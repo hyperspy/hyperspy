@@ -354,6 +354,7 @@ def plot_images(images,
                 scalebar_color='white',
                 interp='nearest',
                 axes_on=True,
+                tight_layout=True,
                 fig=None,
                 *args,
                 **kwargs):
@@ -407,6 +408,12 @@ def plot_images(images,
 
         axes_on : bool
             If true, axes (labels and values) will be plotted. If not, just image is shown.
+
+        tight_layout : bool
+            If true, hyperspy will attempt to improve image placement in figure using matplotlib's tight_layout
+                This is known to cause some problems, so an option is provided to disable it.
+                Turn this option off if output is not as expected, or try adjusting `labelwrap` or `per_row`
+            If false, repositioning images inside the figure will be left as an exercise for the user.
 
         fig : mpl figure
             If set, the images will be plotted to an existing MPL figure
@@ -583,9 +590,10 @@ def plot_images(images,
         f.subplots_adjust(right=0.8)
         cbar_ax = f.add_axes([0.9, 0.1, 0.03, 0.8])
         f.colorbar(im, cax=cbar_ax)
-        # tight_layout, leaving room for the colorbar
-        plt.tight_layout(rect=[0, 0, 0.9, 1])
-    else:
+        if tight_layout:
+            # tight_layout, leaving room for the colorbar
+            plt.tight_layout(rect=[0, 0, 0.9, 1])
+    elif tight_layout:
         plt.tight_layout()
 
     # If we want to plot scalebars, loop through the list of axes and add them
