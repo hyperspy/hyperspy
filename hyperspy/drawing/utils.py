@@ -353,7 +353,7 @@ def plot_images(images,
                 plot_scalebar=False,
                 scalebar_color='white',
                 interp='nearest',
-                axes_on=True,
+                axes_decor='all',
                 padding=None,
                 tight_layout=True,
                 fig=None,
@@ -407,8 +407,12 @@ def plot_images(images,
         scalebar_color : str
             A valid MPL color string; will be used as the scalebar color
 
-        axes_on : bool
-            If true, axes (labels and values) will be plotted. If not, just image is shown.
+        axes_decor : str
+            Controls how the axes are displayed on each image; default is 'all'
+            If 'all', both ticks and axis labels will be shown
+            If 'ticks', no axis labels will be shown, but ticks and tick labels will
+            If 'off', all decorations and frame will be disabled
+            If None, no axis decorations will be shown, but ticks/frame will
 
         padding : None or dict
             This parameter controls the spacing between images. If None, default options will be used
@@ -587,17 +591,28 @@ def plot_images(images,
                 axes[0].name = 'x'
             if isinstance(axes[1].name, trait_base._Undefined):
                 axes[1].name = 'y'
-            plt.xlabel(axes[0].name + " axis (" + axes[0].units + ")")
-            plt.ylabel(axes[1].name + " axis (" + axes[1].units + ")")
+            ax.set_xlabel(axes[0].name + " axis (" + axes[0].units + ")")
+            ax.set_ylabel(axes[1].name + " axis (" + axes[1].units + ")")
 
             if label:
                 title = label_list[i]
                 if ims.axes_manager.navigation_size > 1:
                     title += " / %s" % str(ims.axes_manager.indices)
-                plt.title(textwrap.fill(title, labelwrap))
+                ax.set_title(textwrap.fill(title, labelwrap))
 
-            if not axes_on:
-                plt.axis('off')
+            # Set axes decorations based on user input
+            if axes_decor is 'off':
+                ax.axis('off')
+            elif axes_decor is 'ticks':
+                ax.set_xlabel('')
+                ax.set_ylabel('')
+            elif axes_decor is 'all':
+                pass
+            elif axes_decor is None:
+                ax.set_xlabel('')
+                ax.set_ylabel('')
+                ax.set_xticklabels([])
+                ax.set_yticklabels([])
 
             # If using independent colorbars, add them
             if colorbar is 'multi' and not isrgb[i]:
