@@ -430,7 +430,7 @@ def plot_images(images,
 
         Returns
         -------
-        f, the figure handler that is plotted
+        axes_list, a list of subplot axes that hold the images
 
     """
     from mpl_toolkits.axes_grid1 import make_axes_locatable
@@ -556,6 +556,8 @@ def plot_images(images,
                 axes[1].low_value,
             )
 
+            asp = abs(extent[1] - extent[0]) / abs(extent[3] - extent[2])
+
             # Plot image data, using vmin and vmax to set bounds, or allowing them
             # to be set automatically if using individual colorbars
             if colorbar is 'single' and not isrgb[i]:
@@ -563,12 +565,12 @@ def plot_images(images,
                                cmap=cmap, extent=extent,
                                interpolation=interp,
                                vmin=gl_min, vmax=gl_max,
-                               aspect='auto',
+                               aspect=asp,
                                *args, **kwargs)
             else:
                 im = ax.imshow(data,
                                cmap=cmap, extent=extent,
-                               aspect='auto',
+                               aspect=asp,
                                interpolation=interp,
                                *args, **kwargs)
 
@@ -619,7 +621,7 @@ def plot_images(images,
     if padding is not None:
         plt.subplots_adjust(**padding)
 
-    return f
+    return axes_list
 
 
 def plot_spectra(
