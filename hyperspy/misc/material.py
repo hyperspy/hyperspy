@@ -297,9 +297,9 @@ def mass_absorption_coefficient(element, energies):
     return np.nan_to_num(mac_res)
 
 
-def mass_absorption_coefficient_of_mixture_of_pure_elements(elements,
-                                                            weight_percent,
-                                                            energies):
+def _mass_absorption_coefficient_of_mixture_of_pure_elements(weight_percent,
+                                                             elements,
+                                                             energies):
     """Calculate the mass absorption coefficient for X-ray absorbed in a
     mixture of elements.
 
@@ -308,11 +308,11 @@ def mass_absorption_coefficient_of_mixture_of_pure_elements(elements,
 
     Parameters
     ----------
-    elements: list of str
-        The list of element symbol of the absorber, e.g. ['Al','Zn'].
     weight_percent: np.array
         The composition of the absorber(s) in weight percent. The first
         dimension of the matrix corresponds to the elements.
+    elements: list of str
+        The list of element symbol of the absorber, e.g. ['Al','Zn'].
     energies: float or list of float or str or list of str
         The energy or energies of the X-ray in keV, or the name of the X-rays,
         e.g. 'Al_Ka'.
@@ -343,13 +343,12 @@ def mass_absorption_coefficient_of_mixture_of_pure_elements(elements,
         raise ValueError(
             "Elements and weight_fraction should have the same lenght")
     if hasattr(weight_percent[0], '__iter__'):
-        weight_percent = np.array(weight_percent)
-        mac_res = np.zeros(weight_percent.shape[1:])
-        for element, weight in zip(elements, weight_percent):
-            mac_re = mass_absorption_coefficient(
-                element, energies)
-            mac_res += mac_re * weight
-        mac_res /= np.sum(weight_percent, 0)
+        weight_fraction = np.array(weight_percent)
+        weight_fraction /= np.sum(weight_fraction, 0)
+        mac_res = np.zeros([len(energies)]+list(weight_fraction.shape[1:]))
+        for element, weight in zip(elements, weight_fraction):
+            mac_re = mass_absorption_coefficient(element, energies)
+            mac_res += np.array([weight * ma for ma in mac_re])
         return mac_res
     else:
         mac_res = np.array([mass_absorption_coefficient(
