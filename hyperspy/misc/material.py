@@ -385,8 +385,8 @@ def mass_absorption_coefficient_of_mixture_of_pure_elements(weight_percent,
     Examples
     --------
     >>> utils.material.mass_absorption_coefficient_of_mixture_of_pure_elements(
-    >>>     elements=['Al','Zn'], weight_percent=[50,50], energies=['Al_Ka'])
-    array([ 2587.41616439])
+    >>>     elements=['Al','Zn'], weight_percent=[50,50], energies='Al_Ka')
+    2587.41616439
 
     Return
     ------
