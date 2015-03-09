@@ -356,6 +356,8 @@ def plot_images(images,
                 axes_decor='all',
                 padding=None,
                 tight_layout=True,
+                aspect='auto',
+                min_asp=0.1,
                 fig=None,
                 *args,
                 **kwargs):
@@ -427,6 +429,15 @@ def plot_images(images,
                 This is known to cause some problems, so an option is provided to disable it.
                 Turn this option off if output is not as expected, or try adjusting `labelwrap` or `per_row`
             If false, repositioning images inside the figure will be left as an exercise for the user.
+
+        aspect : str or (float, int, long)
+            If 'auto', aspect ratio will be automatically determined, subject to min_asp.
+            If 'square', image will be forced onto square display.
+            If 'equal', aspect ratio of 1 will be enforced.
+            If float (or int/long), given value will be used.
+
+        min_asp : float
+            Minimum aspect ratio to be used when plotting images
 
         fig : mpl figure
             If set, the images will be plotted to an existing MPL figure
@@ -565,14 +576,34 @@ def plot_images(images,
                     data = data.reshape(shape)
 
             # Set dimensions of images
+            xaxis = axes[0]
+            yaxis = axes[1]
+
             extent = (
-                axes[0].low_value,
-                axes[0].high_value,
-                axes[1].high_value,
-                axes[1].low_value,
+                xaxis.low_value,
+                xaxis.high_value,
+                yaxis.high_value,
+                yaxis.low_value,
             )
 
-            asp = abs(extent[1] - extent[0]) / abs(extent[3] - extent[2])
+            if not isinstance(aspect, (int, long, float)) and aspect not in ['auto', 'square', 'equal']:
+                print 'Did not understand aspect ratio input. Using \'auto\' as default.'
+                aspect = 'auto'
+
+            if aspect is 'auto':
+                if float(yaxis.size) / xaxis.size < min_asp:
+                    factor = min_asp * float(xaxis.size) / yaxis.size
+                elif float(yaxis.size) / xaxis.size > min_asp ** -1:
+                    factor = min_asp ** -1 * float(xaxis.size) / yaxis.size
+                else:
+                    factor = 1
+                asp = np.abs(factor * float(xaxis.scale) / yaxis.scale)
+            elif aspect is 'square':
+                asp = abs(extent[1] - extent[0]) / abs(extent[3] - extent[2])
+            elif aspect is 'equal':
+                asp = 1
+            elif isinstance(aspect, (int, long, float)):
+                asp = aspect
 
             # Plot image data, using vmin and vmax to set bounds, or allowing them
             # to be set automatically if using individual colorbars
