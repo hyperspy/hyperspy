@@ -350,7 +350,7 @@ def plot_images(images,
                 label='titles',
                 labelwrap=30,
                 colorbar='multi',
-                plot_scalebar=False,
+                scalebar=None,
                 scalebar_color='white',
                 interp='nearest',
                 axes_decor='all',
@@ -359,7 +359,7 @@ def plot_images(images,
                 fig=None,
                 *args,
                 **kwargs):
-    """Plot multiple images as subimages in one figure.
+    """Plot multiple images as sub-images in one figure.
 
         Parameters
         ----------
@@ -401,8 +401,10 @@ def plot_images(images,
            'spline36', 'hanning', 'hamming', 'hermite', 'kaiser', 'quadric',
            'catrom', 'gaussian', 'bessel', 'mitchell', 'sinc', 'lanczos'
 
-        plot_scalebar : bool
-            If True, a scalebar will be added to each plot
+        scalebar : None, 'all', or list of ints
+            If None (or False), no scalebars will be added to the images.
+            If 'all', scalebars will be added to all images.
+            If list of ints, scalebars will be added to each image specified by number.
 
         scalebar_color : str
             A valid MPL color string; will be used as the scalebar color
@@ -417,7 +419,7 @@ def plot_images(images,
         padding : None or dict
             This parameter controls the spacing between images. If None, default options will be used
             Otherwise, supply a dictionary with the spacing options as keywords and desired values as values
-            Possible spacings are:
+            Values should be supplied as used in pyplot.subplots_adjust(), and can be:
                 'left', 'bottom', 'right', 'top', 'wspace' (width), and 'hspace' (height)
 
         tight_layout : bool
@@ -522,8 +524,14 @@ def plot_images(images,
         gl_max, gl_min = max([i.data.max() for i in list(compress(images, [not j for j in isrgb]))]), \
                          min([i.data.min() for i in list(compress(images, [not j for j in isrgb]))])
 
-    # Loop through each image, adding subplot for each one
+    # Check if we need to add a scalebar for some of the images
+    if isinstance(scalebar, list) and all(isinstance(x, int) for x in scalebar):
+        scalelist = True
+    else:
+        scalelist = False
+
     idx = 0
+    # Loop through each image, adding subplot for each one
     for i, ims in enumerate(images):
         # Get handles for the signal axes and axes_manager
         axes_manager = images[i].axes_manager
@@ -620,6 +628,14 @@ def plot_images(images,
                 cax = div.append_axes("right", size="5%", pad=0.05)
                 plt.colorbar(im, cax=cax)
 
+            # Add scalebars as necessary
+            if (scalelist and i in scalebar) or scalebar is 'all':
+                ax.scalebar = widgets.Scale_Bar(
+                    ax=ax,
+                    units=axes[0].units,
+                    color=scalebar_color,
+                )
+
     # If using a single colorbar, add it
     if colorbar is 'single':
         f.subplots_adjust(right=0.8)
@@ -632,13 +648,18 @@ def plot_images(images,
         plt.tight_layout()
 
     # If we want to plot scalebars, loop through the list of axes and add them
-    if plot_scalebar:
-        for ax in axes_list:
-            ax.scalebar = widgets.Scale_Bar(
-                ax=ax,
-                units=axes[0].units,
-                color=scalebar_color,
-            )
+    if scalebar is None or scalebar is False:
+        # Do nothing if no scalebars are called for
+        pass
+    elif scalebar is 'all':
+        # scalebars were taken care of in the plotting loop
+        pass
+    elif scalelist:
+        # scalebars were taken care of in the plotting loop
+        pass
+    else:
+        print 'Did not understand scalebar input. Please use None, \'all\', or list of ints.'
+        print 'No scalebars will be displayed.'
 
     # Adjust subplot spacing according to user's specification
     if padding is not None:
