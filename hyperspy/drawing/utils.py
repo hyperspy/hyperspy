@@ -465,12 +465,17 @@ def plot_images(images,
         f = plt.gcf()
         return f
     elif not isinstance(images, (list, tuple, Signal)):
-        raise ValueError("images must be a list of image signals."
+        raise ValueError("images must be a list of image signals or multi-dimensional signal."
                          " " + repr(type(images)) + " was given.")
 
     # Get default colormap from pyplot:
     if cmap is None:
         cmap = plt.get_cmap()
+
+    # If input is >= 1D signal (e.g. for multi-dimensional plotting),
+    # copy it and put it in a list so labeling works out as (x,y) when plotting
+    if isinstance(images,Signal) and images.axes_manager.navigation_dimension > 0:
+        images = [images._deepcopy_with_new_data(images.data)]
 
     n = 0
     for i, sig in enumerate(images):
@@ -545,8 +550,10 @@ def plot_images(images,
     # Loop through each image, adding subplot for each one
     for i, ims in enumerate(images):
         # Get handles for the signal axes and axes_manager
-        axes_manager = images[i].axes_manager
+        axes_manager = ims.axes_manager
         axes = axes_manager.signal_axes
+        if axes_manager.navigation_dimension > 0:
+            ims = ims._deepcopy_with_new_data(ims.data)
         for j, im in enumerate(ims):
             idx += 1
             ax = f.add_subplot(rows, per_row, idx)
