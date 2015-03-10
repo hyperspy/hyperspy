@@ -465,25 +465,15 @@ def plot_images(images,
         f = plt.gcf()
         return f
     elif not isinstance(images, (list, tuple, Signal)):
-        raise ValueError("images must be a list of image signals or a multi-dimensional image."
+        raise ValueError("images must be a list of image signals."
                          " " + repr(type(images)) + " was given.")
 
     # Get default colormap from pyplot:
     if cmap is None:
         cmap = plt.get_cmap()
 
-    # Create copies of images list to prevent moving other plots of the same data
-    # (or just single image if image is a multi-dimensional signal)
-    if isinstance(images,Signal):
-        print 'just signal provided'
-        images_copy = images._deepcopy_with_new_data(images.data)
-    elif isinstance(images, list):
-        print 'list provided'
-        print type(images)
-        images_copy = [x._deepcopy_with_new_data(x.data) for x in images]
-
     n = 0
-    for i, sig in enumerate(images_copy):
+    for i, sig in enumerate(images):
         if sig.axes_manager.signal_dimension != 2:
             raise ValueError("This method only plots signals that are images. "
                              "The signal dimension must be equal to 2. "
@@ -498,7 +488,7 @@ def plot_images(images,
         pass
     elif label is 'titles':
         # Set label_list to each image's pre-defined title
-        label_list = [x.metadata.General.title for x in images_copy]
+        label_list = [x.metadata.General.title for x in images]
     elif isinstance(label, str):
         # Set label_list to an indexed list, based off of label
         label_list = [label + " " + repr(num) for num in range(n)]
@@ -514,7 +504,7 @@ def plot_images(images,
     else:
         # catch all others to revert to default if bad input
         print "Did not understand input of labels. Defaulting to image titles."
-        label_list = [x.metadata.General.title for x in images_copy]
+        label_list = [x.metadata.General.title for x in images]
 
     # Determine appropriate number of images per row
     rows = int(np.ceil(n / float(per_row)))
@@ -532,18 +522,18 @@ def plot_images(images,
     axes_list = []
 
     # Initialize list of rgb tags
-    isrgb = [False] * len(images_copy)
+    isrgb = [False] * len(images)
 
     # Check to see if there are any rgb images in list
     # and tag them using the isrgb list
-    for i, img in enumerate(images_copy):
+    for i, img in enumerate(images):
         if rgb_tools.is_rgbx(img.data):
             isrgb[i] = True
 
     # Find global min and max values of all the non-rgb images for use with 'single' scalebar
     if colorbar is 'single':
-        gl_max, gl_min = max([i.data.max() for i in list(compress(images_copy, [not j for j in isrgb]))]), \
-                         min([i.data.min() for i in list(compress(images_copy, [not j for j in isrgb]))])
+        gl_max, gl_min = max([i.data.max() for i in list(compress(images, [not j for j in isrgb]))]), \
+                         min([i.data.min() for i in list(compress(images, [not j for j in isrgb]))])
 
     # Check if we need to add a scalebar for some of the images
     if isinstance(scalebar, list) and all(isinstance(x, int) for x in scalebar):
@@ -553,11 +543,10 @@ def plot_images(images,
 
     idx = 0
     # Loop through each image, adding subplot for each one
-    for i, ims in enumerate(images_copy):
+    for i, ims in enumerate(images):
         # Get handles for the signal axes and axes_manager
-        axes_manager = images_copy[i].axes_manager
+        axes_manager = images[i].axes_manager
         axes = axes_manager.signal_axes
-
         for j, im in enumerate(ims):
             idx += 1
             ax = f.add_subplot(rows, per_row, idx)
