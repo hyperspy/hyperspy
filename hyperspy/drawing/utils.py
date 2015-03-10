@@ -347,8 +347,10 @@ def plot_images(images,
                 cmap=None,
                 no_nans=False,
                 per_row=3,
-                label='titles',
+                label='auto',
                 labelwrap=30,
+                suptitle=None,
+                suptitle_fontsize=18,
                 colorbar='multi',
                 scalebar=None,
                 scalebar_color='white',
@@ -367,8 +369,8 @@ def plot_images(images,
         ----------
 
         images : list of Signals to plot
-            if any signal is not an image, a ValueError will be raised
-            multi-dimensional images will have each plane plotted as a separate image
+            If any signal is not an image, a ValueError will be raised
+             multi-dimensional images will have each plane plotted as a separate image
 
         cmap : matplotlib colormap
             The colormap used for the images, by default read from pyplot
@@ -377,12 +379,15 @@ def plot_images(images,
             If True, removes NaN's from the plots.
 
         per_row : int
-            the number of plots in each row
+            The number of plots in each row
 
         label : None, str, or list of str
             Control the title labeling of the plotted images.
             If None, no titles will be shown.
-            If 'titles' (default), the title from each image's metadata.General.title will be used.
+            If 'auto' (default), function will try to determine suitable titles using Image titles,
+             falling back to the 'titles' option if no good short titles are detected.
+             Works best if all images to be plotted have the same beginning to their titles.
+            If 'titles' , the title from each image's metadata.General.title will be used.
             If any other single str, images will be labeled in sequence using that str as a prefix.
             If a list of str, the list elements will be used to determine the labels (repeated, if necessary).
 
@@ -390,6 +395,12 @@ def plot_images(images,
             integer specifying the number of characters that will be used on one line
             If the function returns an unexpected blank figure, lower this value to reduce
             overlap of the labels between each figure
+
+        suptitle : str
+            Title to use at the top of the figure.
+
+        suptitle_fontsize : int
+            Font size to use for super title at top of figure
 
         colorbar : None, 'multi' (default), or 'single'
             Controls the type of colorbars that are plotted.
@@ -399,9 +410,10 @@ def plot_images(images,
 
         interp : None or str
             Type of interpolation to use with matplotlib.imshow()
-            Possible values are None, 'none', 'nearest', 'bilinear', 'bicubic', 'spline16',
-           'spline36', 'hanning', 'hamming', 'hermite', 'kaiser', 'quadric',
-           'catrom', 'gaussian', 'bessel', 'mitchell', 'sinc', 'lanczos'
+            Possible values are:
+             None, 'none', 'nearest', 'bilinear', 'bicubic', 'spline16',
+             'spline36', 'hanning', 'hamming', 'hermite', 'kaiser', 'quadric',
+             'catrom', 'gaussian', 'bessel', 'mitchell', 'sinc', 'lanczos'
 
         scalebar : None, 'all', or list of ints
             If None (or False), no scalebars will be added to the images.
@@ -426,8 +438,8 @@ def plot_images(images,
 
         tight_layout : bool
             If true, hyperspy will attempt to improve image placement in figure using matplotlib's tight_layout
-                This is known to cause some problems, so an option is provided to disable it.
-                Turn this option off if output is not as expected, or try adjusting `labelwrap` or `per_row`
+             This is known to cause some problems, so an option is provided to disable it.
+             Turn this option off if output is not as expected, or try adjusting `labelwrap` or `per_row`
             If false, repositioning images inside the figure will be left as an exercise for the user.
 
         aspect : str or (float, int, long)
@@ -489,14 +501,69 @@ def plot_images(images,
               else 1)
 
     # Sort out the labeling:
+    div_num = 0
     if label is None:
         pass
+    elif label is 'auto':
+        # Use some heuristics to try to get base string of similar titles
+        label_list = [x.metadata.General.title for x in images]
+
+        # Find the shortest common string between the image titles
+        # and pull that out as the base title for the sequence of images
+        # array in which to store arrays
+        res = np.zeros((len(label_list),len(label_list[0]) + 1))
+        res[:,0] = 1
+
+        # j iterates the strings
+        for j in range(len(label_list)):
+            # i iterates length of substring test
+            for i in range(1, len(label_list[0]) + 1):
+                # stores whether or not characters in title match
+                res[j, i] = label_list[0][:i] in label_list[j]
+
+        # sum up the results (1 is True, 0 is False) and create
+        # a substring based on the minimum value (this will be
+        # the "smallest common string" between all the titles
+        if res.all():
+            basename = label_list[0]
+            div_num = len(label_list[0])
+        else:
+            div_num = int(min(np.sum(res,1)))
+            basename = label_list[0][:div_num - 1]
+
+        # trim off any '(' or ' ' characters at end of basename
+        if div_num > 1:
+            while True:
+                if basename[len(basename) - 1] == '(':
+                    basename = basename[:-1]
+                elif basename[len(basename) - 1] == ' ':
+                    basename = basename[:-1]
+                else:
+                    break
+
+        # namefrac is ratio of length of basename to the image name
+        # if it is high (e.g. over 0.5), we can assume that all images
+        # share the same base
+        namefrac = float(len(basename)) / len(label_list[0])
+
+        if namefrac > 0.5:
+            # there was a significant overlap of label beginnings
+            shared_titles = True
+            suptitle = basename
+        else:
+            # there was not much overlap, so default back to 'titles' mode
+            shared_titles = False
+            label = 'titles'
+            div_num = 0
+
     elif label is 'titles':
         # Set label_list to each image's pre-defined title
         label_list = [x.metadata.General.title for x in images]
+
     elif isinstance(label, str):
         # Set label_list to an indexed list, based off of label
         label_list = [label + " " + repr(num) for num in range(n)]
+
     elif isinstance(label, list) and all(isinstance(x, str) for x in label):
         label_list = label
         # If list of labels is longer than the number of images, just use the
@@ -506,6 +573,7 @@ def plot_images(images,
         if len(label_list) < n:
             label_list *= (n / len(label_list)) + 1
             del label_list[n:]
+
     else:
         # catch all others to revert to default if bad input
         print "Did not understand input of labels. Defaulting to image titles."
@@ -641,9 +709,9 @@ def plot_images(images,
             ax.set_ylabel(axes[1].name + " axis (" + axes[1].units + ")")
 
             if label:
-                title = label_list[i]
+                title = label_list[i][div_num:]
                 if ims.axes_manager.navigation_size > 1:
-                    title += " / %s" % str(ims.axes_manager.indices)
+                    title += " %s" % str(ims.axes_manager.indices)
                 ax.set_title(textwrap.fill(title, labelwrap))
 
             # Set axes decorations based on user input
@@ -674,7 +742,7 @@ def plot_images(images,
                     color=scalebar_color,
                 )
 
-    # If using a single colorbar, add it
+    # If using a single colorbar, add it, and do tight_layout:
     if colorbar is 'single':
         f.subplots_adjust(right=0.8)
         cbar_ax = f.add_axes([0.9, 0.1, 0.03, 0.8])
@@ -684,6 +752,11 @@ def plot_images(images,
             plt.tight_layout(rect=[0, 0, 0.9, 1])
     elif tight_layout:
         plt.tight_layout()
+
+    # Set top bounds for shared titles and add suptitle
+    if suptitle:
+        f.subplots_adjust(top=0.85)
+        f.suptitle(suptitle, fontsize=suptitle_fontsize)
 
     # If we want to plot scalebars, loop through the list of axes and add them
     if scalebar is None or scalebar is False:
