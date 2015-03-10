@@ -475,8 +475,11 @@ def plot_images(images,
     # Create copies of images list to prevent moving other plots of the same data
     # (or just single image if image is a multi-dimensional signal)
     if isinstance(images,Signal):
+        print 'just signal provided'
         images_copy = images._deepcopy_with_new_data(images.data)
     elif isinstance(images, list):
+        print 'list provided'
+        print type(images)
         images_copy = [x._deepcopy_with_new_data(x.data) for x in images]
 
     n = 0
@@ -550,16 +553,7 @@ def plot_images(images,
 
     idx = 0
     # Loop through each image, adding subplot for each one
-    if isinstance(images_copy, Signal):
-        images_copy.unfold_navigation_space()
-
     for i, ims in enumerate(images_copy):
-
-        # If the image is multi-dimensional (in navigation space)
-        # we have to unfold it to use the image_copy[i] notation
-        if ims.axes_manager.navigation_dimension > 1:
-            ims.unfold_navigation_space()
-
         # Get handles for the signal axes and axes_manager
         axes_manager = images_copy[i].axes_manager
         axes = axes_manager.signal_axes
