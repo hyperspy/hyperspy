@@ -527,9 +527,11 @@ def plot_images(images,
         if res.all():
             basename = label_list[0]
             div_num = len(label_list[0])
+            all_match = True
         else:
             div_num = int(min(np.sum(res,1)))
             basename = label_list[0][:div_num - 1]
+            all_match = False
 
         # trim off any '(' or ' ' characters at end of basename
         if div_num > 1:
@@ -709,7 +711,10 @@ def plot_images(images,
             ax.set_ylabel(axes[1].name + " axis (" + axes[1].units + ")")
 
             if label:
-                title = label_list[i][div_num:]
+                if all_match:
+                    title = ''
+                else:
+                    title = label_list[i][div_num - 1:]
                 if ims.axes_manager.navigation_size > 1:
                     title += " %s" % str(ims.axes_manager.indices)
                 ax.set_title(textwrap.fill(title, labelwrap))
