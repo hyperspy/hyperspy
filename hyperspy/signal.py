@@ -3137,8 +3137,8 @@ class Signal(MVA,
                     self.tmp_parameters.folder,
                     self.tmp_parameters.filename)
                 extension = (self.tmp_parameters.extension
-                            if not extension
-                            else extension)
+                             if not extension
+                             else extension)
             elif self.metadata.has_item('General.original_filename'):
                 filename = self.metadata.General.original_filename
             else:
