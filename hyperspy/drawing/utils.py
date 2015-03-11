@@ -727,7 +727,9 @@ def plot_images(images,
                 else:
                     if len(ims) == n:
                         # This is true if we are plotting just 1 multi-dimensional Image
-                        title = label_list[j]
+                        title = label_list[idx - 1]
+                    elif user_labels:
+                        title = label_list[idx - 1]
                     else:
                         title = label_list[i]
 
