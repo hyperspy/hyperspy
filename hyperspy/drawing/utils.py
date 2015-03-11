@@ -502,6 +502,7 @@ def plot_images(images,
 
     # Sort out the labeling:
     div_num = 0
+    all_match = False
     if label is None:
         pass
     elif label is 'auto':
