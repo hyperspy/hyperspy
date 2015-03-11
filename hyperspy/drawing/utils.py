@@ -370,7 +370,7 @@ def plot_images(images,
 
         images : list of Signals to plot
             If any signal is not an image, a ValueError will be raised
-             multi-dimensional images will have each plane plotted as a separate image
+            multi-dimensional images will have each plane plotted as a separate image
 
         cmap : matplotlib colormap
             The colormap used for the images, by default read from pyplot
@@ -385,8 +385,8 @@ def plot_images(images,
             Control the title labeling of the plotted images.
             If None, no titles will be shown.
             If 'auto' (default), function will try to determine suitable titles using Image titles,
-             falling back to the 'titles' option if no good short titles are detected.
-             Works best if all images to be plotted have the same beginning to their titles.
+            falling back to the 'titles' option if no good short titles are detected.
+            Works best if all images to be plotted have the same beginning to their titles.
             If 'titles' , the title from each image's metadata.General.title will be used.
             If any other single str, images will be labeled in sequence using that str as a prefix.
             If a list of str, the list elements will be used to determine the labels (repeated, if necessary).
@@ -398,7 +398,7 @@ def plot_images(images,
 
         suptitle : str
             Title to use at the top of the figure. If called with label='auto', this parameter will override
-             the automatically determined title.
+            the automatically determined title.
 
         suptitle_fontsize : int
             Font size to use for super title at top of figure
@@ -412,9 +412,9 @@ def plot_images(images,
         interp : None or str
             Type of interpolation to use with matplotlib.imshow()
             Possible values are:
-             None, 'none', 'nearest', 'bilinear', 'bicubic', 'spline16',
-             'spline36', 'hanning', 'hamming', 'hermite', 'kaiser', 'quadric',
-             'catrom', 'gaussian', 'bessel', 'mitchell', 'sinc', 'lanczos'
+            None, 'none', 'nearest', 'bilinear', 'bicubic', 'spline16',
+            'spline36', 'hanning', 'hamming', 'hermite', 'kaiser', 'quadric',
+            'catrom', 'gaussian', 'bessel', 'mitchell', 'sinc', 'lanczos'
 
         scalebar : None, 'all', or list of ints
             If None (or False), no scalebars will be added to the images.

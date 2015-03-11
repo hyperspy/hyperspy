@@ -257,7 +257,8 @@ Plotting several images
 
 :py:func:`~.drawing.utils.plot_images` is used to plot several images in the
 same figure. It supports many configurations and has many options available
-to customize the resulting output. The function returns a list of :py:func:`matplotlib` axes, which
+to customize the resulting output. The function returns a list of
+`matplotlib axes <http://matplotlib.org/api/pyplot_api.html#matplotlib.pyplot.axes>`_, which
 can be used to further customize the figure. Some examples are given below.
 
 A common usage for :py:func:`~.drawing.utils.plot_images` is to view the
