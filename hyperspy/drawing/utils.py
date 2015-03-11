@@ -397,7 +397,8 @@ def plot_images(images,
             overlap of the labels between each figure
 
         suptitle : str
-            Title to use at the top of the figure.
+            Title to use at the top of the figure. If called with label='auto', this parameter will override
+             the automatically determined title.
 
         suptitle_fontsize : int
             Font size to use for super title at top of figure
@@ -503,6 +504,9 @@ def plot_images(images,
     # Sort out the labeling:
     div_num = 0
     all_match = False
+    shared_titles = False
+    user_labels = False
+
     if label is None:
         pass
     elif label is 'auto':
@@ -552,7 +556,10 @@ def plot_images(images,
         if namefrac > 0.5:
             # there was a significant overlap of label beginnings
             shared_titles = True
-            suptitle = basename
+            # only use new suptitle if one isn't specified already
+            if suptitle is None:
+                suptitle = basename
+
         else:
             # there was not much overlap, so default back to 'titles' mode
             shared_titles = False
@@ -569,6 +576,7 @@ def plot_images(images,
 
     elif isinstance(label, list) and all(isinstance(x, str) for x in label):
         label_list = label
+        user_labels = True
         # If list of labels is longer than the number of images, just use the
         # first n elements
         if len(label_list) > n:
@@ -714,10 +722,18 @@ def plot_images(images,
             if label:
                 if all_match:
                     title = ''
-                else:
+                elif shared_titles:
                     title = label_list[i][div_num - 1:]
-                if ims.axes_manager.navigation_size > 1:
+                else:
+                    if len(ims) == n:
+                        # This is true if we are plotting just 1 multi-dimensional Image
+                        title = label_list[j]
+                    else:
+                        title = label_list[i]
+
+                if ims.axes_manager.navigation_size > 1 and not user_labels:
                     title += " %s" % str(ims.axes_manager.indices)
+
                 ax.set_title(textwrap.fill(title, labelwrap))
 
             # Set axes decorations based on user input
