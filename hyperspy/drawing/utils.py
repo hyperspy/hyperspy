@@ -18,6 +18,9 @@
 
 import copy
 import itertools
+import textwrap
+from traits import trait_base
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -25,6 +28,9 @@ import matplotlib as mpl
 
 from hyperspy.misc.utils import unfold_if_multidim
 from hyperspy.defaults_parser import preferences
+from hyperspy.drawing import widgets
+from hyperspy.misc import rgb_tools
+from hyperspy.signal import Signal
 
 
 def create_figure(window_title=None,
@@ -463,13 +469,6 @@ def plot_images(images,
         axes_list, a list of subplot axes that hold the images
 
     """
-    from mpl_toolkits.axes_grid1 import make_axes_locatable
-    from hyperspy.drawing import widgets
-    from hyperspy.misc import rgb_tools
-    from hyperspy.signal import Signal
-    from traits import trait_base
-    from itertools import compress
-    import textwrap
 
     if isinstance(images, Signal) and len(images) is 1:
         print "Single image provided, using Signal.plot() instead."
@@ -616,8 +615,8 @@ def plot_images(images,
 
     # Find global min and max values of all the non-rgb images for use with 'single' scalebar
     if colorbar is 'single':
-        gl_max, gl_min = max([i.data.max() for i in list(compress(images, [not j for j in isrgb]))]), \
-                         min([i.data.min() for i in list(compress(images, [not j for j in isrgb]))])
+        gl_max, gl_min = max([i.data.max() for i in list(itertools.compress(images, [not j for j in isrgb]))]), \
+                         min([i.data.min() for i in list(itertools.compress(images, [not j for j in isrgb]))])
 
     # Check if we need to add a scalebar for some of the images
     if isinstance(scalebar, list) and all(isinstance(x, int) for x in scalebar):
