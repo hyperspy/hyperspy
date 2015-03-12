@@ -632,7 +632,7 @@ def plot_images(images,
 
     # Determine how many non-rgb Images there are
     non_rgb = list(itertools.compress(images, [not j for j in isrgb]))
-    if len(non_rgb) is 0:
+    if len(non_rgb) is 0 and colorbar is not None:
         colorbar = None
         print "Sorry, colorbar is not implemented for RGB images."
 
