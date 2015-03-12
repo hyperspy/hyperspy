@@ -479,11 +479,9 @@ def plot_images(images,
     from hyperspy.signal import Signal
 
     if isinstance(images, Signal) and len(images) is 1:
-        print "Single image provided, using Signal.plot() instead."
-        print "Use Signal.plot() directly to supply more options."
         images.plot()
-        f = plt.gcf()
-        return f
+        ax = plt.gca()
+        return ax
     elif not isinstance(images, (list, tuple, Signal)):
         raise ValueError("images must be a list of image signals or "
                          "multi-dimensional signal."
