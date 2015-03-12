@@ -28,9 +28,6 @@ import matplotlib as mpl
 
 from hyperspy.misc.utils import unfold_if_multidim
 from hyperspy.defaults_parser import preferences
-from hyperspy.drawing import widgets
-from hyperspy.misc import rgb_tools
-from hyperspy.signal import Signal
 
 
 def create_figure(window_title=None,
@@ -469,6 +466,9 @@ def plot_images(images,
         axes_list, a list of subplot axes that hold the images
 
     """
+    from hyperspy.drawing.widgets import Scale_Bar
+    from hyperspy.misc import rgb_tools
+    from hyperspy.signal import Signal
 
     if isinstance(images, Signal) and len(images) is 1:
         print "Single image provided, using Signal.plot() instead."
@@ -766,7 +766,7 @@ def plot_images(images,
 
             # Add scalebars as necessary
             if (scalelist and i in scalebar) or scalebar is 'all':
-                ax.scalebar = widgets.Scale_Bar(
+                ax.scalebar = Scale_Bar(
                     ax=ax,
                     units=axes[0].units,
                     color=scalebar_color,
