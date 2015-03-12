@@ -833,9 +833,8 @@ def plot_images(images,
         # scalebars were taken care of in the plotting loop
         pass
     else:
-        print 'Did not understand scalebar input. Please use None, ' \
-              '\'all\', or list of ints.'
-        print 'No scalebars will be displayed.'
+        raise ValueError("Did not understand scalebar input. Must be None, "
+                         "\'all\', or list of ints.")
 
     # Adjust subplot spacing according to user's specification
     if padding is not None:
