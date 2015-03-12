@@ -562,7 +562,12 @@ def plot_images(images,
         # namefrac is ratio of length of basename to the image name
         # if it is high (e.g. over 0.5), we can assume that all images
         # share the same base
-        namefrac = float(len(basename)) / len(label_list[0])
+        if len(label_list[0]) > 0:
+            namefrac = float(len(basename)) / len(label_list[0])
+        else:
+            # If label_list[0] is empty, it means there was probably no
+            # title set originally, so nothing to share
+            namefrac = 0
 
         if namefrac > 0.5:
             # there was a significant overlap of label beginnings
