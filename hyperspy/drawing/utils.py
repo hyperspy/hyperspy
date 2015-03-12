@@ -137,7 +137,7 @@ def plot_RGB_map(im_list, normalization='single', dont_plot=False):
         rgb[:, :, 2] = im_list[2].data.squeeze()
     if normalization == 'single':
         for i in xrange(rgb.shape[2]):
-            rgb[:, :, i] /= rgb[:,:, i].max()
+            rgb[:, :, i] /= rgb[:, :, i].max()
     elif normalization == 'global':
         rgb /= rgb.max()
     rgb = rgb.clip(0, rgb.max())
@@ -486,7 +486,8 @@ def plot_images(images,
 
     # If input is >= 1D signal (e.g. for multi-dimensional plotting),
     # copy it and put it in a list so labeling works out as (x,y) when plotting
-    if isinstance(images,Signal) and images.axes_manager.navigation_dimension > 0:
+    if isinstance(
+            images, Signal) and images.axes_manager.navigation_dimension > 0:
         images = [images._deepcopy_with_new_data(images.data)]
 
     n = 0
@@ -495,7 +496,8 @@ def plot_images(images,
             raise ValueError("This method only plots signals that are images. "
                              "The signal dimension must be equal to 2. "
                              "The signal at position " + repr(i) + " was " + repr(sig) + ".")
-        # increment n by the navigation size, or by 1 if the navigation size is <= 0
+        # increment n by the navigation size, or by 1 if the navigation size is
+        # <= 0
         n += (sig.axes_manager.navigation_size
               if sig.axes_manager.navigation_size > 0
               else 1)
@@ -515,8 +517,8 @@ def plot_images(images,
         # Find the shortest common string between the image titles
         # and pull that out as the base title for the sequence of images
         # array in which to store arrays
-        res = np.zeros((len(label_list),len(label_list[0]) + 1))
-        res[:,0] = 1
+        res = np.zeros((len(label_list), len(label_list[0]) + 1))
+        res[:, 0] = 1
 
         # j iterates the strings
         for j in range(len(label_list)):
@@ -533,7 +535,7 @@ def plot_images(images,
             div_num = len(label_list[0])
             all_match = True
         else:
-            div_num = int(min(np.sum(res,1)))
+            div_num = int(min(np.sum(res, 1)))
             basename = label_list[0][:div_num - 1]
             all_match = False
 
@@ -613,13 +615,16 @@ def plot_images(images,
         if rgb_tools.is_rgbx(img.data):
             isrgb[i] = True
 
-    # Find global min and max values of all the non-rgb images for use with 'single' scalebar
+    # Find global min and max values of all the non-rgb images for use with
+    # 'single' scalebar
     if colorbar is 'single':
         gl_max, gl_min = max([i.data.max() for i in list(itertools.compress(images, [not j for j in isrgb]))]), \
-                         min([i.data.min() for i in list(itertools.compress(images, [not j for j in isrgb]))])
+            min([i.data.min()
+                 for i in list(itertools.compress(images, [not j for j in isrgb]))])
 
     # Check if we need to add a scalebar for some of the images
-    if isinstance(scalebar, list) and all(isinstance(x, int) for x in scalebar):
+    if isinstance(scalebar, list) and all(isinstance(x, int)
+                                          for x in scalebar):
         scalelist = True
     else:
         scalelist = False
@@ -671,7 +676,8 @@ def plot_images(images,
                 yaxis.low_value,
             )
 
-            if not isinstance(aspect, (int, long, float)) and aspect not in ['auto', 'square', 'equal']:
+            if not isinstance(aspect, (int, long, float)) and aspect not in [
+                    'auto', 'square', 'equal']:
                 print 'Did not understand aspect ratio input. Using \'auto\' as default.'
                 aspect = 'auto'
 
@@ -725,7 +731,8 @@ def plot_images(images,
                     title = label_list[i][div_num - 1:]
                 else:
                     if len(ims) == n:
-                        # This is true if we are plotting just 1 multi-dimensional Image
+                        # This is true if we are plotting just 1
+                        # multi-dimensional Image
                         title = label_list[idx - 1]
                     elif user_labels:
                         title = label_list[idx - 1]
