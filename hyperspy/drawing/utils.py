@@ -371,21 +371,22 @@ def plot_images(images,
         Parameters
         ----------
 
-        images : list of Signals to plot
+        images : list
+            `images` should be a list of Signals (Images) to plot
             If any signal is not an image, a ValueError will be raised
             multi-dimensional images will have each plane plotted as a separate
             image
 
-        cmap : matplotlib colormap
+        cmap : matplotlib colormap, optional
             The colormap used for the images, by default read from pyplot
 
-        no_nans : bool
+        no_nans : bool, optional
             If True, removes NaN's from the plots.
 
-        per_row : int
+        per_row : int, optional
             The number of plots in each row
 
-        label : None, str, or list of str
+        label : None, str, or list of str, optional
             Control the title labeling of the plotted images.
             If None, no titles will be shown.
             If 'auto' (default), function will try to determine suitable titles
@@ -393,57 +394,57 @@ def plot_images(images,
             short titles are detected.
             Works best if all images to be plotted have the same beginning
             to their titles.
-            If 'titles' , the title from each image's metadata.General.title
+            If 'titles', the title from each image's metadata.General.title
             will be used.
             If any other single str, images will be labeled in sequence using
             that str as a prefix.
             If a list of str, the list elements will be used to determine the
             labels (repeated, if necessary).
 
-        labelwrap : int
+        labelwrap : int, optional
             integer specifying the number of characters that will be used on
             one line
             If the function returns an unexpected blank figure, lower this
             value to reduce overlap of the labels between each figure
 
-        suptitle : str
+        suptitle : str, optional
             Title to use at the top of the figure. If called with label='auto',
             this parameter will override the automatically determined title.
 
-        suptitle_fontsize : int
+        suptitle_fontsize : int, optional
             Font size to use for super title at top of figure
 
-        colorbar : None, 'multi' (default), or 'single'
+        colorbar : {'multi', None, 'single'}
             Controls the type of colorbars that are plotted.
             If None, no colorbar is plotted.
-            If 'multi', individual colorbars are plotted for each
+            If 'multi' (default), individual colorbars are plotted for each
             (non-RGB) image
             If 'single', all (non-RGB) images are plotted on the same scale,
             and one colorbar is shown for all
 
-        interp : None or str
+        interp : None or str, optional
             Type of interpolation to use with matplotlib.imshow()
             Possible values are:
             None, 'none', 'nearest', 'bilinear', 'bicubic', 'spline16',
             'spline36', 'hanning', 'hamming', 'hermite', 'kaiser', 'quadric',
             'catrom', 'gaussian', 'bessel', 'mitchell', 'sinc', 'lanczos'
 
-        scalebar : None, 'all', or list of ints
+        scalebar : {None, 'all', list of ints}, optional
             If None (or False), no scalebars will be added to the images.
             If 'all', scalebars will be added to all images.
             If list of ints, scalebars will be added to each image specified.
 
-        scalebar_color : str
+        scalebar_color : str, optional
             A valid MPL color string; will be used as the scalebar color
 
-        axes_decor : str
+        axes_decor : {'all', 'ticks', 'off', None}, optional
             Controls how the axes are displayed on each image; default is 'all'
             If 'all', both ticks and axis labels will be shown
             If 'ticks', no axis labels will be shown, but ticks/tick labels will
             If 'off', all decorations and frame will be disabled
             If None, no axis decorations will be shown, but ticks/frame will
 
-        padding : None or dict
+        padding : None or dict, optional
             This parameter controls the spacing between images.
             If None, default options will be used
             Otherwise, supply a dictionary with the spacing options as
@@ -453,33 +454,43 @@ def plot_images(images,
                 'left', 'bottom', 'right', 'top', 'wspace' (width),
                 and 'hspace' (height)
 
-        tight_layout : bool
+        tight_layout : bool, optional
             If true, hyperspy will attempt to improve image placement in
             figure using matplotlib's tight_layout
-             This is known to cause some problems, so an option is
-             provided to disable it. Turn this option off if output is not
-             as expected, or try adjusting `labelwrap` or `per_row`
             If false, repositioning images inside the figure will be left as
             an exercise for the user.
 
-        aspect : str or (float, int, long)
+        aspect : str or numeric, optional
             If 'auto', aspect ratio will be auto determined, subject to min_asp.
             If 'square', image will be forced onto square display.
             If 'equal', aspect ratio of 1 will be enforced.
             If float (or int/long), given value will be used.
 
-        min_asp : float
+        min_asp : float, optional
             Minimum aspect ratio to be used when plotting images
 
-        fig : mpl figure
+        fig : mpl figure, optional
             If set, the images will be plotted to an existing MPL figure
 
-        *args, **kwargs
+        *args, **kwargs, optional
             Additional arguments passed to matplotlib.imshow()
 
         Returns
         -------
-        axes_list, a list of subplot axes that hold the images
+        axes_list : list
+            a list of subplot axes that hold the images
+
+        See Also
+        --------
+        plot_spectra : Plotting of multiple spectra
+        plot_signals : Plotting of multiple signals
+        plot_histograms : Compare signal histograms
+
+        Notes
+        -----
+        `tight_layout` is known to be quite brittle, so an option is provided
+        to disable it. Turn this option off if output is not as expected,
+        or try adjusting `label`, `labelwrap`, or `per_row`
 
     """
     from hyperspy.drawing.widgets import Scale_Bar
