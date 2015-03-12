@@ -89,7 +89,7 @@ def on_figure_window_close(figure, function):
         import wx
 
         def function_wrapper(event):
-            # When using WX window.connect does not supports multiple funtions
+            # When using WX window.connect does not supports multiple functions
             for f in figure._on_window_close:
                 f()
             plt.close(figure)
@@ -97,14 +97,14 @@ def on_figure_window_close(figure, function):
 
     elif backend == 'TkAgg':
         def function_wrapper(*args):
-            # When using TK window.connect does not supports multiple funtions
+            # When using TK window.connect does not supports multiple functions
             for f in figure._on_window_close:
                 f()
         figure.canvas.manager.window.bind("<Destroy>", function_wrapper)
 
     elif backend == 'Qt4Agg':
         # PyQt
-        # In PyQt window.connect supports multiple funtions
+        # In PyQt window.connect supports multiple functions
         from IPython.external.qt_for_kernel import QtCore
         window.connect(window, QtCore.SIGNAL('closing()'), function)
     else:
@@ -370,22 +370,17 @@ def plot_images(images,
 
         Parameters
         ----------
-
         images : list
             `images` should be a list of Signals (Images) to plot
             If any signal is not an image, a ValueError will be raised
             multi-dimensional images will have each plane plotted as a separate
             image
-
         cmap : matplotlib colormap, optional
             The colormap used for the images, by default read from pyplot
-
         no_nans : bool, optional
             If True, removes NaN's from the plots.
-
         per_row : int, optional
             The number of plots in each row
-
         label : None, str, or list of str, optional
             Control the title labeling of the plotted images.
             If None, no titles will be shown.
@@ -400,20 +395,16 @@ def plot_images(images,
             that str as a prefix.
             If a list of str, the list elements will be used to determine the
             labels (repeated, if necessary).
-
         labelwrap : int, optional
             integer specifying the number of characters that will be used on
             one line
             If the function returns an unexpected blank figure, lower this
             value to reduce overlap of the labels between each figure
-
         suptitle : str, optional
             Title to use at the top of the figure. If called with label='auto',
             this parameter will override the automatically determined title.
-
         suptitle_fontsize : int, optional
             Font size to use for super title at top of figure
-
         colorbar : {'multi', None, 'single'}
             Controls the type of colorbars that are plotted.
             If None, no colorbar is plotted.
@@ -421,29 +412,24 @@ def plot_images(images,
             (non-RGB) image
             If 'single', all (non-RGB) images are plotted on the same scale,
             and one colorbar is shown for all
-
         interp : None or str, optional
             Type of interpolation to use with matplotlib.imshow()
             Possible values are:
             None, 'none', 'nearest', 'bilinear', 'bicubic', 'spline16',
             'spline36', 'hanning', 'hamming', 'hermite', 'kaiser', 'quadric',
             'catrom', 'gaussian', 'bessel', 'mitchell', 'sinc', 'lanczos'
-
         scalebar : {None, 'all', list of ints}, optional
             If None (or False), no scalebars will be added to the images.
             If 'all', scalebars will be added to all images.
             If list of ints, scalebars will be added to each image specified.
-
         scalebar_color : str, optional
             A valid MPL color string; will be used as the scalebar color
-
         axes_decor : {'all', 'ticks', 'off', None}, optional
             Controls how the axes are displayed on each image; default is 'all'
             If 'all', both ticks and axis labels will be shown
-            If 'ticks', no axis labels will be shown, but ticks/tick labels will
+            If 'ticks', no axis labels will be shown, but ticks/labels will
             If 'off', all decorations and frame will be disabled
             If None, no axis decorations will be shown, but ticks/frame will
-
         padding : None or dict, optional
             This parameter controls the spacing between images.
             If None, default options will be used
@@ -453,25 +439,20 @@ def plot_images(images,
             and can be:
                 'left', 'bottom', 'right', 'top', 'wspace' (width),
                 and 'hspace' (height)
-
         tight_layout : bool, optional
             If true, hyperspy will attempt to improve image placement in
             figure using matplotlib's tight_layout
             If false, repositioning images inside the figure will be left as
             an exercise for the user.
-
         aspect : str or numeric, optional
-            If 'auto', aspect ratio will be auto determined, subject to min_asp.
+            If 'auto', aspect ratio is auto determined, subject to min_asp.
             If 'square', image will be forced onto square display.
             If 'equal', aspect ratio of 1 will be enforced.
             If float (or int/long), given value will be used.
-
         min_asp : float, optional
             Minimum aspect ratio to be used when plotting images
-
         fig : mpl figure, optional
             If set, the images will be plotted to an existing MPL figure
-
         *args, **kwargs, optional
             Additional arguments passed to matplotlib.imshow()
 
@@ -669,7 +650,6 @@ def plot_images(images,
     for i, ims in enumerate(images):
         # Get handles for the signal axes and axes_manager
         axes_manager = ims.axes_manager
-        axes = axes_manager.signal_axes
         if axes_manager.navigation_dimension > 0:
             ims = ims._deepcopy_with_new_data(ims.data)
         for j, im in enumerate(ims):
@@ -691,10 +671,6 @@ def plot_images(images,
             # Get handles for the signal axes and axes_manager
             axes_manager = im.axes_manager
             axes = axes_manager.signal_axes
-
-            if axes_manager.signal_dimension == 2:
-                # get calibration from a passed axes_manager
-                shape = axes_manager._signal_shape_in_array
 
             # Set dimensions of images
             xaxis = axes[0]
@@ -818,7 +794,7 @@ def plot_images(images,
         if foundim is not None:
             f.subplots_adjust(right=0.8)
             cbar_ax = f.add_axes([0.9, 0.1, 0.03, 0.8])
-            cbar = f.colorbar(ax_im_list[foundim], cax=cbar_ax)
+            f.colorbar(ax_im_list[foundim], cax=cbar_ax)
             if tight_layout:
                 # tight_layout, leaving room for the colorbar
                 plt.tight_layout(rect=[0, 0, 0.9, 1])
@@ -1031,7 +1007,7 @@ def animate_legend(figure='last'):
     Parameters
     ----------
 
-    figure: 'last' | matplolib.figure
+    figure: 'last' | matplotlib.figure
         If 'last' pick the last figure
 
     Note
@@ -1089,7 +1065,7 @@ def plot_histograms(signal_list,
     ----------
     signal_list : iterable
         Ordered spectra list to plot. If `style` is "cascade" or "mosaic"
-        the spectra can have diffent size and axes.
+        the spectra can have different size and axes.
     bins : int or list or str, optional
         If bins is a string, then it must be one of:
         'knuth' : use Knuth's rule to determine bins
@@ -1099,22 +1075,23 @@ def plot_histograms(signal_list,
     range_bins : tuple or None, optional.
         the minimum and maximum range for the histogram. If not specified,
         it will be (x.min(), x.max())
-    color : valid matplotlib color or a list of them or `None`, otional.
+    color : valid matplotlib color or a list of them or `None`, optional.
         Sets the color of the lines of the plots. If a list, if its length is
         less than the number of spectra to plot, the colors will be cycled. If
         If `None`, use default matplotlib color cycle.
-    line_style: valid matplotlib line style or a list of them or `None`, otional.
+    line_style: valid matplotlib line style or a list of them or `None`,
+    optional.
         The main line style are '-','--','steps','-.',':'.
         If a list, if its length is less than the number of
         spectra to plot, line_style will be cycled. If
         If `None`, use continuous lines, eg: ('-','--','steps','-.',':')
-    legend: None or list of str or 'auto', otional.
+    legend: None or list of str or 'auto', optional.
        Display a legend. If 'auto', the title of each spectra
        (metadata.General.title) is used.
-    legend_picking: bool, otional.
+    legend_picking: bool, optional.
         If true, a spectrum can be toggle on and off by clicking on
         the legended line.
-    fig : matplotlib figure or None, otional.
+    fig : matplotlib figure or None, optional.
         If None, a default figure will be created.
     **kwargs
         other keyword arguments (weight and density) are described in
