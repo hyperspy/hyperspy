@@ -685,10 +685,6 @@ def plot_images(images,
                 # get calibration from a passed axes_manager
                 shape = axes_manager._signal_shape_in_array
 
-                # Reshape the data for input into imshow (if not rgb)
-                if not isrgb[i]:
-                    data = data.reshape(shape)
-
             # Set dimensions of images
             xaxis = axes[0]
             yaxis = axes[1]
