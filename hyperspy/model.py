@@ -2180,12 +2180,17 @@ class Model(list):
             _spectrum.get_dimensions_from_data()
             from hyperspy import components
             _model = self.__class__(_spectrum)
-            for c in _model:
-                _model.remove(c)
+            for _ in xrange(len(_model)):
+                _model.remove(0)
             # create components:
             twin_dict = {}
             for c in self:
-                _model.append(getattr(components, c._id_name)())
+                args = {}
+                for k, v in c._whitelist.iteritems():
+                    if k.startswith('_init_'):
+                        args[k[6:]] = v
+                _model.append(getattr(components, c._id_name)(**args))
+
             if isNavigation:
                 _model.dof.data = np.atleast_1d(
                     self.dof.data[
