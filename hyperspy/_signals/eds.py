@@ -561,11 +561,12 @@ class EDSSpectrum(Spectrum):
             img = self[..., line_energy - det:line_energy + det
                        ].integrate1D(-1)
             img.metadata.General.title = (
-                'Intensity of %s at %.2f %s from %s' %
-                (Xray_line,
+                'X-ray line intensity of %s: %s at %.2f %s' %
+                (self.metadata.General.title,
+                 Xray_line,
                  line_energy,
                  self.axes_manager.signal_axes[0].units,
-                 self.metadata.General.title))
+                 ))
             if img.axes_manager.navigation_dimension >= 2:
                 img = img.as_image([0, 1])
             elif img.axes_manager.navigation_dimension == 1:
