@@ -482,7 +482,8 @@ def plot_spectra(
     elif style == 'mosaic':
         default_fsize = plt.rcParams["figure.figsize"]
         figsize = (default_fsize[0], default_fsize[1] * len(spectra))
-        fig, subplots = plt.subplots(len(spectra), 1, figsize=figsize, **kwargs)
+        fig, subplots = plt.subplots(
+            len(spectra), 1, figsize=figsize, **kwargs)
         if legend is None:
             legend = [legend] * len(spectra)
         for spectrum, ax, color, line_style, legend in zip(spectra,

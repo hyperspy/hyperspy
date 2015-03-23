@@ -726,7 +726,7 @@ class ImageContrastEditor(t.HasTraits):
         vmax = vmax + pad
         data = self.image.data_function().ravel()
         self.patches = self.ax.hist(data, 100, range=(vmin, vmax),
-                                    color = 'blue')[2]
+                                    color='blue')[2]
         self.ax.set_xticks([])
         self.ax.set_yticks([])
         self.ax.set_xlim(vmin, vmax)

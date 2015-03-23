@@ -2028,9 +2028,9 @@ class Model(list):
                     for vv in v:
                         if isinstance(vv, dict):
                             remove_empty_numpy_strings(vv)
-                        elif isinstance(vv, numpy.string_) and len(vv) == 0:
+                        elif isinstance(vv, np.string_) and len(vv) == 0:
                             vv = ''
-                elif isinstance(v, numpy.string_) and len(v) == 0:
+                elif isinstance(v, np.string_) and len(v) == 0:
                     del dic[k]
                     dic[k] = ''
         remove_empty_numpy_strings(dic)

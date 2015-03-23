@@ -461,7 +461,7 @@ class ModifiableSpanSelector(matplotlib.widgets.SpanSelector):
         self.tolerance = 1
         self.on_move_cid = None
         self.range = None
-        
+
     def dummy(self, *args, **kwargs):
         pass
 

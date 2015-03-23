@@ -552,6 +552,7 @@ class Component(t.HasTraits):
         self.model = None
         self._whitelist = {'_whitelist': None, '_id_name': None, 'name': None, 'active_is_multidimensional': None,
                            '_active_array': None, 'active': None}
+        self.name = ''
 
     _name = ''
     _active_is_multidimensional = False

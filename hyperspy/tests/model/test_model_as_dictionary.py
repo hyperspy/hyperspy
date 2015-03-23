@@ -41,7 +41,7 @@ def remove_empty_numpy_strings(dic):
 
 
 class DummyAxesManager:
-    navigation_shape = [0, ]
+    navigation_shape = [1, ]
     navigation_size = 2
     indices = ()
 
