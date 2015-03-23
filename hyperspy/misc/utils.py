@@ -17,10 +17,10 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 from __future__ import division
+from operator import attrgetter
 import inspect
 import copy
 import types
-import re
 from StringIO import StringIO
 import codecs
 import collections
@@ -28,6 +28,42 @@ import tempfile
 import unicodedata
 
 import numpy as np
+
+
+def attrsetter(target, attrs, value):
+    """ Sets attribute of the target to specified value, supports nested attributes.
+        Only creates a new attribute if the object supports such behaviour (e.g. DictionaryTreeBrowser does)
+
+        Parameters
+        ----------
+            target : object
+            attrs : string
+                attributes, separated by periods (e.g. 'metadata.Signal.Noise_parameters.variance' )
+            value : object
+
+        Example
+        -------
+        First create a signal and model pair:
+
+        >>> s = signals.Spectrum(np.arange(10))
+        >>> m = create_model(s)
+        >>> m.spectrum.data
+        array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+
+        Now set the data of the model with attrsetter
+        >>> attrsetter(m, 'spectrum.data', np.arange(10)+2)
+        >>> m.spectrum.data
+        array([2, 3, 4, 5, 6, 7, 8, 9, 10, 10])
+
+        The behaviour is identical to
+        >>> m.spectrum.data = np.arange(10) + 2
+
+
+    """
+    where = attrs.rfind('.')
+    if where != -1:
+        target = attrgetter(attrs[:where])(target)
+    setattr(target, attrs[where + 1:], value)
 
 
 def generate_axis(origin, step, N, index=0):
@@ -89,7 +125,6 @@ def str2num(string, **kargs):
     return np.loadtxt(stringIO, **kargs)
 
 
-import numpy as np
 _slugify_strip_re_data = ''.join(
     c for c in map(
         chr, np.delete(
@@ -263,6 +298,10 @@ class DictionaryTreeBrowser(object):
             return item
 
     def __setattr__(self, key, value):
+        if key.startswith('_sig_'):
+            key = key[5:]
+            from hyperspy.signal import Signal
+            value = Signal(**value)
         slugified_key = str(slugify(key, valid_variable_name=True))
         if isinstance(value, dict):
             if self.has_item(slugified_key):
@@ -289,6 +328,7 @@ class DictionaryTreeBrowser(object):
         """Returns its dictionary representation.
 
         """
+        from hyperspy.signal import Signal
         par_dict = {}
         for key_, item_ in self.__dict__.iteritems():
             if not isinstance(item_, types.MethodType):
@@ -297,6 +337,9 @@ class DictionaryTreeBrowser(object):
                     continue
                 if isinstance(item_['_dtb_value_'], DictionaryTreeBrowser):
                     item = item_['_dtb_value_'].as_dictionary()
+                elif isinstance(item_['_dtb_value_'], Signal):
+                    item = item_['_dtb_value_']._to_dictionary()
+                    key = '_sig_' + key
                 else:
                     item = item_['_dtb_value_']
                 par_dict.__setitem__(key, item)

@@ -223,7 +223,10 @@ class Model(list):
             object = self[object]
         elif not isinstance(object, Component):
             raise ValueError("Not a component or component id.")
-        return object
+        if object in self:
+            return object
+        else:
+            raise ValueError("The component is not in the model.")
 
     def insert(self):
         raise NotImplementedError
@@ -1686,8 +1689,8 @@ class Model(list):
     def _make_position_adjuster(self, component, fix_it, show_label):
         if (component._position is not None and
                 not component._position.twin):
-            set_value = component._position._setvalue
-            get_value = component._position._getvalue
+            set_value = component._position._set_value
+            get_value = component._position._get_value
         else:
             return
         # Create an AxesManager for the widget
@@ -1711,8 +1714,8 @@ class Model(list):
             w = self._position_widgets[-1]
             w.string = component._get_short_description().replace(
                 ' component', '')
-            w.add_axes(self._plot.signal_plot.ax)
-            self._position_widgets[-2].add_axes(
+            w.set_mpl_ax(self._plot.signal_plot.ax)
+            self._position_widgets[-2].set_mpl_ax(
                 self._plot.signal_plot.ax)
         else:
             self._position_widgets.extend((
@@ -1720,7 +1723,7 @@ class Model(list):
             # Store the component for bookkeeping, and to reset
             # its twin when disabling adjust position
             self._position_widgets[-1].component = component
-            self._position_widgets[-1].add_axes(
+            self._position_widgets[-1].set_mpl_ax(
                 self._plot.signal_plot.ax)
         # Create widget -> parameter connection
         am._axes[0].continuous_value = True
