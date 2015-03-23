@@ -348,3 +348,47 @@ class TestEllipsis:
         self.signal.axes_manager._axes[-3].navigate = False
         s = self.signal.isig[..., 0]
         assert_true((s.data == self.data[:, 0, ...]).all())
+
+
+class TestNearest:
+
+    def setUp(self):
+        self.signal = Signal(np.random.random((2, 6, 4, 5)))
+        #self.signal.axes_manager._axes[0].navigate = True
+        #self.signal.axes_manager._axes[1].navigate = True
+        #self.signal.axes_manager._axes[2].navigate = True
+        #self.signal.axes_manager._axes[3].navigate = False
+        self.data = self.signal.data.copy()
+
+    @raises(IndexError)
+    def test_many_indices(self):
+        s = self.signal._nearest_indices([0, 0, 0, 0], 0)
+
+    @raises(IndexError)
+    def test_many_radii(self):
+        s = self.signal._nearest_indices([0], [0, 0])
+
+    @raises(TypeError)
+    def test_non_iterable_indices(self):
+        s = self.signal._nearest_indices(0, 0)
+
+    @raises(IndexError)
+    def test_out_of_axis_index(self):
+        s = self.signal._nearest_indices([4], 0)
+
+    def test_equal_radii(self):
+        par, c = self.signal._nearest_indices([2, 1, 1], 1)
+        assert_equal(par[0], slice(1, 4, None))
+        assert_equal(par[1], slice(0, 3, None))
+        assert_equal(par[2], slice(0, 2, None))
+
+    def test_different_radii(self):
+        par, c = self.signal._nearest_indices([0, 3, 0], [4, 2, 0])
+        assert_equal(par[0], slice(0, 4, None))
+        assert_equal(par[1], slice(1, 6, None))
+        assert_equal(par[2], slice(0, 1, None))
+
+    def test_get_nearest_data(self):
+        s = self.signal.get_nearest([0], 1)
+        d = self.signal.get_nearest_array([0], 1)
+        assert_true((s.data == d).all())
