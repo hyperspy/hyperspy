@@ -346,6 +346,37 @@ There are also two other styles, "heatmap" and "mosaic":
   :align:   center
   :width:   500    
 
+For the "heatmap" style, different `matplotlib color schemes <http://matplotlib.org/examples/color/colormaps_reference.html>`_ can be used:
+
+.. code-block:: python
+
+    >>> import matplotlib.cm
+    >>> ax = utils.plot.plot_spectra(s, style="heatmap")
+    >>> ax.images[0].set_cmap(matplotlib.cm.jet)
+
+.. figure::  images/plot_spectra_heatmap_jet.png
+  :align:   center
+  :width:   500
+
+Any parameter that can be passed to matplotlib.pyplot.figure can also be used with plot_spectra()
+to allow further customization  (when using the "overlap", "cascade", or "mosaic" styles).
+In the following example, `dpi`, `facecolor`, `frameon`, and `num` are all parameters
+that are passed directly to matplotlib.pyplot.figure as keyword arguments:
+
+.. code-block:: python
+
+    >>> s = signals.Spectrum(np.random.random((6,1000)))
+    >>> legendtext = ['Plot 0', 'Plot 1', 'Plot 2', 'Plot 3', 'Plot 4', 'Plot 5']
+    >>> cascade_plot = utils.plot.plot_spectra(s, style='cascade', legend=legendtext, dpi=60, facecolor='lightblue', frameon=True, num=5)
+    >>> cascade_plot.set_xlabel("X-axis")
+    >>> cascade_plot.set_ylabel("Y-axis")
+    >>> cascade_plot.set_title("Cascade plot")
+    >>> plt.draw()
+
+.. figure:: images/plot_spectra_kwargs.png
+  :align:   center
+  :width:   500
+										
 The function returns a matplotlib ax object, which can be used to customize the figure:
 
 .. code-block:: python

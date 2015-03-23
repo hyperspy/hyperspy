@@ -22,15 +22,30 @@ import copy
 import numpy as np
 import warnings
 
-from hyperspy.axes import AxesManager
+import traits.api as t
+import traitsui.api as tu
+from traits.trait_numeric import Array
 from hyperspy.defaults_parser import preferences
 from hyperspy.misc.utils import slugify
 from hyperspy.misc.io.tools import (incremental_filename,
                                     append2pathname,)
 from hyperspy.exceptions import NavigationDimensionError
+from hyperspy.misc.export_dictionary import export_to_dictionary, load_from_dictionary
 
 
-class Parameter(object):
+class NoneFloat(t.CFloat):   # Lazy solution, but usable
+    default_value = None
+
+    def validate(self, object, name, value):
+        if value == "None" or value == u"None":
+            value = None
+        if value is None:
+            super(NoneFloat, self).validate(object, name, 0)
+            return None
+        return super(NoneFloat, self).validate(object, name, value)
+
+
+class Parameter(t.HasTraits):
 
     """Model parameter
 
@@ -78,27 +93,39 @@ class Parameter(object):
     """
     __number_of_elements = 1
     __value = 0
+    __free = True
     _bounds = (None, None)
     __twin = None
     _axes_manager = None
     __ext_bounded = False
     __ext_force_positive = False
 
+    # traitsui bugs out trying to make an editor for this, so always specify!
+    # (it bugs out, because both editor shares the object, and Array editors
+    # don't like non-sequence objects). TextEditor() works well.
+    value = t.Property(
+        t.Either([t.CFloat(0), Array()]), editor=tu.TextEditor())
+    units = t.Str('')
+    free = t.Property(t.CBool(True))
+
+    bmin = t.Property(NoneFloat(), label="Lower bounds")
+    bmax = t.Property(NoneFloat(), label="Upper bounds")
+
     def __init__(self):
         self._twins = set()
         self.connected_functions = list()
         self.twin_function = lambda x: x
         self.twin_inverse_function = lambda x: x
-        self.value = 0
         self.std = None
         self.component = None
-        self.free = True
         self.grad = None
         self.name = ''
-        self.units = ''
         self.map = None
         self.model = None
         self._id_name = ''
+        self._whitelist = {'_whitelist': None, '_id_name': None, 'value': None, 'std': None, 'free': None, '_id_': None,
+                           'units': None, 'map': None, '_bounds': None, 'ext_bounded': None, 'name': None,
+                           'ext_force_positive': None, '_fn_twin_function': None, '_fn_twin_inverse_function': None}
 
     def _load_dictionary(self, dict):
         """Load data from dictionary
@@ -106,28 +133,14 @@ class Parameter(object):
         Parameters
         ----------
         dict : dictionary
-            A dictionary containing following items:
+            A dictionary containing at least the following items:
             _id_name : string
                 _id_name of the original parameter, used to create the dictionary. Has to match with the
                 self._id_name
-            map : map
-                a map of saved values, standard deviations and booleans 'is_set' for every point of the model
-            value : float
-                current value of the parameter
-            std : float
-                current standard deviation fo the parameter
-            units : string
-                Units of the parameter
-            twin_function : function
-                Twin function for the parameter
-            twin_inverse_function : function
-                Inverse twin function for the parameter
-            _bounds : tuple
-                Tuple of (bmin, bmax), lower and upper bounds of the parameter values
-            free : boolean
-                Boolean if the parameter is free
-            active : boolean
-                Boolean if the parameter is active
+            _whitelist : dictionary
+                a dictionary, which keys are used as keywords to match with the parameter attributes.
+                For more information see :meth:`hyperspy.misc.export_dictionary.load_from_dictionary`
+            * any field from _whitelist.keys() *
         Returns
         -------
         id_value : int
@@ -135,39 +148,8 @@ class Parameter(object):
 
         """
         if dict['_id_name'] == self._id_name:
-            try:
-                import dill
-                dill_avail = True
-            except ImportError:
-                dill_avail = False
-                import types
-                import marshal
-            self.map = copy.deepcopy(dict['map'])
-            self.value = dict['value']
-            self.name = dict['name']
-            self.std = copy.deepcopy(dict['std'])
-            self.free = copy.deepcopy(dict['free'])
-            self.units = copy.deepcopy(dict['units'])
-            self._bounds = copy.deepcopy(dict['_bounds'])
-            self.__ext_bounded = copy.deepcopy(dict['__ext_bounded'])
-            self.__ext_force_positive = copy.deepcopy(dict['__ext_force_positive'])
-            if hasattr(self, 'active') and 'active' in dict:
-                self.active = dict['active']
-            if 'dill_avail' in dict and dill_avail:
-                self.twin_function = dill.loads(dict['twin_function'])
-                self.twin_inverse_function = dill.loads(
-                    dict['twin_inverse_function'])
-            elif 'dill_avail' in dict:
-                raise ValueError(
-                    "the dictionary was constructed using \"dill\" package, which is not available on the system")
-            else:
-                self.twin_function = types.FunctionType(
-                    marshal.loads(
-                        dict['twin_function']),
-                    globals())
-                self.twin_inverse_function = types.FunctionType(marshal.loads(dict['twin_inverse_function']),
-                                                                globals())
-            return dict['id']
+            load_from_dictionary(self, dict)
+            return dict['_id_']
         else:
             raise ValueError(
                 "_id_name of parameter and dictionary do not match, \nparameter._id_name = %s \ndictionary['_id_name'] = %s" %
@@ -196,20 +178,20 @@ class Parameter(object):
             if self.twin:
                 self.twin.disconnect(f)
 
-    def _getvalue(self):
+    def _get_value(self):
         if self.twin is None:
             return self.__value
         else:
             return self.twin_function(self.twin.value)
 
-    def _setvalue(self, arg):
+    def _set_value(self, arg):
         try:
             # Use try/except instead of hasattr("__len__") because a numpy
             # memmap has a __len__ wrapper even for numbers that raises a
             # TypeError when calling. See issue #349.
             if len(arg) != self._number_of_elements:
                 raise ValueError(
-                    "The lenght of the parameter must be ",
+                    "The length of the parameter must be ",
                     self._number_of_elements)
             else:
                 if not isinstance(arg, tuple):
@@ -217,7 +199,7 @@ class Parameter(object):
         except TypeError:
             if self._number_of_elements != 1:
                 raise ValueError(
-                    "The lenght of the parameter must be ",
+                    "The length of the parameter must be ",
                     self._number_of_elements)
         old_value = self.__value
 
@@ -254,20 +236,21 @@ class Parameter(object):
                     f()
                 except:
                     self.disconnect(f)
-    value = property(_getvalue, _setvalue)
+        self.trait_property_changed('value', old_value, self.__value)
 
     # Fix the parameter when coupled
-    def _getfree(self):
+    def _get_free(self):
         if self.twin is None:
             return self.__free
         else:
             return False
 
-    def _setfree(self, arg):
+    def _set_free(self, arg):
+        old_value = self.__free
         self.__free = arg
         if self.component is not None:
             self.component._update_free_parameters()
-    free = property(_getfree, _setfree)
+        self.trait_property_changed('free', old_value, self.__free)
 
     def _set_twin(self, arg):
         if arg is None:
@@ -303,13 +286,14 @@ class Parameter(object):
             return self._bounds[0][0]
 
     def _set_bmin(self, arg):
+        old_value = self.bmin
         if self._number_of_elements == 1:
             self._bounds = (arg, self.bmax)
         else:
             self._bounds = ((arg, self.bmax),) * self._number_of_elements
         # Update the value to take into account the new bounds
         self.value = self.value
-    bmin = property(_get_bmin, _set_bmin)
+        self.trait_property_changed('bmin', old_value, arg)
 
     def _get_bmax(self):
         if self._number_of_elements == 1:
@@ -318,13 +302,14 @@ class Parameter(object):
             return self._bounds[0][1]
 
     def _set_bmax(self, arg):
+        old_value = self.bmax
         if self._number_of_elements == 1:
             self._bounds = (self.bmin, arg)
         else:
             self._bounds = ((self.bmin, arg),) * self._number_of_elements
         # Update the value to take into account the new bounds
         self.value = self.value
-    bmax = property(_get_bmax, _set_bmax)
+        self.trait_property_changed('bmax', old_value, arg)
 
     @property
     def _number_of_elements(self):
@@ -429,7 +414,7 @@ class Parameter(object):
 
         """
         shape = self._axes_manager._navigation_shape_in_array
-        if len(shape) == 1 and shape[0] == 0:
+        if not shape:
             shape = [1, ]
         dtype_ = np.dtype([
             ('values', 'float', self._number_of_elements),
@@ -468,6 +453,8 @@ class Parameter(object):
 
         s = Signal(data=self.map[field],
                    axes=self._axes_manager._get_navigation_axes_dicts())
+        if self.component.active_is_multidimensional:
+            s.data[np.logical_not(self.component._active_array)] = np.nan
         s.metadata.General.title = ("%s parameter" % self.name
                                     if self.component is None
                                     else "%s parameter of %s component" %
@@ -516,61 +503,38 @@ class Parameter(object):
             self.as_signal(field='std').save(append2pathname(
                 filename, '_std'))
 
-    def as_dictionary(self, indices=None):
-        """Returns parameter as a dictionary
+    def as_dictionary(self, picklable=False):
+        """Returns parameter as a dictionary, saving all attributes from self._whitelist.keys()
+                For more information see :meth:`hyperspy.misc.export_dictionary.export_to_dictionary`
 
         Parameters
         ----------
-        indices : tuple
-            a tuple of indices in navigational space of the signal, to return only specific point of the model as a
-            dictionary
-
+        picklable : Bool (optional, False)
+            If any found functions will be pickled
         Returns
         -------
-        dic : dictionary
+        dic : dictionary with the following keys:
+            _id_name : string
+                _id_name of the original parameter, used to create the dictionary. Has to match with the
+                self._id_name
+            _twins : list
+                a list of ids of the twins of the parameter
+            _whitelist : dictionary
+                a dictionary, which keys are used as keywords to match with the parameter attributes.
+                For more information see :meth:`hyperspy.misc.export_dictionary.export_to_dictionary`
+            * any field from _whitelist.keys() *
 
         """
-        import marshal
-        try:
-            import dill
-            dill_avail = True
-        except ImportError:
-            dill_avail = False
-        dic = {}
-        dic['name'] = self.name
-        dic['_id_name'] = self._id_name
-        if indices is not None:
-            dic['map'] = copy.deepcopy(
-                self.map[tuple([slice(i, i + 1, 1) for i in indices[::-1]])])
-            dic['value'] = dic['map']['values'][tuple([0 for i in indices])]
-            dic['std'] = dic['map']['std'][tuple([0 for i in indices])]
-        else:
-            dic['map'] = copy.deepcopy(self.map)
-            dic['value'] = self.value
-            dic['std'] = self.std
-        dic['free'] = self.free
-        dic['units'] = self.units
-        dic['id'] = id(self)
-        dic['_twins'] = [id(t) for t in self._twins]
-        dic['_bounds'] = self._bounds
-        dic['__ext_bounded'] = self.ext_bounded
-        dic['__ext_force_positive'] = self.ext_force_positive
-        if hasattr(self, 'active'):
-            dic['active'] = self.active
-        if dill_avail:
-            dic['twin_function'] = dill.dumps(self.twin_function)
-            dic['twin_inverse_function'] = dill.dumps(
-                self.twin_inverse_function)
-            dic['dill_avail'] = True
-        else:
-            dic['twin_function'] = marshal.dumps(self.twin_function.func_code)
-            dic['twin_inverse_function'] = marshal.dumps(
-                self.twin_inverse_function.func_code)
+        dic = {'_twins': [id(t) for t in self._twins]}
+        export_to_dictionary(self, self._whitelist, dic, picklable)
         return dic
 
 
-class Component(object):
+class Component(t.HasTraits):
     __axes_manager = None
+
+    active = t.Property(t.CBool(True))
+    name = t.Property(t.Str(''))
 
     def __init__(self, parameter_name_list):
         self.connected_functions = list()
@@ -582,12 +546,14 @@ class Component(object):
         self.isbackground = False
         self.convolved = True
         self.parameters = tuple(self.parameters)
-        self._name = ''
         self._id_name = self.__class__.__name__
         self._id_version = '1.0'
         self._position = None
         self.model = None
+        self._whitelist = {'_whitelist': None, '_id_name': None, 'name': None, 'active_is_multidimensional': None,
+                           '_active_array': None, 'active': None}
 
+    _name = ''
     _active_is_multidimensional = False
     _active = True
 
@@ -622,12 +588,11 @@ class Component(object):
             self._active_array = None
             self._active_is_multidimensional = False
 
-    @property
-    def name(self):
+    def _get_name(self):
         return(self._name)
 
-    @name.setter
-    def name(self, value):
+    def _set_name(self, value):
+        old_value = self._name
         if self.model:
             for component in self.model:
                 if value == component.name:
@@ -639,6 +604,7 @@ class Component(object):
                     self._name = value
         else:
             self._name = value
+        self.trait_property_changed('name', old_value, self._name)
 
     @property
     def _axes_manager(self):
@@ -658,8 +624,7 @@ class Component(object):
         if f in self.connected_functions:
             self.connected_functions.remove(f)
 
-    @property
-    def active(self):
+    def _get_active(self):
         if self.active_is_multidimensional is True:
             # The following should set
             self.active = self._active_array[self._axes_manager.indices[::-1]]
@@ -668,10 +633,10 @@ class Component(object):
     def _store_active_value_in_array(self, value):
         self._active_array[self._axes_manager.indices[::-1]] = value
 
-    @active.setter
-    def active(self, arg):
+    def _set_active(self, arg):
         if self._active == arg:
             return
+        old_value = self._active
         self._active = arg
         if self.active_is_multidimensional is True:
             self._store_active_value_in_array(arg)
@@ -681,6 +646,7 @@ class Component(object):
                 f()
             except:
                 self.disconnect(f)
+        self.trait_property_changed('active', old_value, self._active)
 
     def init_parameters(self, parameter_name_list):
         for name in parameter_name_list:
@@ -692,6 +658,7 @@ class Component(object):
             if hasattr(self, 'grad_' + name):
                 parameter.grad = getattr(self, 'grad_' + name)
             parameter.component = self
+            self.add_trait(name, t.Instance(Parameter))
 
     def _get_long_description(self):
         if self.name:
@@ -738,13 +705,13 @@ class Component(object):
             parameters = self.parameters
         i = 0
         for parameter in parameters:
-            lenght = parameter._number_of_elements
-            parameter.value = (p[i] if lenght == 1 else p[i:i + lenght])
+            length = parameter._number_of_elements
+            parameter.value = (p[i] if length == 1 else p[i:i + length])
             if p_std is not None:
-                parameter.std = (p_std[i] if lenght == 1 else
-                                 tuple(p_std[i:i + lenght]))
+                parameter.std = (p_std[i] if length == 1 else
+                                 tuple(p_std[i:i + length]))
 
-            i += lenght
+            i += length
 
     def _create_active_array(self):
         shape = self._axes_manager._navigation_shape_in_array
@@ -960,40 +927,32 @@ class Component(object):
         for _parameter in parameter_list:
             _parameter.free = False
 
-    def as_dictionary(self, indices=None):
+    def as_dictionary(self, picklable=False):
         """Returns component as a dictionary
 
-        All items are copies.
+        All items are references;
+        For more information on method and conventions, see :meth:`hyperspy.misc.export_dictionary.export_to_dictionary`
+
+        Parameters
+        ----------
+        picklable : Bool (optional, False)
+            If any found functions will be pickled
 
         Returns
         -------
         dic : dictionary
-
+            A dictionary, containing at least the following fields:
+            parameters : list
+                a list of dictionaries of the parameters, one per
+            _whitelist : dictionary
+                a dictionary with keys used as references saved attributes, for more information, see
+                :meth:`hyperspy.misc.export_dictionary.export_to_dictionary`
+            * any field from _whitelist.keys() *
         """
-        dic = {}
-        dic['name'] = self.name
-        dic['_id_name'] = self._id_name
-        dic['active_is_multidimensional'] = self.active_is_multidimensional
-        if self.active_is_multidimensional:
-            if indices is not None:
-                dic['active_array'] = self._active_array[
-                    tuple([slice(i, i + 1, 1) for i in indices[::-1]])].copy()
-                dic['active'] = dic['active_array'][
-                    tuple([0 for i in indices])]
-            else:
-                dic['active'] = self.active
-                dic['active_array'] = self._active_array.copy()
-        else:
-            dic['active'] = self.active
-        dic['parameters'] = [p.as_dictionary(indices) for p in self.parameters]
-        if hasattr(self, '_init_par'):
-            from hyperspy.signal import Signal
-            dic['_init_par'] = self._init_par
-            for i in self._init_par:
-                if isinstance(getattr(self, i), Signal):
-                    dic[i] = getattr(self, i)._to_dictionary()
-                else:
-                    dic[i] = getattr(self, i)
+        dic = {
+            'parameters': [
+                p.as_dictionary(picklable) for p in self.parameters]}
+        export_to_dictionary(self, self._whitelist, dic, picklable)
         return dic
 
     def _load_dictionary(self, dic):
@@ -1003,14 +962,16 @@ class Component(object):
         ----------
         dict : dictionary
             A dictionary containing following items:
-            type : type
-                A type object that has been colled to initialise the component before loading the dictionary and running
-                this function
-            name : string
-                Name of the component
+            _id_name : string
+                _id_name of the original component, used to create the dictionary. Has to match with the
+                self._id_name
             parameters : list
-                A list of dictionaries, one for a parameter of the component each (see parameter.as_dictionary()
-                documentation for more info)
+                A list of dictionaries, one per parameter of the component (see parameter.as_dictionary()
+                documentation for more)
+            _whitelist : dictionary
+                a dictionary, which keys are used as keywords to match with the component attributes.
+                For more information see :meth:`hyperspy.misc.export_dictionary.load_from_dictionary`
+            * any field from _whitelist.keys() *
 
         Returns
         -------
@@ -1020,13 +981,6 @@ class Component(object):
 
         """
         if dic['_id_name'] == self._id_name:
-            self.name = copy.deepcopy(dic['name'])
-            self.active = dic['active']
-            if dic['active_is_multidimensional']:
-                self.active_is_multidimensional = dic[
-                    'active_is_multidimensional']
-            if self.active_is_multidimensional:
-                self._active_array = dic['active_array']
             id_dict = {}
             for p in dic['parameters']:
                 idname = p['_id_name']
@@ -1037,6 +991,7 @@ class Component(object):
                 else:
                     raise ValueError(
                         "_id_name of parameters in component and dictionary do not match")
+            load_from_dictionary(self, dic)
             return id_dict
         else:
             raise ValueError(

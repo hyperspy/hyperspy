@@ -20,9 +20,10 @@ import copy
 import os
 import tempfile
 import warnings
+
 import numbers
+
 import numpy as np
-import numpy.linalg
 import scipy.odr as odr
 from scipy.optimize import (leastsq,
                             fmin,
@@ -36,7 +37,6 @@ from traits.trait_errors import TraitError
 
 from hyperspy import components
 from hyperspy import messages
-from hyperspy.signal import Signal
 import hyperspy.drawing.spectrum
 from hyperspy.axes import AxesManager
 from hyperspy.drawing.utils import on_figure_window_close
@@ -53,6 +53,8 @@ from hyperspy.drawing.widgets import (DraggableVerticalLine,
 from hyperspy.gui.tools import ComponentFit
 from hyperspy.component import Component
 from hyperspy.signal import Signal
+from hyperspy.misc.export_dictionary import export_to_dictionary, load_from_dictionary
+
 
 weights_deprecation_warning = (
     'The `weights` argument is deprecated and will be removed '
@@ -66,7 +68,7 @@ class Model(list):
     A model is constructed as a linear combination of :mod:`components` that
     are added to the model using :meth:`append` or :meth:`extend`. There
     are many predifined components available in the in the :mod:`components`
-    module. If needed, new components can easyly created using the code of
+    module. If needed, new components can easily created using the code of
     existing components as a template.
 
     Once defined, the model can be fitted to the data using :meth:`fit` or
@@ -187,6 +189,8 @@ class Model(list):
         self._plot_components = False
         self._suspend_update = False
         self._model_line = None
+        self._whitelist = {'_whitelist': None, 'chisq.data': None, 'dof.data': None, '_low_loss': None,
+                           'free_parameters_boundaries': None, 'convolved': None}
         if isinstance(spectrum, dict):
             self._load_dictionary(spectrum)
         else:
@@ -208,23 +212,14 @@ class Model(list):
         dic : dictionary
             A dictionary containing at least a 'spectrum' keyword with either
             a spectrum itself, or a dictionary created with spectrum._to_dictionary()
-            Additionally the dictionary can containt the following items:
-            spectrum : Signal type or dictionary
-                Either a signal itself, or a dictionary created from one
-            axes_manager : dictionary (optional)
-                Dictionary to define the axes (see the
-                documentation of the AxesManager class for more details).
-            free_parameters_boundaries : list (optional)
-                A list of free parameters boundaries
-            low_loss : (optional)
-            convolved : boolean (optional)
+            Additionally the dictionary can contain the following items:
+            _whitelist : dictionary
+                a dictionary with keys used as references of  save attributes, for more information, see
+                :meth:`hyperspy.misc.export_dictionary.load_from_dictionary`
             components : dictionary (optional)
                 Dictionary, with information about components of the model
                 (see the documentation of component.to_dictionary() method)
-            chisq : dictionary
-                A dictionary of signal of chi-squared
-            dof : dictionary
-                A dictionary of signal of degrees-of-freedom
+            * any field from _whitelist.keys() *
         """
 
         if isinstance(dic['spectrum'], dict):
@@ -237,41 +232,18 @@ class Model(list):
         self.axes_manager.connect(self.fetch_stored_values)
         self.channel_switches = np.array([True] * len(self.axis.axis))
 
-        if 'chisq' in dic:
-            self.chisq = Signal(**dic['chisq'])
-        else:
-            self.chisq = self.spectrum._get_navigation_signal()
-            self.chisq.change_dtype("float")
-            self.chisq.data.fill(np.nan)
-            self.chisq.metadata.General.title = self.spectrum.metadata.General.title + \
-                ' chi-squared'
-
-        if 'dof' in dic:
-            self.dof = Signal(**dic['dof'])
-        else:
-            self.dof = self.chisq._deepcopy_with_new_data(
-                np.zeros_like(self.chisq.data, dtype='int'))
-            self.dof.metadata.General.title = self.spectrum.metadata.General.title + \
-                ' degrees of freedom'
-
-        if 'free_parameters_boundaries' in dic:
-            self.free_parameters_boundaries = copy.deepcopy(
-                dic['free_parameters_boundaries'])
-        else:
-            self.free_parameters_boundaries = None
-
-        if 'low_loss' in dic:
-            if dic['low_loss'] is not None:
-                self._low_loss = Signal(**dic['low_loss'])
-            else:
-                self._low_loss = None
-        else:
-            self._low_loss = None
-
-        if 'convolved' in dic:
-            self.convolved = dic['convolved']
-        else:
-            self.convolved = False
+        self.chisq = self.spectrum._get_navigation_signal()
+        self.chisq.change_dtype("float")
+        self.chisq.data.fill(np.nan)
+        self.chisq.metadata.General.title = self.spectrum.metadata.General.title + \
+            ' chi-squared'
+        self.dof = self.chisq._deepcopy_with_new_data(
+            np.zeros_like(self.chisq.data, dtype='int'))
+        self.dof.metadata.General.title = self.spectrum.metadata.General.title + \
+            ' degrees of freedom'
+        self.free_parameters_boundaries = None
+        self._low_loss = None
+        self.convolved = False
 
         if 'components' in dic:
             while len(self) != 0:
@@ -279,22 +251,20 @@ class Model(list):
             id_dict = {}
 
             for c in dic['components']:
-                if '_init_par' in c:
-                    tmp = []
-                    for i in c['_init_par']:
-                        if i == 'spectrum':
-                            tmp.append(Spectrum(**c[i]))
-                        else:
-                            tmp.append(c[i])
-                    self.append(getattr(components, c['_id_name'])(*tmp))
-                else:
-                    self.append(getattr(components, c['_id_name'])())
+                args = {}
+                for k, v in c['_whitelist'].iteritems():
+                    if k.startswith('_init_'):
+                        args[k[6:]] = v
+                self.append(getattr(components, c['_id_name'])(**args))
                 id_dict.update(self[-1]._load_dictionary(c))
             # deal with twins:
             for c in dic['components']:
                 for p in c['parameters']:
                     for t in p['_twins']:
-                        id_dict[t].twin = id_dict[p['id']]
+                        id_dict[t].twin = id_dict[p['_id_']]
+
+        if '_whitelist' in dic:
+            load_from_dictionary(self, dic)
 
     def __repr__(self):
         return u"<Model %s>".encode('utf8') % super(Model, self).__repr__()
@@ -304,7 +274,10 @@ class Model(list):
             object = self[object]
         elif not isinstance(object, Component):
             raise ValueError("Not a component or component id.")
-        return object
+        if object in self:
+            return object
+        else:
+            raise ValueError("The component is not in the model.")
 
     def insert(self):
         raise NotImplementedError
@@ -1835,8 +1808,8 @@ class Model(list):
     def _make_position_adjuster(self, component, fix_it, show_label):
         if (component._position is not None and
                 not component._position.twin):
-            set_value = component._position._setvalue
-            get_value = component._position._getvalue
+            set_value = component._position._set_value
+            get_value = component._position._get_value
         else:
             return
         # Create an AxesManager for the widget
@@ -1860,8 +1833,8 @@ class Model(list):
             w = self._position_widgets[-1]
             w.string = component._get_short_description().replace(
                 ' component', '')
-            w.add_axes(self._plot.signal_plot.ax)
-            self._position_widgets[-2].add_axes(
+            w.set_mpl_ax(self._plot.signal_plot.ax)
+            self._position_widgets[-2].set_mpl_ax(
                 self._plot.signal_plot.ax)
         else:
             self._position_widgets.extend((
@@ -1869,7 +1842,7 @@ class Model(list):
             # Store the component for bookkeeping, and to reset
             # its twin when disabling adjust position
             self._position_widgets[-1].component = component
-            self._position_widgets[-1].add_axes(
+            self._position_widgets[-1].set_mpl_ax(
                 self._plot.signal_plot.ax)
         # Create widget -> parameter connection
         am._axes[0].continuous_value = True
@@ -2074,18 +2047,28 @@ class Model(list):
                         _parameter.value = value
                         _parameter.assign_current_value_to_all()
 
-    def as_dictionary(self, indices=None):
-        """Returns a dictionary of the model, including full Signal dictionary,
-        all components and all values of their components, and twin functions.
+    def as_dictionary(self, picklable=False):
+        """Returns a dictionary of the model, including full Signal,
+        all components, degrees of freedom (dof) and chi-squared (chisq) with values.
+
+        All values (except functions) are references
 
         Parameters
         ----------
-        indices : tuple
-            A tuple of indices to return a particular point of a model
+        picklable : Bool (optional, False)
+            If any found functions will be pickled
+
         Returns
         -------
-        dictionary : a complete dictionary of the model
-
+        dictionary : a complete dictionary of the model, which includes at least the following fields:
+            components : list
+                a list of dictionaries of components, one per
+            spectrum : Signal
+                a Signal of the original model
+            _whitelist : dictionary
+                a dictionary with keys used as references for saved attributes, for more information, see
+                :meth:`hyperspy.misc.export_dictionary.export_to_dictionary`
+            * any field from _whitelist.keys() *
         Examples
         --------
         >>> s = signals.Spectrum(np.random.random((10,100)))
@@ -2098,27 +2081,11 @@ class Model(list):
         >>> m2 = create_model(dict)
 
         """
-        dic = {}
-        if indices is not None:
-            dic['spectrum'] = self.spectrum.inav[indices]._to_dictionary()
-            dic['chisq'] = self.chisq[indices]._to_dictionary()
-            dic['dof'] = self.dof[indices]._to_dictionary()
-            if self._low_loss is not None:
-                dic['low_loss'] = self._low_loss.inav[indices]._to_dictionary()
-            else:
-                dic['low_loss'] = self._low_loss
-        else:
-            dic['chisq'] = self.chisq._to_dictionary()
-            dic['dof'] = self.dof._to_dictionary()
-            dic['spectrum'] = self.spectrum._to_dictionary()
-            if self._low_loss is not None:
-                dic['low_loss'] = self._low_loss._to_dictionary()
-            else:
-                dic['low_loss'] = self._low_loss
-        dic['components'] = [c.as_dictionary(indices) for c in self]
-        dic['free_parameters_boundaries'] = copy.deepcopy(
-            self.free_parameters_boundaries)
-        dic['convolved'] = self.convolved
+        dic = {
+            'components': [
+                c.as_dictionary(picklable) for c in self],
+            'spectrum': self.spectrum}
+        export_to_dictionary(self, self._whitelist, dic, picklable)
 
         def remove_empty_numpy_strings(dic):
             for k, v in dic.iteritems():
@@ -2128,9 +2095,9 @@ class Model(list):
                     for vv in v:
                         if isinstance(vv, dict):
                             remove_empty_numpy_strings(vv)
-                        elif isinstance(vv, numpy.string_) and len(vv) == 0:
+                        elif isinstance(vv, np.string_) and len(vv) == 0:
                             vv = ''
-                elif isinstance(v, numpy.string_) and len(v) == 0:
+                elif isinstance(v, np.string_) and len(v) == 0:
                     del dic[k]
                     dic[k] = ''
         remove_empty_numpy_strings(dic)
@@ -2322,9 +2289,10 @@ class Model(list):
                         _orig_slices,
                         isNavigation)
             _spectrum.get_dimensions_from_data()
-            from hyperspy.model import Model
             from hyperspy import components
-            _model = Model(_spectrum)
+            _model = self.__class__(_spectrum)
+            for c in _model:
+                _model.remove(c)
             # create components:
             twin_dict = {}
             for c in self:
@@ -2336,7 +2304,6 @@ class Model(list):
                         tmp.append(getattr(c, i))
                     _model.append(getattr(components, c._id_name)(*tmp))
             if isNavigation:
-                # TODO: fix the 0-dimension slices
                 _model.dof.data = np.atleast_1d(
                     self.dof.data[
                         tuple(
@@ -2364,7 +2331,6 @@ class Model(list):
                                     array_slices[
                                         :-
                                         1])])
-                        # p_new.value = p_new.map['values'].ravel()[0]
                         p_new.value = p_orig.value
                         twin_dict[id(p_orig)] = ([id(i)
                                                   for i in list(p_orig._twins)], p_new)
