@@ -48,7 +48,7 @@ except NameError:
             winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE,
                            root_key_name, winreg.KEY_CREATE_SUB_KEY)
             return winreg.HKEY_LOCAL_MACHINE
-        except OSError, details:
+        except OSError as details:
             # Either not exist, or no permissions to create subkey means
             # must be HKCU
             return winreg.HKEY_CURRENT_USER

@@ -32,9 +32,10 @@ from hyperspy.misc.io.tools import (incremental_filename,
 from hyperspy.exceptions import NavigationDimensionError
 from hyperspy.misc.export_dictionary import export_to_dictionary, load_from_dictionary
 
+
 class NoneFloat(t.CFloat):   # Lazy solution, but usable
     default_value = None
-    
+
     def validate(self, object, name, value):
         if value == "None" or value == u"None":
             value = None
@@ -42,6 +43,7 @@ class NoneFloat(t.CFloat):   # Lazy solution, but usable
             super(NoneFloat, self).validate(object, name, 0)
             return None
         return super(NoneFloat, self).validate(object, name, value)
+
 
 class Parameter(t.HasTraits):
 
@@ -97,16 +99,17 @@ class Parameter(t.HasTraits):
     _axes_manager = None
     __ext_bounded = False
     __ext_force_positive = False
-    
+
     # traitsui bugs out trying to make an editor for this, so always specify!
-    # (it bugs out, because both editor shares the object, and Array editors 
+    # (it bugs out, because both editor shares the object, and Array editors
     # don't like non-sequence objects). TextEditor() works well.
-    value = t.Property( t.Either([t.CFloat(0), Array()]), editor=tu.TextEditor())
+    value = t.Property(
+        t.Either([t.CFloat(0), Array()]), editor=tu.TextEditor())
     units = t.Str('')
-    free = t.Property( t.CBool(True) )
-    
-    bmin = t.Property( NoneFloat(), label="Lower bounds" )
-    bmax = t.Property( NoneFloat(), label="Upper bounds" )
+    free = t.Property(t.CBool(True))
+
+    bmin = t.Property(NoneFloat(), label="Lower bounds")
+    bmax = t.Property(NoneFloat(), label="Upper bounds")
 
     def __init__(self):
         self._twins = set()
@@ -529,9 +532,9 @@ class Parameter(t.HasTraits):
 
 class Component(t.HasTraits):
     __axes_manager = None
-    
-    active = t.Property( t.CBool(True) )
-    name = t.Property( t.Str('') )
+
+    active = t.Property(t.CBool(True))
+    name = t.Property(t.Str(''))
 
     def __init__(self, parameter_name_list):
         self.connected_functions = list()
