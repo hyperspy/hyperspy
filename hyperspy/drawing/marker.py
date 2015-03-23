@@ -26,8 +26,7 @@ class Marker(object):
 
     Attributes
     ----------
-
-    type : {'line','axvline','axhline','text','pointer','rect'}
+    type : {'line', 'axvline', 'axhline', 'text', 'pointer', 'rect'}
         Select the type of markers
     orientation : {None,'v','h'}
         Orientation for lines. 'v' is vertical, 'h' is horizontal.
@@ -35,18 +34,17 @@ class Marker(object):
         Accepts a dictionary of valid (i.e. recognized by mpl.plot)
         containing valid line properties. In addition it understands
         the keyword `type` that can take the following values:
-        {'line','text'}
+        {'line', 'text'}
 
     Methods
     -------
     set_marker_properties
         Enables setting the line_properties attribute using keyword
         arguments.
-
     set_data
         Set the data in a structured array. Each field of data should have
-        the same dimensions than the nagivation axes. Some fields need to be defined
-        depending on the type.
+        the same dimensions than the nagivation axes. Some fields need to be
+        defined depending on the type.
         For 'line': 'x1','y1','x2','y2' (All of them if orientation
             is None)
         For 'axvline': 'x1'
@@ -58,7 +56,7 @@ class Marker(object):
     Example
     -------
 
-    >>> s = signals.Spectrum(random.random([10,100]))
+    >>> s = signals.Spectrum(random.random([10, 100]))
     >>> m = utils.plot.marker()
     >>> m.type = 'axvline'
     >>> m.set_marker_properties(color='green')
@@ -67,20 +65,20 @@ class Marker(object):
     >>> s._plot.signal_plot.add_marker(m)
     >>> m.plot()
 
-    >>> im = signals.Image(random.random([10,50,50]))
+    >>> im = signals.Image(random.random([10, 50, 50]))
     >>> m = utils.plot.marker()
     >>> m.type = 'text'
-    >>> m.set_marker_properties(fontsize = 30,color='red')
-    >>> m.set_data(x1=range(10),y1=range(10)[::-1],text='hello')
+    >>> m.set_marker_properties(fontsize = 30, color='red')
+    >>> m.set_data(x1=range(10), y1=range(10)[::-1], text='hello')
     >>> im.plot()
     >>> im._plot.signal_plot.add_marker(m)
     >>> m.plot()
 
-    >>> im = signals.Image(np.zeros((100,100)))
+    >>> im = signals.Image(np.zeros((100, 100)))
     >>> m = utils.plot.marker()
     >>> m.type = 'rect'
-    >>> m.set_marker_properties(linewidth=4,color='red',ls='dotted')
-    >>> m.set_data(x1=20,x2=70,y1=20,y2=70)
+    >>> m.set_marker_properties(linewidth=4, color='red', ls='dotted')
+    >>> m.set_data(x1=20, x2=70, y1=20, y2=70)
     >>> im.plot()
     >>> im._plot.signal_plot.add_marker(m)
     >>> m.plot()
@@ -127,8 +125,8 @@ class Marker(object):
             lp['linewidth'] = 1
         else:
             raise ValueError(
-                "`type` must be one of "
-                "{\'line\',\'axvline\',\'axhline\',\'text\',\'pointer\',\'rect\'}"
+                "`type` must be one of {\'line\', "
+                "\'axvline\', \'axhline\', \'text\', \'pointer\', \'rect\'}"
                 "but %s was given" % value)
         self._type = value
         self.marker_properties = lp
@@ -160,13 +158,10 @@ class Marker(object):
         self.marker_properties = kwargs
 
     def plot(self):
-        data = self.data
         if self.type == 'text':
-            indices = self.axes_manager.indices[::-1]
-            self.marker = self.ax.text(self.get_data_position('x1'),
-                                       self.get_data_position(
-                                           'y1'), self.get_data_position('text'),
-                                       **self.marker_properties)
+            self.marker = self.ax.text(
+                self.get_data_position('x1'), self.get_data_position('y1'),
+                self.get_data_position('text'), **self.marker_properties)
         elif self.type == 'line':
             self.marker = self.ax.vlines(0, 0, 1,
                                          **self.marker_properties)
@@ -184,12 +179,13 @@ class Marker(object):
                                           **self.marker_properties)
             if self.get_data_position('size') is None:
                 self.set_data(size=20)
-                data = self.data
             self.marker._sizes = [self.get_data_position('size')]
 
         elif self.type == 'rect':
-            width = abs(self.get_data_position('x1') - self.get_data_position('x2'))
-            height = abs(self.get_data_position('y1') - self.get_data_position('y2'))
+            width = abs(self.get_data_position('x1') -
+                        self.get_data_position('x2'))
+            height = abs(self.get_data_position('y1') -
+                         self.get_data_position('y2'))
             self.marker = self.ax.add_patch(plt.Rectangle(
                 (self.get_data_position('x1'), self.get_data_position('y1')),
                 width, height, **self.marker_properties))
@@ -263,8 +259,6 @@ class Marker(object):
 
     def update(self):
         """Update the current spectrum figure"""
-        data = self.data
-
         if self.auto_update is False:
             return
         if self.type == 'text':
@@ -282,8 +276,10 @@ class Marker(object):
                                      self.get_data_position('y1')])
             self.marker._sizes = [self.get_data_position('size')]
         elif self.type == 'rect':
-            self.marker.set_xdata([self.get_data_position('x1'),self.get_data_position('x2')])
-            self.marker.set_ydata([self.get_data_position('y1'),self.get_data_position('y2')])
+            self.marker.set_xdata([self.get_data_position('x1'),
+                                   self.get_data_position('x2')])
+            self.marker.set_ydata([self.get_data_position('y1'),
+                                   self.get_data_position('y2')])
         # To be discussed, done in SpectrumLine once.
         # try:
             # self.ax.figure.canvas.draw()
