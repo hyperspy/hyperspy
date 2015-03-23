@@ -2066,7 +2066,6 @@ class Model(list):
                         _orig_slices,
                         isNavigation)
             _spectrum.get_dimensions_from_data()
-            from hyperspy.model import Model
             from hyperspy import components
             _model = self.__class__(_spectrum)
             for c in _model:
