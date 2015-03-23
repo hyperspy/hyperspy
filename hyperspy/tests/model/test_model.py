@@ -138,8 +138,10 @@ class TestModelFitBinned:
 
     def test_fit_fmin_ml(self):
         self.m.fit(fitter="fmin", method="ml")
-        nose.tools.assert_almost_equal(self.m[0].A.value, 10001.39613936)
-        nose.tools.assert_almost_equal(self.m[0].centre.value, -0.104151206314)
+        nose.tools.assert_almost_equal(self.m[0].A.value, 10001.39613936,
+                                       places=3)
+        nose.tools.assert_almost_equal(self.m[0].centre.value, -0.104151206314,
+                                       places=6)
         nose.tools.assert_almost_equal(self.m[0].sigma.value, 2.00053642434)
 
     def test_fit_leastsq(self):

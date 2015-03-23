@@ -3,6 +3,7 @@ syntax: glob
 /MANIFEST
 /*.rst
 *.pyc
+*.pyd
 *.swp
 *~
 *.bak
@@ -30,3 +31,4 @@ doc/examples
 doc/gh-pages
 *Thumbs.db
 .ropeproject/*
+.idea/*
