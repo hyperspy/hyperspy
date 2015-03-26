@@ -74,7 +74,7 @@ class Marker(object):
 
     >>> im = signals.Image(np.zeros((100, 100)))
     >>> m = utils.plot.marker('rect')
-    >>> m.set_marker_properties(linewidth=4, color='red', ls='dotted')
+    >>> m.set_marker_properties(linewidth=4, color='red', linestyle='dotted')
     >>> m.set_data(x1=20, x2=70, y1=20, y2=70)
     >>> im.plot()
     >>> im._plot.signal_plot.add_marker(m)
