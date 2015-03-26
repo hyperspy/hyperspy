@@ -698,7 +698,10 @@ class EDSSpectrum(Spectrum):
                 windows_position[index[i+1]] = interv
         return windows_position
 
-    def plot_background_windows(self, windows_position, xray_lines=None):
+    def plot_background_windows(self,
+                                windows_position,
+                                xray_lines=None,
+                                **kwargs):
         """
         Plot the background windows associated with each X-ray lines.
 
@@ -716,6 +719,8 @@ class EDSSpectrum(Spectrum):
             If None, use `metadata.Sample.elements.xray_lines`. Else,
             provide an iterable containing a list of valid X-ray lines
             symbols.
+        kwargs
+            The extra keyword arguments for plot_xray_lines()
 
         See also
         --------
@@ -725,7 +730,7 @@ class EDSSpectrum(Spectrum):
         """
 
         from hyperspy.drawing import marker
-        self.plot_xray_lines(xray_lines=xray_lines)
+        self.plot_xray_lines(xray_lines=xray_lines, **kwargs)
         colors = itertools.cycle(np.sort(plt.rcParams['axes.color_cycle']*4))
         for window, color in zip(np.ravel(windows_position), colors):
             line = marker.Marker()
