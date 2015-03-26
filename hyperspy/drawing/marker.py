@@ -18,6 +18,7 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
+import warnings
 
 
 class Marker(object):
@@ -148,7 +149,7 @@ class Marker(object):
         if self.marker is not None:
             plt.setp(self.marker, **self.marker_properties)
             if self.ax is None:
-                print 'a'
+                warnings.warn("self.ax need to be set")
             try:
                 # self.ax.figure.canvas.draw()
                 self.ax.hspy_fig._draw_animated()
