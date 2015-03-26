@@ -52,6 +52,8 @@ class Marker(object):
         For 'text': 'x1','y1','text'
         For 'pointer': 'x1','y1','size'. 'size' is optional
         For 'rect': 'x1','y1','x2','y2'
+    add_data
+        Add data to the structured array. Same field as set_data
 
     Example
     -------
@@ -86,6 +88,7 @@ class Marker(object):
         # Data attributes
         self.data = None
         self.axes_manager = None
+        self.ax = None
         self.auto_update = True
 
         # Properties
@@ -144,6 +147,8 @@ class Marker(object):
                 self._marker_properties[key] = item
         if self.marker is not None:
             plt.setp(self.marker, **self.marker_properties)
+            if self.ax is None:
+                print 'a'
             try:
                 # self.ax.figure.canvas.draw()
                 self.ax.hspy_fig._draw_animated()
@@ -174,7 +179,7 @@ class Marker(object):
                                               'y1'),
                                           **self.marker_properties)
             if self.get_data_position('size') is None:
-                self.set_data(size=20)
+                self.add_data(size=20)
             self.marker._sizes = [self.get_data_position('size')]
 
         elif self.type == 'rect':
@@ -203,6 +208,13 @@ class Marker(object):
                              dtype=[('x1', object), ('y1', object),
                                     ('x2', object), ('y2', object),
                                     ('text', object), ('size', object)])
+
+    def add_data(self, **kwargs):
+        if self.data is None:
+            self.set_data(**kwargs)
+        else:
+            for key in kwargs.keys():
+                self.data[key][()] = np.array(kwargs[key])
 
     def get_data_position(self, ind):
         data = self.data
