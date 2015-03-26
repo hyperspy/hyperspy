@@ -176,8 +176,7 @@ class Marker(object):
                                           **self.marker_properties)
         elif self.type == 'pointer':
             self.marker = self.ax.scatter(self.get_data_position('x1'),
-                                          self.get_data_position(
-                                              'y1'),
+                                          self.get_data_position('y1'),
                                           **self.marker_properties)
             if self.get_data_position('size') is None:
                 self.add_data(size=20)
