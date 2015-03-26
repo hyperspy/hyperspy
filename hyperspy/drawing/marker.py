@@ -103,7 +103,6 @@ class Marker(object):
         lp = {}
         if value == 'text':
             lp['color'] = 'black'
-            lp['linewidth'] = None
         elif value == 'line':
             lp['linewidth'] = 1
             lp['color'] = 'black'
