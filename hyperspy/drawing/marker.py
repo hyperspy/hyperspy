@@ -26,7 +26,7 @@ class Marker(object):
 
     Attributes
     ----------
-    type : {'line', 'axvline', 'axhline', 'text', 'pointer', 'rect'}
+    marker_type : {'line', 'axvline', 'axhline', 'text', 'pointer', 'rect'}
         Select the type of markers
     orientation : {None,'v','h'}
         Orientation for lines. 'v' is vertical, 'h' is horizontal.
@@ -57,8 +57,7 @@ class Marker(object):
     -------
 
     >>> s = signals.Spectrum(random.random([10, 100]))
-    >>> m = utils.plot.marker()
-    >>> m.type = 'axvline'
+    >>> m = utils.plot.marker('axvline')
     >>> m.set_marker_properties(color='green')
     >>> m.set_data(x1=range(10))
     >>> s.plot()
@@ -66,8 +65,7 @@ class Marker(object):
     >>> m.plot()
 
     >>> im = signals.Image(random.random([10, 50, 50]))
-    >>> m = utils.plot.marker()
-    >>> m.type = 'text'
+    >>> m = utils.plot.marker('text')
     >>> m.set_marker_properties(fontsize = 30, color='red')
     >>> m.set_data(x1=range(10), y1=range(10)[::-1], text='hello')
     >>> im.plot()
@@ -75,8 +73,7 @@ class Marker(object):
     >>> m.plot()
 
     >>> im = signals.Image(np.zeros((100, 100)))
-    >>> m = utils.plot.marker()
-    >>> m.type = 'rect'
+    >>> m = utils.plot.marker('rect')
     >>> m.set_marker_properties(linewidth=4, color='red', ls='dotted')
     >>> m.set_data(x1=20, x2=70, y1=20, y2=70)
     >>> im.plot()
@@ -85,7 +82,7 @@ class Marker(object):
 
     """
 
-    def __init__(self):
+    def __init__(self, marker_type='line'):
         # Data attributes
         self.data = None
         self.axes_manager = None
@@ -95,7 +92,7 @@ class Marker(object):
         self.marker = None
         self.orientation = None
         self._marker_properties = {}
-        self.type = "line"
+        self.type = marker_type
 
     @property
     def type(self):
