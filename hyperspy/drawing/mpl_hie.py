@@ -22,7 +22,45 @@ from hyperspy.drawing.mpl_he import MPL_HyperExplorer
 
 class MPL_HyperImage_Explorer(MPL_HyperExplorer):
 
-    def plot_signal(self):
+    def plot_signal(self,
+                    colorbar=True,
+                    scalebar=True,
+                    scalebar_color="white",
+                    axes_ticks=None,
+                    auto_contrast=True,
+                    percentile=0.1,
+                    vmin=None,
+                    vmax=None,
+                    no_nans=False,
+                    ):
+        """Plot image.
+
+        Parameters
+        ----------
+        colorbar : bool, optional
+             If true, a colorbar is plotted for non-RGB images.
+        scalebar : bool, optional
+            If True and the units and scale of the x and y axes are the same a
+            scale bar is plotted.
+        scalebar_color : str, optional
+            A valid MPL color string; will be used as the scalebar color.
+        axes_ticks : {None, bool}, optional
+            If True, plot the axes ticks. If None axes_ticks are only
+            plotted when the scale bar is not plotted. If False the axes ticks
+            are never plotted.
+        contrast_adjustment : bool, optional
+            If True, the contrast is stretched for each image using the 
+            percentile value.
+        percentile : float
+            The percentile to be used for contrast stretching. It should be a
+            scalar in the 0 to 1 range.
+        vmin, vmax : scalar, optional
+            `vmin` and `vmax` are used to normalize luminance data. If
+            `contrast_adjustment` is True these values are ignore.
+        no_nans : bool, optional
+            If True, set nans to zero for plotting.
+
+        """
         if self.signal_plot is not None:
             self.signal_plot.plot()
             return
@@ -31,7 +69,12 @@ class MPL_HyperImage_Explorer(MPL_HyperExplorer):
         imf.data_function = self.signal_data_function
         imf.title = self.signal_title + " Signal"
         imf.xaxis, imf.yaxis = self.axes_manager.signal_axes
-        imf.plot_colorbar = True
+        imf.plot_colorbar = colorbar
+        imf.scalebar = scalebar
+        imf.axes_ticks = axes_ticks
+        imf.vmin, imf.vmax = vmin, vmax
+        imf.perc = percentile
+        imf.no_nans = no_nans
         imf.plot()
         self.signal_plot = imf
 
