@@ -109,7 +109,7 @@ class Image(Signal):
             If True, plot the axes ticks. If None axes_ticks are only
             plotted when the scale bar is not plotted. If False the axes ticks
             are never plotted.
-        contrast_adjustment : bool, optional
+        auto_contrast : bool, optional
             If True, the contrast is stretched for each image using the
             percentile value.
         percentile : float
@@ -117,7 +117,7 @@ class Image(Signal):
             scalar in the 0 to 1 range.
         vmin, vmax : scalar, optional
             `vmin` and `vmax` are used to normalize luminance data. If
-            `contrast_adjustment` is True these values are ignore.
+            `auto_contrast` is True these values are ignore.
         no_nans : bool, optional
             If True, set nans to zero for plotting.
         **kwargs, optional
@@ -125,13 +125,13 @@ class Image(Signal):
 
         """
         super(Image, self).plot(
-            colorbar=True,
-            scalebar=True,
-            scalebar_color="white",
-            axes_ticks=None,
-            auto_contrast=True,
-            percentile=0.1,
-            vmin=None,
-            vmax=None,
-            no_nans=False,
+            colorbar=colorbar,
+            scalebar=scalebar,
+            scalebar_color=scalebar_color,
+            axes_ticks=axes_ticks,
+            auto_contrast=auto_contrast,
+            percentile=percentile,
+            vmin=vmin,
+            vmax=vmax,
+            no_nans=no_nans,
         )

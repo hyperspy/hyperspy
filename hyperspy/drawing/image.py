@@ -44,7 +44,7 @@ class ImagePlot(BlittedFigure):
         arguments.
     pixel_units : {None, string}
         The pixel units for the scale bar. Normally
-    scalebar, plot_ticks, plot_colorbar, plot_indices : bool
+    scalebar, plot_ticks, colorbar, plot_indices : bool
     title : str
         The title is printed at the top of the image.
     vmin, vmax : float
@@ -64,7 +64,7 @@ class ImagePlot(BlittedFigure):
         self.data_function = None
         self.pixel_units = None
         self.plot_ticks = False
-        self.plot_colorbar = True
+        self.colorbar = True
         self._colorbar = None
         self.figure = None
         self.ax = None
@@ -84,6 +84,7 @@ class ImagePlot(BlittedFigure):
         self.yaxis = None
         self.min_aspect = 0.1
         self.perc = 0.01
+        self.scalebar_color = "white"
         self._user_scalebar = None
         self._auto_scalebar = False
         self._user_axes_ticks = None
@@ -205,7 +206,7 @@ class ImagePlot(BlittedFigure):
             self.create_axis()
         data = self.data_function(axes_manager=self.axes_manager)
         if rgb_tools.is_rgbx(data):
-            self.plot_colorbar = False
+            self.colorbar = False
             data = rgb_tools.rgbx2regular_array(data, plot_friendly=True)
         if self.auto_contrast is True:
             self.optimize_contrast(data)
@@ -229,9 +230,10 @@ class ImagePlot(BlittedFigure):
                     ax=self.ax,
                     units=self.pixel_units,
                     animated=True,
+                    color=self.scalebar_color,
                 )
 
-        if self.plot_colorbar is True:
+        if self.colorbar is True:
             self._colorbar = plt.colorbar(self.ax.images[0], ax=self.ax)
             self._colorbar.ax.yaxis.set_animated(True)
 

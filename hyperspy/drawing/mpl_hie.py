@@ -48,7 +48,7 @@ class MPL_HyperImage_Explorer(MPL_HyperExplorer):
             If True, plot the axes ticks. If None axes_ticks are only
             plotted when the scale bar is not plotted. If False the axes ticks
             are never plotted.
-        contrast_adjustment : bool, optional
+        auto_contrast : bool, optional
             If True, the contrast is stretched for each image using the 
             percentile value.
         percentile : float
@@ -56,7 +56,7 @@ class MPL_HyperImage_Explorer(MPL_HyperExplorer):
             scalar in the 0 to 1 range.
         vmin, vmax : scalar, optional
             `vmin` and `vmax` are used to normalize luminance data. If
-            `contrast_adjustment` is True these values are ignore.
+            `auto_contrast` is True these values are ignore.
         no_nans : bool, optional
             If True, set nans to zero for plotting.
 
@@ -69,12 +69,14 @@ class MPL_HyperImage_Explorer(MPL_HyperExplorer):
         imf.data_function = self.signal_data_function
         imf.title = self.signal_title + " Signal"
         imf.xaxis, imf.yaxis = self.axes_manager.signal_axes
-        imf.plot_colorbar = colorbar
+        imf.colorbar = colorbar
         imf.scalebar = scalebar
         imf.axes_ticks = axes_ticks
         imf.vmin, imf.vmax = vmin, vmax
         imf.perc = percentile
         imf.no_nans = no_nans
+        imf.scalebar_color = scalebar_color
+        imf.auto_contrast = auto_contrast
         imf.plot()
         self.signal_plot = imf
 
