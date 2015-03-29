@@ -29,8 +29,6 @@ from hyperspy.gui import messages
 from hyperspy.axes import AxesManager
 from hyperspy.drawing.widgets import DraggableVerticalLine
 
-from hyperspy.misc import utils
-
 
 OurApplyButton = tu.Action(name="Apply",
                            action="apply")
