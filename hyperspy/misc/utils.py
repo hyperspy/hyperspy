@@ -28,6 +28,7 @@ import tempfile
 import unicodedata
 
 import numpy as np
+import scipy 
 
 
 def attrsetter(target, attrs, value):
@@ -831,3 +832,47 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
         step_sizes)
 
     return signal
+
+def get_edge_onset(data, start, end, energy_range, percent_position):
+    start_index = find_nearest_index(energy_range, start)
+    end_index = find_nearest_index(energy_range, end)
+
+    data = data[start_index:end_index]
+    energy_range = energy_range[start_index:end_index]
+
+    data_max = data.max()
+    data_min = data.min()
+    data_onset_value = (data_max-data_min)*percent_position + data_min
+    
+    interpolate = scipy.interpolate.interp1d(energy_range, data)
+    large_energy_array = np.arange(energy_range[0],energy_range[-1],0.0001)
+    data_interpolated = interpolate(large_energy_array)
+    data_max_index = data_interpolated.argmax()
+    data_min_index = data_interpolated.argmin()
+    
+    if data_max_index < data_min_index:
+        temp_index = data_max_index
+        data_max_index = data_min_index
+        data_min_index = temp_index
+    
+    data_onset_index = find_nearest_index_from_right(
+            data_interpolated[data_min_index:data_max_index],
+            data_onset_value)
+    onset_energy = large_energy_array[data_min_index:data_max_index][data_onset_index]
+    return(onset_energy)
+
+def find_nearest_index(array,value):
+    idx = (np.abs(array-value)).argmin()
+    return(idx)
+
+def find_nearest_index_from_right(array,value,threshold=0.1):
+    nearest_index = None
+    difference_array = np.abs(array - value)
+    for array_index, array_value in enumerate(difference_array[::-1]):
+        if array_value < threshold:
+            nearest_index = array_index
+            break
+    if nearest_index:
+        return(len(difference_array)-nearest_index)
+    else:
+        return(find_nearest_index(array, value))
