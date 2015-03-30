@@ -699,10 +699,8 @@ class EDSSpectrum(Spectrum):
                 windows_position[index[i+1]] = interv
         return windows_position
 
-    def plot_background_windows(self,
-                                windows_position,
-                                xray_lines=None,
-                                **kwargs):
+    def _add_background_windows_markers(self,
+                                        windows_position):
         """
         Plot the background windows associated with each X-ray lines.
 
@@ -716,12 +714,6 @@ class EDSSpectrum(Spectrum):
             X-ray lines. In a line, the two first value corresponds to the
             limit of the left window and the two last values corresponds to the
             limit of the right window.
-        xray_lines: None or list of string
-            If None, use `metadata.Sample.elements.xray_lines`. Else,
-            provide an iterable containing a list of valid X-ray lines
-            symbols.
-        kwargs
-            The extra keyword arguments for plot_xray_lines()
 
         See also
         --------
@@ -729,25 +721,17 @@ class EDSSpectrum(Spectrum):
         `estimate_background_windows`. Backgrounds average in the windows
         can be subtracted from the X-ray intensities with `get_line_intensity`.
         """
-
-        from hyperspy.drawing import marker
-        self.plot_xray_lines(xray_lines=xray_lines, **kwargs)
         colors = itertools.cycle(np.sort(plt.rcParams['axes.color_cycle']*4))
         for window, color in zip(np.ravel(windows_position), colors):
-            line = marker.Marker()
-            line.type = 'line'
-            line.orientation = 'v'
-            line.set_data(x1=window)
-            line.set_marker_properties(color=color)
+            line = markers.vertical_line(x=window, color=color)
             self._plot.signal_plot.add_marker(line)
             line.plot()
         for bck in windows_position:
-            line = marker.Marker()
-            line.type = 'line'
-            line.set_data(x1=(bck[0]+bck[1])/2., x2=(bck[2]+bck[3])/2.,
-                          y1=self.isig[bck[0]:bck[1]].mean(-1).data,
-                          y2=self.isig[bck[2]:bck[3]].mean(-1).data)
-            line.set_marker_properties(color='black')
+            line = markers.line_segment(
+                x1=(bck[0]+bck[1])/2., x2=(bck[2]+bck[3])/2.,
+                y1=self.isig[bck[0]:bck[1]].mean(-1).data,
+                y2=self.isig[bck[2]:bck[3]].mean(-1).data,
+                color='black')
             self._plot.signal_plot.add_marker(line)
             line.plot()
 
@@ -756,10 +740,13 @@ class EDSSpectrum(Spectrum):
              xray_lines=None,
              only_lines=("a", "b"),
              only_one=False,
+             background_windows=None,
              **kwargs):
         """
-        Annotate a spec.plot() with the name of the selected X-ray
-        lines
+        Plot the EDS spectrum. The following markers can be added
+
+        The background windows associated with each X-ray lines. A black line
+        links the left and right window with the average value in each window.
 
         Parameters
         ----------
@@ -781,12 +768,20 @@ class EDSSpectrum(Spectrum):
             If False, use all the lines of each element in the data spectral
             range. If True use only the line at the highest energy
             above an overvoltage of 2 (< beam energy / 2).
+        background_windows: None or 2D array of float
+            If not None, add markers at the position of the windows in energy.
+            Each line corresponds to a X-ray lines. In a line, the two first
+            value corresponds to the limit of the left window and the two
+            last values corresponds to the limit of the right window.
         kwargs
             The extra keyword arguments for plot()
 
         See also
         --------
         set_elements, add_elements
+        The windows position can be estimated with
+        `estimate_background_windows`. Backgrounds average in the windows
+        can be subtracted from the X-ray intensities with `get_line_intensity`.
 
         """
         super(EDSSpectrum, self).plot(**kwargs)
@@ -817,6 +812,8 @@ class EDSSpectrum(Spectrum):
 
         if xray_lines_markers:
             self._add_xray_lines_markers(xray_lines)
+        if background_windows is not None:
+            self._add_background_windows_markers(background_windows)
 
     def _add_xray_lines_markers(self, xray_lines):
         """
