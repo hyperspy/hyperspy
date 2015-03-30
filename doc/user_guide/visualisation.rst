@@ -474,4 +474,43 @@ each plot:
   :align:   center
   :width:   500    
 
+Markers
+=======
+
+Hyperspy provides an easy access to the main marker of matplotlib. The markers can be used in a static way
+
+.. code-block:: python
+
+    >>> import scipy.ndimage
+    >>> im = signals.Image(scipy.misc.lena())
+    >>> m = utils.plot.markers.rectangle(x1=150, y1=100, x2=400, y2=400, color='red')
+    >>> im.plot()
+    >>> im._plot.signal_plot.add_marker(m)
+    >>> m.plot()
+
+.. figure::  images/plot_marker_std.png
+  :align:   center
+  :width:   400
+
+By providing an array of positions, the marker can also change position when navigating the signal. In the following example, the local maxima are displayed for each R, G and B channel of a colour image.
+
+.. code-block:: python
+
+    >>> from skimage.feature import peak_local_max
+    >>> import scipy.ndimage
+    >>> ims = signals.Signal(scipy.misc.face()).as_image([0,1])
+    >>> index = array([peak_local_max(im.data, min_distance=100, num_peaks=4)
+    >>>                for im in ims])
+    >>> ims.plot()
+    >>> for i in range(4):
+    >>>     m = utils.plot.markers.point(x=index[:, i, 1], 
+    >>>                                  y=index[:, i, 0], color='red')
+    >>>     ims._plot.signal_plot.add_marker(m)
+    >>>     m.plot()
+
+
+.. figure::  images/plot_markers_im.png
+  :align:   center
+  :width:   400
+
 
