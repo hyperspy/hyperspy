@@ -57,6 +57,11 @@ class HorizontalLine(MarkerBase):
         self.marker.set_ydata(self.get_data_position('y1'))
 
     def plot(self):
+        if self.ax is None:
+            raise AttributeError(
+                "To use this method the marker needs to be first add to a " +
+                "figure using `s._plot.signal_plot.add_marker(m)` or " +
+                "`s._plot.navigator_plot.add_marker(m)`")
         self.marker = self.ax.axhline(self.get_data_position('y1'),
                                       **self.marker_properties)
         self.marker.set_animated(True)

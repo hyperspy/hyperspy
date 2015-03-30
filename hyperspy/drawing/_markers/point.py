@@ -64,6 +64,11 @@ class Point(MarkerBase):
         self.marker._sizes = [self.get_data_position('size')]
 
     def plot(self):
+        if self.ax is None:
+            raise AttributeError(
+                "To use this method the marker needs to be first add to a " +
+                "figure using `s._plot.signal_plot.add_marker(m)` or " +
+                "`s._plot.navigator_plot.add_marker(m)`")
         self.marker = self.ax.scatter(self.get_data_position('x1'),
                                       self.get_data_position('y1'),
                                       **self.marker_properties)

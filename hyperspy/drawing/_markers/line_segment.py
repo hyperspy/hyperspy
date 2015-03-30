@@ -74,6 +74,11 @@ class LineSegment(MarkerBase):
         self.marker.set_segments(segments)
 
     def plot(self):
+        if self.ax is None:
+            raise AttributeError(
+                "To use this method the marker needs to be first add to a " +
+                "figure using `s._plot.signal_plot.add_marker(m)` or " +
+                "`s._plot.navigator_plot.add_marker(m)`")
         self.marker = self.ax.vlines(0, 0, 1, **self.marker_properties)
         segments = self.marker.get_segments()
         segments[0][0, 0] = self.get_data_position('x1')

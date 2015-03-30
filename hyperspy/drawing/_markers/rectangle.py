@@ -75,6 +75,11 @@ class Rectangle(MarkerBase):
                                self.get_data_position('y2')])
 
     def plot(self):
+        if self.ax is None:
+            raise AttributeError(
+                "To use this method the marker needs to be first add to a " +
+                "figure using `s._plot.signal_plot.add_marker(m)` or " +
+                "`s._plot.navigator_plot.add_marker(m)`")
         width = abs(self.get_data_position('x1') -
                     self.get_data_position('x2'))
         height = abs(self.get_data_position('y1') -

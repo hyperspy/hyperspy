@@ -18,7 +18,6 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
-import warnings
 
 
 class MarkerBase(object):
@@ -58,9 +57,7 @@ class MarkerBase(object):
             else:
                 self._marker_properties[key] = item
         if self.marker is not None:
-            plt.setp(self.marker, **self.marker_properties)
-            if self.ax is None:
-                warnings.warn("self.ax need to be set")
+            plt.setp(self.marker, **self.marker_properties)            
             try:
                 # self.ax.figure.canvas.draw()
                 self.ax.hspy_fig._draw_animated()
