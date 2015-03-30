@@ -27,7 +27,7 @@ from hyperspy._signals.spectrum import Spectrum
 from hyperspy.misc.elements import elements as elements_db
 from hyperspy.misc.eds import utils as utils_eds
 from hyperspy.misc.utils import isiterable
-from hyperspy.drawing import marker
+from hyperspy.utils import markers
 
 
 class EDSSpectrum(Spectrum):
@@ -620,7 +620,7 @@ class EDSSpectrum(Spectrum):
         TOA = utils.eds.take_off_angle(tilt_stage, azimuth_angle,
                                        elevation_angle)
 
-        return TOA
+        return TOA        
 
     def plot_xray_lines(self,
                         xray_lines=None,
@@ -698,16 +698,12 @@ class EDSSpectrum(Spectrum):
 
         self.plot(**kwargs)
         for i in range(len(line_energy)):
-            line = marker.Marker()
-            line.type = 'line'
-            line.orientation = 'v'
-            line.set_data(x1=line_energy[i], y2=intensity[i] * 0.8)
+            line = markers.vertical_line_segment(
+                x=line_energy[i], y1=None, y2=intensity[i] * 0.8)
             self._plot.signal_plot.add_marker(line)
             line.plot()
-            text = marker.Marker()
-            text.type = 'text'
-            text.set_marker_properties(rotation=90)
-            text.set_data(x1=line_energy[i],
-                          y1=intensity[i] * 1.1, text=xray_lines[i])
+            text = markers.text(
+                x=line_energy[i], y1=intensity[i] * 1.1, text=xray_lines[i],
+                rotation=90)
             self._plot.signal_plot.add_marker(text)
             text.plot()
