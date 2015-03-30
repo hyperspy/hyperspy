@@ -628,11 +628,14 @@ class EDSSpectrum(Spectrum):
              only_one=False,
              **kwargs):
         """
-        Annotate a spec.plot() with the name of the selected X-ray
-        lines
+        Plot the EDS spectrum. The following markers can be added
+
+        - The position of the X-ray lines and their names.
 
         Parameters
         ----------
+        xray_lines_markers: bool
+            If True, indicate the position and the name of the X-ray lines.
         xray_lines: {'auto', 'from_elements', list of string}
             If 'auto', if `metadata.Sample.elements.xray_lines` contains a
             list of lines use those.

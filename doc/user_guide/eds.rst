@@ -1,4 +1,4 @@
-.. _eds-label:
+﻿.. _eds-label:
 
 Energy-Dispersive X-Rays Spectrometry (EDS)
 ******************************************
@@ -288,11 +288,11 @@ Plotting
 --------
 
 As decribed in :ref:`visualisation<visualization-label>`, the 
-:py:meth:`~.signal.Signal.plot` method can be used:
+:py:meth:`~.signals.eds.EDSSpectrum.plot` method can be used:
 
 .. code-block:: python
 
-    >>> spec.plot()
+    >>> spec.plot(xray_lines_markers=False)
 
 .. figure::  images/EDS_plot_spectrum.png
    :align:   center
@@ -306,7 +306,7 @@ Plot X-ray lines
 ^^^^^^^^^^^^^^^^
 
 X-ray lines can be labbeled on a plot with 
-:py:meth:`~._signals.eds.EDSSpectrum.plot_Xray_lines`. The lines are 
+:py:meth:`~._signals.eds.EDSSpectrum.plot`. The lines are 
 either given, either retrieved from "metadata.Sample.Xray_lines",
 or selected with the same method as 
 :py:meth:`~._signals.eds.EDSSpectrum.add_lines` using the 
@@ -316,7 +316,7 @@ elements in "metadata.Sample.elements".
 .. code-block:: python
 
     >>> spec.add_elements(['C','Mn','Cu','Al','Zr'])
-    >>> spec.plot_xray_lines()
+    >>> spec.plot()
 
 .. figure::  images/EDS_plot_Xray_default.png
    :align:   center
@@ -326,7 +326,7 @@ Selecting certain type of lines:
    
 .. code-block:: python
 
-    >>> spec.plot_xray_lines(only_lines=['Ka','b'])
+    >>> spec.plot(only_lines=['Ka','b'])
 
 .. figure::  images/EDS_plot_Xray_a.png
    :align:   center
