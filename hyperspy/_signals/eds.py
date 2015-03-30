@@ -699,42 +699,6 @@ class EDSSpectrum(Spectrum):
                 windows_position[index[i+1]] = interv
         return windows_position
 
-    def _add_background_windows_markers(self,
-                                        windows_position):
-        """
-        Plot the background windows associated with each X-ray lines.
-
-        For X-ray lines, a black line links the left and right window with the
-        average value in each window.
-
-        Parameters
-        ----------
-        windows_position: 2D array of float
-            The position of the windows in energy. Each line corresponds to a
-            X-ray lines. In a line, the two first value corresponds to the
-            limit of the left window and the two last values corresponds to the
-            limit of the right window.
-
-        See also
-        --------
-        The windows position can be estimated with
-        `estimate_background_windows`. Backgrounds average in the windows
-        can be subtracted from the X-ray intensities with `get_line_intensity`.
-        """
-        colors = itertools.cycle(np.sort(plt.rcParams['axes.color_cycle']*4))
-        for window, color in zip(np.ravel(windows_position), colors):
-            line = markers.vertical_line(x=window, color=color)
-            self._plot.signal_plot.add_marker(line)
-            line.plot()
-        for bck in windows_position:
-            line = markers.line_segment(
-                x1=(bck[0]+bck[1])/2., x2=(bck[2]+bck[3])/2.,
-                y1=self.isig[bck[0]:bck[1]].mean(-1).data,
-                y2=self.isig[bck[2]:bck[3]].mean(-1).data,
-                color='black')
-            self._plot.signal_plot.add_marker(line)
-            line.plot()
-
     def plot(self,
              xray_lines_markers=True,
              xray_lines=None,
@@ -745,14 +709,16 @@ class EDSSpectrum(Spectrum):
         """
         Plot the EDS spectrum. The following markers can be added
 
-        The background windows associated with each X-ray lines. A black line
+        - The position of the X-ray lines and their names.
+        - The background windows associated with each X-ray lines. A black line
         links the left and right window with the average value in each window.
 
         Parameters
         ----------
+        xray_lines_markers: bool
+            If True, indicate the position and the name of the X-ray lines.
         xray_lines: {None, 'from_elements', list of string}
-            If None,
-            if `metadata.Sample.elements.xray_lines` contains a
+            If None, if `metadata.Sample.elements.xray_lines` contains a
             list of lines use those.
             If `metadata.Sample.elements.xray_lines` is undefined
             or empty or if xray_lines equals 'from_elements' and
@@ -846,3 +812,39 @@ class EDSSpectrum(Spectrum):
                 rotation=90)
             self._plot.signal_plot.add_marker(text)
             text.plot()
+
+    def _add_background_windows_markers(self,
+                                        windows_position):
+        """
+        Plot the background windows associated with each X-ray lines.
+
+        For X-ray lines, a black line links the left and right window with the
+        average value in each window.
+
+        Parameters
+        ----------
+        windows_position: 2D array of float
+            The position of the windows in energy. Each line corresponds to a
+            X-ray lines. In a line, the two first value corresponds to the
+            limit of the left window and the two last values corresponds to the
+            limit of the right window.
+
+        See also
+        --------
+        The windows position can be estimated with
+        `estimate_background_windows`. Backgrounds average in the windows
+        can be subtracted from the X-ray intensities with `get_line_intensity`.
+        """
+        colors = itertools.cycle(np.sort(plt.rcParams['axes.color_cycle']*4))
+        for window, color in zip(np.ravel(windows_position), colors):
+            line = markers.vertical_line(x=window, color=color)
+            self._plot.signal_plot.add_marker(line)
+            line.plot()
+        for bck in windows_position:
+            line = markers.line_segment(
+                x1=(bck[0]+bck[1])/2., x2=(bck[2]+bck[3])/2.,
+                y1=self.isig[bck[0]:bck[1]].mean(-1).data,
+                y2=self.isig[bck[2]:bck[3]].mean(-1).data,
+                color='black')
+            self._plot.signal_plot.add_marker(line)
+            line.plot()
