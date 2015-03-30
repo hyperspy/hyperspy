@@ -685,7 +685,7 @@ class EDSSpectrum(Spectrum):
             xray_lines)
         for xray in xray_not_here:
             print("Warning: %s is not in the data energy range." % (xray))
-
+        xray_lines = np.unique(xray_lines)
         line_energy = []
         intensity = []
         for xray_line in xray_lines:
