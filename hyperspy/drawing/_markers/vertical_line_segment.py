@@ -64,18 +64,7 @@ class VerticalLineSegment(MarkerBase):
     def update(self):
         if self.auto_update is False:
             return
-        segments = self.marker.get_segments()
-        segments[0][0, 0] = self.get_data_position('x1')
-        segments[0][1, 0] = segments[0][0, 0]
-        if self.get_data_position('y1') is None:
-            segments[0][0, 1] = plt.getp(self.marker.axes, 'ylim')[0]
-        else:
-            segments[0][0, 1] = self.get_data_position('y1')
-        if self.get_data_position('y2') is None:
-            segments[0][1, 1] = plt.getp(self.marker.axes, 'ylim')[1]
-        else:
-            segments[0][1, 1] = self.get_data_position('y2')
-        self.marker.set_segments(segments)
+        self._update_segment()
 
     def plot(self):
         if self.ax is None:
@@ -84,6 +73,14 @@ class VerticalLineSegment(MarkerBase):
                 "figure using `s._plot.signal_plot.add_marker(m)` or " +
                 "`s._plot.navigator_plot.add_marker(m)`")
         self.marker = self.ax.vlines(0, 0, 1, **self.marker_properties)
+        self._update_segment()
+        self.marker.set_animated(True)
+        try:
+            self.ax.hspy_fig._draw_animated()
+        except:
+            pass
+
+    def _update_segment(self):
         segments = self.marker.get_segments()
         segments[0][0, 0] = self.get_data_position('x1')
         segments[0][1, 0] = segments[0][0, 0]
@@ -96,8 +93,3 @@ class VerticalLineSegment(MarkerBase):
         else:
             segments[0][1, 1] = self.get_data_position('y2')
         self.marker.set_segments(segments)
-        self.marker.set_animated(True)
-        try:
-            self.ax.hspy_fig._draw_animated()
-        except:
-            pass
