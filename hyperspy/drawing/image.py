@@ -44,7 +44,7 @@ class ImagePlot(BlittedFigure):
         arguments.
     pixel_units : {None, string}
         The pixel units for the scale bar. Normally
-    plot_scalebar, plot_ticks, plot_colorbar, plot_indices : bool
+    scalebar, plot_ticks, colorbar, plot_indices : bool
     title : str
         The title is printed at the top of the image.
     vmin, vmax : float
@@ -63,9 +63,8 @@ class ImagePlot(BlittedFigure):
     def __init__(self):
         self.data_function = None
         self.pixel_units = None
-        self.plot_scalebar = True
         self.plot_ticks = False
-        self.plot_colorbar = True
+        self.colorbar = True
         self._colorbar = None
         self.figure = None
         self.ax = None
@@ -85,6 +84,38 @@ class ImagePlot(BlittedFigure):
         self.yaxis = None
         self.min_aspect = 0.1
         self.perc = 0.01
+        self.scalebar_color = "white"
+        self._user_scalebar = None
+        self._auto_scalebar = False
+        self._user_axes_ticks = None
+        self._auto_axes_ticks = True
+        self.no_nans = False
+
+    @property
+    def axes_ticks(self):
+        if self._user_axes_ticks is None:
+            return self._auto_axes_ticks
+        else:
+            return self._user_axes_ticks
+
+    @axes_ticks.setter
+    def axes_ticks(self, value):
+        self._user_axes_ticks = value
+
+    @property
+    def scalebar(self):
+        if self._user_scalebar is None:
+            return self._auto_scalebar
+        else:
+            return self._user_scalebar
+
+    @scalebar.setter
+    def scalebar(self, value):
+        if value is False:
+            self._user_scalebar = value
+        else:
+            self._user_scalebar = None
+
 
     def configure(self):
         xaxis = self.xaxis
@@ -100,12 +131,12 @@ class ImagePlot(BlittedFigure):
 
         if (xaxis.units == yaxis.units) and (
                 xaxis.scale == yaxis.scale):
-            self.plot_scalebar = True
-            self.plot_ticks = False
+            self._auto_scalebar = True
+            self._auto_axes_ticks = False
             self.pixel_units = xaxis.units
         else:
-            self.plot_scalebar = False
-            self.plot_ticks = True
+            self._auto_scalebar = False
+            self._auto_axes_ticks = True
 
         # Calibrate the axes of the navigator image
         self._extent = (xaxis.axis[0] - xaxis.scale / 2.,
@@ -117,12 +148,12 @@ class ImagePlot(BlittedFigure):
             min_asp = self.min_aspect
             if yaxis.size / xaxis.size < min_asp:
                 factor = min_asp * xaxis.size / yaxis.size
-                self.plot_scalebar = False
-                self.plot_ticks = True
+                self._auto_scalebar = False
+                self._auto_axes_ticks = True
             elif yaxis.size / xaxis.size > min_asp ** -1:
                 factor = min_asp ** -1 * xaxis.size / yaxis.size
-                self.plot_scalebar = False
-                self.plot_ticks = True
+                self._auto_scalebar = False
+                self._auto_axes_ticks = True
             else:
                 factor = 1
         self._aspect = np.abs(factor * xaxis.scale / yaxis.scale)
@@ -141,7 +172,7 @@ class ImagePlot(BlittedFigure):
         self.vmax = vmax
 
     def create_figure(self, max_size=8, min_size=2):
-        if self.plot_scalebar is True:
+        if self.scalebar is True:
 
             wfactor = 1.1
         else:
@@ -163,7 +194,7 @@ class ImagePlot(BlittedFigure):
         self.ax.set_title(self.title)
         self.ax.set_xlabel(self._xlabel)
         self.ax.set_ylabel(self._ylabel)
-        if self.plot_ticks is False:
+        if self.axes_ticks is False:
             self.ax.set_xticks([])
             self.ax.set_yticks([])
         self.ax.hspy_fig = self
@@ -175,7 +206,7 @@ class ImagePlot(BlittedFigure):
             self.create_axis()
         data = self.data_function(axes_manager=self.axes_manager)
         if rgb_tools.is_rgbx(data):
-            self.plot_colorbar = False
+            self.colorbar = False
             data = rgb_tools.rgbx2regular_array(data, plot_friendly=True)
         if self.auto_contrast is True:
             self.optimize_contrast(data)
@@ -193,15 +224,16 @@ class ImagePlot(BlittedFigure):
                 color='red',
                 animated=True)
         self.update()
-        if self.plot_scalebar is True:
+        if self.scalebar is True:
             if self.pixel_units is not None:
                 self.ax.scalebar = widgets.Scale_Bar(
                     ax=self.ax,
                     units=self.pixel_units,
                     animated=True,
+                    color=self.scalebar_color,
                 )
 
-        if self.plot_colorbar is True:
+        if self.colorbar is True:
             self._colorbar = plt.colorbar(self.ax.images[0], ax=self.ax)
             self._colorbar.ax.yaxis.set_animated(True)
 
@@ -250,6 +282,8 @@ class ImagePlot(BlittedFigure):
             data = np.log(np.abs(data))
         if self.plot_indices is True:
             self._text.set_text((self.axes_manager.indices))
+        if self.no_nans:
+            data = np.nan_to_num(data)
         if ims:
             ims[0].set_data(data)
             ims[0].norm.vmax, ims[0].norm.vmin = self.vmax, self.vmin
