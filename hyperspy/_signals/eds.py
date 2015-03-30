@@ -635,11 +635,11 @@ class EDSSpectrum(Spectrum):
         ----------
         xray_lines: {None, 'from_elements', list of string}
             If None,
-            if `mapped.parameters.Sample.elements.xray_lines` contains a
+            if `metadata.Sample.elements.xray_lines` contains a
             list of lines use those.
-            If `mapped.parameters.Sample.elements.xray_lines` is undefined
+            If `metadata.Sample.elements.xray_lines` is undefined
             or empty or if xray_lines equals 'from_elements' and
-            `mapped.parameters.Sample.elements` is defined,
+            `metadata.Sample.elements` is defined,
             use the same syntax as `add_line` to select a subset of lines
             for the operation.
             Alternatively, provide an iterable containing
