@@ -81,6 +81,9 @@ class MarkerBase(object):
         the same dimensions than the nagivation axes. The other fields are
         overwritten.
         """
+        if np.alltrue([hasattr(a, "__iter__") is False
+                      for a in [x1, y1, x2, y2, text, size]]):
+            self.auto_update = False
         self.data = np.array((np.array(x1), np.array(y1),
                               np.array(x2), np.array(y2),
                               np.array(text), np.array(size)),
@@ -94,6 +97,9 @@ class MarkerBase(object):
         the same dimensions than the nagivation axes. The other fields are
         overwritten.
         """
+        if np.alltrue([hasattr(kwargs[key], "__iter__") is False
+                      for key in kwargs.keys()]):
+            self.auto_update = False
         if self.data is None:
             self.set_data(**kwargs)
         else:
@@ -102,10 +108,11 @@ class MarkerBase(object):
 
     def get_data_position(self, ind):
         data = self.data
-        indices = self.axes_manager.indices[::-1]
         if data[ind].item()[()] is None:
             return None
-        elif hasattr(data[ind].item()[()], "__iter__"):
+        elif hasattr(data[ind].item()[()], "__iter__") and \
+                self.auto_update:
+            indices = self.axes_manager.indices[::-1]
             return data[ind].item()[indices]
         else:
             return data[ind].item()[()]
