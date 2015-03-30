@@ -534,7 +534,7 @@ class EDSSpectrum(Spectrum):
         >>> specImg.get_lines_intensity()
 
         >>> bw = specImg.estimate_background_windows()
-        >>> specImg.plot_background_windows(bw)
+        >>> specImg.plot(background_windows=bw)
         >>> specImg.get_lines_intensity(background_windows=bw)
 
         See also
@@ -741,6 +741,14 @@ class EDSSpectrum(Spectrum):
             last values corresponds to the limit of the right window.
         kwargs
             The extra keyword arguments for plot()
+
+        Examples
+        --------
+        >>> specImg.set_lines(["C_Ka", "Ta_Ma"])
+        >>> specImg.plot()
+
+        >>> bw = specImg.estimate_background_windows()
+        >>> specImg.plot(background_windows=bw)
 
         See also
         --------
