@@ -1,4 +1,4 @@
-.. _eds-label:
+﻿.. _eds-label:
 
 Energy-Dispersive X-Rays Spectrometry (EDS)
 ******************************************
@@ -326,7 +326,7 @@ Selecting certain type of lines:
    
 .. code-block:: python
 
-    >>> spec.plot_Xray_lines(only_lines=['Ka','b'])
+    >>> spec.plot_xray_lines(only_lines=['Ka','b'])
 
 .. figure::  images/EDS_plot_Xray_a.png
    :align:   center
@@ -393,4 +393,13 @@ The background can be subtracted from the X-ray intensities with the :py:meth:`~
 .. figure::  images/EDS_background_subtraction.png
    :align:   center
    :width:   800
+
+Quantification
+--------------
+
+The obtained composition is in weight percent. It can be changed transformed into atomic percent with :py:func:`~.misc.material.weight_to_atomic`. The reverse method is :py:func:`~.misc.material.atomic_to_weigth`.
+
+.. code-block:: python
+
+    >>> atomic_percent = utils.material.weight_to_atomic(weight_percent)
 

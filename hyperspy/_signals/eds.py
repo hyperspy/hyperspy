@@ -27,7 +27,7 @@ from hyperspy._signals.spectrum import Spectrum
 from hyperspy.misc.elements import elements as elements_db
 from hyperspy.misc.eds import utils as utils_eds
 from hyperspy.misc.utils import isiterable
-from hyperspy.drawing import marker
+from hyperspy.utils import markers
 
 
 class EDSSpectrum(Spectrum):
@@ -582,8 +582,9 @@ class EDSSpectrum(Spectrum):
                         self.isig[bck[2]:bck[3]].integrate1D(-1)) * corr_factor
 
             img.metadata.General.title = (
-                'Intensity of %s at %.2f %s from %s' %
-                (Xray_line,
+                'X-ray line intensity of %s: %s at %.2f %s' %
+                (self.metadata.General.title,
+                 Xray_line,
                  line_energy,
                  ax.units,
                  self.metadata.General.title))
@@ -750,11 +751,12 @@ class EDSSpectrum(Spectrum):
             self._plot.signal_plot.add_marker(line)
             line.plot()
 
-    def plot_xray_lines(self,
-                        xray_lines=None,
-                        only_lines=("a", "b"),
-                        only_one=False,
-                        **kwargs):
+    def plot(self,
+             xray_lines_markers=True,
+             xray_lines=None,
+             only_lines=("a", "b"),
+             only_one=False,
+             **kwargs):
         """
         Annotate a spec.plot() with the name of the selected X-ray
         lines
@@ -771,7 +773,7 @@ class EDSSpectrum(Spectrum):
             use the same syntax as `add_line` to select a subset of lines
             for the operation.
             Alternatively, provide an iterable containing
-            a list of valid X-ray lines symbols.
+            a list of valid X-ray lines symbols.s
         only_lines : None or list of strings
             If not None, use only the given lines (eg. ('a','Kb')).
             If None, use all lines.
@@ -787,7 +789,7 @@ class EDSSpectrum(Spectrum):
         set_elements, add_elements
 
         """
-
+        super(EDSSpectrum, self).plot(**kwargs)
         if only_lines is not None:
             only_lines = list(only_lines)
             for only_line in only_lines:
@@ -795,7 +797,6 @@ class EDSSpectrum(Spectrum):
                     only_lines.extend(['Ka', 'La', 'Ma'])
                 elif only_line == 'b':
                     only_lines.extend(['Kb', 'Lb1', 'Mb'])
-
         if xray_lines is None or xray_lines == 'from_elements':
             if 'Sample.xray_lines' in self.metadata \
                     and xray_lines != 'from_elements':
@@ -808,11 +809,26 @@ class EDSSpectrum(Spectrum):
             else:
                 raise ValueError(
                     "No elements defined, set them with `add_elements`")
-
         xray_lines, xray_not_here = self._get_xray_lines_in_spectral_range(
             xray_lines)
         for xray in xray_not_here:
             print("Warning: %s is not in the data energy range." % (xray))
+        xray_lines = np.unique(xray_lines)
+
+        if xray_lines_markers:
+            self._add_xray_lines_markers(xray_lines)
+
+    def _add_xray_lines_markers(self, xray_lines):
+        """
+        Add marker on a spec.plot() with the name of the selected X-ray
+        lines
+
+        Parameters
+        ----------
+        xray_lines: list of string
+            A valid list of X-ray lines
+
+        """
 
         line_energy = []
         intensity = []
@@ -823,19 +839,13 @@ class EDSSpectrum(Spectrum):
                 'Atomic_properties']['Xray_lines'][line]['weight']
             a_eng = self._get_line_energy(element + '_' + line[0] + 'a')
             intensity.append(self[..., a_eng].data * relative_factor)
-
-        self.plot(**kwargs)
         for i in range(len(line_energy)):
-            line = marker.Marker()
-            line.type = 'line'
-            line.orientation = 'v'
-            line.set_data(x1=line_energy[i], y2=intensity[i] * 0.8)
+            line = markers.vertical_line_segment(
+                x=line_energy[i], y1=None, y2=intensity[i] * 0.8)
             self._plot.signal_plot.add_marker(line)
             line.plot()
-            text = marker.Marker()
-            text.type = 'text'
-            text.set_marker_properties(rotation=90)
-            text.set_data(x1=line_energy[i],
-                          y1=intensity[i] * 1.1, text=xray_lines[i])
+            text = markers.text(
+                x=line_energy[i], y=intensity[i] * 1.1, text=xray_lines[i],
+                rotation=90)
             self._plot.signal_plot.add_marker(text)
             text.plot()
