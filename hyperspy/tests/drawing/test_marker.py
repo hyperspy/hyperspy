@@ -18,27 +18,16 @@
 
 import numpy as np
 import nose.tools
-from matplotlib.pyplot import vlines
 
-from hyperspy.drawing.marker import Marker as marker
 from hyperspy.signals import Image
+from hyperspy.utils import markers
 
 
 class Test_markers:
 
-    def test_marker_type(self):
-        m_types = ['line', 'axvline', 'axhline', 'text', 'pointer', 'rect']
-        t = []
-        for m_type in m_types:
-            m = marker(m_type)
-            t.append(m.type)
-        nose.tools.assert_true(m_types == t)
-
     def test_get_data(self):
         s = Image(np.zeros([3, 2, 2]))
-        m = marker('text')
-        m.set_data(x1=range(3))
-        m.add_data(y1=1.3)
+        m = markers.line_segment(x1=range(3), x2=range(3), y1=1.3, y2=1.5)
         m.axes_manager = s.axes_manager
         nose.tools.assert_true(m.get_data_position('x1') == 0)
         nose.tools.assert_true(m.get_data_position('y1') == 1.3)
@@ -46,21 +35,19 @@ class Test_markers:
         nose.tools.assert_true(m.get_data_position('x1') == 2)
         nose.tools.assert_true(m.get_data_position('y1') == 1.3)
 
+    def test_set_get_data(self):
+        m = markers.point(x=0, y=1.3)
+        nose.tools.assert_true(m.get_data_position('x1') == 0)
+        nose.tools.assert_true(m.get_data_position('y1') == 1.3)
+        m.add_data(y1=0.3)
+        nose.tools.assert_true(m.get_data_position('x1') == 0)
+        nose.tools.assert_true(m.get_data_position('y1') == 0.3)
+        m.set_data(y1=1.3)
+        nose.tools.assert_true(m.get_data_position('x1') is None)
+        nose.tools.assert_true(m.get_data_position('y1') == 1.3)
+
     def test_markers_properties(self):
-        m = marker('text')
+        m = markers.text(x=1, y=2, text='a')
         m.set_marker_properties(fontsize=30, color='red')
         nose.tools.assert_true(m.marker_properties ==
                                {'color': 'red', 'fontsize': 30})
-
-    def test_marker_lines(self):
-        im = Image(np.zeros((100, 100)))
-        m = marker('line')
-        m.orientation = 'v'
-        m.set_marker_properties(linewidth=4, color='red', linestyle='dotted')
-        m.set_data(x1=20, x2=70, y1=20, y2=70)
-        m.axes_manager = im.axes_manager
-        m.marker = vlines(0, 0, 0)
-        m.set_line_segment()
-        nose.tools.assert_true(np.allclose(m.marker.get_segments(),
-                                           [np.array([[20.,  20.],
-                                                      [20.,  70.]])]))
