@@ -21,71 +21,20 @@ import matplotlib.pyplot as plt
 import warnings
 
 
-class Marker(object):
+class MarkerBase(object):
 
     """Marker that can be added to the signal figure
 
     Attributes
     ----------
-    marker_type : {'line', 'axvline', 'axhline', 'text', 'pointer', 'rect'}
-        Select the type of markers
-    orientation : {None,'v','h'}
-        Orientation for lines. 'v' is vertical, 'h' is horizontal.
     marker_properties : dictionary
         Accepts a dictionary of valid (i.e. recognized by mpl.plot)
         containing valid line properties. In addition it understands
         the keyword `type` that can take the following values:
         {'line', 'text'}
-
-    Methods
-    -------
-    set_marker_properties
-        Enables setting the line_properties attribute using keyword
-        arguments.
-    set_data
-        Set the data in a structured array. Each field of data should have
-        the same dimensions than the nagivation axes. Some fields need to be
-        defined depending on the type.
-        For 'line': 'x1','y1','x2','y2' (All of them if orientation
-            is None)
-        For 'axvline': 'x1'
-        For 'axhline': 'y1'
-        For 'text': 'x1','y1','text'
-        For 'pointer': 'x1','y1','size'. 'size' is optional
-        For 'rect': 'x1','y1','x2','y2'
-    add_data
-        Add data to the structured array. Same field as set_data
-
-    Example
-    -------
-
-    >>> s = signals.Spectrum(random.random([10, 100]))
-    >>> m = utils.plot.marker('axvline')
-    >>> m.set_marker_properties(color='green')
-    >>> m.set_data(x1=range(10))
-    >>> s.plot()
-    >>> s._plot.signal_plot.add_marker(m)
-    >>> m.plot()
-
-    >>> im = signals.Image(random.random([10, 50, 50]))
-    >>> m = utils.plot.marker('text')
-    >>> m.set_marker_properties(fontsize = 30, color='red')
-    >>> m.set_data(x1=range(10), y1=range(10)[::-1], text='hello')
-    >>> im.plot()
-    >>> im._plot.signal_plot.add_marker(m)
-    >>> m.plot()
-
-    >>> im = signals.Image(np.zeros((100, 100)))
-    >>> m = utils.plot.marker('rect')
-    >>> m.set_marker_properties(linewidth=4, color='red', linestyle='dotted')
-    >>> m.set_data(x1=20, x2=70, y1=20, y2=70)
-    >>> im.plot()
-    >>> im._plot.signal_plot.add_marker(m)
-    >>> m.plot()
-
     """
 
-    def __init__(self, marker_type='line'):
+    def __init__(self):
         # Data attributes
         self.data = None
         self.axes_manager = None
@@ -94,42 +43,7 @@ class Marker(object):
 
         # Properties
         self.marker = None
-        self.orientation = None
         self._marker_properties = {}
-        self.type = marker_type
-
-    @property
-    def type(self):
-        return self._type
-
-    @type.setter
-    def type(self, value):
-        lp = {}
-        if value == 'text':
-            lp['color'] = 'black'
-        elif value == 'line':
-            lp['linewidth'] = 1
-            lp['color'] = 'black'
-        elif value == 'axvline':
-            lp['linewidth'] = 1
-            lp['color'] = 'black'
-        elif value == 'axhline':
-            lp['linewidth'] = 1
-            lp['color'] = 'black'
-        elif value == 'pointer':
-            lp['color'] = 'black'
-            lp['linewidth'] = None
-        elif value == 'rect':
-            lp['color'] = 'black'
-            lp['fill'] = None
-            lp['linewidth'] = 1
-        else:
-            raise ValueError(
-                "`type` must be one of {\'line\', "
-                "\'axvline\', \'axhline\', \'text\', \'pointer\', \'rect\'}"
-                "but %s was given" % value)
-        self._type = value
-        self.marker_properties = lp
 
     @property
     def marker_properties(self):
@@ -137,9 +51,6 @@ class Marker(object):
 
     @marker_properties.setter
     def marker_properties(self, kwargs):
-        if 'type' in kwargs:
-            self.type = kwargs['type']
-            del kwargs['type']
 
         for key, item in kwargs.iteritems():
             if item is None and key in self._marker_properties:
@@ -157,51 +68,19 @@ class Marker(object):
                 pass
 
     def set_marker_properties(self, **kwargs):
+        """
+        Set the line_properties attribute using keyword
+        arguments.
+        """
         self.marker_properties = kwargs
-
-    def plot(self):
-        if self.type == 'text':
-            self.marker = self.ax.text(
-                self.get_data_position('x1'), self.get_data_position('y1'),
-                self.get_data_position('text'), **self.marker_properties)
-        elif self.type == 'line':
-            self.marker = self.ax.vlines(0, 0, 1,
-                                         **self.marker_properties)
-            self.set_line_segment()
-        elif self.type == 'axvline':
-            self.marker = self.ax.axvline(self.get_data_position('x1'),
-                                          **self.marker_properties)
-        elif self.type == 'axhline':
-            self.marker = self.ax.axhline(self.get_data_position('y1'),
-                                          **self.marker_properties)
-        elif self.type == 'pointer':
-            self.marker = self.ax.scatter(self.get_data_position('x1'),
-                                          self.get_data_position('y1'),
-                                          **self.marker_properties)
-            if self.get_data_position('size') is None:
-                self.add_data(size=20)
-            self.marker._sizes = [self.get_data_position('size')]
-
-        elif self.type == 'rect':
-            width = abs(self.get_data_position('x1') -
-                        self.get_data_position('x2'))
-            height = abs(self.get_data_position('y1') -
-                         self.get_data_position('y2'))
-            self.marker = self.ax.add_patch(plt.Rectangle(
-                (self.get_data_position('x1'), self.get_data_position('y1')),
-                width, height, **self.marker_properties))
-
-        self.marker.set_animated(True)
-        # To be discussed, done in Spectrum figure once.
-        # self.axes_manager.connect(self.update)
-        try:
-            self.ax.hspy_fig._draw_animated()
-            # self.ax.figure.canvas.draw()
-        except:
-            pass
 
     def set_data(self, x1=None, y1=None,
                  x2=None, y2=None, text=None, size=None):
+        """
+        Set data to the structured arra. Each field of data should have
+        the same dimensions than the nagivation axes. The other fields are
+        overwritten.
+        """
         self.data = np.array((np.array(x1), np.array(y1),
                               np.array(x2), np.array(y2),
                               np.array(text), np.array(size)),
@@ -210,6 +89,11 @@ class Marker(object):
                                     ('text', object), ('size', object)])
 
     def add_data(self, **kwargs):
+        """
+        Add data to the structured array. Each field of data should have
+        the same dimensions than the nagivation axes. The other fields are
+        overwritten.
+        """
         if self.data is None:
             self.set_data(**kwargs)
         else:
@@ -226,37 +110,6 @@ class Marker(object):
         else:
             return data[ind].item()[()]
 
-    def set_line_segment(self):
-        segments = self.marker.get_segments()
-        if self.orientation is None:
-            segments[0][0, 0] = self.get_data_position('x1')
-            segments[0][0, 1] = self.get_data_position('y1')
-            segments[0][1, 0] = self.get_data_position('x2')
-            segments[0][1, 1] = self.get_data_position('y2')
-        elif 'v' in self.orientation:
-            segments[0][0, 0] = self.get_data_position('x1')
-            segments[0][1, 0] = segments[0][0, 0]
-            if self.get_data_position('y1') is None:
-                segments[0][0, 1] = plt.getp(self.marker.axes, 'ylim')[0]
-            else:
-                segments[0][0, 1] = self.get_data_position('y1')
-            if self.get_data_position('y2') is None:
-                segments[0][1, 1] = plt.getp(self.marker.axes, 'ylim')[1]
-            else:
-                segments[0][1, 1] = self.get_data_position('y2')
-        elif 'h' in self.orientation:
-            segments[0][0, 1] = self.get_data_position('y1')
-            segments[0][1, 1] = segments[0][0, 1]
-            if self.get_data_position('x1') is None:
-                segments[0][0, 0] = plt.getp(self.marker.axes, 'xlim')[0]
-            else:
-                segments[0][0, 0] = self.get_data_position('x1')
-            if self.get_data_position('x2') is None:
-                segments[0][1, 0] = plt.getp(self.marker.axes, 'xlim')[1]
-            else:
-                segments[0][1, 0] = self.get_data_position('x2')
-        self.marker.set_segments(segments)
-
     def close(self):
         try:
             self.marker.remove()
@@ -264,33 +117,3 @@ class Marker(object):
             self.ax.hspy_fig._draw_animated()
         except:
             pass
-
-    def update(self):
-        """Update the current spectrum figure"""
-        if self.auto_update is False:
-            return
-        if self.type == 'text':
-            self.marker.set_position([self.get_data_position('x1'),
-                                      self.get_data_position('y1')])
-            self.marker.set_text(self.get_data_position('text'))
-        elif self.type == 'line':
-            self.set_line_segment()
-        elif self.type == 'axvline':
-            self.marker.set_xdata(self.get_data_position('x1'))
-        elif self.type == 'axhline':
-            self.marker.set_ydata(self.get_data_position('y1'))
-        elif self.type == 'pointer':
-            self.marker.set_offsets([self.get_data_position('x1'),
-                                     self.get_data_position('y1')])
-            self.marker._sizes = [self.get_data_position('size')]
-        elif self.type == 'rect':
-            self.marker.set_xdata([self.get_data_position('x1'),
-                                   self.get_data_position('x2')])
-            self.marker.set_ydata([self.get_data_position('y1'),
-                                   self.get_data_position('y2')])
-        # To be discussed, done in SpectrumLine once.
-        # try:
-            # self.ax.figure.canvas.draw()
-            # self.ax.hspy_fig._draw_animated()
-        # except:
-            # pass
