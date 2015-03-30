@@ -92,7 +92,7 @@ class MarkerBase(object):
         """
         Add data to the structured array. Each field of data should have
         the same dimensions than the nagivation axes. The other fields are
-        overwritten.
+        not changed.
         """
         if np.alltrue([hasattr(kwargs[key], "__iter__") is False
                       for key in kwargs.keys()]):
