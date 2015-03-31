@@ -554,7 +554,7 @@ class EDSSpectrum(Spectrum):
                           "You can remove it with" +
                           "s.metadata.Sample.xray_lines.remove('%s')"
                           % (xray))
-        if isinstance(integration_windows, float):
+        if hasattr(integration_windows, '__iter__') is False:
             integration_windows = self.estimate_integration_windows(
                 windows_width=integration_windows, xray_lines=xray_lines)
         intensities = []
