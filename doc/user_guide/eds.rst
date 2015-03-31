@@ -292,7 +292,7 @@ As decribed in :ref:`visualisation<visualization-label>`, the
 
 .. code-block:: python
 
-    >>> spec.plot(xray_lines_markers=False)
+    >>> spec.plot()
 
 .. figure::  images/EDS_plot_spectrum.png
    :align:   center
@@ -316,7 +316,7 @@ elements in "metadata.Sample.elements".
 .. code-block:: python
 
     >>> spec.add_elements(['C','Mn','Cu','Al','Zr'])
-    >>> spec.plot()
+    >>> spec.plot(xray_lines_markers=True)
 
 .. figure::  images/EDS_plot_Xray_default.png
    :align:   center
@@ -326,7 +326,7 @@ Selecting certain type of lines:
    
 .. code-block:: python
 
-    >>> spec.plot(only_lines=['Ka','b'])
+    >>> spec.plot(xray_lines_markers=True, only_lines=['Ka','b'])
 
 .. figure::  images/EDS_plot_Xray_a.png
    :align:   center
