@@ -30,7 +30,7 @@ class Rectangle(MarkerBase):
         The position of the up left corner of the rectangle in x.
         If float, the marker is fixed.
         If array, the marker will be updated when navigating. The array should
-        have the same dimensions than the nagivation axes.
+        have the same dimensions in the nagivation axes.
     y1: array or float
         The position of the up left corner of the rectangle in y.
         see x1 arguments
