@@ -27,7 +27,7 @@ class HorizontalLine(MarkerBase):
     y: array or float
         The position of the line. If float, the marker is fixed.
         If array, the marker will be updated when navigating. The array should
-        have the same dimensions than the nagivation axes.
+        have the same dimensions as the nagivation axes.
     kwargs:
         Kewywords argument of axvline valid properties (i.e. recognized by
         mpl.plot).
@@ -37,9 +37,7 @@ class HorizontalLine(MarkerBase):
     >>> import numpy as np
     >>> s = signals.Spectrum(np.random.random([10, 100])) * 10
     >>> m = utils.plot.markers.horizontal_line(y=range(10), color='green')
-    >>> s.plot()
-    >>> s._plot.signal_plot.add_marker(m)
-    >>> m.plot()
+    >>> s.add_marker(m)
 
     """
 

@@ -47,9 +47,7 @@ class VerticalLineSegment(MarkerBase):
     >>> im = signals.Image(np.zeros((100, 100)))
     >>> m = utils.plot.markers.vertical_line_segment(
     >>>     x=20, y1=30, y2=70, linewidth=4, color='red', linestyle='dotted')
-    >>> im.plot()
-    >>> im._plot.signal_plot.add_marker(m)
-    >>> m.plot()
+    >>> im.add_marker(m)
 
     """
 
