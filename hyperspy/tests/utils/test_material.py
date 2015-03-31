@@ -36,7 +36,7 @@ class TestWeightToFromAtomic():
         at = hs.utils.material.weight_to_atomic(wt, elements)
         nose.tools.assert_true(np.allclose(
             at[:, 0, 0], np.array([93.196986, 6.803013]), atol=1e-3))
-        wt2 = hs.utils.material.atomic_to_weight(elements, at)
+        wt2 = hs.utils.material.atomic_to_weight(at, elements)
         nose.tools.assert_true(np.allclose(wt, wt2))
 
 

@@ -187,6 +187,14 @@ to fit EELS core-loss spectra
        
     >>> m.smart_fit()
 
+
+This fit can also be applied over the entire signal to fit a whole spectrum image
+
+.. code-block:: python
+
+    >>> m.multifit(kind='smart')
+
+
 Print the result of the fit 
 
 .. code-block:: python

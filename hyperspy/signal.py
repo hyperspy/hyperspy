@@ -3035,6 +3035,7 @@ class Signal(MVA,
         def get_dynamic_explorer_wrapper(*args, **kwargs):
             navigator.axes_manager.indices = self.axes_manager.indices[
                 navigator.axes_manager.signal_dimension:]
+            navigator.axes_manager._update_attributes()
             return navigator()
 
         if not isinstance(navigator, Signal) and navigator == "auto":
@@ -3135,9 +3136,9 @@ class Signal(MVA,
                 filename = os.path.join(
                     self.tmp_parameters.folder,
                     self.tmp_parameters.filename)
-                extesion = (self.tmp_parameters.extension
-                            if not extension
-                            else extension)
+                extension = (self.tmp_parameters.extension
+                             if not extension
+                             else extension)
             elif self.metadata.has_item('General.original_filename'):
                 filename = self.metadata.General.original_filename
             else:
@@ -3438,7 +3439,7 @@ class Signal(MVA,
 
     @auto_replot
     def _unfold(self, steady_axes, unfolded_axis):
-        """Modify the shape of the data by specifying the axes the axes which
+        """Modify the shape of the data by specifying the axes whose
         dimension do not change and the axis over which the remaining axes will
         be unfolded
 
@@ -3497,7 +3498,7 @@ class Signal(MVA,
 
     def unfold(self):
         """Modifies the shape of the data by unfolding the signal and
-        navigation dimensions separaterly
+        navigation dimensions separately
 
         """
         self.unfold_navigation_space()
@@ -4300,8 +4301,8 @@ class Signal(MVA,
         variance = (dc * gain_factor + gain_offset) * correlation_factor
         # The lower bound of the variance is the gaussian noise.
         variance = np.clip(variance, gain_offset * correlation_factor, np.inf)
-        variance = type(self)(variance,
-                              axes=self.axes_manager._get_axes_dicts())
+        variance = type(self)(variance)
+        variance.axes_manager = self.axes_manager
         variance.metadata.General.title = ("Variance of " +
                                            self.metadata.General.title)
         self.metadata.set_item(
