@@ -794,8 +794,8 @@ class EDSSpectrum(Spectrum):
                 print("Warning: %s is not in the data energy range." % (xray))
             xray_lines = np.unique(xray_lines)
             self._add_xray_lines_markers(xray_lines)
-        if background_windows is not None:
-            self._add_background_windows_markers(background_windows)
+            if background_windows is not None:
+                self._add_background_windows_markers(background_windows)
 
     def _add_xray_lines_markers(self, xray_lines):
         """
