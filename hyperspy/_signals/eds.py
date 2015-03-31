@@ -564,7 +564,7 @@ class EDSSpectrum(Spectrum):
             line_energy, line_FWHM = self._get_line_energy(Xray_line,
                                                            FWHM_MnKa='auto')
             element, line = utils_eds._get_element_and_line(Xray_line)
-            img = self[..., window[0]:window[1]].integrate1D(-1)
+            img = self.isig[window[0]:window[1]].integrate1D(-1)
             img.metadata.General.title = (
                 'X-ray line intensity of %s: %s at %.2f %s' %
                 (self.metadata.General.title,
@@ -754,17 +754,18 @@ class EDSSpectrum(Spectrum):
                 if integration_windows == 'auto':
                     integration_windows = self.estimate_integration_windows(
                         xray_lines=xray_lines)
-                self._add_vertical_lines(integration_windows, linestyle='--')
+                self._add_vertical_lines_groups(integration_windows,
+                                                linestyle='--')
 
-    def _add_vertical_lines(self, position, **kwargs):
+    def _add_vertical_lines_groups(self, position, **kwargs):
         """
-        Add vertical markers for each X-ray lines.
+        Add vertical markers for each group that shares the color.
 
         Parameters
         ----------
         position: 2D array of float
-            The position of the lines in energy. Each row corresponds to a
-            X-ray lines.
+            The position on the signal axis. Each row corresponds to a
+            group.
         kwargs
             keywords argument for markers.vertical_line
         """
