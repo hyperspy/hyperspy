@@ -507,8 +507,8 @@ class EDSSpectrum(Spectrum):
         integration_windows: Float or array
             If float, the width of the integration windows is the
             `integration_windows_width` times the calculated FWHM of the line.
-            Else provide an array of energy position see
-            `estimate_integration_windows`
+            Else provide an array for which each row corresponds to a X-ray
+            line. Each row contains the left and right value of the window.
         only_one : bool
             If False, use all the lines of each element in the data spectral
             range. If True use only the line at the highest energy
@@ -643,13 +643,14 @@ class EDSSpectrum(Spectrum):
         Return
         ------
         integration_windows: 2D array of float
-            The position of the windows in energy. Each line corresponds to a
-            X-ray line.
+            The positions of the windows in energy. Each row corresponds to a
+            X-ray line. Each row contains the left and right value of the
+            window.
 
         See also
         --------
         The windows can be plotted with `plot`.
-        The integration windows is used with `get_line_intensity`.
+        The integration windows is used in `get_line_intensity`.
         """
         if xray_lines is None:
             xray_lines = self.metadata.Sample.xray_lines
@@ -698,14 +699,14 @@ class EDSSpectrum(Spectrum):
             If not None, add markers at the position of the integration
             windows.
             If float, use 'estimate_integration_windows`.
-            Else provide an array for which each line corresponds to a X-ray
-            lines. Each line contains the left and right value of the window.
+            Else provide an array for which each row corresponds to a X-ray
+            line. Each row contains the left and right value of the window.
         kwargs
             The extra keyword arguments for plot()
 
         See also
         --------
-        set_elements, add_elements
+        set_elements, add_elements, estimate_integration_windows
 
         """
         super(EDSSpectrum, self).plot(**kwargs)
@@ -738,23 +739,25 @@ class EDSSpectrum(Spectrum):
             if integration_windows is not None:
                 if integration_windows == 'auto':
                     integration_windows = self.estimate_integration_windows()
-                self._add_vertical_lines(integration_windows)
+                self._add_vertical_lines(integration_windows, linestyle='--')
 
-    def _add_vertical_lines(self, position):
+    def _add_vertical_lines(self, position, **kwargs):
         """
-        Add vertical markers for the integration windows each X-ray lines.
+        Add vertical markers for each X-ray lines.
 
         Parameters
         ----------
         position: 2D array of float
             The position of the lines in energy. Each row corresponds to a
             X-ray lines.
+        kwargs
+            keywords argument for markers.vertical_line
         """
         per_xray = len(position[0])
         colors = itertools.cycle(np.sort(
             plt.rcParams['axes.color_cycle']*per_xray))
         for x, color in zip(np.ravel(position), colors):
-            line = markers.vertical_line(x=x, color=color)
+            line = markers.vertical_line(x=x, color=color, **kwargs)
             self._plot.signal_plot.add_marker(line)
             line.plot()
 
