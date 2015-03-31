@@ -649,7 +649,7 @@ class EDSSpectrum(Spectrum):
         return TOA
 
     def estimate_background_windows(self,
-                                    line_width=2,
+                                    line_width=[2, 2],
                                     windows_width=1,
                                     xray_lines=None):
         """
@@ -658,9 +658,10 @@ class EDSSpectrum(Spectrum):
 
         Parameters
         ----------
-        line_width: float
-            The width around the X-ray line is the `line_width` times the
-            calculated FWHM of the line.
+        line_width: list of two floats
+            The position of the two windows around the X-ray line is given by
+            the `line_width` (left and right) times the calculated FWHM of the
+            line.
         windows_width: float
             The width of the windows is is the `windows_width` times the
             calculated FWHM of the line.
@@ -689,11 +690,11 @@ class EDSSpectrum(Spectrum):
         for xray_line in xray_lines:
             line_energy, line_FWHM = self._get_line_energy(xray_line,
                                                            FWHM_MnKa='auto')
-            tmp = [line_energy - line_FWHM*line_width -
+            tmp = [line_energy - line_FWHM*line_width[0] -
                    line_FWHM*windows_width]
-            tmp.append(line_energy - line_FWHM*line_width)
-            tmp.append(line_energy + line_FWHM*line_width)
-            tmp.append(line_energy + line_FWHM*line_width +
+            tmp.append(line_energy - line_FWHM*line_width[0])
+            tmp.append(line_energy + line_FWHM*line_width[1])
+            tmp.append(line_energy + line_FWHM*line_width[1] +
                        line_FWHM*windows_width)
             windows_position.append(tmp)
         windows_position = np.array(windows_position)
