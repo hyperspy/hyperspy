@@ -481,7 +481,7 @@ Hyperspy provides an easy access to the main marker of matplotlib. The markers c
 
 .. code-block:: python
 
-    >>> import scipy.ndimage
+    >>> import scipy.misc
     >>> im = signals.Image(scipy.misc.lena())
     >>> m = utils.plot.markers.rectangle(x1=150, y1=100, x2=400, y2=400, color='red')
     >>> im.plot()
@@ -497,7 +497,7 @@ By providing an array of positions, the marker can also change position when nav
 .. code-block:: python
 
     >>> from skimage.feature import peak_local_max
-    >>> import scipy.ndimage
+    >>> import scipy.misc
     >>> ims = signals.Signal(scipy.misc.face()).as_image([0,1])
     >>> index = array([peak_local_max(im.data, min_distance=100, num_peaks=4)
     >>>                for im in ims])

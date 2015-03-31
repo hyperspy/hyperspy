@@ -709,7 +709,7 @@ class EDSSpectrum(Spectrum):
         return windows_position
 
     def plot(self,
-             xray_lines_markers=True,
+             xray_lines_markers=False,
              xray_lines=None,
              only_lines=("a", "b"),
              only_one=False,
@@ -768,32 +768,31 @@ class EDSSpectrum(Spectrum):
 
         """
         super(EDSSpectrum, self).plot(**kwargs)
-        if only_lines is not None:
-            only_lines = list(only_lines)
-            for only_line in only_lines:
-                if only_line == 'a':
-                    only_lines.extend(['Ka', 'La', 'Ma'])
-                elif only_line == 'b':
-                    only_lines.extend(['Kb', 'Lb1', 'Mb'])
-        if xray_lines is None or xray_lines == 'from_elements':
-            if 'Sample.xray_lines' in self.metadata \
-                    and xray_lines != 'from_elements':
-                xray_lines = self.metadata.Sample.xray_lines
-            elif 'Sample.elements' in self.metadata:
-                xray_lines = self._get_lines_from_elements(
-                    self.metadata.Sample.elements,
-                    only_one=only_one,
-                    only_lines=only_lines)
-            else:
-                raise ValueError(
-                    "No elements defined, set them with `add_elements`")
-        xray_lines, xray_not_here = self._get_xray_lines_in_spectral_range(
-            xray_lines)
-        for xray in xray_not_here:
-            print("Warning: %s is not in the data energy range." % (xray))
-        xray_lines = np.unique(xray_lines)
-
         if xray_lines_markers:
+            if only_lines is not None:
+                only_lines = list(only_lines)
+                for only_line in only_lines:
+                    if only_line == 'a':
+                        only_lines.extend(['Ka', 'La', 'Ma'])
+                    elif only_line == 'b':
+                        only_lines.extend(['Kb', 'Lb1', 'Mb'])
+            if xray_lines is None or xray_lines == 'from_elements':
+                if 'Sample.xray_lines' in self.metadata \
+                        and xray_lines != 'from_elements':
+                    xray_lines = self.metadata.Sample.xray_lines
+                elif 'Sample.elements' in self.metadata:
+                    xray_lines = self._get_lines_from_elements(
+                        self.metadata.Sample.elements,
+                        only_one=only_one,
+                        only_lines=only_lines)
+                else:
+                    raise ValueError(
+                        "No elements defined, set them with `add_elements`")
+            xray_lines, xray_not_here = self._get_xray_lines_in_spectral_range(
+                xray_lines)
+            for xray in xray_not_here:
+                print("Warning: %s is not in the data energy range." % (xray))
+            xray_lines = np.unique(xray_lines)
             self._add_xray_lines_markers(xray_lines)
         if background_windows is not None:
             self._add_background_windows_markers(background_windows)
