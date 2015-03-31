@@ -38,7 +38,7 @@ class Rectangle(MarkerBase):
         The position of the down right corner of the rectangle in x.
         see x1 arguments
     y2: array or float
-        The position of the up down right of the rectangle in y.
+        The position of the down right of the rectangle in y.
         see x1 arguments
     kwargs:
         Kewywords argument of axvline valid properties (i.e. recognized by

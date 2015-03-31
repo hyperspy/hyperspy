@@ -51,3 +51,13 @@ class Test_markers:
         m.set_marker_properties(fontsize=30, color='red')
         nose.tools.assert_true(m.marker_properties ==
                                {'color': 'red', 'fontsize': 30})
+
+    def test_auto_update(self):
+        m = markers.text(y=1, x=2, text='a')
+        nose.tools.assert_true(m.auto_update is False)
+        m = markers.text(y=[1, 2], x=2, text='a')
+        nose.tools.assert_true(m.auto_update is True)
+        m.add_data(y1=1)
+        nose.tools.assert_true(m.auto_update is False)
+        m.add_data(y1=[1, 2])
+        nose.tools.assert_true(m.auto_update is True)
