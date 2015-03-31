@@ -797,6 +797,25 @@ class EDSSpectrum(Spectrum):
             if background_windows is not None:
                 self._add_background_windows_markers(background_windows)
 
+    def _add_vertical_lines_groups(self, position, **kwargs):
+        """
+        Add vertical markers for each group that shares the color.
+
+        Parameters
+        ----------
+        position: 2D array of float
+            The position on the signal axis. Each row corresponds to a
+            group.
+        kwargs
+            keywords argument for markers.vertical_line
+        """
+        per_xray = len(position[0])
+        colors = itertools.cycle(np.sort(
+            plt.rcParams['axes.color_cycle']*per_xray))
+        for x, color in zip(np.ravel(position), colors):
+            line = markers.vertical_line(x=x, color=color, **kwargs)
+            self.add_marker(line)
+
     def _add_xray_lines_markers(self, xray_lines):
         """
         Add marker on a spec.plot() with the name of the selected X-ray
@@ -849,12 +868,8 @@ class EDSSpectrum(Spectrum):
         `estimate_background_windows`. Backgrounds average in the windows
         can be subtracted from the X-ray intensities with `get_line_intensity`.
         """
-        colors = itertools.cycle(np.sort(plt.rcParams['axes.color_cycle']*4))
+        self._add_vertical_lines_groups(windows_position)
         ax = self.axes_manager.signal_axes[0]
-        for bw, color in zip(np.ravel(windows_position), colors):
-            line = markers.vertical_line(x=bw, color=color)
-            self._plot.signal_plot.add_marker(line)
-            line.plot()
         for bw in windows_position:
             # TODO: test to prevent slicing bug. To be reomved when fixed
             if ax.value2index(bw[0]) == ax.value2index(bw[1]):
@@ -868,5 +883,4 @@ class EDSSpectrum(Spectrum):
             line = markers.line_segment(
                 x1=(bw[0]+bw[1])/2., x2=(bw[2]+bw[3])/2.,
                 y1=y1, y2=y2, color='black')
-            self._plot.signal_plot.add_marker(line)
-            line.plot()
+            self.add_marker(line)
