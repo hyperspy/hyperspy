@@ -3137,8 +3137,8 @@ class Signal(MVA,
                     self.tmp_parameters.folder,
                     self.tmp_parameters.filename)
                 extension = (self.tmp_parameters.extension
-                            if not extension
-                            else extension)
+                             if not extension
+                             else extension)
             elif self.metadata.has_item('General.original_filename'):
                 filename = self.metadata.General.original_filename
             else:
@@ -4301,8 +4301,8 @@ class Signal(MVA,
         variance = (dc * gain_factor + gain_offset) * correlation_factor
         # The lower bound of the variance is the gaussian noise.
         variance = np.clip(variance, gain_offset * correlation_factor, np.inf)
-        variance = type(self)(variance,
-                              axes=self.axes_manager._get_axes_dicts())
+        variance = type(self)(variance)
+        variance.axes_manager = self.axes_manager
         variance.metadata.General.title = ("Variance of " +
                                            self.metadata.General.title)
         self.metadata.set_item(
