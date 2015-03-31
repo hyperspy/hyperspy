@@ -43,9 +43,7 @@ class Text(MarkerBase):
     >>> m = utils.plot.markers.text(x=range(10), y=range(10)[::-1],
                                     text=[i for i in 'absdefghij'],
                                     color='red')
-    >>> im.plot()
-    >>> im._plot.signal_plot.add_marker(m)
-    >>> m.plot()
+    >>> im.add_marker(m)
 
     """
 
