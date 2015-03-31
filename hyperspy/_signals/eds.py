@@ -647,6 +647,15 @@ class EDSSpectrum(Spectrum):
             X-ray line. Each row contains the left and right value of the
             window.
 
+        Example
+        -------
+        >>> s = load('data/spec1D2.hdf5')
+        >>> iw = s.estimate_integration_windows()
+        >>> s.plot(True, integration_windows=iw)
+        >>> s.get_lines_intensity(integration_windows=iw, plot_result=True)
+        Cu_Ka at 8.0478 keV : Intensity = 4361.00
+        Mn_Ka at 5.8987 keV : Intensity = 17007.00
+
         See also
         --------
         The windows can be plotted with `plot`.
