@@ -4604,7 +4604,7 @@ class Signal(MVA,
         """
         if self._plot is None:
             self.plot()
-        if to_signal:
+        if plot_on_signal:
             self._plot.signal_plot.add_marker(marker)
         else:
             self._plot.navigator_plot.add_marker(marker)
