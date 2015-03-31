@@ -621,6 +621,44 @@ class EDSSpectrum(Spectrum):
 
         return TOA
 
+    def estimate_integration_windows(self,
+                                     windows_width=2.,
+                                     xray_lines=None):
+        """
+        Estimate a window of integration for each X-ray line.
+
+        Parameters
+        ----------
+        windows_width: float
+            The width of the windows is is the `windows_width` times the
+            calculated FWHM of the line.
+        xray_lines: None or list of string
+            If None, use `metadata.Sample.elements.xray_lines`. Else,
+            provide an iterable containing a list of valid X-ray lines
+            symbols.
+
+        Return
+        ------
+        integration_windows: 2D array of float
+            The position of the windows in energy. Each line corresponds to a
+            X-ray line.
+
+        See also
+        --------
+        The windows can be plotted with `plot`.
+        The integration windows is used with `get_line_intensity`.
+        """
+        if xray_lines is None:
+            xray_lines = self.metadata.Sample.xray_lines
+        integration_windows = []
+        for Xray_line in xray_lines:
+            line_energy, line_FWHM = self._get_line_energy(Xray_line,
+                                                           FWHM_MnKa='auto')
+            element, line = utils_eds._get_element_and_line(Xray_line)
+            det = windows_width * line_FWHM / 2.
+            integration_windows.append([line_energy-det, line_energy+det])
+        return integration_windows
+
     def plot(self,
              xray_lines_markers=False,
              xray_lines=None,
