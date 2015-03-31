@@ -773,8 +773,7 @@ class EDSSpectrum(Spectrum):
             plt.rcParams['axes.color_cycle']*per_xray))
         for x, color in zip(np.ravel(position), colors):
             line = markers.vertical_line(x=x, color=color, **kwargs)
-            self._plot.signal_plot.add_marker(line)
-            line.plot()
+            self.add_marker(line)
 
     def _add_xray_lines_markers(self, xray_lines):
         """
