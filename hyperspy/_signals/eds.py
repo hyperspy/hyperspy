@@ -796,14 +796,12 @@ class EDSSpectrum(Spectrum):
             relative_factor = elements_db[element][
                 'Atomic_properties']['Xray_lines'][line]['weight']
             a_eng = self._get_line_energy(element + '_' + line[0] + 'a')
-            intensity.append(self[..., a_eng].data * relative_factor)
+            intensity.append(self.isig[a_eng].data * relative_factor)
         for i in range(len(line_energy)):
             line = markers.vertical_line_segment(
                 x=line_energy[i], y1=None, y2=intensity[i] * 0.8)
-            self._plot.signal_plot.add_marker(line)
-            line.plot()
+            self.add_marker(line)
             text = markers.text(
                 x=line_energy[i], y=intensity[i] * 1.1, text=xray_lines[i],
                 rotation=90)
-            self._plot.signal_plot.add_marker(text)
-            text.plot()
+            self.add_marker(text)
