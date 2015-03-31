@@ -357,7 +357,6 @@ def plot_images(images,
                 colorbar='multi',
                 scalebar=None,
                 scalebar_color='white',
-                interp='nearest',
                 axes_decor='all',
                 padding=None,
                 tight_layout=False,
@@ -469,6 +468,10 @@ def plot_images(images,
 
         Notes
         -----
+        `interpolation` is a useful parameter to provide as a keyword
+        argument to control how the space between pixels is interpolated. A
+        value of ``'nearest'`` will cause no interpolation between pixels.
+
         `tight_layout` is known to be quite brittle, so an option is provided
         to disable it. Turn this option off if output is not as expected,
         or try adjusting `label`, `labelwrap`, or `per_row`
@@ -713,7 +716,6 @@ def plot_images(images,
             if colorbar is 'single' and not isrgb[i]:
                 axes_im = ax.imshow(data,
                                     cmap=cmap, extent=extent,
-                                    interpolation=interp,
                                     vmin=global_min, vmax=global_max,
                                     aspect=asp,
                                     *args, **kwargs)
@@ -722,7 +724,6 @@ def plot_images(images,
                 axes_im = ax.imshow(data,
                                     cmap=cmap, extent=extent,
                                     aspect=asp,
-                                    interpolation=interp,
                                     *args, **kwargs)
                 ax_im_list[i] = axes_im
 
