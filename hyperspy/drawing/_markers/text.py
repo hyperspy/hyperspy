@@ -38,7 +38,8 @@ class Text(MarkerBase):
 
     Example
     -------
-    >>> im = signals.Image(random.random([10, 50, 50]))
+    >>> import numpy as np
+    >>> im = signals.Image(np.random.random([10, 50, 50]))
     >>> m = utils.plot.markers.text(x=range(10), y=range(10)[::-1],
                                     text=[i for i in 'absdefghij'],
                                     color='red')

@@ -46,10 +46,10 @@ class Rectangle(MarkerBase):
 
     Example
     -------
-    >>> im = signals.Image(np.zeros((100, 100)))
-    >>> m = utils.plot.markers.rectangle(
-    >>>     x1=20, x2=70, y1=20, y2=70,
-    >>>     linewidth=4, color='red', linestyle='dotted')
+    >>> import scipy.misc
+    >>> im = signals.Image(scipy.misc.lena())
+    >>> m = utils.plot.markers.rectangle(x1=150, y1=100, x2=400, y2=400,
+    >>>                                  color='red')
     >>> im.plot()
     >>> im._plot.signal_plot.add_marker(m)
     >>> m.plot()

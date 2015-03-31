@@ -34,7 +34,8 @@ class VerticalLine(MarkerBase):
 
     Example
     -------
-    >>> s = signals.Spectrum(random.random([10, 100]))
+    >>> import numpy as np
+    >>> s = signals.Spectrum(np.random.random([10, 100]))
     >>> m = utils.plot.markers.vertical_line(x=range(10), color='green')
     >>> s.plot()
     >>> s._plot.signal_plot.add_marker(m)

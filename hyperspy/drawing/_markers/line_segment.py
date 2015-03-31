@@ -44,6 +44,7 @@ class LineSegment(MarkerBase):
 
     Example
     -------
+    >>> import numpy as np
     >>> im = signals.Image(np.zeros((100, 100)))
     >>> m = utils.plot.markers.line_segment(
     >>>     x1=20, x2=70, y1=20, y2=70,
