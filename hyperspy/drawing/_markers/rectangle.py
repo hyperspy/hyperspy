@@ -38,7 +38,7 @@ class Rectangle(MarkerBase):
         The position of the down right corner of the rectangle in x.
         see x1 arguments
     y2: array or float
-        The position of the up down right of the rectangle in y.
+        The position of the down right of the rectangle in y.
         see x1 arguments
     kwargs:
         Kewywords argument of axvline valid properties (i.e. recognized by
@@ -50,9 +50,7 @@ class Rectangle(MarkerBase):
     >>> im = signals.Image(scipy.misc.lena())
     >>> m = utils.plot.markers.rectangle(x1=150, y1=100, x2=400, y2=400,
     >>>                                  color='red')
-    >>> im.plot()
-    >>> im._plot.signal_plot.add_marker(m)
-    >>> m.plot()
+    >>> im.add_marker(m)
 
     """
 

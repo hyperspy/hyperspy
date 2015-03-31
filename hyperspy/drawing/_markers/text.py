@@ -38,14 +38,15 @@ class Text(MarkerBase):
 
     Example
     -------
-    >>> import numpy as np
-    >>> im = signals.Image(np.random.random([10, 50, 50]))
-    >>> m = utils.plot.markers.text(x=range(10), y=range(10)[::-1],
-                                    text=[i for i in 'absdefghij'],
-                                    color='red')
-    >>> im.plot()
-    >>> im._plot.signal_plot.add_marker(m)
-    >>> m.plot()
+    >>> s = signals.Spectrum(np.arange(100).reshape([10,10]))
+    >>> s.plot(navigator='spectrum')
+    >>> for i in range(10):
+    >>>     m = utils.plot.markers.text(y=range(50,1000,100)[i],
+    >>>                                 x=i, text='abcdefghij'[i])
+    >>>     s.add_marker(m, plot_on_signal=False)
+    >>> m = utils.plot.markers.text(x=5, y=range(7,110, 10),
+    >>>                             text=[i for i in 'abcdefghij'])
+    >>> s.add_marker(m)
 
     """
 
