@@ -518,7 +518,7 @@ The markers can be added to the navigator as well
     >>> for i in range(10):
     >>>     m = utils.plot.markers.text(y=range(50,1000,100)[i],
     >>>                                 x=i, text='abcdefghij'[i])
-    >>>     s.add_marker(m, to_signal=False)
+    >>>     s.add_marker(m, plot_on_signal=False)
     >>> m = utils.plot.markers.text(x=5, y=range(7,110, 10),
     >>>                             text=[i for i in 'abcdefghij'])
     >>> s.add_marker(m)

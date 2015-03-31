@@ -4577,7 +4577,7 @@ class Signal(MVA,
     def is_rgbx(self):
         return rgb_tools.is_rgbx(self.data)
 
-    def add_marker(self, marker, to_signal=True, plot_marker=True):
+    def add_marker(self, marker, plot_on_signal=True, plot_marker=True):
         """
         Add a marker to the signal or navigator plot.
 
@@ -4587,9 +4587,9 @@ class Signal(MVA,
         ----------
         marker: `hyperspy.drawing._markers`
             the marker to add. see `utils.markers`
-        to_signal: bool
+        plot_on_signal: bool
             If True, add the marker to the signal
-            if False, add the marker to the navigator
+            If False, add the marker to the navigator
         plot_marker: bool
             if True, plot the marker
 
