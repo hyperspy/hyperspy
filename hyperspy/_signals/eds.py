@@ -472,7 +472,7 @@ class EDSSpectrum(Spectrum):
     def get_lines_intensity(self,
                             xray_lines=None,
                             plot_result=False,
-                            integration_window_factor=2.,
+                            integration_windows=2.,
                             only_one=True,
                             only_lines=("Ka", "La", "Ma"),
                             **kwargs):
@@ -504,10 +504,11 @@ class EDSSpectrum(Spectrum):
         plot_result : bool
             If True, plot the calculated line intensities. If the current
             object is a single spectrum it prints the result instead.
-        integration_window_factor: Float
-            The integration window is centered at the center of the X-ray
-            line and its width is defined by this factor (2 by default)
-            times the calculated FWHM of the line.
+        integration_windows: Float or array
+            If float, the width of the integration windows is the
+            `integration_windows_width` times the calculated FWHM of the line.
+            Else provide an array of energy position see
+            `estimate_integration_windows`
         only_one : bool
             If False, use all the lines of each element in the data spectral
             range. If True use only the line at the highest energy
@@ -553,17 +554,17 @@ class EDSSpectrum(Spectrum):
                           "You can remove it with" +
                           "s.metadata.Sample.xray_lines.remove('%s')"
                           % (xray))
-
+        if isinstance(integration_windows, float):
+            integration_windows = self.estimate_integration_windows(
+                windows_width=integration_windows, xray_lines=xray_lines)
         intensities = []
         # test 1D Spectrum (0D problem)
         # signal_to_index = self.axes_manager.navigation_dimension - 2
-        for Xray_line in xray_lines:
+        for Xray_line, window in zip(xray_lines, integration_windows):
             line_energy, line_FWHM = self._get_line_energy(Xray_line,
                                                            FWHM_MnKa='auto')
             element, line = utils_eds._get_element_and_line(Xray_line)
-            det = integration_window_factor * line_FWHM / 2.
-            img = self[..., line_energy - det:line_energy + det
-                       ].integrate1D(-1)
+            img = self[..., window[0]:window[1]].integrate1D(-1)
             img.metadata.General.title = (
                 'X-ray line intensity of %s: %s at %.2f %s' %
                 (self.metadata.General.title,
@@ -632,8 +633,8 @@ class EDSSpectrum(Spectrum):
         Parameters
         ----------
         windows_width: float
-            The width of the windows is is the `windows_width` times the
-            calculated FWHM of the line.
+            The width of the integration windows is the `windows_width` times
+            the calculated FWHM of the line.
         xray_lines: None or list of string
             If None, use `metadata.Sample.elements.xray_lines`. Else,
             provide an iterable containing a list of valid X-ray lines
@@ -693,11 +694,11 @@ class EDSSpectrum(Spectrum):
             If False, use all the lines of each element in the data spectral
             range. If True use only the line at the highest energy
             above an overvoltage of 2 (< beam energy / 2).
-        integration_windows: None or 'auto' or 2D array of float
+        integration_windows: None or float or 2D array of float
             If not None, add markers at the position of the integration
             windows.
-            If 'auto', use 'estimate_integration_windows`.
-            else provide an array for which each line corresponds to a X-ray
+            If float, use 'estimate_integration_windows`.
+            Else provide an array for which each line corresponds to a X-ray
             lines. Each line contains the left and right value of the window.
         kwargs
             The extra keyword arguments for plot()
