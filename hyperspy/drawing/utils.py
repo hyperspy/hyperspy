@@ -362,6 +362,7 @@ def plot_images(images,
                 tight_layout=False,
                 aspect='auto',
                 min_asp=0.1,
+                namefrac_thresh=0.4,
                 fig=None,
                 *args,
                 **kwargs):
@@ -450,6 +451,13 @@ def plot_images(images,
             If float (or int/long), given value will be used.
         min_asp : float, optional
             Minimum aspect ratio to be used when plotting images
+        namefrac_thresh : float, optional
+            Threshold to use for auto-labeling. This parameter controls how
+            much of the titles must be the same for the auto-shortening of
+            labels to activate. Can vary from 0 to 1. Smaller values
+            encourage shortening of titles by auto-labeling, while larger
+            values will require more overlap in titles before activing the
+            auto-label code.
         fig : mpl figure, optional
             If set, the images will be plotted to an existing MPL figure
         *args, **kwargs, optional
@@ -570,7 +578,7 @@ def plot_images(images,
             # title set originally, so nothing to share
             namefrac = 0
 
-        if namefrac > 0.5:
+        if namefrac > namefrac_thresh:
             # there was a significant overlap of label beginnings
             shared_titles = True
             # only use new suptitle if one isn't specified already
