@@ -16,9 +16,11 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 from __future__ import division
+import itertools
 
 import numpy as np
 import warnings
+from matplotlib import pyplot as plt
 
 
 from hyperspy import utils
@@ -664,6 +666,7 @@ class EDSSpectrum(Spectrum):
              xray_lines=None,
              only_lines=("a", "b"),
              only_one=False,
+             integration_windows=None,
              **kwargs):
         """
         Plot the EDS spectrum. The following markers can be added
@@ -690,6 +693,12 @@ class EDSSpectrum(Spectrum):
             If False, use all the lines of each element in the data spectral
             range. If True use only the line at the highest energy
             above an overvoltage of 2 (< beam energy / 2).
+        integration_windows: None or 'auto' or 2D array of float
+            If not None, add markers at the position of the integration
+            windows.
+            If 'auto', use 'estimate_integration_windows`.
+            else provide an array for which each line corresponds to a X-ray
+            lines. Each line contains the left and right value of the window.
         kwargs
             The extra keyword arguments for plot()
 
@@ -725,6 +734,28 @@ class EDSSpectrum(Spectrum):
                 print("Warning: %s is not in the data energy range." % (xray))
             xray_lines = np.unique(xray_lines)
             self._add_xray_lines_markers(xray_lines)
+            if integration_windows is not None:
+                if integration_windows == 'auto':
+                    integration_windows = self.estimate_integration_windows()
+                self._add_vertical_lines(integration_windows)
+
+    def _add_vertical_lines(self, position):
+        """
+        Add vertical markers for the integration windows each X-ray lines.
+
+        Parameters
+        ----------
+        position: 2D array of float
+            The position of the lines in energy. Each row corresponds to a
+            X-ray lines.
+        """
+        per_xray = len(position[0])
+        colors = itertools.cycle(np.sort(
+            plt.rcParams['axes.color_cycle']*per_xray))
+        for x, color in zip(np.ravel(position), colors):
+            line = markers.vertical_line(x=x, color=color)
+            self._plot.signal_plot.add_marker(line)
+            line.plot()
 
     def _add_xray_lines_markers(self, xray_lines):
         """
