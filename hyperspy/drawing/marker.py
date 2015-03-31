@@ -57,7 +57,7 @@ class MarkerBase(object):
             else:
                 self._marker_properties[key] = item
         if self.marker is not None:
-            plt.setp(self.marker, **self.marker_properties)            
+            plt.setp(self.marker, **self.marker_properties)
             try:
                 # self.ax.figure.canvas.draw()
                 self.ax.hspy_fig._draw_animated()
@@ -74,19 +74,17 @@ class MarkerBase(object):
     def set_data(self, x1=None, y1=None,
                  x2=None, y2=None, text=None, size=None):
         """
-        Set data to the structured arra. Each field of data should have
+        Set data to the structured array. Each field of data should have
         the same dimensions than the nagivation axes. The other fields are
         overwritten.
         """
-        if np.alltrue([hasattr(a, "__iter__") is False
-                      for a in [x1, y1, x2, y2, text, size]]):
-            self.auto_update = False
         self.data = np.array((np.array(x1), np.array(y1),
                               np.array(x2), np.array(y2),
                               np.array(text), np.array(size)),
                              dtype=[('x1', object), ('y1', object),
                                     ('x2', object), ('y2', object),
                                     ('text', object), ('size', object)])
+        self._is_marker_static()
 
     def add_data(self, **kwargs):
         """
@@ -94,14 +92,19 @@ class MarkerBase(object):
         the same dimensions than the nagivation axes. The other fields are
         not changed.
         """
-        if np.alltrue([hasattr(kwargs[key], "__iter__") is False
-                      for key in kwargs.keys()]):
-            self.auto_update = False
         if self.data is None:
             self.set_data(**kwargs)
         else:
             for key in kwargs.keys():
                 self.data[key][()] = np.array(kwargs[key])
+        self._is_marker_static()
+
+    def _is_marker_static(self):
+        if np.alltrue([hasattr(self.data[key].item()[()], "__iter__") is False
+                      for key in self.data.dtype.names]):
+            self.auto_update = False
+        else:
+            self.auto_update = True
 
     def get_data_position(self, ind):
         data = self.data

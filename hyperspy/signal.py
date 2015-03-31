@@ -4577,6 +4577,41 @@ class Signal(MVA,
     def is_rgbx(self):
         return rgb_tools.is_rgbx(self.data)
 
+    def add_marker(self, marker, plot_on_signal=True, plot_marker=True):
+        """
+        Add a marker to the signal or navigator plot.
+
+        Plot the signal, if not yet plotted
+
+        Parameters
+        ----------
+        marker: `hyperspy.drawing._markers`
+            the marker to add. see `utils.markers`
+        plot_on_signal: bool
+            If True, add the marker to the signal
+            If False, add the marker to the navigator
+        plot_marker: bool
+            if True, plot the marker
+
+        Examples
+        -------
+        >>> import scipy.misc
+        >>> im = signals.Image(scipy.misc.lena())
+        >>> m = utils.plot.markers.rectangle(x1=150, y1=100, x2=400,
+        >>>                                  y2=400, color='red')
+        >>> im.add_marker(m)
+
+        """
+        if self._plot is None:
+            self.plot()
+        if plot_on_signal:
+            self._plot.signal_plot.add_marker(marker)
+        else:
+            self._plot.navigator_plot.add_marker(marker)
+        if plot_marker:
+            marker.plot()
+
+
 # Implement binary operators
 for name in (
     # Arithmetic operators

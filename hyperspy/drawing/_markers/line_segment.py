@@ -49,9 +49,7 @@ class LineSegment(MarkerBase):
     >>> m = utils.plot.markers.line_segment(
     >>>     x1=20, x2=70, y1=20, y2=70,
     >>>     linewidth=4, color='red', linestyle='dotted')
-    >>> im.plot()
-    >>> im._plot.signal_plot.add_marker(m)
-    >>> m.plot()
+    >>> im.add_marker(m)
 
     """
 
