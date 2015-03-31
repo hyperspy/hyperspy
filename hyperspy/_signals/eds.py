@@ -574,12 +574,20 @@ class EDSSpectrum(Spectrum):
                    line_energy + integration_window_factor * line_FWHM / 2.]
             img = self.isig[det[0]:det[1]].integrate1D(-1)
             if background_windows is not None:
-                bck = background_windows[i]
-                indexes = [float(ax.value2index(de)) for de in det+list(bck)]
+                bw = background_windows[i]
+                # TODO: test to prevent slicing bug. To be reomved when fixed
+                if ax.value2index(bw[0]) == ax.value2index(bw[1]):
+                    bck1 = self.isig[bw[0]]
+                else:
+                    bck1 = self.isig[bw[0]:bw[1]].integrate1D(-1)
+                if ax.value2index(bw[2]) == ax.value2index(bw[3]):
+                    bck2 = self.isig[bw[2]]
+                else:
+                    bck2 = self.isig[bw[2]:bw[3]].integrate1D(-1)
+                indexes = [float(ax.value2index(de)) for de in det+list(bw)]
                 corr_factor = (indexes[1] - indexes[0]) / (
                     (indexes[3] - indexes[2]) + (indexes[5] - indexes[4]))
-                img -= (self.isig[bck[0]:bck[1]].integrate1D(-1) +
-                        self.isig[bck[2]:bck[3]].integrate1D(-1)) * corr_factor
+                img -= (bck1 + bck2) * corr_factor
 
             img.metadata.General.title = (
                 'X-ray line intensity of %s: %s at %.2f %s' %
@@ -844,15 +852,23 @@ class EDSSpectrum(Spectrum):
         can be subtracted from the X-ray intensities with `get_line_intensity`.
         """
         colors = itertools.cycle(np.sort(plt.rcParams['axes.color_cycle']*4))
-        for window, color in zip(np.ravel(windows_position), colors):
-            line = markers.vertical_line(x=window, color=color)
+        ax = self.axes_manager.signal_axes[0]
+        for bw, color in zip(np.ravel(windows_position), colors):
+            line = markers.vertical_line(x=bw, color=color)
             self._plot.signal_plot.add_marker(line)
             line.plot()
-        for bck in windows_position:
+        for bw in windows_position:
+            # TODO: test to prevent slicing bug. To be reomved when fixed
+            if ax.value2index(bw[0]) == ax.value2index(bw[1]):
+                y1 = self.isig[bw[0]].data
+            else:
+                y1 = self.isig[bw[0]:bw[1]].mean(-1).data
+            if ax.value2index(bw[2]) == ax.value2index(bw[3]):
+                y2 = self.isig[bw[2]].data
+            else:
+                y2 = self.isig[bw[2]:bw[3]].mean(-1).data
             line = markers.line_segment(
-                x1=(bck[0]+bck[1])/2., x2=(bck[2]+bck[3])/2.,
-                y1=self.isig[bck[0]:bck[1]].mean(-1).data,
-                y2=self.isig[bck[2]:bck[3]].mean(-1).data,
-                color='black')
+                x1=(bw[0]+bw[1])/2., x2=(bw[2]+bw[3])/2.,
+                y1=y1, y2=y2, color='black')
             self._plot.signal_plot.add_marker(line)
             line.plot()
