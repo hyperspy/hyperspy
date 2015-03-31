@@ -27,7 +27,7 @@ class Text(MarkerBase):
     x: array or float
         The position of the text in x. If float, the marker is fixed.
         If array, the marker will be updated when navigating. The array should
-        have the same dimensions than the nagivation axes.
+        have the same dimensions in the nagivation axes.
     y: array or float
         The position of the text in y. see x arguments
     text: array or str
