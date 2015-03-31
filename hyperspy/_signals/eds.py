@@ -713,6 +713,11 @@ class EDSSpectrum(Spectrum):
         kwargs
             The extra keyword arguments for plot()
 
+        Examples
+        -------
+
+        >>> s.plot(True, xray_lines=['Mn_Ka'], integration_windows='auto')
+
         See also
         --------
         set_elements, add_elements, estimate_integration_windows
@@ -747,7 +752,8 @@ class EDSSpectrum(Spectrum):
             self._add_xray_lines_markers(xray_lines)
             if integration_windows is not None:
                 if integration_windows == 'auto':
-                    integration_windows = self.estimate_integration_windows()
+                    integration_windows = self.estimate_integration_windows(
+                        xray_lines=xray_lines)
                 self._add_vertical_lines(integration_windows, linestyle='--')
 
     def _add_vertical_lines(self, position, **kwargs):

@@ -365,6 +365,17 @@ are used by default.
      dimensions: (|128, 95)>,
     <Image, title: Intensity of Ti_Ka at 4.51 keV from Spectrum image,
      dimensions: (|128, 95)>]
+
+The windows of integration can be visualised using :py:meth:`~._signals.eds.EDSSpectrum.plot` method
+
+.. code-block:: python
+
+	>>> s.plot(True, xray_lines=['Mn_Ka'], integration_windows='auto')
+
+.. figure::  images/EDS_integration_windows.png
+   :align:   center
+   :width:   500 
+
      
 The :py:meth:`~.signal.Signal1DTools.integrate_in_range` 
 method (see :ref:`spectrum tools<integrate_1D-label>`) provides
