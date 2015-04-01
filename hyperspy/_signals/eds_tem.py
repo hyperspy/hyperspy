@@ -329,7 +329,7 @@ class EDSTEMSpectrum(EDSSpectrum):
             utils.plot.plot_signals(composition, **kwargs)
         return composition
 
-    def vacuum_mask(self, threshold=1.0, closing=True):
+    def vacuum_mask(self, threshold=1.0, closing=True, opening=False):
         """
         Generate mask of the vacuum region
 
@@ -340,6 +340,8 @@ class EDSTEMSpectrum(EDSSpectrum):
             pixel is considered as vacuum.
         closing: bool
             If true, applied a morphologic closing to the mask
+        opnening: bool
+            If true, applied a morphologic opening to the mask
 
         Return
         ------
@@ -351,6 +353,9 @@ class EDSTEMSpectrum(EDSSpectrum):
         if closing:
             mask.data = binary_dilation(mask.data, border_value=0)
             mask.data = binary_erosion(mask.data, border_value=1)
+        if opening:
+            mask.data = binary_erosion(mask.data, border_value=1)
+            mask.data = binary_dilation(mask.data, border_value=0)
         return mask
 
     def decomposition(self,
@@ -370,8 +375,8 @@ class EDSTEMSpectrum(EDSSpectrum):
             If True, scale the SI to normalize Poissonian noise
         navigation_mask : None or float or boolean numpy array
             The navigation locations marked as True are not used in the
-            decompostion. If int is given the vacuum_mask method is used to
-            generate a mask with the int value as threhsold.
+            decompostion. If float is given the vacuum_mask method is used to
+            generate a mask with the float value as threshold.
         closing: bool
             If true, applied a morphologic closing to the maks obtained by
             vacuum_mask.
