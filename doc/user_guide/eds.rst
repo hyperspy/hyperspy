@@ -393,13 +393,14 @@ an interactive way to generate intensity map.
 Background subtraction
 -----------------------
 
-The background can be subtracted from the X-ray intensities with the :py:meth:`~._signals.eds.EDSSpectrum.get_lines_intensity` method. The background value is obtained by averaging the intensity in two windows on each side of the X-ray line. The position of the windows can be estimated with the :py:meth:`~._signals.eds.EDSSpectrum.estimate_background_windows` method and can be plotted with the :py:meth:`~._signals.eds.EDSSpectrum.plot_background_windows` method as follow.
+The background can be subtracted from the X-ray intensities with the :py:meth:`~._signals.eds.EDSSpectrum.get_lines_intensity` method. The background value is obtained by averaging the intensity in two windows on each side of the X-ray line. The position of the windows can be estimated with the :py:meth:`~._signals.eds.EDSSpectrum.estimate_background_windows` method and can be plotted with the :py:meth:`~._signals.eds.EDSSpectrum.plot` method as follow. The integration windows are plotted with dashed lines.
 
 .. code-block:: python
 
     >>> bw = spec.estimate_background_windows()
     >>> spec.plot(background_windows=bw)
-    >>> intensity = spec.get_lines_intensity(background_windows=bw)
+    >>> intensity = spec.get_lines_intensity(background_windows=bw,
+    >>>					     integration_windows=2.0)
 
 .. figure::  images/EDS_background_subtraction.png
    :align:   center
