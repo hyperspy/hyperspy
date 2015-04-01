@@ -369,26 +369,11 @@ The windows of integration can be visualised using :py:meth:`~._signals.eds.EDSS
 
 .. code-block:: python
 
-	>>> s.plot(xray_lines=['Mn_Ka'], integration_windows='auto')
+	>>> s.plot(integration_windows='auto')
 
 .. figure::  images/EDS_integration_windows.png
    :align:   center
    :width:   500 
-
-     
-The :py:meth:`~.signal.Signal1DTools.integrate_in_range` 
-method (see :ref:`spectrum tools<integrate_1D-label>`) provides
-an interactive way to generate intensity map.
-
-
-.. code-block:: python
-
-    >>> spec.integrate_in_range()
-    <Image, title: , dimensions: (|128, 95)>
-    
-.. figure::  images/EDS_integrate_in_range.png
-   :align:   center
-   :width:   800
 
 Background subtraction
 -----------------------
@@ -404,7 +389,7 @@ The background can be subtracted from the X-ray intensities with the :py:meth:`~
 
 .. figure::  images/EDS_background_subtraction.png
    :align:   center
-   :width:   800
+   :width:   500
 
 Quantification
 --------------

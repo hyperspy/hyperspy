@@ -49,7 +49,6 @@ class EDSSpectrum(Spectrum):
 
         Parameters
         ----------
-
         Xray_line : strings
             Valid element X-ray lines e.g. Fe_Kb.
 
@@ -60,7 +59,6 @@ class EDSSpectrum(Spectrum):
 
         Returns
         ------
-
         float: the line energy, if FWHM_MnKa is None
         (float,float): the line energy and the energy resolution, if FWHM_MnKa
         is not None
@@ -231,11 +229,10 @@ class EDSSpectrum(Spectrum):
 
         See also
         --------
-        add_elements, set_line, add_lines.
+        add_elements, set_lines, add_lines
 
         Examples
         --------
-
         >>> s = signals.EDSSEMSpectrum(np.arange(1024))
         >>> s.set_elements(['Ni', 'O'],['Ka','Ka'])
         Adding Ni_Ka Line
@@ -264,7 +261,7 @@ class EDSSpectrum(Spectrum):
 
         See also
         --------
-        set_elements, add_lines, set_lines.
+        set_elements, add_lines, set_lines
 
         """
         if not isiterable(elements) or isinstance(elements, basestring):
@@ -315,7 +312,7 @@ class EDSSpectrum(Spectrum):
 
         See also
         --------
-        add_lines, add_elements, set_elements..
+        add_lines, add_elements, set_elements
 
         """
         if "Sample.xray_lines" in self.metadata:
@@ -357,7 +354,7 @@ class EDSSpectrum(Spectrum):
 
         See also
         --------
-        set_lines, add_elements, set_elements.
+        set_lines, add_elements, set_elements
 
         """
         if "Sample.xray_lines" in self.metadata:
@@ -482,7 +479,7 @@ class EDSSpectrum(Spectrum):
         suming the spectrum over the
         different X-ray lines. The sum window width
         is calculated from the energy resolution of the detector
-        defined as defined in `energy_resolution_MnKa` of the metadata.
+        defined as defined in 'energy_resolution_MnKa' of the metadata.
         Backgrounds average in provided windows can be subtracted from the
         intensities.
 
@@ -501,13 +498,13 @@ class EDSSpectrum(Spectrum):
             a list of valid X-ray lines symbols.
         integration_windows: Float or array
             If float, the width of the integration windows is the
-            `integration_windows_width` times the calculated FWHM of the line.
+            'integration_windows_width' times the calculated FWHM of the line.
             Else provide an array for which each row corresponds to a X-ray
             line. Each row contains the left and right value of the window.
         background_windows: None or 2D array of float
             If None, no background subtraction. Else, the backgrounds average
             in the windows are subtracted from the return intensities.
-            `background_windows` provides the position of the windows in
+            'background_windows' provides the position of the windows in
             energy. Each line corresponds to a X-ray line. In a line, the two
             first values correspond to the limits of the left window and the
             two last values correspond to the limits of the right window.
@@ -544,7 +541,7 @@ class EDSSpectrum(Spectrum):
         See also
         --------
         set_elements, add_elements, estimate_background_windows,
-        plot_background_windows
+        plot
 
         """
 
@@ -628,7 +625,8 @@ class EDSSpectrum(Spectrum):
 
         Returns
         -------
-        take_off_angle: float (Degree)
+        take_off_angle: float 
+            in Degree
 
         See also
         --------
@@ -662,10 +660,10 @@ class EDSSpectrum(Spectrum):
         Parameters
         ----------
         windows_width: float
-            The width of the integration windows is the `windows_width` times
+            The width of the integration windows is the 'windows_width' times
             the calculated FWHM of the line.
         xray_lines: None or list of string
-            If None, use `metadata.Sample.elements.xray_lines`. Else,
+            If None, use 'metadata.Sample.elements.xray_lines'. Else,
             provide an iterable containing a list of valid X-ray lines
             symbols.
 
@@ -680,15 +678,14 @@ class EDSSpectrum(Spectrum):
         -------
         >>> s = load('data/spec1D2.hdf5')
         >>> iw = s.estimate_integration_windows()
-        >>> s.plot(True, integration_windows=iw)
+        >>> s.plot(integration_windows=iw)
         >>> s.get_lines_intensity(integration_windows=iw, plot_result=True)
         Cu_Ka at 8.0478 keV : Intensity = 4361.00
         Mn_Ka at 5.8987 keV : Intensity = 17007.00
 
         See also
         --------
-        The integration windows can be plotted with `plot`.
-        The integration windows is used in `get_line_intensity`.
+        plot, get_lines_intensity
         """
         if xray_lines is None:
             xray_lines = self.metadata.Sample.xray_lines
@@ -739,9 +736,7 @@ class EDSSpectrum(Spectrum):
 
         See also
         --------
-        The background windows can be plotted with `plot`.
-        Backgrounds average in the windows can be subtracted from the X-ray
-        intensities with `get_line_intensity`.
+        plot, get_lines_intensity
         """
         if xray_lines is None:
             xray_lines = self.metadata.Sample.xray_lines
@@ -834,10 +829,7 @@ class EDSSpectrum(Spectrum):
         See also
         --------
         set_elements, add_elements, estimate_integration_windows,
-        get_line_intensity
-        The background windows position can be estimated with
-        `estimate_background_windows`
-
+        get_lines_intensity, estimate_background_windows
         """
         super(EDSSpectrum, self).plot(**kwargs)
         if xray_lines_markers or\
@@ -908,7 +900,6 @@ class EDSSpectrum(Spectrum):
         ----------
         xray_lines: list of string
             A valid list of X-ray lines
-
         """
 
         line_energy = []
@@ -947,9 +938,7 @@ class EDSSpectrum(Spectrum):
 
         See also
         --------
-        The windows position can be estimated with
-        `estimate_background_windows`. Backgrounds average in the windows
-        can be subtracted from the X-ray intensities with `get_line_intensity`.
+        estimate_background_windows, get_lines_intensity
         """
         self._add_vertical_lines_groups(windows_position)
         ax = self.axes_manager.signal_axes[0]
