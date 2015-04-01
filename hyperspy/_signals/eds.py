@@ -595,8 +595,8 @@ class EDSSpectrum(Spectrum):
                 (self.metadata.General.title,
                  Xray_line,
                  line_energy,
-                 ax.units,
-                 self.metadata.General.title))
+                 self.axes_manager.signal_axes[0].units,
+                 ))
             if img.axes_manager.navigation_dimension >= 2:
                 img = img.as_image([0, 1])
             elif img.axes_manager.navigation_dimension == 1:
