@@ -355,6 +355,7 @@ def plot_images(images,
                 suptitle=None,
                 suptitle_fontsize=18,
                 colorbar='multi',
+                perc=0.05,
                 scalebar=None,
                 scalebar_color='white',
                 axes_decor='all',
@@ -412,6 +413,9 @@ def plot_images(images,
             (non-RGB) image
             If 'single', all (non-RGB) images are plotted on the same scale,
             and one colorbar is shown for all
+        perc : float
+            The percentile used to set the maximum and minimum of contrast
+            in the image displays.
         interp : None or str, optional
             Type of interpolation to use with matplotlib.imshow()
             Possible values are:
@@ -488,6 +492,32 @@ def plot_images(images,
     from hyperspy.drawing.widgets import Scale_Bar
     from hyperspy.misc import rgb_tools
     from hyperspy.signal import Signal
+
+    def _optimize_contrast(_data, _perc):
+        """
+        Local function to determine appropriate vmin and vmax for _data (as
+        used in drawing\image.py).
+
+        Parameters
+        ----------
+        _data:
+        _perc:
+
+        Returns
+        -------
+        limits : tuple
+            Tuple of vmin and vmax to use with imshow for contrast
+        """
+        dc = _data.copy().ravel()
+        if 'complex' in dc.dtype.name:
+            dc = np.log(np.abs(dc))
+        dc.sort()
+        ii = int(round(len(dc) * _perc))
+        ii = ii if ii > 0 else 1
+        vmin = np.nanmin(dc[ii:])
+        vmax = np.nanmax(dc[:-ii])
+        limits = (vmin, vmax)
+        return limits
 
     if isinstance(images, Signal) and len(images) is 1:
         images.plot()
@@ -650,6 +680,7 @@ def plot_images(images,
     if colorbar is 'single':
         global_max = max([i.data.max() for i in non_rgb])
         global_min = min([i.data.min() for i in non_rgb])
+        g_vmin, g_vmax = _optimize_contrast(i.data, perc)
 
     # Check if we need to add a scalebar for some of the images
     if isinstance(scalebar, list) and all(isinstance(x, int)
@@ -671,6 +702,9 @@ def plot_images(images,
             ax = f.add_subplot(rows, per_row, idx)
             axes_list.append(ax)
             data = im.data
+
+            # Find min and max for contrast
+            l_vmin, l_vmax = _optimize_contrast(data, perc)
 
             # Enable RGB plotting
             if rgb_tools.is_rgbx(data):
@@ -724,13 +758,14 @@ def plot_images(images,
             if colorbar is 'single' and not isrgb[i]:
                 axes_im = ax.imshow(data,
                                     cmap=cmap, extent=extent,
-                                    vmin=global_min, vmax=global_max,
+                                    vmin=g_vmin, vmax=g_vmax,
                                     aspect=asp,
                                     *args, **kwargs)
                 ax_im_list[i] = axes_im
             else:
                 axes_im = ax.imshow(data,
                                     cmap=cmap, extent=extent,
+                                    vmin=l_vmin, vmax=l_vmax,
                                     aspect=asp,
                                     *args, **kwargs)
                 ax_im_list[i] = axes_im
