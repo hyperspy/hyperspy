@@ -215,7 +215,7 @@ get a fully functional installation:
     python2-traits python2-traitsui python2-h5py python2-scikit-learn python2-nose
     python2-statsmodels python2-pillow python2-pyqt4 python2-pyqt5 python2-scipy
     python2-pandas python2-setuptools ipython2	python2-jinja python2-pyzmq
-    python2-pyqt4 python2-tornado python2-sip python2-pygments python2-jsonschema
+    python2-pyqt4 python2-tornado python2-sip python2-pygments
 
     # Or, just run this command from the root hyperspy directory to import the
     # list of packages and install automatically:

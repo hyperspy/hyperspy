@@ -472,7 +472,7 @@ class EDSSpectrum(Spectrum):
                             xray_lines=None,
                             background_windows=None,
                             plot_result=False,
-                            integration_window_factor=2.,
+                            integration_windows=2.,
                             only_one=True,
                             only_lines=("Ka", "La", "Ma"),
                             **kwargs):
@@ -509,10 +509,11 @@ class EDSSpectrum(Spectrum):
         plot_result : bool
             If True, plot the calculated line intensities. If the current
             object is a single spectrum it prints the result instead.
-        integration_window_factor: Float
-            The integration window is centered at the center of the X-ray
-            line and its width is defined by this factor (2 by default)
-            times the calculated FWHM of the line.
+        integration_windows: Float or array
+            If float, the width of the integration windows is the
+            `integration_windows_width` times the calculated FWHM of the line.
+            Else provide an array for which each row corresponds to a X-ray
+            line. Each row contains the left and right value of the window.
         only_one : bool
             If False, use all the lines of each element in the data spectral
             range. If True use only the line at the highest energy
@@ -562,17 +563,18 @@ class EDSSpectrum(Spectrum):
                           "You can remove it with" +
                           "s.metadata.Sample.xray_lines.remove('%s')"
                           % (xray))
-        ax = self.axes_manager.signal_axes[0]
+        if hasattr(integration_windows, '__iter__') is False:
+            integration_windows = self.estimate_integration_windows(
+                windows_width=integration_windows, xray_lines=xray_lines)
         intensities = []
+        ax = self.axes_manager.signal_axes[0]
         # test 1D Spectrum (0D problem)
         # signal_to_index = self.axes_manager.navigation_dimension - 2
-        for i, Xray_line in enumerate(xray_lines):
+        for Xray_line, window in zip(xray_lines, integration_windows):
             line_energy, line_FWHM = self._get_line_energy(Xray_line,
                                                            FWHM_MnKa='auto')
             element, line = utils_eds._get_element_and_line(Xray_line)
-            det = [line_energy - integration_window_factor * line_FWHM / 2.,
-                   line_energy + integration_window_factor * line_FWHM / 2.]
-            img = self.isig[det[0]:det[1]].integrate1D(-1)
+            img = self.isig[window[0]:window[1]].integrate1D(-1)
             if background_windows is not None:
                 bw = background_windows[i]
                 # TODO: test to prevent slicing bug. To be reomved when fixed
@@ -588,7 +590,6 @@ class EDSSpectrum(Spectrum):
                 corr_factor = (indexes[1] - indexes[0]) / (
                     (indexes[3] - indexes[2]) + (indexes[5] - indexes[4]))
                 img -= (bck1 + bck2) * corr_factor
-
             img.metadata.General.title = (
                 'X-ray line intensity of %s: %s at %.2f %s' %
                 (self.metadata.General.title,
@@ -648,6 +649,54 @@ class EDSSpectrum(Spectrum):
 
         return TOA
 
+    def estimate_integration_windows(self,
+                                     windows_width=2.,
+                                     xray_lines=None):
+        """
+        Estimate a window of integration for each X-ray line.
+
+        Parameters
+        ----------
+        windows_width: float
+            The width of the integration windows is the `windows_width` times
+            the calculated FWHM of the line.
+        xray_lines: None or list of string
+            If None, use `metadata.Sample.elements.xray_lines`. Else,
+            provide an iterable containing a list of valid X-ray lines
+            symbols.
+
+        Return
+        ------
+        integration_windows: 2D array of float
+            The positions of the windows in energy. Each row corresponds to a
+            X-ray line. Each row contains the left and right value of the
+            window.
+
+        Example
+        -------
+        >>> s = load('data/spec1D2.hdf5')
+        >>> iw = s.estimate_integration_windows()
+        >>> s.plot(True, integration_windows=iw)
+        >>> s.get_lines_intensity(integration_windows=iw, plot_result=True)
+        Cu_Ka at 8.0478 keV : Intensity = 4361.00
+        Mn_Ka at 5.8987 keV : Intensity = 17007.00
+
+        See also
+        --------
+        The integration windows can be plotted with `plot`.
+        The integration windows is used in `get_line_intensity`.
+        """
+        if xray_lines is None:
+            xray_lines = self.metadata.Sample.xray_lines
+        integration_windows = []
+        for Xray_line in xray_lines:
+            line_energy, line_FWHM = self._get_line_energy(Xray_line,
+                                                           FWHM_MnKa='auto')
+            element, line = utils_eds._get_element_and_line(Xray_line)
+            det = windows_width * line_FWHM / 2.
+            integration_windows.append([line_energy-det, line_energy+det])
+        return integration_windows
+
     def estimate_background_windows(self,
                                     line_width=[2, 2],
                                     windows_width=1,
@@ -680,7 +729,7 @@ class EDSSpectrum(Spectrum):
 
         See also
         --------
-        The windows can be plotted with `plot_background_windows`.
+        The background windows can be plotted with `plot`.
         Backgrounds average in the windows can be subtracted from the X-ray
         intensities with `get_line_intensity`.
         """
@@ -714,6 +763,7 @@ class EDSSpectrum(Spectrum):
              only_lines=("a", "b"),
              only_one=False,
              background_windows=None,
+             integration_windows=None,
              **kwargs):
         """
         Plot the EDS spectrum. The following markers can be added
@@ -748,6 +798,12 @@ class EDSSpectrum(Spectrum):
             Each line corresponds to a X-ray lines. In a line, the two first
             value corresponds to the limit of the left window and the two
             last values corresponds to the limit of the right window.
+        integration_windows: None or float or 2D array of float
+            If not None, add markers at the position of the integration
+            windows.
+            If float, use 'estimate_integration_windows`.
+            Else provide an array for which each row corresponds to a X-ray
+            line. Each row contains the left and right value of the window.
         kwargs
             The extra keyword arguments for plot()
 
@@ -757,14 +813,16 @@ class EDSSpectrum(Spectrum):
         >>> specImg.plot()
 
         >>> bw = specImg.estimate_background_windows()
-        >>> specImg.plot(background_windows=bw)
+        >>> specImg.plot(True, background_windows=bw)
+
+        >>> s.plot(True, xray_lines=['Mn_Ka'], integration_windows='auto')
 
         See also
         --------
-        set_elements, add_elements
-        The windows position can be estimated with
-        `estimate_background_windows`. Backgrounds average in the windows
-        can be subtracted from the X-ray intensities with `get_line_intensity`.
+        set_elements, add_elements, estimate_integration_windows,
+        get_line_intensity
+        The background windows position can be estimated with
+        `estimate_background_windows`
 
         """
         super(EDSSpectrum, self).plot(**kwargs)
@@ -796,6 +854,12 @@ class EDSSpectrum(Spectrum):
             self._add_xray_lines_markers(xray_lines)
             if background_windows is not None:
                 self._add_background_windows_markers(background_windows)
+            if integration_windows is not None:
+                if integration_windows == 'auto':
+                    integration_windows = self.estimate_integration_windows(
+                        xray_lines=xray_lines)
+                self._add_vertical_lines_groups(integration_windows,
+                                                linestyle='--')
 
     def _add_vertical_lines_groups(self, position, **kwargs):
         """

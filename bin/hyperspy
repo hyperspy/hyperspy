@@ -200,18 +200,12 @@ else:
     else:
         from IPython.frontend.terminal.ipapp import launch_new_instance
     sys.argv.append('--profile=hyperspy')
-    if ipy_version < LooseVersion('3.0'):
-        for arg in sys.argv:
-            if 'pylab' in arg:
-                add_pylab = False
-        if pylab_inline is True and args.environment in ("notebook",
-                                                         "qtconsole"):
-            sys.argv.append('--pylab=inline')
-        elif add_pylab is True:
-            sys.argv.append('--pylab=%s' % toolkit.replace("qt4", "qt"))
-    else:
-        for arg in sys.argv:
-            if 'pylab' in arg:
-                del arg['pylab']
-
+    for arg in sys.argv:
+        if 'pylab' in arg:
+            add_pylab = False
+    if pylab_inline is True and args.environment in ("notebook",
+                                                     "qtconsole"):
+        sys.argv.append('--pylab=inline')
+    elif add_pylab is True:
+        sys.argv.append('--pylab=%s' % toolkit.replace("qt4", "qt"))
     sys.exit(launch_new_instance())

@@ -21,4 +21,3 @@ python2-pyqt4
 python2-tornado 	
 python2-sip 			
 python2-pygments	
-python2-jsonschema
