@@ -291,7 +291,7 @@ class EDSTEMSpectrum(EDSSpectrum):
         navigation_mask : None or float or boolean numpy array
             The navigation locations marked as True are not used in the
             decompostion. If float is given the vacuum_mask method is used to
-            generate a mask with the int value as threhsold.
+            generate a mask with the float value as threshold.
         closing: bool
             If true, applied a morphologic closing to the maks obtained by
             vacuum_mask.
