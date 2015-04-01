@@ -172,21 +172,21 @@ class Test_get_lines_intentisity:
         s = self.signal
         sAl = s.get_lines_intensity(["Al_Ka"],
                                     plot_result=False,
-                                    integration_window_factor=5)[0]
+                                    integration_windows=5)[0]
         nose.tools.assert_true(
             np.allclose(24.99516, sAl.data[0, 0, 0], atol=1e-3))
         sAl = s[0].get_lines_intensity(["Al_Ka"],
                                        plot_result=False,
-                                       integration_window_factor=5)[0]
+                                       integration_windows=5)[0]
         nose.tools.assert_true(
             np.allclose(24.99516, sAl.data[0, 0], atol=1e-3))
         sAl = s[0, 0].get_lines_intensity(["Al_Ka"],
                                           plot_result=False,
-                                          integration_window_factor=5)[0]
+                                          integration_windows=5)[0]
         nose.tools.assert_true(np.allclose(24.99516, sAl.data[0], atol=1e-3))
         sAl = s[0, 0, 0].get_lines_intensity(["Al_Ka"],
                                              plot_result=False,
-                                             integration_window_factor=5)[0]
+                                             integration_windows=5)[0]
         nose.tools.assert_true(np.allclose(24.99516, sAl.data, atol=1e-3))
         s.axes_manager[-1].offset = 1.0
         sC = s.get_lines_intensity(["C_Ka"], plot_result=False)
@@ -202,9 +202,15 @@ class Test_get_lines_intentisity:
 
         sAl = s.get_lines_intensity(["Al_Ka"],
                                     plot_result=False,
-                                    integration_window_factor=5)[0]
+                                    integration_windows=5)[0]
         nose.tools.assert_true(
             np.allclose(24.99516, sAl.data[0, 0, 0], atol=1e-3))
+
+    def test_estimate_integration_windows(self):
+        s = self.signal
+        nose.tools.assert_true(np.allclose(
+            s.estimate_integration_windows(3.0, ["Al_Ka"]),
+            [[1.371, 1.601]], atol=1e-2))
 
 
 class Test_tools_bulk:
