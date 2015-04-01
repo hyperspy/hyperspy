@@ -84,8 +84,8 @@ class ImagePlot(BlittedFigure):
         self.xaxis = None
         self.yaxis = None
         self.min_aspect = 0.1
-        self.ax_markers = list()
         self.perc = 0.01
+        self.ax_markers = list()
 
     def configure(self):
         xaxis = self.xaxis
