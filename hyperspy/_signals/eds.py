@@ -16,15 +16,19 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 from __future__ import division
+import itertools
 
 import numpy as np
 import warnings
+from matplotlib import pyplot as plt
+
 
 from hyperspy import utils
 from hyperspy._signals.spectrum import Spectrum
 from hyperspy.misc.elements import elements as elements_db
 from hyperspy.misc.eds import utils as utils_eds
 from hyperspy.misc.utils import isiterable
+from hyperspy.utils import markers
 
 
 class EDSSpectrum(Spectrum):
@@ -468,7 +472,7 @@ class EDSSpectrum(Spectrum):
     def get_lines_intensity(self,
                             xray_lines=None,
                             plot_result=False,
-                            integration_window_factor=2.,
+                            integration_windows=2.,
                             only_one=True,
                             only_lines=("Ka", "La", "Ma"),
                             **kwargs):
@@ -500,10 +504,11 @@ class EDSSpectrum(Spectrum):
         plot_result : bool
             If True, plot the calculated line intensities. If the current
             object is a single spectrum it prints the result instead.
-        integration_window_factor: Float
-            The integration window is centered at the center of the X-ray
-            line and its width is defined by this factor (2 by default)
-            times the calculated FWHM of the line.
+        integration_windows: Float or array
+            If float, the width of the integration windows is the
+            `integration_windows_width` times the calculated FWHM of the line.
+            Else provide an array for which each row corresponds to a X-ray
+            line. Each row contains the left and right value of the window.
         only_one : bool
             If False, use all the lines of each element in the data spectral
             range. If True use only the line at the highest energy
@@ -549,17 +554,17 @@ class EDSSpectrum(Spectrum):
                           "You can remove it with" +
                           "s.metadata.Sample.xray_lines.remove('%s')"
                           % (xray))
-
+        if hasattr(integration_windows, '__iter__') is False:
+            integration_windows = self.estimate_integration_windows(
+                windows_width=integration_windows, xray_lines=xray_lines)
         intensities = []
         # test 1D Spectrum (0D problem)
         # signal_to_index = self.axes_manager.navigation_dimension - 2
-        for Xray_line in xray_lines:
+        for Xray_line, window in zip(xray_lines, integration_windows):
             line_energy, line_FWHM = self._get_line_energy(Xray_line,
                                                            FWHM_MnKa='auto')
             element, line = utils_eds._get_element_and_line(Xray_line)
-            det = integration_window_factor * line_FWHM / 2.
-            img = self[..., line_energy - det:line_energy + det
-                       ].integrate1D(-1)
+            img = self.isig[window[0]:window[1]].integrate1D(-1)
             img.metadata.General.title = (
                 'X-ray line intensity of %s: %s at %.2f %s' %
                 (self.metadata.General.title,
@@ -618,3 +623,185 @@ class EDSSpectrum(Spectrum):
                                        elevation_angle)
 
         return TOA
+
+    def estimate_integration_windows(self,
+                                     windows_width=2.,
+                                     xray_lines=None):
+        """
+        Estimate a window of integration for each X-ray line.
+
+        Parameters
+        ----------
+        windows_width: float
+            The width of the integration windows is the `windows_width` times
+            the calculated FWHM of the line.
+        xray_lines: None or list of string
+            If None, use `metadata.Sample.elements.xray_lines`. Else,
+            provide an iterable containing a list of valid X-ray lines
+            symbols.
+
+        Return
+        ------
+        integration_windows: 2D array of float
+            The positions of the windows in energy. Each row corresponds to a
+            X-ray line. Each row contains the left and right value of the
+            window.
+
+        Example
+        -------
+        >>> s = load('data/spec1D2.hdf5')
+        >>> iw = s.estimate_integration_windows()
+        >>> s.plot(True, integration_windows=iw)
+        >>> s.get_lines_intensity(integration_windows=iw, plot_result=True)
+        Cu_Ka at 8.0478 keV : Intensity = 4361.00
+        Mn_Ka at 5.8987 keV : Intensity = 17007.00
+
+        See also
+        --------
+        The windows can be plotted with `plot`.
+        The integration windows is used in `get_line_intensity`.
+        """
+        if xray_lines is None:
+            xray_lines = self.metadata.Sample.xray_lines
+        integration_windows = []
+        for Xray_line in xray_lines:
+            line_energy, line_FWHM = self._get_line_energy(Xray_line,
+                                                           FWHM_MnKa='auto')
+            element, line = utils_eds._get_element_and_line(Xray_line)
+            det = windows_width * line_FWHM / 2.
+            integration_windows.append([line_energy-det, line_energy+det])
+        return integration_windows
+
+    def plot(self,
+             xray_lines_markers=False,
+             xray_lines=None,
+             only_lines=("a", "b"),
+             only_one=False,
+             integration_windows=None,
+             **kwargs):
+        """
+        Plot the EDS spectrum. The following markers can be added
+
+        - The position of the X-ray lines and their names.
+
+        Parameters
+        ----------
+        xray_lines_markers: bool
+            If True, indicate the position and the name of the X-ray lines.
+        xray_lines: {'auto', 'from_elements', list of string}
+            If 'auto', if `metadata.Sample.elements.xray_lines` contains a
+            list of lines use those.
+            If `metadata.Sample.elements.xray_lines` is undefined or empty or
+            if xray_lines equals 'from_elements' and `metadata.Sample.elements`
+            is defined, use the same syntax as `add_line` to select a subset of
+            lines for the operation.
+            Alternatively, provide an iterable containing a list of valid X-ray
+            lines symbols.
+        only_lines : None or list of strings
+            If not None, use only the given lines (eg. ('a','Kb')).
+            If None, use all lines.
+        only_one : bool
+            If False, use all the lines of each element in the data spectral
+            range. If True use only the line at the highest energy
+            above an overvoltage of 2 (< beam energy / 2).
+        integration_windows: None or float or 2D array of float
+            If not None, add markers at the position of the integration
+            windows.
+            If float, use 'estimate_integration_windows`.
+            Else provide an array for which each row corresponds to a X-ray
+            line. Each row contains the left and right value of the window.
+        kwargs
+            The extra keyword arguments for plot()
+
+        Examples
+        -------
+
+        >>> s.plot(True, xray_lines=['Mn_Ka'], integration_windows='auto')
+
+        See also
+        --------
+        set_elements, add_elements, estimate_integration_windows
+
+        """
+        super(EDSSpectrum, self).plot(**kwargs)
+        if xray_lines_markers:
+            if only_lines is not None:
+                only_lines = list(only_lines)
+                for only_line in only_lines:
+                    if only_line == 'a':
+                        only_lines.extend(['Ka', 'La', 'Ma'])
+                    elif only_line == 'b':
+                        only_lines.extend(['Kb', 'Lb1', 'Mb'])
+            if xray_lines is None or xray_lines == 'from_elements':
+                if 'Sample.xray_lines' in self.metadata \
+                        and xray_lines != 'from_elements':
+                    xray_lines = self.metadata.Sample.xray_lines
+                elif 'Sample.elements' in self.metadata:
+                    xray_lines = self._get_lines_from_elements(
+                        self.metadata.Sample.elements,
+                        only_one=only_one,
+                        only_lines=only_lines)
+                else:
+                    raise ValueError(
+                        "No elements defined, set them with `add_elements`")
+            xray_lines, xray_not_here = self._get_xray_lines_in_spectral_range(
+                xray_lines)
+            for xray in xray_not_here:
+                print("Warning: %s is not in the data energy range." % (xray))
+            xray_lines = np.unique(xray_lines)
+            self._add_xray_lines_markers(xray_lines)
+            if integration_windows is not None:
+                if integration_windows == 'auto':
+                    integration_windows = self.estimate_integration_windows(
+                        xray_lines=xray_lines)
+                self._add_vertical_lines_groups(integration_windows,
+                                                linestyle='--')
+
+    def _add_vertical_lines_groups(self, position, **kwargs):
+        """
+        Add vertical markers for each group that shares the color.
+
+        Parameters
+        ----------
+        position: 2D array of float
+            The position on the signal axis. Each row corresponds to a
+            group.
+        kwargs
+            keywords argument for markers.vertical_line
+        """
+        per_xray = len(position[0])
+        colors = itertools.cycle(np.sort(
+            plt.rcParams['axes.color_cycle']*per_xray))
+        for x, color in zip(np.ravel(position), colors):
+            line = markers.vertical_line(x=x, color=color, **kwargs)
+            self.add_marker(line)
+
+    def _add_xray_lines_markers(self, xray_lines):
+        """
+        Add marker on a spec.plot() with the name of the selected X-ray
+        lines
+
+        Parameters
+        ----------
+        xray_lines: list of string
+            A valid list of X-ray lines
+
+        """
+
+        line_energy = []
+        intensity = []
+        for xray_line in xray_lines:
+            element, line = utils_eds._get_element_and_line(xray_line)
+            line_energy.append(self._get_line_energy(xray_line))
+            relative_factor = elements_db[element][
+                'Atomic_properties']['Xray_lines'][line]['weight']
+            a_eng = self._get_line_energy(element + '_' + line[0] + 'a')
+            intensity.append(self.isig[a_eng].data * relative_factor)
+        for i in range(len(line_energy)):
+            line = markers.vertical_line_segment(
+                x=line_energy[i], y1=None, y2=intensity[i] * 0.8)
+            self.add_marker(line)
+            text = markers.text(
+                x=line_energy[i], y=intensity[i] * 1.1, text=xray_lines[i],
+                rotation=90)
+            self.add_marker(text)
