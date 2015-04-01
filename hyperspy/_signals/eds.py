@@ -808,7 +808,7 @@ class EDSSpectrum(Spectrum):
             windows.
             If 'auto' (or float), the width of the integration windows is 2.0
             (or float) times the calculated FWHM of the line. see
-            'estimate_integration_windows`.
+            'estimate_integration_windows'.
             Else provide an array for which each row corresponds to a X-ray
             line. Each row contains the left and right value of the window.
         kwargs
