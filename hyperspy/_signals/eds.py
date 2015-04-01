@@ -485,7 +485,7 @@ class EDSSpectrum(Spectrum):
         defined as defined in
         `self.metadata.Acquisition_instrument.SEM.Detector.EDS.energy_resolution_MnKa`
         or
-        `self.metadata.Acquisition_instrument.SEM.Detector.EDS.energy_resolution_MnKa`.
+        `self.metadata.Acquisition_instrument.TEM.Detector.EDS.energy_resolution_MnKa`.
 
 
         Parameters
