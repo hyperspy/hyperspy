@@ -244,7 +244,7 @@ class EDSTEMSpectrum(EDSSpectrum):
             mp.Acquisition_instrument.TEM.Detector.EDS.live_time = \
                 mp_ref.Detector.EDS.live_time / nb_pix
 
-    def vacuum_mask(self, threshold=1.0, closing=True):
+    def vacuum_mask(self, threshold=1.0, closing=True, opening=False):
         """
         Generate mask of the vacuum region
 
@@ -255,6 +255,8 @@ class EDSTEMSpectrum(EDSSpectrum):
             pixel is considered as vacuum.
         closing: bool
             If true, applied a morphologic closing to the mask
+        opnening: bool
+            If true, applied a morphologic opening to the mask
 
         Return
         ------
@@ -266,6 +268,9 @@ class EDSTEMSpectrum(EDSSpectrum):
         if closing:
             mask.data = binary_dilation(mask.data, border_value=0)
             mask.data = binary_erosion(mask.data, border_value=1)
+        if opening:
+            mask.data = binary_erosion(mask.data, border_value=1)
+            mask.data = binary_dilation(mask.data, border_value=0)
         return mask
 
     def decomposition(self,
