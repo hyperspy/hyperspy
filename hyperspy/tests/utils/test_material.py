@@ -48,6 +48,12 @@ def test_density_of_mixture():
         [elements_db[element].Physical_properties.density_gcm3 for element in
             elements])
 
+    volumes = wt * densities
+    density = volumes.sum() / 100.
+    assert_almost_equal(
+        density, hs.utils.material.density_of_mixture_of_pure_elements(
+            wt, elements, mean='weighted'))
+
     volumes = wt / densities
     density = 100. / volumes.sum()
     assert_almost_equal(
