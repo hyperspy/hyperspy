@@ -570,7 +570,8 @@ class EDSSpectrum(Spectrum):
         ax = self.axes_manager.signal_axes[0]
         # test 1D Spectrum (0D problem)
         # signal_to_index = self.axes_manager.navigation_dimension - 2
-        for Xray_line, window in zip(xray_lines, integration_windows):
+        for i, (Xray_line, window) in enumerate(
+                zip(xray_lines, integration_windows)):
             line_energy, line_FWHM = self._get_line_energy(Xray_line,
                                                            FWHM_MnKa='auto')
             element, line = utils_eds._get_element_and_line(Xray_line)
@@ -578,17 +579,17 @@ class EDSSpectrum(Spectrum):
             if background_windows is not None:
                 bw = background_windows[i]
                 # TODO: test to prevent slicing bug. To be reomved when fixed
-                if ax.value2index(bw[0]) == ax.value2index(bw[1]):
+                indexes = [float(ax.value2index(de)) for de in list(bw)+window]
+                if indexes[0] == indexes[1]:
                     bck1 = self.isig[bw[0]]
                 else:
                     bck1 = self.isig[bw[0]:bw[1]].integrate1D(-1)
-                if ax.value2index(bw[2]) == ax.value2index(bw[3]):
+                if indexes[2] == indexes[3]:
                     bck2 = self.isig[bw[2]]
                 else:
                     bck2 = self.isig[bw[2]:bw[3]].integrate1D(-1)
-                indexes = [float(ax.value2index(de)) for de in det+list(bw)]
-                corr_factor = (indexes[1] - indexes[0]) / (
-                    (indexes[3] - indexes[2]) + (indexes[5] - indexes[4]))
+                corr_factor = (indexes[5] - indexes[4]) / (
+                    (indexes[1] - indexes[0]) + (indexes[3] - indexes[2]))
                 img -= (bck1 + bck2) * corr_factor
             img.metadata.General.title = (
                 'X-ray line intensity of %s: %s at %.2f %s' %
