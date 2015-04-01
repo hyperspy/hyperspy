@@ -470,9 +470,9 @@ class EDSSpectrum(Spectrum):
 
     def get_lines_intensity(self,
                             xray_lines=None,
+                            integration_windows=2.,
                             background_windows=None,
                             plot_result=False,
-                            integration_windows=2.,
                             only_one=True,
                             only_lines=("Ka", "La", "Ma"),
                             **kwargs):
@@ -499,6 +499,11 @@ class EDSSpectrum(Spectrum):
             for the operation.
             Alternatively, provide an iterable containing
             a list of valid X-ray lines symbols.
+        integration_windows: Float or array
+            If float, the width of the integration windows is the
+            `integration_windows_width` times the calculated FWHM of the line.
+            Else provide an array for which each row corresponds to a X-ray
+            line. Each row contains the left and right value of the window.
         background_windows: None or 2D array of float
             If None, no background subtraction. Else, the backgrounds average
             in the windows are subtracted from the return intensities.
@@ -509,11 +514,6 @@ class EDSSpectrum(Spectrum):
         plot_result : bool
             If True, plot the calculated line intensities. If the current
             object is a single spectrum it prints the result instead.
-        integration_windows: Float or array
-            If float, the width of the integration windows is the
-            `integration_windows_width` times the calculated FWHM of the line.
-            Else provide an array for which each row corresponds to a X-ray
-            line. Each row contains the left and right value of the window.
         only_one : bool
             If False, use all the lines of each element in the data spectral
             range. If True use only the line at the highest energy
@@ -799,10 +799,12 @@ class EDSSpectrum(Spectrum):
             Each line corresponds to a X-ray lines. In a line, the two first
             value corresponds to the limit of the left window and the two
             last values corresponds to the limit of the right window.
-        integration_windows: None or float or 2D array of float
+        integration_windows: None or 'auto' or float or 2D array of float
             If not None, add markers at the position of the integration
             windows.
-            If float, use 'estimate_integration_windows`.
+            If 'auto' (or float), the width of the integration windows is 2.0
+            (or float) times the calculated FWHM of the line. see
+            'estimate_integration_windows`.
             Else provide an array for which each row corresponds to a X-ray
             line. Each row contains the left and right value of the window.
         kwargs
@@ -857,7 +859,10 @@ class EDSSpectrum(Spectrum):
                 self._add_background_windows_markers(background_windows)
             if integration_windows is not None:
                 if integration_windows == 'auto':
+                    integration_windows = 2.0
+                if hasattr(integration_windows, '__iter__') is False:
                     integration_windows = self.estimate_integration_windows(
+                        windows_width=integration_windows,
                         xray_lines=xray_lines)
                 self._add_vertical_lines_groups(integration_windows,
                                                 linestyle='--')
