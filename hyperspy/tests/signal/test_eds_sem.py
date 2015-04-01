@@ -214,7 +214,7 @@ class Test_get_lines_intentisity:
             xray_lines=["Al_Ka"])[0, 0], 1.25666201, atol=1e-3))
         nose.tools.assert_true(np.allclose(s.get_lines_intensity(
             ["Al_Ka"], background_windows=s.estimate_background_windows(
-                4, xray_lines=["Al_Ka"]), plot_result=False)[0].data,
+                [4, 4], xray_lines=["Al_Ka"]), plot_result=False)[0].data,
             intens, atol=1e-3))
 
     def test_estimate_integration_windows(self):
