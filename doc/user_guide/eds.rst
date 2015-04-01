@@ -1,4 +1,4 @@
-.. _eds-label:
+﻿.. _eds-label:
 
 Energy-Dispersive X-Rays Spectrometry (EDS)
 ******************************************
@@ -288,7 +288,7 @@ Plotting
 --------
 
 As decribed in :ref:`visualisation<visualization-label>`, the 
-:py:meth:`~.signal.Signal.plot` method can be used:
+:py:meth:`~.signals.eds.EDSSpectrum.plot` method can be used:
 
 .. code-block:: python
 
@@ -300,6 +300,38 @@ As decribed in :ref:`visualisation<visualization-label>`, the
    
 An example of plotting EDS data of higher dimension (3D SEM-EDS) is given in
 :ref:`visualisation multi-dimension<visualization_multi_dim>`.
+
+
+Plot X-ray lines
+^^^^^^^^^^^^^^^^
+
+X-ray lines can be labbeled on a plot with 
+:py:meth:`~._signals.eds.EDSSpectrum.plot`. The lines are 
+either given, either retrieved from "metadata.Sample.Xray_lines",
+or selected with the same method as 
+:py:meth:`~._signals.eds.EDSSpectrum.add_lines` using the 
+elements in "metadata.Sample.elements". 
+
+
+.. code-block:: python
+
+    >>> spec.add_elements(['C','Mn','Cu','Al','Zr'])
+    >>> spec.plot(xray_lines_markers=True)
+
+.. figure::  images/EDS_plot_Xray_default.png
+   :align:   center
+   :width:   500   
+   
+Selecting certain type of lines:
+   
+.. code-block:: python
+
+    >>> spec.plot(xray_lines_markers=True, only_lines=['Ka','b'])
+
+.. figure::  images/EDS_plot_Xray_a.png
+   :align:   center
+   :width:   500 
+
 
 .. _get_lines_intensity:
 
@@ -333,6 +365,17 @@ are used by default.
      dimensions: (|128, 95)>,
     <Image, title: Intensity of Ti_Ka at 4.51 keV from Spectrum image,
      dimensions: (|128, 95)>]
+
+The windows of integration can be visualised using :py:meth:`~._signals.eds.EDSSpectrum.plot` method
+
+.. code-block:: python
+
+	>>> s.plot(True, xray_lines=['Mn_Ka'], integration_windows='auto')
+
+.. figure::  images/EDS_integration_windows.png
+   :align:   center
+   :width:   500 
+
      
 The :py:meth:`~.signal.Signal1DTools.integrate_in_range` 
 method (see :ref:`spectrum tools<integrate_1D-label>`) provides
