@@ -531,12 +531,15 @@ class EDSSpectrum(Spectrum):
 
         Examples
         --------
-        >>> specImg.set_lines(["C_Ka", "Ta_Ma"])
-        >>> specImg.get_lines_intensity()
+        >>> s.set_lines(["C_Ka", "Ta_Ma"])
+        >>> s.get_lines_intensity()
 
-        >>> bw = specImg.estimate_background_windows()
-        >>> specImg.plot(background_windows=bw)
-        >>> specImg.get_lines_intensity(background_windows=bw)
+        >>> s.plot(integration_windows=2.1)
+        >>> s.get_lines_intensity(integration_windows=2.1)
+
+        >>> bw = s.estimate_background_windows()
+        >>> s.plot(background_windows=bw)
+        >>> s.get_lines_intensity(background_windows=bw)
 
         See also
         --------
@@ -728,6 +731,12 @@ class EDSSpectrum(Spectrum):
             limits of the left window and the two last values correspond to
             the limits of the right window.
 
+        Examples
+        --------
+        >>> bw = s.estimate_background_windows()
+        >>> s.plot(background_windows=bw)
+        >>> s.get_lines_intensity(background_windows=bw)
+
         See also
         --------
         The background windows can be plotted with `plot`.
@@ -812,13 +821,15 @@ class EDSSpectrum(Spectrum):
 
         Examples
         --------
-        >>> specImg.set_lines(["C_Ka", "Ta_Ma"])
-        >>> specImg.plot()
+        >>> s.set_lines(["C_Ka", "Ta_Ma"])
+        >>> s.plot()
 
         >>> bw = specImg.estimate_background_windows()
-        >>> specImg.plot(True, background_windows=bw)
+        >>> s.plot(background_windows=bw)
 
-        >>> s.plot(True, xray_lines=['Mn_Ka'], integration_windows='auto')
+        >>> s.plot(xray_lines=['Mn_Ka'], integration_windows='auto')
+
+        >>> s.plot(background_windows=bw, integration_windows=2.1)
 
         See also
         --------
