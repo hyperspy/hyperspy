@@ -269,10 +269,11 @@ class EDSTEMSpectrum(EDSSpectrum):
         composition_units: 'weight' or 'atomic'
             Cliff-Lorimer return weight percent. By choosing 'atomic', the
             return composition is in atomic percent.
-        navigation_mask : None or float or boolean numpy.array
+        navigation_mask : None or float or signal
             The navigation locations marked as True are not used in the
             quantification. If int is given the vacuum_mask method is used to
             generate a mask with the int value as threhsold.
+            Else provides a signal with the navigation shape.
         closing: bool
             If true, applied a morphologic closing to the mask obtained by
             vacuum_mask.
@@ -280,13 +281,12 @@ class EDSTEMSpectrum(EDSSpectrum):
             If True, plot the calculated composition. If the current
             object is a single spectrum it prints the result instead.
         kwargs
-            The extra keyword arguments for plotting. See
-            `utils.plot.plot_signals`
+            The extra keyword arguments are passed to plot.
 
         Return
         ------
-        A list of quantified elemental maps giving the composition of the
-        sample in weight or atomic percent.
+        A list of quantified elemental maps (signal) giving the composition of
+        the sample in weight or atomic percent.
 
         Examples
         ---------
