@@ -28,6 +28,7 @@ import matplotlib as mpl
 
 from hyperspy.misc.utils import unfold_if_multidim
 from hyperspy.defaults_parser import preferences
+import hyperspy.messages as messages
 
 
 def create_figure(window_title=None,
@@ -770,17 +771,22 @@ def plot_images(images,
                                     *args, **kwargs)
                 ax_im_list[i] = axes_im
 
-            # Label the axes
-            if isinstance(axes[0].units, trait_base._Undefined):
-                axes[0].units = 'pixels'
-            if isinstance(axes[1].units, trait_base._Undefined):
-                axes[1].units = 'pixels'
-            if isinstance(axes[0].name, trait_base._Undefined):
-                axes[0].name = 'x'
-            if isinstance(axes[1].name, trait_base._Undefined):
-                axes[1].name = 'y'
-            ax.set_xlabel(axes[0].name + " axis (" + axes[0].units + ")")
-            ax.set_ylabel(axes[1].name + " axis (" + axes[1].units + ")")
+            # If an axis trait is undefined, shut off :
+            if isinstance(xaxis.units, trait_base._Undefined) or  \
+                    isinstance(yaxis.units, trait_base._Undefined) or \
+                    isinstance(xaxis.name, trait_base._Undefined) or \
+                    isinstance(yaxis.name, trait_base._Undefined):
+                if axes_decor is 'all':
+                    messages.warning('Axes labels were requested, but one '
+                                     'or both of the '
+                                     'axes units and/or name are undefined. '
+                                     'Axes decorations have been set to '
+                                     '\'ticks\' instead.')
+                    axes_decor = 'ticks'
+            # If all traits are defined, set labels as appropriate:
+            else:
+                ax.set_xlabel(axes[0].name + " axis (" + axes[0].units + ")")
+                ax.set_ylabel(axes[1].name + " axis (" + axes[1].units + ")")
 
             if label:
                 if all_match:
