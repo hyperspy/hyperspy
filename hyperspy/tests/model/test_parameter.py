@@ -34,7 +34,7 @@ class Dummy:
 
 
 class DummyAxesManager:
-    navigation_shape = [0, ]
+    navigation_shape = ()
     indices = ()
 
     @property

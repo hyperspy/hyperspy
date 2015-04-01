@@ -356,8 +356,27 @@ For the "heatmap" style, different `matplotlib color schemes <http://matplotlib.
 
 .. figure::  images/plot_spectra_heatmap_jet.png
   :align:   center
-  :width:   500    
+  :width:   500
 
+Any parameter that can be passed to matplotlib.pyplot.figure can also be used with plot_spectra()
+to allow further customization  (when using the "overlap", "cascade", or "mosaic" styles).
+In the following example, `dpi`, `facecolor`, `frameon`, and `num` are all parameters
+that are passed directly to matplotlib.pyplot.figure as keyword arguments:
+
+.. code-block:: python
+
+    >>> s = signals.Spectrum(np.random.random((6,1000)))
+    >>> legendtext = ['Plot 0', 'Plot 1', 'Plot 2', 'Plot 3', 'Plot 4', 'Plot 5']
+    >>> cascade_plot = utils.plot.plot_spectra(s, style='cascade', legend=legendtext, dpi=60, facecolor='lightblue', frameon=True, num=5)
+    >>> cascade_plot.set_xlabel("X-axis")
+    >>> cascade_plot.set_ylabel("Y-axis")
+    >>> cascade_plot.set_title("Cascade plot")
+    >>> plt.draw()
+
+.. figure:: images/plot_spectra_kwargs.png
+  :align:   center
+  :width:   500
+										
 The function returns a matplotlib ax object, which can be used to customize the figure:
 
 .. code-block:: python
@@ -454,5 +473,59 @@ each plot:
 .. figure::  images/plot_signals_sync.png
   :align:   center
   :width:   500    
+
+Markers
+=======
+
+Hyperspy provides an easy access to the main marker of matplotlib. The markers can be used in a static way
+
+.. code-block:: python
+
+    >>> import scipy.misc
+    >>> im = signals.Image(scipy.misc.lena())
+    >>> m = utils.plot.markers.rectangle(x1=150, y1=100, x2=400, y2=400, color='red')
+    >>> im.add_marker(m)
+
+.. figure::  images/plot_markers_std.png
+  :align:   center
+  :width:   400
+
+By providing an array of positions, the marker can also change position when navigating the signal. In the following example, the local maxima are displayed for each R, G and B channel of a colour image.
+
+.. code-block:: python
+
+    >>> from skimage.feature import peak_local_max
+    >>> import scipy.misc
+    >>> ims = signals.Signal(scipy.misc.face()).as_image([0,1])
+    >>> index = array([peak_local_max(im.data, min_distance=100, num_peaks=4)
+    >>>                for im in ims])
+    >>> for i in range(4):
+    >>>     m = utils.plot.markers.point(x=index[:, i, 1], 
+    >>>                                  y=index[:, i, 0], color='red')
+    >>>     ims.add_marker(m)
+
+
+.. figure::  images/plot_markers_im.png
+  :align:   center
+  :width:   400
+
+The markers can be added to the navigator as well
+
+.. code-block:: python
+
+    >>> s = signals.Spectrum(np.arange(100).reshape([10,10]))
+    >>> s.plot(navigator='spectrum')
+    >>> for i in range(10):
+    >>>     m = utils.plot.markers.text(y=range(50,1000,100)[i],
+    >>>                                 x=i, text='abcdefghij'[i])
+    >>>     s.add_marker(m, plot_on_signal=False)
+    >>> m = utils.plot.markers.text(x=5, y=range(7,110, 10),
+    >>>                             text=[i for i in 'abcdefghij'])
+    >>> s.add_marker(m)
+
+
+.. figure::  images/plot_markers_nav.png
+  :align:   center
+  :width:   400
 
 
