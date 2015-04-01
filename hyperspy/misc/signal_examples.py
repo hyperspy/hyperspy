@@ -16,6 +16,16 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
+from hyperspy.misc.config_dir import data_path
 
-def load_1D_EDS():
-    return 
+
+def load_1D_EDS_spectrum():
+    """
+    Load an EDS-SEM spectrum
+
+    - Sample: EDS-TM002 provided by BAM (www.webshop.bam.de)
+    - SEM Microscope: Nvision40 Carl Zeiss
+    - EDS Detector: X-max 80 from Oxford Instrument
+    """
+    from hyperspy.io import load
+    return load(data_path.replace('..', 'eds')+'//1D_EDS_SEM_Spectrum.hdf5')
