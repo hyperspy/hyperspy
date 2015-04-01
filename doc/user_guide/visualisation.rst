@@ -474,4 +474,58 @@ each plot:
   :align:   center
   :width:   500    
 
+Markers
+=======
+
+Hyperspy provides an easy access to the main marker of matplotlib. The markers can be used in a static way
+
+.. code-block:: python
+
+    >>> import scipy.misc
+    >>> im = signals.Image(scipy.misc.lena())
+    >>> m = utils.plot.markers.rectangle(x1=150, y1=100, x2=400, y2=400, color='red')
+    >>> im.add_marker(m)
+
+.. figure::  images/plot_markers_std.png
+  :align:   center
+  :width:   400
+
+By providing an array of positions, the marker can also change position when navigating the signal. In the following example, the local maxima are displayed for each R, G and B channel of a colour image.
+
+.. code-block:: python
+
+    >>> from skimage.feature import peak_local_max
+    >>> import scipy.misc
+    >>> ims = signals.Signal(scipy.misc.face()).as_image([0,1])
+    >>> index = array([peak_local_max(im.data, min_distance=100, num_peaks=4)
+    >>>                for im in ims])
+    >>> for i in range(4):
+    >>>     m = utils.plot.markers.point(x=index[:, i, 1], 
+    >>>                                  y=index[:, i, 0], color='red')
+    >>>     ims.add_marker(m)
+
+
+.. figure::  images/plot_markers_im.png
+  :align:   center
+  :width:   400
+
+The markers can be added to the navigator as well
+
+.. code-block:: python
+
+    >>> s = signals.Spectrum(np.arange(100).reshape([10,10]))
+    >>> s.plot(navigator='spectrum')
+    >>> for i in range(10):
+    >>>     m = utils.plot.markers.text(y=range(50,1000,100)[i],
+    >>>                                 x=i, text='abcdefghij'[i])
+    >>>     s.add_marker(m, plot_on_signal=False)
+    >>> m = utils.plot.markers.text(x=5, y=range(7,110, 10),
+    >>>                             text=[i for i in 'abcdefghij'])
+    >>> s.add_marker(m)
+
+
+.. figure::  images/plot_markers_nav.png
+  :align:   center
+  :width:   400
+
 
