@@ -369,7 +369,7 @@ The windows of integration can be visualised using :py:meth:`~._signals.eds.EDSS
 
 .. code-block:: python
 
-	>>> s.plot(True, xray_lines=['Mn_Ka'], integration_windows='auto')
+	>>> s.plot(xray_lines=['Mn_Ka'], integration_windows='auto')
 
 .. figure::  images/EDS_integration_windows.png
    :align:   center
@@ -398,7 +398,7 @@ The background can be subtracted from the X-ray intensities with the :py:meth:`~
 .. code-block:: python
 
     >>> bw = spec.estimate_background_windows()
-    >>> spec.plot_background_windows(bw)
+    >>> spec.plot(background_windows=bw)
     >>> intensity = spec.get_lines_intensity(background_windows=bw)
 
 .. figure::  images/EDS_background_subtraction.png

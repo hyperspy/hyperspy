@@ -829,7 +829,9 @@ class EDSSpectrum(Spectrum):
 
         """
         super(EDSSpectrum, self).plot(**kwargs)
-        if xray_lines_markers:
+        if xray_lines_markers or\
+                background_windows is not None or\
+                integration_windows is not None:
             if only_lines is not None:
                 only_lines = list(only_lines)
                 for only_line in only_lines:
