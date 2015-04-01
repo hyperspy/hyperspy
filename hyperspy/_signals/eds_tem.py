@@ -18,6 +18,7 @@
 from __future__ import division
 
 import traits.api as t
+import numpy as np
 
 from hyperspy._signals.eds import EDSSpectrum
 from hyperspy.decorators import only_interactive
@@ -242,3 +243,93 @@ class EDSTEMSpectrum(EDSSpectrum):
         if mp_ref.has_item("Detector.EDS.live_time"):
             mp.Acquisition_instrument.TEM.Detector.EDS.live_time = \
                 mp_ref.Detector.EDS.live_time / nb_pix
+
+    def vacuum_mask(self, threshold=1.0, closing=True, opening=False):
+        """
+        Generate mask of the vacuum region
+
+        Parameters
+        ----------
+        threshold: float
+            For a given pixel, maximum value in the energy axis below which the
+            pixel is considered as vacuum.
+        closing: bool
+            If true, applied a morphologic closing to the mask
+        opnening: bool
+            If true, applied a morphologic opening to the mask
+
+        Return
+        ------
+        mask: signal
+            The mask of the region
+        """
+        from scipy.ndimage.morphology import binary_dilation, binary_erosion
+        mask = (self.max(-1) <= threshold)
+        if closing:
+            mask.data = binary_dilation(mask.data, border_value=0)
+            mask.data = binary_erosion(mask.data, border_value=1)
+        if opening:
+            mask.data = binary_erosion(mask.data, border_value=1)
+            mask.data = binary_dilation(mask.data, border_value=0)
+        return mask
+
+    def decomposition(self,
+                      normalize_poissonian_noise=True,
+                      navigation_mask=1.0,
+                      closing=True,
+                      *args,
+                      **kwargs):
+        """
+        Decomposition with a choice of algorithms
+
+        The results are stored in self.learning_results
+
+        Parameters
+        ----------
+        normalize_poissonian_noise : bool
+            If True, scale the SI to normalize Poissonian noise
+        navigation_mask : None or float or boolean numpy array
+            The navigation locations marked as True are not used in the
+            decompostion. If float is given the vacuum_mask method is used to
+            generate a mask with the float value as threshold.
+        closing: bool
+            If true, applied a morphologic closing to the maks obtained by
+            vacuum_mask.
+        algorithm : 'svd' | 'fast_svd' | 'mlpca' | 'fast_mlpca' | 'nmf' |
+            'sparse_pca' | 'mini_batch_sparse_pca'
+        output_dimension : None or int
+            number of components to keep/calculate
+        centre : None | 'variables' | 'trials'
+            If None no centring is applied. If 'variable' the centring will be
+            performed in the variable axis. If 'trials', the centring will be
+            performed in the 'trials' axis. It only has effect when using the
+            svd or fast_svd algorithms
+        auto_transpose : bool
+            If True, automatically transposes the data to boost performance.
+            Only has effect when using the svd of fast_svd algorithms.
+        signal_mask : boolean numpy array
+            The signal locations marked as True are not used in the
+            decomposition.
+        var_array : numpy array
+            Array of variance for the maximum likelihood PCA algorithm
+        var_func : function or numpy array
+            If function, it will apply it to the dataset to obtain the
+            var_array. Alternatively, it can a an array with the coefficients
+            of a polynomial.
+        polyfit :
+        reproject : None | signal | navigation | both
+            If not None, the results of the decomposition will be projected in
+            the selected masked area.
+
+        See also
+        --------
+        vacuum_mask,plot_decomposition_factors, plot_decomposition_loadings,
+        plot_lev
+        """
+        if isinstance(navigation_mask, float):
+            navigation_mask = self.vacuum_mask(navigation_mask, closing).data
+        super(EDSSpectrum, self).decomposition(
+            normalize_poissonian_noise=normalize_poissonian_noise,
+            navigation_mask=navigation_mask, *args, **kwargs)
+        self.learning_results.loadings = np.nan_to_num(
+            self.learning_results.loadings)
