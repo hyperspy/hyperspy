@@ -329,13 +329,14 @@ a file:
 
 .. code-block:: python
 
-    >>> s = signals.Spectrum(np.random.random((6,1000)))
+    >>> import scipy.misc
+    >>> s = signals.Spectrum(scipy.misc.lena()[100:160:10])
     >>> cascade_plot = utils.plot.plot_spectra(s, style='cascade')
     >>> cascade_plot.figure.savefig("cascade_plot.png")
 
 .. figure::  images/plot_spectra_cascade.png
   :align:   center
-  :width:   500    
+  :width:   350    
 
 The "cascade" `style` has a `padding` option. The default value, 1, keeps the 
 individual plots from overlapping. However in most cases a lower 
@@ -347,6 +348,8 @@ and provide the legend labels:
 
 .. code-block:: python
 
+    >>> import scipy.misc
+    >>> s = signals.Spectrum(scipy.misc.lena()[100:160:10])
     >>> color_list = ['red', 'red', 'blue', 'blue', 'red', 'red']
     >>> line_style_list = ['-','--','steps','-.',':','-']
     >>> utils.plot.plot_spectra(s, style='cascade', color=color_list,
@@ -354,12 +357,14 @@ and provide the legend labels:
 
 .. figure::  images/plot_spectra_color.png
   :align:   center
-  :width:   500    
+  :width:   350     
 
 There are also two other styles, "heatmap" and "mosaic":
 
 .. code-block:: python
 
+    >>> import scipy.misc
+    >>> s = signals.Spectrum(scipy.misc.lena()[100:160:10])
     >>> utils.plot.plot_spectra(s, style='heatmap')
 
 .. figure::  images/plot_spectra_heatmap.png
@@ -368,18 +373,21 @@ There are also two other styles, "heatmap" and "mosaic":
 
 .. code-block:: python
 
-    >>> s = signals.Spectrum(np.random.random((2,1000)))
+    >>> import scipy.misc
+    >>> s = signals.Spectrum(scipy.misc.lena()[100:120:10])
     >>> utils.plot.plot_spectra(s, style='mosaic')
     
 .. figure::  images/plot_spectra_mosaic.png
   :align:   center
-  :width:   500    
+  :width:   350     
 
 For the "heatmap" style, different `matplotlib color schemes <http://matplotlib.org/examples/color/colormaps_reference.html>`_ can be used:
 
 .. code-block:: python
 
     >>> import matplotlib.cm
+    >>> import scipy.misc
+    >>> s = signals.Spectrum(scipy.misc.lena()[100:120:10])
     >>> ax = utils.plot.plot_spectra(s, style="heatmap")
     >>> ax.images[0].set_cmap(matplotlib.cm.jet)
 
@@ -394,9 +402,12 @@ that are passed directly to matplotlib.pyplot.figure as keyword arguments:
 
 .. code-block:: python
 
-    >>> s = signals.Spectrum(np.random.random((6,1000)))
+    >>> import scipy.misc
+    >>> s = signals.Spectrum(scipy.misc.lena()[100:160:10])
     >>> legendtext = ['Plot 0', 'Plot 1', 'Plot 2', 'Plot 3', 'Plot 4', 'Plot 5']
-    >>> cascade_plot = utils.plot.plot_spectra(s, style='cascade', legend=legendtext, dpi=60, facecolor='lightblue', frameon=True, num=5)
+    >>> cascade_plot = utils.plot.plot_spectra(
+    >>>     s, style='cascade', legend=legendtext, dpi=60,
+    >>>     facecolor='lightblue', frameon=True, num=5)
     >>> cascade_plot.set_xlabel("X-axis")
     >>> cascade_plot.set_ylabel("Y-axis")
     >>> cascade_plot.set_title("Cascade plot")
@@ -404,13 +415,14 @@ that are passed directly to matplotlib.pyplot.figure as keyword arguments:
 
 .. figure:: images/plot_spectra_kwargs.png
   :align:   center
-  :width:   500
+  :width:   350 
 										
 The function returns a matplotlib ax object, which can be used to customize the figure:
 
 .. code-block:: python
 
-    >>> s = signals.Spectrum(np.random.random((6,1000)))
+    >>> import scipy.misc
+    >>> s = signals.Spectrum(scipy.misc.lena()[100:160:10])
     >>> cascade_plot = utils.plot.plot_spectra(s)
     >>> cascade_plot.set_xlabel("An axis")
     >>> cascade_plot.set_ylabel("Another axis")
@@ -419,23 +431,24 @@ The function returns a matplotlib ax object, which can be used to customize the 
 
 .. figure::  images/plot_spectra_customize.png
   :align:   center
-  :width:   500
+  :width:   350 
   
 A matplotlib ax and fig object can also be specified, which can be used to put several
 subplots in the same figure. This will only work for "cascade" and "overlap" styles:
 
 .. code-block:: python
 
+    >>> import scipy.misc
     >>> fig, axarr = plt.subplots(1,2)
-    >>> s1 = signals.Spectrum(np.random.random((6,1000)))
-    >>> s2 = signals.Spectrum(np.random.random((6,1000)))
+    >>> s1 = signals.Spectrum(scipy.misc.lena()[100:160:10])
+    >>> s2 = signals.Spectrum(scipy.misc.lena()[200:260:10])
     >>> utils.plot.plot_spectra(s1, style='cascade',color='blue',ax=axarr[0],fig=fig)
     >>> utils.plot.plot_spectra(s2, style='cascade',color='red',ax=axarr[1],fig=fig)
     >>> fig.canvas.draw()
 
 .. figure::  images/plot_spectra_ax_argument.png
   :align:   center
-  :width:   500
+  :width:   350 
 
 .. _plot.signals:
 
@@ -449,8 +462,9 @@ signals must have the same dimensions. To plot two spectra at the same time:
 
 .. code-block:: python
 
-    >>> s1 = signals.Spectrum(np.random.random((10,10,100))) 
-    >>> s2 = signals.Spectrum(np.random.random((10,10,100)))
+    >>> import scipy.misc
+    >>> s1 = signals.Spectrum(scipy.misc.face()).as_spectrum(0)[:,:3]
+    >>> s2 = s1.deepcopy()*-1
     >>> utils.plot.plot_signals([s1, s2])
 
 .. figure::  images/plot_signals.png
@@ -465,8 +479,9 @@ To specify the navigator:
 
 .. code-block:: python
 
-    >>> s1 = signals.Spectrum(np.random.random((10,10,100))) 
-    >>> s2 = signals.Spectrum(np.random.random((10,10,100))) 
+    >>> import scipy.misc
+    >>> s1 = signals.Spectrum(scipy.misc.face()).as_spectrum(0)[:,:3]
+    >>> s2 = s1.deepcopy()*-1
     >>> utils.plot.plot_signals([s1, s2], navigator="slider")
 
 .. figure::  images/plot_signals_slider.png
@@ -480,9 +495,10 @@ For example:
 
 .. code-block:: python
 
-    >>> s1 = signals.Spectrum(np.random.random((10,10,100))) 
-    >>> s2 = signals.Spectrum(np.random.random((10,10,100))) 
-    >>> s3 = signals.Spectrum(np.random.random((10,10))) 
+    >>> import scipy.misc
+    >>> s1 = signals.Spectrum(scipy.misc.face()).as_spectrum(0)[:,:3]
+    >>> s2 = s1.deepcopy()*-1
+    >>> s3 = signals.Spectrum(np.linspace(0,9,9).reshape([3,3])) 
     >>> utils.plot.plot_signals([s1, s2], navigator_list=["slider", s3])
 
 .. figure::  images/plot_signals_navigator_list.png
@@ -495,8 +511,9 @@ each plot:
 
 .. code-block:: python
 
-    >>> s1 = signals.Spectrum(np.random.random((10,10,100))) 
-    >>> s2 = signals.Spectrum(np.random.random((10,10,100))) 
+    >>> import scipy.misc
+    >>> s1 = signals.Spectrum(scipy.misc.face()).as_spectrum(0)[:,:3]
+    >>> s2 = s1.deepcopy()*-1
     >>> utils.plot.plot_signals([s1, s2], sync=False, navigator_list=["slider", "slider"])
 
 .. figure::  images/plot_signals_sync.png
