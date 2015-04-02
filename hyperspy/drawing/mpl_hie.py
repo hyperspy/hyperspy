@@ -50,7 +50,7 @@ class MPL_HyperImage_Explorer(MPL_HyperExplorer):
             plotted when the scale bar is not plotted. If False the axes ticks
             are never plotted.
         auto_contrast : bool, optional
-            If True, the contrast is stretched for each image using the 
+            If True, the contrast is stretched for each image using the
             percentile value.
         percentile : float
             The percentile to be used for contrast stretching. It should be a
