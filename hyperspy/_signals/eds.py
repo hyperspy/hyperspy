@@ -567,16 +567,22 @@ class EDSSpectrum(Spectrum):
         Examples
         --------
         >>> s = utils.example_signals.EDS_SEM_Spectrum()
-        >>> s.set_elements(['Mn'])
-        >>> s.get_lines_intensity(plot_result=True)
+        >>> s.get_lines_intensity(['Mn_Ka'], plot_result=True)
         Mn_La at 0.63316 keV : Intensity = 96700.00
 
-        >>> s.plot(integration_windows=2.1)
-        >>> s.get_lines_intensity(integration_windows=2.1)
+        >>> s = utils.example_signals.EDS_SEM_Spectrum()
+        >>> s.plot(['Mn_Ka'], integration_windows=2.1)
+        >>> s.get_lines_intensity(['Mn_Ka'],
+        >>>                       integration_windows=2.1, plot_result=True)
+        Mn_Ka at 5.8987 keV : Intensity = 53597.00
 
+        >>> s = utils.example_signals.EDS_SEM_Spectrum()
+        >>> s.set_elements(['Mn'])
+        >>> s.set_lines(['Mn_Ka'])
         >>> bw = s.estimate_background_windows()
         >>> s.plot(background_windows=bw)
-        >>> s.get_lines_intensity(background_windows=bw)
+        >>> s.get_lines_intensity(background_windows=bw, plot_result=True)
+        Mn_Ka at 5.8987 keV : Intensity = 46716.00
 
         See also
         --------
@@ -668,6 +674,15 @@ class EDSSpectrum(Spectrum):
         take_off_angle: float
             in Degree
 
+        Examples
+        --------
+        >>> s = utils.example_signals.EDS_SEM_Spectrum()
+        >>> s.get_take_off_angle()
+        37.0
+        >>> s.set_microscope_parameters(tilt_stage=20.)
+        >>> s.get_take_off_angle()
+        57.0
+
         See also
         --------
         utils.eds.take_off_angle
@@ -714,14 +729,15 @@ class EDSSpectrum(Spectrum):
             X-ray line. Each row contains the left and right value of the
             window.
 
-        Example
-        -------
-        >>> s = load('data/spec1D2.hdf5')
+        Examples
+        --------
+        >>> s = utils.example_signals.EDS_TEM_Spectrum()
+        >>> s.add_lines()
         >>> iw = s.estimate_integration_windows()
         >>> s.plot(integration_windows=iw)
         >>> s.get_lines_intensity(integration_windows=iw, plot_result=True)
-        Cu_Ka at 8.0478 keV : Intensity = 4361.00
-        Mn_Ka at 5.8987 keV : Intensity = 17007.00
+        Fe_Ka at 6.4039 keV : Intensity = 3710.00
+        Pt_La at 9.4421 keV : Intensity = 15872.00
 
         See also
         --------
@@ -770,9 +786,13 @@ class EDSSpectrum(Spectrum):
 
         Examples
         --------
-        >>> bw = s.estimate_background_windows()
+        >>> s = utils.example_signals.EDS_TEM_Spectrum()
+        >>> s.add_lines()
+        >>> bw = s.estimate_background_windows(line_width=[5.0, 2.0])
         >>> s.plot(background_windows=bw)
-        >>> s.get_lines_intensity(background_windows=bw)
+        >>> s.get_lines_intensity(background_windows=bw, plot_result=True)
+        Fe_Ka at 6.4039 keV : Intensity = 2754.00
+        Pt_La at 9.4421 keV : Intensity = 15090.00
 
         See also
         --------
@@ -853,14 +873,23 @@ class EDSSpectrum(Spectrum):
 
         Examples
         --------
-        >>> s.set_lines(["C_Ka", "Ta_Ma"])
+        >>> s = utils.example_signals.EDS_SEM_Spectrum()
         >>> s.plot()
 
-        >>> bw = specImg.estimate_background_windows()
+        >>> s = utils.example_signals.EDS_SEM_Spectrum()
+        >>> s.plot(True)
+
+        >>> s = utils.example_signals.EDS_TEM_Spectrum()
+        >>> s.add_lines()
+        >>> bw = s.estimate_background_windows()
         >>> s.plot(background_windows=bw)
 
-        >>> s.plot(xray_lines=['Mn_Ka'], integration_windows='auto')
+        >>> s = utils.example_signals.EDS_SEM_Spectrum()
+        >>> s.plot(['Mn_Ka'], integration_windows='auto')
 
+        >>> s = utils.example_signals.EDS_TEM_Spectrum()
+        >>> s.add_lines()
+        >>> bw = s.estimate_background_windows()
         >>> s.plot(background_windows=bw, integration_windows=2.1)
 
         See also
@@ -872,7 +901,8 @@ class EDSSpectrum(Spectrum):
         if xray_lines is not False or\
                 background_windows is not None or\
                 integration_windows is not None:
-            xray_lines = True
+            if xray_lines is False:
+                xray_lines = True
             if only_lines is not None:
                 only_lines = list(only_lines)
                 for only_line in only_lines:
@@ -880,7 +910,7 @@ class EDSSpectrum(Spectrum):
                         only_lines.extend(['Ka', 'La', 'Ma'])
                     elif only_line == 'b':
                         only_lines.extend(['Kb', 'Lb1', 'Mb'])
-            if xray_lines or xray_lines == 'from_elements':
+            if xray_lines is True or xray_lines == 'from_elements':
                 if 'Sample.xray_lines' in self.metadata \
                         and xray_lines != 'from_elements':
                     xray_lines = self.metadata.Sample.xray_lines
