@@ -566,8 +566,10 @@ class EDSSpectrum(Spectrum):
 
         Examples
         --------
-        >>> s.set_lines(["C_Ka", "Ta_Ma"])
-        >>> s.get_lines_intensity()
+        >>> s = utils.example_signals.EDS_SEM_Spectrum()
+        >>> s.set_elements(['Mn'])
+        >>> s.get_lines_intensity(plot_result=True)
+        Mn_La at 0.63316 keV : Intensity = 96700.00
 
         >>> s.plot(integration_windows=2.1)
         >>> s.get_lines_intensity(integration_windows=2.1)
