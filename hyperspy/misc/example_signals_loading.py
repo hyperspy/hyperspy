@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-from hyperspy.misc.config_dir import data_path
+import os
 
 
 def load_1D_EDS_spectrum():
@@ -28,4 +28,6 @@ def load_1D_EDS_spectrum():
     - EDS Detector: X-max 80 from Oxford Instrument
     """
     from hyperspy.io import load
-    return load(data_path.replace('..', 'eds')+'//1D_EDS_SEM_Spectrum.hdf5')
+    file_path = os.sep.join([os.path.dirname(__file__), 'eds',
+                             'example_signals', '1D_EDS_SEM_Spectrum.hdf5'])
+    return load(file_path)
