@@ -163,3 +163,12 @@ class Test_vacum_mask:
         assert_equal(s.vacuum_mask().data[0], True)
         assert_equal(s.vacuum_mask().data[-1], False)
 
+
+class Test_get_lines_intentisity:
+
+    def test_with_signals_examples(self):
+        from hyperspy.misc.example_signals_loading import \
+            load_1D_EDS_TEM_spectrum as EDS_TEM_Spectrum
+        s = EDS_TEM_Spectrum()
+        np.allclose(np.array([res.data for res in s.get_lines_intensity()]),
+                    np.array([3710, 15872]))
