@@ -803,8 +803,7 @@ class EDSSpectrum(Spectrum):
         return windows_position
 
     def plot(self,
-             xray_lines_markers=False,
-             xray_lines=None,
+             xray_lines=False,
              only_lines=("a", "b"),
              only_one=False,
              background_windows=None,
@@ -819,18 +818,16 @@ class EDSSpectrum(Spectrum):
 
         Parameters
         ----------
-        xray_lines_markers: bool
-            If True, indicate the position and the name of the X-ray lines.
-        xray_lines: {None, 'from_elements', list of string}
-            If None, if `metadata.Sample.elements.xray_lines` contains a
-            list of lines use those.
-            If `metadata.Sample.elements.xray_lines` is undefined
-            or empty or if xray_lines equals 'from_elements' and
-            `metadata.Sample.elements` is defined,
-            use the same syntax as `add_line` to select a subset of lines
-            for the operation.
-            Alternatively, provide an iterable containing
-            a list of valid X-ray lines symbols.s
+        xray_lines: {False, True, 'from_elements', list of string}
+            If not False, indicate the position and the name of the X-ray
+            lines.
+            If True, if `metadata.Sample.elements.xray_lines` contains a
+            list of lines use those. If `metadata.Sample.elements.xray_lines`
+            is undefined or empty or if xray_lines equals 'from_elements' and
+            `metadata.Sample.elements` is defined, use the same syntax as
+            `add_line` to select a subset of lines for the operation.
+            Alternatively, provide an iterable containing a list of valid X-ray
+            lines symbols.
         only_lines : None or list of strings
             If not None, use only the given lines (eg. ('a','Kb')).
             If None, use all lines.
@@ -872,9 +869,10 @@ class EDSSpectrum(Spectrum):
         get_lines_intensity, estimate_background_windows
         """
         super(EDSSpectrum, self).plot(**kwargs)
-        if xray_lines_markers or\
+        if xray_lines is not False or\
                 background_windows is not None or\
                 integration_windows is not None:
+            xray_lines = True
             if only_lines is not None:
                 only_lines = list(only_lines)
                 for only_line in only_lines:
@@ -882,7 +880,7 @@ class EDSSpectrum(Spectrum):
                         only_lines.extend(['Ka', 'La', 'Ma'])
                     elif only_line == 'b':
                         only_lines.extend(['Kb', 'Lb1', 'Mb'])
-            if xray_lines is None or xray_lines == 'from_elements':
+            if xray_lines or xray_lines == 'from_elements':
                 if 'Sample.xray_lines' in self.metadata \
                         and xray_lines != 'from_elements':
                     xray_lines = self.metadata.Sample.xray_lines
