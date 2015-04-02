@@ -66,14 +66,16 @@ class Test_metadata:
     def test_default_param(self):
         s = self.signal
         mp = s.metadata
-        assert_equal(mp.Acquisition_instrument.TEM.Detector.EDS.energy_resolution_MnKa,
-                     preferences.EDS.eds_mn_ka)
+        assert_equal(
+            mp.Acquisition_instrument.TEM.Detector.EDS.energy_resolution_MnKa,
+            preferences.EDS.eds_mn_ka)
 
     def test_SEM_to_TEM(self):
         s = self.signal[0, 0]
         signal_type = 'EDS_SEM'
         mp = s.metadata
-        mp.Acquisition_instrument.TEM.Detector.EDS.energy_resolution_MnKa = 125.3
+        mp.Acquisition_instrument.TEM.Detector.EDS.energy_resolution_MnKa =\
+            125.3
         sSEM = s.deepcopy()
         sSEM.set_signal_type(signal_type)
         mpSEM = sSEM.metadata
@@ -81,7 +83,8 @@ class Test_metadata:
             mp.Acquisition_instrument.TEM.Detector.EDS.energy_resolution_MnKa]
         results.append(signal_type)
         resultsSEM = [
-            mpSEM.Acquisition_instrument.SEM.Detector.EDS.energy_resolution_MnKa]
+            mpSEM.Acquisition_instrument.SEM.Detector.EDS.
+            energy_resolution_MnKa]
         resultsSEM.append(mpSEM.Signal.signal_type)
         assert_equal(results, resultsSEM)
 
@@ -140,11 +143,11 @@ class Test_quantification:
         assert_true(np.allclose(
             utils_eds.quantification_cliff_lorimer(
                 intens, [1, 1, 3]).T,
-                np.array([[0.2,  0.2,  0.6],
-                          [0.,  0.25,  0.75],
-                          [0.25,  0.,  0.75],
-                          [0.5,  0.5,  0.],
-                          [1.,  0.,  0.]])))
+            np.array([[0.2,  0.2,  0.6],
+                      [0.,  0.25,  0.75],
+                      [0.25,  0.,  0.75],
+                      [0.5,  0.5,  0.],
+                      [1.,  0.,  0.]])))
 
 
 class Test_vacum_mask:
@@ -160,19 +163,3 @@ class Test_vacum_mask:
         assert_equal(s.vacuum_mask().data[0], True)
         assert_equal(s.vacuum_mask().data[-1], False)
 
-
-# class Test_get_lines_intentisity:
-#    def setUp(self):
-# Create an empty spectrum
-#        s = EDSTEMSpectrum(np.ones((4,2,1024)))
-#        energy_axis = s.axes_manager.signal_axes[0]
-#        energy_axis.scale = 0.01
-#        energy_axis.offset = -0.10
-#        energy_axis.units = 'keV'
-#        self.signal = s
-#
-#    def test(self):
-#        s = self.signal
-#        s.set_elements(['Al','Ni'],['Ka','La'])
-#        sAl = s.get_lines_intensity(plot_result=True)[0]
-#        assert_true(np.allclose(s[...,0].data*15.0, sAl.data))
