@@ -1,4 +1,4 @@
-.. _eds-label:
+﻿.. _eds-label:
 
 Energy-Dispersive X-Rays Spectrometry (EDS)
 ******************************************
@@ -288,7 +288,7 @@ Plotting
 --------
 
 As decribed in :ref:`visualisation<visualization-label>`, the 
-:py:meth:`~.signal.Signal.plot` method can be used:
+:py:meth:`~.signals.eds.EDSSpectrum.plot` method can be used:
 
 .. code-block:: python
 
@@ -301,11 +301,42 @@ As decribed in :ref:`visualisation<visualization-label>`, the
 An example of plotting EDS data of higher dimension (3D SEM-EDS) is given in
 :ref:`visualisation multi-dimension<visualization_multi_dim>`.
 
+
+Plot X-ray lines
+^^^^^^^^^^^^^^^^
+
+X-ray lines can be labbeled on a plot with 
+:py:meth:`~._signals.eds.EDSSpectrum.plot`. The lines are 
+either given, either retrieved from "metadata.Sample.Xray_lines",
+or selected with the same method as 
+:py:meth:`~._signals.eds.EDSSpectrum.add_lines` using the 
+elements in "metadata.Sample.elements". 
+
+
+.. code-block:: python
+
+    >>> spec.add_elements(['C','Mn','Cu','Al','Zr'])
+    >>> spec.plot(xray_lines_markers=True)
+
+.. figure::  images/EDS_plot_Xray_default.png
+   :align:   center
+   :width:   500   
+   
+Selecting certain type of lines:
+   
+.. code-block:: python
+
+    >>> spec.plot(xray_lines_markers=True, only_lines=['Ka','b'])
+
+.. figure::  images/EDS_plot_Xray_a.png
+   :align:   center
+   :width:   500 
+
 .. _get_lines_intensity:
 
 
 Get lines intensity
-^^^^^^^^^^^^^^^^^^^
+-------------------
 
 The :py:meth:`~._signals.eds.EDSSpectrum.get_lines_intensity` 
 method generates intensity maps by peak integration.
@@ -333,18 +364,58 @@ are used by default.
      dimensions: (|128, 95)>,
     <Image, title: Intensity of Ti_Ka at 4.51 keV from Spectrum image,
      dimensions: (|128, 95)>]
-     
-The :py:meth:`~.signal.Signal1DTools.integrate_in_range` 
-method (see :ref:`spectrum tools<integrate_1D-label>`) provides
-an interactive way to generate intensity map.
 
+The windows of integration can be visualised using :py:meth:`~._signals.eds.EDSSpectrum.plot` method
 
 .. code-block:: python
 
-    >>> spec.integrate_in_range()
-    <Image, title: , dimensions: (|128, 95)>
-    
-.. figure::  images/EDS_integrate_in_range.png
+	>>> s.plot(integration_windows='auto')
+
+.. figure::  images/EDS_integration_windows.png
    :align:   center
-   :width:   800
+   :width:   500 
+
+Background subtraction
+-----------------------
+
+The background can be subtracted from the X-ray intensities with the :py:meth:`~._signals.eds.EDSSpectrum.get_lines_intensity` method. The background value is obtained by averaging the intensity in two windows on each side of the X-ray line. The position of the windows can be estimated with the :py:meth:`~._signals.eds.EDSSpectrum.estimate_background_windows` method and can be plotted with the :py:meth:`~._signals.eds.EDSSpectrum.plot` method as follow. The integration windows are plotted with dashed lines.
+
+.. code-block:: python
+
+    >>> bw = spec.estimate_background_windows()
+    >>> spec.plot(background_windows=bw)
+    >>> intensity = spec.get_lines_intensity(background_windows=bw,
+    >>>					     integration_windows=2.0)
+
+.. figure::  images/EDS_background_subtraction.png
+   :align:   center
+   :width:   500
+
+Quantification
+--------------
+
+One TEM quantification method (Cliff-Lorimer) is implemented so far.
+
+Quantification can be applied from the intensities (background subtracted) with the :py:meth:`~._signals.eds_tem.EDSTEMSpectrum.quantification_cliff_lorimer` method. The required kfactors can be usually found in the EDS manufacturer software.
+
+.. code-block:: python
+
+    >>> spec.set_elements(["Al", "Cr", "Ni"])
+    >>> spec.add_lines()
+    >>> kfactors = [0.982, 1.32, 1.60]
+    >>> weight_percent = spec.quantification(intensities, kfactors)
+
+The obtained composition is in weight percent. It can be changed transformed into atomic percent either with the option :py:meth:`~._signals.eds_tem.EDSTEMSpectrum.quantification_cliff_lorimer`:
+
+.. code-block:: python
+
+    >>> weight_percent = spec.quantification(
+    >>> 	intensities, kfactors, composition_units='atomic')	
+
+either with :py:func:`~.misc.material.weight_to_atomic`. The reverse method is :py:func:`~.misc.material.atomic_to_weigth`.
+
+.. code-block:: python
+	
+    >>> atomic_percent = utils.material.weight_to_atomic(weight_percent)
+
 

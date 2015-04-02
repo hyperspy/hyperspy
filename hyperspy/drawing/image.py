@@ -84,6 +84,7 @@ class ImagePlot(BlittedFigure):
         self.yaxis = None
         self.min_aspect = 0.1
         self.perc = 0.01
+        self.ax_markers = list()
         self.scalebar_color = "white"
         self._user_scalebar = None
         self._auto_scalebar = False
@@ -223,6 +224,8 @@ class ImagePlot(BlittedFigure):
                 fontsize=12,
                 color='red',
                 animated=True)
+        for marker in self.ax_markers:
+            marker.plot()
         self.update()
         if self.scalebar is True:
             if self.pixel_units is not None:
@@ -248,12 +251,20 @@ class ImagePlot(BlittedFigure):
 
         self.connect()
 
+    def add_marker(self, marker):
+        marker.ax = self.ax
+        if marker.axes_manager is None:
+            marker.axes_manager = self.axes_manager
+        self.ax_markers.append(marker)
+
     def update(self, auto_contrast=None):
         ims = self.ax.images
         redraw_colorbar = False
         data = rgb_tools.rgbx2regular_array(self.data_function(axes_manager=self.axes_manager),
                                             plot_friendly=True)
         numrows, numcols = data.shape[:2]
+        for marker in self.ax_markers:
+            marker.update()
         if len(data.shape) == 2:
             def format_coord(x, y):
                 try:
@@ -370,6 +381,8 @@ class ImagePlot(BlittedFigure):
             self.axes_manager.disconnect(self._update)
 
     def close(self):
+        for marker in self.ax_markers:
+            marker.close()
         self.disconnect()
         try:
             plt.close(self.figure)
