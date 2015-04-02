@@ -120,6 +120,24 @@ a spectrum or an image obtained by summing over the image dimensions:
 
 The same keys can be used to explore an image stack.
 
+Customising image plot
+======================
+
+The image plot can be customised by passing additional arguments when plotting. Colorbar, scalebar and
+contrast controls are HyperSpy-specific, however `matplotlib.imshow
+<http://matplotlib.org/api/pyplot_api.html#matplotlib.pyplot.imshow>`_ arguments are supported as well:
+
+.. code-block:: python
+
+    >>> img = signals.Image(np.random.random((64,64,64)))
+    >>> img.plot(colorbar=False, scalebar=False, auto_contrast=True, cmap='gist_earth')
+
+.. figure::  images/custom_cmap.png
+   :align:   center
+   :width:   500    
+
+   Custom colormap and switched off colorbar and scalebar in an image stack plot.
+
 Customizing the "navigator"
 ===========================
 
