@@ -479,7 +479,7 @@ class EDSSpectrum(Spectrum):
         suming the spectrum over the
         different X-ray lines. The sum window width
         is calculated from the energy resolution of the detector
-        defined as defined in 'energy_resolution_MnKa' of the metadata.
+        as defined in 'energy_resolution_MnKa' of the metadata.
         Backgrounds average in provided windows can be subtracted from the
         intensities.
 
@@ -625,7 +625,7 @@ class EDSSpectrum(Spectrum):
 
         Returns
         -------
-        take_off_angle: float 
+        take_off_angle: float
             in Degree
 
         See also
