@@ -135,17 +135,17 @@ class EDSTEMSpectrum(EDSSpectrum):
         tem_par = TEMParametersUI()
         mapping = {
             'Acquisition_instrument.TEM.beam_energy':
-                'tem_par.beam_energy',
+            'tem_par.beam_energy',
             'Acquisition_instrument.TEM.tilt_stage':
-                'tem_par.tilt_stage',
+            'tem_par.tilt_stage',
             'Acquisition_instrument.TEM.Detector.EDS.live_time':
-                'tem_par.live_time',
+            'tem_par.live_time',
             'Acquisition_instrument.TEM.Detector.EDS.azimuth_angle':
-                'tem_par.azimuth_angle',
+            'tem_par.azimuth_angle',
             'Acquisition_instrument.TEM.Detector.EDS.elevation_angle':
-                'tem_par.elevation_angle',
+            'tem_par.elevation_angle',
             'Acquisition_instrument.TEM.Detector.EDS.energy_resolution_MnKa':
-                'tem_par.energy_resolution_MnKa', }
+            'tem_par.energy_resolution_MnKa', }
         for key, value in mapping.iteritems():
             if self.metadata.has_item(key):
                 exec('%s = self.metadata.%s' % (value, key))
@@ -153,17 +153,17 @@ class EDSTEMSpectrum(EDSSpectrum):
 
         mapping = {
             'Acquisition_instrument.TEM.beam_energy':
-                tem_par.beam_energy,
+            tem_par.beam_energy,
             'Acquisition_instrument.TEM.tilt_stage':
-                tem_par.tilt_stage,
+            tem_par.tilt_stage,
             'Acquisition_instrument.TEM.Detector.EDS.live_time':
-                tem_par.live_time,
+            tem_par.live_time,
             'Acquisition_instrument.TEM.Detector.EDS.azimuth_angle':
-                tem_par.azimuth_angle,
+            tem_par.azimuth_angle,
             'Acquisition_instrument.TEM.Detector.EDS.elevation_angle':
-                tem_par.elevation_angle,
+            tem_par.elevation_angle,
             'Acquisition_instrument.TEM.Detector.EDS.energy_resolution_MnKa':
-                tem_par.energy_resolution_MnKa, }
+            tem_par.energy_resolution_MnKa, }
 
         for key, value in mapping.iteritems():
             if value != t.Undefined:

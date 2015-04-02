@@ -579,7 +579,8 @@ class EDSSpectrum(Spectrum):
             if background_windows is not None:
                 bw = background_windows[i]
                 # TODO: test to prevent slicing bug. To be reomved when fixed
-                indexes = [float(ax.value2index(de)) for de in list(bw)+window]
+                indexes = [float(ax.value2index(de))
+                           for de in list(bw) + window]
                 if indexes[0] == indexes[1]:
                     bck1 = self.isig[bw[0]]
                 else:
@@ -695,7 +696,7 @@ class EDSSpectrum(Spectrum):
                                                            FWHM_MnKa='auto')
             element, line = utils_eds._get_element_and_line(Xray_line)
             det = windows_width * line_FWHM / 2.
-            integration_windows.append([line_energy-det, line_energy+det])
+            integration_windows.append([line_energy - det, line_energy + det])
         return integration_windows
 
     def estimate_background_windows(self,
@@ -744,22 +745,22 @@ class EDSSpectrum(Spectrum):
         for xray_line in xray_lines:
             line_energy, line_FWHM = self._get_line_energy(xray_line,
                                                            FWHM_MnKa='auto')
-            tmp = [line_energy - line_FWHM*line_width[0] -
-                   line_FWHM*windows_width]
-            tmp.append(line_energy - line_FWHM*line_width[0])
-            tmp.append(line_energy + line_FWHM*line_width[1])
-            tmp.append(line_energy + line_FWHM*line_width[1] +
-                       line_FWHM*windows_width)
+            tmp = [line_energy - line_FWHM * line_width[0] -
+                   line_FWHM * windows_width]
+            tmp.append(line_energy - line_FWHM * line_width[0])
+            tmp.append(line_energy + line_FWHM * line_width[1])
+            tmp.append(line_energy + line_FWHM * line_width[1] +
+                       line_FWHM * windows_width)
             windows_position.append(tmp)
         windows_position = np.array(windows_position)
         # merge ovelapping windows
         index = windows_position.argsort(axis=0)[:, 0]
-        for i in range(len(index)-1):
-            if windows_position[index[i], 2] > windows_position[index[i+1], 0]:
+        for i in range(len(index) - 1):
+            if windows_position[index[i], 2] > windows_position[index[i + 1], 0]:
                 interv = np.append(windows_position[index[i], :2],
-                                   windows_position[index[i+1], 2:])
+                                   windows_position[index[i + 1], 2:])
                 windows_position[index[i]] = interv
-                windows_position[index[i+1]] = interv
+                windows_position[index[i + 1]] = interv
         return windows_position
 
     def plot(self,
@@ -886,7 +887,7 @@ class EDSSpectrum(Spectrum):
         """
         per_xray = len(position[0])
         colors = itertools.cycle(np.sort(
-            plt.rcParams['axes.color_cycle']*per_xray))
+            plt.rcParams['axes.color_cycle'] * per_xray))
         for x, color in zip(np.ravel(position), colors):
             line = markers.vertical_line(x=x, color=color, **kwargs)
             self.add_marker(line)
@@ -953,6 +954,6 @@ class EDSSpectrum(Spectrum):
             else:
                 y2 = self.isig[bw[2]:bw[3]].mean(-1).data
             line = markers.line_segment(
-                x1=(bw[0]+bw[1])/2., x2=(bw[2]+bw[3])/2.,
+                x1=(bw[0] + bw[1]) / 2., x2=(bw[2] + bw[3]) / 2.,
                 y1=y1, y2=y2, color='black')
             self.add_marker(line)

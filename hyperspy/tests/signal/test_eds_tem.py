@@ -143,17 +143,17 @@ class Test_quantification:
         assert_true(np.allclose(
             utils_eds.quantification_cliff_lorimer(
                 intens, [1, 1, 3]).T,
-            np.array([[0.2,  0.2,  0.6],
-                      [0.,  0.25,  0.75],
-                      [0.25,  0.,  0.75],
-                      [0.5,  0.5,  0.],
-                      [1.,  0.,  0.]])))
+            np.array([[0.2, 0.2, 0.6],
+                      [0., 0.25, 0.75],
+                      [0.25, 0., 0.75],
+                      [0.5, 0.5, 0.],
+                      [1., 0., 0.]])))
 
 
 class Test_vacum_mask:
 
     def setUp(self):
-        s = Simulation(np.array([np.linspace(0.001, 0.5, 20)]*100).T)
+        s = Simulation(np.array([np.linspace(0.001, 0.5, 20)] * 100).T)
         s.add_poissonian_noise()
         s = EDSTEMSpectrum(s.data)
         self.signal = s
@@ -162,4 +162,3 @@ class Test_vacum_mask:
         s = self.signal
         assert_equal(s.vacuum_mask().data[0], True)
         assert_equal(s.vacuum_mask().data[-1], False)
-

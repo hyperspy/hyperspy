@@ -4,6 +4,7 @@ import numpy as np
 import math
 
 from hyperspy.misc.elements import elements as elements_db
+from functools import reduce
 
 
 def _get_element_and_line(Xray_line):
@@ -191,7 +192,7 @@ def quantification_cliff_lorimer(intensities,
     min_intensity = 0.1
     dim = intensities.shape
     if len(dim) > 1:
-        dim2 = reduce(lambda x, y: x*y, dim[1:])
+        dim2 = reduce(lambda x, y: x * y, dim[1:])
         intens = intensities.reshape(dim[0], dim2)
         intens = intens.astype('float')
         for i in range(dim2):

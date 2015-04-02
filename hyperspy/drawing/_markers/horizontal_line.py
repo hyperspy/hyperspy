@@ -20,6 +20,7 @@ from hyperspy.drawing.marker import MarkerBase
 
 
 class HorizontalLine(MarkerBase):
+
     """Horizontal line marker that can be added to the signal figure
 
     Parameters

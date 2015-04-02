@@ -117,7 +117,6 @@ class ImagePlot(BlittedFigure):
         else:
             self._user_scalebar = None
 
-
     def configure(self):
         xaxis = self.xaxis
         yaxis = self.yaxis
