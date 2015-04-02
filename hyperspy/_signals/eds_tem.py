@@ -246,16 +246,18 @@ class EDSTEMSpectrum(EDSSpectrum):
             mp.Acquisition_instrument.TEM.Detector.EDS.live_time = \
                 mp_ref.Detector.EDS.live_time / nb_pix
 
-    def quantification_cliff_lorimer(self,
-                                     intensities,
-                                     kfactors,
-                                     composition_units='weight',
-                                     navigation_mask=1.0,
-                                     closing=True,
-                                     plot_result=False,
-                                     **kwargs):
+    def quantification(self,
+                       intensities,
+                       kfactors,
+                       composition_units='weight',
+                       navigation_mask=1.0,
+                       closing=True,
+                       plot_result=False,
+                       **kwargs):
         """
-        Quantification using Cliff-Lorimer
+        Quantification of intensities to return elemental composition
+
+        Method: Cliff-Lorimer
 
         Parameters
         ----------
@@ -267,7 +269,7 @@ class EDSTEMSpectrum(EDSSpectrum):
             order of the X-ray lines. eg. kfactors =[0.982, 1.32, 1.60] for
             ['Al_Ka','Cr_Ka', 'Ni_Ka'].
         composition_units: 'weight' or 'atomic'
-            Cliff-Lorimer return weight percent. By choosing 'atomic', the
+            Quantification returns weight percent. By choosing 'atomic', the
             return composition is in atomic percent.
         navigation_mask : None or float or signal
             The navigation locations marked as True are not used in the

@@ -127,7 +127,7 @@ class Test_quantification:
         s = self.signal
         kfactors = [1, 2.0009344042484134]
         intensities = s.get_lines_intensity()
-        res = s.quantification_cliff_lorimer(intensities, kfactors)
+        res = s.quantification(intensities, kfactors)
         assert_true(np.allclose(res[0].data, np.array(
                     [22.70779, 22.70779]), atol=1e-3))
 

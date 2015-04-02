@@ -394,7 +394,7 @@ The background can be subtracted from the X-ray intensities with the :py:meth:`~
 Quantification
 --------------
 
-For the moment, only one TEM quantification method (Cliff-Lorimer) is implemented.
+One TEM quantification method (Cliff-Lorimer) is implemented so far.
 
 Quantification can be applied from the intensities (background subtracted) with the :py:meth:`~._signals.eds_tem.EDSTEMSpectrum.quantification_cliff_lorimer` method. The required kfactors can be usually found in the EDS manufacturer software.
 
@@ -403,14 +403,14 @@ Quantification can be applied from the intensities (background subtracted) with 
     >>> spec.set_elements(["Al", "Cr", "Ni"])
     >>> spec.add_lines()
     >>> kfactors = [0.982, 1.32, 1.60]
-    >>> weight_percent = spec.quantification_cliff_lorimer(intensities, kfactors)
+    >>> weight_percent = spec.quantification(intensities, kfactors)
 
 The obtained composition is in weight percent. It can be changed transformed into atomic percent either with the option :py:meth:`~._signals.eds_tem.EDSTEMSpectrum.quantification_cliff_lorimer`:
 
 .. code-block:: python
 
-    >>> weight_percent = spec.quantification_cliff_lorimer
-    >>> 	(intensities, kfactors, composition_units='atomic')
+    >>> weight_percent = spec.quantification(
+    >>> 	intensities, kfactors, composition_units='atomic')	
 
 either with :py:func:`~.misc.material.weight_to_atomic`. The reverse method is :py:func:`~.misc.material.atomic_to_weigth`.
 
