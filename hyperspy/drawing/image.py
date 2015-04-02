@@ -199,7 +199,7 @@ class ImagePlot(BlittedFigure):
             self.ax.set_yticks([])
         self.ax.hspy_fig = self
 
-    def plot(self):
+    def plot(self, **kwargs):
         self.configure()
         if self.figure is None:
             self.create_figure()
@@ -225,7 +225,7 @@ class ImagePlot(BlittedFigure):
                 animated=True)
         for marker in self.ax_markers:
             marker.plot()
-        self.update()
+        self.update(**kwargs)
         if self.scalebar is True:
             if self.pixel_units is not None:
                 self.ax.scalebar = widgets.Scale_Bar(
@@ -256,7 +256,7 @@ class ImagePlot(BlittedFigure):
             marker.axes_manager = self.axes_manager
         self.ax_markers.append(marker)
 
-    def update(self, auto_contrast=None):
+    def update(self, auto_contrast=None, **kwargs):
         ims = self.ax.images
         redraw_colorbar = False
         data = rgb_tools.rgbx2regular_array(self.data_function(axes_manager=self.axes_manager),
@@ -310,13 +310,16 @@ class ImagePlot(BlittedFigure):
             if np.isnan(data).any():
                 self.figure.canvas.draw()
         else:
+            new_args = {}
+            new_args['interpolation'] = 'nearest'
+            new_args['vmin'] = self.vmin
+            new_args['vmax'] = self.vmax
+            new_args['extent'] = self._extent
+            new_args['aspect'] = self._aspect
+            new_args['animated'] = True
+            new_args.update(kwargs)
             self.ax.imshow(data,
-                           interpolation='nearest',
-                           vmin=self.vmin,
-                           vmax=self.vmax,
-                           extent=self._extent,
-                           aspect=self._aspect,
-                           animated=True)
+                           **new_args)
             self.figure.canvas.draw()
 
     def _update(self):

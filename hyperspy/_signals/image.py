@@ -51,6 +51,7 @@ class Image(Signal):
              vmin=None,
              vmax=None,
              no_nans=False,
+             **kwargs
              ):
         """Plot image.
 
@@ -134,4 +135,5 @@ class Image(Signal):
             vmin=vmin,
             vmax=vmax,
             no_nans=no_nans,
+            **kwargs
         )

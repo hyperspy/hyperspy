@@ -32,6 +32,7 @@ class MPL_HyperImage_Explorer(MPL_HyperExplorer):
                     vmin=None,
                     vmax=None,
                     no_nans=False,
+                    **kwargs
                     ):
         """Plot image.
 
@@ -59,10 +60,12 @@ class MPL_HyperImage_Explorer(MPL_HyperExplorer):
             `auto_contrast` is True these values are ignore.
         no_nans : bool, optional
             If True, set nans to zero for plotting.
+        **kwargs, optional
+            Additional key word arguments passed to matplotlib.imshow()
 
         """
         if self.signal_plot is not None:
-            self.signal_plot.plot()
+            self.signal_plot.plot(**kwargs)
             return
         imf = image.ImagePlot()
         imf.axes_manager = self.axes_manager
@@ -77,7 +80,7 @@ class MPL_HyperImage_Explorer(MPL_HyperExplorer):
         imf.no_nans = no_nans
         imf.scalebar_color = scalebar_color
         imf.auto_contrast = auto_contrast
-        imf.plot()
+        imf.plot(**kwargs)
         self.signal_plot = imf
 
         if self.navigator_plot is not None and imf.figure is not None:
