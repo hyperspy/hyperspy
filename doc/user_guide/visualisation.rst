@@ -129,8 +129,9 @@ contrast controls are HyperSpy-specific, however `matplotlib.imshow
 
 .. code-block:: python
 
-    >>> img = signals.Image(np.random.random((64,64,64)))
-    >>> img.plot(colorbar=False, scalebar=False, auto_contrast=True, cmap='gist_earth')
+    >>> img = load('core_shell.hdf5')
+    >>> img.plot(colorbar=True, scalebar=False, auto_contrast=True, axes_ticks=True, cmap='RdYlBu_r', percentile=1.0)
+
 
 .. figure::  images/custom_cmap.png
    :align:   center
