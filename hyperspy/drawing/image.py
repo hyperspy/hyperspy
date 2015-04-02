@@ -55,6 +55,8 @@ class ImagePlot(BlittedFigure):
         Set the minimum aspect ratio of the image and the figure. To
         keep the image in the aspect limit the pixels are made
         rectangular.
+    perc: float
+        The percentile use to set the maximum and minimum of contrast
 
     """
 
@@ -82,6 +84,8 @@ class ImagePlot(BlittedFigure):
         self.xaxis = None
         self.yaxis = None
         self.min_aspect = 0.1
+        self.perc = 0.01
+        self.ax_markers = list()
 
     def configure(self):
         xaxis = self.xaxis
@@ -124,7 +128,8 @@ class ImagePlot(BlittedFigure):
                 factor = 1
         self._aspect = np.abs(factor * xaxis.scale / yaxis.scale)
 
-    def optimize_contrast(self, data, perc=0.01):
+    def optimize_contrast(self, data):
+        perc = self.perc
         dc = data.copy().ravel()
         if 'complex' in dc.dtype.name:
             dc = np.log(np.abs(dc))
@@ -179,6 +184,8 @@ class ImagePlot(BlittedFigure):
                 self.axes_manager.navigation_size == 0):
             self.plot_indices = False
         if self.plot_indices is True:
+            if self._text is not None:
+                self._text.remove()
             self._text = self.ax.text(
                 *self._text_position,
                 s=str(self.axes_manager.indices),
@@ -186,6 +193,8 @@ class ImagePlot(BlittedFigure):
                 fontsize=12,
                 color='red',
                 animated=True)
+        for marker in self.ax_markers:
+            marker.plot()
         self.update()
         if self.plot_scalebar is True:
             if self.pixel_units is not None:
@@ -210,12 +219,20 @@ class ImagePlot(BlittedFigure):
 
         self.connect()
 
+    def add_marker(self, marker):
+        marker.ax = self.ax
+        if marker.axes_manager is None:
+            marker.axes_manager = self.axes_manager
+        self.ax_markers.append(marker)
+
     def update(self, auto_contrast=None):
         ims = self.ax.images
         redraw_colorbar = False
         data = rgb_tools.rgbx2regular_array(self.data_function(axes_manager=self.axes_manager),
                                             plot_friendly=True)
         numrows, numcols = data.shape[:2]
+        for marker in self.ax_markers:
+            marker.update()
         if len(data.shape) == 2:
             def format_coord(x, y):
                 try:
@@ -330,6 +347,8 @@ class ImagePlot(BlittedFigure):
             self.axes_manager.disconnect(self._update)
 
     def close(self):
+        for marker in self.ax_markers:
+            marker.close()
         self.disconnect()
         try:
             plt.close(self.figure)

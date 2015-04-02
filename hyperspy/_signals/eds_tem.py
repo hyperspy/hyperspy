@@ -18,14 +18,15 @@
 from __future__ import division
 
 import traits.api as t
+import numpy as np
 
+from hyperspy import utils
 from hyperspy._signals.eds import EDSSpectrum
 from hyperspy.decorators import only_interactive
 from hyperspy.gui.eds import TEMParametersUI
 from hyperspy.defaults_parser import preferences
 import hyperspy.gui.messages as messagesui
-
-# TEM spectrum is just a copy of the basic function of SEM spectrum.
+from hyperspy.misc.eds import utils as utils_eds
 
 
 class EDSTEMSpectrum(EDSSpectrum):
@@ -36,8 +37,9 @@ class EDSTEMSpectrum(EDSSpectrum):
         # Attributes defaults
         if 'Acquisition_instrument.TEM.Detector.EDS' not in self.metadata:
             if 'Acquisition_instrument.SEM.Detector.EDS' in self.metadata:
-                self.metadata.set_item("Acquisition_instrument.TEM",
-                                       self.metadata.Acquisition_instrument.SEM)
+                self.metadata.set_item(
+                    "Acquisition_instrument.TEM",
+                    self.metadata.Acquisition_instrument.SEM)
                 del self.metadata.Acquisition_instrument.SEM
         self._set_default_param()
 
@@ -54,14 +56,18 @@ class EDSTEMSpectrum(EDSSpectrum):
                 "Acquisition_instrument.TEM.tilt_stage",
                 preferences.EDS.eds_tilt_stage)
         if "Acquisition_instrument.TEM.Detector.EDS.elevation_angle" not in mp:
-            mp.set_item("Acquisition_instrument.TEM.Detector.EDS.elevation_angle",
-                        preferences.EDS.eds_detector_elevation)
-        if "Acquisition_instrument.TEM.Detector.EDS.energy_resolution_MnKa" not in mp:
-            mp.set_item("Acquisition_instrument.TEM.Detector.EDS.energy_resolution_MnKa",
+            mp.set_item(
+                "Acquisition_instrument.TEM.Detector.EDS.elevation_angle",
+                preferences.EDS.eds_detector_elevation)
+        if "Acquisition_instrument.TEM.Detector.EDS.energy_resolution_MnKa"\
+                not in mp:
+            mp.set_item("Acquisition_instrument.TEM.Detector.EDS." +
+                        "energy_resolution_MnKa",
                         preferences.EDS.eds_mn_ka)
         if "Acquisition_instrument.TEM.Detector.EDS.azimuth_angle" not in mp:
-            mp.set_item("Acquisition_instrument.TEM.Detector.EDS.azimuth_angle",
-                        preferences.EDS.eds_detector_azimuth)
+            mp.set_item(
+                "Acquisition_instrument.TEM.Detector.EDS.azimuth_angle",
+                preferences.EDS.eds_detector_azimuth)
 
     def set_microscope_parameters(self,
                                   beam_energy=None,
@@ -116,7 +122,8 @@ class EDSTEMSpectrum(EDSSpectrum):
                 elevation_angle)
         if energy_resolution_MnKa is not None:
             md.set_item(
-                "Acquisition_instrument.TEM.Detector.EDS.energy_resolution_MnKa",
+                "Acquisition_instrument.TEM.Detector.EDS." +
+                "energy_resolution_MnKa",
                 energy_resolution_MnKa)
 
         if set([beam_energy, live_time, tilt_stage, azimuth_angle,
@@ -127,24 +134,36 @@ class EDSTEMSpectrum(EDSSpectrum):
     def _set_microscope_parameters(self):
         tem_par = TEMParametersUI()
         mapping = {
-            'Acquisition_instrument.TEM.beam_energy': 'tem_par.beam_energy',
-            'Acquisition_instrument.TEM.tilt_stage': 'tem_par.tilt_stage',
-            'Acquisition_instrument.TEM.Detector.EDS.live_time': 'tem_par.live_time',
-            'Acquisition_instrument.TEM.Detector.EDS.azimuth_angle': 'tem_par.azimuth_angle',
-            'Acquisition_instrument.TEM.Detector.EDS.elevation_angle': 'tem_par.elevation_angle',
-            'Acquisition_instrument.TEM.Detector.EDS.energy_resolution_MnKa': 'tem_par.energy_resolution_MnKa', }
+            'Acquisition_instrument.TEM.beam_energy':
+                'tem_par.beam_energy',
+            'Acquisition_instrument.TEM.tilt_stage':
+                'tem_par.tilt_stage',
+            'Acquisition_instrument.TEM.Detector.EDS.live_time':
+                'tem_par.live_time',
+            'Acquisition_instrument.TEM.Detector.EDS.azimuth_angle':
+                'tem_par.azimuth_angle',
+            'Acquisition_instrument.TEM.Detector.EDS.elevation_angle':
+                'tem_par.elevation_angle',
+            'Acquisition_instrument.TEM.Detector.EDS.energy_resolution_MnKa':
+                'tem_par.energy_resolution_MnKa', }
         for key, value in mapping.iteritems():
             if self.metadata.has_item(key):
                 exec('%s = self.metadata.%s' % (value, key))
         tem_par.edit_traits()
 
         mapping = {
-            'Acquisition_instrument.TEM.beam_energy': tem_par.beam_energy,
-            'Acquisition_instrument.TEM.tilt_stage': tem_par.tilt_stage,
-            'Acquisition_instrument.TEM.Detector.EDS.live_time': tem_par.live_time,
-            'Acquisition_instrument.TEM.Detector.EDS.azimuth_angle': tem_par.azimuth_angle,
-            'Acquisition_instrument.TEM.Detector.EDS.elevation_angle': tem_par.elevation_angle,
-            'Acquisition_instrument.TEM.Detector.EDS.energy_resolution_MnKa': tem_par.energy_resolution_MnKa, }
+            'Acquisition_instrument.TEM.beam_energy':
+                tem_par.beam_energy,
+            'Acquisition_instrument.TEM.tilt_stage':
+                tem_par.tilt_stage,
+            'Acquisition_instrument.TEM.Detector.EDS.live_time':
+                tem_par.live_time,
+            'Acquisition_instrument.TEM.Detector.EDS.azimuth_angle':
+                tem_par.azimuth_angle,
+            'Acquisition_instrument.TEM.Detector.EDS.elevation_angle':
+                tem_par.elevation_angle,
+            'Acquisition_instrument.TEM.Detector.EDS.energy_resolution_MnKa':
+                tem_par.energy_resolution_MnKa, }
 
         for key, value in mapping.iteritems():
             if value != t.Undefined:
@@ -205,40 +224,193 @@ class EDSTEMSpectrum(EDSSpectrum):
         ax_m.units = ax_ref.units
         ax_m.offset = ax_ref.offset
 
-        # if hasattr(self.original_metadata, 'CHOFFSET'):
-            #ax_m.scale = ref.original_metadata.CHOFFSET
-        # if hasattr(self.original_metadata, 'OFFSET'):
-            #ax_m.offset = ref.original_metadata.OFFSET
-        # if hasattr(self.original_metadata, 'XUNITS'):
-            #ax_m.units = ref.original_metadata.XUNITS
-            # if hasattr(self.original_metadata, 'CHOFFSET'):
-                # if self.original_metadata.XUNITS == 'keV':
-                    #ax_m.scale = ref.original_metadata.CHOFFSET / 1000
-
         # Setup metadata
         if 'Acquisition_instrument.TEM' in ref.metadata:
             mp_ref = ref.metadata.Acquisition_instrument.TEM
         elif 'Acquisition_instrument.SEM' in ref.metadata:
             mp_ref = ref.metadata.Acquisition_instrument.SEM
         else:
-            raise ValueError("The reference has no metadata.Acquisition_instrument.TEM"
+            raise ValueError("The reference has no metadata." +
+                             "Acquisition_instrument.TEM" +
                              "\n nor metadata.Acquisition_instrument.SEM ")
 
         mp = self.metadata
-
         mp.Acquisition_instrument.TEM = mp_ref.deepcopy()
-
-        # if hasattr(mp_ref, 'tilt_stage'):
-            #mp.Acquisition_instrument.SEM.tilt_stage = mp_ref.tilt_stage
-        # if hasattr(mp_ref, 'beam_energy'):
-            #mp.Acquisition_instrument.SEM.beam_energy = mp_ref.beam_energy
-        # if hasattr(mp_ref.EDS, 'energy_resolution_MnKa'):
-            #mp.Acquisition_instrument.SEM.Detector.EDS.energy_resolution_MnKa = mp_ref.EDS.energy_resolution_MnKa
-        # if hasattr(mp_ref.EDS, 'azimuth_angle'):
-            #mp.Acquisition_instrument.SEM.Detector.EDS.azimuth_angle = mp_ref.EDS.azimuth_angle
-        # if hasattr(mp_ref.EDS, 'elevation_angle'):
-            #mp.Acquisition_instrument.SEM.Detector.EDS.elevation_angle = mp_ref.EDS.elevation_angle
-
         if mp_ref.has_item("Detector.EDS.live_time"):
             mp.Acquisition_instrument.TEM.Detector.EDS.live_time = \
                 mp_ref.Detector.EDS.live_time / nb_pix
+
+    def quantification(self,
+                       intensities,
+                       kfactors,
+                       composition_units='weight',
+                       navigation_mask=1.0,
+                       closing=True,
+                       plot_result=False,
+                       **kwargs):
+        """
+        Quantification of intensities to return elemental composition
+
+        Method: Cliff-Lorimer
+
+        Parameters
+        ----------
+        intensities: list of signal
+            the intensitiy for each X-ray lines.
+        kfactors: list of float
+            The list of kfactor in same order as intensities. Note that
+            intensities provided by hyperspy are sorted by the aplhabetical
+            order of the X-ray lines. eg. kfactors =[0.982, 1.32, 1.60] for
+            ['Al_Ka','Cr_Ka', 'Ni_Ka'].
+        composition_units: 'weight' or 'atomic'
+            Quantification returns weight percent. By choosing 'atomic', the
+            return composition is in atomic percent.
+        navigation_mask : None or float or signal
+            The navigation locations marked as True are not used in the
+            quantification. If int is given the vacuum_mask method is used to
+            generate a mask with the int value as threhsold.
+            Else provides a signal with the navigation shape.
+        closing: bool
+            If true, applied a morphologic closing to the mask obtained by
+            vacuum_mask.
+        plot_result : bool
+            If True, plot the calculated composition. If the current
+            object is a single spectrum it prints the result instead.
+        kwargs
+            The extra keyword arguments are passed to plot.
+
+        Return
+        ------
+        A list of quantified elemental maps (signal) giving the composition of
+        the sample in weight or atomic percent.
+
+        Examples
+        ---------
+        >>> #s is a signals.EDSTEMSpectrum
+        >>> s.set_elements(["Al", "Cr", "Ni"])
+        >>> s.add_lines()
+        >>> kfactors = [0.982, 1.32, 1.60]
+        >>> intensities = s.get_lines_intensity()
+        >>> res = s.quantification_cliff_lorimer(intensities,kfactors)
+
+        See also
+        --------
+        vacuum_mask
+        """
+        if isinstance(navigation_mask, float):
+            navigation_mask = self.vacuum_mask(navigation_mask, closing).data
+        elif navigation_mask is not None:
+            navigation_mask = navigation_mask.data
+        xray_lines = self.metadata.Sample.xray_lines
+        composition = utils.stack(intensities)
+        composition.data = utils_eds.quantification_cliff_lorimer(
+            composition.data, kfactors=kfactors,
+            mask=navigation_mask) * 100.
+        composition = composition.split()
+        if composition_units == 'atomic':
+            composition = utils.material.weight_to_atomic(composition)
+        for i, xray_line in enumerate(xray_lines):
+            element, line = utils_eds._get_element_and_line(xray_line)
+            composition[i].metadata.General.title = composition_units + \
+                ' percent of ' + element
+            composition[i].metadata.set_item("Sample.elements", ([element]))
+            composition[i].metadata.set_item(
+                "Sample.xray_lines", ([xray_line]))
+            if plot_result and \
+                    composition[i].axes_manager.signal_dimension == 0:
+                print("%s (%s): Composition = %.2f %s percent"
+                      % (element, xray_line, composition[i].data,
+                         composition_units))
+        if plot_result and composition[i].axes_manager.signal_dimension != 0:
+            utils.plot.plot_signals(composition, **kwargs)
+        return composition
+
+    def vacuum_mask(self, threshold=1.0, closing=True, opening=False):
+        """
+        Generate mask of the vacuum region
+
+        Parameters
+        ----------
+        threshold: float
+            For a given pixel, maximum value in the energy axis below which the
+            pixel is considered as vacuum.
+        closing: bool
+            If true, applied a morphologic closing to the mask
+        opnening: bool
+            If true, applied a morphologic opening to the mask
+
+        Return
+        ------
+        mask: signal
+            The mask of the region
+        """
+        from scipy.ndimage.morphology import binary_dilation, binary_erosion
+        mask = (self.max(-1) <= threshold)
+        if closing:
+            mask.data = binary_dilation(mask.data, border_value=0)
+            mask.data = binary_erosion(mask.data, border_value=1)
+        if opening:
+            mask.data = binary_erosion(mask.data, border_value=1)
+            mask.data = binary_dilation(mask.data, border_value=0)
+        return mask
+
+    def decomposition(self,
+                      normalize_poissonian_noise=True,
+                      navigation_mask=1.0,
+                      closing=True,
+                      *args,
+                      **kwargs):
+        """
+        Decomposition with a choice of algorithms
+
+        The results are stored in self.learning_results
+
+        Parameters
+        ----------
+        normalize_poissonian_noise : bool
+            If True, scale the SI to normalize Poissonian noise
+        navigation_mask : None or float or boolean numpy array
+            The navigation locations marked as True are not used in the
+            decompostion. If float is given the vacuum_mask method is used to
+            generate a mask with the float value as threshold.
+        closing: bool
+            If true, applied a morphologic closing to the maks obtained by
+            vacuum_mask.
+        algorithm : 'svd' | 'fast_svd' | 'mlpca' | 'fast_mlpca' | 'nmf' |
+            'sparse_pca' | 'mini_batch_sparse_pca'
+        output_dimension : None or int
+            number of components to keep/calculate
+        centre : None | 'variables' | 'trials'
+            If None no centring is applied. If 'variable' the centring will be
+            performed in the variable axis. If 'trials', the centring will be
+            performed in the 'trials' axis. It only has effect when using the
+            svd or fast_svd algorithms
+        auto_transpose : bool
+            If True, automatically transposes the data to boost performance.
+            Only has effect when using the svd of fast_svd algorithms.
+        signal_mask : boolean numpy array
+            The signal locations marked as True are not used in the
+            decomposition.
+        var_array : numpy array
+            Array of variance for the maximum likelihood PCA algorithm
+        var_func : function or numpy array
+            If function, it will apply it to the dataset to obtain the
+            var_array. Alternatively, it can a an array with the coefficients
+            of a polynomial.
+        polyfit :
+        reproject : None | signal | navigation | both
+            If not None, the results of the decomposition will be projected in
+            the selected masked area.
+
+        See also
+        --------
+        vacuum_mask,plot_decomposition_factors, plot_decomposition_loadings,
+        plot_lev
+        """
+        if isinstance(navigation_mask, float):
+            navigation_mask = self.vacuum_mask(navigation_mask, closing).data
+        super(EDSSpectrum, self).decomposition(
+            normalize_poissonian_noise=normalize_poissonian_noise,
+            navigation_mask=navigation_mask, *args, **kwargs)
+        self.learning_results.loadings = np.nan_to_num(
+            self.learning_results.loadings)
