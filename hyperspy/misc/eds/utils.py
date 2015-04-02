@@ -1,3 +1,5 @@
+from __future__ import division
+
 import numpy as np
 import math
 
@@ -231,3 +233,112 @@ def xray_lines_model(elements=['Al', 'Zn'],
     s.data = m.as_signal().data
     # s.add_poissonian_noise()
     return s
+
+
+def quantification_cliff_lorimer(intensities,
+                                 kfactors,
+                                 mask=None):
+    """
+    Quantification using Cliff-Lorimer
+
+    Parameters
+    ----------
+    intensities: numpy.array
+        the intensities for each X-ray lines. The first axis should be the
+        elements axis.
+    kfactors: list of float
+        The list of kfactor in same order as intensities eg. kfactors =
+        [1, 1.47, 1.72] for ['Al_Ka','Cr_Ka', 'Ni_Ka']
+    mask: array of bool
+        The mask with the dimension of intensities[0]. If a pixel is True,
+        the composition is set to zero.
+
+    Return
+    ------
+    numpy.array containing the weight fraction with the same
+    shape as intensities.
+    """
+    # Value used as an threshold to prevent using zeros as denominator
+    min_intensity = 0.1
+    dim = intensities.shape
+    if len(dim) > 1:
+        dim2 = reduce(lambda x, y: x*y, dim[1:])
+        intens = intensities.reshape(dim[0], dim2)
+        intens = intens.astype('float')
+        for i in range(dim2):
+            index = np.where(intens[:, i] > min_intensity)[0]
+            if len(index) > 1:
+                ref_index, ref_index2 = index[:2]
+                intens[:, i] = _quantification_cliff_lorimer(
+                    intens[:, i], kfactors, ref_index, ref_index2)
+            else:
+                intens[:, i] = np.zeros_like(intens[:, i])
+                if len(index) == 1:
+                    intens[index[0], i] = 1.
+        intens = intens.reshape(dim)
+        if mask is not None:
+            for i in range(dim[0]):
+                intens[i][mask] = 0
+        return intens
+    else:
+        # intens = intensities.copy()
+        # intens = intens.astype('float')
+        index = np.where(intensities > min_intensity)[0]
+        if len(index) > 1:
+            ref_index, ref_index2 = index[:2]
+            intens = _quantification_cliff_lorimer(
+                intensities, kfactors, ref_index, ref_index2)
+        else:
+            intens = np.zeros_like(intensities)
+            if len(index) == 1:
+                intens[index[0]] = 1.
+        return intens
+
+
+def _quantification_cliff_lorimer(intensities,
+                                  kfactors,
+                                  ref_index=0,
+                                  ref_index2=1):
+    """
+    Quantification using Cliff-Lorimer
+
+    Parameters
+    ----------
+    intensities: numpy.array
+        the intensities for each X-ray lines. The first axis should be the
+        elements axis.
+    kfactors: list of float
+        The list of kfactor in same order as  intensities eg. kfactors =
+        [1, 1.47, 1.72] for ['Al_Ka','Cr_Ka', 'Ni_Ka']
+    ref_index, ref_index2: int
+        index of the elements that will be in the denominator. Should be non
+        zeros if possible.
+
+    Return
+    ------
+    numpy.array containing the weight fraction with the same
+    shape as intensities.
+    """
+    if len(intensities) != len(kfactors):
+        raise ValueError('The number of kfactors must match the size of the '
+                         'first axis of intensities.')
+    ab = np.zeros_like(intensities, dtype='float')
+    composition = np.ones_like(intensities, dtype='float')
+    # ab = Ia/Ib / kab
+
+    other_index = range(len(kfactors))
+    other_index.pop(ref_index)
+    for i in other_index:
+        ab[i] = intensities[ref_index] * kfactors[ref_index]  \
+            / intensities[i] / kfactors[i]
+    # Ca = ab /(1 + ab + ab/ac + ab/ad + ...)
+    for i in other_index:
+        if i == ref_index2:
+            composition[ref_index] += ab[ref_index2]
+        else:
+            composition[ref_index] += (ab[ref_index2] / ab[i])
+    composition[ref_index] = ab[ref_index2] / composition[ref_index]
+    # Cb = Ca / ab
+    for i in other_index:
+        composition[i] = composition[ref_index] / ab[i]
+    return composition
