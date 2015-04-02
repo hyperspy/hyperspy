@@ -19,6 +19,7 @@
 from __future__ import division
 
 import math
+import warnings
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -56,7 +57,8 @@ class ImagePlot(BlittedFigure):
         keep the image in the aspect limit the pixels are made
         rectangular.
     perc: float
-        The percentile use to set the maximum and minimum of contrast
+        The percentile of number of data points to use to set the maximum and minimum of contrast.
+        0.9 results in 90% of points not saturated
 
     """
 
@@ -83,7 +85,7 @@ class ImagePlot(BlittedFigure):
         self.xaxis = None
         self.yaxis = None
         self.min_aspect = 0.1
-        self.perc = 0.01
+        self.perc = 0.99
         self.ax_markers = list()
         self.scalebar_color = "white"
         self._user_scalebar = None
@@ -159,15 +161,19 @@ class ImagePlot(BlittedFigure):
         self._aspect = np.abs(factor * xaxis.scale / yaxis.scale)
 
     def optimize_contrast(self, data):
-        perc = self.perc
+        perc = np.abs(self.perc)
         dc = data.copy().ravel()
         if 'complex' in dc.dtype.name:
             dc = np.log(np.abs(dc))
         dc.sort()
-        i = int(round(len(dc) * perc))
-        i = i if i > 0 else 1
-        vmin = np.nanmin(dc[i:])
-        vmax = np.nanmax(dc[:-i])
+        if perc >= 1.0:
+            vmin = np.nanmin(dc)
+            vmax = np.nanmax(dc)
+        else:
+            i = int(round(len(dc) * 0.5 * (1.0 - perc)))
+            i = i if i > 0 else 1 # probably not required check
+            vmin = np.nanmin(dc[i:])
+            vmax = np.nanmax(dc[:-i])
         self.vmin = vmin
         self.vmax = vmax
 
@@ -209,6 +215,8 @@ class ImagePlot(BlittedFigure):
             self.colorbar = False
             data = rgb_tools.rgbx2regular_array(data, plot_friendly=True)
         if self.auto_contrast is True:
+            if self.vmin is not None or self.vmax is not None:
+                warnings.warn("'auto_contrast' is True (default), hence vmin and vmax values are ignored")
             self.optimize_contrast(data)
         if (not self.axes_manager or
                 self.axes_manager.navigation_size == 0):

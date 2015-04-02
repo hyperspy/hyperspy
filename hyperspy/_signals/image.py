@@ -47,7 +47,7 @@ class Image(Signal):
              scalebar_color="white",
              axes_ticks=None,
              auto_contrast=True,
-             percentile=0.1,
+             percentile=0.9,
              vmin=None,
              vmax=None,
              no_nans=False,
@@ -112,13 +112,14 @@ class Image(Signal):
             are never plotted.
         auto_contrast : bool, optional
             If True, the contrast is stretched for each image using the
-            percentile value.
+            percentile value. Default True
         percentile : float
-            The percentile to be used for contrast stretching. It should be a
-            scalar in the 0 to 1 range.
+            The percentile to be used for contrast stretching. 
+            0.9 results in 90% of data points not saturated.
+            It should be a scalar in the 0 to 1 range.
         vmin, vmax : scalar, optional
             `vmin` and `vmax` are used to normalize luminance data. If
-            `auto_contrast` is True these values are ignore.
+            `auto_contrast` is True (i.e. default) these values are ignore.
         no_nans : bool, optional
             If True, set nans to zero for plotting.
         **kwargs, optional
