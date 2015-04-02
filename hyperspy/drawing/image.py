@@ -171,7 +171,7 @@ class ImagePlot(BlittedFigure):
             vmax = np.nanmax(dc)
         else:
             i = int(round(len(dc) * 0.5 * (1.0 - perc)))
-            i = i if i > 0 else 1 # probably not required check
+            i = i if i > 0 else 1  # probably not required check
             vmin = np.nanmin(dc[i:])
             vmax = np.nanmax(dc[:-i])
         self.vmin = vmin
@@ -216,7 +216,8 @@ class ImagePlot(BlittedFigure):
             data = rgb_tools.rgbx2regular_array(data, plot_friendly=True)
         if self.auto_contrast is True:
             if self.vmin is not None or self.vmax is not None:
-                warnings.warn("'auto_contrast' is True (default), hence vmin and vmax values are ignored")
+                warnings.warn(
+                    "'auto_contrast' is True (default), hence vmin and vmax values are ignored")
             self.optimize_contrast(data)
         if (not self.axes_manager or
                 self.axes_manager.navigation_size == 0):

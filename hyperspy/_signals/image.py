@@ -114,7 +114,7 @@ class Image(Signal):
             If True, the contrast is stretched for each image using the
             percentile value. Default True
         percentile : float
-            The percentile to be used for contrast stretching. 
+            The percentile to be used for contrast stretching.
             0.9 results in 90% of data points not saturated.
             It should be a scalar in the 0 to 1 range.
         vmin, vmax : scalar, optional
