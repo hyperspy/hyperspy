@@ -123,13 +123,29 @@ The same keys can be used to explore an image stack.
 Customizing the "navigator"
 ===========================
 
+The files needed for this section can be downloaded using
+
+.. code-block:: python
+
+    >>> from urllib import urlretrieve
+    >>> url = 'http://cook.msm.cam.ac.uk//~hyperspy//EDS_tutorial//'
+    >>> urlretrieve(url + 'TiFeNi_010.rpl', 'Ni_superalloy_010.rpl')
+    >>> urlretrieve(url + 'TiFeNi_010.raw', 'TiFeNi_010.raw')
+    >>> urlretrieve(url + 'TiFeNi_012.rpl', 'TiFeNi_012.rpl')
+    >>> urlretrieve(url + 'TiFeNi_011.raw', 'TiFeNi_011.raw')
+    >>> urlretrieve(url + 'image010.tif', 'image010.tif')
+    >>> urlretrieve(url + 'image011.tif', 'image011.tif')
+
+.. NOTE::
+	See also the `EDS tutorials <http://nbviewer.ipython.org/github/hyperspy/hyperspy-	demos/blob/master/electron_microscopy/EDS/>`_ .
+
 Stack of 2D images can be imported as an 3D image and plotted with a slider
 instead of the 2D navigator as in the previous example.
 
 .. code-block:: python
 
     >>> img = load('image*.tif', stack=True)
-    >>> img.plot(navigator="slider")
+    >>> img.plot(navigator='slider')
     
     
 .. figure::  images/3D_image.png
@@ -144,8 +160,8 @@ plotted with sliders.
 
 .. code-block:: python
 
-    >>> spec = load('spectrum_image*.rpl', stack=True)
-    >>> spec.plot()
+    >>> s = load('TiFeNi_0*.rpl', stack=True).as_spectrum(0)
+    >>> s.plot()
     
     
 .. figure::  images/3D_spectrum.png
@@ -160,7 +176,13 @@ can be used as an external signal for the navigator.
    
 .. code-block:: python
 
-    >>> spec.plot(navigator=img)    
+    >>> im = load('image*.tif', stack=True)
+    >>> s = load('TiFeNi_0*.rpl', stack=True).as_spectrum(0)
+    >>> dim = s.axes_manager.navigation_shape
+    >>> #Rebin the image
+    >>> im = im.rebin([dim[2], dim[0], dim[1]])
+    >>> s.plot(navigator=im)
+  
     
 .. figure::  images/3D_spectrum_external.png
    :align:   center
@@ -173,7 +195,7 @@ alternative display.
 
 .. code-block:: python
 
-    >>> imgSpec = spec.as_image((0, 1))
+    >>> imgSpec = load('TiFeNi_0*.rpl', stack=True)
     >>> imgSpec.plot(navigator='spectrum')
     
     
@@ -188,7 +210,8 @@ the "maximum spectrum" for which each channel is the maximum of all pixels.
 
 .. code-block:: python
 
-    >>> specMax = spec.max(0).max(0).max(0)
+    >>> imgSpec = load('TiFeNi_0*.rpl', stack=True)
+    >>> specMax = imgSpec.max(-1).max(-1).max(-1).as_spectrum(0)
     >>> imgSpec.plot(navigator=specMax)
     
     
@@ -204,6 +227,17 @@ Lastly, if no navigator is needed, "navigator=None" can be used.
 Using Mayavi to visualize 3D data
 =================================
 
+The files needed for this section can be downloaded using
+
+.. code-block:: python
+
+    >>> from urllib import urlretrieve
+    >>> url = 'http://cook.msm.cam.ac.uk//~hyperspy//EDS_tutorial//'
+    >>> urlretrieve(url + 'Ni_La_intensity.hdf5', 'Ni_La_intensity.hdf5')
+
+.. NOTE::
+	See also the `EDS tutorials <http://nbviewer.ipython.org/github/hyperspy/hyperspy-	demos/blob/master/electron_microscopy/EDS/>`_ .
+
 Although HyperSpy does not currently support plotting when signal_dimension is
 greater than 2, `Mayavi <http://docs.enthought.com/mayavi/mayavi/>`_ can be
 used for this purpose.
@@ -215,21 +249,16 @@ found in :ref:`EDS lines intensity<get_lines_intensity>`.
 
 .. code-block:: python
 
-    >>> #Import packages
-    >>> from skimage import filter
     >>> from mayavi import mlab
-    >>> #Generate the X-ray intensity map of Nickel L alpha
-    >>> NiMap = specImg3Dc.get_lines_intensity(['Ni_La'])[0]
-    >>> #Reduce the noise
-    >>> NiMapDenoise = filter.denoise_tv_chambolle(NiMap.data)
-    >>> #Plot isosurfaces
-    >>> mlab.contour3d(NiMapDenoise)
-    >>> mlab.outline()
+    >>> ni = load('Ni_La_intensity.hdf5')
+    >>> mlab.figure()
+    >>> mlab.contour3d(ni.data, contours=[85])
+    >>> mlab.outline(color=(0, 0, 0))
         
     
-.. figure::  images/mayavi.png
+.. figure::  images/plot_3D_mayavi.png
    :align:   center
-   :width:   450    
+   :width:   400    
 
    Visualisation of isosurfaces with mayavi.
    
