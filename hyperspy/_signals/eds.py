@@ -50,18 +50,15 @@ class EDSSpectrum(Spectrum):
 
         Parameters
         ----------
-
         Xray_line : strings
-            Valid element X-ray lines e.g. Fe_Kb.
-
+            Valid element X-ray lines e.g. Fe_Kb
         FWHM_MnKa: {None, float, 'auto'}
             The energy resolution of the detector in eV
             if 'auto', used the one in
             'self.metadata.Acquisition_instrument.SEM.Detector.EDS.energy_resolution_MnKa'
 
         Returns
-        ------
-
+        -------
         float: the line energy, if FWHM_MnKa is None
         (float,float): the line energy and the energy resolution, if FWHM_MnKa
         is not None
@@ -175,14 +172,9 @@ class EDSSpectrum(Spectrum):
 
         Examples
         --------
-        >>> import numpy as np
-        >>> s = Signal(np.random.random((64,64,1024)))
-        >>> s.data.shape
-        (64,64,1024)
-        >>> s.sum(-1).data.shape
-        (64,64)
-        # If we just want to plot the result of the operation
-        s.sum(-1, True).plot()
+        >>> s = utils.example_signals.EDS_SEM_Spectrum()
+        >>> s.sum(0).data
+        array(1000279)
 
         """
         # modify time spend per spectrum
@@ -202,6 +194,14 @@ class EDSSpectrum(Spectrum):
         ----------
         new_shape: tuple of ints
             The new shape must be a divisor of the original shape
+
+        Examples
+        --------
+        >>> s = utils.example_signals.EDS_SEM_Spectrum()
+        >>> print s
+        >>> print s.rebin([512])
+        <EDSSEMSpectrum, title: EDS SEM Spectrum, dimensions: (|1024)>
+        <EDSSEMSpectrum, title: EDS SEM Spectrum, dimensions: (|512)>
 
         """
         new_shape_in_array = []
@@ -236,15 +236,12 @@ class EDSSpectrum(Spectrum):
 
         Examples
         --------
-
-        >>> s = signals.EDSSEMSpectrum(np.arange(1024))
-        >>> s.set_elements(['Ni', 'O'],['Ka','Ka'])
-        Adding Ni_Ka Line
-        Adding O_Ka Line
-        >>> s.mapped_paramters.Acquisition_instrument.SEM.beam_energy = 10
-        >>> s.set_elements(['Ni', 'O'])
-        Adding Ni_La Line
-        Adding O_Ka Line
+        >>> s = utils.example_signals.EDS_SEM_Spectrum()
+        >>> print s.metadata.Sample.elements
+        >>> s.set_elements(['Al'])
+        >>> print s.metadata.Sample.elements
+        ['Al' 'C' 'Cu' 'Mn' 'Zr']
+        ['Al']
 
         """
         # Erase previous elements and X-ray lines
@@ -262,10 +259,18 @@ class EDSSpectrum(Spectrum):
         elements : list of strings
             The symbol of the elements.
 
+        Examples
+        --------
+        >>> s = utils.example_signals.EDS_SEM_Spectrum()
+        >>> print s.metadata.Sample.elements
+        >>> s.add_elements(['Ar'])
+        >>> print s.metadata.Sample.elements
+        ['Al' 'C' 'Cu' 'Mn' 'Zr']
+        ['Al', 'Ar', 'C', 'Cu', 'Mn', 'Zr']
 
         See also
         --------
-        set_elements, add_lines, set_lines.
+        set_elements, add_lines, set_lines
 
         """
         if not isiterable(elements) or isinstance(elements, basestring):
@@ -314,6 +319,16 @@ class EDSSpectrum(Spectrum):
         only_lines : {None, list of strings}
             If not None, only the given lines will be added.
 
+        Examples
+        --------
+        >>> s = utils.example_signals.EDS_SEM_Spectrum()
+        >>> s.add_lines()
+        >>> print s.metadata.Sample.xray_lines
+        >>> s.set_lines(['Cu_Ka'])
+        >>> print s.metadata.Sample.xray_lines
+        ['Al_Ka', 'C_Ka', 'Cu_La', 'Mn_La', 'Zr_La']
+        ['Al_Ka', 'C_Ka', 'Cu_Ka', 'Mn_La', 'Zr_La']
+
         See also
         --------
         add_lines, add_elements, set_elements..
@@ -355,6 +370,28 @@ class EDSSpectrum(Spectrum):
             above an overvoltage of 2 (< beam energy / 2).
         only_lines : {None, list of strings}
             If not None, only the given lines will be added.
+
+        Examples
+        --------
+        >>> #add_lines()
+        >>> s = utils.example_signals.EDS_SEM_Spectrum()
+        >>> s.add_lines()
+        >>> print s.metadata.Sample.xray_lines
+        ['Al_Ka', 'C_Ka', 'Cu_La', 'Mn_La', 'Zr_La']
+
+        >>> s = utils.example_signals.EDS_SEM_Spectrum()
+        >>> s.set_microscope_parameters(beam_energy=30)
+        >>> s.add_lines()
+        >>> print s.metadata.Sample.xray_lines
+        ['Al_Ka', 'C_Ka', 'Cu_Ka', 'Mn_Ka', 'Zr_La']
+
+        >>> s = utils.example_signals.EDS_SEM_Spectrum()
+        >>> s.add_lines()
+        >>> print s.metadata.Sample.xray_lines
+        >>> s.add_lines(['Cu_Ka'])
+        >>> print s.metadata.Sample.xray_lines
+        ['Al_Ka', 'C_Ka', 'Cu_La', 'Mn_La', 'Zr_La']
+        ['Al_Ka', 'C_Ka', 'Cu_Ka', 'Cu_La', 'Mn_La', 'Zr_La']
 
         See also
         --------
@@ -490,7 +527,6 @@ class EDSSpectrum(Spectrum):
 
         Parameters
         ----------
-
         xray_lines: {None, "best", list of string}
             If None,
             if `mapped.parameters.Sample.elements.xray_lines` contains a
