@@ -129,7 +129,8 @@ contrast controls are HyperSpy-specific, however `matplotlib.imshow
 
 .. code-block:: python
 
-    >>> img = load('core_shell.hdf5')
+    >>> import scipy
+    >>> img = signals.Image(scipy.misc.lena())
     >>> img.plot(colorbar=True, scalebar=False, auto_contrast=True, axes_ticks=True, cmap='RdYlBu_r', percentile=1.0)
 
 
@@ -137,7 +138,7 @@ contrast controls are HyperSpy-specific, however `matplotlib.imshow
    :align:   center
    :width:   500    
 
-   Custom colormap and switched off colorbar and scalebar in an image stack plot.
+   Custom colormap and switched off scalebar in an image stack plot.
 
 Customizing the "navigator"
 ===========================
