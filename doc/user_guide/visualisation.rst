@@ -137,7 +137,13 @@ The files needed for this section can be downloaded using
     >>> urlretrieve(url + 'image011.tif', 'image011.tif')
 
 .. NOTE::
-	See also the `EDS tutorials <http://nbviewer.ipython.org/github/hyperspy/hyperspy-	demos/blob/master/electron_microscopy/EDS/>`_ .
+	See also the `SEM EDS tutorials <http://nbviewer.ipython.org/github/hyperspy/hyperspy-	demos/blob/master/electron_microscopy/EDS/>`_ .
+
+.. NOTE::
+
+    The sample and the data used in this chapter are described in 
+    P. Burdet, `et al.`, Acta Materialia, 61, p. 3090-3098 (2013) (see
+    `abstract <http://infoscience.epfl.ch/record/185861/>`_).
 
 Stack of 2D images can be imported as an 3D image and plotted with a slider
 instead of the 2D navigator as in the previous example.
@@ -263,11 +269,12 @@ found in :ref:`EDS lines intensity<get_lines_intensity>`.
    Visualisation of isosurfaces with mayavi.
    
 .. NOTE::
+	See also the `SEM EDS tutorials <http://nbviewer.ipython.org/github/hyperspy/hyperspy-	demos/blob/master/electron_microscopy/EDS/>`_ .
+
+.. NOTE::
 
     The sample and the data used in this chapter are described in 
-    P. Burdet, `et al.`, Acta Materialia, 61, p. 3090-3098 (2013) (see
-    `abstract <http://infoscience.epfl.ch/record/185861/>`_).
-
+    P. Burdet, `et al.`, Ultramicroscopy, 148, p. 158-167 (2015).
 .. _plot_spectra:
 
 Plotting multiple signals
@@ -555,17 +562,18 @@ By providing an array of positions, the marker can also change position when nav
   :align:   center
   :width:   400
 
-The markers can be added to the navigator as well
-
+The markers can be added to the navigator as well. In the following example, each slice of a 2D spectrum is tagged with a text marker on the signal plot. Each slice is indicated with the same text on the navigator.
+ 
 .. code-block:: python
 
     >>> s = signals.Spectrum(np.arange(100).reshape([10,10]))
     >>> s.plot(navigator='spectrum')
-    >>> for i in range(10):
-    >>>     m = utils.plot.markers.text(y=range(50,1000,100)[i],
+    >>> for i in range(s.axes_manager.shape[0]):
+    >>>     m = utils.plot.markers.text(y=s.sum(-1).data[i]+5,
     >>>                                 x=i, text='abcdefghij'[i])
     >>>     s.add_marker(m, plot_on_signal=False)
-    >>> m = utils.plot.markers.text(x=5, y=range(7,110, 10),
+    >>> x = s.axes_manager.shape[-1]/2 #middle of signal plot
+    >>> m = utils.plot.markers.text(x=x, y=s[:, x].data+2,
     >>>                             text=[i for i in 'abcdefghij'])
     >>> s.add_marker(m)
 
