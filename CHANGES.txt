@@ -6,7 +6,35 @@ see `the github commits changelog
 <https://github.com/hyperspy/hyperspy/commits/master>`_.
 
 
-.. _changes_0.7.3:
+.. _changes_0.8.0:
+
+v0.8.0
+======
+
+New features
+------------
+
+Plotting
+^^^^^^^^
+
+* New class,  :py:class:`~.drawing.marker.MarkerBase`, to plot markers with ``hspy.utils.plot.markers`` module.  See :ref:`plot.markers`.
+* New method to plot images with the :py:func:`~.drawing.utils.plot_images` function in  ``hspy.utils.plot.plot_images``. See :ref:`plot.images`.
+* Improved :py:meth:`~._signals.image.Image.plot` method to customize the image. See :ref:`plot.customize_images`.
+
+EDS
+^^^
+
+* New method for quantifying EDS TEM spectra using Cliff-Lorimer method, :py:meth:`~._signals.eds_tem.EDSTEMSpectrum.quantification`. See :ref:`eds_quantification-label`.
+* New method to estimate for background subtraction, :py:meth:`~._signals.eds.EDSSpectrum.estimate_background_windows`. See :ref:`eds_background_subtraction-label`.
+* New method to estimate the windows of integration, :py:meth:`~._signals.eds.EDSSpectrum.estimate_integration_windows`.
+* New specific :py:meth:`~._signals.eds.EDSSpectrum.plot` method, with markers to indicate the X-ray lines, the window of integration or/and the windows for background subtraction. See :ref:`eds_plot_markers-label`.
+* New examples of signal in the ``hspy.utils.example_signals`` module.
+
+  + :py:func:`~.misc.example_signals_loading.load_1D_EDS_SEM_spectrum`
+  + :py:func:`~.misc.example_signals_loading.load_1D_EDS_TEM_spectrum`
+
+* New method to mask the vaccum, :py:meth:`~._signals.eds_tem.EDSTEMSpectrum.vacuum_mask` and a specific :py:meth:`~._signals.eds_tem.EDSTEMSpectrum.decomposition` method that incoroporate the vacuum mask
+
 
 v0.7.3
 ======

@@ -34,7 +34,7 @@ def _weight_to_atomic(weight_percent, elements):
         [elements_db[element]['General_properties']['atomic_weight']
             for element in elements])
     atomic_percent = np.array(map(np.divide, weight_percent, atomic_weights))
-    sum_weight = atomic_percent.sum(axis=0)/100.
+    sum_weight = atomic_percent.sum(axis=0) / 100.
     for i, el in enumerate(elements):
         warnings.simplefilter("ignore")
         atomic_percent[i] /= sum_weight
@@ -111,7 +111,7 @@ def _atomic_to_weight(atomic_percent, elements):
         [elements_db[element]['General_properties']['atomic_weight']
             for element in elements])
     weight_percent = np.array(map(np.multiply, atomic_percent, atomic_weights))
-    sum_atomic = weight_percent.sum(axis=0)/100.
+    sum_atomic = weight_percent.sum(axis=0) / 100.
     for i, el in enumerate(elements):
         warnings.simplefilter("ignore")
         weight_percent[i] /= sum_atomic

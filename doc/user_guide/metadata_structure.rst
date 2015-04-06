@@ -1,4 +1,4 @@
-.. _metadata_structure:
+﻿.. _metadata_structure:
 
 
 Metadata structure
@@ -71,7 +71,7 @@ in the following sections of this chapter.
         │   └── variance
         ├── binned
         ├── record_by
-        ├── signal_kind
+        ├── signal_type
         └── signal_origin
 
 General 
@@ -279,15 +279,15 @@ thickness
 Signal
 ======
 
-signal_kind
+signal_type
     type: Str
     
-    A term that describes the signal type, e.g. EDX, PES... This information 
+    A term that describes the signal type, e.g. EDS, PES... This information 
     can be used by HyperSpy to load the file as a specific signal class and 
     therefore the naming should be standarised. Currently HyperSpy provides 
-    special signal class for photoemission spectroscopy and electron energy 
-    loss spectroscopy and the signal_kind in these cases should be respectively 
-    PES and EELS.
+    special signal class for photoemission spectroscopy, electron energy 
+    loss spectroscopy and energy dispersive spectroscopy. The signal_type in these cases should be respectively 
+    PES, EELS and EDS_TEM (EDS_SEM).
 
 signal_origin
     type: Str
