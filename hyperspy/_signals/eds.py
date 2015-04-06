@@ -297,8 +297,8 @@ class EDSSpectrum(Spectrum):
         self.metadata.Sample.elements = sorted(list(elements_))
 
     def _parse_only_lines(self, only_lines):
-        if only_lines is None:
-            return None
+        if isinstance(only_lines, str) is False:
+            return only_lines
         else:
             only_lines = list(only_lines)
             for only_line in only_lines:
