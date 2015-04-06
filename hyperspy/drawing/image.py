@@ -161,6 +161,8 @@ class ImagePlot(BlittedFigure):
         self._aspect = np.abs(factor * xaxis.scale / yaxis.scale)
 
     def optimize_contrast(self, data):
+        if self.vmin is not None and self.vmax is not None and not self.auto_contrast:
+            return
         perc = np.abs(self.perc)
         dc = data.copy().ravel()
         if 'complex' in dc.dtype.name:
@@ -174,8 +176,10 @@ class ImagePlot(BlittedFigure):
             i = i if i > 0 else 1  # probably not required check
             vmin = np.nanmin(dc[i:])
             vmax = np.nanmax(dc[:-i])
-        self.vmin = vmin
-        self.vmax = vmax
+        if self.vmin is None or self.auto_contrast:
+            self.vmin = vmin
+        if self.vmax is None or self.auto_contrast:
+            self.vmax = vmax
 
     def create_figure(self, max_size=8, min_size=2):
         if self.scalebar is True:
@@ -214,11 +218,10 @@ class ImagePlot(BlittedFigure):
         if rgb_tools.is_rgbx(data):
             self.colorbar = False
             data = rgb_tools.rgbx2regular_array(data, plot_friendly=True)
-        if self.auto_contrast is True:
-            if self.vmin is not None or self.vmax is not None:
-                warnings.warn(
-                    "'auto_contrast' is True (default), hence vmin and vmax values are ignored")
-            self.optimize_contrast(data)
+        if self.vmin is not None or self.vmax is not None:
+            warnings.warn('vmin or vmax value given, hence auto_contrast is set to False')
+            self.auto_contrast = False
+        self.optimize_contrast(data)
         if (not self.axes_manager or
                 self.axes_manager.navigation_size == 0):
             self.plot_indices = False

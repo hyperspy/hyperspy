@@ -118,8 +118,8 @@ class Image(Signal):
             0.9 results in 90% of data points not saturated.
             It should be a scalar in the 0 to 1 range.
         vmin, vmax : scalar, optional
-            `vmin` and `vmax` are used to normalize luminance data. If
-            `auto_contrast` is True (i.e. default) these values are ignore.
+            `vmin` and `vmax` are used to normalize luminance data. If at least one of them is given
+            `auto_contrast` is set to False and any missing values are calculated automatically.
         no_nans : bool, optional
             If True, set nans to zero for plotting.
         **kwargs, optional
