@@ -3,8 +3,6 @@
 Energy-Dispersive X-Rays Spectrometry (EDS)
 ******************************************
 
-.. versionadded:: 0.7
-
 The methods described here are specific to the following signals:
 
 * :py:class:`~._signals.eds_tem.EDSTEMSpectrum`
@@ -360,6 +358,8 @@ An example of plotting EDS data of higher dimension (3D SEM-EDS) is given in
 Plot X-ray lines
 ^^^^^^^^^^^^^^^^
 
+.. versionadded:: 0.8
+
 X-ray lines can be labbeled on a plot with 
 :py:meth:`~._signals.eds.EDSSpectrum.plot`. The lines are 
 either given, either retrieved from "metadata.Sample.Xray_lines",
@@ -410,6 +410,7 @@ The files needed for this section can be downloaded using
     The sample and the data used in this section are described in 
     D. Roussow et al., Nano Lett, 10.1021/acs.nanolett.5b00449 (2015).
 
+.. versionadded:: 0.8
 
 The width of integration is defined by extending the energy resolution of
 Mn Ka to the peak energy ("energy_resolution_MnKa" in metadata). 
@@ -449,6 +450,8 @@ The windows of integration can be visualised using :py:meth:`~._signals.eds.EDSS
 Background subtraction
 ^^^^^^^^^^^^^^^^^^^^^^
 
+.. versionadded:: 0.8
+
 The background can be subtracted from the X-ray intensities with the :py:meth:`~._signals.eds.EDSSpectrum.get_lines_intensity` method. The background value is obtained by averaging the intensity in two windows on each side of the X-ray line. The position of the windows can be estimated with the :py:meth:`~._signals.eds.EDSSpectrum.estimate_background_windows` method and can be plotted with the :py:meth:`~._signals.eds.EDSSpectrum.plot` method as follow. The integration windows are plotted with dashed lines.
 
 .. code-block:: python
@@ -465,6 +468,8 @@ The background can be subtracted from the X-ray intensities with the :py:meth:`~
 
 Quantification
 --------------
+
+.. versionadded:: 0.8
 
 One TEM quantification method (Cliff-Lorimer) is implemented so far.
 

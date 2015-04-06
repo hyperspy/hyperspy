@@ -123,6 +123,8 @@ The same keys can be used to explore an image stack.
 Customising image plot
 ======================
 
+.. versionadded:: 0.8
+
 The image plot can be customised by passing additional arguments when plotting. Colorbar, scalebar and
 contrast controls are HyperSpy-specific, however `matplotlib.imshow
 <http://matplotlib.org/api/pyplot_api.html#matplotlib.pyplot.imshow>`_ arguments are supported as well:
