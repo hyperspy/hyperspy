@@ -397,7 +397,7 @@ Get lines intensity
 -------------------
 
 
-The files needed for this section can be downloaded using
+Data files used in the following examples can be downloaded using
 
 .. code-block:: python
 
@@ -417,7 +417,7 @@ Mn Ka to the peak energy ("energy_resolution_MnKa" in metadata).
 .. code-block:: python
 
     >>> s = load('core_shell.hdf5')
-    >>> s.get_lines_intensity(['Fe_Ka'],plot_result=True)
+    >>> s.get_lines_intensity(['Fe_Ka'], plot_result=True)
     
 .. figure::  images/EDS_get_lines_intensity.png
    :align:   center
