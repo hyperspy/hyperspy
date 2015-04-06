@@ -356,7 +356,7 @@ def plot_images(images,
                 suptitle=None,
                 suptitle_fontsize=18,
                 colorbar='multi',
-                perc=0.05,
+                percentile=0.9,
                 scalebar=None,
                 scalebar_color='white',
                 axes_decor='all',
@@ -414,9 +414,10 @@ def plot_images(images,
             (non-RGB) image
             If 'single', all (non-RGB) images are plotted on the same scale,
             and one colorbar is shown for all
-        perc : float
-            The percentile used to set the maximum and minimum of contrast
-            in the image displays.
+        percentile : float
+            The percentile to be used for contrast stretching.
+            0.9 results in 90% of data points not saturated.
+            It should be a scalar in the 0 to 1 range.
         interp : None or str, optional
             Type of interpolation to use with matplotlib.imshow()
             Possible values are:
@@ -513,10 +514,14 @@ def plot_images(images,
         if 'complex' in dc.dtype.name:
             dc = np.log(np.abs(dc))
         dc.sort()
-        ii = int(round(len(dc) * _perc))
-        ii = ii if ii > 0 else 1
-        vmin = np.nanmin(dc[ii:])
-        vmax = np.nanmax(dc[:-ii])
+        if _perc >= 1.0:
+            vmin = np.nanmin(dc)
+            vmax = np.nanmax(dc)
+        else:
+            i = int(round(len(dc) * 0.5 * (1.0 - _perc)))
+            i = i if i > 0 else 1  # probably not required check
+            vmin = np.nanmin(dc[i:])
+            vmax = np.nanmax(dc[:-i])
         limits = (vmin, vmax)
         return limits
 
@@ -681,7 +686,7 @@ def plot_images(images,
     if colorbar is 'single':
         global_max = max([i.data.max() for i in non_rgb])
         global_min = min([i.data.min() for i in non_rgb])
-        g_vmin, g_vmax = _optimize_contrast(i.data, perc)
+        g_vmin, g_vmax = _optimize_contrast(i.data, percentile)
 
     # Check if we need to add a scalebar for some of the images
     if isinstance(scalebar, list) and all(isinstance(x, int)
@@ -703,9 +708,6 @@ def plot_images(images,
             ax = f.add_subplot(rows, per_row, idx)
             axes_list.append(ax)
             data = im.data
-
-            # Find min and max for contrast
-            l_vmin, l_vmax = _optimize_contrast(data, perc)
 
             # Enable RGB plotting
             if rgb_tools.is_rgbx(data):
