@@ -27,6 +27,7 @@ from traits.api import Undefined
 from hyperspy.misc.utils import ensure_unicode
 from hyperspy.axes import AxesManager
 
+
 # Plugin characteristics
 # ----------------------
 format_name = 'HDF5'
@@ -143,11 +144,17 @@ def hdfgroup2signaldict(group):
     for i in xrange(len(exp['data'].shape)):
         try:
             axes.append(dict(group['axis-%i' % i].attrs))
+            axis = axes[-1]
+            for key, item in axis.iteritems():
+                axis[key] = ensure_unicode(item)
+        except KeyError:
+            break
+    if len(axes) != len(exp['data'].shape):  # broke from the previous loop
+        try:
+            axes = [i for k, i in sorted(iter(hdfgroup2dict(
+                group['_list_' + str(len(exp['data'].shape)) + '_axes'], {}).iteritems()))]
         except KeyError:
             raise IOError(not_valid_format)
-    for axis in axes:
-        for key, item in axis.iteritems():
-            axis[key] = ensure_unicode(item)
     exp['metadata'] = hdfgroup2dict(
         group[metadata], {})
     exp['original_metadata'] = hdfgroup2dict(
@@ -324,10 +331,18 @@ def dict2hdfgroup(dictionary, group, compression=None):
             group.attrs[key] = '_None_'
         elif isinstance(value, str):
             try:
-                # Store strings as unicode using the default encoding
-                group.attrs[key] = unicode(value)
-            except UnicodeEncodeError:
-                pass
+                # binary string if has any null characters (otherwise not
+                # supported by hdf5)
+                _ = value.index('\x00')
+                group.attrs['_bs_' + key] = np.void(value)
+            except ValueError:
+                try:
+                    # Store strings as unicode using the default encoding
+                    group.attrs[key] = unicode(value)
+                except UnicodeEncodeError:
+                    pass
+                except UnicodeDecodeError:
+                    group.attrs['_bs_' + key] = np.void(value)  # binary string
         elif isinstance(value, AxesManager):
             dict2hdfgroup(value.as_dictionary(),
                           group.create_group('_hspy_AxesManager_'
@@ -335,6 +350,27 @@ def dict2hdfgroup(dictionary, group, compression=None):
                           compression=compression)
         elif isinstance(value, (datetime.date, datetime.time)):
             group.attrs["_datetime_" + key] = repr(value)
+        elif isinstance(value, list):
+            if len(value):
+                dict2hdfgroup(dict(zip([unicode(i) for i in xrange(len(value))], value)),
+                              group.create_group(
+                                  '_list_' + str(len(value)) + '_' + key),
+                              compression=compression)
+            else:
+                group.attrs['_list_empty_' + key] = '_None_'
+        elif isinstance(value, tuple):
+            if len(value):
+                dict2hdfgroup(dict(zip([unicode(i) for i in xrange(len(value))], value)),
+                              group.create_group(
+                                  '_tuple_' + str(len(value)) + '_' + key),
+                              compression=compression)
+            else:
+                group.attrs['_tuple_empty_' + key] = '_None_'
+
+            # for i, v in enumerate(value):
+            # dict2hdfgroup(v, tmp.create_group(str(i)),
+            #     dict2hdfgroup({str(i):v}, tmp,
+        #                       compression=compression)
         elif value is Undefined:
             continue
         else:
@@ -360,6 +396,12 @@ def hdfgroup2dict(group, dictionary={}):
         # skip signals - these are handled below.
         if key.startswith('_sig_'):
             pass
+        elif key.startswith('_list_empty_'):
+            dictionary[key[len('_list_empty_'):]] = []
+        elif key.startswith('_tuple_empty_'):
+            dictionary[key[len('_tuple_empty_'):]] = ()
+        elif key.startswith('_bs_'):
+            dictionary[key[len('_bs_'):]] = value.tostring()
         elif key.startswith('_datetime_'):
             dictionary[key.replace("_datetime_", "")] = eval(value)
         else:
@@ -377,6 +419,12 @@ def hdfgroup2dict(group, dictionary={}):
                     AxesManager([i
                                  for k, i in sorted(iter(
                                      hdfgroup2dict(group[key]).iteritems()))])
+            elif key.startswith('_list_'):
+                dictionary[key[7 + key[6:].find('_'):]] = [i for k, i in sorted(iter(
+                    hdfgroup2dict(group[key], {}).iteritems()))]
+            elif key.startswith('_tuple_'):
+                dictionary[key[8 + key[7:].find('_'):]] = tuple([i for k, i in sorted(iter(
+                    hdfgroup2dict(group[key], {}).iteritems()))])
             else:
                 dictionary[key] = {}
                 hdfgroup2dict(group[key], dictionary[key])
