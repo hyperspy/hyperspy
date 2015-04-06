@@ -357,7 +357,7 @@ In this example, the axes labels and the ticks are also disabled with `axes_deco
   :width:   500
 
 :py:func:`~.drawing.utils.plot_images` can also be used to easily plot a list of `Images`, comparing
-different `Signals`, including RGB images (example below available :download:`here <images/plot_images_rgb1.png>`).
+different `Signals`, including RGB images.
 This example also demonstrates how to wrap labels using `labelwrap` (for preventing overlap) and using a single
 `colorbar` for all the Images, as opposed to multiple individual ones:
 
