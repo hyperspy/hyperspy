@@ -710,8 +710,11 @@ def plot_images(images,
             # Enable RGB plotting
             if rgb_tools.is_rgbx(data):
                 data = rgb_tools.rgbx2regular_array(data, plot_friendly=True)
+                l_vmin, l_vmax = None, None
             else:
                 data = im.data
+                # Find min and max for contrast
+                l_vmin, l_vmax = _optimize_contrast(data, percentile)
 
             # Remove NaNs (if requested)
             if no_nans:
