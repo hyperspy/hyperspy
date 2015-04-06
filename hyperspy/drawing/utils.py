@@ -418,12 +418,6 @@ def plot_images(images,
             The percentile to be used for contrast stretching.
             0.9 results in 90% of data points not saturated.
             It should be a scalar in the 0 to 1 range.
-        interp : None or str, optional
-            Type of interpolation to use with matplotlib.imshow()
-            Possible values are:
-            None, 'none', 'nearest', 'bilinear', 'bicubic', 'spline16',
-            'spline36', 'hanning', 'hamming', 'hermite', 'kaiser', 'quadric',
-            'catrom', 'gaussian', 'bessel', 'mitchell', 'sinc', 'lanczos'
         scalebar : {None, 'all', list of ints}, optional
             If None (or False), no scalebars will be added to the images.
             If 'all', scalebars will be added to all images.
@@ -757,7 +751,9 @@ def plot_images(images,
                 asp = 1
             elif isinstance(aspect, (int, long, float)):
                 asp = aspect
-
+            if ('interpolation' in kwargs.keys()) is False:
+                kwargs['interpolation'] = 'nearest'
+                
             # Plot image data, using vmin and vmax to set bounds,
             # or allowing them to be set automatically if using individual
             # colorbars
@@ -765,14 +761,14 @@ def plot_images(images,
                 axes_im = ax.imshow(data,
                                     cmap=cmap, extent=extent,
                                     vmin=g_vmin, vmax=g_vmax,
-                                    aspect=asp,
+                                    aspect=asp, interpolation='nearest',
                                     *args, **kwargs)
                 ax_im_list[i] = axes_im
             else:
                 axes_im = ax.imshow(data,
                                     cmap=cmap, extent=extent,
                                     vmin=l_vmin, vmax=l_vmax,
-                                    aspect=asp,
+                                    aspect=asp, interpolation='nearest',
                                     *args, **kwargs)
                 ax_im_list[i] = axes_im
 
