@@ -21,6 +21,7 @@ import itertools
 import textwrap
 from traits import trait_base
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+import warnings
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -380,7 +381,7 @@ def plot_images(images,
         cmap : matplotlib colormap, optional
             The colormap used for the images, by default read from pyplot
         no_nans : bool, optional
-            If True, removes NaN's from the plots.
+            If True, set nans to zero for plotting.
         per_row : int, optional
             The number of plots in each row
         label : None, str, or list of str, optional
@@ -753,7 +754,7 @@ def plot_images(images,
                 asp = aspect
             if ('interpolation' in kwargs.keys()) is False:
                 kwargs['interpolation'] = 'nearest'
-                
+ 
             # Plot image data, using vmin and vmax to set bounds,
             # or allowing them to be set automatically if using individual
             # colorbars
@@ -761,14 +762,14 @@ def plot_images(images,
                 axes_im = ax.imshow(data,
                                     cmap=cmap, extent=extent,
                                     vmin=g_vmin, vmax=g_vmax,
-                                    aspect=asp, interpolation='nearest',
+                                    aspect=asp,
                                     *args, **kwargs)
                 ax_im_list[i] = axes_im
             else:
                 axes_im = ax.imshow(data,
                                     cmap=cmap, extent=extent,
                                     vmin=l_vmin, vmax=l_vmax,
-                                    aspect=asp, interpolation='nearest',
+                                    aspect=asp,
                                     *args, **kwargs)
                 ax_im_list[i] = axes_im
 
@@ -778,7 +779,7 @@ def plot_images(images,
                     isinstance(xaxis.name, trait_base._Undefined) or \
                     isinstance(yaxis.name, trait_base._Undefined):
                 if axes_decor is 'all':
-                    messages.warning('Axes labels were requested, but one '
+                    warnings.warn('Axes labels were requested, but one '
                                      'or both of the '
                                      'axes units and/or name are undefined. '
                                      'Axes decorations have been set to '
