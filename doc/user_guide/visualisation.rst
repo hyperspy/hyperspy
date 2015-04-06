@@ -120,8 +120,12 @@ a spectrum or an image obtained by summing over the image dimensions:
 
 The same keys can be used to explore an image stack.
 
+.. _plot.customize_images:
+
 Customising image plot
 ======================
+
+.. versionadded:: 0.8
 
 The image plot can be customised by passing additional arguments when plotting. Colorbar, scalebar and
 contrast controls are HyperSpy-specific, however `matplotlib.imshow
@@ -439,8 +443,6 @@ which is used to call subplots_adjust method of matplotlib
 Plotting several spectra
 ------------------------
 
-.. versionadded:: 0.7
-
 :py:func:`~.drawing.utils.plot_spectra` is used to plot several spectra in the
 same figure. It supports different styles, the default
 being "overlap". The default style is configurable in :ref:`preferences
@@ -612,7 +614,6 @@ subplots in the same figure. This will only work for "cascade" and "overlap" sty
 Plotting several signals
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. versionadded:: 0.7
 :py:func:`~.drawing.utils.plot_signals` is used to plot several signals at the
 same time. By default the navigation position of the signals will be synced, and the 
 signals must have the same dimensions. To plot two spectra at the same time: 
@@ -677,8 +678,12 @@ each plot:
   :align:   center
   :width:   500    
 
+.. _plot.markers:
+
 Markers
 =======
+
+.. versionadded:: 0.8
 
 Hyperspy provides an easy access to the main marker of matplotlib. The markers can be used in a static way
 
