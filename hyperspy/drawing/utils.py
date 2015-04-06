@@ -28,6 +28,7 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 
 from hyperspy.misc.utils import unfold_if_multidim
+from hyperspy.misc.image_tools import contrast_stretching
 from hyperspy.defaults_parser import preferences
 import hyperspy.messages as messages
 
@@ -357,7 +358,7 @@ def plot_images(images,
                 suptitle=None,
                 suptitle_fontsize=18,
                 colorbar='multi',
-                percentile=0.9,
+                saturated_pixels=0.2,
                 scalebar=None,
                 scalebar_color='white',
                 axes_decor='all',
@@ -415,10 +416,10 @@ def plot_images(images,
             (non-RGB) image
             If 'single', all (non-RGB) images are plotted on the same scale,
             and one colorbar is shown for all
-        percentile : float
-            The percentile to be used for contrast stretching.
-            0.9 results in 90% of data points not saturated.
-            It should be a scalar in the 0 to 1 range.
+        saturated_pixels: scalar
+            The percentage of pixels that are left out of the bounds.  For example,
+            the low and high bounds of a value of 1 are the 0.5% and 99.5%
+            percentiles. It must be in the [0, 100] range.
         scalebar : {None, 'all', list of ints}, optional
             If None (or False), no scalebars will be added to the images.
             If 'all', scalebars will be added to all images.
@@ -489,36 +490,6 @@ def plot_images(images,
     from hyperspy.drawing.widgets import Scale_Bar
     from hyperspy.misc import rgb_tools
     from hyperspy.signal import Signal
-
-    def _optimize_contrast(_data, _perc):
-        """
-        Local function to determine appropriate vmin and vmax for _data (as
-        used in drawing\image.py).
-
-        Parameters
-        ----------
-        _data:
-        _perc:
-
-        Returns
-        -------
-        limits : tuple
-            Tuple of vmin and vmax to use with imshow for contrast
-        """
-        dc = _data.copy().ravel()
-        if 'complex' in dc.dtype.name:
-            dc = np.log(np.abs(dc))
-        dc.sort()
-        if _perc >= 1.0:
-            vmin = np.nanmin(dc)
-            vmax = np.nanmax(dc)
-        else:
-            i = int(round(len(dc) * 0.5 * (1.0 - _perc)))
-            i = i if i > 0 else 1  # probably not required check
-            vmin = np.nanmin(dc[i:])
-            vmax = np.nanmax(dc[:-i])
-        limits = (vmin, vmax)
-        return limits
 
     if isinstance(images, Signal) and len(images) is 1:
         images.plot()
@@ -681,7 +652,7 @@ def plot_images(images,
     if colorbar is 'single':
         global_max = max([i.data.max() for i in non_rgb])
         global_min = min([i.data.min() for i in non_rgb])
-        g_vmin, g_vmax = _optimize_contrast(i.data, percentile)
+        g_vmin, g_vmax = contrast_stretching(i.data, saturated_pixels)
 
     # Check if we need to add a scalebar for some of the images
     if isinstance(scalebar, list) and all(isinstance(x, int)
@@ -711,7 +682,7 @@ def plot_images(images,
             else:
                 data = im.data
                 # Find min and max for contrast
-                l_vmin, l_vmax = _optimize_contrast(data, percentile)
+                l_vmin, l_vmax = contrast_stretching(data, saturated_pixels)
 
             # Remove NaNs (if requested)
             if no_nans:
@@ -754,7 +725,7 @@ def plot_images(images,
                 asp = aspect
             if ('interpolation' in kwargs.keys()) is False:
                 kwargs['interpolation'] = 'nearest'
- 
+
             # Plot image data, using vmin and vmax to set bounds,
             # or allowing them to be set automatically if using individual
             # colorbars
@@ -779,11 +750,12 @@ def plot_images(images,
                     isinstance(xaxis.name, trait_base._Undefined) or \
                     isinstance(yaxis.name, trait_base._Undefined):
                 if axes_decor is 'all':
-                    warnings.warn('Axes labels were requested, but one '
-                                     'or both of the '
-                                     'axes units and/or name are undefined. '
-                                     'Axes decorations have been set to '
-                                     '\'ticks\' instead.')
+                    warnings.warn(
+                        'Axes labels were requested, but one '
+                        'or both of the '
+                        'axes units and/or name are undefined. '
+                        'Axes decorations have been set to '
+                        '\'ticks\' instead.')
                     axes_decor = 'ticks'
             # If all traits are defined, set labels as appropriate:
             else:
