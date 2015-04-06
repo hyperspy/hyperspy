@@ -300,9 +300,160 @@ found in :ref:`EDS lines intensity<get_lines_intensity>`.
 Plotting multiple signals
 =========================
 
-HyperSpy provides two functions to plot multiple signals (spectra, images or
-other signals): :py:func:`~.drawing.utils.plot_spectra` and
+HyperSpy provides three functions to plot multiple signals (spectra, images or
+other signals): :py:func:`~.drawing.utils.plot_images`, :py:func:`~.drawing.utils.plot_spectra`, and
 :py:func:`~.drawing.utils.plot_signals` in the ``utils.plot`` package.
+
+.. _plot.images:
+
+Plotting several images
+-----------------------
+
+.. versionadded:: 0.8
+
+:py:func:`~.drawing.utils.plot_images` is used to plot several images in the
+same figure. It supports many configurations and has many options available
+to customize the resulting output. The function returns a list of
+`matplotlib axes <http://matplotlib.org/api/pyplot_api.html#matplotlib.pyplot.axes>`_, which
+can be used to further customize the figure. Some examples are given below.
+
+A common usage for :py:func:`~.drawing.utils.plot_images` is to view the
+different slices of a multidimensional image (a *hyperimage*):
+
+ .. code-block:: python
+
+    >>> import scipy.ndimage
+    >>> image = signals.Image(np.random.random((2, 3, 512, 512)))
+    >>> for i in range(2):
+    >>>     for j in range(3):
+    >>>         image.data[i,j,:] = scipy.misc.lena()*(i+0.5+j)
+
+    >>> axes = image.axes_manager
+    >>> axes[2].name = "x"
+    >>> axes[3].name = "y"
+    >>> axes[2].units = "nm"
+    >>> axes[3].units = "nm"
+
+    >>> image.metadata.General.title = 'multi-dimensional Lena'
+    >>> utils.plot.plot_images(image, tight_layout=True)
+
+.. figure::  images/plot_images_defaults.png
+  :align:   center
+  :width:   500
+
+By default, :py:func:`~.drawing.utils.plot_images` will attempt to auto-label the images
+based on the Signal titles. The labels (and title) can be customized with the `suptitle` and `label` arguments.
+In this example, the axes labels are also disabled with `axes_decor` so only ticks are shown:
+
+ .. code-block:: python
+
+    >>> import scipy.ndimage
+    >>> image = signals.Image(np.random.random((2, 3, 512, 512)))
+    >>> for i in range(2):
+    >>>     for j in range(3):
+    >>>         image.data[i,j,:] = scipy.misc.lena()*(i+0.5+j)
+
+    >>> axes = image.axes_manager
+    >>> axes[2].name = "x"
+    >>> axes[3].name = "y"
+    >>> axes[2].units = "nm"
+    >>> axes[3].units = "nm"
+
+    >>> image.metadata.General.title = 'multi-dimensional Lena'
+    >>> utils.plot.plot_images(image, suptitle='Custom figure title',
+    ...                        label=['Image 1', 'Image 2', 'Image 3', 'Image 4', 'Image 5', 'Image 6'],
+    ...                        axes_decor=None, tight_layout=True)
+
+.. figure::  images/plot_images_custom-labels.png
+  :align:   center
+  :width:   500
+
+:py:func:`~.drawing.utils.plot_images` can also be used to easily plot a list of `Images`, comparing
+different `Signals`, including RGB images (example below available :download:`here <images/plot_images_rgb1.png>`).
+This example also demonstrates how to wrap labels using `labelwrap` (for preventing overlap) and using a single
+`colorbar` for all the Images, as opposed to multiple individual ones:
+
+ .. code-block:: python
+
+    >>> import scipy.ndimage
+
+    >>> # load red channel of raccoon as an image
+    >>> image0 = signals.Image(scipy.misc.face()[:,:,0])
+    >>> image0.metadata.General.title = 'Rocky Raccoon - R'
+    >>> axes0 = image0.axes_manager
+    >>> axes0[0].name = "x"
+    >>> axes0[1].name = "y"
+    >>> axes0[0].units = "mm"
+    >>> axes0[1].units = "mm"
+
+    >>> # load lena into 2x3 hyperimage
+    >>> image1 = signals.Image(np.random.random((2, 3, 512, 512)))
+    >>> image1.metadata.General.title = 'multi-dimensional Lena'
+    >>> for i in range(2):
+    >>>     for j in range(3):
+    >>>         image1.data[i,j,:] = scipy.misc.lena()*(i+0.5+j)
+    >>> axes1 = image1.axes_manager
+    >>> axes1[2].name = "x"
+    >>> axes1[3].name = "y"
+    >>> axes1[2].units = "nm"
+    >>> axes1[3].units = "nm"
+
+    >>> # load green channel of raccoon as an image
+    >>> image2 = signals.Image(scipy.misc.face()[:,:,1])
+    >>> image2.metadata.General.title = 'Rocky Raccoon - G'
+    >>> axes2 = image2.axes_manager
+    >>> axes2[0].name = "x"
+    >>> axes2[1].name = "y"
+    >>> axes2[0].units = "mm"
+    >>> axes2[1].units = "mm"
+
+    >>> # load rgb image
+    >>> rgb = load("plot_images_rgb1.png")
+    >>> rgb.metadata.General.title = 'RGB'
+    >>> axesRGB = rgb.axes_manager
+    >>> axesRGB[0].name = "x"
+    >>> axesRGB[1].name = "y"
+    >>> axesRGB[0].units = "nm"
+    >>> axesRGB[1].units = "nm"
+
+    >>> utils.plot.plot_images([image0, image1, image2, rgb], tight_layout=True, colorbar='single', labelwrap=20)
+
+.. figure::  images/plot_images_image-list.png
+  :align:   center
+  :width:   500
+
+Another example for this function is plotting EDS line intensities. Using a
+spectrum image with EDS data (:download:`download
+<images/si-EDS-pburdet_PCA.hdf5>`), one can use the following commands
+to get a representative figure of the line intensities.
+This example also demonstrates changing the colormap (with `cmap`),
+adding scalebars to the plots (with `scalebar`), and changing the
+`padding` between the images. The padding is specified as a dictionary,
+which is used to call :py:func:`matplotlib.figure.Figure.subplots_adjust`
+(see `documentation <http://matplotlib.org/api/figure_api.html#matplotlib.figure.Figure.subplots_adjust>`_).
+
+The sample and data used in this example are  described in P. Burdet, et al.,
+Acta Materialia, 61, p. 3090-3098 (2013) (see
+`paper <http://infoscience.epfl.ch/record/185861/>`_).
+
+.. |subplots_adjust| image:: images/plot_images_subplots.png
+
+*Note, this padding can also be changed interactively by clicking on the* |subplots_adjust|
+*button in the GUI (button may be different when using different graphical backends).*
+
+ .. code-block:: python
+
+    >>> si_EDS = load("si-EDS-pburdet_PCA.hdf5")
+    >>> im = si_EDS.get_lines_intensity()
+    >>> utils.plot.plot_images(im, per_row=3, tight_layout=True, axes_decor='off',
+    ...                       suptitle_fontsize=16, colorbar='single', suptitle='EDS Line intensity\n (from PCA-denoised data)',
+    ...                   label=['Fe L$\\alpha$ (0.70 keV)', 'Ni L$\\alpha$ (0.85 keV)', 'Ti K$\\alpha$ (4.51 keV)'],cmap='cubehelix',
+    ...                   scalebar='all', scalebar_color='white',
+    ...                   padding={'top':0.6,'bottom':0.10,'left':0.05,'right':0.85,'wspace':0.10,'hspace':0.10})
+
+.. figure::  images/plot_images_eds.png
+  :align:   center
+  :width:   500
 
 .. _plot.spectra:
 
@@ -319,7 +470,7 @@ being "overlap". The default style is configurable in :ref:`preferences
 In the following example we create a list of 9 single spectra (gaussian
 functions with different sigma values) and plot them in the same figure using
 :py:func:`~.drawing.utils.plot_spectra`. Note that, in this case, the legend
-labels are taken from the indivual spectrum titles. By clicking on the 
+labels are taken from the individual spectrum titles. By clicking on the
 legended line, a spectrum can be toggled on and off.
 
  .. code-block:: python
@@ -332,7 +483,7 @@ legended line, a spectrum can be toggled on and off.
      >>> m.append(g)
      >>> gaussians = []
      >>> labels = []
-     >>> 
+
      >>> for sigma in range(1, 10):
      ...         g.sigma.value = sigma
      ...         gs = m.as_signal()
