@@ -32,7 +32,7 @@ class TestWeightToFromAtomic():
 
     def test_multi_dim(self):
         elements = ("Cu", "Sn")
-        wt = np.array([[[88]*2]*3, [[12]*2]*3])
+        wt = np.array([[[88] * 2] * 3, [[12] * 2] * 3])
         at = hs.utils.material.weight_to_atomic(wt, elements)
         nose.tools.assert_true(np.allclose(
             at[:, 0, 0], np.array([93.196986, 6.803013]), atol=1e-3))
@@ -60,7 +60,7 @@ def test_density_of_mixture():
         density, hs.utils.material.density_of_mixture_of_pure_elements(
             wt, elements))
 
-    wt = np.array([[[88]*2]*3, [[12]*2]*3])
+    wt = np.array([[[88] * 2] * 3, [[12] * 2] * 3])
     assert_almost_equal(
         density, hs.utils.material.density_of_mixture_of_pure_elements(
             wt, elements)[0, 0])

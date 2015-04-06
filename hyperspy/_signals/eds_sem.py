@@ -212,13 +212,13 @@ class EDSSEMSpectrum(EDSSpectrum):
             'Acquisition_instrument.SEM.beam_energy': 'tem_par.beam_energy',
             'Acquisition_instrument.SEM.tilt_stage': 'tem_par.tilt_stage',
             'Acquisition_instrument.SEM.Detector.EDS.live_time':
-                'tem_par.live_time',
+            'tem_par.live_time',
             'Acquisition_instrument.SEM.Detector.EDS.azimuth_angle':
-                'tem_par.azimuth_angle',
+            'tem_par.azimuth_angle',
             'Acquisition_instrument.SEM.Detector.EDS.elevation_angle':
-                'tem_par.elevation_angle',
+            'tem_par.elevation_angle',
             'Acquisition_instrument.SEM.Detector.EDS.energy_resolution_MnKa':
-                'tem_par.energy_resolution_MnKa', }
+            'tem_par.energy_resolution_MnKa', }
 
         for key, value in mapping.iteritems():
             if self.metadata.has_item(key):
@@ -229,13 +229,13 @@ class EDSSEMSpectrum(EDSSpectrum):
             'Acquisition_instrument.SEM.beam_energy': tem_par.beam_energy,
             'Acquisition_instrument.SEM.tilt_stage': tem_par.tilt_stage,
             'Acquisition_instrument.SEM.Detector.EDS.live_time':
-                tem_par.live_time,
+            tem_par.live_time,
             'Acquisition_instrument.SEM.Detector.EDS.azimuth_angle':
-                tem_par.azimuth_angle,
+            tem_par.azimuth_angle,
             'Acquisition_instrument.SEM.Detector.EDS.elevation_angle':
-                tem_par.elevation_angle,
+            tem_par.elevation_angle,
             'Acquisition_instrument.SEM.Detector.EDS.energy_resolution_MnKa':
-                tem_par.energy_resolution_MnKa, }
+            tem_par.energy_resolution_MnKa, }
 
         for key, value in mapping.iteritems():
             if value != t.Undefined:
