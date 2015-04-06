@@ -23,7 +23,6 @@ from hyperspy.signals import EDSSEMSpectrum
 from hyperspy.defaults_parser import preferences
 from hyperspy.components import Gaussian
 from hyperspy import utils
-from hyperspy.misc.utils import DictionaryTreeBrowser
 
 
 class Test_metadata:
