@@ -85,21 +85,27 @@ class EDSTEMSpectrum(EDSSpectrum):
         ----------
         beam_energy: float
             The energy of the electron beam in keV
-
         live_time : float
             In second
-
         tilt_stage : float
             In degree
-
         azimuth_angle : float
             In degree
-
         elevation_angle : float
             In degree
-
         energy_resolution_MnKa : float
             In eV
+
+        Examples
+        --------
+        >>> s = utils.example_signals.EDS_TEM_Spectrum()
+        >>> print(s.metadata.Acquisition_instrument.
+        >>>       TEM.Detector.EDS.energy_resolution_MnKa)
+        >>> s.set_microscope_parameters(energy_resolution_MnKa=135.)
+        >>> print(s.metadata.Acquisition_instrument.
+        >>>       TEM.Detector.EDS.energy_resolution_MnKa)
+        133.312296
+        135.0
 
         """
         md = self.metadata
@@ -135,17 +141,17 @@ class EDSTEMSpectrum(EDSSpectrum):
         tem_par = TEMParametersUI()
         mapping = {
             'Acquisition_instrument.TEM.beam_energy':
-                'tem_par.beam_energy',
+            'tem_par.beam_energy',
             'Acquisition_instrument.TEM.tilt_stage':
-                'tem_par.tilt_stage',
+            'tem_par.tilt_stage',
             'Acquisition_instrument.TEM.Detector.EDS.live_time':
-                'tem_par.live_time',
+            'tem_par.live_time',
             'Acquisition_instrument.TEM.Detector.EDS.azimuth_angle':
-                'tem_par.azimuth_angle',
+            'tem_par.azimuth_angle',
             'Acquisition_instrument.TEM.Detector.EDS.elevation_angle':
-                'tem_par.elevation_angle',
+            'tem_par.elevation_angle',
             'Acquisition_instrument.TEM.Detector.EDS.energy_resolution_MnKa':
-                'tem_par.energy_resolution_MnKa', }
+            'tem_par.energy_resolution_MnKa', }
         for key, value in mapping.iteritems():
             if self.metadata.has_item(key):
                 exec('%s = self.metadata.%s' % (value, key))
@@ -153,17 +159,17 @@ class EDSTEMSpectrum(EDSSpectrum):
 
         mapping = {
             'Acquisition_instrument.TEM.beam_energy':
-                tem_par.beam_energy,
+            tem_par.beam_energy,
             'Acquisition_instrument.TEM.tilt_stage':
-                tem_par.tilt_stage,
+            tem_par.tilt_stage,
             'Acquisition_instrument.TEM.Detector.EDS.live_time':
-                tem_par.live_time,
+            tem_par.live_time,
             'Acquisition_instrument.TEM.Detector.EDS.azimuth_angle':
-                tem_par.azimuth_angle,
+            tem_par.azimuth_angle,
             'Acquisition_instrument.TEM.Detector.EDS.elevation_angle':
-                tem_par.elevation_angle,
+            tem_par.elevation_angle,
             'Acquisition_instrument.TEM.Detector.EDS.energy_resolution_MnKa':
-                tem_par.energy_resolution_MnKa, }
+            tem_par.energy_resolution_MnKa, }
 
         for key, value in mapping.iteritems():
             if value != t.Undefined:
@@ -214,6 +220,18 @@ class EDSTEMSpectrum(EDSSpectrum):
             The live time (real time corrected from the "dead time")
             is divided by the number of pixel (spectrums), giving an
             average live time.
+
+        Examples
+        --------
+        >>> ref = utils.example_signals.EDS_TEM_Spectrum()
+        >>> s = signals.EDSTEMSpectrum(
+        >>>     utils.example_signals.EDS_TEM_Spectrum().data)
+        >>> print s.axes_manager[0].scale
+        >>> s.get_calibration_from(ref)
+        >>> print s.axes_manager[0].scale
+        1.0
+        0.020028
+
         """
 
         self.original_metadata = ref.original_metadata.deepcopy()
@@ -285,13 +303,17 @@ class EDSTEMSpectrum(EDSSpectrum):
         the sample in weight or atomic percent.
 
         Examples
-        ---------
-        >>> #s is a signals.EDSTEMSpectrum
-        >>> s.set_elements(["Al", "Cr", "Ni"])
+        --------
+        >>> s = utils.example_signals.EDS_TEM_Spectrum()
         >>> s.add_lines()
-        >>> kfactors = [0.982, 1.32, 1.60]
-        >>> intensities = s.get_lines_intensity()
-        >>> res = s.quantification_cliff_lorimer(intensities,kfactors)
+        >>> kfactors = [1.450226, 5.075602] #For Fe Ka and Pt La
+        >>> bw = s.estimate_background_windows(line_width=[5.0, 2.0])
+        >>> s.plot(background_windows=bw)
+        >>> intensities = s.get_lines_intensity(background_windows=bw)
+        >>> res = s.quantification(intensities, kfactors, plot_result=True,
+        >>>                        composition_units='atomic')
+        Fe (Fe_Ka): Composition = 15.41 atomic percent
+        Pt (Pt_La): Composition = 84.59 atomic percent
 
         See also
         --------
@@ -338,6 +360,17 @@ class EDSTEMSpectrum(EDSSpectrum):
             If true, applied a morphologic closing to the mask
         opnening: bool
             If true, applied a morphologic opening to the mask
+
+        Examples
+        --------
+        >>> # Simulate a spectrum image with vacuum region
+        >>> import numpy as np
+        >>> s = utils.example_signals.EDS_TEM_Spectrum()
+        >>> s_vac = signals.Simulation(np.ones_like(s.data, dtype=float))*0.005
+        >>> s_vac.add_poissonian_noise()
+        >>> si = utils.stack([s]*3 + [s_vac])
+        >>> si.vacuum_mask().data
+        array([False, False, False,  True], dtype=bool)
 
         Return
         ------
@@ -402,10 +435,16 @@ class EDSTEMSpectrum(EDSSpectrum):
             If not None, the results of the decomposition will be projected in
             the selected masked area.
 
+        Examples
+        --------
+        >>> s = utils.example_signals.EDS_TEM_Spectrum()
+        >>> si = utils.stack([s]*3)
+        >>> si.change_dtype(float)
+        >>> si.decomposition()
+
         See also
         --------
-        vacuum_mask,plot_decomposition_factors, plot_decomposition_loadings,
-        plot_lev
+        vacuum_mask
         """
         if isinstance(navigation_mask, float):
             navigation_mask = self.vacuum_mask(navigation_mask, closing).data
