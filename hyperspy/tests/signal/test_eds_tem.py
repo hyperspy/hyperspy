@@ -163,6 +163,7 @@ class Test_vacum_mask:
         assert_equal(s.vacuum_mask().data[0], True)
         assert_equal(s.vacuum_mask().data[-1], False)
 
+
 class Test_get_lines_intentisity:
 
     def test_with_signals_examples(self):
