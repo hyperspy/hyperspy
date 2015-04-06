@@ -5,7 +5,6 @@ from hyperspy.misc import rgb_tools
 import hyperspy.hspy as hs
 
 
-
 class TestRGBA8():
 
     def setUp(self):

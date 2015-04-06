@@ -22,6 +22,7 @@ from hyperspy.drawing.marker import MarkerBase
 
 
 class Rectangle(MarkerBase):
+
     """Rectangle marker that can be added to the signal figure
 
     Parameters

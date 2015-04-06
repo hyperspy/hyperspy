@@ -17,7 +17,7 @@
 
 
 import numpy as np
-from nose.tools import assert_true, assert_equal
+from nose.tools import assert_true, assert_equal, assert_dict_equal
 
 from hyperspy.signals import EDSTEMSpectrum, Simulation
 from hyperspy.defaults_parser import preferences
@@ -36,14 +36,21 @@ class Test_metadata:
 
     def test_sum_live_time(self):
         s = self.signal
+        old_metadata = s.metadata.deepcopy()
         sSum = s.sum(0)
         assert_equal(
             sSum.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time,
             3.1 *
             2)
+        # Check that metadata is unchanged
+        print old_metadata, s.metadata      # Capture for comparison on error
+        assert_dict_equal(old_metadata.as_dictionary(),
+                          s.metadata.as_dictionary(),
+                          "Source metadata changed")
 
     def test_rebin_live_time(self):
         s = self.signal
+        old_metadata = s.metadata.deepcopy()
         dim = s.axes_manager.shape
         s = s.rebin([dim[0] / 2, dim[1] / 2, dim[2]])
         assert_equal(
@@ -51,6 +58,11 @@ class Test_metadata:
             3.1 *
             2 *
             2)
+        # Check that metadata is unchanged
+        print old_metadata, self.signal.metadata    # Captured on error
+        assert_dict_equal(old_metadata.as_dictionary(),
+                          self.signal.metadata.as_dictionary(),
+                          "Source metadata changed")
 
     def test_add_elements(self):
         s = self.signal
@@ -143,17 +155,17 @@ class Test_quantification:
         assert_true(np.allclose(
             utils_eds.quantification_cliff_lorimer(
                 intens, [1, 1, 3]).T,
-            np.array([[0.2,  0.2,  0.6],
-                      [0.,  0.25,  0.75],
-                      [0.25,  0.,  0.75],
-                      [0.5,  0.5,  0.],
-                      [1.,  0.,  0.]])))
+            np.array([[0.2, 0.2, 0.6],
+                      [0., 0.25, 0.75],
+                      [0.25, 0., 0.75],
+                      [0.5, 0.5, 0.],
+                      [1., 0., 0.]])))
 
 
 class Test_vacum_mask:
 
     def setUp(self):
-        s = Simulation(np.array([np.linspace(0.001, 0.5, 20)]*100).T)
+        s = Simulation(np.array([np.linspace(0.001, 0.5, 20)] * 100).T)
         s.add_poissonian_noise()
         s = EDSTEMSpectrum(s.data)
         self.signal = s
@@ -163,3 +175,12 @@ class Test_vacum_mask:
         assert_equal(s.vacuum_mask().data[0], True)
         assert_equal(s.vacuum_mask().data[-1], False)
 
+
+class Test_get_lines_intentisity:
+
+    def test_with_signals_examples(self):
+        from hyperspy.misc.example_signals_loading import \
+            load_1D_EDS_TEM_spectrum as EDS_TEM_Spectrum
+        s = EDS_TEM_Spectrum()
+        np.allclose(np.array([res.data for res in s.get_lines_intensity()]),
+                    np.array([3710, 15872]))

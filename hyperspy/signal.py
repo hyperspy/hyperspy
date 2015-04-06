@@ -2939,7 +2939,7 @@ class Signal(MVA,
         return np.atleast_1d(
             self.data.__getitem__(axes_manager._getitem_tuple))
 
-    def plot(self, navigator="auto", axes_manager=None):
+    def plot(self, navigator="auto", axes_manager=None, **kwargs):
         """Plot the signal at the current coordinates.
 
         For multidimensional datasets an optional figure,
@@ -2987,6 +2987,9 @@ class Signal(MVA,
 
         axes_manager : {None, axes_manager}
             If None `axes_manager` is used.
+
+        **kwargs : optional
+            Any extra keyword arguments are passed to the signal plot.
 
         """
 
@@ -3092,7 +3095,7 @@ class Signal(MVA,
                     "navigator must be one of \"spectrum\",\"auto\","
                     " \"slider\", None, a Signal instance")
 
-        self._plot.plot()
+        self._plot.plot(**kwargs)
 
     def save(self, filename=None, overwrite=None, extension=None,
              **kwds):
