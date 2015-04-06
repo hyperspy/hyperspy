@@ -23,6 +23,7 @@ from hyperspy.signals import EDSSEMSpectrum
 from hyperspy.defaults_parser import preferences
 from hyperspy.components import Gaussian
 from hyperspy import utils
+from hyperspy.misc.utils import DictionaryTreeBrowser
 
 
 class Test_metadata:
@@ -42,14 +43,21 @@ class Test_metadata:
 
     def test_sum_live_time(self):
         s = self.signal
+        old_metadata = s.metadata.deepcopy()
         sSum = s.sum(0)
         nose.tools.assert_equal(
             sSum.metadata.Acquisition_instrument.SEM.Detector.EDS.live_time,
             3.1 *
             2)
+        # Check that metadata is unchanged
+        print old_metadata, s.metadata      # Capture for comparison on error
+        nose.tools.assert_dict_equal(old_metadata.as_dictionary(),
+                                     s.metadata.as_dictionary(),
+                                     "Source metadata changed")
 
     def test_rebin_live_time(self):
         s = self.signal
+        old_metadata = s.metadata.deepcopy()
         dim = s.axes_manager.shape
         s = s.rebin([dim[0] / 2, dim[1] / 2, dim[2]])
         nose.tools.assert_equal(
@@ -57,6 +65,11 @@ class Test_metadata:
             3.1 *
             2 *
             2)
+        # Check that metadata is unchanged
+        print old_metadata, self.signal.metadata    # Captured on error
+        nose.tools.assert_dict_equal(old_metadata.as_dictionary(),
+                                     self.signal.metadata.as_dictionary(),
+                                     "Source metadata changed")
 
     def test_add_elements(self):
         s = self.signal

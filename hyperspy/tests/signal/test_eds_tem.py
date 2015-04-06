@@ -17,7 +17,7 @@
 
 
 import numpy as np
-from nose.tools import assert_true, assert_equal
+from nose.tools import assert_true, assert_equal, assert_dict_equal
 
 from hyperspy.signals import EDSTEMSpectrum, Simulation
 from hyperspy.defaults_parser import preferences
@@ -36,14 +36,21 @@ class Test_metadata:
 
     def test_sum_live_time(self):
         s = self.signal
+        old_metadata = s.metadata.deepcopy()
         sSum = s.sum(0)
         assert_equal(
             sSum.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time,
             3.1 *
             2)
+        # Check that metadata is unchanged
+        print old_metadata, s.metadata      # Capture for comparison on error
+        assert_dict_equal(old_metadata.as_dictionary(),
+                          s.metadata.as_dictionary(),
+                          "Source metadata changed")
 
     def test_rebin_live_time(self):
         s = self.signal
+        old_metadata = s.metadata.deepcopy()
         dim = s.axes_manager.shape
         s = s.rebin([dim[0] / 2, dim[1] / 2, dim[2]])
         assert_equal(
@@ -51,6 +58,11 @@ class Test_metadata:
             3.1 *
             2 *
             2)
+        # Check that metadata is unchanged
+        print old_metadata, self.signal.metadata    # Captured on error
+        assert_dict_equal(old_metadata.as_dictionary(),
+                          self.signal.metadata.as_dictionary(),
+                          "Source metadata changed")
 
     def test_add_elements(self):
         s = self.signal
