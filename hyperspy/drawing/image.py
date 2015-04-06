@@ -219,7 +219,8 @@ class ImagePlot(BlittedFigure):
             self.colorbar = False
             data = rgb_tools.rgbx2regular_array(data, plot_friendly=True)
         if self.vmin is not None or self.vmax is not None:
-            warnings.warn('vmin or vmax value given, hence auto_contrast is set to False')
+            warnings.warn(
+                'vmin or vmax value given, hence auto_contrast is set to False')
             self.auto_contrast = False
         self.optimize_contrast(data)
         if (not self.axes_manager or
