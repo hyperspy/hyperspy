@@ -64,6 +64,17 @@ def xray_range(xray_line, beam_energy, density='auto'):
     -------
     X-ray range in micrometer.
 
+    Examples
+    --------
+    >>> # X-ray range of Cu Ka in pure Copper at 30 kV in micron
+    >>> utils.eds.xray_range('Cu_Ka', 30.)
+    1.9361716759499248
+
+    >>> # X-ray range of Cu Ka in pure Carbon at 30kV in micron
+    >>> utils.eds.xray_range('Cu_Ka', 30., utils.material.elements.C.
+    >>>                      Physical_properties.density_gcm3)
+    7.6418811280855454
+
     Notes
     -----
     From Anderson, C.A. and M.F. Hasler (1966). In proceedings of the
@@ -107,6 +118,12 @@ def electron_range(element, beam_energy, density='auto', tilt=0):
     -------
     Electron range in micrometers.
 
+    Examples
+    --------
+    >>> # Electron range in pure Copper at 30 kV in micron
+    >>> utils.eds.electron_range('Cu', 30.)
+    2.8766744984001607
+
     Notes
     -----
     From Kanaya, K. and S. Okayama (1972). J. Phys. D. Appl. Phys. 5, p43
@@ -137,8 +154,8 @@ def take_off_angle(tilt_stage,
     Parameters
     ----------
     tilt_stage: float
-        The tilt of the stage in degrees. The sample is facing the detector when
-        positively tilted.
+        The tilt of the stage in degrees. The sample is facing the detector
+        when positively tilted.
     azimuth_angle: float
         The azimuth of the detector in degrees. 0 is perpendicular to the tilt
         axis.
@@ -149,6 +166,12 @@ def take_off_angle(tilt_stage,
     -------
     take_off_angle: float.
         In degrees.
+
+    Examples
+    --------
+    >>> utils.eds.take_off_angle(tilt_stage=10.,
+    >>>                          azimuth_angle=45., elevation_angle=22.)
+    28.865971201155283
 
     Notes
     -----
