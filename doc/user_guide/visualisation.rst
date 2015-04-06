@@ -123,7 +123,7 @@ The same keys can be used to explore an image stack.
 Customizing the "navigator"
 ===========================
 
-The files needed for this section can be downloaded using
+Data files used in the following examples can be downloaded using
 
 .. code-block:: python
 
@@ -233,7 +233,7 @@ Lastly, if no navigator is needed, "navigator=None" can be used.
 Using Mayavi to visualize 3D data
 =================================
 
-The files needed for this section can be downloaded using
+Data files used in the following examples can be downloaded using
 
 .. code-block:: python
 

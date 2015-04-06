@@ -13,7 +13,7 @@ Subpackages:
         Tools for plotting.
     eds
         Tools for energy-dispersive X-ray data analysis.
-    examples
+    example_signals
         A few example of signal
 
 

@@ -372,7 +372,6 @@ class EDSSpectrum(Spectrum):
 
         Examples
         --------
-        >>> #add_lines()
         >>> s = utils.example_signals.EDS_SEM_Spectrum()
         >>> s.add_lines()
         >>> print s.metadata.Sample.xray_lines

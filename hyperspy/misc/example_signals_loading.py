@@ -35,10 +35,10 @@ def load_1D_EDS_SEM_spectrum():
 
 def load_1D_EDS_TEM_spectrum():
     """
-    Load an EDS-SEM spectrum
+    Load an EDS-TEM spectrum
 
     - Sample: FePt bimetallic nanoparticles
-    - SEM Microscope: TecnaiOsiris 200 kV D658 AnalyticalTwin
+    - SEM Microscope: Tecnai Osiris 200 kV D658 AnalyticalTwin
     - EDS Detector: Super-X 4 detectors Brucker
     """
     from hyperspy.io import load

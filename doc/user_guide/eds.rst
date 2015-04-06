@@ -19,7 +19,7 @@ spectrum (SEM or TEM).
 Spectrum loading and parameters
 -------------------------------
 
-The files needed for this section can be downloaded using
+Data files used in the following examples can be downloaded using
 
 .. code-block:: python
 
@@ -105,6 +105,7 @@ as follow:
     
 .. code-block:: python
 
+    >>> s = load("Ni_superalloy_1pix.msa", signal_type="EDS_SEM")
     >>> s.metadata.Acquisition_instrument.SEM
     ├── Detector
     │   └── EDS
@@ -122,6 +123,7 @@ These parameters can be set directly:
 
 .. code-block:: python
 
+    >>> s = load("Ni_superalloy_1pix.msa", signal_type="EDS_SEM")
     >>> s.metadata.Acquisition_instrument.SEM.beam_energy = 30
 
 or with the  
@@ -129,12 +131,14 @@ or with the
 
 .. code-block:: python
 
+    >>> s = load("Ni_superalloy_1pix.msa", signal_type="EDS_SEM")
     >>> s.set_microscope_parameters(beam_energy = 30)
     
 or raising the gui:
     
 .. code-block:: python
 
+    >>> s = load("Ni_superalloy_1pix.msa", signal_type="EDS_SEM")
     >>> s.set_microscope_parameters()
     
 .. figure::  images/EDS_microscope_parameters_gui.png
@@ -168,7 +172,7 @@ The main values for the energy axis are automatically imported from the file, if
 
 .. code-block:: python
 
-    >>> si = load("Ni_superalloy_010.rpl").as_spectrum(0)
+    >>> si = load("Ni_superalloy_010.rpl", signal_type="EDS_TEM").as_spectrum(0)
     >>> si.axes_manager[-1].name = 'E'
     >>> si.axes_manager['E'].units = 'keV'
     >>> si.axes_manager['E'].scale = 0.01
@@ -178,7 +182,7 @@ or with the :py:meth:`~.axes.AxesManager.gui` method:
 
 .. code-block:: python
 
-    >>> spec.axes_manager.gui()
+    >>> si.axes_manager.gui()
     
 .. figure::  images/EDS_energy_axis_gui.png
    :align:   center
@@ -187,24 +191,24 @@ or with the :py:meth:`~.axes.AxesManager.gui` method:
 Related method
 ^^^^^^^^^^^^^^
 
-All the above parameters can be copy from one spectrum to another one
+All the above parameters can be copy from one spectrum (for example exported from one pixel) to another one
 with the :py:meth:`~._signals.eds_tem.EDSTEMSpectrum.get_calibration_from`
 method.
 
 .. code-block:: python
 
-    >>> # s1p contains all the parameters
-    >>> s1p = load("Ni_superalloy_1pix.msa", signal_type="EDS_TEM")
+    >>> # s1pixel contains all the parameters
+    >>> s1pixel = load("Ni_superalloy_1pix.msa", signal_type="EDS_TEM")
 
 .. code-block:: python
 
-    >>> # s contains no parameters
-    >>> s = load("Ni_superalloy_010.rpl", signal_type="EDS_TEM").as_spectrum(0)
+    >>> # si contains no parameters
+    >>> si = load("Ni_superalloy_010.rpl", signal_type="EDS_TEM").as_spectrum(0)
 
 .. code-block:: python
 
-    >>> # Copy all the properties of s1p to s
-    >>> s.get_calibration_from(s1p)
+    >>> # Copy all the properties of s1pixel to si
+    >>> si.get_calibration_from(s1pixel)
     
 .. _eds_sample-label:
    
@@ -412,7 +416,8 @@ Mn Ka to the peak energy ("energy_resolution_MnKa" in metadata).
 
 .. code-block:: python
 
-    >>> spec_img.get_lines_intensity(['Ni_Ka'],plot_result=True)
+    >>> s = load('core_shell.hdf5')
+    >>> s.get_lines_intensity(['Fe_Ka'],plot_result=True)
     
 .. figure::  images/EDS_get_lines_intensity.png
    :align:   center
@@ -423,6 +428,7 @@ are used by default.
    
 .. code-block:: python
 
+    >>> s = load('core_shell.hdf5')
     >>> s.set_lines(['Fe_Ka', 'Pt_La'])
     >>> s.get_lines_intensity()
     [<Image, title: X-ray line intensity of Core shell: Fe_Ka at 6.40 keV, dimensions: (|64, 64)>,
@@ -432,7 +438,9 @@ The windows of integration can be visualised using :py:meth:`~._signals.eds.EDSS
 
 .. code-block:: python
 
-	>>> s.plot(integration_windows='auto')
+    >>> s = utils.example_signals.EDS_TEM_Spectrum()[5.:13.]
+    >>> s.add_lines()
+    >>> s.plot(integration_windows='auto')
 
 .. figure::  images/EDS_integration_windows.png
    :align:   center
@@ -460,7 +468,7 @@ Quantification
 
 One TEM quantification method (Cliff-Lorimer) is implemented so far.
 
-Quantification can be applied from the intensities (background subtracted) with the :py:meth:`~._signals.eds_tem.EDSTEMSpectrum.quantificationr` method. The required kfactors can be usually found in the EDS manufacturer software.
+Quantification can be applied from the intensities (background subtracted) with the :py:meth:`~._signals.eds_tem.EDSTEMSpectrum.quantificationr` method. The required k-factors can be usually found in the EDS manufacturer software.
 
 .. code-block:: python
 
@@ -476,7 +484,8 @@ Quantification can be applied from the intensities (background subtracted) with 
 The obtained composition is in weight percent. It can be changed transformed into atomic percent either with the option :py:meth:`~._signals.eds_tem.EDSTEMSpectrum.quantification`:
 
 .. code-block:: python
-
+    
+    >>> # With s, intensities and kfactors from before
     >>> s.quantification(intensities, kfactors, plot_result=True,
     >>>                  composition_units='atomic')
     Fe (Fe_Ka): Composition = 15.41 atomic percent
@@ -485,7 +494,8 @@ The obtained composition is in weight percent. It can be changed transformed int
 either with :py:func:`~.misc.material.weight_to_atomic`. The reverse method is :py:func:`~.misc.material.atomic_to_weigth`.
 
 .. code-block:: python
-	
+
+    >>> # With weight_percent from before	
     >>> atomic_percent = utils.material.weight_to_atomic(weight_percent)
 
 
