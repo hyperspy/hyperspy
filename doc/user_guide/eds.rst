@@ -355,6 +355,8 @@ An example of plotting EDS data of higher dimension (3D SEM-EDS) is given in
 :ref:`visualisation multi-dimension<visualization_multi_dim>`.
 
 
+.. _eds_plot_markers-label:
+
 Plot X-ray lines
 ^^^^^^^^^^^^^^^^
 
@@ -447,6 +449,8 @@ The windows of integration can be visualised using :py:meth:`~._signals.eds.EDSS
    :align:   center
    :width:   500 
 
+.. _eds_background_subtraction-label:
+
 Background subtraction
 ^^^^^^^^^^^^^^^^^^^^^^
 
@@ -466,6 +470,8 @@ The background can be subtracted from the X-ray intensities with the :py:meth:`~
    :align:   center
    :width:   500
 
+.. _eds_quantification-label:
+
 Quantification
 --------------
 
@@ -473,7 +479,7 @@ Quantification
 
 One TEM quantification method (Cliff-Lorimer) is implemented so far.
 
-Quantification can be applied from the intensities (background subtracted) with the :py:meth:`~._signals.eds_tem.EDSTEMSpectrum.quantificationr` method. The required k-factors can be usually found in the EDS manufacturer software.
+Quantification can be applied from the intensities (background subtracted) with the :py:meth:`~._signals.eds_tem.EDSTEMSpectrum.quantification` method. The required k-factors can be usually found in the EDS manufacturer software.
 
 .. code-block:: python
 
@@ -496,7 +502,7 @@ The obtained composition is in weight percent. It can be changed transformed int
     Fe (Fe_Ka): Composition = 15.41 atomic percent
     Pt (Pt_La): Composition = 84.59 atomic percent
 
-either with :py:func:`~.misc.material.weight_to_atomic`. The reverse method is :py:func:`~.misc.material.atomic_to_weigth`.
+either with :py:func:`~.misc.material.weight_to_atomic`. The reverse method is :py:func:`~.misc.material.atomic_to_weight`.
 
 .. code-block:: python
 
