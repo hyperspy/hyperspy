@@ -223,6 +223,13 @@ class Test_get_lines_intentisity:
             s.estimate_integration_windows(3.0, ["Al_Ka"]),
             [[1.371, 1.601]], atol=1e-2))
 
+    def test_with_signals_examples(self):
+        from hyperspy.misc.example_signals_loading import \
+            load_1D_EDS_SEM_spectrum as EDS_SEM_Spectrum
+        s = EDS_SEM_Spectrum()
+        np.allclose(utils.stack(s.get_lines_intensity()).data,
+                    np.array([84163, 89063, 96117, 96700, 99075]))
+
 
 class Test_tools_bulk:
 

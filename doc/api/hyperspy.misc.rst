@@ -41,6 +41,14 @@ hyperspy.misc.elements module
     :undoc-members:
     :show-inheritance:
 
+hyperspy.misc.example_signals_loading module
+--------------------------------------------
+
+.. automodule:: hyperspy.misc.example_signals_loading
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 hyperspy.misc.image_tools module
 --------------------------------
 
