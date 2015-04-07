@@ -51,10 +51,6 @@ from hyperspy.gui.tools import ComponentFit
 from hyperspy.component import Component
 from hyperspy.signal import Signal
 
-weights_deprecation_warning = (
-    'The `weights` argument is deprecated and will be removed '
-    'in the next release. ')
-
 
 class Model(list):
 
@@ -1064,9 +1060,6 @@ class Model(list):
         multifit
 
         """
-        if "weights" in kwargs:
-            warnings.warn(weights_deprecation_warning, DeprecationWarning)
-            del kwargs["weights"]
 
         if fitter is None:
             fitter = preferences.Model.default_fitter
@@ -1294,10 +1287,6 @@ class Model(list):
         if show_progressbar is None:
             show_progressbar = preferences.General.show_progressbar
 
-        if "weights" in kwargs:
-            warnings.warn(weights_deprecation_warning, DeprecationWarning)
-            del kwargs["weights"]
-
         if autosave is not False:
             fd, autosave_fn = tempfile.mkstemp(
                 prefix='hyperspy_autosave-',
@@ -1487,26 +1476,6 @@ class Model(list):
         for component in self:
             self._disable_plot_component(component)
         self._plot_components = False
-
-    def set_current_values_to(self, components_list=None, mask=None):
-        """Set parameter values for all positions to the current ones.
-
-        Parameters
-        ----------
-        component_list : list of components, optional
-            If a list of components is given, the operation will be performed
-            only in the value of the parameters of the given components.
-            The components can be specified by name, index or themselves.
-        mask : boolean numpy array or None, optional
-            The operation won't be performed where mask is True.
-
-        """
-
-        warnings.warn(
-            "This method has been renamed to `assign_current_values_to_all` "
-            "and it will be removed in the next release", DeprecationWarning)
-        return self.assign_current_values_to_all(
-            components_list=components_list, mask=mask)
 
     def assign_current_values_to_all(self, components_list=None, mask=None):
         """Set parameter values for all positions to the current ones.
