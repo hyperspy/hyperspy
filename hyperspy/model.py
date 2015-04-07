@@ -1368,7 +1368,7 @@ class Model(list):
         -----
         This method can be used to save the current state of the model in a way
         that can be loaded back to recreate the it using `load_parameters_from
-        file`. Actually, before HyperSpy 0.8 this is the only way to do so.
+        file`. Actually, as of HyperSpy 0.8 this is the only way to do so.
         However, this is known to be brittle. For example see
         https://github.com/hyperspy/hyperspy/issues/341.
 

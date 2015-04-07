@@ -628,7 +628,7 @@ datasets**.
 Saving and loading the result of the fit
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-As of HyperSpy 0.7.4, the following is the only way to save a model to  a file
+As of HyperSpy 0.8, the following is the only way to save a model to  a file
 and load it back. Note that this method is known to be brittle i.e. there is no
 guarantee that a version of HyperSpy different from the one used to save the
 model will be able to load it sucessfully.  Also, it is advisable not to use
