@@ -30,6 +30,7 @@ from hyperspy.drawing import utils
 from hyperspy.gui.tools import ImageContrastEditor
 from hyperspy.misc import math_tools
 from hyperspy.misc import rgb_tools
+from hyperspy.misc.image_tools import contrast_stretching
 from hyperspy.drawing.figure import BlittedFigure
 
 
@@ -56,9 +57,10 @@ class ImagePlot(BlittedFigure):
         Set the minimum aspect ratio of the image and the figure. To
         keep the image in the aspect limit the pixels are made
         rectangular.
-    perc: float
-        The percentile of number of data points to use to set the maximum and minimum of contrast.
-        0.9 results in 90% of points not saturated
+    saturated_pixels: scalar
+        The percentage of pixels that are left out of the bounds.  For example,
+        the low and high bounds of a value of 1 are the 0.5% and 99.5%
+        percentiles. It must be in the [0, 100] range.
 
     """
 
@@ -85,7 +87,7 @@ class ImagePlot(BlittedFigure):
         self.xaxis = None
         self.yaxis = None
         self.min_aspect = 0.1
-        self.perc = 0.99
+        self.saturated_pixels = 0.2
         self.ax_markers = list()
         self.scalebar_color = "white"
         self._user_scalebar = None
@@ -161,21 +163,13 @@ class ImagePlot(BlittedFigure):
         self._aspect = np.abs(factor * xaxis.scale / yaxis.scale)
 
     def optimize_contrast(self, data):
-        if self.vmin is not None and self.vmax is not None and not self.auto_contrast:
+        if (self.vmin is not None and
+            self.vmax is not None and
+            not self.auto_contrast):
             return
-        perc = np.abs(self.perc)
-        dc = data.copy().ravel()
-        if 'complex' in dc.dtype.name:
-            dc = np.log(np.abs(dc))
-        dc.sort()
-        if perc >= 1.0:
-            vmin = np.nanmin(dc)
-            vmax = np.nanmax(dc)
-        else:
-            i = int(round(len(dc) * 0.5 * (1.0 - perc)))
-            i = i if i > 0 else 1  # probably not required check
-            vmin = np.nanmin(dc[i:])
-            vmax = np.nanmax(dc[:-i])
+        if 'complex' in data.dtype.name:
+            data = np.log(np.abs(data))
+        vmin, vmax = contrast_stretching(data, self.saturated_pixels)
         if self.vmin is None or self.auto_contrast:
             self.vmin = vmin
         if self.vmax is None or self.auto_contrast:

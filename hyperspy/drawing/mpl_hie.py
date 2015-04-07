@@ -28,7 +28,7 @@ class MPL_HyperImage_Explorer(MPL_HyperExplorer):
                     scalebar_color="white",
                     axes_ticks=None,
                     auto_contrast=True,
-                    percentile=0.9,
+                    saturated_pixels=0.2,
                     vmin=None,
                     vmax=None,
                     no_nans=False,
@@ -51,11 +51,11 @@ class MPL_HyperImage_Explorer(MPL_HyperExplorer):
             are never plotted.
         auto_contrast : bool, optional
             If True, the contrast is stretched for each image using the
-            percentile value. Default True
-        percentile : float
-            The percentile to be used for contrast stretching.
-            0.9 results in 90% of data points not saturated.
-            It should be a scalar in the 0 to 1 range.
+            `saturated_pixels` value. Default True
+        saturated_pixels: scalar
+            The percentage of pixels that are left out of the bounds. For
+            example, the low and high bounds of a value of 1 are the
+            0.5% and 99.5% percentiles. It must be in the [0, 100] range.
         vmin, vmax : scalar, optional
             `vmin` and `vmax` are used to normalize luminance data. If
             `auto_contrast` is True (i.e. default) these values are ignore.
@@ -77,7 +77,7 @@ class MPL_HyperImage_Explorer(MPL_HyperExplorer):
         imf.scalebar = scalebar
         imf.axes_ticks = axes_ticks
         imf.vmin, imf.vmax = vmin, vmax
-        imf.perc = percentile
+        imf.saturated_pixels = saturated_pixels
         imf.no_nans = no_nans
         imf.scalebar_color = scalebar_color
         imf.auto_contrast = auto_contrast
