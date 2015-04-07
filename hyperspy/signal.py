@@ -2526,46 +2526,6 @@ class Signal(MVA,
         self.inav = SpecialSlicers(self, True)
         self.isig = SpecialSlicers(self, False)
 
-    @property
-    def mapped_parameters(self):
-        # Deprecated added for HSpy 0.7
-        warnings.warn('This attribute has been renamed to `metadata` '
-                      'and will be removed in the next HyperSpy version. '
-                      'Please use `metadata` instead',
-                      DeprecationWarning)
-        if hasattr(self, "metadata"):
-            return self.metadata
-        else:
-            return None
-
-    @property
-    def original_parameters(self):
-        # Deprecated added for HSpy 0.7
-        warnings.warn('This attribute has been renamed to `original_metadata` '
-                      'and will be removed in the next HyperSpy version. '
-                      'Please use `original_metadata` instead',
-                      DeprecationWarning)
-        if hasattr(self, "original_metadata"):
-            return self.original_metadata
-        else:
-            return None
-
-    @property
-    def navigation_indexer(self):
-        warnings.warn(
-            "`navigation_indexer` has been renamed to `inav` and"
-            " it will be removed in the next version. ",
-            DeprecationWarning)
-        return self.inav
-
-    @property
-    def signal_indexer(self):
-        warnings.warn(
-            "`navigation_indexer` has been renamed to `isig` and"
-            " it will be removed in the next version. ",
-            DeprecationWarning)
-        return self.isig
-
     def _create_metadata(self):
         self.metadata = DictionaryTreeBrowser()
         mp = self.metadata
@@ -2939,7 +2899,7 @@ class Signal(MVA,
         return np.atleast_1d(
             self.data.__getitem__(axes_manager._getitem_tuple))
 
-    def plot(self, navigator="auto", axes_manager=None):
+    def plot(self, navigator="auto", axes_manager=None, **kwargs):
         """Plot the signal at the current coordinates.
 
         For multidimensional datasets an optional figure,
@@ -2987,6 +2947,9 @@ class Signal(MVA,
 
         axes_manager : {None, axes_manager}
             If None `axes_manager` is used.
+
+        **kwargs : optional
+            Any extra keyword arguments are passed to the signal plot.
 
         """
 
@@ -3092,7 +3055,7 @@ class Signal(MVA,
                     "navigator must be one of \"spectrum\",\"auto\","
                     " \"slider\", None, a Signal instance")
 
-        self._plot.plot()
+        self._plot.plot(**kwargs)
 
     def save(self, filename=None, overwrite=None, extension=None,
              **kwds):

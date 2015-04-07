@@ -36,68 +36,6 @@ class Spectrum(Signal):
         Signal.__init__(self, *args, **kwargs)
         self.axes_manager.set_signal_dimension(1)
 
-    def to_EELS(self):
-        warnings.warn(
-            'This method is deprecated and and will be removed '
-            'in the next version. '
-            'Please use `set_signal_type("EELS")` instead',
-            DeprecationWarning)
-        s = self.deepcopy()
-        s.set_signal_type("EELS")
-        return s
-
-    def to_EDS(self, microscope=None):
-        warnings.warn(
-            'This method is deprecated and and will be removed '
-            'in the next version. '
-            'Please use `set_signal_type("EDS_TEM")` or '
-            '`set_signal_type("EDS_SEM")` instead',
-            DeprecationWarning)
-        if microscope is None:
-            if self.metadata.Signal.signal_type == 'EDS_SEM':
-                microscope = 'SEM'
-            elif self.metadata.Signal.signal_type == 'EDS_TEM':
-                microscope = 'TEM'
-            else:
-                microscope = 'TEM'
-        s = self.deepcopy()
-        s.set_signal_type("EDS_" + microscope)
-        return s
-
-        #"""Return a EDSSpectrum from a Spectrum
-        # The microscope, which defines the quantification methods, needs
-        # to be set.
-        # Parameters
-        #----------------
-        # microscope : {None | 'TEM' | 'SEM'}
-            # If None the microscope defined in signal_type is used
-            #(EDS_TEM or EDS_SEM). If 'TEM' or 'SEM', the signal_type is
-            # overwritten.
-        #"""
-        #from hyperspy._signals.eds_tem import EDSTEMSpectrum
-        #from hyperspy._signals.eds_sem import EDSSEMSpectrum
-        # if microscope == None:
-            # if self.metadata.Signal.signal_type == 'EDS_SEM':
-                #microscope = 'SEM'
-            # elif self.metadata.Signal.signal_type == 'EDS_TEM':
-                #microscope = 'TEM'
-            # else:
-                # raise ValueError("Set a microscope. Valid microscopes "
-                #"are: 'SEM' or 'TEM'")
-        #dic = self._get_signal_dict()
-        # if microscope == 'SEM':
-            #dic['metadata']['signal_type'] = 'EDS_SEM'
-            #eds = EDSSEMSpectrum(**dic)
-        # elif microscope == 'TEM':
-            #dic['metadata']['signal_type'] = 'EDS_TEM'
-            #eds = EDSTEMSpectrum(**dic)
-        # else:
-            # raise ValueError("Unkown microscope. Valid microscopes "
-                #"are: 'SEM' or 'TEM'")
-        # if hasattr(self, 'learning_results'):
-            #eds.learning_results = copy.deepcopy(self.learning_results)
-        #eds.tmp_parameters = self.tmp_parameters.deepcopy()
-        # return eds
     def to_image(self):
         """Returns the spectrum as an image.
 

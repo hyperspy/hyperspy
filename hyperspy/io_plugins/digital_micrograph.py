@@ -624,6 +624,8 @@ class ImageObject(object):
     @property
     def signal_type(self):
         if 'ImageTags.Meta_Data.Signal' in self.imdict:
+            if self.imdict.ImageTags.Meta_Data.Signal == "X-ray":
+                return "EDS_TEM"
             return self.imdict.ImageTags.Meta_Data.Signal
         elif 'ImageTags.spim.eels' in self.imdict:  # Orsay's tag group
             return "EELS"
@@ -774,7 +776,13 @@ mapping = {
     "ImageList.TagGroup0.ImageTags.EELS.Experimental_Conditions.Collection_semi_angle_mrad": ("Acquisition_instrument.TEM.Detector.EELS.collection_angle", None),
     "ImageList.TagGroup0.ImageTags.EELS.Experimental_Conditions.Convergence_semi_angle_mrad": ("Acquisition_instrument.TEM.convergence_angle", None),
     "ImageList.TagGroup0.ImageTags.Acquisition.Parameters.Detector.exposure_s": ("Acquisition_instrument.TEM.dwell_time", None),
-    "ImageList.TagGroup0.ImageTags.Microscope_Info.Voltage": ("Acquisition_instrument.TEM.beam_energy", lambda x: x / 1e3)
+    "ImageList.TagGroup0.ImageTags.Microscope_Info.Voltage": ("Acquisition_instrument.TEM.beam_energy", lambda x: x / 1e3),
+    "ImageList.TagGroup0.ImageTags.EDS.Detector_Info.Azimuthal_angle": ("Acquisition_instrument.TEM.Detector.EDS.azimuth_angle", None),
+    "ImageList.TagGroup0.ImageTags.EDS.Detector_Info.Elevation_angle": ("Acquisition_instrument.TEM.Detector.EDS.elevation_angle", None),
+    "ImageList.TagGroup0.ImageTags.EDS.Detector_Info.Stage_tilt": ("Acquisition_instrument.TEM.tilt_stage", None),
+    "ImageList.TagGroup0.ImageTags.EDS.Solid_angle": ("Acquisition_instrument.TEM.Detector.EDS.solid_angle", None),
+    "ImageList.TagGroup0.ImageTags.EDS.Live_time": ("Acquisition_instrument.TEM.Detector.EDS.live_time", None),
+    "ImageList.TagGroup0.ImageTags.EDS.Real_time": ("Acquisition_instrument.TEM.Detector.EDS.real_time", None),
 }
 
 

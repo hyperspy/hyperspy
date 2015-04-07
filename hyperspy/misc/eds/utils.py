@@ -4,6 +4,7 @@ import numpy as np
 import math
 
 from hyperspy.misc.elements import elements as elements_db
+from functools import reduce
 
 
 def _get_element_and_line(Xray_line):
@@ -68,6 +69,17 @@ def xray_range(xray_line, beam_energy, density='auto'):
     -------
     X-ray range in micrometer.
 
+    Examples
+    --------
+    >>> # X-ray range of Cu Ka in pure Copper at 30 kV in micron
+    >>> utils.eds.xray_range('Cu_Ka', 30.)
+    1.9361716759499248
+
+    >>> # X-ray range of Cu Ka in pure Carbon at 30kV in micron
+    >>> utils.eds.xray_range('Cu_Ka', 30., utils.material.elements.C.
+    >>>                      Physical_properties.density_gcm3)
+    7.6418811280855454
+
     Notes
     -----
     From Anderson, C.A. and M.F. Hasler (1966). In proceedings of the
@@ -111,6 +123,12 @@ def electron_range(element, beam_energy, density='auto', tilt=0):
     -------
     Electron range in micrometers.
 
+    Examples
+    --------
+    >>> # Electron range in pure Copper at 30 kV in micron
+    >>> utils.eds.electron_range('Cu', 30.)
+    2.8766744984001607
+
     Notes
     -----
     From Kanaya, K. and S. Okayama (1972). J. Phys. D. Appl. Phys. 5, p43
@@ -141,8 +159,8 @@ def take_off_angle(tilt_stage,
     Parameters
     ----------
     tilt_stage: float
-        The tilt of the stage in degrees. The sample is facing the detector when
-        positively tilted.
+        The tilt of the stage in degrees. The sample is facing the detector
+        when positively tilted.
     azimuth_angle: float
         The azimuth of the detector in degrees. 0 is perpendicular to the tilt
         axis.
@@ -153,6 +171,12 @@ def take_off_angle(tilt_stage,
     -------
     take_off_angle: float.
         In degrees.
+
+    Examples
+    --------
+    >>> utils.eds.take_off_angle(tilt_stage=10.,
+    >>>                          azimuth_angle=45., elevation_angle=22.)
+    28.865971201155283
 
     Notes
     -----
@@ -262,7 +286,7 @@ def quantification_cliff_lorimer(intensities,
     min_intensity = 0.1
     dim = intensities.shape
     if len(dim) > 1:
-        dim2 = reduce(lambda x, y: x*y, dim[1:])
+        dim2 = reduce(lambda x, y: x * y, dim[1:])
         intens = intensities.reshape(dim[0], dim2)
         intens = intens.astype('float')
         for i in range(dim2):
