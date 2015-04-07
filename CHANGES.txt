@@ -6,13 +6,28 @@ see `the github commits changelog
 <https://github.com/hyperspy/hyperspy/commits/master>`_.
 
 
-.. _changes_0.8.0:
+.. _changes_0.8:
 
-v0.8.0
-======
+v0.8
+====
 
 New features
 ------------
+
+Core
+^^^^
+
+* :py:meth:`~._signals.spectrum.Spectrum.spikes_removal_tool` displays derivative max value when used with
+  GUI.
+* Progress-bar can now be suppressed by passing ``show_progressbar`` argument to all functions that generate
+  it.
+
+IO
+^^
+
+* HDF5 file format now supports saving lists, tuples, binary strings and signals in metadata (see
+  :ref:`hdf5-format` )
+
 
 Plotting
 ^^^^^^^^
@@ -35,6 +50,20 @@ EDS
 
 * New method to mask the vaccum, :py:meth:`~._signals.eds_tem.EDSTEMSpectrum.vacuum_mask` and a specific :py:meth:`~._signals.eds_tem.EDSTEMSpectrum.decomposition` method that incoroporate the vacuum mask
 
+API changes
+-----------
+
+* :py:class:`~.component.Component` and :py:class:`~.component.Parameter` now inherit ``traits.api.HasTraits``
+  that enable ``traitsui`` to modify these objects.
+* :py:meth:`~.misc.utils.attrsetter` is added, behaving as the default python :py:meth:`setattr` with nested
+  attributes.
+* Several widget functions were made internal and/or renamed:
+    + ``add_patch_to`` -> ``_add_patch_to``
+    + ``set_patch`` -> ``_set_patch``
+    + ``onmove`` -> ``_onmousemove``
+    + ``update_patch_position`` -> ``_update_patch_position``
+    + ``update_patch_size`` -> ``_update_patch_size``
+    + ``add_axes`` -> ``set_mpl_ax``
 
 v0.7.3
 ======
@@ -312,7 +341,7 @@ New features
 
 
 
-Mayor bugs fixed
+Major bugs fixed
 ----------------
 * The `print_current_values` Model method was raising errors when fine structure was enabled or when only_free = False.
 *  The `load` function `signal_type` keyword was not passed to the readers.
@@ -358,7 +387,7 @@ New features
 * The ripple file format now supports storing the beam energy, the collection and the convergence angle.
 
 
-Mayor bugs fixed
+Major bugs fixed
 ----------------
 * The EELS core loss component had a bug in the calculation of the
   relativistic gamma that produced a gamma that was always

@@ -136,14 +136,14 @@ contrast controls are HyperSpy-specific, however `matplotlib.imshow
     >>> import scipy
     >>> img = signals.Image(scipy.misc.lena())
     >>> img.plot(colorbar=True, scalebar=False, auto_contrast=True,
-    >>> 	 axes_ticks=True, cmap='RdYlBu_r', percentile=1.0)
+    >>> 	 axes_ticks=True, cmap='RdYlBu_r', saturated_pixels=0)
 
 
 .. figure::  images/custom_cmap.png
    :align:   center
    :width:   500    
 
-   Custom colormap and switched off scalebar in an image stack plot.
+   Custom colormap and switched off scalebar in an image.
 
 Customizing the "navigator"
 ===========================
