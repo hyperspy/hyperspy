@@ -41,7 +41,7 @@ default_extension = 4
 
 # Writing capabilities
 writes = True
-version = "1.2"
+version = "1.3"
 
 # -----------------------
 # File format description
@@ -69,6 +69,10 @@ version = "1.2"
 # The Experiments group can contain attributes that may be common to all
 # the experiments and that will be accessible as attribures of the
 # Experimentsinstance
+#
+# New in v1.3
+# -----------
+# - Added support for lists, tuples and binary strings
 
 not_valid_format = 'The file is not a valid HyperSpy hdf5 file'
 
