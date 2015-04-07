@@ -1343,11 +1343,26 @@ class Model(list):
             os.remove(autosave_fn + '.npz')
 
     def save_parameters2file(self, filename):
-        """Save the parameters array in binary format
+        """Save the parameters array in binary format.
+
+        The data is saved to a single file in numpy's uncompressed ``.npz``
+        format.
 
         Parameters
         ----------
         filename : str
+
+        See Also
+        --------
+        load_parameters_from_file, export_results
+
+        Notes
+        -----
+        This method can be used to save the current state of the model in a way
+        that can be loaded back to recreate the it using `load_parameters_from
+        file`. Actually, as of HyperSpy 0.8 this is the only way to do so.
+        However, this is known to be brittle. For example see
+        https://github.com/hyperspy/hyperspy/issues/341.
 
         """
         kwds = {}
@@ -1361,15 +1376,25 @@ class Model(list):
         np.savez(filename, **kwds)
 
     def load_parameters_from_file(self, filename):
-        """Loads the parameters array from  a binary file written with
-        the 'save_parameters2file' function
+        """Loads the parameters array from  a binary file written with the
+        'save_parameters2file' function.
 
         Parameters
         ---------
         filename : str
 
-        """
+        See Also
+        --------
+        save_parameters2file, export_results
 
+        Notes
+        -----
+        In combination with `save_parameters2file`, this method can be used to
+        recreate a model stored in a file. Actually, before HyperSpy 0.8 this
+        is the only way to do so.  However, this is known to be brittle. For
+        example see https://github.com/hyperspy/hyperspy/issues/341.
+
+        """
         f = np.load(filename)
         i = 0
         for component in self:  # Cut the parameters list
