@@ -192,6 +192,8 @@ def xray_lines_model(elements=['Al', 'Zn'],
                      beam_energy=200,
                      weight_percents=[50, 50],
                      energy_resolution_MnKa=130,
+                     counts_rate = 1,
+                     live_time = 1.,
                      energy_axis={'name': 'E', 'scale': 0.01, 'units': 'keV',
                                   'offset': -0.1, 'size': 1024}
                      ):
@@ -211,6 +213,10 @@ def xray_lines_model(elements=['Al', 'Zn'],
         The composition in weight percent.
     energy_resolution_MnKa: float
         The energy resolution of the detector in eV
+    counts_rate: int
+        Number of detected X-ray per second
+    live_time:
+        Time of active X-ray detections in second
     energy_axis: dic
         The dictionary for the energy axis. It must contains 'size' and the
         units must be 'eV' of 'keV'.
@@ -228,15 +234,13 @@ def xray_lines_model(elements=['Al', 'Zn'],
         beam_energy=beam_energy,
         energy_resolution_MnKa=energy_resolution_MnKa)
     s.add_elements(elements)
-    counts_rate = 1.
-    live_time = 1.
     if weight_percents is None:
         weight_percents = [100] * len(elements)
     weight_percents = np.array(weight_percents, dtype=float)
-    weight_percents /= weight_percents.sum()
+    weight_fractions = weight_percents / weight_percents.sum()
     m = Model(s)
-    for i, (element, weight_percent) in enumerate(zip(
-            elements, weight_percents)):
+    for i, (element, weight_fraction) in enumerate(zip(
+            elements, weight_fractions)):
         for line in elements_db[
                 element]['Atomic_properties']['Xray_lines'].keys():
             line_energy = elements_db[element]['Atomic_properties'][
@@ -250,7 +254,7 @@ def xray_lines_model(elements=['Al', 'Zn'],
                 g.sigma.value = get_FWHM_at_Energy(
                     energy_resolution_MnKa, line_energy) / 2.355
                 g.A.value = live_time * counts_rate * \
-                    weight_percent * ratio_line
+                    weight_fraction * ratio_line
                 m.append(g)
     s.data = m.as_signal().data
     # s.add_poissonian_noise()
