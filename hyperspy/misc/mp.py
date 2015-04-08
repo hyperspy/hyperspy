@@ -16,7 +16,6 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-from multiprocessing import Pool as pool_mp
 from IPython.parallel import Client as client_ip
 from IPython.parallel import error
 
@@ -38,13 +37,15 @@ def pool(parallel, pool_type=None, ipython_timeout=1.):
             pool = c[:parallel]
             pool_type = 'ipython'
         except (error.TimeoutError, IOError):
+            from multiprocessing import Pool as pool_mp
             pool_type = 'mp'
             pool = pool_mp(processes=parallel)
-    elif pool_type == 'ipython':
+    elif set('ipython') == set(pool_type):
         c = client_ip(profile='hyperspy', timeout=ipython_timeout)
         pool = c[:parallel]
         pool_type = 'ipython'
     else:
+        from multiprocessing import Pool as pool_mp
         pool_type = 'mp'
         pool = pool_mp(processes=parallel)
     return pool, pool_type
