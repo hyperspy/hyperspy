@@ -329,7 +329,7 @@ def dict2hdfgroup(dictionary, group, compression=None):
                 write_signal(value, group.create_group('_sig_' + key))
         elif isinstance(value, np.ndarray):
             group.create_dataset(key,
-                                 data=value,
+                                 data=np.atleast_1d(value),
                                  compression=compression)
         elif value is None:
             group.attrs[key] = '_None_'
@@ -444,7 +444,7 @@ def write_signal(signal, group, compression='gzip'):
         original_metadata = "original_metadata"
 
     group.create_dataset('data',
-                         data=signal.data,
+                         data=np.atleast_1d(signal.data),
                          compression=compression)
     for axis in signal.axes_manager._axes:
         axis_dict = axis.get_axis_dictionary()
