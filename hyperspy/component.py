@@ -21,14 +21,28 @@ import os
 import numpy as np
 import warnings
 
+import traits.api as t
+import traitsui.api as tu
+from traits.trait_numeric import Array
+
 from hyperspy.defaults_parser import preferences
 from hyperspy.misc.utils import slugify
 from hyperspy.misc.io.tools import (incremental_filename,
                                     append2pathname,)
 from hyperspy.exceptions import NavigationDimensionError
 
+class NoneFloat(t.CFloat):   # Lazy solution, but usable
+    default_value = None
+    
+    def validate(self, object, name, value):
+        if value == "None" or value == u"None":
+            value = None
+        if value is None:
+            super(NoneFloat, self).validate(object, name, 0)
+            return None
+        return super(NoneFloat, self).validate(object, name, value)
 
-class Parameter(object):
+class Parameter(t.HasTraits):
 
     """Model parameter
 
@@ -76,24 +90,32 @@ class Parameter(object):
     """
     __number_of_elements = 1
     __value = 0
+    __free = True
     _bounds = (None, None)
     __twin = None
     _axes_manager = None
     __ext_bounded = False
     __ext_force_positive = False
+    
+    # traitsui bugs out trying to make an editor for this, so always specify!
+    # (it bugs out, because both editor shares the object, and Array editors 
+    # don't like non-sequence objects). TextEditor() works well.
+    value = t.Property( t.Either([t.CFloat(0), Array()]), editor=tu.TextEditor())
+    units = t.Str('')
+    free = t.Property( t.CBool(True) )
+    
+    bmin = t.Property( NoneFloat(), label="Lower bounds" )
+    bmax = t.Property( NoneFloat(), label="Upper bounds" )
 
     def __init__(self):
         self._twins = set()
         self.connected_functions = list()
         self.twin_function = lambda x: x
         self.twin_inverse_function = lambda x: x
-        self.value = 0
         self.std = None
         self.component = None
-        self.free = True
         self.grad = None
         self.name = ''
-        self.units = ''
         self.map = None
         self.model = None
 
@@ -120,20 +142,20 @@ class Parameter(object):
             if self.twin:
                 self.twin.disconnect(f)
 
-    def _getvalue(self):
+    def _get_value(self):
         if self.twin is None:
             return self.__value
         else:
             return self.twin_function(self.twin.value)
 
-    def _setvalue(self, arg):
+    def _set_value(self, arg):
         try:
             # Use try/except instead of hasattr("__len__") because a numpy
             # memmap has a __len__ wrapper even for numbers that raises a
             # TypeError when calling. See issue #349.
             if len(arg) != self._number_of_elements:
                 raise ValueError(
-                    "The lenght of the parameter must be ",
+                    "The length of the parameter must be ",
                     self._number_of_elements)
             else:
                 if not isinstance(arg, tuple):
@@ -141,7 +163,7 @@ class Parameter(object):
         except TypeError:
             if self._number_of_elements != 1:
                 raise ValueError(
-                    "The lenght of the parameter must be ",
+                    "The length of the parameter must be ",
                     self._number_of_elements)
         old_value = self.__value
 
@@ -178,20 +200,21 @@ class Parameter(object):
                     f()
                 except:
                     self.disconnect(f)
-    value = property(_getvalue, _setvalue)
+        self.trait_property_changed('value', old_value, self.__value)
 
     # Fix the parameter when coupled
-    def _getfree(self):
+    def _get_free(self):
         if self.twin is None:
             return self.__free
         else:
             return False
 
-    def _setfree(self, arg):
+    def _set_free(self, arg):
+        old_value = self.__free
         self.__free = arg
         if self.component is not None:
             self.component._update_free_parameters()
-    free = property(_getfree, _setfree)
+        self.trait_property_changed('free', old_value, self.__free)
 
     def _set_twin(self, arg):
         if arg is None:
@@ -227,13 +250,14 @@ class Parameter(object):
             return self._bounds[0][0]
 
     def _set_bmin(self, arg):
+        old_value = self.bmin
         if self._number_of_elements == 1:
             self._bounds = (arg, self.bmax)
         else:
             self._bounds = ((arg, self.bmax),) * self._number_of_elements
         # Update the value to take into account the new bounds
         self.value = self.value
-    bmin = property(_get_bmin, _set_bmin)
+        self.trait_property_changed('bmin', old_value, arg)
 
     def _get_bmax(self):
         if self._number_of_elements == 1:
@@ -242,13 +266,14 @@ class Parameter(object):
             return self._bounds[0][1]
 
     def _set_bmax(self, arg):
+        old_value = self.bmax
         if self._number_of_elements == 1:
             self._bounds = (self.bmin, arg)
         else:
             self._bounds = ((self.bmin, arg),) * self._number_of_elements
         # Update the value to take into account the new bounds
         self.value = self.value
-    bmax = property(_get_bmax, _set_bmax)
+        self.trait_property_changed('bmax', old_value, arg)
 
     @property
     def _number_of_elements(self):
@@ -353,7 +378,7 @@ class Parameter(object):
 
         """
         shape = self._axes_manager._navigation_shape_in_array
-        if len(shape) == 1 and shape[0] == 0:
+        if not shape:
             shape = [1, ]
         dtype_ = np.dtype([
             ('values', 'float', self._number_of_elements),
@@ -443,8 +468,11 @@ class Parameter(object):
                 filename, '_std'))
 
 
-class Component(object):
+class Component(t.HasTraits):
     __axes_manager = None
+    
+    active = t.Property( t.CBool(True) )
+    name = t.Property( t.Str('') )
 
     def __init__(self, parameter_name_list):
         self.connected_functions = list()
@@ -456,12 +484,13 @@ class Component(object):
         self.isbackground = False
         self.convolved = True
         self.parameters = tuple(self.parameters)
-        self._name = ''
         self._id_name = self.__class__.__name__
         self._id_version = '1.0'
         self._position = None
         self.model = None
+        self.name = ''
 
+    _name = ''
     _active_is_multidimensional = False
     _active = True
 
@@ -496,12 +525,11 @@ class Component(object):
             self._active_array = None
             self._active_is_multidimensional = False
 
-    @property
-    def name(self):
+    def _get_name(self):
         return(self._name)
 
-    @name.setter
-    def name(self, value):
+    def _set_name(self, value):
+        old_value = self._name
         if self.model:
             for component in self.model:
                 if value == component.name:
@@ -513,6 +541,7 @@ class Component(object):
                     self._name = value
         else:
             self._name = value
+        self.trait_property_changed('name', old_value, self._name)
 
     @property
     def _axes_manager(self):
@@ -532,8 +561,7 @@ class Component(object):
         if f in self.connected_functions:
             self.connected_functions.remove(f)
 
-    @property
-    def active(self):
+    def _get_active(self):
         if self.active_is_multidimensional is True:
             # The following should set
             self.active = self._active_array[self._axes_manager.indices[::-1]]
@@ -542,10 +570,10 @@ class Component(object):
     def _store_active_value_in_array(self, value):
         self._active_array[self._axes_manager.indices[::-1]] = value
 
-    @active.setter
-    def active(self, arg):
+    def _set_active(self, arg):
         if self._active == arg:
             return
+        old_value = self._active
         self._active = arg
         if self.active_is_multidimensional is True:
             self._store_active_value_in_array(arg)
@@ -555,6 +583,7 @@ class Component(object):
                 f()
             except:
                 self.disconnect(f)
+        self.trait_property_changed('active', old_value, self._active)
 
     def init_parameters(self, parameter_name_list):
         for name in parameter_name_list:
@@ -565,6 +594,7 @@ class Component(object):
             if hasattr(self, 'grad_' + name):
                 parameter.grad = getattr(self, 'grad_' + name)
             parameter.component = self
+            self.add_trait(name, t.Instance(Parameter))
 
     def _get_long_description(self):
         if self.name:
@@ -611,13 +641,13 @@ class Component(object):
             parameters = self.parameters
         i = 0
         for parameter in parameters:
-            lenght = parameter._number_of_elements
-            parameter.value = (p[i] if lenght == 1 else p[i:i + lenght])
+            length = parameter._number_of_elements
+            parameter.value = (p[i] if length == 1 else p[i:i + length])
             if p_std is not None:
-                parameter.std = (p_std[i] if lenght == 1 else
-                                 tuple(p_std[i:i + lenght]))
+                parameter.std = (p_std[i] if length == 1 else
+                                 tuple(p_std[i:i + length]))
 
-            i += lenght
+            i += length
 
     def _create_active_array(self):
         shape = self._axes_manager._navigation_shape_in_array

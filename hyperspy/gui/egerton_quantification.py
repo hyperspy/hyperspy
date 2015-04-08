@@ -337,7 +337,7 @@ class SpikesRemoval(SpanSelectorInSpectrum):
         self.reset_span_selector()
         self.update_spectrum_line()
         if len(self.coordinates) > 1:
-            self.signal._plot.pointer.update_patch_position()
+            self.signal._plot.pointer._update_patch_position()
 
     def update_spectrum_line(self):
         self.line.auto_update = True
