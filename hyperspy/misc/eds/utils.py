@@ -232,11 +232,15 @@ def xray_lines_model(elements=['Al', 'Zn'],
     s = EDSTEMSpectrum(np.zeros(energy_axis['size']), axes=[energy_axis])
     s.set_microscope_parameters(
         beam_energy=beam_energy,
-        energy_resolution_MnKa=energy_resolution_MnKa)
+        energy_resolution_MnKa=energy_resolution_MnKa,
+        live_time=live_time)
     s.add_elements(elements)
     if weight_percents is None:
         weight_percents = [100] * len(elements)
     weight_percents = np.array(weight_percents, dtype=float)
+    s.metadata.Sample.weight_percents = weight_percents
+    s.metadata.Acquisition_instrument.TEM.Detector.EDS.counts_rate =\
+        counts_rate
     weight_fractions = weight_percents / weight_percents.sum()
     m = Model(s)
     for i, (element, weight_fraction) in enumerate(zip(
