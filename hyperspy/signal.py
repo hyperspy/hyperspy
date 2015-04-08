@@ -2526,46 +2526,6 @@ class Signal(MVA,
         self.inav = SpecialSlicers(self, True)
         self.isig = SpecialSlicers(self, False)
 
-    @property
-    def mapped_parameters(self):
-        # Deprecated added for HSpy 0.7
-        warnings.warn('This attribute has been renamed to `metadata` '
-                      'and will be removed in the next HyperSpy version. '
-                      'Please use `metadata` instead',
-                      DeprecationWarning)
-        if hasattr(self, "metadata"):
-            return self.metadata
-        else:
-            return None
-
-    @property
-    def original_parameters(self):
-        # Deprecated added for HSpy 0.7
-        warnings.warn('This attribute has been renamed to `original_metadata` '
-                      'and will be removed in the next HyperSpy version. '
-                      'Please use `original_metadata` instead',
-                      DeprecationWarning)
-        if hasattr(self, "original_metadata"):
-            return self.original_metadata
-        else:
-            return None
-
-    @property
-    def navigation_indexer(self):
-        warnings.warn(
-            "`navigation_indexer` has been renamed to `inav` and"
-            " it will be removed in the next version. ",
-            DeprecationWarning)
-        return self.inav
-
-    @property
-    def signal_indexer(self):
-        warnings.warn(
-            "`navigation_indexer` has been renamed to `isig` and"
-            " it will be removed in the next version. ",
-            DeprecationWarning)
-        return self.isig
-
     def _create_metadata(self):
         self.metadata = DictionaryTreeBrowser()
         mp = self.metadata
@@ -2939,7 +2899,7 @@ class Signal(MVA,
         return np.atleast_1d(
             self.data.__getitem__(axes_manager._getitem_tuple))
 
-    def plot(self, navigator="auto", axes_manager=None):
+    def plot(self, navigator="auto", axes_manager=None, **kwargs):
         """Plot the signal at the current coordinates.
 
         For multidimensional datasets an optional figure,
@@ -2987,6 +2947,9 @@ class Signal(MVA,
 
         axes_manager : {None, axes_manager}
             If None `axes_manager` is used.
+
+        **kwargs : optional
+            Any extra keyword arguments are passed to the signal plot.
 
         """
 
@@ -3092,7 +3055,7 @@ class Signal(MVA,
                     "navigator must be one of \"spectrum\",\"auto\","
                     " \"slider\", None, a Signal instance")
 
-        self._plot.plot()
+        self._plot.plot(**kwargs)
 
     def save(self, filename=None, overwrite=None, extension=None,
              **kwds):
@@ -3137,8 +3100,8 @@ class Signal(MVA,
                     self.tmp_parameters.folder,
                     self.tmp_parameters.filename)
                 extension = (self.tmp_parameters.extension
-                            if not extension
-                            else extension)
+                             if not extension
+                             else extension)
             elif self.metadata.has_item('General.original_filename'):
                 filename = self.metadata.General.original_filename
             else:
@@ -4301,8 +4264,8 @@ class Signal(MVA,
         variance = (dc * gain_factor + gain_offset) * correlation_factor
         # The lower bound of the variance is the gaussian noise.
         variance = np.clip(variance, gain_offset * correlation_factor, np.inf)
-        variance = type(self)(variance,
-                              axes=self.axes_manager._get_axes_dicts())
+        variance = type(self)(variance)
+        variance.axes_manager = self.axes_manager
         variance.metadata.General.title = ("Variance of " +
                                            self.metadata.General.title)
         self.metadata.set_item(
@@ -4599,6 +4562,41 @@ class Signal(MVA,
     @property
     def is_rgbx(self):
         return rgb_tools.is_rgbx(self.data)
+
+    def add_marker(self, marker, plot_on_signal=True, plot_marker=True):
+        """
+        Add a marker to the signal or navigator plot.
+
+        Plot the signal, if not yet plotted
+
+        Parameters
+        ----------
+        marker: `hyperspy.drawing._markers`
+            the marker to add. see `utils.markers`
+        plot_on_signal: bool
+            If True, add the marker to the signal
+            If False, add the marker to the navigator
+        plot_marker: bool
+            if True, plot the marker
+
+        Examples
+        -------
+        >>> import scipy.misc
+        >>> im = signals.Image(scipy.misc.lena())
+        >>> m = utils.plot.markers.rectangle(x1=150, y1=100, x2=400,
+        >>>                                  y2=400, color='red')
+        >>> im.add_marker(m)
+
+        """
+        if self._plot is None:
+            self.plot()
+        if plot_on_signal:
+            self._plot.signal_plot.add_marker(marker)
+        else:
+            self._plot.navigator_plot.add_marker(marker)
+        if plot_marker:
+            marker.plot()
+
 
 # Implement binary operators
 for name in (
