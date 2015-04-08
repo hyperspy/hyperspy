@@ -192,8 +192,8 @@ def xray_lines_model(elements=['Al', 'Zn'],
                      beam_energy=200,
                      weight_percents=[50, 50],
                      energy_resolution_MnKa=130,
-                     counts_rate = 1,
-                     live_time = 1.,
+                     counts_rate=1,
+                     live_time=1.,
                      energy_axis={'name': 'E', 'scale': 0.01, 'units': 'keV',
                                   'offset': -0.1, 'size': 1024}
                      ):
@@ -226,10 +226,12 @@ def xray_lines_model(elements=['Al', 'Zn'],
     >>> s = utils_eds.simulate_model(['Cu', 'Fe'], beam_energy=30)
     >>> s.plot()
     """
-    from hyperspy._signals.eds_tem import EDSTEMSpectrum
+    from hyperspy._signals.eds_tem_spectrum_simulation \
+        import EDSTEMSpectrumSimulation
     from hyperspy.model import Model
     from hyperspy import components
-    s = EDSTEMSpectrum(np.zeros(energy_axis['size']), axes=[energy_axis])
+    s = EDSTEMSpectrumSimulation(np.zeros(energy_axis['size']),
+                                 axes=[energy_axis])
     s.set_microscope_parameters(
         beam_energy=beam_energy,
         energy_resolution_MnKa=energy_resolution_MnKa,
@@ -261,7 +263,6 @@ def xray_lines_model(elements=['Al', 'Zn'],
                     weight_fraction * ratio_line
                 m.append(g)
     s.data = m.as_signal().data
-    # s.add_poissonian_noise()
     return s
 
 

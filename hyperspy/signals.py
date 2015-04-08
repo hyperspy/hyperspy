@@ -18,7 +18,8 @@ The Signal class and its specilized subclasses:
     EELSSpectrum
         For electron energy-loss data with signal_dimension equal 1, i.e.
         spectral data of n-dimensions. The signal is binned by default.
-    EELSSpectrumSimulation, SpectrumSimulation, ImageSimulation
+    EELSSpectrumSimulation, EDSSEMSpectrumSimulation, EDSTEMSpectrumSimulation,
+    SpectrumSimulation, ImageSimulation
         Simulation versions of EELSSpectrum, Spectrum and Image.
     EDSTEMSpectrum
         For electron energy-dispersive X-rays data acquired in a transmission
@@ -47,4 +48,8 @@ from hyperspy._signals.image_simulation import ImageSimulation
 from hyperspy._signals.spectrum_simulation import SpectrumSimulation
 from hyperspy._signals.eels_spectrum_simulation import (
     EELSSpectrumSimulation)
+from hyperspy._signals.eds_sem_spectrum_simulation import \
+    EDSSEMSpectrumSimulation
+from hyperspy._signals.eds_tem_spectrum_simulation import \
+    EDSTEMSpectrumSimulation
 from hyperspy.signal import Signal
