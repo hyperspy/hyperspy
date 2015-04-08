@@ -52,8 +52,9 @@ class Image(Signal):
         """
         if len(image.axes_manager.shape) != 3:
             raise ValueError("image must have 3 dimension.")
-
-        im_xy = image.deepcopy()
+        # TODO: to be changed when issue #515 is fixed to pass kwargs in plot
+        # im_xy = image.deepcopy()
+        im_xy = Signal(image.data.copy())
         im_xy.metadata.General.title = 'xy'
         im_xy.axes_manager.set_signal_dimension(0)
 
@@ -65,7 +66,6 @@ class Image(Signal):
         im_xz.axes_manager._axes[2] = im_xy.axes_manager._axes[2]
         im_xz.axes_manager._axes[1] = im_xy.axes_manager._axes[0]
         im_xz.axes_manager._axes[0] = im_xy.axes_manager._axes[1]
-
         im_yz = im_xy.deepcopy()
         im_yz = im_yz.rollaxis(0, 2)
         im_yz = im_yz.rollaxis(1, 0)
