@@ -233,10 +233,7 @@ class TestModelWeighted:
         self.m.fit(
             fitter="fmin",
             method="ls",
-            weights=np.arange(
-                10,
-                100,
-                0.01))
+            )
         for result, expected in zip(self.m[0].coefficients.value,
                                     (9.9137288425667442, 1.8446013472266145)):
             nose.tools.assert_almost_equal(result, expected, places=5)
@@ -267,10 +264,7 @@ class TestModelWeighted:
         self.m.fit(
             fitter="fmin",
             method="ls",
-            weights=np.arange(
-                10,
-                100,
-                0.01))
+            )
         for result, expected in zip(self.m[0].coefficients.value,
                                     (0.99136169230026261, 0.18483060534056939)):
             nose.tools.assert_almost_equal(result, expected, places=5)
