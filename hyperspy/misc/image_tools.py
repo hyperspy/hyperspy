@@ -185,3 +185,36 @@ def estimate_image_shift(ref, image, roi=None, sobel=True,
     del image
 
     return -np.array((shift0, shift1)), max_val
+
+
+def contrast_stretching(data, saturated_pixels):
+    """Calculate bounds that leaves out a given percentage of the data.
+
+    Parameters
+    ----------
+    data: numpy array
+    saturated_pixels: scalar
+        The percentage of pixels that are left out of the bounds.  For example,
+        the low and high bounds of a value of 1 are the 0.5% and 99.5%
+        percentiles. It must be in the [0, 100] range.
+
+    Returns
+    -------
+    vmin, vmax: scalar
+        The low and high bounds
+
+    Raises
+    ------
+    ValueError if the value of `saturated_pixels` is out of the valid range.
+
+    """
+    # Sanity check
+    if not 0 <= saturated_pixels <= 100:
+        raise ValueError(
+            "saturated_pixels must be a scalar in the range[0, 100]")
+    nans = np.isnan(data)
+    if nans.any():
+        data = data[~nans]
+    vmin = np.percentile(data, saturated_pixels / 2.)
+    vmax = np.percentile(data, 100 - saturated_pixels / 2.)
+    return vmin, vmax
