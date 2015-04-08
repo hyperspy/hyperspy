@@ -232,6 +232,8 @@ def xray_lines_model(elements=['Al', 'Zn'],
     live_time = 1.
     if weight_percents is None:
         weight_percents = [100] * len(elements)
+    weight_percents = np.array(weight_percents, dtype=float)
+    weight_percents /= weight_percents.sum()
     m = Model(s)
     for i, (element, weight_percent) in enumerate(zip(
             elements, weight_percents)):
@@ -248,7 +250,7 @@ def xray_lines_model(elements=['Al', 'Zn'],
                 g.sigma.value = get_FWHM_at_Energy(
                     energy_resolution_MnKa, line_energy) / 2.355
                 g.A.value = live_time * counts_rate * \
-                    weight_percent / 100 * ratio_line
+                    weight_percent * ratio_line
                 m.append(g)
     s.data = m.as_signal().data
     # s.add_poissonian_noise()
