@@ -37,7 +37,7 @@ def _weight_to_atomic(weight_percent, elements):
         [elements_db[element]['General_properties']['atomic_weight']
             for element in elements])
     atomic_percent = np.array(map(np.divide, weight_percent, atomic_weights))
-    sum_weight = atomic_percent.sum(axis=0)/100.
+    sum_weight = atomic_percent.sum(axis=0) / 100.
     for i, el in enumerate(elements):
         warnings.simplefilter("ignore")
         atomic_percent[i] /= sum_weight
@@ -114,7 +114,7 @@ def _atomic_to_weight(atomic_percent, elements):
         [elements_db[element]['General_properties']['atomic_weight']
             for element in elements])
     weight_percent = np.array(map(np.multiply, atomic_percent, atomic_weights))
-    sum_atomic = weight_percent.sum(axis=0)/100.
+    sum_atomic = weight_percent.sum(axis=0) / 100.
     for i, el in enumerate(elements):
         warnings.simplefilter("ignore")
         weight_percent[i] /= sum_atomic
@@ -159,7 +159,9 @@ def atomic_to_weight(atomic_percent, elements='auto'):
         return _atomic_to_weight(atomic_percent, elements)
 
 
-def _density_of_mixture_of_pure_elements(weight_percent, elements):
+def _density_of_mixture_of_pure_elements(weight_percent,
+                                         elements,
+                                         mean='harmonic'):
     """Calculate the density a mixture of elements.
 
     The density of the elements is retrieved from an internal database. The
@@ -174,6 +176,8 @@ def _density_of_mixture_of_pure_elements(weight_percent, elements):
         of the list (normalization).
     elements: list of str
         A list of element symbols, e.g. ['Al', 'Zn']
+    mean: 'harmonic' or 'weighted'
+        The type of mean use to estimate the density
 
     Returns
     -------
@@ -195,16 +199,28 @@ def _density_of_mixture_of_pure_elements(weight_percent, elements):
         [elements_db[element]['Physical_properties']['density (g/cm^3)']
             for element in elements])
     sum_densities = np.zeros_like(weight_percent, dtype='float')
-    for i, weight in enumerate(weight_percent):
-        sum_densities[i] = weight / densities[i]
-    sum_densities = sum_densities.sum(axis=0)
-    warnings.simplefilter("ignore")
-    density = np.sum(weight_percent, axis=0) / sum_densities
-    warnings.simplefilter('default')
-    return np.where(sum_densities == 0.0, 0.0, density)
+    if mean == 'harmonic':
+        for i, weight in enumerate(weight_percent):
+            sum_densities[i] = weight / densities[i]
+        sum_densities = sum_densities.sum(axis=0)
+        warnings.simplefilter("ignore")
+        density = np.sum(weight_percent, axis=0) / sum_densities
+        warnings.simplefilter('default')
+        return np.where(sum_densities == 0.0, 0.0, density)
+    elif mean == 'weighted':
+        for i, weight in enumerate(weight_percent):
+            sum_densities[i] = weight * densities[i]
+        sum_densities = sum_densities.sum(axis=0)
+        sum_weight = np.sum(weight_percent, axis=0)
+        warnings.simplefilter("ignore")
+        density = sum_densities / sum_weight
+        warnings.simplefilter('default')
+        return np.where(sum_weight == 0.0, 0.0, density)
 
 
-def density_of_mixture_of_pure_elements(weight_percent, elements='auto'):
+def density_of_mixture_of_pure_elements(weight_percent,
+                                        elements='auto',
+                                        mean='harmonic'):
     """Calculate the density of a mixture of elements.
 
     The density of the elements is retrieved from an internal database. The
@@ -221,6 +237,8 @@ def density_of_mixture_of_pure_elements(weight_percent, elements='auto'):
         A list of element symbols, e.g. ['Al', 'Zn']. If elements is 'auto',
         take the elements in en each signal metadata of the weight_percent
         list.
+    mean: 'harmonic' or 'weighted'
+        The type of mean use to estimate the density
 
     Returns
     -------
@@ -239,10 +257,11 @@ def density_of_mixture_of_pure_elements(weight_percent, elements='auto'):
     if isinstance(weight_percent[0], Signal):
         density = weight_percent[0]._deepcopy_with_new_data(
             _density_of_mixture_of_pure_elements(
-                stack(weight_percent).data, elements))
+                stack(weight_percent).data, elements, mean=mean))
         return density
     else:
-        return _density_of_mixture_of_pure_elements(weight_percent, elements)
+        return _density_of_mixture_of_pure_elements(weight_percent,
+                                                    elements, mean=mean)
 
 
 def mass_absorption_coefficient(element, energies):

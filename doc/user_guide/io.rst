@@ -89,11 +89,11 @@ which case the function will return a list of objects, e.g.:
     CL1.rpl  CL2.raw   CL3.raw  CL4.raw  hdf5/    LL3.rpl
     >>> s = load('*.rpl')
     >>> s
-   [<EELSSpectrum, title: CL1, dimensions: (64, 64, 1024)>,     
-   <EELSSpectrum, title: CL2, dimensions: (64, 64, 1024)>, 
-   <EELSSpectrum, title: CL3, dimensions: (64, 64, 1024)>, 
-   <EELSSpectrum, title: CL4, dimensions: (64, 64, 1024)>, 
-   <EELSSpectrum, title: LL3, dimensions: (64, 64, 1024)>]
+    [<EELSSpectrum, title: CL1, dimensions: (64, 64, 1024)>,     
+    <EELSSpectrum, title: CL2, dimensions: (64, 64, 1024)>, 
+    <EELSSpectrum, title: CL3, dimensions: (64, 64, 1024)>, 
+    <EELSSpectrum, title: CL4, dimensions: (64, 64, 1024)>, 
+    <EELSSpectrum, title: LL3, dimensions: (64, 64, 1024)>]
     >>> s = load('*.rpl', stack=True)
     >>> s
     <EELSSpectrum, title: mva, dimensions: (5, 64, 64, 1024)>
@@ -110,7 +110,7 @@ extension. If the filename does not contain the extension the default format
 (:ref:`hdf5-format`) is used. For example, if the :py:const:`s` variable
 contains the :py:class:`~.signal.Signal` that you want to write to a file, the
 following will write the data to a file called :file:`spectrum.hdf5` in the
-default :ref:`hdf5-format` format::
+default :ref:`hdf5-format` format:
 
 .. code-block:: python
 
@@ -173,7 +173,30 @@ of arbitrary dimensions. It is based on the `HDF5 open standard
 applications
 <http://www.hdfgroup.org/products/hdf5_tools/SWSummarybyName.htm>`_.
 
-Note that only HDF5 files written by HyperSpy are supported.
+Note that only HDF5 files written by HyperSpy are supported
+
+.. versionadded:: 0.8
+    
+It is also possible to save more complex structures (i.e. lists, tuples and signals) in 
+:py:attr:`~.metadata` of the signal, which might be particularly useful when using
+:py:meth:`~._signals.EDSSEMSpectrum.get_lines_intensity` (see :ref:`get lines
+intensity<get_lines_intensity>`):
+
+.. code-block:: python
+
+    >>> s = utils.example_signals.EDS_SEM_Spectrum()
+    >>> s.metadata.Sample.intensities = s.get_lines_intensity()
+    >>> s.save('EDS_spectrum.hdf5')
+
+    >>> s_new = load('EDS_spectrum.hdf5')
+    >>> s_new.metadata.Sample.intensities
+    [<Signal, title: X-ray line intensity of EDS SEM Spectrum: Al_Ka at 1.49 keV, dimensions: (|)>,
+     <Signal, title: X-ray line intensity of EDS SEM Spectrum: C_Ka at 0.28 keV, dimensions: (|)>,
+     <Signal, title: X-ray line intensity of EDS SEM Spectrum: Cu_La at 0.93 keV, dimensions: (|)>,
+     <Signal, title: X-ray line intensity of EDS SEM Spectrum: Mn_La at 0.63 keV, dimensions: (|)>,
+     <Signal, title: X-ray line intensity of EDS SEM Spectrum: Zr_La at 2.04 keV, dimensions: (|)>]
+        
+
 
 Extra saving arguments
 ^^^^^^^^^^^^^^^^^^^^^^^
