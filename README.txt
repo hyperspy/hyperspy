@@ -14,3 +14,7 @@ energy-loss spectroscopy (EELS) and energy dispersive X-rays (EDX) data.
 
 HyperSpy is released under the GPL v3 license.
 
+
+
+[![DOI](https://zenodo.org/badge/6941/hyperspy/hyperspy.svg)](http://dx.doi.org/10.5281/zenodo.16850)
+
