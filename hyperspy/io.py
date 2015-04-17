@@ -155,24 +155,42 @@ def load(filenames=None,
         if len(filenames) > 1:
             _logger.info('Loading individual files')
         if stack is True:
-            signal = []
             for i, filename in enumerate(filenames):
                 obj = load_single_file(filename,
                                        **kwds)
-                signal.append(obj)
-            signal = hyperspy.misc.utils.stack(signal,
-                                               axis=stack_axis,
-                                               new_axis_name=new_axis_name,
-                                               mmap=mmap, mmap_dir=mmap_dir)
-            signal.metadata.General.title = \
-                os.path.split(
+                if i == 0:
+                    if isinstance(obj, (list, tuple)):
+                        n = len(obj)
+                    else:
+                        n = 1
+                    signals = [[] for j in xrange(n)]
+                else:
+                    if isinstance(obj, (list, tuple)):
+                        if n != len(obj):
+                            raise ValueError()
+                    elif n != 1:
+                        raise ValueError()
+                if n == 1:
+                    signals[0].append(obj)
+                elif n > 1:
+                    for j in xrange(n):
+                        signals[j].append(obj[j])
+            objects = []
+            for i in xrange(n):
+                signal = signals[i]
+                signal = hyperspy.utils.stack(signal,
+                                              axis=stack_axis,
+                                              new_axis_name=new_axis_name,
+                                              mmap=mmap, mmap_dir=mmap_dir)
+                signal.metadata.General.title = \
                     os.path.split(
-                        os.path.abspath(filenames[0])
-                    )[0]
-                )[1]
-            _logger.info('Individual files loaded correctly')
-            _logger.info(signal._summary())
-            objects = [signal, ]
+                        os.path.split(
+                            os.path.abspath(filenames[0])
+                        )[0]
+                    )[1]
+                _logger.info('Individual files loaded correctly')
+                _logger.info(signal._summary())
+                objects.append(signal)
         else:
             objects = [load_single_file(filename,
                                         **kwds)
