@@ -74,8 +74,12 @@ class LineSegment(MarkerBase):
                 "To use this method the marker needs to be first add to a " +
                 "figure using `s._plot.signal_plot.add_marker(m)` or " +
                 "`s._plot.navigator_plot.add_marker(m)`")
-        self.marker = self.ax.vlines(0, 0, 1, **self.marker_properties)
-        self._update_segment()
+        x1 = self.get_data_position('x1')
+        x2 = self.get_data_position('x2')
+        y1 = self.get_data_position('y1')
+        y2 = self.get_data_position('y2')
+        self.marker = self.ax.plot((x1, x2), (y1, y2),
+                                   **self.marker_properties)[0]
         self.marker.set_animated(True)
         try:
             self.ax.hspy_fig._draw_animated()
