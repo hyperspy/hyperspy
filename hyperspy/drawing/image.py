@@ -136,6 +136,7 @@ class ImagePlot(BlittedFigure):
         self._use_cache = True
         if not value:
             self._cached_stack = None
+            self._stack_colorbars = []
         self.plot()
 
     def configure(self):
@@ -248,6 +249,8 @@ class ImagePlot(BlittedFigure):
                 animated=True)
         if self._colorbar is not None:
             self._colorbar.remove()
+        if self.auto_contrast:
+            self.vmin = self.vmax = None
 
         stack_artists = []
         for index in stack_iterable:
@@ -256,15 +259,11 @@ class ImagePlot(BlittedFigure):
             if rgb_tools.is_rgbx(data):
                 self.colorbar = False
                 data = rgb_tools.rgbx2regular_array(data, plot_friendly=True)
-            if self.vmin is not None or self.vmax is not None:
-                warnings.warn(
-                    'vmin or vmax value given, hence auto_contrast is set to False')
-                self.auto_contrast = False
             self.optimize_contrast(data)
             for marker in self.ax_markers:
                 marker.plot()
                 stack_artists[-1].append(marker.marker)
-            img = self.update(axes_manager=am, **kwargs)
+            img = self.update(axes_manager=am, auto_contrast=False, **kwargs)
             stack_artists[-1].append(img)
             if self.scalebar is True:
                 if self.pixel_units is not None:
@@ -276,8 +275,10 @@ class ImagePlot(BlittedFigure):
                     )
 
         if self.colorbar is True:
-            self._colorbar = plt.colorbar(img, ax=self.ax)
+            self._colorbar = self.figure.colorbar(img, ax=self.ax)
             self._colorbar.ax.yaxis.set_animated(True)
+            for im in self._colorbar.ax.images:
+                im.set_animated(True)
 
         if self.cache_stack:
             self._cached_stack = StackAnimation(self.figure, stack_artists)
@@ -301,6 +302,12 @@ class ImagePlot(BlittedFigure):
     def _update_text(self):
         if self.plot_indices is True:
             self._text.set_text((self.axes_manager.indices))
+
+    def _update_colorbar(self, idx):
+        if self.colorbar:
+            im = self._cached_stack._framedata[idx][0]
+            self._colorbar.on_mappable_changed(im)
+            self._colorbar.solids.set_animated(True)
 
     def update(self, auto_contrast=None, axes_manager=None, **kwargs):
         if axes_manager is None:
@@ -358,6 +365,7 @@ class ImagePlot(BlittedFigure):
             img.norm.vmax, img.norm.vmin = self.vmax, self.vmin
             if redraw_colorbar is True:
                 img.autoscale()
+                print "redrawing solids"
                 self._colorbar.draw_all()
                 self._colorbar.solids.set_animated(True)
             else:
@@ -389,6 +397,8 @@ class ImagePlot(BlittedFigure):
                 self.axes_manager.indices,
                 tuple(self.axes_manager._navigation_shape_in_array))
             self._cached_stack.event_source.navigate(idx)
+            self._update_colorbar(idx)
+            self._draw_animated()
         else:
             self.update()
 
@@ -529,11 +539,20 @@ class StackAnimation(animation.ArtistAnimation):
     def _step(self, frame_index, *args):
         try:
             framedata = self.frame_seq.seek(frame_index)
-            print framedata
             self._draw_next_frame(framedata, self._blit)
             return True
         except IndexError:
             return False
+
+    def _pre_draw(self, framedata, blit):
+        '''
+        Clears artists from the last frame.
+        '''
+        if blit:
+            # Let blit handle clearing
+            self._blit_clear(self._drawn_artists, self._blit_cache)
+        for artist in self._drawn_artists:
+            artist.set_visible(False)
 
     def _stop(self, *args):
         return animation.Animation._stop(self)
