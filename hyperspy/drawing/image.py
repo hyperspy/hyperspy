@@ -23,6 +23,7 @@ import warnings
 
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.animation as animation
 from traits.api import Undefined
 
 from hyperspy.drawing import widgets
@@ -32,6 +33,7 @@ from hyperspy.misc import math_tools
 from hyperspy.misc import rgb_tools
 from hyperspy.misc.image_tools import contrast_stretching
 from hyperspy.drawing.figure import BlittedFigure
+from hyperspy.events import Events, Event
 
 
 class ImagePlot(BlittedFigure):
@@ -95,6 +97,7 @@ class ImagePlot(BlittedFigure):
         self._user_axes_ticks = None
         self._auto_axes_ticks = True
         self.no_nans = False
+        self.fast_stack = True
 
     @property
     def axes_ticks(self):
@@ -208,44 +211,62 @@ class ImagePlot(BlittedFigure):
         if self.figure is None:
             self.create_figure()
             self.create_axis()
-        data = self.data_function(axes_manager=self.axes_manager)
-        if rgb_tools.is_rgbx(data):
-            self.colorbar = False
-            data = rgb_tools.rgbx2regular_array(data, plot_friendly=True)
-        if self.vmin is not None or self.vmax is not None:
-            warnings.warn(
-                'vmin or vmax value given, hence auto_contrast is set to False')
-            self.auto_contrast = False
-        self.optimize_contrast(data)
+        if self.fast_stack:
+            stack_iterable = self.axes_manager.deepcopy()
+            am = stack_iterable
+        else:
+            # Only plot current frame
+            stack_iterable = [self.axes_manager.indices]
+            am = self.axes_manager
+
+        if self._text is not None:
+            self._text.remove()
         if (not self.axes_manager or
                 self.axes_manager.navigation_size == 0):
             self.plot_indices = False
         if self.plot_indices is True:
-            if self._text is not None:
-                self._text.remove()
             self._text = self.ax.text(
                 *self._text_position,
-                s=str(self.axes_manager.indices),
+                s=str(am.indices),
                 transform=self.ax.transAxes,
                 fontsize=12,
                 color='red',
                 animated=True)
-        for marker in self.ax_markers:
-            marker.plot()
-        self.update(**kwargs)
-        if self.scalebar is True:
-            if self.pixel_units is not None:
-                self.ax.scalebar = widgets.Scale_Bar(
-                    ax=self.ax,
-                    units=self.pixel_units,
-                    animated=True,
-                    color=self.scalebar_color,
-                )
+        if self._colorbar is not None:
+            self._colorbar.remove()
+
+        stack_artists = []
+        for index in stack_iterable:
+            stack_artists.append([])
+            data = self.data_function(axes_manager=am)
+            if rgb_tools.is_rgbx(data):
+                self.colorbar = False
+                data = rgb_tools.rgbx2regular_array(data, plot_friendly=True)
+            if self.vmin is not None or self.vmax is not None:
+                warnings.warn(
+                    'vmin or vmax value given, hence auto_contrast is set to False')
+                self.auto_contrast = False
+            self.optimize_contrast(data)
+            for marker in self.ax_markers:
+                marker.plot()
+                stack_artists[-1].append(marker.marker)
+            img = self.update(axes_manager=am, **kwargs)
+            stack_artists[-1].append(img)
+            if self.scalebar is True:
+                if self.pixel_units is not None:
+                    self.ax.scalebar = widgets.Scale_Bar(
+                        ax=self.ax,
+                        units=self.pixel_units,
+                        animated=True,
+                        color=self.scalebar_color,
+                    )
 
         if self.colorbar is True:
-            self._colorbar = plt.colorbar(self.ax.images[0], ax=self.ax)
+            self._colorbar = plt.colorbar(img, ax=self.ax)
             self._colorbar.ax.yaxis.set_animated(True)
 
+        if self.fast_stack:
+            self._fast_stack = StackAnimation(self.figure, stack_artists)
         self.figure.canvas.draw()
         if hasattr(self.figure, 'tight_layout'):
             try:
@@ -263,11 +284,29 @@ class ImagePlot(BlittedFigure):
             marker.axes_manager = self.axes_manager
         self.ax_markers.append(marker)
 
-    def update(self, auto_contrast=None, **kwargs):
-        ims = self.ax.images
+    def _update_text(self):
+        if self.plot_indices is True:
+            self._text.set_text((self.axes_manager.indices))
+
+    def update(self, auto_contrast=None, axes_manager=None, **kwargs):
+        if axes_manager is None:
+            axes_manager = self.axes_manager
+        if self.fast_stack:
+            idx = np.ravel_multi_index(
+                axes_manager.indices,
+                tuple(axes_manager._navigation_shape_in_array))
+            if idx >= len(self.ax.images):
+                img = None
+            else:
+                img = self.ax.images[idx]
+        elif self.ax.images:
+            img = self.ax.images[0]
+        else:
+            img = None
         redraw_colorbar = False
-        data = rgb_tools.rgbx2regular_array(self.data_function(axes_manager=self.axes_manager),
-                                            plot_friendly=True)
+        data = rgb_tools.rgbx2regular_array(
+            self.data_function(axes_manager=axes_manager),
+            plot_friendly=True)
         numrows, numcols = data.shape[:2]
         for marker in self.ax_markers:
             marker.update()
@@ -291,25 +330,24 @@ class ImagePlot(BlittedFigure):
                 auto_contrast is None and self.auto_contrast is True):
             vmax, vmin = self.vmax, self.vmin
             self.optimize_contrast(data)
-            if vmax == vmin and self.vmax != self.vmin and ims:
+            if vmax == vmin and self.vmax != self.vmin and img:
                 redraw_colorbar = True
-                ims[0].autoscale()
+                img.autoscale()
 
         if 'complex' in data.dtype.name:
             data = np.log(np.abs(data))
-        if self.plot_indices is True:
-            self._text.set_text((self.axes_manager.indices))
+        self._update_text()
         if self.no_nans:
             data = np.nan_to_num(data)
-        if ims:
-            ims[0].set_data(data)
-            ims[0].norm.vmax, ims[0].norm.vmin = self.vmax, self.vmin
+        if img:
+            img.set_data(data)
+            img.norm.vmax, img.norm.vmin = self.vmax, self.vmin
             if redraw_colorbar is True:
-                ims[0].autoscale()
+                img.autoscale()
                 self._colorbar.draw_all()
                 self._colorbar.solids.set_animated(True)
             else:
-                ims[0].changed()
+                img.changed()
             self._draw_animated()
             # It seems that nans they're simply not drawn, so simply replacing
             # the data does not update the value of the nan pixels to the
@@ -325,9 +363,20 @@ class ImagePlot(BlittedFigure):
             new_args['aspect'] = self._aspect
             new_args['animated'] = True
             new_args.update(kwargs)
-            self.ax.imshow(data,
-                           **new_args)
+            img = self.ax.imshow(data,
+                                 **new_args)
             self.figure.canvas.draw()
+        return img
+
+    def on_navigate(self):
+        if self.fast_stack:
+            self._update_text()
+            idx = np.ravel_multi_index(
+                self.axes_manager.indices,
+                tuple(self.axes_manager._navigation_shape_in_array))
+            self._fast_stack.event_source.navigate(idx)
+        else:
+            self.update()
 
     def _update(self):
         # This "wrapper" because on_trait_change fiddles with the
@@ -344,7 +393,7 @@ class ImagePlot(BlittedFigure):
                                        self.on_key_press)
         self.figure.canvas.draw()
         if self.axes_manager:
-            self.axes_manager.connect(self._update)
+            self.axes_manager.connect(self.on_navigate)
 
     def on_key_press(self, event):
         if event.key == 'h':
@@ -398,3 +447,79 @@ class ImagePlot(BlittedFigure):
         except:
             pass
         self.figure = None
+
+
+class StackNavEventSource(object):
+
+    def __init__(self):
+        self.events = Events()
+        self.events.navigate_stack = Event()
+        self.stop()
+
+    def start(self):
+        self.events.navigate_stack.suppress = False
+
+    def stop(self):
+        self.events.navigate_stack.suppress = True
+
+    def add_callback(self, func, *args, **kwargs):
+        self.events.navigate_stack.connect(func)
+
+    def remove_callback(self, func, *args, **kwargs):
+        self.events.navigate_stack.disconnect(func)
+
+    def navigate(self, index):
+        self.events.navigate_stack.trigger(index)
+
+
+class StackAnimation(animation.ArtistAnimation):
+    '''
+    '''
+    def __init__(self, fig, artists, event_source=None, *args, **kwargs):
+        if event_source is None:
+            event_source = StackNavEventSource()
+
+        # Use the list of artists as the framedata, which will be iterated
+        # over by the machinery.
+        self._framedata = artists
+        super(StackAnimation, self).__init__(fig, artists, repeat=False,
+                                             event_source=event_source,
+                                             blit=True,
+                                             *args, **kwargs)
+
+    def new_frame_seq(self):
+        'Creates a new sequence of frame information.'
+        # Default implementation is just an iterator over self._framedata
+        class FrameSequence(object):
+            def __init__(self, framedata):
+                self.framedata = framedata
+                self._idx = None
+
+            def __iter__(self):
+                self._idx = 0
+                return self
+
+            def next(self):
+                self._idx += 1
+                if self._idx < len(self.framedata):
+                    return self.framedata[self._idx]
+                else:
+                    raise StopIteration()
+
+            def seek(self, index):
+                self._idx = index
+                return self.framedata[index]
+
+        return FrameSequence(self._framedata)
+
+    def _step(self, frame_index, *args):
+        try:
+            framedata = self.frame_seq.seek(frame_index)
+            print framedata
+            self._draw_next_frame(framedata, self._blit)
+            return True
+        except IndexError:
+            return False
+
+    def _stop(self, *args):
+        return animation.Animation._stop(self)
