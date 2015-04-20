@@ -97,7 +97,8 @@ class ImagePlot(BlittedFigure):
         self._user_axes_ticks = None
         self._auto_axes_ticks = True
         self.no_nans = False
-        self.fast_stack = True
+        self._use_cache = False
+        self._cached_stack = None
 
     @property
     def axes_ticks(self):
@@ -123,6 +124,19 @@ class ImagePlot(BlittedFigure):
             self._user_scalebar = value
         else:
             self._user_scalebar = None
+
+    @property
+    def cache_stack(self):
+        return self._use_cache
+
+    @cache_stack.setter
+    def cache_stack(self, value):
+        if value == self._use_cache:
+            return
+        self._use_cache = True
+        if not value:
+            self._cached_stack = None
+        self.plot()
 
     def configure(self):
         xaxis = self.xaxis
@@ -211,7 +225,7 @@ class ImagePlot(BlittedFigure):
         if self.figure is None:
             self.create_figure()
             self.create_axis()
-        if self.fast_stack:
+        if self.cache_stack:
             stack_iterable = self.axes_manager.deepcopy()
             am = stack_iterable
         else:
@@ -265,8 +279,8 @@ class ImagePlot(BlittedFigure):
             self._colorbar = plt.colorbar(img, ax=self.ax)
             self._colorbar.ax.yaxis.set_animated(True)
 
-        if self.fast_stack:
-            self._fast_stack = StackAnimation(self.figure, stack_artists)
+        if self.cache_stack:
+            self._cached_stack = StackAnimation(self.figure, stack_artists)
         self.figure.canvas.draw()
         if hasattr(self.figure, 'tight_layout'):
             try:
@@ -291,7 +305,7 @@ class ImagePlot(BlittedFigure):
     def update(self, auto_contrast=None, axes_manager=None, **kwargs):
         if axes_manager is None:
             axes_manager = self.axes_manager
-        if self.fast_stack:
+        if self.cache_stack:
             idx = np.ravel_multi_index(
                 axes_manager.indices,
                 tuple(axes_manager._navigation_shape_in_array))
@@ -369,12 +383,12 @@ class ImagePlot(BlittedFigure):
         return img
 
     def on_navigate(self):
-        if self.fast_stack:
+        if self.cache_stack:
             self._update_text()
             idx = np.ravel_multi_index(
                 self.axes_manager.indices,
                 tuple(self.axes_manager._navigation_shape_in_array))
-            self._fast_stack.event_source.navigate(idx)
+            self._cached_stack.event_source.navigate(idx)
         else:
             self.update()
 
