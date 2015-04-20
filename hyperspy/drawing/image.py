@@ -387,7 +387,8 @@ class ImagePlot(BlittedFigure):
             new_args.update(kwargs)
             img = self.ax.imshow(data,
                                  **new_args)
-            self.figure.canvas.draw()
+            if not self.cache_stack:
+                self.figure.canvas.draw()
         return img
 
     def on_navigate(self):
