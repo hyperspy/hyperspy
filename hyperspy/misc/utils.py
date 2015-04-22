@@ -268,7 +268,7 @@ class DictionaryTreeBrowser(object):
                         symbol = u'└── '
                     else:
                         symbol = u'├── '
-                    strvalue = unicode(value)
+                    strvalue = unicode(repr(value), 'utf8')
                     if max_len is not None and \
                             len(strvalue) > 2 * max_len:
                         right_limit = min(max_len,
@@ -276,7 +276,7 @@ class DictionaryTreeBrowser(object):
                         value = u'%s ... %s' % (strvalue[:max_len],
                                                 strvalue[-right_limit:])
                     string += u"%s%s%s = %s\n" % (
-                        padding, symbol, key, value)
+                        padding, symbol, key, strvalue)
             j += 1
         return string
 
