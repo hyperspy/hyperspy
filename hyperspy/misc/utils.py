@@ -26,6 +26,10 @@ import codecs
 import collections
 import tempfile
 import unicodedata
+import sys
+
+reload(sys)
+sys.setdefaultencoding('utf8')
 
 import numpy as np
 
