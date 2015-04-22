@@ -1014,7 +1014,7 @@ class EELSModel(Model):
             cf = SetCorelossEdgeOnset(self, component, only_current, percent_position)
             cf.edit_traits()
         else:
-            _set_edge_onset(
+            self._set_coreloss_edge_onset(
                     component, signal_range, only_current, percent_position)
 
     def _set_coreloss_edge_onset(self, component, signal_range, only_current=False, percent_position=0.1):
