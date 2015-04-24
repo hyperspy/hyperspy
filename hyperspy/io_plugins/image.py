@@ -26,7 +26,7 @@ from hyperspy.misc.rgb_tools import regular_array2rgbx
 # ----------------------
 format_name = 'Image'
 description = 'Import/Export standard image formats using PIL or freeimage'
-full_suport = False
+full_support = False
 file_extensions = ['png', 'bmp', 'dib', 'gif', 'jpeg', 'jpe', 'jpg',
                    'msp', 'pcx', 'ppm', "pbm", "pgm", 'xbm', 'spi', ]
 default_extension = 0  # png

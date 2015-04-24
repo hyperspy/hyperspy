@@ -41,7 +41,7 @@ except:
 # ----------------------
 format_name = 'netCDF'
 description = ''
-full_suport = True
+full_support = True
 file_extensions = ('nc', 'NC')
 default_extension = 0
 
