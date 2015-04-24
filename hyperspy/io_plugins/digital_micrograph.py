@@ -525,14 +525,22 @@ class ImageObject(object):
     @property
     def scales(self):
         dimensions = self.imdict.ImageData.Calibrations.Dimension
-        return np.array([dimension[1].Scale for dimension in dimensions])[::-1]
+        scale_list = []
+        for dimension in dimensions:
+            scale_list.append(dimension[1].Scale)
+        scale_array = np.array(scale_list)[::-1]
+        return scale_array
 
     @property
     def units(self):
         dimensions = self.imdict.ImageData.Calibrations.Dimension
-        return tuple([dimension[1].Units
-                      if dimension[1].Units else ""
-                      for dimension in dimensions])[::-1]
+        units_tuple = ()
+        for dimension in dimensions:
+            if dimension[1].Units:
+                units_tuple += (dimension[1].Units,)
+            else:
+                units_tuple += ("",)
+        return units_tuple[::-1]
 
     @property
     def names(self):
@@ -752,15 +760,19 @@ class ImageObject(object):
         return data
 
     def get_axes_dict(self):
-        return [{'name': name,
-                 'size': size,
-                 'index_in_array': i,
-                 'scale': scale,
-                 'offset': offset,
-                 'units': unicode(units), }
-                for i, (name, size, scale, offset, units) in enumerate(
-                    zip(self.names, self.shape, self.scales, self.offsets,
-                        self.units))]
+        axes_dict_list = []
+        for i, (name, size, scale, offset, units) in enumerate(
+            zip(self.names, self.shape, self.scales, self.offsets,
+                self.units)):
+                axes_dict = {
+                        'name': name,
+                        'size': size,
+                        'index_in_array': i,
+                        'scale': scale,
+                        'offset': offset,
+                        'units': unicode(units), }
+                axes_dict_list.append(axes_dict)
+        return axes_dict_list
 
     def get_metadata(self, metadata={}):
         if "General" not in metadata:
