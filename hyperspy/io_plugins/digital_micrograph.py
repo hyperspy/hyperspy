@@ -519,20 +519,26 @@ class ImageObject(object):
     @property
     def offsets(self):
         dimensions = self.imdict.ImageData.Calibrations.Dimension
+        len_diff = len(self.shape) - len(dimensions)
         origins = np.array([dimension[1].Origin for dimension in dimensions])
+        origins = np.append(origins, (0.0,)*len_diff)
         return (-1 * origins[::-1] * self.scales)
 
     @property
     def scales(self):
         dimensions = self.imdict.ImageData.Calibrations.Dimension
-        return np.array([dimension[1].Scale for dimension in dimensions])[::-1]
+        len_diff = len(self.shape) - len(dimensions)
+        scales = np.array([dimension[1].Scale for dimension in dimensions])
+        scales = np.append(scales, (1.0,)*len_diff)
+        return scales[::-1]
 
     @property
     def units(self):
         dimensions = self.imdict.ImageData.Calibrations.Dimension
-        return tuple([dimension[1].Units
+        len_diff = len(self.shape) - len(dimensions)
+        return (tuple([dimension[1].Units
                       if dimension[1].Units else ""
-                      for dimension in dimensions])[::-1]
+                      for dimension in dimensions]) + ('',)*len_diff)[::-1]
 
     @property
     def names(self):
