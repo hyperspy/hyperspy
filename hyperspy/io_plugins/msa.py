@@ -33,7 +33,7 @@ from hyperspy.misc.utils import DictionaryTreeBrowser
 # ----------------------
 format_name = 'MSA'
 description = ''
-full_suport = False
+full_support = False
 file_extensions = ('msa', 'ems', 'mas', 'emsa', 'EMS', 'MAS', 'EMSA', 'MSA')
 default_extension = 0
 
