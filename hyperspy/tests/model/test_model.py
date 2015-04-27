@@ -233,7 +233,7 @@ class TestModelWeighted:
         self.m.fit(
             fitter="fmin",
             method="ls",
-            )
+        )
         for result, expected in zip(self.m[0].coefficients.value,
                                     (9.9137288425667442, 1.8446013472266145)):
             nose.tools.assert_almost_equal(result, expected, places=5)
@@ -264,7 +264,7 @@ class TestModelWeighted:
         self.m.fit(
             fitter="fmin",
             method="ls",
-            )
+        )
         for result, expected in zip(self.m[0].coefficients.value,
                                     (0.99136169230026261, 0.18483060534056939)):
             nose.tools.assert_almost_equal(result, expected, places=5)
@@ -435,6 +435,7 @@ class TestSetCurrentValuesTo:
         nose.tools.assert_true((self.comps[0].offset.map["values"] != 2).all())
         nose.tools.assert_true((self.comps[1].offset.map["values"] == 2).all())
 
+
 class TestAsSignal:
 
     def setUp(self):
@@ -447,40 +448,42 @@ class TestAsSignal:
         self.m.assign_current_values_to_all()
 
     def test_all_components_simple(self):
-        s = self.m.as_signal(show_progressbar = False)
+        s = self.m.as_signal(show_progressbar=False)
         nose.tools.assert_true(np.all(s.data == 4.))
 
     def test_one_component_simple(self):
-        s = self.m.as_signal(component_list = [0], show_progressbar = False)
+        s = self.m.as_signal(component_list=[0], show_progressbar=False)
         nose.tools.assert_true(np.all(s.data == 2.))
         nose.tools.assert_true(self.m[1].active)
 
     def test_all_components_multidim(self):
         self.m[0].active_is_multidimensional = True
 
-        s = self.m.as_signal(show_progressbar = False)
+        s = self.m.as_signal(show_progressbar=False)
         nose.tools.assert_true(np.all(s.data == 4.))
 
         self.m[0]._active_array[0] = False
-        s = self.m.as_signal(show_progressbar = False)
-        nose.tools.assert_true(np.all(s.data == np.array([np.ones(5)*2, np.ones(5)*4])))
+        s = self.m.as_signal(show_progressbar=False)
+        nose.tools.assert_true(
+            np.all(s.data == np.array([np.ones(5) * 2, np.ones(5) * 4])))
         nose.tools.assert_true(self.m[0].active_is_multidimensional)
 
     def test_one_component_multidim(self):
         self.m[0].active_is_multidimensional = True
 
-        s = self.m.as_signal(component_list = [0], show_progressbar = False)
+        s = self.m.as_signal(component_list=[0], show_progressbar=False)
         nose.tools.assert_true(np.all(s.data == 2.))
         nose.tools.assert_true(self.m[1].active)
         nose.tools.assert_false(self.m[1].active_is_multidimensional)
 
-        s = self.m.as_signal(component_list = [1], show_progressbar = False)
+        s = self.m.as_signal(component_list=[1], show_progressbar=False)
         nose.tools.assert_true(np.all(s.data == 2.))
         nose.tools.assert_true(self.m[0].active_is_multidimensional)
 
         self.m[0]._active_array[0] = False
-        s = self.m.as_signal(component_list = [1], show_progressbar = False)
+        s = self.m.as_signal(component_list=[1], show_progressbar=False)
         nose.tools.assert_true(np.all(s.data == 2.))
 
-        s = self.m.as_signal(component_list = [0], show_progressbar = False)
-        nose.tools.assert_true(np.all(s.data == np.array([np.zeros(5), np.ones(5)*2])))
+        s = self.m.as_signal(component_list=[0], show_progressbar=False)
+        nose.tools.assert_true(
+            np.all(s.data == np.array([np.zeros(5), np.ones(5) * 2])))
