@@ -421,6 +421,9 @@ class Model(list):
         >>> s2 = m.as_signal(component_list=[l1])
 
         """
+        # change actual values to whatever except bool
+        _multi_on_ = '_multi_on_'
+        _multi_off_ = '_multi_off_'
         if show_progressbar is None:
             show_progressbar = preferences.General.show_progressbar
 
@@ -428,11 +431,19 @@ class Model(list):
             component_list = [self._get_component(x) for x in component_list]
             active_state = []
             for component_ in self:
-                active_state.append(component_.active)
-                if component_ in component_list:
-                    component_.active = True
+                if component_.active_is_multidimensional:
+                    if component_ not in component_list:
+                        active_state.append(_multi_off_)
+                        component_._toggle_connect_active_array(False)
+                        component_.active = False
+                    else:
+                        active_state.append(_multi_on_)
                 else:
-                    component_.active = False
+                    active_state.append(component_.active)
+                    if component_ in component_list:
+                        component_.active = True
+                    else:
+                        component_.active = False
         data = np.empty(self.spectrum.data.shape, dtype='float')
         data.fill(np.nan)
         if out_of_range_to_nan is True:
@@ -462,7 +473,12 @@ class Model(list):
 
         if component_list:
             for component_ in self:
-                component_.active = active_state.pop(0)
+                active_s = active_state.pop(0)
+                if isinstance(active_s, bool):
+                    component_.active = active_s
+                else:
+                    if active_s == _multi_off_:
+                        component_._toggle_connect_active_array(True)
         return spectrum
 
     @property
