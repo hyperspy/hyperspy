@@ -561,6 +561,28 @@ class Component(t.HasTraits):
         if f in self.connected_functions:
             self.connected_functions.remove(f)
 
+    def _toggle_connect_active_array(self, if_on):
+        if self._active_array is None: # nothing to do (was never multidimensional)
+            return
+        if self.active_is_multidimensional and if_on: # as it should be (both True)
+            return
+        if not self.active_is_multidimensional and not if_on: # as it should be (both False)
+            return
+        if not if_on: # active_is_multidimensional = True, want to set to False
+            self._active_is_multidimensional = False
+            self.active = self._active
+            return
+        if if_on: # a_i_m = False, want to set to False
+            # check that dimensions are correct
+            shape = self._axes_manager._navigation_shape_in_array
+            if self._active_array.shape != shape:
+                warnings.warn(
+                    '`_active_array` of wrong shape, skipping',
+                    RuntimeWarning)
+                return
+            self._active_is_multidimensional = True
+            self.active = self.active
+
     def _get_active(self):
         if self.active_is_multidimensional is True:
             # The following should set
