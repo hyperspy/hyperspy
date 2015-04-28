@@ -218,3 +218,38 @@ def contrast_stretching(data, saturated_pixels):
     vmin = np.percentile(data, saturated_pixels / 2.)
     vmax = np.percentile(data, 100 - saturated_pixels / 2.)
     return vmin, vmax
+
+MPL_DIVERGING_COLORMAPS = [
+    "BrBG",
+    "bwr",
+    "coolwarm",
+    "PiYG",
+    "PRGn",
+    "PuOr",
+    "RdBu",
+    "RdGy",
+    "RdYIBu",
+    "RdYIGn",
+    "seismic", ]
+# Add reversed colormaps
+MPL_DIVERGING_COLORMAPS += [cmap + "_r" for cmap in MPL_DIVERGING_COLORMAPS]
+
+
+def centre_colormap_values(vmin, vmax):
+    """Calculate vmin and vmax to set the colormap midpoint to zero.
+
+    Parameters
+    ----------
+    vmin, vmax : scalar
+        The range of data to display.
+
+    Returns
+    -------
+    cvmin, cvmax : scalar
+        The values to obtain a centre colormap.
+
+    """
+
+    absmax = max(vmin, vmax)
+    cvmin, cvmax = -absmax, absmax
+    return cvmin, cvmax

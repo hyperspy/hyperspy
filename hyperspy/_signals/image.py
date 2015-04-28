@@ -51,6 +51,7 @@ class Image(Signal):
              vmin=None,
              vmax=None,
              no_nans=False,
+             centre_colormap="auto",
              **kwargs
              ):
         """Plot image.
@@ -114,14 +115,19 @@ class Image(Signal):
             If True, the contrast is stretched for each image using the
             `saturated_pixels` value. Default True.
         saturated_pixels: scalar
-            The percentage of pixels that are left out of the bounds.  For example,
-            the low and high bounds of a value of 1 are the 0.5% and 99.5%
-            percentiles. It must be in the [0, 100] range.
+            The percentage of pixels that are left out of the bounds.
+            For example, the low and high bounds of a value of 1 are the 0.5%
+            and 99.5% percentiles. It must be in the [0, 100] range.
         vmin, vmax : scalar, optional
-            `vmin` and `vmax` are used to normalize luminance data. If at least one of them is given
-            `auto_contrast` is set to False and any missing values are calculated automatically.
+            `vmin` and `vmax` are used to normalize luminance data. If at
+            least one of them is given `auto_contrast` is set to False and any
+            missing values are calculated automatically.
         no_nans : bool, optional
             If True, set nans to zero for plotting.
+        centre_colormap : {"auto", True, False}
+            If True the centre of the color scheme is set to zero. This is
+            specially useful when using diverging color schemes. If "auto"
+            (default), diverging color schemes are automatically centred.
         **kwargs, optional
             Additional key word arguments passed to matplotlib.imshow()
 
@@ -136,5 +142,6 @@ class Image(Signal):
             vmin=vmin,
             vmax=vmax,
             no_nans=no_nans,
+            centre_colormap=centre_colormap,
             **kwargs
         )

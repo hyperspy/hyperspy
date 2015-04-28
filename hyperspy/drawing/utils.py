@@ -28,9 +28,10 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 
 from hyperspy.misc.utils import unfold_if_multidim
-from hyperspy.misc.image_tools import contrast_stretching
+from hyperspy.misc.image_tools import (contrast_stretching,
+                                       MPL_DIVERGING_COLORMAPS,
+                                       centre_colormap_values)
 from hyperspy.defaults_parser import preferences
-import hyperspy.messages as messages
 
 
 def create_figure(window_title=None,
@@ -358,6 +359,7 @@ def plot_images(images,
                 suptitle=None,
                 suptitle_fontsize=18,
                 colorbar='multi',
+                centre_colormap="auto",
                 saturated_pixels=0.2,
                 scalebar=None,
                 scalebar_color='white',
@@ -416,6 +418,10 @@ def plot_images(images,
             (non-RGB) image
             If 'single', all (non-RGB) images are plotted on the same scale,
             and one colorbar is shown for all
+        centre_colormap : {"auto", True, False}
+            If True the centre of the color scheme is set to zero. This is
+            specially useful when using diverging color schemes. If "auto"
+            (default), diverging color schemes are automatically centred.
         saturated_pixels: scalar
             The percentage of pixels that are left out of the bounds.  For example,
             the low and high bounds of a value of 1 are the 0.5% and 99.5%
@@ -503,6 +509,11 @@ def plot_images(images,
     # Get default colormap from pyplot:
     if cmap is None:
         cmap = plt.get_cmap()
+    if centre_colormap == "auto":
+        if cmap in MPL_DIVERGING_COLORMAPS:
+            centre_colormap = True
+        else:
+            centre_colormap = False
 
     # If input is >= 1D signal (e.g. for multi-dimensional plotting),
     # copy it and put it in a list so labeling works out as (x,y) when plotting
@@ -653,6 +664,8 @@ def plot_images(images,
         global_max = max([i.data.max() for i in non_rgb])
         global_min = min([i.data.min() for i in non_rgb])
         g_vmin, g_vmax = contrast_stretching(i.data, saturated_pixels)
+        if centre_colormap:
+            g_vmin, g_vmax = centre_colormap_values(g_vmin, g_vmax)
 
     # Check if we need to add a scalebar for some of the images
     if isinstance(scalebar, list) and all(isinstance(x, int)
@@ -683,6 +696,8 @@ def plot_images(images,
                 data = im.data
                 # Find min and max for contrast
                 l_vmin, l_vmax = contrast_stretching(data, saturated_pixels)
+                if centre_colormap:
+                    l_vmin, l_vmax = centre_colormap_values(l_vmin, l_vmax)
 
             # Remove NaNs (if requested)
             if no_nans:
