@@ -508,12 +508,15 @@ def plot_images(images,
 
     # Get default colormap from pyplot:
     if cmap is None:
-        cmap = plt.get_cmap()
+        cmap = plt.get_cmap().name
+    elif isinstance(cmap, mpl.colors.Colormap):
+        cmap = cmap.name
     if centre_colormap == "auto":
         if cmap in MPL_DIVERGING_COLORMAPS:
             centre_colormap = True
         else:
             centre_colormap = False
+        print centre_colormap
 
     # If input is >= 1D signal (e.g. for multi-dimensional plotting),
     # copy it and put it in a list so labeling works out as (x,y) when plotting
