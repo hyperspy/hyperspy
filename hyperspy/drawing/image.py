@@ -320,8 +320,7 @@ class ImagePlot(BlittedFigure):
         if self.no_nans:
             data = np.nan_to_num(data)
         if self.centre_colormap is True:
-            absmax = max(self.vmin, self.vmax)
-            vmin, vmax = centre_colormap_values(vmin, vmax)
+            vmin, vmax = centre_colormap_values(self.vmin, self.vmax)
         else:
             vmin, vmax = self.vmin, self.vmax
         if ims:
