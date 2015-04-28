@@ -529,7 +529,7 @@ class MVA():
 
     def normalize_factors(self, which='bss', by='area', sort=True):
         """Normalises the factors and modifies the loadings
-        accordingly
+        accordingly.
 
         Parameters
         ----------
@@ -538,6 +538,7 @@ class MVA():
         sort : bool
 
         """
+
         if which == 'bss':
             factors = self.learning_results.bss_factors
             loadings = self.learning_results.bss_loadings
@@ -560,8 +561,9 @@ class MVA():
         else:
             raise ValueError("by must be max or mean")
 
-        factors /= by(factors, 0)
-        loadings *= by(factors, 0)
+        coeff = by(factors, 0)
+        factors /= coeff
+        loadings *= coeff
         sorting_indices = np.argsort(loadings.max(0))
         factors[:] = factors[:, sorting_indices]
         loadings[:] = loadings[:, sorting_indices]
