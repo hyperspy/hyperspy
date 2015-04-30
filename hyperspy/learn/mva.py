@@ -520,10 +520,19 @@ class MVA():
                 exec(to_exec)
                 target.bss_node.train(factors)
                 unmixing_matrix = target.bss_node.get_recmatrix()
-
-            target.unmixing_matrix = np.dot(unmixing_matrix, invsqcovmat)
-            self._unmix_factors(target)
-            self._unmix_loadings(target)
+            w = np.dot(unmixing_matrix, invsqcovmat)
+            if target.explained_variance is not None:
+                # The output of ICA is not sorted in any way what makes it
+                # difficult to compare results from different unmixings. The
+                # following code is an experimental attempt to sort them in a
+                # more predictable way
+                sorting_indices = np.argsort(np.dot(
+                    target.explained_variance[:number_of_components],
+                    np.abs(w.T)))[::-1]
+                w[:] = w[sorting_indices, :]
+            target.unmixing_matrix = w
+            target.on_loadings = on_loadings
+            self._unmix_components()
             self._auto_reverse_bss_component(target)
             target.bss_algorithm = algorithm
 
@@ -613,17 +622,17 @@ class MVA():
             target.bss_loadings[:, i] *= -1
             target.unmixing_matrix[i, :] *= -1
 
-    def _unmix_factors(self, target):
-        w = target.unmixing_matrix
+    def _unmix_components(self):
+        lr = self.learning_results
+        w = lr.unmixing_matrix
         n = len(w)
-        if target.explained_variance is not None:
-            # The output of ICA is not sorted in any way what makes it difficult
-            # to compare results from different unmixings. The following code
-            # is an experimental attempt to sort them in a more predictable way
-            sorting_indices = np.argsort(np.dot(target.explained_variance[:n],
-                                                np.abs(w.T)))[::-1]
-            w[:] = w[sorting_indices, :]
-        target.bss_factors = np.dot(target.factors[:, :n], w.T)
+        if lr.on_loadings:
+            lr.bss_loadings = np.dot(lr.loadings[:, :n], w.T)
+            lr.bss_factors = np.dot(lr.factors[:, :n], np.linalg.inv(w))
+        else:
+
+            lr.bss_factors = np.dot(lr.factors[:, :n], w.T)
+            lr.bss_loadings = np.dot(lr.loadings[:, :n], np.linalg.inv(w))
 
     def _auto_reverse_bss_component(self, target):
         n_components = target.bss_factors.shape[1]
@@ -633,14 +642,6 @@ class MVA():
             if minimum < 0 and -minimum > maximum:
                 self.reverse_bss_component(i)
                 print("IC %i reversed" % i)
-
-    def _unmix_loadings(self, target):
-        """
-        Returns the ICA score matrix (formerly known as the recmatrix)
-        """
-        W = target.loadings.T[:target.bss_factors.shape[1], :]
-        Q = np.linalg.inv(target.unmixing_matrix.T)
-        target.bss_loadings = np.dot(Q, W).T
 
     @do_not_replot
     def _calculate_recmatrix(self, components=None, mva_type=None,):
