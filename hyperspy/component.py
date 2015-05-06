@@ -889,6 +889,9 @@ class Component(t.HasTraits):
                                                parameter.std,
                                                parameter.units)
 
+    def __tempcall2d__(self, p, x, y, onlyfree=True):
+        self.fetch_values_from_array(p, onlyfree=onlyfree)
+        return self.function(x, y)
     def __tempcall__(self, p, x, onlyfree=True):
         self.fetch_values_from_array(p, onlyfree=onlyfree)
         return self.function(x)

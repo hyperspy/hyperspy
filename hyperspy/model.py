@@ -99,7 +99,7 @@ class ModelComponents(object):
 
 class BaseModel(list):
 
-    """One-dimensional model and data fitting.
+    """Model and data fitting in one or two dimensions.
 
     A model is constructed as a linear combination of :mod:`components` that
     are added to the model using :meth:`append` or :meth:`extend`. There
@@ -271,12 +271,12 @@ class BaseModel(list):
         if '_whitelist' in dic:
             load_from_dictionary(self, dic)
     def __repr__(self):
-        title = self.spectrum.metadata.General.title
+        title = self.signal.metadata.General.title
         class_name = str(self.__class__).split("'")[1].split('.')[-1]
 
         if len(title):
             return u"<%s, title: %s>".encode(
-                'utf8') % (class_name, self.spectrum.metadata.General.title)
+                'utf8') % (class_name, self.signal.metadata.General.title)
         else:
             return u"<%s>".encode('utf8') % class_name
 
@@ -293,8 +293,6 @@ class BaseModel(list):
     def insert(self, **kwargs):
         raise NotImplementedError
 
-
-    # Extend the list methods to call the _touch when the model is modified
 
     def append(self, thing):
         # Check if any of the other components in the model has the same name
@@ -377,8 +375,8 @@ class BaseModel(list):
             line.close()
             del line
             idx = self.index(thing)
-            self.spectrum._plot.signal_plot.ax_lines.remove(
-                self.spectrum._plot.signal_plot.ax_lines[2 + idx])
+            self.signal._plot.signal_plot.ax_lines.remove(
+                self.signal._plot.signal_plot.ax_lines[2 + idx])
         list.remove(self, thing)
         thing.model = None
         if touch is True:
@@ -549,11 +547,6 @@ class BaseModel(list):
         else:
             warnings.warn("Update not suspended, nothing to resume.")
 
-    def _update_model_line(self):
-        if (self._plot_active is True and
-                self._model_line is not None):
-            self._model_line.update()
-
     def _fetch_values_from_p0(self, p_std=None):
         """Fetch the parameter values from the output of the optimzer `self.p0`
 
@@ -575,7 +568,6 @@ class BaseModel(list):
                     self.p0[counter: counter + component._nfree_param],
                     comp_p_std, onlyfree=True)
                 counter += component._nfree_param
-
 
 
     def _function4odr(self, param, x):
@@ -601,9 +593,9 @@ class BaseModel(list):
     def _errfunc(self, param, y, weights=None):
         errfunc = self._model_function(param) - y
         if weights is None:
-            return errfunc
+            return errfunc.ravel()
         else:
-            return errfunc * weights
+            return (errfunc * weights).ravel()
 
     def _errfunc2(self, param, y, weights=None):
         if weights is None:
@@ -631,27 +623,28 @@ class BaseModel(list):
             return [0, self._jacobian(p, y).T]
 
     def _calculate_chisq(self):
-        if self.spectrum.metadata.has_item('Signal.Noise_properties.variance'):
+        if self.signal.metadata.has_item('Signal.Noise_properties.variance'):
 
-            variance = self.spectrum.metadata.Signal.Noise_properties.variance
+            variance = self.signal.metadata.Signal.Noise_properties.variance
             if isinstance(variance, Signal):
                 variance = variance.data.__getitem__(
-                    self.axes_manager._getitem_tuple)[self.channel_switches]
+                    self.axes_manager._getitem_tuple
+                )[self.channel_switches]
         else:
             variance = 1.0
-        d = self(onlyactive=True) - self.spectrum()[self.channel_switches]
+        d = self(onlyactive=True) - self.signal()[self.channel_switches]
         d *= d / (1. * variance)  # d = difference^2 / variance.
-        self.chisq.data[self.axes_manager.indices[::-1]] = sum(d)
+        self.chisq.data[self.signal.axes_manager.indices[::-1]] = sum(d)
 
     def _set_current_degrees_of_freedom(self):
-        self.dof.data[self.spectrum.axes_manager.indices[::-1]] = len(self.p0)
+        self.dof.data[self.axes_manager.indices[::-1]] = len(self.p0)
 
     @property
     def red_chisq(self):
         """Reduced chi-squared. Calculated from self.chisq and self.dof
         """
         tmp = self.chisq / (- self.dof + sum(self.channel_switches) - 1)
-        tmp.metadata.General.title = self.spectrum.metadata.General.title + \
+        tmp.metadata.General.title = self.signal.metadata.General.title + \
             ' reduced chi-squared'
         return tmp
 
@@ -754,34 +747,32 @@ class BaseModel(list):
                                           'is only implemented for the "fmin" '
                                           'optimizer')
         elif method == "ls":
-            if ("Signal.Noise_properties.variance" not in
-                    self.spectrum.metadata):
+            if "Signal.Noise_properties.variance" not in self.signal.metadata:
                 variance = 1
             else:
-                variance = self.spectrum.metadata.Signal.\
-                    Noise_properties.variance
+                variance = self.signal.metadata.Signal.Noise_properties.variance
                 if isinstance(variance, Signal):
                     if (variance.axes_manager.navigation_shape ==
-                            self.spectrum.axes_manager.navigation_shape):
+                            self.signal.axes_manager.navigation_shape):
                         variance = variance.data.__getitem__(
                             self.axes_manager._getitem_tuple)[
                             self.channel_switches]
                     else:
-                        raise AttributeError(
-                            "The `navigation_shape` of the variance signals "
-                            "is not equal to the variance shape of the "
-                            "spectrum")
+                        raise AttributeError("The `navigation_shape` of the "
+                                             "variance signals is not equal to"
+                                             "the variance shape of the "
+                                             "spectrum")
                 elif not isinstance(variance, numbers.Number):
-                    raise AttributeError(
-                        "Variance must be a number or a `Signal` instance but "
-                        "currently it is a %s" % type(variance))
+                    raise AttributeError("Variance must be a number or a "
+                                         "`Signal` instance but currently it is"
+                                         "a %s" % type(variance))
 
             weights = 1. / np.sqrt(variance)
         else:
             raise ValueError(
                 'method must be "ls" or "ml" but %s given' %
                 method)
-        args = (self.spectrum()[self.channel_switches],
+        args = (self.signal()[self.channel_switches],
                 weights)
 
         # Least squares "dedicated" fitters
@@ -791,8 +782,9 @@ class BaseModel(list):
                         col_deriv=1, args=args, full_output=True, **kwargs)
 
             self.p0, pcov = output[0:2]
-
-            if (self.axis.size > len(self.p0)) and pcov is not None:
+            signal_len = sum([axis.size
+                              for axis in self.axes_manager.signal_axes])
+            if (signal_len > len(self.p0)) and pcov is not None:
                 pcov *= ((self._errfunc(self.p0, *args) ** 2).sum() /
                          (len(args[0]) - len(self.p0)))
                 self.p_std = np.sqrt(np.diag(pcov))
@@ -801,11 +793,10 @@ class BaseModel(list):
         elif fitter == "odr":
             modelo = odr.Model(fcn=self._function4odr,
                                fjacb=odr_jacobian)
-            mydata = odr.RealData(
-                self.axis.axis[
-                    self.channel_switches], self.spectrum()[
-                    self.channel_switches], sx=None, sy=(
-                    1 / weights if weights is not None else None))
+            mydata = odr.RealData(self.axis.axis[self.channel_switches],
+                                  self.signal()[self.channel_switches],
+                                  sx=None,
+                                  sy=(1 / weights if weights is not None else None))
             myodr = odr.ODR(mydata, modelo, beta0=self.p0[:])
             myoutput = myodr.run()
             result = myoutput.beta
@@ -823,7 +814,7 @@ class BaseModel(list):
                 self.mpfit_parinfo = None
             m = mpfit(self._errfunc4mpfit, self.p0[:],
                       parinfo=self.mpfit_parinfo, functkw={
-                          'y': self.spectrum()[self.channel_switches],
+                          'y': self.signal()[self.channel_switches],
                           'weights': weights}, autoderivative=autoderivative,
                       quiet=1)
             self.p0 = m.params
@@ -872,14 +863,9 @@ class BaseModel(list):
                     self.set_boundaries()
                 elif bounded is False:
                     self.self.free_parameters_boundaries = None
-                self.p0 = fmin_tnc(
-                    tominimize,
-                    self.p0,
-                    fprime=fprime,
-                    args=args,
-                    bounds=self.free_parameters_boundaries,
-                    approx_grad=approx_grad,
-                    **kwargs)[0]
+                self.p0 = fmin_tnc(tominimize, self.p0, fprime=fprime,
+                                   args=args, bounds=self.free_parameters_boundaries,
+                                   approx_grad=approx_grad, **kwargs)[0]
             elif fitter == "l_bfgs_b":
                 if bounded is True:
                     self.set_boundaries()
@@ -966,9 +952,8 @@ class BaseModel(list):
                                                          autosave_fn))
             messages.information(
                 "When multifit finishes its job the file will be deleted")
-        if mask is not None and (
-            mask.shape != tuple(
-                self.axes_manager._navigation_shape_in_array)):
+        if mask is not None and \
+                (mask.shape != tuple(self.axes_manager._navigation_shape_in_array)):
             messages.warning_exit(
                 "The mask must be a numpy array of boolen type with "
                 " shape: %s" +
@@ -1469,11 +1454,47 @@ class BaseModel(list):
             return list.__getitem__(self, value)
 
 class Model2D(BaseModel):
-    def __init__(self, spectrum):
-        pass
+
+    """
+    TODO: add docstring specific for 2D model
+    """
+    #Rewrite in progress dnj23 06/05/15
+    def __init__(self, image, dictionary=None):
+	self.image = image
+        self.signal = self.image
+        self.axes_manager = self.signal.axes_manager
+        self.xaxis, self.yaxis = np.meshgrid(
+            self.axes_manager.signal_axes[0].axis,
+            self.axes_manager.signal_axes[1].axis)
+        self.axes_manager.connect(self.fetch_stored_values)
+        self.free_parameters_boundaries = None
+        self.channel_switches = None
+        #self._position_widgets = []
+        self._plot = None
+        self.chisq = image._get_navigation_signal()
+        self.chisq.change_dtype("float")
+        self.chisq.data.fill(np.nan)
+        self.chisq.metadata.General.title = self.signal.metadata.General.title + \
+            ' chi-squared'
+        self.dof = self.chisq._deepcopy_with_new_data(
+            np.zeros_like(
+                self.chisq.data,
+                dtype='int'))
+        self.dof.metadata.General.title = self.signal.metadata.General.title + \
+            ' degrees of freedom'
+        #self._suspend_update = False
+        self._adjust_position_all = None
+        self._plot_components = False
+	self.components = ModelComponents(self)
+        if dictionary is not None:
+            self._load_dictionary(dictionary)
+        self.inav = ModelSpecialSlicers(self, True)
+        self.isig = ModelSpecialSlicers(self, False)
+
 
     #def __repr__(self):
     #    return u"<2D Model %s>".encode('utf8') % super(Model2D, self).__repr__()
+
     @property
     def image(self):
         return self._image
@@ -1484,6 +1505,7 @@ class Model2D(BaseModel):
             self._image = value
         else:
             raise WrongObjectError(str(type(value)), 'Image')
+
     # Plotting code to rewrite
     def _connect_parameters2update_plot(self):
         pass
@@ -1496,17 +1518,55 @@ class Model2D(BaseModel):
     def as_signal(self):
         pass
 
-    # To rewrite
+    # Plotting code to rewrite
     def update_plot(self):
         pass
 
-    # To rewrite, required!
-    def __call__(self):
-        pass
+    # Rewrite in progress dnj23 06/05/15
+    def __call__(self, onlyactive=False):
+        """Returns the corresponding 2D model for the current coordinates
 
-    # To rewrite, required!
+        Parameters
+        ----------
+        only_active : bool
+            If true, only the active components will be used to build the model.
+
+        Returns
+        -------
+        numpy array
+        """
+
+        sum_ = np.zeros_like(self.xaxis)
+        if onlyactive is True:
+            for component in self:  # Cut the parameters list
+                if component.active:
+                    np.add(sum_, component.function(self.xaxis, self.yaxis),
+                               sum_)
+        else:
+            for component in self:  # Cut the parameters list
+                np.add(sum_, component.function(self.xaxis, self.yaxis),
+                       sum_)
+        return sum_
+
+    # Rewrite in progress dnj23 06/05/15
     def _model_function(self, param):
-        pass
+
+        xaxis, yaxis = (self.xaxis,self.yaxis)
+        counter = 0
+        first = True
+        for component in self:  # Cut the parameters list
+            if component.active:
+                if first is True:
+                    sum = component.__tempcall2d__(param[counter:counter +
+                                                       component._nfree_param],
+                                                 xaxis, yaxis)
+                    first = False
+                else:
+                    sum += component.__tempcall2d__(param[counter:counter +
+                                                        component._nfree_param],
+                                                  xaxis, yaxis)
+                counter += component._nfree_param
+        return sum
 
 
 class Model1D(BaseModel):
@@ -1535,6 +1595,7 @@ class Model1D(BaseModel):
             'dof.data': 'inav'}
 
         self.spectrum = spectrum
+	self.signal = self.spectrum
         self.axes_manager = self.spectrum.axes_manager
         self.axis = self.axes_manager.signal_axes[0]
         self.axes_manager.connect(self.fetch_stored_values)
@@ -1601,6 +1662,9 @@ class Model1D(BaseModel):
         knot_position = ll_axis.size - ll_axis.value2index(0) - 1
         self.convolution_axis = generate_axis(self.axis.offset, step,
                                               dimension, knot_position)
+
+
+    # Extend the list methods to call the _touch when the model is modified
 
     def _connect_parameters2update_plot(self):
         if self._plot_active is False:
@@ -1972,7 +2036,6 @@ class Model1D(BaseModel):
             to_return *= self.spectrum.axes_manager[-1].scale
         return to_return
 
-    # noinspection PyAssignmentToLoopOrWithParameter
     def _jacobian(self, param, y, weights=None):
         if self.convolved is True:
             counter = 0
