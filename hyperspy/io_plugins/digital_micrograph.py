@@ -38,7 +38,7 @@ from hyperspy.misc.utils import DictionaryTreeBrowser
 # ----------------------
 format_name = 'Digital Micrograph dm3'
 description = 'Read data from Gatan Digital Micrograph (TM) files'
-full_suport = False
+full_support = False
 # Recognised file extension
 file_extensions = ('dm3', 'DM3', 'dm4', 'DM4')
 default_extension = 0

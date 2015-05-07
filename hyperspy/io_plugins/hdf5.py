@@ -34,7 +34,7 @@ format_name = 'HDF5'
 description = \
     'The default file format for HyperSpy based on the HDF5 standard'
 
-full_suport = False
+full_support = False
 # Recognised file extension
 file_extensions = ['hdf', 'h4', 'hdf4', 'h5', 'hdf5', 'he4', 'he5']
 default_extension = 4
