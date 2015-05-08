@@ -250,7 +250,7 @@ class DictionaryTreeBrowser(object):
                 continue
             if not isinstance(key_, types.MethodType):
                 key = ensure_unicode(value['key'])
-                value = ensure_unicode(value['_dtb_value_'])
+                value = value['_dtb_value_']
                 if isinstance(value, DictionaryTreeBrowser):
                     if j == eoi - 1:
                         symbol = u'└── '
@@ -264,11 +264,12 @@ class DictionaryTreeBrowser(object):
                     string += value._get_print_items(
                         padding + extra_padding)
                 else:
+                    value = ensure_unicode(value)
                     if j == eoi - 1:
                         symbol = u'└── '
                     else:
                         symbol = u'├── '
-                    strvalue = unicode(repr(value), 'utf8')
+                    strvalue = unicode(value)
                     if max_len is not None and \
                             len(strvalue) > 2 * max_len:
                         right_limit = min(max_len,
@@ -533,8 +534,8 @@ def strlist2enumeration(lst):
 
 
 def ensure_unicode(stuff, encoding='utf8', encoding2='latin-1'):
-    if not isinstance(stuff, str) and not isinstance(stuff, np.string_):
-        return stuff
+    if not isinstance(stuff, (str, np.string_)):
+        string = repr(stuff)
     else:
         string = stuff
     try:
