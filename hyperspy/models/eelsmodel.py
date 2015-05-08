@@ -967,12 +967,15 @@ class EELSModel(Model):
             warnings.warn("Not suspended, nothing to resume.")
 
     def set_coreloss_edge_onset(self, component, signal_range="interactive", only_current=False, percent_position=0.1):
-        """Set onset energy of a EELS core loss ionisation edge component. 
-        The onset is calculated by finding the lowest and highest point in the signal range,
-        then taking the difference between these two values times percent_position.
-        Finally the energy closest to this calculated value, between the energy of the highest and lowest points is the onset energy.
+        """Set onset energy of an EELS core loss ionization
+        edge component. The minimum (baseline) and maximum 
+        (peak) in the signal range is found. The minimum is 
+        subtracted from the maximum. The onset threshold is 
+        this difference multiplied with precent_position. 
+        The onset energy is the energy closest to the where 
+        the intensity equals the onset threshold added to the baseline.
 
-        Onset value = (highest value - lowest value)*percent position
+        Onset value = (highest value - lowest value)*percent position + lowest value
         Onset energy = Energy(onset value), between E(highest value) and E(lowest value).
 
         Parameters
@@ -987,8 +990,8 @@ class EELSModel(Model):
         only_current : bool
             If False sets the onset for the full dataset. Default is False.
         percent_position : float
-            At what fraction of the ELNES signal the onset energy will be placed, specified 
-            above. Default is 0.1.
+            At what fraction of the ELNES signal the onset energy will be 
+            placed as explained above. Default is 0.1.
 
         Examples
         --------
