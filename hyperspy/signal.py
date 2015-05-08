@@ -970,14 +970,24 @@ class Signal1DTools(object):
         polynomial_order : int, default 2
             Specify the polynomial order if a Polynomial background is used.
         estimate_background : bool
-            If True, estimate the background. If False, the component is fitted
-            to the signal, which is slower compared to the estimation but possibly 
-            more accurate. 
+            If True, estimate the background. If False, the signal is fitted
+            using a full model. This is slower compared to the estimation but 
+            possibly more accurate. 
 
         Examples
         --------
-        >>>> s.remove_background() # Using gui, replaces spectrum s
-        >>>> s2 = s.remove_background(signal_range=(400,450), background_type='PowerLaw') #Using cli, returns a spectrum
+
+        Using gui, replaces spectrum s
+
+        >>>> s.remove_background()
+
+        Using command line, returns a spectrum
+
+        >>>> s = s.remove_background(signal_range=(400,450), background_type='PowerLaw')
+
+        Using a full model to fit the background
+
+        >>>> s = s.remove_background(signal_range=(400,450), estimate_background=False)
 
         Raises
         ------
