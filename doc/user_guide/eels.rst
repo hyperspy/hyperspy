@@ -46,8 +46,12 @@ The :py:meth:`~._signals.eels.EELSSpectrum.estimate_zero_loss_peak_centre` can b
 
 The :py:meth:`~._signals.eels.EELSSpectrum.align_zero_loss_peak` can
 align the ZLP with subpixel accuracy. It is more robust and easy to use than
-:py:meth:`~.signal.Signal1DTools.align1D` for the task. Note that it is possible to apply the same alignment to other spectra using the `also_align` argument. This can be useful e.g. to align core-loss spectra acquired quasi-simultaneously.
-
+:py:meth:`~.signal.Signal1DTools.align1D` for the task. Note that it is 
+possible to apply the same alignment to other spectra using the `also_align` 
+argument. This can be useful e.g. to align core-loss spectra acquired quasi-simultaneously.
+If there are other features in the low loss signal which are more intense than the
+ZLP, the `signal_range` argument can narrow down the energy range for searching for the
+ZLP.
 
 Deconvolutions
 ^^^^^^^^^^^^^^
