@@ -182,6 +182,7 @@ class EELSSpectrum(Spectrum):
             print_stats=True,
             subpixel=True,
             mask=None,
+            signal_range=None,
             **kwargs):
         """Align the zero-loss peak.
 
@@ -210,6 +211,22 @@ class EELSSpectrum(Spectrum):
             It must have signal_dimension = 0 and navigation_shape equal to the
             current signal. Where mask is True the shift is not computed
             and set to nan.
+        signal_range : tuple of integers, tuple of floats. Optional
+            Will only search for the ZLP within the signal_range. If given
+            in integers, the range will be in index values. If given floats,
+            the range will be in spectrum values. Useful if there are features
+            in the spectrum which are more intensity than the ZLP.
+            Default is searching in the whole signal.
+
+        Examples
+        --------
+        >>>> s_ll.align_zero_loss_peak()
+
+        Aligning both the lowloss signal and another signal
+        >>>> s_ll.align_zero_loss_peak(also_align=[s])
+
+        Aligning within a narrow range of the lowloss signal
+        >>>> s_ll.align_zero_loss_peak(signal_range=(-10.,10.))
 
         See Also
         --------
@@ -224,37 +241,43 @@ class EELSSpectrum(Spectrum):
         def substract_from_offset(value, signals):
             for signal in signals:
                 signal.axes_manager[-1].offset -= value
+        
+        if signal_range:
+            self_signal = self[...,signal_range[0]:signal_range[1]].deepcopy()
+            also_align.append(self)
+        else:
+            self_signal = self
 
-        zlpc = self.estimate_zero_loss_peak_centre(mask=mask)
+        zlpc = self_signal.estimate_zero_loss_peak_centre(mask=mask)
         mean_ = without_nans(zlpc.data).mean()
         if print_stats is True:
             print
             print(underline("Initial ZLP position statistics"))
             zlpc.print_summary_statistics()
 
-        for signal in also_align + [self]:
+        for signal in also_align + [self_signal]:
             signal.shift1D(-zlpc.data + mean_)
 
         if calibrate is True:
-            zlpc = self.estimate_zero_loss_peak_centre(mask=mask)
+            zlpc = self_signal.estimate_zero_loss_peak_centre(mask=mask)
             substract_from_offset(without_nans(zlpc.data).mean(),
-                                  also_align + [self])
+                                  also_align + [self_signal])
 
         if subpixel is False:
             return
         left, right = -3., 3.
         if calibrate is False:
-            mean_ = without_nans(self.estimate_zero_loss_peak_centre(
+            mean_ = without_nans(self_signal.estimate_zero_loss_peak_centre(
                 mask=mask).data).mean()
             left += mean_
             right += mean_
 
-        left = (left if left > self.axes_manager[-1].axis[0]
-                else self.axes_manager[-1].axis[0])
-        right = (right if right < self.axes_manager[-1].axis[-1]
-                 else self.axes_manager[-1].axis[-1])
-        self.align1D(left, right, also_align=also_align, **kwargs)
-        zlpc = self.estimate_zero_loss_peak_centre(mask=mask)
+        left = (left if left > self_signal.axes_manager[-1].axis[0]
+                else self_signal.axes_manager[-1].axis[0])
+        right = (right if right < self_signal.axes_manager[-1].axis[-1]
+                 else self_signal.axes_manager[-1].axis[-1])
+        self_signal.align1D(left, right, also_align=also_align, **kwargs)
+        zlpc = self_signal.estimate_zero_loss_peak_centre(mask=mask)
         if calibrate is True:
             substract_from_offset(without_nans(zlpc.data).mean(),
                                   also_align + [self])
