@@ -264,6 +264,8 @@ class DictionaryTreeBrowser(object):
                     string += value._get_print_items(
                         padding + extra_padding)
                 else:
+                    if not isinstance(value, (str, np.string_)):
+                        value = repr(value)
                     value = ensure_unicode(value)
                     if j == eoi - 1:
                         symbol = u'└── '
@@ -535,7 +537,7 @@ def strlist2enumeration(lst):
 
 def ensure_unicode(stuff, encoding='utf8', encoding2='latin-1'):
     if not isinstance(stuff, (str, np.string_)):
-        string = repr(stuff)
+        return stuff
     else:
         string = stuff
     try:
