@@ -38,7 +38,7 @@ description = 'RPL file contains the information on how to read\n'
 description += 'the RAW file with the same name.'
 description += '\nThis format may not provide information on the calibration.'
 description += '\nIf so, you should add that after loading the file.'
-full_suport = False  # but maybe True
+full_support = False  # but maybe True
 # Recognised file extension
 file_extensions = ['rpl', 'RPL']
 default_extension = 0

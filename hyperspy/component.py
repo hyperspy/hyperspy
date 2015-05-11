@@ -31,9 +31,10 @@ from hyperspy.misc.io.tools import (incremental_filename,
                                     append2pathname,)
 from hyperspy.exceptions import NavigationDimensionError
 
+
 class NoneFloat(t.CFloat):   # Lazy solution, but usable
     default_value = None
-    
+
     def validate(self, object, name, value):
         if value == "None" or value == u"None":
             value = None
@@ -41,6 +42,7 @@ class NoneFloat(t.CFloat):   # Lazy solution, but usable
             super(NoneFloat, self).validate(object, name, 0)
             return None
         return super(NoneFloat, self).validate(object, name, value)
+
 
 class Parameter(t.HasTraits):
 
@@ -96,16 +98,17 @@ class Parameter(t.HasTraits):
     _axes_manager = None
     __ext_bounded = False
     __ext_force_positive = False
-    
+
     # traitsui bugs out trying to make an editor for this, so always specify!
-    # (it bugs out, because both editor shares the object, and Array editors 
+    # (it bugs out, because both editor shares the object, and Array editors
     # don't like non-sequence objects). TextEditor() works well.
-    value = t.Property( t.Either([t.CFloat(0), Array()]), editor=tu.TextEditor())
+    value = t.Property(
+        t.Either([t.CFloat(0), Array()]), editor=tu.TextEditor())
     units = t.Str('')
-    free = t.Property( t.CBool(True) )
-    
-    bmin = t.Property( NoneFloat(), label="Lower bounds" )
-    bmax = t.Property( NoneFloat(), label="Upper bounds" )
+    free = t.Property(t.CBool(True))
+
+    bmin = t.Property(NoneFloat(), label="Lower bounds")
+    bmax = t.Property(NoneFloat(), label="Upper bounds")
 
     def __init__(self):
         self._twins = set()
@@ -470,9 +473,9 @@ class Parameter(t.HasTraits):
 
 class Component(t.HasTraits):
     __axes_manager = None
-    
-    active = t.Property( t.CBool(True) )
-    name = t.Property( t.Str('') )
+
+    active = t.Property(t.CBool(True))
+    name = t.Property(t.Str(''))
 
     def __init__(self, parameter_name_list):
         self.connected_functions = list()
@@ -560,6 +563,32 @@ class Component(t.HasTraits):
     def disconnect(self, f):
         if f in self.connected_functions:
             self.connected_functions.remove(f)
+
+    def _toggle_connect_active_array(self, if_on):
+        # nothing to do (was never multidimensional)
+        if self._active_array is None:
+            return
+        # as it should be (both True)
+        if self.active_is_multidimensional and if_on:
+            return
+        # as it should be (both False)
+        if not self.active_is_multidimensional and not if_on:
+            return
+        # active_is_multidimensional = True, want to set to False
+        if not if_on:
+            self._active_is_multidimensional = False
+            self.active = self._active
+            return
+        if if_on:  # a_i_m = False, want to set to False
+            # check that dimensions are correct
+            shape = self._axes_manager._navigation_shape_in_array
+            if self._active_array.shape != shape:
+                warnings.warn(
+                    '`_active_array` of wrong shape, skipping',
+                    RuntimeWarning)
+                return
+            self._active_is_multidimensional = True
+            self.active = self.active
 
     def _get_active(self):
         if self.active_is_multidimensional is True:
