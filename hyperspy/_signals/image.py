@@ -41,7 +41,7 @@ class Image(Signal):
         """
         return self.as_spectrum(0 + 3j)
 
-    def plot_orthoview(image):
+    def plot_orthoview(image, **kwargs):
         """
         Plot an orthogonal view of a 3D images
 
@@ -49,6 +49,8 @@ class Image(Signal):
         ---------
         image: signals.Image
             A 3D image.
+        kwargs
+            The key word arguments are passed to image.plot
         """
         if len(image.axes_manager.shape) != 3:
             raise ValueError("image must have 3 dimension.")
@@ -82,9 +84,9 @@ class Image(Signal):
 
         im_xz.axes_manager._update_attributes()
         im_yz.axes_manager._update_attributes()
-        im_xy.plot()
-        im_xz.plot()
-        im_yz.plot()
+        im_xy.plot(**kwargs)
+        im_xz.plot(**kwargs)
+        im_yz.plot(**kwargs)
 
     def plot(self,
              colorbar=True,
