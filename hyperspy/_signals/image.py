@@ -68,6 +68,10 @@ class Image(Signal):
             can improve the convergence rate, but one runs the risk of
             instabilities. Values close to or higher than 1 are not
             recommended.
+        kwargs
+            The key word arguments are passed to skimage.transform.iradon or
+            skimage.transform.iradon_sart
+        """
 
         Return
         ------
