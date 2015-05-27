@@ -18,6 +18,39 @@ def _get_energy_xray_line(xray_line):
         line]['energy (keV)']
 
 
+def get_xray_lines_near_energy(energy, spread=0.1):
+    """Find xray lines near a specific energy, more specifically search in
+    range 'energy' +/- 'spread'
+
+    Parameters
+    ----------
+    energy : float
+        Energy to search near in keV
+    spread : float
+        Spread in keV around energy in which to search
+
+    Returns
+    -------
+    List of xray-lines sorted by energy difference to given energy.
+    """
+    valid_lines = []
+    E_min, E_max = energy - spread, energy + spread
+    for element, el_props in elements_db.iteritems():
+        # Not all elements in the DB have the keys, so catch KeyErrors
+        try:
+            lines = el_props['Atomic_properties']['Xray_lines']
+        except KeyError:
+            continue
+        for line, l_props in lines.iteritems():
+            line_energy = l_props['energy (keV)']
+            if E_min <= line_energy <= E_max:
+                # Store line in Element_Line format, and energy difference
+                valid_lines.append((element + "_" + line,
+                                    np.abs(line_energy - energy)))
+    # Sort by energy difference, but return only the line names
+    return [line for line, _ in sorted(valid_lines, key=lambda x: x[1])]
+
+
 def get_FWHM_at_Energy(energy_resolution_MnKa, E):
     """Calculates the FWHM of a peak at energy E.
 
