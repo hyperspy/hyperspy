@@ -13,8 +13,8 @@ def _get_element_and_line(Xray_line):
 
 
 def _get_energy_xray_line(xray_line):
-    energy, line = _get_element_and_line(xray_line)
-    return elements_db[energy]['Atomic_properties']['Xray_lines'][
+    element, line = _get_element_and_line(xray_line)
+    return elements_db[element]['Atomic_properties']['Xray_lines'][
         line]['energy (keV)']
 
 
