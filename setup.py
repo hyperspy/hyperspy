@@ -193,7 +193,7 @@ with update_version_when_dev() as version:
         maintainer='Francisco de la Peña',
         maintainer_email='fjd29@cam.ac.uk',
         description=Release.description,
-        long_description=open('README.md').read(),
+        long_description=open('README.rst').read(),
         license=Release.license,
         platforms=Release.platforms,
         url=Release.url,

@@ -1,3 +1,5 @@
+.. -*- mode: rst -*-
+
 |Travis|_ |Coveralls|_
 
 .. |Travis| image:: https://api.travis-ci.org/hyperspy/hyperspy.png?branch=0.8.x
@@ -25,5 +27,7 @@ HyperSpy is released under the GPL v3 license.
 Cite
 ----
 
-[![DOI](https://zenodo.org/badge/6941/hyperspy/hyperspy.svg)](http://dx.doi.org/10.5281/zenodo.16850)
+|DOI|_
 
+.. |DOI| image:: https://zenodo.org/badge/6941/hyperspy/hyperspy.svg
+.. _DOI: http://dx.doi.org/10.5281/zenodo.16850
