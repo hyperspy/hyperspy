@@ -372,7 +372,7 @@ class DictionaryTreeBrowser(object):
         False
 
         """
-        if isinstance(item_path, str):
+        if isinstance(item_path, basestring):
             item_path = item_path.split('.')
         else:
             item_path = copy.copy(item_path)
@@ -413,7 +413,7 @@ class DictionaryTreeBrowser(object):
         False
 
         """
-        if isinstance(item_path, str):
+        if isinstance(item_path, basestring):
             item_path = item_path.split('.')
         else:
             item_path = copy.copy(item_path)
@@ -462,7 +462,7 @@ class DictionaryTreeBrowser(object):
         """
         if not self.has_item(item_path):
             self.add_node(item_path)
-        if isinstance(item_path, str):
+        if isinstance(item_path, basestring):
             item_path = item_path.split('.')
         if len(item_path) > 1:
             self.__getattribute__(item_path.pop(0)).set_item(
@@ -536,7 +536,7 @@ def strlist2enumeration(lst):
 
 
 def ensure_unicode(stuff, encoding='utf8', encoding2='latin-1'):
-    if not isinstance(stuff, (str, np.string_)):
+    if not isinstance(stuff, (basestring, np.string_)):
         return stuff
     else:
         string = stuff

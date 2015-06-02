@@ -290,7 +290,7 @@ def histogram(a, bins=10, range=None, **kwargs):
         da, bins = scotts_bin_width(a, True)
     elif bins == 'freedman':
         da, bins = freedman_bin_width(a, True)
-    elif isinstance(bins, str):
+    elif isinstance(bins, basestring):
         raise ValueError("unrecognized bin code: '%s'" % bins)
 
     return np.histogram(a, bins, range, **kwargs)
