@@ -301,9 +301,9 @@ def _make_heatmap_subplot(spectra):
 
 
 def _make_overlap_plot(spectra, ax, color="blue", line_style='-'):
-    if isinstance(color, str):
+    if isinstance(color, basestring):
         color = [color] * len(spectra)
-    if isinstance(line_style, str):
+    if isinstance(line_style, basestring):
         line_style = [line_style] * len(spectra)
     for spectrum_index, (spectrum, color, line_style) in enumerate(
             zip(spectra, color, line_style)):
@@ -323,9 +323,9 @@ def _make_cascade_subplot(
                            np.nanmin(spectrum.data))
         if spectrum_yrange > max_value:
             max_value = spectrum_yrange
-    if isinstance(color, str):
+    if isinstance(color, basestring):
         color = [color] * len(spectra)
-    if isinstance(line_style, str):
+    if isinstance(line_style, basestring):
         line_style = [line_style] * len(spectra)
     for spectrum_index, (spectrum, color, line_style) in enumerate(
             zip(spectra, color, line_style)):
@@ -597,11 +597,12 @@ def plot_images(images,
         # Set label_list to each image's pre-defined title
         label_list = [x.metadata.General.title for x in images]
 
-    elif isinstance(label, str):
+    elif isinstance(label, basestring):
         # Set label_list to an indexed list, based off of label
         label_list = [label + " " + repr(num) for num in range(n)]
 
-    elif isinstance(label, list) and all(isinstance(x, str) for x in label):
+    elif isinstance(label, list) and all(
+            isinstance(x, basestring) for x in label):
         label_list = label
         user_labels = True
         # If list of labels is longer than the number of images, just use the

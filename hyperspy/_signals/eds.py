@@ -298,9 +298,9 @@ class EDSSpectrum(Spectrum):
 
     def _parse_only_lines(self, only_lines):
         if hasattr(only_lines, '__iter__'):
-            if isinstance(only_lines[0], str) is False:
+            if isinstance(only_lines[0], basestring) is False:
                 return only_lines
-        elif isinstance(only_lines, str) is False:
+        elif isinstance(only_lines, basestring) is False:
             return only_lines
         only_lines = list(only_lines)
         for only_line in only_lines:
