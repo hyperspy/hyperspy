@@ -625,7 +625,8 @@ class EDSSpectrum(Spectrum):
         """
 
         only_lines = self._parse_only_lines(only_lines)
-        xray_lines = self._get_xray_lines(xray_lines)
+        xray_lines = self._get_xray_lines(xray_lines, only_one=only_one,
+                                          only_lines=only_lines)
         xray_lines, xray_not_here = self._get_xray_lines_in_spectral_range(
             xray_lines)
         for xray in xray_not_here:
