@@ -311,7 +311,7 @@ class EDSSpectrum(Spectrum):
         return only_lines
 
     def _get_xray_lines(self, xray_lines=None, only_one=None,
-                        only_lines=['a']):
+                        only_lines=('a')):
         if xray_lines is None:
             if 'Sample.xray_lines' in self.metadata:
                 xray_lines = self.metadata.Sample.xray_lines
