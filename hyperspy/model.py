@@ -210,7 +210,7 @@ class Model(list):
         return u"<Model %s>".encode('utf8') % super(Model, self).__repr__()
 
     def _get_component(self, object):
-        if isinstance(object, int) or isinstance(object, str):
+        if isinstance(object, int) or isinstance(object, basestring):
             object = self[object]
         elif not isinstance(object, Component):
             raise ValueError("Not a component or component id.")
@@ -1981,7 +1981,7 @@ class Model(list):
 
     def __getitem__(self, value):
         """x.__getitem__(y) <==> x[y]"""
-        if isinstance(value, str):
+        if isinstance(value, basestring):
             component_list = []
             for component in self:
                 if component.name:

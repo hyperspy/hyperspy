@@ -372,7 +372,7 @@ class DictionaryTreeBrowser(object):
         False
 
         """
-        if isinstance(item_path, str):
+        if isinstance(item_path, basestring):
             item_path = item_path.split('.')
         else:
             item_path = copy.copy(item_path)
@@ -413,7 +413,7 @@ class DictionaryTreeBrowser(object):
         False
 
         """
-        if isinstance(item_path, str):
+        if isinstance(item_path, basestring):
             item_path = item_path.split('.')
         else:
             item_path = copy.copy(item_path)
@@ -462,7 +462,7 @@ class DictionaryTreeBrowser(object):
         """
         if not self.has_item(item_path):
             self.add_node(item_path)
-        if isinstance(item_path, str):
+        if isinstance(item_path, basestring):
             item_path = item_path.split('.')
         if len(item_path) > 1:
             self.__getattribute__(item_path.pop(0)).set_item(
