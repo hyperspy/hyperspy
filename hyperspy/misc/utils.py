@@ -536,7 +536,7 @@ def strlist2enumeration(lst):
 
 
 def ensure_unicode(stuff, encoding='utf8', encoding2='latin-1'):
-    if not isinstance(stuff, (basestring, np.string_)):
+    if not isinstance(stuff, (str, np.string_)):
         return stuff
     else:
         string = stuff
