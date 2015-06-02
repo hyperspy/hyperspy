@@ -1,6 +1,6 @@
 .. -*- mode: rst -*-
 
-|Travis|_ |Coveralls|_ |pypi_downloads|_ |pypi_version|_
+|Travis|_ |Coveralls|_ |pypi_version|_ |pypi_downloads|_ 
 
 .. |Travis| image:: https://api.travis-ci.org/hyperspy/hyperspy.png?branch=0.8.x
 .. _Travis: https://travis-ci.org/hyperspy/hyperspy
