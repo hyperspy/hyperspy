@@ -310,6 +310,21 @@ class EDSSpectrum(Spectrum):
                 only_lines.extend(['Kb', 'Lb1', 'Mb'])
         return only_lines
 
+    def _get_xray_lines(self, xray_lines=None, only_one=None,
+                        only_lines=['a']):
+        if xray_lines is None:
+            if 'Sample.xray_lines' in self.metadata:
+                xray_lines = self.metadata.Sample.xray_lines
+            elif 'Sample.elements' in self.metadata:
+                xray_lines = self._get_lines_from_elements(
+                    self.metadata.Sample.elements,
+                    only_one=only_one,
+                    only_lines=only_lines)
+            else:
+                raise ValueError(
+                    "Not X-ray line, set them with `add_elements`")
+        return xray_lines
+
     def set_lines(self,
                   lines,
                   only_one=True,
@@ -610,17 +625,7 @@ class EDSSpectrum(Spectrum):
         """
 
         only_lines = self._parse_only_lines(only_lines)
-        if xray_lines is None:
-            if 'Sample.xray_lines' in self.metadata:
-                xray_lines = self.metadata.Sample.xray_lines
-            elif 'Sample.elements' in self.metadata:
-                xray_lines = self._get_lines_from_elements(
-                    self.metadata.Sample.elements,
-                    only_one=only_one,
-                    only_lines=only_lines)
-            else:
-                raise ValueError(
-                    "Not X-ray line, set them with `add_elements`")
+        xray_lines = self._get_xray_lines(xray_lines)
         xray_lines, xray_not_here = self._get_xray_lines_in_spectral_range(
             xray_lines)
         for xray in xray_not_here:
@@ -763,8 +768,7 @@ class EDSSpectrum(Spectrum):
         --------
         plot, get_lines_intensity
         """
-        if xray_lines is None:
-            xray_lines = self.metadata.Sample.xray_lines
+        xray_lines = self._get_xray_lines(xray_lines)
         integration_windows = []
         for Xray_line in xray_lines:
             line_energy, line_FWHM = self._get_line_energy(Xray_line,
@@ -818,8 +822,7 @@ class EDSSpectrum(Spectrum):
         --------
         plot, get_lines_intensity
         """
-        if xray_lines is None:
-            xray_lines = self.metadata.Sample.xray_lines
+        xray_lines = self._get_xray_lines(xray_lines)
         windows_position = []
         for xray_line in xray_lines:
             line_energy, line_FWHM = self._get_line_energy(xray_line,
