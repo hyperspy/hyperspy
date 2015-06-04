@@ -23,3 +23,11 @@ def test_xray_lines_near_energy():
         lines,
         ['Cr_Ka', 'La_Lb2', 'V_Kb', 'Pm_La', 'Pm_Ln', 'Ce_Lb3', 'Gd_Ll',
          'Pr_Lb1', 'Xe_Lg3', 'Pr_Lb4'])
+    lines = get_xray_lines_near_energy(E, only_lines=('a', 'b'))
+    nose.tools.assert_list_equal(
+        lines,
+        ['Cr_Ka', 'V_Kb', 'Pm_La', 'Pr_Lb1'])
+    lines = get_xray_lines_near_energy(E, only_lines=('a'))
+    nose.tools.assert_list_equal(
+        lines,
+        ['Cr_Ka', 'Pm_La'])
