@@ -146,12 +146,12 @@ for f in to_copy:
             args.overwrite_profile:
         shutil.copy(f, destination)
 if ipy_version >= LooseVersion('3.0.0'):
-    additional_dest = os.path.join(destination, 'startup')
+    additional_dest = os.path.join(destination, 'static/custom')
     if not os.path.isdir(additional_dest):
         os.makedirs(additional_dest)
-    if not os.path.isfile(os.path.join(additional_dest, 'default_imports.py')) or \
+    if not os.path.isfile(os.path.join(additional_dest, 'custom.js')) or \
             args.overwrite_profile:
-        shutil.copy(os.path.join(ipy_hspy, 'default_imports.py'), additional_dest)
+        shutil.copy(os.path.join(ipy_hspy, 'custom.js'), additional_dest)
 # Now that the hspy arguments are parsed, we can delete them from
 # sys.argv
 sys.argv = ipy_argv
