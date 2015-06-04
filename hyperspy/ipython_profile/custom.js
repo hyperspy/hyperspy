@@ -92,9 +92,7 @@ define([
                 'icon'    : 'fa-cube', // select your icon from http://fortawesome.github.io/Font-Awesome/icons
                 'callback': function () {
                     IPython.notebook.insert_cell_above('code').set_text(
-                            'import matplotlib.pyplot as plt\n' +
-                            'import numpy as np\n' +
-                            'import hyperspy.hspy as hs');
+                            '%hyperspy');
                     IPython.notebook.select_prev();
                     IPython.notebook.get_selected_cell().execute();
                     IPython.notebook.select_next()

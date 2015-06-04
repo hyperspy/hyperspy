@@ -149,9 +149,17 @@ if ipy_version >= LooseVersion('3.0.0'):
     additional_dest = os.path.join(destination, 'static/custom')
     if not os.path.isdir(additional_dest):
         os.makedirs(additional_dest)
-    if not os.path.isfile(os.path.join(additional_dest, 'custom.js')) or \
+
+    # always overwrite.. I'm sure there is a way to check if the files are the same, but not sure it's worth it
+    shutil.copy(os.path.join(ipy_hspy, 'custom.js'), additional_dest)
+
+    additional_dest = os.path.join(destination, 'startup')
+    if not os.path.isdir(additional_dest):
+        os.makedirs(additional_dest)
+    if not os.path.isfile(os.path.join(additional_dest, 'hyperspy_magics.py')) or \
             args.overwrite_profile:
-        shutil.copy(os.path.join(ipy_hspy, 'custom.js'), additional_dest)
+        shutil.copy(os.path.join(ipy_hspy, 'hyperspy_magics.py'), additional_dest)
+
 # Now that the hspy arguments are parsed, we can delete them from
 # sys.argv
 sys.argv = ipy_argv
