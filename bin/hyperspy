@@ -145,7 +145,13 @@ for f in to_copy:
             destination, os.path.split(f)[-1])) or \
             args.overwrite_profile:
         shutil.copy(f, destination)
-
+if ipy_version >= LooseVersion('3.0.0'):
+    additional_dest = os.path.join(destination, 'startup')
+    if not os.path.isdir(additional_dest):
+        os.makedirs(additional_dest)
+    if not os.path.isfile(os.path.join(additional_dest, 'default_imports.py')) or \
+            args.overwrite_profile:
+        shutil.copy(os.path.join(ipy_hspy, 'default_imports.py'), additional_dest)
 # Now that the hspy arguments are parsed, we can delete them from
 # sys.argv
 sys.argv = ipy_argv
@@ -208,4 +214,10 @@ else:
         sys.argv.append('--pylab=inline')
     elif add_pylab is True:
         sys.argv.append('--pylab=%s' % toolkit.replace("qt4", "qt"))
+
+    if ipy_version >= LooseVersion('3.0.0') and args.environment == "notebook":
+        for arg in sys.argv:
+            if 'pylab' in arg:
+                sys.argv.remove(arg)
     sys.exit(launch_new_instance())
+
