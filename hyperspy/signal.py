@@ -3238,12 +3238,30 @@ class Signal(MVA,
         Parameters
         ----------
         new_shape: tuple of ints
-            The new shape must be a divisor of the original shape
+            The new shape elements must be divisors of the original shape
+            elements.
 
         Returns
         -------
         s : Signal subclass
 
+        Raises
+        ------
+        ValueError
+            When there is a mismatch between the number of elements in the
+            signal shape and `new_shape` or `new_shape` elements are not
+            divisors of the original signal shape.
+
+
+        Examples
+        --------
+        >>> import hyperspy.hspy as hs
+        >>> s = hs.signals.Spectrum(np.zeros((10, 100)))
+        >>> s
+        <Spectrum, title: , dimensions: (10|100)>
+        >>> s.rebin((5, 100))
+        <Spectrum, title: , dimensions: (5|100)>
+        I
         """
         if len(new_shape) != len(self.data.shape):
             raise ValueError("Wrong shape size")
