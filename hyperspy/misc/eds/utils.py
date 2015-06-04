@@ -20,9 +20,9 @@ def _get_energy_xray_line(xray_line):
 
 def _parse_only_lines(only_lines):
     if hasattr(only_lines, '__iter__'):
-        if any(isinstance(line, str) is False for line in only_lines):
+        if any(isinstance(line, basestring) is False for line in only_lines):
             return only_lines
-    elif isinstance(only_lines, str) is False:
+    elif isinstance(only_lines, basestring) is False:
         return only_lines
     only_lines = list(only_lines)
     for only_line in only_lines:
