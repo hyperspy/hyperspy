@@ -18,7 +18,22 @@ def _get_energy_xray_line(xray_line):
         line]['energy (keV)']
 
 
-def get_xray_lines_near_energy(energy, spread=0.1):
+def _parse_only_lines(only_lines):
+    if hasattr(only_lines, '__iter__'):
+        if any(isinstance(line, str) is False for line in only_lines):
+            return only_lines
+    elif isinstance(only_lines, str) is False:
+        return only_lines
+    only_lines = list(only_lines)
+    for only_line in only_lines:
+        if only_line == 'a':
+            only_lines.extend(['Ka', 'La', 'Ma'])
+        elif only_line == 'b':
+            only_lines.extend(['Kb', 'Lb1', 'Mb'])
+    return only_lines
+
+
+def get_xray_lines_near_energy(energy, spread=0.1, only_lines=None):
     """Find xray lines near a specific energy, more specifically search in
     range 'energy' +/- 'spread'
 
@@ -33,6 +48,7 @@ def get_xray_lines_near_energy(energy, spread=0.1):
     -------
     List of xray-lines sorted by energy difference to given energy.
     """
+    only_lines = _parse_only_lines(only_lines)
     valid_lines = []
     E_min, E_max = energy - spread, energy + spread
     for element, el_props in elements_db.iteritems():
@@ -42,6 +58,8 @@ def get_xray_lines_near_energy(energy, spread=0.1):
         except KeyError:
             continue
         for line, l_props in lines.iteritems():
+            if only_lines and line not in only_lines:
+                continue
             line_energy = l_props['energy (keV)']
             if E_min <= line_energy <= E_max:
                 # Store line in Element_Line format, and energy difference
