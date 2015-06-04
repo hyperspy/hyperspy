@@ -399,7 +399,7 @@ class EDSSpectrum(Spectrum):
         set_lines, add_elements, set_elements
 
         """
-        only_lines = utils_eds.utils_eds._parse_only_lines(only_lines)
+        only_lines = utils_eds._parse_only_lines(only_lines)
         if "Sample.xray_lines" in self.metadata:
             xray_lines = set(self.metadata.Sample.xray_lines)
         else:
