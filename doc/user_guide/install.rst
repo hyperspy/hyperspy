@@ -32,7 +32,8 @@ Quick instructions to install HyperSpy in MacOs
    Anaconda is recommended for the best performance (it is compiled
    using Intel MKL libraries) and the easiest intallation (all the required
    libraries are included). The academic license is free.
-#. Open a new terminal and type: `pip install hyperspy`
+#. Open a terminal and install traitsui by executing: `conda install traitui`
+#. Install HyperSpy by executing: `pip install hyperspy`
 
 For more options and details read the rest of the documentation.
 
