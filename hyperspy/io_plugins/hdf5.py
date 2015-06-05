@@ -67,8 +67,8 @@ version = "1.3"
 # assigned to the same name attributes of the Signal instance as a
 # Dictionary Browsers
 # The Experiments group can contain attributes that may be common to all
-# the experiments and that will be accessible as attribures of the
-# Experimentsinstance
+# the experiments and that will be accessible as attributes of the
+# Experiments instance
 #
 # New in v1.3
 # -----------
