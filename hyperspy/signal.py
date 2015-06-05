@@ -3276,6 +3276,11 @@ class Signal(MVA,
         for axis in s.axes_manager._axes:
             axis.scale *= factors[axis.index_in_array]
         s.get_dimensions_from_data()
+        if s.metadata.has_item('Signal.Noise_properties.variance'):
+            if isinstance(s.metadata.Signal.Noise_properties.variance, Signal):
+                var = s.metadata.Signal.Noise_properties.variance
+                s.metadata.Signal.Noise_properties.variance = var.rebin(
+                    new_shape)
         return s
 
     def split(self,
