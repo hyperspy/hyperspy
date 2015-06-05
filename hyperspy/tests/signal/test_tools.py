@@ -1,7 +1,8 @@
 import numpy as np
 from nose.tools import (
     assert_true,
-    assert_equal,)
+    assert_equal,
+    raises)
 
 from hyperspy.signal import Signal
 from hyperspy import signals
@@ -97,7 +98,24 @@ class Test3D:
         self.data = self.signal.data.copy()
 
     def test_rebin(self):
-        assert_true(self.signal.rebin((2, 1, 6)).data.shape == (1, 2, 6))
+        self.signal.estimate_poissonian_noise_variance()
+        new_s = self.signal.rebin((2, 1, 6))
+        var = new_s.metadata.Signal.Noise_properties.variance
+        assert_true(new_s.data.shape == (1, 2, 6))
+        assert_true(var.data.shape == (1, 2, 6))
+        from hyperspy.misc.array_tools import rebin
+        assert_true(np.all(rebin(self.signal.data, (1, 2, 6)) == var.data))
+        assert_true(np.all(rebin(self.signal.data, (1, 2, 6)) == new_s.data))
+
+    @raises(AttributeError)
+    def test_rebin_no_variance(self):
+        new_s = self.signal.rebin((2, 1, 6))
+        _ = new_s.metadata.Signal.Noise_properties
+
+    def test_rebin_const_variance(self):
+        self.signal.metadata.set_item('Signal.Noise_properties.variance', 0.3)
+        new_s = self.signal.rebin((2, 1, 6))
+        assert_true(new_s.metadata.Signal.Noise_properties.variance == 0.3)
 
     def test_swap_axes(self):
         s = self.signal
