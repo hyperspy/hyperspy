@@ -3279,7 +3279,8 @@ class Signal(MVA,
         if s.metadata.has_item('Signal.Noise_properties.variance'):
             if isinstance(s.metadata.Signal.Noise_properties.variance, Signal):
                 var = s.metadata.Signal.Noise_properties.variance
-                s.metadata.Signal.Noise_properties.variance = var.rebin(new_shape)
+                s.metadata.Signal.Noise_properties.variance = var.rebin(
+                    new_shape)
         return s
 
     def split(self,
