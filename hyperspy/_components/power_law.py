@@ -105,6 +105,8 @@ class PowerLaw(Component):
         i1, i2 = axis.value_range_to_indices(x1, x2)
         if not (i2 + i1) % 2 == 0:
             i2 -= 1
+        if i2 == i1:
+            i2 += 2
         i3 = (i2 + i1) / 2
         x1 = axis.index2value(i1)
         x2 = axis.index2value(i2)
@@ -113,8 +115,8 @@ class PowerLaw(Component):
             s = signal.get_current_signal()
         else:
             s = signal
-        I1 = s.isig[i1:i3].integrate1D(2j).data
-        I2 = s.isig[i3:i2].integrate1D(2j).data
+        I1 = s.isig[i1:i3].integrate1D(2j).data.astype("float")
+        I2 = s.isig[i3:i2].integrate1D(2j).data.astype("float")
         try:
             r = 2 * np.log(I1 / I2) / math.log(x2 / x1)
             k = 1 - r

@@ -1,0 +1,26 @@
+Package						Required by
+----------------				--------------
+python2 						hyperspy
+python2-numpy				hyperspy
+python2-matplotlib			hyperspy
+python2-pip 					hyperspy (for installation)
+python2-traits 				hyperspy
+python2-traitsui 			hyperspy
+python2-h5py 				hyperspy
+python2-scikit-learn		hyperspy
+python2-nose 				hyperspy
+python2-statsmodels 		hyperspy
+python2-pillow 				python2-matplotlib (optional for tiff export)		
+python2-pyqt4 				python2-matplotlib
+python2-pyqt5 				python2-matplotlib
+python2-scipy 				python2-statsmodels and python2-scikit-learn
+python2-pandas				python2-statsmodels
+python2-setuptools			python2-pip (and others)
+									
+ipython2						hyperspy
+python2-jinja 				ipython2 (for nb)
+python2-pyzmq 				ipython2 (for nb and qtConsole)
+python2-pyqt4 				ipython2 (qtConsole)
+python2-tornado 			ipython2 (for nb)
+python2-sip 					ipython2 (for qtConsole)
+python2-pygments			ipython2 (for qtConsole)

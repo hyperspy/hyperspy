@@ -18,7 +18,7 @@ def get_array_memory_size_in_GiB(shape, dtype):
     dtype : data-type
         The desired data-type for the array.
     """
-    if isinstance(dtype, str):
+    if isinstance(dtype, basestring):
         dtype = np.dtype(dtype)
     return np.array(shape).cumprod()[-1] * dtype.itemsize / 2. ** 30
 
