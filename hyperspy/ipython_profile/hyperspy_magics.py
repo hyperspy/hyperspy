@@ -23,7 +23,7 @@ class HyperspyMagics(Magics):
         exec(second_import_part, sh.user_ns)
 
         sh.set_next_input("# %hyperspy " + toolkit + "\n" + first_import_part +
-                          "%matplitlib " + toolkit + "\n" + second_import_part,
+                          "%matplotlib " + toolkit + "\n" + second_import_part,
                           replace=True)
 
 ip = get_ipython()
