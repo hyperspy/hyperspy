@@ -176,3 +176,26 @@ class TestGaussian:
         nose.tools.assert_almost_equal(g.sigma.value, 0.5)
         nose.tools.assert_almost_equal(g.A.value, 2)
         nose.tools.assert_almost_equal(g.centre.value, 1)
+
+class TestExpression:
+    def setUp(self):
+        self.g = hs.components.Expression(
+            expression="height * exp(-(x - x0) ** 2 * 4 * log(2)/ fwhm ** 2)",
+            name="Gaussian",
+            position="x0",
+            height=1,
+            fwhm=1,
+            x0=0,
+            module="numpy")
+
+    def test_name(self):
+        nose.tools.assert_equal(self.g.name, "Gaussian")
+
+    def test_position(self):
+        nose.tools.assert_is(self.g._position, self.g.x0)
+
+    def test_f(self):
+        nose.tools.assert_equal(self.g.function(0), 1)
+
+    def test_grad_height(self):
+        nose.tools.assert_equal(self.g.grad_height(0), 1)
