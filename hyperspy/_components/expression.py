@@ -69,7 +69,7 @@ class Expression(Component):
 
         import sympy
         self._str_expression = expression
-        self.compile_function(module=module)
+        self.recompile(module=module)
         # Initialise component
         Component.__init__(self, self._parameter_strings)
         self.name = name
@@ -87,7 +87,7 @@ class Expression(Component):
     def function(self, x):
         return eval(self._f_eval_str)
 
-    def compile_function(self, module="numpy"):
+    def recompile(self, module="numpy"):
         import compiler
         import sympy
         from sympy.utilities.lambdify import lambdify
