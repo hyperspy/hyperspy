@@ -1,4 +1,3 @@
-import compiler
 
 from hyperspy.component import Component
 
@@ -13,7 +12,7 @@ _CLASS_DOC = \
 
 
 def _get_compiled_f(eval_str):
-    return lambda self, x: eval(compiler.compile(eval_str, '<string>', 'eval'))
+    return lambda self, x: eval(compile(eval_str, '<string>', 'eval'))
 
 
 class Expression(Component):
@@ -69,7 +68,7 @@ class Expression(Component):
 
         import sympy
         self._str_expression = expression
-        self.recompile(module=module)
+        self.compile_function(module=module)
         # Initialise component
         Component.__init__(self, self._parameter_strings)
         self.name = name
@@ -87,8 +86,7 @@ class Expression(Component):
     def function(self, x):
         return eval(self._f_eval_str)
 
-    def recompile(self, module="numpy"):
-        import compiler
+    def compile_function(self, module="numpy"):
         import sympy
         from sympy.utilities.lambdify import lambdify
         expr = sympy.sympify(self._str_expression)
@@ -105,7 +103,7 @@ class Expression(Component):
         eval_str = "self._f(x, %s)" % ", ".join(
             ["self.%s.value" % par for par in parnames])
         # Generate string to be evaluated by self.function
-        self._f_eval_str = compiler.compile(eval_str, '<string>', 'eval')
+        self._f_eval_str = compile(eval_str, '<string>', 'eval')
         self._parameter_strings = parnames
         for parameter in parameters:
             grad_expr = sympy.diff(eval_expr, parameter)
