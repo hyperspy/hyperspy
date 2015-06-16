@@ -60,11 +60,10 @@ However, this doesn't mean that you have to limit yourself to this meagre list o
 
 .. versionadded:: 0.8.1
 
-The easiest way to turn a function into a component is using the
-:py:class:`~._components.expression.Expression`. For example, the following
-is all you need to create a`Gaussian` component  
-with more sensible parameters for spectroscopy than
-the one that ships with HyperSpy:
+The easiest way to turn a mathematical expression into a component is using the
+:py:class:`~._components.expression.Expression` component. For example, the
+following is all you need to create a`Gaussian` component  with more sensible
+parameters for spectroscopy than the one that ships with HyperSpy:
 
 .. code-block:: python
 
