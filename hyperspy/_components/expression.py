@@ -12,8 +12,8 @@ _CLASS_DOC = \
 
 
 def get_f_wrapped(fn):
-    def _f_p_wrapped(thing, x):
-        return fn(x, *[p.value for p in thing.parameters])
+    def _f_p_wrapped(self, x):
+        return fn(x, *[p.value for p in self.parameters])
     return _f_p_wrapped
 
 
@@ -77,7 +77,7 @@ class Expression(Component):
         self.name = name
         # Set the position parameter
         if position:
-            setattr(self, "_position", getattr(self, position))
+            self._position = getattr(self, position)
         # Set the initial value of the parameters
         if kwargs:
             for kwarg, value in kwargs.iteritems():
