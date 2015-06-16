@@ -2,13 +2,14 @@
 from hyperspy.component import Component
 
 _CLASS_DOC = \
-"""%s component (created with Expression).
+    """%s component (created with Expression).
 
 .. math::
 
     f(x) = %s
 
 """
+
 
 def get_f_wrapped(fn):
     def _f_p_wrapped(thing, x):
@@ -17,6 +18,7 @@ def get_f_wrapped(fn):
 
 
 class Expression(Component):
+
     def __init__(self, expression, name, position=None, module="numpy",
                  **kwargs):
         """Create a component from a string expression.
@@ -95,7 +97,7 @@ class Expression(Component):
         # Extract parameters
         parameters = [
             symbol for symbol in expr.free_symbols if symbol.name != "x"]
-        parameters.sort(key = lambda x :x.name) # to have a reliable order
+        parameters.sort(key=lambda x: x.name)  # to have a reliable order
         # Extract x
         x, = [symbol for symbol in expr.free_symbols if symbol.name == "x"]
         # Create compiled function
@@ -112,9 +114,14 @@ class Expression(Component):
                              modules=module,
                              dummify=False)
                     )
-                    
+
             setattr(self,
                     "grad_%s" % parameter.name,
-                    get_f_wrapped(getattr(self, "_f_grad_%s" % parameter.name)).__get__(self, Expression)
+                    get_f_wrapped(
+                        getattr(
+                            self,
+                            "_f_grad_%s" %
+                            parameter.name)).__get__(
+                        self,
+                        Expression)
                     )
-             
