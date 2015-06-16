@@ -81,7 +81,7 @@ class Expression(Component):
         # Set the initial value of the parameters
         if kwargs:
             for kwarg, value in kwargs.iteritems():
-                exec("self.%s.value = value" % kwarg)
+                setattr(getattr(self, kwarg), 'value', value)
 
         self.__doc__ = _CLASS_DOC % (name,
                                      sympy.latex(sympy.sympify(expression)))
