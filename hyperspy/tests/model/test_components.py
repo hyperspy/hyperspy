@@ -198,4 +198,10 @@ class TestExpression:
         nose.tools.assert_equal(self.g.function(0), 1)
 
     def test_grad_height(self):
-        nose.tools.assert_equal(self.g.grad_height(0), 1)
+        nose.tools.assert_almost_equal(self.g.grad_height(2), 1.5258789062500007e-05)
+
+    def test_grad_x0(self):
+        nose.tools.assert_almost_equal(self.g.grad_x0(2), 0.00016922538587889289)
+
+    def test_grad_fwhm(self):
+        nose.tools.assert_almost_equal(self.g.grad_fwhm(2),0.00033845077175778578)

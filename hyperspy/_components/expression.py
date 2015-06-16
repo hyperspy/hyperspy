@@ -10,9 +10,10 @@ _CLASS_DOC = \
 
 """
 
-
-def _get_compiled_f(eval_str):
-    return lambda self, x: eval(compile(eval_str, '<string>', 'eval'))
+def get_f_wrapped(fn):
+    def _f_p_wrapped(thing, x):
+        return fn(x, *[p.value for p in thing.parameters])
+    return _f_p_wrapped
 
 
 class Expression(Component):
@@ -74,7 +75,7 @@ class Expression(Component):
         self.name = name
         # Set the position parameter
         if position:
-            self._position = eval("self.%s" % position)
+            setattr(self, "_position", getattr(self, position))
         # Set the initial value of the parameters
         if kwargs:
             for kwarg, value in kwargs.iteritems():
@@ -84,7 +85,7 @@ class Expression(Component):
                                      sympy.latex(sympy.sympify(expression)))
 
     def function(self, x):
-        return eval(self._f_eval_str)
+        return self._f(x, *[p.value for p in self.parameters])
 
     def compile_function(self, module="numpy"):
         import sympy
@@ -94,16 +95,13 @@ class Expression(Component):
         # Extract parameters
         parameters = [
             symbol for symbol in expr.free_symbols if symbol.name != "x"]
+        parameters.sort(key = lambda x :x.name) # to have a reliable order
         # Extract x
         x, = [symbol for symbol in expr.free_symbols if symbol.name == "x"]
         # Create compiled function
         self._f = lambdify([x] + parameters, eval_expr,
                            modules=module, dummify=False)
         parnames = [symbol.name for symbol in parameters]
-        eval_str = "self._f(x, %s)" % ", ".join(
-            ["self.%s.value" % par for par in parnames])
-        # Generate string to be evaluated by self.function
-        self._f_eval_str = compile(eval_str, '<string>', 'eval')
         self._parameter_strings = parnames
         for parameter in parameters:
             grad_expr = sympy.diff(eval_expr, parameter)
@@ -114,11 +112,9 @@ class Expression(Component):
                              modules=module,
                              dummify=False)
                     )
-            eval_str = "self._f_grad_%s(x, %s)" % (
-                parameter.name,
-                ", ".join(["self.%s.value" % par for par in parnames]))
+                    
             setattr(self,
                     "grad_%s" % parameter.name,
-                    # __get__ is to bind function to class
-                    _get_compiled_f(eval_str).__get__(self, Expression),
+                    get_f_wrapped(getattr(self, "_f_grad_%s" % parameter.name)).__get__(self, Expression)
                     )
+             
