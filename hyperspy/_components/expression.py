@@ -97,8 +97,10 @@ class Expression(Component):
         expr = sympy.sympify(self._str_expression)
 
         rvars = sympy.symbols([s.name for s in expr.free_symbols], real=True)
-        real_expr = expr.subs({orig: real_ for (orig, real_) in zip(expr.free_symbols, rvars)})
-        expr = real_expr # just replace with the assumption that all our variables are real
+        real_expr = expr.subs(
+            {orig: real_ for (orig, real_) in zip(expr.free_symbols, rvars)})
+        # just replace with the assumption that all our variables are real
+        expr = real_expr
 
         eval_expr = expr.evalf()
         # Extract parameters
