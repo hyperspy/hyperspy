@@ -1,4 +1,4 @@
-
+from functools import wraps
 from hyperspy.component import Component
 
 _CLASS_DOC = \
@@ -11,10 +11,12 @@ _CLASS_DOC = \
 """
 
 
-def get_f_wrapped(fn):
-    def _f_p_wrapped(self, x):
+def _fill_function_args(fn):
+    @wraps(fn)
+    def fn_wrapped(self, x):
         return fn(x, *[p.value for p in self.parameters])
-    return _f_p_wrapped
+
+    return fn_wrapped
 
 
 class Expression(Component):
@@ -117,7 +119,7 @@ class Expression(Component):
 
             setattr(self,
                     "grad_%s" % parameter.name,
-                    get_f_wrapped(
+                    _fill_function_args(
                         getattr(
                             self,
                             "_f_grad_%s" %
