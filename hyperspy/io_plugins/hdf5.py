@@ -485,6 +485,6 @@ def file_writer(filename,
         if isinstance(signal, list):
             for num, sig in enumerate(signal):
                 group_name = sig.metadata.General.title if \
-                    sig.metadata.General.title else '__unnamed__'+str(num)
+                    sig.metadata.General.title else '__unnamed__' + str(num)
                 expg = exps.create_group(group_name)
                 write_signal(sig, expg, compression=compression)

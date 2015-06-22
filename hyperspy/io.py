@@ -423,7 +423,8 @@ def save(filename, signal, overwrite=None, **kwds):
                              'supported, supported file extensions are: %s ' %
                              strlist2enumeration(default_write_ext))
         elif isinstance(signal, list):
-            if hasattr(writer, 'projects') and writer.projects: # assume when projects is True, any dimensions
+            # assume when projects is True, any dimensions
+            if hasattr(writer, 'projects') and writer.projects:
                                                                 # can be written
                 # pass # temp
                 ensure_directory(filename)
@@ -433,7 +434,8 @@ def save(filename, signal, overwrite=None, **kwds):
                     writer.file_writer(filename, signal, **kwds)
                     print('The %s file was created' % filename)
             else:
-                raise ValueError('Writing projects to this format is not supported')
+                raise ValueError(
+                    'Writing projects to this format is not supported')
         else:
             sd = signal.axes_manager.signal_dimension
             nd = signal.axes_manager.navigation_dimension
