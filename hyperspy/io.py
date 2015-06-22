@@ -374,6 +374,32 @@ def dict2signal(signal_dict):
 
 
 def save(filename, signal, overwrite=None, **kwds):
+    """
+    Save a hyperspy signal (or a list thereof) to multiple supported file formats
+
+    Any extra keyword is passed to the corresponsing writer. For
+    available options see their individual documentation.
+
+    Parameters
+    ----------
+    filename :  str
+
+    signal : signal or list of signals
+
+
+    Examples
+    --------
+    Save a single signal to file:
+
+    >>> hs.save('file.hdf5', somesignal)
+
+    Save multiple signals to a project file (only hdf5 extension is supported):
+
+    >>> hs.save('project.hdf5', [eds_spectrum, survey_image, some_other_signal])
+
+
+    """
+
     extension = os.path.splitext(filename)[1][1:]
     if extension == '':
         extension = \
@@ -392,28 +418,41 @@ def save(filename, signal, overwrite=None, **kwds):
                          strlist2enumeration(default_write_ext))
     else:
         # Check if the writer can write
-        sd = signal.axes_manager.signal_dimension
-        nd = signal.axes_manager.navigation_dimension
         if writer.writes is False:
             raise ValueError('Writing to this format is not '
                              'supported, supported file extensions are: %s ' %
                              strlist2enumeration(default_write_ext))
-        if writer.writes is not True and (sd, nd) not in writer.writes:
-            yes_we_can = [plugin.format_name for plugin in io_plugins
-                          if plugin.writes is True or
-                          plugin.writes is not False and
-                          (sd, nd) in plugin.writes]
-            raise ValueError('This file format cannot write this data. '
-                             'The following formats can: %s' %
-                             strlist2enumeration(yes_we_can))
-        ensure_directory(filename)
-        if overwrite is None:
-            overwrite = hyperspy.misc.io.tools.overwrite(filename)
-        if overwrite is True:
-            writer.file_writer(filename, signal, **kwds)
-            print('The %s file was created' % filename)
-            folder, filename = os.path.split(os.path.abspath(filename))
-            signal.tmp_parameters.set_item('folder', folder)
-            signal.tmp_parameters.set_item('filename',
-                                           os.path.splitext(filename)[0])
-            signal.tmp_parameters.set_item('extension', extension)
+        elif isinstance(signal, list):
+            if hasattr(writer, 'projects') and writer.projects: # assume when projects is True, any dimensions
+                                                                # can be written
+                # pass # temp
+                ensure_directory(filename)
+                if overwrite is None:
+                    overwrite = hyperspy.misc.io.tools.overwrite(filename)
+                if overwrite is True:
+                    writer.file_writer(filename, signal, **kwds)
+                    print('The %s file was created' % filename)
+            else:
+                raise ValueError('Writing projects to this format is not supported')
+        else:
+            sd = signal.axes_manager.signal_dimension
+            nd = signal.axes_manager.navigation_dimension
+            if writer.writes is not True and (sd, nd) not in writer.writes:
+                yes_we_can = [plugin.format_name for plugin in io_plugins
+                              if plugin.writes is True or
+                              plugin.writes is not False and
+                              (sd, nd) in plugin.writes]
+                raise ValueError('This file format cannot write this data. '
+                                 'The following formats can: %s' %
+                                 strlist2enumeration(yes_we_can))
+            ensure_directory(filename)
+            if overwrite is None:
+                overwrite = hyperspy.misc.io.tools.overwrite(filename)
+            if overwrite is True:
+                writer.file_writer(filename, signal, **kwds)
+                print('The %s file was created' % filename)
+                folder, filename = os.path.split(os.path.abspath(filename))
+                signal.tmp_parameters.set_item('folder', folder)
+                signal.tmp_parameters.set_item('filename',
+                                               os.path.splitext(filename)[0])
+                signal.tmp_parameters.set_item('extension', extension)

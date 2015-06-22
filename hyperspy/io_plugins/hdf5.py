@@ -41,6 +41,7 @@ default_extension = 4
 
 # Writing capabilities
 writes = True
+projects = True
 version = "1.3"
 
 # -----------------------
@@ -481,7 +482,9 @@ def file_writer(filename,
         f.attrs['file_format'] = "HyperSpy"
         f.attrs['file_format_version'] = version
         exps = f.create_group('Experiments')
-        group_name = signal.metadata.General.title if \
-            signal.metadata.General.title else '__unnamed__'
-        expg = exps.create_group(group_name)
-        write_signal(signal, expg, compression=compression)
+        if isinstance(signal, list):
+            for num, sig in enumerate(signal):
+                group_name = sig.metadata.General.title if \
+                    sig.metadata.General.title else '__unnamed__'+str(num)
+                expg = exps.create_group(group_name)
+                write_signal(sig, expg, compression=compression)
