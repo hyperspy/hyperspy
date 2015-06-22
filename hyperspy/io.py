@@ -423,10 +423,8 @@ def save(filename, signal, overwrite=None, **kwds):
                              'supported, supported file extensions are: %s ' %
                              strlist2enumeration(default_write_ext))
         elif isinstance(signal, list):
-            # assume when projects is True, any dimensions
+            # assume when projects is True, any dimensions can be written
             if hasattr(writer, 'projects') and writer.projects:
-                                                                # can be written
-                # pass # temp
                 ensure_directory(filename)
                 if overwrite is None:
                     overwrite = hyperspy.misc.io.tools.overwrite(filename)
