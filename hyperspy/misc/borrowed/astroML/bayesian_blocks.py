@@ -50,7 +50,8 @@ class FitnessFunc(object):
         if self.gamma == 1:
             return 0
         else:
-            return np.log((1 - self.gamma) * self.gamma**N / (1 - self.gamma**(Ntot+1)))
+            return np.log(
+                (1 - self.gamma) * self.gamma**N / (1 - self.gamma**(Ntot + 1)))
 
     # the fitness_args property will return the list of arguments accepted by
     # the method fitness().  This allows more efficient computation below.
@@ -75,7 +76,7 @@ class Events(FitnessFunc):
 
     def fitness(self, N_k, T_k):
         # eq. 19 from Scargle 2012
-        return N_k * np.log(N_k/T_k)
+        return N_k * np.log(N_k / T_k)
 
     def prior(self, N, Ntot):
         if self.gamma is not None:
@@ -107,7 +108,7 @@ class RegularEvents(FitnessFunc):
         self.gamma = gamma
 
     def validate_input(self, t, x, sigma):
-        if not np.all(np.logical_or(x==0, x==1)):
+        if not np.all(np.logical_or(x == 0, x == 1)):
             raise ValueError("Regular events must have only 0 and 1 in x")
 
     def fitness(self, T_k, N_k):
@@ -314,7 +315,7 @@ def bayesian_blocks(t, x=None, sigma=None,
     if 'b_k' in fitfunc.args:
         bk_raw = x / (sigma * sigma)
     if 'c_k' in fitfunc.args:
-        ck_raw = x * x /( sigma * sigma)
+        ck_raw = x * x / (sigma * sigma)
 
     # create length-(N + 1) array of cell edges
     edges = np.concatenate([t[:1],
