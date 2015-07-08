@@ -173,8 +173,8 @@ class SpanSelectorInSpectrum(t.HasTraits):
 
     def reset_span_selector(self):
         self.span_selector_switch(False)
-        self.ss_left_value = 0
-        self.ss_right_value = 0
+        self.ss_left_value = np.nan
+        self.ss_right_value = np.nan
         self.span_selector_switch(True)
 
 

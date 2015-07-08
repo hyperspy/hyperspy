@@ -369,10 +369,12 @@ class SpikesRemoval(SpanSelectorInSpectrum):
         self.span_selector_changed()
 
     def _ss_left_value_changed(self, old, new):
-        self.span_selector_changed()
+        if not np.isnan(self.ss_right_value):
+            self.span_selector_changed()
 
     def _ss_right_value_changed(self, old, new):
-        self.span_selector_changed()
+        if not np.isnan(self.ss_right_value):
+            self.span_selector_changed()
 
     def create_interpolation_line(self):
         self.interpolated_line = drawing.spectrum.SpectrumLine()
@@ -387,7 +389,7 @@ class SpikesRemoval(SpanSelectorInSpectrum):
 
     def get_interpolation_range(self):
         axis = self.signal.axes_manager.signal_axes[0]
-        if self.ss_left_value == self.ss_right_value:
+        if np.isnan(self.ss_left_value) or np.isnan(self.ss_right_value):
             left = self.argmax - self.default_spike_width
             right = self.argmax + self.default_spike_width
         else:
