@@ -142,7 +142,6 @@ class TestFindPeaks1D:
 
     def test_two_spectra(self):
         peaks = self.spectrum.find_peaks1D_ohaver()
-        peaks = self.spectrum.find_peaks1D_ohaver()
         nose.tools.assert_true(np.allclose(
             peaks[1]['position'], self.peak_positions1, rtol=1e-5, atol=1e-4))
 
