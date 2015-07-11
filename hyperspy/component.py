@@ -22,7 +22,6 @@ import numpy as np
 import warnings
 
 import traits.api as t
-import traitsui.api as tu
 from traits.trait_numeric import Array
 
 from hyperspy.defaults_parser import preferences
@@ -42,6 +41,13 @@ class NoneFloat(t.CFloat):   # Lazy solution, but usable
             super(NoneFloat, self).validate(object, name, 0)
             return None
         return super(NoneFloat, self).validate(object, name, value)
+
+
+def _editor_wrapper(self):
+    from traitsui.api import TextEditor
+    if not isinstance(self.editor, TextEditor()):
+        self.editor = TextEditor()
+    return self.editor
 
 
 class Parameter(t.HasTraits):
@@ -101,9 +107,12 @@ class Parameter(t.HasTraits):
 
     # traitsui bugs out trying to make an editor for this, so always specify!
     # (it bugs out, because both editor shares the object, and Array editors
-    # don't like non-sequence objects). TextEditor() works well.
+    # don't like non-sequence objects). TextEditor() works well. Use a wrapper
+    # to avoid importing traitsui prematurely
     value = t.Property(
-        t.Either([t.CFloat(0), Array()]), editor=tu.TextEditor())
+        t.Either([t.CFloat(0), Array()]))
+    value.get_editor = _editor_wrapper
+
     units = t.Str('')
     free = t.Property(t.CBool(True))
 
