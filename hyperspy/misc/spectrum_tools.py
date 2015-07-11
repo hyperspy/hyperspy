@@ -162,6 +162,9 @@ def find_peaks_ohaver(y, x=None, slope_thresh=0., amp_thresh=None,
                         peak = peak + 1
     # return only the part of the array that contains peaks
     # (not the whole maxpeakn x 3 array)
+    if len(P) > maxpeakn:
+        minh = np.sort(P['height'])[-maxpeakn]
+        P = P[P['height'] >= minh]
     return P
 
 
