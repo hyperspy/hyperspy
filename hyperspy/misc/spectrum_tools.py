@@ -92,8 +92,8 @@ def find_peaks_ohaver(y, x=None, slope_thresh=0., amp_thresh=None,
         d = np.gradient(y)
     n = np.round(peakgroup / 2 + 1)
     peak_dt = np.dtype([('position', np.float),
-                        ('width', np.float),
-                        ('height', np.float)])
+                        ('height', np.float),
+                        ('width', np.float)])
     P = np.array([], dtype=peak_dt)
     peak = 0
     for j in xrange(len(y) - 4):
