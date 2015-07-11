@@ -88,7 +88,7 @@ class update_version_when_dev:
         # Get the hash from the git repository if available
         self.restore_version = False
         git_master_path = ".git/refs/heads/master"
-        if ".dev" in self.release_version and \
+        if "+dev" in self.release_version and \
                 os.path.isfile(git_master_path):
             try:
                 p = subprocess.Popen(["git", "describe",
@@ -110,7 +110,7 @@ class update_version_when_dev:
                 with open(git_master_path) as f:
                     masterhash = f.readline()
                 self.version = self.release_version.replace(
-                    ".dev", "+git-%s" % masterhash[:7])
+                    "+dev", "+git-%s" % masterhash[:7])
             for line in fileinput.FileInput("hyperspy/Release.py",
                                             inplace=1):
                 if line.startswith('version = '):
