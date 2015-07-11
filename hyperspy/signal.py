@@ -1104,8 +1104,7 @@ class Signal1DTools(object):
         Function to locate the positive peaks in a noisy x-y data set.
 
         Detects peaks by looking for downward zero-crossings in the
-        first
-        derivative that exceed 'slope_thresh'.
+        first derivative that exceed 'slope_thresh'.
 
         Returns an array containing position, height, and width of each
         peak.

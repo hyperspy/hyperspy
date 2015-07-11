@@ -137,14 +137,14 @@ class TestFindPeaks1D:
 
     def test_single_spectrum(self):
         peaks = self.spectrum[0].find_peaks1D_ohaver()
-        nose.tools.assert_true(np.allclose(peaks[0]['position'],
-                                           self.peak_positions0, rtol=1e-5, atol=1e-4))
+        nose.tools.assert_true(np.allclose(
+            peaks[0]['position'], self.peak_positions0, rtol=1e-5, atol=1e-4))
 
     def test_two_spectra(self):
         peaks = self.spectrum.find_peaks1D_ohaver()
         peaks = self.spectrum.find_peaks1D_ohaver()
-        nose.tools.assert_true(np.allclose(peaks[1]['position'],
-                                           self.peak_positions1, rtol=1e-5, atol=1e-4))
+        nose.tools.assert_true(np.allclose(
+            peaks[1]['position'], self.peak_positions1, rtol=1e-5, atol=1e-4))
 
 
 class TestInterpolateInBetween:

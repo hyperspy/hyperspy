@@ -4,7 +4,8 @@ import scipy.signal
 
 
 def find_peaks_ohaver(y, x=None, slope_thresh=0., amp_thresh=None,
-                      medfilt_radius=5, maxpeakn=30000, peakgroup=10, subchannel=True,):
+                      medfilt_radius=5, maxpeakn=30000, peakgroup=10,
+                      subchannel=True,):
     """Find peaks along a 1D line.
 
     Function to locate the positive peaks in a noisy x-y data set.
@@ -153,8 +154,8 @@ def find_peaks_ohaver(y, x=None, slope_thresh=0., amp_thresh=None,
                         # no way to know peak width without
                         # the above measurements.
                         width = 0
-                    if (position > 0 and not np.isnan(position)
-                            and position < x[-1]):
+                    if (position > 0 and not np.isnan(position) and
+                            position < x[-1]):
                         P = np.hstack((P,
                                        np.array([(position, height, width)],
                                                 dtype=peak_dt)))
