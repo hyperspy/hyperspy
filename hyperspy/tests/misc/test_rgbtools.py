@@ -73,13 +73,13 @@ class TestRGBTools:
 
     def test_regular_array2rgbx_cordermask_from_cmasked(self):
         d = rt.regular_array2rgbx(self.data_masked)
-        nt.assert_true(d.flags['C_CONTIGUOUS'])
         nt.assert_is_instance(d, np.ma.MaskedArray)
+        nt.assert_true(d.flags['C_CONTIGUOUS'])
 
     def test_regular_array2rgbx_cordermask_from_cmasked_slices(self):
         d = rt.regular_array2rgbx(self.data_masked[0:1, ...])
-        nt.assert_true(d.flags['C_CONTIGUOUS'])
         nt.assert_is_instance(d, np.ma.MaskedArray)
+        nt.assert_true(d.flags['C_CONTIGUOUS'])
         d = rt.regular_array2rgbx(self.data_masked[:, 0:1, :])
-        nt.assert_true(d.flags['C_CONTIGUOUS'])
         nt.assert_is_instance(d, np.ma.MaskedArray)
+        nt.assert_true(d.flags['C_CONTIGUOUS'])
