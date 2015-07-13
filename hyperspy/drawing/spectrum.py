@@ -84,7 +84,7 @@ class SpectrumFigure(BlittedFigure):
         elif ax == 'right':
             line.ax = self.right_ax
             self.right_ax_lines.append(line)
-            line.sf_lines = self.ax_lines
+            line.sf_lines = self.right_ax_lines
             if line.axes_manager is None:
                 line.axes_manager = self.right_axes_manager
         line.axis = self.axis
