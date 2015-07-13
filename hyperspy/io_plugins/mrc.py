@@ -32,7 +32,7 @@ from hyperspy.misc.array_tools import sarray2dict
 # ----------------------
 format_name = 'MRC'
 description = ''
-full_suport = False
+full_support = False
 # Recognised file extension
 file_extensions = ['mrc', 'MRC', 'ALI', 'ali']
 default_extension = 0

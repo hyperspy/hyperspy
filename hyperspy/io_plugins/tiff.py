@@ -30,7 +30,7 @@ from hyperspy.misc import rgb_tools
 format_name = 'TIFF'
 description = ('Import/Export standard image formats Christoph Gohlke\'s '
                'tifffile library')
-full_suport = False
+full_support = False
 file_extensions = ['tif', 'tiff']
 default_extension = 0  # tif
 
