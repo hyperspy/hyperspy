@@ -4355,9 +4355,9 @@ class Signal(MVA,
         if data is not None:
             if data.shape != self.axes_manager._navigation_shape_in_array:
                 raise ValueError(
-                    "data.shape is not equal to the current navigation shape in"
-                    " array which is %s" %
-                    str(self.axes_manager._navigation_shape_in_array))
+                    "data.shape %s is not equal to the current navigation shape in"
+                    " array which is %s" % (str(data.shape),
+                    str(self.axes_manager._navigation_shape_in_array)))
         else:
             if self.axes_manager.navigation_dimension == 0:
                 data = np.array([0, ], dtype=self.data.dtype)
@@ -4397,9 +4397,9 @@ class Signal(MVA,
         if data is not None:
             if data.shape != self.axes_manager._signal_shape_in_array:
                 raise ValueError(
-                    "data.shape is not equal to the current signal shape in"
-                    " array which is %s" %
-                    (self.axes_manager._signal_shape_in_array))
+                    "data.shape %s is not equal to the current signal shape in"
+                    " array which is %s" % (str(data.shape),
+                    (self.axes_manager._signal_shape_in_array)))
         else:
             if self.axes_manager.signal_dimension == 0:
                 data = np.array([0, ], dtype=self.data.dtype)
