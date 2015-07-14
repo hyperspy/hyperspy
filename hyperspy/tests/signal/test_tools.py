@@ -154,6 +154,38 @@ class Test3D:
                      s.axes_manager.navigation_shape)
         assert_equal(ns.axes_manager.navigation_dimension, 0)
 
+    def test_get_signal_signal_nav_dim0(self):
+        s = self.signal
+        s.axes_manager.set_signal_dimension(0)
+        ns = s._get_signal_signal()
+        assert_equal(ns.axes_manager.navigation_dimension, 0)
+        assert_equal(ns.axes_manager.navigation_size, 0)
+        assert_equal(ns.axes_manager.signal_dimension, 1)
+
+    def test_get_signal_signal_nav_dim1(self):
+        s = self.signal
+        s.axes_manager.set_signal_dimension(1)
+        ns = s._get_signal_signal()
+        assert_equal(ns.axes_manager.signal_shape,
+                     s.axes_manager.signal_shape)
+        assert_equal(ns.axes_manager.navigation_dimension, 0)
+
+    def test_get_signal_signal_nav_dim2(self):
+        s = self.signal
+        s.axes_manager.set_signal_dimension(2)
+        ns = s._get_signal_signal()
+        assert_equal(ns.axes_manager.signal_shape,
+                     s.axes_manager.signal_shape)
+        assert_equal(ns.axes_manager.navigation_dimension, 0)
+
+    def test_get_signal_signal_nav_dim3(self):
+        s = self.signal
+        s.axes_manager.set_signal_dimension(3)
+        ns = s._get_signal_signal()
+        assert_equal(ns.axes_manager.signal_shape,
+                     s.axes_manager.signal_shape)
+        assert_equal(ns.axes_manager.navigation_dimension, 0)
+
 
 class Test4D:
 

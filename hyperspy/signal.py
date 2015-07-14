@@ -4365,7 +4365,7 @@ class Signal(MVA,
 
     def _get_signal_signal(self):
         if self.axes_manager.signal_dimension == 0:
-            return self.__class__(np.array([0, ]).astype(self.data.dtype))
+            s = Signal(np.array([0, ]).astype(self.data.dtype))
         elif self.axes_manager.signal_dimension == 1:
             from hyperspy._signals.spectrum import Spectrum
             s = Spectrum(np.zeros(
