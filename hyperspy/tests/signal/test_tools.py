@@ -157,6 +157,12 @@ class Test3D:
         s.axes_manager.set_signal_dimension(1)
         ns = s._get_navigation_signal(data=np.zeros((3, 2)))
 
+    @nt.raises(ValueError)
+    def test_get_navigation_signal_wrong_data_shape_dim0(self):
+        s = self.signal
+        s.axes_manager.set_signal_dimension(3)
+        ns = s._get_navigation_signal(data=np.asarray(0))
+
     def test_get_navigation_signal_given_data(self):
         s = self.signal
         s.axes_manager.set_signal_dimension(1)
@@ -202,6 +208,12 @@ class Test3D:
         s.axes_manager.set_signal_dimension(1)
         ns = s._get_signal_signal(data=np.zeros((3, 2)))
 
+    @nt.raises(ValueError)
+    def test_get_signal_signal_wrong_data_shape_dim0(self):
+        s = self.signal
+        s.axes_manager.set_signal_dimension(0)
+        ns = s._get_signal_signal(data=np.asarray(0))
+        
     def test_get_signal_signal_given_data(self):
         s = self.signal
         s.axes_manager.set_signal_dimension(2)
