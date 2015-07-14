@@ -34,7 +34,7 @@ format_name = 'HDF5'
 description = \
     'The default file format for HyperSpy based on the HDF5 standard'
 
-full_suport = False
+full_support = False
 # Recognised file extension
 file_extensions = ['hdf', 'h4', 'hdf4', 'h5', 'hdf5', 'he4', 'he5']
 default_extension = 4
@@ -67,8 +67,8 @@ version = "1.3"
 # assigned to the same name attributes of the Signal instance as a
 # Dictionary Browsers
 # The Experiments group can contain attributes that may be common to all
-# the experiments and that will be accessible as attribures of the
-# Experimentsinstance
+# the experiments and that will be accessible as attributes of the
+# Experiments instance
 #
 # New in v1.3
 # -----------

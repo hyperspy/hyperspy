@@ -38,7 +38,7 @@ emi_extensions = ('emi', 'EMI')
 # ----------------------
 format_name = 'FEI TIA'
 description = ''
-full_suport = False
+full_support = False
 # Recognised file extension
 file_extensions = ser_extensions + emi_extensions
 default_extension = 0

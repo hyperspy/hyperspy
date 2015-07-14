@@ -1104,8 +1104,7 @@ class Signal1DTools(object):
         Function to locate the positive peaks in a noisy x-y data set.
 
         Detects peaks by looking for downward zero-crossings in the
-        first
-        derivative that exceed 'slope_thresh'.
+        first derivative that exceed 'slope_thresh'.
 
         Returns an array containing position, height, and width of each
         peak.
@@ -1153,8 +1152,8 @@ class Signal1DTools(object):
         -------
         peaks : structured array of shape _navigation_shape_in_array in which
         each cell contains an array that contains as many structured arrays as
-        peaks where found at that location and which fields: position, width,
-        height contains position, height, and width of each peak.
+        peaks where found at that location and which fields: position, height,
+        width, contains position, height, and width of each peak.
 
         Raises
         ------
@@ -3238,12 +3237,30 @@ class Signal(MVA,
         Parameters
         ----------
         new_shape: tuple of ints
-            The new shape must be a divisor of the original shape
+            The new shape elements must be divisors of the original shape
+            elements.
 
         Returns
         -------
         s : Signal subclass
 
+        Raises
+        ------
+        ValueError
+            When there is a mismatch between the number of elements in the
+            signal shape and `new_shape` or `new_shape` elements are not
+            divisors of the original signal shape.
+
+
+        Examples
+        --------
+        >>> import hyperspy.hspy as hs
+        >>> s = hs.signals.Spectrum(np.zeros((10, 100)))
+        >>> s
+        <Spectrum, title: , dimensions: (10|100)>
+        >>> s.rebin((5, 100))
+        <Spectrum, title: , dimensions: (5|100)>
+        I
         """
         if len(new_shape) != len(self.data.shape):
             raise ValueError("Wrong shape size")
@@ -3258,6 +3275,11 @@ class Signal(MVA,
         for axis in s.axes_manager._axes:
             axis.scale *= factors[axis.index_in_array]
         s.get_dimensions_from_data()
+        if s.metadata.has_item('Signal.Noise_properties.variance'):
+            if isinstance(s.metadata.Signal.Noise_properties.variance, Signal):
+                var = s.metadata.Signal.Noise_properties.variance
+                s.metadata.Signal.Noise_properties.variance = var.rebin(
+                    new_shape)
         return s
 
     def split(self,
@@ -4321,7 +4343,7 @@ class Signal(MVA,
 
     def _get_navigation_signal(self):
         if self.axes_manager.navigation_dimension == 0:
-            return self.__class__(np.array([0, ]).astype(self.data.dtype))
+            s = Signal(np.array([0, ]).astype(self.data.dtype))
         elif self.axes_manager.navigation_dimension == 1:
             from hyperspy._signals.spectrum import Spectrum
             s = Spectrum(
@@ -4337,6 +4359,8 @@ class Signal(MVA,
             s = Signal(np.zeros(self.axes_manager._navigation_shape_in_array,
                                 dtype=self.data.dtype),
                        axes=self.axes_manager._get_navigation_axes_dicts())
+            s.axes_manager.set_signal_dimension(
+                self.axes_manager.navigation_dimension)
         return s
 
     def _get_signal_signal(self):
