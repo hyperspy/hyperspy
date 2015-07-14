@@ -4407,17 +4407,13 @@ class Signal(MVA,
                 data = np.zeros(self.axes_manager._signal_shape_in_array,
                                 dtype=self.data.dtype)
 
+
         if self.axes_manager.signal_dimension == 0:
             s = Signal(data)
-        elif self.axes_manager.signal_dimension == 1:
-            from hyperspy._signals.spectrum import Spectrum
-            s = Spectrum(data, axes=self.axes_manager._get_signal_axes_dicts())
-        elif self.axes_manager.signal_dimension == 2:
-            from hyperspy._signals.image import Image
-            s = Image(data, axes=self.axes_manager._get_signal_axes_dicts())
+            s.set_signal_type(self.metadata.Signal.signal_type)
         else:
-            s = Signal(data, axes=self.axes_manager._get_signal_axes_dicts())
-        s.set_signal_type(self.metadata.Signal.signal_type)
+            s = self.__class__(data,
+                               axes=self.axes_manager._get_signal_axes_dicts())
         return s
 
     def __iter__(self):
