@@ -4363,6 +4363,29 @@ class Signal(MVA,
                 self.axes_manager.navigation_dimension)
         return s
 
+    def _get_signal_signal(self):
+        if self.axes_manager.signal_dimension == 0:
+            s = Signal(np.array([0, ]).astype(self.data.dtype))
+        elif self.axes_manager.signal_dimension == 1:
+            from hyperspy._signals.spectrum import Spectrum
+            s = Spectrum(np.zeros(
+                self.axes_manager._signal_shape_in_array,
+                dtype=self.data.dtype),
+                axes=self.axes_manager._get_signal_axes_dicts())
+        elif self.axes_manager.signal_dimension == 2:
+            from hyperspy._signals.image import Image
+            s = Image(np.zeros(
+                self.axes_manager._signal_shape_in_array,
+                dtype=self.data.dtype),
+                axes=self.axes_manager._get_signal_axes_dicts())
+        else:
+            s = Signal(np.zeros(
+                self.axes_manager._signal_shape_in_array,
+                dtype=self.data.dtype),
+                axes=self.axes_manager._get_signal_axes_dicts())
+        s.set_signal_type(self.metadata.Signal.signal_type)
+        return s
+
     def __iter__(self):
         # Reset AxesManager iteration index
         self.axes_manager.__iter__()
