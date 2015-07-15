@@ -3441,8 +3441,8 @@ class Signal(MVA,
         fold
         """
 
-        # It doesn't make sense unfolding when dim < 3
-        if len(self.data.squeeze().shape) < 3:
+        # It doesn't make sense unfolding when dim < 2
+        if self.data.squeeze().ndim < 2:
             return False
 
         # We need to store the original shape and coordinates to be used
