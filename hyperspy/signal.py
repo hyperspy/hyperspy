@@ -1104,8 +1104,7 @@ class Signal1DTools(object):
         Function to locate the positive peaks in a noisy x-y data set.
 
         Detects peaks by looking for downward zero-crossings in the
-        first
-        derivative that exceed 'slope_thresh'.
+        first derivative that exceed 'slope_thresh'.
 
         Returns an array containing position, height, and width of each
         peak.
@@ -1153,8 +1152,8 @@ class Signal1DTools(object):
         -------
         peaks : structured array of shape _navigation_shape_in_array in which
         each cell contains an array that contains as many structured arrays as
-        peaks where found at that location and which fields: position, width,
-        height contains position, height, and width of each peak.
+        peaks where found at that location and which fields: position, height,
+        width, contains position, height, and width of each peak.
 
         Raises
         ------
@@ -3442,8 +3441,8 @@ class Signal(MVA,
         fold
         """
 
-        # It doesn't make sense unfolding when dim < 3
-        if len(self.data.squeeze().shape) < 3:
+        # It doesn't make sense unfolding when dim < 2
+        if self.data.squeeze().ndim < 2:
             return False
 
         # We need to store the original shape and coordinates to be used
@@ -4344,7 +4343,7 @@ class Signal(MVA,
 
     def _get_navigation_signal(self):
         if self.axes_manager.navigation_dimension == 0:
-            return self.__class__(np.array([0, ]).astype(self.data.dtype))
+            s = Signal(np.array([0, ]).astype(self.data.dtype))
         elif self.axes_manager.navigation_dimension == 1:
             from hyperspy._signals.spectrum import Spectrum
             s = Spectrum(
@@ -4360,6 +4359,31 @@ class Signal(MVA,
             s = Signal(np.zeros(self.axes_manager._navigation_shape_in_array,
                                 dtype=self.data.dtype),
                        axes=self.axes_manager._get_navigation_axes_dicts())
+            s.axes_manager.set_signal_dimension(
+                self.axes_manager.navigation_dimension)
+        return s
+
+    def _get_signal_signal(self):
+        if self.axes_manager.signal_dimension == 0:
+            s = Signal(np.array([0, ]).astype(self.data.dtype))
+        elif self.axes_manager.signal_dimension == 1:
+            from hyperspy._signals.spectrum import Spectrum
+            s = Spectrum(np.zeros(
+                self.axes_manager._signal_shape_in_array,
+                dtype=self.data.dtype),
+                axes=self.axes_manager._get_signal_axes_dicts())
+        elif self.axes_manager.signal_dimension == 2:
+            from hyperspy._signals.image import Image
+            s = Image(np.zeros(
+                self.axes_manager._signal_shape_in_array,
+                dtype=self.data.dtype),
+                axes=self.axes_manager._get_signal_axes_dicts())
+        else:
+            s = Signal(np.zeros(
+                self.axes_manager._signal_shape_in_array,
+                dtype=self.data.dtype),
+                axes=self.axes_manager._get_signal_axes_dicts())
+        s.set_signal_type(self.metadata.Signal.signal_type)
         return s
 
     def __iter__(self):

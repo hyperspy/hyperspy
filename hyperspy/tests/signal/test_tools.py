@@ -86,6 +86,12 @@ class Test2D:
             (self.signal.metadata.Signal.Noise_properties.variance.data ==
              (self.signal.data * 2 + 1) * 0.5).all())
 
+    def test_unfold_image(self):
+        s = self.signal
+        s.axes_manager.set_signal_dimension(2)
+        s.unfold()
+        assert_equal(s.data.shape, (50,))
+
 
 class Test3D:
 
@@ -121,6 +127,70 @@ class Test3D:
         s = self.signal
         assert_equal(s.swap_axes(0, 1).data.shape, (4, 2, 6))
         assert_true(s.swap_axes(0, 2).data.flags['C_CONTIGUOUS'])
+
+    def test_get_navigation_signal_nav_dim0(self):
+        s = self.signal
+        s.axes_manager.set_signal_dimension(3)
+        ns = s._get_navigation_signal()
+        assert_equal(ns.axes_manager.signal_dimension, 1)
+        assert_equal(ns.axes_manager.signal_size, 1)
+        assert_equal(ns.axes_manager.navigation_dimension, 0)
+
+    def test_get_navigation_signal_nav_dim1(self):
+        s = self.signal
+        s.axes_manager.set_signal_dimension(2)
+        ns = s._get_navigation_signal()
+        assert_equal(ns.axes_manager.signal_shape,
+                     s.axes_manager.navigation_shape)
+        assert_equal(ns.axes_manager.navigation_dimension, 0)
+
+    def test_get_navigation_signal_nav_dim2(self):
+        s = self.signal
+        s.axes_manager.set_signal_dimension(1)
+        ns = s._get_navigation_signal()
+        assert_equal(ns.axes_manager.signal_shape,
+                     s.axes_manager.navigation_shape)
+        assert_equal(ns.axes_manager.navigation_dimension, 0)
+
+    def test_get_navigation_signal_nav_dim3(self):
+        s = self.signal
+        s.axes_manager.set_signal_dimension(0)
+        ns = s._get_navigation_signal()
+        assert_equal(ns.axes_manager.signal_shape,
+                     s.axes_manager.navigation_shape)
+        assert_equal(ns.axes_manager.navigation_dimension, 0)
+
+    def test_get_signal_signal_nav_dim0(self):
+        s = self.signal
+        s.axes_manager.set_signal_dimension(0)
+        ns = s._get_signal_signal()
+        assert_equal(ns.axes_manager.navigation_dimension, 0)
+        assert_equal(ns.axes_manager.navigation_size, 0)
+        assert_equal(ns.axes_manager.signal_dimension, 1)
+
+    def test_get_signal_signal_nav_dim1(self):
+        s = self.signal
+        s.axes_manager.set_signal_dimension(1)
+        ns = s._get_signal_signal()
+        assert_equal(ns.axes_manager.signal_shape,
+                     s.axes_manager.signal_shape)
+        assert_equal(ns.axes_manager.navigation_dimension, 0)
+
+    def test_get_signal_signal_nav_dim2(self):
+        s = self.signal
+        s.axes_manager.set_signal_dimension(2)
+        ns = s._get_signal_signal()
+        assert_equal(ns.axes_manager.signal_shape,
+                     s.axes_manager.signal_shape)
+        assert_equal(ns.axes_manager.navigation_dimension, 0)
+
+    def test_get_signal_signal_nav_dim3(self):
+        s = self.signal
+        s.axes_manager.set_signal_dimension(3)
+        ns = s._get_signal_signal()
+        assert_equal(ns.axes_manager.signal_shape,
+                     s.axes_manager.signal_shape)
+        assert_equal(ns.axes_manager.navigation_dimension, 0)
 
 
 class Test4D:
