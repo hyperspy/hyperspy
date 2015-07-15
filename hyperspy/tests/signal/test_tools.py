@@ -86,6 +86,12 @@ class Test2D:
             (self.signal.metadata.Signal.Noise_properties.variance.data ==
              (self.signal.data * 2 + 1) * 0.5).all())
 
+    def test_unfold_image(self):
+        s = self.signal
+        s.axes_manager.set_signal_dimension(2)
+        s.unfold()
+        assert_equal(s.data.shape, (50,))
+
 
 class Test3D:
 
