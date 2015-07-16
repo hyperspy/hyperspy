@@ -6,7 +6,6 @@ from hyperspy.signals import Spectrum
 from hyperspy._signals.spectrum import Spectrum
 
 
-
 def are_bss_components_equivalent(c1_list, c2_list, atol=1e-4):
     """Check if two list of components are equivalent.
 
@@ -29,12 +28,13 @@ def are_bss_components_equivalent(c1_list, c2_list, atol=1e-4):
     for c1 in c1_list:
         for c2 in c2_list:
             if (np.allclose(c2.data, c1.data, atol=atol) or
-                np.allclose(c2.data, -c1.data, atol=atol)):
+                    np.allclose(c2.data, -c1.data, atol=atol)):
                 matches += 1
     return matches == len(c1_list)
 
 
 class TestBSS:
+
     def setUp(self):
         ics = np.random.laplace(size=(3, 1000))
         np.random.seed(1)
