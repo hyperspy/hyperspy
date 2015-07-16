@@ -503,8 +503,7 @@ class EELSSpectrum(Spectrum):
                 threshold=threshold,).data
 
         t_over_lambda = np.log(total_intensity / I0)
-        s = self._get_navigation_signal()
-        s.data = t_over_lambda
+        s = self._get_navigation_signal(data=t_over_lambda)
         s.metadata.General.title = (self.metadata.General.title +
                                     ' $\\frac{t}{\\lambda}$')
         if self.tmp_parameters.has_item('filename'):
@@ -1171,13 +1170,12 @@ class EELSSpectrum(Spectrum):
                 self.tmp_parameters.filename +
                 '_CDF_after_Kramers_Kronig_transform')
         if 'thickness' in output:
-            thickness = eps._get_navigation_signal()
+            thickness = eps._get_navigation_signal(
+                data=te[self.axes_manager._get_data_slice(
+                [(axis.index_in_array, 0)])] )
             thickness.metadata.General.title = (
                 self.metadata.General.title + ' thickness '
                 '(calculated using Kramers-Kronig analysis)')
-            thickness.data = te[
-                self.axes_manager._get_data_slice([(
-                    axis.index_in_array, 0)])]
             output['thickness'] = thickness
         if full_output is False:
             return eps
