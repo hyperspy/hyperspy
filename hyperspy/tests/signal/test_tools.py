@@ -65,7 +65,7 @@ class Test2D:
     def test_estimate_poissonian_noise_copy_data(self):
         self.signal.estimate_poissonian_noise_variance()
         nt.assert_true(self.signal.metadata.Signal.Noise_properties.variance.data
-                    is not self.signal.data)
+                       is not self.signal.data)
 
     def test_estimate_poissonian_noise_noarg(self):
         self.signal.estimate_poissonian_noise_variance()
@@ -102,7 +102,10 @@ class Test3D:
         nt.assert_true(var.data.shape == (1, 2, 6))
         from hyperspy.misc.array_tools import rebin
         nt.assert_true(np.all(rebin(self.signal.data, (1, 2, 6)) == var.data))
-        nt.assert_true(np.all(rebin(self.signal.data, (1, 2, 6)) == new_s.data))
+        nt.assert_true(
+            np.all(
+                rebin(
+                    self.signal.data, (1, 2, 6)) == new_s.data))
 
     @nt.raises(AttributeError)
     def test_rebin_no_variance(self):
@@ -132,7 +135,7 @@ class Test3D:
         s.axes_manager.set_signal_dimension(2)
         ns = s._get_navigation_signal()
         nt.assert_equal(ns.axes_manager.signal_shape,
-                     s.axes_manager.navigation_shape)
+                        s.axes_manager.navigation_shape)
         nt.assert_equal(ns.axes_manager.navigation_dimension, 0)
 
     def test_get_navigation_signal_nav_dim2(self):
@@ -140,7 +143,7 @@ class Test3D:
         s.axes_manager.set_signal_dimension(1)
         ns = s._get_navigation_signal()
         nt.assert_equal(ns.axes_manager.signal_shape,
-                     s.axes_manager.navigation_shape)
+                        s.axes_manager.navigation_shape)
         nt.assert_equal(ns.axes_manager.navigation_dimension, 0)
 
     def test_get_navigation_signal_nav_dim3(self):
@@ -148,7 +151,7 @@ class Test3D:
         s.axes_manager.set_signal_dimension(0)
         ns = s._get_navigation_signal()
         nt.assert_equal(ns.axes_manager.signal_shape,
-                     s.axes_manager.navigation_shape)
+                        s.axes_manager.navigation_shape)
         nt.assert_equal(ns.axes_manager.navigation_dimension, 0)
 
     def test_get_signal_signal_nav_dim0(self):
@@ -164,7 +167,7 @@ class Test3D:
         s.axes_manager.set_signal_dimension(1)
         ns = s._get_signal_signal()
         nt.assert_equal(ns.axes_manager.signal_shape,
-                     s.axes_manager.signal_shape)
+                        s.axes_manager.signal_shape)
         nt.assert_equal(ns.axes_manager.navigation_dimension, 0)
 
     def test_get_signal_signal_nav_dim2(self):
@@ -172,7 +175,7 @@ class Test3D:
         s.axes_manager.set_signal_dimension(2)
         ns = s._get_signal_signal()
         nt.assert_equal(ns.axes_manager.signal_shape,
-                     s.axes_manager.signal_shape)
+                        s.axes_manager.signal_shape)
         nt.assert_equal(ns.axes_manager.navigation_dimension, 0)
 
     def test_get_signal_signal_nav_dim3(self):
@@ -180,7 +183,7 @@ class Test3D:
         s.axes_manager.set_signal_dimension(3)
         ns = s._get_signal_signal()
         nt.assert_equal(ns.axes_manager.signal_shape,
-                     s.axes_manager.signal_shape)
+                        s.axes_manager.signal_shape)
         nt.assert_equal(ns.axes_manager.navigation_dimension, 0)
 
 
