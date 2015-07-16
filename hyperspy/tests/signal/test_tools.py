@@ -213,13 +213,34 @@ class Test3D:
         s = self.signal
         s.axes_manager.set_signal_dimension(0)
         ns = s._get_signal_signal(data=np.asarray(0))
-        
+
     def test_get_signal_signal_given_data(self):
         s = self.signal
         s.axes_manager.set_signal_dimension(2)
         data = np.empty(s.axes_manager._signal_shape_in_array)
         ns = s._get_signal_signal(data=data)
         nt.assert_is(ns.data, data)
+
+    def test_get_navigation_signal_dtype(self):
+        s = self.signal
+        nt.assert_equal(s._get_navigation_signal().data.dtype.name,
+                        s.data.dtype.name)
+
+    def test_get_signal_signal_dtype(self):
+        s = self.signal
+        nt.assert_equal(s._get_signal_signal().data.dtype.name,
+                        s.data.dtype.name)
+
+    def test_get_navigation_signal_given_dtype(self):
+        s = self.signal
+        nt.assert_equal(
+            s._get_navigation_signal(dtype="bool").data.dtype.name, "bool")
+
+    def test_get_signal_signal_given_dtype(self):
+        s = self.signal
+        nt.assert_equal(
+            s._get_signal_signal(dtype="bool").data.dtype.name, "bool")
+
 
 class Test4D:
 

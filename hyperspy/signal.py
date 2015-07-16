@@ -4341,7 +4341,7 @@ class Signal(MVA,
         cs.axes_manager._set_axis_attribute_values("navigate", False)
         return cs
 
-    def _get_navigation_signal(self, data=None):
+    def _get_navigation_signal(self, data=None, dtype=None):
         """Return a signal with the same axes as the navigation space.
 
         Parameters
@@ -4361,11 +4361,13 @@ class Signal(MVA,
                     "data.shape %s is not equal to the current navigation shape in"
                     " array which is %s" % (str(data.shape), str(ref_shape)))
         else:
+            if dtype is None:
+                dtype = self.data.dtype
             if self.axes_manager.navigation_dimension == 0:
-                data = np.array([0, ], dtype=self.data.dtype)
+                data = np.array([0, ], dtype=dtype)
             else:
                 data = np.zeros(self.axes_manager._navigation_shape_in_array,
-                                dtype=self.data.dtype)
+                                dtype=dtype)
         if self.axes_manager.navigation_dimension == 0:
             s = Signal(data)
         elif self.axes_manager.navigation_dimension == 1:
@@ -4384,7 +4386,7 @@ class Signal(MVA,
                 self.axes_manager.navigation_dimension)
         return s
 
-    def _get_signal_signal(self,data=None):
+    def _get_signal_signal(self, data=None, dtype=None):
         """Return a signal with the same axes as the signal space.
 
         Parameters
@@ -4405,12 +4407,13 @@ class Signal(MVA,
                     "data.shape %s is not equal to the current signal shape in"
                     " array which is %s" % (str(data.shape), str(ref_shape)))
         else:
+            if dtype is None:
+                dtype = self.data.dtype
             if self.axes_manager.signal_dimension == 0:
-                data = np.array([0, ], dtype=self.data.dtype)
+                data = np.array([0, ], dtype=dtype)
             else:
                 data = np.zeros(self.axes_manager._signal_shape_in_array,
-                                dtype=self.data.dtype)
-
+                                dtype=dtype)
 
         if self.axes_manager.signal_dimension == 0:
             s = Signal(data)
