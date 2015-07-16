@@ -87,7 +87,7 @@ class Test2D:
         s = self.signal
         s.axes_manager.set_signal_dimension(2)
         s.unfold()
-        assert_equal(s.data.shape, (50,))
+        nt.assert_equal(s.data.shape, (50,))
 
 
 class Test3D:
