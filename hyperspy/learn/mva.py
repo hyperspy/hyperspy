@@ -38,6 +38,7 @@ from hyperspy import messages
 from hyperspy.decorators import do_not_replot
 from scipy import linalg
 from hyperspy.misc.machine_learning.orthomax import orthomax
+from hyperspy.misc.utils import stack
 
 
 def centering_and_whitening(X):
@@ -52,6 +53,25 @@ def centering_and_whitening(X):
     X1 = np.dot(K, X)
     return X1.T, K
 
+def get_diff(signal, diff_axes, diff_order):
+    if signal.axes_manager.signal_dimension == 1:
+        signal = signal.diff(order=diff_order, axis=-1)
+    else:
+        # n-d signal case.
+        # Compute the differences for each signal axis, unfold the
+        # signal axes and stack the differences over the signal
+        # axis.
+        if diff_axes is None:
+            diff_axes = signal.axes_manager.signal_axes
+        iaxes = [axis.index_in_axes_manager
+                for axis in diff_axes]
+        diffs = [signal.diff(order=diff_order, axis=i)
+                for i in iaxes]
+        for signal in diffs:
+            signal.unfold()
+        signal = stack(diffs, axis=-1)
+        del diffs
+    return signal
 
 class MVA():
 
@@ -398,6 +418,7 @@ class MVA():
                                 number_of_components=None,
                                 algorithm='sklearn_fastica',
                                 diff_order=1,
+                                diff_axes=None,
                                 factors=None,
                                 comp_list=None,
                                 mask=None,
@@ -417,15 +438,25 @@ class MVA():
         diff_order : int
             Sometimes it is convenient to perform the BSS on the derivative
             of the signal. If diff_order is 0, the signal is not differentiated.
-        factors : numpy.array
-            Factors to decompose. If None, the BSS is performed on the result
-            of a previous decomposition.
+        diff_axes : None or list of ints or strings
+            If None, when `diff_order` is greater than 1 and `signal_dimension`
+            (`navigation_dimension`) when `on_loadings` is False (True) is
+            greater than 1, the differences are calculated across all
+            signal (navigation) axes. Otherwise the axes can be specified in
+            a list.
+        factors : Signal or numpy array.
+            Factors to decompose. If None, the BSS is performed on the
+            factors of a previous decomposition. If a Signal instance the
+            navigation dimension must be 1 and the size greater than 1. If a
+            numpy array (deprecated) the factors are stored in a 2d array
+            stacked over the last axis.
         comp_list : boolen numpy array
             choose the components to use by the boolean list. It permits
              to choose non contiguous components.
-        mask : numpy boolean array with the same dimension as the signal
-            If not None, the signal locations marked as True (masked) will
-            not be passed to the BSS algorithm.
+        mask : bool numpy array or Signal instance.
+            If not None, the signal locations marked as True are masked. The
+            mask shape must be equal to the signal shape
+            (navigation shape) when `on_loadings` is False (True).
         on_loadings : bool
             If True, perform the BSS on the loadings of a previous
             decomposition. If False, performs it on the factors.
@@ -435,106 +466,189 @@ class MVA():
             Any keyword arguments are passed to the BSS algorithm.
 
         """
-        target = self.learning_results
-        if not hasattr(target, 'factors') or target.factors is None:
-            raise AttributeError(
-                'A decomposition must be performed before blind '
-                'source seperation or factors must be provided.')
-        else:
-            if factors is None:
-                if on_loadings:
-                    factors = target.loadings
+        from hyperspy.signal import Signal
+        from hyperspy._signals.spectrum import Spectrum
+
+        lr = self.learning_results
+
+        # Check mask
+        if mask is not None:
+            ref_shape, space = (
+                (self.axes_manager.navigation_shape, "navigation")
+                 if on_loadings
+                 else
+                 (self.axes_manager.signal_shape, "signal"))
+            if isinstance(mask, np.ndarray):
+                ref_shape = ref_shape[::-1]
+                if mask.shape != ref_shape:
+                    raise ValueError(
+                    "The `mask` shape is not equal to the %s shape in the"
+                    "array. Mask shape: %s\tSignal shape in array: %s" %
+                    (space, str(mask.shape), str(ref_shape)))
                 else:
-                    factors = target.factors
-            bool_index = np.zeros((factors.shape[0]), dtype='bool')
-            if number_of_components is not None:
-                bool_index[:number_of_components] = True
+                    if on_loadings:
+                        mask = self._get_navigation_signal(data=mask)
+                    else:
+                        mask = self._get_signal_signal(data=mask)
+            elif isinstance(mask, Signal):
+                ref_shape = (self.axes_manager.navigation_shape
+                             if on_loadings
+                             else self.axes_manager.signal_shape)
+                if mask.axes_manager.signal_shape != ref_shape:
+                    raise ValueError(
+                    "The `mask` signal shape is not equal to the %s shape in "
+                    "the array. Mask shape: %s\t%s shape:%s" %
+                    (space, str(mask.axes_manager.signal_shape), space,
+                     str(ref_shape)))
+
+        if factors is None:
+            if not hasattr(lr, 'factors') or lr.factors is None:
+                raise AttributeError(
+                    'A decomposition must be performed before blind '
+                    'source seperation or factors must be provided.')
+
             else:
-                if target.output_dimension is not None:
-                    number_of_components = target.output_dimension
-                    bool_index[:number_of_components] = True
+                if on_loadings:
+                    factors = self.get_decomposition_loadings()
+                else:
+                    factors = self.get_decomposition_factors()
 
-            if comp_list is not None:
-                for ifactors in comp_list:
-                    bool_index[ifactors] = True
-                number_of_components = len(comp_list)
-            factors = factors[:, bool_index]
+        # Check factors
+        if not isinstance(factors, Signal):
+            if isinstance(factors, np.ndarray):
+                warnings.warn(
+                    "factors as numpy arrays will raise an error in "
+                    "HyperSpy 0.9 and newer. From them on only passing "
+                    "factors as HyperSpy Signal instances will be "
+                    "supported.",
+                    DeprecationWarning)
+                # We proceed supposing that the factors are spectra stacked
+                # over the last dimension to reproduce the deprecated
+                # behaviour.
+                # TODO: Don't forget to change `factors` docstring when
+                # removing this.
+                factors = Spectrum(factors.T)
+            else:
+                # Change next error message when removing the
+                # DeprecationWarning
+                raise ValueError(
+                    "`factors` must be either a Signal instance or a "
+                    "numpy array but an object of type %s was provided." %
+                    type(factors))
 
-            if pretreatment is not None:
-                from hyperspy._signals.spectrum import Spectrum
-                sfactors = Spectrum(factors.T)
-                if pretreatment['algorithm'] == 'savitzky_golay':
-                    sfactors.smooth_savitzky_golay(
-                        number_of_points=pretreatment[
-                            'number_of_points'],
-                        polynomial_order=pretreatment[
-                            'polynomial_order'],
-                        differential_order=diff_order)
-                if pretreatment['algorithm'] == 'tv':
-                    sfactors.smooth_tv(
-                        smoothing_parameter=pretreatment[
-                            'smoothing_parameter'],
-                        differential_order=diff_order)
-                factors = sfactors.data.T
-                if pretreatment['algorithm'] == 'butter':
-                    b, a = sp.signal.butter(pretreatment['order'],
-                                            pretreatment['cutoff'], pretreatment['type'])
-                    for i in range(factors.shape[1]):
-                        factors[:, i] = sp.signal.filtfilt(b, a,
-                                                           factors[:, i])
-            elif diff_order > 0:
-                factors = np.diff(factors, diff_order, axis=0)
+        # Check factor dimensions
+        if factors.axes_manager.navigation_dimension != 1:
+            raise ValueError("`factors` must have navigation dimension"
+                             "equal one, but the navigation dimension "
+                             "of the given factors is %i." %
+                             factors.axes_manager.navigation_dimension
+                             )
+        elif factors.axes_manager.navigation_size < 2:
+            raise ValueError("`factors` must have navigation size"
+                             "greater than one, but the navigation "
+                             "size of the given factors is %i." %
+                             factors.axes_manager.navigation_size)
 
+        # The diff_axes are given for the main signal. We need to Compute
+        # the correct diff_axes for the factors.
+        # Get diff_axes index in axes manager
+        if diff_axes is not None:
+            diff_axes = [axis.index_in_axes_manager for axis in
+                         [self.axes_manager[axis] for axis in diff_axes]]
+            if on_loadings is False:
+                diff_axes = [index - self.axes_manager.navigation_dimension
+                             for index in diff_axes]
+        # Select components to separate
+        if number_of_components is not None:
+            comp_list = range(number_of_components)
+        elif comp_list is not None:
+            number_of_components = len(comp_list)
+        else:
+            if lr.output_dimension is not None:
+                number_of_components = lr.output_dimension
+                comp_list = range(number_of_components)
+            else:
+                raise ValueError(
+                    "No `number_of_components` or `comp_list` provided.")
+        factors = stack([factors.inav[i] for i in comp_list])
+
+        # Apply differences pre-processing if requested.
+        if diff_order > 0:
+            factors = get_diff(factors,
+                               diff_axes=diff_axes,
+                               diff_order=diff_order)
             if mask is not None:
-                factors = factors[~mask]
+                # The following is a little trick to dilate the mask
+                # as required when operation on the differences. It exploits the
+                # fact that np.diff autimatically "dilates" nans. The trick has
+                # a memory penalty which should be low compare to the total
+                # memory required for the core application in most cases.
 
-            # first center and scale the data
-            factors, invsqcovmat = centering_and_whitening(factors)
-            if algorithm == 'orthomax':
-                _, unmixing_matrix = orthomax(factors, **kwargs)
-                unmixing_matrix = unmixing_matrix.T
+                mask.change_dtype("float")
+                mask.data[mask.data == 1] = np.nan
+                mask = get_diff(mask,
+                                diff_axes=diff_axes,
+                                diff_order=diff_order)
+                mask.data[np.isnan(mask.data)] = 1
+                mask.change_dtype("bool")
 
-            elif algorithm == 'sklearn_fastica':
-                # if sklearn_installed is False:
-                    # raise ImportError(
-                    #'sklearn is not installed. Nothing done')
-                if 'tol' not in kwargs:
-                    kwargs['tol'] = 1e-10
-                target.bss_node = import_sklearn.FastICA(
-                    **kwargs)
-                target.bss_node.whiten = False
-                target.bss_node.fit(factors)
-                try:
-                    unmixing_matrix = target.bss_node.unmixing_matrix_
-                except AttributeError:
-                    # unmixing_matrix was renamed to components
-                    unmixing_matrix = target.bss_node.components_
-            else:
-                if mdp_installed is False:
-                    raise ImportError(
-                        'MDP is not installed. Nothing done')
-                to_exec = 'target.bss_node=mdp.nodes.%sNode(' % algorithm
-                for key, value in kwargs.iteritems():
-                    to_exec += '%s=%s,' % (key, value)
-                to_exec += ')'
-                exec(to_exec)
-                target.bss_node.train(factors)
-                unmixing_matrix = target.bss_node.get_recmatrix()
-            w = np.dot(unmixing_matrix, invsqcovmat)
-            if target.explained_variance is not None:
-                # The output of ICA is not sorted in any way what makes it
-                # difficult to compare results from different unmixings. The
-                # following code is an experimental attempt to sort them in a
-                # more predictable way
-                sorting_indices = np.argsort(np.dot(
-                    target.explained_variance[:number_of_components],
-                    np.abs(w.T)))[::-1]
-                w[:] = w[sorting_indices, :]
-            target.unmixing_matrix = w
-            target.on_loadings = on_loadings
-            self._unmix_components()
-            self._auto_reverse_bss_component(target)
-            target.bss_algorithm = algorithm
+        # Unfold in case the signal_dimension > 1
+        factors.unfold()
+        if mask is not None:
+            mask.unfold()
+            factors = factors.data.T[~mask.data]
+        else:
+            factors = factors.data.T
+
+        # Center and scale the data
+        factors, invsqcovmat = centering_and_whitening(factors)
+
+        # Perform actual BSS
+        if algorithm == 'orthomax':
+            _, unmixing_matrix = orthomax(factors, **kwargs)
+            unmixing_matrix = unmixing_matrix.T
+
+        elif algorithm == 'sklearn_fastica':
+            # if sklearn_installed is False:
+                # raise ImportError(
+                #'sklearn is not installed. Nothing done')
+            if 'tol' not in kwargs:
+                kwargs['tol'] = 1e-10
+            lr.bss_node = import_sklearn.FastICA(
+                **kwargs)
+            lr.bss_node.whiten = False
+            lr.bss_node.fit(factors)
+            try:
+                unmixing_matrix = lr.bss_node.unmixing_matrix_
+            except AttributeError:
+                # unmixing_matrix was renamed to components
+                unmixing_matrix = lr.bss_node.components_
+        else:
+            if mdp_installed is False:
+                raise ImportError(
+                    'MDP is not installed. Nothing done')
+            to_exec = 'lr.bss_node=mdp.nodes.%sNode(' % algorithm
+            for key, value in kwargs.iteritems():
+                to_exec += '%s=%s,' % (key, value)
+            to_exec += ')'
+            exec(to_exec)
+            lr.bss_node.train(factors)
+            unmixing_matrix = lr.bss_node.get_recmatrix()
+        w = np.dot(unmixing_matrix, invsqcovmat)
+        if lr.explained_variance is not None:
+            # The output of ICA is not sorted in any way what makes it
+            # difficult to compare results from different unmixings. The
+            # following code is an experimental attempt to sort them in a
+            # more predictable way
+            sorting_indices = np.argsort(np.dot(
+                lr.explained_variance[:number_of_components],
+                np.abs(w.T)))[::-1]
+            w[:] = w[sorting_indices, :]
+        lr.unmixing_matrix = w
+        lr.on_loadings = on_loadings
+        self._unmix_components()
+        self._auto_reverse_bss_component(lr)
+        lr.bss_algorithm = algorithm
 
     def normalize_factors(self, which='bss', by='area', sort=True):
         """Normalises the factors and modifies the loadings
