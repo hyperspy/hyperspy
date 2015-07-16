@@ -19,9 +19,9 @@
 
 from __future__ import division
 import types
+import warnings
 
 import numpy as np
-import scipy as sp
 import matplotlib.pyplot as plt
 try:
     import mdp
