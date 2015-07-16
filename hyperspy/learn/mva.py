@@ -53,6 +53,7 @@ def centering_and_whitening(X):
     X1 = np.dot(K, X)
     return X1.T, K
 
+
 def get_diff(signal, diff_axes, diff_order):
     if signal.axes_manager.signal_dimension == 1:
         signal = signal.diff(order=diff_order, axis=-1)
@@ -64,14 +65,15 @@ def get_diff(signal, diff_axes, diff_order):
         if diff_axes is None:
             diff_axes = signal.axes_manager.signal_axes
         iaxes = [axis.index_in_axes_manager
-                for axis in diff_axes]
+                 for axis in diff_axes]
         diffs = [signal.diff(order=diff_order, axis=i)
-                for i in iaxes]
+                 for i in iaxes]
         for signal in diffs:
             signal.unfold()
         signal = stack(diffs, axis=-1)
         del diffs
     return signal
+
 
 class MVA():
 
@@ -475,16 +477,16 @@ class MVA():
         if mask is not None:
             ref_shape, space = (
                 (self.axes_manager.navigation_shape, "navigation")
-                 if on_loadings
-                 else
-                 (self.axes_manager.signal_shape, "signal"))
+                if on_loadings
+                else
+                (self.axes_manager.signal_shape, "signal"))
             if isinstance(mask, np.ndarray):
                 ref_shape = ref_shape[::-1]
                 if mask.shape != ref_shape:
                     raise ValueError(
-                    "The `mask` shape is not equal to the %s shape in the"
-                    "array. Mask shape: %s\tSignal shape in array: %s" %
-                    (space, str(mask.shape), str(ref_shape)))
+                        "The `mask` shape is not equal to the %s shape in the"
+                        "array. Mask shape: %s\tSignal shape in array: %s" %
+                        (space, str(mask.shape), str(ref_shape)))
                 else:
                     if on_loadings:
                         mask = self._get_navigation_signal(data=mask)
@@ -496,10 +498,10 @@ class MVA():
                              else self.axes_manager.signal_shape)
                 if mask.axes_manager.signal_shape != ref_shape:
                     raise ValueError(
-                    "The `mask` signal shape is not equal to the %s shape in "
-                    "the array. Mask shape: %s\t%s shape:%s" %
-                    (space, str(mask.axes_manager.signal_shape), space,
-                     str(ref_shape)))
+                        "The `mask` signal shape is not equal to the %s shape in "
+                        "the array. Mask shape: %s\t%s shape:%s" %
+                        (space, str(mask.axes_manager.signal_shape), space,
+                         str(ref_shape)))
 
         if factors is None:
             if not hasattr(lr, 'factors') or lr.factors is None:
