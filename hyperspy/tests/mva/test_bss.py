@@ -1,9 +1,7 @@
 import nose.tools
 import numpy as np
 
-from hyperspy.signals import Spectrum
-
-from hyperspy._signals.spectrum import Spectrum
+from hyperspy.signals import Spectrum, Image
 
 
 def are_bss_components_equivalent(c1_list, c2_list, atol=1e-4):
@@ -33,7 +31,7 @@ def are_bss_components_equivalent(c1_list, c2_list, atol=1e-4):
     return matches == len(c1_list)
 
 
-class TestBSS:
+class TestBSS1D:
 
     def setUp(self):
         ics = np.random.laplace(size=(3, 1000))
@@ -56,36 +54,80 @@ class TestBSS:
         mask = self.s._get_signal_signal(dtype="bool")
         mask[5] = True
         self.s.learning_results.factors[5, :] = np.nan
-        try:
-            self.s.blind_source_separation(3, diff_order=0, mask=mask)
-        except:
-            nose.tools.assert_true(False)
+        self.s.blind_source_separation(3, diff_order=0, mask=mask)
 
     def test_mask_diff_order_1(self):
         mask = self.s._get_signal_signal(dtype="bool")
         mask[5] = True
         self.s.learning_results.factors[5, :] = np.nan
-        try:
-            self.s.blind_source_separation(3, diff_order=1, mask=mask)
-        except:
-            nose.tools.assert_true(False)
+        self.s.blind_source_separation(3, diff_order=1, mask=mask)
 
     def test_mask_diff_order_0_on_loadings(self):
         mask = self.s._get_navigation_signal(dtype="bool")
         mask[5] = True
         self.s.learning_results.loadings[5, :] = np.nan
-        try:
-            self.s.blind_source_separation(3, diff_order=0, mask=mask,
-                                           on_loadings=True)
-        except:
-            nose.tools.assert_true(False)
+        self.s.blind_source_separation(3, diff_order=0, mask=mask,
+                                       on_loadings=True)
 
     def test_mask_diff_order_1_on_loadings(self):
         mask = self.s._get_navigation_signal(dtype="bool")
         mask[5] = True
         self.s.learning_results.loadings[5, :] = np.nan
-        try:
-            self.s.blind_source_separation(3, diff_order=1, mask=mask,
-                                           on_loadings=True)
-        except:
-            nose.tools.assert_true(False)
+        self.s.blind_source_separation(3, diff_order=1, mask=mask,
+                                       on_loadings=True)
+
+
+class TestBSS2D:
+
+    def setUp(self):
+        ics = np.random.laplace(size=(3, 1024))
+        np.random.seed(1)
+        mixing_matrix = np.random.random((100, 3))
+        self.s = Image(np.dot(mixing_matrix, ics).reshape((100, 32, 32)))
+        self.s.decomposition()
+
+    def test_on_loadings(self):
+        self.s.blind_source_separation(
+            3, diff_order=0, fun="exp", on_loadings=False)
+        s2 = self.s.as_spectrum(0)
+        s2.decomposition()
+        s2.blind_source_separation(
+            3, diff_order=0, fun="exp", on_loadings=True)
+        nose.tools.assert_true(are_bss_components_equivalent(
+            self.s.get_bss_factors(), s2.get_bss_loadings()))
+
+    def test_mask_diff_order_0(self):
+        mask = self.s._get_signal_signal(dtype="bool")
+        mask.unfold()
+        mask[5] = True
+        mask.fold()
+        self.s.learning_results.factors[5, :] = np.nan
+        self.s.blind_source_separation(3, diff_order=0, mask=mask)
+
+    def test_mask_diff_order_1(self):
+        mask = self.s._get_signal_signal(dtype="bool")
+        mask.unfold()
+        mask[5] = True
+        mask.fold()
+        self.s.learning_results.factors[5, :] = np.nan
+        self.s.blind_source_separation(3, diff_order=1, mask=mask)
+
+    def test_mask_diff_order_0_on_loadings(self):
+        mask = self.s._get_navigation_signal(dtype="bool")
+        mask.unfold()
+        mask[5] = True
+        mask.fold()
+        self.s.learning_results.loadings[5, :] = np.nan
+        self.s.blind_source_separation(3, diff_order=0, mask=mask,
+                                       on_loadings=True)
+
+    def test_mask_diff_order_1_on_loadings(self):
+        s = self.s.to_spectrum()
+        s.decomposition()
+        mask = s._get_navigation_signal(dtype="bool")
+        mask.unfold()
+        mask[5] = True
+        mask.fold()
+        s.learning_results.loadings[5, :] = np.nan
+        s.blind_source_separation(3, diff_order=1, mask=mask,
+                                  on_loadings=True)
