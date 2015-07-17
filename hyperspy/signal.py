@@ -3794,9 +3794,11 @@ class Signal(MVA,
         """
 
         s = self._deepcopy_with_new_data(
-            np.diff(self.data, order, axis))
-        axis = s.axes_manager._axes[axis]
-        axis.offset += (axis.scale / 2)
+            np.diff(self.data,
+                    n=order,
+                    axis=self.axes_manager[axis].index_in_array))
+        axis = s.axes_manager[axis]
+        axis.offset += (order * axis.scale / 2)
         s.get_dimensions_from_data()
         return s
 
