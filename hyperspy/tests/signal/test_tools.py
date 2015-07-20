@@ -197,6 +197,19 @@ class Test4D:
             axis.name = name
         self.s = s
 
+    def test_diff_data(self):
+        s = self.s
+        diff = s.diff(axis=2, order=2)
+        diff_data = np.diff(s.data, n=2, axis=0)
+        assert_true((diff.data == diff_data).all())
+
+    def test_diff_axis(self):
+        s = self.s
+        diff = s.diff(axis=2, order=2)
+        assert_equal(
+            diff.axes_manager[2].offset,
+            s.axes_manager[2].offset + s.axes_manager[2].scale)
+
     def test_rollaxis_int(self):
         assert_equal(self.s.rollaxis(2, 0).data.shape, (4, 3, 5, 6))
 

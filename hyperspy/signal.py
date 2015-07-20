@@ -3767,18 +3767,15 @@ class Signal(MVA,
     def diff(self, axis, order=1):
         """Returns a signal with the n-th order discrete difference along
         given axis.
-
         Parameters
         ----------
         axis : {int | string}
            The axis can be specified using the index of the axis in
            `axes_manager` or the axis name.
         order: the order of the derivative
-
         See also
         --------
         mean, sum
-
         Examples
         --------
         >>> import numpy as np
@@ -3787,16 +3784,17 @@ class Signal(MVA,
         (64,64,1024)
         >>> s.diff(-1).data.shape
         (64,64,1023)
-
         """
 
         s = self._deepcopy_with_new_data(
-            np.diff(self.data, order, axis))
-        axis = s.axes_manager._axes[axis]
-        axis.offset += (axis.scale / 2)
+            np.diff(self.data,
+                    n=order,
+                    axis=self.axes_manager[axis].index_in_array))
+        axis = s.axes_manager[axis]
+        axis.offset += (order * axis.scale / 2)
         s.get_dimensions_from_data()
         return s
-
+        
     def integrate_simpson(self, axis):
         """Returns a signal with the result of calculating the integral
         of the signal along an axis using Simpson's rule.
