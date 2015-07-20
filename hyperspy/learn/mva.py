@@ -64,8 +64,10 @@ def get_diff(signal, diff_axes, diff_order):
         # axis.
         if diff_axes is None:
             diff_axes = signal.axes_manager.signal_axes
-        iaxes = [axis.index_in_axes_manager
-                 for axis in diff_axes]
+            iaxes = [axis.index_in_axes_manager
+                     for axis in diff_axes]
+        else:
+            iaxes = diff_axes
         diffs = [signal.diff(order=diff_order, axis=i)
                  for i in iaxes]
         for signal in diffs:
@@ -551,11 +553,15 @@ class MVA():
                              "size of the given factors is %i." %
                              factors.axes_manager.navigation_size)
 
-        # The diff_axes are given for the main signal. We need to Compute
+        # Note that we don't check the factor's signal dimension. This is on
+        # purpose as an user may like to apply pretreaments that change their
+        # dimensionality.
+
+        # The diff_axes are given for the main signal. We need to compute
         # the correct diff_axes for the factors.
         # Get diff_axes index in axes manager
         if diff_axes is not None:
-            diff_axes = [axis.index_in_axes_manager for axis in
+            diff_axes = [1 + axis.index_in_axes_manager for axis in
                          [self.axes_manager[axis] for axis in diff_axes]]
             if on_loadings is False:
                 diff_axes = [index - self.axes_manager.navigation_dimension
@@ -585,11 +591,14 @@ class MVA():
                 # fact that np.diff autimatically "dilates" nans. The trick has
                 # a memory penalty which should be low compare to the total
                 # memory required for the core application in most cases.
-
+                mask_diff_axes = (
+                    [iaxis - 1 for iaxis in diff_axes]
+                    if diff_axes is not None
+                    else None)
                 mask.change_dtype("float")
                 mask.data[mask.data == 1] = np.nan
                 mask = get_diff(mask,
-                                diff_axes=diff_axes,
+                                diff_axes=mask_diff_axes,
                                 diff_order=diff_order)
                 mask.data[np.isnan(mask.data)] = 1
                 mask.change_dtype("bool")

@@ -83,8 +83,52 @@ class TestBSS2D:
         ics = np.random.laplace(size=(3, 1024))
         np.random.seed(1)
         mixing_matrix = np.random.random((100, 3))
-        self.s = Image(np.dot(mixing_matrix, ics).reshape((100, 32, 32)))
-        self.s.decomposition()
+        s = Image(np.dot(mixing_matrix, ics).reshape((100, 32, 32)))
+        for (axis, name) in zip(s.axes_manager._axes, ("z", "y", "x")):
+            axis.name = name
+        s.decomposition()
+        self.s = s
+
+    def test_diff_axes_string_with_mask(self):
+        factors = self.s.get_decomposition_factors().inav[:3].diff(
+            axis="x", order=1)
+        self.s.blind_source_separation(
+            3, diff_order=0, fun="exp", on_loadings=False, factors=factors)
+        matrix = self.s.learning_results.unmixing_matrix.copy()
+        print matrix
+        self.s.blind_source_separation(
+            3, diff_order=1, fun="exp", on_loadings=False,
+            diff_axes=["x"],
+            )
+        matrix = self.s.learning_results.unmixing_matrix.copy()
+        nose.tools.assert_true(
+            np.allclose(matrix, self.s.learning_results.unmixing_matrix))
+
+    def test_diff_axes_string_without_mask(self):
+        factors = self.s.get_decomposition_factors().inav[:3].diff(
+            axis="x", order=1)
+        self.s.blind_source_separation(
+            3, diff_order=0, fun="exp", on_loadings=False, factors=factors)
+        matrix = self.s.learning_results.unmixing_matrix.copy()
+        self.s.blind_source_separation(
+            3, diff_order=1, fun="exp", on_loadings=False,
+            diff_axes=["x"],
+            )
+        nose.tools.assert_true(
+            np.allclose(matrix, self.s.learning_results.unmixing_matrix,
+                        atol=1e-3))
+
+    def test_diff_axes_without_mask(self):
+        factors = self.s.get_decomposition_factors().inav[:3].diff(
+            axis="y", order=1)
+        self.s.blind_source_separation(
+            3, diff_order=0, fun="exp", on_loadings=False, factors=factors)
+        matrix = self.s.learning_results.unmixing_matrix.copy()
+        self.s.blind_source_separation(
+            3, diff_order=1, fun="exp", on_loadings=False, diff_axes=[2],)
+        nose.tools.assert_true(
+            np.allclose(matrix, self.s.learning_results.unmixing_matrix,
+                        atol=1e-3))
 
     def test_on_loadings(self):
         self.s.blind_source_separation(
@@ -112,6 +156,15 @@ class TestBSS2D:
         self.s.learning_results.factors[5, :] = np.nan
         self.s.blind_source_separation(3, diff_order=1, mask=mask)
 
+    def test_mask_diff_order_1_diff_axes(self):
+        mask = self.s._get_signal_signal(dtype="bool")
+        mask.unfold()
+        mask[5] = True
+        mask.fold()
+        self.s.learning_results.factors[5, :] = np.nan
+        self.s.blind_source_separation(3, diff_order=1, mask=mask,
+                                       diff_axes=["x", ])
+
     def test_mask_diff_order_0_on_loadings(self):
         mask = self.s._get_navigation_signal(dtype="bool")
         mask.unfold()
@@ -131,3 +184,14 @@ class TestBSS2D:
         s.learning_results.loadings[5, :] = np.nan
         s.blind_source_separation(3, diff_order=1, mask=mask,
                                   on_loadings=True)
+
+    def test_mask_diff_order_1_on_loadings_diff_axes(self):
+        s = self.s.to_spectrum()
+        s.decomposition()
+        mask = s._get_navigation_signal(dtype="bool")
+        mask.unfold()
+        mask[5] = True
+        mask.fold()
+        s.learning_results.loadings[5, :] = np.nan
+        s.blind_source_separation(3, diff_order=1, mask=mask,
+                                  on_loadings=True, diff_axes=["x"])
