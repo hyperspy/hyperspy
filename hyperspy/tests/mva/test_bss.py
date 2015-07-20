@@ -99,7 +99,7 @@ class TestBSS2D:
         self.s.blind_source_separation(
             3, diff_order=1, fun="exp", on_loadings=False,
             diff_axes=["x"],
-            )
+        )
         matrix = self.s.learning_results.unmixing_matrix.copy()
         nose.tools.assert_true(
             np.allclose(matrix, self.s.learning_results.unmixing_matrix))
@@ -113,7 +113,7 @@ class TestBSS2D:
         self.s.blind_source_separation(
             3, diff_order=1, fun="exp", on_loadings=False,
             diff_axes=["x"],
-            )
+        )
         nose.tools.assert_true(
             np.allclose(matrix, self.s.learning_results.unmixing_matrix,
                         atol=1e-3))
