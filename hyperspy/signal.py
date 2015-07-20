@@ -3794,7 +3794,7 @@ class Signal(MVA,
         axis.offset += (order * axis.scale / 2)
         s.get_dimensions_from_data()
         return s
-        
+
     def integrate_simpson(self, axis):
         """Returns a signal with the result of calculating the integral
         of the signal along an axis using Simpson's rule.
