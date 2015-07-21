@@ -435,8 +435,9 @@ class EELSSpectrum(Spectrum):
                 threshold.data[:] = np.nan
         del s
         if np.isnan(threshold.data).any():
-            warnings.warn("No inflexion point could we found in some positions "
-                          "that have been marked with nans.")
+            warnings.warn(
+                "No inflexion point could we found in some positions "
+                "that have been marked with nans.")
         # Create spectrum image, stop and return value
         threshold.metadata.General.title = (
             self.metadata.General.title +
@@ -820,7 +821,8 @@ class EELSSpectrum(Spectrum):
         mapping = {
             'Acquisition_instrument.TEM.convergence_angle': 'tem_par.convergence_angle',
             'Acquisition_instrument.TEM.beam_energy': 'tem_par.beam_energy',
-            'Acquisition_instrument.TEM.Detector.EELS.collection_angle': 'tem_par.collection_angle', }
+            'Acquisition_instrument.TEM.Detector.EELS.collection_angle': 'tem_par.collection_angle',
+        }
         for key, value in mapping.iteritems():
             if self.metadata.has_item(key):
                 exec('%s = self.metadata.%s' % (value, key))
@@ -828,7 +830,8 @@ class EELSSpectrum(Spectrum):
         mapping = {
             'Acquisition_instrument.TEM.convergence_angle': tem_par.convergence_angle,
             'Acquisition_instrument.TEM.beam_energy': tem_par.beam_energy,
-            'Acquisition_instrument.TEM.Detector.EELS.collection_angle': tem_par.collection_angle, }
+            'Acquisition_instrument.TEM.Detector.EELS.collection_angle': tem_par.collection_angle,
+        }
         for key, value in mapping.iteritems():
             if value != t.Undefined:
                 self.metadata.set_item(key, value)

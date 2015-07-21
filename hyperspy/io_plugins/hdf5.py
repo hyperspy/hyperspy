@@ -103,12 +103,11 @@ def file_reader(filename, record_by, mode='r', driver='core',
         current_file_version = get_hspy_format_version(f)
         global default_version
         if current_file_version > default_version:
-            warnings.warn("This file was written using a newer version of "
-                          "the HyperSpy hdf5 file format. "
-                          "I will attempt to load it, but, "
-                          "if I fail, "
-                          "it is likely that I will be more successful at this "
-                          "and other tasks if you upgrade me.")
+            warnings.warn(
+                "This file was written using a newer version of the " +
+                "HyperSpy hdf5 file format. I will attempt to load it, but, " +
+                "if I fail, it is likely that I will be more successful at " +
+                "this and other tasks if you upgrade me.")
 
         experiments = []
         exp_dict_list = []
@@ -231,38 +230,34 @@ def hdfgroup2signaldict(group):
             if "EELS" in exp["metadata"]["Acquisition_instrument"]["TEM"]:
                 if "dwell_time" in exp["metadata"][
                         "Acquisition_instrument"]["TEM"]:
-                    exp["metadata"]["Acquisition_instrument"]["TEM"]["EELS"]["dwell_time"] =\
-                        exp["metadata"]["Acquisition_instrument"][
-                            "TEM"]["dwell_time"]
+                    exp["metadata"]["Acquisition_instrument"]["TEM"]["EELS"]["dwell_time"] = exp[
+                        "metadata"]["Acquisition_instrument"]["TEM"]["dwell_time"]
                     del exp["metadata"]["Acquisition_instrument"][
                         "TEM"]["dwell_time"]
                 if "dwell_time_units" in exp["metadata"][
                         "Acquisition_instrument"]["TEM"]:
-                    exp["metadata"]["Acquisition_instrument"]["TEM"]["EELS"]["dwell_time_units"] =\
-                        exp["metadata"]["Acquisition_instrument"][
-                            "TEM"]["dwell_time_units"]
+                    exp["metadata"]["Acquisition_instrument"]["TEM"]["EELS"]["dwell_time_units"] = exp[
+                        "metadata"]["Acquisition_instrument"]["TEM"]["dwell_time_units"]
                     del exp["metadata"]["Acquisition_instrument"][
                         "TEM"]["dwell_time_units"]
                 if "exposure" in exp["metadata"][
                         "Acquisition_instrument"]["TEM"]:
-                    exp["metadata"]["Acquisition_instrument"]["TEM"]["EELS"]["exposure"] =\
-                        exp["metadata"]["Acquisition_instrument"][
-                            "TEM"]["exposure"]
+                    exp["metadata"]["Acquisition_instrument"]["TEM"]["EELS"]["exposure"] = exp[
+                        "metadata"]["Acquisition_instrument"]["TEM"]["exposure"]
                     del exp["metadata"]["Acquisition_instrument"][
                         "TEM"]["exposure"]
                 if "exposure_units" in exp["metadata"][
                         "Acquisition_instrument"]["TEM"]:
-                    exp["metadata"]["Acquisition_instrument"]["TEM"]["EELS"]["exposure_units"] =\
-                        exp["metadata"]["Acquisition_instrument"][
-                            "TEM"]["exposure_units"]
+                    exp["metadata"]["Acquisition_instrument"]["TEM"]["EELS"]["exposure_units"] = exp[
+                        "metadata"]["Acquisition_instrument"]["TEM"]["exposure_units"]
                     del exp["metadata"]["Acquisition_instrument"][
                         "TEM"]["exposure_units"]
                 if "Detector" not in exp["metadata"][
                         "Acquisition_instrument"]["TEM"]:
                     exp["metadata"]["Acquisition_instrument"][
                         "TEM"]["Detector"] = {}
-                exp["metadata"]["Acquisition_instrument"]["TEM"]["Detector"] = \
-                    exp["metadata"]["Acquisition_instrument"]["TEM"]["EELS"]
+                exp["metadata"]["Acquisition_instrument"]["TEM"]["Detector"] = exp[
+                    "metadata"]["Acquisition_instrument"]["TEM"]["EELS"]
                 del exp["metadata"]["Acquisition_instrument"]["TEM"]["EELS"]
             if "EDS" in exp["metadata"]["Acquisition_instrument"]["TEM"]:
                 if "Detector" not in exp["metadata"][
@@ -273,8 +268,8 @@ def hdfgroup2signaldict(group):
                         "Acquisition_instrument"]["TEM"]["Detector"]:
                     exp["metadata"]["Acquisition_instrument"][
                         "TEM"]["Detector"]["EDS"] = {}
-                exp["metadata"]["Acquisition_instrument"]["TEM"]["Detector"]["EDS"] = \
-                    exp["metadata"]["Acquisition_instrument"]["TEM"]["EDS"]
+                exp["metadata"]["Acquisition_instrument"]["TEM"]["Detector"][
+                    "EDS"] = exp["metadata"]["Acquisition_instrument"]["TEM"]["EDS"]
                 del exp["metadata"]["Acquisition_instrument"]["TEM"]["EDS"]
 
         if "SEM" in exp["metadata"]:
@@ -292,8 +287,8 @@ def hdfgroup2signaldict(group):
                         "Acquisition_instrument"]["SEM"]["Detector"]:
                     exp["metadata"]["Acquisition_instrument"][
                         "SEM"]["Detector"]["EDS"] = {}
-                exp["metadata"]["Acquisition_instrument"]["SEM"]["Detector"]["EDS"] = \
-                    exp["metadata"]["Acquisition_instrument"]["SEM"]["EDS"]
+                exp["metadata"]["Acquisition_instrument"]["SEM"]["Detector"][
+                    "EDS"] = exp["metadata"]["Acquisition_instrument"]["SEM"]["EDS"]
                 del exp["metadata"]["Acquisition_instrument"]["SEM"]["EDS"]
 
         if "Sample" in exp["metadata"] and "Xray_lines" in exp[
@@ -366,18 +361,14 @@ def dict2hdfgroup(dictionary, group, compression=None):
             group.attrs["_datetime_" + key] = repr(value)
         elif isinstance(value, list):
             if len(value):
-                dict2hdfgroup(dict(zip([unicode(i) for i in xrange(len(value))], value)),
-                              group.create_group(
-                                  '_list_' + str(len(value)) + '_' + key),
-                              compression=compression)
+                dict2hdfgroup(dict(zip([unicode(i) for i in xrange(len(value))], value)), group.create_group(
+                    '_list_' + str(len(value)) + '_' + key), compression=compression)
             else:
                 group.attrs['_list_empty_' + key] = '_None_'
         elif isinstance(value, tuple):
             if len(value):
-                dict2hdfgroup(dict(zip([unicode(i) for i in xrange(len(value))], value)),
-                              group.create_group(
-                                  '_tuple_' + str(len(value)) + '_' + key),
-                              compression=compression)
+                dict2hdfgroup(dict(zip([unicode(i) for i in xrange(len(value))], value)), group.create_group(
+                    '_tuple_' + str(len(value)) + '_' + key), compression=compression)
             else:
                 group.attrs['_tuple_empty_' + key] = '_None_'
 
@@ -434,11 +425,11 @@ def hdfgroup2dict(group, dictionary={}):
                                  for k, i in sorted(iter(
                                      hdfgroup2dict(group[key]).iteritems()))])
             elif key.startswith('_list_'):
-                dictionary[key[7 + key[6:].find('_'):]] = [i for k, i in sorted(iter(
-                    hdfgroup2dict(group[key], {}).iteritems()))]
+                dictionary[key[7 + key[6:].find('_'):]] = [i for k, i in sorted(
+                    iter(hdfgroup2dict(group[key], {}).iteritems()))]
             elif key.startswith('_tuple_'):
-                dictionary[key[8 + key[7:].find('_'):]] = tuple([i for k, i in sorted(iter(
-                    hdfgroup2dict(group[key], {}).iteritems()))])
+                dictionary[key[8 + key[7:].find('_'):]] = tuple(
+                    [i for k, i in sorted(iter(hdfgroup2dict(group[key], {}).iteritems()))])
             else:
                 dictionary[key] = {}
                 hdfgroup2dict(group[key], dictionary[key])

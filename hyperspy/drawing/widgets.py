@@ -481,7 +481,9 @@ class ModifiableSpanSelector(matplotlib.widgets.SpanSelector):
         self.cids.append(
             self.canvas.mpl_connect('button_press_event', self.mm_on_press))
         self.cids.append(
-            self.canvas.mpl_connect('button_release_event', self.mm_on_release))
+            self.canvas.mpl_connect(
+                'button_release_event',
+                self.mm_on_release))
         self.cids.append(
             self.canvas.mpl_connect('draw_event', self.update_background))
 

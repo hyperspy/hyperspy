@@ -214,7 +214,8 @@ class ImagePlot(BlittedFigure):
             data = rgb_tools.rgbx2regular_array(data, plot_friendly=True)
         if self.vmin is not None or self.vmax is not None:
             warnings.warn(
-                'vmin or vmax value given, hence auto_contrast is set to False')
+                'vmin or vmax value given, hence '
+                'auto_contrast is set to False')
             self.auto_contrast = False
         self.optimize_contrast(data)
         if (not self.axes_manager or
@@ -266,8 +267,9 @@ class ImagePlot(BlittedFigure):
     def update(self, auto_contrast=None, **kwargs):
         ims = self.ax.images
         redraw_colorbar = False
-        data = rgb_tools.rgbx2regular_array(self.data_function(axes_manager=self.axes_manager),
-                                            plot_friendly=True)
+        data = rgb_tools.rgbx2regular_array(
+            self.data_function(axes_manager=self.axes_manager),
+            plot_friendly=True)
         numrows, numcols = data.shape[:2]
         for marker in self.ax_markers:
             marker.update()
@@ -368,8 +370,10 @@ class ImagePlot(BlittedFigure):
             self.colorbar_vmin = math.floor(vmin / 10 ** oom) * 10 ** oom
             self.colorbar_vmax = self.colorbar_vmin + \
                 self.colorbar_step * (number_of_ticks - 1)
-            self.colorbar_locs = np.arange(0, number_of_ticks
-                                           ) * self.colorbar_step + self.colorbar_vmin
+            self.colorbar_locs = (
+                np.arange(0, number_of_ticks) *
+                self.colorbar_step +
+                self.colorbar_vmin)
 
         def check_tolerance():
             if abs(self.colorbar_vmax - vmax) / vmax > (
