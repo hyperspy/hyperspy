@@ -3798,6 +3798,35 @@ class Signal(MVA,
         s.get_dimensions_from_data()
         return s
 
+    def derivative(self, axis, order=1, central_differences=False):
+        """Numerical derivative along the given axis.
+
+        Currently only the first order finete difference method is implemented.
+        Therefore, the
+        Parameters
+        ----------
+        axis : {int | string}
+           The axis can be specified using the index of the axis in
+           `axes_manager` or the axis name.
+        order: int
+            The order of the derivative
+
+        Returns
+        -------
+        def : Signal
+            The size of the
+
+        See also
+        --------
+        diff
+
+        """
+
+        der = self.diff(order=order, axis=axis)
+        axis = self.axes_manager[axis]
+        der.data /= axis.scale ** order
+        return der
+
     def integrate_simpson(self, axis):
         """Returns a signal with the result of calculating the integral
         of the signal along an axis using Simpson's rule.
