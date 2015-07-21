@@ -91,7 +91,8 @@ class TestDictionaryBrowser:
                                                            'signal_type': ''},
                                                 '_HyperSpy': {'Folding': {'original_axes_manager': None,
                                                                           'original_shape': None,
-                                                                          'unfolded': False}}},
+                                                                          'unfolded': False,
+                                                                          'signal_unfolded': False}}},
                                    'original_metadata': {},
                                    'tmp_parameters': {}
                                    }
