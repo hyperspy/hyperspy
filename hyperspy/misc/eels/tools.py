@@ -293,7 +293,7 @@ def eels_constant(s, zlp, t):
     # Kinetic definitions
     ke = e0 * (1 + e0 / 2. / me) / (1 + e0 / me) ** 2
     tgt = e0 * (2 * me + e0) / (me + e0)
-    k = s._get_navigation_signal()
-    k.data = (t * i0 / (332.5 * ke)) * np.log(1 + (beta * tgt / eaxis) ** 2)
+    k = s.__class__(data=
+        (t * i0 / (332.5 * ke)) * np.log(1 + (beta * tgt / eaxis) ** 2))
     k.metadata.General.title = "EELS proportionality constant K"
     return k

@@ -2534,6 +2534,7 @@ class Signal(MVA,
         mp._HyperSpy.add_node("Folding")
         folding = mp._HyperSpy.Folding
         folding.unfolded = False
+        folding.signal_unfolded = False
         folding.original_shape = None
         folding.original_axes_manager = None
         mp.Signal.binned = False
@@ -3407,20 +3408,17 @@ class Signal(MVA,
 
         return splitted
 
+    # TODO: remove in HyperSpy 0.9
     def unfold_if_multidim(self):
         """Unfold the datacube if it is >2D
 
-        Returns
-        -------
+        Deprecated method, please use unfold.
 
-        Boolean. True if the data was unfolded by the function.
         """
-        if len(self.axes_manager._axes) > 2:
-            print "Automatically unfolding the data"
-            self.unfold()
-            return True
-        else:
-            return False
+        warnings.warn(
+            "`unfold_if_multidim` is deprecated and will be removed in "
+            "HyperSpy 0.9. Please use `unfold` instead.")
+        return unfold
 
     @auto_replot
     def _unfold(self, steady_axes, unfolded_axis):
@@ -3441,9 +3439,9 @@ class Signal(MVA,
         fold
         """
 
-        # It doesn't make sense unfolding when dim < 3
-        if len(self.data.squeeze().shape) < 3:
-            return False
+        # It doesn't make sense unfolding when dim < 2
+        if self.data.squeeze().ndim < 2:
+            return
 
         # We need to store the original shape and coordinates to be used
         # by
@@ -3485,35 +3483,59 @@ class Signal(MVA,
         """Modifies the shape of the data by unfolding the signal and
         navigation dimensions separately
 
+        Returns
+        -------
+        needed_unfolding : bool
+
+
         """
-        self.unfold_navigation_space()
-        self.unfold_signal_space()
+        nav_needed_unfolding = self.unfold_navigation_space()
+        sig_needed_unfolding = self.unfold_signal_space()
+        needed_unfolding = nav_needed_unfolding or sig_needed_unfolding
+        return needed_unfolding
 
     def unfold_navigation_space(self):
         """Modify the shape of the data to obtain a navigation space of
         dimension 1
+
+        Returns
+        -------
+        needed_unfolding : bool
+
         """
 
         if self.axes_manager.navigation_dimension < 2:
-            return False
-        steady_axes = [
-            axis.index_in_array for axis in
-            self.axes_manager.signal_axes]
-        unfolded_axis = (
-            self.axes_manager.navigation_axes[0].index_in_array)
-        self._unfold(steady_axes, unfolded_axis)
+            needed_unfolding = False
+        else:
+            needed_unfolding = True
+            steady_axes = [
+                axis.index_in_array for axis in
+                self.axes_manager.signal_axes]
+            unfolded_axis = (
+                self.axes_manager.navigation_axes[0].index_in_array)
+            self._unfold(steady_axes, unfolded_axis)
+        return needed_unfolding
 
     def unfold_signal_space(self):
         """Modify the shape of the data to obtain a signal space of
         dimension 1
+
+        Returns
+        -------
+        needed_unfolding : bool
+
         """
         if self.axes_manager.signal_dimension < 2:
-            return False
-        steady_axes = [
-            axis.index_in_array for axis in
-            self.axes_manager.navigation_axes]
-        unfolded_axis = self.axes_manager.signal_axes[0].index_in_array
-        self._unfold(steady_axes, unfolded_axis)
+            needed_unfolding = False
+        else:
+            needed_unfolding = True
+            steady_axes = [
+                axis.index_in_array for axis in
+                self.axes_manager.navigation_axes]
+            unfolded_axis = self.axes_manager.signal_axes[0].index_in_array
+            self._unfold(steady_axes, unfolded_axis)
+            self.metadata._HyperSpy.Folding.signal_unfolded = True
+        return needed_unfolding
 
     @auto_replot
     def fold(self):
@@ -3527,6 +3549,7 @@ class Signal(MVA,
             folding.original_shape = None
             folding.original_axes_manager = None
             folding.unfolded = False
+            folding.signal_unfolded = False
             if self.metadata.has_item('Signal.Noise_properties.variance'):
                 variance = self.metadata.Signal.Noise_properties.variance
                 if isinstance(variance, Signal):
@@ -4368,19 +4391,48 @@ class Signal(MVA,
         cs.axes_manager._set_axis_attribute_values("navigate", False)
         return cs
 
-    def _get_navigation_signal(self):
+    def _get_navigation_signal(self, data=None, dtype=None):
+        """Return a signal with the same axes as the navigation space.
+
+        Parameters
+        ----------
+        data : {None, numpy array}, optional
+            If None the `Signal` data is an array of the same dtype as the
+            current one filled with zeros. If a numpy array, the array must
+            have the correct dimensions.
+
+        dtype : data-type, optional
+            The desired data-type for the data array when `data` is None,
+            e.g., `numpy.int8`.  Default is the data type of the current signal
+            data.
+
+
+        """
+        if data is not None:
+            ref_shape = (self.axes_manager._navigation_shape_in_array
+                         if self.axes_manager.navigation_dimension != 0
+                         else (1,))
+            if data.shape != ref_shape:
+                raise ValueError(
+                    "data.shape %s is not equal to the current navigation shape in"
+                    " array which is %s" % (str(data.shape), str(ref_shape)))
+        else:
+            if dtype is None:
+                dtype = self.data.dtype
+            if self.axes_manager.navigation_dimension == 0:
+                data = np.array([0, ], dtype=dtype)
+            else:
+                data = np.zeros(self.axes_manager._navigation_shape_in_array,
+                                dtype=dtype)
         if self.axes_manager.navigation_dimension == 0:
-            s = Signal(np.array([0, ]).astype(self.data.dtype))
+            s = Signal(data)
         elif self.axes_manager.navigation_dimension == 1:
             from hyperspy._signals.spectrum import Spectrum
-            s = Spectrum(
-                np.zeros(self.axes_manager._navigation_shape_in_array,
-                         dtype=self.data.dtype),
-                axes=self.axes_manager._get_navigation_axes_dicts())
+            s = Spectrum(data,
+                         axes=self.axes_manager._get_navigation_axes_dicts())
         elif self.axes_manager.navigation_dimension == 2:
             from hyperspy._signals.image import Image
-            s = Image(np.zeros(self.axes_manager._navigation_shape_in_array,
-                               dtype=self.data.dtype),
+            s = Image(data,
                       axes=self.axes_manager._get_navigation_axes_dicts())
         else:
             s = Signal(np.zeros(self.axes_manager._navigation_shape_in_array,
@@ -4390,27 +4442,45 @@ class Signal(MVA,
                 self.axes_manager.navigation_dimension)
         return s
 
-    def _get_signal_signal(self):
-        if self.axes_manager.signal_dimension == 0:
-            s = Signal(np.array([0, ]).astype(self.data.dtype))
-        elif self.axes_manager.signal_dimension == 1:
-            from hyperspy._signals.spectrum import Spectrum
-            s = Spectrum(np.zeros(
-                self.axes_manager._signal_shape_in_array,
-                dtype=self.data.dtype),
-                axes=self.axes_manager._get_signal_axes_dicts())
-        elif self.axes_manager.signal_dimension == 2:
-            from hyperspy._signals.image import Image
-            s = Image(np.zeros(
-                self.axes_manager._signal_shape_in_array,
-                dtype=self.data.dtype),
-                axes=self.axes_manager._get_signal_axes_dicts())
+    def _get_signal_signal(self, data=None, dtype=None):
+        """Return a signal with the same axes as the signal space.
+
+        Parameters
+        ----------
+        data : {None, numpy array}, optional
+            If None the `Signal` data is an array of the same dtype as the
+            current one filled with zeros. If a numpy array, the array must
+            have the correct dimensions.
+        dtype : data-type, optional
+            The desired data-type for the data array when `data` is None,
+            e.g., `numpy.int8`.  Default is the data type of the current signal
+            data.
+
+        """
+
+        if data is not None:
+            ref_shape = (self.axes_manager._signal_shape_in_array
+                         if self.axes_manager.signal_dimension != 0
+                         else (1,))
+            if data.shape != ref_shape:
+                raise ValueError(
+                    "data.shape %s is not equal to the current signal shape in"
+                    " array which is %s" % (str(data.shape), str(ref_shape)))
         else:
-            s = Signal(np.zeros(
-                self.axes_manager._signal_shape_in_array,
-                dtype=self.data.dtype),
-                axes=self.axes_manager._get_signal_axes_dicts())
-        s.set_signal_type(self.metadata.Signal.signal_type)
+            if dtype is None:
+                dtype = self.data.dtype
+            if self.axes_manager.signal_dimension == 0:
+                data = np.array([0, ], dtype=dtype)
+            else:
+                data = np.zeros(self.axes_manager._signal_shape_in_array,
+                                dtype=dtype)
+
+        if self.axes_manager.signal_dimension == 0:
+            s = Signal(data)
+            s.set_signal_type(self.metadata.Signal.signal_type)
+        else:
+            s = self.__class__(data,
+                               axes=self.axes_manager._get_signal_axes_dicts())
         return s
 
     def __iter__(self):
