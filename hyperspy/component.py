@@ -478,16 +478,16 @@ class Parameter(t.HasTraits):
         # that configure/edit_traits will still work straight out of the box.
         # A whitelist controls which traits to include in this view.
         from traitsui.api import RangeEditor, View, Item
-        et = self.editable_traits()
         whitelist = ['bmax', 'bmin',  'free', 'name', 'std', 'units', 'value']
-        et = [v for v in et if v in whitelist]
-        if 'value' in et:
-            i = et.index('value')
-            v = et.pop(i)
-            et.insert(i, Item(v, editor=RangeEditor(low_name='bmin',
-                                                    high_name='bmax')))
-        v = View(et, buttons=['OK', 'Cancel'])
-        return v
+        editable_traits = [trait for trait in self.editable_traits()
+                           if trait in whitelist]
+        if 'value' in editable_traits:
+            i = editable_traits.index('value')
+            v = editable_traits.pop(i)
+            editable_traits.insert(i, Item(
+                v, editor=RangeEditor(low_name='bmin', high_name='bmax')))
+        view = View(editable_traits, buttons=['OK', 'Cancel'])
+        return view
 
 
 class Component(t.HasTraits):
