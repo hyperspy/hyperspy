@@ -583,8 +583,8 @@ class MVA():
         # Apply differences pre-processing if requested.
         if diff_order > 0:
             factors = get_derivative(factors,
-                               diff_axes=diff_axes,
-                               diff_order=diff_order)
+                                     diff_axes=diff_axes,
+                                     diff_order=diff_order)
             if mask is not None:
                 # The following is a little trick to dilate the mask
                 # as required when operation on the differences. It exploits the
@@ -598,8 +598,8 @@ class MVA():
                 mask.change_dtype("float")
                 mask.data[mask.data == 1] = np.nan
                 mask = get_derivative(mask,
-                                diff_axes=mask_diff_axes,
-                                diff_order=diff_order)
+                                      diff_axes=mask_diff_axes,
+                                      diff_order=diff_order)
                 mask.data[np.isnan(mask.data)] = 1
                 mask.change_dtype("bool")
 
