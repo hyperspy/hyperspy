@@ -3513,7 +3513,7 @@ class Signal(MVA,
             unfolded_axis = (
                 self.axes_manager.navigation_axes[0].index_in_array)
             self._unfold(steady_axes, unfolded_axis)
-            return needed_unfolding
+        return needed_unfolding
 
     def unfold_signal_space(self):
         """Modify the shape of the data to obtain a signal space of
@@ -3533,7 +3533,7 @@ class Signal(MVA,
                 self.axes_manager.navigation_axes]
             unfolded_axis = self.axes_manager.signal_axes[0].index_in_array
             self._unfold(steady_axes, unfolded_axis)
-            return needed_unfolding
+        return needed_unfolding
 
     @auto_replot
     def fold(self):
