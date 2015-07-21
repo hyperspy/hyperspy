@@ -4364,19 +4364,48 @@ class Signal(MVA,
         cs.axes_manager._set_axis_attribute_values("navigate", False)
         return cs
 
-    def _get_navigation_signal(self):
+    def _get_navigation_signal(self, data=None, dtype=None):
+        """Return a signal with the same axes as the navigation space.
+
+        Parameters
+        ----------
+        data : {None, numpy array}, optional
+            If None the `Signal` data is an array of the same dtype as the
+            current one filled with zeros. If a numpy array, the array must
+            have the correct dimensions.
+
+        dtype : data-type, optional
+            The desired data-type for the data array when `data` is None,
+            e.g., `numpy.int8`.  Default is the data type of the current signal
+            data.
+
+
+        """
+        if data is not None:
+            ref_shape = (self.axes_manager._navigation_shape_in_array
+                         if self.axes_manager.navigation_dimension != 0
+                         else (1,))
+            if data.shape != ref_shape:
+                raise ValueError(
+                    "data.shape %s is not equal to the current navigation shape in"
+                    " array which is %s" % (str(data.shape), str(ref_shape)))
+        else:
+            if dtype is None:
+                dtype = self.data.dtype
+            if self.axes_manager.navigation_dimension == 0:
+                data = np.array([0, ], dtype=dtype)
+            else:
+                data = np.zeros(self.axes_manager._navigation_shape_in_array,
+                                dtype=dtype)
         if self.axes_manager.navigation_dimension == 0:
-            s = Signal(np.array([0, ]).astype(self.data.dtype))
+            s = Signal(data)
         elif self.axes_manager.navigation_dimension == 1:
             from hyperspy._signals.spectrum import Spectrum
-            s = Spectrum(
-                np.zeros(self.axes_manager._navigation_shape_in_array,
-                         dtype=self.data.dtype),
-                axes=self.axes_manager._get_navigation_axes_dicts())
+            s = Spectrum(data,
+                         axes=self.axes_manager._get_navigation_axes_dicts())
         elif self.axes_manager.navigation_dimension == 2:
             from hyperspy._signals.image import Image
-            s = Image(np.zeros(self.axes_manager._navigation_shape_in_array,
-                               dtype=self.data.dtype),
+            s = Image(data,
                       axes=self.axes_manager._get_navigation_axes_dicts())
         else:
             s = Signal(np.zeros(self.axes_manager._navigation_shape_in_array,
@@ -4386,27 +4415,45 @@ class Signal(MVA,
                 self.axes_manager.navigation_dimension)
         return s
 
-    def _get_signal_signal(self):
-        if self.axes_manager.signal_dimension == 0:
-            s = Signal(np.array([0, ]).astype(self.data.dtype))
-        elif self.axes_manager.signal_dimension == 1:
-            from hyperspy._signals.spectrum import Spectrum
-            s = Spectrum(np.zeros(
-                self.axes_manager._signal_shape_in_array,
-                dtype=self.data.dtype),
-                axes=self.axes_manager._get_signal_axes_dicts())
-        elif self.axes_manager.signal_dimension == 2:
-            from hyperspy._signals.image import Image
-            s = Image(np.zeros(
-                self.axes_manager._signal_shape_in_array,
-                dtype=self.data.dtype),
-                axes=self.axes_manager._get_signal_axes_dicts())
+    def _get_signal_signal(self, data=None, dtype=None):
+        """Return a signal with the same axes as the signal space.
+
+        Parameters
+        ----------
+        data : {None, numpy array}, optional
+            If None the `Signal` data is an array of the same dtype as the
+            current one filled with zeros. If a numpy array, the array must
+            have the correct dimensions.
+        dtype : data-type, optional
+            The desired data-type for the data array when `data` is None,
+            e.g., `numpy.int8`.  Default is the data type of the current signal
+            data.
+
+        """
+
+        if data is not None:
+            ref_shape = (self.axes_manager._signal_shape_in_array
+                         if self.axes_manager.signal_dimension != 0
+                         else (1,))
+            if data.shape != ref_shape:
+                raise ValueError(
+                    "data.shape %s is not equal to the current signal shape in"
+                    " array which is %s" % (str(data.shape), str(ref_shape)))
         else:
-            s = Signal(np.zeros(
-                self.axes_manager._signal_shape_in_array,
-                dtype=self.data.dtype),
-                axes=self.axes_manager._get_signal_axes_dicts())
-        s.set_signal_type(self.metadata.Signal.signal_type)
+            if dtype is None:
+                dtype = self.data.dtype
+            if self.axes_manager.signal_dimension == 0:
+                data = np.array([0, ], dtype=dtype)
+            else:
+                data = np.zeros(self.axes_manager._signal_shape_in_array,
+                                dtype=dtype)
+
+        if self.axes_manager.signal_dimension == 0:
+            s = Signal(data)
+            s.set_signal_type(self.metadata.Signal.signal_type)
+        else:
+            s = self.__class__(data,
+                               axes=self.axes_manager._get_signal_axes_dicts())
         return s
 
     def __iter__(self):
