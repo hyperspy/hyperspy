@@ -43,13 +43,6 @@ class NoneFloat(t.CFloat):   # Lazy solution, but usable
         return super(NoneFloat, self).validate(object, name, value)
 
 
-def _editor_wrapper(self):
-    from traitsui.api import TextEditor
-    if not isinstance(self.editor, TextEditor()):
-        self.editor = TextEditor()
-    return self.editor
-
-
 class Parameter(t.HasTraits):
 
     """Model parameter
@@ -111,7 +104,6 @@ class Parameter(t.HasTraits):
     # to avoid importing traitsui prematurely
     value = t.Property(
         t.Either([t.CFloat(0), Array()]))
-    value.get_editor = _editor_wrapper
 
     units = t.Str('')
     free = t.Property(t.CBool(True))
@@ -478,6 +470,19 @@ class Parameter(t.HasTraits):
         if save_std is True:
             self.as_signal(field='std').save(append2pathname(
                 filename, '_std'))
+
+    def default_traits_view(self):
+        from traitsui.api import RangeEditor, View, Item
+        et = self.editable_traits()
+        whitelist = ['bmax', 'bmin',  'free', 'name', 'std', 'units', 'value']
+        et = [v for v in et if v in whitelist]
+        if 'value' in et:
+            i = et.index('value')
+            v = et.pop(i)
+            et.insert(i, Item(v, editor=RangeEditor(low_name='bmin',
+                                                    high_name='bmax')))
+        v = View(et, buttons=['OK', 'Cancel'])
+        return v
 
 
 class Component(t.HasTraits):
