@@ -100,8 +100,8 @@ class Parameter(t.HasTraits):
 
     # traitsui bugs out trying to make an editor for this, so always specify!
     # (it bugs out, because both editor shares the object, and Array editors
-    # don't like non-sequence objects). TextEditor() works well. Use a wrapper
-    # to avoid importing traitsui prematurely
+    # don't like non-sequence objects). TextEditor() works well, so does
+    # RangeEditor() as it works with bmin/bmax.
     value = t.Property(
         t.Either([t.CFloat(0), Array()]))
 
