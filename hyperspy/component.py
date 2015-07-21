@@ -472,6 +472,11 @@ class Parameter(t.HasTraits):
                 filename, '_std'))
 
     def default_traits_view(self):
+        # As mentioned above, the default editor for
+        # value = t.Property(t.Either([t.CFloat(0), Array()]))
+        # gives a ValueError. We therefore implement default_traits_view so
+        # that configure/edit_traits will still work straight out of the box.
+        # A whitelist controls which traits to include in this view.
         from traitsui.api import RangeEditor, View, Item
         et = self.editable_traits()
         whitelist = ['bmax', 'bmin',  'free', 'name', 'std', 'units', 'value']
