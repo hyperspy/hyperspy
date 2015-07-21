@@ -22,7 +22,7 @@ import warnings
 import traits.api as t
 with warnings.catch_warnings():
     warnings.simplefilter("ignore")
-    from hyperspy.misc.io.tifffile import imsave, TiffFile
+    from hyperspy.misc.borrowed.tifffile import imsave, TiffFile
 from hyperspy.misc import rgb_tools
 
 # Plugin characteristics
