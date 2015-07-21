@@ -933,22 +933,27 @@ class Signal1DTools(object):
         else:
             smoother.edit_traits()
 
-    def _remove_background_cli(self, signal_range, background_estimator):
+    def _remove_background_cli(self, signal_range, background_estimator, estimate_background=True):
         from hyperspy.model import Model
         model = Model(self)
         model.append(background_estimator)
-        background_estimator.estimate_parameters(
-            self,
-            signal_range[0],
-            signal_range[1],
-            only_current=False)
+        if estimate_background:
+            background_estimator.estimate_parameters(
+                self,
+                signal_range[0],
+                signal_range[1],
+                only_current=False)
+        else:
+            model.set_signal_range(signal_range[0], signal_range[1])
+            model.multifit()
         return self - model.as_signal()
 
     def remove_background(
             self,
             signal_range='interactive',
             background_type='PowerLaw',
-            polynomial_order=2):
+            polynomial_order=2,
+            estimate_background=True):
         """Remove the background, either in place using a gui or returned as a new
         spectrum using the command line.
 
@@ -964,11 +969,25 @@ class Signal1DTools(object):
             If Polynomial is used, the polynomial order can be specified
         polynomial_order : int, default 2
             Specify the polynomial order if a Polynomial background is used.
+        estimate_background : bool
+            If True, estimate the background. If False, the signal is fitted
+            using a full model. This is slower compared to the estimation but 
+            possibly more accurate. 
 
         Examples
         --------
-        >>>> s.remove_background() # Using gui, replaces spectrum s
-        >>>> s2 = s.remove_background(signal_range=(400,450), background_type='PowerLaw') #Using cli, returns a spectrum
+
+        Using gui, replaces spectrum s
+
+        >>>> s.remove_background()
+
+        Using command line, returns a spectrum
+
+        >>>> s = s.remove_background(signal_range=(400,450), background_type='PowerLaw')
+
+        Using a full model to fit the background
+
+        >>>> s = s.remove_background(signal_range=(400,450), estimate_background=False)
 
         Raises
         ------
@@ -995,7 +1014,7 @@ class Signal1DTools(object):
                     " not recognized")
 
             spectra = self._remove_background_cli(
-                signal_range, background_estimator)
+                signal_range, background_estimator, estimate_background)
             return spectra
 
     @interactive_range_selector
