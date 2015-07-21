@@ -23,7 +23,6 @@ import traits.api as t
 from hyperspy.misc import rgb_tools
 try:
     from skimage.external.tifffile import imsave, TiffFile
-    raise ImportError
 except ImportError:
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
