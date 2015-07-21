@@ -70,7 +70,7 @@ from hyperspy.misc import rgb_tools
 from hyperspy.gui.tools import IntegrateArea
 from hyperspy import components
 from hyperspy.misc.utils import underline
-from hyperspy.misc.borrowed.astroML.histtools import histogram
+from hyperspy.external.astroML.histtools import histogram
 from hyperspy.drawing.utils import animate_legend
 
 
