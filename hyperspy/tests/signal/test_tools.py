@@ -89,6 +89,11 @@ class Test2D:
         s.unfold()
         nt.assert_equal(s.data.shape, (50,))
 
+    def test_unfold_image_returns_true(self):
+        s = self.signal
+        s.axes_manager.set_signal_dimension(2)
+        nt.assert_true(s.unfold())
+
 
 class Test3D:
 
@@ -283,6 +288,12 @@ class Test4D:
     def test_unfold_spectrum(self):
         self.s.unfold()
         nt.assert_equal(self.s.data.shape, (60, 6))
+
+    def test_unfold_spectrum_returns_true(self):
+        nt.assert_true(self.s.unfold())
+
+    def test_unfold_spectrum_signal_returns_false(self):
+        nt.assert_false(self.s.unfold_signal_space())
 
     def test_unfold_image(self):
         im = self.s.to_image()
