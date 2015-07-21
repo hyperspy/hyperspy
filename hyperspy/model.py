@@ -43,7 +43,7 @@ from hyperspy.defaults_parser import preferences
 from hyperspy.axes import generate_axis
 from hyperspy.exceptions import WrongObjectError
 from hyperspy.decorators import interactive_range_selector
-from hyperspy.misc.mpfit.mpfit import mpfit
+from hyperspy.external.mpfit.mpfit import mpfit
 from hyperspy.axes import AxesManager
 from hyperspy.drawing.widgets import (DraggableVerticalLine,
                                       DraggableLabel)
