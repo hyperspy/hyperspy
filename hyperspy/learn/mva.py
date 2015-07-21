@@ -54,7 +54,7 @@ def centering_and_whitening(X):
     return X1.T, K
 
 
-def get_diff(signal, diff_axes, diff_order):
+def get_derivative(signal, diff_axes, diff_order):
     if signal.axes_manager.signal_dimension == 1:
         signal = signal.diff(order=diff_order, axis=-1)
     else:
@@ -68,7 +68,7 @@ def get_diff(signal, diff_axes, diff_order):
                      for axis in diff_axes]
         else:
             iaxes = diff_axes
-        diffs = [signal.diff(order=diff_order, axis=i)
+        diffs = [signal.derivative(order=diff_order, axis=i)
                  for i in iaxes]
         for signal in diffs:
             signal.unfold()
@@ -582,7 +582,7 @@ class MVA():
 
         # Apply differences pre-processing if requested.
         if diff_order > 0:
-            factors = get_diff(factors,
+            factors = get_derivative(factors,
                                diff_axes=diff_axes,
                                diff_order=diff_order)
             if mask is not None:
@@ -597,7 +597,7 @@ class MVA():
                     else None)
                 mask.change_dtype("float")
                 mask.data[mask.data == 1] = np.nan
-                mask = get_diff(mask,
+                mask = get_derivative(mask,
                                 diff_axes=mask_diff_axes,
                                 diff_order=diff_order)
                 mask.data[np.isnan(mask.data)] = 1
