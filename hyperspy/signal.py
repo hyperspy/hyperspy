@@ -4346,10 +4346,16 @@ class Signal(MVA,
 
         Parameters
         ----------
-        data : {None, numpy array}
+        data : {None, numpy array}, optional
             If None the `Signal` data is an array of the same dtype as the
             current one filled with zeros. If a numpy array, the array must
             have the correct dimensions.
+
+        dtype : data-type, optional
+            The desired data-type for the data array when `data` is None,
+            e.g., `numpy.int8`.  Default is the data type of the current signal
+            data.
+
 
         """
         if data is not None:
@@ -4391,10 +4397,14 @@ class Signal(MVA,
 
         Parameters
         ----------
-        data : {None, numpy array}
+        data : {None, numpy array}, optional
             If None the `Signal` data is an array of the same dtype as the
             current one filled with zeros. If a numpy array, the array must
             have the correct dimensions.
+        dtype : data-type, optional
+            The desired data-type for the data array when `data` is None,
+            e.g., `numpy.int8`.  Default is the data type of the current signal
+            data.
 
         """
 
