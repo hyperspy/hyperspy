@@ -516,6 +516,13 @@ class ImageObject(object):
         shape = tuple([dimension[1] for dimension in dimensions])
         return shape[::-1]  # DM uses image indexing X, Y, Z...
 
+    # For some image stacks created using plugins in Digital Micrograph
+    # the metadata under Calibrations.Dimension would not reflect the 
+    # actual dimensions in the dataset, leading to these images not
+    # loading properly. To allow HyperSpy to load these files, any missing
+    # dimensions in the metadata is appended with "dummy" values.
+    # This is done for the offsets, scales and units properties, using
+    # the len_diff variable
     @property
     def offsets(self):
         dimensions = self.imdict.ImageData.Calibrations.Dimension
