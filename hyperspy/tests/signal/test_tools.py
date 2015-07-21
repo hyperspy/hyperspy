@@ -64,14 +64,14 @@ class Test2D:
 
     def test_estimate_poissonian_noise_copy_data(self):
         self.signal.estimate_poissonian_noise_variance()
-        nt.assert_true(self.signal.metadata.Signal.Noise_properties.variance.data
-                       is not self.signal.data)
+        variance = self.signal.metadata.Signal.Noise_properties.variance
+        nt.assert_true(
+            variance.data is not self.signal.data)
 
     def test_estimate_poissonian_noise_noarg(self):
         self.signal.estimate_poissonian_noise_variance()
-        nt.assert_true(
-            (self.signal.metadata.Signal.Noise_properties.variance.data ==
-             self.signal.data).all())
+        variance = self.signal.metadata.Signal.Noise_properties.variance
+        nt.assert_true((variance.data == self.signal.data).all())
 
     def test_estimate_poissonian_noise_with_args(self):
         self.signal.estimate_poissonian_noise_variance(
@@ -79,9 +79,9 @@ class Test2D:
             gain_factor=2,
             gain_offset=1,
             correlation_factor=0.5)
+        variance = self.signal.metadata.Signal.Noise_properties.variance
         nt.assert_true(
-            (self.signal.metadata.Signal.Noise_properties.variance.data ==
-             (self.signal.data * 2 + 1) * 0.5).all())
+            (variance.data == (self.signal.data * 2 + 1) * 0.5).all())
 
     def test_unfold_image(self):
         s = self.signal
@@ -169,13 +169,13 @@ class Test3D:
     def test_get_navigation_signal_wrong_data_shape(self):
         s = self.signal
         s.axes_manager.set_signal_dimension(1)
-        ns = s._get_navigation_signal(data=np.zeros((3, 2)))
+        s._get_navigation_signal(data=np.zeros((3, 2)))
 
     @nt.raises(ValueError)
     def test_get_navigation_signal_wrong_data_shape_dim0(self):
         s = self.signal
         s.axes_manager.set_signal_dimension(3)
-        ns = s._get_navigation_signal(data=np.asarray(0))
+        s._get_navigation_signal(data=np.asarray(0))
 
     def test_get_navigation_signal_given_data(self):
         s = self.signal
@@ -220,13 +220,13 @@ class Test3D:
     def test_get_signal_signal_wrong_data_shape(self):
         s = self.signal
         s.axes_manager.set_signal_dimension(1)
-        ns = s._get_signal_signal(data=np.zeros((3, 2)))
+        s._get_signal_signal(data=np.zeros((3, 2)))
 
     @nt.raises(ValueError)
     def test_get_signal_signal_wrong_data_shape_dim0(self):
         s = self.signal
         s.axes_manager.set_signal_dimension(0)
-        ns = s._get_signal_signal(data=np.asarray(0))
+        s._get_signal_signal(data=np.asarray(0))
 
     def test_get_signal_signal_given_data(self):
         s = self.signal
