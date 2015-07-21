@@ -4001,8 +4001,7 @@ class Signal(MVA,
         hist_spec.metadata.Signal.binned = True
         return hist_spec
 
-    def map(self, function,
-            show_progressbar=None, **kwargs):
+    def map(self, function, overwrite=False, show_progressbar=None, **kwargs):
         """Apply a function to the signal data at all the coordinates.
 
         The function must operate on numpy arrays and the output *must have the
@@ -4021,11 +4020,24 @@ class Signal(MVA,
 
         function : function
             A function that can be applied to the signal.
+        overwrite : bool
+            If True, the output of the function overwrites the original signal.
+            If False (default), the output is generated as a new signal.
         show_progressbar : None or bool
             If True, display a progress bar. If None the default is set in
             `preferences`.
         keyword arguments : any valid keyword argument
-            All extra keyword arguments are passed to the
+            All extra keyword arguments are passed to the function being mapped.
+
+        Returns
+        -------
+        If overwrite is True:
+            the original signal is overwritten with the output of the function
+
+        If overwrite is False:
+            A structured array with shape equal to input navigation dimensions
+            where each entry in that array is itself an array containing the
+            result of the function on each signal.
 
         Notes
         -----
@@ -4068,12 +4080,12 @@ class Signal(MVA,
             scale.add(self.axes_manager[i].scale)
             units.add(self.axes_manager[i].units)
         if len(units) != 1 or len(scale) != 1:
-            warnings.warn("The function you applied does not take into "
-                          "account the difference of units and of scales in-between"
-                          " axes.")
+            warnings.warn("The function you applied does not take into account"
+                          "the difference of units and of scales between axes.")
+
         # If the function has an axis argument and the signal dimension is 1,
         # we suppose that it can operate on the full array and we don't
-        # interate over the coordinates.
+        # iterate over the coordinates.
         try:
             fargs = inspect.getargspec(function).args
         except TypeError:
@@ -4101,11 +4113,22 @@ class Signal(MVA,
                 disabled=not show_progressbar)
             iterators = [signal[1]._iterate_signal() for signal in ndkwargs]
             iterators = tuple([self._iterate_signal()] + iterators)
-            for data in zip(*iterators):
-                for (key, value), datum in zip(ndkwargs, data[1:]):
-                    kwargs[key] = datum[0]
-                data[0][:] = function(data[0], **kwargs)
-                pbar.next()
+            if overwrite is True:
+                for data in zip(*iterators):
+                    for (key, value), datum in zip(ndkwargs, data[1:]):
+                        kwargs[key] = datum[0]
+                    data[0][:] = function(data[0], **kwargs)
+                    pbar.next()
+            else:
+                arr_shape = (self.axes_manager._navigation_shape_in_array
+                             if self.axes_manager.navigation_size > 0
+                             else [1, ])
+                out_array = np.zeros(arr_shape, dtype=object)
+                for z, indices in zip(self._iterate_signal(),
+                                      self.axes_manager._array_indices_generator()):
+                    out_array[indices] = function(z, **kwargs)
+                    pbar.next()
+                return out_array
             pbar.finish()
 
     def copy(self):
