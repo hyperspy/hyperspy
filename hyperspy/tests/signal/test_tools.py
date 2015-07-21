@@ -234,7 +234,9 @@ def test_signal_iterator():
     for i, signal in enumerate(s):
         assert_equal(i, signal.data[0])
 
+
 class TestDerivative:
+
     def setup(self):
         offset = 3
         scale = 0.1
@@ -247,4 +249,4 @@ class TestDerivative:
     def test_derivative_data(self):
         self.s.derivative(axis=0, order=4)
         assert_true(np.allclose(self.s.data,
-                    np.sin(self.s.axes_manager[0].axis)))
+                                np.sin(self.s.axes_manager[0].axis)))
