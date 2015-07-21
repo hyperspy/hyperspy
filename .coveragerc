@@ -6,7 +6,6 @@ omit =
     */hyperspy/external/*
     */hyperspy/ipython_profile/*
     */hyperspy/drawing/*
-    */hyperspy/mpfit/*
     */hyperspy/gui/*
     */setup.py
     */examples/*
