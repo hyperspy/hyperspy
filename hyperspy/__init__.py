@@ -40,6 +40,3 @@ os.environ['QT_API'] = "pyqt"
 import Release
 
 __version__ = Release.version
-
-
-

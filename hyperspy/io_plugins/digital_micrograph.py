@@ -241,10 +241,10 @@ class DigitalMicrographReader(object):
                 raise DM3TagIDError(tag_header['tag_id'])
 
     def get_data_reader(self, enc_dtype):
-    # _data_type dictionary.
-    # The first element of the InfoArray in the TagType
-    # will always be one of _data_type keys.
-    # the tuple reads: ('read bytes function', 'number of bytes', 'type')
+        # _data_type dictionary.
+        # The first element of the InfoArray in the TagType
+        # will always be one of _data_type keys.
+        # the tuple reads: ('read bytes function', 'number of bytes', 'type')
 
         dtype_dict = {
             2: (read_short, 2, 'h'),

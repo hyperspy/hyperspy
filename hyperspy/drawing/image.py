@@ -164,8 +164,8 @@ class ImagePlot(BlittedFigure):
 
     def optimize_contrast(self, data):
         if (self.vmin is not None and
-            self.vmax is not None and
-            not self.auto_contrast):
+                self.vmax is not None and
+                not self.auto_contrast):
             return
         if 'complex' in data.dtype.name:
             data = np.log(np.abs(data))
