@@ -2534,6 +2534,7 @@ class Signal(MVA,
         mp._HyperSpy.add_node("Folding")
         folding = mp._HyperSpy.Folding
         folding.unfolded = False
+        folding.signal_unfolded = False
         folding.original_shape = None
         folding.original_axes_manager = None
         mp.Signal.binned = False
@@ -3514,6 +3515,7 @@ class Signal(MVA,
             self.axes_manager.navigation_axes]
         unfolded_axis = self.axes_manager.signal_axes[0].index_in_array
         self._unfold(steady_axes, unfolded_axis)
+        self.metadata._HyperSpy.Folding.signal_unfolded = True
 
     @auto_replot
     def fold(self):
@@ -3527,6 +3529,7 @@ class Signal(MVA,
             folding.original_shape = None
             folding.original_axes_manager = None
             folding.unfolded = False
+            folding.signal_unfolded = False
             if self.metadata.has_item('Signal.Noise_properties.variance'):
                 variance = self.metadata.Signal.Noise_properties.variance
                 if isinstance(variance, Signal):
