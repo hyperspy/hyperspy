@@ -185,7 +185,7 @@ class EDSSpectrum(Spectrum):
             mp = s.metadata.Acquisition_instrument.TEM
         if mp.has_item('Detector.EDS.live_time'):
             mp.Detector.EDS.live_time = mp.Detector.EDS.live_time * \
-                self.axes_manager.shape[axis]
+                self.axes_manager[axis].size
         return s
 
     def rebin(self, new_shape):
@@ -922,12 +922,6 @@ class EDSSpectrum(Spectrum):
         get_lines_intensity, estimate_background_windows
         """
         super(EDSSpectrum, self).plot(**kwargs)
-        self._plot_xray_lines(xray_lines, only_lines, only_one,
-                              background_windows, integration_windows)
-
-    def _plot_xray_lines(self, xray_lines=False, only_lines=("a", "b"),
-                         only_one=False, background_windows=None,
-                         integration_windows=None):
         if xray_lines is not False or\
                 background_windows is not None or\
                 integration_windows is not None:

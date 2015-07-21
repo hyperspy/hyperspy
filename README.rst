@@ -2,7 +2,7 @@
 
 |Travis|_ |Coveralls|_ |pypi_version|_ |pypi_downloads|_ 
 
-.. |Travis| image:: https://api.travis-ci.org/hyperspy/hyperspy.png?branch=master
+.. |Travis| image:: https://api.travis-ci.org/hyperspy/hyperspy.png?branch=0.8.x
 .. _Travis: https://travis-ci.org/hyperspy/hyperspy
 
 .. |Coveralls| image:: https://coveralls.io/repos/hyperspy/hyperspy/badge.svg

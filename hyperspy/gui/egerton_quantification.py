@@ -103,7 +103,8 @@ class BackgroundRemoval(SpanSelectorInSpectrum):
         self.bg_line.data_function = self.bg_to_plot
         self.bg_line.set_line_properties(
             color='blue',
-            type='line')
+            type='line',
+            scaley=False)
         self.signal._plot.signal_plot.add_line(self.bg_line)
         self.bg_line.autoscale = False
         self.bg_line.plot()
