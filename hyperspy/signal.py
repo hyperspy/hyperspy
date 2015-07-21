@@ -3408,20 +3408,17 @@ class Signal(MVA,
 
         return splitted
 
+    # TODO: remove in HyperSpy 0.9
     def unfold_if_multidim(self):
         """Unfold the datacube if it is >2D
 
-        Returns
-        -------
+        Deprecated method, please use unfold.
 
-        Boolean. True if the data was unfolded by the function.
         """
-        if len(self.axes_manager._axes) > 2:
-            print "Automatically unfolding the data"
-            self.unfold()
-            return True
-        else:
-            return False
+        warnings.warn(
+            "`unfold_if_multidim` is deprecated and will be removed in "
+            "HyperSpy 0.9. Please use `unfold` instead.")
+        return unfold
 
     @auto_replot
     def _unfold(self, steady_axes, unfolded_axis):
@@ -3442,9 +3439,9 @@ class Signal(MVA,
         fold
         """
 
-        # It doesn't make sense unfolding when dim < 3
-        if len(self.data.squeeze().shape) < 3:
-            return False
+        # It doesn't make sense unfolding when dim < 2
+        if self.data.squeeze().ndim < 2:
+            return
 
         # We need to store the original shape and coordinates to be used
         # by
@@ -3486,36 +3483,59 @@ class Signal(MVA,
         """Modifies the shape of the data by unfolding the signal and
         navigation dimensions separately
 
+        Returns
+        -------
+        needed_unfolding : bool
+
+
         """
-        self.unfold_navigation_space()
-        self.unfold_signal_space()
+        nav_needed_unfolding = self.unfold_navigation_space()
+        sig_needed_unfolding = self.unfold_signal_space()
+        needed_unfolding = nav_needed_unfolding or sig_needed_unfolding
+        return needed_unfolding
 
     def unfold_navigation_space(self):
         """Modify the shape of the data to obtain a navigation space of
         dimension 1
+
+        Returns
+        -------
+        needed_unfolding : bool
+
         """
 
         if self.axes_manager.navigation_dimension < 2:
-            return False
-        steady_axes = [
-            axis.index_in_array for axis in
-            self.axes_manager.signal_axes]
-        unfolded_axis = (
-            self.axes_manager.navigation_axes[0].index_in_array)
-        self._unfold(steady_axes, unfolded_axis)
+            needed_unfolding = False
+        else:
+            needed_unfolding = True
+            steady_axes = [
+                axis.index_in_array for axis in
+                self.axes_manager.signal_axes]
+            unfolded_axis = (
+                self.axes_manager.navigation_axes[0].index_in_array)
+            self._unfold(steady_axes, unfolded_axis)
+        return needed_unfolding
 
     def unfold_signal_space(self):
         """Modify the shape of the data to obtain a signal space of
         dimension 1
+
+        Returns
+        -------
+        needed_unfolding : bool
+
         """
         if self.axes_manager.signal_dimension < 2:
-            return False
-        steady_axes = [
-            axis.index_in_array for axis in
-            self.axes_manager.navigation_axes]
-        unfolded_axis = self.axes_manager.signal_axes[0].index_in_array
-        self._unfold(steady_axes, unfolded_axis)
-        self.metadata._HyperSpy.Folding.signal_unfolded = True
+            needed_unfolding = False
+        else:
+            needed_unfolding = True
+            steady_axes = [
+                axis.index_in_array for axis in
+                self.axes_manager.navigation_axes]
+            unfolded_axis = self.axes_manager.signal_axes[0].index_in_array
+            self._unfold(steady_axes, unfolded_axis)
+            self.metadata._HyperSpy.Folding.signal_unfolded = True
+        return needed_unfolding
 
     @auto_replot
     def fold(self):
