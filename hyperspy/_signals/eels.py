@@ -1172,7 +1172,7 @@ class EELSSpectrum(Spectrum):
         if 'thickness' in output:
             thickness = eps._get_navigation_signal(
                 data=te[self.axes_manager._get_data_slice(
-                [(axis.index_in_array, 0)])] )
+                    [(axis.index_in_array, 0)])])
             thickness.metadata.General.title = (
                 self.metadata.General.title + ' thickness '
                 '(calculated using Kramers-Kronig analysis)')
