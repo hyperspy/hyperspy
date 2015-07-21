@@ -102,8 +102,7 @@ class Parameter(t.HasTraits):
     # (it bugs out, because both editor shares the object, and Array editors
     # don't like non-sequence objects). TextEditor() works well, so does
     # RangeEditor() as it works with bmin/bmax.
-    value = t.Property(
-        t.Either([t.CFloat(0), Array()]))
+    value = t.Property(t.Either([t.CFloat(0), Array()]))
 
     units = t.Str('')
     free = t.Property(t.CBool(True))
