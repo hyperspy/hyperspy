@@ -28,7 +28,10 @@ class Image(Signal):
 
     def __init__(self, *args, **kw):
         super(Image, self).__init__(*args, **kw)
-        self.axes_manager.set_signal_dimension(2)
+        if self.metadata._HyperSpy.Folding.signal_unfolded:
+            self.axes_manager.set_signal_dimension(1)
+        else:
+            self.axes_manager.set_signal_dimension(2)
 
     def to_spectrum(self):
         """Returns the image as a spectrum.
