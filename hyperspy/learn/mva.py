@@ -159,7 +159,7 @@ class MVA():
 
         # Apply pre-treatments
         # Transform the data in a line spectrum
-        self._unfolded4decomposition = self.unfold_if_multidim()
+        self._unfolded4decomposition = self.unfold()
         try:
             if hasattr(navigation_mask, 'ravel'):
                 navigation_mask = navigation_mask.ravel()
@@ -688,7 +688,7 @@ class MVA():
             signal_name = 'model from %s with %i components' % (
                 mva_type, components)
 
-        self._unfolded4decomposition = self.unfold_if_multidim()
+        self._unfolded4decomposition = self.unfold()
 
         sc = self.deepcopy()
         sc.data = a.T.reshape(self.data.shape)
@@ -843,7 +843,7 @@ class MVA():
         messages.information(
             "Scaling the data to normalize the (presumably)"
             " Poissonian noise")
-        refold = self.unfold_if_multidim()
+        refold = self.unfold()
         # The rest of the code assumes that the first data axis
         # is the navigation axis. We transpose the data if that is not the
         # case.
