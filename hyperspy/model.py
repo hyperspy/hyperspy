@@ -223,6 +223,16 @@ class Model(list):
         raise NotImplementedError
 
     @property
+    def axes_manager(self):
+        return self._axes_manager
+
+    @axes_manager.setter
+    def axes_manager(self, value):
+        for component in self:
+            component._axes_manager = value
+        self._axes_manager = value
+
+    @property
     def spectrum(self):
         return self._spectrum
 
@@ -1422,7 +1432,7 @@ class Model(list):
 
         self.fetch_stored_values()
 
-    def plot(self, plot_components=False):
+    def plot(self, plot_components=False, **kwargs):
         """Plots the current spectrum to the screen and a map with a
         cursor to explore the SI.
 
@@ -1434,8 +1444,9 @@ class Model(list):
         """
 
         # If new coordinates are assigned
-        self.spectrum.plot()
+        self.spectrum.plot(**kwargs)
         _plot = self.spectrum._plot
+        _plot.axes_manager.connect(self.fetch_stored_values)
         l1 = _plot.signal_plot.ax_lines[0]
         color = l1.line.get_color()
         l1.set_line_properties(color=color, type='scatter')
@@ -1502,6 +1513,7 @@ class Model(list):
             self.disable_plot_components()
         self._disconnect_parameters2update_plot()
         self._model_line = None
+        self.axes_manager = self.spectrum.axes_manager
 
     def enable_plot_components(self):
         if self._plot is None or self._plot_components:
