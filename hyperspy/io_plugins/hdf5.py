@@ -229,41 +229,48 @@ def hdfgroup2signaldict(group):
                 "TEM"] = exp["metadata"]["TEM"]
             del exp["metadata"]["TEM"]
             if "EELS" in exp["metadata"]["Acquisition_instrument"]["TEM"]:
-                if "dwell_time" in exp["metadata"]["Acquisition_instrument"]["TEM"]:
+                if "dwell_time" in exp["metadata"][
+                        "Acquisition_instrument"]["TEM"]:
                     exp["metadata"]["Acquisition_instrument"]["TEM"]["EELS"]["dwell_time"] =\
                         exp["metadata"]["Acquisition_instrument"][
                             "TEM"]["dwell_time"]
                     del exp["metadata"]["Acquisition_instrument"][
                         "TEM"]["dwell_time"]
-                if "dwell_time_units" in exp["metadata"]["Acquisition_instrument"]["TEM"]:
+                if "dwell_time_units" in exp["metadata"][
+                        "Acquisition_instrument"]["TEM"]:
                     exp["metadata"]["Acquisition_instrument"]["TEM"]["EELS"]["dwell_time_units"] =\
                         exp["metadata"]["Acquisition_instrument"][
                             "TEM"]["dwell_time_units"]
                     del exp["metadata"]["Acquisition_instrument"][
                         "TEM"]["dwell_time_units"]
-                if "exposure" in exp["metadata"]["Acquisition_instrument"]["TEM"]:
+                if "exposure" in exp["metadata"][
+                        "Acquisition_instrument"]["TEM"]:
                     exp["metadata"]["Acquisition_instrument"]["TEM"]["EELS"]["exposure"] =\
                         exp["metadata"]["Acquisition_instrument"][
                             "TEM"]["exposure"]
                     del exp["metadata"]["Acquisition_instrument"][
                         "TEM"]["exposure"]
-                if "exposure_units" in exp["metadata"]["Acquisition_instrument"]["TEM"]:
+                if "exposure_units" in exp["metadata"][
+                        "Acquisition_instrument"]["TEM"]:
                     exp["metadata"]["Acquisition_instrument"]["TEM"]["EELS"]["exposure_units"] =\
                         exp["metadata"]["Acquisition_instrument"][
                             "TEM"]["exposure_units"]
                     del exp["metadata"]["Acquisition_instrument"][
                         "TEM"]["exposure_units"]
-                if "Detector" not in exp["metadata"]["Acquisition_instrument"]["TEM"]:
+                if "Detector" not in exp["metadata"][
+                        "Acquisition_instrument"]["TEM"]:
                     exp["metadata"]["Acquisition_instrument"][
                         "TEM"]["Detector"] = {}
                 exp["metadata"]["Acquisition_instrument"]["TEM"]["Detector"] = \
                     exp["metadata"]["Acquisition_instrument"]["TEM"]["EELS"]
                 del exp["metadata"]["Acquisition_instrument"]["TEM"]["EELS"]
             if "EDS" in exp["metadata"]["Acquisition_instrument"]["TEM"]:
-                if "Detector" not in exp["metadata"]["Acquisition_instrument"]["TEM"]:
+                if "Detector" not in exp["metadata"][
+                        "Acquisition_instrument"]["TEM"]:
                     exp["metadata"]["Acquisition_instrument"][
                         "TEM"]["Detector"] = {}
-                if "EDS" not in exp["metadata"]["Acquisition_instrument"]["TEM"]["Detector"]:
+                if "EDS" not in exp["metadata"][
+                        "Acquisition_instrument"]["TEM"]["Detector"]:
                     exp["metadata"]["Acquisition_instrument"][
                         "TEM"]["Detector"]["EDS"] = {}
                 exp["metadata"]["Acquisition_instrument"]["TEM"]["Detector"]["EDS"] = \
@@ -277,17 +284,20 @@ def hdfgroup2signaldict(group):
                 "SEM"] = exp["metadata"]["SEM"]
             del exp["metadata"]["SEM"]
             if "EDS" in exp["metadata"]["Acquisition_instrument"]["SEM"]:
-                if "Detector" not in exp["metadata"]["Acquisition_instrument"]["SEM"]:
+                if "Detector" not in exp["metadata"][
+                        "Acquisition_instrument"]["SEM"]:
                     exp["metadata"]["Acquisition_instrument"][
                         "SEM"]["Detector"] = {}
-                if "EDS" not in exp["metadata"]["Acquisition_instrument"]["SEM"]["Detector"]:
+                if "EDS" not in exp["metadata"][
+                        "Acquisition_instrument"]["SEM"]["Detector"]:
                     exp["metadata"]["Acquisition_instrument"][
                         "SEM"]["Detector"]["EDS"] = {}
                 exp["metadata"]["Acquisition_instrument"]["SEM"]["Detector"]["EDS"] = \
                     exp["metadata"]["Acquisition_instrument"]["SEM"]["EDS"]
                 del exp["metadata"]["Acquisition_instrument"]["SEM"]["EDS"]
 
-        if "Sample" in exp["metadata"] and "Xray_lines" in exp["metadata"]["Sample"]:
+        if "Sample" in exp["metadata"] and "Xray_lines" in exp[
+                "metadata"]["Sample"]:
             exp["metadata"]["Sample"]["xray_lines"] = exp[
                 "metadata"]["Sample"]["Xray_lines"]
             del exp["metadata"]["Sample"]["Xray_lines"]

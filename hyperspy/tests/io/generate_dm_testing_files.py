@@ -127,7 +127,8 @@ if __name__ == '__main__':
     with open("generate_dm3_test_files.s", "w") as f1, open("generate_dm4_test_files.s", "w") as f2:
         f1.write('image im\nstring filename\n')
         f2.write('image im\nstring filename\n')
-        for f, dmv, dt in zip((f1, f2), (3, 4), (dm3_data_types, dm4_data_types)):
+        for f, dmv, dt in zip(
+                (f1, f2), (3, 4), (dm3_data_types, dm4_data_types)):
             generate_1D_files(f, dt, dmv)
             generate_2D_files(f, dt, dmv)
             generate_3D_files(f, dt, dmv)

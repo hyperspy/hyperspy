@@ -146,10 +146,9 @@ def parse_ripple(fp):
         line = line.replace('data-Length', 'data-length')
         if line[:2] not in newline and line[0] != comment:
             line = line.strip('\r\n')
-            #line = line.lower()
             if comment in line:
                 line = line[:line.find(comment)]
-            if not sep in line:
+            if sep not in line:
                 err = 'Separator in line "%s" is wrong, ' % line
                 err += 'it should be a <TAB> ("\\t")'
                 raise IOError(err)
@@ -180,10 +179,11 @@ def parse_ripple(fp):
         err = '"data-length" for float "data-type" must be "4" or "8".\n'
         err += 'Check %s' % fp.name
         raise IOError(err)
-    if rpl_info['data-length'] == '1' and rpl_info['byte-order'] != 'dont-care':
+    if (rpl_info['data-length'] == '1' and
+            rpl_info['byte-order'] != 'dont-care'):
         err = '"data-length" and "byte-order" mismatch.\n'
-        err += '"data-length" cannot be "1" if "byte-order" is not "dont-care" '
-        err += 'and vice versa.'
+        err += '"data-length" cannot be "1" if "byte-order" is not "dont-care"'
+        err += ' and vice versa.'
         err += 'Check %s' % fp.name
         raise IOError(err)
     return rpl_info
@@ -463,7 +463,8 @@ def file_reader(filename, rpl_info=None, encoding="latin-1",
         mp.set_item('Acquisition_instrument.TEM.tilt_stage',
                     rpl_info['tilt-stage'])
     if 'collection-angle' in rpl_info:
-        mp.set_item('Acquisition_instrument.TEM.Detector.EELS.collection_angle',
+        mp.set_item('Acquisition_instrument.TEM.Detector.EELS.' +
+                    'collection_angle',
                     rpl_info['collection-angle'])
     if 'beam-energy' in rpl_info:
         mp.set_item('Acquisition_instrument.TEM.beam_energy',
@@ -475,7 +476,8 @@ def file_reader(filename, rpl_info=None, encoding="latin-1",
         mp.set_item('Acquisition_instrument.TEM.Detector.EDS.azimuth_angle',
                     rpl_info['azimuth-angle'])
     if 'energy-resolution' in rpl_info:
-        mp.set_item('Acquisition_instrument.TEM.Detector.EDS.energy_resolution_MnKa',
+        mp.set_item('Acquisition_instrument.TEM.Detector.EDS.' +
+                    'energy_resolution_MnKa',
                     rpl_info['energy-resolution'])
     if 'live-time' in rpl_info:
         mp.set_item('Acquisition_instrument.TEM.Detector.EDS.live_time',
