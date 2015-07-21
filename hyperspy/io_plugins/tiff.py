@@ -20,17 +20,24 @@ import os
 import warnings
 
 import traits.api as t
-with warnings.catch_warnings():
-    warnings.simplefilter("ignore")
-    from hyperspy.misc.io.tifffile import imsave, TiffFile
 from hyperspy.misc import rgb_tools
+try:
+    from skimage.external.tifffile import imsave, TiffFile
+except ImportError:
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        from hyperspy.misc.borrowed.tifffile import imsave, TiffFile
+    warnings.warn(
+        "Failed to import the optional scikit image package. "
+        "Loading of some compressed images will be slow.\n")
+
 
 # Plugin characteristics
 # ----------------------
 format_name = 'TIFF'
 description = ('Import/Export standard image formats Christoph Gohlke\'s '
                'tifffile library')
-full_suport = False
+full_support = False
 file_extensions = ['tif', 'tiff']
 default_extension = 0  # tif
 

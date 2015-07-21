@@ -115,8 +115,8 @@ class PowerLaw(Component):
             s = signal.get_current_signal()
         else:
             s = signal
-        I1 = s.isig[i1:i3].integrate1D(2j).data
-        I2 = s.isig[i3:i2].integrate1D(2j).data
+        I1 = s.isig[i1:i3].integrate1D(2j).data.astype("float")
+        I2 = s.isig[i3:i2].integrate1D(2j).data.astype("float")
         try:
             r = 2 * np.log(I1 / I2) / math.log(x2 / x1)
             k = 1 - r
