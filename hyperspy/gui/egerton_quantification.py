@@ -43,9 +43,9 @@ class BackgroundRemoval(SpanSelectorInSpectrum):
         default='Power Law')
     polynomial_order = t.Range(1, 10)
     estimate_background = t.Enum(
-            'Estimate',
-            'Full fit',
-            default='Estimate')
+        'Estimate',
+        'Full fit',
+        default='Estimate')
     background_estimator = t.Instance(Component)
     bg_line_range = t.Enum('from_left_range',
                            'full',

@@ -929,7 +929,8 @@ class Signal1DTools(object):
         else:
             smoother.edit_traits()
 
-    def _remove_background_cli(self, signal_range, background_estimator, estimate_background=True):
+    def _remove_background_cli(
+            self, signal_range, background_estimator, estimate_background=True):
         from hyperspy.model import Model
         model = Model(self)
         model.append(background_estimator)
@@ -967,8 +968,8 @@ class Signal1DTools(object):
             Specify the polynomial order if a Polynomial background is used.
         estimate_background : bool
             If True, estimate the background. If False, the signal is fitted
-            using a full model. This is slower compared to the estimation but 
-            possibly more accurate. 
+            using a full model. This is slower compared to the estimation but
+            possibly more accurate.
 
         Examples
         --------
