@@ -3827,7 +3827,9 @@ class Signal(MVA,
            The axis can be specified using the index of the axis in
            `axes_manager` or the axis name.
         order: int
-            The order of the derivative.
+            The order of the derivative. (Note that this is the order of the
+            derivative i.e. `order=2` does not use second order finite
+            differences method.)
 
         Returns
         -------
