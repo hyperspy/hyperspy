@@ -435,8 +435,9 @@ class EELSSpectrum(Spectrum):
                 threshold.data[:] = np.nan
         del s
         if np.isnan(threshold.data).any():
-            warnings.warn("No inflexion point could we found in some positions "
-                          "that have been marked with nans.")
+            warnings.warn(
+                "No inflexion point could we found in some positions "
+                "that have been marked with nans.")
         # Create spectrum image, stop and return value
         threshold.metadata.General.title = (
             self.metadata.General.title +
@@ -503,8 +504,7 @@ class EELSSpectrum(Spectrum):
                 threshold=threshold,).data
 
         t_over_lambda = np.log(total_intensity / I0)
-        s = self._get_navigation_signal()
-        s.data = t_over_lambda
+        s = self._get_navigation_signal(data=t_over_lambda)
         s.metadata.General.title = (self.metadata.General.title +
                                     ' $\\frac{t}{\\lambda}$')
         if self.tmp_parameters.has_item('filename'):
@@ -821,7 +821,8 @@ class EELSSpectrum(Spectrum):
         mapping = {
             'Acquisition_instrument.TEM.convergence_angle': 'tem_par.convergence_angle',
             'Acquisition_instrument.TEM.beam_energy': 'tem_par.beam_energy',
-            'Acquisition_instrument.TEM.Detector.EELS.collection_angle': 'tem_par.collection_angle', }
+            'Acquisition_instrument.TEM.Detector.EELS.collection_angle': 'tem_par.collection_angle',
+        }
         for key, value in mapping.iteritems():
             if self.metadata.has_item(key):
                 exec('%s = self.metadata.%s' % (value, key))
@@ -829,7 +830,8 @@ class EELSSpectrum(Spectrum):
         mapping = {
             'Acquisition_instrument.TEM.convergence_angle': tem_par.convergence_angle,
             'Acquisition_instrument.TEM.beam_energy': tem_par.beam_energy,
-            'Acquisition_instrument.TEM.Detector.EELS.collection_angle': tem_par.collection_angle, }
+            'Acquisition_instrument.TEM.Detector.EELS.collection_angle': tem_par.collection_angle,
+        }
         for key, value in mapping.iteritems():
             if value != t.Undefined:
                 self.metadata.set_item(key, value)
@@ -1171,13 +1173,12 @@ class EELSSpectrum(Spectrum):
                 self.tmp_parameters.filename +
                 '_CDF_after_Kramers_Kronig_transform')
         if 'thickness' in output:
-            thickness = eps._get_navigation_signal()
+            thickness = eps._get_navigation_signal(
+                data=te[self.axes_manager._get_data_slice(
+                    [(axis.index_in_array, 0)])])
             thickness.metadata.General.title = (
                 self.metadata.General.title + ' thickness '
                 '(calculated using Kramers-Kronig analysis)')
-            thickness.data = te[
-                self.axes_manager._get_data_slice([(
-                    axis.index_in_array, 0)])]
             output['thickness'] = thickness
         if full_output is False:
             return eps

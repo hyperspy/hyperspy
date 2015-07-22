@@ -134,8 +134,8 @@ class MVA():
         # Check if it is the wrong data type
         if self.data.dtype.char not in ['e', 'f', 'd']:  # If not float
             messages.warning(
-                'To perform a decomposition the data must be of the float type.'
-                ' You can change the type using the change_dtype method'
+                'To perform a decomposition the data must be of the float '
+                'type. You can change the type using the change_dtype method'
                 ' e.g. s.change_dtype(\'float64\')\n'
                 'Nothing done.')
             return
@@ -159,7 +159,7 @@ class MVA():
 
         # Apply pre-treatments
         # Transform the data in a line spectrum
-        self._unfolded4decomposition = self.unfold_if_multidim()
+        self._unfolded4decomposition = self.unfold()
         try:
             if hasattr(navigation_mask, 'ravel'):
                 navigation_mask = navigation_mask.ravel()
@@ -282,12 +282,13 @@ class MVA():
                             dc[signal_mask, ...][:, navigation_mask])
                     else:
                         try:
-                            var_array = np.polyval(polyfit, dc[signal_mask,
-                                                               navigation_mask])
+                            var_array = np.polyval(
+                                polyfit, dc[
+                                    signal_mask, navigation_mask])
                         except:
                             raise ValueError(
-                                'var_func must be either a function or an array'
-                                'defining the coefficients of a polynom')
+                                'var_func must be either a function or an '
+                                'array defining the coefficients of a polynom')
                 if algorithm == 'mlpca':
                     fast = False
                 else:
@@ -327,8 +328,8 @@ class MVA():
             if output_dimension and factors.shape[1] != output_dimension:
                 target.crop_decomposition_dimension(output_dimension)
 
-            # Delete the unmixing information, because it'll refer to a previous
-            # decompositions
+            # Delete the unmixing information, because it'll refer to a
+            # previous decomposition
             target.unmixing_matrix = None
             target.bss_algorithm = None
 
@@ -373,8 +374,8 @@ class MVA():
                     self.axes_manager._signal_shape_in_array)
                 if reproject not in ('both', 'signal'):
                     factors = np.zeros((dc.shape[-1], target.factors.shape[1]))
-                    factors[signal_mask == True, :] = target.factors
-                    factors[signal_mask == False, :] = np.nan
+                    factors[signal_mask, :] = target.factors
+                    factors[~signal_mask, :] = np.nan
                     target.factors = factors
             if not isinstance(navigation_mask, slice):
                 # Store the (inverted, as inputed) navigation mask
@@ -383,8 +384,8 @@ class MVA():
                 if reproject not in ('both', 'navigation'):
                     loadings = np.zeros(
                         (dc.shape[0], target.loadings.shape[1]))
-                    loadings[navigation_mask == True, :] = target.loadings
-                    loadings[navigation_mask == False, :] = np.nan
+                    loadings[navigation_mask, :] = target.loadings
+                    loadings[~navigation_mask, :] = np.nan
                     target.loadings = loadings
         finally:
             # undo any pre-treatments
@@ -416,7 +417,8 @@ class MVA():
         algorithm : {FastICA, JADE, CuBICA, TDSEP}
         diff_order : int
             Sometimes it is convenient to perform the BSS on the derivative
-            of the signal. If diff_order is 0, the signal is not differentiated.
+            of the signal. If diff_order is 0, the signal is not
+            differentiated.
         factors : numpy.array
             Factors to decompose. If None, the BSS is performed on the result
             of a previous decomposition.
@@ -477,8 +479,10 @@ class MVA():
                         differential_order=diff_order)
                 factors = sfactors.data.T
                 if pretreatment['algorithm'] == 'butter':
-                    b, a = sp.signal.butter(pretreatment['order'],
-                                            pretreatment['cutoff'], pretreatment['type'])
+                    b, a = sp.signal.butter(
+                        pretreatment['order'],
+                        pretreatment['cutoff'],
+                        pretreatment['type'])
                     for i in range(factors.shape[1]):
                         factors[:, i] = sp.signal.filtfilt(b, a,
                                                            factors[:, i])
@@ -497,7 +501,7 @@ class MVA():
             elif algorithm == 'sklearn_fastica':
                 # if sklearn_installed is False:
                     # raise ImportError(
-                    #'sklearn is not installed. Nothing done')
+                    # 'sklearn is not installed. Nothing done')
                 if 'tol' not in kwargs:
                     kwargs['tol'] = 1e-10
                 target.bss_node = import_sklearn.FastICA(
@@ -617,9 +621,10 @@ class MVA():
         w = target.unmixing_matrix
         n = len(w)
         if target.explained_variance is not None:
-            # The output of ICA is not sorted in any way what makes it difficult
-            # to compare results from different unmixings. The following code
-            # is an experimental attempt to sort them in a more predictable way
+            # The output of ICA is not sorted in any way what makes it
+            # difficult to compare results from different unmixings. The
+            # following code is an experimental attempt to sort them in a more
+            # predictable way
             sorting_indices = np.argsort(np.dot(target.explained_variance[:n],
                                                 np.abs(w.T)))[::-1]
             w[:] = w[sorting_indices, :]
@@ -688,7 +693,7 @@ class MVA():
             signal_name = 'model from %s with %i components' % (
                 mva_type, components)
 
-        self._unfolded4decomposition = self.unfold_if_multidim()
+        self._unfolded4decomposition = self.unfold()
 
         sc = self.deepcopy()
         sc.data = a.T.reshape(self.data.shape)
@@ -843,7 +848,7 @@ class MVA():
         messages.information(
             "Scaling the data to normalize the (presumably)"
             " Poissonian noise")
-        refold = self.unfold_if_multidim()
+        refold = self.unfold()
         # The rest of the code assumes that the first data axis
         # is the navigation axis. We transpose the data if that is not the
         # case.
@@ -925,7 +930,11 @@ class LearningResults(object):
         """
         kwargs = {}
         for attribute in [
-                v for v in dir(self) if not isinstance(getattr(self, v), types.MethodType) and not v.startswith('_')]:
+            v for v in dir(self) if not isinstance(
+                getattr(
+                    self,
+                    v),
+                types.MethodType) and not v.startswith('_')]:
             kwargs[attribute] = self.__getattribute__(attribute)
         # Check overwrite
         if overwrite is None:

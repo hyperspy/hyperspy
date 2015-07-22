@@ -64,14 +64,14 @@ class Test2D:
 
     def test_estimate_poissonian_noise_copy_data(self):
         self.signal.estimate_poissonian_noise_variance()
-        nt.assert_true(self.signal.metadata.Signal.Noise_properties.variance.data
-                       is not self.signal.data)
+        variance = self.signal.metadata.Signal.Noise_properties.variance
+        nt.assert_true(
+            variance.data is not self.signal.data)
 
     def test_estimate_poissonian_noise_noarg(self):
         self.signal.estimate_poissonian_noise_variance()
-        nt.assert_true(
-            (self.signal.metadata.Signal.Noise_properties.variance.data ==
-             self.signal.data).all())
+        variance = self.signal.metadata.Signal.Noise_properties.variance
+        nt.assert_true((variance.data == self.signal.data).all())
 
     def test_estimate_poissonian_noise_with_args(self):
         self.signal.estimate_poissonian_noise_variance(
@@ -79,9 +79,20 @@ class Test2D:
             gain_factor=2,
             gain_offset=1,
             correlation_factor=0.5)
+        variance = self.signal.metadata.Signal.Noise_properties.variance
         nt.assert_true(
-            (self.signal.metadata.Signal.Noise_properties.variance.data ==
-             (self.signal.data * 2 + 1) * 0.5).all())
+            (variance.data == (self.signal.data * 2 + 1) * 0.5).all())
+
+    def test_unfold_image(self):
+        s = self.signal
+        s.axes_manager.set_signal_dimension(2)
+        s.unfold()
+        nt.assert_equal(s.data.shape, (50,))
+
+    def test_unfold_image_returns_true(self):
+        s = self.signal
+        s.axes_manager.set_signal_dimension(2)
+        nt.assert_true(s.unfold())
 
 
 class Test3D:
@@ -154,6 +165,25 @@ class Test3D:
                         s.axes_manager.navigation_shape)
         nt.assert_equal(ns.axes_manager.navigation_dimension, 0)
 
+    @nt.raises(ValueError)
+    def test_get_navigation_signal_wrong_data_shape(self):
+        s = self.signal
+        s.axes_manager.set_signal_dimension(1)
+        s._get_navigation_signal(data=np.zeros((3, 2)))
+
+    @nt.raises(ValueError)
+    def test_get_navigation_signal_wrong_data_shape_dim0(self):
+        s = self.signal
+        s.axes_manager.set_signal_dimension(3)
+        s._get_navigation_signal(data=np.asarray(0))
+
+    def test_get_navigation_signal_given_data(self):
+        s = self.signal
+        s.axes_manager.set_signal_dimension(1)
+        data = np.empty(s.axes_manager._navigation_shape_in_array)
+        ns = s._get_navigation_signal(data=data)
+        nt.assert_is(ns.data, data)
+
     def test_get_signal_signal_nav_dim0(self):
         s = self.signal
         s.axes_manager.set_signal_dimension(0)
@@ -186,6 +216,45 @@ class Test3D:
                         s.axes_manager.signal_shape)
         nt.assert_equal(ns.axes_manager.navigation_dimension, 0)
 
+    @nt.raises(ValueError)
+    def test_get_signal_signal_wrong_data_shape(self):
+        s = self.signal
+        s.axes_manager.set_signal_dimension(1)
+        s._get_signal_signal(data=np.zeros((3, 2)))
+
+    @nt.raises(ValueError)
+    def test_get_signal_signal_wrong_data_shape_dim0(self):
+        s = self.signal
+        s.axes_manager.set_signal_dimension(0)
+        s._get_signal_signal(data=np.asarray(0))
+
+    def test_get_signal_signal_given_data(self):
+        s = self.signal
+        s.axes_manager.set_signal_dimension(2)
+        data = np.empty(s.axes_manager._signal_shape_in_array)
+        ns = s._get_signal_signal(data=data)
+        nt.assert_is(ns.data, data)
+
+    def test_get_navigation_signal_dtype(self):
+        s = self.signal
+        nt.assert_equal(s._get_navigation_signal().data.dtype.name,
+                        s.data.dtype.name)
+
+    def test_get_signal_signal_dtype(self):
+        s = self.signal
+        nt.assert_equal(s._get_signal_signal().data.dtype.name,
+                        s.data.dtype.name)
+
+    def test_get_navigation_signal_given_dtype(self):
+        s = self.signal
+        nt.assert_equal(
+            s._get_navigation_signal(dtype="bool").data.dtype.name, "bool")
+
+    def test_get_signal_signal_given_dtype(self):
+        s = self.signal
+        nt.assert_equal(
+            s._get_signal_signal(dtype="bool").data.dtype.name, "bool")
+
 
 class Test4D:
 
@@ -206,6 +275,12 @@ class Test4D:
     def test_unfold_spectrum(self):
         self.s.unfold()
         nt.assert_equal(self.s.data.shape, (60, 6))
+
+    def test_unfold_spectrum_returns_true(self):
+        nt.assert_true(self.s.unfold())
+
+    def test_unfold_spectrum_signal_returns_false(self):
+        nt.assert_false(self.s.unfold_signal_space())
 
     def test_unfold_image(self):
         im = self.s.to_image()
