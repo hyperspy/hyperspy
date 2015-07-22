@@ -3818,7 +3818,7 @@ class Signal(MVA,
         s.get_dimensions_from_data()
         return s
 
-    def derivative(self, axis, order=1, central_differences=False):
+    def derivative(self, axis, order=1):
         """Numerical derivative along the given axis.
 
         Currently only the first order finete difference method is implemented.
