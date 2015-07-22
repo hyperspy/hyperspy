@@ -30,7 +30,9 @@ class TestModel:
     def test_component_name_when_append(self):
         m = self.model
         gs = [
-            hs.components.Gaussian(), hs.components.Gaussian(), hs.components.Gaussian()]
+            hs.components.Gaussian(),
+            hs.components.Gaussian(),
+            hs.components.Gaussian()]
         m.extend(gs)
         nose.tools.assert_is(m['Gaussian'], gs[0])
         nose.tools.assert_is(m['Gaussian_0'], gs[1])
@@ -40,7 +42,9 @@ class TestModel:
     def test_several_component_with_same_name(self):
         m = self.model
         gs = [
-            hs.components.Gaussian(), hs.components.Gaussian(), hs.components.Gaussian()]
+            hs.components.Gaussian(),
+            hs.components.Gaussian(),
+            hs.components.Gaussian()]
         m.extend(gs)
         m[0]._name = "hs.components.Gaussian"
         m[1]._name = "hs.components.Gaussian"
@@ -241,22 +245,25 @@ class TestModelWeighted:
     def test_fit_leastsq_unbinned(self):
         self.m.spectrum.metadata.Signal.binned = False
         self.m.fit(fitter="leastsq", method="ls")
-        for result, expected in zip(self.m[0].coefficients.value,
-                                    (0.99165596391487121, 0.16628254242532492)):
+        for result, expected in zip(
+                self.m[0].coefficients.value,
+                (0.99165596391487121, 0.16628254242532492)):
             nose.tools.assert_almost_equal(result, expected, places=5)
 
     def test_fit_odr_unbinned(self):
         self.m.spectrum.metadata.Signal.binned = False
         self.m.fit(fitter="odr", method="ls")
-        for result, expected in zip(self.m[0].coefficients.value,
-                                    (0.99165596548961943, 0.16628247412317315)):
+        for result, expected in zip(
+                self.m[0].coefficients.value,
+                (0.99165596548961943, 0.16628247412317315)):
             nose.tools.assert_almost_equal(result, expected, places=5)
 
     def test_fit_mpfit_unbinned(self):
         self.m.spectrum.metadata.Signal.binned = False
         self.m.fit(fitter="mpfit", method="ls")
-        for result, expected in zip(self.m[0].coefficients.value,
-                                    (0.99165596295068958, 0.16628257462820528)):
+        for result, expected in zip(
+                self.m[0].coefficients.value,
+                (0.99165596295068958, 0.16628257462820528)):
             nose.tools.assert_almost_equal(result, expected, places=5)
 
     def test_fit_fmin_unbinned(self):
@@ -265,8 +272,9 @@ class TestModelWeighted:
             fitter="fmin",
             method="ls",
         )
-        for result, expected in zip(self.m[0].coefficients.value,
-                                    (0.99136169230026261, 0.18483060534056939)):
+        for result, expected in zip(
+                self.m[0].coefficients.value,
+                (0.99136169230026261, 0.18483060534056939)):
             nose.tools.assert_almost_equal(result, expected, places=5)
 
     def test_chisq(self):

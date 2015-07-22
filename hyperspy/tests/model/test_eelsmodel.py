@@ -51,20 +51,24 @@ class TestEELSModel:
         self.m.spectrum.data = 2. * self.m.axis.axis ** (-3)  # A= 2, r=3
         self.m.spectrum.metadata.Signal.binned = False
         self.m.two_area_background_estimation()
-        nose.tools.assert_almost_equal(self.m._background_components[0].A.value,
-                                       2.1451237089380295)
-        nose.tools.assert_almost_equal(self.m._background_components[0].r.value,
-                                       3.0118980767392736)
+        nose.tools.assert_almost_equal(
+            self.m._background_components[0].A.value,
+            2.1451237089380295)
+        nose.tools.assert_almost_equal(
+            self.m._background_components[0].r.value,
+            3.0118980767392736)
 
     def test_two_area_powerlaw_estimation_C(self):
         self.m["B_K"].active = False
         self.m.spectrum.data = 2. * self.m.axis.axis ** (-3)  # A= 2, r=3
         self.m.spectrum.metadata.Signal.binned = False
         self.m.two_area_background_estimation()
-        nose.tools.assert_almost_equal(self.m._background_components[0].A.value,
-                                       2.3978438900878087)
-        nose.tools.assert_almost_equal(self.m._background_components[0].r.value,
-                                       3.031884021065014)
+        nose.tools.assert_almost_equal(
+            self.m._background_components[0].A.value,
+            2.3978438900878087)
+        nose.tools.assert_almost_equal(
+            self.m._background_components[0].r.value,
+            3.031884021065014)
 
     def test_two_area_powerlaw_estimation_no_edge(self):
         self.m["B_K"].active = False
@@ -72,10 +76,12 @@ class TestEELSModel:
         self.m.spectrum.data = 2. * self.m.axis.axis ** (-3)  # A= 2, r=3
         self.m.spectrum.metadata.Signal.binned = False
         self.m.two_area_background_estimation()
-        nose.tools.assert_almost_equal(self.m._background_components[0].A.value,
-                                       2.6598803469440986)
-        nose.tools.assert_almost_equal(self.m._background_components[0].r.value,
-                                       3.0494030409062058)
+        nose.tools.assert_almost_equal(
+            self.m._background_components[0].A.value,
+            2.6598803469440986)
+        nose.tools.assert_almost_equal(
+            self.m._background_components[0].r.value,
+            3.0494030409062058)
 
     def test_get_start_energy_none(self):
         nose.tools.assert_equal(self.m._get_start_energy(),

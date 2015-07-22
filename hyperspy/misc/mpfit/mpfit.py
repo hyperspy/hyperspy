@@ -1048,9 +1048,16 @@ Outputs:
                     xnew0 = self.params.copy()
 
                     dof = numpy.max([len(fvec) - len(x), 0])
-                    status = iterfunct(fcn, self.params, self.niter, self.fnorm ** 2,
-                                       functkw=functkw, parinfo=parinfo, quiet=quiet,
-                                       dof=dof, **iterkw)
+                    status = iterfunct(
+                        fcn,
+                        self.params,
+                        self.niter,
+                        self.fnorm ** 2,
+                        functkw=functkw,
+                        parinfo=parinfo,
+                        quiet=quiet,
+                        dof=dof,
+                        **iterkw)
                     if status is not None:
                         self.status = status
 
@@ -1524,9 +1531,21 @@ Outputs:
         ans = self.blas_enorm(vec)
         return ans
 
-    def fdjac2(self, fcn, x, fvec, step=None, ulimited=None, ulimit=None, dside=None,
-               epsfcn=None, autoderivative=1,
-               functkw=None, xall=None, ifree=None, dstep=None):
+    def fdjac2(
+            self,
+            fcn,
+            x,
+            fvec,
+            step=None,
+            ulimited=None,
+            ulimit=None,
+            dside=None,
+            epsfcn=None,
+            autoderivative=1,
+            functkw=None,
+            xall=None,
+            ifree=None,
+            dstep=None):
 
         if self.debug:
             print 'Entering fdjac2...'
