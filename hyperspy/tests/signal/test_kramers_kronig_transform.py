@@ -133,8 +133,11 @@ class Test2D:
                                                      iterations=1,
                                                      n=1000.,
                                                      full_output=True)
-        nose.tools.assert_true(np.allclose(self.thickness.data,
-                                           output['thickness'].data, rtol=0.01))
+        nose.tools.assert_true(
+            np.allclose(
+                self.thickness.data,
+                output['thickness'].data,
+                rtol=0.01))
 
     @nose.tools.raises(ValueError)
     def test_thicness_input_array(self):

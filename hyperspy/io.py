@@ -387,9 +387,10 @@ def save(filename, signal, overwrite=None, **kwds):
             break
 
     if writer is None:
-        raise ValueError('.%s does not correspond ' % extension +
-                         'of any supported format. Supported file extensions are: %s ' %
-                         strlist2enumeration(default_write_ext))
+        raise ValueError(
+            ('.%s does not correspond to any supported format. Supported ' +
+             'file extensions are: %s') %
+            (extension, strlist2enumeration(default_write_ext)))
     else:
         # Check if the writer can write
         sd = signal.axes_manager.signal_dimension
