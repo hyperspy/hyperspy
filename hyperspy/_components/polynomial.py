@@ -111,7 +111,7 @@ class Polynomial(Component):
                 dc = np.rollaxis(dc, axis.index_in_array, 0)
             cmaps = np.polyfit(axis.axis[i1:i2],
                                dc[i1:i2, :], self.get_polynomial_order()).reshape([
-                self.get_polynomial_order() + 1, ] + nav_shape)
+                                   self.get_polynomial_order() + 1, ] + nav_shape)
             self.coefficients.map['values'][:] = np.rollaxis(cmaps, 0,
                                                              axis.index_in_array)
             if binned is True:
