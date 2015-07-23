@@ -621,6 +621,10 @@ class MVA():
             unmixing_matrix = unmixing_matrix.T
 
         elif algorithm == 'sklearn_fastica':
+            if not import_sklearn.sklearn_installed:
+                raise ImportError(
+                    "The optional package scikit learn is not installed "
+                    "and it is required for this feature.")
             if 'tol' not in kwargs:
                 kwargs['tol'] = 1e-10
             lr.bss_node = import_sklearn.FastICA(

@@ -1,7 +1,10 @@
 import nose.tools
+from nose.plugins.skip import SkipTest
 import numpy as np
 
 from hyperspy.signals import Spectrum, Image
+from hyperspy.misc.machine_learning.import_sklearn import sklearn_installed
+
 
 
 def are_bss_components_equivalent(c1_list, c2_list, atol=1e-4):
@@ -41,6 +44,8 @@ class TestBSS1D:
         self.s.decomposition()
 
     def test_on_loadings(self):
+        if not sklearn_installed:
+            raise SkipTest
         self.s.blind_source_separation(
             3, diff_order=0, fun="exp", on_loadings=False)
         s2 = self.s.as_spectrum(0)
@@ -51,6 +56,8 @@ class TestBSS1D:
             self.s.get_bss_factors(), s2.get_bss_loadings()))
 
     def test_mask_diff_order_0(self):
+        if not sklearn_installed:
+            raise SkipTest
         # This test, unlike most other tests, either passes or raises an error.
         # It is designed to test if the mask is correctly dilated inside the
         # `blind_source_separation_method`. If the mask is not correctely
@@ -61,6 +68,8 @@ class TestBSS1D:
         self.s.blind_source_separation(3, diff_order=0, mask=mask)
 
     def test_mask_diff_order_1(self):
+        if not sklearn_installed:
+            raise SkipTest
         # This test, unlike most other tests, either passes or raises an error.
         # It is designed to test if the mask is correctly dilated inside the
         # `blind_source_separation_method`. If the mask is not correctely
@@ -71,6 +80,8 @@ class TestBSS1D:
         self.s.blind_source_separation(3, diff_order=1, mask=mask)
 
     def test_mask_diff_order_0_on_loadings(self):
+        if not sklearn_installed:
+            raise SkipTest
         # This test, unlike most other tests, either passes or raises an error.
         # It is designed to test if the mask is correctly dilated inside the
         # `blind_source_separation_method`. If the mask is not correctely
@@ -82,6 +93,8 @@ class TestBSS1D:
                                        on_loadings=True)
 
     def test_mask_diff_order_1_on_loadings(self):
+        if not sklearn_installed:
+            raise SkipTest
         # This test, unlike most other tests, either passes or raises an error.
         # It is designed to test if the mask is correctly dilated inside the
         # `blind_source_separation_method`. If the mask is not correctely
@@ -106,6 +119,8 @@ class TestBSS2D:
         self.s = s
 
     def test_diff_axes_string_with_mask(self):
+        if not sklearn_installed:
+            raise SkipTest
         mask = self.s._get_signal_signal(dtype="bool")
         mask.unfold()
         mask[5] = True
@@ -126,6 +141,8 @@ class TestBSS2D:
                         atol=1e-6))
 
     def test_diff_axes_string_without_mask(self):
+        if not sklearn_installed:
+            raise SkipTest
         factors = self.s.get_decomposition_factors().inav[:3].diff(
             axis="x", order=1)
         self.s.blind_source_separation(
@@ -140,6 +157,8 @@ class TestBSS2D:
                         atol=1e-3))
 
     def test_diff_axes_without_mask(self):
+        if not sklearn_installed:
+            raise SkipTest
         factors = self.s.get_decomposition_factors().inav[:3].diff(
             axis="y", order=1)
         self.s.blind_source_separation(
@@ -152,6 +171,8 @@ class TestBSS2D:
                         atol=1e-3))
 
     def test_on_loadings(self):
+        if not sklearn_installed:
+            raise SkipTest
         self.s.blind_source_separation(
             3, diff_order=0, fun="exp", on_loadings=False)
         s2 = self.s.as_spectrum(0)
@@ -162,6 +183,8 @@ class TestBSS2D:
             self.s.get_bss_factors(), s2.get_bss_loadings()))
 
     def test_mask_diff_order_0(self):
+        if not sklearn_installed:
+            raise SkipTest
         # This test, unlike most other tests, either passes or raises an error.
         # It is designed to test if the mask is correctly dilated inside the
         # `blind_source_separation_method`. If the mask is not correctely
@@ -174,6 +197,8 @@ class TestBSS2D:
         self.s.blind_source_separation(3, diff_order=0, mask=mask)
 
     def test_mask_diff_order_1(self):
+        if not sklearn_installed:
+            raise SkipTest
         # This test, unlike most other tests, either passes or raises an error.
         # It is designed to test if the mask is correctly dilated inside the
         # `blind_source_separation_method`. If the mask is not correctely
@@ -186,6 +211,8 @@ class TestBSS2D:
         self.s.blind_source_separation(3, diff_order=1, mask=mask)
 
     def test_mask_diff_order_1_diff_axes(self):
+        if not sklearn_installed:
+            raise SkipTest
         # This test, unlike most other tests, either passes or raises an error.
         # It is designed to test if the mask is correctly dilated inside the
         # `blind_source_separation_method`. If the mask is not correctely
@@ -199,6 +226,8 @@ class TestBSS2D:
                                        diff_axes=["x", ])
 
     def test_mask_diff_order_0_on_loadings(self):
+        if not sklearn_installed:
+            raise SkipTest
         # This test, unlike most other tests, either passes or raises an error.
         # It is designed to test if the mask is correctly dilated inside the
         # `blind_source_separation_method`. If the mask is not correctely
@@ -212,6 +241,8 @@ class TestBSS2D:
                                        on_loadings=True)
 
     def test_mask_diff_order_1_on_loadings(self):
+        if not sklearn_installed:
+            raise SkipTest
         # This test, unlike most other tests, either passes or raises an error.
         # It is designed to test if the mask is correctly dilated inside the
         # `blind_source_separation_method`. If the mask is not correctely
@@ -227,6 +258,8 @@ class TestBSS2D:
                                   on_loadings=True)
 
     def test_mask_diff_order_1_on_loadings_diff_axes(self):
+        if not sklearn_installed:
+            raise SkipTest
         # This test, unlike most other tests, either passes or raises an error.
         # It is designed to test if the mask is correctly dilated inside the
         # `blind_source_separation_method`. If the mask is not correctely
