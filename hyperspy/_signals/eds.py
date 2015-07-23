@@ -839,11 +839,12 @@ class EDSSpectrum(Spectrum):
         # merge ovelapping windows
         index = windows_position.argsort(axis=0)[:, 0]
         for i in range(len(index) - 1):
-            if windows_position[index[i], 2] > windows_position[index[i + 1], 0]:
-                interv = np.append(windows_position[index[i], :2],
-                                   windows_position[index[i + 1], 2:])
-                windows_position[index[i]] = interv
-                windows_position[index[i + 1]] = interv
+            ia, ib = index[i], index[i + 1]
+            if windows_position[ia, 2] > windows_position[ib, 0]:
+                interv = np.append(windows_position[ia, :2],
+                                   windows_position[ib, 2:])
+                windows_position[ia] = interv
+                windows_position[ib] = interv
         return windows_position
 
     def plot(self,

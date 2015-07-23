@@ -158,8 +158,8 @@ class MVA():
         # Check if it is the wrong data type
         if self.data.dtype.char not in ['e', 'f', 'd']:  # If not float
             messages.warning(
-                'To perform a decomposition the data must be of the float type.'
-                ' You can change the type using the change_dtype method'
+                'To perform a decomposition the data must be of the float '
+                'type. You can change the type using the change_dtype method'
                 ' e.g. s.change_dtype(\'float64\')\n'
                 'Nothing done.')
             return
@@ -306,12 +306,13 @@ class MVA():
                             dc[signal_mask, ...][:, navigation_mask])
                     else:
                         try:
-                            var_array = np.polyval(polyfit, dc[signal_mask,
-                                                               navigation_mask])
+                            var_array = np.polyval(
+                                polyfit, dc[
+                                    signal_mask, navigation_mask])
                         except:
                             raise ValueError(
-                                'var_func must be either a function or an array'
-                                'defining the coefficients of a polynom')
+                                'var_func must be either a function or an '
+                                'array defining the coefficients of a polynom')
                 if algorithm == 'mlpca':
                     fast = False
                 else:
@@ -351,8 +352,8 @@ class MVA():
             if output_dimension and factors.shape[1] != output_dimension:
                 target.crop_decomposition_dimension(output_dimension)
 
-            # Delete the unmixing information, because it'll refer to a previous
-            # decompositions
+            # Delete the unmixing information, because it'll refer to a
+            # previous decomposition
             target.unmixing_matrix = None
             target.bss_algorithm = None
 
@@ -397,8 +398,8 @@ class MVA():
                     self.axes_manager._signal_shape_in_array)
                 if reproject not in ('both', 'signal'):
                     factors = np.zeros((dc.shape[-1], target.factors.shape[1]))
-                    factors[signal_mask == True, :] = target.factors
-                    factors[signal_mask == False, :] = np.nan
+                    factors[signal_mask, :] = target.factors
+                    factors[~signal_mask, :] = np.nan
                     target.factors = factors
             if not isinstance(navigation_mask, slice):
                 # Store the (inverted, as inputed) navigation mask
@@ -407,8 +408,8 @@ class MVA():
                 if reproject not in ('both', 'navigation'):
                     loadings = np.zeros(
                         (dc.shape[0], target.loadings.shape[1]))
-                    loadings[navigation_mask == True, :] = target.loadings
-                    loadings[navigation_mask == False, :] = np.nan
+                    loadings[navigation_mask, :] = target.loadings
+                    loadings[~navigation_mask, :] = np.nan
                     target.loadings = loadings
         finally:
             # undo any pre-treatments
@@ -1045,7 +1046,11 @@ class LearningResults(object):
         """
         kwargs = {}
         for attribute in [
-                v for v in dir(self) if not isinstance(getattr(self, v), types.MethodType) and not v.startswith('_')]:
+            v for v in dir(self) if not isinstance(
+                getattr(
+                    self,
+                    v),
+                types.MethodType) and not v.startswith('_')]:
             kwargs[attribute] = self.__getattribute__(attribute)
         # Check overwrite
         if overwrite is None:
