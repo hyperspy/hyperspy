@@ -6,7 +6,6 @@ from hyperspy.signals import Spectrum, Image
 from hyperspy.misc.machine_learning.import_sklearn import sklearn_installed
 
 
-
 def are_bss_components_equivalent(c1_list, c2_list, atol=1e-4):
     """Check if two list of components are equivalent.
 
