@@ -215,7 +215,7 @@ class EELSSpectrum(Spectrum):
             Will only search for the ZLP within the signal_range. If given
             in integers, the range will be in index values. If given floats,
             the range will be in spectrum values. Useful if there are features
-            in the spectrum which are more intensite than the ZLP.
+            in the spectrum which are more intense than the ZLP.
             Default is searching in the whole signal.
 
         Examples
@@ -279,7 +279,7 @@ class EELSSpectrum(Spectrum):
         right = (right if right < self.axes_manager[-1].axis[-1]
                  else self.axes_manager[-1].axis[-1])
         self.align1D(left, right, also_align=also_align, **kwargs)
-        zlpc = estimate_zero_loss_peak_centre(self, mask, signal_range)
+        zlpc = estimate_zero_loss_peak_centre(self, mask, (-3., 3.))
         if calibrate is True:
             substract_from_offset(without_nans(zlpc.data).mean(),
                                   also_align + [self])
