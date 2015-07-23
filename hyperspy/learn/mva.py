@@ -441,8 +441,8 @@ class MVA():
             number of principal components to pass to the BSS algorithm
         algorithm : {FastICA, JADE, CuBICA, TDSEP}
         diff_order : int
-            Sometimes it is convenient to perform the BSS on the derivative
-            of the signal. If diff_order is 0, the signal is not differentiated.
+            Sometimes it is convenient to perform the BSS on the derivative of
+            the signal. If diff_order is 0, the signal is not differentiated.
         diff_axes : None or list of ints or strings
             If None, when `diff_order` is greater than 1 and `signal_dimension`
             (`navigation_dimension`) when `on_loadings` is False (True) is
@@ -530,8 +530,9 @@ class MVA():
                                 "navigation" if on_loadings else "signal")
             if isinstance(mask, np.ndarray):
                 warnings.warn(
-                    "Bare numpy array masks are deprecated and will be removed "
-                    "in next HyperSpy 0.9.", DeprecationWarning)
+                    "Bare numpy array masks are deprecated and will be removed"
+                    " in next HyperSpy 0.9.",
+                    DeprecationWarning)
                 ref_shape = ref_shape[::-1]
                 if mask.shape != ref_shape:
                     raise ValueError(
@@ -546,9 +547,11 @@ class MVA():
             elif isinstance(mask, Signal):
                 if mask.axes_manager.signal_shape != ref_shape:
                     raise ValueError(
-                        "The `mask` signal shape is not equal to the %s shape. "
-                        "Mask shape: %s\t%s shape:%s" %
-                        (space, str(mask.axes_manager.signal_shape), space,
+                        "The `mask` signal shape is not equal to the %s shape."
+                        " Mask shape: %s\t%s shape:%s" %
+                        (space,
+                         str(mask.axes_manager.signal_shape),
+                         space,
                          str(ref_shape)))
 
         # Note that we don't check the factor's signal dimension. This is on
@@ -584,8 +587,8 @@ class MVA():
                                      diff_axes=diff_axes,
                                      diff_order=diff_order)
             if mask is not None:
-                # The following is a little trick to dilate the mask
-                # as required when operation on the differences. It exploits the
+                # The following is a little trick to dilate the mask as
+                # required when operation on the differences. It exploits the
                 # fact that np.diff autimatically "dilates" nans. The trick has
                 # a memory penalty which should be low compare to the total
                 # memory required for the core application in most cases.
@@ -618,9 +621,6 @@ class MVA():
             unmixing_matrix = unmixing_matrix.T
 
         elif algorithm == 'sklearn_fastica':
-            # if sklearn_installed is False:
-                # raise ImportError(
-                #'sklearn is not installed. Nothing done')
             if 'tol' not in kwargs:
                 kwargs['tol'] = 1e-10
             lr.bss_node = import_sklearn.FastICA(
