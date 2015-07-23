@@ -1,5 +1,5 @@
 import numpy as np
-import nose.tools
+import nose.tools as nt
 
 import hyperspy.hspy as hs
 
@@ -25,8 +25,8 @@ class TestPowerLaw:
                               None,
                               None,
                               only_current=True)
-        nose.tools.assert_almost_equal(g.A.value, 10.084913947965161)
-        nose.tools.assert_almost_equal(g.r.value, 4.0017676988807409)
+        nt.assert_almost_equal(g.A.value, 10.084913947965161)
+        nt.assert_almost_equal(g.r.value, 4.0017676988807409)
 
     def test_estimate_parameters_unbinned_only_current(self):
         self.m.spectrum.metadata.Signal.binned = False
@@ -37,8 +37,8 @@ class TestPowerLaw:
                               None,
                               None,
                               only_current=True)
-        nose.tools.assert_almost_equal(g.A.value, 10.064378823244837)
-        nose.tools.assert_almost_equal(g.r.value, 4.0017522876514304)
+        nt.assert_almost_equal(g.A.value, 10.064378823244837)
+        nt.assert_almost_equal(g.r.value, 4.0017522876514304)
 
     def test_estimate_parameters_binned(self):
         self.m.spectrum.metadata.Signal.binned = True
@@ -50,8 +50,8 @@ class TestPowerLaw:
                               None,
                               None,
                               only_current=False)
-        nose.tools.assert_almost_equal(g.A.value, 10.084913947965161)
-        nose.tools.assert_almost_equal(g.r.value, 4.0017676988807409)
+        nt.assert_almost_equal(g.A.value, 10.084913947965161)
+        nt.assert_almost_equal(g.r.value, 4.0017676988807409)
 
     def test_estimate_parameters_unbinned(self):
         self.m.spectrum.metadata.Signal.binned = False
@@ -63,8 +63,8 @@ class TestPowerLaw:
                               None,
                               None,
                               only_current=False)
-        nose.tools.assert_almost_equal(g.A.value, 10.064378823244837)
-        nose.tools.assert_almost_equal(g.r.value, 4.0017522876514304)
+        nt.assert_almost_equal(g.A.value, 10.064378823244837)
+        nt.assert_almost_equal(g.r.value, 4.0017522876514304)
 
 
 class TestOffset:
@@ -86,7 +86,7 @@ class TestOffset:
                               None,
                               None,
                               only_current=True)
-        nose.tools.assert_almost_equal(g.offset.value, 10)
+        nt.assert_almost_equal(g.offset.value, 10)
 
     def test_estimate_parameters_unbinned(self):
         self.m.spectrum.metadata.Signal.binned = False
@@ -97,10 +97,10 @@ class TestOffset:
                               None,
                               None,
                               only_current=True)
-        nose.tools.assert_almost_equal(g.offset.value, 10)
+        nt.assert_almost_equal(g.offset.value, 10)
 
 
-class TestiPolynomial:
+class TestPolynomial:
 
     def setUp(self):
         s = hs.signals.Spectrum(np.empty((1024)))
@@ -120,9 +120,9 @@ class TestiPolynomial:
                               None,
                               None,
                               only_current=True)
-        nose.tools.assert_almost_equal(g.coefficients.value[0], 0.5)
-        nose.tools.assert_almost_equal(g.coefficients.value[1], 2)
-        nose.tools.assert_almost_equal(g.coefficients.value[2], 3)
+        nt.assert_almost_equal(g.coefficients.value[0], 0.5)
+        nt.assert_almost_equal(g.coefficients.value[1], 2)
+        nt.assert_almost_equal(g.coefficients.value[2], 3)
 
     def test_estimate_parameters_unbinned(self):
         self.m.spectrum.metadata.Signal.binned = False
@@ -133,9 +133,9 @@ class TestiPolynomial:
                               None,
                               None,
                               only_current=True)
-        nose.tools.assert_almost_equal(g.coefficients.value[0], 0.5)
-        nose.tools.assert_almost_equal(g.coefficients.value[1], 2)
-        nose.tools.assert_almost_equal(g.coefficients.value[2], 3)
+        nt.assert_almost_equal(g.coefficients.value[0], 0.5)
+        nt.assert_almost_equal(g.coefficients.value[1], 2)
+        nt.assert_almost_equal(g.coefficients.value[2], 3)
 
 
 class TestGaussian:
@@ -160,9 +160,9 @@ class TestGaussian:
                               None,
                               None,
                               only_current=True)
-        nose.tools.assert_almost_equal(g.sigma.value, 0.5)
-        nose.tools.assert_almost_equal(g.A.value, 2)
-        nose.tools.assert_almost_equal(g.centre.value, 1)
+        nt.assert_almost_equal(g.sigma.value, 0.5)
+        nt.assert_almost_equal(g.A.value, 2)
+        nt.assert_almost_equal(g.centre.value, 1)
 
     def test_estimate_parameters_unbinned(self):
         self.m.spectrum.metadata.Signal.binned = False
@@ -173,6 +173,6 @@ class TestGaussian:
                               None,
                               None,
                               only_current=True)
-        nose.tools.assert_almost_equal(g.sigma.value, 0.5)
-        nose.tools.assert_almost_equal(g.A.value, 2)
-        nose.tools.assert_almost_equal(g.centre.value, 1)
+        nt.assert_almost_equal(g.sigma.value, 0.5)
+        nt.assert_almost_equal(g.A.value, 2)
+        nt.assert_almost_equal(g.centre.value, 1)
