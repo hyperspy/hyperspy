@@ -51,18 +51,30 @@ class TestBSS1D:
             self.s.get_bss_factors(), s2.get_bss_loadings()))
 
     def test_mask_diff_order_0(self):
+        # This test, unlike most other tests, either passes or raises an error.
+        # It is designed to test if the mask is correctly dilated inside the
+        # `blind_source_separation_method`. If the mask is not correctely
+        # dilated the nan in the loadings should raise an error.
         mask = self.s._get_signal_signal(dtype="bool")
         mask[5] = True
         self.s.learning_results.factors[5, :] = np.nan
         self.s.blind_source_separation(3, diff_order=0, mask=mask)
 
     def test_mask_diff_order_1(self):
+        # This test, unlike most other tests, either passes or raises an error.
+        # It is designed to test if the mask is correctly dilated inside the
+        # `blind_source_separation_method`. If the mask is not correctely
+        # dilated the nan in the loadings should raise an error.
         mask = self.s._get_signal_signal(dtype="bool")
         mask[5] = True
         self.s.learning_results.factors[5, :] = np.nan
         self.s.blind_source_separation(3, diff_order=1, mask=mask)
 
     def test_mask_diff_order_0_on_loadings(self):
+        # This test, unlike most other tests, either passes or raises an error.
+        # It is designed to test if the mask is correctly dilated inside the
+        # `blind_source_separation_method`. If the mask is not correctely
+        # dilated the nan in the loadings should raise an error.
         mask = self.s._get_navigation_signal(dtype="bool")
         mask[5] = True
         self.s.learning_results.loadings[5, :] = np.nan
@@ -70,6 +82,10 @@ class TestBSS1D:
                                        on_loadings=True)
 
     def test_mask_diff_order_1_on_loadings(self):
+        # This test, unlike most other tests, either passes or raises an error.
+        # It is designed to test if the mask is correctly dilated inside the
+        # `blind_source_separation_method`. If the mask is not correctely
+        # dilated the nan in the loadings should raise an error.
         mask = self.s._get_navigation_signal(dtype="bool")
         mask[5] = True
         self.s.learning_results.loadings[5, :] = np.nan
@@ -141,6 +157,10 @@ class TestBSS2D:
             self.s.get_bss_factors(), s2.get_bss_loadings()))
 
     def test_mask_diff_order_0(self):
+        # This test, unlike most other tests, either passes or raises an error.
+        # It is designed to test if the mask is correctly dilated inside the
+        # `blind_source_separation_method`. If the mask is not correctely
+        # dilated the nan in the loadings should raise an error.
         mask = self.s._get_signal_signal(dtype="bool")
         mask.unfold()
         mask[5] = True
@@ -149,6 +169,10 @@ class TestBSS2D:
         self.s.blind_source_separation(3, diff_order=0, mask=mask)
 
     def test_mask_diff_order_1(self):
+        # This test, unlike most other tests, either passes or raises an error.
+        # It is designed to test if the mask is correctly dilated inside the
+        # `blind_source_separation_method`. If the mask is not correctely
+        # dilated the nan in the loadings should raise an error.
         mask = self.s._get_signal_signal(dtype="bool")
         mask.unfold()
         mask[5] = True
@@ -157,6 +181,10 @@ class TestBSS2D:
         self.s.blind_source_separation(3, diff_order=1, mask=mask)
 
     def test_mask_diff_order_1_diff_axes(self):
+        # This test, unlike most other tests, either passes or raises an error.
+        # It is designed to test if the mask is correctly dilated inside the
+        # `blind_source_separation_method`. If the mask is not correctely
+        # dilated the nan in the loadings should raise an error.
         mask = self.s._get_signal_signal(dtype="bool")
         mask.unfold()
         mask[5] = True
@@ -166,6 +194,10 @@ class TestBSS2D:
                                        diff_axes=["x", ])
 
     def test_mask_diff_order_0_on_loadings(self):
+        # This test, unlike most other tests, either passes or raises an error.
+        # It is designed to test if the mask is correctly dilated inside the
+        # `blind_source_separation_method`. If the mask is not correctely
+        # dilated the nan in the loadings should raise an error.
         mask = self.s._get_navigation_signal(dtype="bool")
         mask.unfold()
         mask[5] = True
@@ -175,6 +207,10 @@ class TestBSS2D:
                                        on_loadings=True)
 
     def test_mask_diff_order_1_on_loadings(self):
+        # This test, unlike most other tests, either passes or raises an error.
+        # It is designed to test if the mask is correctly dilated inside the
+        # `blind_source_separation_method`. If the mask is not correctely
+        # dilated the nan in the loadings should raise an error.
         s = self.s.to_spectrum()
         s.decomposition()
         mask = s._get_navigation_signal(dtype="bool")
@@ -186,6 +222,10 @@ class TestBSS2D:
                                   on_loadings=True)
 
     def test_mask_diff_order_1_on_loadings_diff_axes(self):
+        # This test, unlike most other tests, either passes or raises an error.
+        # It is designed to test if the mask is correctly dilated inside the
+        # `blind_source_separation_method`. If the mask is not correctely
+        # dilated the nan in the loadings should raise an error.
         s = self.s.to_spectrum()
         s.decomposition()
         mask = s._get_navigation_signal(dtype="bool")
