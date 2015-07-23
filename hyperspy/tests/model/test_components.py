@@ -111,8 +111,12 @@ class TestPolynomial:
         m.append(hs.components.Polynomial(order=2))
         m[0].coefficients.value = (0.5, 2, 3)
         self.m = m
-        self.sig2d = hs.signals.Spectrum(np.arange(1000).reshape(10, 100))
-        self.sig3d = hs.signals.Spectrum(np.arange(1000).reshape(2, 5, 100))
+        s_2d = hs.signals.Spectrum(np.arange(1000).reshape(10, 100))
+        self.m_2d = hs.create_model(s_2d)
+        self.m_2d.append(m[0])
+        s_3d = hs.signals.Spectrum(np.arange(1000).reshape(2, 5, 100))
+        self.m_3d = hs.create_model(s_3d)
+        self.m_3d.append(m[0])
 
     def test_estimate_parameters_binned(self):
         self.m.spectrum.metadata.Signal.binned = True
@@ -142,21 +146,23 @@ class TestPolynomial:
 
     def test_2d_signal(self):
         # This code should run smoothly, any exceptions should trigger failure
-        s = self.sig2d
-        for i in xrange(1, 5):
-            model = Model(s)
-            p = hs.components.Polynomial(order=i)
-            model.append(p)
-            p.estimate_parameters(s, 0, 100, only_current=False)
+        s = self.m_2d.as_signal()
+        model = Model(s)
+        p = hs.components.Polynomial(order=2)
+        model.append(p)
+        p.estimate_parameters(s, 0, 100, only_current=False)
+        np.testing.assert_allclose(p.coefficients.map['values'],
+                                   np.tile([0.5, 2, 3], (10, 1)))
 
     def test_3d_signal(self):
         # This code should run smoothly, any exceptions should trigger failure
-        s = self.sig3d
-        for i in xrange(1, 5):
-            model = Model(s)
-            p = hs.components.Polynomial(order=i)
-            model.append(p)
-            p.estimate_parameters(s, 0, 100, only_current=False)
+        s = self.m_3d.as_signal()
+        model = Model(s)
+        p = hs.components.Polynomial(order=2)
+        model.append(p)
+        p.estimate_parameters(s, 0, 100, only_current=False)
+        np.testing.assert_allclose(p.coefficients.map['values'],
+                                   np.tile([0.5, 2, 3], (2, 5, 1)))
 
 
 class TestGaussian:
