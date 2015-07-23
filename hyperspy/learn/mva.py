@@ -475,35 +475,6 @@ class MVA():
 
         lr = self.learning_results
 
-        # Check mask
-        if mask is not None:
-            ref_shape, space = (
-                (self.axes_manager.navigation_shape, "navigation")
-                if on_loadings
-                else
-                (self.axes_manager.signal_shape, "signal"))
-            if isinstance(mask, np.ndarray):
-                ref_shape = ref_shape[::-1]
-                if mask.shape != ref_shape:
-                    raise ValueError(
-                        "The `mask` shape is not equal to the %s shape in the"
-                        "array. Mask shape: %s\tSignal shape in array: %s" %
-                        (space, str(mask.shape[::-1]), str(ref_shape)))
-                else:
-                    if on_loadings:
-                        mask = self._get_navigation_signal(data=mask)
-                    else:
-                        mask = self._get_signal_signal(data=mask)
-            elif isinstance(mask, Signal):
-                ref_shape = (self.axes_manager.navigation_shape
-                             if on_loadings
-                             else self.axes_manager.signal_shape)
-                if mask.axes_manager.signal_shape != ref_shape:
-                    raise ValueError(
-                        "The `mask` signal shape is not equal to the %s shape in "
-                        "the array. Mask shape: %s\t%s shape:%s" %
-                        (space, str(mask.axes_manager.signal_shape), space,
-                         str(ref_shape)))
 
         if factors is None:
             if not hasattr(lr, 'factors') or lr.factors is None:
@@ -552,6 +523,33 @@ class MVA():
                              "greater than one, but the navigation "
                              "size of the given factors is %i." %
                              factors.axes_manager.navigation_size)
+
+        # Check mask dimensions
+        if mask is not None:
+            ref_shape, space = (factors.axes_manager.signal_shape,
+                                "navigation" if on_loadings else "signal")
+            if isinstance(mask, np.ndarray):
+                warnings.warn(
+                    "Bare numpy array masks are deprecated and will be removed "
+                    "in next HyperSpy 0.9.", DeprecationWarning)
+                ref_shape = ref_shape[::-1]
+                if mask.shape != ref_shape:
+                    raise ValueError(
+                        "The `mask` shape is not equal to the %s shape."
+                        "Mask shape: %s\tSignal shape in array: %s" %
+                        (space, str(mask.shape), str(ref_shape)))
+                else:
+                    if on_loadings:
+                        mask = self._get_navigation_signal(data=mask)
+                    else:
+                        mask = self._get_signal_signal(data=mask)
+            elif isinstance(mask, Signal):
+                if mask.axes_manager.signal_shape != ref_shape:
+                    raise ValueError(
+                        "The `mask` signal shape is not equal to the %s shape. "
+                        "Mask shape: %s\t%s shape:%s" %
+                        (space, str(mask.axes_manager.signal_shape), space,
+                         str(ref_shape)))
 
         # Note that we don't check the factor's signal dimension. This is on
         # purpose as an user may like to apply pretreaments that change their
