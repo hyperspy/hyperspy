@@ -24,10 +24,14 @@ from hyperspy.io import load
 
 my_path = os.path.dirname(__file__)
 
+
 class TestStackBuilder():
-    
+
     def test_load_stackbuilder_imagestack(self):
-        image_stack = load(my_path + "/dm_stackbuilder_plugin/test_stackbuilder_imagestack.dm3")
-        data_dimensions = len(image_stack.data.shape)
-        axes_dimensions = len(image_stack.axes_manager.shape)
+        image_stack = load(
+            my_path +
+            "/dm_stackbuilder_plugin/test_stackbuilder_imagestack.dm3")
+        data_dimensions = image_stack.data.ndim
+        am = image_stack.axes_manager
+        axes_dimensions = am.signal_dimension + am.navigation_dimension
         assert_equal(data_dimensions, axes_dimensions)
