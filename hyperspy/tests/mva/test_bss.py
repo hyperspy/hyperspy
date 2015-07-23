@@ -111,14 +111,13 @@ class TestBSS2D:
         self.s.blind_source_separation(
             3, diff_order=0, fun="exp", on_loadings=False, factors=factors)
         matrix = self.s.learning_results.unmixing_matrix.copy()
-        print matrix
         self.s.blind_source_separation(
             3, diff_order=1, fun="exp", on_loadings=False,
             diff_axes=["x"],
         )
-        matrix = self.s.learning_results.unmixing_matrix.copy()
         nose.tools.assert_true(
-            np.allclose(matrix, self.s.learning_results.unmixing_matrix))
+            np.allclose(matrix, self.s.learning_results.unmixing_matrix,
+                        atol=1e-6))
 
     def test_diff_axes_string_without_mask(self):
         factors = self.s.get_decomposition_factors().inav[:3].diff(
