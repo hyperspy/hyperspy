@@ -638,11 +638,8 @@ class MVA():
             if mdp_installed is False:
                 raise ImportError(
                     'MDP is not installed. Nothing done')
-            to_exec = 'lr.bss_node=mdp.nodes.%sNode(' % algorithm
-            for key, value in kwargs.iteritems():
-                to_exec += '%s=%s,' % (key, value)
-            to_exec += ')'
-            exec(to_exec)
+            temp_function = getattr(mdp.nodes, algorithm + "Node")
+            lr.bss_node = temp_function(**kwargs)
             lr.bss_node.train(factors)
             unmixing_matrix = lr.bss_node.get_recmatrix()
         w = np.dot(unmixing_matrix, invsqcovmat)
