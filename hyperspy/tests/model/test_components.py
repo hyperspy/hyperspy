@@ -112,7 +112,7 @@ class TestPolynomial:
         m[0].coefficients.value = (0.5, 2, 3)
         self.m = m
         self.sig2d = hs.signals.Spectrum(np.arange(1000).reshape(10, 100))
-        self.sig3d = hs.signals.Spectrum(np.arange(10000).reshape(10, 10, 100))
+        self.sig3d = hs.signals.Spectrum(np.arange(1000).reshape(2, 5, 100))
 
     def test_estimate_parameters_binned(self):
         self.m.spectrum.metadata.Signal.binned = True
