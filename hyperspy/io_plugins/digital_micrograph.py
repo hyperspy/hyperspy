@@ -517,7 +517,7 @@ class ImageObject(object):
         return shape[::-1]  # DM uses image indexing X, Y, Z...
 
     # For some image stacks created using plugins in Digital Micrograph
-    # the metadata under Calibrations.Dimension would not reflect the 
+    # the metadata under Calibrations.Dimension would not reflect the
     # actual dimensions in the dataset, leading to these images not
     # loading properly. To allow HyperSpy to load these files, any missing
     # dimensions in the metadata is appended with "dummy" values.
