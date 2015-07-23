@@ -2,6 +2,7 @@ import numpy as np
 import nose.tools as nt
 
 import hyperspy.hspy as hs
+from hyperspy.model import Model
 
 
 class TestPowerLaw:
@@ -110,6 +111,8 @@ class TestPolynomial:
         m.append(hs.components.Polynomial(order=2))
         m[0].coefficients.value = (0.5, 2, 3)
         self.m = m
+        self.sig2d = hs.signals.Spectrum(np.arange(1000).reshape(10, 100))
+        self.sig3d = hs.signals.Spectrum(np.arange(10000).reshape(10, 10, 100))
 
     def test_estimate_parameters_binned(self):
         self.m.spectrum.metadata.Signal.binned = True
@@ -136,6 +139,32 @@ class TestPolynomial:
         nt.assert_almost_equal(g.coefficients.value[0], 0.5)
         nt.assert_almost_equal(g.coefficients.value[1], 2)
         nt.assert_almost_equal(g.coefficients.value[2], 3)
+
+    def test_2d_signal(self):
+        s = self.sig2d
+        try:
+            for i in xrange(1, 5):
+                model = Model(s)
+                p = hs.components.Polynomial(order=i)
+                model.append(p)
+                p.estimate_parameters(s, 0, 100, only_current=False)
+        except:
+            # This code should run smoothly, so explicitly fail on exception
+            nt.assert_true(False, "Polynomial component failed to estimate "
+                           "parameters for 2D Signal")
+
+    def test_3d_signal(self):
+        s = self.sig3d
+        try:
+            for i in xrange(1, 5):
+                model = Model(s)
+                p = hs.components.Polynomial(order=i)
+                model.append(p)
+                p.estimate_parameters(s, 0, 100, only_current=False)
+        except:
+            # This code should run smoothly, so explicitly fail on exception
+            nt.assert_true(False, "Polynomial component failed to estimate "
+                           "parameters for 3D Signal")
 
 
 class TestGaussian:
