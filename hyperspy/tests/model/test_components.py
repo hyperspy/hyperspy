@@ -141,30 +141,22 @@ class TestPolynomial:
         nt.assert_almost_equal(g.coefficients.value[2], 3)
 
     def test_2d_signal(self):
+        # This code should run smoothly, any exceptions should trigger failure
         s = self.sig2d
-        try:
-            for i in xrange(1, 5):
-                model = Model(s)
-                p = hs.components.Polynomial(order=i)
-                model.append(p)
-                p.estimate_parameters(s, 0, 100, only_current=False)
-        except:
-            # This code should run smoothly, so explicitly fail on exception
-            nt.assert_true(False, "Polynomial component failed to estimate "
-                           "parameters for 2D Signal")
+        for i in xrange(1, 5):
+            model = Model(s)
+            p = hs.components.Polynomial(order=i)
+            model.append(p)
+            p.estimate_parameters(s, 0, 100, only_current=False)
 
     def test_3d_signal(self):
+        # This code should run smoothly, any exceptions should trigger failure
         s = self.sig3d
-        try:
-            for i in xrange(1, 5):
-                model = Model(s)
-                p = hs.components.Polynomial(order=i)
-                model.append(p)
-                p.estimate_parameters(s, 0, 100, only_current=False)
-        except:
-            # This code should run smoothly, so explicitly fail on exception
-            nt.assert_true(False, "Polynomial component failed to estimate "
-                           "parameters for 3D Signal")
+        for i in xrange(1, 5):
+            model = Model(s)
+            p = hs.components.Polynomial(order=i)
+            model.append(p)
+            p.estimate_parameters(s, 0, 100, only_current=False)
 
 
 class TestGaussian:
