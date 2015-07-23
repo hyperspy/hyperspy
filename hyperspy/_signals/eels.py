@@ -215,7 +215,7 @@ class EELSSpectrum(Spectrum):
             Will only search for the ZLP within the signal_range. If given
             in integers, the range will be in index values. If given floats,
             the range will be in spectrum values. Useful if there are features
-            in the spectrum which are more intensity than the ZLP.
+            in the spectrum which are more intensite than the ZLP.
             Default is searching in the whole signal.
 
         Examples
@@ -241,11 +241,16 @@ class EELSSpectrum(Spectrum):
         def substract_from_offset(value, signals):
             for signal in signals:
                 signal.axes_manager[-1].offset -= value
-        
-        if signal_range:
-            zlpc = self[...,signal_range[0]:signal_range[1]].estimate_zero_loss_peak_centre(mask=mask)
-        else:
-            zlpc = self.estimate_zero_loss_peak_centre(mask=mask)
+
+        def estimate_zero_loss_peak_centre(s, mask, signal_range):
+            if signal_range:
+                zlpc = s.isig[signal_range[0]:signal_range[1]].\
+                        estimate_zero_loss_peak_centre(mask=mask)
+            else:
+                zlpc = s.estimate_zero_loss_peak_centre(mask=mask)
+            return zlpc
+
+        zlpc = estimate_zero_loss_peak_centre(self, mask, signal_range)
         mean_ = without_nans(zlpc.data).mean()
         if print_stats is True:
             print
@@ -256,10 +261,7 @@ class EELSSpectrum(Spectrum):
             signal.shift1D(-zlpc.data + mean_)
 
         if calibrate is True:
-            if signal_range:
-                zlpc = self[...,signal_range[0]:signal_range[1]].estimate_zero_loss_peak_centre(mask=mask)
-            else:
-                zlpc = self.estimate_zero_loss_peak_centre(mask=mask)
+            zlpc = estimate_zero_loss_peak_centre(self, mask, signal_range)
             substract_from_offset(without_nans(zlpc.data).mean(),
                                   also_align + [self])
 
@@ -267,8 +269,8 @@ class EELSSpectrum(Spectrum):
             return
         left, right = -3., 3.
         if calibrate is False:
-            mean_ = without_nans(self.estimate_zero_loss_peak_centre(
-                mask=mask).data).mean()
+            mean_ = without_nans(estimate_zero_loss_peak_centre(
+                self, mask, signal_range).data).mean()
             left += mean_
             right += mean_
 
@@ -277,10 +279,7 @@ class EELSSpectrum(Spectrum):
         right = (right if right < self.axes_manager[-1].axis[-1]
                  else self.axes_manager[-1].axis[-1])
         self.align1D(left, right, also_align=also_align, **kwargs)
-        if signal_range:
-            zlpc = self[...,-3.:3.].estimate_zero_loss_peak_centre(mask=mask)
-        else:
-            zlpc = self.estimate_zero_loss_peak_centre(mask=mask)
+        zlpc = estimate_zero_loss_peak_centre(self, mask, signal_range)
         if calibrate is True:
             substract_from_offset(without_nans(zlpc.data).mean(),
                                   also_align + [self])
