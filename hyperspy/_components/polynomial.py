@@ -109,17 +109,19 @@ class Polynomial(Component):
                 dc = signal.data
                 # For polyfit the spectrum goes in the first axis
                 if axis.index_in_array > 0:
-                    dc = np.rollaxis(dc, 1, 0)  # Unfolded, so use 1
+                    dc = dc.T             # Unfolded, so simply transpose
                 cmaps = np.polyfit(axis.axis[i1:i2], dc[i1:i2, :],
                                    self.get_polynomial_order())
                 if axis.index_in_array > 0:
-                    cmaps = np.rollaxis(cmaps, 0, 2)
+                    cmaps = cmaps.T       # Transpose back if needed
+                # Shape needed to fit coefficients.map:
                 cmap_shape = nav_shape + (self.get_polynomial_order() + 1, )
                 self.coefficients.map['values'][:] = cmaps.reshape(cmap_shape)
                 if binned is True:
                     self.coefficients.map["values"] /= axis.scale
                 self.coefficients.map['is_set'][:] = True
             finally:
+                # Make sure we always attempt to refold
                 if unfolded:
                     signal.fold()
             self.fetch_stored_values()
