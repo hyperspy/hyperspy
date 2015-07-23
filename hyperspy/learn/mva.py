@@ -488,7 +488,7 @@ class MVA():
                     raise ValueError(
                         "The `mask` shape is not equal to the %s shape in the"
                         "array. Mask shape: %s\tSignal shape in array: %s" %
-                        (space, str(mask.shape), str(ref_shape)))
+                        (space, str(mask.shape[::-1]), str(ref_shape)))
                 else:
                     if on_loadings:
                         mask = self._get_navigation_signal(data=mask)
@@ -563,7 +563,7 @@ class MVA():
         if diff_axes is not None:
             diff_axes = [1 + axis.index_in_axes_manager for axis in
                          [self.axes_manager[axis] for axis in diff_axes]]
-            if on_loadings is False:
+            if not on_loadings:
                 diff_axes = [index - self.axes_manager.navigation_dimension
                              for index in diff_axes]
         # Select components to separate
