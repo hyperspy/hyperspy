@@ -475,7 +475,6 @@ class MVA():
 
         lr = self.learning_results
 
-
         if factors is None:
             if not hasattr(lr, 'factors') or lr.factors is None:
                 raise AttributeError(
