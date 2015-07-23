@@ -77,7 +77,8 @@ class PowerLaw(Component):
 
     def grad_origin(self, x):
         return np.where(x > self.left_cutoff, self.r.value *
-                        (x - self.origin.value) ** (-self.r.value - 1) * self.A.value, 0)
+                        (x - self.origin.value) ** (-self.r.value - 1) *
+                        self.A.value, 0)
 
     def estimate_parameters(self, signal, x1, x2, only_current=False):
         """Estimate the parameters by the two area method
