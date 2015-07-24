@@ -21,6 +21,7 @@ import os.path
 import warnings
 import math
 import inspect
+from contextlib import contextmanager
 
 import numpy as np
 import numpy.ma as ma
@@ -3491,6 +3492,29 @@ class Signal(MVA,
         sig_needed_unfolding = self.unfold_signal_space()
         needed_unfolding = nav_needed_unfolding or sig_needed_unfolding
         return needed_unfolding
+
+    @contextmanager
+    def unfolded(self):
+        """Use this function together with a `with` statement to have the
+        signal be unfolded for the scope of the `with` block, before
+        automatically refolding when passing out of scope.
+
+        See also
+        --------
+        unfold, fold
+
+        Examples
+        --------
+        >>> import numpy as np
+        >>> s = Signal(np.random.random((64,64,1024)))
+        >>> with s.unfolded():
+                # Do whatever needs doing while unfolded here
+                pass
+        """
+        unfolded = self.unfold()
+        yield unfolded
+        if unfolded is not False:
+            self.fold()
 
     def unfold_navigation_space(self):
         """Modify the shape of the data to obtain a navigation space of
