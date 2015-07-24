@@ -182,6 +182,7 @@ class EELSSpectrum(Spectrum):
             print_stats=True,
             subpixel=True,
             mask=None,
+            signal_range=None,
             **kwargs):
         """Align the zero-loss peak.
 
@@ -210,6 +211,22 @@ class EELSSpectrum(Spectrum):
             It must have signal_dimension = 0 and navigation_shape equal to the
             current signal. Where mask is True the shift is not computed
             and set to nan.
+        signal_range : tuple of integers, tuple of floats. Optional
+            Will only search for the ZLP within the signal_range. If given
+            in integers, the range will be in index values. If given floats,
+            the range will be in spectrum values. Useful if there are features
+            in the spectrum which are more intense than the ZLP.
+            Default is searching in the whole signal.
+
+        Examples
+        --------
+        >>>> s_ll.align_zero_loss_peak()
+
+        Aligning both the lowloss signal and another signal
+        >>>> s_ll.align_zero_loss_peak(also_align=[s])
+
+        Aligning within a narrow range of the lowloss signal
+        >>>> s_ll.align_zero_loss_peak(signal_range=(-10.,10.))
 
         See Also
         --------
@@ -225,7 +242,15 @@ class EELSSpectrum(Spectrum):
             for signal in signals:
                 signal.axes_manager[-1].offset -= value
 
-        zlpc = self.estimate_zero_loss_peak_centre(mask=mask)
+        def estimate_zero_loss_peak_centre(s, mask, signal_range):
+            if signal_range:
+                zlpc = s.isig[signal_range[0]:signal_range[1]].\
+                        estimate_zero_loss_peak_centre(mask=mask)
+            else:
+                zlpc = s.estimate_zero_loss_peak_centre(mask=mask)
+            return zlpc
+
+        zlpc = estimate_zero_loss_peak_centre(self, mask, signal_range)
         mean_ = without_nans(zlpc.data).mean()
         if print_stats is True:
             print
@@ -236,7 +261,7 @@ class EELSSpectrum(Spectrum):
             signal.shift1D(-zlpc.data + mean_)
 
         if calibrate is True:
-            zlpc = self.estimate_zero_loss_peak_centre(mask=mask)
+            zlpc = estimate_zero_loss_peak_centre(self, mask, signal_range)
             substract_from_offset(without_nans(zlpc.data).mean(),
                                   also_align + [self])
 
@@ -244,8 +269,8 @@ class EELSSpectrum(Spectrum):
             return
         left, right = -3., 3.
         if calibrate is False:
-            mean_ = without_nans(self.estimate_zero_loss_peak_centre(
-                mask=mask).data).mean()
+            mean_ = without_nans(estimate_zero_loss_peak_centre(
+                self, mask, signal_range).data).mean()
             left += mean_
             right += mean_
 
@@ -254,7 +279,7 @@ class EELSSpectrum(Spectrum):
         right = (right if right < self.axes_manager[-1].axis[-1]
                  else self.axes_manager[-1].axis[-1])
         self.align1D(left, right, also_align=also_align, **kwargs)
-        zlpc = self.estimate_zero_loss_peak_centre(mask=mask)
+        zlpc = estimate_zero_loss_peak_centre(self, mask, (-3., 3.))
         if calibrate is True:
             substract_from_offset(without_nans(zlpc.data).mean(),
                                   also_align + [self])
