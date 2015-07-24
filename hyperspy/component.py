@@ -560,6 +560,10 @@ class Component(t.HasTraits):
                             "the name " + str(value))
                 else:
                     self._name = value
+                    setattr(self.model.components, slugify(
+                        value, valid_variable_name=True), self)
+                    self.model.components.__delattr__(
+                        slugify(old_value, valid_variable_name=True))
         else:
             self._name = value
         self.trait_property_changed('name', old_value, self._name)

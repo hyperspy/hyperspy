@@ -49,7 +49,15 @@ from hyperspy.drawing.widgets import (DraggableVerticalLine,
 from hyperspy.gui.tools import ComponentFit
 from hyperspy.component import Component
 from hyperspy.signal import Signal
+from hyperspy.misc.utils import slugify
 
+class ModelComponents(object):
+    """Container for model components.
+
+    Useful to provide tab completion when running in IPython.
+
+    """
+    pass
 
 class Model(list):
 
@@ -205,6 +213,7 @@ class Model(list):
         self._suspend_update = False
         self._adjust_position_all = None
         self._plot_components = False
+        self.components = ModelComponents()
 
     def __repr__(self):
         return u"<Model %s>".encode('utf8') % super(Model, self).__repr__()
@@ -281,6 +290,8 @@ class Model(list):
         object._create_arrays()
         list.append(self, object)
         object.model = self
+        setattr(self.components, slugify(name_string,
+                                         valid_variable_name=True), object)
         self._touch()
         if self._plot_components:
             self._plot_component(object)
