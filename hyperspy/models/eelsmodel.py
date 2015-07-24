@@ -79,6 +79,10 @@ class EELSModel(Model):
             interactive_ns = get_interactive_ns()
             background = PowerLaw()
             background.name = 'background'
+            warnings.warn(
+                "Adding \"background\" to the user namespace. "
+                "This feature will be removed in HyperSpy 0.9.",
+                DeprecationWarning)
             interactive_ns['background'] = background
             self.append(background)
 
@@ -177,8 +181,16 @@ class EELSModel(Model):
         self.GOS = master_edge.GOS._name
         self.append(master_edge)
         interactive_ns[self[-1].name] = self[-1]
+        warnings.warn("warning",
+            "Adding \"%s\" to the user namespace. "
+            "This feature will be removed in HyperSpy 0.9." % self[-1].name,
+            DeprecationWarning)
         element = master_edge.element
         interactive_ns[element] = []
+        warnings.warn(
+            "Adding \"%s\" to the user namespace. "
+            "This feature will be removed in HyperSpy 0.9." % element,
+            DeprecationWarning)
         interactive_ns[element].append(self[-1])
         while len(e_shells) > 0:
             next_element = e_shells[-1].split('_')[0]
@@ -207,6 +219,11 @@ class EELSModel(Model):
                 self.append(edge)
                 if copy2interactive_ns is True:
                     interactive_ns[edge.name] = edge
+                    warnings.warn(
+                        "Adding \"%s\" to the user namespace. "
+                        "This feature will be removed in HyperSpy 0.9." %
+                        edge.name,
+                        DeprecationWarning)
                     interactive_ns[element].append(edge)
 
     def resolve_fine_structure(
