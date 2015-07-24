@@ -23,7 +23,7 @@ object returned by the :py:func:`~.io.load` function. e.g.,
 .. code-block:: python
     
     >>> s = load('YourDataFilenameHere') # Load the data from a file
-    >>> m = create_model(s) # Create the model and asign it to the variable m
+    >>> m = s.create_model() # Create the model and asign it to the variable m
 
 At this point you may be prompted to provide any necessary information not
 already included in the datafile, e.g.if s is EELS data, you may be asked for
@@ -158,7 +158,7 @@ back to `True`.
     .. code-block:: python
  
         >>> s = signals.Spectrum(np.arange(100).reshape(10,10))
-        >>> m = create_model(s)
+        >>> m = s.create_model()
         >>> g1 = components.Gaussian()
         >>> g2 = components.Gaussian()
         >>> m.extend([g1,g2])
@@ -198,7 +198,7 @@ Example:
 .. code-block:: python
 
     >>> s = signals.Spectrum(np.arange(100).reshape(10,10))
-    >>> m = create_model(s)
+    >>> m = s.create_model()
     >>> g1 = components.Gaussian()
     >>> g2 = components.Gaussian()
     >>> m.extend([g1,g2])
@@ -412,7 +412,7 @@ to the data.
 
 .. code-block:: python
 
-    >>> m = create_model(s)
+    >>> m = s.create_model()
     >>> line  = components.Polynomial(order=1)
     >>> m.append(line)
     >>> m.fit()
@@ -447,7 +447,7 @@ gaussian noise and proceed to fit as in the previous example.
     >>> s = signals.SpectrumSimulation(
     ...     np.arange(300))
     >>> s.add_poissonian_noise()
-    >>> m = create_model(s)
+    >>> m = s.create_model()
     >>> line  = components.Polynomial(order=1)
     >>> m.append(line)
     >>> m.fit()
@@ -491,7 +491,7 @@ the ``centre`` parameter.
     >>> s = signals.Signal(np.random.normal(loc=10, scale=0.01,
     size=1e5)).get_histogram()
     >>> s.metadata.Signal.binned = True
-    >>> m = create_model(s)
+    >>> m = s.create_model()
     >>> g1 = components.Gaussian()
     >>> m.append(g1)
     >>> g1.centre.value = 7
