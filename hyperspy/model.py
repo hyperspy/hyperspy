@@ -66,7 +66,7 @@ class ModelComponents(object):
     def __repr__(self):
         signature = u"%4s | %25s | %25s | %25s"
         ans = signature % ('#',
-                           'Variable Name',
+                           'Attribute Name',
                            'Component Name',
                            'Component Type')
         ans += u"\n"
@@ -253,11 +253,13 @@ class Model(list):
 
     def __repr__(self):
         title = self.spectrum.metadata.General.title
+        class_name = str(self.__class__).split("'")[1].split('.')[-1]
+
         if len(title):
-            return u"<%s model>".encode(
-                'utf8') % self.spectrum.metadata.General.title
+            return u"<%s, title: %s>".encode(
+                'utf8') % (class_name, self.spectrum.metadata.General.title)
         else:
-            return u"<Model>".encode('utf8')
+            return u"<%s>".encode('utf8') % class_name
 
     def _get_component(self, object):
         if isinstance(object, int) or isinstance(object, basestring):
