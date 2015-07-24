@@ -181,8 +181,7 @@ class EELSModel(Model):
         self.GOS = master_edge.GOS._name
         self.append(master_edge)
         interactive_ns[self[-1].name] = self[-1]
-        warnings.warn("warning",
-                      "Adding \"%s\" to the user namespace. "
+        warnings.warn("Adding \"%s\" to the user namespace. "
                       "This feature will be removed in HyperSpy 0.9." % self[
                           -1].name,
                       DeprecationWarning)
