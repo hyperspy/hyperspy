@@ -345,6 +345,7 @@ class TestDerivative:
         self.s = s
 
     def test_derivative_data(self):
-        self.s.derivative(axis=0, order=4)
-        nt.assert_true(np.allclose(self.s.data,
-                                   np.sin(self.s.axes_manager[0].axis)))
+        der = self.s.derivative(axis=0, order=4)
+        nt.assert_true(np.allclose(der.data,
+                                   np.sin(der.axes_manager[0].axis),
+                                   atol=1e-2),)

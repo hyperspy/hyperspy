@@ -3816,23 +3816,27 @@ class Signal(MVA,
         s.get_dimensions_from_data()
         return s
 
-    def derivative(self, axis, order=1, central_differences=False):
+    def derivative(self, axis, order=1):
         """Numerical derivative along the given axis.
 
-        Currently only the first order finete difference method is implemented.
-        Therefore, the
+        Currently only the first order finite difference method is implemented.
+
         Parameters
         ----------
         axis : {int | string}
            The axis can be specified using the index of the axis in
            `axes_manager` or the axis name.
         order: int
-            The order of the derivative
+            The order of the derivative. (Note that this is the order of the
+            derivative i.e. `order=2` does not use second order finite
+            differences method.)
 
         Returns
         -------
-        def : Signal
-            The size of the
+        der : Signal
+            Note that the size of the data on the given `axis` decreases by the
+            given `order` i.e. if `axis` is "x" and `order` is 2 the x dimension
+            is N, der's x dimension is N - 2.
 
         See also
         --------
