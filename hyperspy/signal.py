@@ -3508,9 +3508,11 @@ class Signal(MVA,
         """
         unfolded = False
         if unfold_navigation:
-            unfolded = unfolded or self.unfold_navigation_space()
+            if self.unfold_navigation_space():
+                unfolded = True
         if unfold_signal:
-            unfolded = unfolded or self.unfold_signal_space()
+            if self.unfold_signal_space():
+                unfolded = True
         return unfolded
 
     @contextmanager
