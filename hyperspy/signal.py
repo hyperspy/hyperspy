@@ -3496,7 +3496,7 @@ class Signal(MVA,
             if isinstance(variance, Signal):
                 variance._unfold(steady_axes, unfolded_axis)
 
-    def unfold(self):
+    def unfold(self, unfold_navigation=True, unfold_signal=True):
         """Modifies the shape of the data by unfolding the signal and
         navigation dimensions separately
 
@@ -3506,10 +3506,12 @@ class Signal(MVA,
 
 
         """
-        nav_needed_unfolding = self.unfold_navigation_space()
-        sig_needed_unfolding = self.unfold_signal_space()
-        needed_unfolding = nav_needed_unfolding or sig_needed_unfolding
-        return needed_unfolding
+        unfolded = False
+        if unfold_navigation:
+            unfolded = unfolded or self.unfold_navigation_space()
+        if unfold_signal:
+            unfolded = unfolded or self.unfold_signal_space()
+        return unfolded
 
     @contextmanager
     def unfolded(self):
