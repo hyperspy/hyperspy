@@ -836,8 +836,9 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
 
     return signal
 
+
 def shorten_name(name, req_l):
     if len(name) > req_l:
-        return name[:req_l-2] + u'..'
+        return name[:req_l - 2] + u'..'
     else:
         return name

@@ -65,9 +65,12 @@ class ModelComponents(object):
 
     def __repr__(self):
         signature = u"%4s | %25s | %25s | %25s"
-        ans = signature % ('#', 'Variable Name', 'Component Name', 'Component Type')
+        ans = signature % ('#',
+                           'Variable Name',
+                           'Component Name',
+                           'Component Type')
         ans += u"\n"
-        ans += signature % ('-'*4, '-'*25, '-'*25, '-'*25)
+        ans += signature % ('-' * 4, '-' * 25, '-' * 25, '-' * 25)
         if self._model:
             for i, c in enumerate(self._model):
                 ans += u"\n"
@@ -79,7 +82,10 @@ class ModelComponents(object):
                 name_string = shorten_name(name_string, 25)
                 component_type = shorten_name(component_type, 25)
 
-                ans += signature % (i, variable_name, name_string, component_type)
+                ans += signature % (i,
+                                    variable_name,
+                                    name_string,
+                                    component_type)
         ans = ans.encode('utf8')
         return ans
 
@@ -248,7 +254,8 @@ class Model(list):
     def __repr__(self):
         title = self.spectrum.metadata.General.title
         if len(title):
-            return u"<%s model>".encode('utf8') % self.spectrum.metadata.General.title
+            return u"<%s model>".encode(
+                'utf8') % self.spectrum.metadata.General.title
         else:
             return u"<Model>".encode('utf8')
 
