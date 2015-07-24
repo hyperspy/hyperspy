@@ -147,6 +147,13 @@ HyperSpy has created the model and configured it automatically:
     <N_K (EELSCLEdge component)>,
     <B_K (EELSCLEdge component)>]
 
+.. warning::
+
+   Notice that the PowerLaw component has been automatically renamed to
+   "background". This behaviour is deprecated and will be removed in
+   HyperSpy 0.9. From them on this component will keep its original name,
+   "PowerLaw".
+
 
 Furthermore, the components are available in the user namespace
 
