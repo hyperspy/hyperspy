@@ -270,12 +270,12 @@ class Test4D:
         s = self.s
         diff = s.diff(axis=2, order=2)
         diff_data = np.diff(s.data, n=2, axis=0)
-        assert_true((diff.data == diff_data).all())
+        nt.assert_true((diff.data == diff_data).all())
 
     def test_diff_axis(self):
         s = self.s
         diff = s.diff(axis=2, order=2)
-        assert_equal(
+        nt.assert_equal(
             diff.axes_manager[2].offset,
             s.axes_manager[2].offset + s.axes_manager[2].scale)
 
@@ -331,3 +331,21 @@ def test_signal_iterator():
     # restarted
     for i, signal in enumerate(s):
         nt.assert_equal(i, signal.data[0])
+
+
+class TestDerivative:
+
+    def setup(self):
+        offset = 3
+        scale = 0.1
+        x = np.arange(-offset, offset, scale)
+        s = signals.Spectrum(np.sin(x))
+        s.axes_manager[0].offset = x[0]
+        s.axes_manager[0].scale = scale
+        self.s = s
+
+    def test_derivative_data(self):
+        der = self.s.derivative(axis=0, order=4)
+        nt.assert_true(np.allclose(der.data,
+                                   np.sin(der.axes_manager[0].axis),
+                                   atol=1e-2),)
