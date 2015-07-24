@@ -182,9 +182,10 @@ class EELSModel(Model):
         self.append(master_edge)
         interactive_ns[self[-1].name] = self[-1]
         warnings.warn("warning",
-            "Adding \"%s\" to the user namespace. "
-            "This feature will be removed in HyperSpy 0.9." % self[-1].name,
-            DeprecationWarning)
+                      "Adding \"%s\" to the user namespace. "
+                      "This feature will be removed in HyperSpy 0.9." % self[
+                          -1].name,
+                      DeprecationWarning)
         element = master_edge.element
         interactive_ns[element] = []
         warnings.warn(
