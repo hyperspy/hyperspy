@@ -3512,9 +3512,11 @@ class Signal(MVA,
                 pass
         """
         unfolded = self.unfold()
-        yield unfolded
-        if unfolded is not False:
-            self.fold()
+        try:
+            yield unfolded
+        finally:
+            if unfolded is not False:
+                self.fold()
 
     def unfold_navigation_space(self):
         """Modify the shape of the data to obtain a navigation space of
