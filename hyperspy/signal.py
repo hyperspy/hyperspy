@@ -4724,6 +4724,10 @@ class Signal(MVA,
         if plot_marker:
             marker.plot()
 
+    def create_model(self):
+        from hyperspy.model import Model
+        return Model(self)
+
 
 # Implement binary operators
 for name in (

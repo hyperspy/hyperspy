@@ -97,11 +97,9 @@ def create_model(signal, *args, **kwargs):
     A Model class
 
     """
-
-    from hyperspy._signals.eels import EELSSpectrum
-    from hyperspy.models.eelsmodel import EELSModel
-    from hyperspy.model import Model
-    if isinstance(signal, EELSSpectrum):
-        return EELSModel(signal, *args, **kwargs)
-    else:
-        return Model(signal, *args, **kwargs)
+    import warnings
+    warnings.warn(
+        "This function is deprecated and will be removed in HyperSpy 0.9. "
+        "Please use the equivalent `Signal.create_model` method "
+        "instead.", DeprecationWarning)
+    return s.create_model(*args, **kwargs)
