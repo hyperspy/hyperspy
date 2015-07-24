@@ -27,6 +27,7 @@ except ImportError:
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         from hyperspy.misc.borrowed.tifffile import imsave, TiffFile
+        warnings.simplefilter("default")
     warnings.warn(
         "Failed to import the optional scikit image package. "
         "Loading of some compressed images will be slow.\n")

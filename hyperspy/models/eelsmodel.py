@@ -80,11 +80,6 @@ class EELSModel(Model):
             background = PowerLaw()
             background.name = 'background'
             warnings.warn(
-                "Power law background name changed to background."
-                "This feature will be removed in HyperSpy 0.9 and, "
-                "from then on, this component will keep its original name, "
-                "PowerLaw.", DeprecationWarning)
-            warnings.warn(
                 "Adding \"background\" to the user namespace. "
                 "This feature will be removed in HyperSpy 0.9.",
                 DeprecationWarning)
