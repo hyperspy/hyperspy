@@ -89,7 +89,12 @@ class Model(list):
         Chi-squared of the signal (or np.nan if not yet fit)
     dof : A Signal of integers
         Degrees of freedom of the signal (0 if not yet fit)
-    red_chisq
+    red_chisq : Signal instance
+        Reduced chi-squared.
+    components : `ModelComponents` instance
+        The components of the model are attributes of this class. This provides
+        a convinient way to access the model components when working in IPython
+        as it enables tab completion.
 
     Methods
     -------
