@@ -11,7 +11,7 @@ class TestPowerLaw:
         s = hs.signals.Spectrum(np.empty((1024)))
         s.axes_manager[0].offset = 100
         s.axes_manager[0].scale = 0.01
-        m = hs.create_model(s)
+        m = s.create_model()
         m.append(hs.components.PowerLaw())
         m[0].A.value = 10
         m[0].r.value = 4
@@ -73,7 +73,7 @@ class TestOffset:
     def setUp(self):
         s = hs.signals.Spectrum(np.empty((10)))
         s.axes_manager[0].scale = 0.01
-        m = hs.create_model(s)
+        m = s.create_model()
         m.append(hs.components.Offset())
         m[0].offset.value = 10
         self.m = m
@@ -107,15 +107,15 @@ class TestPolynomial:
         s = hs.signals.Spectrum(np.empty((1024)))
         s.axes_manager[0].offset = -5
         s.axes_manager[0].scale = 0.01
-        m = hs.create_model(s)
+        m = s.create_model()
         m.append(hs.components.Polynomial(order=2))
         m[0].coefficients.value = (0.5, 2, 3)
         self.m = m
         s_2d = hs.signals.Spectrum(np.arange(1000).reshape(10, 100))
-        self.m_2d = hs.create_model(s_2d)
+        self.m_2d = s_2d.create_model()
         self.m_2d.append(m[0])
         s_3d = hs.signals.Spectrum(np.arange(1000).reshape(2, 5, 100))
-        self.m_3d = hs.create_model(s_3d)
+        self.m_3d = s_3d.create_model()
         self.m_3d.append(m[0])
 
     def test_estimate_parameters_binned(self):
@@ -171,7 +171,7 @@ class TestGaussian:
         s = hs.signals.Spectrum(np.empty((1024)))
         s.axes_manager[0].offset = -5
         s.axes_manager[0].scale = 0.01
-        m = hs.create_model(s)
+        m = s.create_model()
         m.append(hs.components.Gaussian())
         m[0].sigma.value = 0.5
         m[0].centre.value = 1

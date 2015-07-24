@@ -633,7 +633,7 @@ class AxesManager(t.HasTraits):
             val = np.unravel_index(
                 self._index,
                 tuple(self._navigation_shape_in_array)
-                )[::-1]
+            )[::-1]
             self.indices = val
         return val
 

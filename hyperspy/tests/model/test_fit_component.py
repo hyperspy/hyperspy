@@ -34,7 +34,7 @@ class TestFitOneComponent:
         g.sigma.value = 500.0
         axis = np.arange(10000)
         s = Spectrum(g.function(axis))
-        m = create_model(s)
+        m = s.create_model()
         self.model = m
         self.g = g
         self.axis = axis
@@ -82,7 +82,7 @@ class TestFitSeveralComponent:
                         gs3.function(axis))
 
         s = Spectrum(total_signal)
-        m = create_model(s)
+        m = s.create_model()
 
         g1 = Gaussian()
         g2 = Gaussian()

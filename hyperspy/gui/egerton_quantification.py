@@ -42,6 +42,10 @@ class BackgroundRemoval(SpanSelectorInSpectrum):
         'Polynomial',
         default='Power Law')
     polynomial_order = t.Range(1, 10)
+    estimate_background = t.Enum(
+        'Estimate',
+        'Full fit',
+        default='Estimate')
     background_estimator = t.Instance(Component)
     bg_line_range = t.Enum('from_left_range',
                            'full',
@@ -54,6 +58,7 @@ class BackgroundRemoval(SpanSelectorInSpectrum):
             tu.Group(
                 'polynomial_order',
                 visible_when='background_type == \'Polynomial\''),),
+            'estimate_background',
             buttons=[OKButton, CancelButton],
             handler=SpanSelectorInSpectrumHandler,
             title='Background removal tool')
@@ -61,6 +66,7 @@ class BackgroundRemoval(SpanSelectorInSpectrum):
     def __init__(self, signal):
         super(BackgroundRemoval, self).__init__(signal)
         self.set_background_estimator()
+        self.estimate_fit = True
         self.bg_line = None
 
     def on_disabling_span_selector(self):
@@ -91,6 +97,12 @@ class BackgroundRemoval(SpanSelectorInSpectrum):
     def _background_type_changed(self, old, new):
         self.set_background_estimator()
         self.span_selector_changed()
+
+    def _estimate_background_changed(self, old, new):
+        if self.estimate_background == 'Full fit':
+            self.estimate_fit = False
+        if self.estimate_background == 'Estimate':
+            self.estimate_fit = True
 
     def _ss_left_value_changed(self, old, new):
         self.span_selector_changed()
@@ -155,7 +167,7 @@ class BackgroundRemoval(SpanSelectorInSpectrum):
         self.signal._plot.auto_update_plot = False
         new_spectra = self.signal._remove_background_cli(
             (self.ss_left_value, self.ss_right_value),
-            self.background_estimator)
+            self.background_estimator, estimate_background=self.estimate_fit)
         self.signal.data = new_spectra.data
         self.signal._replot()
         self.signal._plot.auto_update_plot = True

@@ -8,7 +8,7 @@ class TestModel:
 
     def setUp(self):
         s = hs.signals.Spectrum(np.empty(1))
-        m = hs.create_model(s)
+        m = s.create_model()
         self.model = m
 
     def test_access_component_by_name(self):
@@ -127,7 +127,7 @@ class TestModelFitBinned:
                 size=10000)).get_histogram()
         s.metadata.Signal.binned = True
         g = hs.components.Gaussian()
-        m = hs.create_model(s)
+        m = s.create_model()
         m.append(g)
         g.sigma.value = 1
         g.centre.value = 0.5
@@ -207,7 +207,7 @@ class TestModelWeighted:
         s.axes_manager[0].scale = 0.1
         s.axes_manager[0].offset = 10
         s.add_poissonian_noise()
-        m = hs.create_model(s)
+        m = s.create_model()
         m.append(hs.components.Polynomial(1))
         self.m = m
 
@@ -291,7 +291,7 @@ class TestModelScalarVariance:
 
     def setUp(self):
         s = hs.signals.SpectrumSimulation(np.ones(100))
-        m = hs.create_model(s)
+        m = s.create_model()
         m.append(hs.components.Offset())
         self.s = s
         self.m = m
@@ -352,7 +352,7 @@ class TestModelSignalVariance:
         s.add_poissonian_noise()
         s.metadata.set_item("Signal.Noise_properties.variance",
                             variance + std ** 2)
-        m = hs.create_model(s)
+        m = s.create_model()
         m.append(hs.components.Polynomial(order=1))
         self.s = s
         self.m = m
@@ -371,7 +371,7 @@ class TestMultifit:
         s = hs.signals.Spectrum(np.empty((2, 200)))
         s.axes_manager[-1].offset = 1
         s.data[:] = 2 * s.axes_manager[-1].axis ** (-3)
-        m = hs.create_model(s)
+        m = s.create_model()
         m.append(hs.components.PowerLaw())
         m[0].A.value = 2
         m[0].r.value = 2
@@ -403,7 +403,7 @@ class TestMultifit:
 class TestStoreCurrentValues:
 
     def setUp(self):
-        self.m = hs.create_model(hs.signals.Spectrum(np.arange(10)))
+        self.m = hs.signals.Spectrum(np.arange(10)).create_model()
         self.o = hs.components.Offset()
         self.m.append(self.o)
 
@@ -425,8 +425,8 @@ class TestStoreCurrentValues:
 class TestSetCurrentValuesTo:
 
     def setUp(self):
-        self.m = hs.create_model(hs.signals.Spectrum(
-            np.arange(10).reshape(2, 5)))
+        self.m = hs.signals.Spectrum(
+            np.arange(10).reshape(2, 5)).create_model()
         self.comps = [hs.components.Offset(), hs.components.Offset()]
         self.m.extend(self.comps)
 
@@ -447,8 +447,8 @@ class TestSetCurrentValuesTo:
 class TestAsSignal:
 
     def setUp(self):
-        self.m = hs.create_model(hs.signals.Spectrum(
-            np.arange(10).reshape(2, 5)))
+        self.m = hs.signals.Spectrum(
+            np.arange(10).reshape(2, 5)).create_model()
         self.comps = [hs.components.Offset(), hs.components.Offset()]
         self.m.extend(self.comps)
         for c in self.comps:
@@ -495,3 +495,14 @@ class TestAsSignal:
         s = self.m.as_signal(component_list=[0], show_progressbar=False)
         nose.tools.assert_true(
             np.all(s.data == np.array([np.zeros(5), np.ones(5) * 2])))
+
+
+class TestCreateModel:
+
+    def setUp(self):
+        self.s = hs.signals.Spectrum(np.asarray([0, ]))
+
+    def test_create_model(self):
+        from hyperspy.model import Model
+        nose.tools.assert_is_instance(
+            self.s.create_model(), Model)
