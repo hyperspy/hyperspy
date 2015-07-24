@@ -3514,7 +3514,7 @@ class Signal(MVA,
         return unfolded
 
     @contextmanager
-    def unfolded(self):
+    def unfolded(self, unfold_navigation=True, unfold_signal=True):
         """Use this function together with a `with` statement to have the
         signal be unfolded for the scope of the `with` block, before
         automatically refolding when passing out of scope.
@@ -3531,7 +3531,7 @@ class Signal(MVA,
                 # Do whatever needs doing while unfolded here
                 pass
         """
-        unfolded = self.unfold()
+        unfolded = self.unfold(unfold_navigation, unfold_signal)
         try:
             yield unfolded
         finally:
