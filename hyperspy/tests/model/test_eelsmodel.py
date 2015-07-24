@@ -11,7 +11,7 @@ class TestEELSModel:
         s.set_microscope_parameters(100, 10, 10)
         s.axes_manager[-1].offset = 150
         s.add_elements(("B", "C"))
-        self.m = hs.create_model(s)
+        self.m = s.create_model()
 
     def test_suspend_auto_fsw(self):
         m = self.m
@@ -107,7 +107,7 @@ class TestFitBackground:
         s.isig[BE:] += 1
         s.isig[CE:] += 1
         s.add_elements(("Be", "B", "C"))
-        self.m = hs.create_model(s, auto_background=False)
+        self.m = s.create_model(auto_background=False)
         self.m.append(hs.components.Offset())
 
     def test_fit_background_B_C(self):

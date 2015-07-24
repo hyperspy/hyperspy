@@ -12,7 +12,7 @@ s = signals.Spectrum(np.zeros((32, 32, 1024)))
 # Generate some simple data: two Gaussians with random centers and area
 
 # First we create a model
-m = create_model(s)
+m = s.create_model()
 
 # Define the first gaussian
 gs1 = components.Gaussian()
