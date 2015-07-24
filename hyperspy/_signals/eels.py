@@ -1192,7 +1192,7 @@ class EELSSpectrum(Spectrum):
         Parameters
         ----------
         ll : EELSSpectrum, optional
-            If an EELSSPectrum is provided, it will be assumed that it is
+            If an EELSSpectrum is provided, it will be assumed that it is
             a low-loss EELS spectrum, and it will be used to simulate the
             effect of multiple scattering by convolving it with the EELS
             spectrum.
