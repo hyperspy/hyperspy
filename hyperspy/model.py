@@ -68,8 +68,8 @@ class ModelComponents(object):
         if self._model:
             ans += u"\n"
             for c in self._model[:-1]:
-                ans += u"\t" +c.__repr__()+u',\n'
-            ans += u"\t" +self._model[-1].__repr__() + u"\n"
+                ans += u"\t" + c.__repr__() + u',\n'
+            ans += u"\t" + self._model[-1].__repr__() + u"\n"
         ans += u"]"
         ans = ans.encode('utf8')
         return ans
