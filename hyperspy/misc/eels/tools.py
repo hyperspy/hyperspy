@@ -6,7 +6,6 @@ import matplotlib.pyplot as plt
 from scipy import constants
 
 from hyperspy.misc.array_tools import rebin
-from hyperspy.misc.utils import unfold_if_multidim
 from hyperspy.gui import messages as messagesui
 import hyperspy.defaults_parser
 
@@ -115,65 +114,59 @@ def estimate_variance_parameters(
     and scale factor
 
     """
-    fold_back_noisy = unfold_if_multidim(noisy_signal)
-    fold_back_clean = unfold_if_multidim(clean_signal)
+    with noisy_signal.unfolded(), clean_signal.unfolded():
+        # The rest of the code assumes that the first data axis
+        # is the navigation axis. We transpose the data if that is not the
+        # case.
+        ns = (noisy_signal.data.copy()
+              if noisy_signal.axes_manager[0].index_in_array == 0
+              else noisy_signal.data.T.copy())
+        cs = (clean_signal.data.copy()
+              if clean_signal.axes_manager[0].index_in_array == 0
+              else clean_signal.data.T.copy())
 
-    # The rest of the code assumes that the first data axis
-    # is the navigation axis. We transpose the data if that is not the
-    # case.
-    ns = (noisy_signal.data.copy()
-          if noisy_signal.axes_manager[0].index_in_array == 0
-          else noisy_signal.data.T.copy())
-    cs = (clean_signal.data.copy()
-          if clean_signal.axes_manager[0].index_in_array == 0
-          else clean_signal.data.T.copy())
+        if mask is not None:
+            _slice = [slice(None), ] * len(ns.shape)
+            _slice[noisy_signal.axes_manager.signal_axes[0].index_in_array]\
+                = ~mask
+            ns = ns[_slice]
+            cs = cs[_slice]
 
-    if mask is not None:
-        _slice = [slice(None), ] * len(ns.shape)
-        _slice[noisy_signal.axes_manager.signal_axes[0].index_in_array]\
-            = ~mask
-        ns = ns[_slice]
-        cs = cs[_slice]
+        results0 = _estimate_gain(
+            ns, cs, weighted=weighted, higher_than=higher_than,
+            plot_results=plot_results, binning=0, pol_order=pol_order)
 
-    results0 = _estimate_gain(
-        ns, cs, weighted=weighted, higher_than=higher_than,
-        plot_results=plot_results, binning=0, pol_order=pol_order)
+        results2 = _estimate_gain(
+            ns, cs, weighted=weighted, higher_than=higher_than,
+            plot_results=False, binning=2, pol_order=pol_order)
 
-    results2 = _estimate_gain(
-        ns, cs, weighted=weighted, higher_than=higher_than,
-        plot_results=False, binning=2, pol_order=pol_order)
+        c = _estimate_correlation_factor(results0['fit'][0],
+                                         results2['fit'][0], 4)
 
-    c = _estimate_correlation_factor(results0['fit'][0],
-                                     results2['fit'][0], 4)
-
-    message = ("Gain factor: %.2f\n" % results0['fit'][0] +
-               "Gain offset: %.2f\n" % results0['fit'][1] +
-               "Correlation factor: %.2f\n" % c)
-    is_ok = True
-    if hyperspy.defaults_parser.preferences.General.interactive is True:
-        is_ok = messagesui.information(
-            message + "Would you like to store the results?")
-    else:
-        print message
-    if is_ok:
-        noisy_signal.metadata.set_item(
-            "Signal.Noise_properties.Variance_linear_model.gain_factor",
-            results0['fit'][0])
-        noisy_signal.metadata.set_item(
-            "Signal.Noise_properties.Variance_linear_model.gain_offset",
-            results0['fit'][1])
-        noisy_signal.metadata.set_item(
-            "Signal.Noise_properties.Variance_linear_model.correlation_factor",
-            c)
-        noisy_signal.metadata.set_item(
-            "Signal.Noise_properties.Variance_linear_model." +
-            "parameters_estimation_method",
-            'HyperSpy')
-
-    if fold_back_noisy is True:
-        noisy_signal.fold()
-    if fold_back_clean is True:
-        clean_signal.fold()
+        message = ("Gain factor: %.2f\n" % results0['fit'][0] +
+                   "Gain offset: %.2f\n" % results0['fit'][1] +
+                   "Correlation factor: %.2f\n" % c)
+        is_ok = True
+        if hyperspy.defaults_parser.preferences.General.interactive is True:
+            is_ok = messagesui.information(
+                message + "Would you like to store the results?")
+        else:
+            print message
+        if is_ok:
+            noisy_signal.metadata.set_item(
+                "Signal.Noise_properties.Variance_linear_model.gain_factor",
+                results0['fit'][0])
+            noisy_signal.metadata.set_item(
+                "Signal.Noise_properties.Variance_linear_model.gain_offset",
+                results0['fit'][1])
+            noisy_signal.metadata.set_item(
+                "Signal.Noise_properties.Variance_linear_model."
+                "correlation_factor",
+                c)
+            noisy_signal.metadata.set_item(
+                "Signal.Noise_properties.Variance_linear_model." +
+                "parameters_estimation_method",
+                'HyperSpy')
 
     if return_results is True:
         return results0
