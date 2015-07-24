@@ -51,13 +51,16 @@ from hyperspy.component import Component
 from hyperspy.signal import Signal
 from hyperspy.misc.utils import slugify
 
+
 class ModelComponents(object):
+
     """Container for model components.
 
     Useful to provide tab completion when running in IPython.
 
     """
     pass
+
 
 class Model(list):
 

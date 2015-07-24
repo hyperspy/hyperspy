@@ -157,6 +157,7 @@ class TestModel:
         g1.name = "test"
         getattr(m.components, slugify(invalid_name))
 
+
 class TestModelFitBinned:
 
     def setUp(self):
