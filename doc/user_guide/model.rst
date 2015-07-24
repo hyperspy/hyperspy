@@ -155,7 +155,7 @@ index in the model.
         [<Carbon (Gaussian component)>,
          <Hydrogen (Gaussian component)>,
          <Nitrogen (Gaussian component)>]
-        >>> m.components.Gaussian
+        >>> m.components.Carbon
         <Carbon (Gaussian component)>
 
 
