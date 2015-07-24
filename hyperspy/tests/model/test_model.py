@@ -495,3 +495,12 @@ class TestAsSignal:
         s = self.m.as_signal(component_list=[0], show_progressbar=False)
         nose.tools.assert_true(
             np.all(s.data == np.array([np.zeros(5), np.ones(5) * 2])))
+
+class TestCreateModel:
+    def setUp(self):
+        self.s = hs.signals.Spectrum(np.asarray([0,]))
+
+    def test_create_model(self):
+        from hyperspy.model import Model
+        nose.tools.assert_is_instance(
+            self.s.create_model(), Model)
