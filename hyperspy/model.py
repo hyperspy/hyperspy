@@ -59,7 +59,20 @@ class ModelComponents(object):
     Useful to provide tab completion when running in IPython.
 
     """
-    pass
+
+    def __init__(self, model):
+        self._model = model
+
+    def __repr__(self):
+        ans = u"["
+        if self._model:
+            ans += u"\n"
+            for c in self._model[:-1]:
+                ans += u"\t" +c.__repr__()+u',\n'
+            ans += u"\t" +self._model[-1].__repr__() + u"\n"
+        ans += u"]"
+        ans = ans.encode('utf8')
+        return ans
 
 
 class Model(list):
@@ -221,10 +234,10 @@ class Model(list):
         self._suspend_update = False
         self._adjust_position_all = None
         self._plot_components = False
-        self.components = ModelComponents()
+        self.components = ModelComponents(self)
 
     def __repr__(self):
-        return u"<Model %s>".encode('utf8') % super(Model, self).__repr__()
+        return u"<Model %s>".encode('utf8') % self.components.__repr__()
 
     def _get_component(self, object):
         if isinstance(object, int) or isinstance(object, basestring):
