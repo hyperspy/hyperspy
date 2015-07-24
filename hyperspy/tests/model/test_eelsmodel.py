@@ -4,6 +4,53 @@ import nose.tools
 import hyperspy.hspy as hs
 
 
+class TestCreateEELSModel:
+
+    def setUp(self):
+        s = hs.signals.EELSSpectrum(np.empty(200))
+        s.set_microscope_parameters(100, 10, 10)
+        s.axes_manager[-1].offset = 150
+        s.add_elements(("B", "C"))
+        self.s = s
+
+    def test_create_eelsmodel(self):
+        from hyperspy.models.eelsmodel import EELSModel
+        nose.tools.assert_is_instance(
+            self.s.create_model(), EELSModel)
+
+    def test_auto_add_edges_true(self):
+        m = self.s.create_model(auto_add_edges=True)
+        cnames = [component.name for component in m]
+        nose.tools.assert_true("B_K" in cnames and "C_K" in cnames)
+
+    def test_gos(self):
+        m = self.s.create_model(auto_add_edges=True, GOS="hydrogenic")
+        nose.tools.assert_true(m["B_K"].GOS._name == "hydrogenic")
+
+    def test_auto_add_edges_true(self):
+        m = self.s.create_model(auto_background=True)
+        from hyperspy.components import PowerLaw
+        is_pl_instance = [isinstance(c, PowerLaw) for c in m]
+        nose.tools.assert_true(True in is_pl_instance)
+
+    def test_auto_add_edges_false(self):
+        m = self.s.create_model(auto_background=False)
+        from hyperspy.components import PowerLaw
+        is_pl_instance = [isinstance(c, PowerLaw) for c in m]
+        nose.tools.assert_false(False in is_pl_instance)
+
+    def test_auto_add_edges_false(self):
+        m = self.s.create_model(auto_add_edges=False)
+        cnames = [component.name for component in m]
+        nose.tools.assert_false("B_K" in cnames or "C_K" in cnames)
+
+    def test_low_loss(self):
+        ll = self.s.deepcopy()
+        ll.axes_manager[-1].offset = -20
+        m = self.s.create_model(ll=ll)
+        nose.tools.assert_is(m.low_loss, ll)
+
+
 class TestEELSModel:
 
     def setUp(self):
