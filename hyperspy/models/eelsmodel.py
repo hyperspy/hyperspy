@@ -971,7 +971,7 @@ class EELSModel(Model):
         edge component. The minimum (baseline) and maximum 
         (peak) in the signal range is found. The minimum is 
         subtracted from the maximum. The onset threshold is 
-        this difference multiplied with precent_position. 
+        this difference multiplied with percent_position. 
         The onset energy is the energy closest to the where 
         the intensity equals the onset threshold added to the baseline.
 
@@ -995,7 +995,7 @@ class EELSModel(Model):
 
         Examples
         --------
-        Signal range set interactivly
+        Signal range set interactively
 
         >>> s = load('some_spectrum.hdf5')
         >>> s.add_elements(['Mn',])
