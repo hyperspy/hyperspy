@@ -84,7 +84,10 @@ class Spectrum(Signal):
             dc = dc[~navigation_mask, :]
         der = np.abs(np.diff(dc, 1, -1))
         plt.figure()
-        plt.hist(np.ravel(der.max(-1)), 100)
+        if len(dc.shape) == 1:
+            plt.hist(der, 100)
+        else:
+            plt.hist(np.ravel(der.max(-1)), 100)
         plt.xlabel('Threshold')
         plt.ylabel('Counts')
         plt.draw()
