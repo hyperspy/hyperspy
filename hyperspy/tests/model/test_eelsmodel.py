@@ -27,7 +27,7 @@ class TestCreateEELSModel:
         m = self.s.create_model(auto_add_edges=True, GOS="hydrogenic")
         nose.tools.assert_true(m["B_K"].GOS._name == "hydrogenic")
 
-    def test_auto_add_edges_true(self):
+    def test_auto_add_background_true(self):
         m = self.s.create_model(auto_background=True)
         from hyperspy.components import PowerLaw
         is_pl_instance = [isinstance(c, PowerLaw) for c in m]
