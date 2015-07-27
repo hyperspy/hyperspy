@@ -130,8 +130,7 @@ Define the chemical composition of the sample
     >>> s.add_elements(('B', 'N'))
 
 
-We pass the low-loss spectrum to :py:func:`~.hspy.create_model` to include the
-effect of multiple scattering by Fourier-ratio convolution.
+In order to include the effect of plural scattering we provide the low-loss spectrum to :py:meth:`~._signals.eels.EELSSpectrum.create_model`:
 
 .. code-block:: python
 
