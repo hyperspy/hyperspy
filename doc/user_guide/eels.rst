@@ -13,7 +13,7 @@ The functions described in this chapter are only available for the
 :py:class:`~._signals.eels.EELSSpectrum`:
 
 .. code-block:: python
-       
+
     >>> s.set_signal_type("EELS")
 
 Note these chapter discusses features that are available only for
@@ -108,13 +108,13 @@ EELS curve fitting
 HyperSpy makes it really easy to quantify EELS core-loss spectra by curve
 fitting as it is shown in the next example of quantification of a boron nitride
 EELS spectrum from the `The EELS Data Base
-<http://pc-web.cemes.fr/eelsdb/index.php?page=home.php>`_. 
+<http://pc-web.cemes.fr/eelsdb/index.php?page=home.php>`_.
 
 Load the core-loss and low-loss spectra
 
 
 .. code-block:: python
-       
+
     >>> s = load("BN_(hex)_B_K_Giovanni_Bertoni_100.msa")
     >>> ll = load("BN_(hex)_LowLoss_Giovanni_Bertoni_96.msa")
 
@@ -123,29 +123,28 @@ Set some important experimental information that is missing from the original
 core-loss file
 
 .. code-block:: python
-       
+
     >>> s.set_microscope_parameters(beam_energy=100, convergence_angle=0.2, collection_angle=2.55)
-    
-    
+
+
 Define the chemical composition of the sample
 
 .. code-block:: python
-       
+
     >>> s.add_elements(('B', 'N'))
-    
-    
-We pass the low-loss spectrum to :py:func:`~.hspy.create_model` to include the
-effect of multiple scattering by Fourier-ratio convolution.
+
+
+In order to include the effect of plural scattering we provide the low-loss spectrum to :py:meth:`~._signals.eels.EELSSpectrum.create_model`:
 
 .. code-block:: python
-       
-    >>> m = create_model(s, ll=ll)
+
+    >>> m = s.create_model(ll=ll)
 
 
 HyperSpy has created the model and configured it automatically:
 
 .. code-block:: python
-       
+
     >>> m
     [<background (PowerLaw component)>,
     <N_K (EELSCLEdge component)>,
@@ -170,7 +169,7 @@ of them at once. Although in this example the list contains just one component
 this is not generally the case.
 
 .. code-block:: python
-       
+
     >>> N
     [<N_K (EELSCLEdge component)>]
 
@@ -180,7 +179,7 @@ can be configured (see :ref:`configuring-hyperspy-label`). We must enable them
 to accurately fit this spectrum.
 
 .. code-block:: python
-       
+
     >>> m.enable_fine_structure()
 
 
@@ -188,7 +187,7 @@ We use smart_fit instead of standard fit method because smart_fit is optimized
 to fit EELS core-loss spectra
 
 .. code-block:: python
-       
+
     >>> m.smart_fit()
 
 
@@ -199,7 +198,7 @@ This fit can also be applied over the entire signal to fit a whole spectrum imag
     >>> m.multifit(kind='smart')
 
 
-Print the result of the fit 
+Print the result of the fit
 
 .. code-block:: python
 
@@ -215,28 +214,28 @@ Visualize the result
 .. code-block:: python
 
     >>> m.plot()
-    
+
 
 .. figure::  images/curve_fitting_BN.png
    :align:   center
-   :width:   500    
+   :width:   500
 
    Curve fitting quantification of a boron nitride EELS core-loss spectrum from
    `The EELS Data Base
    <http://pc-web.cemes.fr/eelsdb/index.php?page=home.php>`_
-   
+
 
 There are several methods that are only available in
 :py:class:`~.models.eelsmodel.EELSModel`:
 
-* :py:meth:`~.models.eelsmodel.EELSModel.smart_fit` is a fit method that is 
+* :py:meth:`~.models.eelsmodel.EELSModel.smart_fit` is a fit method that is
   more robust than the standard routine when fitting EELS data.
-* :py:meth:`~.models.eelsmodel.EELSModel.quantify` prints the intensity at 
+* :py:meth:`~.models.eelsmodel.EELSModel.quantify` prints the intensity at
   the current locations of all the EELS ionisation edges in the model.
-* :py:meth:`~.models.eelsmodel.EELSModel.remove_fine_structure_data` removes 
-  the fine structure spectral data range (as defined by the 
-  :py:attr:`~._components.eels_cl_edge.EELSCLEdge.fine_structure_width)` 
-  ionisation edge components. It is specially useful when fitting without 
+* :py:meth:`~.models.eelsmodel.EELSModel.remove_fine_structure_data` removes
+  the fine structure spectral data range (as defined by the
+  :py:attr:`~._components.eels_cl_edge.EELSCLEdge.fine_structure_width)`
+  ionisation edge components. It is specially useful when fitting without
   convolving with a zero-loss peak.
 
 The following methods permit to easily enable/disable background and ionisation
@@ -248,7 +247,7 @@ edges components:
 * :py:meth:`~.models.eelsmodel.EELSModel.enable_fine_structure`
 * :py:meth:`~.models.eelsmodel.EELSModel.disable_fine_structure`
 
-The following methods permit to easily enable/disable several ionisation 
+The following methods permit to easily enable/disable several ionisation
 edge functionalities:
 
 * :py:meth:`~.models.eelsmodel.EELSModel.set_all_edges_intensities_positive`

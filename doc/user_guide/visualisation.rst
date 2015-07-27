@@ -459,7 +459,7 @@ legended line, a spectrum can be toggled on and off.
      >>> s = signals.Spectrum(np.zeros((200)))
      >>> s.axes_manager[0].offset = -10
      >>> s.axes_manager[0].scale = 0.1
-     >>> m = create_model(s)
+     >>> m = s.create_model()
      >>> g = components.Gaussian()
      >>> m.append(g)
      >>> gaussians = []
