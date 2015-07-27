@@ -21,7 +21,6 @@ import numpy as np
 import nose.tools
 from nose.tools import assert_true
 from hyperspy._signals.spectrum import Spectrum
-from hyperspy.hspy import create_model
 from hyperspy.components import Gaussian
 
 
