@@ -165,6 +165,10 @@ def find_peaks_ohaver(y, x=None, slope_thresh=0., amp_thresh=None,
     if len(P) > maxpeakn:
         minh = np.sort(P['height'])[-maxpeakn]
         P = P[P['height'] >= minh]
+
+    # Sorts the values as a function of position
+    P.sort(0)
+
     return P
 
 
