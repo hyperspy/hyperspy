@@ -99,7 +99,7 @@ def find_peaks_ohaver(y, x=None, slope_thresh=0., amp_thresh=None,
 
     zero_value_list = np.where(y == 0)[0]
     if len(zero_value_list):
-        y_padding_value = y.mean()/10000.
+        y_padding_value = y.mean() / 10000.
         for zero_value in zero_value_list:
             y[zero_value] = y_padding_value
 
