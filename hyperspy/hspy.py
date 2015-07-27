@@ -12,9 +12,6 @@ package as follows:
 
 Functions:
 
-    create_model
-        Create a model for curve fitting.
-
     get_configuration_directory_path
         Return the configuration directory path.
 
