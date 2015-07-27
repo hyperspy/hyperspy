@@ -46,7 +46,7 @@ def attrsetter(target, attrs, value):
         First create a signal and model pair:
 
         >>> s = signals.Spectrum(np.arange(10))
-        >>> m = create_model(s)
+        >>> m = s.create_model()
         >>> m.spectrum.data
         array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
 
