@@ -14,6 +14,7 @@ def find_peaks_ohaver(y, x=None, slope_thresh=0., amp_thresh=None,
     derivative that exceed 'slope_thresh'.
 
     Returns an array containing position, height, and width of each peak.
+    Sorted by position.
 
     'slope_thresh' and 'amp_thresh', control sensitivity: higher values will
     neglect smaller features.
