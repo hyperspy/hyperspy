@@ -1,5 +1,4 @@
-from IPython.core.magic import (Magics, magics_class, line_magic,
-                                cell_magic, line_cell_magic)
+from IPython.core.magic import Magics, magics_class, line_magic
 
 
 @magics_class
@@ -19,12 +18,13 @@ class HyperspyMagics(Magics):
 
         sh.enable_matplotlib(toolkit)
 
-        second_import_part = "import matplotlib.pyplot as plt\n"
+        second_import_part = "import matplotlib.pyplot as plt"
         exec(second_import_part, sh.user_ns)
 
-        sh.set_next_input("# %hyperspy " + toolkit + "\n" + first_import_part +
-                          "%matplotlib " + toolkit + "\n" + second_import_part,
-                          replace=True)
+        ans = "\nHyperSpy imported!\nThe following commands were just executed:\n"
+        ans += "---------------\n"
+        ans += first_import_part + "%matplotlib "+ toolkit + "\n" + second_import_part
+        print ans
 
 ip = get_ipython()
 ip.register_magics(HyperspyMagics)
