@@ -23,7 +23,8 @@ class HyperspyMagics(Magics):
 
         ans = "\nHyperSpy imported!\nThe following commands were just executed:\n"
         ans += "---------------\n"
-        ans += first_import_part + "%matplotlib "+ toolkit + "\n" + second_import_part
+        ans += first_import_part + "%matplotlib " + \
+            toolkit + "\n" + second_import_part
         print ans
 
 ip = get_ipython()
