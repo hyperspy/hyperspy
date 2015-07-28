@@ -23,6 +23,8 @@ class TestRemoveBackground1DGaussian:
             signal_range=(None, None),
             background_type='Gaussian')
         assert_true(np.allclose(s1.data, np.zeros(len(s1.data))))
+
+
 class TestRemoveBackground1DPowerLaw:
 
     def setUp(self):

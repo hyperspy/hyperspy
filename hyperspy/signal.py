@@ -203,15 +203,10 @@ class Signal2DTools(object):
                 if ref is None:
                     ref = im.copy()
                     shift = np.array([0, 0])
-                nshift, max_val = estimate_image_shift(ref,
-                                                       im,
-                                                       roi=roi,
-                                                       sobel=sobel,
-                                                       medfilter=medfilter,
-                                                       hanning=hanning,
-                                                       plot=plot,
-                                                       normalize_corr=normalize_corr,
-                                                       dtype=dtype)
+                nshift, max_val = estimate_image_shift(
+                    ref, im, roi=roi, sobel=sobel, medfilter=medfilter,
+                    hanning=hanning, plot=plot,
+                    normalize_corr=normalize_corr, dtype=dtype)
                 if reference == 'cascade':
                     shift += nshift
                     ref = im.copy()
@@ -707,11 +702,12 @@ class Signal1DTools(object):
         Parameters
         ----------
         signal_range : {a tuple of this form (l, r), "interactive"}
-            l and r are the left and right limits of the range. They can be numbers or None,
-            where None indicates the extremes of the interval. If l and r are floats the
-            `signal_range` will be in axis units (for example eV). If l and r are integers
-            the `signal_range` will be in index units.
-            When `signal_range` is "interactive" (default) the range is selected using a GUI.
+            l and r are the left and right limits of the range. They can be
+            numbers or None, where None indicates the extremes of the interval.
+            If l and r are floats the `signal_range` will be in axis units (for
+            example eV). If l and r are integers the `signal_range` will be in
+            index units. When `signal_range` is "interactive" (default) the
+            range is selected using a GUI.
 
         Returns
         -------
@@ -955,8 +951,8 @@ class Signal1DTools(object):
         Parameters
         ----------
         signal_range : tuple, optional
-            If this argument is not specified, the signal range has to be selected
-            using a GUI. And the original spectrum will be replaced.
+            If this argument is not specified, the signal range has to be
+            selected using a GUI. And the original spectrum will be replaced.
             If tuple is given, the a spectrum will be returned.
         background_type : string
             The type of component which should be used to fit the background.
@@ -968,7 +964,9 @@ class Signal1DTools(object):
         Examples
         --------
         >>>> s.remove_background() # Using gui, replaces spectrum s
-        >>>> s2 = s.remove_background(signal_range=(400,450), background_type='PowerLaw') #Using cli, returns a spectrum
+        >>>> s2 = s.remove_background(
+                 signal_range=(400,450),
+                 background_type='PowerLaw') #Using cli, returns a spectrum
 
         Raises
         ------
@@ -1104,8 +1102,7 @@ class Signal1DTools(object):
         Function to locate the positive peaks in a noisy x-y data set.
 
         Detects peaks by looking for downward zero-crossings in the
-        first
-        derivative that exceed 'slope_thresh'.
+        first derivative that exceed 'slope_thresh'.
 
         Returns an array containing position, height, and width of each
         peak.
@@ -1153,8 +1150,8 @@ class Signal1DTools(object):
         -------
         peaks : structured array of shape _navigation_shape_in_array in which
         each cell contains an array that contains as many structured arrays as
-        peaks where found at that location and which fields: position, width,
-        height contains position, height, and width of each peak.
+        peaks where found at that location and which fields: position, height,
+        width, contains position, height, and width of each peak.
 
         Raises
         ------
@@ -1381,12 +1378,14 @@ class MVATools(object):
                     if i > 0:
                         f = plt.figure()
                     ax = f.add_subplot(111)
-                ax = sigdraw._plot_1D_component(factors=factors,
-                                                idx=comp_ids[
-                                                    i], axes_manager=self.axes_manager,
-                                                ax=ax, calibrate=calibrate,
-                                                comp_label=comp_label,
-                                                same_window=same_window)
+                ax = sigdraw._plot_1D_component(
+                    factors=factors,
+                    idx=comp_ids[i],
+                    axes_manager=self.axes_manager,
+                    ax=ax,
+                    calibrate=calibrate,
+                    comp_label=comp_label,
+                    same_window=same_window)
                 if same_window:
                     plt.legend(ncol=factors.shape[1] // 2, loc='best')
             elif self.axes_manager.signal_dimension == 2:
@@ -1454,11 +1453,10 @@ class MVATools(object):
                     if i > 0:
                         f = plt.figure()
                     ax = f.add_subplot(111)
-            sigdraw._plot_loading(loadings, idx=comp_ids[i],
-                                  axes_manager=self.axes_manager,
-                                  no_nans=no_nans, calibrate=calibrate,
-                                  cmap=cmap, comp_label=comp_label, ax=ax,
-                                  same_window=same_window)
+            sigdraw._plot_loading(
+                loadings, idx=comp_ids[i], axes_manager=self.axes_manager,
+                no_nans=no_nans, calibrate=calibrate, cmap=cmap,
+                comp_label=comp_label, ax=ax, same_window=same_window)
             if not same_window:
                 fig_list.append(f)
         try:
@@ -1467,12 +1465,10 @@ class MVATools(object):
             pass
         if not same_window:
             if with_factors:
-                return fig_list, self._plot_factors_or_pchars(factors,
-                                                              comp_ids=comp_ids,
-                                                              calibrate=calibrate,
-                                                              same_window=same_window,
-                                                              comp_label=comp_label,
-                                                              per_row=per_row)
+                return fig_list, self._plot_factors_or_pchars(
+                    factors, comp_ids=comp_ids, calibrate=calibrate,
+                    same_window=same_window, comp_label=comp_label,
+                    per_row=per_row)
             else:
                 return fig_list
         else:
@@ -1589,12 +1585,11 @@ class MVATools(object):
                     'units': 'factor',
                     'index_in_array': 0,
                 })
-                s = Spectrum(factors.T,
-                             axes=axes,
-                             metadata={
-                                 "General": {'title': '%s from %s' % (
-                                     factor_prefix, self.metadata.General.title),
-                                 }})
+                s = Spectrum(
+                    factors.T, axes=axes, metadata={
+                        "General": {
+                            'title': '%s from %s' %
+                            (factor_prefix, self.metadata.General.title), }})
             filename = '%ss.%s' % (factor_prefix, factor_format)
             if folder is not None:
                 filename = os.path.join(folder, filename)
@@ -2323,21 +2318,21 @@ class MVATools(object):
         from hyperspy.hspy import signals
         data = loadings.T.reshape(
             (-1,) + self.axes_manager.navigation_shape[::-1])
-        signal = signals.Signal(data,
-                                axes=([{"size": data.shape[0],
-                                        "navigate": True}] +
-                                      self.axes_manager._get_navigation_axes_dicts()))
+        signal = signals.Signal(
+            data,
+            axes=(
+                [{"size": data.shape[0], "navigate": True}] +
+                self.axes_manager._get_navigation_axes_dicts()))
         signal.set_signal_origin(self.metadata.Signal.signal_origin)
         for axis in signal.axes_manager._axes[1:]:
             axis.navigate = False
         return signal
 
     def _get_factors(self, factors):
-        signal = self.__class__(factors.T.reshape((-1,) +
-                                                  self.axes_manager.signal_shape[::-1]),
-                                axes=[{"size": factors.shape[-1],
-                                       "navigate": True}] +
-                                self.axes_manager._get_signal_axes_dicts())
+        signal = self.__class__(
+            factors.T.reshape((-1,) + self.axes_manager.signal_shape[::-1]),
+            axes=[{"size": factors.shape[-1], "navigate": True}] +
+            self.axes_manager._get_signal_axes_dicts())
         signal.set_signal_origin(self.metadata.Signal.signal_origin)
         signal.set_signal_type(self.metadata.Signal.signal_type)
         for axis in signal.axes_manager._axes[1:]:
@@ -2535,6 +2530,7 @@ class Signal(MVA,
         mp._HyperSpy.add_node("Folding")
         folding = mp._HyperSpy.Folding
         folding.unfolded = False
+        folding.signal_unfolded = False
         folding.original_shape = None
         folding.original_axes_manager = None
         mp.Signal.binned = False
@@ -2588,9 +2584,10 @@ class Signal(MVA,
             # Expand the first Ellipsis
             ellipsis_index = _orig_slices.index(Ellipsis)
             _orig_slices.remove(Ellipsis)
-            _orig_slices = (_orig_slices[:ellipsis_index] +
-                            [slice(None), ] * max(0, len(idx) - len(_orig_slices)) +
-                            _orig_slices[ellipsis_index:])
+            _orig_slices = (
+                _orig_slices[:ellipsis_index] +
+                [slice(None), ] * max(0, len(idx) - len(_orig_slices)) +
+                _orig_slices[ellipsis_index:])
             # Replace all the following Ellipses by :
             while Ellipsis in _orig_slices:
                 _orig_slices[_orig_slices.index(Ellipsis)] = slice(None)
@@ -2618,11 +2615,10 @@ class Signal(MVA,
 
         _signal.data = _signal.data[array_slices]
         if self.metadata.has_item('Signal.Noise_properties.variance'):
-            if isinstance(
-                    self.metadata.Signal.Noise_properties.variance, Signal):
-                _signal.metadata.Signal.Noise_properties.variance = self.metadata.Signal.Noise_properties.variance.__getitem__(
-                    _orig_slices,
-                    isNavigation)
+            variance = self.metadata.Signal.Noise_properties.variance
+            if isinstance(variance, Signal):
+                _signal.metadata.Signal.Noise_properties.variance = \
+                    variance.__getitem__(_orig_slices, isNavigation)
         _signal.get_dimensions_from_data()
 
         return _signal
@@ -2681,8 +2677,8 @@ class Signal(MVA,
                             raise ValueError(exception_message)
                     elif len(sig) == 2:
                         sdata = self.data.reshape(
-                            (1,) * other.axes_manager.signal_dimension
-                            + self.data.shape)
+                            (1,) * other.axes_manager.signal_dimension +
+                            self.data.shape)
                         odata = other.data.reshape(
                             other.data.shape +
                             (1,) * self.axes_manager.signal_dimension)
@@ -2818,9 +2814,9 @@ class Signal(MVA,
             file_data_dict['axes'] = self._get_undefined_axes_list()
         self.axes_manager = AxesManager(
             file_data_dict['axes'])
-        if not 'metadata' in file_data_dict:
+        if 'metadata' not in file_data_dict:
             file_data_dict['metadata'] = {}
-        if not 'original_metadata' in file_data_dict:
+        if 'original_metadata' not in file_data_dict:
             file_data_dict['original_metadata'] = {}
         if 'attributes' in file_data_dict:
             for key, value in file_data_dict['attributes'].iteritems():
@@ -3085,9 +3081,11 @@ class Signal(MVA,
         overwrite : None, bool
             If None, if the file exists it will query the user. If
             True(False) it (does not) overwrites the file if it exists.
-        extension : {None, 'hdf5', 'rpl', 'msa',common image extensions e.g. 'tiff', 'png'}
+        extension : {None, 'hdf5', 'rpl', 'msa',common image extensions e.g.
+                    'tiff', 'png'}
             The extension of the file that defines the file format.
-            If None, the extension is taken from the first not None in the following list:
+            If None, the extension is taken from the first not None in the
+            following list:
             i) the filename
             ii)  `tmp_parameters.extension`
             iii) `preferences.General.default_file_format` in this order.
@@ -3238,12 +3236,30 @@ class Signal(MVA,
         Parameters
         ----------
         new_shape: tuple of ints
-            The new shape must be a divisor of the original shape
+            The new shape elements must be divisors of the original shape
+            elements.
 
         Returns
         -------
         s : Signal subclass
 
+        Raises
+        ------
+        ValueError
+            When there is a mismatch between the number of elements in the
+            signal shape and `new_shape` or `new_shape` elements are not
+            divisors of the original signal shape.
+
+
+        Examples
+        --------
+        >>> import hyperspy.hspy as hs
+        >>> s = hs.signals.Spectrum(np.zeros((10, 100)))
+        >>> s
+        <Spectrum, title: , dimensions: (10|100)>
+        >>> s.rebin((5, 100))
+        <Spectrum, title: , dimensions: (5|100)>
+        I
         """
         if len(new_shape) != len(self.data.shape):
             raise ValueError("Wrong shape size")
@@ -3258,6 +3274,11 @@ class Signal(MVA,
         for axis in s.axes_manager._axes:
             axis.scale *= factors[axis.index_in_array]
         s.get_dimensions_from_data()
+        if s.metadata.has_item('Signal.Noise_properties.variance'):
+            if isinstance(s.metadata.Signal.Noise_properties.variance, Signal):
+                var = s.metadata.Signal.Noise_properties.variance
+                s.metadata.Signal.Noise_properties.variance = var.rebin(
+                    new_shape)
         return s
 
     def split(self,
@@ -3286,7 +3307,8 @@ class Signal(MVA,
             by the number_of_parts the reminder data is lost without
             warning. If number_of_parts and step_sizes is 'auto',
             number_of_parts equals the length of the axis,
-            step_sizes equals one  and the axis is supress from each sub_spectra.
+            step_sizes equals one  and the axis is supress from each
+            sub_spectra.
         step_sizes : {'auto' | list of ints | int}
             Size of the splitted parts. If 'auto', the step_sizes equals one.
             If int, the splitting is homogenous.
@@ -3319,11 +3341,12 @@ class Signal(MVA,
         if axis == 'auto':
             mode = 'auto'
             if hasattr(self.metadata._HyperSpy, 'Stacking_history'):
-                axis_in_manager = self.metadata._HyperSpy.Stacking_history.axis
-                step_sizes = self.metadata._HyperSpy.Stacking_history.step_sizes
+                stack_history = self.metadata._HyperSpy.Stacking_history
+                axis_in_manager = stack_history.axis
+                step_sizes = stack_history.step_sizes
             else:
-                axis_in_manager = self.axes_manager[-1 +
-                                                    1j].index_in_axes_manager
+                axis_in_manager = \
+                    self.axes_manager[-1 + 1j].index_in_axes_manager
         else:
             mode = 'manual'
             axis_in_manager = self.axes_manager[axis].index_in_axes_manager
@@ -3374,31 +3397,26 @@ class Signal(MVA,
         if mode == 'auto' and hasattr(
                 self.original_metadata, 'stack_elements'):
             for i, spectrum in enumerate(splitted):
+                se = self.original_metadata.stack_elements['element' + str(i)]
                 spectrum.metadata = copy.deepcopy(
-                    self.original_metadata.stack_elements[
-                        'element' +
-                        str(i)]['metadata'])
-                spectrum.original_metadata = copy.deepcopy(self.original_metadata.stack_elements['element' +
-                                                                                                 str(i)]['original_metadata'])
-                spectrum.metadata.General.title = self.original_metadata.stack_elements['element' +
-                                                                                        str(i)].metadata.General.title
+                    se['metadata'])
+                spectrum.original_metadata = copy.deepcopy(
+                    se['original_metadata'])
+                spectrum.metadata.General.title = se.metadata.General.title
 
         return splitted
 
+    # TODO: remove in HyperSpy 0.9
     def unfold_if_multidim(self):
         """Unfold the datacube if it is >2D
 
-        Returns
-        -------
+        Deprecated method, please use unfold.
 
-        Boolean. True if the data was unfolded by the function.
         """
-        if len(self.axes_manager._axes) > 2:
-            print "Automatically unfolding the data"
-            self.unfold()
-            return True
-        else:
-            return False
+        warnings.warn(
+            "`unfold_if_multidim` is deprecated and will be removed in "
+            "HyperSpy 0.9. Please use `unfold` instead.")
+        return None
 
     @auto_replot
     def _unfold(self, steady_axes, unfolded_axis):
@@ -3419,9 +3437,9 @@ class Signal(MVA,
         fold
         """
 
-        # It doesn't make sense unfolding when dim < 3
-        if len(self.data.squeeze().shape) < 3:
-            return False
+        # It doesn't make sense unfolding when dim < 2
+        if self.data.squeeze().ndim < 2:
+            return
 
         # We need to store the original shape and coordinates to be used
         # by
@@ -3463,35 +3481,59 @@ class Signal(MVA,
         """Modifies the shape of the data by unfolding the signal and
         navigation dimensions separately
 
+        Returns
+        -------
+        needed_unfolding : bool
+
+
         """
-        self.unfold_navigation_space()
-        self.unfold_signal_space()
+        nav_needed_unfolding = self.unfold_navigation_space()
+        sig_needed_unfolding = self.unfold_signal_space()
+        needed_unfolding = nav_needed_unfolding or sig_needed_unfolding
+        return needed_unfolding
 
     def unfold_navigation_space(self):
         """Modify the shape of the data to obtain a navigation space of
         dimension 1
+
+        Returns
+        -------
+        needed_unfolding : bool
+
         """
 
         if self.axes_manager.navigation_dimension < 2:
-            return False
-        steady_axes = [
-            axis.index_in_array for axis in
-            self.axes_manager.signal_axes]
-        unfolded_axis = (
-            self.axes_manager.navigation_axes[0].index_in_array)
-        self._unfold(steady_axes, unfolded_axis)
+            needed_unfolding = False
+        else:
+            needed_unfolding = True
+            steady_axes = [
+                axis.index_in_array for axis in
+                self.axes_manager.signal_axes]
+            unfolded_axis = (
+                self.axes_manager.navigation_axes[0].index_in_array)
+            self._unfold(steady_axes, unfolded_axis)
+        return needed_unfolding
 
     def unfold_signal_space(self):
         """Modify the shape of the data to obtain a signal space of
         dimension 1
+
+        Returns
+        -------
+        needed_unfolding : bool
+
         """
         if self.axes_manager.signal_dimension < 2:
-            return False
-        steady_axes = [
-            axis.index_in_array for axis in
-            self.axes_manager.navigation_axes]
-        unfolded_axis = self.axes_manager.signal_axes[0].index_in_array
-        self._unfold(steady_axes, unfolded_axis)
+            needed_unfolding = False
+        else:
+            needed_unfolding = True
+            steady_axes = [
+                axis.index_in_array for axis in
+                self.axes_manager.navigation_axes]
+            unfolded_axis = self.axes_manager.signal_axes[0].index_in_array
+            self._unfold(steady_axes, unfolded_axis)
+            self.metadata._HyperSpy.Folding.signal_unfolded = True
+        return needed_unfolding
 
     @auto_replot
     def fold(self):
@@ -3505,6 +3547,7 @@ class Signal(MVA,
             folding.original_shape = None
             folding.original_axes_manager = None
             folding.unfolded = False
+            folding.signal_unfolded = False
             if self.metadata.has_item('Signal.Noise_properties.variance'):
                 variance = self.metadata.Signal.Noise_properties.variance
                 if isinstance(variance, Signal):
@@ -3745,18 +3788,15 @@ class Signal(MVA,
     def diff(self, axis, order=1):
         """Returns a signal with the n-th order discrete difference along
         given axis.
-
         Parameters
         ----------
         axis : {int | string}
            The axis can be specified using the index of the axis in
            `axes_manager` or the axis name.
         order: the order of the derivative
-
         See also
         --------
         mean, sum
-
         Examples
         --------
         >>> import numpy as np
@@ -3765,15 +3805,49 @@ class Signal(MVA,
         (64,64,1024)
         >>> s.diff(-1).data.shape
         (64,64,1023)
-
         """
 
         s = self._deepcopy_with_new_data(
-            np.diff(self.data, order, axis))
-        axis = s.axes_manager._axes[axis]
-        axis.offset += (axis.scale / 2)
+            np.diff(self.data,
+                    n=order,
+                    axis=self.axes_manager[axis].index_in_array))
+        axis = s.axes_manager[axis]
+        axis.offset += (order * axis.scale / 2)
         s.get_dimensions_from_data()
         return s
+
+    def derivative(self, axis, order=1):
+        """Numerical derivative along the given axis.
+
+        Currently only the first order finite difference method is implemented.
+
+        Parameters
+        ----------
+        axis : {int | string}
+           The axis can be specified using the index of the axis in
+           `axes_manager` or the axis name.
+        order: int
+            The order of the derivative. (Note that this is the order of the
+            derivative i.e. `order=2` does not use second order finite
+            differences method.)
+
+        Returns
+        -------
+        der : Signal
+            Note that the size of the data on the given `axis` decreases by the
+            given `order` i.e. if `axis` is "x" and `order` is 2 the x dimension
+            is N, der's x dimension is N - 2.
+
+        See also
+        --------
+        diff
+
+        """
+
+        der = self.diff(order=order, axis=axis)
+        axis = self.axes_manager[axis]
+        der.data /= axis.scale ** order
+        return der
 
     def integrate_simpson(self, axis):
         """Returns a signal with the result of calculating the integral
@@ -4045,9 +4119,10 @@ class Signal(MVA,
             scale.add(self.axes_manager[i].scale)
             units.add(self.axes_manager[i].units)
         if len(units) != 1 or len(scale) != 1:
-            warnings.warn("The function you applied does not take into "
-                          "account the difference of units and of scales in-between"
-                          " axes.")
+            warnings.warn(
+                "The function you applied does not take into "
+                "account the difference of units and of scales in-between"
+                " axes.")
         # If the function has an axis argument and the signal dimension is 1,
         # we suppose that it can operate on the full array and we don't
         # interate over the coordinates.
@@ -4143,24 +4218,27 @@ class Signal(MVA,
         if not isinstance(dtype, np.dtype):
             if dtype in rgb_tools.rgb_dtypes:
                 if self.metadata.Signal.record_by != "spectrum":
-                    raise AttributeError("Only spectrum signals can be converted "
-                                         "to RGB images.")
+                    raise AttributeError(
+                        "Only spectrum signals can be converted "
+                        "to RGB images.")
                     if "rgba" in dtype:
                         if self.axes_manager.signal_size != 4:
                             raise AttributeError(
-                                "Only spectra with signal_size equal to 4 can be"
-                                "converted to RGBA images")
+                                "Only spectra with signal_size equal to 4 can "
+                                "be converted to RGBA images")
                     else:
                         if self.axes_manager.signal_size != 3:
                             raise AttributeError(
-                                "Only spectra with signal_size equal to 3 can be"
-                                " converted to RGBA images")
+                                "Only spectra with signal_size equal to 3 can "
+                                "be converted to RGBA images")
                 if "8" in dtype and self.data.dtype.name != "uint8":
                     raise AttributeError(
-                        "Only signals with dtype uint8 can be converted to rgb8 images")
+                        "Only signals with dtype uint8 can be converted to "
+                        "rgb8 images")
                 elif "16" in dtype and self.data.dtype.name != "uint16":
                     raise AttributeError(
-                        "Only signals with dtype uint16 can be converted to rgb16 images")
+                        "Only signals with dtype uint16 can be converted to "
+                        "rgb16 images")
                 dtype = rgb_tools.rgb_dtypes[dtype]
                 self.data = rgb_tools.regular_array2rgbx(self.data)
                 self.axes_manager.remove(-1)
@@ -4284,9 +4362,9 @@ class Signal(MVA,
             are appended to the title.
         auto_filename : bool
             If True and `tmp_parameters.filename` is defined
-            (what is always the case when the Signal has been read from a file),
-            the filename is modified by appending an underscore and a parenthesis
-            containing the current indices.
+            (what is always the case when the Signal has been read from a
+            file), the filename is modified by appending an underscore and a
+            parenthesis containing the current indices.
 
         Returns
         -------
@@ -4319,24 +4397,97 @@ class Signal(MVA,
         cs.axes_manager._set_axis_attribute_values("navigate", False)
         return cs
 
-    def _get_navigation_signal(self):
+    def _get_navigation_signal(self, data=None, dtype=None):
+        """Return a signal with the same axes as the navigation space.
+
+        Parameters
+        ----------
+        data : {None, numpy array}, optional
+            If None the `Signal` data is an array of the same dtype as the
+            current one filled with zeros. If a numpy array, the array must
+            have the correct dimensions.
+
+        dtype : data-type, optional
+            The desired data-type for the data array when `data` is None,
+            e.g., `numpy.int8`.  Default is the data type of the current signal
+            data.
+
+
+        """
+        if data is not None:
+            ref_shape = (self.axes_manager._navigation_shape_in_array
+                         if self.axes_manager.navigation_dimension != 0
+                         else (1,))
+            if data.shape != ref_shape:
+                raise ValueError(
+                    ("data.shape %s is not equal to the current navigation "
+                     "shape in array which is %s") %
+                    (str(data.shape), str(ref_shape)))
+        else:
+            if dtype is None:
+                dtype = self.data.dtype
+            if self.axes_manager.navigation_dimension == 0:
+                data = np.array([0, ], dtype=dtype)
+            else:
+                data = np.zeros(self.axes_manager._navigation_shape_in_array,
+                                dtype=dtype)
         if self.axes_manager.navigation_dimension == 0:
-            return self.__class__(np.array([0, ]).astype(self.data.dtype))
+            s = Signal(data)
         elif self.axes_manager.navigation_dimension == 1:
             from hyperspy._signals.spectrum import Spectrum
-            s = Spectrum(
-                np.zeros(self.axes_manager._navigation_shape_in_array,
-                         dtype=self.data.dtype),
-                axes=self.axes_manager._get_navigation_axes_dicts())
+            s = Spectrum(data,
+                         axes=self.axes_manager._get_navigation_axes_dicts())
         elif self.axes_manager.navigation_dimension == 2:
             from hyperspy._signals.image import Image
-            s = Image(np.zeros(self.axes_manager._navigation_shape_in_array,
-                               dtype=self.data.dtype),
+            s = Image(data,
                       axes=self.axes_manager._get_navigation_axes_dicts())
         else:
             s = Signal(np.zeros(self.axes_manager._navigation_shape_in_array,
                                 dtype=self.data.dtype),
                        axes=self.axes_manager._get_navigation_axes_dicts())
+            s.axes_manager.set_signal_dimension(
+                self.axes_manager.navigation_dimension)
+        return s
+
+    def _get_signal_signal(self, data=None, dtype=None):
+        """Return a signal with the same axes as the signal space.
+
+        Parameters
+        ----------
+        data : {None, numpy array}, optional
+            If None the `Signal` data is an array of the same dtype as the
+            current one filled with zeros. If a numpy array, the array must
+            have the correct dimensions.
+        dtype : data-type, optional
+            The desired data-type for the data array when `data` is None,
+            e.g., `numpy.int8`.  Default is the data type of the current signal
+            data.
+
+        """
+
+        if data is not None:
+            ref_shape = (self.axes_manager._signal_shape_in_array
+                         if self.axes_manager.signal_dimension != 0
+                         else (1,))
+            if data.shape != ref_shape:
+                raise ValueError(
+                    "data.shape %s is not equal to the current signal shape in"
+                    " array which is %s" % (str(data.shape), str(ref_shape)))
+        else:
+            if dtype is None:
+                dtype = self.data.dtype
+            if self.axes_manager.signal_dimension == 0:
+                data = np.array([0, ], dtype=dtype)
+            else:
+                data = np.zeros(self.axes_manager._signal_shape_in_array,
+                                dtype=dtype)
+
+        if self.axes_manager.signal_dimension == 0:
+            s = Signal(data)
+            s.set_signal_type(self.metadata.Signal.signal_type)
+        else:
+            s = self.__class__(data,
+                               axes=self.axes_manager._get_signal_axes_dicts())
         return s
 
     def __iter__(self):
@@ -4426,7 +4577,6 @@ class Signal(MVA,
 
     def _assign_subclass(self):
         mp = self.metadata
-        current_class = self.__class__
         self.__class__ = hyperspy.io.assign_signal_subclass(
             record_by=mp.Signal.record_by
             if "Signal.record_by" in mp
@@ -4573,6 +4723,10 @@ class Signal(MVA,
             self._plot.navigator_plot.add_marker(marker)
         if plot_marker:
             marker.plot()
+
+    def create_model(self):
+        from hyperspy.model import Model
+        return Model(self)
 
 
 # Implement binary operators

@@ -20,10 +20,17 @@ import os
 import warnings
 
 import traits.api as t
-with warnings.catch_warnings():
-    warnings.simplefilter("ignore")
-    from hyperspy.misc.io.tifffile import imsave, TiffFile
 from hyperspy.misc import rgb_tools
+try:
+    from skimage.external.tifffile import imsave, TiffFile
+except ImportError:
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        from hyperspy.misc.borrowed.tifffile import imsave, TiffFile
+    warnings.warn(
+        "Failed to import the optional scikit image package. "
+        "Loading of some compressed images will be slow.\n")
+
 
 # Plugin characteristics
 # ----------------------
@@ -114,11 +121,16 @@ def file_reader(filename, record_by='image', **kwds):
         op = {}
         for key, tag in tiff[0].tags.iteritems():
             op[key] = tag.value
-    return [{'data': dc,
-             'original_metadata': op,
-             'metadata': {'General': {'original_filename': os.path.split(filename)[1]},
-                          "Signal": {'signal_type': "",
-                                     'record_by': "image",
-                                     },
-                          },
-             }]
+    return [
+        {
+            'data': dc,
+            'original_metadata': op,
+            'metadata': {
+                'General': {
+                    'original_filename': os.path.split(filename)[1]},
+                "Signal": {
+                    'signal_type': "",
+                    'record_by': "image",
+                },
+            },
+        }]
