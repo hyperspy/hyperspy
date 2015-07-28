@@ -146,13 +146,6 @@ for f in to_copy:
             args.overwrite_profile:
         shutil.copy(f, destination)
 if ipy_version >= LooseVersion('3.0.0'):
-    additional_dest = os.path.join(destination, 'static/custom')
-    if not os.path.isdir(additional_dest):
-        os.makedirs(additional_dest)
-
-    # always overwrite.. I'm sure there is a way to check if the files are the same, but not sure it's worth it
-    shutil.copy(os.path.join(ipy_hspy, 'custom.js'), additional_dest)
-
     additional_dest = os.path.join(destination, 'startup')
     if not os.path.isdir(additional_dest):
         os.makedirs(additional_dest)
