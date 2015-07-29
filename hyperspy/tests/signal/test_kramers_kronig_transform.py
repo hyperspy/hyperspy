@@ -52,7 +52,7 @@ class Test2D:
         k = eels_constant(s, i0, t)
 
         vpm = VolumePlasmonDrude()
-        m = hs.create_model(s, auto_background=False)
+        m = s.create_model(auto_background=False)
         m.append(vpm)
         vpm.intensity.map['values'][:] = 1
         vpm.plasmon_energy.map['values'] = np.array([[8., 18.4, 15.8],
@@ -133,8 +133,11 @@ class Test2D:
                                                      iterations=1,
                                                      n=1000.,
                                                      full_output=True)
-        nose.tools.assert_true(np.allclose(self.thickness.data,
-                                           output['thickness'].data, rtol=0.01))
+        nose.tools.assert_true(
+            np.allclose(
+                self.thickness.data,
+                output['thickness'].data,
+                rtol=0.01))
 
     @nose.tools.raises(ValueError)
     def test_thicness_input_array(self):

@@ -57,8 +57,9 @@ class DoublePowerLaw(Component):
         s = self.shift.value
         r = self.r.value
         x0 = self.origin.value
-        return np.where(
-            x > self.left_cutoff, a * (b / (-x0 + x - s) ** r + 1 / (x - x0) ** r), 0)
+        return np.where(x > self.left_cutoff,
+                        a * (b / (-x0 + x - s) ** r + 1 / (x - x0) ** r),
+                        0)
 
     def grad_A(self, x):
         return self.function(x) / self.A.value
@@ -76,8 +77,12 @@ class DoublePowerLaw(Component):
         s = self.shift.value
         r = self.r.value
         x0 = self.origin.value
-        return np.where(x > self.left_cutoff, a * (b * r *
-                                                   (-x0 + x - s) ** (-r - 1) + r * (x - x0) ** (-r - 1)), 0)
+        return np.where(
+            x > self.left_cutoff,
+            a * (
+                b * r * (-x0 + x - s) ** (-r - 1) +
+                r * (x - x0) ** (-r - 1)),
+            0)
 
     def grad_shift(self, x):
         a = self.A.value
@@ -94,5 +99,10 @@ class DoublePowerLaw(Component):
         s = self.shift.value
         r = self.r.value
         x0 = self.origin.value
-        return np.where(x > self.left_cutoff, a * (-(b * np.log(-x0 + x - s)) /
-                                                   (-x0 + x - s) ** r - np.log(x - x0) / (x - x0) ** r), 0)
+        return np.where(
+            x > self.left_cutoff,
+            a * (
+                -(b * np.log(-x0 + x - s)) /
+                (-x0 + x - s) ** r - np.log(x - x0) /
+                (x - x0) ** r),
+            0)
