@@ -358,7 +358,7 @@ class TestModelSignalVariance:
         self.m = m
 
     def test_std1_red_chisq(self):
-        self.m.multifit(fitter="leastsq", method="ls")
+        self.m.multifit(fitter="leastsq", method="ls", show_progressbar=False)
         nose.tools.assert_almost_equals(self.m.red_chisq.data[0],
                                         0.79693355673230915)
         nose.tools.assert_almost_equals(self.m.red_chisq.data[1],
@@ -386,14 +386,14 @@ class TestMultifit:
         m[0].A.value = 100
 
     def test_fetch_only_fixed_false(self):
-        self.m.multifit(fetch_only_fixed=False)
+        self.m.multifit(fetch_only_fixed=False, show_progressbar=False)
         np.testing.assert_array_almost_equal(self.m[0].r.map['values'],
                                              [3., 100.])
         np.testing.assert_array_almost_equal(self.m[0].A.map['values'],
                                              [2., 2.])
 
     def test_fetch_only_fixed_true(self):
-        self.m.multifit(fetch_only_fixed=True)
+        self.m.multifit(fetch_only_fixed=True, show_progressbar=False)
         np.testing.assert_array_almost_equal(self.m[0].r.map['values'],
                                              [3., 3.])
         np.testing.assert_array_almost_equal(self.m[0].A.map['values'],
