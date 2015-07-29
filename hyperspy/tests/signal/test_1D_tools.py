@@ -54,7 +54,10 @@ class TestAlignTools:
 
     def test_shift1D(self):
         s = self.spectrum
-        s.shift1D(-1 * self.ishifts[:, np.newaxis] * self.scale, show_progressbar=False)
+        s.shift1D(-
+                  1 *
+                  self.ishifts[:, np.newaxis] *
+                  self.scale, show_progressbar=False)
         i_zlp = s.axes_manager.signal_axes[0].value2index(0)
         nose.tools.assert_true(np.allclose(s.data[:, i_zlp], 12))
         # Check that at the edges of the spectrum the value == to the
@@ -268,7 +271,7 @@ class TestSmoothing:
                 im=data[i, :],
                 weight=weight,)
         self.s.smooth_tv(smoothing_parameter=weight,
-                show_progressbar=False)
+                         show_progressbar=False)
         nose.tools.assert_true(np.allclose(data, self.s.data))
 
     def test_savgol(self):
