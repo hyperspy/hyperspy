@@ -262,7 +262,7 @@ class Signal2DTools(object):
             del ref
         return shifts
 
-    def align2D(self, crop=True, fill_value=np.nan, shifts=None,
+    def align2D(self, crop=True, fill_value=np.nan, shifts=None, expand=False,
                 roi=None,
                 sobel=True,
                 medfilter=True,
@@ -291,6 +291,9 @@ class Signal2DTools(object):
         shifts : None or list of tuples
             If None the shifts are estimated using
             `estimate_shift2D`.
+        expand : bool
+            If True, the data will be expanded to fit all data after alignment.
+            Overrides `crop`.
 
         Returns
         -------
@@ -329,6 +332,37 @@ class Signal2DTools(object):
             return_shifts = True
         else:
             return_shifts = False
+
+        if expand:
+            # Expand to fit all valid data
+            left, right = (int(np.floor(shifts[:, 1].min())) if
+                           shifts[:, 1].min() < 0 else 0,
+                           int(np.ceil(shifts[:, 1].max())) if
+                           shifts[:, 1].max() > 0 else 0)
+            top, bottom = (int(np.floor(shifts[:, 0].min())) if
+                           shifts[:, 0].min() < 0 else 0,
+                           int(np.ceil(shifts[:, 0].max())) if
+                           shifts[:, 0].max() > 0 else 0)
+            xaxis = self.axes_manager.signal_axes[0]
+            yaxis = self.axes_manager.signal_axes[1]
+            padding = []
+            for i in xrange(self.data.ndim):
+                if i == xaxis.index_in_array:
+                    padding.append((right, -left))
+                elif i == yaxis.index_in_array:
+                    padding.append((bottom, -top))
+                else:
+                    padding.append((0, 0))
+            self.data = np.pad(self.data, padding, mode='constant',
+                               constant_values=(fill_value,))
+            if left < 0:
+                xaxis.offset += left * xaxis.scale
+            if np.any((left < 0, right > 0)):
+                xaxis.size += right - left
+            if top < 0:
+                yaxis.offset += top * yaxis.scale
+            if np.any((top < 0, bottom > 0)):
+                yaxis.size += bottom - top
         # Translate with sub-pixel precision if necesary
         for im, shift in zip(self._iterate_signal(),
                              shifts):
@@ -337,8 +371,8 @@ class Signal2DTools(object):
                             fill_value=fill_value)
                 del im
 
-        # Crop the image to the valid size
-        if crop is True:
+        if crop and not expand:
+            # Crop the image to the valid size
             shifts = -shifts
             bottom, top = (int(np.floor(shifts[:, 0].min())) if
                            shifts[:, 0].min() < 0 else None,
