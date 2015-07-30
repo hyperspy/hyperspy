@@ -137,14 +137,34 @@ class TestFindPeaks1D:
 
     def test_single_spectrum(self):
         peaks = self.spectrum[0].find_peaks1D_ohaver()
-        nose.tools.assert_true(np.allclose(peaks[0]['position'],
-                                           self.peak_positions0, rtol=1e-5, atol=1e-4))
+        nose.tools.assert_true(np.allclose(
+            peaks[0]['position'], self.peak_positions0, rtol=1e-5, atol=1e-4))
 
     def test_two_spectra(self):
         peaks = self.spectrum.find_peaks1D_ohaver()
+        nose.tools.assert_true(np.allclose(
+            peaks[1]['position'], self.peak_positions1, rtol=1e-5, atol=1e-4))
+
+    def test_height(self):
         peaks = self.spectrum.find_peaks1D_ohaver()
-        nose.tools.assert_true(np.allclose(peaks[1]['position'],
-                                           self.peak_positions1, rtol=1e-5, atol=1e-4))
+        nose.tools.assert_true(np.allclose(
+            peaks[1]['height'], 1.0, rtol=1e-5, atol=1e-4))
+
+    def test_width(self):
+        peaks = self.spectrum.find_peaks1D_ohaver()
+        nose.tools.assert_true(np.allclose(
+            peaks[1]['width'], 3.5758, rtol=1e-4, atol=1e-4),
+            msg="One or several widths are not close enough to expected " +
+            "value (3.5758): " + str(peaks[1]['width']))
+
+    def test_n_peaks(self):
+        peaks = self.spectrum.find_peaks1D_ohaver()
+        nose.tools.assert_equal(len(peaks[1]), 8)
+
+    def test_maxpeaksn(self):
+        for n in xrange(1, 10):
+            peaks = self.spectrum.find_peaks1D_ohaver(maxpeakn=n)
+            nose.tools.assert_equal(len(peaks[1]), min((8, n)))
 
 
 class TestInterpolateInBetween:

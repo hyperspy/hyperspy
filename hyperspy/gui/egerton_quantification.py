@@ -103,7 +103,8 @@ class BackgroundRemoval(SpanSelectorInSpectrum):
         self.bg_line.data_function = self.bg_to_plot
         self.bg_line.set_line_properties(
             color='blue',
-            type='line')
+            type='line',
+            scaley=False)
         self.signal._plot.signal_plot.add_line(self.bg_line)
         self.bg_line.autoscale = False
         self.bg_line.plot()
@@ -320,8 +321,11 @@ class SpikesRemoval(SpanSelectorInSpectrum):
         else:
             minimum = max(0, self.argmax - 50)
             maximum = min(len(self.signal()) - 1, self.argmax + 50)
-            thresh_label = DerivativeTextParameters(text="$\mathsf{\delta}_\mathsf{max}=$", color="black")
-            self.ax.legend([thresh_label], [repr(int(self.derivmax))], handler_map={DerivativeTextParameters: DerivativeTextHandler()}, loc='best')
+            thresh_label = DerivativeTextParameters(
+                text="$\mathsf{\delta}_\mathsf{max}=$",
+                color="black")
+            self.ax.legend([thresh_label], [repr(int(self.derivmax))], handler_map={
+                           DerivativeTextParameters: DerivativeTextHandler()}, loc='best')
             self.ax.set_xlim(
                 self.signal.axes_manager.signal_axes[0].index2value(
                     minimum),
@@ -465,16 +469,19 @@ class SpikesRemoval(SpanSelectorInSpectrum):
 
 # For creating a text handler in legend (to label derivative magnitude)
 class DerivativeTextParameters(object):
+
     def __init__(self, text, color):
         self.my_text = text
         self.my_color = color
 
 
 class DerivativeTextHandler(object):
+
     def legend_artist(self, legend, orig_handle, fontsize, handlebox):
         x0, y0 = handlebox.xdescent, handlebox.ydescent
         width, height = handlebox.width, handlebox.height
-        patch = mpl_text.Text(text=orig_handle.my_text, color=orig_handle.my_color)
+        patch = mpl_text.Text(
+            text=orig_handle.my_text,
+            color=orig_handle.my_color)
         handlebox.add_artist(patch)
         return patch
-

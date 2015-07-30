@@ -5,21 +5,18 @@ automatically imported in the user namespace when starting HyperSpy using the
 starting script e.g. by typing ``hyperspy`` in a console, using the context
 menu entries or using the links in the ``Start Menu``, the
 :mod:`~hyperspy.hspy` package is imported in the user namespace. When using
-HyperSpy as a library, it is reccommended to import the :mod:`~hyperspy.hspy`
+HyperSpy as a library, it is recommended to import the :mod:`~hyperspy.hspy`
 package as follows:
 
     from hyperspy import hspy as hs
 
 Functions:
 
-    create_model
-        Create a model for curve fitting.
-
     get_configuration_directory_path
         Return the configuration directory path.
 
     load
-        Load data into Signal instaces from supported files.
+        Load data into Signal instances from supported files.
 
     preferences
         Preferences class instance to configure the default value of different
@@ -38,7 +35,7 @@ The :mod:`~hyperspy.hspy` package contains the following subpackages:
     :mod:`~hyperspy.hspy.components`
         Components that can be used to create a model for curve fitting.
 
-For more details see their doctrings.
+For more details see their docstrings.
 
 """
 # -*- coding: utf-8 -*-
@@ -97,11 +94,9 @@ def create_model(signal, *args, **kwargs):
     A Model class
 
     """
-
-    from hyperspy._signals.eels import EELSSpectrum
-    from hyperspy.models.eelsmodel import EELSModel
-    from hyperspy.model import Model
-    if isinstance(signal, EELSSpectrum):
-        return EELSModel(signal, *args, **kwargs)
-    else:
-        return Model(signal, *args, **kwargs)
+    import warnings
+    warnings.warn(
+        "This function is deprecated and will be removed in HyperSpy 0.9. "
+        "Please use the equivalent `Signal.create_model` method "
+        "instead.", DeprecationWarning)
+    return signal.create_model(*args, **kwargs)

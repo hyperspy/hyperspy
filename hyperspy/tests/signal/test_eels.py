@@ -87,8 +87,13 @@ class TestEstimateZLPCentre():
 
     def test_estimate_zero_loss_peak_centre(self):
         s = self.spectrum
-        nose.tools.assert_true(np.allclose(s.estimate_zero_loss_peak_centre().data,
-                                           np.arange(100, 101, 0.1)))
+        nose.tools.assert_true(
+            np.allclose(
+                s.estimate_zero_loss_peak_centre().data,
+                np.arange(
+                    100,
+                    101,
+                    0.1)))
 
 
 class TestAlignZLP():

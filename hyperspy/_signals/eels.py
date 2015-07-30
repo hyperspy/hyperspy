@@ -435,8 +435,9 @@ class EELSSpectrum(Spectrum):
                 threshold.data[:] = np.nan
         del s
         if np.isnan(threshold.data).any():
-            warnings.warn("No inflexion point could we found in some positions "
-                          "that have been marked with nans.")
+            warnings.warn(
+                "No inflexion point could we found in some positions "
+                "that have been marked with nans.")
         # Create spectrum image, stop and return value
         threshold.metadata.General.title = (
             self.metadata.General.title +
@@ -503,8 +504,7 @@ class EELSSpectrum(Spectrum):
                 threshold=threshold,).data
 
         t_over_lambda = np.log(total_intensity / I0)
-        s = self._get_navigation_signal()
-        s.data = t_over_lambda
+        s = self._get_navigation_signal(data=t_over_lambda)
         s.metadata.General.title = (self.metadata.General.title +
                                     ' $\\frac{t}{\\lambda}$')
         if self.tmp_parameters.has_item('filename'):
@@ -821,7 +821,8 @@ class EELSSpectrum(Spectrum):
         mapping = {
             'Acquisition_instrument.TEM.convergence_angle': 'tem_par.convergence_angle',
             'Acquisition_instrument.TEM.beam_energy': 'tem_par.beam_energy',
-            'Acquisition_instrument.TEM.Detector.EELS.collection_angle': 'tem_par.collection_angle', }
+            'Acquisition_instrument.TEM.Detector.EELS.collection_angle': 'tem_par.collection_angle',
+        }
         for key, value in mapping.iteritems():
             if self.metadata.has_item(key):
                 exec('%s = self.metadata.%s' % (value, key))
@@ -829,7 +830,8 @@ class EELSSpectrum(Spectrum):
         mapping = {
             'Acquisition_instrument.TEM.convergence_angle': tem_par.convergence_angle,
             'Acquisition_instrument.TEM.beam_energy': tem_par.beam_energy,
-            'Acquisition_instrument.TEM.Detector.EELS.collection_angle': tem_par.collection_angle, }
+            'Acquisition_instrument.TEM.Detector.EELS.collection_angle': tem_par.collection_angle,
+        }
         for key, value in mapping.iteritems():
             if value != t.Undefined:
                 self.metadata.set_item(key, value)
@@ -1171,15 +1173,54 @@ class EELSSpectrum(Spectrum):
                 self.tmp_parameters.filename +
                 '_CDF_after_Kramers_Kronig_transform')
         if 'thickness' in output:
-            thickness = eps._get_navigation_signal()
+            thickness = eps._get_navigation_signal(
+                data=te[self.axes_manager._get_data_slice(
+                    [(axis.index_in_array, 0)])])
             thickness.metadata.General.title = (
                 self.metadata.General.title + ' thickness '
                 '(calculated using Kramers-Kronig analysis)')
-            thickness.data = te[
-                self.axes_manager._get_data_slice([(
-                    axis.index_in_array, 0)])]
             output['thickness'] = thickness
         if full_output is False:
             return eps
         else:
             return eps, output
+
+    def create_model(self, ll=None, auto_background=True, auto_add_edges=True,
+                     GOS=None):
+        """Create a model for the current EELS data.
+
+        Parameters
+        ----------
+        ll : EELSSpectrum, optional
+            If an EELSSpectrum is provided, it will be assumed that it is
+            a low-loss EELS spectrum, and it will be used to simulate the
+            effect of multiple scattering by convolving it with the EELS
+            spectrum.
+        auto_background : boolean, default True
+            If True, and if spectrum is an EELS instance adds automatically
+            a powerlaw to the model and estimate the parameters by the
+            two-area method.
+        auto_add_edges : boolean, default True
+            If True, and if spectrum is an EELS instance, it will
+            automatically add the ionization edges as defined in the
+            Spectrum instance. Adding a new element to the spectrum using
+            the components.EELSSpectrum.add_elements method automatically
+            add the corresponding ionisation edges to the model.
+        GOS : {'hydrogenic' | 'Hartree-Slater'}, optional
+            The generalized oscillation strenght calculations to use for the
+            core-loss EELS edges. If None the Hartree-Slater GOS are used if
+            available, otherwise it uses the hydrogenic GOS.
+
+        Returns
+        -------
+
+        model : `EELSModel` instance.
+
+        """
+        from hyperspy.models.eelsmodel import EELSModel
+        model = EELSModel(self,
+                          ll=ll,
+                          auto_background=auto_background,
+                          auto_add_edges=auto_add_edges,
+                          GOS=GOS)
+        return model
