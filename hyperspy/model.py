@@ -1791,6 +1791,7 @@ class Model(list):
             signal_range="interactive",
             estimate_parameters=True,
             fit_independent=False,
+			only_current=True,
             **kwargs):
         """Fit just the given component in the given signal range.
 
@@ -1829,7 +1830,8 @@ class Model(list):
         """
         component = self._get_component(component)
         cf = ComponentFit(self, component, signal_range,
-                          estimate_parameters, fit_independent, **kwargs)
+                          estimate_parameters, fit_independent,
+                          only_current, **kwargs)
         if signal_range == "interactive":
             cf.edit_traits()
         else:
