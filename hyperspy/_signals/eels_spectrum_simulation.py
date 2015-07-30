@@ -51,7 +51,6 @@ class EELSSpectrumSimulation(SpectrumSimulation, EELSSpectrum):
 #        return delta_map
 
 
-
 #    def simulate(self, maps = None, energy_instability = 0,
 #    min_intensity = 0., max_intensity = 1.):
 #        """Create a simulated SI.
