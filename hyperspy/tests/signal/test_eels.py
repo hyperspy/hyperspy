@@ -123,7 +123,7 @@ class TestAlignZLP():
         s.align_zero_loss_peak(
             calibrate=True,
             print_stats=False,
-            show_progressbar=False)
+            show_progressbar=None)
         zlpc = s.estimate_zero_loss_peak_centre()
         nose.tools.assert_true(np.allclose(zlpc.data.mean(), 0))
         nose.tools.assert_true(np.allclose(zlpc.data.std(), 0))
@@ -133,7 +133,7 @@ class TestAlignZLP():
         s.align_zero_loss_peak(
             calibrate=False,
             print_stats=False,
-            show_progressbar=False)
+            show_progressbar=None)
         zlpc = s.estimate_zero_loss_peak_centre()
         nose.tools.assert_true(np.allclose(zlpc.data.std(), 0))
 
@@ -143,7 +143,7 @@ class TestAlignZLP():
         s.align_zero_loss_peak(calibrate=True,
                                print_stats=False,
                                also_align=[s2],
-                               show_progressbar=False)
+                               show_progressbar=None)
         zlpc = s2.estimate_zero_loss_peak_centre()
         nose.tools.assert_equal(zlpc.data.mean(), 0)
         nose.tools.assert_equal(zlpc.data.std(), 0)

@@ -22,7 +22,7 @@ class TestRemoveBackground1DGaussian:
         s1 = self.signal.remove_background(
             signal_range=(None, None),
             background_type='Gaussian',
-            show_progressbar=False)
+            show_progressbar=None)
         assert_true(np.allclose(s1.data, np.zeros(len(s1.data))))
 
 
@@ -41,7 +41,7 @@ class TestRemoveBackground1DPowerLaw:
         s1 = self.signal.remove_background(
             signal_range=(None, None),
             background_type='PowerLaw',
-            show_progressbar=False)
+            show_progressbar=None)
         assert_true(np.allclose(s1.data, np.zeros(len(s1.data)), atol=60))
 
     def test_background_remove_pl_int(self):
@@ -49,5 +49,5 @@ class TestRemoveBackground1DPowerLaw:
         s1 = self.signal.remove_background(
             signal_range=(None, None),
             background_type='PowerLaw',
-            show_progressbar=False)
+            show_progressbar=None)
         assert_true(np.allclose(s1.data, np.zeros(len(s1.data)), atol=60))
