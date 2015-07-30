@@ -373,11 +373,11 @@ class SpikesRemoval(SpanSelectorInSpectrum):
         self.span_selector_changed()
 
     def _ss_left_value_changed(self, old, new):
-        if not np.isnan(self.ss_right_value):
+        if not (np.isnan(self.ss_right_value) or np.isnan(self.ss_left_value)):
             self.span_selector_changed()
 
     def _ss_right_value_changed(self, old, new):
-        if not np.isnan(self.ss_right_value):
+        if not (np.isnan(self.ss_right_value) or np.isnan(self.ss_left_value)):
             self.span_selector_changed()
 
     def create_interpolation_line(self):
