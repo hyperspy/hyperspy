@@ -59,7 +59,7 @@ class TestModelBinned:
     def setUp(self):
         s = hs.signals.Spectrum([1])
         s.axes_manager[0].scale = 0.1
-        m = hs.create_model(s)
+        m = s.create_model()
         m.append(hs.components.Offset())
         m[0].offset.value = 1
         self.m = m

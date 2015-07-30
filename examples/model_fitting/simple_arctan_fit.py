@@ -16,7 +16,7 @@ s.add_gaussian_noise(0.1)
 arctan_component = components.Arctan()
 
 # Create the model and add the arctan component
-m = create_model(s)
+m = s.create_model()
 m.append(arctan_component)
 
 # Fit the arctan component to the spectrum

@@ -217,10 +217,13 @@ class DataAxis(t.HasTraits):
         return my_slice
 
     def _get_name(self):
-        name = (self.name if self.name is not t.Undefined
-                else ("Unnamed " +
-                      ordinal(self.index_in_axes_manager)) if self.axes_manager is not None
-                else "Unnamed")
+        if self.name is t.Undefined:
+            if self.axes_manager is None:
+                name = "Unnamed"
+            else:
+                name = "Unnamed " + ordinal(self.index_in_axes_manager)
+        else:
+            name = self.name
         return name
 
     def __repr__(self):
@@ -627,8 +630,10 @@ class AxesManager(t.HasTraits):
             raise StopIteration
         else:
             self._index += 1
-            val = np.unravel_index(self._index,
-                                   tuple(self._navigation_shape_in_array))[::-1]
+            val = np.unravel_index(
+                self._index,
+                tuple(self._navigation_shape_in_array)
+            )[::-1]
             self.indices = val
         return val
 
@@ -698,8 +703,9 @@ class AxesManager(t.HasTraits):
         if len(self._axes) == 0:
             return
         elif value > len(self._axes):
-            raise ValueError("The signal dimension cannot be greater"
-                             " than the number of axes which is %i" % len(self._axes))
+            raise ValueError(
+                "The signal dimension cannot be greater"
+                " than the number of axes which is %i" % len(self._axes))
         elif value < 0:
             raise ValueError(
                 "The signal dimension must be a positive integer")

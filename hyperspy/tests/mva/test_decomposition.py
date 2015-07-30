@@ -89,8 +89,8 @@ class TestReverseDecompositionComponent():
 
     def setUp(self):
         s = signals.Signal(np.empty(1))
-        self.factors = np.ones([2 ,3])
-        self.loadings = np.ones([2 ,3])
+        self.factors = np.ones([2, 3])
+        self.loadings = np.ones([2, 3])
         s.learning_results.factors = self.factors.copy()
         s.learning_results.loadings = self.loadings.copy()
         self.s = s

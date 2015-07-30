@@ -411,7 +411,7 @@ Perform Levenberg-Marquardt least-squares minimization, based on MINPACK-1.
 
 import numpy
 import types
-import scipy.lib.blas
+import scipy.linalg
 
 #	 Original FORTRAN documentation
 #	 **********
@@ -598,10 +598,10 @@ import scipy.lib.blas
 
 class mpfit:
 
-    blas_enorm32, = scipy.lib.blas.get_blas_funcs(
+    blas_enorm32, = scipy.linalg.get_blas_funcs(
         ['nrm2'], numpy.array(
             [0], dtype=numpy.float32))
-    blas_enorm64, = scipy.lib.blas.get_blas_funcs(
+    blas_enorm64, = scipy.linalg.get_blas_funcs(
         ['nrm2'], numpy.array(
             [0], dtype=numpy.float64))
 
@@ -1048,9 +1048,16 @@ Outputs:
                     xnew0 = self.params.copy()
 
                     dof = numpy.max([len(fvec) - len(x), 0])
-                    status = iterfunct(fcn, self.params, self.niter, self.fnorm ** 2,
-                                       functkw=functkw, parinfo=parinfo, quiet=quiet,
-                                       dof=dof, **iterkw)
+                    status = iterfunct(
+                        fcn,
+                        self.params,
+                        self.niter,
+                        self.fnorm ** 2,
+                        functkw=functkw,
+                        parinfo=parinfo,
+                        quiet=quiet,
+                        dof=dof,
+                        **iterkw)
                     if status is not None:
                         self.status = status
 
@@ -1524,9 +1531,21 @@ Outputs:
         ans = self.blas_enorm(vec)
         return ans
 
-    def fdjac2(self, fcn, x, fvec, step=None, ulimited=None, ulimit=None, dside=None,
-               epsfcn=None, autoderivative=1,
-               functkw=None, xall=None, ifree=None, dstep=None):
+    def fdjac2(
+            self,
+            fcn,
+            x,
+            fvec,
+            step=None,
+            ulimited=None,
+            ulimit=None,
+            dside=None,
+            epsfcn=None,
+            autoderivative=1,
+            functkw=None,
+            xall=None,
+            ifree=None,
+            dstep=None):
 
         if self.debug:
             print 'Entering fdjac2...'
@@ -2281,7 +2300,7 @@ Outputs:
 
         if self.debug:
             print 'Entering calc_covar...'
-        if numpy.rank(rr) != 2:
+        if numpy.ndim(rr) != 2:
             print 'ERROR: r must be a two-dimensional matrix'
             return -1
         s = rr.shape

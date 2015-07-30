@@ -7,7 +7,7 @@ optimisation algorithms to fit the model to experimental data. It supports
 bounds and weights.
 
 .. versionadded:: 0.7
-   
+
     Before creating a model verify that the ``Signal.binned`` metadata
     attribute of the signal is set to the correct value because the resulting
     model depends on this parameter. See :ref:`signal.binned` for more details.
@@ -16,14 +16,12 @@ Creating a model
 ^^^^^^^^^^^^^^^^
 
 A :py:class:`~.model.Model` can be created using the
-:py:func:`~.hspy.create_model` function, whose first argument is a
-:py:class:`~.signal.Signal` of any of its subclasses (often it is simply the
-object returned by the :py:func:`~.io.load` function. e.g.,
+:py:meth:`~._signals.spectrum.Spectrum.create_model` method:
 
 .. code-block:: python
-    
+
     >>> s = load('YourDataFilenameHere') # Load the data from a file
-    >>> m = create_model(s) # Create the model and asign it to the variable m
+    >>> m = s.create_model() # Create the model and asign it to the variable m
 
 At this point you may be prompted to provide any necessary information not
 already included in the datafile, e.g.if s is EELS data, you may be asked for
@@ -144,7 +142,7 @@ a component is very easy modifying the following template:
              return x
 
 
-If you need help for
+If you need help with
 the task please submit your question to the :ref:`users mailing list
 <http://groups.google.com/group/hyperspy-users>`. 
 
@@ -153,7 +151,7 @@ To print the current components in a model simply enter the name of the
 variable, e.g.:
 
 .. code-block:: python
-    
+
     >>> m # m is the variable in which we have previously stored the model
     []
     >>> # [] means that the model is empty
@@ -165,17 +163,17 @@ automatically be placed in m. To add a component first we have to create an
 instance of the component. Once the instance has been created we can add the
 component to the model using the :py:meth:`append` method, e.g. for a type of
 data that can be modelled using gaussians we might proceed as follows:
-    
+
 
 .. code-block:: python
-    
+
     >>> gaussian = components.Gaussian() # Create a Gaussian function component
     >>> m.append(gaussian) # Add it to the model
-    >>> m # Print the model components 
+    >>> m # Print the model components
     [<Gaussian component>]
     >>> gaussian2 = components.Gaussian() # Create another gaussian components
     >>> gaussian3 = components.Gaussian() # Create a third gaussian components
-    
+
 
 We could use the append method two times to add the two gaussians, but when
 adding multiple components it is handier to use the extend method that enables
@@ -187,8 +185,8 @@ adding a list of components at once.
     >>> m.extend((gaussian2, gaussian3)) #note the double brackets!
     >>> m
     [<Gaussian component>, <Gaussian component>, <Gaussian component>]
-    
-    
+
+
 We can customise the name of the components.
 
 .. code-block:: python
@@ -217,7 +215,7 @@ Two components cannot have the same name.
 
 It is possible to access the components in the model by their name or by the
 index in the model.
-    
+
 .. code-block:: python
 
     >>> m
@@ -241,12 +239,12 @@ back to `True`.
     :py:attr:`~.component.Component.active` attribute at each navigation index.
     To enable this feature for a given component set the
     :py:attr:`~.component.Component.active_is_multidimensional` attribute to
-    `True`. 
+    `True`.
 
     .. code-block:: python
- 
+
         >>> s = signals.Spectrum(np.arange(100).reshape(10,10))
-        >>> m = create_model(s)
+        >>> m = s.create_model()
         >>> g1 = components.Gaussian()
         >>> g2 = components.Gaussian()
         >>> m.extend([g1,g2])
@@ -264,7 +262,7 @@ back to `True`.
         >>> g1.active_is_multidimensional = False
         >>> g1._active_array is None
         True
- 
+
 
 Getting and setting parameter values and attributes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -286,7 +284,7 @@ Example:
 .. code-block:: python
 
     >>> s = signals.Spectrum(np.arange(100).reshape(10,10))
-    >>> m = create_model(s)
+    >>> m = s.create_model()
     >>> g1 = components.Gaussian()
     >>> g2 = components.Gaussian()
     >>> m.extend([g1,g2])
@@ -345,15 +343,15 @@ example:
     >>> g2.free_parameters
     set([])
     >>> m.set_parameters_free(parameter_name_list=['A'])
-    >>> g1.free_parameters 
+    >>> g1.free_parameters
     set([<Parameter A of Gaussian component>])
-    >>> g2.free_parameters 
+    >>> g2.free_parameters
     set([<Parameter A of Gaussian component>])
     >>> m.set_parameters_free([g1], parameter_name_list=['sigma'])
-    >>> g1.free_parameters 
+    >>> g1.free_parameters
     set([<Parameter A of Gaussian component>,
          <Parameter sigma of Gaussian component>])
-    >>> g2.free_parameters 
+    >>> g2.free_parameters
     set([<Parameter A of Gaussian component>])
 
 
@@ -363,7 +361,7 @@ The value of a parameter can be coupled to the value of another by setting the
 For example:
 
 .. code-block:: python
-    
+
     >>> gaussian.parameters # Print the parameters of the gaussian components
     (A, sigma, centre)
     >>> gaussian.centre.free = False # Fix the centre
@@ -421,7 +419,7 @@ possible to set a different coupling function by setting the
 :py:attr:`~.component.Parameter.twin_function` and
 :py:attr:`~.component.Parameter.twin_inverse_function` attributes.  For
 example:
- 
+
     >>> gaussian2.A.twin_function = lambda x: x**2
     >>> gaussian2.A.twin_inverse_function = lambda x: np.sqrt(np.abs(x))
     >>> gaussian2.A.value = 4
@@ -456,7 +454,7 @@ example:
             A	4.000000
             centre	0.000000
 
-.. _model.fitting:            
+.. _model.fitting:
 
 Fitting the model to the data
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -500,7 +498,7 @@ to the data.
 
 .. code-block:: python
 
-    >>> m = create_model(s)
+    >>> m = s.create_model()
     >>> line  = components.Polynomial(order=1)
     >>> m.append(line)
     >>> m.fit()
@@ -535,7 +533,7 @@ gaussian noise and proceed to fit as in the previous example.
     >>> s = signals.SpectrumSimulation(
     ...     np.arange(300))
     >>> s.add_poissonian_noise()
-    >>> m = create_model(s)
+    >>> m = s.create_model()
     >>> line  = components.Polynomial(order=1)
     >>> m.append(line)
     >>> m.fit()
@@ -546,7 +544,7 @@ gaussian noise and proceed to fit as in the previous example.
 
 Because the noise is heterocedastic, the least squares optimizer estimation is
 biased. A more accurate result can be obtained by using weighted least squares
-instead that, although still biased for poissonian noise, is a good 
+instead that, although still biased for poissonian noise, is a good
 approximation in most cases.
 
 .. code-block:: python
@@ -579,7 +577,7 @@ the ``centre`` parameter.
     >>> s = signals.Signal(np.random.normal(loc=10, scale=0.01,
     size=1e5)).get_histogram()
     >>> s.metadata.Signal.binned = True
-    >>> m = create_model(s)
+    >>> m = s.create_model()
     >>> g1 = components.Gaussian()
     >>> m.append(g1)
     >>> g1.centre.value = 7
@@ -605,8 +603,8 @@ the ``centre`` parameter.
     unless ``metadata.Signal.Noise_properties.variance`` contains an accurate
     estimation of the variance of the data, the chi-squared and reduced
     chi-squared cannot be computed correctly. This is also true for
-    homocedastic noise. 
-        
+    homocedastic noise.
+
 .. _model.visualization:
 
 Visualizing the model
@@ -615,7 +613,7 @@ Visualizing the model
 To visualise the result use the :py:meth:`~.model.Model.plot` method:
 
 .. code-block:: python
-    
+
     >>> m.plot() # Visualise the results
 
 .. versionadded:: 0.7
@@ -626,7 +624,7 @@ is possible to display the individual components by calling
 :py:meth:`~.model.Model.plot`:
 
 .. code-block:: python
-    
+
     >>> m.plot(plot_components=True) # Visualise the results
 
 To disable this feature call :py:meth:`~.model.Model.disable_plot_components`.
@@ -634,9 +632,9 @@ To disable this feature call :py:meth:`~.model.Model.disable_plot_components`.
 .. versionadded:: 0.7.1
 
    By default the model plot is automatically updated when any parameter value
-   changes. It is possible to suspend this feature with 
+   changes. It is possible to suspend this feature with
    :py:meth:`~.model.Model.suspend_update`. To resume it use
-   :py:meth:`~.model.Model.resume_update`. 
+   :py:meth:`~.model.Model.resume_update`.
 
 
 .. _model.starting:
@@ -644,31 +642,31 @@ To disable this feature call :py:meth:`~.model.Model.disable_plot_components`.
 Setting the initial parameters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Non-linear regression often requires setting sensible starting 
+Non-linear regression often requires setting sensible starting
 parameters. This can be done by plotting the model and adjusting the parameters
-by hand. 
+by hand.
 
 .. versionadded:: 0.7
 
     In addition, it is possible to fit a given component  independently using
     the :py:meth:`~.model.Model.fit_component` method.
 
-    
+
 
 .. versionadded:: 0.6
 
     Also, :py:meth:`~.model.Model.enable_adjust_position` provides an
     interactive way of setting the position of the components with a well
     define position.  :py:meth:`~.model.Model.disable_adjust_position` disables
-    the tool. 
+    the tool.
 
 
     .. figure::  images/model_adjust_position.png
         :align:   center
-        :width:   500    
+        :width:   500
 
         Interactive component position adjustment tool.Drag the vertical lines
-        to set the initial value of the position parameter. 
+        to set the initial value of the position parameter.
 
 
 
@@ -687,13 +685,13 @@ Fitting multidimensional datasets
 
 To fit the model to all the elements of a multidimensional datataset use
 :py:meth:`~.model.Model.multifit`, e.g.:
-    
+
 .. code-block:: python
 
     >>> m.multifit() # warning: this can be a lengthy process on large datasets
 
-:py:meth:`~.model.Model.multifit` fits the model at the first position, 
-store the result of the fit internally and move to the next position until 
+:py:meth:`~.model.Model.multifit` fits the model at the first position,
+store the result of the fit internally and move to the next position until
 reaching the end of the dataset.
 
 Sometimes one may like to store and fetch the value of the parameters at a
@@ -732,7 +730,7 @@ To save a model:
 
 2. Save all the commands that used to create the model to a file. This
    can be done in the form of an IPython notebook or a Python script.
-   
+
 3.  (Optional) Comment out or delete the fitting commangs (e.g. `multifit`).
 
 To recreate the model:
@@ -762,5 +760,3 @@ parameter attributes:
 * :py:meth:`~.model.Model.set_parameters_not_free`
 * :py:meth:`~.model.Model.set_parameters_free`
 * :py:meth:`~.model.Model.set_parameters_value`
-
-

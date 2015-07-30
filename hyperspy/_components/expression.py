@@ -46,7 +46,7 @@ class Expression(Component):
             Module used to evaluate the function. numexpr is often faster but
             it supports less functions.
 
-        **kwarfs
+        **kwargs
              Keyword arguments can be used to initialise the value of the
              parameters.
 

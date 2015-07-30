@@ -87,16 +87,16 @@ class PESCoreLineShape(Component):
         a1 = self.origin.value
         a2 = self.FWHM.value
         a3 = self.ab.value
-        return self.factor * (2 * math.log(2) * a0 * (x + a3 - a1) ** 2 * np.exp(
-            -(math.log(2) * (x + a3 - a1) ** 2) / a2 ** 2)) / a2 ** 3
+        return self.factor * (2 * math.log(2) * a0 * (x + a3 - a1) ** 2 *
+                              np.exp(-(math.log(2) * (x + a3 - a1) ** 2) / a2 ** 2)) / a2 ** 3
 
     def grad_origin(self, x):
         a0 = self.A.value
         a1 = self.origin.value
         a2 = self.FWHM.value
         a3 = self.ab.value
-        return self.factor * (2 * math.log(2) * a0 * (x + a3 - a1) * np.exp(-(math.log(2) *
-                                                                            (x + a3 - a1) ** 2) / a2 ** 2)) / a2 ** 2
+        return self.factor * (2 * math.log(2) * a0 * (x + a3 - a1) *
+                              np.exp(-(math.log(2) * (x + a3 - a1) ** 2) / a2 ** 2)) / a2 ** 2
 
     def grad_ab(self, x):
         return -self.grad_origin(x)

@@ -89,10 +89,12 @@ keywords = {
     'ZPOSITION': {'dtype': float, 'mapped_to': None},
 
     # EELS
+    # in ms:
     'INTEGTIME': {'dtype': float, 'mapped_to':
-                  'Acquisition_instrument.TEM.Detector.EELS.exposure'},  # in ms
+                  'Acquisition_instrument.TEM.Detector.EELS.exposure'},
+    # in ms:
     'DWELLTIME': {'dtype': float, 'mapped_to':
-                  'Acquisition_instrument.TEM.Detector.EELS.dwell_time'},  # in ms
+                  'Acquisition_instrument.TEM.Detector.EELS.dwell_time'},
     'COLLANGLE': {'dtype': float, 'mapped_to':
                   'Acquisition_instrument.TEM.Detector.EELS.collection_angle'},
     'ELSDET': {'dtype': unicode, 'mapped_to': None},
@@ -109,7 +111,8 @@ keywords = {
     'REALTIME': {'dtype': float, 'mapped_to':
                  'Acquisition_instrument.TEM.Detector.EDS.real_time'},
     'FWHMMNKA': {'dtype': float, 'mapped_to':
-                 'Acquisition_instrument.TEM.Detector.EDS.energy_resolution_MnKa'},
+                 'Acquisition_instrument.TEM.Detector.EDS.' +
+                 'energy_resolution_MnKa'},
     'TBEWIND': {'dtype': float, 'mapped_to': None},
     'TAUWIND': {'dtype': float, 'mapped_to': None},
     'TDEADLYR': {'dtype': float, 'mapped_to': None},
@@ -157,7 +160,9 @@ def file_reader(filename, encoding='latin-1', **kwds):
                         y.append(float(xy[1]))
                     elif parameters['DATATYPE'] == 'Y':
                         data = [
-                            float(i) for i in line.replace(',', ' ').strip().split()]
+                            float(i) for i in line.replace(
+                                ',',
+                                ' ').strip().split()]
                         y.extend(data)
     # We rewrite the format value to be sure that it complies with the
     # standard, because it will be used by the writer routine
@@ -280,14 +285,15 @@ def file_writer(filename, signal, format=None, separator=', ',
                     "%d-%b-%Y")
                 locale.setlocale(locale.LC_TIME, loc)  # restore saved locale
             except:
-                warnings.warn("I couldn't write the date information due to"
-                              "an unexpected error. Please report this error to "
-                              "the developers")
+                warnings.warn(
+                    "I couldn't write the date information due to"
+                    "an unexpected error. Please report this error to "
+                    "the developers")
     keys_from_signal = {
         # Required parameters
         'FORMAT': FORMAT,
         'VERSION': '1.0',
-        #'TITLE' : signal.title[:64] if hasattr(signal, "title") else '',
+        # 'TITLE' : signal.title[:64] if hasattr(signal, "title") else '',
         'DATE': '',
         'TIME': '',
         'OWNER': '',

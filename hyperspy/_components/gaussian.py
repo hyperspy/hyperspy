@@ -89,9 +89,8 @@ class Gaussian(Component):
                                                                                                                                                                           self.sigma.value ** 2)) * self.A.value) / (sqrt2pi * self.sigma.value ** 2)
 
     def grad_centre(self, x):
-        return ((x - self.centre.value) * np.exp(-(x - self.centre.value) ** 2 / (2
-                                                                                  * self.sigma.value ** 2)) * self.A.value) / (sqrt2pi *
-                                                                                                                               self.sigma.value ** 3)
+        return ((x - self.centre.value) * np.exp(-(x - self.centre.value) ** 2 /
+                                                 (2 * self.sigma.value ** 2)) * self.A.value) / (sqrt2pi * self.sigma.value ** 3)
 
     def estimate_parameters(self, signal, x1, x2, only_current=False):
         """Estimate the gaussian by calculating the momenta.

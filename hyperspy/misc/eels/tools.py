@@ -135,13 +135,13 @@ def estimate_variance_parameters(
         ns = ns[_slice]
         cs = cs[_slice]
 
-    results0 = _estimate_gain(ns, cs, weighted=weighted,
-                              higher_than=higher_than, plot_results=plot_results, binning=0,
-                              pol_order=pol_order)
+    results0 = _estimate_gain(
+        ns, cs, weighted=weighted, higher_than=higher_than,
+        plot_results=plot_results, binning=0, pol_order=pol_order)
 
-    results2 = _estimate_gain(ns, cs, weighted=weighted,
-                              higher_than=higher_than, plot_results=False, binning=2,
-                              pol_order=pol_order)
+    results2 = _estimate_gain(
+        ns, cs, weighted=weighted, higher_than=higher_than,
+        plot_results=False, binning=2, pol_order=pol_order)
 
     c = _estimate_correlation_factor(results0['fit'][0],
                                      results2['fit'][0], 4)
@@ -156,14 +156,19 @@ def estimate_variance_parameters(
     else:
         print message
     if is_ok:
-        noisy_signal.metadata.set_item("Signal.Noise_properties.Variance_linear_model.gain_factor",
-                                       results0['fit'][0])
-        noisy_signal.metadata.set_item("Signal.Noise_properties.Variance_linear_model.gain_offset",
-                                       results0['fit'][1])
-        noisy_signal.metadata.set_item("Signal.Noise_properties.Variance_linear_model.correlation_factor",
-                                       c)
-        noisy_signal.metadata.set_item("Signal.Noise_properties.Variance_linear_model.parameters_estimation_method",
-                                       'HyperSpy')
+        noisy_signal.metadata.set_item(
+            "Signal.Noise_properties.Variance_linear_model.gain_factor",
+            results0['fit'][0])
+        noisy_signal.metadata.set_item(
+            "Signal.Noise_properties.Variance_linear_model.gain_offset",
+            results0['fit'][1])
+        noisy_signal.metadata.set_item(
+            "Signal.Noise_properties.Variance_linear_model.correlation_factor",
+            c)
+        noisy_signal.metadata.set_item(
+            "Signal.Noise_properties.Variance_linear_model." +
+            "parameters_estimation_method",
+            'HyperSpy')
 
     if fold_back_noisy is True:
         noisy_signal.fold()
@@ -248,7 +253,8 @@ def eels_constant(s, zlp, t):
                              "You can do this e.g. by using the "
                              "set_microscope_parameters method")
     try:
-        beta = s.metadata.Acquisition_instrument.TEM.Detector.EELS.collection_angle
+        beta = s.metadata.Acquisition_instrument.\
+            TEM.Detector.EELS.collection_angle
     except:
         raise AttributeError("Please define the collection angle."
                              "You can do this e.g. by using the "
@@ -293,7 +299,7 @@ def eels_constant(s, zlp, t):
     # Kinetic definitions
     ke = e0 * (1 + e0 / 2. / me) / (1 + e0 / me) ** 2
     tgt = e0 * (2 * me + e0) / (me + e0)
-    k = s._get_navigation_signal()
-    k.data = (t * i0 / (332.5 * ke)) * np.log(1 + (beta * tgt / eaxis) ** 2)
+    k = s.__class__(
+        data=(t * i0 / (332.5 * ke)) * np.log(1 + (beta * tgt / eaxis) ** 2))
     k.metadata.General.title = "EELS proportionality constant K"
     return k
