@@ -93,10 +93,12 @@ class BackgroundRemoval(SpanSelectorInSpectrum):
         self.span_selector_changed()
 
     def _ss_left_value_changed(self, old, new):
-        self.span_selector_changed()
+        if not (np.isnan(self.ss_right_value) or np.isnan(self.ss_left_value)):
+            self.span_selector_changed()
 
     def _ss_right_value_changed(self, old, new):
-        self.span_selector_changed()
+        if not (np.isnan(self.ss_right_value) or np.isnan(self.ss_left_value)):
+            self.span_selector_changed()
 
     def create_background_line(self):
         self.bg_line = drawing.spectrum.SpectrumLine()
