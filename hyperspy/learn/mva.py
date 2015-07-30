@@ -824,7 +824,7 @@ class MVA():
             if self._unfolded4decomposition is True:
                 self.fold()
                 sc.fold()
-            # TODO: Should self._unfolded4decomposition be set to False?
+                self._unfolded4decomposition = False
         return sc
 
     def get_decomposition_model(self, components=None):

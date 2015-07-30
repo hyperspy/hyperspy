@@ -104,7 +104,7 @@ def unfold_if_multidim(signal):
     """
     import warnings
     warnings.warn("unfold_if_multidim is deprecated and will be removed in "
-                  "0.9 please use Signal.unfold instead")
+                  "0.9 please use Signal.unfold instead", DeprecationWarning)
     return None
 
 
