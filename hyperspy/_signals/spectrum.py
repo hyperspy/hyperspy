@@ -106,7 +106,7 @@ class Spectrum(Signal):
         plt.ylabel('Log(Counts)')
         ax.set_yscale('log')
         ax.set_ylim(10 ** -1, plt.ylim()[1])
-        ax.set_xlim(0, 1.1 * plt.xlim()[1])
+        ax.set_xlim(plt.xlim()[0], 1.1 * plt.xlim()[1])
         plt.draw()
 
     def spikes_removal_tool(self, signal_mask=None,
