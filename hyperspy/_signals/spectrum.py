@@ -27,6 +27,7 @@ from hyperspy.gui.egerton_quantification import SpikesRemoval
 
 
 class Spectrum(Signal):
+
     """
     """
     _record_by = 'spectrum'
