@@ -10,7 +10,7 @@ class HyperspyMagics(Magics):
         first_import_part = ("import numpy as np\n"
                              "import hyperspy.hspy as hs\n")
         exec(first_import_part, sh.user_ns)
-        
+
         overwrite = False
         line = line.strip()
         if "-r" in line:
@@ -40,11 +40,11 @@ class HyperspyMagics(Magics):
             toolkit + "\n" + second_import_part
         print ans
         if overwrite:
-            sh.set_next_input("# %hyperspy -r "+toolkit+\
-                    "\n"+first_import_part + \
-                    "%matplotlib " + toolkit + "\n" +\
-                    second_import_part + "\n\n", 
-                    replace=True)
+            sh.set_next_input("# %hyperspy -r " + toolkit +
+                              "\n" + first_import_part +
+                              "%matplotlib " + toolkit + "\n" +
+                              second_import_part + "\n\n",
+                              replace=True)
 
 ip = get_ipython()
 ip.register_magics(HyperspyMagics)
