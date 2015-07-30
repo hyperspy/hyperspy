@@ -53,8 +53,8 @@ if are_we_building4windows() or os.name in ['nt', 'dos']:
     # that runs the different scripts.
     # (code adapted from scitools)
     scripts.extend(('bin/win_post_installation.py',
-                   'bin/install_hyperspy_here.py',
-                   'bin/uninstall_hyperspy_here.py'))
+                    'bin/install_hyperspy_here.py',
+                    'bin/uninstall_hyperspy_here.py'))
     batch_files = []
     for script in scripts:
         batch_file = os.path.splitext(script)[0] + '.bat'
@@ -161,15 +161,14 @@ with update_version_when_dev() as version:
                   'hyperspy.misc.eds',
                   'hyperspy.misc.io',
                   'hyperspy.misc.machine_learning',
-                  'hyperspy.misc.mpfit',
-                  'hyperspy.misc.mpfit.tests',
-                  'hyperspy.misc.borrowed',
-                  'hyperspy.misc.borrowed.astroML',
+                  'hyperspy.external.mpfit',
+                  'hyperspy.external.mpfit.tests',
+                  'hyperspy.external',
+                  'hyperspy.external.astroML',
                   ],
         requires=install_req,
         scripts=scripts,
-        package_data=
-        {
+        package_data={
             'hyperspy':
             ['bin/*.py',
              'ipython_profile/*',
