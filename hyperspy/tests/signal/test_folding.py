@@ -26,6 +26,31 @@ class TestSignalFolding:
         self.s.unfold()
         nt.assert_true("unfolded" in repr(self.s))
 
+    def test_unfold_navigation_by_keyword(self):
+        s = self.s.deepcopy()
+        s.unfold(unfold_navigation=True, unfold_signal=False)
+        nt.assert_equal(s.axes_manager.navigation_shape,
+                        (self.s.axes_manager.navigation_size,))
+
+    def test_unfold_signal_by_keyword(self):
+        s = self.s.deepcopy()
+        s.unfold(unfold_navigation=False, unfold_signal=True)
+        nt.assert_equal(s.axes_manager.signal_shape,
+                        (self.s.axes_manager.signal_size,))
+
+    def test_unfold_nothing_by_keyword(self):
+        s = self.s.deepcopy()
+        s.unfold(unfold_navigation=False, unfold_signal=False)
+        nt.assert_equal(s.data.shape, self.s.data.shape)
+
+    def test_unfold_full_by_keyword(self):
+        s = self.s.deepcopy()
+        s.unfold(unfold_navigation=True, unfold_signal=True)
+        nt.assert_equal(s.axes_manager.signal_shape,
+                        (self.s.axes_manager.signal_size,))
+        nt.assert_equal(s.axes_manager.navigation_shape,
+                        (self.s.axes_manager.navigation_size,))
+
     def test_unfolded_context_manager(self):
         s = self.s.deepcopy()
         with s.unfolded():
@@ -35,6 +60,66 @@ class TestSignalFolding:
             nt.assert_equal(s.axes_manager.signal_shape,
                             (self.s.axes_manager.signal_size,))
         # Check that it folds back as expected
+        nt.assert_equal(s.axes_manager.navigation_shape,
+                        self.s.axes_manager.navigation_shape)
+        nt.assert_equal(s.axes_manager.signal_shape,
+                        self.s.axes_manager.signal_shape)
+
+    def test_unfolded_full_by_keywords(self):
+        s = self.s.deepcopy()
+        with s.unfolded(unfold_navigation=True, unfold_signal=True) as folded:
+            nt.assert_true(folded)
+            # Check that both spaces unfold as expected
+            nt.assert_equal(s.axes_manager.navigation_shape,
+                            (self.s.axes_manager.navigation_size,))
+            nt.assert_equal(s.axes_manager.signal_shape,
+                            (self.s.axes_manager.signal_size,))
+        # Check that it folds back as expected
+        nt.assert_equal(s.axes_manager.navigation_shape,
+                        self.s.axes_manager.navigation_shape)
+        nt.assert_equal(s.axes_manager.signal_shape,
+                        self.s.axes_manager.signal_shape)
+
+    def test_unfolded_navigation_by_keyword(self):
+        s = self.s.deepcopy()
+        with s.unfolded(unfold_navigation=True, unfold_signal=False) as folded:
+            nt.assert_true(folded)
+            # Check that only navigation space unfolded
+            nt.assert_equal(s.axes_manager.navigation_shape,
+                            (self.s.axes_manager.navigation_size,))
+            nt.assert_equal(s.axes_manager.signal_shape,
+                            self.s.axes_manager.signal_shape)
+        # Check that it folds back as expected
+        nt.assert_equal(s.axes_manager.navigation_shape,
+                        self.s.axes_manager.navigation_shape)
+        nt.assert_equal(s.axes_manager.signal_shape,
+                        self.s.axes_manager.signal_shape)
+
+    def test_unfolded_signal_by_keyword(self):
+        s = self.s.deepcopy()
+        with s.unfolded(unfold_navigation=False, unfold_signal=True) as folded:
+            nt.assert_true(folded)
+            # Check that only signal space unfolded
+            nt.assert_equal(s.axes_manager.navigation_shape,
+                            self.s.axes_manager.navigation_shape)
+            nt.assert_equal(s.axes_manager.signal_shape,
+                            (self.s.axes_manager.signal_size,))
+        # Check that it folds back as expected
+        nt.assert_equal(s.axes_manager.navigation_shape,
+                        self.s.axes_manager.navigation_shape)
+        nt.assert_equal(s.axes_manager.signal_shape,
+                        self.s.axes_manager.signal_shape)
+
+    def test_unfolded_nothin_by_keyword(self):
+        s = self.s.deepcopy()
+        with s.unfolded(False, False) as folded:
+            nt.assert_false(folded)
+            # Check that nothing folded
+            nt.assert_equal(s.axes_manager.navigation_shape,
+                            self.s.axes_manager.navigation_shape)
+            nt.assert_equal(s.axes_manager.signal_shape,
+                            self.s.axes_manager.signal_shape)
+        # Check that it "folds back" as expected
         nt.assert_equal(s.axes_manager.navigation_shape,
                         self.s.axes_manager.navigation_shape)
         nt.assert_equal(s.axes_manager.signal_shape,
