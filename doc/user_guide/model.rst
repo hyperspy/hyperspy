@@ -51,12 +51,100 @@ These are some of the components which are currently available:
 * :py:class:`~._components.arctan.Arctan`
 
 
+ 
+However, this doesn't mean that you have to limit yourself to this meagre list of function.
 
-Writing a new component is very easy, so, if the function that you need to fit
-is not in the list above, by inspecting the code of, for example, the Gaussian
-component, it should be easy to write your own component. If you need help for
+
+
+.. versionadded:: 0.8.1
+
+The easiest way to turn a mathematical expression into a component is using the
+:py:class:`~._components.expression.Expression` component. For example, the
+following is all you need to create a`Gaussian` component  with more sensible
+parameters for spectroscopy than the one that ships with HyperSpy:
+
+.. code-block:: python
+
+    >>> g = hs.components.Expression(
+    ... expression="height * exp(-(x - x0) ** 2 * 4 * log(2)/ fwhm ** 2)",
+    ... name="Gaussian",
+    ... position="x0",
+    ... height=1,
+    ... fwhm=1,
+    ... centre=0,
+    ... module="numpy")   
+
+:py:class:`~._components.expression.Expression` uses `Sympy
+<http://www.sympy.org>`_ internally to turn the string into
+a funtion. By default it "translates" the expression using
+numpy, but often it is possible to boost performance by using
+`numexpr <https://github.com/pydata/numexpr>`_ instead. 
+
+ 
+:py:class:`~._components.expression.Expression` is only useful for analytical
+functions. If you know how to write the function with Python, turning it into
+a component is very easy modifying the following template:
+
+
+.. code-block:: python
+
+    from hyperspy.component import Component
+ 
+    class My_Component(Component):
+ 
+        """
+        """
+ 
+        def __init__(self, parameter_1=1, parameter_2=2):
+            # Define the parameters
+            Component.__init__(self, ('parameter_1', 'parameter_2'))
+ 
+            # Optionally we can set the initial values
+             self.parameter_1.value = parameter_1
+             self.parameter_1.value = parameter_1
+ 
+            # The units (optional)
+             self.parameter_1.units = 'Tesla'
+             self.parameter_2.units = 'Kociak'
+ 
+            # Once defined we can give default values to the attribute is we want
+            # For example we fix the attribure_1 (optional)
+             self.parameter_1.attribute_1.free = False
+ 
+            # And we set the boundaries (optional)
+             self.parameter_1.bmin = 0.
+             self.parameter_1.bmax = None
+ 
+            # Optionally, to boost the optimization speed we can define also define
+            # the gradients of the function we the syntax:
+            # self.parameter.grad = function
+             self.parameter_1.grad = self.grad_parameter_1
+             self.parameter_2.grad = self.grad_parameter_2
+ 
+        # Define the function as a function of the already defined parameters, x
+        # being the independent variable value
+        def function(self, x):
+            p1 = self.parameter_1.value
+            p2 = self.parameter_2.value
+            return p1 + x * p2
+ 
+        # Optionally define the gradients of each parameter
+         def grad_parameter_1(self, x):
+             """
+             Returns d(function)/d(parameter_1)
+             """
+             return 0
+ 
+         def grad_parameter_2(self, x):
+             """
+             Returns d(function)/d(parameter_2)
+             """
+             return x
+
+
+If you need help with
 the task please submit your question to the :ref:`users mailing list
-<http://groups.google.com/group/hyperspy-users>`.
+<http://groups.google.com/group/hyperspy-users>`. 
 
 
 To print the current components in a model simply enter the name of the

@@ -341,9 +341,9 @@ def dict2hdfgroup(dictionary, group, compression=None):
             if len(value):
                 dict2hdfgroup(dict(zip(
                     [unicode(i) for i in xrange(len(value))], value)),
-                     group.create_group(
-                         '_list_' + str(len(value)) + '_' + key),
-                     compression=compression)
+                    group.create_group(
+                    '_list_' + str(len(value)) + '_' + key),
+                    compression=compression)
             else:
                 group.attrs['_list_empty_' + key] = '_None_'
         elif isinstance(value, tuple):
