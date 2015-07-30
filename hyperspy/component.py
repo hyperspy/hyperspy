@@ -477,7 +477,7 @@ class Parameter(t.HasTraits):
         # that configure/edit_traits will still work straight out of the box.
         # A whitelist controls which traits to include in this view.
         from traitsui.api import RangeEditor, View, Item
-        whitelist = ['bmax', 'bmin',  'free', 'name', 'std', 'units', 'value']
+        whitelist = ['bmax', 'bmin', 'free', 'name', 'std', 'units', 'value']
         editable_traits = [trait for trait in self.editable_traits()
                            if trait in whitelist]
         if 'value' in editable_traits:
