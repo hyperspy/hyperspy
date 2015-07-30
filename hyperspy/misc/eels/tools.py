@@ -183,7 +183,7 @@ def power_law_perc_area(E1, E2, r):
     a = E1
     b = E2
     return 100 * ((a ** r * r - a ** r) * (a / (a ** r * r - a ** r) -
-                  (b + a) / ((b + a) ** r * r - (b + a) ** r))) / a
+                                           (b + a) / ((b + a) ** r * r - (b + a) ** r))) / a
 
 
 def rel_std_of_fraction(a, std_a, b, std_b, corr_factor=1):

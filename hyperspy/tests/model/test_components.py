@@ -203,3 +203,40 @@ class TestGaussian:
         nt.assert_almost_equal(g.sigma.value, 0.5)
         nt.assert_almost_equal(g.A.value, 2)
         nt.assert_almost_equal(g.centre.value, 1)
+
+
+class TestExpression:
+
+    def setUp(self):
+        self.g = hs.components.Expression(
+            expression="height * exp(-(x - x0) ** 2 * 4 * log(2)/ fwhm ** 2)",
+            name="Gaussian",
+            position="x0",
+            height=1,
+            fwhm=1,
+            x0=0,
+            module="numpy")
+
+    def test_name(self):
+        nt.assert_equal(self.g.name, "Gaussian")
+
+    def test_position(self):
+        nt.assert_is(self.g._position, self.g.x0)
+
+    def test_f(self):
+        nt.assert_equal(self.g.function(0), 1)
+
+    def test_grad_height(self):
+        nt.assert_almost_equal(
+            self.g.grad_height(2),
+            1.5258789062500007e-05)
+
+    def test_grad_x0(self):
+        nt.assert_almost_equal(
+            self.g.grad_x0(2),
+            0.00016922538587889289)
+
+    def test_grad_fwhm(self):
+        nt.assert_almost_equal(
+            self.g.grad_fwhm(2),
+            0.00033845077175778578)

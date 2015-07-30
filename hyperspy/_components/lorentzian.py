@@ -90,4 +90,5 @@ class Lorentzian(Component):
         """
         """
         return (2 * (x - self.centre.value) * self.A.value * self.gamma.value ) / \
-            (np.pi * (self.gamma.value ** 2 + (x - self.centre.value) ** 2) ** 2)
+            (np.pi *
+             (self.gamma.value ** 2 + (x - self.centre.value) ** 2) ** 2)
