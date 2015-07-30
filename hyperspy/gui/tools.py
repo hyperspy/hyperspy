@@ -778,7 +778,8 @@ class ComponentFit(SpanSelectorInSpectrum):
     )
 
     def __init__(self, model, component, signal_range=None,
-                 estimate_parameters=True, fit_independent=False, **kwargs):
+                 estimate_parameters=True, fit_independent=False,
+                 only_current=True, **kwargs):
         if model.spectrum.axes_manager.signal_dimension != 1:
             raise SignalDimensionError(
                 model.spectrum.axes_manager.signal_dimension, 1)
@@ -786,7 +787,7 @@ class ComponentFit(SpanSelectorInSpectrum):
         self.signal = model.spectrum
         self.axis = self.signal.axes_manager.signal_axes[0]
         self.span_selector = None
-        self.only_current = [True]
+        self.only_current = [True] if only_current else []  # CheckListEditor
         self.model = model
         self.component = component
         self.signal_range = signal_range
@@ -830,7 +831,7 @@ class ComponentFit(SpanSelectorInSpectrum):
 
         # Setting reasonable initial value for parameters through
         # the components estimate_parameters function (if it has one)
-        only_current = len(self.only_current) > 0
+        only_current = len(self.only_current) > 0   # CheckListEditor
         if self.estimate_parameters:
             if hasattr(self.component, 'estimate_parameters'):
                 if (self.signal_range != "interactive" and
@@ -847,7 +848,10 @@ class ComponentFit(SpanSelectorInSpectrum):
                         self.ss_right_value,
                         only_current=only_current)
 
-        self.model.fit(**self.fit_kwargs)
+        if only_current:
+            self.model.fit(**self.fit_kwargs)
+        else:
+            self.model.multifit(**self.fit_kwargs)
 
         # Restore the signal range
         if self.signal_range is not None:
