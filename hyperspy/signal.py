@@ -3416,7 +3416,7 @@ class Signal(MVA,
         """
         warnings.warn(
             "`unfold_if_multidim` is deprecated and will be removed in "
-            "HyperSpy 0.9. Please use `unfold` instead.")
+            "HyperSpy 0.9. Please use `unfold` instead.", DeprecationWarning)
         return None
 
     @auto_replot
