@@ -145,10 +145,10 @@ class BackgroundRemoval(SpanSelectorInSpectrum):
             print("No bg estimator")
             return
         if self.bg_line is None and \
-                        self.background_estimator.estimate_parameters(
-                            self.signal, self.ss_left_value,
-                            self.ss_right_value,
-                            only_current=True) is True:
+            self.background_estimator.estimate_parameters(
+                self.signal, self.ss_left_value,
+                self.ss_right_value,
+                only_current=True) is True:
             self.create_background_line()
         else:
             self.bg_line.update()
@@ -164,6 +164,7 @@ class BackgroundRemoval(SpanSelectorInSpectrum):
 
 
 class SpikesRemovalHandler(tu.Handler):
+
     def close(self, info, is_ok):
         # Removes the span selector from the plot
         info.object.span_selector_switch(False)
@@ -265,7 +266,7 @@ class SpikesRemoval(SpanSelectorInSpectrum):
         self.coordinates = [coordinate for coordinate in
                             signal.axes_manager._am_indices_generator()
                             if (navigation_mask is None or not
-            navigation_mask[coordinate[::-1]])]
+                                navigation_mask[coordinate[::-1]])]
         self.signal = signal
         self.line = signal._plot.signal_plot.ax_lines[0]
         self.ax = signal._plot.signal_plot.ax
@@ -351,8 +352,8 @@ class SpikesRemoval(SpanSelectorInSpectrum):
         ncoordinates = len(self.coordinates)
         spike = self.detect_spike()
         while not spike and (
-                    (self.index < ncoordinates - 1 and back is False) or
-                    (self.index > 0 and back is True)):
+                (self.index < ncoordinates - 1 and back is False) or
+                (self.index > 0 and back is True)):
             if back is False:
                 self.index += 1
             else:
@@ -372,7 +373,7 @@ class SpikesRemoval(SpanSelectorInSpectrum):
                 color="black")
             self.ax.legend([thresh_label], [repr(int(self.derivmax))],
                            handler_map={DerivativeTextParameters:
-                                            DerivativeTextHandler()},
+                                        DerivativeTextHandler()},
                            loc='best')
             self.ax.set_xlim(
                 self.signal.axes_manager.signal_axes[0].index2value(
@@ -517,12 +518,14 @@ class SpikesRemoval(SpanSelectorInSpectrum):
 
 # For creating a text handler in legend (to label derivative magnitude)
 class DerivativeTextParameters(object):
+
     def __init__(self, text, color):
         self.my_text = text
         self.my_color = color
 
 
 class DerivativeTextHandler(object):
+
     def legend_artist(self, legend, orig_handle, fontsize, handlebox):
         x0, y0 = handlebox.xdescent, handlebox.ydescent
         width, height = handlebox.width, handlebox.height
