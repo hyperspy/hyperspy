@@ -310,9 +310,11 @@ class SpikesRemoval(SpanSelectorInSpectrum):
                        "   3. Click \"Find next\" to find the first spike.\n"
                        "   4. View the spike (and the replacement data that "
                        "will be added) and click \"Remove spike\"\n"
-                       "        in order to alter the data as shown\n"
+                       "        in order to alter the data as shown.\n"
                        "   5. Repeat this process for each spike throughout "
-                       "the dataset\n\n"
+                       "the dataset.\n"
+                       "   6. Click \"OK\" when finished to close the spikes "
+                       "removal tool.\n\n"
 
                        "Note: Various settings can be configured in "
                        "the \"Advanced settings\" section. Hover the "
