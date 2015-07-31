@@ -339,20 +339,34 @@ def dict2hdfgroup(dictionary, group, compression=None):
             group.attrs["_datetime_" + key] = repr(value)
         elif isinstance(value, list):
             if len(value):
-                dict2hdfgroup(dict(zip(
-                    [unicode(i) for i in xrange(len(value))], value)),
-                    group.create_group(
-                    '_list_' + str(len(value)) + '_' + key),
-                    compression=compression)
+                try:
+                    tmp = np.array(value)
+                except ValueError:
+                    tmp = np.array([[0]])
+                if tmp.dtype is np.dtype('O') or tmp.ndim is not 1:
+                    dict2hdfgroup(dict(zip(
+                        [unicode(i) for i in xrange(len(value))], value)),
+                        group.create_group(
+                        '_list_' + str(len(value)) + '_' + key),
+                        compression=compression)
+                else:
+                    group.create_dataset(key, data=tmp, compression=compression)
             else:
                 group.attrs['_list_empty_' + key] = '_None_'
         elif isinstance(value, tuple):
             if len(value):
-                dict2hdfgroup(dict(zip(
-                    [unicode(i) for i in xrange(len(value))], value)),
-                    group.create_group(
-                        '_tuple_' + str(len(value)) + '_' + key),
-                    compression=compression)
+                try:
+                    tmp = np.array(value)
+                except ValueError:
+                    tmp = np.array([[0]])
+                if tmp.dtype is np.dtype('O') or tmp.ndim is not 1:
+                    dict2hdfgroup(dict(zip(
+                        [unicode(i) for i in xrange(len(value))], value)),
+                        group.create_group(
+                            '_tuple_' + str(len(value)) + '_' + key),
+                        compression=compression)
+                else:
+                    group.create_dataset(key, data=tmp, compression=compression)
             else:
                 group.attrs['_tuple_empty_' + key] = '_None_'
 
