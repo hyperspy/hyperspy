@@ -135,3 +135,16 @@ class Spectrum(Signal):
                            signal_mask=signal_mask)
         sr.configure_traits()
         return sr
+
+    def create_model(self):
+        """Create a model for the current data.
+
+        Returns
+        -------
+        model : `Model` instance.
+
+        """
+
+        from hyperspy.model import Model
+        model = Model(self)
+        return model

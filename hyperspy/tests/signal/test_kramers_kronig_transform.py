@@ -52,7 +52,7 @@ class Test2D:
         k = eels_constant(s, i0, t)
 
         vpm = VolumePlasmonDrude()
-        m = hs.create_model(s, auto_background=False)
+        m = s.create_model(auto_background=False)
         m.append(vpm)
         vpm.intensity.map['values'][:] = 1
         vpm.plasmon_energy.map['values'] = np.array([[8., 18.4, 15.8],

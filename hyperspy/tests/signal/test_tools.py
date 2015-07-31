@@ -14,6 +14,17 @@ class Test2D:
         self.signal.axes_manager[0].scale = 0.5
         self.data = self.signal.data.copy()
 
+    def test_sum_x(self):
+        s = self.signal.sum("x")
+        np.testing.assert_array_equal(self.signal.data.sum(0), s.data)
+        nt.assert_equal(s.axes_manager.navigation_dimension, 0)
+
+    def test_sum_x_E(self):
+        s = self.signal.sum("x").sum("E")
+        np.testing.assert_array_equal(self.signal.data.sum(), s.data)
+        # Check that there is still one signal axis.
+        nt.assert_equal(s.axes_manager.signal_dimension, 1)
+
     def test_axis_by_str(self):
         s1 = self.signal.deepcopy()
         s2 = self.signal.deepcopy()
@@ -266,6 +277,19 @@ class Test4D:
             axis.name = name
         self.s = s
 
+    def test_diff_data(self):
+        s = self.s
+        diff = s.diff(axis=2, order=2)
+        diff_data = np.diff(s.data, n=2, axis=0)
+        nt.assert_true((diff.data == diff_data).all())
+
+    def test_diff_axis(self):
+        s = self.s
+        diff = s.diff(axis=2, order=2)
+        nt.assert_equal(
+            diff.axes_manager[2].offset,
+            s.axes_manager[2].offset + s.axes_manager[2].scale)
+
     def test_rollaxis_int(self):
         nt.assert_equal(self.s.rollaxis(2, 0).data.shape, (4, 3, 5, 6))
 
@@ -318,3 +342,21 @@ def test_signal_iterator():
     # restarted
     for i, signal in enumerate(s):
         nt.assert_equal(i, signal.data[0])
+
+
+class TestDerivative:
+
+    def setup(self):
+        offset = 3
+        scale = 0.1
+        x = np.arange(-offset, offset, scale)
+        s = signals.Spectrum(np.sin(x))
+        s.axes_manager[0].offset = x[0]
+        s.axes_manager[0].scale = scale
+        self.s = s
+
+    def test_derivative_data(self):
+        der = self.s.derivative(axis=0, order=4)
+        nt.assert_true(np.allclose(der.data,
+                                   np.sin(der.axes_manager[0].axis),
+                                   atol=1e-2),)

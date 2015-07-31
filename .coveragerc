@@ -3,12 +3,10 @@ branch = True
 source = hyperspy
 include = */hyperspy/*
 omit =
-    */hyperspy/misc/borrowed/*
+    */hyperspy/external/*
     */hyperspy/ipython_profile/*
     */hyperspy/drawing/*
-    */hyperspy/mpfit/*
     */hyperspy/gui/*
     */setup.py
     */examples/*
     */bin/*
-    */hyperspy/misc/io/tifffile.py

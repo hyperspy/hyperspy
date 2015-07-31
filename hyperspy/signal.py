@@ -48,7 +48,7 @@ from hyperspy.drawing import signal as sigdraw
 from hyperspy.decorators import auto_replot
 from hyperspy.defaults_parser import preferences
 from hyperspy.misc.io.tools import ensure_directory
-from hyperspy.misc.progressbar import progressbar
+from hyperspy.external.progressbar import progressbar
 from hyperspy.gui.tools import (
     SpectrumCalibration,
     SmoothingSavitzkyGolay,
@@ -70,7 +70,7 @@ from hyperspy.misc import rgb_tools
 from hyperspy.gui.tools import IntegrateArea
 from hyperspy import components
 from hyperspy.misc.utils import underline
-from hyperspy.misc.borrowed.astroML.histtools import histogram
+from hyperspy.external.astroML.histtools import histogram
 from hyperspy.drawing.utils import animate_legend
 
 
@@ -2809,7 +2809,7 @@ class Signal(MVA,
 
         """
 
-        self.data = np.asanyarray(file_data_dict['data'])
+        self.data = np.atleast_1d(np.asanyarray(file_data_dict['data']))
         if 'axes' not in file_data_dict:
             file_data_dict['axes'] = self._get_undefined_axes_list()
         self.axes_manager = AxesManager(
@@ -3585,19 +3585,29 @@ class Signal(MVA,
             yield(data[getitem])
 
     def _remove_axis(self, axis):
-        axis = self.axes_manager[axis]
-        self.axes_manager.remove(axis.index_in_axes_manager)
-        if axis.navigate is False:  # The removed axis is a signal axis
-            if self.axes_manager.signal_dimension == 2:
-                self._record_by = "image"
-            elif self.axes_manager.signal_dimension == 1:
-                self._record_by = "spectrum"
-            elif self.axes_manager.signal_dimension == 0:
-                self._record_by = ""
-            else:
-                return
-            self.metadata.Signal.record_by = self._record_by
-            self._assign_subclass()
+        am = self.axes_manager
+        axis = am[axis]
+        if am.navigation_dimension + am.signal_dimension > 1:
+            am.remove(axis.index_in_axes_manager)
+            if axis.navigate is False:  # The removed axis is a signal axis
+                if am.signal_dimension == 2:
+                    self._record_by = "image"
+                elif am.signal_dimension == 1:
+                    self._record_by = "spectrum"
+                elif am.signal_dimension == 0:
+                    self._record_by = ""
+                else:
+                    return
+                self.metadata.Signal.record_by = self._record_by
+                self._assign_subclass()
+        else:
+            # Don't remove axis because it is the only one and HyperSpy does not
+            # support 0 dimensions
+            axis.size = 1
+            axis.scale = 1
+            axis.offset = 0
+            axis.name = "scalar"
+            axis.navigate = False
 
     def _apply_function_on_data_and_remove_axis(self, function, axis):
         s = self._deepcopy_with_new_data(
@@ -3788,18 +3798,15 @@ class Signal(MVA,
     def diff(self, axis, order=1):
         """Returns a signal with the n-th order discrete difference along
         given axis.
-
         Parameters
         ----------
         axis : {int | string}
            The axis can be specified using the index of the axis in
            `axes_manager` or the axis name.
         order: the order of the derivative
-
         See also
         --------
         mean, sum
-
         Examples
         --------
         >>> import numpy as np
@@ -3808,15 +3815,49 @@ class Signal(MVA,
         (64,64,1024)
         >>> s.diff(-1).data.shape
         (64,64,1023)
-
         """
 
         s = self._deepcopy_with_new_data(
-            np.diff(self.data, order, axis))
-        axis = s.axes_manager._axes[axis]
-        axis.offset += (axis.scale / 2)
+            np.diff(self.data,
+                    n=order,
+                    axis=self.axes_manager[axis].index_in_array))
+        axis = s.axes_manager[axis]
+        axis.offset += (order * axis.scale / 2)
         s.get_dimensions_from_data()
         return s
+
+    def derivative(self, axis, order=1):
+        """Numerical derivative along the given axis.
+
+        Currently only the first order finite difference method is implemented.
+
+        Parameters
+        ----------
+        axis : {int | string}
+           The axis can be specified using the index of the axis in
+           `axes_manager` or the axis name.
+        order: int
+            The order of the derivative. (Note that this is the order of the
+            derivative i.e. `order=2` does not use second order finite
+            differences method.)
+
+        Returns
+        -------
+        der : Signal
+            Note that the size of the data on the given `axis` decreases by the
+            given `order` i.e. if `axis` is "x" and `order` is 2 the x dimension
+            is N, der's x dimension is N - 2.
+
+        See also
+        --------
+        diff
+
+        """
+
+        der = self.diff(order=order, axis=axis)
+        axis = self.axes_manager[axis]
+        der.data /= axis.scale ** order
+        return der
 
     def integrate_simpson(self, axis):
         """Returns a signal with the result of calculating the integral
@@ -4692,6 +4733,10 @@ class Signal(MVA,
             self._plot.navigator_plot.add_marker(marker)
         if plot_marker:
             marker.plot()
+
+    def create_model(self):
+        from hyperspy.model import Model
+        return Model(self)
 
 
 # Implement binary operators
