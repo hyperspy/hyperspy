@@ -22,6 +22,7 @@ import matplotlib.text as mpl_text
 import traits.api as t
 import traitsui.api as tu
 from traitsui.menu import OKButton, CancelButton
+from pyface.message_dialog import information
 
 from hyperspy import components
 from hyperspy.component import Component
@@ -220,14 +221,16 @@ class SpikesRemoval(SpanSelectorInSpectrum):
     default_spike_width = t.Int(5,
                                 desc="the width over which to do the "
                                      "interpolation\n"
-                                     "when removing a spike")
+                                     "when removing a spike (this can be "
+                                     "adjusted for each\nspike by clicking "
+                                     "and dragging on the display during\n"
+                                     "spike replacement)")
     index = t.Int(0)
     add_noise = t.Bool(True,
-                       desc="whether to add noise to the interpolated "
-                            "portion\n"
+                       desc="whether to add noise to the interpolated\nportion"
                             "of the spectrum. The noise properties defined\n"
-                            "in the Signal metadata are used if present,\n"
-                            "otherwise shot noise is used as a default")
+                            "in the Signal metadata are used if present,"
+                            "otherwise\nshot noise is used as a default")
     view = tu.View(tu.Group(
         tu.Group(
             tu.Item('click_to_show_instructions',
@@ -299,30 +302,37 @@ class SpikesRemoval(SpanSelectorInSpectrum):
         self.update_plot()
 
     def _click_to_show_instructions_fired(self):
-        m = tu.message("\nTo remove spikes from the data:\n\n"
+        m = information(None,
+                        "\nTo remove spikes from the data:\n\n"
 
-                       "   1. Click \"Show derivative histogram\" to determine"
-                       " at what magnitude the spikes are present.\n"
-                       "   2. Enter a suitable threshold (lower than the "
-                       "lowest magnitude outlier in the histogram) in\n"
-                       "        the \"Threshold\" box, which will be "
-                       "the magnitude from which to search. \n"
-                       "   3. Click \"Find next\" to find the first spike.\n"
-                       "   4. View the spike (and the replacement data that "
-                       "will be added) and click \"Remove spike\"\n"
-                       "        in order to alter the data as shown.\n"
-                       "   5. Repeat this process for each spike throughout "
-                       "the dataset.\n"
-                       "   6. Click \"OK\" when finished to close the spikes "
-                       "removal tool.\n\n"
+                        "   1. Click \"Show derivative histogram\" to "
+                        "determine at what magnitude the spikes are present.\n"
+                        "   2. Enter a suitable threshold (lower than the "
+                        "lowest magnitude outlier in the histogram) in the "
+                        "\"Threshold\" box, which will be the magnitude "
+                        "from which to search. \n"
+                        "   3. Click \"Find next\" to find the first spike.\n"
+                        "   4. If desired, the width and position of the "
+                        "boundaries used to replace the spike can be "
+                        "adjusted by clicking and dragging on the displayed "
+                        "plot.\n "
+                        "   5. View the spike (and the replacement data that "
+                        "will be added) and click \"Remove spike\" in order "
+                        "to alter the data as shown. The tool will "
+                        "automatically find the next spike to replace.\n"
+                        "   6. Repeat this process for each spike throughout "
+                        "the dataset, until the end of the dataset is "
+                        "reached.\n"
+                        "   7. Click \"OK\" when finished to close the spikes "
+                        "removal tool.\n\n"
 
-                       "Note: Various settings can be configured in "
-                       "the \"Advanced settings\" section. Hover the "
-                       "mouse\n"
-                       "over each parameter for a description of what "
-                       "it does."
+                        "Note: Various settings can be configured in "
+                        "the \"Advanced settings\" section. Hover the "
+                        "mouse over each parameter for a description of what "
+                        "it does."
 
-                       "\n"),
+                        "\n",
+                        title="Instructions"),
 
     def _show_derivative_histogram_fired(self):
         self.signal._spikes_diagnosis(signal_mask=self.signal_mask,
