@@ -814,15 +814,17 @@ class MVA():
                 mva_type, components)
 
         self._unfolded4decomposition = self.unfold()
-
-        sc = self.deepcopy()
-        sc.data = a.T.reshape(self.data.shape)
-        sc.metadata.General.title += signal_name
-        if target.mean is not None:
-            sc.data += target.mean
-        if self._unfolded4decomposition is True:
-            self.fold()
-            sc.fold()
+        try:
+            sc = self.deepcopy()
+            sc.data = a.T.reshape(self.data.shape)
+            sc.metadata.General.title += signal_name
+            if target.mean is not None:
+                sc.data += target.mean
+        finally:
+            if self._unfolded4decomposition is True:
+                self.fold()
+                sc.fold()
+                self._unfolded4decomposition = False
         return sc
 
     def get_decomposition_model(self, components=None):
@@ -968,46 +970,42 @@ class MVA():
         messages.information(
             "Scaling the data to normalize the (presumably)"
             " Poissonian noise")
-        refold = self.unfold()
-        # The rest of the code assumes that the first data axis
-        # is the navigation axis. We transpose the data if that is not the
-        # case.
-        dc = (self.data if self.axes_manager[0].index_in_array == 0
-              else self.data.T)
-        if navigation_mask is None:
-            navigation_mask = slice(None)
-        else:
-            navigation_mask = ~navigation_mask.ravel()
-        if signal_mask is None:
-            signal_mask = slice(None)
-        else:
-            signal_mask = ~signal_mask
-        # Rescale the data to gaussianize the poissonian noise
-        aG = dc[:, signal_mask][navigation_mask, :].sum(1).squeeze()
-        bH = dc[:, signal_mask][navigation_mask, :].sum(0).squeeze()
-        # Checks if any is negative
-        if (aG < 0).any() or (bH < 0).any():
-            raise ValueError(
-                "Data error: negative values\n"
-                "Are you sure that the data follow a poissonian "
-                "distribution?")
+        with self.unfolded():
+            # The rest of the code assumes that the first data axis
+            # is the navigation axis. We transpose the data if that is not the
+            # case.
+            dc = (self.data if self.axes_manager[0].index_in_array == 0
+                  else self.data.T)
+            if navigation_mask is None:
+                navigation_mask = slice(None)
+            else:
+                navigation_mask = ~navigation_mask.ravel()
+            if signal_mask is None:
+                signal_mask = slice(None)
+            else:
+                signal_mask = ~signal_mask
+            # Rescale the data to gaussianize the poissonian noise
+            aG = dc[:, signal_mask][navigation_mask, :].sum(1).squeeze()
+            bH = dc[:, signal_mask][navigation_mask, :].sum(0).squeeze()
+            # Checks if any is negative
+            if (aG < 0).any() or (bH < 0).any():
+                raise ValueError(
+                    "Data error: negative values\n"
+                    "Are you sure that the data follow a poissonian "
+                    "distribution?")
 
-        self._root_aG = np.sqrt(aG)[:, np.newaxis]
-        self._root_bH = np.sqrt(bH)[np.newaxis, :]
-        # We first disable numpy's warning when the result of an
-        # operation produces nans
-        np.seterr(invalid='ignore')
-        dc[:, signal_mask][navigation_mask, :] /= (self._root_aG *
-                                                   self._root_bH)
-        # Enable numpy warning
-        np.seterr(invalid=None)
-        # Set the nans resulting from 0/0 to zero
-        dc[:, signal_mask][navigation_mask, :] = \
-            np.nan_to_num(dc[:, signal_mask][navigation_mask, :])
-
-        if refold is True:
-            print "Automatically refolding the SI after scaling"
-            self.fold()
+            self._root_aG = np.sqrt(aG)[:, np.newaxis]
+            self._root_bH = np.sqrt(bH)[np.newaxis, :]
+            # We first disable numpy's warning when the result of an
+            # operation produces nans
+            np.seterr(invalid='ignore')
+            dc[:, signal_mask][navigation_mask, :] /= (self._root_aG *
+                                                       self._root_bH)
+            # Enable numpy warning
+            np.seterr(invalid=None)
+            # Set the nans resulting from 0/0 to zero
+            dc[:, signal_mask][navigation_mask, :] = \
+                np.nan_to_num(dc[:, signal_mask][navigation_mask, :])
 
     def undo_treatments(self):
         """Undo normalize_poissonian_noise"""

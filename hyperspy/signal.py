@@ -21,6 +21,7 @@ import os.path
 import warnings
 import math
 import inspect
+from contextlib import contextmanager
 
 import numpy as np
 import numpy.ma as ma
@@ -3415,7 +3416,7 @@ class Signal(MVA,
         """
         warnings.warn(
             "`unfold_if_multidim` is deprecated and will be removed in "
-            "HyperSpy 0.9. Please use `unfold` instead.")
+            "HyperSpy 0.9. Please use `unfold` instead.", DeprecationWarning)
         return None
 
     @auto_replot
@@ -3477,7 +3478,7 @@ class Signal(MVA,
             if isinstance(variance, Signal):
                 variance._unfold(steady_axes, unfolded_axis)
 
-    def unfold(self):
+    def unfold(self, unfold_navigation=True, unfold_signal=True):
         """Modifies the shape of the data by unfolding the signal and
         navigation dimensions separately
 
@@ -3487,10 +3488,39 @@ class Signal(MVA,
 
 
         """
-        nav_needed_unfolding = self.unfold_navigation_space()
-        sig_needed_unfolding = self.unfold_signal_space()
-        needed_unfolding = nav_needed_unfolding or sig_needed_unfolding
-        return needed_unfolding
+        unfolded = False
+        if unfold_navigation:
+            if self.unfold_navigation_space():
+                unfolded = True
+        if unfold_signal:
+            if self.unfold_signal_space():
+                unfolded = True
+        return unfolded
+
+    @contextmanager
+    def unfolded(self, unfold_navigation=True, unfold_signal=True):
+        """Use this function together with a `with` statement to have the
+        signal be unfolded for the scope of the `with` block, before
+        automatically refolding when passing out of scope.
+
+        See also
+        --------
+        unfold, fold
+
+        Examples
+        --------
+        >>> import numpy as np
+        >>> s = Signal(np.random.random((64,64,1024)))
+        >>> with s.unfolded():
+                # Do whatever needs doing while unfolded here
+                pass
+        """
+        unfolded = self.unfold(unfold_navigation, unfold_signal)
+        try:
+            yield unfolded
+        finally:
+            if unfolded is not False:
+                self.fold()
 
     def unfold_navigation_space(self):
         """Modify the shape of the data to obtain a navigation space of
