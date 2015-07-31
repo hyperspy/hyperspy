@@ -98,7 +98,9 @@ class Spectrum(Signal):
         plt.gca().set_title('')
         plt.gca().fill_between(tmph.axes_manager[0].axis,
                                tmph.data,
-                               facecolor='#fddbc7')
+                               facecolor='#fddbc7',
+                               interpolate=True,
+                               color='none')
         ax = tmph._plot.signal_plot.ax
         axl = tmph._plot.signal_plot.ax_lines[0]
         axl.set_line_properties(color='#b2182b')
