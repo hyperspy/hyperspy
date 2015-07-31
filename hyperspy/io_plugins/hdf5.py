@@ -347,10 +347,13 @@ def dict2hdfgroup(dictionary, group, compression=None):
                     dict2hdfgroup(dict(zip(
                         [unicode(i) for i in xrange(len(value))], value)),
                         group.create_group(
-                        '_list_' + str(len(value)) + '_' + key),
+                            '_list_' + str(len(value)) + '_' + key),
                         compression=compression)
                 else:
-                    group.create_dataset(key, data=tmp, compression=compression)
+                    group.create_dataset(
+                        key,
+                        data=tmp,
+                        compression=compression)
             else:
                 group.attrs['_list_empty_' + key] = '_None_'
         elif isinstance(value, tuple):
@@ -366,7 +369,10 @@ def dict2hdfgroup(dictionary, group, compression=None):
                             '_tuple_' + str(len(value)) + '_' + key),
                         compression=compression)
                 else:
-                    group.create_dataset(key, data=tmp, compression=compression)
+                    group.create_dataset(
+                        key,
+                        data=tmp,
+                        compression=compression)
             else:
                 group.attrs['_tuple_empty_' + key] = '_None_'
 
