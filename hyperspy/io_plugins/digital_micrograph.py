@@ -528,7 +528,7 @@ class ImageObject(object):
         dimensions = self.imdict.ImageData.Calibrations.Dimension
         len_diff = len(self.shape) - len(dimensions)
         origins = np.array([dimension[1].Origin for dimension in dimensions])
-        origins = np.append(origins, (0.0,)*len_diff)
+        origins = np.append(origins, (0.0,) * len_diff)
         return (-1 * origins[::-1] * self.scales)
 
     @property
@@ -536,7 +536,7 @@ class ImageObject(object):
         dimensions = self.imdict.ImageData.Calibrations.Dimension
         len_diff = len(self.shape) - len(dimensions)
         scales = np.array([dimension[1].Scale for dimension in dimensions])
-        scales = np.append(scales, (1.0,)*len_diff)
+        scales = np.append(scales, (1.0,) * len_diff)
         return scales[::-1]
 
     @property
@@ -544,8 +544,8 @@ class ImageObject(object):
         dimensions = self.imdict.ImageData.Calibrations.Dimension
         len_diff = len(self.shape) - len(dimensions)
         return (tuple([dimension[1].Units
-                      if dimension[1].Units else ""
-                      for dimension in dimensions]) + ('',)*len_diff)[::-1]
+                       if dimension[1].Units else ""
+                       for dimension in dimensions]) + ('',) * len_diff)[::-1]
 
     @property
     def names(self):

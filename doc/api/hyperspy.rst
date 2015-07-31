@@ -9,6 +9,7 @@ Subpackages
     hyperspy._components
     hyperspy._signals
     hyperspy.drawing
+    hyperspy.external
     hyperspy.gui
     hyperspy.io_plugins
     hyperspy.learn
