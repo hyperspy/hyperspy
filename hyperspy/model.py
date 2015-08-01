@@ -1791,7 +1791,7 @@ class Model(list):
             signal_range="interactive",
             estimate_parameters=True,
             fit_independent=False,
-			only_current=True,
+            only_current=True,
             **kwargs):
         """Fit just the given component in the given signal range.
 
