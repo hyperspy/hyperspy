@@ -348,7 +348,7 @@ def dict2hdfgroup(dictionary, group, compression=None):
                 dict2hdfgroup(dict(zip(
                     [unicode(i) for i in xrange(len(value))], value)),
                     group.create_group(
-                    '_list_' + str(len(value)) + '_' + key),
+                        '_list_' + str(len(value)) + '_' + key),
                     compression=compression)
             else:
                 group.attrs['_list_empty_' + key] = '_None_'
@@ -440,7 +440,7 @@ def write_signal(signal, group, compression='gzip'):
                              data=signal.data,
                              compression=compression)
     else:
-        group.attrs['data'] = signal.data.tolist() #returns a flat number
+        group.attrs['data'] = signal.data.tolist()  # returns a flat number
     for axis in signal.axes_manager._axes:
         axis_dict = axis.get_axis_dictionary()
         # For the moment we don't store the navigate attribute
