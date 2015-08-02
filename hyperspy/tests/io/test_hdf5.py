@@ -103,7 +103,12 @@ class TestExample1_12(Example1):
             "example1_v1.2.hdf5"))
 
     def test_date(self):
-        nt.assert_equal(self.s.metadata.General.date, datetime.date(1991, 10, 1))
+        nt.assert_equal(
+            self.s.metadata.General.date,
+            datetime.date(
+                1991,
+                10,
+                1))
 
     def test_time(self):
         nt.assert_equal(self.s.metadata.General.time, datetime.time(12, 0))
@@ -131,10 +136,16 @@ class TestLoadingNewSavedMetadata:
         nt.assert_equal(self.s.metadata.test.tuple, (1, 2))
 
     def test_inside_things(self):
-        nt.assert_equal(self.s.metadata.test.list_inside_list, [42, 137, [0, 1]])
+        nt.assert_equal(
+            self.s.metadata.test.list_inside_list, [
+                42, 137, [
+                    0, 1]])
         nt.assert_equal(self.s.metadata.test.list_inside_tuple, (137, [42, 0]))
-        nt.assert_equal(self.s.metadata.test.tuple_inside_tuple, (137, (123, 44)))
-        nt.assert_equal(self.s.metadata.test.tuple_inside_list, [137, (123, 44)])
+        nt.assert_equal(
+            self.s.metadata.test.tuple_inside_tuple, (137, (123, 44)))
+        nt.assert_equal(
+            self.s.metadata.test.tuple_inside_list, [
+                137, (123, 44)])
 
     def test_binary_string(self):
         import marshal
@@ -144,6 +155,7 @@ class TestLoadingNewSavedMetadata:
                 self.s.metadata.test.binary_string),
             globals())
         nt.assert_equal(f(3.5), 4.5)
+
 
 class TestSavingMetadataContainers:
 
@@ -158,7 +170,7 @@ class TestSavingMetadataContainers:
 
     def test_numpy_only_inner_lists(self):
         s = self.s
-        s.metadata.set_item('test', [[1.,2], ['3',4]])
+        s.metadata.set_item('test', [[1., 2], ['3', 4]])
         s.save('tmp.hdf5', overwrite=True)
         l = load('tmp.hdf5')
         nt.assert_is_instance(l.metadata.test, list)
@@ -167,7 +179,7 @@ class TestSavingMetadataContainers:
 
     def test_numpy_general_type(self):
         s = self.s
-        s.metadata.set_item('test', [[1.,2], ['3',4]])
+        s.metadata.set_item('test', [[1., 2], ['3', 4]])
         s.save('tmp.hdf5', overwrite=True)
         l = load('tmp.hdf5')
         nt.assert_true(l.metadata.test[0].dtype.type is np.float64)
