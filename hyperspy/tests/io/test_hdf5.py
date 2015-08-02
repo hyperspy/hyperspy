@@ -1,5 +1,6 @@
 import os.path
 import datetime
+from os import remove
 
 from nose.tools import (assert_equal,
                         assert_true,
@@ -7,6 +8,7 @@ from nose.tools import (assert_equal,
 import numpy as np
 
 from hyperspy.io import load
+from hyperspy.signal import Signal
 
 my_path = os.path.dirname(__file__)
 
@@ -144,6 +146,22 @@ class TestNewSavedMetadata:
                 self.s.metadata.test.binary_string),
             globals())
         assert_equal(f(3.5), 4.5)
+
+
+class TestSaveZeroDimData:
+
+    def setUp(self):
+        self.s = Signal(1)
+
+    def test_save_0d_data(self):
+        self.s.save('tmp.hdf5', overwrite=True)
+        l = load('tmp.hdf5')
+        assert_equal(self.s.data, l.data)
+        assert_equal(self.s.data.ndim, l.data.ndim)
+        assert_equal(self.s.data.ndim, 0)
+
+    def tearDown(self):
+        remove('tmp.hdf5')
 
 
 def test_none_metadata():
