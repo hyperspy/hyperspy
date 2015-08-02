@@ -2761,7 +2761,7 @@ class Signal(MVA,
             old_plot = self._plot
             self._plot = None
             ns = self.deepcopy()
-            ns.data = data
+            ns.data = np.atleast_1d(data)
             return ns
         finally:
             self.data = old_data

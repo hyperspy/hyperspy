@@ -17,11 +17,13 @@ class Test2D:
     def test_sum_x(self):
         s = self.signal.sum("x")
         np.testing.assert_array_equal(self.signal.data.sum(0), s.data)
+        nt.assert_equal(s.data.ndim, 1)
         nt.assert_equal(s.axes_manager.navigation_dimension, 0)
 
     def test_sum_x_E(self):
         s = self.signal.sum("x").sum("E")
         np.testing.assert_array_equal(self.signal.data.sum(), s.data)
+        nt.assert_equal(s.data.ndim, 1)
         # Check that there is still one signal axis.
         nt.assert_equal(s.axes_manager.signal_dimension, 1)
 
