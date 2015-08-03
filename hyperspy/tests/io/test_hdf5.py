@@ -170,20 +170,22 @@ class TestSavingMetadataContainers:
 
     def test_numpy_only_inner_lists(self):
         s = self.s
-        s.metadata.set_item('test', [[1., 2], ['3', 4]])
+        s.metadata.set_item('test', [[1., 2], ('3', 4)])
         s.save('tmp.hdf5', overwrite=True)
         l = load('tmp.hdf5')
         nt.assert_is_instance(l.metadata.test, list)
-        nt.assert_is_instance(l.metadata.test[0], np.ndarray)
-        nt.assert_is_instance(l.metadata.test[1], np.ndarray)
+        nt.assert_is_instance(l.metadata.test[0], list)
+        nt.assert_is_instance(l.metadata.test[1], tuple)
 
     def test_numpy_general_type(self):
         s = self.s
         s.metadata.set_item('test', [[1., 2], ['3', 4]])
         s.save('tmp.hdf5', overwrite=True)
         l = load('tmp.hdf5')
-        nt.assert_true(l.metadata.test[0].dtype.type is np.float64)
-        nt.assert_true(l.metadata.test[1].dtype.type is np.string_)
+        nt.assert_is_instance(l.metadata.test[0][0], float)
+        nt.assert_is_instance(l.metadata.test[0][1], float)
+        nt.assert_is_instance(l.metadata.test[1][0], basestring)
+        nt.assert_is_instance(l.metadata.test[1][1], basestring)
 
     def test_general_type_not_working(self):
         s = self.s
