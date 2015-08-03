@@ -304,14 +304,13 @@ def dict2hdfgroup(dictionary, group, compression=None):
         if tmp.dtype is np.dtype('O') or tmp.ndim is not 1:
             dict2hdfgroup(dict(zip(
                 [unicode(i) for i in xrange(len(value))], value)),
-                group.create_group( _type + str(len(value)) + '_' + key),
+                group.create_group(_type + str(len(value)) + '_' + key),
                 compression=compression)
         else:
             group.create_dataset(
-                _type+key,
+                _type + key,
                 data=tmp,
                 compression=compression)
-
 
     for key, value in dictionary.iteritems():
         if isinstance(value, dict):
