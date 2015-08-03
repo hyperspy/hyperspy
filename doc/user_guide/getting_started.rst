@@ -4,7 +4,7 @@ Getting started
 Starting hyperspy
 -----------------
 
-HyperSpy is a Python library to analyze multidimensional. HyperSpy does not
+HyperSpy is a Python library to analyze multidimensional data. HyperSpy does not
 have a GUI. Instead, the most common way of running HyperSpy is interactively
 using the wonderful interactive computing package `IPython
 <http://ipython.org>`_. In this section we describe the different ways to start
@@ -13,47 +13,41 @@ hyperspy in the different operating systems.
 Starting hyperspy from the terminal
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-In all operating systems (OS) you can start HyperSpy
-by opening a system terminal and typing hyperspy:
+In all operating systems (OS) you can start HyperSpy by opening a system
+terminal and typing `hyperspy`, optionally followed by the frontend. In most
+cases, **the most agreeable way** to work with HyperSpy interactively is
+`IPython's HTML notebook
+<http://ipython.org/ipython-doc/stable/interactive/htmlnotebook.html>`_, which
+can be started as follows:
 
 .. code-block:: bash
 
-    $ hyperspy
+    $ hyperspy notebook
 
 
-If HyperSpy is correctly installed it should welcome you with a message similar
-to:
+Once a new ipython notebook is started in a browser window, the hyperspy
+functionality can be switched on by running the :ref:`hyperspy magic
+<magic-label>`
 
-.. code-block:: ipython
-    
-    H y p e r S p y
-    Version 0.7
-    
-    http://www.hyperspy.org	
-	
+.. code-block:: python
 
-If IPython 0.11 or newer and the Qt libraries are installed in your system it
-is also possible to run HyperSpy in `IPython's QtConsole
-<http://ipython.org/ipython-doc/stable/interactive/qtconsole.html>`_ by
-executing `hyperspy qtconsole` in a terminal:
+    >>> %hyperspy
+
+
+Alternatively, hyperspy can be run in two console modes: the terminal you run
+the command in (default, no additional arguments required), or the ipython
+"qtconsole".
 
 .. code-block:: bash
 
     $ hyperspy qtconsole
 
-If IPython 0.12 or newer is installed in your system it is also possible to run
-HyperSpy in `IPython's HTML notebook
-<http://ipython.org/ipython-doc/stable/interactive/htmlnotebook.html>`_ that
-runs inside your browser. The Notebook is probably **the most agreeable way**
-to work with HyperSpy interactively. You can start it from a terminal as
-follows
 
-.. code-block:: bash
-
-    $ hyperspy notebook 
-
-There are multiple options available when starting from the terminal. To print
-these options add the `-h` flag:
+The main difference between notebook and terminal frontends is that ipython
+notebook allows for much better reproducibility by re-running any commands and
+automatically saving the history in an easy to share format. There are multiple
+options available when starting from the terminal. To print these options add
+the `-h` flag:
 
 .. code-block:: bash
 
@@ -134,19 +128,41 @@ menu.
 
    Starting hyperspy using the Gnome nautilus context menu.
 
-Using HyperSpy as a library
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. _magic-label:
 
-When starting hyperspy by using the file browser context menu or by running the
-`hyperspy` script in the terminal, the `hyperspy` script simply starts and
-configures IPython appropiately and imports the contents of the
-:py:mod:`~.hspy` module in the user namespace. Of course, It is possible to use
-HyperSpy as a library by simply importing its modules. The recommended way to
-do it is importing the hspy module as follows:
+HyperSpy magic
+^^^^^^^^^^^^^^
+
+Hyperspy is written as any other python library. As such, before using it, it
+has to be imported and configured appropriately. Starting with IPython version
+3.0, auto-loading and auto-configuring is discouraged, hence we supply
+a hyperspy magic that performs these steps in an easy way:
 
 .. code-block:: python
 
+    >>> %hyperspy [-r] [toolkit]
+
+    HyperSpy imported!
+    The following commands were just executed:
+    ---------------
+    import numpy as np
     import hyperspy.hspy as hs
+    %matplotlib [toolkit]
+    import matplotlib.pyplot as plt
+
+The magic imports hyperspy and the required dependencies in the correct order.
+By default the magic looks for the toolkit to use in the default settings,
+however a different one can be given when running. Once executed, the magic
+prints which packages were imported, and hyperspy is ready to be used. 
+
+If the flag `-r` is passed as well, the magic overwrites the current input
+cell with actual code that can be executed to achieve the same result
+without any magic commands (e.g. included in a script).
+
+.. WARNING::
+    If "-r" flag is passed, all code in the same cell will be lost. To revert
+    the process, use "undo" functionality
+
 
 Choosing a toolkit
 ------------------
@@ -174,10 +190,11 @@ plotting function embeds the resulting plots in the Notebook or QtConsole
 instead of raising figure windows. The main drawback is that these plots are
 not (yet) interactive.
 
-This option only has effect when
-running in the *IPython QtConsole* or the *IPython Notebook*, e.g.
+This option only has effect when running in the *IPython QtConsole* or the
+*IPython Notebook*, e.g.
 
 .. code-block:: bash
+
    $ hyperspy qtconsole --pylab_inline
 
 The default value can be configured in :ref:`preferences
@@ -205,9 +222,12 @@ Getting help
 The documentation (docstring in Python jargon) can be accessed by adding a
 question mark to the name of a function. e.g.:
 
+
 .. code-block:: python
-    
-    >>> load?
+
+    >>> hs?
+    >>> hs.load?
+    >>> hs.signals?
 
 This syntax is a shortcut to the standard way one of displaying the help
 associated to a given functions (docstring in Python jargon) and it is one of
@@ -261,7 +281,7 @@ allows to select a single file through your OS file manager, e.g.:
 It is also possible to load multiple files at once or even stack multiple
 files. For more details read :ref:`loading_files`
 
-"Loading" zadata from a numpy array
+"Loading" data from a numpy array
 ---------------------------------
 
 HyperSpy can operate on any numpy array by assigning it to a Signal class.
