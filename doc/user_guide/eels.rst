@@ -141,10 +141,12 @@ HyperSpy has created the model and configured it automatically:
 
 .. code-block:: python
 
-    >>> m
-    [<background (PowerLaw component)>,
-    <N_K (EELSCLEdge component)>,
-    <B_K (EELSCLEdge component)>]
+    >>> m.components
+       # |            Attribute Name |            Component Name |            Component Type
+    ---- | ------------------------- | ------------------------- | -------------------------
+       0 |                background |                background |                  PowerLaw
+       1 |                       N_K |                       N_K |                EELSCLEdge
+       2 |                       B_K |                       B_K |                EELSCLEdge
 
 .. warning::
 
