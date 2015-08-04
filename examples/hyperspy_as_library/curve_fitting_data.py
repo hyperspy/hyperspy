@@ -15,7 +15,7 @@ s.set_microscope_parameters(
 
 ll = hspy.load(lowlossSpectrumFileName).to_EELS()
 
-m = hspy.create_model(s, ll=ll)
+m = s.create_model(ll=ll)
 m.enable_fine_structure()
 m.multifit(kind="smart")
 m.plot()
