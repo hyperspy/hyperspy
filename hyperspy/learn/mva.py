@@ -710,7 +710,7 @@ class MVA():
 
         Examples
         -------
-        >>> s = load('some_file')
+        >>> s = hs.load('some_file')
         >>> s.decomposition(True) # perform PCA
         >>> s.reverse_decomposition_component(1) # reverse IC 1
         >>> s.reverse_decomposition_component((0, 2)) # reverse ICs 0 and 2
@@ -732,7 +732,7 @@ class MVA():
 
         Examples
         -------
-        >>> s = load('some_file')
+        >>> s = hs.load('some_file')
         >>> s.decomposition(True) # perform PCA
         >>> s.blind_source_separation(3)  # perform ICA on 3 PCs
         >>> s.reverse_bss_component(1) # reverse IC 1

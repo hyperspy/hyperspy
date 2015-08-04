@@ -68,11 +68,11 @@ def xray_range(xray_line, beam_energy, density='auto'):
     Examples
     --------
     >>> # X-ray range of Cu Ka in pure Copper at 30 kV in micron
-    >>> utils.eds.xray_range('Cu_Ka', 30.)
+    >>> hs.utils.eds.xray_range('Cu_Ka', 30.)
     1.9361716759499248
 
     >>> # X-ray range of Cu Ka in pure Carbon at 30kV in micron
-    >>> utils.eds.xray_range('Cu_Ka', 30., utils.material.elements.C.
+    >>> hs.utils.eds.xray_range('Cu_Ka', 30., hs.utils.material.elements.C.
     >>>                      Physical_properties.density_gcm3)
     7.6418811280855454
 
@@ -122,7 +122,7 @@ def electron_range(element, beam_energy, density='auto', tilt=0):
     Examples
     --------
     >>> # Electron range in pure Copper at 30 kV in micron
-    >>> utils.eds.electron_range('Cu', 30.)
+    >>> hs.utils.eds.electron_range('Cu', 30.)
     2.8766744984001607
 
     Notes
@@ -170,7 +170,7 @@ def take_off_angle(tilt_stage,
 
     Examples
     --------
-    >>> utils.eds.take_off_angle(tilt_stage=10.,
+    >>> hs.utils.eds.take_off_angle(tilt_stage=10.,
     >>>                          azimuth_angle=45., elevation_angle=22.)
     28.865971201155283
 

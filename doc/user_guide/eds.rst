@@ -308,13 +308,13 @@ An elemental database is available with the energy of the X-ray lines.
 
 .. code-block:: python
 
-    >>> utils.material.elements.Fe.General_properties
+    >>> hs.utils.material.elements.Fe.General_properties
     ├── Z = 26
     ├── atomic_weight = 55.845
     └── name = iron
-    >>> utils.material.elements.Fe.Physical_properties
+    >>> hs.utils.material.elements.Fe.Physical_properties
     └── density (g/cm^3) = 7.874
-    >>> utils.material.elements.Fe.Atomic_properties.Xray_lines
+    >>> hs.utils.material.elements.Fe.Atomic_properties.Xray_lines
     ├── Ka
     │   ├── energy (keV) = 6.404
     │   └── weight = 1.0
