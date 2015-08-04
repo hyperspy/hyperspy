@@ -4070,8 +4070,8 @@ class Signal(MVA,
 
         """
         from hyperspy import signals
-
-        hist, bin_edges = histogram(img.data.flatten(),
+        data = img.data[~np.isnan(img.data)].flatten()
+        hist, bin_edges = histogram(data,
                                     bins=bins,
                                     range=range_bins,
                                     **kwargs)
