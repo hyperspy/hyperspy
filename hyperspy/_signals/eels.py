@@ -30,7 +30,7 @@ from hyperspy.decorators import only_interactive
 from hyperspy.gui.eels import TEMParametersUI
 from hyperspy.defaults_parser import preferences
 import hyperspy.gui.messages as messagesui
-from hyperspy.misc.progressbar import progressbar
+from hyperspy.external.progressbar import progressbar
 from hyperspy.components import PowerLaw
 from hyperspy.misc.utils import isiterable, closest_power_of_two, underline
 from hyperspy.misc.utils import without_nans
@@ -70,7 +70,7 @@ class EELSSpectrum(Spectrum):
         Examples
         --------
 
-        >>> s = signals.EELSSpectrum(np.arange(1024))
+        >>> s = hs.signals.EELSSpectrum(np.arange(1024))
         >>> s.add_elements(('C', 'O'))
         Adding C_K subshell
         Adding O_K subshell
@@ -310,7 +310,7 @@ class EELSSpectrum(Spectrum):
             bk_I0_navigate = (
                 I0.axes_manager._get_axis_attribute_values('navigate'))
             I0.axes_manager.set_signal_dimension(0)
-            pbar = hyperspy.misc.progressbar.progressbar(
+            pbar = hyperspy.external.progressbar.progressbar(
                 maxval=self.axes_manager.navigation_size,
             )
             for i, s in enumerate(self):

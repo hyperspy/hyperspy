@@ -104,8 +104,7 @@ class Polynomial(Component):
             if self.coefficients.map is None:
                 self._create_arrays()
             nav_shape = signal.axes_manager._navigation_shape_in_array
-            unfolded = signal.unfold()
-            try:
+            with signal.unfolded():
                 dc = signal.data
                 # For polyfit the spectrum goes in the first axis
                 if axis.index_in_array > 0:
@@ -120,9 +119,5 @@ class Polynomial(Component):
                 if binned is True:
                     self.coefficients.map["values"] /= axis.scale
                 self.coefficients.map['is_set'][:] = True
-            finally:
-                # Make sure we always attempt to refold
-                if unfolded:
-                    signal.fold()
             self.fetch_stored_values()
             return True

@@ -36,13 +36,13 @@ from traits.trait_errors import TraitError
 from hyperspy import messages
 import hyperspy.drawing.spectrum
 from hyperspy.drawing.utils import on_figure_window_close
-from hyperspy.misc import progressbar
+from hyperspy.external import progressbar
 from hyperspy._signals.eels import Spectrum
 from hyperspy.defaults_parser import preferences
 from hyperspy.axes import generate_axis
 from hyperspy.exceptions import WrongObjectError
 from hyperspy.decorators import interactive_range_selector
-from hyperspy.misc.mpfit.mpfit import mpfit
+from hyperspy.external.mpfit.mpfit import mpfit
 from hyperspy.axes import AxesManager
 from hyperspy.drawing.widgets import (DraggableVerticalLine,
                                       DraggableLabel)
@@ -140,9 +140,9 @@ class Model(list):
     components to it, adjust the value of the parameters of the components,
     fit the model to the data and access the components in the model.
 
-    >>> s = signals.Spectrum(
+    >>> s = hs.signals.Spectrum(
             np.random.normal(scale=2, size=10000)).get_histogram()
-    >>> g = components.Gaussian()
+    >>> g = hs.components.Gaussian()
     >>> m = s.create_model()
     >>> m.append(g)
     >>> m.print_current_values()
@@ -303,9 +303,9 @@ class Model(list):
         Examples
         --------
 
-        >>> s = signals.Spectrum(np.empty(1))
+        >>> s = hs.signals.Spectrum(np.empty(1))
         >>> m = s.create_model()
-        >>> g = components.Gaussian()
+        >>> g = hs.components.Gaussian()
         >>> m.append(g)
 
         You could remove `g` like this
@@ -411,10 +411,10 @@ class Model(list):
 
         Examples
         --------
-        >>> s = signals.Spectrum(np.random.random((10,100)))
+        >>> s = hs.signals.Spectrum(np.random.random((10,100)))
         >>> m = s.create_model()
-        >>> l1 = components.Lorentzian()
-        >>> l2 = components.Lorentzian()
+        >>> l1 = hs.components.Lorentzian()
+        >>> l2 = hs.components.Lorentzian()
         >>> m.append(l1)
         >>> m.append(l2)
         >>> s1 = m.as_signal()
@@ -1819,7 +1819,7 @@ class Model(list):
         --------
         Signal range set interactivly
 
-        >>> g1 = components.Gaussian()
+        >>> g1 = hs.components.Gaussian()
         >>> m.append(g1)
         >>> m.fit_component(g1)
 
@@ -1854,7 +1854,7 @@ class Model(list):
 
         Examples
         --------
-        >>> v1 = components.Voigt()
+        >>> v1 = hs.components.Voigt()
         >>> m.append(v1)
         >>> m.set_parameters_not_free()
 
@@ -1898,7 +1898,7 @@ class Model(list):
 
         Examples
         --------
-        >>> v1 = components.Voigt()
+        >>> v1 = hs.components.Voigt()
         >>> m.append(v1)
         >>> m.set_parameters_free()
         >>> m.set_parameters_free(component_list=[v1],
@@ -1948,8 +1948,8 @@ class Model(list):
 
         Examples
         --------
-        >>> v1 = components.Voigt()
-        >>> v2 = components.Voigt()
+        >>> v1 = hs.components.Voigt()
+        >>> v2 = hs.components.Voigt()
         >>> m.extend([v1,v2])
         >>> m.set_parameters_value('area', 5)
         >>> m.set_parameters_value('area', 5, component_list=[v1])
@@ -1995,8 +1995,8 @@ class Model(list):
 
         Examples
         --------
-        >>> v1 = components.Voigt()
-        >>> v2 = components.Voigt()
+        >>> v1 = hs.components.Voigt()
+        >>> v2 = hs.components.Voigt()
         >>> m.extend([v1,v2])
         >>> m.set_component_active_value(False)
         >>> m.set_component_active_value(True, component_list=[v1])

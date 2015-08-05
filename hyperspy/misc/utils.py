@@ -45,7 +45,7 @@ def attrsetter(target, attrs, value):
         -------
         First create a signal and model pair:
 
-        >>> s = signals.Spectrum(np.arange(10))
+        >>> s = hs.signals.Spectrum(np.arange(10))
         >>> m = s.create_model()
         >>> m.spectrum.data
         array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
@@ -88,6 +88,7 @@ def generate_axis(origin, step, N, index=0):
         origin - index * step, origin + step * (N - 1 - index), N)
 
 
+# TODO: Remove in 0.9
 def unfold_if_multidim(signal):
     """Unfold the SI if it is 2D
 
@@ -101,12 +102,10 @@ def unfold_if_multidim(signal):
     Boolean. True if the SI was unfolded by the function.
 
     """
-    if len(signal.axes_manager._axes) > 2:
-        print "Automatically unfolding the SI"
-        signal.unfold()
-        return True
-    else:
-        return False
+    import warnings
+    warnings.warn("unfold_if_multidim is deprecated and will be removed in "
+                  "0.9 please use Signal.unfold instead", DeprecationWarning)
+    return None
 
 
 def str2num(string, **kargs):
@@ -746,7 +745,7 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
     Examples
     --------
     >>> data = np.arange(20)
-    >>> s = utils.stack([signals.Spectrum(data[:10]), signals.Spectrum(data[10:])])
+    >>> s = hs.utils.stack([hs.signals.Spectrum(data[:10]), hs.signals.Spectrum(data[10:])])
     >>> s
     <Spectrum, title: Stack of , dimensions: (2, 10)>
     >>> s.data

@@ -1,11 +1,7 @@
 """
 
-All public packages, functions and classes are in this package. This package is
-automatically imported in the user namespace when starting HyperSpy using the
-starting script e.g. by typing ``hyperspy`` in a console, using the context
-menu entries or using the links in the ``Start Menu``, the
-:mod:`~hyperspy.hspy` package is imported in the user namespace. When using
-HyperSpy as a library, it is recommended to import the :mod:`~hyperspy.hspy`
+All public packages, functions and classes are in this package. When using
+HyperSpy, it is recommended to import the :mod:`~hyperspy.hspy`
 package as follows:
 
     from hyperspy import hspy as hs
