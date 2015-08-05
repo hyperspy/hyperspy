@@ -39,13 +39,19 @@ class HyperspyMagics(Magics):
 
         header = "\nHyperSpy imported!\nThe following commands were just executed:\n"
         header += "---------------\n"
-        ans = first_import_part 
+        ans = first_import_part
         if gui:
-            ans += "%matplotlib " + toolkit + "\n" 
+            ans += "%matplotlib " + toolkit + "\n"
         ans += second_import_part
         print header + ans
         if overwrite:
-            sh.set_next_input("# %hyperspy -r " + toolkit + "\n" + ans + "\n\n", replace=True)
+            sh.set_next_input(
+                "# %hyperspy -r " +
+                toolkit +
+                "\n" +
+                ans +
+                "\n\n",
+                replace=True)
 
 ip = get_ipython()
 ip.register_magics(HyperspyMagics)
