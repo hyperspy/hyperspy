@@ -1034,7 +1034,7 @@ Outputs:
 
         # Beginning of the outer loop
 
-        while 1:
+        while True:
 
             # If requested, call fcn to enable printing of iterates
             self.params[ifree] = x
@@ -1175,7 +1175,7 @@ Outputs:
                 diag = numpy.choose(diag > wa2, (wa2, diag))
 
             # Beginning of the inner loop
-            while 1:
+            while True:
 
                 # Determine the levenberg-marquardt parameter
                 catch_msg = 'calculating LM parameter (MPFIT_)'
@@ -1846,7 +1846,8 @@ Outputs:
                         a[j:, lk] = ajk - ajj * sum(ajk * ajj) / a[j, lj]
                         if (pivot != 0) and (rdiag[k] != 0):
                             temp = a[j, lk] / rdiag[k]
-                            rdiag[k] *= numpy.sqrt(numpy.max([(1. - temp ** 2), 0.]))
+                            rdiag[
+                                k] *= numpy.sqrt(numpy.max([(1. - temp ** 2), 0.]))
                             temp = rdiag[k] / wa[k]
                             if (0.05 * temp * temp) <= machep:
                                 rdiag[k] = self.enorm(a[j + 1:, lk])
@@ -2170,7 +2171,7 @@ Outputs:
             par = gnorm / dxnorm
 
         # Beginning of an interation
-        while 1:
+        while True:
             iter += 1
 
             # Evaluate the function at the current value of par

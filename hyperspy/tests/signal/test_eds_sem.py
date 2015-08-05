@@ -140,8 +140,12 @@ class Test_metadata:
         sTEM = s.deepcopy()
         sTEM.set_signal_type(signal_type)
         mpTEM = sTEM.metadata
-        results = [mp.Acquisition_instrument.SEM.Detector.EDS.energy_resolution_MnKa, signal_type]
-        resultsTEM = [mpTEM.Acquisition_instrument.TEM.Detector.EDS.energy_resolution_MnKa, mpTEM.Signal.signal_type]
+        results = [
+            mp.Acquisition_instrument.SEM.Detector.EDS.energy_resolution_MnKa,
+            signal_type]
+        resultsTEM = [
+            mpTEM.Acquisition_instrument.TEM.Detector.EDS.energy_resolution_MnKa,
+            mpTEM.Signal.signal_type]
         nose.tools.assert_equal(results, resultsTEM)
 
     def test_get_calibration_from(self):

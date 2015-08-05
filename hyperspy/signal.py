@@ -1582,7 +1582,7 @@ class MVATools(object):
                          'size': int(factors.shape[1]),
                          'units': 'factor',
                          'index_in_array': 0,
-                        }]
+                         }]
                 axes[0]['index_in_array'] = 1
                 s = Spectrum(
                     factors.T, axes=axes, metadata={

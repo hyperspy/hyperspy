@@ -91,8 +91,12 @@ class Test_metadata:
         sSEM = s.deepcopy()
         sSEM.set_signal_type(signal_type)
         mpSEM = sSEM.metadata
-        results = [mp.Acquisition_instrument.TEM.Detector.EDS.energy_resolution_MnKa, signal_type]
-        resultsSEM = [mpSEM.Acquisition_instrument.SEM.Detector.EDS.energy_resolution_MnKa, mpSEM.Signal.signal_type]
+        results = [
+            mp.Acquisition_instrument.TEM.Detector.EDS.energy_resolution_MnKa,
+            signal_type]
+        resultsSEM = [
+            mpSEM.Acquisition_instrument.SEM.Detector.EDS.energy_resolution_MnKa,
+            mpSEM.Signal.signal_type]
         assert_equal(results, resultsSEM)
 
     def test_get_calibration_from(self):
