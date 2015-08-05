@@ -6,6 +6,35 @@ class HyperspyMagics(Magics):
 
     @line_magic
     def hyperspy(self, line):
+        """
+        %hyperspy [-r] [toolkit]
+
+        Load HyperSpy, numpy and matplotlib to work interactively.
+
+        %hyperspy runs the following commands::
+
+        >>> import numpy as np
+        >>> import hyperspy.hspy as hs
+        >>> %matplotlib [toolkit]
+        >>> import matplotlib.pyplot as plt
+
+        If you pass `-r`, the current input cell will be overwritten with the above specified commands. As a
+        consequence, all other code in the input cell will be deleted!
+
+        Positional arguments:
+        ---------------------
+            toolkit
+                Name of the matplotlib backend to use. If given, the corresponding matplotlib backend is used,
+                otherwise it will be the HyperSpy's default. If "none" or "None" is passed, the matplotlib
+                magic is not executed.
+
+        Optional arguments:
+        -------------------
+            -r
+                After running the the magic as usual, overwrites the current input cell with just executed
+                code that can be run directly without magic
+
+        """
         sh = self.shell
         first_import_part = ("import numpy as np\n"
                              "import hyperspy.hspy as hs\n")
