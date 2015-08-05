@@ -436,7 +436,7 @@ class EELSSpectrum(Spectrum):
         del s
         if np.isnan(threshold.data).any():
             warnings.warn(
-                "No inflexion point could we found in some positions "
+                "No inflexion point could be found in some positions "
                 "that have been marked with nans.")
         # Create spectrum image, stop and return value
         threshold.metadata.General.title = (
