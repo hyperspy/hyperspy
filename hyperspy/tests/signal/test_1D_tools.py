@@ -100,7 +100,7 @@ class TestAlignTools:
         nose.tools.assert_equal(s.axes_manager._axes[1].scale, self.scale)
 
 
-class TestShift1D():
+class TestShift1D:
 
     def setUp(self):
         self.s = hs.signals.Spectrum(np.arange(10))
@@ -108,7 +108,7 @@ class TestShift1D():
 
     def test_crop_left(self):
         s = self.s
-        s.shift1D(np.array((0.01)), crop=True)
+        s.shift1D(np.array(0.01), crop=True)
         nose.tools.assert_equal(
             tuple(
                 s.axes_manager[0].axis), tuple(
@@ -191,7 +191,7 @@ class TestInterpolateInBetween:
         nose.tools.assert_true((s.data == np.arange(40).reshape(2, 20)).all())
 
 
-class TestEstimatePeakWidth():
+class TestEstimatePeakWidth:
 
     def setUp(self):
         scale = 0.1

@@ -59,9 +59,7 @@ class Point(MarkerBase):
 
     def __init__(self, x, y, size=20, **kwargs):
         MarkerBase.__init__(self)
-        lp = {}
-        lp['color'] = 'black'
-        lp['linewidth'] = None
+        lp = {'color': 'black', 'linewidth': None}
         self.marker_properties = lp
         self.set_data(x1=x, y1=y, size=size)
         self.set_marker_properties(**kwargs)

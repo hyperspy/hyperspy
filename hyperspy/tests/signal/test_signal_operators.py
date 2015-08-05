@@ -173,13 +173,13 @@ class TestUnaryOperators:
         self.s1 = Signal(np.array((1, -1, 4, -3)))
 
     def test_minus(self):
-        assert_true(((-self.s1).data == -(self.s1.data)).all())
+        assert_true(((-self.s1).data == -self.s1.data).all())
 
     def test_plus(self):
-        assert_true(((+self.s1).data == +(self.s1.data)).all())
+        assert_true(((+self.s1).data == +self.s1.data).all())
 
     def test_invert(self):
-        assert_true(((~self.s1).data == ~(self.s1.data)).all())
+        assert_true(((~self.s1).data == ~self.s1.data).all())
 
     def test_abs(self):
         assert_true((abs(self.s1).data == abs(self.s1.data)).all())

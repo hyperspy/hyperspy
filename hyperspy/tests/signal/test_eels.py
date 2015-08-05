@@ -77,7 +77,7 @@ class Test_Estimate_Elastic_Scattering_Threshold:
         nose.tools.assert_true(np.all(np.isnan(data)))
 
 
-class TestEstimateZLPCentre():
+class TestEstimateZLPCentre:
 
     def setUp(self):
         s = hp.signals.EELSSpectrumSimulation(np.diag(np.arange(1, 11)))
@@ -96,7 +96,7 @@ class TestEstimateZLPCentre():
                     0.1)))
 
 
-class TestAlignZLP():
+class TestAlignZLP:
 
     def setUp(self):
         s = hp.signals.EELSSpectrumSimulation(np.zeros((10, 100)))

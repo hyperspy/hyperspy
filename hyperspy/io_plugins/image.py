@@ -39,7 +39,7 @@ writes = [(2, 0), ]
 
 # TODO Extend it to support SI
 def file_writer(filename, signal, file_format='png', **kwds):
-    '''Writes data to any format supported by PIL
+    """Writes data to any format supported by PIL
 
         Parameters
         ----------
@@ -48,18 +48,18 @@ def file_writer(filename, signal, file_format='png', **kwds):
         file_format : str
             The fileformat defined by its extension that is any one supported by
             PIL.
-    '''
+    """
     imsave(filename, signal.data)
 
 
 def file_reader(filename, **kwds):
-    '''Read data from any format supported by PIL.
+    """Read data from any format supported by PIL.
 
     Parameters
     ----------
     filename: str
 
-    '''
+    """
     dc = imread(filename)
     if len(dc.shape) > 2:
         # It may be a grayscale image that was saved in the RGB or RGBA

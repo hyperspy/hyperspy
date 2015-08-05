@@ -60,7 +60,6 @@ class Logistic(Component):
         """
         Returns d(function)/d(parameter_1)
         """
-        a = self.a.value
         b = self.b.value
         c = self.c.value
         origin = self.origin.value

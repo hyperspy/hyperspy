@@ -44,9 +44,7 @@ class VerticalLine(MarkerBase):
 
     def __init__(self, x, **kwargs):
         MarkerBase.__init__(self)
-        lp = {}
-        lp['linewidth'] = 1
-        lp['color'] = 'black'
+        lp = {'linewidth': 1, 'color': 'black'}
         self.marker_properties = lp
         self.set_data(x1=x)
         self.set_marker_properties(**kwargs)

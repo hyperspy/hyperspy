@@ -89,7 +89,7 @@ def get_std_dtype_list(endianess='<'):
             ('STAMP', (str, 4)),
             ('RMS', end + 'f4'),
             ('NLABL', end + 'u4'),
-            ('LABELS', (str, (800))),
+            ('LABELS', (str, 800)),
         ]
 
     return dtype_list

@@ -100,9 +100,9 @@ def mlpca(X, varX, p, convlim=1E-10, maxiter=50000, fast=False):
                                  F *
                                  U0m.T *
                                  Q *
-                                 ((np.matrix(XX[:, i])).T)).squeeze()
+                                 (np.matrix(XX[:, i])).T).squeeze()
             dx = np.matrix((XX[:, i] - MLX[:, i]).squeeze())
-            Sobj = Sobj + float(dx * Q * dx.T)
+            Sobj += float(dx * Q * dx.T)
         if (count % 2) == 1:
             print "Iteration : %s" % (count / 2)
             if (abs(Sold - Sobj) / Sobj) < convlim:

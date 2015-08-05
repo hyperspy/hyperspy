@@ -228,16 +228,14 @@ def file_reader(filename, encoding='latin-1', **kwds):
                       "the developers")
     locale.setlocale(locale.LC_TIME, loc)  # restore saved locale
 
-    axes = []
-
-    axes.append({
+    axes = [{
         'size': len(y),
         'index_in_array': 0,
         'name': parameters['XLABEL'] if 'XLABEL' in parameters else '',
         'scale': parameters['XPERCHAN'] if 'XPERCHAN' in parameters else 1,
         'offset': parameters['OFFSET'] if 'OFFSET' in parameters else 0,
         'units': parameters['XUNITS'] if 'XUNITS' in parameters else '',
-    })
+    }]
 
     mapped.set_item('General.original_filename', os.path.split(filename)[1])
     mapped.set_item('Signal.record_by', 'spectrum')

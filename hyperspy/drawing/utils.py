@@ -169,10 +169,10 @@ def subplot_parameters(fig):
     right = fig.subplotpars.right
     top = fig.subplotpars.top
     bottom = fig.subplotpars.bottom
-    return (left, bottom, right, top, wspace, hspace)
+    return left, bottom, right, top, wspace, hspace
 
 
-class ColorCycle():
+class ColorCycle:
     _color_cycle = [mpl.colors.colorConverter.to_rgba(color) for color
                     in ('b', 'g', 'r', 'c', 'm', 'y', 'k')]
 

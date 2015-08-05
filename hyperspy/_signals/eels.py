@@ -128,7 +128,7 @@ class EELSSpectrum(Spectrum):
                             <= end_energy:
                         subshell = '%s_%s' % (element, shell)
                         if subshell not in self.subshells:
-                            print "Adding %s subshell" % (subshell)
+                            print "Adding %s subshell" % subshell
                             self.subshells.add(
                                 '%s_%s' % (element, shell))
                             e_shells.append(subshell)
@@ -876,7 +876,7 @@ class EELSSpectrum(Spectrum):
                 '_%i_channels_extrapolated' % extrapolation_size)
         new_shape = list(self.data.shape)
         new_shape[axis.index_in_array] += extrapolation_size
-        s.data = np.zeros((new_shape))
+        s.data = np.zeros(new_shape)
         s.get_dimensions_from_data()
         s.data[..., :axis.size] = self.data
         pl = PowerLaw()

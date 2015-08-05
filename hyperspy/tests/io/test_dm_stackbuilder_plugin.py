@@ -25,7 +25,7 @@ from hyperspy.io import load
 my_path = os.path.dirname(__file__)
 
 
-class TestStackBuilder():
+class TestStackBuilder:
 
     def test_load_stackbuilder_imagestack(self):
         image_stack = load(

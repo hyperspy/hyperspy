@@ -301,7 +301,8 @@ class SpikesRemoval(SpanSelectorInSpectrum):
         self.index = 0
         self.update_plot()
 
-    def _click_to_show_instructions_fired(self):
+    @staticmethod
+    def _click_to_show_instructions_fired():
         m = information(None,
                         "\nTo remove spikes from the data:\n\n"
 

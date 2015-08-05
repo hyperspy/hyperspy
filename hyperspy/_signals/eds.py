@@ -95,7 +95,7 @@ class EDSSpectrum(Spectrum):
                 "Only `eV` and `keV` are supported. "
                 "If `s` is the variable containing this EDS spectrum:\n "
                 ">>> s.axes_manager.signal_axes[0].units = \'keV\' \n"
-                % (units_name))
+                % units_name)
         if FWHM_MnKa is None:
             return line_energy
         else:
@@ -122,7 +122,7 @@ class EDSSpectrum(Spectrum):
         units_name = self.axes_manager.signal_axes[0].units
 
         if units_name == 'eV':
-            beam_energy = beam_energy * 1000
+            beam_energy *= 1000
         return beam_energy
 
     def _get_xray_lines_in_spectral_range(self, xray_lines):
@@ -147,7 +147,7 @@ class EDSSpectrum(Spectrum):
         xray_lines_not_in_range = []
         for xray_line in xray_lines:
             line_energy = self._get_line_energy(xray_line)
-            if line_energy > low_value and line_energy < high_value:
+            if low_value < line_energy < high_value:
                 xray_lines_in_range.append(xray_line)
             else:
                 xray_lines_not_in_range.append(xray_line)
@@ -311,7 +311,7 @@ class EDSSpectrum(Spectrum):
         return only_lines
 
     def _get_xray_lines(self, xray_lines=None, only_one=None,
-                        only_lines=('a')):
+                        only_lines=('a',)):
         if xray_lines is None:
             if 'Sample.xray_lines' in self.metadata:
                 xray_lines = self.metadata.Sample.xray_lines
@@ -328,7 +328,7 @@ class EDSSpectrum(Spectrum):
     def set_lines(self,
                   lines,
                   only_one=True,
-                  only_lines=('a')):
+                  only_lines=('a',)):
         """Erase all Xrays lines and set them.
 
         See add_lines for details.
@@ -374,7 +374,7 @@ class EDSSpectrum(Spectrum):
     def add_lines(self,
                   lines=(),
                   only_one=True,
-                  only_lines=("a")):
+                  only_lines=("a",)):
         """Add X-rays lines to the internal list.
 
         Although most functions do not require an internal list of
@@ -463,7 +463,7 @@ class EDSSpectrum(Spectrum):
                     "%s is not a valid symbol of an element." % element)
         xray_not_here = self._get_xray_lines_in_spectral_range(xray_lines)[1]
         for xray in xray_not_here:
-            warnings.warn("%s is not in the data energy range." % (xray))
+            warnings.warn("%s is not in the data energy range." % xray)
         if "Sample.elements" in self.metadata:
             extra_elements = (set(self.metadata.Sample.elements) -
                               elements)
@@ -485,7 +485,7 @@ class EDSSpectrum(Spectrum):
     def _get_lines_from_elements(self,
                                  elements,
                                  only_one=False,
-                                 only_lines=("a")):
+                                 only_lines=("a",)):
         """Returns the X-ray lines of the given elements in spectral range
         of the data.
 
@@ -543,7 +543,7 @@ class EDSSpectrum(Spectrum):
                             background_windows=None,
                             plot_result=False,
                             only_one=True,
-                            only_lines=("a"),
+                            only_lines=("a",),
                             **kwargs):
         """Return the intensity map of selected Xray lines.
 
@@ -630,10 +630,10 @@ class EDSSpectrum(Spectrum):
         xray_lines, xray_not_here = self._get_xray_lines_in_spectral_range(
             xray_lines)
         for xray in xray_not_here:
-            warnings.warn("%s is not in the data energy range." % (xray) +
+            warnings.warn("%s is not in the data energy range." % xray +
                           "You can remove it with" +
                           "s.metadata.Sample.xray_lines.remove('%s')"
-                          % (xray))
+                          % xray)
         if hasattr(integration_windows, '__iter__') is False:
             integration_windows = self.estimate_integration_windows(
                 windows_width=integration_windows, xray_lines=xray_lines)
@@ -828,12 +828,10 @@ class EDSSpectrum(Spectrum):
         for xray_line in xray_lines:
             line_energy, line_FWHM = self._get_line_energy(xray_line,
                                                            FWHM_MnKa='auto')
-            tmp = [line_energy - line_FWHM * line_width[0] -
-                   line_FWHM * windows_width]
-            tmp.append(line_energy - line_FWHM * line_width[0])
-            tmp.append(line_energy + line_FWHM * line_width[1])
-            tmp.append(line_energy + line_FWHM * line_width[1] +
-                       line_FWHM * windows_width)
+            tmp = [line_energy - line_FWHM * line_width[0] - line_FWHM * windows_width,
+                   line_energy - line_FWHM * line_width[0],
+                   line_energy + line_FWHM * line_width[1],
+                   line_energy + line_FWHM * line_width[1] + line_FWHM * windows_width]
             windows_position.append(tmp)
         windows_position = np.array(windows_position)
         # merge ovelapping windows
@@ -944,7 +942,7 @@ class EDSSpectrum(Spectrum):
             xray_lines, xray_not_here = self._get_xray_lines_in_spectral_range(
                 xray_lines)
             for xray in xray_not_here:
-                print("Warning: %s is not in the data energy range." % (xray))
+                print("Warning: %s is not in the data energy range." % xray)
             xray_lines = np.unique(xray_lines)
             self._add_xray_lines_markers(xray_lines)
             if background_windows is not None:

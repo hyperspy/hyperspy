@@ -7,11 +7,11 @@ import hyperspy.hspy as hs
 from hyperspy.misc.elements import elements_db
 
 
-class TestWeightToFromAtomic():
+class TestWeightToFromAtomic:
 
     def setUp(self):
         # TiO2
-        self.elements = (("Ti", "O"))
+        self.elements = ("Ti", "O")
         natoms = (1, 2)
         self.at = [100 * nat / float(sum(natoms)) for nat in natoms]
         atomic_weight = np.array(

@@ -57,10 +57,7 @@ class Rectangle(MarkerBase):
 
     def __init__(self, x1, y1, x2, y2, **kwargs):
         MarkerBase.__init__(self)
-        lp = {}
-        lp['color'] = 'black'
-        lp['fill'] = None
-        lp['linewidth'] = 1
+        lp = {'color': 'black', 'fill': None, 'linewidth': 1}
         self.marker_properties = lp
         self.set_data(x1=x1, y1=y1, x2=x2, y2=y2)
         self.set_marker_properties(**kwargs)

@@ -53,6 +53,7 @@ def test_dtypes():
 # TODO: the RGB data generated is not correct
 
 
+# noinspection PyArgumentList
 def test_content():
     for subfolder in data_dict:
         for key, data in data_dict[subfolder].iteritems():

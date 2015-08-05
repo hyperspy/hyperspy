@@ -44,9 +44,7 @@ class HorizontalLine(MarkerBase):
 
     def __init__(self, y, **kwargs):
         MarkerBase.__init__(self)
-        lp = {}
-        lp['linewidth'] = 1
-        lp['color'] = 'black'
+        lp = {'linewidth': 1, 'color': 'black'}
         self.marker_properties = lp
         self.set_data(y1=y)
         self.set_marker_properties(**kwargs)

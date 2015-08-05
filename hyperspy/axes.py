@@ -361,11 +361,11 @@ class DataAxis(t.HasTraits):
         if v1 > v2:
             raise ValueError("v2 must be greater than v1.")
 
-        if v1 is not None and v1 > self.low_value and v1 <= self.high_value:
+        if v1 is not None and self.low_value < v1 <= self.high_value:
             i1 = self.value2index(v1)
         else:
             i1 = 0
-        if v2 is not None and v2 < self.high_value and v2 >= self.low_value:
+        if v2 is not None and self.high_value > v2 >= self.low_value:
             i2 = self.value2index(v2)
         else:
             i2 = self.size - 1
@@ -478,7 +478,7 @@ class AxesManager(t.HasTraits):
 
     def _get_positive_index(self, axis):
         if axis < 0:
-            axis = len(self._axes) + axis
+            axis += len(self._axes)
             if axis < 0:
                 raise IndexError("index out of bounds")
         return axis
@@ -626,7 +626,7 @@ class AxesManager(t.HasTraits):
             self._index = 0
             val = (0,) * self.navigation_dimension
             self.indices = val
-        elif (self._index >= self._max_index):
+        elif self._index >= self._max_index:
             raise StopIteration
         else:
             self._index += 1
@@ -756,10 +756,10 @@ class AxesManager(t.HasTraits):
             axis.edit_traits(view=data_axis_view)
 
     def copy(self):
-        return(copy.copy(self))
+        return copy.copy(self)
 
     def deepcopy(self):
-        return(copy.deepcopy(self))
+        return copy.deepcopy(self)
 
     def __deepcopy__(self, *args):
         return AxesManager(self._get_axes_dicts())

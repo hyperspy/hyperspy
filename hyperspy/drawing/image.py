@@ -300,7 +300,7 @@ class ImagePlot(BlittedFigure):
         if 'complex' in data.dtype.name:
             data = np.log(np.abs(data))
         if self.plot_indices is True:
-            self._text.set_text((self.axes_manager.indices))
+            self._text.set_text(self.axes_manager.indices)
         if self.no_nans:
             data = np.nan_to_num(data)
         if ims:
@@ -319,13 +319,12 @@ class ImagePlot(BlittedFigure):
             if np.isnan(data).any():
                 self.figure.canvas.draw()
         else:
-            new_args = {}
-            new_args['interpolation'] = 'nearest'
-            new_args['vmin'] = self.vmin
-            new_args['vmax'] = self.vmax
-            new_args['extent'] = self._extent
-            new_args['aspect'] = self._aspect
-            new_args['animated'] = True
+            new_args = {'interpolation': 'nearest',
+                        'vmin': self.vmin,
+                        'vmax': self.vmax,
+                        'extent': self._extent,
+                        'aspect': self._aspect,
+                        'animated': True}
             new_args.update(kwargs)
             self.ax.imshow(data,
                            **new_args)

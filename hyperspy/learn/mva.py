@@ -77,7 +77,7 @@ def get_derivative(signal, diff_axes, diff_order):
     return signal
 
 
-class MVA():
+class MVA:
 
     """
     Multivariate analysis capabilities for the Spectrum class.

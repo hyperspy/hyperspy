@@ -71,7 +71,6 @@ class Arctan(Component):
             return A * np.arctan(k * (x - x0))
 
     def grad_A(self, x):
-        A = self.A.value
         k = self.k.value
         x0 = self.x0.value
         if self.minimum_at_zero:

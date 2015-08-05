@@ -235,7 +235,7 @@ def read_raw(rpl_info, fp, mmap_mode='c'):
     else:
         endian = '='
 
-    data_type = data_type + str(int(data_length) * 8)
+    data_type += str(int(data_length) * 8)
     data_type = np.dtype(data_type)
     data_type = data_type.newbyteorder(endian)
 

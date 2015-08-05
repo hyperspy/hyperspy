@@ -53,8 +53,7 @@ class Text(MarkerBase):
 
     def __init__(self, x, y, text, **kwargs):
         MarkerBase.__init__(self)
-        lp = {}
-        lp['color'] = 'black'
+        lp = {'color': 'black'}
         self.marker_properties = lp
         self.set_data(x1=x, y1=y, text=text)
         self.set_marker_properties(**kwargs)

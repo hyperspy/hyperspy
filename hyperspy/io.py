@@ -173,7 +173,6 @@ def load(filenames=None,
             'The filenames parameter must be a list, tuple, string or None')
     if not filenames:
         raise ValueError('No file provided to reader.')
-        return None
     else:
         if len(filenames) > 1:
             messages.information('Loading individual files')

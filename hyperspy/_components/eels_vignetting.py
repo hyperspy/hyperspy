@@ -60,7 +60,6 @@ class Vignetting(Component):
         r = self.right.value
         ex = self.extension_nch
         if self.side_vignetting is True:
-            original_nch = len(x)
 
             x = x.tolist()
             x = range(-ex, 0) + x + range(int(x[-1]) + 1, int(x[-1]) + ex + 1)
