@@ -1,4 +1,5 @@
 from IPython.core.magic import Magics, magics_class, line_magic
+import warnings
 
 
 @magics_class
@@ -14,7 +15,7 @@ class HyperspyMagics(Magics):
         %hyperspy runs the following commands::
 
         >>> import numpy as np
-        >>> import hyperspy.hspy as hs
+        >>> import hyperspy.api as hs
         >>> %matplotlib [toolkit]
         >>> import matplotlib.pyplot as plt
 
@@ -37,7 +38,7 @@ class HyperspyMagics(Magics):
         """
         sh = self.shell
         first_import_part = ("import numpy as np\n"
-                             "import hyperspy.hspy as hs\n")
+                             "import hyperspy.api as hs\n")
         exec(first_import_part, sh.user_ns)
 
         overwrite = False
@@ -65,6 +66,16 @@ class HyperspyMagics(Magics):
 
         second_import_part = "import matplotlib.pyplot as plt"
         exec(second_import_part, sh.user_ns)
+        if hs.preferences.General.import_hspy:
+            third_import_part = "from hyperspy.hspy import *\n"
+            warnings.warn(
+                "Importing everything from ``hyperspy.hspy`` will be removed in "
+                "HyperSpy 0.9. Please use the new API imported as ``hs`` "
+                "instead. See the "
+                "`Getting started` section of the User Guide for details.",
+                UserWarning)
+            exec(third_import_part, sh.user_ns)
+            first_import_part += third_import_part
 
         header = "\nHyperSpy imported!\nThe following commands were just executed:\n"
         header += "---------------\n"
