@@ -37,7 +37,8 @@ install_req = ['scipy',
                'matplotlib (>= 1.2)',
                'numpy',
                'traits',
-               'traitsui', ]
+               'traitsui',
+               'sympy']
 
 
 def are_we_building4windows():
