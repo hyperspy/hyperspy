@@ -1,4 +1,5 @@
 from IPython.core.magic import Magics, magics_class, line_magic
+from hyperspy.defaults_parser import preferences
 
 
 @magics_class
@@ -52,12 +53,12 @@ class HyperspyMagics(Magics):
             elif before:
                 toolkit = before
             else:
-                toolkit = hs.preferences.General.default_toolkit
+                toolkit = preferences.General.default_toolkit
 
         elif line:
             toolkit = line.strip()
         else:
-            toolkit = hs.preferences.General.default_toolkit
+            toolkit = preferences.General.default_toolkit
 
         if toolkit not in ["None", "none"]:
             gui = True
@@ -81,6 +82,3 @@ class HyperspyMagics(Magics):
                 ans +
                 "\n\n",
                 replace=True)
-
-ip = get_ipython()
-ip.register_magics(HyperspyMagics)
