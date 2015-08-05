@@ -39,8 +39,6 @@ The :mod:`~hyperspy.api` package contains the following submodules/packages:
         Components that can be used to create a model for curve fitting.
     :mod:`~hyperspy.api.eds`
         Functions for energy dispersive X-rays data analysis.
-    :mod:`~hyperspy.api.markers`
-        Markers that can be added to `Signal` plots.
     :mod:`~hyperspy.api.material`
         Useful functions for materials properties and elements database that
         includes physical properties and X-rays and EELS energies.
@@ -66,3 +64,4 @@ from hyperspy.hspy import (
     get_configuration_directory_path,
     create_model)
 
+del markers
