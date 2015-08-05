@@ -1,1 +1,1 @@
-c = get_config()
+# c = get_config()
