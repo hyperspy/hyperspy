@@ -27,10 +27,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 
-from hyperspy.misc.utils import unfold_if_multidim
 from hyperspy.misc.image_tools import contrast_stretching
 from hyperspy.defaults_parser import preferences
-import hyperspy.messages as messages
 
 
 def create_figure(window_title=None,
@@ -1017,11 +1015,9 @@ def plot_spectra(
         if not isinstance(spectra, hyperspy.signal.Signal):
             import hyperspy.utils
             spectra = hyperspy.utils.stack(spectra)
-        refold = unfold_if_multidim(spectra)
-        ax = _make_heatmap_subplot(spectra)
-        ax.set_ylabel('Spectra')
-        if refold is True:
-            spectra.fold()
+        with spectra.unfolded():
+            ax = _make_heatmap_subplot(spectra)
+            ax.set_ylabel('Spectra')
     ax = ax if style != "mosaic" else subplots
 
     return ax

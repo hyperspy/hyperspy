@@ -88,6 +88,7 @@ def generate_axis(origin, step, N, index=0):
         origin - index * step, origin + step * (N - 1 - index), N)
 
 
+# TODO: Remove in 0.9
 def unfold_if_multidim(signal):
     """Unfold the SI if it is 2D
 
@@ -101,12 +102,10 @@ def unfold_if_multidim(signal):
     Boolean. True if the SI was unfolded by the function.
 
     """
-    if len(signal.axes_manager._axes) > 2:
-        print "Automatically unfolding the SI"
-        signal.unfold()
-        return True
-    else:
-        return False
+    import warnings
+    warnings.warn("unfold_if_multidim is deprecated and will be removed in "
+                  "0.9 please use Signal.unfold instead", DeprecationWarning)
+    return None
 
 
 def str2num(string, **kargs):
