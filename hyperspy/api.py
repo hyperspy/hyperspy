@@ -55,7 +55,6 @@ For more details see their doctrings.
 del docstrings
 
 from hyperspy.Release import version as __version__
-import hyperspy.components as model_components
 from hyperspy import signals
 from hyperspy.io import load
 from hyperspy.defaults_parser import preferences
