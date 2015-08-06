@@ -210,9 +210,9 @@ class TestSaveZeroDimData:
     def test_save_0d_data(self):
         self.s.save('tmp.hdf5', overwrite=True)
         l = load('tmp.hdf5')
-        assert_equal(self.s.data, l.data)
-        assert_equal(self.s.data.ndim, l.data.ndim)
-        assert_equal(self.s.data.ndim, 0)
+        nt.assert_equal(self.s.data, l.data)
+        nt.assert_equal(self.s.data.ndim, l.data.ndim)
+        nt.assert_equal(self.s.data.ndim, 0)
 
     def tearDown(self):
         remove('tmp.hdf5')
