@@ -30,7 +30,7 @@ from hyperspy.decorators import only_interactive
 from hyperspy.gui.eels import TEMParametersUI
 from hyperspy.defaults_parser import preferences
 import hyperspy.gui.messages as messagesui
-from hyperspy.misc.progressbar import progressbar
+from hyperspy.external.progressbar import progressbar
 from hyperspy.components import PowerLaw
 from hyperspy.misc.utils import isiterable, closest_power_of_two, underline
 from hyperspy.misc.utils import without_nans
@@ -310,7 +310,7 @@ class EELSSpectrum(Spectrum):
             bk_I0_navigate = (
                 I0.axes_manager._get_axis_attribute_values('navigate'))
             I0.axes_manager.set_signal_dimension(0)
-            pbar = hyperspy.misc.progressbar.progressbar(
+            pbar = hyperspy.external.progressbar.progressbar(
                 maxval=self.axes_manager.navigation_size,
             )
             for i, s in enumerate(self):
@@ -1184,3 +1184,43 @@ class EELSSpectrum(Spectrum):
             return eps
         else:
             return eps, output
+
+    def create_model(self, ll=None, auto_background=True, auto_add_edges=True,
+                     GOS=None):
+        """Create a model for the current EELS data.
+
+        Parameters
+        ----------
+        ll : EELSSpectrum, optional
+            If an EELSSpectrum is provided, it will be assumed that it is
+            a low-loss EELS spectrum, and it will be used to simulate the
+            effect of multiple scattering by convolving it with the EELS
+            spectrum.
+        auto_background : boolean, default True
+            If True, and if spectrum is an EELS instance adds automatically
+            a powerlaw to the model and estimate the parameters by the
+            two-area method.
+        auto_add_edges : boolean, default True
+            If True, and if spectrum is an EELS instance, it will
+            automatically add the ionization edges as defined in the
+            Spectrum instance. Adding a new element to the spectrum using
+            the components.EELSSpectrum.add_elements method automatically
+            add the corresponding ionisation edges to the model.
+        GOS : {'hydrogenic' | 'Hartree-Slater'}, optional
+            The generalized oscillation strenght calculations to use for the
+            core-loss EELS edges. If None the Hartree-Slater GOS are used if
+            available, otherwise it uses the hydrogenic GOS.
+
+        Returns
+        -------
+
+        model : `EELSModel` instance.
+
+        """
+        from hyperspy.models.eelsmodel import EELSModel
+        model = EELSModel(self,
+                          ll=ll,
+                          auto_background=auto_background,
+                          auto_add_edges=auto_add_edges,
+                          GOS=GOS)
+        return model

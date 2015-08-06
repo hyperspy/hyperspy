@@ -36,13 +36,13 @@ from traits.trait_errors import TraitError
 from hyperspy import messages
 import hyperspy.drawing.spectrum
 from hyperspy.drawing.utils import on_figure_window_close
-from hyperspy.misc import progressbar
+from hyperspy.external import progressbar
 from hyperspy._signals.eels import Spectrum
 from hyperspy.defaults_parser import preferences
 from hyperspy.axes import generate_axis
 from hyperspy.exceptions import WrongObjectError
 from hyperspy.decorators import interactive_range_selector
-from hyperspy.misc.mpfit.mpfit import mpfit
+from hyperspy.external.mpfit.mpfit import mpfit
 from hyperspy.axes import AxesManager
 from hyperspy.drawing.widgets import (DraggableVerticalLine,
                                       DraggableLabel)
@@ -187,7 +187,7 @@ class Model(list):
     >>> s = signals.Spectrum(
             np.random.normal(scale=2, size=10000)).get_histogram()
     >>> g = components.Gaussian()
-    >>> m = create_model(s)
+    >>> m = s.create_model()
     >>> m.append(g)
     >>> m.print_current_values()
     Components	Parameter	Value
@@ -346,9 +346,10 @@ class Model(list):
         for object in iterable:
             self.append(object)
 
-    def __delitem__(self, object):
-        list.__delitem__(self, object)
-        object.model = None
+    def __delitem__(self, thing):
+        thing = self.__getitem__(thing)
+        thing.model = None
+        list.__delitem__(self, self.index(thing))
         self._touch()
 
     def remove(self, object, touch=True):
@@ -358,7 +359,7 @@ class Model(list):
         --------
 
         >>> s = signals.Spectrum(np.empty(1))
-        >>> m = create_model(s)
+        >>> m = s.create_model()
         >>> g = components.Gaussian()
         >>> m.append(g)
 
@@ -466,7 +467,7 @@ class Model(list):
         Examples
         --------
         >>> s = signals.Spectrum(np.random.random((10,100)))
-        >>> m = create_model(s)
+        >>> m = s.create_model()
         >>> l1 = components.Lorentzian()
         >>> l2 = components.Lorentzian()
         >>> m.append(l1)

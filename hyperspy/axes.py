@@ -591,7 +591,7 @@ class AxesManager(t.HasTraits):
 
         See also
         --------
-        append_axis
+        _append_axis
 
         """
         # Reorder axes_list using index_in_array if it is defined
@@ -601,7 +601,7 @@ class AxesManager(t.HasTraits):
         if len(indices) == len(axes_list):
             axes_list.sort(key=lambda x: x['index_in_array'])
         for axis_dict in axes_list:
-            self.append_axis(**axis_dict)
+            self._append_axis(**axis_dict)
 
     def _update_max_index(self):
         self._max_index = 1
@@ -633,7 +633,7 @@ class AxesManager(t.HasTraits):
             val = np.unravel_index(
                 self._index,
                 tuple(self._navigation_shape_in_array)
-                )[::-1]
+            )[::-1]
             self.indices = val
         return val
 
@@ -643,7 +643,7 @@ class AxesManager(t.HasTraits):
         self._index = None
         return self
 
-    def append_axis(self, *args, **kwargs):
+    def _append_axis(self, *args, **kwargs):
         axis = DataAxis(*args, **kwargs)
         axis.axes_manager = self
         self._axes.append(axis)

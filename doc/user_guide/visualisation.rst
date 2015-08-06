@@ -459,7 +459,7 @@ legended line, a spectrum can be toggled on and off.
      >>> s = signals.Spectrum(np.zeros((200)))
      >>> s.axes_manager[0].offset = -10
      >>> s.axes_manager[0].scale = 0.1
-     >>> m = create_model(s)
+     >>> m = s.create_model()
      >>> g = components.Gaussian()
      >>> m.append(g)
      >>> gaussians = []
@@ -516,7 +516,35 @@ and provide the legend labels:
 
 .. figure::  images/plot_spectra_color.png
   :align:   center
-  :width:   350     
+  :width:   350
+
+A simple extension of this functionality is to customize the colormap that
+is used to generate the list of colors. Using a list comprehension, one can
+generate a list of colors that follows a certain colormap:
+
+.. code-block:: python
+
+    >>> import scipy.misc
+    >>> fig, axarr = plt.subplots(1,2)
+    >>> s1 = signals.Spectrum(scipy.misc.lena()[100:160:10])
+    >>> s2 = signals.Spectrum(scipy.misc.lena()[200:260:10])
+    >>> utils.plot.plot_spectra(s1,
+    >>>                         style='cascade',
+    >>>                         color=[plt.cm.RdBu(i/float(len(s1)-1))
+    >>>                                for i in range(len(s1))],
+    >>>                         ax=axarr[0],
+    >>>                         fig=fig)
+    >>> utils.plot.plot_spectra(s2,
+    >>>                         style='cascade',
+    >>>                         color=[plt.cm.summer(i/float(len(s1)-1))
+    >>>                                for i in range(len(s1))],
+    >>>                         ax=axarr[1],
+    >>>                         fig=fig)
+    >>> fig.canvas.draw()
+
+.. figure::  images/plot_spectra_colormap.png
+  :align:   center
+  :width:   500
 
 There are also two other styles, "heatmap" and "mosaic":
 

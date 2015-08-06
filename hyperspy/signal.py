@@ -21,6 +21,7 @@ import os.path
 import warnings
 import math
 import inspect
+from contextlib import contextmanager
 
 import numpy as np
 import numpy.ma as ma
@@ -48,7 +49,7 @@ from hyperspy.drawing import signal as sigdraw
 from hyperspy.decorators import auto_replot
 from hyperspy.defaults_parser import preferences
 from hyperspy.misc.io.tools import ensure_directory
-from hyperspy.misc.progressbar import progressbar
+from hyperspy.external.progressbar import progressbar
 from hyperspy.gui.tools import (
     SpectrumCalibration,
     SmoothingSavitzkyGolay,
@@ -70,7 +71,7 @@ from hyperspy.misc import rgb_tools
 from hyperspy.gui.tools import IntegrateArea
 from hyperspy import components
 from hyperspy.misc.utils import underline
-from hyperspy.misc.borrowed.astroML.histtools import histogram
+from hyperspy.external.astroML.histtools import histogram
 from hyperspy.drawing.utils import animate_legend
 
 
@@ -465,12 +466,16 @@ class Signal1DTools(object):
             The limits of the interval. If int they are taken as the
             axis index. If float they are taken as the axis value.
 
-        All extra keyword arguments are passed to
-        scipy.interpolate.interp1d. See the function documentation
-        for details.
+        delta : {int | float}
+            The windows around the (start, end) to use for interpolation
+
         show_progressbar : None or bool
             If True, display a progress bar. If None the default is set in
             `preferences`.
+
+        All extra keyword arguments are passed to
+        scipy.interpolate.interp1d. See the function documentation
+        for details.
 
         Raises
         ------
@@ -483,6 +488,8 @@ class Signal1DTools(object):
         axis = self.axes_manager.signal_axes[0]
         i1 = axis._get_index(start)
         i2 = axis._get_index(end)
+        if isinstance(delta, float):
+            delta = int(delta / axis.scale)
         i0 = int(np.clip(i1 - delta, 0, np.inf))
         i3 = int(np.clip(i2 + delta, 0, axis.size))
         pbar = progressbar(
@@ -2809,7 +2816,7 @@ class Signal(MVA,
 
         """
 
-        self.data = np.asanyarray(file_data_dict['data'])
+        self.data = np.atleast_1d(np.asanyarray(file_data_dict['data']))
         if 'axes' not in file_data_dict:
             file_data_dict['axes'] = self._get_undefined_axes_list()
         self.axes_manager = AxesManager(
@@ -3415,7 +3422,7 @@ class Signal(MVA,
         """
         warnings.warn(
             "`unfold_if_multidim` is deprecated and will be removed in "
-            "HyperSpy 0.9. Please use `unfold` instead.")
+            "HyperSpy 0.9. Please use `unfold` instead.", DeprecationWarning)
         return None
 
     @auto_replot
@@ -3477,7 +3484,7 @@ class Signal(MVA,
             if isinstance(variance, Signal):
                 variance._unfold(steady_axes, unfolded_axis)
 
-    def unfold(self):
+    def unfold(self, unfold_navigation=True, unfold_signal=True):
         """Modifies the shape of the data by unfolding the signal and
         navigation dimensions separately
 
@@ -3487,10 +3494,39 @@ class Signal(MVA,
 
 
         """
-        nav_needed_unfolding = self.unfold_navigation_space()
-        sig_needed_unfolding = self.unfold_signal_space()
-        needed_unfolding = nav_needed_unfolding or sig_needed_unfolding
-        return needed_unfolding
+        unfolded = False
+        if unfold_navigation:
+            if self.unfold_navigation_space():
+                unfolded = True
+        if unfold_signal:
+            if self.unfold_signal_space():
+                unfolded = True
+        return unfolded
+
+    @contextmanager
+    def unfolded(self, unfold_navigation=True, unfold_signal=True):
+        """Use this function together with a `with` statement to have the
+        signal be unfolded for the scope of the `with` block, before
+        automatically refolding when passing out of scope.
+
+        See also
+        --------
+        unfold, fold
+
+        Examples
+        --------
+        >>> import numpy as np
+        >>> s = Signal(np.random.random((64,64,1024)))
+        >>> with s.unfolded():
+                # Do whatever needs doing while unfolded here
+                pass
+        """
+        unfolded = self.unfold(unfold_navigation, unfold_signal)
+        try:
+            yield unfolded
+        finally:
+            if unfolded is not False:
+                self.fold()
 
     def unfold_navigation_space(self):
         """Modify the shape of the data to obtain a navigation space of
@@ -3585,19 +3621,29 @@ class Signal(MVA,
             yield(data[getitem])
 
     def _remove_axis(self, axis):
-        axis = self.axes_manager[axis]
-        self.axes_manager.remove(axis.index_in_axes_manager)
-        if axis.navigate is False:  # The removed axis is a signal axis
-            if self.axes_manager.signal_dimension == 2:
-                self._record_by = "image"
-            elif self.axes_manager.signal_dimension == 1:
-                self._record_by = "spectrum"
-            elif self.axes_manager.signal_dimension == 0:
-                self._record_by = ""
-            else:
-                return
-            self.metadata.Signal.record_by = self._record_by
-            self._assign_subclass()
+        am = self.axes_manager
+        axis = am[axis]
+        if am.navigation_dimension + am.signal_dimension > 1:
+            am.remove(axis.index_in_axes_manager)
+            if axis.navigate is False:  # The removed axis is a signal axis
+                if am.signal_dimension == 2:
+                    self._record_by = "image"
+                elif am.signal_dimension == 1:
+                    self._record_by = "spectrum"
+                elif am.signal_dimension == 0:
+                    self._record_by = ""
+                else:
+                    return
+                self.metadata.Signal.record_by = self._record_by
+                self._assign_subclass()
+        else:
+            # Don't remove axis because it is the only one and HyperSpy does not
+            # support 0 dimensions
+            axis.size = 1
+            axis.scale = 1
+            axis.offset = 0
+            axis.name = "scalar"
+            axis.navigate = False
 
     def _apply_function_on_data_and_remove_axis(self, function, axis):
         s = self._deepcopy_with_new_data(
@@ -4030,8 +4076,8 @@ class Signal(MVA,
 
         """
         from hyperspy import signals
-
-        hist, bin_edges = histogram(img.data.flatten(),
+        data = img.data[~np.isnan(img.data)].flatten()
+        hist, bin_edges = histogram(data,
                                     bins=bins,
                                     range=range_bins,
                                     **kwargs)
@@ -4723,6 +4769,10 @@ class Signal(MVA,
             self._plot.navigator_plot.add_marker(marker)
         if plot_marker:
             marker.plot()
+
+    def create_model(self):
+        from hyperspy.model import Model
+        return Model(self)
 
 
 # Implement binary operators

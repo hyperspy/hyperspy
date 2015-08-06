@@ -30,17 +30,20 @@ from hyperspy.axes import AxesManager
 from hyperspy.drawing.widgets import DraggableVerticalLine
 
 
+OurOKButton = tu.Action(name="OK",
+                        action="OK",)
+
 OurApplyButton = tu.Action(name="Apply",
                            action="apply")
 
 OurResetButton = tu.Action(name="Reset",
                            action="reset")
 
-OurFindButton = tu.Action(name="Find",
-                          action="find")
+OurFindButton = tu.Action(name="Find next",
+                          action="find",)
 
-OurPreviousButton = tu.Action(name="Previous",
-                              action="back")
+OurPreviousButton = tu.Action(name="Find previous",
+                              action="back",)
 
 
 class SmoothingHandler(tu.Handler):
