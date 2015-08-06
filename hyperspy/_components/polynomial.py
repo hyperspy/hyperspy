@@ -68,7 +68,7 @@ class Polynomial(Component):
             self.get_polynomial_order())
         if self.name:
             text = "%s (%s)" % (self.name, text)
-        return "<%s>".encode('utf8') % text
+        return "<%s>" % text
 
     def estimate_parameters(self, signal, x1, x2, only_current=False):
         """Estimate the parameters by the two area method
