@@ -64,7 +64,8 @@ class Polynomial(Component):
             return x * 0
 
     def __repr__(self):
-        text = u"%s order Polynomial component" % ordinal(self.get_polynomial_order())
+        text = u"%s order Polynomial component" % ordinal(
+            self.get_polynomial_order())
         if self.name:
             text = u"%s (%s)" % (self.name, text)
         return u"<%s>".encode('utf8') % text
