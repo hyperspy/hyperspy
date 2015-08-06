@@ -232,23 +232,23 @@ class SpikesRemoval(SpanSelectorInSpectrum):
                             "otherwise\nshot noise is used as a default")
 
     thisOKButton = tu.Action(name="OK",
-                            action="OK",
-                            tooltip="Close the spikes removal tool")
+                             action="OK",
+                             tooltip="Close the spikes removal tool")
 
     thisApplyButton = tu.Action(name="Remove spike",
-                               action="apply",
-                               tooltip="Remove the current spike by "
+                                action="apply",
+                                tooltip="Remove the current spike by "
                                        "interpolating\n"
                                        "with the specified settings (and find\n"
                                        "the next spike automatically)")
     thisFindButton = tu.Action(name="Find next",
-                              action="find",
-                              tooltip="Find the next (in terms of navigation\n"
+                               action="find",
+                               tooltip="Find the next (in terms of navigation\n"
                                       "dimensions) spike in the data.")
 
     thisPreviousButton = tu.Action(name="Find previous",
-                                  action="back",
-                                  tooltip="Find the previous (in terms of "
+                                   action="back",
+                                   tooltip="Find the previous (in terms of "
                                           "navigation\n"
                                           "dimensions) spike in the data.")
     view = tu.View(tu.Group(
