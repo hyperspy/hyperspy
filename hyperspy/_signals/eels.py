@@ -245,7 +245,7 @@ class EELSSpectrum(Spectrum):
         def estimate_zero_loss_peak_centre(s, mask, signal_range):
             if signal_range:
                 zlpc = s.isig[signal_range[0]:signal_range[1]].\
-                        estimate_zero_loss_peak_centre(mask=mask)
+                    estimate_zero_loss_peak_centre(mask=mask)
             else:
                 zlpc = s.estimate_zero_loss_peak_centre(mask=mask)
             return zlpc
