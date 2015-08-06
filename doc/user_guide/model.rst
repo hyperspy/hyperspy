@@ -51,10 +51,10 @@ These are some of the components which are currently available:
 * :py:class:`~._components.arctan.Arctan`
 
 
+ 
+However, this doesn't mean that you have to limit yourself to this meagre list of function.
 
-
-
-.. versionadded:: 0.8.1
+.. versionadded:: 0.8.1 :py:class:`~._components.expression.Expression` component
 
 The easiest way to turn a mathematical expression into a component is using the
 :py:class:`~._components.expression.Expression` component. For example, the
@@ -140,19 +140,23 @@ a component is very easy modifying the following template:
              return x
 
 
-If you need help with
-the task please submit your question to the :ref:`users mailing list
-<http://groups.google.com/group/hyperspy-users>`. 
+If you need help with the task please submit your question to the :ref:`users
+mailing list <http://groups.google.com/group/hyperspy-users>`. 
 
 
-To print the current components in a model simply enter the name of the
-variable, e.g.:
+.. versionchanged:: 0.8.1 printing current model components
+
+To print the current components in a model use :py:attr:`components` of the
+variable. A table with component number, attribute name, component name and
+component type will be printed:
 
 .. code-block:: python
 
-    >>> m # m is the variable in which we have previously stored the model
-    []
-    >>> # [] means that the model is empty
+    >>> m 
+    <Model, title: my signal title>
+    >>> m.components # an empty model
+       # |            Attribute Name |            Component Name |            Component Type
+    ---- | ------------------------- | ------------------------- | -------------------------
 
 
 In fact, components may be created automatically in some cases. For example, if
@@ -167,8 +171,10 @@ data that can be modelled using gaussians we might proceed as follows:
 
     >>> gaussian = components.Gaussian() # Create a Gaussian function component
     >>> m.append(gaussian) # Add it to the model
-    >>> m # Print the model components
-    [<Gaussian component>]
+    >>> m.components # Print the model components
+       # |            Attribute Name |            Component Name |            Component Type
+    ---- | ------------------------- | ------------------------- | -------------------------
+       0 |                  Gaussian |                  Gaussian |                  Gaussian
     >>> gaussian2 = components.Gaussian() # Create another gaussian components
     >>> gaussian3 = components.Gaussian() # Create a third gaussian components
 
@@ -180,9 +186,13 @@ adding a list of components at once.
 
 .. code-block:: python
 
-    >>> m.extend((gaussian2, gaussian3)) #note the double brackets!
-    >>> m
-    [<Gaussian component>, <Gaussian component>, <Gaussian component>]
+    >>> m.extend((gaussian2, gaussian3)) # note the double brackets!
+    >>> m.components
+       # |            Attribute Name |            Component Name |            Component Type
+    ---- | ------------------------- | ------------------------- | -------------------------
+       0 |                  Gaussian |                  Gaussian |                  Gaussian
+       1 |                Gaussian_0 |                Gaussian_0 |                  Gaussian
+       2 |                Gaussian_1 |                Gaussian_1 |                  Gaussian
 
 
 We can customise the name of the components.
@@ -190,12 +200,14 @@ We can customise the name of the components.
 .. code-block:: python
 
     >>> gaussian.name = 'Carbon'
-    >>> gaussian2.name = 'Hydrogen'
+    >>> gaussian2.name = 'Long Hydrogen name'
     >>> gaussian3.name = 'Nitrogen'
-    >>> m
-    [<Carbon (Gaussian component)>,
-     <Hydrogen (Gaussian component)>,
-     <Nitrogen (Gaussian component)>]
+    >>> m.components
+       # |            Attribute Name |            Component Name |            Component Type
+    ---- | ------------------------- | ------------------------- | -------------------------
+       0 |                    Carbon |                    Carbon |                  Gaussian
+       1 |        Long_Hydrogen_name |        Long Hydrogen name |                  Gaussian
+       2 |                  Nitrogen |                  Nitrogen |                  Gaussian
 
 
 Two components cannot have the same name.
@@ -217,30 +229,33 @@ index in the model.
 .. code-block:: python
 
     >>> m
-    [<Carbon (Gaussian component)>,
-     <Hydrogen (Gaussian component)>,
-     <Nitrogen (Gaussian component)>]
+       # |            Attribute Name |            Component Name |            Component Type
+    ---- | ------------------------- | ------------------------- | -------------------------
+       0 |                    Carbon |                    Carbon |                  Gaussian
+       1 |        Long_Hydrogen_name |        Long Hydrogen name |                  Gaussian
+       2 |                  Nitrogen |                  Nitrogen |                  Gaussian
     >>> m[0]
     <Carbon (Gaussian component)>
-    >>> m["Carbon"]
-    <Carbon (Gaussian component)>
+    >>> m["Long Hydrogen name"]
+    <Long Hydrogen name (Gaussian component)>
 
-.. versionadded:: 0.8.1
+.. versionadded:: 0.8.1 :py:attr:`components` attribute
 
-    In addition, the components can be accessed in the
-    :py:attr:`~.model.Model.components` `Model` attribute.
-    This is specially useful when working
+In addition, the components can be accessed in the
+:py:attr:`~.model.Model.components` `Model` attribute. This is specially
+useful when working in interactive data analysis with IPython because it
+enables tab completion.
 
-    in interactive data analysis with IPython because it enables tab completion.
+.. code-block:: python
 
-    .. code-block:: python
-
-        >>> m
-        [<Carbon (Gaussian component)>,
-         <Hydrogen (Gaussian component)>,
-         <Nitrogen (Gaussian component)>]
-        >>> m.components.Carbon
-        <Carbon (Gaussian component)>
+    >>> m
+       # |            Attribute Name |            Component Name |            Component Type
+    ---- | ------------------------- | ------------------------- | -------------------------
+       0 |                    Carbon |                    Carbon |                  Gaussian
+       1 |        Long_Hydrogen_name |        Long Hydrogen name |                  Gaussian
+       2 |                  Nitrogen |                  Nitrogen |                  Gaussian
+    >>> m.components.Long_Hydrogen_name
+    <Long Hydrogen name (Gaussian component)>
 
 
 It is possible to "switch off" a component by setting its
@@ -249,35 +264,35 @@ switched off, to all effects it is as if it was not part of the model. To
 switch it on simply set the :py:attr:`~.component.Component.active` attribute
 back to `True`.
 
-.. versionadded:: 0.7.1
+.. versionadded:: 0.7.1 :py:attr:`~.component.Component.active_is_multidimensional`
 
-    In multidimensional signals it is possible to store the value of the
-    :py:attr:`~.component.Component.active` attribute at each navigation index.
-    To enable this feature for a given component set the
-    :py:attr:`~.component.Component.active_is_multidimensional` attribute to
-    `True`.
+In multidimensional signals it is possible to store the value of the
+:py:attr:`~.component.Component.active` attribute at each navigation index.
+To enable this feature for a given component set the
+:py:attr:`~.component.Component.active_is_multidimensional` attribute to
+`True`.
 
-    .. code-block:: python
+.. code-block:: python
 
-        >>> s = signals.Spectrum(np.arange(100).reshape(10,10))
-        >>> m = s.create_model()
-        >>> g1 = components.Gaussian()
-        >>> g2 = components.Gaussian()
-        >>> m.extend([g1,g2])
-        >>> g1.active_is_multidimensional = True
-        >>> g1._active_array
-        array([ True,  True,  True,  True,  True,  True,  True,  True,  True,  True], dtype=bool)
-        >>> g2._active_array is None
-        True
-        >>> m.set_component_active_value(False)
-        >>> g1._active_array
-        array([False, False, False, False, False, False, False, False, False, False], dtype=bool)
-        >>> m.set_component_active_value(True, only_current=True)
-        >>> g1._active_array
-        array([ True, False, False, False, False, False, False, False, False, False], dtype=bool)
-        >>> g1.active_is_multidimensional = False
-        >>> g1._active_array is None
-        True
+    >>> s = signals.Spectrum(np.arange(100).reshape(10,10))
+    >>> m = s.create_model()
+    >>> g1 = components.Gaussian()
+    >>> g2 = components.Gaussian()
+    >>> m.extend([g1,g2])
+    >>> g1.active_is_multidimensional = True
+    >>> g1._active_array
+    array([ True,  True,  True,  True,  True,  True,  True,  True,  True,  True], dtype=bool)
+    >>> g2._active_array is None
+    True
+    >>> m.set_component_active_value(False)
+    >>> g1._active_array
+    array([False, False, False, False, False, False, False, False, False, False], dtype=bool)
+    >>> m.set_component_active_value(True, only_current=True)
+    >>> g1._active_array
+    array([ True, False, False, False, False, False, False, False, False, False], dtype=bool)
+    >>> g1.active_is_multidimensional = False
+    >>> g1._active_array is None
+    True
 
 
 Getting and setting parameter values and attributes
@@ -610,16 +625,16 @@ the ``centre`` parameter.
 
 
 
-.. versionadded:: 0.7
+.. versionadded:: 0.7 chi-squared and reduced chi-squared
 
-    The chi-squared, reduced chi-squared and the degrees of freedom are
-    computed automatically when fitting. They are stored as signals, in the
-    :attr:`~.model.Model.chisq`, :attr:`~.model.Model.red_chisq`  and
-    :attr:`~.model.Model.dof` attributes of the model respectively. Note that,
-    unless ``metadata.Signal.Noise_properties.variance`` contains an accurate
-    estimation of the variance of the data, the chi-squared and reduced
-    chi-squared cannot be computed correctly. This is also true for
-    homocedastic noise.
+The chi-squared, reduced chi-squared and the degrees of freedom are
+computed automatically when fitting. They are stored as signals, in the
+:attr:`~.model.Model.chisq`, :attr:`~.model.Model.red_chisq`  and
+:attr:`~.model.Model.dof` attributes of the model respectively. Note that,
+unless ``metadata.Signal.Noise_properties.variance`` contains an accurate
+estimation of the variance of the data, the chi-squared and reduced
+chi-squared cannot be computed correctly. This is also true for
+homocedastic noise.
 
 .. _model.visualization:
 
@@ -645,12 +660,12 @@ is possible to display the individual components by calling
 
 To disable this feature call :py:meth:`~.model.Model.disable_plot_components`.
 
-.. versionadded:: 0.7.1
+.. versionadded:: 0.7.1 :py:meth:`~.model.Model.suspend_update` and :py:meth:`~.model.Model.resume_update`
 
-   By default the model plot is automatically updated when any parameter value
-   changes. It is possible to suspend this feature with
-   :py:meth:`~.model.Model.suspend_update`. To resume it use
-   :py:meth:`~.model.Model.resume_update`.
+By default the model plot is automatically updated when any parameter value
+changes. It is possible to suspend this feature with
+:py:meth:`~.model.Model.suspend_update`. To resume it use
+:py:meth:`~.model.Model.resume_update`.
 
 
 .. _model.starting:
@@ -669,20 +684,21 @@ by hand.
 
 
 
-.. versionadded:: 0.6
+.. versionadded:: 0.6 
+    :py:meth:`~.model.Model.enable_adjust_position` and 
+    :py:meth:`~.model.Model.disable_adjust_position`
 
-    Also, :py:meth:`~.model.Model.enable_adjust_position` provides an
-    interactive way of setting the position of the components with a well
-    define position.  :py:meth:`~.model.Model.disable_adjust_position` disables
-    the tool.
+Also, :py:meth:`~.model.Model.enable_adjust_position` provides an interactive
+way of setting the position of the components with a well define position.
+:py:meth:`~.model.Model.disable_adjust_position` disables the tool.
 
 
-    .. figure::  images/model_adjust_position.png
-        :align:   center
-        :width:   500
+.. figure::  images/model_adjust_position.png
+    :align:   center
+    :width:   500
 
-        Interactive component position adjustment tool.Drag the vertical lines
-        to set the initial value of the position parameter.
+    Interactive component position adjustment tool.Drag the vertical lines
+    to set the initial value of the position parameter.
 
 
 

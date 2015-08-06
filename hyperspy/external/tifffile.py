@@ -3832,7 +3832,7 @@ AXES_LABELS = {
     'L': 'exposure',  # lux
     'V': 'event',
     'Q': 'other',
-    #'M': 'mosaic',  # LSM 6
+    # 'M': 'mosaic',  # LSM 6
 }
 
 AXES_LABELS.update(dict((v, k) for k, v in AXES_LABELS.items()))
