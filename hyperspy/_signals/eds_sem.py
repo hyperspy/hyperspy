@@ -56,9 +56,9 @@ class EDSSEMSpectrum(EDSSpectrum):
 
         Examples
         --------
-        >>> ref = hs.example_signals.EDS_SEM_Spectrum()
+        >>> ref = hs.datasets.example_signals.EDS_SEM_Spectrum()
         >>> s = hs.signals.EDSSEMSpectrum(
-        >>>     hs.example_signals.EDS_SEM_Spectrum().data)
+        >>>     hs.datasets.example_signals.EDS_SEM_Spectrum().data)
         >>> print s.axes_manager[0].scale
         >>> s.get_calibration_from(ref)
         >>> print s.axes_manager[0].scale
@@ -164,7 +164,7 @@ class EDSSEMSpectrum(EDSSpectrum):
 
         Examples
         --------
-        >>> s = hs.example_signals.EDS_SEM_Spectrum()
+        >>> s = hs.datasets.example_signals.EDS_SEM_Spectrum()
         >>> print('Default value %s eV' %
         >>>       s.metadata.Acquisition_instrument.
         >>>       SEM.Detector.EDS.energy_resolution_MnKa)
