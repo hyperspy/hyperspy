@@ -656,7 +656,7 @@ class ImageContrastHandler(tu.Handler):
         info.object.close()
         return True
 
-    def apply(self, info, *args, **kwargs):
+    def apply(self, info):
         """Handles the **Apply** button being clicked.
 
         """
@@ -666,7 +666,7 @@ class ImageContrastHandler(tu.Handler):
         return
 
     @staticmethod
-    def reset(info, *args, **kwargs):
+    def reset(info):
         """Handles the **Apply** button being clicked.
 
         """
@@ -675,7 +675,7 @@ class ImageContrastHandler(tu.Handler):
         return
 
     @staticmethod
-    def our_help(info, *args, **kwargs):
+    def our_help(info):
         """Handles the **Apply** button being clicked.
 
         """

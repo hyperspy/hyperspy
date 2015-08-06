@@ -68,7 +68,7 @@ class EELSModel(Model):
 
     def __init__(self, spectrum, auto_background=True,
                  auto_add_edges=True, ll=None,
-                 GOS=None, *args, **kwargs):
+                 GOS=None):
         Model.__init__(self, spectrum)
         self._suspend_auto_fine_structure_width = False
         self.convolved = False
