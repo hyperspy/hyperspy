@@ -77,6 +77,12 @@ def get_derivative(signal, diff_axes, diff_order):
     return signal
 
 
+def _normalize_components(target, other, function=np.sum):
+    coeff = function(target, axis=0)
+    target /= coeff
+    other *= coeff
+
+
 class MVA():
 
     """
@@ -662,7 +668,7 @@ class MVA():
 
     def normalize_factors(self, which='bss', by='area', sort=True):
         """Normalises the factors and modifies the loadings
-        accordingly
+        accordingly.
 
         Parameters
         ----------
@@ -671,6 +677,11 @@ class MVA():
         sort : bool
 
         """
+        warnings.warn(
+            "This function is deprecated an will be removed in HyperSpy 0.9. "
+            "Use `normalize_decomposition_components` or "
+            "`normalize_bss_components` instead.", DeprecationWarning)
+
         if which == 'bss':
             factors = self.learning_results.bss_factors
             loadings = self.learning_results.bss_loadings
@@ -693,12 +704,62 @@ class MVA():
         else:
             raise ValueError("by must be max or mean")
 
-        factors /= by(factors, 0)
-        loadings *= by(factors, 0)
+        _normalize_components(factors, loadings, by)
         sorting_indices = np.argsort(loadings.max(0))
         factors[:] = factors[:, sorting_indices]
         loadings[:] = loadings[:, sorting_indices]
         loadings[:] = loadings[:, sorting_indices]
+
+    def normalize_decomposition_components(self, target='factors',
+                                           function=np.sum):
+        """Normalize decomposition components.
+
+        Parameters
+        ----------
+        target : {"factors", "loadings"}
+        function : numpy universal function, optional, default np.sum
+            Each target component is divided by the output of function(target).
+            `function` must return a scalar when operating on numpy arrays and
+            must have an `axis`.
+
+        """
+        if target == 'factors':
+            target = self.learning_results.factors
+            other = self.learning_results.loadings
+        elif target == 'loadings':
+            target = self.learning_results.loadings
+            other = self.learning_results.factors
+        else:
+            raise ValueError("target must be \"factors\" or \"loadings\"")
+        if target is None:
+            raise Exception("This method can only be used after "
+                            "decomposition operation.")
+        _normalize_components(target=target, other=other, function=function)
+
+    def normalize_bss_components(self, target='factors', function=np.sum):
+        """Normalize BSS components.
+
+        Parameters
+        ----------
+        target : {"factors", "loadings"}
+        function : numpy universal function, optional, default np.sum
+            Each target component is divided by the output of function(target).
+            `function` must return a scalar when operating on numpy arrays and
+            must have an `axis`.
+
+        """
+        if target == 'factors':
+            target = self.learning_results.bss_factors
+            other = self.learning_results.bss_loadings
+        elif target == 'loadings':
+            target = self.learning_results.bss_loadings
+            other = self.learning_results.bss_factors
+        else:
+            raise ValueError("target must be \"factors\" or \"loadings\"")
+        if target is None:
+            raise Exception("This method can only be used after "
+                            "a blind source separation operation.")
+        _normalize_components(target=target, other=other, function=function)
 
     def reverse_decomposition_component(self, component_number):
         """Reverse the decomposition component
@@ -814,15 +875,17 @@ class MVA():
                 mva_type, components)
 
         self._unfolded4decomposition = self.unfold()
-
-        sc = self.deepcopy()
-        sc.data = a.T.reshape(self.data.shape)
-        sc.metadata.General.title += signal_name
-        if target.mean is not None:
-            sc.data += target.mean
-        if self._unfolded4decomposition is True:
-            self.fold()
-            sc.fold()
+        try:
+            sc = self.deepcopy()
+            sc.data = a.T.reshape(self.data.shape)
+            sc.metadata.General.title += signal_name
+            if target.mean is not None:
+                sc.data += target.mean
+        finally:
+            if self._unfolded4decomposition is True:
+                self.fold()
+                sc.fold()
+                self._unfolded4decomposition = False
         return sc
 
     def get_decomposition_model(self, components=None):
@@ -967,46 +1030,42 @@ class MVA():
         messages.information(
             "Scaling the data to normalize the (presumably)"
             " Poissonian noise")
-        refold = self.unfold()
-        # The rest of the code assumes that the first data axis
-        # is the navigation axis. We transpose the data if that is not the
-        # case.
-        dc = (self.data if self.axes_manager[0].index_in_array == 0
-              else self.data.T)
-        if navigation_mask is None:
-            navigation_mask = slice(None)
-        else:
-            navigation_mask = ~navigation_mask.ravel()
-        if signal_mask is None:
-            signal_mask = slice(None)
-        else:
-            signal_mask = ~signal_mask
-        # Rescale the data to gaussianize the poissonian noise
-        aG = dc[:, signal_mask][navigation_mask, :].sum(1).squeeze()
-        bH = dc[:, signal_mask][navigation_mask, :].sum(0).squeeze()
-        # Checks if any is negative
-        if (aG < 0).any() or (bH < 0).any():
-            raise ValueError(
-                "Data error: negative values\n"
-                "Are you sure that the data follow a poissonian "
-                "distribution?")
+        with self.unfolded():
+            # The rest of the code assumes that the first data axis
+            # is the navigation axis. We transpose the data if that is not the
+            # case.
+            dc = (self.data if self.axes_manager[0].index_in_array == 0
+                  else self.data.T)
+            if navigation_mask is None:
+                navigation_mask = slice(None)
+            else:
+                navigation_mask = ~navigation_mask.ravel()
+            if signal_mask is None:
+                signal_mask = slice(None)
+            else:
+                signal_mask = ~signal_mask
+            # Rescale the data to gaussianize the poissonian noise
+            aG = dc[:, signal_mask][navigation_mask, :].sum(1).squeeze()
+            bH = dc[:, signal_mask][navigation_mask, :].sum(0).squeeze()
+            # Checks if any is negative
+            if (aG < 0).any() or (bH < 0).any():
+                raise ValueError(
+                    "Data error: negative values\n"
+                    "Are you sure that the data follow a poissonian "
+                    "distribution?")
 
-        self._root_aG = np.sqrt(aG)[:, np.newaxis]
-        self._root_bH = np.sqrt(bH)[np.newaxis, :]
-        # We first disable numpy's warning when the result of an
-        # operation produces nans
-        np.seterr(invalid='ignore')
-        dc[:, signal_mask][navigation_mask, :] /= (self._root_aG *
-                                                   self._root_bH)
-        # Enable numpy warning
-        np.seterr(invalid=None)
-        # Set the nans resulting from 0/0 to zero
-        dc[:, signal_mask][navigation_mask, :] = \
-            np.nan_to_num(dc[:, signal_mask][navigation_mask, :])
-
-        if refold is True:
-            print "Automatically refolding the SI after scaling"
-            self.fold()
+            self._root_aG = np.sqrt(aG)[:, np.newaxis]
+            self._root_bH = np.sqrt(bH)[np.newaxis, :]
+            # We first disable numpy's warning when the result of an
+            # operation produces nans
+            np.seterr(invalid='ignore')
+            dc[:, signal_mask][navigation_mask, :] /= (self._root_aG *
+                                                       self._root_bH)
+            # Enable numpy warning
+            np.seterr(invalid=None)
+            # Set the nans resulting from 0/0 to zero
+            dc[:, signal_mask][navigation_mask, :] = \
+                np.nan_to_num(dc[:, signal_mask][navigation_mask, :])
 
     def undo_treatments(self):
         """Undo normalize_poissonian_noise"""
