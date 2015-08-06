@@ -49,7 +49,7 @@ class Rectangle(MarkerBase):
     -------
     >>> import scipy.misc
     >>> im = hs.signals.Image(scipy.misc.lena())
-    >>> m = hs.utils.plot.markers.rectangle(x1=150, y1=100, x2=400, y2=400,
+    >>> m = hs.plot.markers.rectangle(x1=150, y1=100, x2=400, y2=400,
     >>>                                  color='red')
     >>> im.add_marker(m)
 

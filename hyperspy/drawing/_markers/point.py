@@ -40,7 +40,7 @@ class Point(MarkerBase):
     Example
     -------
     >>> im = hs.signals.Image(np.random.random([10, 50, 50]))
-    >>> m = hs.utils.plot.markers.point(x=range(10), y=range(10)[::-1],
+    >>> m = hs.plot.markers.point(x=range(10), y=range(10)[::-1],
                                      color='red')
     >>> im.add_marker(m)
 
@@ -51,7 +51,7 @@ class Point(MarkerBase):
     >>> index = array([peak_local_max(i.data, min_distance=100, num_peaks=4)
     >>>                for i in im])
     >>> for i in range(4):
-    >>>     m = hs.utils.plot.markers.point(x=index[:, i, 1],
+    >>>     m = hs.plot.markers.point(x=index[:, i, 1],
     >>>                                  y=index[:, i, 0], color='red')
     >>>     im.add_marker(m)
     """

@@ -142,7 +142,7 @@ class Model(list):
 
     >>> s = hs.signals.Spectrum(
             np.random.normal(scale=2, size=10000)).get_histogram()
-    >>> g = hs.components.Gaussian()
+    >>> g = hs.model.components.Gaussian()
     >>> m = s.create_model()
     >>> m.append(g)
     >>> m.print_current_values()
@@ -305,7 +305,7 @@ class Model(list):
 
         >>> s = hs.signals.Spectrum(np.empty(1))
         >>> m = s.create_model()
-        >>> g = hs.components.Gaussian()
+        >>> g = hs.model.components.Gaussian()
         >>> m.append(g)
 
         You could remove `g` like this
@@ -413,8 +413,8 @@ class Model(list):
         --------
         >>> s = hs.signals.Spectrum(np.random.random((10,100)))
         >>> m = s.create_model()
-        >>> l1 = hs.components.Lorentzian()
-        >>> l2 = hs.components.Lorentzian()
+        >>> l1 = hs.model.components.Lorentzian()
+        >>> l2 = hs.model.components.Lorentzian()
         >>> m.append(l1)
         >>> m.append(l2)
         >>> s1 = m.as_signal()
@@ -1819,7 +1819,7 @@ class Model(list):
         --------
         Signal range set interactivly
 
-        >>> g1 = hs.components.Gaussian()
+        >>> g1 = hs.model.components.Gaussian()
         >>> m.append(g1)
         >>> m.fit_component(g1)
 
@@ -1854,7 +1854,7 @@ class Model(list):
 
         Examples
         --------
-        >>> v1 = hs.components.Voigt()
+        >>> v1 = hs.model.components.Voigt()
         >>> m.append(v1)
         >>> m.set_parameters_not_free()
 
@@ -1898,7 +1898,7 @@ class Model(list):
 
         Examples
         --------
-        >>> v1 = hs.components.Voigt()
+        >>> v1 = hs.model.components.Voigt()
         >>> m.append(v1)
         >>> m.set_parameters_free()
         >>> m.set_parameters_free(component_list=[v1],
@@ -1948,8 +1948,8 @@ class Model(list):
 
         Examples
         --------
-        >>> v1 = hs.components.Voigt()
-        >>> v2 = hs.components.Voigt()
+        >>> v1 = hs.model.components.Voigt()
+        >>> v2 = hs.model.components.Voigt()
         >>> m.extend([v1,v2])
         >>> m.set_parameters_value('area', 5)
         >>> m.set_parameters_value('area', 5, component_list=[v1])
@@ -1995,8 +1995,8 @@ class Model(list):
 
         Examples
         --------
-        >>> v1 = hs.components.Voigt()
-        >>> v2 = hs.components.Voigt()
+        >>> v1 = hs.model.components.Voigt()
+        >>> v2 = hs.model.components.Voigt()
         >>> m.extend([v1,v2])
         >>> m.set_component_active_value(False)
         >>> m.set_component_active_value(True, component_list=[v1])

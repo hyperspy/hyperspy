@@ -22,7 +22,7 @@ def _weight_to_atomic(weight_percent, elements):
         Composition in atomic percent.
 
     Calculate the atomic percent of modern bronze given its weight percent:
-    >>> hs.utils.material.weight_to_atomic((88, 12), ("Cu", "Sn"))
+    >>> hs.material.weight_to_atomic((88, 12), ("Cu", "Sn"))
     array([ 93.19698614,   6.80301386])
 
     """
@@ -63,7 +63,7 @@ def weight_to_atomic(weight_percent, elements='auto'):
     Examples
     --------
     Calculate the atomic percent of modern bronze given its weight percent:
-    >>> hs.utils.material.weight_to_atomic((88, 12), ("Cu", "Sn"))
+    >>> hs.material.weight_to_atomic((88, 12), ("Cu", "Sn"))
     array([ 93.19698614,   6.80301386])
 
     """
@@ -99,7 +99,7 @@ def _atomic_to_weight(atomic_percent, elements):
     Examples
     --------
     Calculate the weight percent of modern bronze given its atomic percent:
-    >>> hs.utils.material.atomic_to_weight([93.2, 6.8], ("Cu", "Sn"))
+    >>> hs.material.atomic_to_weight([93.2, 6.8], ("Cu", "Sn"))
     array([ 88.00501989,  11.99498011])
 
     """
@@ -140,7 +140,7 @@ def atomic_to_weight(atomic_percent, elements='auto'):
     Examples
     --------
     Calculate the weight percent of modern bronze given its atomic percent:
-    >>> hs.utils.material.atomic_to_weight([93.2, 6.8], ("Cu", "Sn"))
+    >>> hs.material.atomic_to_weight([93.2, 6.8], ("Cu", "Sn"))
     array([ 88.00501989,  11.99498011])
 
     """
@@ -183,7 +183,7 @@ def _density_of_mixture_of_pure_elements(weight_percent,
     Examples
     --------
     Calculate the density of modern bronze given its weight percent:
-    >>> hs.utils.material.density_of_mixture_of_pure_elements(
+    >>> hs.material.density_of_mixture_of_pure_elements(
             (88, 12),("Cu", "Sn"))
     8.6903187973131466
 
@@ -244,7 +244,7 @@ def density_of_mixture_of_pure_elements(weight_percent,
     Examples
     --------
     Calculate the density of modern bronze given its weight percent:
-    >>> hs.utils.material.density_of_mixture_of_pure_elements(
+    >>> hs.material.density_of_mixture_of_pure_elements(
             (88, 12),("Cu", "Sn"))
     8.6903187973131466
 

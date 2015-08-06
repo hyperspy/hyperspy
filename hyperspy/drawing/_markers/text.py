@@ -42,10 +42,10 @@ class Text(MarkerBase):
     >>> s = hs.signals.Spectrum(np.arange(100).reshape([10,10]))
     >>> s.plot(navigator='spectrum')
     >>> for i in range(10):
-    >>>     m = hs.utils.plot.markers.text(y=range(50,1000,100)[i],
+    >>>     m = hs.plot.markers.text(y=range(50,1000,100)[i],
     >>>                                 x=i, text='abcdefghij'[i])
     >>>     s.add_marker(m, plot_on_signal=False)
-    >>> m = hs.utils.plot.markers.text(x=5, y=range(7,110, 10),
+    >>> m = hs.plot.markers.text(x=5, y=range(7,110, 10),
     >>>                             text=[i for i in 'abcdefghij'])
     >>> s.add_marker(m)
 
