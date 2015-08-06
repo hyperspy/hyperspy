@@ -42,7 +42,6 @@ from hyperspy.misc.utils import stack
 from hyperspy.misc.hspy_warnings import VisibleDeprecationWarning
 
 
-
 def centering_and_whitening(X):
     X = X.T
     # Centering the columns (ie the variables)

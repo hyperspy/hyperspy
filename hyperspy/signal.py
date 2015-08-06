@@ -75,6 +75,7 @@ from hyperspy.external.astroML.histtools import histogram
 from hyperspy.drawing.utils import animate_legend
 from hyperspy.misc.hspy_warnings import VisibleDeprecationWarning
 
+
 class Signal2DTools(object):
 
     def estimate_shift2D(self,
