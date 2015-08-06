@@ -73,7 +73,7 @@ from hyperspy import components
 from hyperspy.misc.utils import underline
 from hyperspy.external.astroML.histtools import histogram
 from hyperspy.drawing.utils import animate_legend
-
+from hyperspy.misc.hspy_warnings import VisibleDeprecationWarning
 
 class Signal2DTools(object):
 
@@ -3422,7 +3422,8 @@ class Signal(MVA,
         """
         warnings.warn(
             "`unfold_if_multidim` is deprecated and will be removed in "
-            "HyperSpy 0.9. Please use `unfold` instead.", DeprecationWarning)
+            "HyperSpy 0.9. Please use `unfold` instead.",
+            VisibleDeprecationWarning)
         return None
 
     @auto_replot

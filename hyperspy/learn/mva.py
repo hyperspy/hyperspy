@@ -39,6 +39,8 @@ from hyperspy.decorators import do_not_replot
 from scipy import linalg
 from hyperspy.misc.machine_learning.orthomax import orthomax
 from hyperspy.misc.utils import stack
+from hyperspy.misc.hspy_warnings import VisibleDeprecationWarning
+
 
 
 def centering_and_whitening(X):
@@ -502,7 +504,7 @@ class MVA():
                     "HyperSpy 0.9 and newer. From them on only passing "
                     "factors as HyperSpy Signal instances will be "
                     "supported.",
-                    DeprecationWarning)
+                    VisibleDeprecationWarning)
                 # We proceed supposing that the factors are spectra stacked
                 # over the last dimension to reproduce the deprecated
                 # behaviour.
@@ -538,7 +540,7 @@ class MVA():
                 warnings.warn(
                     "Bare numpy array masks are deprecated and will be removed"
                     " in next HyperSpy 0.9.",
-                    DeprecationWarning)
+                    VisibleDeprecationWarning)
                 ref_shape = ref_shape[::-1]
                 if mask.shape != ref_shape:
                     raise ValueError(
@@ -680,7 +682,7 @@ class MVA():
         warnings.warn(
             "This function is deprecated an will be removed in HyperSpy 0.9. "
             "Use `normalize_decomposition_components` or "
-            "`normalize_bss_components` instead.", DeprecationWarning)
+            "`normalize_bss_components` instead.", VisibleDeprecationWarning)
 
         if which == 'bss':
             factors = self.learning_results.bss_factors
