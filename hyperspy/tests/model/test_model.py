@@ -2,6 +2,7 @@ import numpy as np
 import nose.tools
 
 import hyperspy.hspy as hs
+from hyperspy.misc.utils import slugify
 
 
 class TestModel:
@@ -83,6 +84,31 @@ class TestModel:
         m.remove(g1.name)
         nose.tools.assert_equal(len(m), 0)
 
+    def test_delete_component_by_index(self):
+        m = self.model
+        g1 = hs.components.Gaussian()
+        m.append(g1)
+        del m[0]
+        nose.tools.assert_not_in(g1, m)
+
+    def test_delete_component_by_name(self):
+        m = self.model
+        g1 = hs.components.Gaussian()
+        m.append(g1)
+        del m[g1.name]
+        nose.tools.assert_not_in(g1, m)
+
+    def test_delete_slice(self):
+        m = self.model
+        g1 = hs.components.Gaussian()
+        g2 = hs.components.Gaussian()
+        g3 = hs.components.Gaussian()
+        m.extend([g1, g2, g3])
+        del m[:2]
+        nose.tools.assert_not_in(g1, m)
+        nose.tools.assert_not_in(g2, m)
+        nose.tools.assert_in(g3, m)
+
     def test_get_component_by_name(self):
         m = self.model
         g1 = hs.components.Gaussian()
@@ -115,6 +141,46 @@ class TestModel:
         g2.name = "test"
         m.extend((g1, g2))
         m._get_component(1.2)
+
+    def test_components_class_default(self):
+        m = self.model
+        g1 = hs.components.Gaussian()
+        m.append(g1)
+        nose.tools.assert_is(getattr(m.components, g1.name), g1)
+
+    def test_components_class_change_name(self):
+        m = self.model
+        g1 = hs.components.Gaussian()
+        m.append(g1)
+        g1.name = "test"
+        nose.tools.assert_is(getattr(m.components, g1.name), g1)
+
+    @nose.tools.raises(AttributeError)
+    def test_components_class_change_name_del_default(self):
+        m = self.model
+        g1 = hs.components.Gaussian()
+        m.append(g1)
+        g1.name = "test"
+        getattr(m.components, "Gaussian")
+
+    def test_components_class_change_invalid_name(self):
+        m = self.model
+        g1 = hs.components.Gaussian()
+        m.append(g1)
+        g1.name = "1, Test This!"
+        nose.tools.assert_is(
+            getattr(m.components,
+                    slugify(g1.name, valid_variable_name=True)), g1)
+
+    @nose.tools.raises(AttributeError)
+    def test_components_class_change_name_del_default(self):
+        m = self.model
+        g1 = hs.components.Gaussian()
+        m.append(g1)
+        invalid_name = "1, Test This!"
+        g1.name = invalid_name
+        g1.name = "test"
+        getattr(m.components, slugify(invalid_name))
 
 
 class TestModelFitBinned:

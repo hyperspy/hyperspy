@@ -429,7 +429,7 @@ class Parameter(t.HasTraits):
         for axis in s.axes_manager._axes:
             axis.navigate = False
         if self._number_of_elements > 1:
-            s.axes_manager.append_axis(
+            s.axes_manager._append_axis(
                 size=self._number_of_elements,
                 name=self.name,
                 navigate=True)
@@ -558,8 +558,11 @@ class Component(t.HasTraits):
                         raise ValueError(
                             "Another component already has "
                             "the name " + str(value))
-                else:
-                    self._name = value
+            self._name = value
+            setattr(self.model.components, slugify(
+                value, valid_variable_name=True), self)
+            self.model.components.__delattr__(
+                slugify(old_value, valid_variable_name=True))
         else:
             self._name = value
         self.trait_property_changed('name', old_value, self._name)

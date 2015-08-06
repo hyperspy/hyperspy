@@ -73,6 +73,7 @@ from hyperspy import components
 from hyperspy.misc.utils import underline
 from hyperspy.external.astroML.histtools import histogram
 from hyperspy.drawing.utils import animate_legend
+from hyperspy.misc.hspy_warnings import VisibleDeprecationWarning
 
 
 class Signal2DTools(object):
@@ -466,12 +467,16 @@ class Signal1DTools(object):
             The limits of the interval. If int they are taken as the
             axis index. If float they are taken as the axis value.
 
-        All extra keyword arguments are passed to
-        scipy.interpolate.interp1d. See the function documentation
-        for details.
+        delta : {int | float}
+            The windows around the (start, end) to use for interpolation
+
         show_progressbar : None or bool
             If True, display a progress bar. If None the default is set in
             `preferences`.
+
+        All extra keyword arguments are passed to
+        scipy.interpolate.interp1d. See the function documentation
+        for details.
 
         Raises
         ------
@@ -484,6 +489,8 @@ class Signal1DTools(object):
         axis = self.axes_manager.signal_axes[0]
         i1 = axis._get_index(start)
         i2 = axis._get_index(end)
+        if isinstance(delta, float):
+            delta = int(delta / axis.scale)
         i0 = int(np.clip(i1 - delta, 0, np.inf))
         i3 = int(np.clip(i2 + delta, 0, axis.size))
         pbar = progressbar(
@@ -3416,7 +3423,8 @@ class Signal(MVA,
         """
         warnings.warn(
             "`unfold_if_multidim` is deprecated and will be removed in "
-            "HyperSpy 0.9. Please use `unfold` instead.", DeprecationWarning)
+            "HyperSpy 0.9. Please use `unfold` instead.",
+            VisibleDeprecationWarning)
         return None
 
     @auto_replot
