@@ -18,7 +18,7 @@
 
 
 import nose.tools as nt
-from hyperspy.misc import progressbar
+from hyperspy.external import progressbar
 
 
 class TestProgressBar:
