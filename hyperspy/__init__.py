@@ -15,7 +15,7 @@ needed for data analysis.
 
 %s
 
-More details in the :mod:`~hyperspy.hspy` docstring.
+More details in the :mod:`~hyperspy.api` docstring.
 
 """ % docstrings.START_HSPY
 

@@ -711,7 +711,7 @@ class EDSSpectrum(Spectrum):
 
         See also
         --------
-        hs.utils.eds.take_off_angle
+        hs.eds.take_off_angle
 
         Notes
         -----

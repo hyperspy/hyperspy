@@ -21,7 +21,7 @@ import nose.tools
 
 from hyperspy.components import VolumePlasmonDrude, Lorentzian
 from hyperspy.misc.eels.tools import eels_constant
-import hyperspy.hspy as hs
+import hyperspy.api as hs
 
 
 class Test2D:

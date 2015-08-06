@@ -1,37 +1,7 @@
 """
 
-All public packages, functions and classes are in this package. When using
-HyperSpy, it is recommended to import the :mod:`~hyperspy.hspy`
-package as follows:
-
-    from hyperspy import hspy as hs
-
-Functions:
-
-    get_configuration_directory_path
-        Return the configuration directory path.
-
-    load
-        Load data into Signal instances from supported files.
-
-    preferences
-        Preferences class instance to configure the default value of different
-        parameters. It has a CLI and a GUI that can be started by execting its
-        `gui` method i.e. `preferences.gui()`.
-
-
-The :mod:`~hyperspy.hspy` package contains the following subpackages:
-
-    :mod:`~hyperspy.hspy.signals`
-        Specialized Signal instances.
-
-    :mod:`~hyperspy.hspy.utils`
-        Functions that operate of Signal instances and other goodies.
-
-    :mod:`~hyperspy.hspy.components`
-        Components that can be used to create a model for curve fitting.
-
-For more details see their docstrings.
+This module is deprecated and will be removed in HyperSpy 0.10,
+plese use :mod:`~hyperspy.api` instead.
 
 """
 # -*- coding: utf-8 -*-

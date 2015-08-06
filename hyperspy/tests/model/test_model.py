@@ -1,7 +1,7 @@
 import numpy as np
 import nose.tools
 
-import hyperspy.hspy as hs
+import hyperspy.api as hs
 
 
 class TestModel:
@@ -13,16 +13,16 @@ class TestModel:
 
     def test_access_component_by_name(self):
         m = self.model
-        g1 = hs.components.Gaussian()
-        g2 = hs.components.Gaussian()
+        g1 = hs.model.components.Gaussian()
+        g2 = hs.model.components.Gaussian()
         g2.name = "test"
         m.extend((g1, g2))
         nose.tools.assert_is(m["test"], g2)
 
     def test_access_component_by_index(self):
         m = self.model
-        g1 = hs.components.Gaussian()
-        g2 = hs.components.Gaussian()
+        g1 = hs.model.components.Gaussian()
+        g2 = hs.model.components.Gaussian()
         g2.name = "test"
         m.extend((g1, g2))
         nose.tools.assert_is(m[1], g2)
@@ -30,9 +30,9 @@ class TestModel:
     def test_component_name_when_append(self):
         m = self.model
         gs = [
-            hs.components.Gaussian(),
-            hs.components.Gaussian(),
-            hs.components.Gaussian()]
+            hs.model.components.Gaussian(),
+            hs.model.components.Gaussian(),
+            hs.model.components.Gaussian()]
         m.extend(gs)
         nose.tools.assert_is(m['Gaussian'], gs[0])
         nose.tools.assert_is(m['Gaussian_0'], gs[1])
@@ -42,13 +42,13 @@ class TestModel:
     def test_several_component_with_same_name(self):
         m = self.model
         gs = [
-            hs.components.Gaussian(),
-            hs.components.Gaussian(),
-            hs.components.Gaussian()]
+            hs.model.components.Gaussian(),
+            hs.model.components.Gaussian(),
+            hs.model.components.Gaussian()]
         m.extend(gs)
-        m[0]._name = "hs.components.Gaussian"
-        m[1]._name = "hs.components.Gaussian"
-        m[2]._name = "hs.components.Gaussian"
+        m[0]._name = "hs.model.components.Gaussian"
+        m[1]._name = "hs.model.components.Gaussian"
+        m[2]._name = "hs.model.components.Gaussian"
         m['Gaussian']
 
     @nose.tools.raises(ValueError)
@@ -59,50 +59,50 @@ class TestModel:
     @nose.tools.raises(ValueError)
     def test_component_already_in_model(self):
         m = self.model
-        g1 = hs.components.Gaussian()
+        g1 = hs.model.components.Gaussian()
         m.extend((g1, g1))
 
     def test_remove_component(self):
         m = self.model
-        g1 = hs.components.Gaussian()
+        g1 = hs.model.components.Gaussian()
         m.append(g1)
         m.remove(g1)
         nose.tools.assert_equal(len(m), 0)
 
     def test_remove_component_by_index(self):
         m = self.model
-        g1 = hs.components.Gaussian()
+        g1 = hs.model.components.Gaussian()
         m.append(g1)
         m.remove(0)
         nose.tools.assert_equal(len(m), 0)
 
     def test_remove_component_by_name(self):
         m = self.model
-        g1 = hs.components.Gaussian()
+        g1 = hs.model.components.Gaussian()
         m.append(g1)
         m.remove(g1.name)
         nose.tools.assert_equal(len(m), 0)
 
     def test_get_component_by_name(self):
         m = self.model
-        g1 = hs.components.Gaussian()
-        g2 = hs.components.Gaussian()
+        g1 = hs.model.components.Gaussian()
+        g2 = hs.model.components.Gaussian()
         g2.name = "test"
         m.extend((g1, g2))
         nose.tools.assert_is(m._get_component("test"), g2)
 
     def test_get_component_by_index(self):
         m = self.model
-        g1 = hs.components.Gaussian()
-        g2 = hs.components.Gaussian()
+        g1 = hs.model.components.Gaussian()
+        g2 = hs.model.components.Gaussian()
         g2.name = "test"
         m.extend((g1, g2))
         nose.tools.assert_is(m._get_component(1), g2)
 
     def test_get_component_by_component(self):
         m = self.model
-        g1 = hs.components.Gaussian()
-        g2 = hs.components.Gaussian()
+        g1 = hs.model.components.Gaussian()
+        g2 = hs.model.components.Gaussian()
         g2.name = "test"
         m.extend((g1, g2))
         nose.tools.assert_is(m._get_component(g2), g2)
@@ -110,8 +110,8 @@ class TestModel:
     @nose.tools.raises(ValueError)
     def test_get_component_wrong(self):
         m = self.model
-        g1 = hs.components.Gaussian()
-        g2 = hs.components.Gaussian()
+        g1 = hs.model.components.Gaussian()
+        g2 = hs.model.components.Gaussian()
         g2.name = "test"
         m.extend((g1, g2))
         m._get_component(1.2)
@@ -126,7 +126,7 @@ class TestModelFitBinned:
                 scale=2,
                 size=10000)).get_histogram()
         s.metadata.Signal.binned = True
-        g = hs.components.Gaussian()
+        g = hs.model.components.Gaussian()
         m = s.create_model()
         m.append(g)
         g.sigma.value = 1
@@ -208,7 +208,7 @@ class TestModelWeighted:
         s.axes_manager[0].offset = 10
         s.add_poissonian_noise()
         m = s.create_model()
-        m.append(hs.components.Polynomial(1))
+        m.append(hs.model.components.Polynomial(1))
         self.m = m
 
     def test_fit_leastsq_binned(self):
@@ -292,7 +292,7 @@ class TestModelScalarVariance:
     def setUp(self):
         s = hs.signals.SpectrumSimulation(np.ones(100))
         m = s.create_model()
-        m.append(hs.components.Offset())
+        m.append(hs.model.components.Offset())
         self.s = s
         self.m = m
 
@@ -353,7 +353,7 @@ class TestModelSignalVariance:
         s.metadata.set_item("Signal.Noise_properties.variance",
                             variance + std ** 2)
         m = s.create_model()
-        m.append(hs.components.Polynomial(order=1))
+        m.append(hs.model.components.Polynomial(order=1))
         self.s = s
         self.m = m
 
@@ -372,7 +372,7 @@ class TestMultifit:
         s.axes_manager[-1].offset = 1
         s.data[:] = 2 * s.axes_manager[-1].axis ** (-3)
         m = s.create_model()
-        m.append(hs.components.PowerLaw())
+        m.append(hs.model.components.PowerLaw())
         m[0].A.value = 2
         m[0].r.value = 2
         m.store_current_values()
@@ -404,7 +404,7 @@ class TestStoreCurrentValues:
 
     def setUp(self):
         self.m = hs.signals.Spectrum(np.arange(10)).create_model()
-        self.o = hs.components.Offset()
+        self.o = hs.model.components.Offset()
         self.m.append(self.o)
 
     def test_active(self):
@@ -427,7 +427,7 @@ class TestSetCurrentValuesTo:
     def setUp(self):
         self.m = hs.signals.Spectrum(
             np.arange(10).reshape(2, 5)).create_model()
-        self.comps = [hs.components.Offset(), hs.components.Offset()]
+        self.comps = [hs.model.components.Offset(), hs.model.components.Offset()]
         self.m.extend(self.comps)
 
     def test_set_all(self):
@@ -449,7 +449,7 @@ class TestAsSignal:
     def setUp(self):
         self.m = hs.signals.Spectrum(
             np.arange(10).reshape(2, 5)).create_model()
-        self.comps = [hs.components.Offset(), hs.components.Offset()]
+        self.comps = [hs.model.components.Offset(), hs.model.components.Offset()]
         self.m.extend(self.comps)
         for c in self.comps:
             c.offset.value = 2

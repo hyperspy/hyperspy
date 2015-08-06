@@ -1,7 +1,7 @@
 """Creates a spectrum, and fits an arctan to it."""
 
 import numpy as np
-import hyperspy.hspy as hs
+import hyperspy.api as hs
 import matplotlib.pyplot as plt
 
 # Generate the data and make the spectrum
@@ -15,7 +15,7 @@ s.metadata.General.title = "Simple arctan fit"
 s.add_gaussian_noise(0.1)
 
 # Make the arctan component for use in the model
-arctan_component = hs.components.Arctan()
+arctan_component = hs.model.components.Arctan()
 
 # Create the model and add the arctan component
 m = s.create_model()

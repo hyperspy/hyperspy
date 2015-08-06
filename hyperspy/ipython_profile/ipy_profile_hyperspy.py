@@ -19,6 +19,8 @@
 
 from IPython import ipapi
 from hyperspy import Release
+from hyperspy.defaults_parser import preferences
+
 
 
 def main():
@@ -26,7 +28,9 @@ def main():
     ip = ipapi.get()
     o = ip.options
     o.pylab_import_all = 0
-    ip.ex("from hyperspy.hspy import *")
+    if preferences.General.import_hspy:
+        ip.ex("from hyperspy.hspy import *")
+    ip.ex("import hyperspy.api as hs")
     ip.ex("__version__ = Release.version")
     o.banner = Release.info
 

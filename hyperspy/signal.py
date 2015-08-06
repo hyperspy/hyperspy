@@ -2316,7 +2316,7 @@ class MVATools(object):
                               save_figures_format=save_figures_format)
 
     def _get_loadings(self, loadings):
-        from hyperspy.hspy import signals
+        from hyperspy.api import signals
         data = loadings.T.reshape(
             (-1,) + self.axes_manager.navigation_shape[::-1])
         signal = signals.Signal(
@@ -3254,7 +3254,7 @@ class Signal(MVA,
 
         Examples
         --------
-        >>> import hyperspy.hspy as hs
+        >>> import hyperspy.api as hs
         >>> s = hs.signals.Spectrum(np.zeros((10, 100)))
         >>> s
         <Spectrum, title: , dimensions: (10|100)>
@@ -4727,7 +4727,7 @@ class Signal(MVA,
         Parameters
         ----------
         marker: `hyperspy.drawing._markers`
-            the marker to add. see `utils.markers`
+            the marker to add. see `plot.markers`
         plot_on_signal: bool
             If True, add the marker to the signal
             If False, add the marker to the navigator
