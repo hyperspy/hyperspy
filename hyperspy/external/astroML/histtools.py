@@ -2,7 +2,7 @@
 Tools for working with distributions
 """
 import numpy as np
-from hyperspy.misc.borrowed.astroML.bayesian_blocks import bayesian_blocks
+from hyperspy.external.astroML.bayesian_blocks import bayesian_blocks
 from scipy.special import gammaln
 from scipy import optimize
 
@@ -290,7 +290,7 @@ def histogram(a, bins=10, range=None, **kwargs):
         da, bins = scotts_bin_width(a, True)
     elif bins == 'freedman':
         da, bins = freedman_bin_width(a, True)
-    elif isinstance(bins, str):
+    elif isinstance(bins, basestring):
         raise ValueError("unrecognized bin code: '%s'" % bins)
 
     return np.histogram(a, bins, range, **kwargs)

@@ -101,7 +101,7 @@ class MarkerBase(object):
 
     def _is_marker_static(self):
         if np.alltrue([hasattr(self.data[key].item()[()], "__iter__") is False
-                      for key in self.data.dtype.names]):
+                       for key in self.data.dtype.names]):
             self.auto_update = False
         else:
             self.auto_update = True

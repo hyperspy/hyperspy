@@ -207,7 +207,7 @@ class Bar(ProgressBarWidgetHFill):
         self.right = right
 
     def _format_marker(self, pbar):
-        if isinstance(self.marker, (str, unicode)):
+        if isinstance(self.marker, basestring):
             return self.marker
         else:
             return self.marker.update(pbar)
@@ -333,7 +333,7 @@ class ProgressBar(object):
                 r.append(w)
                 hfill_inds.append(i)
                 num_hfill += 1
-            elif isinstance(w, (str, unicode)):
+            elif isinstance(w, basestring):
                 r.append(w)
                 currwidth += len(w)
             else:

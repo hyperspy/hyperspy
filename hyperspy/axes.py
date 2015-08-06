@@ -217,10 +217,13 @@ class DataAxis(t.HasTraits):
         return my_slice
 
     def _get_name(self):
-        name = (self.name if self.name is not t.Undefined
-                else ("Unnamed " +
-                      ordinal(self.index_in_axes_manager)) if self.axes_manager is not None
-                else "Unnamed")
+        if self.name is t.Undefined:
+            if self.axes_manager is None:
+                name = "Unnamed"
+            else:
+                name = "Unnamed " + ordinal(self.index_in_axes_manager)
+        else:
+            name = self.name
         return name
 
     def __repr__(self):
@@ -588,7 +591,7 @@ class AxesManager(t.HasTraits):
 
         See also
         --------
-        append_axis
+        _append_axis
 
         """
         # Reorder axes_list using index_in_array if it is defined
@@ -598,7 +601,7 @@ class AxesManager(t.HasTraits):
         if len(indices) == len(axes_list):
             axes_list.sort(key=lambda x: x['index_in_array'])
         for axis_dict in axes_list:
-            self.append_axis(**axis_dict)
+            self._append_axis(**axis_dict)
 
     def _update_max_index(self):
         self._max_index = 1
@@ -627,8 +630,10 @@ class AxesManager(t.HasTraits):
             raise StopIteration
         else:
             self._index += 1
-            val = np.unravel_index(self._index,
-                                   tuple(self._navigation_shape_in_array))[::-1]
+            val = np.unravel_index(
+                self._index,
+                tuple(self._navigation_shape_in_array)
+            )[::-1]
             self.indices = val
         return val
 
@@ -638,7 +643,7 @@ class AxesManager(t.HasTraits):
         self._index = None
         return self
 
-    def append_axis(self, *args, **kwargs):
+    def _append_axis(self, *args, **kwargs):
         axis = DataAxis(*args, **kwargs)
         axis.axes_manager = self
         self._axes.append(axis)
@@ -698,8 +703,9 @@ class AxesManager(t.HasTraits):
         if len(self._axes) == 0:
             return
         elif value > len(self._axes):
-            raise ValueError("The signal dimension cannot be greater"
-                             " than the number of axes which is %i" % len(self._axes))
+            raise ValueError(
+                "The signal dimension cannot be greater"
+                " than the number of axes which is %i" % len(self._axes))
         elif value < 0:
             raise ValueError(
                 "The signal dimension must be a positive integer")

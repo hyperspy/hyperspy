@@ -29,8 +29,15 @@ class Vignetting(Component):
     """
 
     def __init__(self):
-        Component.__init__(self, ['optical_center', 'height', 'period',
-                                  'left_slope', 'right_slope', 'left', 'right', 'sigma'])
+        Component.__init__(self,
+                           ['optical_center',
+                            'height',
+                            'period',
+                            'left_slope',
+                            'right_slope',
+                            'left',
+                            'right',
+                            'sigma'])
         self.left.value = np.nan
         self.right.value = np.nan
         self.side_vignetting = False

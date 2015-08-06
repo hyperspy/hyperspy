@@ -46,7 +46,7 @@ def attrsetter(target, attrs, value):
         First create a signal and model pair:
 
         >>> s = signals.Spectrum(np.arange(10))
-        >>> m = create_model(s)
+        >>> m = s.create_model()
         >>> m.spectrum.data
         array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
 
@@ -88,6 +88,7 @@ def generate_axis(origin, step, N, index=0):
         origin - index * step, origin + step * (N - 1 - index), N)
 
 
+# TODO: Remove in 0.9
 def unfold_if_multidim(signal):
     """Unfold the SI if it is 2D
 
@@ -101,12 +102,10 @@ def unfold_if_multidim(signal):
     Boolean. True if the SI was unfolded by the function.
 
     """
-    if len(signal.axes_manager._axes) > 2:
-        print "Automatically unfolding the SI"
-        signal.unfold()
-        return True
-    else:
-        return False
+    import warnings
+    warnings.warn("unfold_if_multidim is deprecated and will be removed in "
+                  "0.9 please use Signal.unfold instead", DeprecationWarning)
+    return None
 
 
 def str2num(string, **kargs):
@@ -250,7 +249,7 @@ class DictionaryTreeBrowser(object):
                 continue
             if not isinstance(key_, types.MethodType):
                 key = ensure_unicode(value['key'])
-                value = ensure_unicode(value['_dtb_value_'])
+                value = value['_dtb_value_']
                 if isinstance(value, DictionaryTreeBrowser):
                     if j == eoi - 1:
                         symbol = u'└── '
@@ -264,6 +263,9 @@ class DictionaryTreeBrowser(object):
                     string += value._get_print_items(
                         padding + extra_padding)
                 else:
+                    if not isinstance(value, (str, np.string_)):
+                        value = repr(value)
+                    value = ensure_unicode(value)
                     if j == eoi - 1:
                         symbol = u'└── '
                     else:
@@ -276,7 +278,7 @@ class DictionaryTreeBrowser(object):
                         value = u'%s ... %s' % (strvalue[:max_len],
                                                 strvalue[-right_limit:])
                     string += u"%s%s%s = %s\n" % (
-                        padding, symbol, key, value)
+                        padding, symbol, key, strvalue)
             j += 1
         return string
 
@@ -322,7 +324,7 @@ class DictionaryTreeBrowser(object):
 
         """
         return sorted([key for key in self.__dict__.keys()
-                      if not key.startswith("_")])
+                       if not key.startswith("_")])
 
     def as_dictionary(self):
         """Returns its dictionary representation.
@@ -369,7 +371,7 @@ class DictionaryTreeBrowser(object):
         False
 
         """
-        if isinstance(item_path, str):
+        if isinstance(item_path, basestring):
             item_path = item_path.split('.')
         else:
             item_path = copy.copy(item_path)
@@ -410,7 +412,7 @@ class DictionaryTreeBrowser(object):
         False
 
         """
-        if isinstance(item_path, str):
+        if isinstance(item_path, basestring):
             item_path = item_path.split('.')
         else:
             item_path = copy.copy(item_path)
@@ -459,7 +461,7 @@ class DictionaryTreeBrowser(object):
         """
         if not self.has_item(item_path):
             self.add_node(item_path)
-        if isinstance(item_path, str):
+        if isinstance(item_path, basestring):
             item_path = item_path.split('.')
         if len(item_path) > 1:
             self.__getattribute__(item_path.pop(0)).set_item(
@@ -533,7 +535,7 @@ def strlist2enumeration(lst):
 
 
 def ensure_unicode(stuff, encoding='utf8', encoding2='latin-1'):
-    if not isinstance(stuff, str) and not isinstance(stuff, np.string_):
+    if not isinstance(stuff, (str, np.string_)):
         return stuff
     else:
         string = stuff
@@ -622,7 +624,7 @@ def find_subclasses(mod, cls):
 
     """
     return dict([(name, obj) for name, obj in inspect.getmembers(mod)
-                if inspect.isclass(obj) and issubclass(obj, cls)])
+                 if inspect.isclass(obj) and issubclass(obj, cls)])
 
 
 def isiterable(obj):

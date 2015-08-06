@@ -34,7 +34,7 @@ format_name = 'HDF5'
 description = \
     'The default file format for HyperSpy based on the HDF5 standard'
 
-full_suport = False
+full_support = False
 # Recognised file extension
 file_extensions = ['hdf', 'h4', 'hdf4', 'h5', 'hdf5', 'he4', 'he5']
 default_extension = 4
@@ -67,8 +67,8 @@ version = "1.3"
 # assigned to the same name attributes of the Signal instance as a
 # Dictionary Browsers
 # The Experiments group can contain attributes that may be common to all
-# the experiments and that will be accessible as attribures of the
-# Experimentsinstance
+# the experiments and that will be accessible as attributes of the
+# Experiments instance
 #
 # New in v1.3
 # -----------
@@ -103,12 +103,11 @@ def file_reader(filename, record_by, mode='r', driver='core',
         current_file_version = get_hspy_format_version(f)
         global default_version
         if current_file_version > default_version:
-            warnings.warn("This file was written using a newer version of "
-                          "the HyperSpy hdf5 file format. "
-                          "I will attempt to load it, but, "
-                          "if I fail, "
-                          "it is likely that I will be more successful at this "
-                          "and other tasks if you upgrade me.")
+            warnings.warn(
+                "This file was written using a newer version of the "
+                "HyperSpy hdf5 file format. I will attempt to load it, but, "
+                "if I fail, it is likely that I will be more successful at "
+                "this and other tasks if you upgrade me.")
 
         experiments = []
         exp_dict_list = []
@@ -156,7 +155,8 @@ def hdfgroup2signaldict(group):
     if len(axes) != len(exp['data'].shape):  # broke from the previous loop
         try:
             axes = [i for k, i in sorted(iter(hdfgroup2dict(
-                group['_list_' + str(len(exp['data'].shape)) + '_axes'], {}).iteritems()))]
+                group['_list_' + str(len(exp['data'].shape)) + '_axes'],
+                {}).iteritems()))]
         except KeyError:
             raise IOError(not_valid_format)
     exp['metadata'] = hdfgroup2dict(
@@ -190,7 +190,7 @@ def hdfgroup2signaldict(group):
                 group['peak_mva_results'], {})
         # Replace the old signal and name keys with their current names
         if 'signal' in exp['metadata']:
-            if not "Signal" in exp["metadata"]:
+            if "Signal" not in exp["metadata"]:
                 exp["metadata"]["Signal"] = {}
             exp['metadata']["Signal"]['signal_type'] = \
                 exp['metadata']['signal']
@@ -223,71 +223,55 @@ def hdfgroup2signaldict(group):
                 exp['metadata']['Variance_estimation']
             del exp['metadata']['Variance_estimation']
         if "TEM" in exp["metadata"]:
-            if not "Acquisition_instrument" in exp["metadata"]:
+            if "Acquisition_instrument" not in exp["metadata"]:
                 exp["metadata"]["Acquisition_instrument"] = {}
-            exp["metadata"]["Acquisition_instrument"][
-                "TEM"] = exp["metadata"]["TEM"]
+            exp["metadata"]["Acquisition_instrument"]["TEM"] = \
+                exp["metadata"]["TEM"]
             del exp["metadata"]["TEM"]
-            if "EELS" in exp["metadata"]["Acquisition_instrument"]["TEM"]:
-                if "dwell_time" in exp["metadata"]["Acquisition_instrument"]["TEM"]:
-                    exp["metadata"]["Acquisition_instrument"]["TEM"]["EELS"]["dwell_time"] =\
-                        exp["metadata"]["Acquisition_instrument"][
-                            "TEM"]["dwell_time"]
-                    del exp["metadata"]["Acquisition_instrument"][
-                        "TEM"]["dwell_time"]
-                if "dwell_time_units" in exp["metadata"]["Acquisition_instrument"]["TEM"]:
-                    exp["metadata"]["Acquisition_instrument"]["TEM"]["EELS"]["dwell_time_units"] =\
-                        exp["metadata"]["Acquisition_instrument"][
-                            "TEM"]["dwell_time_units"]
-                    del exp["metadata"]["Acquisition_instrument"][
-                        "TEM"]["dwell_time_units"]
-                if "exposure" in exp["metadata"]["Acquisition_instrument"]["TEM"]:
-                    exp["metadata"]["Acquisition_instrument"]["TEM"]["EELS"]["exposure"] =\
-                        exp["metadata"]["Acquisition_instrument"][
-                            "TEM"]["exposure"]
-                    del exp["metadata"]["Acquisition_instrument"][
-                        "TEM"]["exposure"]
-                if "exposure_units" in exp["metadata"]["Acquisition_instrument"]["TEM"]:
-                    exp["metadata"]["Acquisition_instrument"]["TEM"]["EELS"]["exposure_units"] =\
-                        exp["metadata"]["Acquisition_instrument"][
-                            "TEM"]["exposure_units"]
-                    del exp["metadata"]["Acquisition_instrument"][
-                        "TEM"]["exposure_units"]
-                if "Detector" not in exp["metadata"]["Acquisition_instrument"]["TEM"]:
-                    exp["metadata"]["Acquisition_instrument"][
-                        "TEM"]["Detector"] = {}
-                exp["metadata"]["Acquisition_instrument"]["TEM"]["Detector"] = \
-                    exp["metadata"]["Acquisition_instrument"]["TEM"]["EELS"]
-                del exp["metadata"]["Acquisition_instrument"]["TEM"]["EELS"]
-            if "EDS" in exp["metadata"]["Acquisition_instrument"]["TEM"]:
-                if "Detector" not in exp["metadata"]["Acquisition_instrument"]["TEM"]:
-                    exp["metadata"]["Acquisition_instrument"][
-                        "TEM"]["Detector"] = {}
-                if "EDS" not in exp["metadata"]["Acquisition_instrument"]["TEM"]["Detector"]:
-                    exp["metadata"]["Acquisition_instrument"][
-                        "TEM"]["Detector"]["EDS"] = {}
-                exp["metadata"]["Acquisition_instrument"]["TEM"]["Detector"]["EDS"] = \
-                    exp["metadata"]["Acquisition_instrument"]["TEM"]["EDS"]
-                del exp["metadata"]["Acquisition_instrument"]["TEM"]["EDS"]
-
+            tem = exp["metadata"]["Acquisition_instrument"]["TEM"]
+            if "EELS" in tem:
+                if "dwell_time" in tem:
+                    tem["EELS"]["dwell_time"] = tem["dwell_time"]
+                    del tem["dwell_time"]
+                if "dwell_time_units" in tem:
+                    tem["EELS"]["dwell_time_units"] = tem["dwell_time_units"]
+                    del tem["dwell_time_units"]
+                if "exposure" in tem:
+                    tem["EELS"]["exposure"] = tem["exposure"]
+                    del tem["exposure"]
+                if "exposure_units" in tem:
+                    tem["EELS"]["exposure_units"] = tem["exposure_units"]
+                    del tem["exposure_units"]
+                if "Detector" not in tem:
+                    tem["Detector"] = {}
+                tem["Detector"] = tem["EELS"]
+                del tem["EELS"]
+            if "EDS" in tem:
+                if "Detector" not in tem:
+                    tem["Detector"] = {}
+                if "EDS" not in tem["Detector"]:
+                    tem["Detector"]["EDS"] = {}
+                tem["Detector"]["EDS"] = tem["EDS"]
+                del tem["EDS"]
+            del tem
         if "SEM" in exp["metadata"]:
-            if not "Acquisition_instrument" in exp["metadata"]:
+            if "Acquisition_instrument" not in exp["metadata"]:
                 exp["metadata"]["Acquisition_instrument"] = {}
-            exp["metadata"]["Acquisition_instrument"][
-                "SEM"] = exp["metadata"]["SEM"]
+            exp["metadata"]["Acquisition_instrument"]["SEM"] = \
+                exp["metadata"]["SEM"]
             del exp["metadata"]["SEM"]
-            if "EDS" in exp["metadata"]["Acquisition_instrument"]["SEM"]:
-                if "Detector" not in exp["metadata"]["Acquisition_instrument"]["SEM"]:
-                    exp["metadata"]["Acquisition_instrument"][
-                        "SEM"]["Detector"] = {}
-                if "EDS" not in exp["metadata"]["Acquisition_instrument"]["SEM"]["Detector"]:
-                    exp["metadata"]["Acquisition_instrument"][
-                        "SEM"]["Detector"]["EDS"] = {}
-                exp["metadata"]["Acquisition_instrument"]["SEM"]["Detector"]["EDS"] = \
-                    exp["metadata"]["Acquisition_instrument"]["SEM"]["EDS"]
-                del exp["metadata"]["Acquisition_instrument"]["SEM"]["EDS"]
+            sem = exp["metadata"]["Acquisition_instrument"]["SEM"]
+            if "EDS" in sem:
+                if "Detector" not in sem:
+                    sem["Detector"] = {}
+                if "EDS" not in sem["Detector"]:
+                    sem["Detector"]["EDS"] = {}
+                sem["Detector"]["EDS"] = sem["EDS"]
+                del sem["EDS"]
+            del sem
 
-        if "Sample" in exp["metadata"] and "Xray_lines" in exp["metadata"]["Sample"]:
+        if "Sample" in exp["metadata"] and "Xray_lines" in exp[
+                "metadata"]["Sample"]:
             exp["metadata"]["Sample"]["xray_lines"] = exp[
                 "metadata"]["Sample"]["Xray_lines"]
             del exp["metadata"]["Sample"]["Xray_lines"]
@@ -311,6 +295,23 @@ def hdfgroup2signaldict(group):
 def dict2hdfgroup(dictionary, group, compression=None):
     from hyperspy.misc.utils import DictionaryTreeBrowser
     from hyperspy.signal import Signal
+
+    def parse_structure(key, group, value, _type, compression):
+        try:
+            tmp = np.array(value)
+        except ValueError:
+            tmp = np.array([[0]])
+        if tmp.dtype is np.dtype('O') or tmp.ndim is not 1:
+            dict2hdfgroup(dict(zip(
+                [unicode(i) for i in xrange(len(value))], value)),
+                group.create_group(_type + str(len(value)) + '_' + key),
+                compression=compression)
+        else:
+            group.create_dataset(
+                _type + key,
+                data=tmp,
+                compression=compression)
+
     for key, value in dictionary.iteritems():
         if isinstance(value, dict):
             dict2hdfgroup(value, group.create_group(key),
@@ -349,32 +350,21 @@ def dict2hdfgroup(dictionary, group, compression=None):
                     group.attrs['_bs_' + key] = np.void(value)  # binary string
         elif isinstance(value, AxesManager):
             dict2hdfgroup(value.as_dictionary(),
-                          group.create_group('_hspy_AxesManager_'
-                                             + key),
+                          group.create_group('_hspy_AxesManager_' + key),
                           compression=compression)
         elif isinstance(value, (datetime.date, datetime.time)):
             group.attrs["_datetime_" + key] = repr(value)
         elif isinstance(value, list):
             if len(value):
-                dict2hdfgroup(dict(zip([unicode(i) for i in xrange(len(value))], value)),
-                              group.create_group(
-                                  '_list_' + str(len(value)) + '_' + key),
-                              compression=compression)
+                parse_structure(key, group, value, '_list_', compression)
             else:
                 group.attrs['_list_empty_' + key] = '_None_'
         elif isinstance(value, tuple):
             if len(value):
-                dict2hdfgroup(dict(zip([unicode(i) for i in xrange(len(value))], value)),
-                              group.create_group(
-                                  '_tuple_' + str(len(value)) + '_' + key),
-                              compression=compression)
+                parse_structure(key, group, value, '_tuple_', compression)
             else:
                 group.attrs['_tuple_empty_' + key] = '_None_'
 
-            # for i, v in enumerate(value):
-            # dict2hdfgroup(v, tmp.create_group(str(i)),
-            #     dict2hdfgroup({str(i):v}, tmp,
-        #                       compression=compression)
         elif value is Undefined:
             continue
         else:
@@ -417,18 +407,28 @@ def hdfgroup2dict(group, dictionary={}):
                 dictionary[key[len('_sig_'):]] = (
                     dict2signal(hdfgroup2signaldict(group[key])))
             elif isinstance(group[key], h5py.Dataset):
-                dictionary[key] = np.array(group[key])
+                ans = np.array(group[key])
+                kn = key
+                if key.startswith("_list_"):
+                    ans = ans.tolist()
+                    kn = key[6:]
+                elif key.startswith("_tuple_"):
+                    ans = tuple(ans.tolist())
+                    kn = key[7:]
+                dictionary[kn] = ans
             elif key.startswith('_hspy_AxesManager_'):
                 dictionary[key[len('_hspy_AxesManager_'):]] = \
                     AxesManager([i
                                  for k, i in sorted(iter(
                                      hdfgroup2dict(group[key]).iteritems()))])
             elif key.startswith('_list_'):
-                dictionary[key[7 + key[6:].find('_'):]] = [i for k, i in sorted(iter(
-                    hdfgroup2dict(group[key], {}).iteritems()))]
+                dictionary[key[7 + key[6:].find('_'):]] = \
+                    [i for k, i in sorted(iter(
+                        hdfgroup2dict(group[key], {}).iteritems()))]
             elif key.startswith('_tuple_'):
-                dictionary[key[8 + key[7:].find('_'):]] = tuple([i for k, i in sorted(iter(
-                    hdfgroup2dict(group[key], {}).iteritems()))])
+                dictionary[key[8 + key[7:].find('_'):]] = tuple(
+                    [i for k, i in sorted(iter(
+                        hdfgroup2dict(group[key], {}).iteritems()))])
             else:
                 dictionary[key] = {}
                 hdfgroup2dict(group[key], dictionary[key])
