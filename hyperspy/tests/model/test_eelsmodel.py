@@ -37,7 +37,7 @@ class TestCreateEELSModel:
         m = self.s.create_model(auto_background=False)
         from hyperspy.components import PowerLaw
         is_pl_instance = [isinstance(c, PowerLaw) for c in m]
-        nose.tools.assert_true(False in is_pl_instance)
+        nose.tools.assert_false(True in is_pl_instance)
 
     def test_auto_add_edges_false_names(self):
         m = self.s.create_model(auto_add_edges=False)
