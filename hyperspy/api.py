@@ -62,5 +62,6 @@ from hyperspy.utils import *
 from hyperspy.hspy import (
     get_configuration_directory_path,
     create_model)
+from hyperspy import datasets
 
 del markers
