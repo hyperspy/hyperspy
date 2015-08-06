@@ -102,7 +102,7 @@ class TestModel:
         g1 = hs.components.Gaussian()
         g2 = hs.components.Gaussian()
         g3 = hs.components.Gaussian()
-        m.extend([g1,g2,g3])
+        m.extend([g1, g2, g3])
         del m[:2]
         nose.tools.assert_not_in(g1, m)
         nose.tools.assert_not_in(g2, m)
