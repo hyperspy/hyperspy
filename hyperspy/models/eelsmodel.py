@@ -27,6 +27,8 @@ from hyperspy.defaults_parser import preferences
 import hyperspy.messages as messages
 from hyperspy import components
 from hyperspy._signals.eels import EELSSpectrum
+from hyperspy.misc.hspy_warnings import VisibleDeprecationWarning
+
 
 
 def _give_me_delta(master, slave):
@@ -82,7 +84,7 @@ class EELSModel(Model):
             warnings.warn(
                 "Adding \"background\" to the user namespace. "
                 "This feature will be removed in HyperSpy 0.9.",
-                DeprecationWarning)
+                VisibleDeprecationWarning)
             interactive_ns['background'] = background
             self.append(background)
 
@@ -184,13 +186,13 @@ class EELSModel(Model):
         warnings.warn("Adding \"%s\" to the user namespace. "
                       "This feature will be removed in HyperSpy 0.9." % self[
                           -1].name,
-                      DeprecationWarning)
+                      VisibleDeprecationWarning)
         element = master_edge.element
         interactive_ns[element] = []
         warnings.warn(
             "Adding \"%s\" to the user namespace. "
             "This feature will be removed in HyperSpy 0.9." % element,
-            DeprecationWarning)
+            VisibleDeprecationWarning)
         interactive_ns[element].append(self[-1])
         while len(e_shells) > 0:
             next_element = e_shells[-1].split('_')[0]
@@ -223,7 +225,7 @@ class EELSModel(Model):
                         "Adding \"%s\" to the user namespace. "
                         "This feature will be removed in HyperSpy 0.9." %
                         edge.name,
-                        DeprecationWarning)
+                        VisibleDeprecationWarning)
                     interactive_ns[element].append(edge)
 
     def resolve_fine_structure(

@@ -27,5 +27,3 @@ try:
         sklearn_installed = True
 except ImportError:
     sklearn_installed = False
-finally:
-    warnings.simplefilter("default")
