@@ -76,6 +76,7 @@ def get_derivative(signal, diff_axes, diff_order):
         del diffs
     return signal
 
+
 def _normalize_components(target, other, function=np.sum):
     coeff = function(target, axis=0)
     target /= coeff
@@ -761,6 +762,7 @@ class MVA():
             raise Exception("This method can only be used after "
                             "a blind source separation operation.")
         _normalize_components(target=target, other=other, function=function)
+
     def reverse_decomposition_component(self, component_number):
         """Reverse the decomposition component
 
