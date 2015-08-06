@@ -9,7 +9,7 @@ API can be imported as any other Python library as follows:
 
 .. code-block:: python
 
-   >>> import hyperspy.hspy as hs
+   >>> import hyperspy.api as hs
 
 The most common way of using HyperSpy is interactively using the wonderful
 interactive computing package `IPython <http://ipython.org>`_. For interactive
@@ -188,7 +188,7 @@ and transparent way.
     The following commands were just executed:
     ---------------
     import numpy as np
-    import hyperspy.hspy as hs
+    import hyperspy.api as hs
     %matplotlib [toolkit]
     import matplotlib.pyplot as plt
 
