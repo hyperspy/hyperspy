@@ -427,7 +427,9 @@ class TestSetCurrentValuesTo:
     def setUp(self):
         self.m = hs.signals.Spectrum(
             np.arange(10).reshape(2, 5)).create_model()
-        self.comps = [hs.model.components.Offset(), hs.model.components.Offset()]
+        self.comps = [
+            hs.model.components.Offset(),
+            hs.model.components.Offset()]
         self.m.extend(self.comps)
 
     def test_set_all(self):
@@ -449,7 +451,9 @@ class TestAsSignal:
     def setUp(self):
         self.m = hs.signals.Spectrum(
             np.arange(10).reshape(2, 5)).create_model()
-        self.comps = [hs.model.components.Offset(), hs.model.components.Offset()]
+        self.comps = [
+            hs.model.components.Offset(),
+            hs.model.components.Offset()]
         self.m.extend(self.comps)
         for c in self.comps:
             c.offset.value = 2

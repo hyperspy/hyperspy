@@ -28,4 +28,3 @@ import Release
 
 __all__ = ["api"]
 __version__ = Release.version
-

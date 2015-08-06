@@ -22,7 +22,6 @@ from hyperspy import Release
 from hyperspy.defaults_parser import preferences
 
 
-
 def main():
     import ipy_user_conf
     ip = ipapi.get()
