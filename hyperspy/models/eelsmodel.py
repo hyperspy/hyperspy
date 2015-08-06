@@ -30,7 +30,6 @@ from hyperspy._signals.eels import EELSSpectrum
 from hyperspy.misc.hspy_warnings import VisibleDeprecationWarning
 
 
-
 def _give_me_delta(master, slave):
     return lambda x: x + slave - master
 
