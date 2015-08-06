@@ -190,6 +190,18 @@ class TestInterpolateInBetween:
         s.interpolate_in_between(8, 12)
         nose.tools.assert_true((s.data == np.arange(40).reshape(2, 20)).all())
 
+    def test_delta_int(self):
+        s = self.s[0]
+        s.data[12] *= 10
+        s.interpolate_in_between(8, 12, delta=2, kind='cubic')
+        nose.tools.assert_true(np.all(s.data[8,12] == np.array([44, 95, 139, 155])))
+
+    def test_delta_float(self):
+        s = self.s[0]
+        s.data[12] *= 10
+        s.interpolate_in_between(8, 12, delta=0.3, kind='cubic')
+        nose.tools.assert_true(np.all(s.data[8,12] == np.array([45, 104, 155, 170])))
+
 
 class TestEstimatePeakWidth():
 
