@@ -178,7 +178,24 @@ Note that only HDF5 files written by HyperSpy are supported
 .. versionadded:: 0.8
     
 It is also possible to save more complex structures (i.e. lists, tuples and signals) in 
-:py:attr:`~.metadata` of the signal, which might be particularly useful when using
+:py:attr:`~.metadata` of the signal. Please note that in order to increase
+saving efficiency and speed, if possible, the inner-most structures are
+converted to numpy arrays when saved. This procedure homogenizes any types of
+the objects inside, most notably casting numbers as strings if any other
+strings are present:
+
+.. code-block:: python
+
+    >>> # before saving:
+    >>> somelist
+    [1, 2.0, 'a name']
+    >>> # after saving:
+    ['1', '2.0', 'a name']
+
+The change of type is done using numpy "safe" rules, so no information is lost,
+as numbers are represented to full machine precision.
+
+This feature is particularly useful when using
 :py:meth:`~._signals.EDSSEMSpectrum.get_lines_intensity` (see :ref:`get lines
 intensity<get_lines_intensity>`):
 

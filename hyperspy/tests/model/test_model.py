@@ -83,6 +83,31 @@ class TestModel:
         m.remove(g1.name)
         nose.tools.assert_equal(len(m), 0)
 
+    def test_delete_component_by_index(self):
+        m = self.model
+        g1 = hs.components.Gaussian()
+        m.append(g1)
+        del m[0]
+        nose.tools.assert_not_in(g1, m)
+
+    def test_delete_component_by_name(self):
+        m = self.model
+        g1 = hs.components.Gaussian()
+        m.append(g1)
+        del m[g1.name]
+        nose.tools.assert_not_in(g1, m)
+
+    def test_delete_slice(self):
+        m = self.model
+        g1 = hs.components.Gaussian()
+        g2 = hs.components.Gaussian()
+        g3 = hs.components.Gaussian()
+        m.extend([g1, g2, g3])
+        del m[:2]
+        nose.tools.assert_not_in(g1, m)
+        nose.tools.assert_not_in(g2, m)
+        nose.tools.assert_in(g3, m)
+
     def test_get_component_by_name(self):
         m = self.model
         g1 = hs.components.Gaussian()
