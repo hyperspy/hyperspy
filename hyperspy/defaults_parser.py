@@ -325,9 +325,10 @@ if preferences.General.logger_on:
 
 current_toolkit = preferences.General.default_toolkit
 
+
 def file_version(fname):
     with open(fname, 'r') as f:
         for l in f.readlines():
             if '__version__' in l:
-                return l[l.find('=')+1:].strip()
+                return l[l.find('=') + 1:].strip()
     return '0'
