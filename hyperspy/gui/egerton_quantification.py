@@ -219,8 +219,7 @@ class SpikesRemoval(SpanSelectorInSpectrum):
                                 "connect the reconstructed data")
     interpolator = None
     default_spike_width = t.Int(5,
-                                desc="the width over which to do the "
-                                     "interpolation\n"
+                                desc="the width over which to do the interpolation\n"
                                      "when removing a spike (this can be "
                                      "adjusted for each\nspike by clicking "
                                      "and dragging on the display during\n"
@@ -231,6 +230,27 @@ class SpikesRemoval(SpanSelectorInSpectrum):
                             "of the spectrum. The noise properties defined\n"
                             "in the Signal metadata are used if present,"
                             "otherwise\nshot noise is used as a default")
+
+    thisOKButton = tu.Action(name="OK",
+                             action="OK",
+                             tooltip="Close the spikes removal tool")
+
+    thisApplyButton = tu.Action(name="Remove spike",
+                                action="apply",
+                                tooltip="Remove the current spike by "
+                                       "interpolating\n"
+                                       "with the specified settings (and find\n"
+                                       "the next spike automatically)")
+    thisFindButton = tu.Action(name="Find next",
+                               action="find",
+                               tooltip="Find the next (in terms of navigation\n"
+                                      "dimensions) spike in the data.")
+
+    thisPreviousButton = tu.Action(name="Find previous",
+                                   action="back",
+                                   tooltip="Find the previous (in terms of "
+                                          "navigation\n"
+                                          "dimensions) spike in the data.")
     view = tu.View(tu.Group(
         tu.Group(
             tu.Item('click_to_show_instructions',
@@ -254,10 +274,10 @@ class SpikesRemoval(SpanSelectorInSpectrum):
             show_border=True,
             label='Advanced settings'),
     ),
-        buttons=[OurOKButton,
-                 OurPreviousButton,
-                 OurFindButton,
-                 OurApplyButton, ],
+        buttons=[thisOKButton,
+                 thisPreviousButton,
+                 thisFindButton,
+                 thisApplyButton, ],
         handler=SpikesRemovalHandler,
         title='Spikes removal tool',
         resizable=False,

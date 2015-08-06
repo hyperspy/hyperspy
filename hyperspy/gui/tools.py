@@ -31,29 +31,19 @@ from hyperspy.drawing.widgets import DraggableVerticalLine
 
 
 OurOKButton = tu.Action(name="OK",
-                        action="OK",
-                        tooltip="Close the spikes removal tool")
+                        action="OK",)
 
-OurApplyButton = tu.Action(name="Remove spike",
-                           action="apply",
-                           tooltip="Remove the current spike by "
-                                   "interpolating\n"
-                                   "with the specified settings (and find\n"
-                                   "the next spike automatically)")
+OurApplyButton = tu.Action(name="Apply",
+                           action="apply")
 
 OurResetButton = tu.Action(name="Reset",
                            action="reset")
 
 OurFindButton = tu.Action(name="Find next",
-                          action="find",
-                          tooltip="Find the next (in terms of navigation\n"
-                                  "dimensions) spike in the data.")
+                          action="find",)
 
 OurPreviousButton = tu.Action(name="Find previous",
-                              action="back",
-                              tooltip="Find the previous (in terms of "
-                                      "navigation\n"
-                                      "dimensions) spike in the data.")
+                              action="back",)
 
 
 class SmoothingHandler(tu.Handler):

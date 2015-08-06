@@ -1,12 +1,12 @@
 import os.path
+from os import remove
 import datetime
 
-from nose.tools import (assert_equal,
-                        assert_true,
-                        assert_is)
+import nose.tools as nt
 import numpy as np
 
 from hyperspy.io import load
+from hyperspy.signal import Signal
 
 my_path = os.path.dirname(__file__)
 
@@ -47,7 +47,7 @@ example1_original_metadata = {
 class Example1:
 
     def test_data(self):
-        assert_equal(
+        nt.assert_equal(
             [4066.0,
              3996.0,
              3932.0,
@@ -71,7 +71,7 @@ class Example1:
              4217.0], self.s.data.tolist())
 
     def test_original_metadata(self):
-        assert_equal(
+        nt.assert_equal(
             example1_original_metadata,
             self.s.original_metadata.as_dictionary())
 
@@ -103,13 +103,18 @@ class TestExample1_12(Example1):
             "example1_v1.2.hdf5"))
 
     def test_date(self):
-        assert_equal(self.s.metadata.General.date, datetime.date(1991, 10, 1))
+        nt.assert_equal(
+            self.s.metadata.General.date,
+            datetime.date(
+                1991,
+                10,
+                1))
 
     def test_time(self):
-        assert_equal(self.s.metadata.General.time, datetime.time(12, 0))
+        nt.assert_equal(self.s.metadata.General.time, datetime.time(12, 0))
 
 
-class TestNewSavedMetadata:
+class TestLoadingNewSavedMetadata:
 
     def setUp(self):
         self.s = load(os.path.join(
@@ -118,23 +123,29 @@ class TestNewSavedMetadata:
             "with_lists_etc.hdf5"))
 
     def test_signal_inside(self):
-        assert_true(
+        nt.assert_true(
             np.all(
                 self.s.data == self.s.metadata.Signal.Noise_properties.variance.data))
 
     def test_empty_things(self):
-        assert_equal(self.s.metadata.test.empty_list, [])
-        assert_equal(self.s.metadata.test.empty_tuple, ())
+        nt.assert_equal(self.s.metadata.test.empty_list, [])
+        nt.assert_equal(self.s.metadata.test.empty_tuple, ())
 
     def test_simple_things(self):
-        assert_equal(self.s.metadata.test.list, [42])
-        assert_equal(self.s.metadata.test.tuple, (1, 2))
+        nt.assert_equal(self.s.metadata.test.list, [42])
+        nt.assert_equal(self.s.metadata.test.tuple, (1, 2))
 
     def test_inside_things(self):
-        assert_equal(self.s.metadata.test.list_inside_list, [42, 137, [0, 1]])
-        assert_equal(self.s.metadata.test.list_inside_tuple, (137, [42, 0]))
-        assert_equal(self.s.metadata.test.tuple_inside_tuple, (137, (123, 44)))
-        assert_equal(self.s.metadata.test.tuple_inside_list, [137, (123, 44)])
+        nt.assert_equal(
+            self.s.metadata.test.list_inside_list, [
+                42, 137, [
+                    0, 1]])
+        nt.assert_equal(self.s.metadata.test.list_inside_tuple, (137, [42, 0]))
+        nt.assert_equal(
+            self.s.metadata.test.tuple_inside_tuple, (137, (123, 44)))
+        nt.assert_equal(
+            self.s.metadata.test.tuple_inside_list, [
+                137, (123, 44)])
 
     def test_binary_string(self):
         import marshal
@@ -143,7 +154,51 @@ class TestNewSavedMetadata:
             marshal.loads(
                 self.s.metadata.test.binary_string),
             globals())
-        assert_equal(f(3.5), 4.5)
+        nt.assert_equal(f(3.5), 4.5)
+
+
+class TestSavingMetadataContainers:
+
+    def setUp(self):
+        self.s = Signal([0.1])
+
+    @nt.timed(0.01)
+    def test_save_long_list(self):
+        s = self.s
+        s.metadata.set_item('long_list', range(10000))
+        s.save('tmp.hdf5', overwrite=True)
+
+    def test_numpy_only_inner_lists(self):
+        s = self.s
+        s.metadata.set_item('test', [[1., 2], ('3', 4)])
+        s.save('tmp.hdf5', overwrite=True)
+        l = load('tmp.hdf5')
+        nt.assert_is_instance(l.metadata.test, list)
+        nt.assert_is_instance(l.metadata.test[0], list)
+        nt.assert_is_instance(l.metadata.test[1], tuple)
+
+    def test_numpy_general_type(self):
+        s = self.s
+        s.metadata.set_item('test', [[1., 2], ['3', 4]])
+        s.save('tmp.hdf5', overwrite=True)
+        l = load('tmp.hdf5')
+        nt.assert_is_instance(l.metadata.test[0][0], float)
+        nt.assert_is_instance(l.metadata.test[0][1], float)
+        nt.assert_is_instance(l.metadata.test[1][0], basestring)
+        nt.assert_is_instance(l.metadata.test[1][1], basestring)
+
+    def test_general_type_not_working(self):
+        s = self.s
+        s.metadata.set_item('test', (Signal([1]), 0.1, 'test_string'))
+        s.save('tmp.hdf5', overwrite=True)
+        l = load('tmp.hdf5')
+        nt.assert_is_instance(l.metadata.test, tuple)
+        nt.assert_is_instance(l.metadata.test[0], Signal)
+        nt.assert_is_instance(l.metadata.test[1], float)
+        nt.assert_is_instance(l.metadata.test[2], unicode)
+
+    def tearDown(self):
+        remove('tmp.hdf5')
 
 
 def test_none_metadata():
@@ -151,7 +206,7 @@ def test_none_metadata():
         my_path,
         "hdf5_files",
         "none_metadata.hdf5"))
-    assert_is(s.metadata.should_be_None, None)
+    nt.assert_is(s.metadata.should_be_None, None)
 
 
 def test_rgba16():
@@ -163,4 +218,4 @@ def test_rgba16():
         my_path,
         "npy_files",
         "test_rgba16.npy"))
-    assert_true((s.data == data).all())
+    nt.assert_true((s.data == data).all())

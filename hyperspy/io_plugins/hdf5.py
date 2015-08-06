@@ -294,6 +294,23 @@ def hdfgroup2signaldict(group):
 def dict2hdfgroup(dictionary, group, compression=None):
     from hyperspy.misc.utils import DictionaryTreeBrowser
     from hyperspy.signal import Signal
+
+    def parse_structure(key, group, value, _type, compression):
+        try:
+            tmp = np.array(value)
+        except ValueError:
+            tmp = np.array([[0]])
+        if tmp.dtype is np.dtype('O') or tmp.ndim is not 1:
+            dict2hdfgroup(dict(zip(
+                [unicode(i) for i in xrange(len(value))], value)),
+                group.create_group(_type + str(len(value)) + '_' + key),
+                compression=compression)
+        else:
+            group.create_dataset(
+                _type + key,
+                data=tmp,
+                compression=compression)
+
     for key, value in dictionary.iteritems():
         if isinstance(value, dict):
             dict2hdfgroup(value, group.create_group(key),
@@ -338,27 +355,15 @@ def dict2hdfgroup(dictionary, group, compression=None):
             group.attrs["_datetime_" + key] = repr(value)
         elif isinstance(value, list):
             if len(value):
-                dict2hdfgroup(dict(zip(
-                    [unicode(i) for i in xrange(len(value))], value)),
-                    group.create_group(
-                        '_list_' + str(len(value)) + '_' + key),
-                    compression=compression)
+                parse_structure(key, group, value, '_list_', compression)
             else:
                 group.attrs['_list_empty_' + key] = '_None_'
         elif isinstance(value, tuple):
             if len(value):
-                dict2hdfgroup(dict(zip(
-                    [unicode(i) for i in xrange(len(value))], value)),
-                    group.create_group(
-                        '_tuple_' + str(len(value)) + '_' + key),
-                    compression=compression)
+                parse_structure(key, group, value, '_tuple_', compression)
             else:
                 group.attrs['_tuple_empty_' + key] = '_None_'
 
-            # for i, v in enumerate(value):
-            # dict2hdfgroup(v, tmp.create_group(str(i)),
-            #     dict2hdfgroup({str(i):v}, tmp,
-        #                       compression=compression)
         elif value is Undefined:
             continue
         else:
@@ -403,7 +408,15 @@ def hdfgroup2dict(group, dictionary=None):
                 dictionary[key[len('_sig_'):]] = (
                     dict2signal(hdfgroup2signaldict(group[key])))
             elif isinstance(group[key], h5py.Dataset):
-                dictionary[key] = np.array(group[key])
+                ans = np.array(group[key])
+                kn = key
+                if key.startswith("_list_"):
+                    ans = ans.tolist()
+                    kn = key[6:]
+                elif key.startswith("_tuple_"):
+                    ans = tuple(ans.tolist())
+                    kn = key[7:]
+                dictionary[kn] = ans
             elif key.startswith('_hspy_AxesManager_'):
                 dictionary[key[len('_hspy_AxesManager_'):]] = \
                     AxesManager([i

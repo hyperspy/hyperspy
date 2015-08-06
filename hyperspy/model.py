@@ -293,8 +293,9 @@ class Model(list):
             self.append(object)
 
     def __delitem__(self, thing):
-        list.__delitem__(self, thing)
+        thing = self.__getitem__(thing)
         thing.model = None
+        list.__delitem__(self, self.index(thing))
         self._touch()
 
     def remove(self, thing, touch=True):
