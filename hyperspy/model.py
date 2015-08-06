@@ -292,9 +292,10 @@ class Model(list):
         for object in iterable:
             self.append(object)
 
-    def __delitem__(self, object):
-        list.__delitem__(self, object)
-        object.model = None
+    def __delitem__(self, thing):
+        thing = self.__getitem__(thing)
+        thing.model = None
+        list.__delitem__(self, self.index(thing))
         self._touch()
 
     def remove(self, object, touch=True):
