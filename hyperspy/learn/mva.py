@@ -704,9 +704,7 @@ class MVA():
         else:
             raise ValueError("by must be max or mean")
 
-        coeff = by(factors, 0)
-        factors /= coeff
-        loadings *= coeff
+        _normalize_components(factors, loadings, by)
         sorting_indices = np.argsort(loadings.max(0))
         factors[:] = factors[:, sorting_indices]
         loadings[:] = loadings[:, sorting_indices]
