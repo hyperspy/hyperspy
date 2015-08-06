@@ -219,7 +219,7 @@ follow:
 
 .. code-block:: python
 
-    >>> s = hs.utils.example_signals.EDS_TEM_Spectrum()
+    >>> s = hs.example_signals.EDS_TEM_Spectrum()
     >>> s.add_lines()
     >>> s.metadata.Sample.thickness = 100
     >>> s.metadata.Sample
@@ -243,7 +243,7 @@ abbreviations are accepted:
 
 .. code-block:: python
 
-    >>> s = hs.utils.example_signals.EDS_TEM_Spectrum()
+    >>> s = hs.example_signals.EDS_TEM_Spectrum()
     >>> s.set_elements(['Fe', 'Pt'])
     >>> s.add_elements(['Cu'])
     >>> s.metadata.Sample
@@ -259,7 +259,7 @@ elements will be added automatically. Several lines per elements can be defined.
 
 .. code-block:: python
 
-    >>> s = hs.utils.example_signals.EDS_TEM_Spectrum()
+    >>> s = hs.example_signals.EDS_TEM_Spectrum()
     >>> s.set_elements(['Fe', 'Pt'])
     >>> s.set_lines(['Fe_Ka', 'Pt_La'])
     >>> s.add_lines(['Fe_La'])
@@ -273,7 +273,7 @@ overvoltage of 2 (< beam energy / 2)).
 
 .. code-block:: python
 
-    >>> s = hs.utils.example_signals.EDS_SEM_Spectrum()
+    >>> s = hs.example_signals.EDS_SEM_Spectrum()
     >>> s.set_elements(['Al', 'Cu', 'Mn'])
     >>> s.set_microscope_parameters(beam_energy=30)
     >>> s.add_lines()
@@ -294,7 +294,7 @@ A warning is raised, if setting a X-ray lines higher than the beam energy.
 
 .. code-block:: python
 
-    >>> s = hs.utils.example_signals.EDS_SEM_Spectrum()
+    >>> s = hs.example_signals.EDS_SEM_Spectrum()
     >>> s.set_elements(['Mn'])
     >>> s.set_microscope_parameters(beam_energy=5)
     >>> s.add_lines(['Mn_Ka'])
@@ -308,13 +308,13 @@ An elemental database is available with the energy of the X-ray lines.
 
 .. code-block:: python
 
-    >>> hs.utils.material.elements.Fe.General_properties
+    >>> hs.material.elements.Fe.General_properties
     ├── Z = 26
     ├── atomic_weight = 55.845
     └── name = iron
-    >>> hs.utils.material.elements.Fe.Physical_properties
+    >>> hs.material.elements.Fe.Physical_properties
     └── density (g/cm^3) = 7.874
-    >>> hs.utils.material.elements.Fe.Atomic_properties.Xray_lines
+    >>> hs.material.elements.Fe.Atomic_properties.Xray_lines
     ├── Ka
     │   ├── energy (keV) = 6.404
     │   └── weight = 1.0
@@ -344,7 +344,7 @@ As decribed in :ref:`visualisation<visualization-label>`, the
 
 .. code-block:: python
 
-    >>> s = hs.utils.example_signals.EDS_SEM_Spectrum()
+    >>> s = hs.example_signals.EDS_SEM_Spectrum()
     >>> s.plot()
 
 .. figure::  images/EDS_plot_spectrum.png
@@ -372,7 +372,7 @@ elements in "metadata.Sample.elements".
 
 .. code-block:: python
 
-    >>> s = hs.utils.example_signals.EDS_SEM_Spectrum()
+    >>> s = hs.example_signals.EDS_SEM_Spectrum()
     >>> s.add_elements(['C','Mn','Cu','Al','Zr'])
     >>> s.plot(True)
 
@@ -384,7 +384,7 @@ Selecting certain type of lines:
    
 .. code-block:: python
 
-    >>> s = hs.utils.example_signals.EDS_SEM_Spectrum()
+    >>> s = hs.example_signals.EDS_SEM_Spectrum()
     >>> s.add_elements(['C','Mn','Cu','Al','Zr'])
     >>> s.plot(True, only_lines=['Ka','b'])
 
@@ -441,7 +441,7 @@ The windows of integration can be visualised using :py:meth:`~._signals.eds.EDSS
 
 .. code-block:: python
 
-    >>> s = hs.utils.example_signals.EDS_TEM_Spectrum()[5.:13.]
+    >>> s = hs.example_signals.EDS_TEM_Spectrum()[5.:13.]
     >>> s.add_lines()
     >>> s.plot(integration_windows='auto')
 
@@ -460,7 +460,7 @@ The background can be subtracted from the X-ray intensities with the :py:meth:`~
 
 .. code-block:: python
 
-    >>> s = hs.utils.example_signals.EDS_TEM_Spectrum()[5.:13.]
+    >>> s = hs.example_signals.EDS_TEM_Spectrum()[5.:13.]
     >>> s.add_lines()
     >>> bw = s.estimate_background_windows(line_width=[5.0, 2.0])
     >>> s.plot(background_windows=bw)
@@ -483,7 +483,7 @@ Quantification can be applied from the intensities (background subtracted) with 
 
 .. code-block:: python
 
-    >>> s = hs.utils.example_signals.EDS_TEM_Spectrum()
+    >>> s = hs.example_signals.EDS_TEM_Spectrum()
     >>> s.add_lines()
     >>> kfactors = [1.450226, 5.075602] #For Fe Ka and Pt La
     >>> bw = s.estimate_background_windows(line_width=[5.0, 2.0])
@@ -507,6 +507,6 @@ either with :py:func:`~.misc.material.weight_to_atomic`. The reverse method is :
 .. code-block:: python
 
     >>> # With weight_percent from before	
-    >>> atomic_percent = hs.utils.material.weight_to_atomic(weight_percent)
+    >>> atomic_percent = hs.material.weight_to_atomic(weight_percent)
 
 

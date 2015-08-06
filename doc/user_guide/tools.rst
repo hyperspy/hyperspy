@@ -548,7 +548,7 @@ to make a horizontal "collage" of the image stack:
     >>> for image, angle in zip(image_stack, (0, 45, 90, 135, 180)):
     ...    image.data[:] = scipy.ndimage.rotate(image.data, angle=angle,
     ...    reshape=False)
-    >>> collage = hs.utils.stack([image for image in image_stack], axis=0)
+    >>> collage = hs.stack([image for image in image_stack], axis=0)
     >>> collage.plot()
 
 .. figure::  images/rotate_lena.png
@@ -571,7 +571,7 @@ external function can be more easily accomplished using the
     >>> image_stack.map(scipy.ndimage.rotate,
     ...                            angle=45,
     ...                            reshape=False)
-    >>> collage = hs.utils.stack([image for image in image_stack], axis=0)
+    >>> collage = hs.stack([image for image in image_stack], axis=0)
     >>> collage.plot()
 
 .. figure::  images/rotate_lena_apply_simple.png
@@ -644,7 +644,7 @@ with same dimension.
 .. code-block:: python
 
     >>> image = hs.signals.Image(scipy.misc.lena())
-    >>> image = hs.utils.stack([hs.utils.stack([image]*3,axis=0)]*3,axis=1)
+    >>> image = hs.stack([hs.stack([image]*3,axis=0)]*3,axis=1)
     >>> image.plot()
 
 .. figure::  images/stack_lena_3_3.png
@@ -795,7 +795,7 @@ with histograms of several random chi-square distributions:
 .. code-block:: python
 
     >>> img = hs.signals.Image([np.random.chisquare(i+1,[100,100]) for i in range(5)])
-    >>> hs.utils.plot.plot_histograms(img,legend='auto')
+    >>> hs.plot.plot_histograms(img,legend='auto')
 
 .. figure::  images/plot_histograms_chisquare.png
    :align:   center
