@@ -63,9 +63,6 @@ class Lorentzian(Component):
         self.gamma.grad = self.grad_gamma
         self.centre.grad = self.grad_centre
 
-    def __repr__(self):
-        return u'Lorentzian'
-
     def function(self, x):
         """
         """

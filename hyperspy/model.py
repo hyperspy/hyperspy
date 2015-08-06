@@ -49,6 +49,45 @@ from hyperspy.drawing.widgets import (DraggableVerticalLine,
 from hyperspy.gui.tools import ComponentFit
 from hyperspy.component import Component
 from hyperspy.signal import Signal
+from hyperspy.misc.utils import slugify, shorten_name
+
+
+class ModelComponents(object):
+
+    """Container for model components.
+
+    Useful to provide tab completion when running in IPython.
+
+    """
+
+    def __init__(self, model):
+        self._model = model
+
+    def __repr__(self):
+        signature = u"%4s | %25s | %25s | %25s"
+        ans = signature % ('#',
+                           'Attribute Name',
+                           'Component Name',
+                           'Component Type')
+        ans += u"\n"
+        ans += signature % ('-' * 4, '-' * 25, '-' * 25, '-' * 25)
+        if self._model:
+            for i, c in enumerate(self._model):
+                ans += u"\n"
+                name_string = c.name
+                variable_name = slugify(name_string, valid_variable_name=True)
+                component_type = c._id_name
+
+                variable_name = shorten_name(variable_name, 25)
+                name_string = shorten_name(name_string, 25)
+                component_type = shorten_name(component_type, 25)
+
+                ans += signature % (i,
+                                    variable_name,
+                                    name_string,
+                                    component_type)
+        ans = ans.encode('utf8')
+        return ans
 
 
 class Model(list):
@@ -78,7 +117,12 @@ class Model(list):
         Chi-squared of the signal (or np.nan if not yet fit)
     dof : A Signal of integers
         Degrees of freedom of the signal (0 if not yet fit)
-    red_chisq
+    red_chisq : Signal instance
+        Reduced chi-squared.
+    components : `ModelComponents` instance
+        The components of the model are attributes of this class. This provides
+        a convinient way to access the model components when working in IPython
+        as it enables tab completion.
 
     Methods
     -------
@@ -205,9 +249,17 @@ class Model(list):
         self._suspend_update = False
         self._adjust_position_all = None
         self._plot_components = False
+        self.components = ModelComponents(self)
 
     def __repr__(self):
-        return u"<Model %s>".encode('utf8') % super(Model, self).__repr__()
+        title = self.spectrum.metadata.General.title
+        class_name = str(self.__class__).split("'")[1].split('.')[-1]
+
+        if len(title):
+            return u"<%s, title: %s>".encode(
+                'utf8') % (class_name, self.spectrum.metadata.General.title)
+        else:
+            return u"<%s>".encode('utf8') % class_name
 
     def _get_component(self, thing):
         if isinstance(thing, int) or isinstance(thing, basestring):
@@ -281,6 +333,8 @@ class Model(list):
         thing._create_arrays()
         list.append(self, thing)
         thing.model = self
+        setattr(self.components, slugify(name_string,
+                                         valid_variable_name=True), thing)
         self._touch()
         if self._plot_components:
             self._plot_component(thing)

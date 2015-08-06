@@ -29,6 +29,8 @@ import unicodedata
 
 import numpy as np
 
+from hyperspy.misc.hspy_warnings import VisibleDeprecationWarning
+
 
 def attrsetter(target, attrs, value):
     """ Sets attribute of the target to specified value, supports nested attributes.
@@ -104,7 +106,8 @@ def unfold_if_multidim(signal):
     """
     import warnings
     warnings.warn("unfold_if_multidim is deprecated and will be removed in "
-                  "0.9 please use Signal.unfold instead", DeprecationWarning)
+                  "0.9 please use Signal.unfold instead",
+                  VisibleDeprecationWarning)
     return None
 
 
@@ -837,3 +840,10 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
         step_sizes)
 
     return signal
+
+
+def shorten_name(name, req_l):
+    if len(name) > req_l:
+        return name[:req_l - 2] + u'..'
+    else:
+        return name
