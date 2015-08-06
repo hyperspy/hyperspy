@@ -36,9 +36,7 @@ def _weight_to_atomic(weight_percent, elements):
     atomic_percent = np.array(map(np.divide, weight_percent, atomic_weights))
     sum_weight = atomic_percent.sum(axis=0) / 100.
     for i, el in enumerate(elements):
-        warnings.simplefilter("ignore")
         atomic_percent[i] /= sum_weight
-        warnings.simplefilter('default')
         atomic_percent[i] = np.where(sum_weight == 0.0, 0.0, atomic_percent[i])
     return atomic_percent
 
@@ -113,9 +111,7 @@ def _atomic_to_weight(atomic_percent, elements):
     weight_percent = np.array(map(np.multiply, atomic_percent, atomic_weights))
     sum_atomic = weight_percent.sum(axis=0) / 100.
     for i, el in enumerate(elements):
-        warnings.simplefilter("ignore")
         weight_percent[i] /= sum_atomic
-        warnings.simplefilter('default')
         weight_percent[i] = np.where(sum_atomic == 0.0, 0.0, weight_percent[i])
     return weight_percent
 
@@ -200,18 +196,14 @@ def _density_of_mixture_of_pure_elements(weight_percent,
         for i, weight in enumerate(weight_percent):
             sum_densities[i] = weight / densities[i]
         sum_densities = sum_densities.sum(axis=0)
-        warnings.simplefilter("ignore")
         density = np.sum(weight_percent, axis=0) / sum_densities
-        warnings.simplefilter('default')
         return np.where(sum_densities == 0.0, 0.0, density)
     elif mean == 'weighted':
         for i, weight in enumerate(weight_percent):
             sum_densities[i] = weight * densities[i]
         sum_densities = sum_densities.sum(axis=0)
         sum_weight = np.sum(weight_percent, axis=0)
-        warnings.simplefilter("ignore")
         density = sum_densities / sum_weight
-        warnings.simplefilter('default')
         return np.where(sum_weight == 0.0, 0.0, density)
 
 
