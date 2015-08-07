@@ -241,10 +241,12 @@ class TestExpression:
             self.g.grad_fwhm(2),
             0.00033845077175778578)
 
+
 class TestScalableFixedPattern:
+
     def setUp(self):
-        s = hs.signals.Spectrum(np.linspace(0.,100.,10))
-        s1 = hs.signals.Spectrum(np.linspace(0.,1.,10))
+        s = hs.signals.Spectrum(np.linspace(0., 100., 10))
+        s1 = hs.signals.Spectrum(np.linspace(0., 1., 10))
         s.axes_manager[0].scale = 0.1
         s1.axes_manager[0].scale = 0.1
         self.s = s
