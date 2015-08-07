@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2015 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -357,7 +357,7 @@ class Parameter(t.HasTraits):
             self.std = self.map['std'][indices]
 
     def assign_current_value_to_all(self, mask=None):
-        '''Assign the current value attribute to all the  indices
+        """Assign the current value attribute to all the  indices
 
         Parameters
         ----------
@@ -369,7 +369,7 @@ class Parameter(t.HasTraits):
         --------
         store_current_value_in_array, fetch
 
-        '''
+        """
         if mask is None:
             mask = np.zeros(self.map.shape, dtype='bool')
         self.map['values'][mask == False] = self.value
@@ -440,7 +440,7 @@ class Parameter(t.HasTraits):
 
     def export(self, folder=None, name=None, format=None,
                save_std=False):
-        '''Save the data to a file.
+        """Save the data to a file.
 
         All the arguments are optional.
 
@@ -457,7 +457,7 @@ class Parameter(t.HasTraits):
         save_std : bool
             If True, also the standard deviation will be saved
 
-        '''
+        """
         if format is None:
             format = preferences.General.default_export_format
         if name is None:
@@ -547,7 +547,7 @@ class Component(t.HasTraits):
             self._active_is_multidimensional = False
 
     def _get_name(self):
-        return(self._name)
+        return self._name
 
     def _set_name(self, value):
         old_value = self._name
@@ -837,7 +837,7 @@ class Component(t.HasTraits):
             self.model.axes_manager = old_axes_manager
             self.charge()
         if out_of_range2nans is True:
-            ns = np.empty((self.model.axis.axis.shape))
+            ns = np.empty(self.model.axis.axis.shape)
             ns.fill(np.nan)
             ns[self.model.channel_switches] = s
             s = ns
