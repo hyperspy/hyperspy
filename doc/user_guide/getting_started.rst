@@ -9,7 +9,7 @@ API can be imported as any other Python library as follows:
 
 .. code-block:: python
 
-   >>> import hyperspy.hspy as hs
+   >>> import hyperspy.api as hs
 
 The most common way of using HyperSpy is interactively using the wonderful
 interactive computing package `IPython <http://ipython.org>`_. For interactive
@@ -19,7 +19,7 @@ been imported as follows:
 
 .. code-block:: python
 
-   >>> import hyperspy.hspy as hs
+   >>> import hyperspy.api as hs
    >>> import numpy as np
    >>> import matplotlib.pyplot as plt
 
@@ -154,7 +154,7 @@ in the :file:`~/.local/share/nautilus/scripts/` folder in your home directory
 (create it if it does not exists) and make them executable to get the
 :menuselection:`Scripts --> HyperSpy QtConsole Here` and
 :menuselection:`Scripts --> HyperSpy Notebook Here` entries in the context
-menu. 
+menu.
 
 
 .. figure::  images/hyperspy_here_gnome.png
@@ -188,7 +188,7 @@ and transparent way.
     The following commands were just executed:
     ---------------
     import numpy as np
-    import hyperspy.hspy as hs
+    import hyperspy.api as hs
     %matplotlib [toolkit]
     import matplotlib.pyplot as plt
 

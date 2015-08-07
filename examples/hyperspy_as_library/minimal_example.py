@@ -1,6 +1,6 @@
 """ Loads hyperspy as a regular python library, creates a spectrum with random numbers and plots it to a file"""
 
-import hyperspy.hspy as hs
+import hyperspy.api as hs
 import numpy as np
 import matplotlib.pyplot as plt
 

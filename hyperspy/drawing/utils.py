@@ -211,13 +211,13 @@ def plot_signals(signal_list, sync=True, navigator="auto",
 
     >>> s_cl = hs.load("coreloss.dm3")
     >>> s_ll = hs.load("lowloss.dm3")
-    >>> hs.utils.plot.plot_signals([s_cl, s_ll])
+    >>> hs.plot.plot_signals([s_cl, s_ll])
 
     Specifying the navigator:
 
     >>> s_cl = hs.load("coreloss.dm3")
     >>> s_ll = hs.load("lowloss.dm3")
-    >>> hs.utils.plot_signals([s_cl, s_ll], navigator="slider")
+    >>> hs.plot.plot_signals([s_cl, s_ll], navigator="slider")
 
     Specifying the navigator for each signal:
 
@@ -225,7 +225,7 @@ def plot_signals(signal_list, sync=True, navigator="auto",
     >>> s_ll = hs.load("lowloss.dm3")
     >>> s_edx = hs.load("edx.dm3")
     >>> s_adf = hs.load("adf.dm3")
-    >>> hs.utils.plot.plot_signals(
+    >>> hs.plot.plot_signals(
             [s_cl, s_ll, s_edx], navigator_list=["slider",None,s_adf])
 
     """
@@ -919,11 +919,11 @@ def plot_spectra(
     Example
     -------
     >>> s = hs.load("some_spectra")
-    >>> hs.utils.plot.plot_spectra(s, style='cascade', color='red', padding=0.5)
+    >>> hs.plot.plot_spectra(s, style='cascade', color='red', padding=0.5)
 
     To save the plot as a png-file
 
-    >>> hs.utils.plot.plot_spectra(s).figure.savefig("test.png")
+    >>> hs.plot.plot_spectra(s).figure.savefig("test.png")
 
     Returns
     -------
@@ -1125,7 +1125,7 @@ def plot_histograms(signal_list,
     Histograms of two random chi-square distributions
     >>> img = hs.signals.Image(np.random.chisquare(1,[10,10,100]))
     >>> img2 = hs.signals.Image(np.random.chisquare(2,[10,10,100]))
-    >>> hs.utils.plot.plot_histograms([img,img2],legend=['hist1','hist2'])
+    >>> hs.plot.plot_histograms([img,img2],legend=['hist1','hist2'])
 
     Returns
     -------

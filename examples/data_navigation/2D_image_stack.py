@@ -2,7 +2,7 @@
 """
 
 import numpy as np
-import hyperspy.hspy as hs
+import hyperspy.api as hs
 import matplotlib.pyplot as plt
 
 # Create a 2D image stack with random data

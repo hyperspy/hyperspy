@@ -2349,7 +2349,7 @@ class MVATools(object):
                               save_figures_format=save_figures_format)
 
     def _get_loadings(self, loadings):
-        from hyperspy.hspy import signals
+        from hyperspy.api import signals
         data = loadings.T.reshape(
             (-1,) + self.axes_manager.navigation_shape[::-1])
         signal = signals.Signal(
@@ -2843,7 +2843,7 @@ class Signal(MVA,
 
         """
 
-        self.data = np.atleast_1d(np.asanyarray(file_data_dict['data']))
+        self.data = np.asanyarray(file_data_dict['data'])
         if 'axes' not in file_data_dict:
             file_data_dict['axes'] = self._get_undefined_axes_list()
         self.axes_manager = AxesManager(
@@ -3283,7 +3283,7 @@ class Signal(MVA,
 
         Examples
         --------
-        >>> import hyperspy.hspy as hs
+        >>> import hyperspy.api as hs
         >>> s = hs.signals.Spectrum(np.zeros((10, 100)))
         >>> s
         <Spectrum, title: , dimensions: (10|100)>
@@ -3646,29 +3646,19 @@ class Signal(MVA,
             yield(data[getitem])
 
     def _remove_axis(self, axis):
-        am = self.axes_manager
-        axis = am[axis]
-        if am.navigation_dimension + am.signal_dimension > 1:
-            am.remove(axis.index_in_axes_manager)
-            if axis.navigate is False:  # The removed axis is a signal axis
-                if am.signal_dimension == 2:
-                    self._record_by = "image"
-                elif am.signal_dimension == 1:
-                    self._record_by = "spectrum"
-                elif am.signal_dimension == 0:
-                    self._record_by = ""
-                else:
-                    return
-                self.metadata.Signal.record_by = self._record_by
-                self._assign_subclass()
-        else:
-            # Don't remove axis because it is the only one and HyperSpy does not
-            # support 0 dimensions
-            axis.size = 1
-            axis.scale = 1
-            axis.offset = 0
-            axis.name = "scalar"
-            axis.navigate = False
+        axis = self.axes_manager[axis]
+        self.axes_manager.remove(axis.index_in_axes_manager)
+        if axis.navigate is False:  # The removed axis is a signal axis
+            if self.axes_manager.signal_dimension == 2:
+                self._record_by = "image"
+            elif self.axes_manager.signal_dimension == 1:
+                self._record_by = "spectrum"
+            elif self.axes_manager.signal_dimension == 0:
+                self._record_by = ""
+            else:
+                return
+            self.metadata.Signal.record_by = self._record_by
+            self._assign_subclass()
 
     def _apply_function_on_data_and_remove_axis(self, function, axis):
         s = self._deepcopy_with_new_data(
@@ -4758,7 +4748,7 @@ class Signal(MVA,
         Parameters
         ----------
         marker: `hyperspy.drawing._markers`
-            the marker to add. see `utils.markers`
+            the marker to add. see `plot.markers`
         plot_on_signal: bool
             If True, add the marker to the signal
             If False, add the marker to the navigator
@@ -4769,7 +4759,7 @@ class Signal(MVA,
         -------
         >>> import scipy.misc
         >>> im = hs.signals.Image(scipy.misc.lena())
-        >>> m = hs.utils.plot.markers.rectangle(x1=150, y1=100, x2=400,
+        >>> m = hs.plot.markers.rectangle(x1=150, y1=100, x2=400,
         >>>                                  y2=400, color='red')
         >>> im.add_marker(m)
 
