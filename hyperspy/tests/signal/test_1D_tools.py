@@ -1,4 +1,4 @@
-# Copyright 2007-2012 The HyperSpy developers
+# Copyright 2007-2015 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -103,7 +103,7 @@ class TestAlignTools:
         nose.tools.assert_equal(s.axes_manager._axes[1].scale, self.scale)
 
 
-class TestShift1D():
+class TestShift1D:
 
     def setUp(self):
         self.s = hs.signals.Spectrum(np.arange(10))
@@ -208,7 +208,7 @@ class TestInterpolateInBetween:
             np.all(s.data[8: 12] == np.array([45, 104, 155, 170])))
 
 
-class TestEstimatePeakWidth():
+class TestEstimatePeakWidth:
 
     def setUp(self):
         scale = 0.1

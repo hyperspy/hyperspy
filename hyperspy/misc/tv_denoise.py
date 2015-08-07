@@ -59,7 +59,6 @@ def _tv_denoise_3d(im, weight=100, eps=2.e-4, keep_type=False, n_iter_max=200):
     gx = np.zeros_like(im)
     gy = np.zeros_like(im)
     gz = np.zeros_like(im)
-    d = np.zeros_like(im)
     i = 0
     while i < n_iter_max:
         d = - px - py - pz
@@ -148,8 +147,6 @@ def _tv_denoise_2d(im, weight=50, eps=2.e-4, keep_type=False, n_iter_max=200):
 
     Examples
     ---------
-    >>> import scipy
-    >>> lena = scipy.lena()
     >>> import scipy
     >>> lena = scipy.lena().astype(np.float)
     >>> lena += 0.5 * lena.std()*np.random.randn(*lena.shape)
@@ -246,8 +243,6 @@ def _tv_denoise_1d(im, weight=50, eps=2.e-4, keep_type=False, n_iter_max=200):
 
     Examples
     ---------
-    >>> import scipy
-    >>> lena = scipy.lena()
     >>> import scipy
     >>> lena = scipy.lena().astype(np.float)
     >>> lena += 0.5 * lena.std()*np.random.randn(*lena.shape)
@@ -347,9 +342,7 @@ def tv_denoise(im, weight=50, eps=2.e-4, keep_type=False, n_iter_max=200):
 
     Examples
     ---------
-    >>> import scipy
     >>> # 2D example using lena
-    >>> lena = scipy.lena()
     >>> import scipy
     >>> lena = scipy.lena().astype(np.float)
     >>> lena += 0.5 * lena.std()*np.random.randn(*lena.shape)

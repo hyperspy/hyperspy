@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2015 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -321,7 +321,8 @@ class SpikesRemoval(SpanSelectorInSpectrum):
         self.index = 0
         self.update_plot()
 
-    def _click_to_show_instructions_fired(self):
+    @staticmethod
+    def _click_to_show_instructions_fired():
         m = information(None,
                         "\nTo remove spikes from the data:\n\n"
 

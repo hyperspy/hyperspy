@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2015 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -689,6 +689,8 @@ class Signal1DTools(object):
         estimate_shift1D
 
         """
+        if also_align is None:
+            also_align = []
         self._check_signal_dimension_equals_one()
         shift_array = self.estimate_shift1D(
             start=start,
@@ -768,7 +770,7 @@ class Signal1DTools(object):
         e1 = signal_range[0]
         e2 = signal_range[1]
         integrated_spectrum = self[..., e1:e2].integrate1D(-1)
-        return(integrated_spectrum)
+        return integrated_spectrum
 
     @only_interactive
     def calibrate(self):
@@ -1592,19 +1594,15 @@ class MVATools(object):
                                   self.metadata.General.title),
                               }})
             elif self.axes_manager.signal_dimension == 1:
-                axes = []
-                axes.append(
-                    self.axes_manager.signal_axes[0].get_axis_dictionary())
+                axes = [self.axes_manager.signal_axes[0].get_axis_dictionary(),
+                        {'name': 'factor_index',
+                         'scale': 1.,
+                         'offset': 0.,
+                         'size': int(factors.shape[1]),
+                         'units': 'factor',
+                         'index_in_array': 0,
+                         }]
                 axes[0]['index_in_array'] = 1
-
-                axes.append({
-                    'name': 'factor_index',
-                    'scale': 1.,
-                    'offset': 0.,
-                    'size': int(factors.shape[1]),
-                    'units': 'factor',
-                    'index_in_array': 0,
-                })
                 s = Spectrum(
                     factors.T, axes=axes, metadata={
                         "General": {
@@ -1637,9 +1635,8 @@ class MVATools(object):
 
             if self.axes_manager.signal_dimension == 2:
                 axes = self.axes_manager.signal_axes
-                axes_dicts = []
-                axes_dicts.append(axes[0].get_axis_dictionary())
-                axes_dicts.append(axes[1].get_axis_dictionary())
+                axes_dicts = [axes[0].get_axis_dictionary(),
+                              axes[1].get_axis_dictionary()]
                 axes_dicts[0]['index_in_array'] = 0
                 axes_dicts[1]['index_in_array'] = 1
 
@@ -1739,14 +1736,13 @@ class MVATools(object):
                 cal_axis = self.axes_manager.navigation_axes[0].\
                     get_axis_dictionary()
                 cal_axis['index_in_array'] = 1
-                axes = []
-                axes.append({'name': 'loading_index',
-                             'scale': 1.,
-                             'offset': 0.,
-                             'size': int(loadings.shape[0]),
-                             'units': 'comp_id',
-                             'index_in_array': 0, })
-                axes.append(cal_axis)
+                axes = [{'name': 'loading_index',
+                         'scale': 1.,
+                         'offset': 0.,
+                         'size': int(loadings.shape[0]),
+                         'units': 'comp_id',
+                         'index_in_array': 0, },
+                        cal_axis]
                 s = Image(loadings,
                           axes=axes,
                           metadata={
@@ -2889,15 +2885,11 @@ class Signal(MVA,
         dic : dictionary
 
         """
-        dic = {}
-        dic['data'] = self.data
-        dic['axes'] = self.axes_manager._get_axes_dicts()
-        dic['metadata'] = \
-            self.metadata.deepcopy().as_dictionary()
-        dic['original_metadata'] = \
-            self.original_metadata.deepcopy().as_dictionary()
-        dic['tmp_parameters'] = \
-            self.tmp_parameters.deepcopy().as_dictionary()
+        dic = {'data': self.data,
+               'axes': self.axes_manager._get_axes_dicts(),
+               'metadata': self.metadata.deepcopy().as_dictionary(),
+               'original_metadata': self.original_metadata.deepcopy().as_dictionary(),
+               'tmp_parameters': self.tmp_parameters.deepcopy().as_dictionary()}
         if add_learning_results and hasattr(self, 'learning_results'):
             dic['learning_results'] = copy.deepcopy(
                 self.learning_results.__dict__)
@@ -3427,7 +3419,8 @@ class Signal(MVA,
         return splitted
 
     # TODO: remove in HyperSpy 0.9
-    def unfold_if_multidim(self):
+    @staticmethod
+    def unfold_if_multidim():
         """Unfold the datacube if it is >2D
 
         Deprecated method, please use unfold.
@@ -4043,7 +4036,7 @@ class Signal(MVA,
         s.data = self.axes_manager[axis].index2value(s.data)
         return s
 
-    def get_histogram(img, bins='freedman', range_bins=None, **kwargs):
+    def get_histogram(self, bins='freedman', range_bins=None, **kwargs):
         """Return a histogram of the signal data.
 
         More sophisticated algorithms for determining bins can be used.
@@ -4090,7 +4083,7 @@ class Signal(MVA,
 
         """
         from hyperspy import signals
-        data = img.data[~np.isnan(img.data)].flatten()
+        data = self.data[~np.isnan(self.data)].flatten()
         hist, bin_edges = histogram(data,
                                     bins=bins,
                                     range=range_bins,
@@ -4107,7 +4100,7 @@ class Signal(MVA,
             hist_spec.axes_manager[0].offset = bin_edges[0]
 
         hist_spec.axes_manager[0].name = 'value'
-        hist_spec.metadata.General.title = (img.metadata.General.title +
+        hist_spec.metadata.General.title = (self.metadata.General.title +
                                             " histogram")
         hist_spec.metadata.Signal.binned = True
         return hist_spec
@@ -4281,16 +4274,6 @@ class Signal(MVA,
                     raise AttributeError(
                         "Only spectrum signals can be converted "
                         "to RGB images.")
-                    if "rgba" in dtype:
-                        if self.axes_manager.signal_size != 4:
-                            raise AttributeError(
-                                "Only spectra with signal_size equal to 4 can "
-                                "be converted to RGBA images")
-                    else:
-                        if self.axes_manager.signal_size != 3:
-                            raise AttributeError(
-                                "Only spectra with signal_size equal to 3 can "
-                                "be converted to RGBA images")
                 if "8" in dtype and self.data.dtype.name != "uint8":
                     raise AttributeError(
                         "Only signals with dtype uint8 can be converted to "

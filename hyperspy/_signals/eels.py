@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2015 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -128,7 +128,7 @@ class EELSSpectrum(Spectrum):
                             <= end_energy:
                         subshell = '%s_%s' % (element, shell)
                         if subshell not in self.subshells:
-                            print "Adding %s subshell" % (subshell)
+                            print "Adding %s subshell" % subshell
                             self.subshells.add(
                                 '%s_%s' % (element, shell))
                             e_shells.append(subshell)
@@ -447,7 +447,7 @@ class EELSSpectrum(Spectrum):
         del s
         if np.isnan(threshold.data).any():
             warnings.warn(
-                "No inflexion point could we found in some positions "
+                "No inflexion point could be found in some positions "
                 "that have been marked with nans.")
         # Create spectrum image, stop and return value
         threshold.metadata.General.title = (
@@ -887,7 +887,7 @@ class EELSSpectrum(Spectrum):
                 '_%i_channels_extrapolated' % extrapolation_size)
         new_shape = list(self.data.shape)
         new_shape[axis.index_in_array] += extrapolation_size
-        s.data = np.zeros((new_shape))
+        s.data = np.zeros(new_shape)
         s.get_dimensions_from_data()
         s.data[..., :axis.size] = self.data
         pl = PowerLaw()

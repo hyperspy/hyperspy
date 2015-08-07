@@ -44,7 +44,7 @@ example1_original_metadata = {
     u'YUNITS': u'Intensity'}
 
 
-class Example1():
+class Example1:
 
     def test_data(self):
         nt.assert_equal(

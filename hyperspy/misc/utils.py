@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2015 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -214,7 +214,9 @@ class DictionaryTreeBrowser(object):
 
     """
 
-    def __init__(self, dictionary={}):
+    def __init__(self, dictionary=None):
+        if not dictionary:
+            dictionary = {}
         super(DictionaryTreeBrowser, self).__init__()
         self.add_dictionary(dictionary)
 
@@ -492,10 +494,11 @@ class DictionaryTreeBrowser(object):
 
         """
         keys = node_path.split('.')
+        dtb = self
         for key in keys:
-            if self.has_item(key) is False:
-                self[key] = DictionaryTreeBrowser()
-            self = self[key]
+            if dtb.has_item(key) is False:
+                dtb[key] = DictionaryTreeBrowser()
+            dtb = dtb[key]
 
     def next(self):
         """

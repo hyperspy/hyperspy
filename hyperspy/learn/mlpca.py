@@ -6,7 +6,7 @@
 # Analytica Chimica Acta 350, no. 3 (September 19, 1997): 341-352.
 #
 # Copyright 1997 Darren T. Andrews and Peter D. Wentzell
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2015 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -100,9 +100,9 @@ def mlpca(X, varX, p, convlim=1E-10, maxiter=50000, fast=False):
                                  F *
                                  U0m.T *
                                  Q *
-                                 ((np.matrix(XX[:, i])).T)).squeeze()
+                                 (np.matrix(XX[:, i])).T).squeeze()
             dx = np.matrix((XX[:, i] - MLX[:, i]).squeeze())
-            Sobj = Sobj + float(dx * Q * dx.T)
+            Sobj += float(dx * Q * dx.T)
         if (count % 2) == 1:
             print "Iteration : %s" % (count / 2)
             if (abs(Sold - Sobj) / Sobj) < convlim:

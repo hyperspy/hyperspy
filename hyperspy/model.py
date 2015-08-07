@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2015 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -261,17 +261,17 @@ class Model(list):
         else:
             return u"<%s>".encode('utf8') % class_name
 
-    def _get_component(self, object):
-        if isinstance(object, int) or isinstance(object, basestring):
-            object = self[object]
-        elif not isinstance(object, Component):
+    def _get_component(self, thing):
+        if isinstance(thing, int) or isinstance(thing, basestring):
+            thing = self[thing]
+        elif not isinstance(thing, Component):
             raise ValueError("Not a component or component id.")
-        if object in self:
-            return object
+        if thing in self:
+            return thing
         else:
             raise ValueError("The component is not in the model.")
 
-    def insert(self):
+    def insert(self, **kwargs):
         raise NotImplementedError
 
     @property
@@ -307,18 +307,18 @@ class Model(list):
 
     # Extend the list methods to call the _touch when the model is modified
 
-    def append(self, object):
+    def append(self, thing):
         # Check if any of the other components in the model has the same name
-        if object in self:
+        if thing in self:
             raise ValueError("Component already in model")
         component_name_list = []
         for component in self:
             component_name_list.append(component.name)
         name_string = ""
-        if object.name:
-            name_string = object.name
+        if thing.name:
+            name_string = thing.name
         else:
-            name_string = object._id_name
+            name_string = thing._id_name
 
         if name_string in component_name_list:
             temp_name_string = name_string
@@ -327,19 +327,19 @@ class Model(list):
                 temp_name_string = name_string + "_" + str(index)
                 index += 1
             name_string = temp_name_string
-        object.name = name_string
+        thing.name = name_string
 
-        object._axes_manager = self.axes_manager
-        object._create_arrays()
-        list.append(self, object)
-        object.model = self
+        thing._axes_manager = self.axes_manager
+        thing._create_arrays()
+        list.append(self, thing)
+        thing.model = self
         setattr(self.components, slugify(name_string,
-                                         valid_variable_name=True), object)
+                                         valid_variable_name=True), thing)
         self._touch()
         if self._plot_components:
-            self._plot_component(object)
+            self._plot_component(thing)
         if self._adjust_position_all is not None:
-            self._make_position_adjuster(object, self._adjust_position_all[0],
+            self._make_position_adjuster(thing, self._adjust_position_all[0],
                                          self._adjust_position_all[1])
 
     def extend(self, iterable):
@@ -352,7 +352,7 @@ class Model(list):
         list.__delitem__(self, self.index(thing))
         self._touch()
 
-    def remove(self, object, touch=True):
+    def remove(self, thing, touch=True):
         """Remove component from model.
 
         Examples
@@ -376,22 +376,22 @@ class Model(list):
         >>> m.remove(0)
 
         """
-        object = self._get_component(object)
+        thing = self._get_component(thing)
         for pw in self._position_widgets:
-            if hasattr(pw, 'component') and pw.component is object:
+            if hasattr(pw, 'component') and pw.component is thing:
                 pw.component._position.twin = None
                 del pw.component
                 pw.close()
                 del pw
-        if hasattr(object, '_model_plot_line'):
-            line = object._model_plot_line
+        if hasattr(thing, '_model_plot_line'):
+            line = thing._model_plot_line
             line.close()
             del line
-            idx = self.index(object)
+            idx = self.index(thing)
             self.spectrum._plot.signal_plot.ax_lines.remove(
                 self.spectrum._plot.signal_plot.ax_lines[2 + idx])
-        list.remove(self, object)
-        object.model = None
+        list.remove(self, thing)
+        thing.model = None
         if touch is True:
             self._touch()
         if self._plot_active:
@@ -727,7 +727,7 @@ class Model(list):
             self.axes_manager = old_axes_manager
             self.fetch_stored_values()
         if out_of_range2nans is True:
-            ns = np.empty((self.axis.axis.shape))
+            ns = np.empty(self.axis.axis.shape)
             ns.fill(np.nan)
             ns[self.channel_switches] = s
             s = ns
@@ -860,7 +860,7 @@ class Model(list):
         self._remove_signal_range_in_pixels(i1, i2)
 
     def reset_signal_range(self):
-        '''Resets the data range'''
+        """Resets the data range"""
         self._set_signal_range_in_pixels()
 
     def _add_signal_range_in_pixels(self, i1=None, i2=None):
@@ -946,6 +946,7 @@ class Model(list):
             to_return *= self.spectrum.axes_manager[-1].scale
         return to_return
 
+    # noinspection PyAssignmentToLoopOrWithParameter
     def _jacobian(self, param, y, weights=None):
         if self.convolved is True:
             counter = 0
@@ -964,9 +965,9 @@ class Model(list):
                                 self.low_loss(self.axes_manager),
                                 mode="valid")
                             if parameter._twins:
-                                for parameter in parameter._twins:
+                                for par in parameter._twins:
                                     np.add(par_grad, np.convolve(
-                                        parameter.grad(
+                                        par.grad(
                                             self.convolution_axis),
                                         self.low_loss(self.axes_manager),
                                         mode="valid"), par_grad)
@@ -976,8 +977,8 @@ class Model(list):
                         for parameter in component.free_parameters:
                             par_grad = parameter.grad(self.axis.axis)
                             if parameter._twins:
-                                for parameter in parameter._twins:
-                                    np.add(par_grad, parameter.grad(
+                                for par in parameter._twins:
+                                    np.add(par_grad, par.grad(
                                         self.axis.axis), par_grad)
                             grad = np.vstack((grad, par_grad))
                         counter += component._nfree_param
@@ -999,8 +1000,8 @@ class Model(list):
                     for parameter in component.free_parameters:
                         par_grad = parameter.grad(axis)
                         if parameter._twins:
-                            for parameter in parameter._twins:
-                                np.add(par_grad, parameter.grad(
+                            for par in parameter._twins:
+                                np.add(par_grad, par.grad(
                                     axis), par_grad)
                         grad = np.vstack((grad, par_grad))
                     counter += component._nfree_param
@@ -1538,13 +1539,15 @@ class Model(list):
         if plot_components is True:
             self.enable_plot_components()
 
-    def _connect_component_line(self, component):
+    @staticmethod
+    def _connect_component_line(component):
         if hasattr(component, "_model_plot_line"):
             component.connect(component._model_plot_line.update)
             for parameter in component.parameters:
                 parameter.connect(component._model_plot_line.update)
 
-    def _disconnect_component_line(self, component):
+    @staticmethod
+    def _disconnect_component_line(component):
         if hasattr(component, "_model_plot_line"):
             component.disconnect(component._model_plot_line.update)
             for parameter in component.parameters:
@@ -1569,7 +1572,8 @@ class Model(list):
         component._model_plot_line = line
         self._connect_component_line(component)
 
-    def _update_component_line(self, component):
+    @staticmethod
+    def _update_component_line(component):
         if hasattr(component, "_model_plot_line"):
             component._model_plot_line.update()
 
@@ -2090,7 +2094,7 @@ class Model(list):
                     component_list.append(component)
             if component_list:
                 if len(component_list) == 1:
-                    return(component_list[0])
+                    return component_list[0]
                 else:
                     raise ValueError(
                         "There are several components with "

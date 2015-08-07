@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2015 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -17,7 +17,7 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 
-'''
+"""
 
 Components that can be used to define a model for e.g. curve fitting.
 
@@ -29,7 +29,7 @@ look to the other components.
 
 For more details see each component docstring.
 
-'''
+"""
 
 from hyperspy._components.arctan import Arctan
 from hyperspy._components.bleasdale import Bleasdale

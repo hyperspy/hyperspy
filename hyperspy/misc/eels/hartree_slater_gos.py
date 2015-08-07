@@ -85,10 +85,8 @@ class HartreeSlaterGOS(GOSBase):
             GOS_list = f.read().replace('\r', '').split()
 
         # Map the parameters
-        material = GOS_list[0]
         info1_1 = float(GOS_list[2])
         info1_2 = float(GOS_list[3])
-        info1_3 = float(GOS_list[4])
         ncol = int(GOS_list[5])
         info2_1 = float(GOS_list[6])
         info2_2 = float(GOS_list[7])
