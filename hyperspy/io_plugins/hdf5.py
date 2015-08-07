@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2015 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -141,8 +141,7 @@ def hdfgroup2signaldict(group):
         metadata = "metadata"
         original_metadata = "original_metadata"
 
-    exp = {}
-    exp['data'] = group['data'][:]
+    exp = {'data': group['data'][:]}
     axes = []
     for i in xrange(len(exp['data'].shape)):
         try:
@@ -376,7 +375,9 @@ def dict2hdfgroup(dictionary, group, compression=None):
                 print('%s : %s' % (key, value))
 
 
-def hdfgroup2dict(group, dictionary={}):
+def hdfgroup2dict(group, dictionary=None):
+    if dictionary is None:
+        dictionary = {}
     for key, value in group.attrs.iteritems():
         if isinstance(value, (np.string_, str)):
             if value == '_None_':

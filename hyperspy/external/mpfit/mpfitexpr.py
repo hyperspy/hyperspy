@@ -48,9 +48,7 @@ def mpfitexpr(func, x, y, err, start_params, check=True, full_output=False,
 
     """
 
-    hash = {}
-    hash['numpy'] = numpy
-    hash['scipy'] = scipy
+    hash = {'numpy': numpy, 'scipy': scipy}
 
     if imports is not None:
         for i in imports:
@@ -76,6 +74,6 @@ def mpfitexpr(func, x, y, err, start_params, check=True, full_output=False,
     res = mpfit.mpfit(myfunc, start_params, functkw=fa, **kw)
     yfit = eval(func, globals(), {'x': x, 'p': res.params})
     if full_output:
-        return (res, yfit)
+        return res, yfit
     else:
-        return (res.params, yfit)
+        return res.params, yfit

@@ -13,6 +13,8 @@ from hyperspy.io import load
 from hyperspy.defaults_parser import preferences
 from hyperspy import utils
 from hyperspy.datasets import example_signals
+from hyperspy.misc.hspy_warnings import VisibleDeprecationWarning
+
 
 
 def get_configuration_directory_path():
@@ -62,5 +64,5 @@ def create_model(signal, *args, **kwargs):
     warnings.warn(
         "This function is deprecated and will be removed in HyperSpy 0.9. "
         "Please use the equivalent `Signal.create_model` method "
-        "instead.", DeprecationWarning)
+        "instead.", VisibleDeprecationWarning)
     return signal.create_model(*args, **kwargs)

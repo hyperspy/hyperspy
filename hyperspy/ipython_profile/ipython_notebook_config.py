@@ -1,1 +1,0 @@
-# c = get_config()

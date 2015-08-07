@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2015 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -128,7 +128,7 @@ class EELSSpectrum(Spectrum):
                             <= end_energy:
                         subshell = '%s_%s' % (element, shell)
                         if subshell not in self.subshells:
-                            print "Adding %s subshell" % (subshell)
+                            print "Adding %s subshell" % subshell
                             self.subshells.add(
                                 '%s_%s' % (element, shell))
                             e_shells.append(subshell)
@@ -182,6 +182,7 @@ class EELSSpectrum(Spectrum):
             print_stats=True,
             subpixel=True,
             mask=None,
+            show_progressbar=None,
             **kwargs):
         """Align the zero-loss peak.
 
@@ -210,6 +211,9 @@ class EELSSpectrum(Spectrum):
             It must have signal_dimension = 0 and navigation_shape equal to the
             current signal. Where mask is True the shift is not computed
             and set to nan.
+        show_progressbar : None or bool
+            If True, display a progress bar. If None the default is set in
+            `preferences`.
 
         See Also
         --------
@@ -233,7 +237,9 @@ class EELSSpectrum(Spectrum):
             zlpc.print_summary_statistics()
 
         for signal in also_align + [self]:
-            signal.shift1D(-zlpc.data + mean_)
+            signal.shift1D(-
+                           zlpc.data +
+                           mean_, show_progressbar=show_progressbar)
 
         if calibrate is True:
             zlpc = self.estimate_zero_loss_peak_centre(mask=mask)
@@ -253,7 +259,12 @@ class EELSSpectrum(Spectrum):
                 else self.axes_manager[-1].axis[0])
         right = (right if right < self.axes_manager[-1].axis[-1]
                  else self.axes_manager[-1].axis[-1])
-        self.align1D(left, right, also_align=also_align, **kwargs)
+        self.align1D(
+            left,
+            right,
+            also_align=also_align,
+            show_progressbar=show_progressbar,
+            **kwargs)
         zlpc = self.estimate_zero_loss_peak_centre(mask=mask)
         if calibrate is True:
             substract_from_offset(without_nans(zlpc.data).mean(),
@@ -436,7 +447,7 @@ class EELSSpectrum(Spectrum):
         del s
         if np.isnan(threshold.data).any():
             warnings.warn(
-                "No inflexion point could we found in some positions "
+                "No inflexion point could be found in some positions "
                 "that have been marked with nans.")
         # Create spectrum image, stop and return value
         threshold.metadata.General.title = (
@@ -876,7 +887,7 @@ class EELSSpectrum(Spectrum):
                 '_%i_channels_extrapolated' % extrapolation_size)
         new_shape = list(self.data.shape)
         new_shape[axis.index_in_array] += extrapolation_size
-        s.data = np.zeros((new_shape))
+        s.data = np.zeros(new_shape)
         s.get_dimensions_from_data()
         s.data[..., :axis.size] = self.data
         pl = PowerLaw()
