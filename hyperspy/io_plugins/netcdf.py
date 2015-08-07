@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2015 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -113,7 +113,7 @@ def file_reader(filename, *args, **kwds):
         ncfile.close()
         messages.warning_exit('Unsupported netCDF file')
 
-    return (dictionary,)
+    return dictionary,
 
 
 def nc_hyperspy_reader_0dot1(ncfile, filename, *args, **kwds):
@@ -195,9 +195,7 @@ def nc_hyperspy_reader_0dot1(ncfile, filename, *args, **kwds):
             'offset': origins[i],
             'units': units[i], }
         for i in xrange(dim)]
-    metadata = {}
-    metadata['General'] = {}
-    metadata['Signal'] = {}
+    metadata = {'General': {}, 'Signal': {}}
     metadata['General']['original_filename'] = os.path.split(filename)[1]
     metadata["Signal"]['record_by'] = record_by
     metadata["General"]['signal_type'] = ""

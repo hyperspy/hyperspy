@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The Hyperspy developers
+# Copyright 2007-2015 The HyperSpy developers
 #
-# This file is part of  Hyperspy.
+# This file is part of  HyperSpy.
 #
-#  Hyperspy is free software: you can redistribute it and/or modify
+#  HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  Hyperspy is distributed in the hope that it will be useful,
+#  HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import matplotlib.pyplot as plt
 
@@ -48,8 +48,8 @@ class Rectangle(MarkerBase):
     Example
     -------
     >>> import scipy.misc
-    >>> im = signals.Image(scipy.misc.lena())
-    >>> m = utils.plot.markers.rectangle(x1=150, y1=100, x2=400, y2=400,
+    >>> im = hs.signals.Image(scipy.misc.lena())
+    >>> m = hs.plot.markers.rectangle(x1=150, y1=100, x2=400, y2=400,
     >>>                                  color='red')
     >>> im.add_marker(m)
 
@@ -57,10 +57,7 @@ class Rectangle(MarkerBase):
 
     def __init__(self, x1, y1, x2, y2, **kwargs):
         MarkerBase.__init__(self)
-        lp = {}
-        lp['color'] = 'black'
-        lp['fill'] = None
-        lp['linewidth'] = 1
+        lp = {'color': 'black', 'fill': None, 'linewidth': 1}
         self.marker_properties = lp
         self.set_data(x1=x1, y1=y1, x2=x2, y2=y2)
         self.set_marker_properties(**kwargs)

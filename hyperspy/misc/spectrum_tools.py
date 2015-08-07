@@ -155,12 +155,11 @@ def find_peaks_ohaver(y, x=None, slope_thresh=0., amp_thresh=None,
                         # no way to know peak width without
                         # the above measurements.
                         width = 0
-                    if (position > 0 and not np.isnan(position) and
-                            position < x[-1]):
+                    if (not np.isnan(position) and 0 < position < x[-1]):
                         P = np.hstack((P,
                                        np.array([(position, height, width)],
                                                 dtype=peak_dt)))
-                        peak = peak + 1
+                        peak += 1
     # return only the part of the array that contains peaks
     # (not the whole maxpeakn x 3 array)
     if len(P) > maxpeakn:

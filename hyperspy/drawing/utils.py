@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2015 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -169,10 +169,10 @@ def subplot_parameters(fig):
     right = fig.subplotpars.right
     top = fig.subplotpars.top
     bottom = fig.subplotpars.bottom
-    return (left, bottom, right, top, wspace, hspace)
+    return left, bottom, right, top, wspace, hspace
 
 
-class ColorCycle():
+class ColorCycle:
     _color_cycle = [mpl.colors.colorConverter.to_rgba(color) for color
                     in ('b', 'g', 'r', 'c', 'm', 'y', 'k')]
 
@@ -209,23 +209,23 @@ def plot_signals(signal_list, sync=True, navigator="auto",
     Example
     -------
 
-    >>> s_cl = load("coreloss.dm3")
-    >>> s_ll = load("lowloss.dm3")
-    >>> utils.plot.plot_signals([s_cl, s_ll])
+    >>> s_cl = hs.load("coreloss.dm3")
+    >>> s_ll = hs.load("lowloss.dm3")
+    >>> hs.plot.plot_signals([s_cl, s_ll])
 
     Specifying the navigator:
 
-    >>> s_cl = load("coreloss.dm3")
-    >>> s_ll = load("lowloss.dm3")
-    >>> utils.plot_signals([s_cl, s_ll], navigator="slider")
+    >>> s_cl = hs.load("coreloss.dm3")
+    >>> s_ll = hs.load("lowloss.dm3")
+    >>> hs.plot.plot_signals([s_cl, s_ll], navigator="slider")
 
     Specifying the navigator for each signal:
 
-    >>> s_cl = load("coreloss.dm3")
-    >>> s_ll = load("lowloss.dm3")
-    >>> s_edx = load("edx.dm3")
-    >>> s_adf = load("adf.dm3")
-    >>> utils.plot.plot_signals(
+    >>> s_cl = hs.load("coreloss.dm3")
+    >>> s_ll = hs.load("lowloss.dm3")
+    >>> s_edx = hs.load("edx.dm3")
+    >>> s_adf = hs.load("adf.dm3")
+    >>> hs.plot.plot_signals(
             [s_cl, s_ll, s_edx], navigator_list=["slider",None,s_adf])
 
     """
@@ -918,12 +918,12 @@ def plot_spectra(
 
     Example
     -------
-    >>> s = load("some_spectra")
-    >>> utils.plot.plot_spectra(s, style='cascade', color='red', padding=0.5)
+    >>> s = hs.load("some_spectra")
+    >>> hs.plot.plot_spectra(s, style='cascade', color='red', padding=0.5)
 
     To save the plot as a png-file
 
-    >>> utils.plot.plot_spectra(s).figure.savefig("test.png")
+    >>> hs.plot.plot_spectra(s).figure.savefig("test.png")
 
     Returns
     -------
@@ -1123,9 +1123,9 @@ def plot_histograms(signal_list,
     Example
     -------
     Histograms of two random chi-square distributions
-    >>> img = signals.Image(np.random.chisquare(1,[10,10,100]))
-    >>> img2 = signals.Image(np.random.chisquare(2,[10,10,100]))
-    >>> utils.plot.plot_histograms([img,img2],legend=['hist1','hist2'])
+    >>> img = hs.signals.Image(np.random.chisquare(1,[10,10,100]))
+    >>> img2 = hs.signals.Image(np.random.chisquare(2,[10,10,100]))
+    >>> hs.plot.plot_histograms([img,img2],legend=['hist1','hist2'])
 
     Returns
     -------

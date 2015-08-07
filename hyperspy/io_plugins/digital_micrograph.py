@@ -529,7 +529,7 @@ class ImageObject(object):
         len_diff = len(self.shape) - len(dimensions)
         origins = np.array([dimension[1].Origin for dimension in dimensions])
         origins = np.append(origins, (0.0,) * len_diff)
-        return (-1 * origins[::-1] * self.scales)
+        return -1 * origins[::-1] * self.scales
 
     @property
     def scales(self):

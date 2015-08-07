@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2015 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -39,6 +39,7 @@ from hyperspy.decorators import do_not_replot
 from scipy import linalg
 from hyperspy.misc.machine_learning.orthomax import orthomax
 from hyperspy.misc.utils import stack
+from hyperspy.misc.hspy_warnings import VisibleDeprecationWarning
 
 
 def centering_and_whitening(X):
@@ -75,6 +76,12 @@ def get_derivative(signal, diff_axes, diff_order):
         signal = stack(diffs, axis=-1)
         del diffs
     return signal
+
+
+def _normalize_components(target, other, function=np.sum):
+    coeff = function(target, axis=0)
+    target /= coeff
+    other *= coeff
 
 
 class MVA():
@@ -496,7 +503,7 @@ class MVA():
                     "HyperSpy 0.9 and newer. From them on only passing "
                     "factors as HyperSpy Signal instances will be "
                     "supported.",
-                    DeprecationWarning)
+                    VisibleDeprecationWarning)
                 # We proceed supposing that the factors are spectra stacked
                 # over the last dimension to reproduce the deprecated
                 # behaviour.
@@ -532,7 +539,7 @@ class MVA():
                 warnings.warn(
                     "Bare numpy array masks are deprecated and will be removed"
                     " in next HyperSpy 0.9.",
-                    DeprecationWarning)
+                    VisibleDeprecationWarning)
                 ref_shape = ref_shape[::-1]
                 if mask.shape != ref_shape:
                     raise ValueError(
@@ -662,7 +669,7 @@ class MVA():
 
     def normalize_factors(self, which='bss', by='area', sort=True):
         """Normalises the factors and modifies the loadings
-        accordingly
+        accordingly.
 
         Parameters
         ----------
@@ -671,6 +678,11 @@ class MVA():
         sort : bool
 
         """
+        warnings.warn(
+            "This function is deprecated an will be removed in HyperSpy 0.9. "
+            "Use `normalize_decomposition_components` or "
+            "`normalize_bss_components` instead.", VisibleDeprecationWarning)
+
         if which == 'bss':
             factors = self.learning_results.bss_factors
             loadings = self.learning_results.bss_loadings
@@ -693,12 +705,62 @@ class MVA():
         else:
             raise ValueError("by must be max or mean")
 
-        factors /= by(factors, 0)
-        loadings *= by(factors, 0)
+        _normalize_components(factors, loadings, by)
         sorting_indices = np.argsort(loadings.max(0))
         factors[:] = factors[:, sorting_indices]
         loadings[:] = loadings[:, sorting_indices]
         loadings[:] = loadings[:, sorting_indices]
+
+    def normalize_decomposition_components(self, target='factors',
+                                           function=np.sum):
+        """Normalize decomposition components.
+
+        Parameters
+        ----------
+        target : {"factors", "loadings"}
+        function : numpy universal function, optional, default np.sum
+            Each target component is divided by the output of function(target).
+            `function` must return a scalar when operating on numpy arrays and
+            must have an `axis`.
+
+        """
+        if target == 'factors':
+            target = self.learning_results.factors
+            other = self.learning_results.loadings
+        elif target == 'loadings':
+            target = self.learning_results.loadings
+            other = self.learning_results.factors
+        else:
+            raise ValueError("target must be \"factors\" or \"loadings\"")
+        if target is None:
+            raise Exception("This method can only be used after "
+                            "decomposition operation.")
+        _normalize_components(target=target, other=other, function=function)
+
+    def normalize_bss_components(self, target='factors', function=np.sum):
+        """Normalize BSS components.
+
+        Parameters
+        ----------
+        target : {"factors", "loadings"}
+        function : numpy universal function, optional, default np.sum
+            Each target component is divided by the output of function(target).
+            `function` must return a scalar when operating on numpy arrays and
+            must have an `axis`.
+
+        """
+        if target == 'factors':
+            target = self.learning_results.bss_factors
+            other = self.learning_results.bss_loadings
+        elif target == 'loadings':
+            target = self.learning_results.bss_loadings
+            other = self.learning_results.bss_factors
+        else:
+            raise ValueError("target must be \"factors\" or \"loadings\"")
+        if target is None:
+            raise Exception("This method can only be used after "
+                            "a blind source separation operation.")
+        _normalize_components(target=target, other=other, function=function)
 
     def reverse_decomposition_component(self, component_number):
         """Reverse the decomposition component
@@ -710,7 +772,7 @@ class MVA():
 
         Examples
         -------
-        >>> s = load('some_file')
+        >>> s = hs.load('some_file')
         >>> s.decomposition(True) # perform PCA
         >>> s.reverse_decomposition_component(1) # reverse IC 1
         >>> s.reverse_decomposition_component((0, 2)) # reverse ICs 0 and 2
@@ -732,7 +794,7 @@ class MVA():
 
         Examples
         -------
-        >>> s = load('some_file')
+        >>> s = hs.load('some_file')
         >>> s.decomposition(True) # perform PCA
         >>> s.blind_source_separation(3)  # perform ICA on 3 PCs
         >>> s.reverse_bss_component(1) # reverse IC 1

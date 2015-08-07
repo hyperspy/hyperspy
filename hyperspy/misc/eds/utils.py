@@ -47,7 +47,7 @@ def get_FWHM_at_Energy(energy_resolution_MnKa, E):
 
 
 def xray_range(xray_line, beam_energy, density='auto'):
-    '''Return the Anderson-Hasler X-ray range.
+    """Return the Anderson-Hasler X-ray range.
 
     Return the maximum range of X-ray generation in a pure bulk material.
 
@@ -68,11 +68,11 @@ def xray_range(xray_line, beam_energy, density='auto'):
     Examples
     --------
     >>> # X-ray range of Cu Ka in pure Copper at 30 kV in micron
-    >>> utils.eds.xray_range('Cu_Ka', 30.)
+    >>> hs.eds.xray_range('Cu_Ka', 30.)
     1.9361716759499248
 
     >>> # X-ray range of Cu Ka in pure Carbon at 30kV in micron
-    >>> utils.eds.xray_range('Cu_Ka', 30., utils.material.elements.C.
+    >>> hs.eds.xray_range('Cu_Ka', 30., hs.material.elements.C.
     >>>                      Physical_properties.density_gcm3)
     7.6418811280855454
 
@@ -84,7 +84,7 @@ def xray_range(xray_line, beam_energy, density='auto'):
     See also the textbook of Goldstein et al., Plenum publisher,
     third edition p 286
 
-    '''
+    """
 
     element, line = _get_element_and_line(xray_line)
     if density == 'auto':
@@ -99,7 +99,7 @@ def xray_range(xray_line, beam_energy, density='auto'):
 
 
 def electron_range(element, beam_energy, density='auto', tilt=0):
-    '''Return the Kanaya-Okayama electron range.
+    """Return the Kanaya-Okayama electron range.
 
     Return the maximum electron range in a pure bulk material.
 
@@ -122,7 +122,7 @@ def electron_range(element, beam_energy, density='auto', tilt=0):
     Examples
     --------
     >>> # Electron range in pure Copper at 30 kV in micron
-    >>> utils.eds.electron_range('Cu', 30.)
+    >>> hs.eds.electron_range('Cu', 30.)
     2.8766744984001607
 
     Notes
@@ -132,7 +132,7 @@ def electron_range(element, beam_energy, density='auto', tilt=0):
     See also the textbook of Goldstein et al., Plenum publisher,
     third edition p 72.
 
-    '''
+    """
 
     if density == 'auto':
         density = elements_db[
@@ -170,7 +170,7 @@ def take_off_angle(tilt_stage,
 
     Examples
     --------
-    >>> utils.eds.take_off_angle(tilt_stage=10.,
+    >>> hs.eds.take_off_angle(tilt_stage=10.,
     >>>                          azimuth_angle=45., elevation_angle=22.)
     28.865971201155283
 

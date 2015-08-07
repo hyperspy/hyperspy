@@ -1,4 +1,4 @@
-# Copyright 2007-2012 The HyperSpy developers
+# Copyright 2007-2015 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
