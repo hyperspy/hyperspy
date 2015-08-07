@@ -59,11 +59,13 @@ class BackgroundRemoval(SpanSelectorInSpectrum):
             'background_type',
             tu.Group(
                 'polynomial_order',
-                visible_when='background_type == \'Polynomial\''),),
-            'estimate_background',
-            buttons=[OKButton, CancelButton],
-            handler=SpanSelectorInSpectrumHandler,
-            title='Background removal tool')
+                visible_when='background_type == \'Polynomial\''), ),
+        buttons=[OKButton, CancelButton],
+        handler=SpanSelectorInSpectrumHandler,
+        title='Background removal tool',
+        resizable=True,
+        width=300,
+    )
 
     def __init__(self, signal):
         super(BackgroundRemoval, self).__init__(signal)
@@ -335,8 +337,7 @@ class SpikesRemoval(SpanSelectorInSpectrum):
         self.index = 0
         self.update_plot()
 
-    @staticmethod
-    def _click_to_show_instructions_fired():
+    def _click_to_show_instructions_fired(self):
         m = information(None,
                         "\nTo remove spikes from the data:\n\n"
 
