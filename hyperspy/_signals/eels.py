@@ -182,6 +182,7 @@ class EELSSpectrum(Spectrum):
             print_stats=True,
             subpixel=True,
             mask=None,
+            show_progressbar=None,
             **kwargs):
         """Align the zero-loss peak.
 
@@ -210,6 +211,9 @@ class EELSSpectrum(Spectrum):
             It must have signal_dimension = 0 and navigation_shape equal to the
             current signal. Where mask is True the shift is not computed
             and set to nan.
+        show_progressbar : None or bool
+            If True, display a progress bar. If None the default is set in
+            `preferences`.
 
         See Also
         --------
@@ -233,7 +237,9 @@ class EELSSpectrum(Spectrum):
             zlpc.print_summary_statistics()
 
         for signal in also_align + [self]:
-            signal.shift1D(-zlpc.data + mean_)
+            signal.shift1D(-
+                           zlpc.data +
+                           mean_, show_progressbar=show_progressbar)
 
         if calibrate is True:
             zlpc = self.estimate_zero_loss_peak_centre(mask=mask)
@@ -253,7 +259,12 @@ class EELSSpectrum(Spectrum):
                 else self.axes_manager[-1].axis[0])
         right = (right if right < self.axes_manager[-1].axis[-1]
                  else self.axes_manager[-1].axis[-1])
-        self.align1D(left, right, also_align=also_align, **kwargs)
+        self.align1D(
+            left,
+            right,
+            also_align=also_align,
+            show_progressbar=show_progressbar,
+            **kwargs)
         zlpc = self.estimate_zero_loss_peak_centre(mask=mask)
         if calibrate is True:
             substract_from_offset(without_nans(zlpc.data).mean(),

@@ -49,7 +49,8 @@ class Test_Estimate_Elastic_Scattering_Threshold:
         thr = s.estimate_elastic_scattering_threshold(
             window=5,
             window_length=5,
-            tol=0.00001)
+            tol=0.00001,
+        )
         nose.tools.assert_true(np.allclose(thr.data, 2.5))
 
     def test_min_in_window_without_smoothing_single_spectrum(self):
@@ -57,7 +58,8 @@ class Test_Estimate_Elastic_Scattering_Threshold:
         thr = s.estimate_elastic_scattering_threshold(
             window=5,
             window_length=0,
-            tol=0.001)
+            tol=0.001,
+        )
         nose.tools.assert_true(np.allclose(thr.data, 2.49))
 
     def test_min_in_window_without_smoothing(self):
@@ -65,7 +67,8 @@ class Test_Estimate_Elastic_Scattering_Threshold:
         thr = s.estimate_elastic_scattering_threshold(
             window=5,
             window_length=0,
-            tol=0.001)
+            tol=0.001,
+        )
         nose.tools.assert_true(np.allclose(thr.data, 2.49))
 
     def test_min_not_in_window(self):
@@ -73,7 +76,8 @@ class Test_Estimate_Elastic_Scattering_Threshold:
         # returned as threshold.
         s = self.signal
         data = s.estimate_elastic_scattering_threshold(window=1.5,
-                                                       tol=0.001).data
+                                                       tol=0.001,
+                                                       ).data
         nose.tools.assert_true(np.all(np.isnan(data)))
 
 
@@ -116,14 +120,20 @@ class TestAlignZLP():
 
     def test_align_zero_loss_peak_calibrate_true(self):
         s = self.spectrum
-        s.align_zero_loss_peak(calibrate=True, print_stats=False)
+        s.align_zero_loss_peak(
+            calibrate=True,
+            print_stats=False,
+            show_progressbar=None)
         zlpc = s.estimate_zero_loss_peak_centre()
         nose.tools.assert_true(np.allclose(zlpc.data.mean(), 0))
         nose.tools.assert_true(np.allclose(zlpc.data.std(), 0))
 
     def test_align_zero_loss_peak_calibrate_false(self):
         s = self.spectrum
-        s.align_zero_loss_peak(calibrate=False, print_stats=False)
+        s.align_zero_loss_peak(
+            calibrate=False,
+            print_stats=False,
+            show_progressbar=None)
         zlpc = s.estimate_zero_loss_peak_centre()
         nose.tools.assert_true(np.allclose(zlpc.data.std(), 0))
 
@@ -132,7 +142,8 @@ class TestAlignZLP():
         s2 = s.deepcopy()
         s.align_zero_loss_peak(calibrate=True,
                                print_stats=False,
-                               also_align=[s2])
+                               also_align=[s2],
+                               show_progressbar=None)
         zlpc = s2.estimate_zero_loss_peak_centre()
         nose.tools.assert_equal(zlpc.data.mean(), 0)
         nose.tools.assert_equal(zlpc.data.std(), 0)
