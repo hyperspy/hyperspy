@@ -8,6 +8,8 @@ Subpackages
 
     hyperspy._components
     hyperspy._signals
+    hyperspy.datasets
+    hyperspy.docstrings
     hyperspy.drawing
     hyperspy.external
     hyperspy.gui
@@ -25,6 +27,14 @@ hyperspy.Release module
 -----------------------
 
 .. automodule:: hyperspy.Release
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+hyperspy.api module
+-------------------
+
+.. automodule:: hyperspy.api
     :members:
     :undoc-members:
     :show-inheritance:

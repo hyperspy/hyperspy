@@ -1,6 +1,9 @@
 Getting started
 ***************
 
+
+.. _importing_hyperspy-label:
+
 Starting HyperSpy
 -----------------
 
