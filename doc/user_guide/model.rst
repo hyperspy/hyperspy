@@ -401,16 +401,16 @@ For example:
     >>> m.print_current_values() # Print the current value of all the free parameters
     Components	Parameter	Value
     Normalized Gaussian
-		    A	1.000000
-		    sigma	1.000000
+            A	1.000000
+            sigma	1.000000
     Normalized Gaussian
-		    centre	0.000000
-		    A	1.000000
-		    sigma	1.000000
+            centre	0.000000
+            A	1.000000
+            sigma	1.000000
     Normalized Gaussian
-		    A	1.000000
-		    sigma	1.000000
-		    centre	0.000000
+            A	1.000000
+            sigma	1.000000
+            centre	0.000000
     >>> gaussian2.A.twin = gaussian3.A # Couple the A parameter of gaussian2 to the A parameter of gaussian 3
     >>> gaussian2.A.value = 10 # Set the gaussian2 centre value to 10
     >>> m.print_current_values()
