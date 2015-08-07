@@ -3644,13 +3644,15 @@ class Signal(MVA,
                 self.metadata.Signal.record_by = self._record_by
                 self._assign_subclass()
         else:
-            # Don't remove axis because it is the only one and HyperSpy does not
-            # support 0 dimensions
-            axis.size = 1
-            axis.scale = 1
-            axis.offset = 0
-            axis.name = "scalar"
-            axis.navigate = False
+            # Create a "Scalar" axis because the axis is the last one left and
+            # HyperSpy does not # support 0 dimensions
+            am.remove(axis.index_in_axes_manager)
+            am._append_axis(
+                size=1,
+                scale=1,
+                offset=0,
+                name="Scalar",
+                navigate=False,)
 
     def _apply_function_on_data_and_remove_axis(self, function, axis):
         s = self._deepcopy_with_new_data(
