@@ -621,8 +621,9 @@ class Signal1DTools(object):
                 interpolation_method='linear',
                 crop=True,
                 fill_value=np.nan,
-                also_align=None,
-                mask=None):
+                also_align=[],
+                mask=None,
+                show_progressbar=None):
         """Estimate the shifts in the signal axis using
         cross-correlation and use the estimation to align the data in place.
 
@@ -671,6 +672,9 @@ class Signal1DTools(object):
             It must have signal_dimension = 0 and navigation_shape equal to the
             current signal. Where mask is True the shift is not computed
             and set to nan.
+        show_progressbar : None or bool
+            If True, display a progress bar. If None the default is set in
+            `preferences`.
 
         Returns
         -------
@@ -695,12 +699,14 @@ class Signal1DTools(object):
             max_shift=max_shift,
             interpolate=interpolate,
             number_of_interpolation_points=number_of_interpolation_points,
-            mask=mask)
+            mask=mask,
+            show_progressbar=show_progressbar)
         for signal in also_align + [self]:
             signal.shift1D(shift_array=shift_array,
                            interpolation_method=interpolation_method,
                            crop=crop,
-                           fill_value=fill_value)
+                           fill_value=fill_value,
+                           show_progressbar=show_progressbar)
 
     def integrate_in_range(self, signal_range='interactive'):
         """ Sums the spectrum over an energy range, giving the integrated
@@ -939,7 +945,8 @@ class Signal1DTools(object):
         else:
             smoother.edit_traits()
 
-    def _remove_background_cli(self, signal_range, background_estimator):
+    def _remove_background_cli(self, signal_range, background_estimator,
+                               show_progressbar=None):
         from hyperspy.model import Model
         model = Model(self)
         model.append(background_estimator)
@@ -948,13 +955,14 @@ class Signal1DTools(object):
             signal_range[0],
             signal_range[1],
             only_current=False)
-        return self - model.as_signal()
+        return self - model.as_signal(show_progressbar=show_progressbar)
 
     def remove_background(
             self,
             signal_range='interactive',
             background_type='PowerLaw',
-            polynomial_order=2):
+            polynomial_order=2,
+            show_progressbar=None):
         """Remove the background, either in place using a gui or returned as a new
         spectrum using the command line.
 
@@ -970,6 +978,9 @@ class Signal1DTools(object):
             If Polynomial is used, the polynomial order can be specified
         polynomial_order : int, default 2
             Specify the polynomial order if a Polynomial background is used.
+        show_progressbar : None or bool
+            If True, display a progress bar. If None the default is set in
+            `preferences`.
 
         Examples
         --------
@@ -1003,7 +1014,8 @@ class Signal1DTools(object):
                     " not recognized")
 
             spectra = self._remove_background_cli(
-                signal_range, background_estimator)
+                signal_range, background_estimator,
+                show_progressbar=show_progressbar)
             return spectra
 
     @interactive_range_selector

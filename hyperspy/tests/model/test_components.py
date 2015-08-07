@@ -19,7 +19,7 @@ class TestPowerLaw:
 
     def test_estimate_parameters_binned_only_current(self):
         self.m.spectrum.metadata.Signal.binned = True
-        s = self.m.as_signal()
+        s = self.m.as_signal(show_progressbar=None)
         s.metadata.Signal.binned = True
         g = hs.components.PowerLaw()
         g.estimate_parameters(s,
@@ -31,7 +31,7 @@ class TestPowerLaw:
 
     def test_estimate_parameters_unbinned_only_current(self):
         self.m.spectrum.metadata.Signal.binned = False
-        s = self.m.as_signal()
+        s = self.m.as_signal(show_progressbar=None)
         s.metadata.Signal.binned = False
         g = hs.components.PowerLaw()
         g.estimate_parameters(s,
@@ -43,7 +43,7 @@ class TestPowerLaw:
 
     def test_estimate_parameters_binned(self):
         self.m.spectrum.metadata.Signal.binned = True
-        s = self.m.as_signal()
+        s = self.m.as_signal(show_progressbar=None)
         s.metadata.Signal.binned = True
         g = hs.components.PowerLaw()
         g._axes_manager = self.m.spectrum.axes_manager
@@ -56,7 +56,7 @@ class TestPowerLaw:
 
     def test_estimate_parameters_unbinned(self):
         self.m.spectrum.metadata.Signal.binned = False
-        s = self.m.as_signal()
+        s = self.m.as_signal(show_progressbar=None)
         s.metadata.Signal.binned = False
         g = hs.components.PowerLaw()
         g._axes_manager = self.m.spectrum.axes_manager
@@ -80,7 +80,7 @@ class TestOffset:
 
     def test_estimate_parameters_binned(self):
         self.m.spectrum.metadata.Signal.binned = True
-        s = self.m.as_signal()
+        s = self.m.as_signal(show_progressbar=None)
         s.metadata.Signal.binned = True
         g = hs.components.Offset()
         g.estimate_parameters(s,
@@ -91,7 +91,7 @@ class TestOffset:
 
     def test_estimate_parameters_unbinned(self):
         self.m.spectrum.metadata.Signal.binned = False
-        s = self.m.as_signal()
+        s = self.m.as_signal(show_progressbar=None)
         s.metadata.Signal.binned = False
         g = hs.components.Offset()
         g.estimate_parameters(s,
@@ -120,7 +120,7 @@ class TestPolynomial:
 
     def test_estimate_parameters_binned(self):
         self.m.spectrum.metadata.Signal.binned = True
-        s = self.m.as_signal()
+        s = self.m.as_signal(show_progressbar=None)
         s.metadata.Signal.binned = True
         g = hs.components.Polynomial(order=2)
         g.estimate_parameters(s,
@@ -133,7 +133,7 @@ class TestPolynomial:
 
     def test_estimate_parameters_unbinned(self):
         self.m.spectrum.metadata.Signal.binned = False
-        s = self.m.as_signal()
+        s = self.m.as_signal(show_progressbar=None)
         s.metadata.Signal.binned = False
         g = hs.components.Polynomial(order=2)
         g.estimate_parameters(s,
@@ -146,7 +146,7 @@ class TestPolynomial:
 
     def test_2d_signal(self):
         # This code should run smoothly, any exceptions should trigger failure
-        s = self.m_2d.as_signal()
+        s = self.m_2d.as_signal(show_progressbar=None)
         model = Model(s)
         p = hs.components.Polynomial(order=2)
         model.append(p)
@@ -156,7 +156,7 @@ class TestPolynomial:
 
     def test_3d_signal(self):
         # This code should run smoothly, any exceptions should trigger failure
-        s = self.m_3d.as_signal()
+        s = self.m_3d.as_signal(show_progressbar=None)
         model = Model(s)
         p = hs.components.Polynomial(order=2)
         model.append(p)
@@ -180,7 +180,7 @@ class TestGaussian:
 
     def test_estimate_parameters_binned(self):
         self.m.spectrum.metadata.Signal.binned = True
-        s = self.m.as_signal()
+        s = self.m.as_signal(show_progressbar=None)
         s.metadata.Signal.binned = True
         g = hs.components.Gaussian()
         g.estimate_parameters(s,
@@ -193,7 +193,7 @@ class TestGaussian:
 
     def test_estimate_parameters_unbinned(self):
         self.m.spectrum.metadata.Signal.binned = False
-        s = self.m.as_signal()
+        s = self.m.as_signal(show_progressbar=None)
         s.metadata.Signal.binned = False
         g = hs.components.Gaussian()
         g.estimate_parameters(s,
