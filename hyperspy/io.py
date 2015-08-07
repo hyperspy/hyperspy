@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2015 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -173,7 +173,6 @@ def load(filenames=None,
             'The filenames parameter must be a list, tuple, string or None')
     if not filenames:
         raise ValueError('No file provided to reader.')
-        return None
     else:
         if len(filenames) > 1:
             messages.information('Loading individual files')

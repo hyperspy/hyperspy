@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2015 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -28,6 +28,8 @@ import tempfile
 import unicodedata
 
 import numpy as np
+
+from hyperspy.misc.hspy_warnings import VisibleDeprecationWarning
 
 
 def attrsetter(target, attrs, value):
@@ -104,7 +106,8 @@ def unfold_if_multidim(signal):
     """
     import warnings
     warnings.warn("unfold_if_multidim is deprecated and will be removed in "
-                  "0.9 please use Signal.unfold instead", DeprecationWarning)
+                  "0.9 please use Signal.unfold instead",
+                  VisibleDeprecationWarning)
     return None
 
 
@@ -211,7 +214,9 @@ class DictionaryTreeBrowser(object):
 
     """
 
-    def __init__(self, dictionary={}):
+    def __init__(self, dictionary=None):
+        if not dictionary:
+            dictionary = {}
         super(DictionaryTreeBrowser, self).__init__()
         self.add_dictionary(dictionary)
 
@@ -489,10 +494,11 @@ class DictionaryTreeBrowser(object):
 
         """
         keys = node_path.split('.')
+        dtb = self
         for key in keys:
-            if self.has_item(key) is False:
-                self[key] = DictionaryTreeBrowser()
-            self = self[key]
+            if dtb.has_item(key) is False:
+                dtb[key] = DictionaryTreeBrowser()
+            dtb = dtb[key]
 
     def next(self):
         """
@@ -834,3 +840,10 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
         step_sizes)
 
     return signal
+
+
+def shorten_name(name, req_l):
+    if len(name) > req_l:
+        return name[:req_l - 2] + u'..'
+    else:
+        return name

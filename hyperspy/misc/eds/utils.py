@@ -47,7 +47,7 @@ def get_FWHM_at_Energy(energy_resolution_MnKa, E):
 
 
 def xray_range(xray_line, beam_energy, density='auto'):
-    '''Return the Anderson-Hasler X-ray range.
+    """Return the Anderson-Hasler X-ray range.
 
     Return the maximum range of X-ray generation in a pure bulk material.
 
@@ -84,7 +84,7 @@ def xray_range(xray_line, beam_energy, density='auto'):
     See also the textbook of Goldstein et al., Plenum publisher,
     third edition p 286
 
-    '''
+    """
 
     element, line = _get_element_and_line(xray_line)
     if density == 'auto':
@@ -99,7 +99,7 @@ def xray_range(xray_line, beam_energy, density='auto'):
 
 
 def electron_range(element, beam_energy, density='auto', tilt=0):
-    '''Return the Kanaya-Okayama electron range.
+    """Return the Kanaya-Okayama electron range.
 
     Return the maximum electron range in a pure bulk material.
 
@@ -132,7 +132,7 @@ def electron_range(element, beam_energy, density='auto', tilt=0):
     See also the textbook of Goldstein et al., Plenum publisher,
     third edition p 72.
 
-    '''
+    """
 
     if density == 'auto':
         density = elements_db[

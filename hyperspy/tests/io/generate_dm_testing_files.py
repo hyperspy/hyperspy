@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2015 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -16,8 +16,8 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-'''Creates Digital Micrograph scripts to generate the dm3 testing files
-'''
+"""Creates Digital Micrograph scripts to generate the dm3 testing files
+"""
 
 import numpy as np
 
