@@ -98,7 +98,7 @@ def rebin(a, new_shape):
 
 
 def sarray2dict(sarray, dictionary=None):
-    '''Converts a struct array to an ordered dictionary
+    """Converts a struct array to an ordered dictionary
 
     Parameters
     ----------
@@ -111,7 +111,7 @@ def sarray2dict(sarray, dictionary=None):
     -------
     Ordered dictionary
 
-    '''
+    """
     if dictionary is None:
         if ordict:
             dictionary = OrderedDict()

@@ -1,7 +1,7 @@
 import numpy as np
 import nose.tools
 
-import hyperspy.hspy as hs
+import hyperspy.api as hs
 
 
 def test_spectrum_binned_default():
@@ -60,7 +60,7 @@ class TestModelBinned:
         s = hs.signals.Spectrum([1])
         s.axes_manager[0].scale = 0.1
         m = s.create_model()
-        m.append(hs.components.Offset())
+        m.append(hs.model.components.Offset())
         m[0].offset.value = 1
         self.m = m
 

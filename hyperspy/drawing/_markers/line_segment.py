@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The Hyperspy developers
+# Copyright 2007-2015 The HyperSpy developers
 #
-# This file is part of  Hyperspy.
+# This file is part of  HyperSpy.
 #
-#  Hyperspy is free software: you can redistribute it and/or modify
+#  HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  Hyperspy is distributed in the hope that it will be useful,
+#  HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 from hyperspy.drawing.marker import MarkerBase
 
@@ -45,9 +45,8 @@ class LineSegment(MarkerBase):
 
     Example
     -------
-    >>> import numpy as np
-    >>> im = signals.Image(np.zeros((100, 100)))
-    >>> m = utils.plot.markers.line_segment(
+    >>> im = hs.signals.Image(np.zeros((100, 100)))
+    >>> m = hs.plot.markers.line_segment(
     >>>     x1=20, x2=70, y1=20, y2=70,
     >>>     linewidth=4, color='red', linestyle='dotted')
     >>> im.add_marker(m)
@@ -56,9 +55,7 @@ class LineSegment(MarkerBase):
 
     def __init__(self, x1, y1, x2, y2, **kwargs):
         MarkerBase.__init__(self)
-        lp = {}
-        lp['color'] = 'black'
-        lp['linewidth'] = 1
+        lp = {'color': 'black', 'linewidth': 1}
         self.marker_properties = lp
         self.set_data(x1=x1, y1=y1, x2=x2, y2=y2)
         self.set_marker_properties(**kwargs)

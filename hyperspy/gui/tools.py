@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2015 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -30,17 +30,20 @@ from hyperspy.axes import AxesManager
 from hyperspy.drawing.widgets import DraggableVerticalLine
 
 
+OurOKButton = tu.Action(name="OK",
+                        action="OK",)
+
 OurApplyButton = tu.Action(name="Apply",
                            action="apply")
 
 OurResetButton = tu.Action(name="Reset",
                            action="reset")
 
-OurFindButton = tu.Action(name="Find",
-                          action="find")
+OurFindButton = tu.Action(name="Find next",
+                          action="find",)
 
-OurPreviousButton = tu.Action(name="Previous",
-                              action="back")
+OurPreviousButton = tu.Action(name="Find previous",
+                              action="back",)
 
 
 class SmoothingHandler(tu.Handler):
@@ -653,7 +656,7 @@ class ImageContrastHandler(tu.Handler):
         info.object.close()
         return True
 
-    def apply(self, info, *args, **kwargs):
+    def apply(self, info):
         """Handles the **Apply** button being clicked.
 
         """
@@ -662,7 +665,8 @@ class ImageContrastHandler(tu.Handler):
 
         return
 
-    def reset(self, info, *args, **kwargs):
+    @staticmethod
+    def reset(info):
         """Handles the **Apply** button being clicked.
 
         """
@@ -670,7 +674,8 @@ class ImageContrastHandler(tu.Handler):
         obj.reset()
         return
 
-    def our_help(self, info, *args, **kwargs):
+    @staticmethod
+    def our_help(info):
         """Handles the **Apply** button being clicked.
 
         """
@@ -731,8 +736,8 @@ class ImageContrastEditor(t.HasTraits):
     def plot_histogram(self):
         vmin, vmax = self.image.vmin, self.image.vmax
         pad = (vmax - vmin) * 0.05
-        vmin = vmin - pad
-        vmax = vmax + pad
+        vmin -= pad
+        vmax += pad
         data = self.image.data_function().ravel()
         self.patches = self.ax.hist(data, 100, range=(vmin, vmax),
                                     color='blue')[2]

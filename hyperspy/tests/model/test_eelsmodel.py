@@ -1,7 +1,7 @@
 import numpy as np
 import nose.tools
 
-import hyperspy.hspy as hs
+import hyperspy.api as hs
 
 
 class TestCreateEELSModel:
@@ -37,9 +37,9 @@ class TestCreateEELSModel:
         m = self.s.create_model(auto_background=False)
         from hyperspy.components import PowerLaw
         is_pl_instance = [isinstance(c, PowerLaw) for c in m]
-        nose.tools.assert_false(False in is_pl_instance)
+        nose.tools.assert_false(True in is_pl_instance)
 
-    def test_auto_add_edges_false(self):
+    def test_auto_add_edges_false_names(self):
         m = self.s.create_model(auto_add_edges=False)
         cnames = [component.name for component in m]
         nose.tools.assert_false("B_K" in cnames or "C_K" in cnames)
@@ -149,13 +149,13 @@ class TestFitBackground:
         s = hs.signals.EELSSpectrum(np.ones(200))
         s.set_microscope_parameters(100, 10, 10)
         s.axes_manager[-1].offset = 150
-        CE = hs.utils.material.elements.C.Atomic_properties.Binding_energies.K.onset_energy_eV
-        BE = hs.utils.material.elements.B.Atomic_properties.Binding_energies.K.onset_energy_eV
+        CE = hs.material.elements.C.Atomic_properties.Binding_energies.K.onset_energy_eV
+        BE = hs.material.elements.B.Atomic_properties.Binding_energies.K.onset_energy_eV
         s.isig[BE:] += 1
         s.isig[CE:] += 1
         s.add_elements(("Be", "B", "C"))
         self.m = s.create_model(auto_background=False)
-        self.m.append(hs.components.Offset())
+        self.m.append(hs.model.components.Offset())
 
     def test_fit_background_B_C(self):
         self.m.fit_background()

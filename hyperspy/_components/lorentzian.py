@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2015 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -63,9 +63,6 @@ class Lorentzian(Component):
         self.gamma.grad = self.grad_gamma
         self.centre.grad = self.grad_centre
 
-    def __repr__(self):
-        return u'Lorentzian'
-
     def function(self, x):
         """
         """
@@ -90,4 +87,5 @@ class Lorentzian(Component):
         """
         """
         return (2 * (x - self.centre.value) * self.A.value * self.gamma.value ) / \
-            (np.pi * (self.gamma.value ** 2 + (x - self.centre.value) ** 2) ** 2)
+            (np.pi *
+             (self.gamma.value ** 2 + (x - self.centre.value) ** 2) ** 2)

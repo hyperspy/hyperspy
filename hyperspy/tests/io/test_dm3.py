@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2015 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -53,6 +53,7 @@ def test_dtypes():
 # TODO: the RGB data generated is not correct
 
 
+# noinspection PyArgumentList
 def test_content():
     for subfolder in data_dict:
         for key, data in data_dict[subfolder].iteritems():
