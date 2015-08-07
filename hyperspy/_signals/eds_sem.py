@@ -200,7 +200,8 @@ class EDSSEMSpectrum(EDSSpectrum):
                 "energy_resolution_MnKa",
                 energy_resolution_MnKa)
 
-        if {beam_energy, live_time, tilt_stage, azimuth_angle, elevation_angle, energy_resolution_MnKa} == {None}:
+        if {beam_energy, live_time, tilt_stage, azimuth_angle,
+                elevation_angle, energy_resolution_MnKa} == {None}:
             self._are_microscope_parameters_missing()
 
     @only_interactive
