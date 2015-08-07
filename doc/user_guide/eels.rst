@@ -111,8 +111,8 @@ Load the core-loss and low-loss spectra
 
 .. code-block:: python
 
-    >>> s = load("BN_(hex)_B_K_Giovanni_Bertoni_100.msa")
-    >>> ll = load("BN_(hex)_LowLoss_Giovanni_Bertoni_96.msa")
+    >>> s = hs.load("BN_(hex)_B_K_Giovanni_Bertoni_100.msa")
+    >>> ll = hs.load("BN_(hex)_LowLoss_Giovanni_Bertoni_96.msa")
 
 
 Set some important experimental information that is missing from the original

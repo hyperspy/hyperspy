@@ -28,7 +28,7 @@ if os.name == 'posix':
     config_path = os.path.join(os.path.expanduser('~'), '.hyperspy')
     os_name = 'posix'
 elif os.name in ['nt', 'dos']:
-##    appdata = os.environ['APPDATA']
+    ##    appdata = os.environ['APPDATA']
     config_path = os.path.expanduser('~/.hyperspy')
 # if os.path.isdir(appdata) is False:
 # os.mkdir(appdata)

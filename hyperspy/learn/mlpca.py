@@ -89,9 +89,9 @@ def mlpca(X, varX, p, convlim=1E-10, maxiter=50000, fast=False):
         Sobj = 0
         MLX = np.zeros(XX.shape)
         for i in xrange(n):
-#            Q = sp.sparse.lil_matrix((varX.shape[0] ,varX.shape[0]))
-#            Q.setdiag((1/(varX[:,i])).squeeze())
-#            Q.tocsc()
+            #            Q = sp.sparse.lil_matrix((varX.shape[0] ,varX.shape[0]))
+            #            Q.setdiag((1/(varX[:,i])).squeeze())
+            #            Q.tocsc()
 
             Q = np.diag((1 / (varX[:, i])).squeeze())
             U0m = np.matrix(U0)

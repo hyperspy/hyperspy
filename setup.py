@@ -33,7 +33,7 @@ if os.path.exists('build'):
     distutils.dir_util.remove_tree('build')
 
 install_req = ['scipy',
-               'ipython',
+               'ipython (>= 2.0)',
                'matplotlib (>= 1.2)',
                'numpy',
                'traits',

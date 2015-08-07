@@ -132,19 +132,19 @@ def load(filenames=None,
     --------
     Loading a single file providing the signal type:
 
-    >>> d = load('file.dm3', signal_type='EDS_TEM')
+    >>> d = hs.load('file.dm3', signal_type='EDS_TEM')
 
     Loading a single file and overriding its default record_by:
 
-    >>> d = load('file.dm3', record_by='Image')
+    >>> d = hs.load('file.dm3', record_by='Image')
 
     Loading multiple files:
 
-    >>> d = load('file1.dm3','file2.dm3')
+    >>> d = hs.load('file1.dm3','file2.dm3')
 
     Loading multiple files matching the pattern:
 
-    >>>d = load('file*.dm3')
+    >>> d = hs.load('file*.dm3')
 
     """
     kwds['record_by'] = record_by
