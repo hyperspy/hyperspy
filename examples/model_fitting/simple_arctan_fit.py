@@ -2,7 +2,6 @@
 
 import numpy as np
 import hyperspy.api as hs
-import matplotlib.pyplot as plt
 
 # Generate the data and make the spectrum
 s = hs.signals.SpectrumSimulation(
