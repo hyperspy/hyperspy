@@ -240,3 +240,56 @@ class TestExpression:
         nt.assert_almost_equal(
             self.g.grad_fwhm(2),
             0.00033845077175778578)
+
+class TestScalableFixedPattern:
+    def setUp(self):
+        s = hs.signals.Spectrum(np.linspace(0.,100.,10))
+        s1 = hs.signals.Spectrum(np.linspace(0.,1.,10))
+        s.axes_manager[0].scale = 0.1
+        s1.axes_manager[0].scale = 0.1
+        self.s = s
+        self.pattern = s1
+
+    def test_both_unbinned(self):
+        s = self.s
+        s1 = self.pattern
+        s.metadata.Signal.binned = False
+        s1.metadata.Signal.binned = False
+        m = s.create_model()
+        fp = hs.model.components.ScalableFixedPattern(s1)
+        m.append(fp)
+        m.fit()
+        nt.assert_almost_equal(fp.yscale.value, 100, delta=0.1)
+
+    def test_both_binned(self):
+        s = self.s
+        s1 = self.pattern
+        s.metadata.Signal.binned = True
+        s1.metadata.Signal.binned = True
+        m = s.create_model()
+        fp = hs.model.components.ScalableFixedPattern(s1)
+        m.append(fp)
+        m.fit()
+        nt.assert_almost_equal(fp.yscale.value, 100, delta=0.1)
+
+    def test_pattern_unbinned_signal_binned(self):
+        s = self.s
+        s1 = self.pattern
+        s.metadata.Signal.binned = True
+        s1.metadata.Signal.binned = False
+        m = s.create_model()
+        fp = hs.model.components.ScalableFixedPattern(s1)
+        m.append(fp)
+        m.fit()
+        nt.assert_almost_equal(fp.yscale.value, 1000, delta=1)
+
+    def test_pattern_binned_signal_unbinned(self):
+        s = self.s
+        s1 = self.pattern
+        s.metadata.Signal.binned = False
+        s1.metadata.Signal.binned = True
+        m = s.create_model()
+        fp = hs.model.components.ScalableFixedPattern(s1)
+        m.append(fp)
+        m.fit()
+        nt.assert_almost_equal(fp.yscale.value, 10, delta=.1)
