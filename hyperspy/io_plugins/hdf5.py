@@ -114,7 +114,7 @@ def file_reader(filename, record_by, mode='r', driver='core',
         if 'Experiments' in f:
             for ds in f['Experiments']:
                 if isinstance(f['Experiments'][ds], h5py.Group):
-                    if 'data' in f['Experiments'][ds]:
+                    if 'data' in f['Experiments'][ds] or 'data' in f['Experiments'][ds].attrs:
                         experiments.append(ds)
             if not experiments:
                 raise IOError(not_valid_format)
@@ -141,7 +141,10 @@ def hdfgroup2signaldict(group):
         metadata = "metadata"
         original_metadata = "original_metadata"
 
-    exp = {'data': group['data'][:]}
+    if 'data' in group.keys():
+        exp = {'data': group['data'][:]}
+    else:
+        exp = {'data': group.attrs['data']}
     axes = []
     for i in xrange(len(exp['data'].shape)):
         try:
@@ -328,9 +331,12 @@ def dict2hdfgroup(dictionary, group, compression=None):
             else:
                 write_signal(value, group.create_group('_sig_' + key))
         elif isinstance(value, np.ndarray):
-            group.create_dataset(key,
-                                 data=value,
-                                 compression=compression)
+            if value.ndim:
+                group.create_dataset(key,
+                                     data=value,
+                                     compression=compression)
+            else:
+                group.attrs[key] = value.tolist()
         elif value is None:
             group.attrs[key] = '_None_'
         elif isinstance(value, str):
@@ -443,10 +449,12 @@ def write_signal(signal, group, compression='gzip'):
     else:
         metadata = "metadata"
         original_metadata = "original_metadata"
-
-    group.create_dataset('data',
-                         data=signal.data,
-                         compression=compression)
+    if signal.data.ndim:
+        group.create_dataset('data',
+                             data=signal.data,
+                             compression=compression)
+    else:
+        group.attrs['data'] = signal.data.tolist()  # returns a flat number
     for axis in signal.axes_manager._axes:
         axis_dict = axis.get_axis_dictionary()
         # For the moment we don't store the navigate attribute

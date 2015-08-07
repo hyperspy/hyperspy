@@ -1,6 +1,7 @@
 import os.path
 from os import remove
 import datetime
+from os import remove
 
 import nose.tools as nt
 import numpy as np
@@ -196,6 +197,22 @@ class TestSavingMetadataContainers:
         nt.assert_is_instance(l.metadata.test[0], Signal)
         nt.assert_is_instance(l.metadata.test[1], float)
         nt.assert_is_instance(l.metadata.test[2], unicode)
+
+    def tearDown(self):
+        remove('tmp.hdf5')
+
+
+class TestSaveZeroDimData:
+
+    def setUp(self):
+        self.s = Signal(1)
+
+    def test_save_0d_data(self):
+        self.s.save('tmp.hdf5', overwrite=True)
+        l = load('tmp.hdf5')
+        nt.assert_equal(self.s.data, l.data)
+        nt.assert_equal(self.s.data.ndim, l.data.ndim)
+        nt.assert_equal(self.s.data.ndim, 0)
 
     def tearDown(self):
         remove('tmp.hdf5')
