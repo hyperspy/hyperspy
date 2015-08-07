@@ -64,8 +64,11 @@ class Polynomial(Component):
             return x * 0
 
     def __repr__(self):
-        return u'Component <%s order polynomial>'.encode('utf8') % (
-            ordinal(self.get_polynomial_order()))
+        text = "%s order Polynomial component" % ordinal(
+            self.get_polynomial_order())
+        if self.name:
+            text = "%s (%s)" % (self.name, text)
+        return "<%s>" % text
 
     def estimate_parameters(self, signal, x1, x2, only_current=False):
         """Estimate the parameters by the two area method
