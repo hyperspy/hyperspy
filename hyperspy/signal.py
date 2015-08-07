@@ -2575,6 +2575,11 @@ class Signal(MVA,
         except TypeError:
             slices = (slices,)
         _orig_slices = slices
+        if isNavigation is None:
+            warnings.warn(
+                "Indexing the `Signal` class is deprecated and will be removed "
+                "in HyperSpy 0.9. Please use `.isig` and/or `.inav` instead.",
+                VisibleDeprecationWarning)
 
         has_nav = True if isNavigation is None else isNavigation
         has_signal = True if isNavigation is None else not isNavigation
