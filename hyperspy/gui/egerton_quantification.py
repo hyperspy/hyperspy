@@ -58,7 +58,10 @@ class BackgroundRemoval(SpanSelectorInSpectrum):
                 visible_when='background_type == \'Polynomial\''), ),
         buttons=[OKButton, CancelButton],
         handler=SpanSelectorInSpectrumHandler,
-        title='Background removal tool')
+        title='Background removal tool',
+        resizable=True,
+        width=300,
+    )
 
     def __init__(self, signal):
         super(BackgroundRemoval, self).__init__(signal)
