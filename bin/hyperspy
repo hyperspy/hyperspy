@@ -39,7 +39,9 @@ import traits.etsconfig.etsconfig
 import hyperspy
 import hyperspy.Release
 import hyperspy.defaults_parser
-from hyperspy.defaults_parser import preferences
+from hyperspy.defaults_parser import preferences, file_version
+from IPython.terminal.ipapp import launch_new_instance
+
 
 # First we split the argv items in two: the firsts for hyperspy,
 # the rest for ipython
@@ -51,44 +53,21 @@ if '--ipython_args' in sys.argv:
 hyperspy_module_path = os.path.dirname(hyperspy.__file__)
 ipy_hspy = os.path.join(hyperspy_module_path, 'ipython_profile')
 ipy_version = LooseVersion(IPython.__version__)
-ipython_environments = ['terminal', ]
-if ipy_version < LooseVersion('0.11'):
-    from IPython.genutils import get_home_dir, get_ipython_dir
-    from IPython.iplib import user_setup
-    ipy_dir = get_ipython_dir()
-    to_copy = [os.path.join(ipy_hspy, 'ipy_profile_hyperspy.py'), ]
-    destination = ipy_dir
-    if not os.path.isdir(ipy_dir):
-        # Platform-dependent suffix.
-        if os.name == 'posix':
-            rc_suffix = ''
-        else:
-            rc_suffix = '.ini'
-        # Use the IPython function to create the ipy_dir
-        user_setup(ipy_dir, rc_suffix, mode='install',
-                   interactive=False)
-        sys.argv.append('--overwrite_profile')
-else:
-    ipy_dir = IPython.utils.path.get_ipython_dir()
-    to_copy = [os.path.join(ipy_hspy, 'ipython_config.py'),
-               os.path.join(ipy_hspy, 'ipython_console_config.py'),
-               os.path.join(ipy_hspy, 'ipython_qtconsole_config.py'),
-               os.path.join(ipy_hspy, 'ipython_notebook_config.py',), ]
-    destination = os.path.join(ipy_dir, 'profile_hyperspy')
-    # The ipy_dir may not exist if it is the first time that the user
-    # runs ipython, therefore we must create it, what is done
-    # automatically when creating a profile
-    if not os.path.isdir(ipy_dir) or not os.path.isdir(destination):
-        # Use the IPython routines to create the directory and profile
-        import IPython.core.profileapp
-        ipy_create_profile = IPython.core.profileapp.ProfileCreate()
-        ipy_create_profile.parse_command_line(['hyperspy', ])
-        ipy_create_profile.init_config_files()
-        sys.argv.append('--overwrite_profile')
-    ipython_environments.extend(['console', 'qtconsole', ])
 
-if ipy_version > LooseVersion('0.11'):
-    ipython_environments.append('notebook')
+ipython_environments = ['terminal', 'console', 'qtconsole', 'notebook']
+
+ipy_dir = IPython.utils.path.get_ipython_dir()
+destination = os.path.join(ipy_dir, 'profile_hyperspy')
+# The ipy_dir may not exist if it is the first time that the user
+# runs ipython, therefore we must create it, what is done
+# automatically when creating a profile
+if not os.path.isdir(ipy_dir) or not os.path.isdir(destination):
+    # Use the IPython routines to create the directory and profile
+    import IPython.core.profileapp
+    ipy_create_profile = IPython.core.profileapp.ProfileCreate()
+    ipy_create_profile.parse_command_line(['hyperspy', ])
+    ipy_create_profile.init_config_files()
+    sys.argv.append('--overwrite_profile')
 
 if argp is True:
     parser = argparse.ArgumentParser(
@@ -140,11 +119,32 @@ if argp is True:
 else:
     options, args = parser.parse_args()
 
-for f in to_copy:
-    if not os.path.isfile(os.path.join(
-            destination, os.path.split(f)[-1])) or \
-            args.overwrite_profile:
-        shutil.copy(f, destination)
+
+to_delete = [
+    # os.path.join(destination, 'ipython_console_config.py'),
+    # os.path.join(destination, 'ipython_qtconsole_config.py'),
+    # os.path.join(destination, 'ipython_notebook_config.py',),
+]
+
+ipy_config_hspy = os.path.join(ipy_hspy, 'ipython_config.py')
+ipy_config_home = os.path.join(destination, 'ipython_config.py')
+if not os.path.isfile(ipy_config_home) or \
+        args.overwrite_profile or (
+        LooseVersion(file_version(ipy_config_hspy)) >
+        LooseVersion(file_version(ipy_config_home))):
+    shutil.copy(ipy_config_hspy, destination)
+
+additional_dest = os.path.join(destination, 'startup')
+if not os.path.isdir(additional_dest):
+    os.makedirs(additional_dest)
+if not os.path.isfile(os.path.join(additional_dest, 'hyperspy_magics_importer.py')) or \
+        args.overwrite_profile:
+    shutil.copy(os.path.join(ipy_hspy, 'hyperspy_magics_importer.py'), additional_dest)
+
+for f in to_delete:
+    if os.path.isfile(f):
+        os.remove(f)
+
 
 # Now that the hspy arguments are parsed, we can delete them from
 # sys.argv
@@ -174,38 +174,21 @@ if toolkit in ("qt4", "wx"):
     traits.etsconfig.etsconfig.ETSConfig.toolkit = toolkit
 else:
     traits.etsconfig.etsconfig.ETSConfig.toolkit = "null"
-if ipy_version < LooseVersion('0.11'):
-    if add_pylab is True:
-        sys.argv.append('-pylab')
-    add_toolkit = True
-    for arg in sys.argv:
-        if 'thread' in arg:
-            add_toolkit = False
-            break
-    if add_toolkit is True:
-        if toolkit == "qt":
-            sys.argv.append('-qthread')
-        elif toolkit == "gtk":
-            sys.argv.append('-gthread')
-        elif toolkit == "wx":
-            sys.argv.append('-wthread')
-        elif toolkit == "tk":
-            sys.argv.append('-tkthread')
-    sys.argv.extend(('-p', 'hyperspy'))
-    from IPython.ipapi import launch_new_instance
-    sys.exit(launch_new_instance())
-else:
-    if ipy_version >= LooseVersion('1.0'):
-        from IPython.terminal.ipapp import launch_new_instance
-    else:
-        from IPython.frontend.terminal.ipapp import launch_new_instance
-    sys.argv.append('--profile=hyperspy')
+
+
+sys.argv.append('--profile=hyperspy')
+for arg in sys.argv:
+    if 'pylab' in arg:
+        add_pylab = False
+if pylab_inline is True and args.environment in ("notebook",
+                                                 "qtconsole"):
+    sys.argv.append('--pylab=inline')
+elif add_pylab is True:
+    sys.argv.append('--pylab=%s' % toolkit.replace("qt4", "qt"))
+
+if ipy_version >= LooseVersion('3.0.0') and args.environment == "notebook":
     for arg in sys.argv:
         if 'pylab' in arg:
-            add_pylab = False
-    if pylab_inline is True and args.environment in ("notebook",
-                                                     "qtconsole"):
-        sys.argv.append('--pylab=inline')
-    elif add_pylab is True:
-        sys.argv.append('--pylab=%s' % toolkit.replace("qt4", "qt"))
-    sys.exit(launch_new_instance())
+            sys.argv.remove(arg)
+sys.exit(launch_new_instance())
+

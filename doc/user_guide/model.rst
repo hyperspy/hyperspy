@@ -20,7 +20,7 @@ A :py:class:`~.model.Model` can be created using the
 
 .. code-block:: python
 
-    >>> s = load('YourDataFilenameHere') # Load the data from a file
+    >>> s = hs.load('YourDataFilenameHere') # Load the data from a file
     >>> m = s.create_model() # Create the model and asign it to the variable m
 
 At this point you may be prompted to provide any necessary information not
@@ -169,14 +169,14 @@ data that can be modelled using gaussians we might proceed as follows:
 
 .. code-block:: python
 
-    >>> gaussian = components.Gaussian() # Create a Gaussian function component
+    >>> gaussian = hs.components.Gaussian() # Create a Gaussian function component
     >>> m.append(gaussian) # Add it to the model
     >>> m.components # Print the model components
        # |            Attribute Name |            Component Name |            Component Type
     ---- | ------------------------- | ------------------------- | -------------------------
        0 |                  Gaussian |                  Gaussian |                  Gaussian
-    >>> gaussian2 = components.Gaussian() # Create another gaussian components
-    >>> gaussian3 = components.Gaussian() # Create a third gaussian components
+    >>> gaussian2 = hs.components.Gaussian() # Create another gaussian components
+    >>> gaussian3 = hs.components.Gaussian() # Create a third gaussian components
 
 
 We could use the append method two times to add the two gaussians, but when
@@ -274,10 +274,10 @@ To enable this feature for a given component set the
 
 .. code-block:: python
 
-    >>> s = signals.Spectrum(np.arange(100).reshape(10,10))
+    >>> s = hs.signals.Spectrum(np.arange(100).reshape(10,10))
     >>> m = s.create_model()
-    >>> g1 = components.Gaussian()
-    >>> g2 = components.Gaussian()
+    >>> g1 = hs.components.Gaussian()
+    >>> g2 = hs.components.Gaussian()
     >>> m.extend([g1,g2])
     >>> g1.active_is_multidimensional = True
     >>> g1._active_array
@@ -314,10 +314,10 @@ Example:
 
 .. code-block:: python
 
-    >>> s = signals.Spectrum(np.arange(100).reshape(10,10))
+    >>> s = hs.signals.Spectrum(np.arange(100).reshape(10,10))
     >>> m = s.create_model()
-    >>> g1 = components.Gaussian()
-    >>> g2 = components.Gaussian()
+    >>> g1 = hs.components.Gaussian()
+    >>> g2 = hs.components.Gaussian()
     >>> m.extend([g1,g2])
     >>> m.set_parameters_value('A', 20)
     >>> g1.A.map['values']
@@ -344,7 +344,7 @@ all parameters in a component to `True` use
 
 .. code-block:: python
 
-    >>> g = components.Gaussian()
+    >>> g = hs.components.Gaussian()
     >>> g.free_parameters
     set([<Parameter A of Gaussian component>,
         <Parameter sigma of Gaussian component>,
@@ -365,8 +365,8 @@ example:
 
 .. code-block:: python
 
-    >>> g1 = components.Gaussian()
-    >>> g2 = components.Gaussian()
+    >>> g1 = hs.components.Gaussian()
+    >>> g2 = hs.components.Gaussian()
     >>> m.extend([g1,g2])
     >>> m.set_parameters_not_free()
     >>> g1.free_parameters
@@ -519,7 +519,7 @@ and ``b = 100`` and we add white noise to it:
 
 .. code-block:: python
 
-    >>> s = signals.SpectrumSimulation(
+    >>> s = hs.signals.SpectrumSimulation(
     ...     np.arange(100, 300))
     >>> s.add_gaussian_noise(std=100)
 
@@ -530,7 +530,7 @@ to the data.
 .. code-block:: python
 
     >>> m = s.create_model()
-    >>> line  = components.Polynomial(order=1)
+    >>> line = hs.components.Polynomial(order=1)
     >>> m.append(line)
     >>> m.fit()
 
@@ -561,11 +561,11 @@ gaussian noise and proceed to fit as in the previous example.
 
 .. code-block:: python
 
-    >>> s = signals.SpectrumSimulation(
+    >>> s = hs.signals.SpectrumSimulation(
     ...     np.arange(300))
     >>> s.add_poissonian_noise()
     >>> m = s.create_model()
-    >>> line  = components.Polynomial(order=1)
+    >>> line  = hs.components.Polynomial(order=1)
     >>> m.append(line)
     >>> m.fit()
     >>> line.coefficients.value
@@ -580,7 +580,7 @@ approximation in most cases.
 
 .. code-block:: python
 
-   >>> s.estimate_poissonian_noise_variance(expected_value=signals.Spectrum(np.arange(300)))
+   >>> s.estimate_poissonian_noise_variance(expected_value=hs.signals.Spectrum(np.arange(300)))
    >>> m.fit()
    >>> line.coefficients.value
    (1.0004224896604759, -0.46982916592391377)
@@ -605,11 +605,11 @@ the ``centre`` parameter.
 
 .. code-block:: python
 
-    >>> s = signals.Signal(np.random.normal(loc=10, scale=0.01,
+    >>> s = hs.signals.Signal(np.random.normal(loc=10, scale=0.01,
     size=1e5)).get_histogram()
     >>> s.metadata.Signal.binned = True
     >>> m = s.create_model()
-    >>> g1 = components.Gaussian()
+    >>> g1 = hs.components.Gaussian()
     >>> m.append(g1)
     >>> g1.centre.value = 7
     >>> g1.centre.bmin = 7

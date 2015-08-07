@@ -3233,7 +3233,7 @@ class Signal(MVA,
 
         Examples
         --------
-        >>> s = signals.Spectrum(np.ones((5,4,3,6)))
+        >>> s = hs.signals.Spectrum(np.ones((5,4,3,6)))
         >>> s
         <Spectrum, title: , dimensions: (3, 4, 5, 6)>
         >>> s.rollaxis(3, 1)
@@ -3345,7 +3345,7 @@ class Signal(MVA,
 
         Examples
         --------
-        >>> s=signals.Spectrum(random.random([4,3,2]))
+        >>> s = hs.signals.Spectrum(random.random([4,3,2]))
         >>> s
             <Spectrum, title: , dimensions: (3, 4|2)>
         >>> s.split()
@@ -4093,7 +4093,7 @@ class Signal(MVA,
 
         Examples
         --------
-        >>> s = signals.Spectrum(np.random.normal(size=(10, 100)))
+        >>> s = hs.signals.Spectrum(np.random.normal(size=(10, 100)))
         Plot the data histogram
         >>> s.get_histogram().plot()
         Plot the histogram of the signal at the current coordinates
@@ -4162,14 +4162,14 @@ class Signal(MVA,
         parameter is constant.
 
         >>> import scipy.ndimage
-        >>> im = signals.Image(np.random.random((10, 64, 64)))
+        >>> im = hs.signals.Image(np.random.random((10, 64, 64)))
         >>> im.map(scipy.ndimage.gaussian_filter, sigma=2.5)
 
         Apply a gaussian filter to all the images in the dataset. The sigmal
         parameter is variable.
 
-        >>> im = signals.Image(np.random.random((10, 64, 64)))
-        >>> sigmas = signals.Signal(np.linspace(2,5,10))
+        >>> im = hs.signals.Image(np.random.random((10, 64, 64)))
+        >>> sigmas = hs.signals.Signal(np.linspace(2,5,10))
         >>> sigmas.axes_manager.set_signal_dimension(0)
         >>> im.map(scipy.ndimage.gaussian_filter, sigma=sigmas)
 
@@ -4276,9 +4276,7 @@ class Signal(MVA,
 
         Examples
         --------
-        >>> import numpy as np
-        >>> from hyperspy.signals import Spectrum
-        >>> s = signals.Spectrum(np.array([1,2,3,4,5]))
+        >>> s = hs.signals.Spectrum([1,2,3,4,5])
         >>> s.data
         array([1, 2, 3, 4, 5])
         >>> s.change_dtype('float')
@@ -4433,7 +4431,7 @@ class Signal(MVA,
 
         Examples
         --------
-        >>> im = signals.Image(np.zeros((2,3, 32,32)))
+        >>> im = hs.signals.Image(np.zeros((2,3, 32,32)))
         >>> im
         <Image, title: , dimensions: (3, 2, 32, 32)>
         >>> im.axes_manager.indices = 2,1
@@ -4580,7 +4578,7 @@ class Signal(MVA,
 
         Examples
         --------
-        >>> img = signals.Image(np.ones((3,4,5,6)))
+        >>> img = hs.signals.Image(np.ones((3,4,5,6)))
         >>> img
         <Image, title: , dimensions: (4, 3, 6, 5)>
         >>> img.to_spectrum(-1+1j)
@@ -4610,7 +4608,7 @@ class Signal(MVA,
 
         Examples
         --------
-        >>> s = signals.Spectrum(np.ones((2,3,4,5)))
+        >>> s = hs.signals.Spectrum(np.ones((2,3,4,5)))
         >>> s
         <Spectrum, title: , dimensions: (4, 3, 2, 5)>
         >>> s.as_image((0,1))
@@ -4770,8 +4768,8 @@ class Signal(MVA,
         Examples
         -------
         >>> import scipy.misc
-        >>> im = signals.Image(scipy.misc.lena())
-        >>> m = utils.plot.markers.rectangle(x1=150, y1=100, x2=400,
+        >>> im = hs.signals.Image(scipy.misc.lena())
+        >>> m = hs.utils.plot.markers.rectangle(x1=150, y1=100, x2=400,
         >>>                                  y2=400, color='red')
         >>> im.add_marker(m)
 

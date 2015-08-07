@@ -44,9 +44,8 @@ class HorizontalLineSegment(MarkerBase):
 
     Example
     -------
-    >>> import numpy as np
-    >>> im = signals.Image(np.zeros((100, 100)))
-    >>> m = utils.plot.markers.horizontal_line_segment(
+    >>> im = hs.signals.Image(np.zeros((100, 100)))
+    >>> m = hs.utils.plot.markers.horizontal_line_segment(
     >>>     x1=20, x2=70, y=70, linewidth=4, color='red', linestyle='dotted')
     >>> im.add_marker(m)
 
