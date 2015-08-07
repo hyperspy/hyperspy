@@ -61,7 +61,7 @@ class BackgroundRemoval(SpanSelectorInSpectrum):
         title='Background removal tool',
         resizable=True,
         width=300,
-        )
+    )
 
     def __init__(self, signal):
         super(BackgroundRemoval, self).__init__(signal)
