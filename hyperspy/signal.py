@@ -2579,7 +2579,7 @@ class Signal(MVA,
             warnings.warn(
                 "Indexing the `Signal` class is deprecated and will be removed "
                 "in HyperSpy 0.9. Please use `.isig` and/or `.inav` instead.",
-            VisibleDeprecationWarning)
+                VisibleDeprecationWarning)
 
         has_nav = True if isNavigation is None else isNavigation
         has_signal = True if isNavigation is None else not isNavigation
