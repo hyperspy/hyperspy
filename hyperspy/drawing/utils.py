@@ -217,7 +217,7 @@ def plot_signals(signal_list, sync=True, navigator="auto",
 
     >>> s_cl = hs.load("coreloss.dm3")
     >>> s_ll = hs.load("lowloss.dm3")
-    >>> hs.plot_signals([s_cl, s_ll], navigator="slider")
+    >>> hs.plot.plot_signals([s_cl, s_ll], navigator="slider")
 
     Specifying the navigator for each signal:
 

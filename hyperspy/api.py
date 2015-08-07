@@ -35,8 +35,9 @@ The :mod:`~hyperspy.api` package contains the following submodules/packages:
         create `Signal` instances manually from numpy arrays. Note that to
         load data from supported file formats is more convenient to use the
         `load` function.
-    :mod:`~hyperspy.api.model_components`
-        Components that can be used to create a model for curve fitting.
+    :mod:`~hyperspy.api.model`
+        Contains the :mod:`~hyperspy.api.model.components` module with
+        components that can be used to create a model for curve fitting.
     :mod:`~hyperspy.api.eds`
         Functions for energy dispersive X-rays data analysis.
     :mod:`~hyperspy.api.material`
@@ -44,7 +45,7 @@ The :mod:`~hyperspy.api` package contains the following submodules/packages:
         includes physical properties and X-rays and EELS energies.
     :mod:`~hyperspy.api.plot`
         Plotting functions that operate on multiple signals.
-    :mod:`~hyperspy.api.example_signals`
+    :mod:`~hyperspy.api.datasets`
         Example datasets.
 
 For more details see their doctrings.
