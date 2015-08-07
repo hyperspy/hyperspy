@@ -404,7 +404,7 @@ class Smoothing(t.HasTraits):
         if new == 0:
             self.turn_diff_line_off()
             return
-        self.smooth_diff_line.update(force_replot=True)
+        self.smooth_diff_line.update(force_replot=False)
 
     def _line_color_changed(self, old, new):
         self.smooth_line.line_properties = {
