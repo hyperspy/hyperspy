@@ -63,7 +63,7 @@ parameters for spectroscopy than the one that ships with HyperSpy:
 
 .. code-block:: python
 
-    >>> g = hs.components.Expression(
+    >>> g = hs.model.components.Expression(
     ... expression="height * exp(-(x - x0) ** 2 * 4 * log(2)/ fwhm ** 2)",
     ... name="Gaussian",
     ... position="x0",
@@ -169,7 +169,7 @@ data that can be modelled using gaussians we might proceed as follows:
 
 .. code-block:: python
 
-    >>> gaussian = hs.components.Gaussian() # Create a Gaussian function component
+    >>> gaussian = hs.model.components.Gaussian() # Create a Gaussian function component
     >>> m.append(gaussian) # Add it to the model
     >>> m.components # Print the model components
        # |            Attribute Name |            Component Name |            Component Type
@@ -316,8 +316,8 @@ Example:
 
     >>> s = hs.signals.Spectrum(np.arange(100).reshape(10,10))
     >>> m = s.create_model()
-    >>> g1 = hs.components.Gaussian()
-    >>> g2 = hs.components.Gaussian()
+    >>> g1 = hs.model.components.Gaussian()
+    >>> g2 = hs.model.components.Gaussian()
     >>> m.extend([g1,g2])
     >>> m.set_parameters_value('A', 20)
     >>> g1.A.map['values']
@@ -344,7 +344,7 @@ all parameters in a component to `True` use
 
 .. code-block:: python
 
-    >>> g = hs.components.Gaussian()
+    >>> g = hs.model.components.Gaussian()
     >>> g.free_parameters
     set([<Parameter A of Gaussian component>,
         <Parameter sigma of Gaussian component>,
@@ -365,8 +365,8 @@ example:
 
 .. code-block:: python
 
-    >>> g1 = hs.components.Gaussian()
-    >>> g2 = hs.components.Gaussian()
+    >>> g1 = hs.model.components.Gaussian()
+    >>> g2 = hs.model.components.Gaussian()
     >>> m.extend([g1,g2])
     >>> m.set_parameters_not_free()
     >>> g1.free_parameters
@@ -530,7 +530,7 @@ to the data.
 .. code-block:: python
 
     >>> m = s.create_model()
-    >>> line = hs.components.Polynomial(order=1)
+    >>> line = hs.model.components.Polynomial(order=1)
     >>> m.append(line)
     >>> m.fit()
 
@@ -565,7 +565,7 @@ gaussian noise and proceed to fit as in the previous example.
     ...     np.arange(300))
     >>> s.add_poissonian_noise()
     >>> m = s.create_model()
-    >>> line  = hs.components.Polynomial(order=1)
+    >>> line  = hs.model.components.Polynomial(order=1)
     >>> m.append(line)
     >>> m.fit()
     >>> line.coefficients.value
@@ -609,7 +609,7 @@ the ``centre`` parameter.
     size=1e5)).get_histogram()
     >>> s.metadata.Signal.binned = True
     >>> m = s.create_model()
-    >>> g1 = hs.components.Gaussian()
+    >>> g1 = hs.model.components.Gaussian()
     >>> m.append(g1)
     >>> g1.centre.value = 7
     >>> g1.centre.bmin = 7

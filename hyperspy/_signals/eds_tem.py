@@ -98,7 +98,7 @@ class EDSTEMSpectrum(EDSSpectrum):
 
         Examples
         --------
-        >>> s = hs.utils.example_signals.EDS_TEM_Spectrum()
+        >>> s = hs.datasets.example_signals.EDS_TEM_Spectrum()
         >>> print(s.metadata.Acquisition_instrument.
         >>>       TEM.Detector.EDS.energy_resolution_MnKa)
         >>> s.set_microscope_parameters(energy_resolution_MnKa=135.)
@@ -223,9 +223,9 @@ class EDSTEMSpectrum(EDSSpectrum):
 
         Examples
         --------
-        >>> ref = hs.utils.example_signals.EDS_TEM_Spectrum()
+        >>> ref = hs.datasets.example_signals.EDS_TEM_Spectrum()
         >>> s = hs.signals.EDSTEMSpectrum(
-        >>>     hs.utils.example_signals.EDS_TEM_Spectrum().data)
+        >>>     hs.datasets.example_signals.EDS_TEM_Spectrum().data)
         >>> print s.axes_manager[0].scale
         >>> s.get_calibration_from(ref)
         >>> print s.axes_manager[0].scale
@@ -304,7 +304,7 @@ class EDSTEMSpectrum(EDSSpectrum):
 
         Examples
         --------
-        >>> s = hs.utils.example_signals.EDS_TEM_Spectrum()
+        >>> s = hs.datasets.example_signals.EDS_TEM_Spectrum()
         >>> s.add_lines()
         >>> kfactors = [1.450226, 5.075602] #For Fe Ka and Pt La
         >>> bw = s.estimate_background_windows(line_width=[5.0, 2.0])
@@ -364,10 +364,10 @@ class EDSTEMSpectrum(EDSSpectrum):
         Examples
         --------
         >>> # Simulate a spectrum image with vacuum region
-        >>> s = hs.utils.example_signals.EDS_TEM_Spectrum()
+        >>> s = hs.datasets.example_signals.EDS_TEM_Spectrum()
         >>> s_vac = hs.signals.Simulation(np.ones_like(s.data, dtype=float))*0.005
         >>> s_vac.add_poissonian_noise()
-        >>> si = hs.utils.stack([s]*3 + [s_vac])
+        >>> si = hs.stack([s]*3 + [s_vac])
         >>> si.vacuum_mask().data
         array([False, False, False,  True], dtype=bool)
 
@@ -436,8 +436,8 @@ class EDSTEMSpectrum(EDSSpectrum):
 
         Examples
         --------
-        >>> s = hs.utils.example_signals.EDS_TEM_Spectrum()
-        >>> si = hs.utils.stack([s]*3)
+        >>> s = hs.datasets.example_signals.EDS_TEM_Spectrum()
+        >>> si = hs.stack([s]*3)
         >>> si.change_dtype(float)
         >>> si.decomposition()
 

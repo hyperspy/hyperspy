@@ -46,7 +46,7 @@ class LineSegment(MarkerBase):
     Example
     -------
     >>> im = hs.signals.Image(np.zeros((100, 100)))
-    >>> m = hs.utils.plot.markers.line_segment(
+    >>> m = hs.plot.markers.line_segment(
     >>>     x1=20, x2=70, y1=20, y2=70,
     >>>     linewidth=4, color='red', linestyle='dotted')
     >>> im.add_marker(m)

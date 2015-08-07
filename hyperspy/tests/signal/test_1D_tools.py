@@ -27,7 +27,7 @@ except:
     skip_lowess = True
 
 from hyperspy.misc.tv_denoise import _tv_denoise_1d
-import hyperspy.hspy as hs
+import hyperspy.api as hs
 
 
 class TestAlignTools:
@@ -218,7 +218,7 @@ class TestEstimatePeakWidth:
         scale = 0.1
         window = 2
         x = np.arange(-window, window, scale)
-        g = hs.components.Gaussian()
+        g = hs.model.components.Gaussian()
         s = hs.signals.Spectrum(g.function(x))
         s.axes_manager[-1].scale = scale
         self.s = s

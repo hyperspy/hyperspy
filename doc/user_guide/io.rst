@@ -201,7 +201,7 @@ intensity<get_lines_intensity>`):
 
 .. code-block:: python
 
-    >>> s = hs.utils.example_signals.EDS_SEM_Spectrum()
+    >>> s = hs.datasets.example_signals.EDS_SEM_Spectrum()
     >>> s.metadata.Sample.intensities = s.get_lines_intensity()
     >>> s.save('EDS_spectrum.hdf5')
 

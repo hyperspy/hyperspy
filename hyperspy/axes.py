@@ -413,7 +413,7 @@ class AxesManager(t.HasTraits):
     The following commands were just executed:
     ---------------
     import numpy as np
-    import hyperspy.hspy as hs
+    import hyperspy.api as hs
     %matplotlib qt
     import matplotlib.pyplot as plt
 

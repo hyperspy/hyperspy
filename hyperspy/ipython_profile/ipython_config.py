@@ -1,9 +1,17 @@
 from hyperspy import Release
-__version__ = 1.0
+from hyperspy.defaults_parser import preferences
+
+__version__ = 1.1
+
 # Configuration file for ipython.
 c = get_config()
 c.TerminalIPythonApp.ignore_old_config = True
 c.TerminalInteractiveShell.banner2 = Release.info + \
-    "\n\n** Hyperspy is loaded in hs.* namespace **\n\n"
+    "\n\n** hyperspy.api imported as hs in user namespace **\n\n"
 
-c.InteractiveShellApp.exec_lines = ['import hyperspy.hspy as hs', ]
+if preferences.General.import_hspy:
+    c.InteractiveShellApp.exec_lines = [
+        'import hyperspy.api as hs',
+        'from hyperspy.hspy import *', ]
+else:
+    c.InteractiveShellApp.exec_lines = ['import hyperspy.api as hs', ]

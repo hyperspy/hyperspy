@@ -2,7 +2,7 @@ import numpy as np
 from nose.tools import assert_true, raises
 
 from hyperspy.misc import rgb_tools
-import hyperspy.hspy as hs
+import hyperspy.api as hs
 
 
 class TestRGBA8:

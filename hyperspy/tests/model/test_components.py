@@ -1,7 +1,7 @@
 import numpy as np
 import nose.tools as nt
 
-import hyperspy.hspy as hs
+import hyperspy.api as hs
 from hyperspy.model import Model
 
 
@@ -12,7 +12,7 @@ class TestPowerLaw:
         s.axes_manager[0].offset = 100
         s.axes_manager[0].scale = 0.01
         m = s.create_model()
-        m.append(hs.components.PowerLaw())
+        m.append(hs.model.components.PowerLaw())
         m[0].A.value = 10
         m[0].r.value = 4
         self.m = m
@@ -21,7 +21,7 @@ class TestPowerLaw:
         self.m.spectrum.metadata.Signal.binned = True
         s = self.m.as_signal(show_progressbar=None)
         s.metadata.Signal.binned = True
-        g = hs.components.PowerLaw()
+        g = hs.model.components.PowerLaw()
         g.estimate_parameters(s,
                               None,
                               None,
@@ -33,7 +33,7 @@ class TestPowerLaw:
         self.m.spectrum.metadata.Signal.binned = False
         s = self.m.as_signal(show_progressbar=None)
         s.metadata.Signal.binned = False
-        g = hs.components.PowerLaw()
+        g = hs.model.components.PowerLaw()
         g.estimate_parameters(s,
                               None,
                               None,
@@ -45,7 +45,7 @@ class TestPowerLaw:
         self.m.spectrum.metadata.Signal.binned = True
         s = self.m.as_signal(show_progressbar=None)
         s.metadata.Signal.binned = True
-        g = hs.components.PowerLaw()
+        g = hs.model.components.PowerLaw()
         g._axes_manager = self.m.spectrum.axes_manager
         g.estimate_parameters(s,
                               None,
@@ -58,7 +58,7 @@ class TestPowerLaw:
         self.m.spectrum.metadata.Signal.binned = False
         s = self.m.as_signal(show_progressbar=None)
         s.metadata.Signal.binned = False
-        g = hs.components.PowerLaw()
+        g = hs.model.components.PowerLaw()
         g._axes_manager = self.m.spectrum.axes_manager
         g.estimate_parameters(s,
                               None,
@@ -74,7 +74,7 @@ class TestOffset:
         s = hs.signals.Spectrum(np.empty(10))
         s.axes_manager[0].scale = 0.01
         m = s.create_model()
-        m.append(hs.components.Offset())
+        m.append(hs.model.components.Offset())
         m[0].offset.value = 10
         self.m = m
 
@@ -82,7 +82,7 @@ class TestOffset:
         self.m.spectrum.metadata.Signal.binned = True
         s = self.m.as_signal(show_progressbar=None)
         s.metadata.Signal.binned = True
-        g = hs.components.Offset()
+        g = hs.model.components.Offset()
         g.estimate_parameters(s,
                               None,
                               None,
@@ -93,7 +93,7 @@ class TestOffset:
         self.m.spectrum.metadata.Signal.binned = False
         s = self.m.as_signal(show_progressbar=None)
         s.metadata.Signal.binned = False
-        g = hs.components.Offset()
+        g = hs.model.components.Offset()
         g.estimate_parameters(s,
                               None,
                               None,
@@ -108,7 +108,7 @@ class TestPolynomial:
         s.axes_manager[0].offset = -5
         s.axes_manager[0].scale = 0.01
         m = s.create_model()
-        m.append(hs.components.Polynomial(order=2))
+        m.append(hs.model.components.Polynomial(order=2))
         m[0].coefficients.value = (0.5, 2, 3)
         self.m = m
         s_2d = hs.signals.Spectrum(np.arange(1000).reshape(10, 100))
@@ -122,7 +122,7 @@ class TestPolynomial:
         self.m.spectrum.metadata.Signal.binned = True
         s = self.m.as_signal(show_progressbar=None)
         s.metadata.Signal.binned = True
-        g = hs.components.Polynomial(order=2)
+        g = hs.model.components.Polynomial(order=2)
         g.estimate_parameters(s,
                               None,
                               None,
@@ -135,7 +135,7 @@ class TestPolynomial:
         self.m.spectrum.metadata.Signal.binned = False
         s = self.m.as_signal(show_progressbar=None)
         s.metadata.Signal.binned = False
-        g = hs.components.Polynomial(order=2)
+        g = hs.model.components.Polynomial(order=2)
         g.estimate_parameters(s,
                               None,
                               None,
@@ -148,7 +148,7 @@ class TestPolynomial:
         # This code should run smoothly, any exceptions should trigger failure
         s = self.m_2d.as_signal(show_progressbar=None)
         model = Model(s)
-        p = hs.components.Polynomial(order=2)
+        p = hs.model.components.Polynomial(order=2)
         model.append(p)
         p.estimate_parameters(s, 0, 100, only_current=False)
         np.testing.assert_allclose(p.coefficients.map['values'],
@@ -158,7 +158,7 @@ class TestPolynomial:
         # This code should run smoothly, any exceptions should trigger failure
         s = self.m_3d.as_signal(show_progressbar=None)
         model = Model(s)
-        p = hs.components.Polynomial(order=2)
+        p = hs.model.components.Polynomial(order=2)
         model.append(p)
         p.estimate_parameters(s, 0, 100, only_current=False)
         np.testing.assert_allclose(p.coefficients.map['values'],
@@ -172,7 +172,7 @@ class TestGaussian:
         s.axes_manager[0].offset = -5
         s.axes_manager[0].scale = 0.01
         m = s.create_model()
-        m.append(hs.components.Gaussian())
+        m.append(hs.model.components.Gaussian())
         m[0].sigma.value = 0.5
         m[0].centre.value = 1
         m[0].A.value = 2
@@ -182,7 +182,7 @@ class TestGaussian:
         self.m.spectrum.metadata.Signal.binned = True
         s = self.m.as_signal(show_progressbar=None)
         s.metadata.Signal.binned = True
-        g = hs.components.Gaussian()
+        g = hs.model.components.Gaussian()
         g.estimate_parameters(s,
                               None,
                               None,
@@ -195,7 +195,7 @@ class TestGaussian:
         self.m.spectrum.metadata.Signal.binned = False
         s = self.m.as_signal(show_progressbar=None)
         s.metadata.Signal.binned = False
-        g = hs.components.Gaussian()
+        g = hs.model.components.Gaussian()
         g.estimate_parameters(s,
                               None,
                               None,
@@ -208,7 +208,7 @@ class TestGaussian:
 class TestExpression:
 
     def setUp(self):
-        self.g = hs.components.Expression(
+        self.g = hs.model.components.Expression(
             expression="height * exp(-(x - x0) ** 2 * 4 * log(2)/ fwhm ** 2)",
             name="Gaussian",
             position="x0",
