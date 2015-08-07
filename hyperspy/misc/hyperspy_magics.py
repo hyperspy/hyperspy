@@ -68,7 +68,7 @@ class HyperspyMagics(Magics):
 
         second_import_part = "import matplotlib.pyplot as plt"
         exec(second_import_part, sh.user_ns)
-        if hs.preferences.General.import_hspy:
+        if preferences.General.import_hspy:
             third_import_part = "from hyperspy.hspy import *\n"
             warnings.warn(
                 "Importing everything from ``hyperspy.hspy`` will be removed in "
