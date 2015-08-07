@@ -42,7 +42,6 @@ import hyperspy.defaults_parser
 from hyperspy.defaults_parser import preferences, file_version
 from IPython.terminal.ipapp import launch_new_instance
 
-__version__ = 1.0
 
 # First we split the argv items in two: the firsts for hyperspy,
 # the rest for ipython
@@ -120,15 +119,20 @@ if argp is True:
 else:
     options, args = parser.parse_args()
 
-to_copy = os.path.join(ipy_hspy, 'ipython_config.py')
 
-to_delete = [os.path.join(destination, 'ipython_console_config.py'),
-           os.path.join(destination, 'ipython_qtconsole_config.py'),
-           os.path.join(destination, 'ipython_notebook_config.py',), ]
+to_delete = [
+    # os.path.join(destination, 'ipython_console_config.py'),
+    # os.path.join(destination, 'ipython_qtconsole_config.py'),
+    # os.path.join(destination, 'ipython_notebook_config.py',),
+]
 
-if LooseVersion(str(__version__)) > LooseVersion(file_version(os.path.join(destination,
-    'ipython_config.py'))):
-    args.overwrite_profile = True
+ipy_config_hspy = os.path.join(ipy_hspy, 'ipython_config.py')
+ipy_config_home = os.path.join(destination, 'ipython_config.py')
+if not os.path.isfile(ipy_config_home) or \
+        args.overwrite_profile or (
+        LooseVersion(file_version(ipy_config_hspy)) >
+        LooseVersion(file_version(ipy_config_home))):
+    shutil.copy(ipy_config_hspy, destination)
 
 additional_dest = os.path.join(destination, 'startup')
 if not os.path.isdir(additional_dest):
@@ -141,10 +145,6 @@ for f in to_delete:
     if os.path.isfile(f):
         os.remove(f)
 
-if not os.path.isfile(os.path.join(
-        destination, os.path.split(to_copy)[-1])) or \
-        args.overwrite_profile:
-    shutil.copy(to_copy, destination)
 
 # Now that the hspy arguments are parsed, we can delete them from
 # sys.argv
