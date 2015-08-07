@@ -1,11 +1,7 @@
 """
 
-All public packages, functions and classes are in this package. This package is
-automatically imported in the user namespace when starting HyperSpy using the
-starting script e.g. by typing ``hyperspy`` in a console, using the context
-menu entries or using the links in the ``Start Menu``, the
-:mod:`~hyperspy.hspy` package is imported in the user namespace. When using
-HyperSpy as a library, it is recommended to import the :mod:`~hyperspy.hspy`
+All public packages, functions and classes are in this package. When using
+HyperSpy, it is recommended to import the :mod:`~hyperspy.hspy`
 package as follows:
 
     from hyperspy import hspy as hs
@@ -49,6 +45,7 @@ from hyperspy import signals
 from hyperspy.io import load
 from hyperspy.defaults_parser import preferences
 from hyperspy import utils
+from hyperspy.misc.hspy_warnings import VisibleDeprecationWarning
 
 
 def get_configuration_directory_path():
@@ -98,5 +95,5 @@ def create_model(signal, *args, **kwargs):
     warnings.warn(
         "This function is deprecated and will be removed in HyperSpy 0.9. "
         "Please use the equivalent `Signal.create_model` method "
-        "instead.", DeprecationWarning)
+        "instead.", VisibleDeprecationWarning)
     return signal.create_model(*args, **kwargs)

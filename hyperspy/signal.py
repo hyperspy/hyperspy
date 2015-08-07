@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2015 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -73,6 +73,7 @@ from hyperspy import components
 from hyperspy.misc.utils import underline
 from hyperspy.external.astroML.histtools import histogram
 from hyperspy.drawing.utils import animate_legend
+from hyperspy.misc.hspy_warnings import VisibleDeprecationWarning
 
 
 class Signal2DTools(object):
@@ -621,7 +622,8 @@ class Signal1DTools(object):
                 crop=True,
                 fill_value=np.nan,
                 also_align=[],
-                mask=None):
+                mask=None,
+                show_progressbar=None):
         """Estimate the shifts in the signal axis using
         cross-correlation and use the estimation to align the data in place.
 
@@ -670,6 +672,9 @@ class Signal1DTools(object):
             It must have signal_dimension = 0 and navigation_shape equal to the
             current signal. Where mask is True the shift is not computed
             and set to nan.
+        show_progressbar : None or bool
+            If True, display a progress bar. If None the default is set in
+            `preferences`.
 
         Returns
         -------
@@ -684,6 +689,8 @@ class Signal1DTools(object):
         estimate_shift1D
 
         """
+        if also_align is None:
+            also_align = []
         self._check_signal_dimension_equals_one()
         shift_array = self.estimate_shift1D(
             start=start,
@@ -692,12 +699,14 @@ class Signal1DTools(object):
             max_shift=max_shift,
             interpolate=interpolate,
             number_of_interpolation_points=number_of_interpolation_points,
-            mask=mask)
+            mask=mask,
+            show_progressbar=show_progressbar)
         for signal in also_align + [self]:
             signal.shift1D(shift_array=shift_array,
                            interpolation_method=interpolation_method,
                            crop=crop,
-                           fill_value=fill_value)
+                           fill_value=fill_value,
+                           show_progressbar=show_progressbar)
 
     def integrate_in_range(self, signal_range='interactive'):
         """ Sums the spectrum over an energy range, giving the integrated
@@ -761,7 +770,7 @@ class Signal1DTools(object):
         e1 = signal_range[0]
         e2 = signal_range[1]
         integrated_spectrum = self[..., e1:e2].integrate1D(-1)
-        return(integrated_spectrum)
+        return integrated_spectrum
 
     @only_interactive
     def calibrate(self):
@@ -936,7 +945,8 @@ class Signal1DTools(object):
         else:
             smoother.edit_traits()
 
-    def _remove_background_cli(self, signal_range, background_estimator):
+    def _remove_background_cli(self, signal_range, background_estimator,
+                               show_progressbar=None):
         from hyperspy.model import Model
         model = Model(self)
         model.append(background_estimator)
@@ -945,13 +955,14 @@ class Signal1DTools(object):
             signal_range[0],
             signal_range[1],
             only_current=False)
-        return self - model.as_signal()
+        return self - model.as_signal(show_progressbar=show_progressbar)
 
     def remove_background(
             self,
             signal_range='interactive',
             background_type='PowerLaw',
-            polynomial_order=2):
+            polynomial_order=2,
+            show_progressbar=None):
         """Remove the background, either in place using a gui or returned as a new
         spectrum using the command line.
 
@@ -967,6 +978,9 @@ class Signal1DTools(object):
             If Polynomial is used, the polynomial order can be specified
         polynomial_order : int, default 2
             Specify the polynomial order if a Polynomial background is used.
+        show_progressbar : None or bool
+            If True, display a progress bar. If None the default is set in
+            `preferences`.
 
         Examples
         --------
@@ -1000,7 +1014,8 @@ class Signal1DTools(object):
                     " not recognized")
 
             spectra = self._remove_background_cli(
-                signal_range, background_estimator)
+                signal_range, background_estimator,
+                show_progressbar=show_progressbar)
             return spectra
 
     @interactive_range_selector
@@ -1579,19 +1594,15 @@ class MVATools(object):
                                   self.metadata.General.title),
                               }})
             elif self.axes_manager.signal_dimension == 1:
-                axes = []
-                axes.append(
-                    self.axes_manager.signal_axes[0].get_axis_dictionary())
+                axes = [self.axes_manager.signal_axes[0].get_axis_dictionary(),
+                        {'name': 'factor_index',
+                         'scale': 1.,
+                         'offset': 0.,
+                         'size': int(factors.shape[1]),
+                         'units': 'factor',
+                         'index_in_array': 0,
+                         }]
                 axes[0]['index_in_array'] = 1
-
-                axes.append({
-                    'name': 'factor_index',
-                    'scale': 1.,
-                    'offset': 0.,
-                    'size': int(factors.shape[1]),
-                    'units': 'factor',
-                    'index_in_array': 0,
-                })
                 s = Spectrum(
                     factors.T, axes=axes, metadata={
                         "General": {
@@ -1624,9 +1635,8 @@ class MVATools(object):
 
             if self.axes_manager.signal_dimension == 2:
                 axes = self.axes_manager.signal_axes
-                axes_dicts = []
-                axes_dicts.append(axes[0].get_axis_dictionary())
-                axes_dicts.append(axes[1].get_axis_dictionary())
+                axes_dicts = [axes[0].get_axis_dictionary(),
+                              axes[1].get_axis_dictionary()]
                 axes_dicts[0]['index_in_array'] = 0
                 axes_dicts[1]['index_in_array'] = 1
 
@@ -1726,14 +1736,13 @@ class MVATools(object):
                 cal_axis = self.axes_manager.navigation_axes[0].\
                     get_axis_dictionary()
                 cal_axis['index_in_array'] = 1
-                axes = []
-                axes.append({'name': 'loading_index',
-                             'scale': 1.,
-                             'offset': 0.,
-                             'size': int(loadings.shape[0]),
-                             'units': 'comp_id',
-                             'index_in_array': 0, })
-                axes.append(cal_axis)
+                axes = [{'name': 'loading_index',
+                         'scale': 1.,
+                         'offset': 0.,
+                         'size': int(loadings.shape[0]),
+                         'units': 'comp_id',
+                         'index_in_array': 0, },
+                        cal_axis]
                 s = Image(loadings,
                           axes=axes,
                           metadata={
@@ -2876,15 +2885,11 @@ class Signal(MVA,
         dic : dictionary
 
         """
-        dic = {}
-        dic['data'] = self.data
-        dic['axes'] = self.axes_manager._get_axes_dicts()
-        dic['metadata'] = \
-            self.metadata.deepcopy().as_dictionary()
-        dic['original_metadata'] = \
-            self.original_metadata.deepcopy().as_dictionary()
-        dic['tmp_parameters'] = \
-            self.tmp_parameters.deepcopy().as_dictionary()
+        dic = {'data': self.data,
+               'axes': self.axes_manager._get_axes_dicts(),
+               'metadata': self.metadata.deepcopy().as_dictionary(),
+               'original_metadata': self.original_metadata.deepcopy().as_dictionary(),
+               'tmp_parameters': self.tmp_parameters.deepcopy().as_dictionary()}
         if add_learning_results and hasattr(self, 'learning_results'):
             dic['learning_results'] = copy.deepcopy(
                 self.learning_results.__dict__)
@@ -3210,7 +3215,7 @@ class Signal(MVA,
 
         Examples
         --------
-        >>> s = signals.Spectrum(np.ones((5,4,3,6)))
+        >>> s = hs.signals.Spectrum(np.ones((5,4,3,6)))
         >>> s
         <Spectrum, title: , dimensions: (3, 4, 5, 6)>
         >>> s.rollaxis(3, 1)
@@ -3322,7 +3327,7 @@ class Signal(MVA,
 
         Examples
         --------
-        >>> s=signals.Spectrum(random.random([4,3,2]))
+        >>> s = hs.signals.Spectrum(random.random([4,3,2]))
         >>> s
             <Spectrum, title: , dimensions: (3, 4|2)>
         >>> s.split()
@@ -3414,7 +3419,8 @@ class Signal(MVA,
         return splitted
 
     # TODO: remove in HyperSpy 0.9
-    def unfold_if_multidim(self):
+    @staticmethod
+    def unfold_if_multidim():
         """Unfold the datacube if it is >2D
 
         Deprecated method, please use unfold.
@@ -3422,7 +3428,8 @@ class Signal(MVA,
         """
         warnings.warn(
             "`unfold_if_multidim` is deprecated and will be removed in "
-            "HyperSpy 0.9. Please use `unfold` instead.", DeprecationWarning)
+            "HyperSpy 0.9. Please use `unfold` instead.",
+            VisibleDeprecationWarning)
         return None
 
     @auto_replot
@@ -4019,7 +4026,7 @@ class Signal(MVA,
         s.data = self.axes_manager[axis].index2value(s.data)
         return s
 
-    def get_histogram(img, bins='freedman', range_bins=None, **kwargs):
+    def get_histogram(self, bins='freedman', range_bins=None, **kwargs):
         """Return a histogram of the signal data.
 
         More sophisticated algorithms for determining bins can be used.
@@ -4058,7 +4065,7 @@ class Signal(MVA,
 
         Examples
         --------
-        >>> s = signals.Spectrum(np.random.normal(size=(10, 100)))
+        >>> s = hs.signals.Spectrum(np.random.normal(size=(10, 100)))
         Plot the data histogram
         >>> s.get_histogram().plot()
         Plot the histogram of the signal at the current coordinates
@@ -4066,7 +4073,7 @@ class Signal(MVA,
 
         """
         from hyperspy import signals
-        data = img.data[~np.isnan(img.data)].flatten()
+        data = self.data[~np.isnan(self.data)].flatten()
         hist, bin_edges = histogram(data,
                                     bins=bins,
                                     range=range_bins,
@@ -4083,7 +4090,7 @@ class Signal(MVA,
             hist_spec.axes_manager[0].offset = bin_edges[0]
 
         hist_spec.axes_manager[0].name = 'value'
-        hist_spec.metadata.General.title = (img.metadata.General.title +
+        hist_spec.metadata.General.title = (self.metadata.General.title +
                                             " histogram")
         hist_spec.metadata.Signal.binned = True
         return hist_spec
@@ -4127,14 +4134,14 @@ class Signal(MVA,
         parameter is constant.
 
         >>> import scipy.ndimage
-        >>> im = signals.Image(np.random.random((10, 64, 64)))
+        >>> im = hs.signals.Image(np.random.random((10, 64, 64)))
         >>> im.map(scipy.ndimage.gaussian_filter, sigma=2.5)
 
         Apply a gaussian filter to all the images in the dataset. The sigmal
         parameter is variable.
 
-        >>> im = signals.Image(np.random.random((10, 64, 64)))
-        >>> sigmas = signals.Signal(np.linspace(2,5,10))
+        >>> im = hs.signals.Image(np.random.random((10, 64, 64)))
+        >>> sigmas = hs.signals.Signal(np.linspace(2,5,10))
         >>> sigmas.axes_manager.set_signal_dimension(0)
         >>> im.map(scipy.ndimage.gaussian_filter, sigma=sigmas)
 
@@ -4241,9 +4248,7 @@ class Signal(MVA,
 
         Examples
         --------
-        >>> import numpy as np
-        >>> from hyperspy.signals import Spectrum
-        >>> s = signals.Spectrum(np.array([1,2,3,4,5]))
+        >>> s = hs.signals.Spectrum([1,2,3,4,5])
         >>> s.data
         array([1, 2, 3, 4, 5])
         >>> s.change_dtype('float')
@@ -4257,16 +4262,6 @@ class Signal(MVA,
                     raise AttributeError(
                         "Only spectrum signals can be converted "
                         "to RGB images.")
-                    if "rgba" in dtype:
-                        if self.axes_manager.signal_size != 4:
-                            raise AttributeError(
-                                "Only spectra with signal_size equal to 4 can "
-                                "be converted to RGBA images")
-                    else:
-                        if self.axes_manager.signal_size != 3:
-                            raise AttributeError(
-                                "Only spectra with signal_size equal to 3 can "
-                                "be converted to RGBA images")
                 if "8" in dtype and self.data.dtype.name != "uint8":
                     raise AttributeError(
                         "Only signals with dtype uint8 can be converted to "
@@ -4408,7 +4403,7 @@ class Signal(MVA,
 
         Examples
         --------
-        >>> im = signals.Image(np.zeros((2,3, 32,32)))
+        >>> im = hs.signals.Image(np.zeros((2,3, 32,32)))
         >>> im
         <Image, title: , dimensions: (3, 2, 32, 32)>
         >>> im.axes_manager.indices = 2,1
@@ -4555,7 +4550,7 @@ class Signal(MVA,
 
         Examples
         --------
-        >>> img = signals.Image(np.ones((3,4,5,6)))
+        >>> img = hs.signals.Image(np.ones((3,4,5,6)))
         >>> img
         <Image, title: , dimensions: (4, 3, 6, 5)>
         >>> img.to_spectrum(-1+1j)
@@ -4585,7 +4580,7 @@ class Signal(MVA,
 
         Examples
         --------
-        >>> s = signals.Spectrum(np.ones((2,3,4,5)))
+        >>> s = hs.signals.Spectrum(np.ones((2,3,4,5)))
         >>> s
         <Spectrum, title: , dimensions: (4, 3, 2, 5)>
         >>> s.as_image((0,1))
@@ -4745,8 +4740,8 @@ class Signal(MVA,
         Examples
         -------
         >>> import scipy.misc
-        >>> im = signals.Image(scipy.misc.lena())
-        >>> m = utils.plot.markers.rectangle(x1=150, y1=100, x2=400,
+        >>> im = hs.signals.Image(scipy.misc.lena())
+        >>> m = hs.utils.plot.markers.rectangle(x1=150, y1=100, x2=400,
         >>>                                  y2=400, color='red')
         >>> im.add_marker(m)
 

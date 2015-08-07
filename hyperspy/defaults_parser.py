@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2015 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -324,3 +324,11 @@ if preferences.General.logger_on:
     turn_logging_on(verbose=0)
 
 current_toolkit = preferences.General.default_toolkit
+
+
+def file_version(fname):
+    with open(fname, 'r') as f:
+        for l in f.readlines():
+            if '__version__' in l:
+                return l[l.find('=') + 1:].strip()
+    return '0'
