@@ -144,13 +144,13 @@ class TestModel:
 
     def test_components_class_default(self):
         m = self.model
-        g1 = hs.components.Gaussian()
+        g1 = hs.model.components.Gaussian()
         m.append(g1)
         nose.tools.assert_is(getattr(m.components, g1.name), g1)
 
     def test_components_class_change_name(self):
         m = self.model
-        g1 = hs.components.Gaussian()
+        g1 = hs.model.components.Gaussian()
         m.append(g1)
         g1.name = "test"
         nose.tools.assert_is(getattr(m.components, g1.name), g1)
@@ -158,14 +158,14 @@ class TestModel:
     @nose.tools.raises(AttributeError)
     def test_components_class_change_name_del_default(self):
         m = self.model
-        g1 = hs.components.Gaussian()
+        g1 = hs.model.components.Gaussian()
         m.append(g1)
         g1.name = "test"
         getattr(m.components, "Gaussian")
 
     def test_components_class_change_invalid_name(self):
         m = self.model
-        g1 = hs.components.Gaussian()
+        g1 = hs.model.components.Gaussian()
         m.append(g1)
         g1.name = "1, Test This!"
         nose.tools.assert_is(
@@ -175,7 +175,7 @@ class TestModel:
     @nose.tools.raises(AttributeError)
     def test_components_class_change_name_del_default(self):
         m = self.model
-        g1 = hs.components.Gaussian()
+        g1 = hs.model.components.Gaussian()
         m.append(g1)
         invalid_name = "1, Test This!"
         g1.name = invalid_name

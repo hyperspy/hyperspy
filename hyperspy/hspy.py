@@ -16,7 +16,6 @@ from hyperspy.datasets import example_signals
 from hyperspy.misc.hspy_warnings import VisibleDeprecationWarning
 
 
-
 def get_configuration_directory_path():
     import hyperspy.misc.config_dir
     return hyperspy.misc.config_dir.config_path
