@@ -15,7 +15,7 @@ acquired by recording two signals in parallel in a FIB/SEM.
 
 
 .. code-block:: python
-    
+
     >>> s = hs.load('YourDataFilenameHere')
     >>> s.plot()
 
@@ -38,7 +38,7 @@ the x-axis if 1D:
    :width:   500
 
    Visualisation of a 2D spectrum image
-   
+
 .. _1d_SI:
 
 .. figure::  images/1D_SI.png
@@ -70,10 +70,10 @@ is possible to change the size of the cursors by pressing the ``+`` and ``-``
 keys  **when the navigator window is selected**.
 
 =========   =============================
-key         function    
+key         function
 =========   =============================
 e           Switch second pointer on/off
-Arrows      Change coordinates  
+Arrows      Change coordinates
 PageUp      Increase step size
 PageDown    Decrease step size
 ``+``           Increase pointer size
@@ -97,24 +97,24 @@ To close all the figures run the following command:
 Multidimensional image data
 ===========================
 
-Equivalently, if the object is a 1D or 2D image stack two figures will appear, 
+Equivalently, if the object is a 1D or 2D image stack two figures will appear,
 one containing a plot of the image at the current coordinates and the other
 a spectrum or an image obtained by summing over the image dimensions:
-   
+
 .. _1D_image_stack.png:
 
 .. figure::  images/1D_image_stack.png
    :align:   center
-   :width:   500    
+   :width:   500
 
    Visualisation of a 1D image stack
-   
+
 .. _2D_image_stack.png:
 
 .. figure::  images/2D_image_stack.png
    :align:   center
    :width:   500
-   
+
    Visualisation of a 2D image stack
 
 
@@ -141,9 +141,60 @@ contrast controls are HyperSpy-specific, however `matplotlib.imshow
 
 .. figure::  images/custom_cmap.png
    :align:   center
-   :width:   500    
+   :width:   500
 
    Custom colormap and switched off scalebar in an image.
+
+
+.. _plot.divergent_colormaps-label:
+
+
+.. versionadded:: 0.8.1
+
+When plotting using divergent colormaps, if ``centre_colormap`` is ``True``
+(default) the constrast is automatically adjusted so that zero corresponds to
+the center of the colormap (usually white). This can be useful e.g. when
+displaying images that contain pixels with both positive and negative values.
+
+The following example shows the effect of centering the color map:
+
+.. code-block:: python
+
+    >>> x = np.linspace(-2 * np.pi, 2 * np.pi, 128)
+    >>> xx, yy = np.meshgrid(x, x)
+    >>> data1 = np.sin(xx * yy)
+    >>> data2 = data.copy()
+    >>> data2[data2 < 0] /= 4
+    >>> im = hs.signals.Image([data1, data])
+    >>> hs.plot.plot_images(im, cmap="RdBu", tight_layout=True)
+
+
+.. figure::  images/divergent_cmap.png
+   :align:   center
+   :width:   500
+
+   Divergent color map with ``Centre colormap `` enabled (default).
+
+
+The same example with the feature disabled:
+
+.. code-block:: python
+
+    >>> x = np.linspace(-2 * np.pi, 2 * np.pi, 128)
+    >>> xx, yy = np.meshgrid(x, x)
+    >>> data1 = np.sin(xx * yy)
+    >>> data2 = data.copy()
+    >>> data2[data2 < 0] /= 4
+    >>> im = hs.signals.Image([data1, data])
+    >>> hs.plot.plot_images(im, centre_colormap=False, cmap="RdBu", tight_layout=True)
+
+
+.. figure::  images/divergent_cmap_no_centre.png
+   :align:   center
+   :width:   500
+
+   Divergent color map with ``Centre colormap`` disabled.
+
 
 Customizing the "navigator"
 ===========================
@@ -166,7 +217,7 @@ Data files used in the following examples can be downloaded using
 
 .. NOTE::
 
-    The sample and the data used in this chapter are described in 
+    The sample and the data used in this chapter are described in
     P. Burdet, `et al.`, Acta Materialia, 61, p. 3090-3098 (2013) (see
     `abstract <http://infoscience.epfl.ch/record/185861/>`_).
 
@@ -177,14 +228,14 @@ instead of the 2D navigator as in the previous example.
 
     >>> img = hs.load('image*.tif', stack=True)
     >>> img.plot(navigator='slider')
-    
-    
+
+
 .. figure::  images/3D_image.png
    :align:   center
-   :width:   500    
+   :width:   500
 
-   Visualisation of a 3D image with a slider.   
-   
+   Visualisation of a 3D image with a slider.
+
 
 A stack of 2D spectrum images can be imported as a 3D spectrum image and
 plotted with sliders.
@@ -193,18 +244,18 @@ plotted with sliders.
 
     >>> s = hs.load('TiFeNi_0*.rpl', stack=True).as_spectrum(0)
     >>> s.plot()
-    
-    
+
+
 .. figure::  images/3D_spectrum.png
    :align:   center
-   :width:   650    
+   :width:   650
 
    Visualisation of a 3D spectrum image with sliders.
-   
+
 If the 3D images has the same spatial dimension as the 3D spectrum image, it
 can be used as an external signal for the navigator.
-   
-   
+
+
 .. code-block:: python
 
     >>> im = hs.load('image*.tif', stack=True)
@@ -213,14 +264,14 @@ can be used as an external signal for the navigator.
     >>> #Rebin the image
     >>> im = im.rebin([dim[2], dim[0], dim[1]])
     >>> s.plot(navigator=im)
-  
-    
+
+
 .. figure::  images/3D_spectrum_external.png
    :align:   center
-   :width:   650    
+   :width:   650
 
    Visualisation of a 3D spectrum image. The navigator is an external signal.
-   
+
 The 3D spectrum image can be transformed in a stack of spectral images for an
 alternative display.
 
@@ -228,31 +279,31 @@ alternative display.
 
     >>> imgSpec = hs.load('TiFeNi_0*.rpl', stack=True)
     >>> imgSpec.plot(navigator='spectrum')
-    
-    
+
+
 .. figure::  images/3D_image_spectrum.png
    :align:   center
-   :width:   650    
+   :width:   650
 
    Visualisation of a stack of 2D spectral images.
-   
+
 An external signal (e.g. a spectrum) can be used as a navigator, for example
-the "maximum spectrum" for which each channel is the maximum of all pixels. 
+the "maximum spectrum" for which each channel is the maximum of all pixels.
 
 .. code-block:: python
 
     >>> imgSpec = hs.load('TiFeNi_0*.rpl', stack=True)
     >>> specMax = imgSpec.max(-1).max(-1).max(-1).as_spectrum(0)
     >>> imgSpec.plot(navigator=specMax)
-    
-    
+
+
 .. figure::  images/3D_image_spectrum_external.png
    :align:   center
-   :width:   650    
+   :width:   650
 
-   Visualisation of a stack of 2D spectral images. 
+   Visualisation of a stack of 2D spectral images.
    The navigator is the "maximum spectrum".
-   
+
 Lastly, if no navigator is needed, "navigator=None" can be used.
 
 Using Mayavi to visualize 3D data
@@ -274,8 +325,8 @@ greater than 2, `Mayavi <http://docs.enthought.com/mayavi/mayavi/>`_ can be
 used for this purpose.
 
 In the following example we also use `scikit-image <http://scikit-image.org/>`_
-for noise reduction. More details about 
-:py:meth:`~._signals.eds.EDSSpectrum.get_lines_intensity` method can be 
+for noise reduction. More details about
+:py:meth:`~._signals.eds.EDSSpectrum.get_lines_intensity` method can be
 found in :ref:`EDS lines intensity<get_lines_intensity>`.
 
 .. code-block:: python
@@ -285,20 +336,20 @@ found in :ref:`EDS lines intensity<get_lines_intensity>`.
     >>> mlab.figure()
     >>> mlab.contour3d(ni.data, contours=[85])
     >>> mlab.outline(color=(0, 0, 0))
-        
-    
+
+
 .. figure::  images/plot_3D_mayavi.png
    :align:   center
-   :width:   400    
+   :width:   400
 
    Visualisation of isosurfaces with mayavi.
-   
+
 .. NOTE::
     See also the `SEM EDS tutorials <http://nbviewer.ipython.org/github/hyperspy/hyperspy-	demos/blob/master/electron_microscopy/EDS/>`_ .
 
 .. NOTE::
 
-    The sample and the data used in this chapter are described in 
+    The sample and the data used in this chapter are described in
     P. Burdet, `et al.`, Ultramicroscopy, 148, p. 158-167 (2015).
 .. _plot_spectra:
 
@@ -353,7 +404,7 @@ In this example, the axes labels and the ticks are also disabled with `axes_deco
     >>> image.map(scipy.ndimage.rotate, angle=angles, reshape=False)
     >>> hs.plot.plot_images(
     >>>     image, suptitle='Turning Lena', axes_decor='off',
-    >>>     label=['Rotation ' + str(angle.data[0]) + 
+    >>>     label=['Rotation ' + str(angle.data[0]) +
     >>>            '$^\degree$' for angle in angles], colorbar=None)
 
 .. figure::  images/plot_images_custom-labels.png
@@ -387,13 +438,13 @@ This example also demonstrates how to wrap labels using `labelwrap` (for prevent
     >>> rgb = hs.signals.Spectrum(scipy.misc.face())
     >>> rgb.change_dtype("rgb8")
     >>> rgb.metadata.General.title = 'Raccoon - RGB'
-    
+
     >>> images = [image0, image1, image2, rgb]
     >>> for im in images:
     >>>     ax = im.axes_manager.signal_axes
     >>>     ax[0].name, ax[1].name = 'x', 'y'
     >>>     ax[0].units, ax[1].units = 'mm', 'mm'
-    >>> hs.plot.plot_images(images, tight_layout=True, 
+    >>> hs.plot.plot_images(images, tight_layout=True,
     >>>                        colorbar='single', labelwrap=20)
 
 .. figure::  images/plot_images_image-list.png
@@ -422,10 +473,10 @@ which is used to call subplots_adjust method of matplotlib
     >>> im = si_EDS.get_lines_intensity()
     >>> hs.plot.plot_images(
     >>>     im, tight_layout=True, cmap='RdYlBu_r', axes_decor='off',
-    >>>     colorbar='single', saturated_pixels=2, scalebar='all', 
+    >>>     colorbar='single', saturated_pixels=2, scalebar='all',
     >>>     scalebar_color='black', suptitle_fontsize=16,
     >>>     padding={'top':0.8, 'bottom':0.10, 'left':0.05,
-    >>>              'right':0.85, 'wspace':0.20, 'hspace':0.10})      
+    >>>              'right':0.85, 'wspace':0.20, 'hspace':0.10})
 
 .. figure::  images/plot_images_eds.png
   :align:   center
@@ -470,20 +521,20 @@ legended line, a spectrum can be toggled on and off.
      ...         gs = m.as_signal()
      ...         gs.metadata.General.title = "sigma=%i" % sigma
      ...         gaussians.append(gs)
-     ...         
+     ...
      >>> hs.plot.plot_spectra(gaussians,legend='auto')
      <matplotlib.axes.AxesSubplot object at 0x4c28c90>
 
 
 .. figure::  images/plot_spectra_overlap.png
   :align:   center
-  :width:   500 
-  
+  :width:   500
+
 
 Another style, "cascade", can be useful when "overlap" results in a plot that
-is too cluttered e.g. to visualize 
-changes in EELS fine structure over a line scan. The following example 
-shows how to plot a cascade style figure from a spectrum, and save it in 
+is too cluttered e.g. to visualize
+changes in EELS fine structure over a line scan. The following example
+shows how to plot a cascade style figure from a spectrum, and save it in
 a file:
 
 .. code-block:: python
@@ -495,10 +546,10 @@ a file:
 
 .. figure::  images/plot_spectra_cascade.png
   :align:   center
-  :width:   350    
+  :width:   350
 
-The "cascade" `style` has a `padding` option. The default value, 1, keeps the 
-individual plots from overlapping. However in most cases a lower 
+The "cascade" `style` has a `padding` option. The default value, 1, keeps the
+individual plots from overlapping. However in most cases a lower
 padding value can be used, to get tighter plots.
 
 Using the color argument one can assign a color to all the spectra, or specific
@@ -556,17 +607,17 @@ There are also two other styles, "heatmap" and "mosaic":
 
 .. figure::  images/plot_spectra_heatmap.png
   :align:   center
-  :width:   500    
+  :width:   500
 
 .. code-block:: python
 
     >>> import scipy.misc
     >>> s = hs.signals.Spectrum(scipy.misc.lena()[100:120:10])
     >>> hs.plot.plot_spectra(s, style='mosaic')
-    
+
 .. figure::  images/plot_spectra_mosaic.png
   :align:   center
-  :width:   350     
+  :width:   350
 
 For the "heatmap" style, different `matplotlib color schemes <http://matplotlib.org/examples/color/colormaps_reference.html>`_ can be used:
 
@@ -602,7 +653,7 @@ that are passed directly to matplotlib.pyplot.figure as keyword arguments:
 
 .. figure:: images/plot_spectra_kwargs.png
   :align:   center
-  :width:   350 
+  :width:   350
 
 The function returns a matplotlib ax object, which can be used to customize the figure:
 
@@ -618,8 +669,8 @@ The function returns a matplotlib ax object, which can be used to customize the 
 
 .. figure::  images/plot_spectra_customize.png
   :align:   center
-  :width:   350 
-  
+  :width:   350
+
 A matplotlib ax and fig object can also be specified, which can be used to put several
 subplots in the same figure. This will only work for "cascade" and "overlap" styles:
 
@@ -635,7 +686,7 @@ subplots in the same figure. This will only work for "cascade" and "overlap" sty
 
 .. figure::  images/plot_spectra_ax_argument.png
   :align:   center
-  :width:   350 
+  :width:   350
 
 .. _plot.signals:
 
@@ -643,8 +694,8 @@ Plotting several signals
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
 :py:func:`~.drawing.utils.plot_signals` is used to plot several signals at the
-same time. By default the navigation position of the signals will be synced, and the 
-signals must have the same dimensions. To plot two spectra at the same time: 
+same time. By default the navigation position of the signals will be synced, and the
+signals must have the same dimensions. To plot two spectra at the same time:
 
 .. code-block:: python
 
@@ -655,11 +706,11 @@ signals must have the same dimensions. To plot two spectra at the same time:
 
 .. figure::  images/plot_signals.png
   :align:   center
-  :width:   500    
+  :width:   500
 
-The navigator can be specified by using the navigator argument, where the 
-different options are "auto", None, "spectrum", "slider" or Signal.  
-For more details about the different navigators, 
+The navigator can be specified by using the navigator argument, where the
+different options are "auto", None, "spectrum", "slider" or Signal.
+For more details about the different navigators,
 see :ref:`navigator_options`.
 To specify the navigator:
 
@@ -672,9 +723,9 @@ To specify the navigator:
 
 .. figure::  images/plot_signals_slider.png
   :align:   center
-  :width:   500    
+  :width:   500
 
-Navigators can also be set differently for different plots using the 
+Navigators can also be set differently for different plots using the
 navigator_list argument. Where the navigator_list be the same length
 as the number of signals plotted, and only contain valid navigator options.
 For example:
@@ -684,15 +735,15 @@ For example:
     >>> import scipy.misc
     >>> s1 = hs.signals.Spectrum(scipy.misc.face()).as_spectrum(0)[:,:3]
     >>> s2 = s1.deepcopy()*-1
-    >>> s3 = hs.signals.Spectrum(np.linspace(0,9,9).reshape([3,3])) 
+    >>> s3 = hs.signals.Spectrum(np.linspace(0,9,9).reshape([3,3]))
     >>> hs.plot.plot_signals([s1, s2], navigator_list=["slider", s3])
 
 .. figure::  images/plot_signals_navigator_list.png
   :align:   center
-  :width:   500    
+  :width:   500
 
 Several signals can also be plotted without syncing the navigation by using
-sync=False. The navigator_list can still be used to specify a navigator for 
+sync=False. The navigator_list can still be used to specify a navigator for
 each plot:
 
 .. code-block:: python
@@ -704,7 +755,7 @@ each plot:
 
 .. figure::  images/plot_signals_sync.png
   :align:   center
-  :width:   500    
+  :width:   500
 
 .. _plot.markers:
 
@@ -736,7 +787,7 @@ By providing an array of positions, the marker can also change position when nav
     >>> index = array([peak_local_max(im.data, min_distance=100, num_peaks=4)
     >>>                for im in ims])
     >>> for i in range(4):
-    >>>     m = hs.plot.markers.point(x=index[:, i, 1], 
+    >>>     m = hs.plot.markers.point(x=index[:, i, 1],
     >>>                                  y=index[:, i, 0], color='red')
     >>>     ims.add_marker(m)
 
@@ -746,7 +797,7 @@ By providing an array of positions, the marker can also change position when nav
   :width:   400
 
 The markers can be added to the navigator as well. In the following example, each slice of a 2D spectrum is tagged with a text marker on the signal plot. Each slice is indicated with the same text on the navigator.
- 
+
 .. code-block:: python
 
     >>> s = hs.signals.Spectrum(np.arange(100).reshape([10,10]))
@@ -764,5 +815,3 @@ The markers can be added to the navigator as well. In the following example, eac
 .. figure::  images/plot_markers_nav.png
   :align:   center
   :width:   400
-
-

@@ -39,6 +39,9 @@ OurApplyButton = tu.Action(name="Apply",
 OurResetButton = tu.Action(name="Reset",
                            action="reset")
 
+OurCloseButton = tu.Action(name="Close",
+                           action="close_directly")
+
 OurFindButton = tu.Action(name="Find next",
                           action="find",)
 
@@ -66,6 +69,10 @@ class SpanSelectorInSpectrumHandler(tu.Handler):
             self.apply(info)
 
         return True
+
+    def close_directly(self, info):
+        if (info.ui.owner is not None) and self.close(info, False):
+            info.ui.owner.close()
 
     def apply(self, info, *args, **kwargs):
         """Handles the **Apply** button being clicked.
@@ -771,16 +778,20 @@ class ImageContrastEditor(t.HasTraits):
 
 class ComponentFit(SpanSelectorInSpectrum):
     fit = t.Button()
+    only_current = t.List(t.Bool(True))
 
     view = tu.View(
         tu.Item('fit', show_label=False),
-        buttons=[OKButton, CancelButton],
+        tu.Item('only_current', show_label=False, style='custom',
+                editor=tu.CheckListEditor(values=[(True, 'Only current')])),
+        buttons=[OurCloseButton],
         title='Fit single component',
         handler=SpanSelectorInSpectrumHandler,
     )
 
     def __init__(self, model, component, signal_range=None,
-                 estimate_parameters=True, fit_independent=False, **kwargs):
+                 estimate_parameters=True, fit_independent=False,
+                 only_current=True, **kwargs):
         if model.spectrum.axes_manager.signal_dimension != 1:
             raise SignalDimensionError(
                 model.spectrum.axes_manager.signal_dimension, 1)
@@ -788,6 +799,7 @@ class ComponentFit(SpanSelectorInSpectrum):
         self.signal = model.spectrum
         self.axis = self.signal.axes_manager.signal_axes[0]
         self.span_selector = None
+        self.only_current = [True] if only_current else []  # CheckListEditor
         self.model = model
         self.component = component
         self.signal_range = signal_range
@@ -831,6 +843,7 @@ class ComponentFit(SpanSelectorInSpectrum):
 
         # Setting reasonable initial value for parameters through
         # the components estimate_parameters function (if it has one)
+        only_current = len(self.only_current) > 0   # CheckListEditor
         if self.estimate_parameters:
             if hasattr(self.component, 'estimate_parameters'):
                 if (self.signal_range != "interactive" and
@@ -839,15 +852,18 @@ class ComponentFit(SpanSelectorInSpectrum):
                         self.signal,
                         self.signal_range[0],
                         self.signal_range[1],
-                        only_current=True)
+                        only_current=only_current)
                 elif self.signal_range == "interactive":
                     self.component.estimate_parameters(
                         self.signal,
                         self.ss_left_value,
                         self.ss_right_value,
-                        only_current=True)
+                        only_current=only_current)
 
-        self.model.fit(**self.fit_kwargs)
+        if only_current:
+            self.model.fit(**self.fit_kwargs)
+        else:
+            self.model.multifit(**self.fit_kwargs)
 
         # Restore the signal range
         if self.signal_range is not None:
