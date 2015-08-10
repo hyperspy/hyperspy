@@ -142,6 +142,7 @@ with update_version_when_dev() as version:
                   'hyperspy._components',
                   'hyperspy.datasets',
                   'hyperspy.io_plugins',
+                  'hyperspy.docstrings',
                   'hyperspy.drawing',
                   'hyperspy.drawing._markers',
                   'hyperspy.learn',
