@@ -36,6 +36,9 @@ OurApplyButton = tu.Action(name="Apply",
 OurResetButton = tu.Action(name="Reset",
                            action="reset")
 
+OurCloseButton = tu.Action(name="Close",
+                           action="close_directly")
+
 OurFindButton = tu.Action(name="Find",
                           action="find")
 
@@ -63,6 +66,10 @@ class SpanSelectorInSpectrumHandler(tu.Handler):
             self.apply(info)
 
         return True
+
+    def close_directly(self, info):
+        if (info.ui.owner is not None) and self.close(info, False):
+            info.ui.owner.close()
 
     def apply(self, info, *args, **kwargs):
         """Handles the **Apply** button being clicked.
@@ -772,7 +779,7 @@ class ComponentFit(SpanSelectorInSpectrum):
         tu.Item('fit', show_label=False),
         tu.Item('only_current', show_label=False, style='custom',
                 editor=tu.CheckListEditor(values=[(True, 'Only current')])),
-        buttons=[OKButton, CancelButton],
+        buttons=[OurCloseButton],
         title='Fit single component',
         handler=SpanSelectorInSpectrumHandler,
     )
