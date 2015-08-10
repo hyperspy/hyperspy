@@ -9,27 +9,33 @@ see `the github commits changelog
 
 v0.8.1
 ======
-This is a maintenance release. Follow the following two links for a list of all
- `bugs fixed <https://github.com/hyperspy/hyperspy/issues?page=1&q=is%3Aclosed+milestone%3A0.8.1+label%3Abug&utf8=%E2%9C%93>`_
- and `enhancements <https://github.com/hyperspy/hyperspy/issues?utf8=%E2%9C%93&q=is%3Aclosed+milestone%3A0.8.1++label%3Aenhancement+>`_. It also implement some new features
- and introduces important API changes that will be fully enforced in
- HyperSpy 0.9.
+
+This is a maintenance release. Follow the following links for details on all
+the `bugs fixed
+<https://github.com/hyperspy/hyperspy/issues?page=1&q=is%3Aclosed+milestone%3A0.8.1+label%3Abug&utf8=%E2%9C%93>`_,
+`feature
+<https://github.com/hyperspy/hyperspy/issues?utf8=%E2%9C%93&q=is%3Aclosed+milestone%3A0.8.1++label%3Aenhancement+>`_
+and `documentation
+<https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3A0.8.1+label%3Adocumentation>`_ enhancements.
+
+It also includes some new features and introduces important API changes that
+will be fully enforced in HyperSpy 0.9.
 
 New features
 ------------
-
-* :py:class:`~._components.expression.Expression` component. More details
+* Support for IPython 3.0.
+* ``%hyperspy`` :ref:`IPython magic <magic-label>` to easily and transparently import HyperSpy, matplotlib and numpy when using IPython.
+* :py:class:`~._components.expression.Expression` model component to easily create analytical function components. More details
   :ref:`here <expression_component-label>`.
-* New :py:meth:`~.signal.Signal.unfolded` context manager.
-* New :py:meth:`~.signal.Signal.derivative` method.
-* New :ref:`syntax to access the components in the model <model_components-label>`
+* :py:meth:`~.signal.Signal.unfolded` context manager.
+* :py:meth:`~.signal.Signal.derivative` method.
+* :ref:`syntax to access the components in the model <model_components-label>`
   that includes pretty printing of the components.
-* New ``hyperspy`` :ref:`IPython magic <magic-label>`.
 
 API changes
 -----------
 
-* :py:mod:`~.hyperspy.hspy` is now deprecated in favor of the new
+* :py:mod:`~.hyperspy.hspy` is now deprecated in favour of the new
   :py:mod:`~.hyperspy.api`. The new API renames and/or move several modules as
   folows:
 
@@ -47,7 +53,7 @@ API changes
     syntax. For more details see :ref:importing_hyperspy-label
 * Indexing the :py:class:`~.signal.Signal` class is now deprecated. We encourage
   all users to use ``isig`` and ``inav`` instead for indexing.
-* :py:func:`~.hyperspy.hspy.create_model` is now deprecated in favor of the new
+* :py:func:`~.hyperspy.hspy.create_model` is now deprecated in favour of the new
   equivalent :py:meth:`~.signal.Signal.create_model` ``Signal`` method.
 
 
