@@ -42,7 +42,7 @@ def test_linfit():
         parinfo[i]['value'] = p0[i]
     fa = {'x': x, 'y': y, 'err': ey}
     m = mpfit(myfunctlin, p0, parinfo=parinfo, functkw=fa)
-    if (m.status <= 0):
+    if m.status <= 0:
         print 'error message = ', m.errmsg
     assert N.allclose(
         m.params, N.array([3.20996572, -1.7709542], dtype='float64'))
@@ -70,7 +70,7 @@ def test_rosenbrock():
     p0 = N.array([-1, 1.], dtype='float64')  # initial conditions
     pactual = N.array([1., 1.])  # actual minimum of the rosenbrock function
     m = mpfit(myfunctrosenbrock, p0)
-    if (m.status <= 0):
+    if m.status <= 0:
         print 'error message = ', m.errmsg
     assert m.status > 0
     assert N.allclose(m.params, pactual)

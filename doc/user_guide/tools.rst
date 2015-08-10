@@ -39,7 +39,7 @@ example we create an Image instance from a 2D numpy array:
 
 .. code-block:: python
 
-    >>> im = signals.Image(np.random.random((64,64)))
+    >>> im = hs.signals.Image(np.random.random((64,64)))
 
 
 The different signals store other objects in what are called attributes. For
@@ -124,7 +124,7 @@ The following example shows how to transform between different subclasses.
 
    .. code-block:: python
 
-       >>> s = signals.Spectrum(np.random.random((10,20,100)))
+       >>> s = hs.signals.Spectrum(np.random.random((10,20,100)))
        >>> s
        <Spectrum, title: , dimensions: (20, 10|100)>
        >>> s.metadata
@@ -279,7 +279,7 @@ Lets start by indexing a single spectrum:
 
 .. code-block:: python
 
-    >>> s = signals.Spectrum(np.arange(10))
+    >>> s = hs.signals.Spectrum(np.arange(10))
     >>> s
     <Spectrum, title: , dimensions: (|10)>
     >>> s.data
@@ -311,7 +311,7 @@ HyperSpy indexes using the axis scales instead of the indices.
 
 .. code-block:: python
 
-    >>> s = signals.Spectrum(np.arange(10))
+    >>> s = hs.signals.Spectrum(np.arange(10))
     >>> s
     <Spectrum, title: , dimensions: (|10)>
     >>> s.data
@@ -333,7 +333,7 @@ modifies the same value in the other.
 
 .. code-block:: python
 
-    >>> s = signals.Spectrum(np.arange(10))
+    >>> s = hs.signals.Spectrum(np.arange(10))
     >>> s
     <Spectrum, title: , dimensions: (10,)>
     >>> s.data
@@ -357,7 +357,7 @@ order.
 
 .. code-block:: python
 
-    >>> s = signals.Spectrum(np.arange(2*3*4).reshape((2,3,4)))
+    >>> s = hs.signals.Spectrum(np.arange(2*3*4).reshape((2,3,4)))
     >>> s
     <Spectrum, title: , dimensions: (10, 10, 10)>
     >>> s.data
@@ -394,7 +394,7 @@ dimensions independently:
 
 .. code-block:: python
 
-    >>> s = signals.Spectrum(np.arange(2*3*4).reshape((2,3,4)))
+    >>> s = hs.signals.Spectrum(np.arange(2*3*4).reshape((2,3,4)))
     >>> s
     <Spectrum, title: , dimensions: (10, 10, 10)>
     >>> s.data
@@ -429,7 +429,7 @@ The same syntax can be used to set the data values:
 
 .. code-block:: python
 
-    >>> s = signals.Spectrum(np.arange(2*3*4).reshape((2,3,4)))
+    >>> s = hs.signals.Spectrum(np.arange(2*3*4).reshape((2,3,4)))
     >>> s
     <Spectrum, title: , dimensions: (10, 10, 10)>
     >>> s.data
@@ -517,7 +517,7 @@ files by iterating over the signal instance:
 
 .. code-block:: python
 
-    >>> image_stack = signals.Image(np.random.random((2, 5, 64,64)))
+    >>> image_stack = hs.signals.Image(np.random.random((2, 5, 64,64)))
     >>> for single_image in image_stack:
     ...    single_image.save("image %s.png" % str(image_stack.axes_manager.indices))
     The "image (0, 0).png" file was created.
@@ -542,13 +542,13 @@ to make a horizontal "collage" of the image stack:
 .. code-block:: python
 
     >>> import scipy.ndimage
-    >>> image_stack = signals.Image(np.array([scipy.misc.lena()]*5))
+    >>> image_stack = hs.signals.Image(np.array([scipy.misc.lena()]*5))
     >>> image_stack.axes_manager[1].name = "x"
     >>> image_stack.axes_manager[2].name = "y"
     >>> for image, angle in zip(image_stack, (0, 45, 90, 135, 180)):
     ...    image.data[:] = scipy.ndimage.rotate(image.data, angle=angle,
     ...    reshape=False)
-    >>> collage = utils.stack([image for image in image_stack], axis=0)
+    >>> collage = hs.stack([image for image in image_stack], axis=0)
     >>> collage.plot()
 
 .. figure::  images/rotate_lena.png
@@ -565,13 +565,13 @@ external function can be more easily accomplished using the
 .. code-block:: python
 
     >>> import scipy.ndimage
-    >>> image_stack = signals.Image(np.array([scipy.misc.lena()]*4))
+    >>> image_stack = hs.signals.Image(np.array([scipy.misc.lena()]*4))
     >>> image_stack.axes_manager[1].name = "x"
     >>> image_stack.axes_manager[2].name = "y"
     >>> image_stack.map(scipy.ndimage.rotate,
     ...                            angle=45,
     ...                            reshape=False)
-    >>> collage = utils.stack([image for image in image_stack], axis=0)
+    >>> collage = hs.stack([image for image in image_stack], axis=0)
     >>> collage.plot()
 
 .. figure::  images/rotate_lena_apply_simple.png
@@ -584,12 +584,12 @@ arguments as in the following example.
 .. code-block:: python
 
     >>> import scipy.ndimage
-    >>> image_stack = signals.Image(np.array([scipy.misc.lena()]*4))
+    >>> image_stack = hs.signals.Image(np.array([scipy.misc.lena()]*4))
     >>> image_stack.axes_manager[1].name = "x"
     >>> image_stack.axes_manager[2].name = "y"
-    >>> angles = signals.Signal(np.array([0, 45, 90, 135]))
+    >>> angles = hs.signals.Signal(np.array([0, 45, 90, 135]))
     >>> angles.axes_manager.set_signal_dimension(0)
-    >>> modes = signals.Signal(np.array(['constant', 'nearest', 'reflect', 'wrap']))
+    >>> modes = hs.signals.Signal(np.array(['constant', 'nearest', 'reflect', 'wrap']))
     >>> modes.axes_manager.set_signal_dimension(0)
     >>> image_stack.map(scipy.ndimage.rotate,
     ...                            angle=angles,
@@ -643,8 +643,8 @@ with same dimension.
 
 .. code-block:: python
 
-    >>> image = signals.Image(scipy.misc.lena())
-    >>> image = utils.stack([utils.stack([image]*3,axis=0)]*3,axis=1)
+    >>> image = hs.signals.Image(scipy.misc.lena())
+    >>> image = hs.stack([hs.stack([image]*3,axis=0)]*3,axis=1)
     >>> image.plot()
 
 .. figure::  images/stack_lena_3_3.png
@@ -691,7 +691,7 @@ type in place, e.g.:
 
 .. code-block:: python
 
-    >>> s = load('EELS Spectrum Image (high-loss).dm3')
+    >>> s = hs.load('EELS Spectrum Image (high-loss).dm3')
         Title: EELS Spectrum Image (high-loss).dm3
         Signal type: EELS
         Data dimensions: (21, 42, 2048)
@@ -731,7 +731,7 @@ type in place, e.g.:
         >>> rgb_test[:,:,1] = (X - lx / 2 + lx*offset_factor) ** 2 + (Y - ly / 2 - ly*offset_factor) ** 2 < lx * ly / size_factor **2
         >>> rgb_test[:,:,2] = (X - lx / 2) ** 2 + (Y - ly / 2 + ly*offset_factor) ** 2 < lx * ly / size_factor **2
         >>> rgb_test *= 2**16 - 1
-        >>> s = signals.Spectrum(rgb_test)
+        >>> s = hs.signals.Spectrum(rgb_test)
         >>> s.change_dtype("uint16")
         >>> s
         <Spectrum, title: , dimensions: (1024, 1024|3)>
@@ -763,7 +763,7 @@ These two methods can be combined with
 print the summary stastics of the signal at the current coordinates, e.g:
 .. code-block:: python
 
-    >>> s = signals.EELSSpectrum(np.random.normal(size=(10,100)))
+    >>> s = hs.signals.EELSSpectrum(np.random.normal(size=(10,100)))
     >>> s.print_summary_statistics()
     Summary statistics
     ------------------
@@ -794,8 +794,8 @@ with histograms of several random chi-square distributions:
 
 .. code-block:: python
 
-    >>> img = signals.Image([np.random.chisquare(i+1,[100,100]) for i in range(5)])
-    >>> utils.plot.plot_histograms(img,legend='auto')
+    >>> img = hs.signals.Image([np.random.chisquare(i+1,[100,100]) for i in range(5)])
+    >>> hs.plot.plot_histograms(img,legend='auto')
 
 .. figure::  images/plot_histograms_chisquare.png
    :align:   center
@@ -845,7 +845,7 @@ for example:
 
 .. code-block:: python
 
-  >>> s = signals.SpectrumSimulation(np.ones(100))
+  >>> s = hs.signals.SpectrumSimulation(np.ones(100))
   >>> s.add_poissonian_noise()
   >>> s.metadata
   ├── General

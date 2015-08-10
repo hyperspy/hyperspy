@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2015 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -361,11 +361,11 @@ class DataAxis(t.HasTraits):
         if v1 > v2:
             raise ValueError("v2 must be greater than v1.")
 
-        if v1 is not None and v1 > self.low_value and v1 <= self.high_value:
+        if v1 is not None and self.low_value < v1 <= self.high_value:
             i1 = self.value2index(v1)
         else:
             i1 = 0
-        if v2 is not None and v2 < self.high_value and v2 >= self.low_value:
+        if v2 is not None and self.high_value > v2 >= self.low_value:
             i2 = self.value2index(v2)
         else:
             i2 = self.size - 1
@@ -408,11 +408,18 @@ class AxesManager(t.HasTraits):
     Examples
     --------
 
-    >>> import numpy as np
+    >>> %hyperspy
+    HyperSpy imported!
+    The following commands were just executed:
+    ---------------
+    import numpy as np
+    import hyperspy.api as hs
+    %matplotlib qt
+    import matplotlib.pyplot as plt
 
-    Create a spectrum with random data
+    >>> # Create a spectrum with random data
 
-    >>> s = signals.Spectrum(np.random.random((2,3,4,5)))
+    >>> s = hs.signals.Spectrum(np.random.random((2,3,4,5)))
     >>> s.axes_manager
     <Axes manager, axes: (<axis2 axis, size: 4, index: 0>, <axis1 axis, size: 3, index: 0>, <axis0 axis, size: 2, index: 0>, <axis3 axis, size: 5>)>
     >>> s.axes_manager[0]
@@ -478,7 +485,7 @@ class AxesManager(t.HasTraits):
 
     def _get_positive_index(self, axis):
         if axis < 0:
-            axis = len(self._axes) + axis
+            axis += len(self._axes)
             if axis < 0:
                 raise IndexError("index out of bounds")
         return axis
@@ -591,7 +598,7 @@ class AxesManager(t.HasTraits):
 
         See also
         --------
-        append_axis
+        _append_axis
 
         """
         # Reorder axes_list using index_in_array if it is defined
@@ -601,7 +608,7 @@ class AxesManager(t.HasTraits):
         if len(indices) == len(axes_list):
             axes_list.sort(key=lambda x: x['index_in_array'])
         for axis_dict in axes_list:
-            self.append_axis(**axis_dict)
+            self._append_axis(**axis_dict)
 
     def _update_max_index(self):
         self._max_index = 1
@@ -626,7 +633,7 @@ class AxesManager(t.HasTraits):
             self._index = 0
             val = (0,) * self.navigation_dimension
             self.indices = val
-        elif (self._index >= self._max_index):
+        elif self._index >= self._max_index:
             raise StopIteration
         else:
             self._index += 1
@@ -643,7 +650,7 @@ class AxesManager(t.HasTraits):
         self._index = None
         return self
 
-    def append_axis(self, *args, **kwargs):
+    def _append_axis(self, *args, **kwargs):
         axis = DataAxis(*args, **kwargs)
         axis.axes_manager = self
         self._axes.append(axis)
@@ -756,10 +763,10 @@ class AxesManager(t.HasTraits):
             axis.edit_traits(view=data_axis_view)
 
     def copy(self):
-        return(copy.copy(self))
+        return copy.copy(self)
 
     def deepcopy(self):
-        return(copy.deepcopy(self))
+        return copy.deepcopy(self)
 
     def __deepcopy__(self, *args):
         return AxesManager(self._get_axes_dicts())

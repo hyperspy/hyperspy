@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2007-2011 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
@@ -14,20 +13,27 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.import
+# nose.tools
 
 
-from IPython import ipapi
-from hyperspy import Release
+import nose.tools as nt
+from hyperspy.external import progressbar
 
 
-def main():
-    import ipy_user_conf
-    ip = ipapi.get()
-    o = ip.options
-    o.pylab_import_all = 0
-    ip.ex("from hyperspy.hspy import *")
-    ip.ex("__version__ = Release.version")
-    o.banner = Release.info
+class TestProgressBar:
 
-main()
+    def setUp(self):
+        pass
+
+    def test_progressbar_not_shown(self):
+        pbar = progressbar.progressbar(maxval=2, disabled=True)
+        for i in xrange(2):
+            pbar.update(i)
+        pbar.finish()
+
+    def test_progressbar_shown(self):
+        pbar = progressbar.progressbar(maxval=2, disabled=False)
+        for i in xrange(2):
+            pbar.update(i)
+        pbar.finish()
