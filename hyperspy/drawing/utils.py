@@ -515,7 +515,6 @@ def plot_images(images,
             centre_colormap = True
         else:
             centre_colormap = False
-        print centre_colormap
 
     # If input is >= 1D signal (e.g. for multi-dimensional plotting),
     # copy it and put it in a list so labeling works out as (x,y) when plotting
