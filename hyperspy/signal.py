@@ -4773,6 +4773,13 @@ class Signal(MVA,
             marker.plot()
 
     def create_model(self):
+        """Create a model for the current signal
+
+        Returns
+        -------
+        A Model class
+
+        """
         from hyperspy.model import Model
         return Model(self)
 
