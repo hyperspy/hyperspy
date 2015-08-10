@@ -45,13 +45,13 @@ class TestNdAxes:
         s2.decomposition()
         s12.decomposition()
         np.testing.assert_array_almost_equal(s2.learning_results.loadings,
-                s12.learning_results.loadings)
+                                             s12.learning_results.loadings)
         np.testing.assert_array_almost_equal(s2.learning_results.factors,
-                s12.learning_results.factors)
+                                             s12.learning_results.factors)
         np.testing.assert_array_almost_equal(s1.learning_results.loadings,
-                s2.learning_results.factors)
+                                             s2.learning_results.factors)
         np.testing.assert_array_almost_equal(s1.learning_results.factors,
-                s2.learning_results.loadings)
+                                             s2.learning_results.loadings)
 
     def test_consistensy_poissonian(self):
         s1 = self.s1
@@ -61,13 +61,13 @@ class TestNdAxes:
         s2.decomposition(normalize_poissonian_noise=True)
         s12.decomposition(normalize_poissonian_noise=True)
         np.testing.assert_array_almost_equal(s2.learning_results.loadings,
-                s12.learning_results.loadings)
+                                             s12.learning_results.loadings)
         np.testing.assert_array_almost_equal(s2.learning_results.factors,
-                s12.learning_results.factors)
+                                             s12.learning_results.factors)
         np.testing.assert_array_almost_equal(s1.learning_results.loadings,
-                s2.learning_results.factors)
+                                             s2.learning_results.factors)
         np.testing.assert_array_almost_equal(s1.learning_results.factors,
-                s2.learning_results.loadings)
+                                             s2.learning_results.loadings)
 
 
 class TestGetExplainedVarinaceRation:
