@@ -320,9 +320,8 @@ class ImagePlot(BlittedFigure):
             self._text.set_text(self.axes_manager.indices)
         if self.no_nans:
             data = np.nan_to_num(data)
-        if self.centre_colormap is True:
+        if self.centre_colormap:
             vmin, vmax = centre_colormap_values(self.vmin, self.vmax)
-            print vmin, vmax
         else:
             vmin, vmax = self.vmin, self.vmax
         if ims:
