@@ -50,7 +50,7 @@ class Image(Signal):
              scalebar_color="white",
              axes_ticks=None,
              auto_contrast=True,
-             saturated_pixels=0.2,
+             saturated_pixels=0,
              vmin=None,
              vmax=None,
              no_nans=False,
