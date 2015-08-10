@@ -230,7 +230,8 @@ MPL_DIVERGING_COLORMAPS = [
     "RdGy",
     "RdYIBu",
     "RdYIGn",
-    "seismic", ]
+    "seismic",
+    "Spectral",]
 # Add reversed colormaps
 MPL_DIVERGING_COLORMAPS += [cmap + "_r" for cmap in MPL_DIVERGING_COLORMAPS]
 
