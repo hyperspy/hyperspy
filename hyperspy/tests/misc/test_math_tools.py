@@ -1,7 +1,7 @@
 import nose.tools
 import numpy as np
 
-from .. import math_tools
+from hyperspy.misc import math_tools
 
 
 def test_isfloat_float():

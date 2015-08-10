@@ -162,7 +162,7 @@ class TestSavingMetadataContainers:
     def setUp(self):
         self.s = Signal([0.1])
 
-    @nt.timed(0.01)
+    @nt.timed(0.1)
     def test_save_long_list(self):
         s = self.s
         s.metadata.set_item('long_list', range(10000))
