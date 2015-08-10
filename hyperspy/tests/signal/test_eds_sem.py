@@ -1,4 +1,4 @@
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2015 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -141,16 +141,16 @@ class Test_metadata:
         sTEM.set_signal_type(signal_type)
         mpTEM = sTEM.metadata
         results = [
-            mp.Acquisition_instrument.SEM.Detector.EDS.energy_resolution_MnKa]
-        results.append(signal_type)
-        resultsTEM = [mpTEM.Acquisition_instrument.TEM.Detector.
-                      EDS.energy_resolution_MnKa]
-        resultsTEM.append(mpTEM.Signal.signal_type)
+            mp.Acquisition_instrument.SEM.Detector.EDS.energy_resolution_MnKa,
+            signal_type]
+        resultsTEM = [
+            mpTEM.Acquisition_instrument.TEM.Detector.EDS.energy_resolution_MnKa,
+            mpTEM.Signal.signal_type]
         nose.tools.assert_equal(results, resultsTEM)
 
     def test_get_calibration_from(self):
         s = self.signal
-        scalib = EDSSEMSpectrum(np.ones((1024)))
+        scalib = EDSSEMSpectrum(np.ones(1024))
         energy_axis = scalib.axes_manager.signal_axes[0]
         energy_axis.scale = 0.01
         energy_axis.offset = -0.10
@@ -221,7 +221,7 @@ class Test_get_lines_intentisity:
     def test_background_substraction(self):
         s = self.signal
         intens = s.get_lines_intensity(["Al_Ka"], plot_result=False)[0].data
-        s = s + 1.
+        s += 1.
         nose.tools.assert_true(np.allclose(s.estimate_background_windows(
             xray_lines=["Al_Ka"])[0, 0], 1.25666201, atol=1e-3))
         nose.tools.assert_true(np.allclose(s.get_lines_intensity(

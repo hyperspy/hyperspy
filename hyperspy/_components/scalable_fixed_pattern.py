@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2015 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -106,16 +106,21 @@ class ScalableFixedPattern(Component):
         self.f = interp1d(
             self.spectrum.axes_manager.signal_axes[0].axis,
             self.spectrum.data.squeeze(),
+            kind=kind,
             bounds_error=False,
-            fill_value=0.,
+            fill_value=fill_value,
             **kwargs)
 
     def function(self, x):
         if self.interpolate is True:
-            return self.yscale.value * self.f(
+            result = self.yscale.value * self.f(
                 x * self.xscale.value - self.shift.value)
         else:
-            return self.yscale.value * self.spectrum.data
+            result = self.yscale.value * self.spectrum.data
+        if self.spectrum.metadata.Signal.binned is True:
+            return result / self.spectrum.axes_manager.signal_axes[0].scale
+        else:
+            return result
 
     def grad_yscale(self, x):
         return self.function(x) / self.yscale.value

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2015 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -30,7 +30,7 @@ from hyperspy.decorators import only_interactive
 from hyperspy.gui.eels import TEMParametersUI
 from hyperspy.defaults_parser import preferences
 import hyperspy.gui.messages as messagesui
-from hyperspy.misc.progressbar import progressbar
+from hyperspy.external.progressbar import progressbar
 from hyperspy.components import PowerLaw
 from hyperspy.misc.utils import isiterable, closest_power_of_two, underline
 from hyperspy.misc.utils import without_nans
@@ -70,7 +70,7 @@ class EELSSpectrum(Spectrum):
         Examples
         --------
 
-        >>> s = signals.EELSSpectrum(np.arange(1024))
+        >>> s = hs.signals.EELSSpectrum(np.arange(1024))
         >>> s.add_elements(('C', 'O'))
         Adding C_K subshell
         Adding O_K subshell
@@ -128,7 +128,7 @@ class EELSSpectrum(Spectrum):
                             <= end_energy:
                         subshell = '%s_%s' % (element, shell)
                         if subshell not in self.subshells:
-                            print "Adding %s subshell" % (subshell)
+                            print "Adding %s subshell" % subshell
                             self.subshells.add(
                                 '%s_%s' % (element, shell))
                             e_shells.append(subshell)
@@ -182,6 +182,7 @@ class EELSSpectrum(Spectrum):
             print_stats=True,
             subpixel=True,
             mask=None,
+            show_progressbar=None,
             **kwargs):
         """Align the zero-loss peak.
 
@@ -210,6 +211,9 @@ class EELSSpectrum(Spectrum):
             It must have signal_dimension = 0 and navigation_shape equal to the
             current signal. Where mask is True the shift is not computed
             and set to nan.
+        show_progressbar : None or bool
+            If True, display a progress bar. If None the default is set in
+            `preferences`.
 
         See Also
         --------
@@ -233,7 +237,9 @@ class EELSSpectrum(Spectrum):
             zlpc.print_summary_statistics()
 
         for signal in also_align + [self]:
-            signal.shift1D(-zlpc.data + mean_)
+            signal.shift1D(-
+                           zlpc.data +
+                           mean_, show_progressbar=show_progressbar)
 
         if calibrate is True:
             zlpc = self.estimate_zero_loss_peak_centre(mask=mask)
@@ -253,7 +259,12 @@ class EELSSpectrum(Spectrum):
                 else self.axes_manager[-1].axis[0])
         right = (right if right < self.axes_manager[-1].axis[-1]
                  else self.axes_manager[-1].axis[-1])
-        self.align1D(left, right, also_align=also_align, **kwargs)
+        self.align1D(
+            left,
+            right,
+            also_align=also_align,
+            show_progressbar=show_progressbar,
+            **kwargs)
         zlpc = self.estimate_zero_loss_peak_centre(mask=mask)
         if calibrate is True:
             substract_from_offset(without_nans(zlpc.data).mean(),
@@ -310,7 +321,7 @@ class EELSSpectrum(Spectrum):
             bk_I0_navigate = (
                 I0.axes_manager._get_axis_attribute_values('navigate'))
             I0.axes_manager.set_signal_dimension(0)
-            pbar = hyperspy.misc.progressbar.progressbar(
+            pbar = hyperspy.external.progressbar.progressbar(
                 maxval=self.axes_manager.navigation_size,
             )
             for i, s in enumerate(self):
@@ -435,8 +446,9 @@ class EELSSpectrum(Spectrum):
                 threshold.data[:] = np.nan
         del s
         if np.isnan(threshold.data).any():
-            warnings.warn("No inflexion point could we found in some positions "
-                          "that have been marked with nans.")
+            warnings.warn(
+                "No inflexion point could be found in some positions "
+                "that have been marked with nans.")
         # Create spectrum image, stop and return value
         threshold.metadata.General.title = (
             self.metadata.General.title +
@@ -503,8 +515,7 @@ class EELSSpectrum(Spectrum):
                 threshold=threshold,).data
 
         t_over_lambda = np.log(total_intensity / I0)
-        s = self._get_navigation_signal()
-        s.data = t_over_lambda
+        s = self._get_navigation_signal(data=t_over_lambda)
         s.metadata.General.title = (self.metadata.General.title +
                                     ' $\\frac{t}{\\lambda}$')
         if self.tmp_parameters.has_item('filename'):
@@ -821,7 +832,8 @@ class EELSSpectrum(Spectrum):
         mapping = {
             'Acquisition_instrument.TEM.convergence_angle': 'tem_par.convergence_angle',
             'Acquisition_instrument.TEM.beam_energy': 'tem_par.beam_energy',
-            'Acquisition_instrument.TEM.Detector.EELS.collection_angle': 'tem_par.collection_angle', }
+            'Acquisition_instrument.TEM.Detector.EELS.collection_angle': 'tem_par.collection_angle',
+        }
         for key, value in mapping.iteritems():
             if self.metadata.has_item(key):
                 exec('%s = self.metadata.%s' % (value, key))
@@ -829,7 +841,8 @@ class EELSSpectrum(Spectrum):
         mapping = {
             'Acquisition_instrument.TEM.convergence_angle': tem_par.convergence_angle,
             'Acquisition_instrument.TEM.beam_energy': tem_par.beam_energy,
-            'Acquisition_instrument.TEM.Detector.EELS.collection_angle': tem_par.collection_angle, }
+            'Acquisition_instrument.TEM.Detector.EELS.collection_angle': tem_par.collection_angle,
+        }
         for key, value in mapping.iteritems():
             if value != t.Undefined:
                 self.metadata.set_item(key, value)
@@ -874,7 +887,7 @@ class EELSSpectrum(Spectrum):
                 '_%i_channels_extrapolated' % extrapolation_size)
         new_shape = list(self.data.shape)
         new_shape[axis.index_in_array] += extrapolation_size
-        s.data = np.zeros((new_shape))
+        s.data = np.zeros(new_shape)
         s.get_dimensions_from_data()
         s.data[..., :axis.size] = self.data
         pl = PowerLaw()
@@ -1171,15 +1184,54 @@ class EELSSpectrum(Spectrum):
                 self.tmp_parameters.filename +
                 '_CDF_after_Kramers_Kronig_transform')
         if 'thickness' in output:
-            thickness = eps._get_navigation_signal()
+            thickness = eps._get_navigation_signal(
+                data=te[self.axes_manager._get_data_slice(
+                    [(axis.index_in_array, 0)])])
             thickness.metadata.General.title = (
                 self.metadata.General.title + ' thickness '
                 '(calculated using Kramers-Kronig analysis)')
-            thickness.data = te[
-                self.axes_manager._get_data_slice([(
-                    axis.index_in_array, 0)])]
             output['thickness'] = thickness
         if full_output is False:
             return eps
         else:
             return eps, output
+
+    def create_model(self, ll=None, auto_background=True, auto_add_edges=True,
+                     GOS=None):
+        """Create a model for the current EELS data.
+
+        Parameters
+        ----------
+        ll : EELSSpectrum, optional
+            If an EELSSpectrum is provided, it will be assumed that it is
+            a low-loss EELS spectrum, and it will be used to simulate the
+            effect of multiple scattering by convolving it with the EELS
+            spectrum.
+        auto_background : boolean, default True
+            If True, and if spectrum is an EELS instance adds automatically
+            a powerlaw to the model and estimate the parameters by the
+            two-area method.
+        auto_add_edges : boolean, default True
+            If True, and if spectrum is an EELS instance, it will
+            automatically add the ionization edges as defined in the
+            Spectrum instance. Adding a new element to the spectrum using
+            the components.EELSSpectrum.add_elements method automatically
+            add the corresponding ionisation edges to the model.
+        GOS : {'hydrogenic' | 'Hartree-Slater'}, optional
+            The generalized oscillation strenght calculations to use for the
+            core-loss EELS edges. If None the Hartree-Slater GOS are used if
+            available, otherwise it uses the hydrogenic GOS.
+
+        Returns
+        -------
+
+        model : `EELSModel` instance.
+
+        """
+        from hyperspy.models.eelsmodel import EELSModel
+        model = EELSModel(self,
+                          ll=ll,
+                          auto_background=auto_background,
+                          auto_add_edges=auto_add_edges,
+                          GOS=GOS)
+        return model

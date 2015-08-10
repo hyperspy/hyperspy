@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2015 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -274,11 +274,14 @@ class EELSCLEdge(Component):
     def _calculate_knots(self):
         start = self.onset_energy.value
         stop = start + self.fine_structure_width
-        self.__knots = np.r_[[start] * 4,
-                             np.linspace(start,
-                                         stop,
-                                         self.fine_structure_coeff._number_of_elements
-                                         )[2:-2], [stop] * 4]
+        self.__knots = np.r_[
+            [start] * 4,
+            np.linspace(
+                start,
+                stop,
+                self.fine_structure_coeff._number_of_elements)[
+                2:-2],
+            [stop] * 4]
 
     def function(self, E):
         """Returns the number of counts in barns
@@ -290,9 +293,11 @@ class EELSCLEdge(Component):
         if self.fine_structure_active is True:
             bfs = bsignal * (
                 E < (self.onset_energy.value + self.fine_structure_width))
-            cts[bfs] = splev(E[bfs],
-                             (self.__knots, self.fine_structure_coeff.value + (0,) * 4,
-                              3))
+            cts[bfs] = splev(
+                E[bfs], (
+                    self.__knots,
+                    self.fine_structure_coeff.value + (0,) * 4,
+                    3))
             bsignal[bfs] = False
         itab = bsignal * (E <= Emax)
         cts[itab] = self.tab_xsection(E[itab])
@@ -313,8 +318,9 @@ class EELSCLEdge(Component):
         if len(fs) == len(self.__knots):
             self.fine_structure_coeff.value = fs
         else:
-            messages.warning_exit("The provided fine structure file "
-                                  "doesn't match the size of the current fine structure")
+            messages.warning_exit(
+                "The provided fine structure file "
+                "doesn't match the size of the current fine structure")
 
     def get_fine_structure_as_spectrum(self):
         """Returns a spectrum containing the fine structure.

@@ -1,0 +1,33 @@
+language: python
+
+sudo: false
+
+python:
+  - 2.7
+
+env:
+  - DEPS="nose numpy scipy matplotlib traits traitsui ipython h5py sympy scikit-learn"
+
+install:
+  - conda create -n testenv --yes python=$TRAVIS_PYTHON_VERSION
+  - source activate testenv
+  - conda install --yes $DEPS
+  - conda install pip
+  - pip install coverage coveralls
+  # The following two lines set hyperspy to run headless. This is a temporary
+  # workaround until we fix hyperspy so that this is not required.
+  - mkdir ~/.hyperspy 
+  - printf "[General]\ndefault_toolkit = None" > ~/.hyperspy/hyperspyrc
+  - python setup.py install
+
+before_install:
+  # then install python version to test
+  - if [ ${TRAVIS_PYTHON_VERSION:0:1} == "2" ]; then wget https://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh; else wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh; fi
+  - chmod +x miniconda.sh
+  - ./miniconda.sh -b
+  - export PATH=/home/travis/miniconda/bin:$PATH
+  # miniconda is not always up-to-date with conda.
+  - conda update --yes conda
+script: python continuous_integration/nosetest.py --with-coverage hyperspy 
+after_success:
+    coveralls

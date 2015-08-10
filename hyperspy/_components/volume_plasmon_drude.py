@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2015 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -65,10 +65,12 @@ class VolumePlasmonDrude(Component):
         plasmon_energy = self.plasmon_energy.value
         fwhm = self.fwhm.value
         intensity = self.intensity.value
-        return np.where(x > 0,
-                        intensity * (plasmon_energy ** 2 * x * fwhm) / (
-                            (x ** 2 - plasmon_energy ** 2) ** 2 + (x * fwhm) ** 2),
-                        0)
+        pe2 = plasmon_energy ** 2
+        return np.where(
+            x > 0,
+            intensity * (pe2 * x * fwhm) /
+            ((x ** 2 - pe2) ** 2 + (x * fwhm) ** 2),
+            0)
 
     # Partial derivative with respect to the plasmon energy E_p
     def grad_plasmon_energy(self, x):
@@ -76,14 +78,13 @@ class VolumePlasmonDrude(Component):
         fwhm = self.fwhm.value
         intensity = self.intensity.value
 
-        return np.where(x > 0,
-                        2 * x * fwhm * plasmon_energy * (
-                            (x ** 4 +
-                             (x *
-                              fwhm) ** 2 -
-                                plasmon_energy ** 4)
-                            / (x ** 4 + x ** 2 * (fwhm ** 2 - 2 *
-                                                  plasmon_energy ** 2) + plasmon_energy ** 4) ** 2) * intensity, 0)
+        return np.where(
+            x > 0,
+            2 * x * fwhm * plasmon_energy * intensity * (
+                (x ** 4 + (x * fwhm) ** 2 - plasmon_energy ** 4) /
+                (x ** 4 + x ** 2 * (fwhm ** 2 - 2 * plasmon_energy ** 2) +
+                    plasmon_energy ** 4) ** 2),
+            0)
 
     # Partial derivative with respect to the plasmon linewidth delta_E_p
     def grad_fwhm(self, x):
@@ -91,11 +92,14 @@ class VolumePlasmonDrude(Component):
         fwhm = self.fwhm.value
         intensity = self.intensity.value
 
-        return np.where(x > 0,
-                        x * plasmon_energy * ((x ** 4 - x ** 2 * (2 * plasmon_energy ** 2
-                                                                  + fwhm ** 2) + plasmon_energy ** 4) / (x ** 4 + x ** 2
-                                                                                                         * (fwhm ** 2 - 2 * plasmon_energy ** 2)
-                                                                                                         + plasmon_energy ** 4) ** 2) * intensity, 0)
+        return np.where(
+            x > 0,
+            x * plasmon_energy * intensity * (
+                (x ** 4 - x ** 2 * (2 * plasmon_energy ** 2 + fwhm ** 2) +
+                    plasmon_energy ** 4) /
+                (x ** 4 + x ** 2 * (fwhm ** 2 - 2 * plasmon_energy ** 2) +
+                    plasmon_energy ** 4) ** 2),
+            0)
 
     def grad_intensity(self, x):
         return self.function(x) / self.intensity.value

@@ -1,4 +1,4 @@
-# Copyright 2007-2012 The HyperSpy developers
+# Copyright 2007-2015 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -43,5 +43,24 @@ class TestParametersAsSignals:
         g._create_arrays()
         g._active_array[2, 0] = False
         g._active_array[0, 0] = False
+        nt.assert_true(
+            np.isnan(g.A.as_signal('values').data[[0, 2], [0]]).all())
+
+    def test_toggle_array(self):
+        g = self.gaussian
+        g.active_is_multidimensional = True
+        g._create_arrays()
+        g._active_array[2, 0] = False
+        g._active_array[0, 0] = False
+        g._toggle_connect_active_array(False)
+        nt.assert_false(g._active_is_multidimensional)
+        nt.assert_true(
+            np.all(
+                g.A.as_signal('values').data == np.zeros(
+                    (3, 3))))
+        nt.assert_true(np.all(
+            g._active_array == np.array([[0, 1, 1], [1, 1, 1], [0, 1, 1]], dtype=bool)))
+        g._toggle_connect_active_array(True)
+        nt.assert_true(g._active_is_multidimensional)
         nt.assert_true(
             np.isnan(g.A.as_signal('values').data[[0, 2], [0]]).all())

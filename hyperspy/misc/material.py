@@ -22,7 +22,7 @@ def _weight_to_atomic(weight_percent, elements):
         Composition in atomic percent.
 
     Calculate the atomic percent of modern bronze given its weight percent:
-    >>> utils.material.weight_to_atomic((88, 12), ("Cu", "Sn"))
+    >>> hs.material.weight_to_atomic((88, 12), ("Cu", "Sn"))
     array([ 93.19698614,   6.80301386])
 
     """
@@ -36,9 +36,7 @@ def _weight_to_atomic(weight_percent, elements):
     atomic_percent = np.array(map(np.divide, weight_percent, atomic_weights))
     sum_weight = atomic_percent.sum(axis=0) / 100.
     for i, el in enumerate(elements):
-        warnings.simplefilter("ignore")
         atomic_percent[i] /= sum_weight
-        warnings.simplefilter('default')
         atomic_percent[i] = np.where(sum_weight == 0.0, 0.0, atomic_percent[i])
     return atomic_percent
 
@@ -63,7 +61,7 @@ def weight_to_atomic(weight_percent, elements='auto'):
     Examples
     --------
     Calculate the atomic percent of modern bronze given its weight percent:
-    >>> utils.material.weight_to_atomic((88, 12), ("Cu", "Sn"))
+    >>> hs.material.weight_to_atomic((88, 12), ("Cu", "Sn"))
     array([ 93.19698614,   6.80301386])
 
     """
@@ -99,7 +97,7 @@ def _atomic_to_weight(atomic_percent, elements):
     Examples
     --------
     Calculate the weight percent of modern bronze given its atomic percent:
-    >>> utils.material.atomic_to_weight([93.2, 6.8], ("Cu", "Sn"))
+    >>> hs.material.atomic_to_weight([93.2, 6.8], ("Cu", "Sn"))
     array([ 88.00501989,  11.99498011])
 
     """
@@ -113,9 +111,7 @@ def _atomic_to_weight(atomic_percent, elements):
     weight_percent = np.array(map(np.multiply, atomic_percent, atomic_weights))
     sum_atomic = weight_percent.sum(axis=0) / 100.
     for i, el in enumerate(elements):
-        warnings.simplefilter("ignore")
         weight_percent[i] /= sum_atomic
-        warnings.simplefilter('default')
         weight_percent[i] = np.where(sum_atomic == 0.0, 0.0, weight_percent[i])
     return weight_percent
 
@@ -140,7 +136,7 @@ def atomic_to_weight(atomic_percent, elements='auto'):
     Examples
     --------
     Calculate the weight percent of modern bronze given its atomic percent:
-    >>> utils.material.atomic_to_weight([93.2, 6.8], ("Cu", "Sn"))
+    >>> hs.material.atomic_to_weight([93.2, 6.8], ("Cu", "Sn"))
     array([ 88.00501989,  11.99498011])
 
     """
@@ -183,7 +179,7 @@ def _density_of_mixture_of_pure_elements(weight_percent,
     Examples
     --------
     Calculate the density of modern bronze given its weight percent:
-    >>> utils.material.density_of_mixture_of_pure_elements(
+    >>> hs.material.density_of_mixture_of_pure_elements(
             (88, 12),("Cu", "Sn"))
     8.6903187973131466
 
@@ -200,18 +196,14 @@ def _density_of_mixture_of_pure_elements(weight_percent,
         for i, weight in enumerate(weight_percent):
             sum_densities[i] = weight / densities[i]
         sum_densities = sum_densities.sum(axis=0)
-        warnings.simplefilter("ignore")
         density = np.sum(weight_percent, axis=0) / sum_densities
-        warnings.simplefilter('default')
         return np.where(sum_densities == 0.0, 0.0, density)
     elif mean == 'weighted':
         for i, weight in enumerate(weight_percent):
             sum_densities[i] = weight * densities[i]
         sum_densities = sum_densities.sum(axis=0)
         sum_weight = np.sum(weight_percent, axis=0)
-        warnings.simplefilter("ignore")
         density = sum_densities / sum_weight
-        warnings.simplefilter('default')
         return np.where(sum_weight == 0.0, 0.0, density)
 
 
@@ -244,7 +236,7 @@ def density_of_mixture_of_pure_elements(weight_percent,
     Examples
     --------
     Calculate the density of modern bronze given its weight percent:
-    >>> utils.material.density_of_mixture_of_pure_elements(
+    >>> hs.material.density_of_mixture_of_pure_elements(
             (88, 12),("Cu", "Sn"))
     8.6903187973131466
 
@@ -263,11 +255,11 @@ def density_of_mixture_of_pure_elements(weight_percent,
 
 def _elements_auto(composition, elements):
     if isinstance(composition[0], numbers.Number):
-        if isinstance(elements, str):
+        if isinstance(elements, basestring):
             if elements == 'auto':
                 raise ValueError("The elements needs to be provided.")
     else:
-        if isinstance(elements, str):
+        if isinstance(elements, basestring):
             if elements == 'auto':
                 elements = []
                 for compo in composition:

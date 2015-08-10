@@ -1,4 +1,4 @@
-# Copyright 2007-2012 The HyperSpy developers
+# Copyright 2007-2015 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -20,7 +20,6 @@ import numpy as np
 from nose.tools import assert_true, assert_equal
 
 from hyperspy._signals.spectrum import Spectrum
-from hyperspy.hspy import create_model
 from hyperspy.components import Gaussian
 
 
@@ -31,7 +30,7 @@ class TestSetParameterInModel:
         g2 = Gaussian()
         g3 = Gaussian()
         s = Spectrum(np.arange(10))
-        m = create_model(s)
+        m = s.create_model()
         m.append(g1)
         m.append(g2)
         m.append(g3)

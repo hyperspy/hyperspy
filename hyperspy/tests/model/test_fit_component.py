@@ -1,4 +1,4 @@
-# Copyright 2007-2012 The HyperSpy developers
+# Copyright 2007-2015 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -21,7 +21,6 @@ import numpy as np
 import nose.tools
 from nose.tools import assert_true
 from hyperspy._signals.spectrum import Spectrum
-from hyperspy.hspy import create_model
 from hyperspy.components import Gaussian
 
 
@@ -34,7 +33,7 @@ class TestFitOneComponent:
         g.sigma.value = 500.0
         axis = np.arange(10000)
         s = Spectrum(g.function(axis))
-        m = create_model(s)
+        m = s.create_model()
         self.model = m
         self.g = g
         self.axis = axis
@@ -82,7 +81,7 @@ class TestFitSeveralComponent:
                         gs3.function(axis))
 
         s = Spectrum(total_signal)
-        m = create_model(s)
+        m = s.create_model()
 
         g1 = Gaussian()
         g2 = Gaussian()

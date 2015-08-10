@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2015 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -44,7 +44,7 @@ def triu_indices_minus_diag(n):
     """
     ti = np.triu_indices(n)
     isnotdiag = ti[0] != ti[1]
-    return (ti[0][isnotdiag], ti[1][isnotdiag])
+    return ti[0][isnotdiag], ti[1][isnotdiag]
 
 
 def hanning2d(M, N):

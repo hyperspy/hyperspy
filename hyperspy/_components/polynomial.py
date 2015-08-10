@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2015 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -64,8 +64,11 @@ class Polynomial(Component):
             return x * 0
 
     def __repr__(self):
-        return u'Component <%s order polynomial>'.encode('utf8') % (
-            ordinal(self.get_polynomial_order()))
+        text = "%s order Polynomial component" % ordinal(
+            self.get_polynomial_order())
+        if self.name:
+            text = "%s (%s)" % (self.name, text)
+        return "<%s>" % text
 
     def estimate_parameters(self, signal, x1, x2, only_current=False):
         """Estimate the parameters by the two area method
@@ -104,19 +107,20 @@ class Polynomial(Component):
             if self.coefficients.map is None:
                 self._create_arrays()
             nav_shape = signal.axes_manager._navigation_shape_in_array
-            signal.unfold()
-            dc = signal.data
-            # For polyfit the spectrum goes in the first axis
-            if axis.index_in_array > 0:
-                dc = np.rollaxis(dc, axis.index_in_array, 0)
-            cmaps = np.polyfit(axis.axis[i1:i2],
-                               dc[i1:i2, :], self.get_polynomial_order()).reshape([
-                self.get_polynomial_order() + 1, ] + nav_shape)
-            self.coefficients.map['values'][:] = np.rollaxis(cmaps, 0,
-                                                             axis.index_in_array)
-            if binned is True:
-                self.coefficients.map["values"] /= axis.scale
-            self.coefficients.map['is_set'][:] = True
-            signal.fold()
+            with signal.unfolded():
+                dc = signal.data
+                # For polyfit the spectrum goes in the first axis
+                if axis.index_in_array > 0:
+                    dc = dc.T             # Unfolded, so simply transpose
+                cmaps = np.polyfit(axis.axis[i1:i2], dc[i1:i2, :],
+                                   self.get_polynomial_order())
+                if axis.index_in_array > 0:
+                    cmaps = cmaps.T       # Transpose back if needed
+                # Shape needed to fit coefficients.map:
+                cmap_shape = nav_shape + (self.get_polynomial_order() + 1, )
+                self.coefficients.map['values'][:] = cmaps.reshape(cmap_shape)
+                if binned is True:
+                    self.coefficients.map["values"] /= axis.scale
+                self.coefficients.map['is_set'][:] = True
             self.fetch_stored_values()
             return True

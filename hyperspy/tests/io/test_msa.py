@@ -80,7 +80,7 @@ example2_parameters = {
     u'ZPOSITION': 0.0}
 
 
-class TestExample1():
+class TestExample1:
 
     def setUp(self):
         self.s = load(os.path.join(
@@ -118,7 +118,7 @@ class TestExample1():
             self.s.original_metadata.as_dictionary())
 
 
-class TestExample2():
+class TestExample2:
 
     def setUp(self):
         self.s = load(os.path.join(

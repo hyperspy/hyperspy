@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2015 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -72,36 +72,54 @@ else:
 
 
 class GeneralConfig(t.HasTraits):
-    default_file_format = t.Enum('hdf5', 'rpl',
-                                 desc='Using the hdf5 format is highly reccomended because is the '
-                                 'only one fully supported. The Ripple (rpl) format it is useful '
-                                 'tk is provided for when none of the other toolkits are'
-                                 ' available. However, when using this toolkit the '
-                                 'user interface elements are not available. '
-                                 'to export data to other software that do not support hdf5')
-    default_toolkit = t.Enum("qt4", "gtk", "wx", "tk", "None",
-                             desc="Default toolkit for matplotlib and the user interface "
-                             "elements. "
-                             "When using gtk and tk the user interface elements are not"
-                             " available."
-                             "user interface elements are not available. "
-                             "None is suitable to run headless. "
-                             "HyperSpy must be restarted for changes to take effect")
-    default_export_format = t.Enum(*default_write_ext,
-                                   desc='Using the hdf5 format is highly reccomended because is the '
-                                   'only one fully supported. The Ripple (rpl) format it is useful '
-                                   'to export data to other software that do not support hdf5')
-    interactive = t.CBool(True,
-                          desc='If enabled, HyperSpy will prompt the user when optios are '
-                          'available, otherwise it will use the default values if possible')
-    logger_on = t.CBool(False,
-                        label='Automatic logging',
-                        desc='If enabled, HyperSpy will store a log in the current directory '
-                        'of all the commands typed')
+    default_file_format = t.Enum(
+        'hdf5',
+        'rpl',
+        desc='Using the hdf5 format is highly reccomended because is the '
+        'only one fully supported. The Ripple (rpl) format it is useful '
+        'tk is provided for when none of the other toolkits are'
+        ' available. However, when using this toolkit the '
+        'user interface elements are not available. '
+        'to export data to other software that do not support hdf5')
+    default_toolkit = t.Enum(
+        "qt4",
+        "gtk",
+        "wx",
+        "tk",
+        "None",
+        desc="Default toolkit for matplotlib and the user interface "
+        "elements. "
+        "When using gtk and tk the user interface elements are not"
+        " available."
+        "user interface elements are not available. "
+        "None is suitable to run headless. "
+        "HyperSpy must be restarted for changes to take effect")
+    default_export_format = t.Enum(
+        *default_write_ext,
+        desc='Using the hdf5 format is highly reccomended because is the '
+        'only one fully supported. The Ripple (rpl) format it is useful '
+        'to export data to other software that do not support hdf5')
+    interactive = t.CBool(
+        True,
+        desc='If enabled, HyperSpy will prompt the user when optios are '
+        'available, otherwise it will use the default values if possible')
+    logger_on = t.CBool(
+        False,
+        label='Automatic logging',
+        desc='If enabled, HyperSpy will store a log in the current directory '
+        'of all the commands typed')
 
-    show_progressbar = t.CBool(True,
-                               label='Show progress bar',
-                               desc='If enabled, show a progress bar when available')
+    show_progressbar = t.CBool(
+        True,
+        label='Show progress bar',
+        desc='If enabled, show a progress bar when available')
+
+    import_hspy = t.CBool(
+        True,
+        label='from hspy import all',
+        desc='If enabled, when starting HyperSpy using the `hyperspy` '
+             'IPython magic of the starting scripts, all the contents of '
+             '``hyperspy.hspy`` are imported in the user namespace. ')
 
     def _logger_on_changed(self, old, new):
         if new is True:
@@ -119,48 +137,58 @@ class ModelConfig(t.HasTraits):
 class MachineLearningConfig(t.HasTraits):
     export_factors_default_file_format = t.Enum(*default_write_ext)
     export_loadings_default_file_format = t.Enum(*default_write_ext)
-    multiple_files = t.Bool(True,
-                            label='Export to multiple files',
-                            desc='If enabled, on exporting the PCA or ICA results one file'
-                            'per factor and loading will be created. Otherwise only two files'
-                            'will contain the factors and loadings')
-    same_window = t.Bool(True,
-                         label='Plot components in the same window',
-                         desc='If enabled the principal and independent components will all'
-                         ' be plotted in the same window')
+    multiple_files = t.Bool(
+        True,
+        label='Export to multiple files',
+        desc='If enabled, on exporting the PCA or ICA results one file'
+        'per factor and loading will be created. Otherwise only two files'
+        'will contain the factors and loadings')
+    same_window = t.Bool(
+        True,
+        label='Plot components in the same window',
+        desc='If enabled the principal and independent components will all'
+        ' be plotted in the same window')
 
 
 class EELSConfig(t.HasTraits):
-    eels_gos_files_path = t.Directory(guess_gos_path(),
-                                      label='GOS directory',
-                                      desc='The GOS files are required to create the EELS edge components')
-    fine_structure_width = t.CFloat(30,
-                                    label='Fine structure length',
-                                    desc='The default length of the fine structure from the edge onset')
-    fine_structure_active = t.CBool(False,
-                                    label='Enable fine structure',
-                                    desc="If enabled, the regions of the EELS spectrum defined as fine "
-                                    "structure will be fitted with a spline. Please note that it "
-                                    "enabling this feature only makes sense when the model is "
-                                    "convolved to account for multiple scattering")
-    fine_structure_smoothing = t.Range(0., 1., value=0.3,
-                                       label='Fine structure smoothing factor',
-                                       desc='The lower the value the smoother the fine structure spline fit')
+    eels_gos_files_path = t.Directory(
+        guess_gos_path(),
+        label='GOS directory',
+        desc='The GOS files are required to create the EELS edge components')
+    fine_structure_width = t.CFloat(
+        30,
+        label='Fine structure length',
+        desc='The default length of the fine structure from the edge onset')
+    fine_structure_active = t.CBool(
+        False,
+        label='Enable fine structure',
+        desc="If enabled, the regions of the EELS spectrum defined as fine "
+        "structure will be fitted with a spline. Please note that it "
+        "enabling this feature only makes sense when the model is "
+        "convolved to account for multiple scattering")
+    fine_structure_smoothing = t.Range(
+        0.,
+        1.,
+        value=0.3,
+        label='Fine structure smoothing factor',
+        desc='The lower the value the smoother the fine structure spline fit')
     synchronize_cl_with_ll = t.CBool(False)
-    preedge_safe_window_width = t.CFloat(2,
-                                         label='Pre-onset region (in eV)',
-                                         desc='Some functions needs to define the regions between two '
-                                         'ionisation edges. Due to limited energy resolution or chemical '
-                                         'shift, the region is limited on its higher energy side by '
-                                         'the next ionisation edge onset minus an offset defined by this '
-                                         'parameters')
-    min_distance_between_edges_for_fine_structure = t.CFloat(0,
-                                                             label='Minimum distance between edges',
-                                                             desc='When automatically setting the fine structure energy regions, '
-                                                             'the fine structure of an EELS edge component is automatically '
-                                                             'disable if the next ionisation edge onset distance to the '
-                                                             'higher energy side of the fine structure region is lower that '
-                                                             'the value of this parameter')
+    preedge_safe_window_width = t.CFloat(
+        2,
+        label='Pre-onset region (in eV)',
+        desc='Some functions needs to define the regions between two '
+        'ionisation edges. Due to limited energy resolution or chemical '
+        'shift, the region is limited on its higher energy side by '
+        'the next ionisation edge onset minus an offset defined by this '
+        'parameters')
+    min_distance_between_edges_for_fine_structure = t.CFloat(
+        0,
+        label='Minimum distance between edges',
+        desc='When automatically setting the fine structure energy regions, '
+        'the fine structure of an EELS edge component is automatically '
+        'disable if the next ionisation edge onset distance to the '
+        'higher energy side of the fine structure region is lower that '
+        'the value of this parameter')
 
 
 class EDSConfig(t.HasTraits):
@@ -169,27 +197,36 @@ class EDSConfig(t.HasTraits):
                          desc='default value for FWHM of the Mn Ka peak in eV,'
                          'This value is used as a first approximation'
                          'of the energy resolution of the detector.')
-    eds_tilt_stage = t.CFloat(0.,
-                              label='Stage tilt',
-                              desc='default value for the stage tilt in degree.')
-    eds_detector_azimuth = t.CFloat(0.,
-                                    label='Azimuth angle',
-                                    desc='default value for the azimuth angle in degree. If the azimuth'
-                                    ' is zero, the detector is perpendicular to the tilt axis.')
-    eds_detector_elevation = t.CFloat(35.,
-                                      label='Elevation angle',
-                                      desc='default value for the elevation angle in degree.')
+    eds_tilt_stage = t.CFloat(
+        0.,
+        label='Stage tilt',
+        desc='default value for the stage tilt in degree.')
+    eds_detector_azimuth = t.CFloat(
+        0.,
+        label='Azimuth angle',
+        desc='default value for the azimuth angle in degree. If the azimuth'
+        ' is zero, the detector is perpendicular to the tilt axis.')
+    eds_detector_elevation = t.CFloat(
+        35.,
+        label='Elevation angle',
+        desc='default value for the elevation angle in degree.')
 
 
 class PlotConfig(t.HasTraits):
-    default_style_to_compare_spectra = t.Enum('overlap', 'cascade', 'mosaic', 'heatmap',
-                                              desc=' the default style use to compare spectra with the'
-                                              ' function utils.plot.plot_spectra')
-    plot_on_load = t.CBool(False,
-                           desc='If enabled, the object will be plot automatically on loading')
-    pylab_inline = t.CBool(False,
-                           desc="If True the figure are displayed inline."
-                           "HyperSpy must be restarted for changes to take effect")
+    default_style_to_compare_spectra = t.Enum(
+        'overlap',
+        'cascade',
+        'mosaic',
+        'heatmap',
+        desc=' the default style use to compare spectra with the'
+        ' function utils.plot.plot_spectra')
+    plot_on_load = t.CBool(
+        False,
+        desc='If enabled, the object will be plot automatically on loading')
+    pylab_inline = t.CBool(
+        False,
+        desc="If True the figure are displayed inline."
+        "HyperSpy must be restarted for changes to take effect")
 
 template = {
     'General': GeneralConfig(),
@@ -294,3 +331,11 @@ if preferences.General.logger_on:
     turn_logging_on(verbose=0)
 
 current_toolkit = preferences.General.default_toolkit
+
+
+def file_version(fname):
+    with open(fname, 'r') as f:
+        for l in f.readlines():
+            if '__version__' in l:
+                return l[l.find('=') + 1:].strip()
+    return '0'

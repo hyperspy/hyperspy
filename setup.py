@@ -33,11 +33,12 @@ if os.path.exists('build'):
     distutils.dir_util.remove_tree('build')
 
 install_req = ['scipy',
-               'ipython',
+               'ipython (>= 2.0)',
                'matplotlib (>= 1.2)',
                'numpy',
                'traits',
-               'traitsui', ]
+               'traitsui',
+               'sympy']
 
 
 def are_we_building4windows():
@@ -53,8 +54,8 @@ if are_we_building4windows() or os.name in ['nt', 'dos']:
     # that runs the different scripts.
     # (code adapted from scitools)
     scripts.extend(('bin/win_post_installation.py',
-                   'bin/install_hyperspy_here.py',
-                   'bin/uninstall_hyperspy_here.py'))
+                    'bin/install_hyperspy_here.py',
+                    'bin/uninstall_hyperspy_here.py'))
     batch_files = []
     for script in scripts:
         batch_file = os.path.splitext(script)[0] + '.bat'
@@ -161,15 +162,14 @@ with update_version_when_dev() as version:
                   'hyperspy.misc.eds',
                   'hyperspy.misc.io',
                   'hyperspy.misc.machine_learning',
-                  'hyperspy.misc.mpfit',
-                  'hyperspy.misc.mpfit.tests',
-                  'hyperspy.misc.borrowed',
-                  'hyperspy.misc.borrowed.astroML',
+                  'hyperspy.external.mpfit',
+                  'hyperspy.external.mpfit.tests',
+                  'hyperspy.external',
+                  'hyperspy.external.astroML',
                   ],
         requires=install_req,
         scripts=scripts,
-        package_data=
-        {
+        package_data={
             'hyperspy':
             ['bin/*.py',
              'ipython_profile/*',
@@ -193,7 +193,7 @@ with update_version_when_dev() as version:
         maintainer='Francisco de la Peña',
         maintainer_email='fjd29@cam.ac.uk',
         description=Release.description,
-        long_description=open('README.txt').read(),
+        long_description=open('README.rst').read(),
         license=Release.license,
         platforms=Release.platforms,
         url=Release.url,

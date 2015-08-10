@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2015 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -89,9 +89,8 @@ class Gaussian(Component):
                                                                                                                                                                           self.sigma.value ** 2)) * self.A.value) / (sqrt2pi * self.sigma.value ** 2)
 
     def grad_centre(self, x):
-        return ((x - self.centre.value) * np.exp(-(x - self.centre.value) ** 2 / (2
-                                                                                  * self.sigma.value ** 2)) * self.A.value) / (sqrt2pi *
-                                                                                                                               self.sigma.value ** 3)
+        return ((x - self.centre.value) * np.exp(-(x - self.centre.value) ** 2 /
+                                                 (2 * self.sigma.value ** 2)) * self.A.value) / (sqrt2pi * self.sigma.value ** 3)
 
     def estimate_parameters(self, signal, x1, x2, only_current=False):
         """Estimate the gaussian by calculating the momenta.
@@ -120,14 +119,11 @@ class Gaussian(Component):
         Examples
         --------
 
-        >>> import numpy as np
-        >>> from hyperspy.hspy import *
-        >>> from hyperspy.signals import Spectrum
-        >>> g = components.Gaussian()
+        >>> g = hs.model.components.Gaussian()
         >>> x = np.arange(-10,10, 0.01)
         >>> data = np.zeros((32,32,2000))
         >>> data[:] = g.function(x).reshape((1,1,2000))
-        >>> s = Spectrum(data)
+        >>> s = hs.signals.Spectrum(data)
         >>> s.axes_manager._axes[-1].offset = -10
         >>> s.axes_manager._axes[-1].scale = 0.01
         >>> g.estimate_parameters(s, -10,10, False)

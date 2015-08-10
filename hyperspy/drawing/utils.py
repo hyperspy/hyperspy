@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2015 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -27,7 +27,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 
-from hyperspy.misc.utils import unfold_if_multidim
 from hyperspy.misc.image_tools import (contrast_stretching,
                                        MPL_DIVERGING_COLORMAPS,
                                        centre_colormap_values)
@@ -172,10 +171,10 @@ def subplot_parameters(fig):
     right = fig.subplotpars.right
     top = fig.subplotpars.top
     bottom = fig.subplotpars.bottom
-    return (left, bottom, right, top, wspace, hspace)
+    return left, bottom, right, top, wspace, hspace
 
 
-class ColorCycle():
+class ColorCycle:
     _color_cycle = [mpl.colors.colorConverter.to_rgba(color) for color
                     in ('b', 'g', 'r', 'c', 'm', 'y', 'k')]
 
@@ -212,23 +211,23 @@ def plot_signals(signal_list, sync=True, navigator="auto",
     Example
     -------
 
-    >>> s_cl = load("coreloss.dm3")
-    >>> s_ll = load("lowloss.dm3")
-    >>> utils.plot.plot_signals([s_cl, s_ll])
+    >>> s_cl = hs.load("coreloss.dm3")
+    >>> s_ll = hs.load("lowloss.dm3")
+    >>> hs.plot.plot_signals([s_cl, s_ll])
 
     Specifying the navigator:
 
-    >>> s_cl = load("coreloss.dm3")
-    >>> s_ll = load("lowloss.dm3")
-    >>> utils.plot_signals([s_cl, s_ll], navigator="slider")
+    >>> s_cl = hs.load("coreloss.dm3")
+    >>> s_ll = hs.load("lowloss.dm3")
+    >>> hs.plot.plot_signals([s_cl, s_ll], navigator="slider")
 
     Specifying the navigator for each signal:
 
-    >>> s_cl = load("coreloss.dm3")
-    >>> s_ll = load("lowloss.dm3")
-    >>> s_edx = load("edx.dm3")
-    >>> s_adf = load("adf.dm3")
-    >>> utils.plot.plot_signals(
+    >>> s_cl = hs.load("coreloss.dm3")
+    >>> s_ll = hs.load("lowloss.dm3")
+    >>> s_edx = hs.load("edx.dm3")
+    >>> s_adf = hs.load("adf.dm3")
+    >>> hs.plot.plot_signals(
             [s_cl, s_ll, s_edx], navigator_list=["slider",None,s_adf])
 
     """
@@ -302,9 +301,9 @@ def _make_heatmap_subplot(spectra):
 
 
 def _make_overlap_plot(spectra, ax, color="blue", line_style='-'):
-    if isinstance(color, str):
+    if isinstance(color, basestring):
         color = [color] * len(spectra)
-    if isinstance(line_style, str):
+    if isinstance(line_style, basestring):
         line_style = [line_style] * len(spectra)
     for spectrum_index, (spectrum, color, line_style) in enumerate(
             zip(spectra, color, line_style)):
@@ -324,9 +323,9 @@ def _make_cascade_subplot(
                            np.nanmin(spectrum.data))
         if spectrum_yrange > max_value:
             max_value = spectrum_yrange
-    if isinstance(color, str):
+    if isinstance(color, basestring):
         color = [color] * len(spectra)
-    if isinstance(line_style, str):
+    if isinstance(line_style, basestring):
         line_style = [line_style] * len(spectra)
     for spectrum_index, (spectrum, color, line_style) in enumerate(
             zip(spectra, color, line_style)):
@@ -611,11 +610,12 @@ def plot_images(images,
         # Set label_list to each image's pre-defined title
         label_list = [x.metadata.General.title for x in images]
 
-    elif isinstance(label, str):
+    elif isinstance(label, basestring):
         # Set label_list to an indexed list, based off of label
         label_list = [label + " " + repr(num) for num in range(n)]
 
-    elif isinstance(label, list) and all(isinstance(x, str) for x in label):
+    elif isinstance(label, list) and all(
+            isinstance(x, basestring) for x in label):
         label_list = label
         user_labels = True
         # If list of labels is longer than the number of images, just use the
@@ -937,12 +937,12 @@ def plot_spectra(
 
     Example
     -------
-    >>> s = load("some_spectra")
-    >>> utils.plot.plot_spectra(s, style='cascade', color='red', padding=0.5)
+    >>> s = hs.load("some_spectra")
+    >>> hs.plot.plot_spectra(s, style='cascade', color='red', padding=0.5)
 
     To save the plot as a png-file
 
-    >>> utils.plot.plot_spectra(s).figure.savefig("test.png")
+    >>> hs.plot.plot_spectra(s).figure.savefig("test.png")
 
     Returns
     -------
@@ -1018,8 +1018,8 @@ def plot_spectra(
             len(spectra), 1, figsize=figsize, **kwargs)
         if legend is None:
             legend = [legend] * len(spectra)
-        for spectrum, ax, color, line_style, legend in zip(spectra,
-                                                           subplots, color, line_style, legend):
+        for spectrum, ax, color, line_style, legend in zip(
+                spectra, subplots, color, line_style, legend):
             _plot_spectrum(spectrum, ax, color=color, line_style=line_style)
             ax.set_ylabel('Intensity')
             if legend is not None:
@@ -1034,11 +1034,9 @@ def plot_spectra(
         if not isinstance(spectra, hyperspy.signal.Signal):
             import hyperspy.utils
             spectra = hyperspy.utils.stack(spectra)
-        refold = unfold_if_multidim(spectra)
-        ax = _make_heatmap_subplot(spectra)
-        ax.set_ylabel('Spectra')
-        if refold is True:
-            spectra.fold()
+        with spectra.unfolded():
+            ax = _make_heatmap_subplot(spectra)
+            ax.set_ylabel('Spectra')
     ax = ax if style != "mosaic" else subplots
 
     return ax
@@ -1144,9 +1142,9 @@ def plot_histograms(signal_list,
     Example
     -------
     Histograms of two random chi-square distributions
-    >>> img = signals.Image(np.random.chisquare(1,[10,10,100]))
-    >>> img2 = signals.Image(np.random.chisquare(2,[10,10,100]))
-    >>> utils.plot.plot_histograms([img,img2],legend=['hist1','hist2'])
+    >>> img = hs.signals.Image(np.random.chisquare(1,[10,10,100]))
+    >>> img2 = hs.signals.Image(np.random.chisquare(2,[10,10,100]))
+    >>> hs.plot.plot_histograms([img,img2],legend=['hist1','hist2'])
 
     Returns
     -------

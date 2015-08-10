@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2015 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -46,8 +46,8 @@ class Bleasdale(Component):
         a = self.a.value
         b = self.b.value
         c = self.c.value
-        abx = (a+b*x)
-        return np.where(abx > 0., (abx)**(-1/c), 0.)
+        abx = (a + b * x)
+        return np.where(abx > 0., abx ** (-1 / c), 0.)
 
     def grad_a(self, x):
         """

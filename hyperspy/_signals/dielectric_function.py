@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2013 The HyperSpy developers
+# Copyright 2007-2015 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -83,10 +83,8 @@ class DielectricFunction(Spectrum):
             dneff2 = k * simps(self.data.imag * axis.axis,
                                x=axis.axis,
                                axis=axis.index_in_array)
-            neff1 = self._get_navigation_signal()
-            neff2 = self._get_navigation_signal()
-            neff1.data = dneff1
-            neff2.data = dneff2
+            neff1 = self._get_navigation_signal(data=dneff1)
+            neff2 = self._get_navigation_signal(data=dneff2)
         else:
             neff1 = self._deepcopy_with_new_data(
                 k * cumtrapz((-1. / self.data).imag * axis.axis,

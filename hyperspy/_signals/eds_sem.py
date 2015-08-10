@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2015 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -56,9 +56,9 @@ class EDSSEMSpectrum(EDSSpectrum):
 
         Examples
         --------
-        >>> ref = utils.example_signals.EDS_SEM_Spectrum()
-        >>> s = signals.EDSSEMSpectrum(
-        >>>     utils.example_signals.EDS_SEM_Spectrum().data)
+        >>> ref = hs.datasets.example_signals.EDS_SEM_Spectrum()
+        >>> s = hs.signals.EDSSEMSpectrum(
+        >>>     hs.datasets.example_signals.EDS_SEM_Spectrum().data)
         >>> print s.axes_manager[0].scale
         >>> s.get_calibration_from(ref)
         >>> print s.axes_manager[0].scale
@@ -164,7 +164,7 @@ class EDSSEMSpectrum(EDSSpectrum):
 
         Examples
         --------
-        >>> s = utils.example_signals.EDS_SEM_Spectrum()
+        >>> s = hs.datasets.example_signals.EDS_SEM_Spectrum()
         >>> print('Default value %s eV' %
         >>>       s.metadata.Acquisition_instrument.
         >>>       SEM.Detector.EDS.energy_resolution_MnKa)
@@ -200,8 +200,8 @@ class EDSSEMSpectrum(EDSSpectrum):
                 "energy_resolution_MnKa",
                 energy_resolution_MnKa)
 
-        if set([beam_energy, live_time, tilt_stage, azimuth_angle,
-               elevation_angle, energy_resolution_MnKa]) == {None}:
+        if {beam_energy, live_time, tilt_stage, azimuth_angle,
+                elevation_angle, energy_resolution_MnKa} == {None}:
             self._are_microscope_parameters_missing()
 
     @only_interactive

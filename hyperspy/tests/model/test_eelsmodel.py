@@ -1,7 +1,54 @@
 import numpy as np
 import nose.tools
 
-import hyperspy.hspy as hs
+import hyperspy.api as hs
+
+
+class TestCreateEELSModel:
+
+    def setUp(self):
+        s = hs.signals.EELSSpectrum(np.empty(200))
+        s.set_microscope_parameters(100, 10, 10)
+        s.axes_manager[-1].offset = 150
+        s.add_elements(("B", "C"))
+        self.s = s
+
+    def test_create_eelsmodel(self):
+        from hyperspy.models.eelsmodel import EELSModel
+        nose.tools.assert_is_instance(
+            self.s.create_model(), EELSModel)
+
+    def test_auto_add_edges_true(self):
+        m = self.s.create_model(auto_add_edges=True)
+        cnames = [component.name for component in m]
+        nose.tools.assert_true("B_K" in cnames and "C_K" in cnames)
+
+    def test_gos(self):
+        m = self.s.create_model(auto_add_edges=True, GOS="hydrogenic")
+        nose.tools.assert_true(m["B_K"].GOS._name == "hydrogenic")
+
+    def test_auto_add_background_true(self):
+        m = self.s.create_model(auto_background=True)
+        from hyperspy.components import PowerLaw
+        is_pl_instance = [isinstance(c, PowerLaw) for c in m]
+        nose.tools.assert_true(True in is_pl_instance)
+
+    def test_auto_add_edges_false(self):
+        m = self.s.create_model(auto_background=False)
+        from hyperspy.components import PowerLaw
+        is_pl_instance = [isinstance(c, PowerLaw) for c in m]
+        nose.tools.assert_false(True in is_pl_instance)
+
+    def test_auto_add_edges_false_names(self):
+        m = self.s.create_model(auto_add_edges=False)
+        cnames = [component.name for component in m]
+        nose.tools.assert_false("B_K" in cnames or "C_K" in cnames)
+
+    def test_low_loss(self):
+        ll = self.s.deepcopy()
+        ll.axes_manager[-1].offset = -20
+        m = self.s.create_model(ll=ll)
+        nose.tools.assert_is(m.low_loss, ll)
 
 
 class TestEELSModel:
@@ -11,7 +58,7 @@ class TestEELSModel:
         s.set_microscope_parameters(100, 10, 10)
         s.axes_manager[-1].offset = 150
         s.add_elements(("B", "C"))
-        self.m = hs.create_model(s)
+        self.m = s.create_model()
 
     def test_suspend_auto_fsw(self):
         m = self.m
@@ -51,20 +98,24 @@ class TestEELSModel:
         self.m.spectrum.data = 2. * self.m.axis.axis ** (-3)  # A= 2, r=3
         self.m.spectrum.metadata.Signal.binned = False
         self.m.two_area_background_estimation()
-        nose.tools.assert_almost_equal(self.m._background_components[0].A.value,
-                                       2.1451237089380295)
-        nose.tools.assert_almost_equal(self.m._background_components[0].r.value,
-                                       3.0118980767392736)
+        nose.tools.assert_almost_equal(
+            self.m._background_components[0].A.value,
+            2.1451237089380295)
+        nose.tools.assert_almost_equal(
+            self.m._background_components[0].r.value,
+            3.0118980767392736)
 
     def test_two_area_powerlaw_estimation_C(self):
         self.m["B_K"].active = False
         self.m.spectrum.data = 2. * self.m.axis.axis ** (-3)  # A= 2, r=3
         self.m.spectrum.metadata.Signal.binned = False
         self.m.two_area_background_estimation()
-        nose.tools.assert_almost_equal(self.m._background_components[0].A.value,
-                                       2.3978438900878087)
-        nose.tools.assert_almost_equal(self.m._background_components[0].r.value,
-                                       3.031884021065014)
+        nose.tools.assert_almost_equal(
+            self.m._background_components[0].A.value,
+            2.3978438900878087)
+        nose.tools.assert_almost_equal(
+            self.m._background_components[0].r.value,
+            3.031884021065014)
 
     def test_two_area_powerlaw_estimation_no_edge(self):
         self.m["B_K"].active = False
@@ -72,10 +123,12 @@ class TestEELSModel:
         self.m.spectrum.data = 2. * self.m.axis.axis ** (-3)  # A= 2, r=3
         self.m.spectrum.metadata.Signal.binned = False
         self.m.two_area_background_estimation()
-        nose.tools.assert_almost_equal(self.m._background_components[0].A.value,
-                                       2.6598803469440986)
-        nose.tools.assert_almost_equal(self.m._background_components[0].r.value,
-                                       3.0494030409062058)
+        nose.tools.assert_almost_equal(
+            self.m._background_components[0].A.value,
+            2.6598803469440986)
+        nose.tools.assert_almost_equal(
+            self.m._background_components[0].r.value,
+            3.0494030409062058)
 
     def test_get_start_energy_none(self):
         nose.tools.assert_equal(self.m._get_start_energy(),
@@ -96,13 +149,13 @@ class TestFitBackground:
         s = hs.signals.EELSSpectrum(np.ones(200))
         s.set_microscope_parameters(100, 10, 10)
         s.axes_manager[-1].offset = 150
-        CE = hs.utils.material.elements.C.Atomic_properties.Binding_energies.K.onset_energy_eV
-        BE = hs.utils.material.elements.B.Atomic_properties.Binding_energies.K.onset_energy_eV
+        CE = hs.material.elements.C.Atomic_properties.Binding_energies.K.onset_energy_eV
+        BE = hs.material.elements.B.Atomic_properties.Binding_energies.K.onset_energy_eV
         s.isig[BE:] += 1
         s.isig[CE:] += 1
         s.add_elements(("Be", "B", "C"))
-        self.m = hs.create_model(s, auto_background=False)
-        self.m.append(hs.components.Offset())
+        self.m = s.create_model(auto_background=False)
+        self.m.append(hs.model.components.Offset())
 
     def test_fit_background_B_C(self):
         self.m.fit_background()

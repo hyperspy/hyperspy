@@ -18,7 +18,7 @@ def get_array_memory_size_in_GiB(shape, dtype):
     dtype : data-type
         The desired data-type for the array.
     """
-    if isinstance(dtype, str):
+    if isinstance(dtype, basestring):
         dtype = np.dtype(dtype)
     return np.array(shape).cumprod()[-1] * dtype.itemsize / 2. ** 30
 
@@ -98,7 +98,7 @@ def rebin(a, new_shape):
 
 
 def sarray2dict(sarray, dictionary=None):
-    '''Converts a struct array to an ordered dictionary
+    """Converts a struct array to an ordered dictionary
 
     Parameters
     ----------
@@ -111,7 +111,7 @@ def sarray2dict(sarray, dictionary=None):
     -------
     Ordered dictionary
 
-    '''
+    """
     if dictionary is None:
         if ordict:
             dictionary = OrderedDict()

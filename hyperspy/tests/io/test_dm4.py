@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2015 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -76,7 +76,7 @@ def check_load(filename, subfolder, key):
         data_dict[subfolder][key] = s.data
     except:
         ok = False
-    assert_true(ok == True, msg='loading %s\\test-%i' % (subfolder, key))
+    assert_true(ok, msg='loading %s\\test-%i' % (subfolder, key))
 
 
 def check_dtype(d1, d2, i):
@@ -85,4 +85,5 @@ def check_dtype(d1, d2, i):
 
 def check_content(dat1, dat2, subfolder, key):
     assert_true((dat1 == dat2).all(), msg='content %s type % i: '
-                '\n%s not equal to \n%s' % (subfolder, key, str(dat1), str(dat2)))
+                '\n%s not equal to \n%s' %
+                (subfolder, key, str(dat1), str(dat2)))

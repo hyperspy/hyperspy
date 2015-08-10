@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2015 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -49,7 +49,6 @@ class EELSSpectrumSimulation(SpectrumSimulation, EELSSpectrum):
 #            edge.delta.already_set_map = np.ones((self.xdimension,
 #            self.ydimension), dtype = 'Bool')
 #        return delta_map
-
 
 
 #    def simulate(self, maps = None, energy_instability = 0,

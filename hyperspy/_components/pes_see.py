@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2015 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -72,12 +72,22 @@ class SEE(Component):
         if self.sigma.value:
             self.gaussian.sigma.value = self.sigma.value
             self.gaussian.origin.value = (x[-1] + x[0]) / 2
-            return np.convolve(self.gaussian.function(x),
-                               np.where(x > self.Phi.value, self.A.value *
-                                        (x - self.Phi.value) / (x - self.Phi.value + self.B.value) ** 4, 0), 'same')
+            return np.convolve(
+                self.gaussian.function(x),
+                np.where(
+                    x > self.Phi.value,
+                    self.A.value * (
+                        x - self.Phi.value) / (
+                        x - self.Phi.value + self.B.value) ** 4,
+                    0),
+                'same')
         else:
             return np.where(x > self.Phi.value, self.A.value *
-                            (x - self.Phi.value) / (x - self.Phi.value + self.B.value) ** 4, 0)
+                            (x -
+                             self.Phi.value) /
+                            (x -
+                             self.Phi.value +
+                             self.B.value) ** 4, 0)
 
     def grad_A(self, x):
         """
@@ -85,9 +95,13 @@ class SEE(Component):
         if self.sigma.value:
             self.gaussian.sigma.value = self.sigma.value
             self.gaussian.origin.value = (x[-1] + x[0]) / 2
-            return np.convolve(self.gaussian.function(x),
-                               np.where(x > self.Phi.value, (x - self.Phi.value) /
-                                        (x - self.Phi.value + self.B.value) ** 4, 0), 'same')
+            return np.convolve(
+                self.gaussian.function(x),
+                np.where(
+                    x > self.Phi.value,
+                    (x - self.Phi.value) /
+                    (x - self.Phi.value + self.B.value) ** 4, 0),
+                'same')
         else:
             return np.where(x > self.Phi.value, (x - self.Phi.value) /
                             (x - self.Phi.value + self.B.value) ** 4, 0)
@@ -97,9 +111,13 @@ class SEE(Component):
         """
         self.gaussian.sigma.value = self.sigma.value
         self.gaussian.origin.value = (x[-1] + x[0]) / 2
-        return np.convolve(self.gaussian.grad_sigma(x),
-                           np.where(x > self.Phi.value, self.A.value *
-                                    (x - self.Phi.value) / (x - self.Phi.value + self.B.value) ** 4, 0), 'same')
+        return np.convolve(
+            self.gaussian.grad_sigma(x),
+            np.where(
+                x > self.Phi.value,
+                self.A.value * (x - self.Phi.value) /
+                (x - self.Phi.value + self.B.value) ** 4, 0),
+            'same')
 
     def grad_Phi(self, x):
         """
@@ -107,24 +125,35 @@ class SEE(Component):
         if self.sigma.value:
             self.gaussian.sigma.value = self.sigma.value
             self.gaussian.origin.value = (x[-1] + x[0]) / 2
-            return np.convolve(self.gaussian.function(x),
-                               np.where(x > self.Phi.value,
-                                        (4 * (x - self.Phi.value) * self.A.value) / (self.B.value +
-                                                                                     x - self.Phi.value) ** 5 - self.A.value / (self.B.value + x - self.Phi.value) ** 4, 0),
-                               'same')
+            return np.convolve(
+                self.gaussian.function(x),
+                np.where(
+                    x > self.Phi.value,
+                    (4 * (x - self.Phi.value) * self.A.value) /
+                    (self.B.value + x - self.Phi.value) ** 5 -
+                    self.A.value / (self.B.value + x - self.Phi.value) ** 4,
+                    0),
+                'same')
         else:
-            return np.where(x > self.Phi.value, (4 * (x - self.Phi.value) * self.A.value) / (self.B.value +
-                                                                                             x - self.Phi.value) ** 5 - self.A.value / (self.B.value + x - self.Phi.value) ** 4, 0)
+            return np.where(
+                x > self.Phi.value,
+                (4 * (x - self.Phi.value) * self.A.value) /
+                (self.B.value + x - self.Phi.value) ** 5 -
+                self.A.value / (self.B.value + x - self.Phi.value) ** 4, 0)
 
     def grad_B(self, x):
         if self.sigma.value:
             self.gaussian.sigma.value = self.sigma.value
             self.gaussian.origin.value = (x[-1] + x[0]) / 2
-            return np.convolve(self.gaussian.function(x),
-                               np.where(x > self.Phi.value,
-                                        -(4 * (x - self.Phi.value) * self.A.value) /
-                                        (self.B.value + x - self.Phi.value) ** 5, 0), 'same')
+            return np.convolve(
+                self.gaussian.function(x),
+                np.where(
+                    x > self.Phi.value,
+                    -(4 * (x - self.Phi.value) * self.A.value) /
+                    (self.B.value + x - self.Phi.value) ** 5, 0),
+                'same')
         else:
-            return np.where(x > self.Phi.value,
-                            -(4 * (x - self.Phi.value) * self.A.value) /
-                            (self.B.value + x - self.Phi.value) ** 5, 0)
+            return np.where(
+                x > self.Phi.value,
+                -(4 * (x - self.Phi.value) * self.A.value) /
+                (self.B.value + x - self.Phi.value) ** 5, 0)

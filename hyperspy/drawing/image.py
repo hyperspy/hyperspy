@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2015 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -171,8 +171,8 @@ class ImagePlot(BlittedFigure):
 
     def optimize_contrast(self, data):
         if (self.vmin is not None and
-            self.vmax is not None and
-            not self.auto_contrast):
+                self.vmax is not None and
+                not self.auto_contrast):
             return
         if 'complex' in data.dtype.name:
             data = np.log(np.abs(data))
@@ -221,7 +221,8 @@ class ImagePlot(BlittedFigure):
             data = rgb_tools.rgbx2regular_array(data, plot_friendly=True)
         if self.vmin is not None or self.vmax is not None:
             warnings.warn(
-                'vmin or vmax value given, hence auto_contrast is set to False')
+                'vmin or vmax value given, hence '
+                'auto_contrast is set to False')
             self.auto_contrast = False
         self.optimize_contrast(data)
         if (not self.axes_manager or
@@ -316,7 +317,7 @@ class ImagePlot(BlittedFigure):
         if 'complex' in data.dtype.name:
             data = np.log(np.abs(data))
         if self.plot_indices is True:
-            self._text.set_text((self.axes_manager.indices))
+            self._text.set_text(self.axes_manager.indices)
         if self.no_nans:
             data = np.nan_to_num(data)
         if self.centre_colormap is True:
@@ -339,13 +340,12 @@ class ImagePlot(BlittedFigure):
             if np.isnan(data).any():
                 self.figure.canvas.draw()
         else:
-            new_args = {}
-            new_args['interpolation'] = 'nearest'
-            new_args['vmin'] = vmin
-            new_args['vmax'] = vmax
-            new_args['extent'] = self._extent
-            new_args['aspect'] = self._aspect
-            new_args['animated'] = True
+            new_args = {'interpolation': 'nearest',
+                        'vmin': self.vmin,
+                        'vmax': self.vmax,
+                        'extent': self._extent,
+                        'aspect': self._aspect,
+                        'animated': True}
             new_args.update(kwargs)
             self.ax.imshow(data,
                            **new_args)
@@ -390,8 +390,10 @@ class ImagePlot(BlittedFigure):
             self.colorbar_vmin = math.floor(vmin / 10 ** oom) * 10 ** oom
             self.colorbar_vmax = self.colorbar_vmin + \
                 self.colorbar_step * (number_of_ticks - 1)
-            self.colorbar_locs = np.arange(0, number_of_ticks
-                                           ) * self.colorbar_step + self.colorbar_vmin
+            self.colorbar_locs = (
+                np.arange(0, number_of_ticks) *
+                self.colorbar_step +
+                self.colorbar_vmin)
 
         def check_tolerance():
             if abs(self.colorbar_vmax - vmax) / vmax > (

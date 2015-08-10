@@ -2,10 +2,10 @@ import numpy as np
 from nose.tools import assert_true, raises
 
 from hyperspy.misc import rgb_tools
-import hyperspy.hspy as hs
+import hyperspy.api as hs
 
 
-class TestRGBA8():
+class TestRGBA8:
 
     def setUp(self):
         self.s = hs.signals.Spectrum(np.array(
@@ -36,7 +36,7 @@ class TestRGBA8():
         self.im.change_dtype("rgb8")
 
 
-class TestRGBA16():
+class TestRGBA16:
 
     def setUp(self):
         self.s = hs.signals.Spectrum(np.array(
