@@ -250,6 +250,6 @@ def centre_colormap_values(vmin, vmax):
 
     """
 
-    absmax = max(vmin, vmax)
+    absmax = max(abs(vmin), abs(vmax))
     cvmin, cvmax = -absmax, absmax
     return cvmin, cvmax
