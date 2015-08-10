@@ -322,6 +322,7 @@ class ImagePlot(BlittedFigure):
             data = np.nan_to_num(data)
         if self.centre_colormap is True:
             vmin, vmax = centre_colormap_values(self.vmin, self.vmax)
+            print vmin, vmax
         else:
             vmin, vmax = self.vmin, self.vmax
         if ims:
@@ -341,8 +342,8 @@ class ImagePlot(BlittedFigure):
                 self.figure.canvas.draw()
         else:
             new_args = {'interpolation': 'nearest',
-                        'vmin': self.vmin,
-                        'vmax': self.vmax,
+                        'vmin': vmin,
+                        'vmax': vmax,
                         'extent': self._extent,
                         'aspect': self._aspect,
                         'animated': True}
