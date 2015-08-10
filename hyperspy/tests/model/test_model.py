@@ -254,7 +254,7 @@ class TestModelFitBinned:
         self.m[0].centre.bmin = 0.5
         self.m[0].bounded = True
         self.m.fit(fitter="mpfit", bounded=True)
-        nose.tools.assert_almost_equal(self.m[0].A.value, 9991.65422046, 5)
+        nose.tools.assert_almost_equal(self.m[0].A.value, 9991.65422046, 4)
         nose.tools.assert_almost_equal(self.m[0].centre.value, 0.5)
         nose.tools.assert_almost_equal(self.m[0].sigma.value, 2.08398236966)
 
