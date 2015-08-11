@@ -14,11 +14,22 @@ class HyperspyMagics(Magics):
 
         Load HyperSpy, numpy and matplotlib to work interactively.
 
-        %hyperspy runs the following commands::
+        %hyperspy runs the following commands in various cases:
 
+        >>> # if toolkit is "None" only
+        >>> import matplotlib
+        >>> matplotlib.use('Agg')
+
+        >>> # if toolkit is "qt4" only
+        >>> import os
+        >>> os.environ['QT_API'] = 'pyqt'
+
+        >>> # if toolkit is not "None"
+        >>> %matplotlib [toolkit]
+
+        >>> # run in all cases
         >>> import numpy as np
         >>> import hyperspy.api as hs
-        >>> %matplotlib [toolkit]
         >>> import matplotlib.pyplot as plt
 
         If you pass `-r`, the current input cell will be overwritten with the above specified commands. As a
@@ -28,8 +39,7 @@ class HyperspyMagics(Magics):
         ---------------------
             toolkit
                 Name of the matplotlib backend to use. If given, the corresponding matplotlib backend is used,
-                otherwise it will be the HyperSpy's default. If "none" or "None" is passed, the matplotlib
-                magic is not executed.
+                otherwise it will be the HyperSpy's default.
 
         Optional arguments:
         -------------------
@@ -39,9 +49,6 @@ class HyperspyMagics(Magics):
 
         """
         sh = self.shell
-        first_import_part = ("import numpy as np\n"
-                             "import hyperspy.api as hs\n")
-        exec(first_import_part, sh.user_ns)
 
         overwrite = False
         gui = False
@@ -62,29 +69,43 @@ class HyperspyMagics(Magics):
         else:
             toolkit = preferences.General.default_toolkit
 
-        if toolkit not in ["None", "none"]:
+        mpl_code = ""
+        if toolkit in ["None", "none"]:
+            mpl_code = ("import matplotlib\n"
+                        "matplotlib.use('Agg')\n")
+        elif toolkit =='qt4':
             gui = True
-            sh.enable_matplotlib(toolkit)
+            mpl_code = ("import os\n"
+                        "os.environ['QT_API'] = 'pyqt'\n")
+        else:
+            gui = True
 
-        second_import_part = "import matplotlib.pyplot as plt"
-        exec(second_import_part, sh.user_ns)
+        exec(mpl_code, sh.user_ns)
+        if gui:
+            sh.enable_matplotlib(toolkit)
+        first_import_part = ("import numpy as np\n"
+                             "import hyperspy.api as hs\n"
+                             "import matplotlib.pyplot as plt\n")
+        exec(first_import_part, sh.user_ns)
+
         if preferences.General.import_hspy:
-            third_import_part = "from hyperspy.hspy import *\n"
+            second_import_part = "from hyperspy.hspy import *\n"
             warnings.warn(
                 "Importing everything from ``hyperspy.hspy`` will be removed in "
                 "HyperSpy 0.9. Please use the new API imported as ``hs`` "
                 "instead. See the "
                 "`Getting started` section of the User Guide for details.",
                 UserWarning)
-            exec(third_import_part, sh.user_ns)
-            first_import_part += third_import_part
+            exec(second_import_part, sh.user_ns)
+            first_import_part += second_import_part
 
         header = "\nHyperSpy imported!\nThe following commands were just executed:\n"
         header += "---------------\n"
-        ans = first_import_part
+        ans = mpl_code
         if gui:
             ans += "%matplotlib " + toolkit + "\n"
-        ans += second_import_part
+
+        ans += first_import_part
         print header + ans
         if overwrite:
             sh.set_next_input(
