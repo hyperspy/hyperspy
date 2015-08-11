@@ -125,10 +125,6 @@ sys.argv = ipy_argv
 # Add the subcommand first
 if args.environment != 'terminal':
     sys.argv.insert(1, args.environment)
-if ipy_version >= LooseVersion('3.0.0') and args.environment == "notebook":
-    for arg in sys.argv:
-        if 'pylab' in arg:
-            sys.argv.remove(arg)
 sys.argv.append('--profile=hyperspy')
 sys.exit(launch_new_instance())
 
