@@ -70,7 +70,7 @@ class HyperspyMagics(Magics):
             toolkit = preferences.General.default_toolkit
 
         if toolkit not in ['qt4', 'gtk', 'wx', 'tk', 'None', 'none']:
-            raise ValueError("The '%s' toolkit is not supported.\n" % toolkit+
+            raise ValueError("The '%s' toolkit is not supported.\n" % toolkit +
                              "Supported toolkits: {qt4, gtk, wx, tk, None}")
 
         mpl_code = ""
