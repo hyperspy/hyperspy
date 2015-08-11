@@ -10,16 +10,16 @@ class HyperspyMagics(Magics):
 
     @line_magic
     @magic_arguments()
-    @argument('-r', '--replace', action='store_true', default=None, 
+    @argument('-r', '--replace', action='store_true', default=None,
               help="""After running the the magic as usual, overwrites the current input cell with just executed
               code that can be run directly without magic"""
-    )
-    @argument('toolkit', nargs='?', default=None, 
+              )
+    @argument('toolkit', nargs='?', default=None,
               help="""Name of the matplotlib backend to use.  If given, the corresponding matplotlib backend
               is used, otherwise it will be the HyperSpy's default.  Available toolkits: {qt4, wx, None, gtk,
               tk}. Note that gtk and tk toolkits are not fully supported
               """
-    )
+              )
     def hyperspy(self, line):
         """
         Load HyperSpy, numpy and matplotlib to work interactively.
