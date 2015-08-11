@@ -42,8 +42,6 @@ class HyperspyMagics(Magics):
         >>> import hyperspy.api as hs
         >>> import matplotlib.pyplot as plt
 
-        If you pass `-r`, the current input cell will be overwritten with the above specified commands. As a
-        consequence, all other code in the input cell will be deleted!
         """
         sh = self.shell
 
