@@ -31,13 +31,12 @@ sys.path.append(os.path.abspath('sphinxext'))
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = [
     'sphinx.ext.autodoc',
-    'gen_rst',
-    'numpydoc',
-    'matplotlib.sphinxext.only_directives',
+    'sphinxcontrib.napoleon',
     'sphinx.ext.intersphinx',
     'sphinx.ext.pngmath',
     'sphinx.ext.autosummary',
-    'ipython_console_highlighting']  # , 'rst2pdf.pdfbuilder']
+]
+
 try:
     import sphinxcontrib.spelling
     extensions.append('sphinxcontrib.spelling')
@@ -57,7 +56,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'HyperSpy'
-copyright = u'2012, The HyperSpy development team'
+copyright = u'2011-2015, The HyperSpy development team'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -107,12 +106,12 @@ pygments_style = 'sphinx'
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-html_theme = 'default'
+html_theme = 'sphinx_rtd_theme'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
-html_theme_options = {'collapsiblesidebar': True}
+# html_theme_options = {'collapsiblesidebar': True}
 
 # Add any paths that contain custom themes here, relative to this directory.
 #html_theme_path = []

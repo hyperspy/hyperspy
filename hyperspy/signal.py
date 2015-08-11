@@ -3453,7 +3453,12 @@ class Signal(MVA,
             "`unfold_if_multidim` is deprecated and will be removed in "
             "HyperSpy 0.9. Please use `unfold` instead.",
             VisibleDeprecationWarning)
-        return None
+        if len(self.axes_manager._axes) > 2:
+            print "Automatically unfolding the data"
+            self.unfold()
+            return True
+        else:
+            return False
 
     @auto_replot
     def _unfold(self, steady_axes, unfolded_axis):
