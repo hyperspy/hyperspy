@@ -18,6 +18,8 @@ the `bugs fixed
 and `documentation
 <https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3A0.8.1+label%3Adocumentation>`_ enhancements.
 
+Importantly, the way to start HyperSpy changes in this release. Read :ref:`importing_hyperspy-label` for details.
+
 It also includes some new features and introduces important API changes that
 will be fully enforced in HyperSpy 0.9.
 
@@ -47,14 +49,15 @@ API changes
 
     In HyperSpy 0.8.1 the full content of :py:mod:`~.hyperspy.hspy` is still
     imported in the user namespace, but this can now be disabled in
-    `hs.preferences.General.import_hspy`. In HyperSpy 0.9 it will be
+    ``hs.preferences.General.import_hspy``. In HyperSpy 0.9 it will be
     disabled by default and the :py:mod:`~.hyperspy.hspy` module will be fully
     removed in HyperSpy 0.10. We encourage all users to migrate to the new
-    syntax. For more details see :ref:importing_hyperspy-label
+    syntax. For more details see :ref:`importing_hyperspy-label`.
 * Indexing the :py:class:`~.signal.Signal` class is now deprecated. We encourage
   all users to use ``isig`` and ``inav`` instead for indexing.
 * :py:func:`~.hyperspy.hspy.create_model` is now deprecated in favour of the new
   equivalent :py:meth:`~.signal.Signal.create_model` ``Signal`` method.
+* :py:meth:`~.signal.Signal.unfold_if_multidim` is deprecated.
 
 
 .. _changes_0.8:
