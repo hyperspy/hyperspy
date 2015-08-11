@@ -34,7 +34,6 @@ except ImportError:
 
 
 import IPython
-import traits.etsconfig.etsconfig
 
 import hyperspy
 import hyperspy.Release
@@ -85,22 +84,6 @@ parser.add_argument('environment',
                     help=(
                         'Selects the IPython environment in '
                         'which to start Hyperspy. The default is terminal'))
-parser.add_argument('--toolkit',
-                    choices=["qt4", "gtk", "wx", "tk", "None", ],
-                    default=preferences.General.default_toolkit,
-                    help=(
-                        "Pre-load matplotlib and traitsui for interactive use,"
-                        "selecting a particular matplotlib backend and loop "
-                        "integration."
-                        "When using gtk and tk toolkits the "
-                        "user interface elements are not available. "
-                        "None is suitable to run headless."))
-parser.add_argument('--pylab_inline',
-                    action="store_true",
-                    default=preferences.Plot.pylab_inline,
-                    help=("If True the figure are displayed inline. "
-                           "This option only has effect when using the "
-                          "qtconsole or notebook"))
 parser.add_argument('--overwrite_profile',
                     action="store_true",
                     default=False,
@@ -119,13 +102,6 @@ if argp is True:
 else:
     options, args = parser.parse_args()
 
-
-to_delete = [
-    # os.path.join(destination, 'ipython_console_config.py'),
-    # os.path.join(destination, 'ipython_qtconsole_config.py'),
-    # os.path.join(destination, 'ipython_notebook_config.py',),
-]
-
 ipy_config_hspy = os.path.join(ipy_hspy, 'ipython_config.py')
 ipy_config_home = os.path.join(destination, 'ipython_config.py')
 if not os.path.isfile(ipy_config_home) or \
@@ -141,11 +117,6 @@ if not os.path.isfile(os.path.join(additional_dest, 'hyperspy_magics_importer.py
         args.overwrite_profile:
     shutil.copy(os.path.join(ipy_hspy, 'hyperspy_magics_importer.py'), additional_dest)
 
-for f in to_delete:
-    if os.path.isfile(f):
-        os.remove(f)
-
-
 # Now that the hspy arguments are parsed, we can delete them from
 # sys.argv
 sys.argv = ipy_argv
@@ -154,41 +125,6 @@ sys.argv = ipy_argv
 # Add the subcommand first
 if args.environment != 'terminal':
     sys.argv.insert(1, args.environment)
-# By default Hyperspy uses the qt backend, but if the user tries to
-# choose a different one using --pylab= , then we grant him the control
-add_pylab = True
-if argp is True:
-    toolkit = args.toolkit
-    if args.toolkit == "None":
-        add_pylab = False
-else:
-    toolkit = options.toolkit
-    if options.toolkit == "None":
-        add_pylab = False
-if argp is True:
-    pylab_inline = args.pylab_inline
-else:
-    pylab_inline = options.pylab_inline
-hyperspy.defaults_parser.current_toolkit = toolkit
-if toolkit in ("qt4", "wx"):
-    traits.etsconfig.etsconfig.ETSConfig.toolkit = toolkit
-else:
-    traits.etsconfig.etsconfig.ETSConfig.toolkit = "null"
-
-
 sys.argv.append('--profile=hyperspy')
-for arg in sys.argv:
-    if 'pylab' in arg:
-        add_pylab = False
-if pylab_inline is True and args.environment in ("notebook",
-                                                 "qtconsole"):
-    sys.argv.append('--pylab=inline')
-elif add_pylab is True:
-    sys.argv.append('--pylab=%s' % toolkit.replace("qt4", "qt"))
-
-if ipy_version >= LooseVersion('3.0.0') and args.environment == "notebook":
-    for arg in sys.argv:
-        if 'pylab' in arg:
-            sys.argv.remove(arg)
 sys.exit(launch_new_instance())
 

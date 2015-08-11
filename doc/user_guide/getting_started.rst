@@ -49,17 +49,14 @@ can be started as follows:
 
 
 
-.. warning::
+.. versionadded:: 0.8.1
 
-        .. versionadded:: 0.8.1
+Once a new Jupyter notebook is started in a browser window, HyperSpy needs to
+be imported using the :ref:`hyperspy magic <magic-label>`.
 
-                When using IPython 3.0 or newer, once a new Jupyter notebook is started
-                in a browser window, HyperSpy needs to be imported using the
-                :ref:`hyperspy magic <magic-label>`.
+.. code-block:: python
 
-                .. code-block:: python
-
-                    >>> %hyperspy
+    >>> %hyperspy
 
 
 Alternatively, hyperspy can be run in two console modes: the terminal you run
@@ -80,10 +77,9 @@ the `-h` flag:
 .. code-block:: bash
 
     $ hyperspy -h
-    usage: hyperspy [-h] [-v] [--toolkit {qt4,gtk,wx,tk,None}]
-                    [--pylab_inline] [--overwrite_profile]
-                    [--ipython_args [IPYTHON_ARGS [IPYTHON_ARGS ...]]]
-                    [{terminal,console,qtconsole,notebook}]
+    usage: ana-hyperspy [-h] [-v] [--overwrite_profile]
+                        [--ipython_args [IPYTHON_ARGS [IPYTHON_ARGS ...]]]
+                        [{terminal,console,qtconsole,notebook}]
 
     Multidimensional data analysis toolbox
 
@@ -95,14 +91,6 @@ the `-h` flag:
     optional arguments:
       -h, --help            show this help message and exit
       -v, --version         show program's version number and exit
-      --toolkit {qt4,gtk,wx,tk,None}
-                            Pre-load matplotlib and traitsui for interactive
-                            use,selecting a particular matplotlib backend and loop
-                            integration.When using gtk and tk toolkits the user
-                            interface elements are not available. None is suitable
-                            to run headless.
-      --pylab_inline        If True the figure are displayed inline. This option
-                            only has effect when using the qtconsole or notebook
       --overwrite_profile   Overwrite the Ipython profile with the default one.
       --ipython_args [IPYTHON_ARGS [IPYTHON_ARGS ...]]
                             Arguments to be passed to IPython. This option must be
@@ -111,12 +99,13 @@ the `-h` flag:
 
 
 
-.. warning::
+.. versionchanged:: 0.8.1
+    .. warning::
 
-        When using IPython 3.0 or newer the ``toolkit`` and ``pylab_inline``
-        optional argurments won't work. In order to configure the toolkit use
-        the :ref:`hyperspy magic <magic-label>` after starting an Jupyter
-        notebook.
+            The ``toolkit`` and ``pylab_inline`` optional arguments are no
+            longer supported. In order to configure the toolkit use the
+            :ref:`hyperspy magic <magic-label>` after starting an Jupyter
+            notebook.
 
 
 Starting HyperSpy from the context menu
@@ -190,9 +179,10 @@ and transparent way.
     HyperSpy imported!
     The following commands were just executed:
     ---------------
+    [optional 2 code lines if toolkit is "None" or "qt4"]
+    %matplotlib [toolkit]
     import numpy as np
     import hyperspy.api as hs
-    %matplotlib [toolkit]
     import matplotlib.pyplot as plt
 
 The magic imports HyperSpy's API as ``hs``, numpy as ``np``, matplotlib's API
@@ -217,64 +207,6 @@ without any magic commands (e.g. included in a script).
    .. code-block:: bash
 
       $ ipython --profile=hyperspy
-
-
-
-Choosing a toolkit
-^^^^^^^^^^^^^^^^^^
-
-.. versionadded:: 0.7
-
-HyperSpy fully supports the Qt toolkit in addition to the WX toolkit. GTK and
-TK are also supported but the user interface elements are not available. The
-default toolkit is Qt4/PySide because currently is the one that works best in
-most platforms.
-
-The toolkit can be specified on start using the ``--toolkit`` optional argument
-or using the :ref:`magic-label`. If the toolkit is not given, the
-default, as configured in  :ref:`preferences <configuring-hyperspy-label>`, is
-used.
-
-.. _inline_plotting:
-
-
-Inline plotting
-^^^^^^^^^^^^^^^
-
-.. versionadded:: 0.7
-
-HyperSpy can be started using the IPython's inline plotting mode by passing the
-`--pylab_inline` flag when starting HyperSpy or choosing the ``inline`` toolkit
-when using the :ref:`magic-label`. In inline-mode, calling any plotting
-function embeds the resulting plots in the Notebook or QtConsole instead of
-raising figure windows. The main drawback is that these plots are not (yet)
-interactive.
-
-This option only has effect when running in the *IPython QtConsole* or the
-*IPython Notebook*, e.g.
-
-.. code-block:: bash
-
-   $ hyperspy qtconsole --pylab_inline
-
-The default value can be configured in :ref:`preferences
-<configuring-hyperspy-label>`.
-
-.. _headless-label:
-
-Using HyperSpy in a headless system
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. versionadded:: 0.7
-
-To run HyperSpy in a headless system select "None" as the toolkit either in
-:ref:`preferences <configuring-hyperspy-label>`, when starting from a
-terminal or using the :ref:`magic-label`, e.g.:
-
-
-.. code-block:: bash
-
-    $ hyperspy --toolkit None
 
 
 Getting help
