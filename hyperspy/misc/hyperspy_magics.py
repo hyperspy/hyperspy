@@ -73,7 +73,7 @@ class HyperspyMagics(Magics):
         if toolkit in ["None", "none"]:
             mpl_code = ("import matplotlib\n"
                         "matplotlib.use('Agg')\n")
-        elif toolkit =='qt4':
+        elif toolkit == 'qt4':
             gui = True
             mpl_code = ("import os\n"
                         "os.environ['QT_API'] = 'pyqt'\n")
