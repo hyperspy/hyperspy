@@ -1,4 +1,5 @@
 from IPython.core.magic import Magics, magics_class, line_magic
+from IPython.core.magic_arguments import magic_arguments, argument, parse_argstring
 import warnings
 
 from hyperspy.defaults_parser import preferences
@@ -8,10 +9,19 @@ from hyperspy.defaults_parser import preferences
 class HyperspyMagics(Magics):
 
     @line_magic
+    @magic_arguments()
+    @argument('-r', '--replace', action='store_true', default=None, 
+              help="""After running the the magic as usual, overwrites the current input cell with just executed
+              code that can be run directly without magic"""
+    )
+    @argument('toolkit', nargs='?', default=None, 
+              help="""Name of the matplotlib backend to use.  If given, the corresponding matplotlib backend
+              is used, otherwise it will be the HyperSpy's default.  Available toolkits: {qt4, wx, None, gtk,
+              tk}. Note that gtk and tk toolkits are not fully supported
+              """
+    )
     def hyperspy(self, line):
         """
-        %hyperspy [-r] [toolkit]
-
         Load HyperSpy, numpy and matplotlib to work interactively.
 
         %hyperspy runs the following commands in various cases:
@@ -34,47 +44,22 @@ class HyperspyMagics(Magics):
 
         If you pass `-r`, the current input cell will be overwritten with the above specified commands. As a
         consequence, all other code in the input cell will be deleted!
-
-        Positional arguments:
-        ---------------------
-            toolkit : {qt4, gtk, wx, tk, None}
-                Name of the matplotlib backend to use. If given, the corresponding matplotlib backend is used,
-                otherwise it will be the HyperSpy's default.
-
-        Optional arguments:
-        -------------------
-            -r
-                After running the the magic as usual, overwrites the current input cell with just executed
-                code that can be run directly without magic
-
         """
         sh = self.shell
 
-        overwrite = False
         gui = False
-        line = line.strip()
-        if "-r" in line:
-            overwrite = True
-            before, after = line.split("-r")
-            before, after = before.strip(), after.strip()
-            if after:
-                toolkit = after
-            elif before:
-                toolkit = before
-            else:
-                toolkit = preferences.General.default_toolkit
-
-        elif line:
-            toolkit = line.strip()
-        else:
+        args = parse_argstring(self.hyperspy, line)
+        overwrite = not args.replace is None
+        toolkit = args.toolkit
+        if toolkit is None:
             toolkit = preferences.General.default_toolkit
 
-        if toolkit not in ['qt4', 'gtk', 'wx', 'tk', 'None', 'none']:
+        if toolkit not in ['qt4', 'gtk', 'wx', 'tk', 'None']:
             raise ValueError("The '%s' toolkit is not supported.\n" % toolkit +
                              "Supported toolkits: {qt4, gtk, wx, tk, None}")
 
         mpl_code = ""
-        if toolkit in ["None", "none"]:
+        if toolkit == "None":
             mpl_code = ("import matplotlib\n"
                         "matplotlib.use('Agg')\n")
         elif toolkit == 'qt4':
