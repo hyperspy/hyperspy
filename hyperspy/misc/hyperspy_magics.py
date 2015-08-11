@@ -37,7 +37,7 @@ class HyperspyMagics(Magics):
 
         Positional arguments:
         ---------------------
-            toolkit
+            toolkit : {qt4, gtk, wx, tk, None}
                 Name of the matplotlib backend to use. If given, the corresponding matplotlib backend is used,
                 otherwise it will be the HyperSpy's default.
 
@@ -68,6 +68,10 @@ class HyperspyMagics(Magics):
             toolkit = line.strip()
         else:
             toolkit = preferences.General.default_toolkit
+
+        if toolkit not in ['qt4', 'gtk', 'wx', 'tk', 'None', 'none']:
+            raise ValueError("The '%s' toolkit is not supported.\n" % toolkit+
+                             "Supported toolkits: {qt4, gtk, wx, tk, None}")
 
         mpl_code = ""
         if toolkit in ["None", "none"]:
