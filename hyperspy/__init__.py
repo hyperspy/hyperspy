@@ -24,7 +24,7 @@ import os
 os.environ['QT_API'] = "pyqt"
 
 
-import Release
+from . import Release
 
 __all__ = ["api"]
 __version__ = Release.version

@@ -31,13 +31,10 @@ from hyperspy import Release
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = [
     'sphinx.ext.autodoc',
-    'gen_rst',
-    'numpydoc',
-    'matplotlib.sphinxext.only_directives',
     'sphinx.ext.intersphinx',
     'sphinx.ext.pngmath',
     'sphinx.ext.autosummary',
-    'ipython_console_highlighting']  # , 'rst2pdf.pdfbuilder']
+]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -53,7 +50,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'HyperSpy User Guide [Draft]'
-copyright = u'2011-2013, The HyperSpy Developers'
+copyright = u'2011-2015, The HyperSpy Developers'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the

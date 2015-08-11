@@ -31,13 +31,12 @@ sys.path.append(os.path.abspath('sphinxext'))
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = [
     'sphinx.ext.autodoc',
-    'gen_rst',
-    'numpydoc',
-    'matplotlib.sphinxext.only_directives',
+    'sphinxcontrib.napoleon',
     'sphinx.ext.intersphinx',
     'sphinx.ext.pngmath',
     'sphinx.ext.autosummary',
-    'ipython_console_highlighting']  # , 'rst2pdf.pdfbuilder']
+]
+
 try:
     import sphinxcontrib.spelling
     extensions.append('sphinxcontrib.spelling')
