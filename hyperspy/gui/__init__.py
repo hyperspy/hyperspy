@@ -25,7 +25,7 @@ from hyperspy.misc.ipython_tools import get_ipython
 
 def set_ets_toolkit(toolkit):
     try:
-        ETSConfig = toolkit
+        ETSConfig.toolkit = toolkit
     except ValueError:
         pass
 
