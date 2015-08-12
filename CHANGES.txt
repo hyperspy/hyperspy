@@ -5,6 +5,60 @@ We only cover here the main highlights, for a detailed list of all the changes
 see `the github commits changelog
 <https://github.com/hyperspy/hyperspy/commits/master>`_.
 
+.. _changes_0.8.1:
+
+v0.8.1
+======
+
+This is a maintenance release. Follow the following links for details on all
+the `bugs fixed
+<https://github.com/hyperspy/hyperspy/issues?page=1&q=is%3Aclosed+milestone%3A0.8.1+label%3Abug&utf8=%E2%9C%93>`_,
+`feature
+<https://github.com/hyperspy/hyperspy/issues?utf8=%E2%9C%93&q=is%3Aclosed+milestone%3A0.8.1++label%3Aenhancement+>`_
+and `documentation
+<https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3A0.8.1+label%3Adocumentation>`_ enhancements.
+
+Importantly, the way to start HyperSpy changes in this release. Read :ref:`importing_hyperspy-label` for details.
+
+It also includes some new features and introduces important API changes that
+will be fully enforced in HyperSpy 0.9.
+
+New features
+------------
+* Support for IPython 3.0.
+* ``%hyperspy`` :ref:`IPython magic <magic-label>` to easily and transparently import HyperSpy, matplotlib and numpy when using IPython.
+* :py:class:`~._components.expression.Expression` model component to easily create analytical function components. More details
+  :ref:`here <expression_component-label>`.
+* :py:meth:`~.signal.Signal.unfolded` context manager.
+* :py:meth:`~.signal.Signal.derivative` method.
+* :ref:`syntax to access the components in the model <model_components-label>`
+  that includes pretty printing of the components.
+
+API changes
+-----------
+
+* :py:mod:`~.hyperspy.hspy` is now deprecated in favour of the new
+  :py:mod:`~.hyperspy.api`. The new API renames and/or move several modules as
+  folows:
+
+    * ``hspy.components`` -> ``api.model.components``
+    * ``hspy.utils``-> ``api``
+    * ``hspy.utils.markers`` ``api.plot.markers``
+    * ``hspy.utils.example_signals`` -> ``api.datasets.example_signals``
+
+
+    In HyperSpy 0.8.1 the full content of :py:mod:`~.hyperspy.hspy` is still
+    imported in the user namespace, but this can now be disabled in
+    ``hs.preferences.General.import_hspy``. In HyperSpy 0.9 it will be
+    disabled by default and the :py:mod:`~.hyperspy.hspy` module will be fully
+    removed in HyperSpy 0.10. We encourage all users to migrate to the new
+    syntax. For more details see :ref:`importing_hyperspy-label`.
+* Indexing the :py:class:`~.signal.Signal` class is now deprecated. We encourage
+  all users to use ``isig`` and ``inav`` instead for indexing.
+* :py:func:`~.hyperspy.hspy.create_model` is now deprecated in favour of the new
+  equivalent :py:meth:`~.signal.Signal.create_model` ``Signal`` method.
+* :py:meth:`~.signal.Signal.unfold_if_multidim` is deprecated.
+
 
 .. _changes_0.8:
 
@@ -118,7 +172,7 @@ Core
   + :py:meth:`~.signal.Signal.as_image`
   + :py:meth:`~.signal.Signal.as_spectrum`
 
-* The string representation of the Signal class now prints the shape of the 
+* The string representation of the Signal class now prints the shape of the
   data and includes a separator between the navigation and the signal axes e.g
   (100, 10| 5) for a signal with two navigation axes of size 100 and 10 and one
   signal axis of size 5.
@@ -127,7 +181,7 @@ Core
 * Added full compatibility with the Qt toolkit that is now the default.
 * Added compatibility witn the the GTK and TK toolkits, although with no GUI
   features.
-* It is now possible to run HyperSpy in 
+* It is now possible to run HyperSpy in
   :ref:`a headless system <headless-label>`.
 * Added a CLI to :py:meth:`~.signal.Signal1DTools.remove_background`.
 * New :py:meth:`~.signal.Signal1DTools.estimate_peak_width` method to estimate
@@ -160,7 +214,7 @@ Plotting
 
 * Use the blitting capabilities of the different toolkits to
   speed up the plotting of images.
-* Added several extra options to the Signal :py:meth:`~.signal.Signal.plot` 
+* Added several extra options to the Signal :py:meth:`~.signal.Signal.plot`
   method to customize the navigator. See :ref:`visualization-label`.
 * Add compatibility with IPython's matplotlib inline plotting. See
   :ref:`inline_plotting`.
@@ -178,14 +232,14 @@ Curve fitting
   computed automatically when fitting. See :ref:`model.fitting`.
 * New functionality to plot the individual components of a model. See
   :ref:`model.visualization`.
-* New method, :py:meth:`~.model.Model.fit_component`, to help setting the 
+* New method, :py:meth:`~.model.Model.fit_component`, to help setting the
   starting parameters. See :ref:`model.starting`.
 
 Machine learning
 ^^^^^^^^^^^^^^^^
 
 * The PCA scree plot can now be easily obtained as a Signal. See
-  :ref:`scree-plot`. 
+  :ref:`scree-plot`.
 * The decomposition and blind source separation components can now be obtained
   as :py:class:`~.signal.Signal` instances. See :ref:`mva.get_results`.
 * New methods to plot the decomposition and blind source separation results
@@ -200,8 +254,8 @@ Dielectric function
 EELS
 ^^^^
 
-* New method, 
-  :meth:`~._signals.eels.EELSSpectrum.kramers_kronig_analysis` to calculate 
+* New method,
+  :meth:`~._signals.eels.EELSSpectrum.kramers_kronig_analysis` to calculate
   the dielectric function from low-loss electron energy-loss spectra based on
   the Kramers-Kronig relations. See :ref:`eels.kk`.
 * New method to align the zero-loss peak,
@@ -210,18 +264,18 @@ EELS
 EDS
 ^^^
 
-* New signal, EDSSpectrum especialized in EDS data analysis, with subsignal 
+* New signal, EDSSpectrum especialized in EDS data analysis, with subsignal
   for EDS with SEM and with TEM: EDSSEMSpectrum and EDSTEMSpectrum. See
   :ref:`eds-label`.
-* New database of EDS lines available in the ``elements`` attribute of the 
+* New database of EDS lines available in the ``elements`` attribute of the
   ``hspy.utils.material`` module.
 * Adapted methods to calibrate the spectrum, the detector and the microscope.
   See :ref:`eds_calibration-label`.
-* Specific methods to describe the sample, 
-  :py:meth:`~._signals.eds.EDSSpectrum.add_elements` and 
+* Specific methods to describe the sample,
+  :py:meth:`~._signals.eds.EDSSpectrum.add_elements` and
   :py:meth:`~._signals.eds.EDSSpectrum.add_lines`. See :ref:`eds_sample-label`
 * New method to get the intensity of specific X-ray lines:
-  :py:meth:`~._signals.eds.EDSSpectrum.get_lines_intensity`. See 
+  :py:meth:`~._signals.eds.EDSSpectrum.get_lines_intensity`. See
   :ref:`eds_plot-label`
 
 API changes
@@ -230,14 +284,14 @@ API changes
 * hyperspy.misc has been reorganized. Most of the functions in misc.utils has
   been rellocated to specialized modules. misc.utils is no longer imported in
   hyperspy.hspy. A new hyperspy.utils module is imported instead.
-* Objects that have been renamed 
-  
+* Objects that have been renamed
+
   + ``hspy.elements`` -> ``utils.material.elements``.
   + ``Signal.navigation_indexer`` -> ``inav``.
   + ``Signal.signal_indexer`` -> ``isig``.
   + ``Signal.mapped_parameters`` -> ``Signal.metadata``.
   + ``Signal.original_parameters`` -> ``Signal.original_metadata``.
-* The metadata has been reorganized. See :ref:`metadata_structure`. 
+* The metadata has been reorganized. See :ref:`metadata_structure`.
 * The following signal methods now operate out-of-place:
 
   + :py:meth:`~.signal.Signal.swap_axes`
@@ -255,74 +309,74 @@ New features
 * Most arithmetic and rich arithmetic operators work with signal.
   See :ref:`signal.operations`.
 * Much improved EELSSpectrum methods:
-  :py:meth:`~._signals.eels.EELSSpectrum.estimate_zero_loss_peak_centre`,  
-  :py:meth:`~._signals.eels.EELSSpectrum.estimate_elastic_scattering_intensity` and  
+  :py:meth:`~._signals.eels.EELSSpectrum.estimate_zero_loss_peak_centre`,
+  :py:meth:`~._signals.eels.EELSSpectrum.estimate_elastic_scattering_intensity` and
   :py:meth:`~._signals.eels.EELSSpectrum.estimate_elastic_scattering_threshold`.
-  
+
 * The axes can now be given using their name e.g. ``s.crop("x", 1,10)``
 * New syntax to specify position over axes: an integer specifies the indexes
   over the axis and a floating number specifies the position in the axis units
-  e.g. ``s.crop("x", 1, 10.)`` crops over the axis `x` (in meters) from index 1 
-  to value 10 meters. Note that this may make your old scripts behave in 
+  e.g. ``s.crop("x", 1, 10.)`` crops over the axis `x` (in meters) from index 1
+  to value 10 meters. Note that this may make your old scripts behave in
   unexpected ways as just renaming the old \*_in_units and \*_in_values methods
   won't work in most cases.
 * Most methods now use the natural order i.e. X,Y,Z.. to index the axes.
-* Add padding to fourier-log and fourier-ratio deconvolution to fix the 
+* Add padding to fourier-log and fourier-ratio deconvolution to fix the
   wrap-around problem and increase its performance.
-* New 
+* New
   :py:meth:`~.components.eels_cl_edge.EELSCLEdge.get_fine_structure_as_spectrum`
   EELSCLEdge method.
 * New :py:class:`~.components.arctan.Arctan` model component.
-* New 
-  :py:meth:`~.model.Model.enable_adjust_position`     
+* New
+  :py:meth:`~.model.Model.enable_adjust_position`
   and :py:meth:`~.model.Model.disable_adjust_position`
   to easily change the position of components using the mouse on the plot.
 * New Model methods
-  :py:meth:`~.model.Model.set_parameters_value`, 
+  :py:meth:`~.model.Model.set_parameters_value`,
   :py:meth:`~.model.Model.set_parameters_free` and
   :py:meth:`~.model.Model.set_parameters_not_free`
-  to easily set several important component attributes of a list of components 
+  to easily set several important component attributes of a list of components
   at once.
 * New
   :py:func:`~.misc.utils.stack` function to stack signals.
 * New Signal methods:
-  :py:meth:`~.signal.Signal.integrate_simpson`, 
-  :py:meth:`~.signal.Signal.max`,  
-  :py:meth:`~.signal.Signal.min`, 
+  :py:meth:`~.signal.Signal.integrate_simpson`,
+  :py:meth:`~.signal.Signal.max`,
+  :py:meth:`~.signal.Signal.min`,
   :py:meth:`~.signal.Signal.var`, and
   :py:meth:`~.signal.Signal.std`.
 * New sliders window to easily navigate signals with navigation_dimension > 2.
-* The Ripple (rpl) reader can now read rpl files produced by INCA.   
+* The Ripple (rpl) reader can now read rpl files produced by INCA.
 
 API changes
 -----------
 * The following functions has been renamed or removed:
 
     * components.EELSCLEdge
-    
+
         * knots_factor -> fine_structure_smoothing
         * edge_position -> onset_energy
         * energy_shift removed
-        
+
     * components.Voigt.origin -> centre
     * signals.Spectrum
-    
+
         * find_peaks_1D -> Signal.find_peaks1D_ohaver
         * align_1D -> Signal.align1D
         * shift_1D -> Signal.shift1D
         * interpolate_1D -> Signal.interpolate1D
-        
+
     * signals.Image.estimate_2D_translation -> Signal.estimate_shift2D
     * Signal
-    
+
         * split_in -> split
         * crop_in_units -> crop
         * crop_in_pixels -> crop
-        
-    
-* Change syntax to create Signal objects. Instead of a dictionary 
+
+
+* Change syntax to create Signal objects. Instead of a dictionary
   Signal.__init__ takes keywords e.g with  a new syntax .
-  ``>>> s = signals.Spectrum(np.arange(10))`` instead of 
+  ``>>> s = signals.Spectrum(np.arange(10))`` instead of
   ``>>> s = signals.Spectrum({'data' : np.arange(10)})``
 
 
@@ -377,12 +431,12 @@ New features
 * Improved hyperspy starter script that now includes the possibility
   to start HyperSpy in the new IPython notebook.
 * Add "HyperSpy notebook here" to the Windows context menu.
-* The information displayed in the plots produced by Signal.plot have 
+* The information displayed in the plots produced by Signal.plot have
   been enhanced.
-* Added Egerton's sigmak3 and sigmal3 GOS calculations (translated 
+* Added Egerton's sigmak3 and sigmal3 GOS calculations (translated
   from matlab by I. Iyengar) to the EELS core loss component.
-* A browsable dictionary containing the chemical elements and 
-  their onset energies is now available in the user namespace under 
+* A browsable dictionary containing the chemical elements and
+  their onset energies is now available in the user namespace under
   the variable name `elements`.
 * The ripple file format now supports storing the beam energy, the collection and the convergence angle.
 
@@ -396,7 +450,7 @@ Major bugs fixed
 * Loading msa files was broken when running on Python 2.7.2 and newer.
 * Saving images to rpl format was broken.
 * Performing BSS on data decomposed with poissonian noise normalization
-  was failing when some columns or rows of the unfolded data were zero, 
+  was failing when some columns or rows of the unfolded data were zero,
   what occurs often in EDX data for example.
 * Importing some versions of scikits learn was broken
 * The progress bar was not working properly in the new IPython notebook.
@@ -407,8 +461,8 @@ API changes
 * spatial_mask was renamed to navigation_mask.
 * Spectrum and Image are not loaded into the user namespace by default.
   The signals module is loaded instead.
-* Change the default BSS algorithm to sklearn fastica, that is now 
-  distributed with HyperSpy and used in case that sklearn is not 
+* Change the default BSS algorithm to sklearn fastica, that is now
+  distributed with HyperSpy and used in case that sklearn is not
   installed e.g. when using EPDFree.
 * _slicing_axes was renamed to signal_axes.
 * _non_slicing_axes to navigation_axes.
@@ -418,7 +472,7 @@ API changes
 * EELSCLEdge.fs_emax was renamed to fine_structure_width.
 * EELSCLEdge.freedelta was renamed to free_energy_shift.
 * EELSCLEdge.delta was renamed to energy_shift.
-* A value of True in a mask now means that the item is masked all over 
+* A value of True in a mask now means that the item is masked all over
   HyperSpy.
 
 
@@ -452,9 +506,9 @@ Syntax changes
 --------------
  * In EELS automatic background feature creates a PowerLaw component, adds it to the model an add it to a variable in the user namespace. The variable has been renamed from `bg` to `background`.
  * pes_gaussian Component renamed to pes_core_line_shape.
- 
+
 .. _changes_0.4:
- 
+
 v0.4
 ====
 
@@ -502,7 +556,7 @@ New features
  * Return an error message when the decomposition algorithm is not recognised.
  * Store the masks in mva_results.
  * The free parameters are now automically updated on chaning the free attribute.
- 
+
 Bugs fixed
 ----------
  * Added missing keywords to plot_pca_factors and plot_ica_factors.
@@ -556,11 +610,10 @@ Syntax changes
  * slice_bool renamed to navigate to make its function more explicit.
  * smoothing renamed to pretreatment and butter added.
  * variance2one renamed to normalize_variance.
- * w renamed to unmixing matrix and fixes a bug when loading a mva_result 
+ * w renamed to unmixing matrix and fixes a bug when loading a mva_result
    in which output_dimension = None.
  * ubshells are again availabe in the interactive session.
  * Several changes to the interface.
  * The documentation was updated to reflex the last changes.
- * The microscopes.csv file was updated so it no longer contains the 
+ * The microscopes.csv file was updated so it no longer contains the
    Orsay VG parameters.
-

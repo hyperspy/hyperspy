@@ -10,7 +10,6 @@ Subpackages
     hyperspy.misc.eels
     hyperspy.misc.io
     hyperspy.misc.machine_learning
-    hyperspy.misc.tests
 
 Submodules
 ----------
@@ -43,6 +42,22 @@ hyperspy.misc.example_signals_loading module
 --------------------------------------------
 
 .. automodule:: hyperspy.misc.example_signals_loading
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+hyperspy.misc.hspy_warnings module
+----------------------------------
+
+.. automodule:: hyperspy.misc.hspy_warnings
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+hyperspy.misc.hyperspy_magics module
+------------------------------------
+
+.. automodule:: hyperspy.misc.hyperspy_magics
     :members:
     :undoc-members:
     :show-inheritance:

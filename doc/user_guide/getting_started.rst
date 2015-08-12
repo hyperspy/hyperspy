@@ -1,6 +1,9 @@
 Getting started
 ***************
 
+
+.. _importing_hyperspy-label:
+
 Starting HyperSpy
 -----------------
 
@@ -482,4 +485,4 @@ This command should raise the Preferences user interface:
 .. figure::  images/preferences.png
    :align:   center
 
-   Preferences user interface
+   Preferences user interface.
