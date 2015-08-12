@@ -162,6 +162,16 @@ class TestSavingMetadataContainers:
     def setUp(self):
         self.s = Signal([0.1])
 
+    def test_save_unicode(self):
+        s = self.s
+        s.metadata.set_item('test', [u'a', u'b', u'\u6f22\u5b57'])
+        s.save('tmp.hdf5', overwrite=True)
+        l = load('tmp.hdf5')
+        nt.assert_is_instance(l.metadata.test[0], unicode)
+        nt.assert_is_instance(l.metadata.test[1], unicode)
+        nt.assert_is_instance(l.metadata.test[2], unicode)
+        nt.assert_equal(l.metadata.test[2], u'\u6f22\u5b57')
+
     @nt.timed(0.1)
     def test_save_long_list(self):
         s = self.s
