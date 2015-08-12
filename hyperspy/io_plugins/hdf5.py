@@ -310,10 +310,10 @@ def dict2hdfgroup(dictionary, group, compression=None):
                 compression=compression)
         elif tmp.dtype.type is np.unicode_:
             group.create_dataset(_type + key,
-                    tmp.shape,
-                    dtype=h5py.special_dtype(vlen=unicode),
-                    compression=compression)
-            group[_type+key][:] = tmp[:]
+                                 tmp.shape,
+                                 dtype=h5py.special_dtype(vlen=unicode),
+                                 compression=compression)
+            group[_type + key][:] = tmp[:]
         else:
             group.create_dataset(
                 _type + key,
