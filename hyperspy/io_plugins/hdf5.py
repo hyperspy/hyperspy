@@ -298,7 +298,8 @@ def dict2hdfgroup(dictionary, group, compression=None):
     def parse_structure(key, group, value, _type, compression):
         try:
             # Here we check if there are any signals in the container, as casting a long list of signals to a
-            # numpy array takes a very long time. So we check if there are any, and save numpy the trouble
+            # numpy array takes a very long time. So we check if there are any,
+            # and save numpy the trouble
             if np.any([isinstance(t, Signal) for t in value]):
                 tmp = np.array([[0]])
             else:
