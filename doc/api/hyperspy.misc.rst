@@ -10,7 +10,6 @@ Subpackages
     hyperspy.misc.eels
     hyperspy.misc.io
     hyperspy.misc.machine_learning
-    hyperspy.misc.tests
 
 Submodules
 ----------
