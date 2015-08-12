@@ -482,4 +482,4 @@ This command should raise the Preferences user interface:
 .. figure::  images/preferences.png
    :align:   center
 
-   Preferences user interface
+   Preferences user interface.
