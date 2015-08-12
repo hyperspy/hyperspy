@@ -297,7 +297,13 @@ def dict2hdfgroup(dictionary, group, compression=None):
 
     def parse_structure(key, group, value, _type, compression):
         try:
-            tmp = np.array(value)
+            # Here we check if there are any signals in the container, as casting a long list of signals to a
+            # numpy array takes a very long time. So we check if there are any,
+            # and save numpy the trouble
+            if np.any([isinstance(t, Signal) for t in value]):
+                tmp = np.array([[0]])
+            else:
+                tmp = np.array(value)
         except ValueError:
             tmp = np.array([[0]])
         if tmp.dtype is np.dtype('O') or tmp.ndim is not 1:
@@ -305,6 +311,12 @@ def dict2hdfgroup(dictionary, group, compression=None):
                 [unicode(i) for i in xrange(len(value))], value)),
                 group.create_group(_type + str(len(value)) + '_' + key),
                 compression=compression)
+        elif tmp.dtype.type is np.unicode_:
+            group.create_dataset(_type + key,
+                                 tmp.shape,
+                                 dtype=h5py.special_dtype(vlen=unicode),
+                                 compression=compression)
+            group[_type + key][:] = tmp[:]
         else:
             group.create_dataset(
                 _type + key,
