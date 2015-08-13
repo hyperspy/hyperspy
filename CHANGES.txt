@@ -10,7 +10,7 @@ see `the github commits changelog
 v0.8.2
 ======
 
-This is a maintenance release that fixes an issue with the Python installers. Those who has successfully installer v0.8.1 do not need to upgrade.
+This is a maintenance release that fixes an issue with the Python installers. Those who have successfully installed v0.8.1 do not need to upgrade.
 
 .. _changes_0.8.1:
 
