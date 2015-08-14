@@ -33,8 +33,5 @@ entry
 
 or click on the DOI badge below for more citation formats.
 
-.. image:: https://zenodo.org/badge/doi/10.5281/zenodo.27735.svg
-   :target: http://dx.doi.org/10.5281/zenodo.27735
-
-
-
+.. image:: https://zenodo.org/badge/doi/10.5281/zenodo.28025.svg
+   :target: http://dx.doi.org/10.5281/zenodo.28025

@@ -38,5 +38,5 @@ Cite
 
 |DOI|_
 
-.. |DOI| image:: https://zenodo.org/badge/6941/hyperspy/hyperspy.svg
-.. _DOI: http://dx.doi.org/10.5281/zenodo.16850
+.. |DOI| image:: https://zenodo.org/badge/doi/10.5281/zenodo.28025.svg
+.. _DOI: http://dx.doi.org/10.5281/zenodo.28025
