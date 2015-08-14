@@ -36,7 +36,7 @@ Quick instructions to install HyperSpy MacOs
 
    .. code-block:: bash
 
-       $ conda install traitui mkl
+       $ conda install traitsui mkl
 
 #. Install HyperSpy:
 
