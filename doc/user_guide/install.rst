@@ -87,7 +87,7 @@ In any case, you must be sure to have all the dependencies installed, see
 Install from a binary
 ---------------------
 
-We provide  binary distributions for Ubuntu Linux and Windows (`see the
+We provide  binary distributions for Windows (`see the
 Downloads section of the website <http://hyperspy.org/download.html>`_). To
 install easily in other platforms see :ref:`install-with-python-installers`
     
@@ -150,12 +150,6 @@ so for Ubuntu:
     $ cd hyperspy
     $ sudo pip install -e ./
 
-In addition there as a bug with the IPython version packaged in Ubuntu 12.10,
-which can be fixed by upgrading it through pip:
-
-.. code-block:: bash
-
-    $ sudo pip install --upgrade ipython
 
 To install the context menu and Start Menu entries (on Windows), it is necessary to run the following
 from the bin directory of hyperspy (make sure to run as administrator):
