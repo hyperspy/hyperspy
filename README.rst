@@ -39,4 +39,4 @@ Cite
 |DOI|_
 
 .. |DOI| image:: https://zenodo.org/badge/6941/hyperspy/hyperspy.svg
-.. _DOI: http://dx.doi.org/10.5281/zenodo.16850
+.. _DOI: http://dx.doi.org/10.5281/zenodo.28025
