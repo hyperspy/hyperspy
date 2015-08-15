@@ -5,6 +5,13 @@ We only cover here the main highlights, for a detailed list of all the changes
 see `the github commits changelog
 <https://github.com/hyperspy/hyperspy/commits/master>`_.
 
+.. _changes_0.8.2:
+
+v0.8.2
+======
+
+This is a maintenance release that fixes an issue with the Python installers. Those who have successfully installed v0.8.1 do not need to upgrade.
+
 .. _changes_0.8.1:
 
 v0.8.1

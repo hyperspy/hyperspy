@@ -25,15 +25,25 @@ libraries and nothing else is required.
 
 .. _quick-mac-install:
 
-Quick instructions to install HyperSpy in MacOs
--------------------------------------------------
+Quick instructions to install HyperSpy MacOs
+--------------------------------------------
 
 #. Download and install `Anaconda. <https://store.continuum.io/cshop/anaconda/>`_
    Anaconda is recommended for the best performance (it is compiled
    using Intel MKL libraries) and the easiest intallation (all the required
    libraries are included). The academic license is free.
-#. Open a terminal and install traitsui by executing: `conda install traitui`
-#. Install HyperSpy by executing: `pip install hyperspy`
+#. Open a terminal and install traitsui and mkl: 
+
+   .. code-block:: bash
+
+       $ conda install traitsui mkl
+
+#. Install HyperSpy:
+
+   .. code-block:: bash
+
+       $ pip install hyperspy  
+
 
 For more options and details read the rest of the documentation.
 
@@ -77,7 +87,7 @@ In any case, you must be sure to have all the dependencies installed, see
 Install from a binary
 ---------------------
 
-We provide  binary distributions for Ubuntu Linux and Windows (`see the
+We provide  binary distributions for Windows (`see the
 Downloads section of the website <http://hyperspy.org/download.html>`_). To
 install easily in other platforms see :ref:`install-with-python-installers`
     
@@ -140,12 +150,6 @@ so for Ubuntu:
     $ cd hyperspy
     $ sudo pip install -e ./
 
-In addition there as a bug with the IPython version packaged in Ubuntu 12.10,
-which can be fixed by upgrading it through pip:
-
-.. code-block:: bash
-
-    $ sudo pip install --upgrade ipython
 
 To install the context menu and Start Menu entries (on Windows), it is necessary to run the following
 from the bin directory of hyperspy (make sure to run as administrator):
