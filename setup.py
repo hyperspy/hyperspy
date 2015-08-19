@@ -50,6 +50,7 @@ import hyperspy.Release as Release
 install_req = ['scipy',
                'ipython>=2.0',
                'matplotlib>=1.2',
+               'scikit-image',
                'numpy>=1.10',
                'traits>=4.5.0',
                'traitsui>=5.0',
