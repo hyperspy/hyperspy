@@ -51,12 +51,15 @@ def file_reader(filename, *args, **kwds):
                          usecols=(1, 3), unpack=True)
 
     times = rawdata[0]
+    # Add a day worth of seconds to any values after a detected rollover
+    # Hopefully unlikely that there is more than one, but we can handle it
+    for rollover in 1+np.where(np.diff(times) < 0)[0]:
+        times[rollover:] += 60*60*24
     dt = np.diff(times).mean()
     temp = rawdata[1]
     interp = scipy.interpolate.interp1d(times, temp, copy=False,
                                         assume_sorted=True, bounds_error=False)
     interp_axis = times[0] + dt * np.array(range(len(times)))
-    print len(interp_axis), interp_axis[-1], times[-1]
     temp_interp = interp(interp_axis)
 
     units = ['s']
