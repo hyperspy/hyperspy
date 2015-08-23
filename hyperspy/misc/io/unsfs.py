@@ -240,9 +240,8 @@ def items_to_dict(file_tables, size, parent, is_dir, name):
 # main functions:
 
 def get_sfs_file_tree(filename):
-    """ Function scans sfs type file and returns dictionary with file/dir structure.
-    The function fetches just metadata which is significantly smaller than data,
-    and safely can be fetch as whole into memory.
+    """ Function scans sfs type file and returns dictionary with file/dir
+    structure.
 
     args: filename
 
@@ -351,7 +350,7 @@ def get_the_item(filename, item_dict, chunk_data_size, compression):
     """
     # read the file table and fill the pointer table:
     item_dict = read_pointer_table(filename, item_dict, chunk_data_size)
-    #proceed with
+    #proceed further:
     if compression == 'None':
         data = io.BytesIO()
         with open(filename, 'rb') as fn:
