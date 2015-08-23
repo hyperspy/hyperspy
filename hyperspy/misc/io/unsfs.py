@@ -35,10 +35,11 @@
 #  developers would introduce critical changes.
 #
 # This library is very basic and can read just un-encrypted type of sfs.
-# At least two compression methods are used for compression zlib and bzip2.
+# At least two compression methods were observed beeing in use
+# for compression: zlib and bzip2.
 # However sfs containers could use different compression methods which
 #  is unknown for developer of this library, thus just zlib and bzip2
-#  decompressions are implemented
+#  decompressions are implemented.
 #
 #STRUCTURE:
 # The all non string data are little-endian.
@@ -184,7 +185,6 @@ def bin_tree_to_lists(data, n_items):
     name = []
 
     #get data into lists:
-    #table_pointer = struct.unpack('<I', data[0:4])
     for item in range(0, n_items, 1):
         #tab_pointers += table_pointer
         tab_pointers += struct.unpack('<I', data[item*0x200 : 4 + item*0x200])
@@ -197,8 +197,6 @@ def bin_tree_to_lists(data, n_items):
         is_dir += struct.unpack('?', data[0xDC + item*0x200 : 0xDD + item*0x200])
         name.append(data[0xE0 + item*0x200 : 0x200 + item*0x200].strip(b'\x00').\
                                                                  decode('utf-8'))
-        #item += 1
-        #table_pointer = struct.unpack('<I', data[item*0x200 : 4 + item*0x200])
 
     return tab_pointers, size, parent, is_dir, name
 
@@ -325,7 +323,7 @@ def get_sfs_file_tree(filename):
 
 
 def get_the_item(filename, item_dict, chunk_data_size, compression):
-    """Extracts required file/item from the SFS file.
+    """Extracts requested file/item from the SFS file.
 
     Arguments:
     filename -- the path to the .sfs file.
@@ -401,7 +399,7 @@ def get_the_item(filename, item_dict, chunk_data_size, compression):
 
         return data
     else:
-        raise RuntimeError('SFS/BCF uses unknown compression methods.',
+        raise RuntimeError('SFS (or *bcf,*.pan)  uses unknown compression methods.',
                            'Abort...')
 
 
