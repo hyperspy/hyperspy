@@ -53,7 +53,7 @@ def file_reader(filename, mode='r', driver='core',
                 exp_dict_list.extend(exp_dict)
         return exp_dict_list
 
-def _get_emd_metadata(metadata_string):
+def _get_emd_metadata_from_dict(metadata_string):
     original_metadata_dict = json.loads(metadata_string)
     axes_offset = original_metadata_dict['_values']['Scale/Spatial/Start']
     axes_scale = original_metadata_dict['_values']['Scale/Spatial/Step']
@@ -92,26 +92,42 @@ def _make_axes(data_shape, axes_dict):
         axes_list.append(temp_axes)
     return(axes_list)
     
-
 def emdimagegroup2signaldict(experiment_key, group):
     image_data_list = []
-    for image_group in group['images'].itervalues():
-        temp_image_data = {'data':image_group['image'].value}
+    if 'images' in group.keys():
+        for image_group in group['images'].itervalues():
+            if 'image' in image_group.keys():
+                temp_image_data = {'data':image_group['image'].value}
 
-        data_shape = temp_image_data['data'].shape
+                metadata_tag_string = image_group.attrs['links']
+                metadata_tag = json.loads(metadata_tag_string)['meta_d']
+                original_metadata = group['metadata'][metadata_tag].attrs['metadata']
 
-        metadata_tag_string = image_group.attrs['links']
-        metadata_tag = json.loads(metadata_tag_string)['meta_d']
+                data_shape = temp_image_data['data'].shape
+                metadata_dict = _get_emd_metadata_from_dict(original_metadata)
 
-        original_metadata = group['metadata'][metadata_tag].attrs['metadata']
-        metadata_dict = _get_emd_metadata(original_metadata)
+                axes_list = _make_axes(data_shape, metadata_dict['axes'])
 
-        axes_list = _make_axes(data_shape, metadata_dict['axes'])
+                temp_image_data['axes'] = axes_list
 
-        temp_image_data['axes'] = axes_list
+                temp_image_data['metadata'] = {}
 
-        temp_image_data['metadata'] = {}
+                image_data_list.append(temp_image_data)
 
-        image_data_list.append(temp_image_data)
+    if 'edx' in group.keys():
+        temp_data = {}
+        temp_spectrum_data = []
+        for spectrum in group['edx']['spectrum'].itervalues():
+            if 'data' in spectrum.keys():
+                temp_spectrum_data.append(spectrum['data'].value)
+            else:
+                if 'compressed_cube' in spectrum.keys():
+                    temp_spectrum_data.append(
+                        spectrum['compressed_cube'].value)
+
+        temp_data['metadata'] = {}
+        temp_data['data'] = np.array(temp_spectrum_data)
+
+        image_data_list.append(temp_data)
 
     return(image_data_list)
