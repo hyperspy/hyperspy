@@ -125,11 +125,11 @@ def read_pointer_table(filename, item_tree, chunk_usable):
     first_pointer = item_tree['pointers']
     size = item_tree['size']
     if sfs_size < 0xFFFF:
-        table_type = 'uint16'
+        table_type = np.uint16
     elif sfs_size < 0xFFFFFFFF:
-        table_type = 'uint32'
+        table_type = np.uint32
     else:
-        table_type = 'uint64'
+        table_type = np.uint64
     size_in_last_chunk = size % (chunk_usable)
     if size_in_last_chunk == 0:
         last_size = chunk_usable
@@ -143,13 +143,15 @@ def read_pointer_table(filename, item_tree, chunk_usable):
         if table_size > 1:
             j = 0  # chunk counter
             next_chunk = first_pointer
-            temp_table = b''
-            while j != table_size:
+            temp_string = io.BytesIO()
+            for j in range(0, tabe_size, 1):
                 fn.seek(chunksize * next_chunk + 0x118)
                 next_chunk = struct.unpack('<I', fn.read(4))[0]
                 fn.seek(28, 1)
-                temp_table += fn.read(chunk_usable)
-                j += 1
+                temp_string.write(fn.read(chunk_usable))
+            temp_string.seek(0)
+            temp_table = temp_string.read()
+            temp_string.close()  # optional
         else:
             fn.seek(chunksize * first_pointer + 0x138)
             temp_table = fn.read(chunk_usable)
@@ -268,39 +270,28 @@ def get_sfs_file_tree(filename):
             fn.seek(0x140)
             tree_address = struct.unpack('<I', fn.read(4))[0]
             fn.seek(0x144)
-            #useful but no more needed:
+            #the number of the items / files + directories
             n_of_file_tree_items = struct.unpack('<I', fn.read(4))[0]
+            n_of_file_tree_chunks = -((-n_of_file_tree_items*0x200) //
+                                      (chunksize-512))
             # get value, how many chunks are in sfs file?
             fn.seek(0x148)
             n_of_chunks = struct.unpack('<I', fn.read(4))[0]
-            # jump to tree/list addr. and check the header
-            fn.seek(chunksize * tree_address + 0x118)
-            next_chunk = struct.unpack('<I', fn.read(4))[0]
-            if (next_chunk < n_of_chunks) and (next_chunk != 0):
-                #list/tree exceeds the chunk
-                fn.seek(28, 1)
+            if n_of_file_tree_chunks == 1:
+                fn.seek(chunksize * tree_address + 0x138)  # skip with header
                 list_data = fn.read(chunksize - 512)
-                tree_address = next_chunk
-                fn.seek(chunksize * tree_address + 0x118)
-                next_chunk = struct.unpack('<I', fn.read(4))[0]
-                #check for chain of chunks with list:
-                while (tree_address != next_chunk) and (
-                       next_chunk < n_of_chunks) and (
-                       next_chunk != 0):
-                    fn.seek(28, 1)
-                    list_data += fn.read(chunksize - 512)
-                    tree_address = next_chunk
-                    fn.seek(chunksize * tree_address + 0x118)
-                    next_chunk = struct.unpack('<I', fn.read(4))[0]
-                else:
-                    #if chunk header points to itself, or have non valid
-                    # values, it means -- last chunk
-                    fn.seek(28, 1)
-                    list_data += fn.read(chunksize - 512)
             else:
-                #list/tree fits into 1 chunk
-                fn.seek(28, 1)
-                list_data = fn.read(chunksize - 512)
+                temp_str = io.BytesIO()
+                for i in range(0, n_of_file_tree_chunks, 1):
+                    # jump to tree/list address:
+                    fn.seek(chunksize * tree_address + 0x118)
+                    # next tree/list address:
+                    tree_address = struct.unpack('<I', fn.read(4))[0]
+                    fn.seek(28, 1)
+                    temp_str.write(fn.read(chunksize - 512))
+                temp_str.seek(0)
+                list_data = temp_str.read(n_of_file_tree_items*0x200)
+                temp_str.close()
             tab_pointers, size, parent, is_dir, name = bin_tree_to_lists(
                                                  list_data, n_of_file_tree_items)
             #check if data is compressed on the first bits of data:
