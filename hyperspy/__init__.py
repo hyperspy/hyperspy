@@ -28,3 +28,8 @@ from . import Release
 
 __all__ = ["api"]
 __version__ = Release.version
+
+
+def load_ipython_extension(ip):
+    from hyperspy.misc.hyperspy_magics import HyperspyMagics
+    ip.register_magics(HyperspyMagics)
