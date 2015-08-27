@@ -100,6 +100,7 @@
 #
 #  Compression are used (if used) just on the data part, file tree, and
 #  file tables are never compressed.
+
 import os
 import io
 
@@ -108,13 +109,14 @@ import struct
 
 # helper functions:
 
-
 def read_pointer_table(filename, item_tree, chunk_usable):
-    """ The function which seeks to first pointer table retrieves and updates
-    item_tree with full pointer table of file
+    """ The function which seeks to first pointer table retrieves
+    and updates item_tree with full pointer table of file
     Args:
     filename -- sfs file
-    item_tree -- the dict from get_the_file_tree functions
+    item_tree -- the dict from get_the_file_tree function
+    chunk_usable -- the the data size in chunk after substracting
+      the header (32bit)
     """
 
     #1st determine required numpy dtype for file_chunk_tables
@@ -160,21 +162,27 @@ def read_pointer_table(filename, item_tree, chunk_usable):
 
 
 def bin_tree_to_lists(data, n_items):
-    """unpacks sfs list/tree data into dictionary.
+    """unpacks sfs list/tree of content into python lists.
 
     args:
-    data -- (the tree/list binary/string continuous data with 512 bytes per item)
+    data -- the cocatenated binary/string of sfs content tree/list
     n_items -- number of items in the data
 
-    returns: 5 lists (file table, size, parent, is_dir (boolen), name)"""
+    returns: 5 lists (file table, size, parent (it's index in the sfs list),
+       is_dir (boolen), name)
+    """
 
     # due to possibility of child items appearing before parent in sfs list,
     # before we construct tree like structure, we need to sort out
     # child/parent relation, thus different kind of data should be fetched
     # into separate lists. Function have lots of space for optimization....
+    # some of the values from common knowlidge about file systems are supposed
+    # to be the time and file permissions, but however couldn't be sucessfully
+    # RE. They are left and comented in code, maybe somebody will figure out
+    # how to recalculate them
 
     # initializing dictionaries:
-    tab_pointers = []  # index of the chunk with file table (or beginning of it)
+    tab_pointer = []  # index of the chunk with file table (or beginning of it)
     size = []  # in bytes
     #create_time = []
     #mod_time = []
@@ -187,7 +195,7 @@ def bin_tree_to_lists(data, n_items):
     #get data into lists:
     for item in range(0, n_items, 1):
         #tab_pointers += table_pointer
-        tab_pointers += struct.unpack('<I', data[item*0x200 : 4 + item*0x200])
+        tab_pointer += struct.unpack('<I', data[item*0x200 : 4 + item*0x200])
         size += struct.unpack('<Q', data[4 + item*0x200 : 12 + item*0x200])
         #create_time += struct.unpack('<d', data[12+item*0x200:20+item*0x200])
         #mod_time += struct.unpack('<d', data[20+item*0x200 : 28+item*0x200])
@@ -198,10 +206,11 @@ def bin_tree_to_lists(data, n_items):
         name.append(data[0xE0 + item*0x200 : 0x200 + item*0x200].strip(b'\x00').\
                                                                  decode('utf-8'))
 
-    return tab_pointers, size, parent, is_dir, name
+    return tab_pointer, size, parent, is_dir, name
 
 
 def items_to_dict(file_tables, size, parent, is_dir, name):
+    """ returns sfs tree structure as dict""" 
     tree0 = {}
     ## check if there is any tree structure or list is flat:
     n_parents = np.sort(np.unique(np.fromiter(parent, dtype='uint8')))
@@ -399,8 +408,8 @@ def get_the_item(filename, item_dict, chunk_data_size, compression):
 
         return data
     else:
-        raise RuntimeError('SFS (or *bcf,*.pan)  uses unknown compression methods.',
-                           'Abort...')
+        raise RuntimeError('file', str(filename),' is compressed by not known method.',
+                           'Aborting...')
 
 
 # the combined function which uses all above functions
@@ -409,12 +418,23 @@ def getFileFromTheSFS(sfs_filename, files_internal_sfs_path):
     """Extracts one file with known path in the SFS file.
 
     Arguments:
+    ------------
     sfs_filename -- the file name (can be with path) of .sfs file
-    (or any SFS container with different file extentions)
-    files_internal_sfs_path -- the name of the file inside sfs with full path if
-    file is in directories, separating with standart unix forward slash i.e.:
-            file HeaderData.xml which is in 'EDSDatabase' directory:
-                  'EDSDatabase/HeaderData.xml'
+      (or any SFS container with different file extentions i.e.*.bcf, *.pan)
+    files_internal_sfs_path -- the name of the file inside sfs with full path 
+    
+    Returns:  io.BytesIO string with binary data.
+    ------------
+    examples:
+    >>> xml_data = getFileFromTheSFS('Sample.bcf', 'EDSDatabase/HeaderData')
+    >>> xml_data.seek(0)
+    0
+    >>> xml_data.read(62)
+    b'<?xml version="1.0" encoding="WINDOWS-1252" standalone="yes"?>'
+    
+    >>> data = getFileFromTheSFS('Sample.bcf', 'EDSDatabase/SpectrumData0')
+    .. .. .. .. ..
+    >>> particle_list = getFileFromTheSFS('Features_sample.pan', 'Analysis.pab')
     """
 
     tree = get_sfs_file_tree(sfs_filename)
