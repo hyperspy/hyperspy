@@ -193,10 +193,10 @@ class Signal2DTools(object):
                 dtype=dtype)
             np.fill_diagonal(pcarray['max_value'], max_value)
             pbar = progressbar(maxval=nrows * images_number,
-                               disabled=not show_progressbar).start()
+                               disabled=not show_progressbar)
         else:
             pbar = progressbar(maxval=images_number,
-                               disabled=not show_progressbar).start()
+                               disabled=not show_progressbar)
 
         # Main iteration loop. Fills the rows of pcarray when reference
         # is stat
