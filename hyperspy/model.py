@@ -99,7 +99,7 @@ class ModelComponents(object):
 
 class BaseModel(list):
 
-    """Model and data fitting in one or two dimensions.
+    """Model and data fitting for one or two dimensional signals.
 
     A model is constructed as a linear combination of :mod:`components` that
     are added to the model using :meth:`append` or :meth:`extend`. There
@@ -118,7 +118,7 @@ class BaseModel(list):
     Attributes
     ----------
 
-    spectrum : Spectrum instance
+    signal : Signal instance
         It contains the data to fit.
     chisq : A Signal of floats
         Chi-squared of the signal (or np.nan if not yet fit)
@@ -270,6 +270,7 @@ class BaseModel(list):
 
         if '_whitelist' in dic:
             load_from_dictionary(self, dic)
+
     def __repr__(self):
         title = self.signal.metadata.General.title
         class_name = str(self.__class__).split("'")[1].split('.')[-1]
@@ -292,7 +293,6 @@ class BaseModel(list):
 
     def insert(self, **kwargs):
         raise NotImplementedError
-
 
     def append(self, thing):
         # Check if any of the other components in the model has the same name
@@ -483,26 +483,6 @@ class BaseModel(list):
             self._connect_parameters2update_plot()
             self.update_plot()
 
-    def update_plot(self, *args, **kwargs):
-        """Update model plot.
-
-        The updating can be suspended using `suspend_update`.
-
-        See Also
-        --------
-        suspend_update
-        resume_update
-
-        """
-        if self._plot_active is True and self._suspend_update is False:
-            try:
-                self._update_model_line()
-                for component in [component for component in self if
-                                  component.active is True]:
-                    self._update_component_line(component)
-            except:
-                self._disconnect_parameters2update_plot()
-
     def suspend_update(self):
         """Prevents plot from updating until resume_update() is called
 
@@ -553,7 +533,8 @@ class BaseModel(list):
         Parameters
         ----------
         p_std : array
-            array containing the corresponding standard deviation
+            array containing the corresponding standard deviatio
+            n
 
         """
         comp_p_std = None
@@ -569,11 +550,9 @@ class BaseModel(list):
                     comp_p_std, onlyfree=True)
                 counter += component._nfree_param
 
-
     def _function4odr(self, param, x):
         return self._model_function(param)
 
-    # TODO: adapt for 2D, only required when `grad=True`.
     def _jacobian4odr(self, param, x):
         return self._jacobian(param, x)
 
@@ -585,7 +564,6 @@ class BaseModel(list):
         with np.errstate(invalid='ignore'):
             return -(y * np.log(mf) - mf).sum()
 
-    # TODO: adapt for 2D, only required when `grad=True`.
     def _gradient_ml(self, param, y, weights=None):
         mf = self._model_function(param)
         return -(self._jacobian(param, y) * (y / mf - 1)).sum(1)
@@ -863,9 +841,14 @@ class BaseModel(list):
                     self.set_boundaries()
                 elif bounded is False:
                     self.self.free_parameters_boundaries = None
-                self.p0 = fmin_tnc(tominimize, self.p0, fprime=fprime,
-                                   args=args, bounds=self.free_parameters_boundaries,
-                                   approx_grad=approx_grad, **kwargs)[0]
+                self.p0 = fmin_tnc(
+                    tominimize,
+                    self.p0,
+                    fprime=fprime,
+                    args=args,
+                    bounds=self.free_parameters_boundaries,
+                    approx_grad=approx_grad,
+                    **kwargs)[0]
             elif fitter == "l_bfgs_b":
                 if bounded is True:
                     self.set_boundaries()
@@ -1186,7 +1169,6 @@ class BaseModel(list):
                         print("\t\t%s\t%g" % (
                             parameter.name, parameter.value))
 
-
     def set_parameters_not_free(self, component_list=None,
                                 parameter_name_list=None):
         """
@@ -1453,6 +1435,7 @@ class BaseModel(list):
         else:
             return list.__getitem__(self, value)
 
+
 class Model2D(BaseModel):
 
     """
@@ -1469,7 +1452,7 @@ class Model2D(BaseModel):
         self.axes_manager.connect(self.fetch_stored_values)
         self.free_parameters_boundaries = None
         self.channel_switches = None
-        #self._position_widgets = []
+        # self._position_widgets = []
         self._plot = None
         self.chisq = image._get_navigation_signal()
         self.chisq.change_dtype("float")
@@ -1482,7 +1465,7 @@ class Model2D(BaseModel):
                 dtype='int'))
         self.dof.metadata.General.title = self.signal.metadata.General.title + \
             ' degrees of freedom'
-        #self._suspend_update = False
+        # self._suspend_update = False
         self._adjust_position_all = None
         self._plot_components = False
 	self.components = ModelComponents(self)
@@ -1506,7 +1489,7 @@ class Model2D(BaseModel):
         else:
             raise WrongObjectError(str(type(value)), 'Image')
 
-    # Plotting code to rewrite
+    # TODO: write 2D secific plotting tools
     def _connect_parameters2update_plot(self):
         pass
 
@@ -1541,7 +1524,7 @@ class Model2D(BaseModel):
             for component in self:  # Cut the parameters list
                 if component.active:
                     np.add(sum_, component.function(self.xaxis, self.yaxis),
-                               sum_)
+                           sum_)
         else:
             for component in self:  # Cut the parameters list
                 np.add(sum_, component.function(self.xaxis, self.yaxis),
@@ -1551,20 +1534,20 @@ class Model2D(BaseModel):
     # Rewrite in progress dnj23 06/05/15
     def _model_function(self, param):
 
-        xaxis, yaxis = (self.xaxis,self.yaxis)
+        xaxis, yaxis = (self.xaxis, self.yaxis)
         counter = 0
         first = True
         for component in self:  # Cut the parameters list
             if component.active:
                 if first is True:
                     sum = component.__tempcall2d__(param[counter:counter +
-                                                       component._nfree_param],
-                                                 xaxis, yaxis)
+                                                   component._nfree_param],
+                                                   xaxis, yaxis)
                     first = False
                 else:
                     sum += component.__tempcall2d__(param[counter:counter +
-                                                        component._nfree_param],
-                                                  xaxis, yaxis)
+                                                    component._nfree_param],
+                                                    xaxis, yaxis)
                 counter += component._nfree_param
         return sum
 
@@ -1662,7 +1645,6 @@ class Model1D(BaseModel):
         knot_position = ll_axis.size - ll_axis.value2index(0) - 1
         self.convolution_axis = generate_axis(self.axis.offset, step,
                                               dimension, knot_position)
-
 
     # Extend the list methods to call the _touch when the model is modified
 
