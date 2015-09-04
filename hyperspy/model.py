@@ -2227,6 +2227,101 @@ class Model(list):
         else:
             return list.__getitem__(self, value)
 
+    def stash(self, name=None):
+        """Stashes the current model state to spectrum.metadata.Analysis.models.<name>
+
+        Parameters
+        ----------
+        name : string, None
+            the name of the stash. If None, a combination of alphabet letters will be picked. The default
+            naming sequence goes as 'a, ... , z, aa, ... , az, ba, ...'
+
+        See Also
+        --------
+        pop
+        apply
+        """
+        from itertools import product
+        _abc = 'abcdefghijklmnopqrstuvwxyz'
+
+        def get_letter(models):
+            l = len(models._history)
+            if not l:
+                return 'a'
+            order = int(np.log(l) / np.log(26)) + 1
+            letters = [_abc, ] * order
+            for comb in product(*letters):
+                guess = "".join(comb)
+                if not guess in models._history:
+                    return guess
+
+        def check_valid_names(name):
+            if name.startswith('_'):
+                raise KeyError(
+                    'The model stash name cannot start with "_" symbol')
+            return slugify(name, True)
+
+        res = self.as_dictionary(True)
+        if not self.spectrum.metadata.has_item('Analysis.models'):
+            self.spectrum.metadata.add_node('Analysis.models')
+            self.spectrum.metadata.set_item('Analysis.models._history', [])
+        models = self.spectrum.metadata.Analysis.models
+        if name is None:
+            name = get_letter(models)
+        else:
+            name = check_valid_names(name)
+        models.set_item(name, res)
+        if name in models._history:
+            models._history.remove(name)
+        models._history.insert(0, name)
+
+    def _apply(self, name=None):
+        if self.spectrum.metadata.has_item('Analysis.models'):
+            m = self.spectrum.metadata.Analysis.models
+            if len(m._history):
+                if name is None:
+                    name = m._history[0]
+                elif name not in m._history:
+                    raise KeyError(
+                        'No model was saved with the given name "%s"' %
+                        name)
+                d = m.get_item(name).as_dictionary()
+                self._load_dictionary(d)
+                return name
+        raise KeyError('No models were stashed yet')
+
+    def pop(self, name=None):
+        """Applies the given stash and deletes it from history
+
+        Parameters
+        ----------
+        name : string, None
+            the name of the stash. If None, the latest stash will be popped
+
+        See Also
+        --------
+        stash
+        apply
+        """
+        name = self._apply(name=name)
+        self.spectrum.metadata.Analysis.models.__delattr__(name)
+        self.spectrum.metadata.Analysis.models._history.remove(name)
+
+    def apply(self, name=None):
+        """Applies (restores) the given stash.
+
+        Parameters
+        ----------
+        name : string, None
+            the name of the stash. If None, the latest stash will be applied
+
+        See Also
+        --------
+        pop
+        stash
+        """
+        _ = self._apply(name=name)
+
 
 class ModelSpecialSlicers(object):
 
