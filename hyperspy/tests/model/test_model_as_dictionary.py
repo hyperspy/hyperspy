@@ -21,7 +21,6 @@ import numpy as np
 import nose.tools as nt
 from hyperspy._signals.spectrum import Spectrum
 from hyperspy.component import Parameter, Component
-from hyperspy.model import Model
 from hyperspy.hspy import create_model
 from hyperspy.components import Gaussian, Lorentzian, ScalableFixedPattern
 
@@ -56,6 +55,7 @@ class TestParameterDictionary:
     def setUp(self):
         self.par = Parameter()
         self.par.name = 'asd'
+        self.par._id_name = 'newone'
 
         def ft(x):
             return x * x
@@ -83,7 +83,7 @@ class TestParameterDictionary:
         nt.assert_true(d['value'] == self.par.value)
         nt.assert_true(d['std'] == self.par.std)
         nt.assert_true(d['free'] == self.par.free)
-        nt.assert_true(d['_id_'] == id(self.par))
+        nt.assert_true(d['self'] == id(self.par))
         nt.assert_true(d['_bounds'] == self.par._bounds)
         nt.assert_true(d['ext_bounded'] == self.par.ext_bounded)
         nt.assert_true(
@@ -92,6 +92,7 @@ class TestParameterDictionary:
     def test_load_dictionary(self):
         d = self.par.as_dictionary()
         p = Parameter()
+        p._id_name = 'newone'
         _id = p._load_dictionary(d)
 
         nt.assert_equal(_id, id(self.par))
@@ -114,8 +115,9 @@ class TestParameterDictionary:
     @nt.raises(ValueError)
     def test_invalid_name(self):
         d = self.par.as_dictionary()
-        d['_id_name'] = 'newone'
+        d['_id_name'] = 'otherone'
         p = Parameter()
+        p._id_name = 'newone'
         _id = p._load_dictionary(d)
 
 
@@ -142,18 +144,21 @@ class TestComponentDictionary:
         nt.assert_equal(c._id_name, d['_id_name'])
         nt.assert_false(d['active_is_multidimensional'])
         nt.assert_true(d['active'])
+        nt.assert_is_none(d['_active_array'])
         for ip, p in enumerate(c.parameters):
             nt.assert_equal(p.as_dictionary(), d['parameters'][ip])
 
         c.active_is_multidimensional = True
         d1 = c.as_dictionary()
         nt.assert_true(d1['active_is_multidimensional'])
-        nt.assert_true(d1['_active_array'] == c._active_array)
+        nt.assert_true(np.all(d1['_active_array'] == c._active_array))
 
     def test_load_dictionary(self):
         c = self.comp
         d = c.as_dictionary()
         n = Component(self.parameter_names)
+        print self.parameter_names
+        print d
         n._id_name = 'dummy names yay!'
         _ = n._load_dictionary(d)
         nt.assert_equal(c.name, n.name)
@@ -164,9 +169,9 @@ class TestComponentDictionary:
 
         for pn, pc in zip(n.parameters, c.parameters):
             dn = pn.as_dictionary()
-            del dn['_id_']
+            del dn['self']
             dc = pc.as_dictionary()
-            del dc['_id_']
+            del dc['self']
             nt.assert_true(dn == dc)
 
     @nt.raises(ValueError)
@@ -189,9 +194,10 @@ class TestModelDictionary:
 
     def setUp(self):
         s = Spectrum(np.array([1.0, 2, 4, 7, 12, 7, 4, 2, 1]))
-        m = create_model(s)
+        m = s.create_model()
         m._low_loss = (s + 3.0).deepcopy()
         self.model = m
+        self.s = s
 
         m.append(Gaussian())
         m.append(Gaussian())
@@ -204,13 +210,8 @@ class TestModelDictionary:
         d = m.as_dictionary()
 
         nt.assert_equal(m.low_loss, d['low_loss'])
-
         nt.assert_true(np.all(m.chisq.data == d['chisq.data']))
-
         nt.assert_true(np.all(m.dof.data == d['dof.data']))
-
-        nt.assert_equal(m.spectrum, d['spectrum'])
-
         nt.assert_equal(
             d['free_parameters_boundaries'],
             m.free_parameters_boundaries)
@@ -222,21 +223,20 @@ class TestModelDictionary:
             nt.assert_equal(d['components'][num]['name'], tmp['name'])
             nt.assert_equal(d['components'][num]['_id_name'], tmp['_id_name'])
         nt.assert_equal(
-            d['components'][-1]['_whitelist']['_init_spectrum'], m.spectrum * 0.3)
+            d['components'][-1]['_whitelist']['spectrum'][1], m.spectrum * 0.3)
 
     def test_load_dictionary(self):
         d = self.model.as_dictionary()
-        mn = Model(d)
-        # mn = create_model(d)
+        mn = self.s.create_model()
         mn.append(Lorentzian())
         mn._load_dictionary(d)
         mo = self.model
 
-        nt.assert_true(np.allclose(mo.spectrum.data, mn.spectrum.data))
+        # nt.assert_true(np.allclose(mo.spectrum.data, mn.spectrum.data))
         nt.assert_true(np.allclose(mo.chisq.data, mn.chisq.data))
         nt.assert_true(np.allclose(mo.dof.data, mn.dof.data))
 
-        nt.assert_true(np.allclose(mn._low_loss.data, mo._low_loss.data))
+        nt.assert_true(np.allclose(mn.low_loss.data, mo.low_loss.data))
 
         nt.assert_equal(
             mn.free_parameters_boundaries,

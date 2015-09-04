@@ -93,8 +93,9 @@ class EELSCLEdge(Component):
                             'fine_structure_coeff',
                             'effective_angle',
                             'onset_energy'])
-        self._whitelist['_init_element_subshell'] = element_subshell
-        self._whitelist['_init_GOS'] = GOS
+
+        self._whitelist['element_subshell'] = ('init', element_subshell)
+        self._whitelist['GOS'] = ('init', GOS)
         self.name = element_subshell
         self.element, self.subshell = element_subshell.split('_')
         self.energy_scale = None

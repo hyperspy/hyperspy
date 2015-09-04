@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-import os, copy
+import os
 
 import numpy as np
 import warnings
@@ -24,7 +24,6 @@ import warnings
 import traits.api as t
 from traits.trait_numeric import Array
 
-from hyperspy.axes import AxesManager
 from hyperspy.defaults_parser import preferences
 from hyperspy.misc.utils import slugify
 from hyperspy.misc.io.tools import (incremental_filename,
@@ -46,6 +45,7 @@ class NoneFloat(t.CFloat):   # Lazy solution, but usable
 
 
 class Parameter(t.HasTraits):
+
     """Model parameter
 
     Attributes
@@ -116,31 +116,29 @@ class Parameter(t.HasTraits):
         self.connected_functions = list()
         self.twin_function = lambda x: x
         self.twin_inverse_function = lambda x: x
-        self.value = 0
         self.std = None
         self.component = None
         self.grad = None
         self.name = ''
+        self.units = ''
         self.map = None
         self.model = None
-        self._id_name = ''
-        self._whitelist = {'_whitelist': None,
-                           '_id_name': None,
+        self._whitelist = {'_id_name': None,
                            'value': None,
                            'std': None,
                            'free': None,
-                           '_id_': ['id', None],
+                           'self': ('id', None),
                            'units': None,
-                           'map': ['inav', None],
+                           'map': ('inav', None),
                            '_bounds': None,
                            'ext_bounded': None,
                            'name': None,
                            'ext_force_positive': None,
-                           'twin_function': ['fn', None],
-                           'twin_inverse_function': ['fn', None],
+                           'twin_function': ('fn', None),
+                           'twin_inverse_function': ('fn', None),
                            }
 
-    def _load_dictionary(self, dict):
+    def _load_dictionary(self, dictionary):
         """Load data from dictionary
 
         Parameters
@@ -158,15 +156,14 @@ class Parameter(t.HasTraits):
         -------
         id_value : int
             the ID value of the original parameter, to be later used for setting up the correct twins
-        
+
         """
-        if dict['_id_name'] == self._id_name:
-            load_from_dictionary(self, dict)
-            return dict['_id_']
+        if dictionary['_id_name'] == self._id_name:
+            load_from_dictionary(self, dictionary)
+            return dictionary['self']
         else:
-            raise ValueError(
-                "_id_name of parameter and dictionary do not match, \nparameter._id_name = %s \ndictionary['_id_name'] = %s" %
-                (self._id_name, dict['_id_name']))
+            raise ValueError( "_id_name of parameter and dictionary do not match, \nparameter._id_name = %s\
+                    \ndictionary['_id_name'] = %s" % (self._id_name, dictionary['_id_name']))
 
     def __repr__(self):
         text = ''
@@ -516,24 +513,6 @@ class Parameter(t.HasTraits):
             self.as_signal(field='std').save(append2pathname(
                 filename, '_std'))
 
-    def default_traits_view(self):
-        # As mentioned above, the default editor for
-        # value = t.Property(t.Either([t.CFloat(0), Array()]))
-        # gives a ValueError. We therefore implement default_traits_view so
-        # that configure/edit_traits will still work straight out of the box.
-        # A whitelist controls which traits to include in this view.
-        from traitsui.api import RangeEditor, View, Item
-        whitelist = ['bmax', 'bmin', 'free', 'name', 'std', 'units', 'value']
-        editable_traits = [trait for trait in self.editable_traits()
-                           if trait in whitelist]
-        if 'value' in editable_traits:
-            i = editable_traits.index('value')
-            v = editable_traits.pop(i)
-            editable_traits.insert(i, Item(
-                v, editor=RangeEditor(low_name='bmin', high_name='bmax')))
-        view = View(editable_traits, buttons=['OK', 'Cancel'])
-        return view
-
     def as_dictionary(self, picklable=False):
         """Returns parameter as a dictionary, saving all attributes from self._whitelist.keys()
                 For more information see :meth:`hyperspy.misc.export_dictionary.export_to_dictionary`
@@ -541,7 +520,7 @@ class Parameter(t.HasTraits):
         Parameters
         ----------
         picklable : Bool (optional, False)
-            If any found functions will be pickled
+            If any found functions will be pickled, and signals converted to dictionaries
         Returns
         -------
         dic : dictionary with the following keys:
@@ -560,9 +539,26 @@ class Parameter(t.HasTraits):
         export_to_dictionary(self, self._whitelist, dic, picklable)
         return dic
 
+    def default_traits_view(self):
+        # As mentioned above, the default editor for
+        # value = t.Property(t.Either([t.CFloat(0), Array()]))
+        # gives a ValueError. We therefore implement default_traits_view so
+        # that configure/edit_traits will still work straight out of the box.
+        # A whitelist controls which traits to include in this view.
+        from traitsui.api import RangeEditor, View, Item
+        whitelist = ['bmax', 'bmin', 'free', 'name', 'std', 'units', 'value']
+        editable_traits = [trait for trait in self.editable_traits()
+                           if trait in whitelist]
+        if 'value' in editable_traits:
+            i = editable_traits.index('value')
+            v = editable_traits.pop(i)
+            editable_traits.insert(i, Item(
+                v, editor=RangeEditor(low_name='bmin', high_name='bmax')))
+        view = View(editable_traits, buttons=['OK', 'Cancel'])
+        return view
+
 
 class Component(t.HasTraits):
-    
     __axes_manager = None
 
     active = t.Property(t.CBool(True))
@@ -582,11 +578,11 @@ class Component(t.HasTraits):
         self._id_version = '1.0'
         self._position = None
         self.model = None
-        self._whitelist = {'_whitelist': None,
-                           '_id_name': None,
+        self.name = ''
+        self._whitelist = {'_id_name': None,
                            'name': None,
                            'active_is_multidimensional': None,
-                           '_active_array': ['inav', None],
+                           '_active_array': ('inav', None),
                            'active': None
                            }
 
@@ -996,8 +992,8 @@ class Component(t.HasTraits):
     def as_dictionary(self, picklable=False):
         """Returns component as a dictionary
 
-        All items are references;
-        For more information on method and conventions, see :meth:`hyperspy.misc.export_dictionary.export_to_dictionary`
+        All items are references. For more information on method and conventions, see
+        :meth:`hyperspy.misc.export_dictionary.export_to_dictionary`
 
         Parameters
         ----------
@@ -1042,8 +1038,8 @@ class Component(t.HasTraits):
         Returns
         -------
         twin_dict : dictionary
-            Dictionary of 'id' values from input dictionary as keys with all of the parameters of the component, to be later used for
-            setting up correct twins.
+            Dictionary of 'id' values from input dictionary as keys with all of the parameters of the
+            component, to be later used for setting up correct twins.
 
         """
         if dic['_id_name'] == self._id_name:
@@ -1060,6 +1056,5 @@ class Component(t.HasTraits):
             load_from_dictionary(self, dic)
             return id_dict
         else:
-            raise ValueError(
-                "_id_name of component and dictionary do not match, \ncomponent._id_name = %s \ndictionary['_id_name'] = %s" %
-                (self._id_name, dic['_id_name']))
+            raise ValueError( "_id_name of component and dictionary do not match, \ncomponent._id_name = %s\
+                    \ndictionary['_id_name'] = %s" % (self._id_name, dic['_id_name']))
