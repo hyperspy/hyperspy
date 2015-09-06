@@ -1,4 +1,4 @@
-# Copyright 2007-2014 The HyperSpy developers
+# Copyright 2007-2015 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -21,7 +21,6 @@ import numpy as np
 import nose.tools as nt
 from hyperspy._signals.spectrum import Spectrum
 from hyperspy.component import Parameter, Component
-from hyperspy.hspy import create_model
 from hyperspy.components import Gaussian, Lorentzian, ScalableFixedPattern
 
 

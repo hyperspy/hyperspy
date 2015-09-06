@@ -69,7 +69,6 @@ class ModelStash(object):
 
     def __init__(self, model):
         self._model = model
-        self._metadata = self._configure_metadata(False)
 
     def _configure_metadata(self, populate=True):
         if not self._model.spectrum.metadata.has_item('Analysis.models'):
@@ -215,6 +214,13 @@ class ModelStash(object):
             return ''
         else:
             return repr(m)
+
+    def __len__(self):
+        m = self._configure_metadata(False)
+        if m is None:
+            return 0
+        else:
+            return len(m._history)
 
 
 class ModelComponents(object):
