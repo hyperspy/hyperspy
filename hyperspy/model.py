@@ -61,6 +61,12 @@ from datetime import datetime
 
 class ModelStash(object):
 
+    """Container for model stashes
+
+    Enables saving history of models and saving (and recovering) models in metadata of the original signal.
+
+    """
+
     def __init__(self, model):
         self._model = model
         self._metadata = self._configure_metadata(False)
@@ -93,7 +99,7 @@ class ModelStash(object):
         models._history.insert(0, name)
 
     def save(self, name=None):
-        """Stashes the current model state
+        """Stashes the current model state. Overwrites
 
         Parameters
         ----------
@@ -105,6 +111,7 @@ class ModelStash(object):
         --------
         pop
         apply
+        remove
         """
         from itertools import product
         _abc = 'abcdefghijklmnopqrstuvwxyz'
@@ -134,7 +141,7 @@ class ModelStash(object):
         res = self._model.as_dictionary(True)
         self._save(name, res)
 
-    def _apply(self, name=None):
+    def _get_name(self, name):
         m = self._configure_metadata(False)
         if m is not None:
             if len(m._history):
@@ -144,13 +151,30 @@ class ModelStash(object):
                     raise KeyError(
                         'No model was saved with the given name "%s"' %
                         name)
-                d = m.get_item(name + '._dict').as_dictionary()
-                self._model._load_dictionary(d)
                 return name
         raise KeyError('No models were stashed yet')
 
+    def remove(self, name=None):
+        """Removes the given stash
+
+        Parameters
+        ----------
+        name : string, None
+            the name of the stash. If None, the latest stash will be removed
+
+        See Also
+        --------
+        pop
+        apply
+        save
+        """
+        name = self._get_name(name)
+        m = self._configure_metadata(False)
+        m.__delattr__(name)
+        m._history.remove(name)
+
     def pop(self, name=None):
-        """Applies the given stash and deletes it from history
+        """Applies the given stash and removes it
 
         Parameters
         ----------
@@ -159,13 +183,12 @@ class ModelStash(object):
 
         See Also
         --------
-        stash
         apply
+        remove
+        save
         """
-        name = self._apply(name=name)
-        m = self._configure_metadata(False)
-        m.__delattr__(name)
-        m._history.remove(name)
+        self.apply(name)
+        self.remove(name)
 
     def apply(self, name=None):
         """Applies (restores) the given stash.
@@ -178,9 +201,13 @@ class ModelStash(object):
         See Also
         --------
         pop
-        stash
+        remove
+        save
         """
-        _ = self._apply(name=name)
+        m = self._configure_metadata(False)
+        name = self._get_name(name)
+        d = m.get_item(name + '._dict').as_dictionary()
+        self._model._load_dictionary(d)
 
     def __repr__(self):
         m = self._configure_metadata(False)
