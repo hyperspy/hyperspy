@@ -781,7 +781,10 @@ a history of the model that can be reverted to and saved. The stash can be acces
 :py:attr:`~.model.Model.stash` attribute, and has the following methods:
  - :py:meth:`~.model.ModelStash.save` - saves the current state of the model to a stash
  - :py:meth:`~.model.ModelStash.remove` - removes a saved stash
- - :py:meth:`~.model.ModelStash.apply`- restores one of the saved stashes
+ - :py:meth:`~.model.ModelStash.apply`- restores one of the saved stashes. If
+   the current model is not empty, its state is first saved to a new stash
+   named "backup" before restoring, in order to prevent data loss. This
+   behaviour can be turned off in ``Preferences``.
  - :py:meth:`~.model.ModelStash.pop` - restores and then removes the saved stash immediately
 
 The saved stashes can be either given a name, or assigned one automatically.
