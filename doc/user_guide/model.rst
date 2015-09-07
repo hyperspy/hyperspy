@@ -770,35 +770,118 @@ can be used to visualise the result of the fit **when fitting multidimensional
 datasets**.
 
 
+Stash
+^^^^^
+.. versionadded:: 0.9 :py:class:`~.model.ModelStash`
+
+When analysing a signal, it is often useful to save intermediate or alternative
+states of a model and come back to them with ease.
+:py:class:`~.model.ModelStash` provides these functions, allowing creating
+a history of the model that can be reverted to and saved. The stash can be accessed via
+:py:attr:`~.model.Model.stash` attribute, and has the following methods:
+ - :py:meth:`~.model.ModelStash.save` - saves the current state of the model to a stash
+ - :py:meth:`~.model.ModelStash.remove` - removes a saved stash
+ - :py:meth:`~.model.ModelStash.apply`- restores one of the saved stashes
+ - :py:meth:`~.model.ModelStash.pop` - restores and then removes the saved stash immediately
+
+The saved stashes can be either given a name, or assigned one automatically.
+The automatic naming follows alphabetical scheme, with the sequence being (a,
+b, ..., z, aa, ab, ..., az, ba, ...).
+
+The saved stashes are stored in the original signal ``metadata.Analysis.models``.
+
+Current stashes can be listed by calling :py:attr:`~.model.Model.stash`:
+
+.. code-block:: python
+
+    >>> m = s.create_model()
+    >>> m.append(hs.model.components.Lorentzian())
+    >>> m.stash.save('myname')
+    >>> m.stash
+    └── myname
+        ├── components
+        │   └── Lorentzian
+        ├── date = 2015-09-07 12:01:50
+        └── dimensions = (|100)
+
+Stash also has in-built history, so recovering stash
+(:py:meth:`~.model.ModelStash.apply`) with no arguments will always use the
+latest one.
+
+.. code-block:: python
+
+    >>> m.append(hs.model.components.Exponential())
+    >>> m.stash.save() # assign stash name automatically
+    >>> m.stash
+    ├── a
+    │   ├── components
+    │   │   ├── Exponential
+    │   │   └── Lorentzian
+    │   ├── date = 2015-09-07 12:01:57
+    │   └── dimensions = (|100)
+    └── myname
+        ├── components
+        │   └── Lorentzian
+        ├── date = 2015-09-07 12:01:50
+        └── dimensions = (|100)
+    >>> m.stash.apply('myname')
+    >>> m.components
+       # |            Attribute Name |            Component Name |            Component Type
+    ---- | ------------------------- | ------------------------- | -------------------------
+       0 |                Lorentzian |                Lorentzian |                Lorentzian
+    >>> m.stash.apply() # apply the latest stash ('a')
+    >>> m.components
+       # |            Attribute Name |            Component Name |            Component Type
+    ---- | ------------------------- | ------------------------- | -------------------------
+       0 |                Lorentzian |                Lorentzian |                Lorentzian
+       1 |               Exponential |               Exponential |               Exponential
 
 Saving and loading the result of the fit
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. versionadded:: 0.9
 
-As of HyperSpy 0.8, the following is the only way to save a model to  a file
-and load it back. Note that this method is known to be brittle i.e. there is no
-guarantee that a version of HyperSpy different from the one used to save the
-model will be able to load it sucessfully.  Also, it is advisable not to use
-this method in combination with functions that alter the value of the
-parameters interactively (e.g.  `enable_adjust_position`) as the modifications
-made by this functions are normally not stored in the IPython notebook or
-Python script.
+The easiest way to save a model is by using :py:class:`~.model.ModelStash`.
+Since it is saved in the original signal ``metadata``, all that is required is
+just stashing the current state of the model and then saving the original
+signal. Only the hyperspy HDF5 files are able to contain all metadata formatted
+correctly.
 
-To save a model:
+.. code-block:: python
 
-1. Save the parameter arrays to a file using
-   :py:meth:`~.model.Model.save_parameters2file`.
+    >>> m = s.create_model()
+    >>> # analysis and fitting goes here
+    >>> m.stash.save()
+    >>> s.save('my_filename')
+    >>> l = hs.load('my_filename.hdf5')
+    >>> m = l.create_model()
+    >>> m.stash.apply() # restore the latest stash
 
-2. Save all the commands that used to create the model to a file. This
-   can be done in the form of an IPython notebook or a Python script.
+For older versions of HyperSpy (before 0.9), the instructions were as follows:
 
-3.  (Optional) Comment out or delete the fitting commangs (e.g. `multifit`).
+    Note that this method is known to be brittle i.e. there is no
+    guarantee that a version of HyperSpy different from the one used to save the
+    model will be able to load it successfully.  Also, it is advisable not to use
+    this method in combination with functions that alter the value of the
+    parameters interactively (e.g.  `enable_adjust_position`) as the modifications
+    made by this functions are normally not stored in the IPython notebook or
+    Python script.
 
-To recreate the model:
+    To save a model:
 
-1. Execute the IPython notebook or Python script.
+    1. Save the parameter arrays to a file using
+       :py:meth:`~.model.Model.save_parameters2file`.
 
-2. Use :py:meth:`~.model.Model.load_parameters_from_file` to load back the
-   parameter values and arrays.
+    2. Save all the commands that used to create the model to a file. This
+       can be done in the form of an IPython notebook or a Python script.
+
+    3.  (Optional) Comment out or delete the fitting commangs (e.g. `multifit`).
+
+    To recreate the model:
+
+    1. Execute the IPython notebook or Python script.
+
+    2. Use :py:meth:`~.model.Model.load_parameters_from_file` to load back the
+       parameter values and arrays.
 
 
 Exporting the result of the fit
