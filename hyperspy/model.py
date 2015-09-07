@@ -172,13 +172,16 @@ class ModelStash(object):
         m.__delattr__(name)
         m._history.remove(name)
 
-    def pop(self, name=None):
+    def pop(self, name=None, backup=None):
         """Applies the given stash and removes it
 
         Parameters
         ----------
         name : string, None
             the name of the stash. If None, the latest stash will be popped
+        backup : bool, None
+            If None, the default value from preferences is used. If True and the current model is not empty,
+            the state of the model is saved to a "backup" stash in order to prevent data loss.
 
         See Also
         --------
@@ -186,16 +189,19 @@ class ModelStash(object):
         remove
         save
         """
-        self.apply(name)
+        self.apply(name=name, backup=backup)
         self.remove(name)
 
-    def apply(self, name=None):
+    def apply(self, name=None, backup=None):
         """Applies (restores) the given stash.
 
         Parameters
         ----------
         name : string, None
             the name of the stash. If None, the latest stash will be applied
+        backup : bool, None
+            If None, the default value from preferences is used. If True and the current model is not empty,
+            the state of the model is saved to a "backup" stash in order to prevent data loss.
 
         See Also
         --------
@@ -203,9 +209,13 @@ class ModelStash(object):
         remove
         save
         """
-        m = self._configure_metadata(False)
+        if backup is None:
+            backup = preferences.Model.stash_save
         name = self._get_name(name)
+        m = self._configure_metadata(False)
         d = m.get_item(name + '._dict').as_dictionary()
+        if backup and len(self._model):
+            self.save('backup')
         self._model._load_dictionary(d)
 
     def __repr__(self):
