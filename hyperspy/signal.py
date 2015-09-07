@@ -2632,7 +2632,6 @@ class Signal(FancySlicing,
         self.auto_replot = True
         self.inav = SpecialSlicersSignal(self, True)
         self.isig = SpecialSlicersSignal(self, False)
-        self._create_operators()
 
     def _create_metadata(self):
         self.metadata = DictionaryTreeBrowser()

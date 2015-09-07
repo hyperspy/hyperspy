@@ -55,6 +55,7 @@ from hyperspy.misc.export_dictionary import (export_to_dictionary,
                                              parse_flag_string,
                                              reconstruct_object)
 from hyperspy.misc.utils import slugify, shorten_name
+from hyperspy.misc.slicing import copy_slice_from_whitelist
 
 
 class ModelComponents(object):
@@ -268,6 +269,8 @@ class Model(list):
         self.components = ModelComponents(self)
         if dictionary is not None:
             self._load_dictionary(dictionary)
+        self.inav = ModelSpecialSlicers(self, True)
+        self.isig = ModelSpecialSlicers(self, False)
 
     def _load_dictionary(self, dic):
         """Load data from dictionary.
@@ -2219,5 +2222,75 @@ class Model(list):
                     "\" not found in model")
         else:
             return list.__getitem__(self, value)
+
+
+class ModelSpecialSlicers:
+
+    def __init__(self, model, isNavigation):
+        self.isNavigation = isNavigation
+        self.model = model
+
+    def __getitem__(self, slices):
+        array_slices = self.model.spectrum._get_array_slices(
+            slices,
+            self.isNavigation)
+        _spectrum = self.model.spectrum._slicer(slices, self.isNavigation)
+        if _spectrum.metadata.Signal.signal_type == 'EELS':
+            _model = _spectrum.create_model(
+                auto_background=False,
+                auto_add_edges=False)
+        else:
+            _model = _spectrum.create_model()
+        from hyperspy import components
+        for _ in xrange(len(_model)):
+            _model.remove(0)
+        twin_dict = {}
+        for comp in self.model:
+            init_args = {}
+            for k, v in comp._whitelist.iteritems():
+                if v is None:
+                    continue
+                flags_str, value = v
+                if 'init' in parse_flag_string(flags_str):
+                    init_args[k] = value
+            _model.append(getattr(components, comp._id_name)(**init_args))
+
+        # TODO: create sliceable whitelist? Deal with low_loss slicing, etc.
+        dims = self.model.axes_manager.navigation_dimension, self.model.axes_manager.signal_dimension
+        copy_slice_from_whitelist(
+            self.model,
+            _model,
+            dims,
+            (slices, array_slices),
+            self.isNavigation)
+        for co, cn in zip(self.model, _model):
+            copy_slice_from_whitelist(co,
+                                      cn,
+                                      dims,
+                                      (slices, array_slices),
+                                      self.isNavigation)
+            for po, pn in zip(co.parameters, cn.parameters):
+                copy_slice_from_whitelist(po,
+                                          pn,
+                                          dims,
+                                          (slices, array_slices),
+                                          self.isNavigation)
+                twin_dict[id(po)] = ([id(i) for i in list(po._twins)], pn)
+
+        for k in twin_dict.keys():
+            for tw_id in twin_dict[k][0]:
+                twin_dict[tw_id][1].twin = twin_dict[k][1]
+
+        _model.chisq.data = _model.chisq.data.copy()
+        _model.dof.data = _model.dof.data.copy()
+        if not self.isNavigation:
+            # strange bug, skips the first pixel when iterating for the first time -
+            # maybe the axes_manager is not initialised correctly?
+            for _ in _model.axes_manager:
+                pass
+            for _ in _model.axes_manager:
+                _model._calculate_chisq()
+
+        return _model
 
 # vim: textwidth=80

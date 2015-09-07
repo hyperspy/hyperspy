@@ -1,38 +1,39 @@
 from operator import attrgetter
 from hyperspy.misc.utils import attrsetter
+from hyperspy.misc.export_dictionary import parse_flag_string
 
 import numpy as np
 
 
-def slice_thing(thing, dims, both_slices=None, nav=True):
+def slice_thing(thing, dims, both_slices=None, issignal=False):
     nav_dims, sig_dims = dims
     slices, array_slices = both_slices
-    if nav:
-        if isinstance(thing, np.ndarray):
-            return np.atleast_1d(thing[tuple(array_slices[:nav_dims])])
-        if hasattr(thing, 'inav'):
-            return thing.inav[slices]
-    else:
-        return thing
+    if thing is None:
+        return None
+    if issignal:
+        return thing.inav[slices]
+    if isinstance(thing, np.ndarray):
+        return np.atleast_1d(thing[tuple(array_slices[:nav_dims])])
 
 
 def copy_slice_from_whitelist(_from, _to, dims, both_slices, isNav):
-    for key in _from._whitelist.keys():
-        if key.startswith('_init_') or key == '_id_':
-            pass
-        elif key.startswith('_fn_'):
-            attrsetter(_to, key[4:], attrgetter(key[4:])(_from))
-        elif key.startswith('_inav_'):
-            attrsetter(
-                _to,
-                key[6:],
-                slice_thing(
-                    attrgetter(key[6:])(_from),
-                    dims,
-                    both_slices,
-                    isNav))
-        else:
+    for key, val in _from._whitelist.iteritems():
+        if val is None:
             attrsetter(_to, key, attrgetter(key)(_from))
+            continue
+        flags_str, value = val
+        flags = parse_flag_string(flags_str)
+        if 'init' in flags:
+            continue
+        if 'id' in flags:
+            continue
+        if 'fn' in flags:
+            attrsetter(_to, key, attrgetter(key)(_from))
+            continue
+        if 'inav' in flags:
+            thing = attrgetter(key)(_from)
+            thing = slice_thing(thing, dims, both_slices, 'sig' in flags)
+            attrsetter(_to, key, thing)
 
 
 class SpecialSlicers:
