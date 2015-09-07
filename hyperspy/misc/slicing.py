@@ -1,4 +1,5 @@
 from operator import attrgetter
+from hyperspy.misc.utils import attrsetter
 
 import numpy as np
 
@@ -32,22 +33,6 @@ def copy_slice_from_whitelist(_from, _to, dims, both_slices, isNav):
                     isNav))
         else:
             attrsetter(_to, key, attrgetter(key)(_from))
-
-
-def attrsetter(target, attrs, value):
-    """ Like operator.attrgetter, but for setattr - supports "nested" attributes.
-
-        Parameters
-        ----------
-            target : object
-            attrs : string
-            value : object
-
-    """
-    where = attrs.rfind('.')
-    if where != -1:
-        target = attrgetter(attrs[:where])(target)
-    setattr(target, attrs[where + 1:], value)
 
 
 class SpecialSlicers:
