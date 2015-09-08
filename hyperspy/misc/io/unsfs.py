@@ -144,7 +144,7 @@ def read_pointer_table(filename, item_tree, chunk_usable):
             j = 0  # chunk counter
             next_chunk = first_pointer
             temp_string = io.BytesIO()
-            for j in range(0, tabe_size, 1):
+            for j in range(0, table_size, 1):
                 fn.seek(chunksize * next_chunk + 0x118)
                 next_chunk = struct.unpack('<I', fn.read(4))[0]
                 fn.seek(28, 1)
@@ -296,17 +296,21 @@ def get_sfs_file_tree(filename):
                                                  list_data, n_of_file_tree_items)
             #check if data is compressed on the first bits of data:
             fn.seek(chunksize * min(tab_pointers) + 0x138)
-            if fn.read(4) == b'AACS':
+            first_data_pointer = struct.unpack('<I', fn.read(4))[0]
+            fn.seek(chunksize * first_data_pointer +0x138)
+            first_bytes = fn.read(4)
+            if first_bytes == b'\x41\x41\x43\x53':  # string AACS
                 compressed = True
             else:
                 compressed = False
-            #data_size = n_of_chunks * chunksize + 0x118
             if compressed:
                 fn.seek(0x8C, 1)
                 compression_head = fn.read(2)
-                if compression_head[0] == 0x78:
+                #on python3 it could simply be 'if compression_head == 120:'
+                byte_one = struct.unpack('BB', compression_head)[0]
+                if byte_one == 0x78:
                     compression = 'zlib'
-                elif compression_head == b'BZ':
+                elif compression_head == b'\x42\x5A':  # string BZ
                     compression = 'bzip2'
                 else:
                     compression = 'unknown'
