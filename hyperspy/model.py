@@ -1835,7 +1835,7 @@ class Model(list):
         enable_adjust_position
 
         """
-        self._adjust_position_all = False
+        self._adjust_position_all = None
         while self._position_widgets:
             pw = self._position_widgets.pop()
             if hasattr(pw, 'component'):
