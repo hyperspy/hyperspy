@@ -18,6 +18,7 @@
 
 from operator import attrgetter
 from hyperspy.misc.utils import attrsetter
+from copy import deepcopy
 try:
     import dill
     dill_avail = True
@@ -97,7 +98,10 @@ def export_to_dictionary(target, whitelist, dic, picklable=False):
     for key, value in whitelist.iteritems():
         if value is None:
             # No flags and/or values are given, just save the target
-            dic[key] = attrgetter(key)(target)
+            thing = attrgetter(key)(target)
+            if picklable:
+                thing = deepcopy(thing)
+            dic[key] = thing
             whitelist_flags[key] = ''
             continue
 
@@ -112,14 +116,19 @@ def export_to_dictionary(target, whitelist, dic, picklable=False):
         else:
             if 'id' in flags:
                 value = id(attrgetter(key)(target))
+
+        # here value is either id(thing), or None (all others except 'init'),
+        # or something for init
         if 'init' not in flags and value is None:
             value = attrgetter(key)(target)
+        # here value either id(thing), or an actual target to export
         if 'sig' in flags:
             if picklable:
                 from hyperspy.signal import Signal
                 if isinstance(value, Signal):
                     value = value._to_dictionary()
-        if 'fn' in flags:
+                    value['data'] = deepcopy(value['data'])
+        elif 'fn' in flags:
             if picklable:
                 if dill_avail:
                     value = (True, dill.dumps(value))
@@ -127,6 +136,8 @@ def export_to_dictionary(target, whitelist, dic, picklable=False):
                     value = (False, marshal.dumps(value.func_code))
             else:
                 value = (None, value)
+        elif picklable:
+            value = deepcopy(value)
 
         dic[key] = value
         whitelist_flags[key] = flags_str
