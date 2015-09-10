@@ -117,7 +117,7 @@ class TestEELSModelSlicing:
             'Acquisition_instrument.TEM.convergence_angle',
             2.0)
         m = s.create_model(
-            low_loss=s + 1,
+            ll=s + 1,
             auto_background=False,
             auto_add_edges=False)
         g = Gaussian()

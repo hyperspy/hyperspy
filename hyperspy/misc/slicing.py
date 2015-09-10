@@ -5,18 +5,41 @@ from hyperspy.misc.export_dictionary import parse_flag_string
 import numpy as np
 
 
-def slice_thing(thing, dims, both_slices=None, issignal=False):
-    nav_dims, sig_dims = dims
-    slices, array_slices = both_slices
+def slice_thing(thing, dims, both_slices=None, slice_nav=None, issignal=False):
+    if slice_nav is None:
+        return thing
     if thing is None:
         return None
-    if issignal:
-        return thing.inav[slices]
-    if isinstance(thing, np.ndarray):
-        return np.atleast_1d(thing[tuple(array_slices[:nav_dims])])
+    nav_dims, sig_dims = dims
+    slices, array_slices = both_slices
+    if slice_nav is True:  # check explicitly for safety
+        if issignal:
+            return thing.inav[slices]
+        if isinstance(thing, np.ndarray):
+            return np.atleast_1d(thing[tuple(array_slices[:nav_dims])])
+        raise ValueError(
+            'tried to slice with navigation dimensions, but was neither a signal nor an array')
+    if slice_nav is False:  # check explicitly
+        if issignal:
+            return thing.isig[slices]
+        if isinstance(thing, np.ndarray):
+            return np.atleast_1d(thing[tuple(array_slices[-sig_dims:])])
+        raise ValueError(
+            'tried to slice with signal dimensions, but was neither a signal nor an array')
+    # return thing
 
 
 def copy_slice_from_whitelist(_from, _to, dims, both_slices, isNav):
+
+    def make_decision(flags, isnav):
+        if isnav:
+            if 'inav' in flags:
+                return True
+            return None
+        if 'isig' in flags:
+            return False
+        return None
+
     for key, val in _from._whitelist.iteritems():
         if val is None:
             attrsetter(_to, key, attrgetter(key)(_from))
@@ -30,9 +53,15 @@ def copy_slice_from_whitelist(_from, _to, dims, both_slices, isNav):
         if 'fn' in flags:
             attrsetter(_to, key, attrgetter(key)(_from))
             continue
-        if 'inav' in flags:
+        if 'inav' in flags or 'isig' in flags:
             thing = attrgetter(key)(_from)
-            thing = slice_thing(thing, dims, both_slices, 'sig' in flags)
+            slice_nav = make_decision(flags, isNav)
+            thing = slice_thing(
+                thing,
+                dims,
+                both_slices,
+                slice_nav,
+                'sig' in flags)
             attrsetter(_to, key, thing)
 
 
