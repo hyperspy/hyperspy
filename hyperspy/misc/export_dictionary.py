@@ -30,8 +30,8 @@ except ImportError:
 
 def check_that_flags_make_sense(flags):
 # one of: fn, id, sig
-# if fn: no inav
-# if id: no inav
+# if fn: no inav, isig
+# if id: no inav, isig
     def do_error(f1, f2):
         raise ValueError(
             'The flags "%s" and "%s" are not compatible' %
@@ -43,12 +43,16 @@ def check_that_flags_make_sense(flags):
             do_error('fn', 'sig')
         if 'inav' in flags:
             do_error('fn', 'inav')
+        if 'isig' in flags:
+            do_error('fn', 'isig')
     if 'id' in flags:
         # fn done previously
         if 'sig' in flags:
             do_error('id', 'sig')
         if 'inav' in flags:
             do_error('id', 'inav')
+        if 'isig' in flags:
+            do_error('id', 'isig')
         if 'init' in flags:
             do_error('id', 'init')
     # all sig cases already covered
@@ -90,6 +94,9 @@ def export_to_dictionary(target, whitelist, dic, picklable=False):
                     picklable=True
                 * 'inav':
                     The targeted attribute should be sliced when slicing navigation dimension of the original
+                    object
+                * 'isig':
+                    The targeted attribute should be sliced when slicing signal dimension of the original
                     object
             dic : dictionary
                 A dictionary where the object will be exported
@@ -176,6 +183,9 @@ def load_from_dictionary(target, dic):
                     picklable=True
                 * 'inav':
                     The targeted attribute should be sliced when slicing navigation dimension of the original
+                    object
+                * 'isig':
+                    The targeted attribute should be sliced when slicing signal dimension of the original
                     object
 
     """

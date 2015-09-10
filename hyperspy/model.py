@@ -237,6 +237,7 @@ class Model(list):
         self._adjust_position_all = None
         self._plot_components = False
         self._whitelist = {
+            'channel_switches': ('isig', None),
             'convolved': None,
             'free_parameters_boundaries': None,
             'low_loss': ('sig,inav', None),
