@@ -2241,6 +2241,14 @@ class ModelSpecialSlicers:
                 auto_add_edges=False)
         else:
             _model = _spectrum.create_model()
+
+        dims = self.model.axes_manager.navigation_dimension, self.model.axes_manager.signal_dimension
+        if self.isNavigation:
+            _model.channel_switches[:] = self.model.channel_switches
+        else:
+            _model.channel_switches[:] = \
+                np.atleast_1d(
+                    self.model.channel_switches[tuple(array_slices[-dims[1]:])])
         from hyperspy import components
         for _ in xrange(len(_model)):
             _model.remove(0)
@@ -2256,7 +2264,6 @@ class ModelSpecialSlicers:
             _model.append(getattr(components, comp._id_name)(**init_args))
 
         # TODO: create sliceable whitelist? Deal with low_loss slicing, etc.
-        dims = self.model.axes_manager.navigation_dimension, self.model.axes_manager.signal_dimension
         copy_slice_from_whitelist(
             self.model,
             _model,
