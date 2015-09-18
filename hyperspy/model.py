@@ -63,7 +63,8 @@ class ModelStash(object):
 
     """Container for model stashes
 
-    Enables saving history of models and saving (and recovering) models in metadata of the original signal.
+    Enables saving history of models and saving (and recovering) models in
+    metadata of the original signal.
 
     """
 
@@ -97,14 +98,60 @@ class ModelStash(object):
             models._history.remove(name)
         models._history.insert(0, name)
 
+    def fetch_values(self, name=None, component_list=None, parameter_list=None,
+                     mask=None):
+        """Fetches values to current model from a stash
+
+        Parameters
+        ----------
+        name : string, None
+            the name of the stash to fetch values from
+        component_list : None, list of components of component names
+            a list of components to fetch values from. Must have components with
+            the same name in the current active model to fetch.
+        parameter_list : None, list of parameter names
+            a list of parameter names to fetch values from. Must have parameters
+            with the same name in the curent active model to fetch.
+        mask : None, bool array
+            if None, all map values are fetched. If bool array (of navigation
+            size), only indices with True are fetched.
+        """
+        if mask is not None:
+            mask = np.asanyarray(mask, dtype=bool)
+        if mask is not None and (
+            mask.shape != tuple(
+                self._model.axes_manager._navigation_shape_in_array)):
+            messages.warning_exit(
+                "The mask must be a numpy array of boolen type with "
+                " shape: %s" +
+                str(self._model.axes_manager._navigation_shape_in_array))
+        if component_list is None:
+            comp_namelist = [c.name for c in self._model]
+        else:
+            comp_namelist = [
+                self._model._get_component(c).name for c in component_list]
+        name = self._get_name(name)
+        models = self._configure_metadata(False)
+        for dc in models[name]._dict.components:
+            if dc['name'] in comp_namelist:
+                for p in dc['parameters']:
+                    if parameter_list is None or p['name'] in parameter_list:
+                        par = getattr(self._model[dc['name']], p['name'])
+                        par.value = p['value']
+                        if mask is None:
+                            par.map = copy.deepcopy(p['map'])
+                        else:
+                            par.map[mask] = copy.deepcopy(p['map'][mask])
+
     def save(self, name=None):
         """Stashes the current model state. Overwrites
 
         Parameters
         ----------
         name : string, None
-            the name of the stash. If None, a combination of alphabet letters will be picked. The default
-            naming sequence goes as 'a, ... , z, aa, ... , az, ba, ...'
+            the name of the stash. If None, a combination of alphabet letters
+            will be picked. The default naming sequence goes as 'a, ... , z, aa,
+            ... , az, ba, ...'
 
         See Also
         --------
@@ -180,8 +227,9 @@ class ModelStash(object):
         name : string, None
             the name of the stash. If None, the latest stash will be popped
         backup : bool, None
-            If None, the default value from preferences is used. If True and the current model is not empty,
-            the state of the model is saved to a "backup" stash in order to prevent data loss.
+            If None, the default value from preferences is used. If True and the
+            current model is not empty, the state of the model is saved to a
+            "backup" stash in order to prevent data loss.
 
         See Also
         --------
@@ -200,8 +248,9 @@ class ModelStash(object):
         name : string, None
             the name of the stash. If None, the latest stash will be applied
         backup : bool, None
-            If None, the default value from preferences is used. If True and the current model is not empty,
-            the state of the model is saved to a "backup" stash in order to prevent data loss.
+            If None, the default value from preferences is used. If True and the
+            current model is not empty, the state of the model is saved to a
+            "backup" stash in order to prevent data loss.
 
         See Also
         --------

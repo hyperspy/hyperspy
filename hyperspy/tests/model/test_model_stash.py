@@ -38,7 +38,7 @@ class TestModelStash:
         m = self.m
         m.stash.save()
         d = m.as_dictionary(True)
-        nt.assert_dict_equal(
+        np.testing.assert_equal(
             d,
             m.spectrum.metadata.Analysis.models.a._dict.as_dictionary())
         m.append(Lorentzian())
@@ -59,7 +59,7 @@ class TestModelStash:
         m.stash.pop()
 
     @nt.raises(KeyError)
-    def test_stash_name_error1(self):
+    def test_stash_name_error2(self):
         m = self.m
         m.stash.save()
         m.stash.pop('b')
@@ -77,6 +77,75 @@ class TestModelStash:
         m.stash.save('a')
         m.stash.apply()
         nt.assert_equal(len(m), 3)
+
+
+class TestStashFetching:
+
+    def setUp(self):
+        s = Spectrum([range(100), ] * 2)
+        m = s.create_model()
+        m.append(Gaussian())
+        m.components.Gaussian.A.value = 3.
+        m.components.Gaussian.A.map['values'].fill(-1)
+        self.m = m
+
+    def test_stash_fetch_noargs(self):
+        m = self.m
+        m.stash.save()
+        m.components.Gaussian.A.value = 5.
+        m.components.Gaussian.A.map['values'].fill(3)
+        m.stash.fetch_values()
+        nt.assert_equal(m.components.Gaussian.A.value, 3.)
+        nt.assert_true(np.all(m.components.Gaussian.A.map['values'] == -1.))
+
+    def test_stash_component_list(self):
+        m = self.m
+        m.append(Lorentzian())
+        m.components.Lorentzian.A.value = 14.
+        m.components.Lorentzian.A.map['values'].fill(-31)
+
+        m.stash.save('a')
+
+        m.components.Gaussian.A.value = 5.
+        m.components.Gaussian.A.map['values'].fill(3)
+        m.components.Lorentzian.A.value = 5.
+        m.components.Lorentzian.A.map['values'].fill(3)
+
+        m.stash.save('b')
+
+        m.stash.fetch_values('a', component_list=['Lorentzian', ])
+
+        nt.assert_equal(m['Gaussian'].A.value, 5.)
+        nt.assert_true(np.all(m['Gaussian'].A.map['values'] == 3))
+        nt.assert_equal(m['Lorentzian'].A.value, 14.)
+        nt.assert_true(np.all(m['Lorentzian'].A.map['values'] == -31))
+
+        m.stash.apply('b', backup=False)
+
+        m.stash.fetch_values('a', component_list=[m[1], ])
+
+        nt.assert_equal(m['Gaussian'].A.value, 5.)
+        nt.assert_true(np.all(m['Gaussian'].A.map['values'] == 3))
+        nt.assert_equal(m['Lorentzian'].A.value, 14.)
+        nt.assert_true(np.all(m['Lorentzian'].A.map['values'] == -31))
+
+    def test_stash_parameter_list(self):
+        m = self.m
+        m.components.Gaussian.centre.value = 14.
+        m.stash.save('a')
+        m.components.Gaussian.centre.value = 0.3
+        m.components.Gaussian.A.value = 5.
+        m.stash.fetch_values('a', parameter_list=['centre', ])
+        nt.assert_equal(m.components.Gaussian.A.value, 5.)
+        nt.assert_equal(m.components.Gaussian.centre.value, 14.)
+
+    def test_stash_mask(self):
+        m = self.m
+        m.stash.save('a')
+        m.components.Gaussian.A.map['values'].fill(3)
+        m.stash.fetch_values(mask=[True, False])
+        nt.assert_equal(m.components.Gaussian.A.map['values'][0], -1)
+        nt.assert_equal(m.components.Gaussian.A.map['values'][1], 3)
 
 
 class TestModelSaving:
