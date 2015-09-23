@@ -48,12 +48,12 @@ class TestAlignTools:
         self.spectrum = s
 
     def test_estimate_shift(self):
-        s = self.spectrum.deepcopy()
+        s = self.spectrum
         eshifts = -1 * s.estimate_shift1D()
         nt.assert_true(np.allclose(eshifts, self.ishifts * self.scale))
 
     def test_shift1D(self):
-        s = self.spectrum.deepcopy()
+        s = self.spectrum
         s.shift1D(-1 * self.ishifts[:, np.newaxis] * self.scale)
         i_zlp = s.axes_manager.signal_axes[0].value2index(0)
         nt.assert_true(np.allclose(s.data[:, i_zlp], 12))
@@ -68,7 +68,7 @@ class TestAlignTools:
         nt.assert_equal(s.axes_manager._axes[1].scale, self.scale)
 
     def test_align(self):
-        s = self.spectrum.deepcopy()
+        s = self.spectrum
         s.align1D()
         i_zlp = s.axes_manager.signal_axes[0].value2index(0)
         nt.assert_true(np.allclose(s.data[:, i_zlp], 12))
@@ -83,7 +83,7 @@ class TestAlignTools:
         nt.assert_equal(s.axes_manager._axes[1].scale, self.scale)
 
     def test_align_axis0(self):
-        s = self.spectrum.deepcopy()
+        s = self.spectrum
         s = s.swap_axes(0, 1)
         s.align1D()
         s = s.swap_axes(0, 1)
@@ -100,7 +100,7 @@ class TestAlignTools:
         nt.assert_equal(s.axes_manager._axes[1].scale, self.scale)
 
     def test_align_expand(self):
-        s = self.spectrum.deepcopy()
+        s = self.spectrum
         s.align1D(expand=True)
 
         # Check the numbers of NaNs to make sure expansion happened properly

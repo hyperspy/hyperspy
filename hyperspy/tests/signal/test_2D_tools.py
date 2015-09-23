@@ -57,7 +57,7 @@ class TestAlignTools:
                           offsets[1]:offsets[1] + size[1]]
 
     def test_estimate_shift(self):
-        s = self.spectrum.deepcopy()
+        s = self.spectrum
         shifts = s.estimate_shift2D()
         print shifts
         print self.ishifts
@@ -65,13 +65,13 @@ class TestAlignTools:
 
     def test_align(self):
         # Align signal
-        s = self.spectrum.deepcopy()
+        s = self.spectrum
         s.align2D()
         # Compare by broadcasting
         nt.assert_true(np.all(s.data == self.aligned))
 
     def test_align_expand(self):
-        s = self.spectrum.deepcopy()
+        s = self.spectrum
         s.align2D(expand=True)
 
         # Check the numbers of NaNs to make sure expansion happened properly
