@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2015 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -17,7 +17,7 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import matplotlib.pyplot as plt
-import traits.etsconfig.etsconfig
+from traits.etsconfig.api import ETSConfig
 
 from hyperspy.defaults_parser import current_toolkit
 from hyperspy.misc.ipython_tools import get_ipython
@@ -25,7 +25,7 @@ from hyperspy.misc.ipython_tools import get_ipython
 
 def set_ets_toolkit(toolkit):
     try:
-        traits.etsconfig.etsconfig.ETSConfig.toolkit = toolkit
+        ETSConfig.toolkit = toolkit
     except ValueError:
         pass
 

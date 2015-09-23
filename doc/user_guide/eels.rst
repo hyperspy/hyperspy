@@ -115,8 +115,8 @@ Load the core-loss and low-loss spectra
 
 .. code-block:: python
 
-    >>> s = load("BN_(hex)_B_K_Giovanni_Bertoni_100.msa")
-    >>> ll = load("BN_(hex)_LowLoss_Giovanni_Bertoni_96.msa")
+    >>> s = hs.load("BN_(hex)_B_K_Giovanni_Bertoni_100.msa")
+    >>> ll = hs.load("BN_(hex)_LowLoss_Giovanni_Bertoni_96.msa")
 
 
 Set some important experimental information that is missing from the original
@@ -145,10 +145,19 @@ HyperSpy has created the model and configured it automatically:
 
 .. code-block:: python
 
-    >>> m
-    [<background (PowerLaw component)>,
-    <N_K (EELSCLEdge component)>,
-    <B_K (EELSCLEdge component)>]
+    >>> m.components
+       # |            Attribute Name |            Component Name |            Component Type
+    ---- | ------------------------- | ------------------------- | -------------------------
+       0 |                background |                background |                  PowerLaw
+       1 |                       N_K |                       N_K |                EELSCLEdge
+       2 |                       B_K |                       B_K |                EELSCLEdge
+
+.. warning::
+
+   Notice that the PowerLaw component has been automatically renamed to
+   "background". This behaviour is deprecated and will be removed in
+   HyperSpy 0.9. From them on this component will keep its original name,
+   "PowerLaw".
 
 
 Furthermore, the components are available in the user namespace
@@ -162,6 +171,19 @@ Furthermore, the components are available in the user namespace
     >>> background
     <background (PowerLaw component)>
 
+.. warning::
+
+   This feature is deprecated and will be removed in HyperSpy 0.9. To access
+   the automatically created component use the following equivalent syntax:
+
+    .. code-block:: python
+
+        >>> m.components.N_K
+        <N_K (EELSCLEdge component)>
+        >>> m.components.B_K
+        <B_K (EELSCLEdge component)>
+        >>> m.background
+        <background (PowerLaw component)>
 
 Conveniently, variables named as the element symbol contain all the eels
 core-loss components of the element to facilitate applying some methods to all

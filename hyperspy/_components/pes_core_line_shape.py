@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2015 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -70,7 +70,7 @@ class PESCoreLineShape(Component):
         a3 = self.ab.value
         k = self.shirley.value
         f = self.factor * a0 * \
-            np.exp(-1 * math.log(2) * (((x - (a1 - a3)) / a2)) ** 2)
+            np.exp(-1 * math.log(2) * ((x - (a1 - a3)) / a2) ** 2)
         if self.Shirley:
             cf = np.cumsum(f)
             cf = cf[-1] - cf

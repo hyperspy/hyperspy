@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2015 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -51,7 +51,8 @@ class Offset(Component):
     def function(self, x):
         return np.ones((len(x))) * self.offset.value
 
-    def grad_offset(self, x):
+    @staticmethod
+    def grad_offset(x):
         return np.ones((len(x)))
 
     def estimate_parameters(self, signal, x1, x2, only_current=False):

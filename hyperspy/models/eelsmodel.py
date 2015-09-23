@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2015 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -27,6 +27,7 @@ from hyperspy.defaults_parser import preferences
 import hyperspy.messages as messages
 from hyperspy import components
 from hyperspy._signals.eels import EELSSpectrum
+from hyperspy.misc.hspy_warnings import VisibleDeprecationWarning
 
 
 def _give_me_delta(master, slave):
@@ -68,8 +69,8 @@ class EELSModel(Model):
 
     def __init__(self, spectrum, auto_background=True,
                  auto_add_edges=True, ll=None,
-                 GOS=None, *args, **kwargs):
-        Model.__init__(self, spectrum, *args, **kwargs)
+                 GOS=None):
+        Model.__init__(self, spectrum)
         self._suspend_auto_fine_structure_width = False
         self.convolved = False
         self.low_loss = ll
@@ -79,6 +80,10 @@ class EELSModel(Model):
             interactive_ns = get_interactive_ns()
             background = PowerLaw()
             background.name = 'background'
+            warnings.warn(
+                "Adding \"background\" to the user namespace. "
+                "This feature will be removed in HyperSpy 0.9.",
+                VisibleDeprecationWarning)
             interactive_ns['background'] = background
             self.append(background)
 
@@ -177,8 +182,16 @@ class EELSModel(Model):
         self.GOS = master_edge.GOS._name
         self.append(master_edge)
         interactive_ns[self[-1].name] = self[-1]
+        warnings.warn("Adding \"%s\" to the user namespace. "
+                      "This feature will be removed in HyperSpy 0.9." % self[
+                          -1].name,
+                      VisibleDeprecationWarning)
         element = master_edge.element
         interactive_ns[element] = []
+        warnings.warn(
+            "Adding \"%s\" to the user namespace. "
+            "This feature will be removed in HyperSpy 0.9." % element,
+            VisibleDeprecationWarning)
         interactive_ns[element].append(self[-1])
         while len(e_shells) > 0:
             next_element = e_shells[-1].split('_')[0]
@@ -207,6 +220,11 @@ class EELSModel(Model):
                 self.append(edge)
                 if copy2interactive_ns is True:
                     interactive_ns[edge.name] = edge
+                    warnings.warn(
+                        "Adding \"%s\" to the user namespace. "
+                        "This feature will be removed in HyperSpy 0.9." %
+                        edge.name,
+                        VisibleDeprecationWarning)
                     interactive_ns[element].append(edge)
 
     def resolve_fine_structure(

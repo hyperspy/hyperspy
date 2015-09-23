@@ -2,7 +2,7 @@
 Tools for working with distributions
 """
 import numpy as np
-from hyperspy.misc.borrowed.astroML.bayesian_blocks import bayesian_blocks
+from hyperspy.external.astroML.bayesian_blocks import bayesian_blocks
 from scipy.special import gammaln
 from scipy import optimize
 

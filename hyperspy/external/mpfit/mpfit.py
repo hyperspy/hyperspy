@@ -411,7 +411,7 @@ Perform Levenberg-Marquardt least-squares minimization, based on MINPACK-1.
 
 import numpy
 import types
-import scipy.lib.blas
+import scipy.linalg
 
 #	 Original FORTRAN documentation
 #	 **********
@@ -598,19 +598,16 @@ import scipy.lib.blas
 
 class mpfit:
 
-    blas_enorm32, = scipy.lib.blas.get_blas_funcs(
+    blas_enorm32, = scipy.linalg.get_blas_funcs(
         ['nrm2'], numpy.array(
             [0], dtype=numpy.float32))
-    blas_enorm64, = scipy.lib.blas.get_blas_funcs(
+    blas_enorm64, = scipy.linalg.get_blas_funcs(
         ['nrm2'], numpy.array(
             [0], dtype=numpy.float64))
 
-    def __init__(self, fcn, xall=None, functkw={}, parinfo=None,
-                 ftol=1.e-10, xtol=1.e-10, gtol=1.e-10,
-                 damp=0., maxiter=200, factor=100., nprint=1,
-                 iterfunct='default', iterkw={}, nocovar=0,
-                 rescale=0, autoderivative=1, quiet=0,
-                 diag=None, epsfcn=None, debug=0):
+    def __init__(self, fcn, xall=None, functkw=None, parinfo=None, ftol=1.e-10, xtol=1.e-10, gtol=1.e-10, damp=0.,
+                 maxiter=200, factor=100., nprint=1, iterfunct='default', iterkw={}, nocovar=0, rescale=0,
+                 autoderivative=1, quiet=0, diag=None, epsfcn=None, debug=0):
         """
 Inputs:
 fcn:
@@ -846,6 +843,8 @@ Outputs:
            pcerror = mpfit.perror * sqrt(mpfit.fnorm / dof)
 
         """
+        if not functkw:
+            functkw = {}
         self.niter = 0
         self.params = None
         self.covar = None
@@ -885,7 +884,7 @@ Outputs:
                 if not isinstance(parinfo[0], types.DictionaryType):
                     self.errmsg = 'ERROR: PARINFO must be a list of dictionaries.'
                     return
-            if ((xall is not None) and (len(xall) != len(parinfo))):
+            if (xall is not None) and (len(xall) != len(parinfo)):
                 self.errmsg = 'ERROR: number of elements in PARINFO and P must agree'
                 return
 
@@ -1035,7 +1034,7 @@ Outputs:
 
         # Beginning of the outer loop
 
-        while(1):
+        while True:
 
             # If requested, call fcn to enable printing of iterates
             self.params[ifree] = x
@@ -1176,7 +1175,7 @@ Outputs:
                 diag = numpy.choose(diag > wa2, (wa2, diag))
 
             # Beginning of the inner loop
-            while(1):
+            while True:
 
                 # Determine the levenberg-marquardt parameter
                 catch_msg = 'calculating LM parameter (MPFIT_)'
@@ -1240,10 +1239,10 @@ Outputs:
                             mrat = numpy.max(numpy.abs(nwa1[whmax]) /
                                              numpy.abs(maxstep[ifree[whmax]]))
                             if mrat > 1:
-                                alpha = alpha / mrat
+                                alpha /= mrat
 
                     # Scale the resulting vector
-                    wa1 = wa1 * alpha
+                    wa1 *= alpha
                     wa2 = x + wa1
 
                     # Adjust the final output values.  If the step put us exactly
@@ -1314,11 +1313,11 @@ Outputs:
                     if ((0.1 * fnorm1) >= self.fnorm) or (temp < 0.1):
                         temp = 0.1
                     delta = temp * numpy.min([delta, pnorm / 0.1])
-                    par = par / temp
+                    par /= temp
                 else:
                     if (par == 0) or (ratio >= 0.75):
                         delta = pnorm / .5
-                        par = .5 * par
+                        par *= .5
 
                 # Test for successful iteration
                 if ratio >= 0.0001:
@@ -1328,7 +1327,7 @@ Outputs:
                     fvec = wa4
                     xnorm = self.enorm(wa2)
                     self.fnorm = fnorm1
-                    self.niter = self.niter + 1
+                    self.niter += 1
 
                 # Tests for convergence
                 if (numpy.abs(actred) <= ftol) and (prered <= ftol) \
@@ -1389,7 +1388,7 @@ Outputs:
 
         if (self.fnorm is not None) and (fnorm1 is not None):
             self.fnorm = numpy.max([self.fnorm, fnorm1])
-            self.fnorm = self.fnorm ** 2.
+            self.fnorm **= 2.
 
         self.covar = None
         self.perror = None
@@ -1421,8 +1420,7 @@ Outputs:
         return
 
     def __str__(self):
-        return {'params': self.params,
-                'niter': self.niter,
+        return {'niter': self.niter,
                 'params': self.params,
                 'covar': self.covar,
                 'perror': self.perror,
@@ -1515,7 +1513,7 @@ Outputs:
             print 'Entering call...'
         if self.qanytied:
             x = self.tie(x, self.ptied)
-        self.nfev = self.nfev + 1
+        self.nfev += 1
         if fjac is None:
             [status, f] = fcn(x, fjac=fjac, **functkw)
             if self.damp > 0:
@@ -1802,7 +1800,7 @@ Outputs:
                 rmax = numpy.max(rdiag[j:])
                 kmax = (numpy.nonzero(rdiag[j:] == rmax))[0]
                 ct = len(kmax)
-                kmax = kmax + j
+                kmax += j
                 if ct > 0:
                     kmax = kmax[0]
 
@@ -1828,7 +1826,7 @@ Outputs:
                 ajnorm = -ajnorm
 
             ajj = ajj / ajnorm
-            ajj[0] = ajj[0] + 1
+            ajj[0] += 1
             # *** Note optimization a(j:*,j)
             a[j:, lj] = ajj
 
@@ -1848,8 +1846,8 @@ Outputs:
                         a[j:, lk] = ajk - ajj * sum(ajk * ajj) / a[j, lj]
                         if (pivot != 0) and (rdiag[k] != 0):
                             temp = a[j, lk] / rdiag[k]
-                            rdiag[k] = rdiag[k] * \
-                                numpy.sqrt(numpy.max([(1. - temp ** 2), 0.]))
+                            rdiag[
+                                k] *= numpy.sqrt(numpy.max([(1. - temp ** 2), 0.]))
                             temp = rdiag[k] / wa[k]
                             if (0.05 * temp * temp) <= machep:
                                 rdiag[k] = self.enorm(a[j + 1:, lk])
@@ -2007,7 +2005,7 @@ Outputs:
 
         # Permute the components of z back to components of x
         x[ipvt] = wa
-        return (r, x, sdiag)
+        return r, x, sdiag
 
     #	 Original FORTRAN documentation
     #
@@ -2173,8 +2171,8 @@ Outputs:
             par = gnorm / dxnorm
 
         # Beginning of an interation
-        while(1):
-            iter = iter + 1
+        while True:
+            iter += 1
 
             # Evaluate the function at the current value of par
             if par == 0:
@@ -2227,7 +2225,7 @@ Outputs:
             if ptied[i] == '':
                 continue
             cmd = 'p[' + str(i) + '] = ' + ptied[i]
-            exec(cmd)
+            exec cmd
         return p
 
     #	 Original FORTRAN documentation

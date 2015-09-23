@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2015 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -22,12 +22,14 @@ import matplotlib.text as mpl_text
 import traits.api as t
 import traitsui.api as tu
 from traitsui.menu import OKButton, CancelButton
+from pyface.message_dialog import information
 
 from hyperspy import components
 from hyperspy.component import Component
 from hyperspy import drawing
 from hyperspy.gui.tools import (SpanSelectorInSpectrum,
                                 SpanSelectorInSpectrumHandler,
+                                OurOKButton,
                                 OurFindButton,
                                 OurPreviousButton,
                                 OurApplyButton)
@@ -57,11 +59,13 @@ class BackgroundRemoval(SpanSelectorInSpectrum):
             'background_type',
             tu.Group(
                 'polynomial_order',
-                visible_when='background_type == \'Polynomial\''),),
-            'estimate_background',
-            buttons=[OKButton, CancelButton],
-            handler=SpanSelectorInSpectrumHandler,
-            title='Background removal tool')
+                visible_when='background_type == \'Polynomial\''), ),
+        buttons=[OKButton, CancelButton],
+        handler=SpanSelectorInSpectrumHandler,
+        title='Background removal tool',
+        resizable=True,
+        width=300,
+    )
 
     def __init__(self, signal):
         super(BackgroundRemoval, self).__init__(signal)
@@ -105,10 +109,12 @@ class BackgroundRemoval(SpanSelectorInSpectrum):
             self.estimate_fit = True
 
     def _ss_left_value_changed(self, old, new):
-        self.span_selector_changed()
+        if not (np.isnan(self.ss_right_value) or np.isnan(self.ss_left_value)):
+            self.span_selector_changed()
 
     def _ss_right_value_changed(self, old, new):
-        self.span_selector_changed()
+        if not (np.isnan(self.ss_right_value) or np.isnan(self.ss_left_value)):
+            self.span_selector_changed()
 
     def create_background_line(self):
         self.bg_line = drawing.spectrum.SpectrumLine()
@@ -157,7 +163,8 @@ class BackgroundRemoval(SpanSelectorInSpectrum):
             return
         if self.bg_line is None and \
             self.background_estimator.estimate_parameters(
-                self.signal, self.ss_left_value, self.ss_right_value,
+                self.signal, self.ss_left_value,
+                self.ss_right_value,
                 only_current=True) is True:
             self.create_background_line()
         else:
@@ -216,39 +223,81 @@ class SpikesRemoval(SpanSelectorInSpectrum):
     interpolator_kind = t.Enum(
         'Linear',
         'Spline',
-        default='Linear')
-    threshold = t.Float()
+        default='Linear',
+        desc="the type of interpolation to use when\n"
+             "replacing the signal where a spike has been replaced")
+    threshold = t.Float(desc="the derivative magnitude threshold above\n"
+                             "which to find spikes")
+    click_to_show_instructions = t.Button()
     show_derivative_histogram = t.Button()
-    spline_order = t.Range(1, 10, 3)
+    spline_order = t.Range(1, 10, 3,
+                           desc="the order of the spline used to\n"
+                                "connect the reconstructed data")
     interpolator = None
-    default_spike_width = t.Int(5)
+    default_spike_width = t.Int(5,
+                                desc="the width over which to do the interpolation\n"
+                                     "when removing a spike (this can be "
+                                     "adjusted for each\nspike by clicking "
+                                     "and dragging on the display during\n"
+                                     "spike replacement)")
     index = t.Int(0)
     add_noise = t.Bool(True,
-                       desc="Add noise to the healed portion of the "
-                       "spectrum. Use the noise properties "
-                       "defined in metadata if present, otherwise "
-                       "it defaults to shot noise.")
+                       desc="whether to add noise to the interpolated\nportion"
+                            "of the spectrum. The noise properties defined\n"
+                            "in the Signal metadata are used if present,"
+                            "otherwise\nshot noise is used as a default")
+
+    thisOKButton = tu.Action(name="OK",
+                             action="OK",
+                             tooltip="Close the spikes removal tool")
+
+    thisApplyButton = tu.Action(name="Remove spike",
+                                action="apply",
+                                tooltip="Remove the current spike by "
+                                       "interpolating\n"
+                                       "with the specified settings (and find\n"
+                                       "the next spike automatically)")
+    thisFindButton = tu.Action(name="Find next",
+                               action="find",
+                               tooltip="Find the next (in terms of navigation\n"
+                                      "dimensions) spike in the data.")
+
+    thisPreviousButton = tu.Action(name="Find previous",
+                                   action="back",
+                                   tooltip="Find the previous (in terms of "
+                                          "navigation\n"
+                                          "dimensions) spike in the data.")
     view = tu.View(tu.Group(
         tu.Group(
-            tu.Item('show_derivative_histogram', show_label=False),
+            tu.Item('click_to_show_instructions',
+                    show_label=False, ),
+            tu.Item('show_derivative_histogram',
+                    show_label=False,
+                    tooltip="To determine the appropriate threshold,\n"
+                            "plot the derivative magnitude histogram, \n"
+                            "and look for outliers at high magnitudes \n"
+                            "(which represent sudden spikes in the data)"),
             'threshold',
-            show_border=True,),
+            show_border=True,
+        ),
         tu.Group(
             'add_noise',
             'interpolator_kind',
             'default_spike_width',
             tu.Group(
                 'spline_order',
-                visible_when='interpolator_kind == \'Spline\''),
+                enabled_when='interpolator_kind == \'Spline\''),
             show_border=True,
             label='Advanced settings'),
     ),
-        buttons=[OKButton,
-                 OurPreviousButton,
-                 OurFindButton,
-                 OurApplyButton, ],
+        buttons=[thisOKButton,
+                 thisPreviousButton,
+                 thisFindButton,
+                 thisApplyButton, ],
         handler=SpikesRemovalHandler,
-        title='Spikes removal tool')
+        title='Spikes removal tool',
+        resizable=False,
+    )
 
     def __init__(self, signal, navigation_mask=None, signal_mask=None):
         super(SpikesRemoval, self).__init__(signal)
@@ -273,6 +322,7 @@ class SpikesRemoval(SpanSelectorInSpectrum):
         self.navigation_mask = navigation_mask
         md = self.signal.metadata
         from hyperspy.signal import Signal
+
         if "Signal.Noise_properties" in md:
             if "Signal.Noise_properties.variance" in md:
                 self.noise_variance = md.Signal.Noise_properties.variance
@@ -286,6 +336,39 @@ class SpikesRemoval(SpanSelectorInSpectrum):
     def _threshold_changed(self, old, new):
         self.index = 0
         self.update_plot()
+
+    def _click_to_show_instructions_fired(self):
+        m = information(None,
+                        "\nTo remove spikes from the data:\n\n"
+
+                        "   1. Click \"Show derivative histogram\" to "
+                        "determine at what magnitude the spikes are present.\n"
+                        "   2. Enter a suitable threshold (lower than the "
+                        "lowest magnitude outlier in the histogram) in the "
+                        "\"Threshold\" box, which will be the magnitude "
+                        "from which to search. \n"
+                        "   3. Click \"Find next\" to find the first spike.\n"
+                        "   4. If desired, the width and position of the "
+                        "boundaries used to replace the spike can be "
+                        "adjusted by clicking and dragging on the displayed "
+                        "plot.\n "
+                        "   5. View the spike (and the replacement data that "
+                        "will be added) and click \"Remove spike\" in order "
+                        "to alter the data as shown. The tool will "
+                        "automatically find the next spike to replace.\n"
+                        "   6. Repeat this process for each spike throughout "
+                        "the dataset, until the end of the dataset is "
+                        "reached.\n"
+                        "   7. Click \"OK\" when finished to close the spikes "
+                        "removal tool.\n\n"
+
+                        "Note: Various settings can be configured in "
+                        "the \"Advanced settings\" section. Hover the "
+                        "mouse over each parameter for a description of what "
+                        "it does."
+
+                        "\n",
+                        title="Instructions"),
 
     def _show_derivative_histogram_fired(self):
         self.signal._spikes_diagnosis(signal_mask=self.signal_mask,
@@ -336,8 +419,10 @@ class SpikesRemoval(SpanSelectorInSpectrum):
             thresh_label = DerivativeTextParameters(
                 text="$\mathsf{\delta}_\mathsf{max}=$",
                 color="black")
-            self.ax.legend([thresh_label], [repr(int(self.derivmax))], handler_map={
-                           DerivativeTextParameters: DerivativeTextHandler()}, loc='best')
+            self.ax.legend([thresh_label], [repr(int(self.derivmax))],
+                           handler_map={DerivativeTextParameters:
+                                        DerivativeTextHandler()},
+                           loc='best')
             self.ax.set_xlim(
                 self.signal.axes_manager.signal_axes[0].index2value(
                     minimum),
@@ -385,10 +470,12 @@ class SpikesRemoval(SpanSelectorInSpectrum):
         self.span_selector_changed()
 
     def _ss_left_value_changed(self, old, new):
-        self.span_selector_changed()
+        if not (np.isnan(self.ss_right_value) or np.isnan(self.ss_left_value)):
+            self.span_selector_changed()
 
     def _ss_right_value_changed(self, old, new):
-        self.span_selector_changed()
+        if not (np.isnan(self.ss_right_value) or np.isnan(self.ss_left_value)):
+            self.span_selector_changed()
 
     def create_interpolation_line(self):
         self.interpolated_line = drawing.spectrum.SpectrumLine()
@@ -403,7 +490,7 @@ class SpikesRemoval(SpanSelectorInSpectrum):
 
     def get_interpolation_range(self):
         axis = self.signal.axes_manager.signal_axes[0]
-        if self.ss_left_value == self.ss_right_value:
+        if np.isnan(self.ss_left_value) or np.isnan(self.ss_right_value):
             left = self.argmax - self.default_spike_width
             right = self.argmax + self.default_spike_width
         else:

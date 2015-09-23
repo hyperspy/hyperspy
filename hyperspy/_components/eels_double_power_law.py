@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2015 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -26,11 +26,11 @@ class DoublePowerLaw(Component):
     """
     """
 
-    def __init__(self, A=10e5, r=3., origin=0.,):
+    def __init__(self, A=1e-5, r=3., origin=0.,):
         Component.__init__(self, ('A', 'r', 'origin', 'shift', 'ratio'))
-        self.A.value = 1E-5
-        self.r.value = 3.
-        self.origin.value = 0.
+        self.A.value = A
+        self.r.value = r
+        self.origin.value = origin
         self.origin.free = False
         self.shift.value = 20.
         self.shift.free = False

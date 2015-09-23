@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2015 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -36,7 +36,7 @@ class Simulation(Signal):
             original_type)
 
     @auto_replot
-    def add_gaussian_noise(self, std, **kwargs):
+    def add_gaussian_noise(self, std):
         """Add Gaussian noise to the data
         Parameters
         ----------
@@ -45,8 +45,7 @@ class Simulation(Signal):
         """
         noise = np.random.normal(0,
                                  std,
-                                 self.data.shape,
-                                 **kwargs)
+                                 self.data.shape)
         original_dtype = self.data.dtype
         self.data = (
             self.data.astype(

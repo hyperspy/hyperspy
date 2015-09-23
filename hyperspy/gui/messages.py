@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2015 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -56,7 +56,9 @@ class Message(t.HasTraits):
 class Options(t.HasTraits):
     options = t.Enum(('a'))
 
-    def __init__(self, options=['a', 'b', 'c']):
+    def __init__(self, options=None):
+        if not options:
+            options = ['a', 'b', 'c']
         self.options = options
 
 

@@ -1,5 +1,6 @@
 import numpy as np
 
+import nose.tools
 from nose.tools import assert_true, raises
 from hyperspy import signals
 
@@ -43,14 +44,14 @@ class TestNdAxes:
         s1.decomposition()
         s2.decomposition()
         s12.decomposition()
-        assert_true((s2.learning_results.loadings ==
-                     s12.learning_results.loadings).all())
-        assert_true((s2.learning_results.factors ==
-                     s12.learning_results.factors).all())
-        assert_true((s1.learning_results.loadings ==
-                     s2.learning_results.factors).all())
-        assert_true((s1.learning_results.factors ==
-                     s2.learning_results.loadings).all())
+        np.testing.assert_array_almost_equal(s2.learning_results.loadings,
+                                             s12.learning_results.loadings)
+        np.testing.assert_array_almost_equal(s2.learning_results.factors,
+                                             s12.learning_results.factors)
+        np.testing.assert_array_almost_equal(s1.learning_results.loadings,
+                                             s2.learning_results.factors)
+        np.testing.assert_array_almost_equal(s1.learning_results.factors,
+                                             s2.learning_results.loadings)
 
     def test_consistensy_poissonian(self):
         s1 = self.s1
@@ -59,17 +60,17 @@ class TestNdAxes:
         s1.decomposition(normalize_poissonian_noise=True)
         s2.decomposition(normalize_poissonian_noise=True)
         s12.decomposition(normalize_poissonian_noise=True)
-        assert_true((s2.learning_results.loadings ==
-                     s12.learning_results.loadings).all())
-        assert_true((s2.learning_results.factors ==
-                     s12.learning_results.factors).all())
-        assert_true((s1.learning_results.loadings ==
-                     s2.learning_results.factors).all())
-        assert_true((s1.learning_results.factors ==
-                     s2.learning_results.loadings).all())
+        np.testing.assert_array_almost_equal(s2.learning_results.loadings,
+                                             s12.learning_results.loadings)
+        np.testing.assert_array_almost_equal(s2.learning_results.factors,
+                                             s12.learning_results.factors)
+        np.testing.assert_array_almost_equal(s1.learning_results.loadings,
+                                             s2.learning_results.factors)
+        np.testing.assert_array_almost_equal(s1.learning_results.factors,
+                                             s2.learning_results.loadings)
 
 
-class TestGetExplainedVarinaceRation():
+class TestGetExplainedVarinaceRation:
 
     def setUp(self):
         s = signals.Signal(np.empty(1))
@@ -85,7 +86,7 @@ class TestGetExplainedVarinaceRation():
         self.s.get_explained_variance_ration()
 
 
-class TestReverseDecompositionComponent():
+class TestReverseDecompositionComponent:
 
     def setUp(self):
         s = signals.Signal(np.empty(1))
@@ -134,3 +135,56 @@ class TestReverseDecompositionComponent():
         self.s.reverse_decomposition_component((0, 2))
         assert_true((self.s.learning_results.loadings[:, 1] ==
                      self.loadings[:, 1]).all())
+
+
+class TestNormalizeComponents():
+
+    def setUp(self):
+        s = signals.Signal(np.empty(1))
+        self.factors = np.ones([2, 3])
+        self.loadings = np.ones([2, 3])
+        s.learning_results.factors = self.factors.copy()
+        s.learning_results.loadings = self.loadings.copy()
+        s.learning_results.bss_factors = self.factors.copy()
+        s.learning_results.bss_loadings = self.loadings.copy()
+        self.s = s
+
+    def test_normalize_bss_factors(self):
+        s = self.s
+        s.normalize_bss_components(target="factors",
+                                   function=np.sum)
+        nose.tools.assert_true(
+            (s.learning_results.bss_factors == self.factors / 2.).all())
+        nose.tools.assert_true(
+            (s.learning_results.bss_loadings == self.loadings * 2.).all())
+
+    def test_normalize_bss_loadings(self):
+        s = self.s
+        s.normalize_bss_components(target="loadings",
+                                   function=np.sum)
+        nose.tools.assert_true(
+            (s.learning_results.bss_factors == self.factors * 2.).all())
+        nose.tools.assert_true(
+            (s.learning_results.bss_loadings == self.loadings / 2.).all())
+
+    def test_normalize_decomposition_factors(self):
+        s = self.s
+        s.normalize_decomposition_components(target="factors",
+                                             function=np.sum)
+        nose.tools.assert_true(
+            (s.learning_results.factors ==
+             self.factors / 2.).all())
+        nose.tools.assert_true(
+            (s.learning_results.loadings ==
+             self.loadings * 2.).all())
+
+    def test_normalize_decomposition_loadings(self):
+        s = self.s
+        s.normalize_decomposition_components(target="loadings",
+                                             function=np.sum)
+        nose.tools.assert_true(
+            (s.learning_results.factors ==
+             self.factors * 2.).all())
+        nose.tools.assert_true(
+            (s.learning_results.loadings ==
+             self.loadings / 2.).all())

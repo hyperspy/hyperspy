@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2015 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -123,7 +123,7 @@ class DraggablePatch(object):
         pass
 
     def button_release(self, event):
-        'whenever a mouse button is released'
+        """whenever a mouse button is released"""
         if event.button != 1:
             return
         if self.picked is True:
@@ -209,7 +209,7 @@ class DraggableSquare(ResizebleDraggablePatch):
         self.draw_patch()
 
     def _onmousemove(self, event):
-        'on mouse motion draw the cursor if picked'
+        """on mouse motion draw the cursor if picked"""
         if self.picked is True and event.inaxes:
             xaxis = self.axes_manager.navigation_axes[0]
             yaxis = self.axes_manager.navigation_axes[1]
@@ -252,7 +252,7 @@ class DraggableHorizontalLine(DraggablePatch):
             picker=5)
 
     def _onmousemove(self, event):
-        'on mouse motion draw the cursor if picked'
+        """on mouse motion draw the cursor if picked"""
         if self.picked is True and event.inaxes:
             try:
                 self.axes_manager.navigation_axes[0].value = event.ydata
@@ -278,7 +278,7 @@ class DraggableVerticalLine(DraggablePatch):
                                 picker=5)
 
     def _onmousemove(self, event):
-        'on mouse motion draw the cursor if picked'
+        """on mouse motion draw the cursor if picked"""
         if self.picked is True and event.inaxes:
             try:
                 self.axes_manager.navigation_axes[0].value = event.xdata
@@ -317,7 +317,7 @@ class DraggableLabel(DraggablePatch):
             animated=self.blit)
 
 
-class Scale_Bar():
+class Scale_Bar:
 
     def __init__(self, ax, units, pixel_size=None, color='white',
                  position=None, max_size_ratio=0.25, lw=2, length=None,
@@ -445,7 +445,7 @@ class Scale_Bar():
 
 
 def in_interval(number, interval):
-    if number >= interval[0] and number <= interval[1]:
+    if interval[0] <= number <= interval[1]:
         return True
     else:
         return False
@@ -488,7 +488,7 @@ class ModifiableSpanSelector(matplotlib.widgets.SpanSelector):
             self.canvas.mpl_connect('draw_event', self.update_background))
 
     def mm_on_press(self, event):
-        if (self.ignore(event) and not self.buttonDown):
+        if self.ignore(event) and not self.buttonDown:
             return
         self.buttonDown = True
 

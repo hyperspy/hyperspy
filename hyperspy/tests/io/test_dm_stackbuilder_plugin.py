@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2015 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -25,7 +25,7 @@ from hyperspy.io import load
 my_path = os.path.dirname(__file__)
 
 
-class TestStackBuilder():
+class TestStackBuilder:
 
     def test_load_stackbuilder_imagestack(self):
         image_stack = load(

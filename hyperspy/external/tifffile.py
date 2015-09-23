@@ -454,7 +454,7 @@ class TiffWriter(object):
         shape = data.shape
 
         bytestr = bytes if sys.version[0] == '2' else (
-            lambda x: bytes(x, 'utf-8') if isinstance(x, str) else x)
+            lambda x: bytes(x) if isinstance(x, str) else x)
         tags = []  # list of (code, ifdentry, ifdvalue, writeonce)
 
         if volume:
@@ -1577,16 +1577,6 @@ class TiffPage(object):
             # DISABLED
             if self.is_palette:
                 assert False, "color mapping disabled for stk"
-                if self.color_map.shape[1] >= 2**self.bits_per_sample:
-                    if image_depth == 1:
-                        self.shape = (3, planes, image_length, image_width)
-                    else:
-                        self.shape = (3, planes, image_depth, image_length,
-                                      image_width)
-                    self.axes = 'C' + self.axes
-                else:
-                    warnings.warn("palette cannot be applied")
-                    self.is_palette = False
         elif self.is_palette:
             samples = 1
             if 'extra_samples' in self.tags:
@@ -2112,7 +2102,7 @@ class TiffTag(object):
         """Initialize instance from file or arguments."""
         self._offset = None
         if hasattr(arg, '_fh'):
-            self._fromfile(arg, **kwargs)
+            self._fromfile(arg)
         else:
             self._fromdata(arg, **kwargs)
 
@@ -3528,7 +3518,7 @@ def sequence(value):
         len(value)
         return value
     except TypeError:
-        return (value, )
+        return value,
 
 
 def product(iterable):
@@ -3832,7 +3822,7 @@ AXES_LABELS = {
     'L': 'exposure',  # lux
     'V': 'event',
     'Q': 'other',
-    #'M': 'mosaic',  # LSM 6
+    # 'M': 'mosaic',  # LSM 6
 }
 
 AXES_LABELS.update(dict((v, k) for k, v in AXES_LABELS.items()))
@@ -4416,7 +4406,6 @@ TIFF_TAGS = {
     347: ('jpeg_tables', None, 7, None, None),
     530: ('ycbcr_subsampling', 1, 3, 2, None),
     531: ('ycbcr_positioning', 1, 3, 1, None),
-    32996: ('sgi_matteing', None, None, 1, None),  # use extra_samples
     32996: ('sgi_datatype', None, None, 1, None),  # use sample_format
     32997: ('image_depth', None, 4, 1, None),
     32998: ('tile_depth', None, 4, 1, None),

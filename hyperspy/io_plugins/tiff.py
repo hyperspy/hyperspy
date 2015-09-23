@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2015 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -26,7 +26,7 @@ try:
 except ImportError:
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        from hyperspy.misc.borrowed.tifffile import imsave, TiffFile
+        from hyperspy.external.tifffile import imsave, TiffFile
     warnings.warn(
         "Failed to import the optional scikit image package. "
         "Loading of some compressed images will be slow.\n")
@@ -67,14 +67,14 @@ axes_label_codes = {
 
 
 def file_writer(filename, signal, **kwds):
-    '''Writes data to tif using Christoph Gohlke's tifffile library
+    """Writes data to tif using Christoph Gohlke's tifffile library
 
         Parameters
         ----------
         filename: str
         signal: a Signal instance
 
-    '''
+    """
     data = signal.data
     if signal.is_rgbx is True:
         data = rgb_tools.rgbx2regular_array(data)
@@ -92,7 +92,7 @@ def file_writer(filename, signal, **kwds):
 
 
 def file_reader(filename, record_by='image', **kwds):
-    '''Read data from tif files using Christoph Gohlke's tifffile
+    """Read data from tif files using Christoph Gohlke's tifffile
     library
 
     Parameters
@@ -102,7 +102,7 @@ def file_reader(filename, record_by='image', **kwds):
         Has no effect because this format only supports recording by
         image.
 
-    '''
+    """
     with TiffFile(filename, **kwds) as tiff:
         dc = tiff.asarray()
         axes = tiff.series[0]['axes']

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2015 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -36,19 +36,58 @@ from traits.trait_errors import TraitError
 from hyperspy import messages
 import hyperspy.drawing.spectrum
 from hyperspy.drawing.utils import on_figure_window_close
-from hyperspy.misc import progressbar
+from hyperspy.external import progressbar
 from hyperspy._signals.eels import Spectrum
 from hyperspy.defaults_parser import preferences
 from hyperspy.axes import generate_axis
 from hyperspy.exceptions import WrongObjectError
 from hyperspy.decorators import interactive_range_selector
-from hyperspy.misc.mpfit.mpfit import mpfit
+from hyperspy.external.mpfit.mpfit import mpfit
 from hyperspy.axes import AxesManager
 from hyperspy.drawing.widgets import (DraggableVerticalLine,
                                       DraggableLabel)
 from hyperspy.gui.tools import ComponentFit
 from hyperspy.component import Component
 from hyperspy.signal import Signal
+from hyperspy.misc.utils import slugify, shorten_name
+
+
+class ModelComponents(object):
+
+    """Container for model components.
+
+    Useful to provide tab completion when running in IPython.
+
+    """
+
+    def __init__(self, model):
+        self._model = model
+
+    def __repr__(self):
+        signature = u"%4s | %25s | %25s | %25s"
+        ans = signature % ('#',
+                           'Attribute Name',
+                           'Component Name',
+                           'Component Type')
+        ans += u"\n"
+        ans += signature % ('-' * 4, '-' * 25, '-' * 25, '-' * 25)
+        if self._model:
+            for i, c in enumerate(self._model):
+                ans += u"\n"
+                name_string = c.name
+                variable_name = slugify(name_string, valid_variable_name=True)
+                component_type = c._id_name
+
+                variable_name = shorten_name(variable_name, 25)
+                name_string = shorten_name(name_string, 25)
+                component_type = shorten_name(component_type, 25)
+
+                ans += signature % (i,
+                                    variable_name,
+                                    name_string,
+                                    component_type)
+        ans = ans.encode('utf8')
+        return ans
 
 
 class Model(list):
@@ -78,7 +117,12 @@ class Model(list):
         Chi-squared of the signal (or np.nan if not yet fit)
     dof : A Signal of integers
         Degrees of freedom of the signal (0 if not yet fit)
-    red_chisq
+    red_chisq : Signal instance
+        Reduced chi-squared.
+    components : `ModelComponents` instance
+        The components of the model are attributes of this class. This provides
+        a convinient way to access the model components when working in IPython
+        as it enables tab completion.
 
     Methods
     -------
@@ -140,9 +184,9 @@ class Model(list):
     components to it, adjust the value of the parameters of the components,
     fit the model to the data and access the components in the model.
 
-    >>> s = signals.Spectrum(
+    >>> s = hs.signals.Spectrum(
             np.random.normal(scale=2, size=10000)).get_histogram()
-    >>> g = components.Gaussian()
+    >>> g = hs.model.components.Gaussian()
     >>> m = s.create_model()
     >>> m.append(g)
     >>> m.print_current_values()
@@ -205,21 +249,29 @@ class Model(list):
         self._suspend_update = False
         self._adjust_position_all = None
         self._plot_components = False
+        self.components = ModelComponents(self)
 
     def __repr__(self):
-        return u"<Model %s>".encode('utf8') % super(Model, self).__repr__()
+        title = self.spectrum.metadata.General.title
+        class_name = str(self.__class__).split("'")[1].split('.')[-1]
 
-    def _get_component(self, object):
-        if isinstance(object, int) or isinstance(object, basestring):
-            object = self[object]
-        elif not isinstance(object, Component):
+        if len(title):
+            return u"<%s, title: %s>".encode(
+                'utf8') % (class_name, self.spectrum.metadata.General.title)
+        else:
+            return u"<%s>".encode('utf8') % class_name
+
+    def _get_component(self, thing):
+        if isinstance(thing, int) or isinstance(thing, basestring):
+            thing = self[thing]
+        elif not isinstance(thing, Component):
             raise ValueError("Not a component or component id.")
-        if object in self:
-            return object
+        if thing in self:
+            return thing
         else:
             raise ValueError("The component is not in the model.")
 
-    def insert(self):
+    def insert(self, **kwargs):
         raise NotImplementedError
 
     @property
@@ -255,18 +307,18 @@ class Model(list):
 
     # Extend the list methods to call the _touch when the model is modified
 
-    def append(self, object):
+    def append(self, thing):
         # Check if any of the other components in the model has the same name
-        if object in self:
+        if thing in self:
             raise ValueError("Component already in model")
         component_name_list = []
         for component in self:
             component_name_list.append(component.name)
         name_string = ""
-        if object.name:
-            name_string = object.name
+        if thing.name:
+            name_string = thing.name
         else:
-            name_string = object._id_name
+            name_string = thing._id_name
 
         if name_string in component_name_list:
             temp_name_string = name_string
@@ -275,37 +327,40 @@ class Model(list):
                 temp_name_string = name_string + "_" + str(index)
                 index += 1
             name_string = temp_name_string
-        object.name = name_string
+        thing.name = name_string
 
-        object._axes_manager = self.axes_manager
-        object._create_arrays()
-        list.append(self, object)
-        object.model = self
+        thing._axes_manager = self.axes_manager
+        thing._create_arrays()
+        list.append(self, thing)
+        thing.model = self
+        setattr(self.components, slugify(name_string,
+                                         valid_variable_name=True), thing)
         self._touch()
         if self._plot_components:
-            self._plot_component(object)
+            self._plot_component(thing)
         if self._adjust_position_all is not None:
-            self._make_position_adjuster(object, self._adjust_position_all[0],
+            self._make_position_adjuster(thing, self._adjust_position_all[0],
                                          self._adjust_position_all[1])
 
     def extend(self, iterable):
         for object in iterable:
             self.append(object)
 
-    def __delitem__(self, object):
-        list.__delitem__(self, object)
-        object.model = None
+    def __delitem__(self, thing):
+        thing = self.__getitem__(thing)
+        thing.model = None
+        list.__delitem__(self, self.index(thing))
         self._touch()
 
-    def remove(self, object, touch=True):
+    def remove(self, thing, touch=True):
         """Remove component from model.
 
         Examples
         --------
 
-        >>> s = signals.Spectrum(np.empty(1))
+        >>> s = hs.signals.Spectrum(np.empty(1))
         >>> m = s.create_model()
-        >>> g = components.Gaussian()
+        >>> g = hs.model.components.Gaussian()
         >>> m.append(g)
 
         You could remove `g` like this
@@ -321,22 +376,22 @@ class Model(list):
         >>> m.remove(0)
 
         """
-        object = self._get_component(object)
+        thing = self._get_component(thing)
         for pw in self._position_widgets:
-            if hasattr(pw, 'component') and pw.component is object:
+            if hasattr(pw, 'component') and pw.component is thing:
                 pw.component._position.twin = None
                 del pw.component
                 pw.close()
                 del pw
-        if hasattr(object, '_model_plot_line'):
-            line = object._model_plot_line
+        if hasattr(thing, '_model_plot_line'):
+            line = thing._model_plot_line
             line.close()
             del line
-            idx = self.index(object)
+            idx = self.index(thing)
             self.spectrum._plot.signal_plot.ax_lines.remove(
                 self.spectrum._plot.signal_plot.ax_lines[2 + idx])
-        list.remove(self, object)
-        object.model = None
+        list.remove(self, thing)
+        thing.model = None
         if touch is True:
             self._touch()
         if self._plot_active:
@@ -411,10 +466,10 @@ class Model(list):
 
         Examples
         --------
-        >>> s = signals.Spectrum(np.random.random((10,100)))
+        >>> s = hs.signals.Spectrum(np.random.random((10,100)))
         >>> m = s.create_model()
-        >>> l1 = components.Lorentzian()
-        >>> l2 = components.Lorentzian()
+        >>> l1 = hs.model.components.Lorentzian()
+        >>> l2 = hs.model.components.Lorentzian()
         >>> m.append(l1)
         >>> m.append(l2)
         >>> s1 = m.as_signal()
@@ -672,7 +727,7 @@ class Model(list):
             self.axes_manager = old_axes_manager
             self.fetch_stored_values()
         if out_of_range2nans is True:
-            ns = np.empty((self.axis.axis.shape))
+            ns = np.empty(self.axis.axis.shape)
             ns.fill(np.nan)
             ns[self.channel_switches] = s
             s = ns
@@ -805,7 +860,7 @@ class Model(list):
         self._remove_signal_range_in_pixels(i1, i2)
 
     def reset_signal_range(self):
-        '''Resets the data range'''
+        """Resets the data range"""
         self._set_signal_range_in_pixels()
 
     def _add_signal_range_in_pixels(self, i1=None, i2=None):
@@ -891,6 +946,7 @@ class Model(list):
             to_return *= self.spectrum.axes_manager[-1].scale
         return to_return
 
+    # noinspection PyAssignmentToLoopOrWithParameter
     def _jacobian(self, param, y, weights=None):
         if self.convolved is True:
             counter = 0
@@ -909,9 +965,9 @@ class Model(list):
                                 self.low_loss(self.axes_manager),
                                 mode="valid")
                             if parameter._twins:
-                                for parameter in parameter._twins:
+                                for par in parameter._twins:
                                     np.add(par_grad, np.convolve(
-                                        parameter.grad(
+                                        par.grad(
                                             self.convolution_axis),
                                         self.low_loss(self.axes_manager),
                                         mode="valid"), par_grad)
@@ -921,8 +977,8 @@ class Model(list):
                         for parameter in component.free_parameters:
                             par_grad = parameter.grad(self.axis.axis)
                             if parameter._twins:
-                                for parameter in parameter._twins:
-                                    np.add(par_grad, parameter.grad(
+                                for par in parameter._twins:
+                                    np.add(par_grad, par.grad(
                                         self.axis.axis), par_grad)
                             grad = np.vstack((grad, par_grad))
                         counter += component._nfree_param
@@ -944,8 +1000,8 @@ class Model(list):
                     for parameter in component.free_parameters:
                         par_grad = parameter.grad(axis)
                         if parameter._twins:
-                            for parameter in parameter._twins:
-                                np.add(par_grad, parameter.grad(
+                            for par in parameter._twins:
+                                np.add(par_grad, par.grad(
                                     axis), par_grad)
                         grad = np.vstack((grad, par_grad))
                     counter += component._nfree_param
@@ -1483,13 +1539,15 @@ class Model(list):
         if plot_components is True:
             self.enable_plot_components()
 
-    def _connect_component_line(self, component):
+    @staticmethod
+    def _connect_component_line(component):
         if hasattr(component, "_model_plot_line"):
             component.connect(component._model_plot_line.update)
             for parameter in component.parameters:
                 parameter.connect(component._model_plot_line.update)
 
-    def _disconnect_component_line(self, component):
+    @staticmethod
+    def _disconnect_component_line(component):
         if hasattr(component, "_model_plot_line"):
             component.disconnect(component._model_plot_line.update)
             for parameter in component.parameters:
@@ -1514,7 +1572,8 @@ class Model(list):
         component._model_plot_line = line
         self._connect_component_line(component)
 
-    def _update_component_line(self, component):
+    @staticmethod
+    def _update_component_line(component):
         if hasattr(component, "_model_plot_line"):
             component._model_plot_line.update()
 
@@ -1791,6 +1850,7 @@ class Model(list):
             signal_range="interactive",
             estimate_parameters=True,
             fit_independent=False,
+            only_current=True,
             **kwargs):
         """Fit just the given component in the given signal range.
 
@@ -1819,7 +1879,7 @@ class Model(list):
         --------
         Signal range set interactivly
 
-        >>> g1 = components.Gaussian()
+        >>> g1 = hs.model.components.Gaussian()
         >>> m.append(g1)
         >>> m.fit_component(g1)
 
@@ -1829,7 +1889,8 @@ class Model(list):
         """
         component = self._get_component(component)
         cf = ComponentFit(self, component, signal_range,
-                          estimate_parameters, fit_independent, **kwargs)
+                          estimate_parameters, fit_independent,
+                          only_current, **kwargs)
         if signal_range == "interactive":
             cf.edit_traits()
         else:
@@ -1854,7 +1915,7 @@ class Model(list):
 
         Examples
         --------
-        >>> v1 = components.Voigt()
+        >>> v1 = hs.model.components.Voigt()
         >>> m.append(v1)
         >>> m.set_parameters_not_free()
 
@@ -1898,7 +1959,7 @@ class Model(list):
 
         Examples
         --------
-        >>> v1 = components.Voigt()
+        >>> v1 = hs.model.components.Voigt()
         >>> m.append(v1)
         >>> m.set_parameters_free()
         >>> m.set_parameters_free(component_list=[v1],
@@ -1948,8 +2009,8 @@ class Model(list):
 
         Examples
         --------
-        >>> v1 = components.Voigt()
-        >>> v2 = components.Voigt()
+        >>> v1 = hs.model.components.Voigt()
+        >>> v2 = hs.model.components.Voigt()
         >>> m.extend([v1,v2])
         >>> m.set_parameters_value('area', 5)
         >>> m.set_parameters_value('area', 5, component_list=[v1])
@@ -1995,8 +2056,8 @@ class Model(list):
 
         Examples
         --------
-        >>> v1 = components.Voigt()
-        >>> v2 = components.Voigt()
+        >>> v1 = hs.model.components.Voigt()
+        >>> v2 = hs.model.components.Voigt()
         >>> m.extend([v1,v2])
         >>> m.set_component_active_value(False)
         >>> m.set_component_active_value(True, component_list=[v1])
@@ -2035,7 +2096,7 @@ class Model(list):
                     component_list.append(component)
             if component_list:
                 if len(component_list) == 1:
-                    return(component_list[0])
+                    return component_list[0]
                 else:
                     raise ValueError(
                         "There are several components with "

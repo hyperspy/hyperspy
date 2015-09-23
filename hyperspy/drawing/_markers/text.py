@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The Hyperspy developers
+# Copyright 2007-2015 The HyperSpy developers
 #
-# This file is part of  Hyperspy.
+# This file is part of  HyperSpy.
 #
-#  Hyperspy is free software: you can redistribute it and/or modify
+#  HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  Hyperspy is distributed in the hope that it will be useful,
+#  HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 from hyperspy.drawing.marker import MarkerBase
 
@@ -39,13 +39,13 @@ class Text(MarkerBase):
 
     Example
     -------
-    >>> s = signals.Spectrum(np.arange(100).reshape([10,10]))
+    >>> s = hs.signals.Spectrum(np.arange(100).reshape([10,10]))
     >>> s.plot(navigator='spectrum')
     >>> for i in range(10):
-    >>>     m = utils.plot.markers.text(y=range(50,1000,100)[i],
+    >>>     m = hs.plot.markers.text(y=range(50,1000,100)[i],
     >>>                                 x=i, text='abcdefghij'[i])
     >>>     s.add_marker(m, plot_on_signal=False)
-    >>> m = utils.plot.markers.text(x=5, y=range(7,110, 10),
+    >>> m = hs.plot.markers.text(x=5, y=range(7,110, 10),
     >>>                             text=[i for i in 'abcdefghij'])
     >>> s.add_marker(m)
 
@@ -53,8 +53,7 @@ class Text(MarkerBase):
 
     def __init__(self, x, y, text, **kwargs):
         MarkerBase.__init__(self)
-        lp = {}
-        lp['color'] = 'black'
+        lp = {'color': 'black'}
         self.marker_properties = lp
         self.set_data(x1=x, y1=y, text=text)
         self.set_marker_properties(**kwargs)
