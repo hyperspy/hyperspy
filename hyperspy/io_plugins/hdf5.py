@@ -19,8 +19,10 @@
 from distutils.version import StrictVersion
 import warnings
 import datetime
+from dask import array as da
 
 import h5py
+from psutil import virtual_memory
 import numpy as np
 from traits.api import Undefined
 
@@ -41,7 +43,7 @@ default_extension = 4
 
 # Writing capabilities
 writes = True
-version = "1.3"
+version = "1.4"
 
 # -----------------------
 # File format description
@@ -112,16 +114,23 @@ def file_reader(filename, record_by, mode='r', driver='core',
         experiments = []
         exp_dict_list = []
         if 'Experiments' in f:
+            available_memory = virtual_memory()[1]
             for ds in f['Experiments']:
                 if isinstance(f['Experiments'][ds], h5py.Group):
                     if 'data' in f['Experiments'][ds]:
                         experiments.append(ds)
+                        d = f['Experiments'][ds]['data']
+                        available_memory -= np.array(d.shape).cumprod()[-1] * np.dtype(d.dtype).itemsize
             if not experiments:
                 raise IOError(not_valid_format)
             # Parse the file
+            if available_memory > 0:
+                loadtomem = True
+            else:
+                loadtomem = False
             for experiment in experiments:
                 exg = f['Experiments'][experiment]
-                exp = hdfgroup2signaldict(exg)
+                exp = hdfgroup2signaldict(exg, loadtomem)
                 exp_dict_list.append(exp)
         else:
             raise IOError('This is not a valid HyperSpy HDF5 file. '
@@ -130,8 +139,44 @@ def file_reader(filename, record_by, mode='r', driver='core',
                           'Please, refer to the User Guide for details')
         return exp_dict_list
 
+def get_signal_chunks(metadata, data):
+    shape = data.shape
+    typesize = np.dtype(data.dtype).itemsize
+    if metadata['Signal']['record_by'] == "spectrum":
+        keepdims = 1
 
-def hdfgroup2signaldict(group):
+    if metadata['Signal']['record_by'] == "image":
+        keepdims = 2
+    else:
+        return h5py._hl.filters.guess_chunk(shape, None, typesize)
+    
+    # largely based on the guess_chunk in h5py
+    CHUNK_MAX = 1024*1024
+    want_to_keep = np.product(shape[-keepdims:])*typesize
+    if want_to_keep >= CHUNK_MAX:
+        chunks = [1 for _ in shape]
+        for i in xrange(keepdims):
+            chunks[-i-1] = shape[-i-1]
+        return tuple(chunks)
+    
+    chunks = [i for i in shape]
+    nchange = len(shape) - keepdims
+    idx = 0
+    while True:
+        chunk_bytes = np.product(chunks) * typesize
+
+        if chunk_bytes < CHUNK_MAX:
+            break
+
+        if np.product(chunks[:nchange]) == 1:
+            break
+        
+        chunks[idx%nchange] = np.ceil(chunks[idx%nchange] / 2.0)
+        idx += 1
+    return tuple(long(x) for x in chunks)
+
+
+def hdfgroup2signaldict(group, loadtomem = False):
     global current_file_version
     global default_version
     if current_file_version < StrictVersion("1.2"):
@@ -141,7 +186,20 @@ def hdfgroup2signaldict(group):
         metadata = "metadata"
         original_metadata = "original_metadata"
 
-    exp = {'data': group['data'][:]}
+    exp = {'metadata': hdfgroup2dict( group[metadata], {}),
+           'original_metadata': hdfgroup2dict( group[original_metadata], {})
+           }
+
+    data = group['data']
+    if loadtomem:
+        data = np.asanyarray(data)
+    else:
+        if data.chunks is None:
+            chunks = get_signal_chunks(exp['metadata'], data)
+        else:
+            chunks = data.chunks
+        data = da.from_array(data, chunks=chunks)
+    exp['data'] = data
     axes = []
     for i in xrange(len(exp['data'].shape)):
         try:
@@ -339,10 +397,18 @@ def dict2hdfgroup(dictionary, group, compression=None):
                     write_signal(value, group.create_group(key))
             else:
                 write_signal(value, group.create_group('_sig_' + key))
+        elif isinstance(value, da.Array):
+            dset = group.create_dataset(key,
+                                        shape=value.shape,
+                                        chunks=value.chunks,
+                                        compression=compression,
+                                        dtype=str(value.dtype))
+            da.store(value, dset)
         elif isinstance(value, np.ndarray):
             group.create_dataset(key,
                                  data=value,
-                                 compression=compression)
+                                 compression=compression,
+                                 chunks=True)
         elif value is None:
             group.attrs[key] = '_None_'
         elif isinstance(value, str):
@@ -420,14 +486,17 @@ def hdfgroup2dict(group, dictionary=None):
                 dictionary[key[len('_sig_'):]] = (
                     dict2signal(hdfgroup2signaldict(group[key])))
             elif isinstance(group[key], h5py.Dataset):
-                ans = np.array(group[key])
-                kn = key
-                if key.startswith("_list_"):
-                    ans = ans.tolist()
-                    kn = key[6:]
-                elif key.startswith("_tuple_"):
-                    ans = tuple(ans.tolist())
-                    kn = key[7:]
+                try:
+                    ans = np.array(group[key])
+                    kn = key
+                    if key.startswith("_list_"):
+                        ans = ans.tolist()
+                        kn = key[6:]
+                    elif key.startswith("_tuple_"):
+                        ans = tuple(ans.tolist())
+                        kn = key[7:]
+                except MemoryError:
+                    ans = da.from_array(group[key], chunks=group[key].chunks)
                 dictionary[kn] = ans
             elif key.startswith('_hspy_AxesManager_'):
                 dictionary[key[len('_hspy_AxesManager_'):]] = \
