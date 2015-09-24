@@ -120,7 +120,8 @@ def file_reader(filename, record_by, mode='r', driver='core',
                     if 'data' in f['Experiments'][ds]:
                         experiments.append(ds)
                         d = f['Experiments'][ds]['data']
-                        available_memory -= np.array(d.shape).cumprod()[-1] * np.dtype(d.dtype).itemsize
+                        available_memory -= np.array(
+                            d.shape).cumprod()[-1] * np.dtype(d.dtype).itemsize
             if not experiments:
                 raise IOError(not_valid_format)
             # Parse the file
@@ -139,6 +140,7 @@ def file_reader(filename, record_by, mode='r', driver='core',
                           'Please, refer to the User Guide for details')
         return exp_dict_list
 
+
 def get_signal_chunks(metadata, data):
     shape = data.shape
     typesize = np.dtype(data.dtype).itemsize
@@ -149,16 +151,16 @@ def get_signal_chunks(metadata, data):
         keepdims = 2
     else:
         return h5py._hl.filters.guess_chunk(shape, None, typesize)
-    
+
     # largely based on the guess_chunk in h5py
-    CHUNK_MAX = 1024*1024
-    want_to_keep = np.product(shape[-keepdims:])*typesize
+    CHUNK_MAX = 1024 * 1024
+    want_to_keep = np.product(shape[-keepdims:]) * typesize
     if want_to_keep >= CHUNK_MAX:
         chunks = [1 for _ in shape]
         for i in xrange(keepdims):
-            chunks[-i-1] = shape[-i-1]
+            chunks[-i - 1] = shape[-i - 1]
         return tuple(chunks)
-    
+
     chunks = [i for i in shape]
     nchange = len(shape) - keepdims
     idx = 0
@@ -170,13 +172,13 @@ def get_signal_chunks(metadata, data):
 
         if np.product(chunks[:nchange]) == 1:
             break
-        
-        chunks[idx%nchange] = np.ceil(chunks[idx%nchange] / 2.0)
+
+        chunks[idx % nchange] = np.ceil(chunks[idx % nchange] / 2.0)
         idx += 1
     return tuple(long(x) for x in chunks)
 
 
-def hdfgroup2signaldict(group, loadtomem = False):
+def hdfgroup2signaldict(group, loadtomem=False):
     global current_file_version
     global default_version
     if current_file_version < StrictVersion("1.2"):
@@ -186,8 +188,8 @@ def hdfgroup2signaldict(group, loadtomem = False):
         metadata = "metadata"
         original_metadata = "original_metadata"
 
-    exp = {'metadata': hdfgroup2dict( group[metadata], {}),
-           'original_metadata': hdfgroup2dict( group[original_metadata], {})
+    exp = {'metadata': hdfgroup2dict(group[metadata], {}),
+           'original_metadata': hdfgroup2dict(group[original_metadata], {})
            }
 
     data = group['data']
