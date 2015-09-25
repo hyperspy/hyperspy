@@ -19,7 +19,6 @@
 from distutils.version import StrictVersion
 import warnings
 import datetime
-from dask import array as da
 
 import h5py
 import numpy as np
@@ -389,13 +388,6 @@ def dict2hdfgroup(dictionary, group, compression=None):
                     write_signal(value, group.create_group(key))
             else:
                 write_signal(value, group.create_group('_sig_' + key))
-        elif isinstance(value, da.Array):
-            dset = group.create_dataset(key,
-                                        shape=value.shape,
-                                        chunks=value.chunks,
-                                        compression=compression,
-                                        dtype=str(value.dtype))
-            da.store(value, dset)
         elif isinstance(value, np.ndarray):
             group.create_dataset(key,
                                  data=value,
