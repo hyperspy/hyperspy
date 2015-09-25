@@ -41,7 +41,7 @@ default_extension = 4
 
 # Writing capabilities
 writes = True
-version = "1.4"
+version = "1.3"
 
 # -----------------------
 # File format description
@@ -132,45 +132,6 @@ def file_reader(filename, record_by, mode='r', driver='core',
     if load_to_memory:
         f.close()
     return exp_dict_list
-
-
-# not used at the moment, but might be useful for the future
-def get_signal_chunks(data, metadata=None):
-    shape = data.shape
-    typesize = np.dtype(data.dtype).itemsize
-    if metadata is not None:
-        if metadata['Signal']['record_by'] == "spectrum":
-            keepdims = 1
-
-        if metadata['Signal']['record_by'] == "image":
-            keepdims = 2
-    else:
-        return h5py._hl.filters.guess_chunk(shape, None, typesize)
-
-    # largely based on the guess_chunk in h5py
-    CHUNK_MAX = 1024 * 1024
-    want_to_keep = np.product(shape[-keepdims:]) * typesize
-    if want_to_keep >= CHUNK_MAX:
-        chunks = [1 for _ in shape]
-        for i in xrange(keepdims):
-            chunks[-i - 1] = shape[-i - 1]
-        return tuple(chunks)
-
-    chunks = [i for i in shape]
-    nchange = len(shape) - keepdims
-    idx = 0
-    while True:
-        chunk_bytes = np.product(chunks) * typesize
-
-        if chunk_bytes < CHUNK_MAX:
-            break
-
-        if np.product(chunks[:nchange]) == 1:
-            break
-
-        chunks[idx % nchange] = np.ceil(chunks[idx % nchange] / 2.0)
-        idx += 1
-    return tuple(long(x) for x in chunks)
 
 
 def hdfgroup2signaldict(group, load_to_memory=True):
@@ -391,8 +352,7 @@ def dict2hdfgroup(dictionary, group, compression=None):
         elif isinstance(value, np.ndarray):
             group.create_dataset(key,
                                  data=value,
-                                 compression=compression,
-                                 chunks=True)
+                                 compression=compression)
         elif value is None:
             group.attrs[key] = '_None_'
         elif isinstance(value, str):
