@@ -353,7 +353,7 @@ def dict2signal(signal_dict):
         if "Signal" in mp and "signal_origin" in mp["Signal"]:
             signal_origin = mp["Signal"]['signal_origin']
     if (not record_by and 'data' in signal_dict and
-            signal_dict['data'].ndim < 2):
+            len(signal_dict['data'].shape) < 2):
         record_by = "spectrum"
 
     signal = assign_signal_subclass(record_by=record_by,

@@ -22,7 +22,6 @@ import datetime
 from dask import array as da
 
 import h5py
-from psutil import virtual_memory
 import numpy as np
 from traits.api import Undefined
 
@@ -96,59 +95,56 @@ def get_hspy_format_version(f):
 
 
 def file_reader(filename, record_by, mode='r', driver='core',
-                backing_store=False, **kwds):
-    with h5py.File(filename, mode=mode, driver=driver) as f:
-        # Getting the format version here also checks if it is a valid HSpy
-        # hdf5 file, so the following two lines must not be deleted or moved
-        # elsewhere.
-        global current_file_version
-        current_file_version = get_hspy_format_version(f)
-        global default_version
-        if current_file_version > default_version:
-            warnings.warn(
-                "This file was written using a newer version of the "
-                "HyperSpy hdf5 file format. I will attempt to load it, but, "
-                "if I fail, it is likely that I will be more successful at "
-                "this and other tasks if you upgrade me.")
+                backing_store=False, load_to_memory=True, **kwds):
+    f = h5py.File(filename, mode=mode, driver=driver, **kwds)
+    # Getting the format version here also checks if it is a valid HSpy
+    # hdf5 file, so the following two lines must not be deleted or moved
+    # elsewhere.
+    global current_file_version
+    current_file_version = get_hspy_format_version(f)
+    global default_version
+    if current_file_version > default_version:
+        warnings.warn(
+            "This file was written using a newer version of the "
+            "HyperSpy hdf5 file format. I will attempt to load it, but, "
+            "if I fail, it is likely that I will be more successful at "
+            "this and other tasks if you upgrade me.")
 
-        experiments = []
-        exp_dict_list = []
-        if 'Experiments' in f:
-            available_memory = virtual_memory()[1]
-            for ds in f['Experiments']:
-                if isinstance(f['Experiments'][ds], h5py.Group):
-                    if 'data' in f['Experiments'][ds]:
-                        experiments.append(ds)
-                        d = f['Experiments'][ds]['data']
-                        available_memory -= np.array(
-                            d.shape).cumprod()[-1] * np.dtype(d.dtype).itemsize
-            if not experiments:
-                raise IOError(not_valid_format)
-            # Parse the file
-            if available_memory > 0:
-                loadtomem = True
-            else:
-                loadtomem = False
-            for experiment in experiments:
-                exg = f['Experiments'][experiment]
-                exp = hdfgroup2signaldict(exg, loadtomem)
-                exp_dict_list.append(exp)
-        else:
-            raise IOError('This is not a valid HyperSpy HDF5 file. '
-                          'You can still load the data using a hdf5 reader, '
-                          'e.g. h5py, and manually create a Signal. '
-                          'Please, refer to the User Guide for details')
-        return exp_dict_list
+    experiments = []
+    exp_dict_list = []
+    if 'Experiments' in f:
+        for ds in f['Experiments']:
+            if isinstance(f['Experiments'][ds], h5py.Group):
+                if 'data' in f['Experiments'][ds]:
+                    experiments.append(ds)
+                    d = f['Experiments'][ds]['data']
+        if not experiments:
+            raise IOError(not_valid_format)
+        # Parse the file
+        for experiment in experiments:
+            exg = f['Experiments'][experiment]
+            exp = hdfgroup2signaldict(exg, load_to_memory)
+            exp_dict_list.append(exp)
+    else:
+        raise IOError('This is not a valid HyperSpy HDF5 file. '
+                      'You can still load the data using a hdf5 reader, '
+                      'e.g. h5py, and manually create a Signal. '
+                      'Please, refer to the User Guide for details')
+    if load_to_memory:
+        f.close()
+    return exp_dict_list
 
 
-def get_signal_chunks(metadata, data):
+# not used at the moment, but might be useful for the future
+def get_signal_chunks(data, metadata=None ):
     shape = data.shape
     typesize = np.dtype(data.dtype).itemsize
-    if metadata['Signal']['record_by'] == "spectrum":
-        keepdims = 1
+    if metadata is not None:
+        if metadata['Signal']['record_by'] == "spectrum":
+            keepdims = 1
 
-    if metadata['Signal']['record_by'] == "image":
-        keepdims = 2
+        if metadata['Signal']['record_by'] == "image":
+            keepdims = 2
     else:
         return h5py._hl.filters.guess_chunk(shape, None, typesize)
 
@@ -178,7 +174,7 @@ def get_signal_chunks(metadata, data):
     return tuple(long(x) for x in chunks)
 
 
-def hdfgroup2signaldict(group, loadtomem=False):
+def hdfgroup2signaldict(group, load_to_memory=True):
     global current_file_version
     global default_version
     if current_file_version < StrictVersion("1.2"):
@@ -188,19 +184,13 @@ def hdfgroup2signaldict(group, loadtomem=False):
         metadata = "metadata"
         original_metadata = "original_metadata"
 
-    exp = {'metadata': hdfgroup2dict(group[metadata], {}),
-           'original_metadata': hdfgroup2dict(group[original_metadata], {})
+    exp = {'metadata': hdfgroup2dict(group[metadata], load_to_memory=load_to_memory),
+           'original_metadata': hdfgroup2dict(group[original_metadata], load_to_memory=load_to_memory)
            }
 
     data = group['data']
-    if loadtomem:
+    if load_to_memory:
         data = np.asanyarray(data)
-    else:
-        if data.chunks is None:
-            chunks = get_signal_chunks(exp['metadata'], data)
-        else:
-            chunks = data.chunks
-        data = da.from_array(data, chunks=chunks)
     exp['data'] = data
     axes = []
     for i in xrange(len(exp['data'].shape)):
@@ -215,21 +205,17 @@ def hdfgroup2signaldict(group, loadtomem=False):
         try:
             axes = [i for k, i in sorted(iter(hdfgroup2dict(
                 group['_list_' + str(len(exp['data'].shape)) + '_axes'],
-                {}).iteritems()))]
+                load_to_memory=load_to_memory).iteritems()))]
         except KeyError:
             raise IOError(not_valid_format)
-    exp['metadata'] = hdfgroup2dict(
-        group[metadata], {})
-    exp['original_metadata'] = hdfgroup2dict(
-        group[original_metadata], {})
     exp['axes'] = axes
     exp['attributes'] = {}
     if 'learning_results' in group.keys():
         exp['attributes']['learning_results'] = \
-            hdfgroup2dict(group['learning_results'], {})
+            hdfgroup2dict(group['learning_results'], load_to_memory=load_to_memory)
     if 'peak_learning_results' in group.keys():
         exp['attributes']['peak_learning_results'] = \
-            hdfgroup2dict(group['peak_learning_results'], {})
+            hdfgroup2dict(group['peak_learning_results'], load_to_memory=load_to_memory)
 
     # If the title was not defined on writing the Experiment is
     # then called __unnamed__. The next "if" simply sets the title
@@ -243,10 +229,10 @@ def hdfgroup2signaldict(group, loadtomem=False):
         # mva_results
         if 'mva_results' in group.keys():
             exp['attributes']['learning_results'] = hdfgroup2dict(
-                group['mva_results'], {})
+                group['mva_results'], load_to_memory=load_to_memory)
         if 'peak_mva_results' in group.keys():
             exp['attributes']['peak_learning_results'] = hdfgroup2dict(
-                group['peak_mva_results'], {})
+                group['peak_mva_results'], load_to_memory=load_to_memory)
         # Replace the old signal and name keys with their current names
         if 'signal' in exp['metadata']:
             if "Signal" not in exp["metadata"]:
@@ -455,7 +441,7 @@ def dict2hdfgroup(dictionary, group, compression=None):
                 print('%s : %s' % (key, value))
 
 
-def hdfgroup2dict(group, dictionary=None):
+def hdfgroup2dict(group, dictionary=None, load_to_memory=True):
     if dictionary is None:
         dictionary = {}
     for key, value in group.attrs.iteritems():
@@ -486,36 +472,41 @@ def hdfgroup2dict(group, dictionary=None):
             if key.startswith('_sig_'):
                 from hyperspy.io import dict2signal
                 dictionary[key[len('_sig_'):]] = (
-                    dict2signal(hdfgroup2signaldict(group[key])))
+                    dict2signal(hdfgroup2signaldict(group[key],
+                                                    load_to_memory=load_to_memory)))
             elif isinstance(group[key], h5py.Dataset):
-                try:
+                if key.startswith("_list_"):
+                    ans = np.array(group[key])
+                    ans = ans.tolist()
+                    kn = key[6:]
+                elif key.startswith("_tuple_"):
+                    ans = np.array(group[key])
+                    ans = tuple(ans.tolist())
+                    kn = key[7:]
+                elif load_to_memory:
                     ans = np.array(group[key])
                     kn = key
-                    if key.startswith("_list_"):
-                        ans = ans.tolist()
-                        kn = key[6:]
-                    elif key.startswith("_tuple_"):
-                        ans = tuple(ans.tolist())
-                        kn = key[7:]
-                except MemoryError:
-                    ans = da.from_array(group[key], chunks=group[key].chunks)
+                else:
+                    # leave as h5py dataset
+                    ans = group[key]
+                    kn = key
                 dictionary[kn] = ans
             elif key.startswith('_hspy_AxesManager_'):
                 dictionary[key[len('_hspy_AxesManager_'):]] = \
                     AxesManager([i
                                  for k, i in sorted(iter(
-                                     hdfgroup2dict(group[key]).iteritems()))])
+                                     hdfgroup2dict(group[key], load_to_memory=load_to_memory).iteritems()))])
             elif key.startswith('_list_'):
                 dictionary[key[7 + key[6:].find('_'):]] = \
                     [i for k, i in sorted(iter(
-                        hdfgroup2dict(group[key], {}).iteritems()))]
+                        hdfgroup2dict(group[key], load_to_memory=load_to_memory).iteritems()))]
             elif key.startswith('_tuple_'):
                 dictionary[key[8 + key[7:].find('_'):]] = tuple(
                     [i for k, i in sorted(iter(
-                        hdfgroup2dict(group[key], {}).iteritems()))])
+                        hdfgroup2dict(group[key], load_to_memory=load_to_memory).iteritems()))])
             else:
                 dictionary[key] = {}
-                hdfgroup2dict(group[key], dictionary[key])
+                hdfgroup2dict(group[key], dictionary[key], load_to_memory=load_to_memory)
     return dictionary
 
 
