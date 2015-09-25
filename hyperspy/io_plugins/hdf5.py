@@ -136,7 +136,7 @@ def file_reader(filename, record_by, mode='r', driver='core',
 
 
 # not used at the moment, but might be useful for the future
-def get_signal_chunks(data, metadata=None ):
+def get_signal_chunks(data, metadata=None):
     shape = data.shape
     typesize = np.dtype(data.dtype).itemsize
     if metadata is not None:
@@ -212,10 +212,14 @@ def hdfgroup2signaldict(group, load_to_memory=True):
     exp['attributes'] = {}
     if 'learning_results' in group.keys():
         exp['attributes']['learning_results'] = \
-            hdfgroup2dict(group['learning_results'], load_to_memory=load_to_memory)
+            hdfgroup2dict(
+                group['learning_results'],
+                load_to_memory=load_to_memory)
     if 'peak_learning_results' in group.keys():
         exp['attributes']['peak_learning_results'] = \
-            hdfgroup2dict(group['peak_learning_results'], load_to_memory=load_to_memory)
+            hdfgroup2dict(
+                group['peak_learning_results'],
+                load_to_memory=load_to_memory)
 
     # If the title was not defined on writing the Experiment is
     # then called __unnamed__. The next "if" simply sets the title
@@ -506,7 +510,10 @@ def hdfgroup2dict(group, dictionary=None, load_to_memory=True):
                         hdfgroup2dict(group[key], load_to_memory=load_to_memory).iteritems()))])
             else:
                 dictionary[key] = {}
-                hdfgroup2dict(group[key], dictionary[key], load_to_memory=load_to_memory)
+                hdfgroup2dict(
+                    group[key],
+                    dictionary[key],
+                    load_to_memory=load_to_memory)
     return dictionary
 
 
