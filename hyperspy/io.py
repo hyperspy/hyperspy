@@ -124,6 +124,10 @@ def load(filenames=None,
         mapped file will be created in the given directory,
         otherwise the default directory is used.
 
+    load_to_memory: bool
+        for HDF5 files, if True (default) loads all data to memory. If False,
+        enables only loading the data upon request
+
     Returns
     -------
     Signal instance or list of signal instances
