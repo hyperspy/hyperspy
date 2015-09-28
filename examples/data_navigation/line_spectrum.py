@@ -1,8 +1,12 @@
 """Creates a line spectrum and plots it
 """
 
+import numpy as np
+import hyperspy.api as hs
+import matplotlib.pyplot as plt
+
 # Create a line spectrum with random data
-s = signals.Spectrum(np.random.random((100, 1024)))
+s = hs.signals.Spectrum(np.random.random((100, 1024)))
 
 # Define the axis properties
 s.axes_manager.signal_axes[0].name = 'Energy'
@@ -21,4 +25,4 @@ s.metadata.General.title = 'Random line spectrum'
 # Plot it
 s.plot()
 
-show()  # No necessary when running in the HyperSpy's IPython profile
+plt.show()  # No necessary when running in the HyperSpy's IPython profile

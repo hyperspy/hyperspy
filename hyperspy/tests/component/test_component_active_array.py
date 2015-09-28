@@ -1,4 +1,4 @@
-# Copyright 2007-2012 The HyperSpy developers
+# Copyright 2007-2015 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -58,8 +58,8 @@ class TestParametersAsSignals:
             np.all(
                 g.A.as_signal('values').data == np.zeros(
                     (3, 3))))
-        nt.assert_true(
-            np.all(g._active_array == np.array([[0, 1, 1], [1, 1, 1], [0, 1, 1]], dtype=bool)))
+        nt.assert_true(np.all(
+            g._active_array == np.array([[0, 1, 1], [1, 1, 1], [0, 1, 1]], dtype=bool)))
         g._toggle_connect_active_array(True)
         nt.assert_true(g._active_is_multidimensional)
         nt.assert_true(

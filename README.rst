@@ -1,6 +1,6 @@
 .. -*- mode: rst -*-
 
-|Travis|_ |Coveralls|_ |pypi_version|_ |pypi_downloads|_ 
+|Travis|_ |Coveralls|_ |pypi_version|_ |pypi_downloads|_ |rtd|_ 
 
 .. |Travis| image:: https://api.travis-ci.org/hyperspy/hyperspy.png?branch=0.8.x
 .. _Travis: https://travis-ci.org/hyperspy/hyperspy
@@ -13,6 +13,9 @@
 
 .. |pypi_version| image:: http://img.shields.io/pypi/v/hyperspy.svg?style=flat
 .. _pypi_version: https://pypi.python.org/pypi/hyperspy
+
+.. |rtd| image:: https://readthedocs.org/projects/hyperspy/badge/?version=latest
+.. _rtd: https://readthedocs.org/projects/hyperspy/?badge=latest
 
 HyperSpy is an open source Python library which provides tools to facilitate
 the interactive data analysis of multidimensional datasets that can be
@@ -35,5 +38,5 @@ Cite
 
 |DOI|_
 
-.. |DOI| image:: https://zenodo.org/badge/6941/hyperspy/hyperspy.svg
-.. _DOI: http://dx.doi.org/10.5281/zenodo.16850
+.. |DOI| image:: https://zenodo.org/badge/doi/10.5281/zenodo.28025.svg
+.. _DOI: http://dx.doi.org/10.5281/zenodo.28025

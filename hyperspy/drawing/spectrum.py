@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2015 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -328,7 +328,7 @@ class SpectrumLine(object):
                             np.nanmin(clipped_ydata))
             self.ax.set_ylim(y_min, y_max)
         if self.plot_indices is True:
-            self.text.set_text((self.axes_manager.indices))
+            self.text.set_text(self.axes_manager.indices)
         try:
             self.ax.hspy_fig._draw_animated()
         except:

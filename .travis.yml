@@ -1,10 +1,12 @@
 language: python
 
+sudo: false
+
 python:
   - 2.7
 
 env:
-  - DEPS="nose numpy scipy matplotlib traits traitsui ipython h5py"
+  - DEPS="nose numpy scipy matplotlib traits traitsui ipython h5py sympy scikit-learn"
 
 install:
   - conda create -n testenv --yes python=$TRAVIS_PYTHON_VERSION

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2015 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -29,6 +29,8 @@ import unicodedata
 
 import numpy as np
 
+from hyperspy.misc.hspy_warnings import VisibleDeprecationWarning
+
 
 def attrsetter(target, attrs, value):
     """ Sets attribute of the target to specified value, supports nested attributes.
@@ -45,8 +47,8 @@ def attrsetter(target, attrs, value):
         -------
         First create a signal and model pair:
 
-        >>> s = signals.Spectrum(np.arange(10))
-        >>> m = create_model(s)
+        >>> s = hs.signals.Spectrum(np.arange(10))
+        >>> m = s.create_model()
         >>> m.spectrum.data
         array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
 
@@ -88,6 +90,7 @@ def generate_axis(origin, step, N, index=0):
         origin - index * step, origin + step * (N - 1 - index), N)
 
 
+# TODO: Remove in 0.9
 def unfold_if_multidim(signal):
     """Unfold the SI if it is 2D
 
@@ -101,12 +104,11 @@ def unfold_if_multidim(signal):
     Boolean. True if the SI was unfolded by the function.
 
     """
-    if len(signal.axes_manager._axes) > 2:
-        print "Automatically unfolding the SI"
-        signal.unfold()
-        return True
-    else:
-        return False
+    import warnings
+    warnings.warn("unfold_if_multidim is deprecated and will be removed in "
+                  "0.9 please use Signal.unfold instead",
+                  VisibleDeprecationWarning)
+    return None
 
 
 def str2num(string, **kargs):
@@ -212,7 +214,9 @@ class DictionaryTreeBrowser(object):
 
     """
 
-    def __init__(self, dictionary={}):
+    def __init__(self, dictionary=None):
+        if not dictionary:
+            dictionary = {}
         super(DictionaryTreeBrowser, self).__init__()
         self.add_dictionary(dictionary)
 
@@ -325,7 +329,7 @@ class DictionaryTreeBrowser(object):
 
         """
         return sorted([key for key in self.__dict__.keys()
-                      if not key.startswith("_")])
+                       if not key.startswith("_")])
 
     def as_dictionary(self):
         """Returns its dictionary representation.
@@ -490,10 +494,11 @@ class DictionaryTreeBrowser(object):
 
         """
         keys = node_path.split('.')
+        dtb = self
         for key in keys:
-            if self.has_item(key) is False:
-                self[key] = DictionaryTreeBrowser()
-            self = self[key]
+            if dtb.has_item(key) is False:
+                dtb[key] = DictionaryTreeBrowser()
+            dtb = dtb[key]
 
     def next(self):
         """
@@ -625,7 +630,7 @@ def find_subclasses(mod, cls):
 
     """
     return dict([(name, obj) for name, obj in inspect.getmembers(mod)
-                if inspect.isclass(obj) and issubclass(obj, cls)])
+                 if inspect.isclass(obj) and issubclass(obj, cls)])
 
 
 def isiterable(obj):
@@ -746,7 +751,7 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
     Examples
     --------
     >>> data = np.arange(20)
-    >>> s = utils.stack([signals.Spectrum(data[:10]), signals.Spectrum(data[10:])])
+    >>> s = hs.stack([hs.signals.Spectrum(data[:10]), hs.signals.Spectrum(data[10:])])
     >>> s
     <Spectrum, title: Stack of , dimensions: (2, 10)>
     >>> s.data
@@ -835,3 +840,10 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
         step_sizes)
 
     return signal
+
+
+def shorten_name(name, req_l):
+    if len(name) > req_l:
+        return name[:req_l - 2] + u'..'
+    else:
+        return name

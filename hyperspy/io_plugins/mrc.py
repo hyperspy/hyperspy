@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2015 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -89,7 +89,7 @@ def get_std_dtype_list(endianess='<'):
             ('STAMP', (str, 4)),
             ('RMS', end + 'f4'),
             ('NLABL', end + 'u4'),
-            ('LABELS', (str, (800))),
+            ('LABELS', (str, 800)),
         ]
 
     return dtype_list

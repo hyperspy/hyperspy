@@ -17,7 +17,7 @@ image lena.jpg you can type:
 
 .. code-block:: python
 
-    >>> s = load("lena.jpg")
+    >>> s = hs.load("lena.jpg")
     
 If the loading was successful, the variable :guilabel:`s` contains a generic
 :py:class:`~.signal.Signal`, a :py:class:`~._signals.spectrum.Spectrum` or an
@@ -36,7 +36,7 @@ providing the ``signal`` keyword, which has to be one of: ``spectrum``,
 
 .. code-block:: python
 
-    >>> s = load("filename", signal = "EELS")
+    >>> s = hs.load("filename", signal = "EELS")
 
 Some file formats store some extra information about the data, which can be
 stored in "attributes". If HyperSpy manages to read some extra information
@@ -69,7 +69,7 @@ functions, e.g.:
 
 .. code-block:: python
 
-    >>> s = load(["file1.hdf5", "file2.hdf5"])
+    >>> s = hs.load(["file1.hdf5", "file2.hdf5"])
     
 or by using `shell-style wildcards <http://docs.python.org/library/glob.html>`_
 
@@ -87,14 +87,14 @@ which case the function will return a list of objects, e.g.:
     >>> ls
     CL1.raw  CL1.rpl~  CL2.rpl  CL3.rpl  CL4.rpl  LL3.raw  shift_map-          SI3.npy
     CL1.rpl  CL2.raw   CL3.raw  CL4.raw  hdf5/    LL3.rpl
-    >>> s = load('*.rpl')
+    >>> s = hs.load('*.rpl')
     >>> s
     [<EELSSpectrum, title: CL1, dimensions: (64, 64, 1024)>,     
     <EELSSpectrum, title: CL2, dimensions: (64, 64, 1024)>, 
     <EELSSpectrum, title: CL3, dimensions: (64, 64, 1024)>, 
     <EELSSpectrum, title: CL4, dimensions: (64, 64, 1024)>, 
     <EELSSpectrum, title: LL3, dimensions: (64, 64, 1024)>]
-    >>> s = load('*.rpl', stack=True)
+    >>> s = hs.load('*.rpl', stack=True)
     >>> s
     <EELSSpectrum, title: mva, dimensions: (5, 64, 64, 1024)>
 
@@ -178,17 +178,34 @@ Note that only HDF5 files written by HyperSpy are supported
 .. versionadded:: 0.8
     
 It is also possible to save more complex structures (i.e. lists, tuples and signals) in 
-:py:attr:`~.metadata` of the signal, which might be particularly useful when using
+:py:attr:`~.metadata` of the signal. Please note that in order to increase
+saving efficiency and speed, if possible, the inner-most structures are
+converted to numpy arrays when saved. This procedure homogenizes any types of
+the objects inside, most notably casting numbers as strings if any other
+strings are present:
+
+.. code-block:: python
+
+    >>> # before saving:
+    >>> somelist
+    [1, 2.0, 'a name']
+    >>> # after saving:
+    ['1', '2.0', 'a name']
+
+The change of type is done using numpy "safe" rules, so no information is lost,
+as numbers are represented to full machine precision.
+
+This feature is particularly useful when using
 :py:meth:`~._signals.EDSSEMSpectrum.get_lines_intensity` (see :ref:`get lines
 intensity<get_lines_intensity>`):
 
 .. code-block:: python
 
-    >>> s = utils.example_signals.EDS_SEM_Spectrum()
+    >>> s = hs.datasets.example_signals.EDS_SEM_Spectrum()
     >>> s.metadata.Sample.intensities = s.get_lines_intensity()
     >>> s.save('EDS_spectrum.hdf5')
 
-    >>> s_new = load('EDS_spectrum.hdf5')
+    >>> s_new = hs.load('EDS_spectrum.hdf5')
     >>> s_new.metadata.Sample.intensities
     [<Signal, title: X-ray line intensity of EDS SEM Spectrum: Al_Ka at 1.49 keV, dimensions: (|)>,
      <Signal, title: X-ray line intensity of EDS SEM Spectrum: C_Ka at 0.28 keV, dimensions: (|)>,

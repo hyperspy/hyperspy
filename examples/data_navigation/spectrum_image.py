@@ -1,8 +1,12 @@
 """Creates a spectrum image and plots it
 """
 
+import numpy as np
+import hyperspy.api as hs
+import matplotlib.pyplot as plt
+
 # Create a spectrum image with random data
-s = signals.Spectrum(np.random.random((64, 64, 1024)))
+s = hs.signals.Spectrum(np.random.random((64, 64, 1024)))
 
 # Define the axis properties
 s.axes_manager.signal_axes[0].name = 'Energy'
@@ -26,4 +30,4 @@ s.metadata.General.title = 'Random spectrum image'
 # Plot it
 s.plot()
 
-show()  # No necessary when running in the HyperSpy's IPython profile
+plt.show()  # No necessary when running in the HyperSpy's IPython profile

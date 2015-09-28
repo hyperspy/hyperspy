@@ -1,4 +1,4 @@
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2015 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -92,17 +92,16 @@ class Test_metadata:
         sSEM.set_signal_type(signal_type)
         mpSEM = sSEM.metadata
         results = [
-            mp.Acquisition_instrument.TEM.Detector.EDS.energy_resolution_MnKa]
-        results.append(signal_type)
+            mp.Acquisition_instrument.TEM.Detector.EDS.energy_resolution_MnKa,
+            signal_type]
         resultsSEM = [
-            mpSEM.Acquisition_instrument.SEM.Detector.EDS.
-            energy_resolution_MnKa]
-        resultsSEM.append(mpSEM.Signal.signal_type)
+            mpSEM.Acquisition_instrument.SEM.Detector.EDS.energy_resolution_MnKa,
+            mpSEM.Signal.signal_type]
         assert_equal(results, resultsSEM)
 
     def test_get_calibration_from(self):
         s = self.signal
-        scalib = EDSTEMSpectrum(np.ones((1024)))
+        scalib = EDSTEMSpectrum(np.ones(1024))
         energy_axis = scalib.axes_manager.signal_axes[0]
         energy_axis.scale = 0.01
         energy_axis.offset = -0.10
