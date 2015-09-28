@@ -96,9 +96,9 @@ def get_hspy_format_version(f):
     return StrictVersion(version)
 
 
-def file_reader(filename, record_by, mode='r', driver='core',
+def file_reader(filename, record_by, mode='r',
                 backing_store=False, load_to_memory=True, **kwds):
-    f = h5py.File(filename, mode=mode, driver=driver, **kwds)
+    f = h5py.File(filename, mode=mode, **kwds)
     # Getting the format version here also checks if it is a valid HSpy
     # hdf5 file, so the following two lines must not be deleted or moved
     # elsewhere.
@@ -165,6 +165,43 @@ def file_reader(filename, record_by, mode='r', driver='core',
     if load_to_memory:
         f.close()
     return exp_dict_list
+
+
+def get_signal_chunks(shape, dtype, metadata=None):
+    typesize = np.dtype(dtype).itemsize
+    keepdims = None
+    if metadata is not None:
+        if metadata['Signal']['record_by'] == "spectrum":
+            keepdims = 1
+        if metadata['Signal']['record_by'] == "image":
+            keepdims = 2
+    if keepdims is None:
+        return h5py._hl.filters.guess_chunk(shape, None, typesize)
+
+    # largely based on the guess_chunk in h5py
+    CHUNK_MAX = 1024 * 1024
+    want_to_keep = np.product(shape[-keepdims:]) * typesize
+    if want_to_keep >= CHUNK_MAX:
+        chunks = [1 for _ in shape]
+        for i in xrange(keepdims):
+            chunks[-i - 1] = shape[-i - 1]
+        return tuple(chunks)
+
+    chunks = [i for i in shape]
+    nchange = len(shape) - keepdims
+    idx = 0
+    while True:
+        chunk_bytes = np.product(chunks) * typesize
+
+        if chunk_bytes < CHUNK_MAX:
+            break
+
+        if np.product(chunks[:nchange]) == 1:
+            break
+
+        chunks[idx % nchange] = np.ceil(chunks[idx % nchange] / 2.0)
+        idx += 1
+    return tuple(long(x) for x in chunks)
 
 
 def hdfgroup2signaldict(group, load_to_memory=True):
@@ -375,17 +412,15 @@ def dict2hdfgroup(dictionary, group, compression=None):
                           group.create_group(key),
                           compression=compression)
         elif isinstance(value, Signal):
-            if key.startswith('_sig_'):
-                try:
-                    write_signal(value, group[key])
-                except:
-                    write_signal(value, group.create_group(key))
-            else:
-                write_signal(value, group.create_group('_sig_' + key))
+            kn = key
+            if not key.startswith('_sig_'):
+                kn = '_sig_' + key
+            write_signal(value, group.require_group(kn))
         elif isinstance(value, np.ndarray):
             group.create_dataset(key,
                                  data=value,
-                                 compression=compression)
+                                 compression=compression,
+                                 chunks=True)
         elif value is None:
             group.attrs[key] = '_None_'
         elif isinstance(value, str):
@@ -510,9 +545,6 @@ def write_signal(signal, group, compression='gzip'):
         metadata = "metadata"
         original_metadata = "original_metadata"
 
-    group.create_dataset('data',
-                         data=signal.data,
-                         compression=compression)
     for axis in signal.axes_manager._axes:
         axis_dict = axis.get_axis_dictionary()
         # For the moment we don't store the navigate attribute
@@ -522,6 +554,18 @@ def write_signal(signal, group, compression='gzip'):
         dict2hdfgroup(axis_dict, coord_group, compression=compression)
     mapped_par = group.create_group(metadata)
     metadata_dict = signal.metadata.as_dictionary()
+    data = group.require_dataset('data',
+                                 shape=signal.data.shape,
+                                 dtype=signal.data.dtype,
+                                 exact=True,
+                                 compression=compression,
+                                 maxshape=tuple(
+                                     None for _ in signal.data.shape),
+                                 chunks=get_signal_chunks(signal.data.shape,
+                                                          signal.data.dtype,
+                                                          metadata_dict),
+                                 )
+    data[:] = signal.data[:]
     if default_version < StrictVersion("1.2"):
         metadata_dict["_internal_parameters"] = \
             metadata_dict.pop("_HyperSpy")
@@ -551,12 +595,34 @@ def write_signal(signal, group, compression='gzip'):
 def file_writer(filename,
                 signal,
                 compression='gzip',
+                fileobj=None,
                 *args, **kwds):
-    with h5py.File(filename, mode='w') as f:
-        f.attrs['file_format'] = "HyperSpy"
-        f.attrs['file_format_version'] = version
-        exps = f.create_group('Experiments')
-        group_name = signal.metadata.General.title if \
-            signal.metadata.General.title else '__unnamed__'
-        expg = exps.create_group(group_name)
-        write_signal(signal, expg, compression=compression)
+    if fileobj is None or fileobj.filename != filename:
+        fileobj = h5py.File(filename, mode='w')
+    expg = write_empty_signal(fileobj,
+                              signal.data.shape,
+                              signal.data.dtype,
+                              compression=compression,
+                              metadata=signal.metadata)
+    write_signal(signal, expg, compression=compression)
+
+
+def write_empty_signal(fileobj,
+                       shape,
+                       dtype,
+                       compression='gzip',
+                       metadata=None):
+    fileobj.attrs['file_format'] = "HyperSpy"
+    fileobj.attrs['file_format_version'] = version
+    exps = fileobj.require_group('Experiments')
+    group_name = metadata.General.title if metadata is not None and \
+        metadata.General.title else '__unnamed__'
+    expg = exps.require_group(group_name)
+    expg.create_dataset(name='data',
+                        shape=shape,
+                        dtype=dtype,
+                        compression=compression,
+                        chunks=get_signal_chunks(shape, dtype, metadata),
+                        maxshape=tuple(None for _ in shape),
+                        )
+    return expg

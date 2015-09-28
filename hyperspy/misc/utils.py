@@ -811,17 +811,36 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
 
     """
 
+    import h5py
+    from hyperspy.io_plugins.hdf5 import write_empty_signal, write_signal
+    import dask.array as da
     axis_input = copy.deepcopy(axis)
 
     for i, obj in enumerate(signal_list):
         if i == 0:
             if axis is None:
                 original_shape = obj.data.shape
-                stack_shape = tuple([len(signal_list), ]) + original_shape
-                tempf = None
+                stack_shape = (len(signal_list),) + original_shape
+
+                # TODO: figure out what happens when deepcopy h5py.Dataset !!!
+
+                new_metadata = copy.deepcopy(obj.metadata)
+                # Get the title from 1st object
+                new_metadata.General.title = "Stack of " + \
+                    new_metadata.General.title
+
                 if mmap is False:
-                    data = np.empty(stack_shape,
-                                    dtype=obj.data.dtype)
+                    if isinstance(obj.data, h5py.Dataset):
+                        tempfname = tempfile.NamedTemporaryFile(
+                            dir=mmap_dir).name
+                        tempf = h5py.File(name=tempfname, mode='w')
+                        data = write_empty_signal(tempf,
+                                                  stack_shape,
+                                                  obj.data.dtype,
+                                                  metadata=new_metadata)['data']
+                    else:
+                        data = np.empty(stack_shape,
+                                        dtype=obj.data.dtype)
                 else:
                     tempf = tempfile.NamedTemporaryFile(
                         dir=mmap_dir)
@@ -844,26 +863,34 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
                 eaxis = signal.axes_manager._axes[0]
                 eaxis.name = axis_name
                 eaxis.navigate = True  # This triggers _update_parameters
-                signal.metadata = copy.deepcopy(obj.metadata)
-                # Get the title from 1st object
-                signal.metadata.General.title = (
-                    "Stack of " + obj.metadata.General.title)
+
+                signal.metadata = new_metadata
                 signal.original_metadata = DictionaryTreeBrowser({})
             else:
                 axis = obj.axes_manager[axis]
-                signal = obj.deepcopy()
+                stack_shape = np.array(obj.data.shape)
+                for j in xrange(len(stack_shape)):
+                    if j == axis.index_in_array:
+                        stack_shape[j] = np.sum(
+                            [s.data.shape[j] for s in signal_list])
+                if isinstance(obj.data, h5py.Dataset):
+                    tempfname = tempfile.NamedTemporaryFile(dir=mmap_dir).name
+                    tempf = h5py.File(name=tempfname, mode='w')
+                    data = write_empty_signal(tempf,
+                                              tuple(stack_shape),
+                                              obj.data.dtype,
+                                              metadata=obj.metadata)['data']
+                else:
+                    data = np.empty(tuple(stack_shape),
+                                    dtype=obj.data.dtype)
+                signal = obj._deepcopy_with_new_data(data)
 
             signal.original_metadata.add_node('stack_elements')
 
-        # Store parameters
-        signal.original_metadata.stack_elements.add_node(
-            'element%i' % i)
-        node = signal.original_metadata.stack_elements[
-            'element%i' % i]
-        node.original_metadata = \
-            obj.original_metadata.as_dictionary()
-        node.metadata = \
-            obj.metadata.as_dictionary()
+        signal.original_metadata.stack_elements.set_item('element%i.original_metadata' % i,
+                                                         obj.original_metadata.as_dictionary())
+        signal.original_metadata.stack_elements.set_item('element%i.metadata' % i,
+                                                         obj.metadata.as_dictionary())
 
         if axis is None:
             if obj.data.shape != original_shape:
@@ -872,8 +899,12 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
             signal.data[i, ...] = obj.data
             del obj
     if axis is not None:
-        signal.data = np.concatenate([signal_.data for signal_ in signal_list],
-                                     axis=axis.index_in_array)
+        if isinstance(obj.data, h5py.Dataset):
+            da.store(da.concatenate([da.from_array(s_.data, chunks=signal.data.chunks)
+                                     for s_ in signal_list], axis=axis.index_in_array), signal.data)
+        else:
+            signal.data = np.concatenate([signal_.data for signal_ in signal_list],
+                                         axis=axis.index_in_array)
         signal.get_dimensions_from_data()
 
     if axis_input is None:
@@ -890,6 +921,8 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
         'Stacking_history.step_sizes',
         step_sizes)
 
+    if isinstance(signal.data, h5py.Dataset):
+        write_signal(signal, data.parent)
     return signal
 
 

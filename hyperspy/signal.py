@@ -3064,7 +3064,7 @@ class Signal(FancySlicing,
             old_models = self.models._models
             self.models._models = DictionaryTreeBrowser()
             ns = self.deepcopy()
-            ns.data = np.atleast_1d(data)
+            ns.data = data
             return ns
         finally:
             self.data = old_data
