@@ -17,6 +17,7 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import copy
+import h5py
 import os.path
 import warnings
 import math
@@ -2880,6 +2881,17 @@ class Signal(MVA,
             string += str(self.data.dtype)
         print string
 
+    @property
+    def data(self):
+        return self._data
+
+    @data.setter
+    def data(self, value):
+        if isinstance(value, h5py.Dataset):
+            self._data = value
+        else:
+            self._data = np.atleast_1d(np.asanyarray(value))
+
     def _load_dictionary(self, file_data_dict):
         """Load data from dictionary.
 
@@ -2908,7 +2920,7 @@ class Signal(MVA,
 
         """
 
-        self.data = np.atleast_1d(np.asanyarray(file_data_dict['data']))
+        self.data = file_data_dict['data']
         if 'axes' not in file_data_dict:
             file_data_dict['axes'] = self._get_undefined_axes_list()
         self.axes_manager = AxesManager(
