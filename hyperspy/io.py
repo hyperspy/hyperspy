@@ -125,10 +125,10 @@ def load(filenames=None,
         mapped file will be created in the given directory,
         otherwise the default directory is used.
 
-    load_to_memory: bool
+    load_to_memory: bool, None
         for HDF5 files and blockfiles, if True (default) loads all data to
         memory. If False, enables only loading the data upon request.
-	If stack=True as well, the result will be written to a new temporary HDF5 file.
+	    If stack=True as well, the result will be written to a new temporary HDF5 file.
         If None the default is set in `preferences`.
     mmap_mode: {'r', 'r+', 'c'}
         Used when loading blockfiles to determine which mode to use for when
