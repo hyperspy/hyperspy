@@ -40,6 +40,7 @@ def load(filenames=None,
          new_axis_name="stack_element",
          mmap=False,
          mmap_dir=None,
+         load_to_memory=None,
          **kwds):
     """
     Load potentially multiple supported file into an hyperspy structure
@@ -162,6 +163,8 @@ def load(filenames=None,
     kwds['record_by'] = record_by
     kwds['signal_type'] = signal_type
     kwds['signal_origin'] = signal_origin
+    if load_to_memory is not None:
+        kwds['load_to_memory'] = load_to_memory
     if filenames is None:
         if hyperspy.defaults_parser.preferences.General.interactive is True:
             from hyperspy.gui.tools import Load
@@ -189,15 +192,19 @@ def load(filenames=None,
         if len(filenames) > 1:
             messages.information('Loading individual files')
         if stack is True:
-            signal = []
-            for i, filename in enumerate(filenames):
-                obj = load_single_file(filename,
-                                       **kwds)
-                signal.append(obj)
+            if load_to_memory:
+                signal = [
+                    load_single_file(
+                        filename,
+                        **kwds) for filename in filenames]
+            else:
+                signal = (load_single_file(filename, **kwds)
+                          for filename in filenames)
             signal = hyperspy.utils.stack(signal,
                                           axis=stack_axis,
                                           new_axis_name=new_axis_name,
-                                          mmap=mmap, mmap_dir=mmap_dir)
+                                          mmap=mmap, mmap_dir=mmap_dir,
+                                          load_to_memory=load_to_memory)
             signal.metadata.General.title = \
                 os.path.split(
                     os.path.split(

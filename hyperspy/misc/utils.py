@@ -763,7 +763,7 @@ def without_nans(data):
 
 
 def stack(signal_list, axis=None, new_axis_name='stack_element',
-          mmap=False, mmap_dir=None,):
+          mmap=False, mmap_dir=None, load_to_memory=None):
     """Concatenate the signals in the list over a given axis or a new axis.
 
     The title is set to that of the first signal in the list.
@@ -793,6 +793,9 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
         If mmap_dir is not None, and stack and mmap are True, the memory
         mapped file will be created in the given directory,
         otherwise the default directory is used.
+    load_to_memory : bool, None
+        if True (default), loads all data to memory.
+        If False, only loads the data upon request.
 
     Returns
     -------
@@ -815,6 +818,9 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
     from hyperspy.io_plugins.hdf5 import write_empty_signal, write_signal, deepcopy2hdf5, get_temp_hdf5_file
     import dask.array as da
     axis_input = copy.deepcopy(axis)
+    dask_arrays = []
+    if load_to_memory is None:
+        load_to_memory = True
 
     for i, obj in enumerate(signal_list):
         if i == 0:
@@ -829,7 +835,7 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
                                                                  obj.metadata.Signal.record_by}})
 
                 if mmap is False:
-                    if isinstance(obj.data, h5py.Dataset):
+                    if isinstance(obj.data, h5py.Dataset) or not load_to_memory:
                         tempf = get_temp_hdf5_file()
                         data = write_empty_signal(tempf.file,
                                                   stack_shape,
@@ -873,11 +879,7 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
                 axis = obj.axes_manager[axis]
                 stack_shape = np.array(obj.data.shape)
                 tempf = None
-                for j in xrange(len(stack_shape)):
-                    if j == axis.index_in_array:
-                        stack_shape[j] = np.sum(
-                            [s.data.shape[j] for s in signal_list])
-                if isinstance(obj.data, h5py.Dataset):
+                if isinstance(obj.data, h5py.Dataset) or not load_to_memory:
                     tempf = get_temp_hdf5_file()
                     data = write_empty_signal(tempf.file,
                                               tuple(stack_shape),
@@ -905,10 +907,24 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
                     "Only files with data of the same shape can be stacked")
             signal.data[i, ...] = obj.data
             del obj
+        elif isinstance(signal.data, h5py.Dataset) and i != 0:
+            # have to extend the data to the required size, do it incrementally so that we don't have to load
+            # all the files at once
+            current_shape = np.array(signal.data.shape)
+            ax_ind = axis.index_in_array
+            current_shape[ax_ind] += obj.data.shape[ax_ind]
+            signal.data.resize(tuple(current_shape))
+            dask_arrays.append(
+                da.from_array(
+                    obj.data,
+                    chunks=signal.data.chunks))
     if axis is not None:
-        if isinstance(obj.data, h5py.Dataset):
-            da.store(da.concatenate([da.from_array(s_.data, chunks=signal.data.chunks)
-                                     for s_ in signal_list], axis=axis.index_in_array), signal.data)
+        if isinstance(signal.data, h5py.Dataset):
+            da.store(
+                da.concatenate(
+                    dask_arrays,
+                    axis=axis.index_in_array),
+                signal.data)
         else:
             signal.data = np.concatenate([signal_.data for signal_ in signal_list],
                                          axis=axis.index_in_array)
