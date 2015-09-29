@@ -4567,14 +4567,12 @@ class Signal(FancySlicing,
 
     def __deepcopy__(self, memo):
         if isinstance(self.data, h5py.Dataset):
-            import tempfile
+            from hyperspy.io_plugins.hdf5 import get_temp_hdf5_file, file_writer
             from hyperspy.io import load
-            # TODO: when migrating to Py3, use TemporaryDirectory, as it will be deleted as
-            # appropriate. Here we rely on the filesystem / reboots.
-            tempfname = tempfile.NamedTemporaryFile(
-                prefix='tmp_hs_').name + '.hdf5'
-            self.save(tempfname)
-            dc = load(tempfname, load_to_memory=False, mode='r+')
+            tempf = get_temp_hdf5_file()
+            file_writer(tempf.name, self, fileobj=tempf.file)
+            dc = load(tempf.name, load_to_memory=False, mode='r+')
+            dc._tempfile = tempf
         else:
             dc = type(self)(**self._to_dictionary())
             if dc.data is not None:

@@ -812,7 +812,7 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
     """
 
     import h5py
-    from hyperspy.io_plugins.hdf5 import write_empty_signal, write_signal, deepcopy2hdf5
+    from hyperspy.io_plugins.hdf5 import write_empty_signal, write_signal, deepcopy2hdf5, get_temp_hdf5_file
     import dask.array as da
     axis_input = copy.deepcopy(axis)
 
@@ -830,12 +830,7 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
 
                 if mmap is False:
                     if isinstance(obj.data, h5py.Dataset):
-                        # TODO: when migrating to Py3, use TemporaryDirectory, as it will be deleted as
-                        # appropriate. Here we rely on the filesystem /
-                        # reboots.
-                        tempfname = tempfile.NamedTemporaryFile(prefix='tmp_hs_',
-                                                                dir=mmap_dir).name
-                        tempf = h5py.File(name=tempfname, mode='w')
+                        tempf = get_temp_hdf5_file()
                         data = write_empty_signal(tempf,
                                                   stack_shape,
                                                   obj.data.dtype,
@@ -855,6 +850,7 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
                         obj.metadata.as_dictionary(),
                         data.parent.require_group('metadata'))
                     signal = type(obj)(data=data, metadata=md)
+                    signal._tempfile = tempf
                 else:
                     signal = type(obj)(data=data)
                 signal.axes_manager._axes[
@@ -876,15 +872,13 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
             else:
                 axis = obj.axes_manager[axis]
                 stack_shape = np.array(obj.data.shape)
+                tempf = None
                 for j in xrange(len(stack_shape)):
                     if j == axis.index_in_array:
                         stack_shape[j] = np.sum(
                             [s.data.shape[j] for s in signal_list])
                 if isinstance(obj.data, h5py.Dataset):
-                    tempfname = tempfile.NamedTemporaryFile(
-                        prefix='tmp_hs_',
-                        dir=mmap_dir).name
-                    tempf = h5py.File(name=tempfname, mode='w')
+                    tempf = get_temp_hdf5_file()
                     data = write_empty_signal(tempf,
                                               tuple(stack_shape),
                                               obj.data.dtype,
@@ -893,6 +887,8 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
                     data = np.empty(tuple(stack_shape),
                                     dtype=obj.data.dtype)
                 signal = obj._deepcopy_with_new_data(data)
+                if tempf is not None:
+                    signal._tempfile = tempf
 
             signal.original_metadata.add_node('stack_elements')
 

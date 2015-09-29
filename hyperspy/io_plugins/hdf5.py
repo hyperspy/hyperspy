@@ -686,3 +686,20 @@ def write_empty_signal(fileobj,
                         shuffle=True,
                         )
     return expg
+
+
+def get_temp_hdf5_file(prefix='tmp_hs',
+                       directory='.',
+                       suffix='.hdf5',
+                       maxnames=100):
+    import tempfile
+    import os
+    names = tempfile._get_candidate_names()
+    for seq in xrange(maxnames):
+        name = names.next()
+        fname = os.path.join(directory, prefix + name + suffix)
+        if os.path.exists(fname):
+            continue
+        fileobj = h5py.File(fname, mode='w')
+        return tempfile._TemporaryFileWrapper(fileobj, fname, True)
+    raise IOError("No usable temporary file name found")
