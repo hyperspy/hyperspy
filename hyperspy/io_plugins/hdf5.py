@@ -612,11 +612,14 @@ def write_signal(signal, group, compression='gzip'):
             # if the shape or dtype/etc do not match,
             # we delete the old one and create new in the next loop run
             del group['data']
-    if data == signal.data:
+
+    if data is signal.data:
         # just a reference to already created thing
         pass
     else:
-        data[:] = signal.data[:]
+        import dask.array as da
+        da.store(da.from_array(signal.data, chunks=data.chunks), data)
+        # data[:] = signal.data[:]
     if default_version < StrictVersion("1.2"):
         metadata_dict["_internal_parameters"] = \
             metadata_dict.pop("_HyperSpy")
@@ -687,23 +690,5 @@ def write_empty_signal(fileobj,
                         chunks=get_signal_chunks(shape, dtype, metadata),
                         maxshape=tuple(None for _ in shape),
                         shuffle=True,
-                        fillvalue=0,
                         )
     return expg
-
-
-def get_temp_hdf5_file(prefix='tmp_hs_',
-                       directory='.',
-                       suffix='.hdf5',
-                       maxnames=100):
-    import tempfile
-    import os
-    names = tempfile._get_candidate_names()
-    for _ in xrange(maxnames):
-        name = names.next()
-        fname = os.path.join(directory, prefix + name + suffix)
-        if os.path.exists(fname):
-            continue
-        fileobj = h5py.File(fname, mode='w')
-        return tempfile._TemporaryFileWrapper(fileobj, fname, True)
-    raise IOError("No usable temporary file name found")

@@ -817,6 +817,7 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
 
     import h5py
     from hyperspy.io_plugins.hdf5 import write_empty_signal, write_signal, deepcopy2hdf5, get_temp_hdf5_file
+    import dask.array as da
     axis_input = copy.deepcopy(axis)
     if load_to_memory is None:
         load_to_memory = True
@@ -922,11 +923,14 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
                     "Only files with data of the same shape can be stacked")
             signal.data[i, ...] = obj.data
             del obj
-    if axis is not None and not isinstance(signal.data, h5py.Dataset):
-        signal.data = np.concatenate([signal_.data for signal_ in signal_list],
-                                     axis=axis.index_in_array)
-
-    signal.get_dimensions_from_data()
+    if axis is not None:
+        if isinstance(obj.data, h5py.Dataset):
+            da.store(da.concatenate([da.from_array(s_.data, chunks=signal.data.chunks)
+                                     for s_ in signal_list], axis=axis.index_in_array), signal.data)
+        else:
+            signal.data = np.concatenate([signal_.data for signal_ in signal_list],
+                                         axis=axis.index_in_array)
+        signal.get_dimensions_from_data()
 
     if axis_input is None:
         axis_input = signal.axes_manager[-1 + 1j].index_in_axes_manager
@@ -943,7 +947,7 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
         step_sizes)
 
     if isinstance(signal.data, h5py.Dataset):
-        write_signal(signal, signal.data.parent)
+        write_signal(signal, data.parent)
     return signal
 
 

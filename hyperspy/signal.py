@@ -2808,7 +2808,6 @@ class Signal(FancySlicing,
             imported from the original data file.
 
         """
-
         self._create_metadata()
         self.models = ModelManager(self)
         self.learning_results = LearningResults()
