@@ -831,7 +831,7 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
                 if mmap is False:
                     if isinstance(obj.data, h5py.Dataset):
                         tempf = get_temp_hdf5_file()
-                        data = write_empty_signal(tempf,
+                        data = write_empty_signal(tempf.file,
                                                   stack_shape,
                                                   obj.data.dtype,
                                                   metadata=new_metadata)['data']
@@ -879,7 +879,7 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
                             [s.data.shape[j] for s in signal_list])
                 if isinstance(obj.data, h5py.Dataset):
                     tempf = get_temp_hdf5_file()
-                    data = write_empty_signal(tempf,
+                    data = write_empty_signal(tempf.file,
                                               tuple(stack_shape),
                                               obj.data.dtype,
                                               metadata=obj.metadata)['data']
@@ -888,7 +888,9 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
                                     dtype=obj.data.dtype)
                 signal = obj._deepcopy_with_new_data(data)
                 if tempf is not None:
-                    signal._tempfile = tempf
+                    if not hasattr(signal, '_tempfile'):
+                        # should not happen atm, as the deepcopy sets it
+                        signal._tempfile = tempf
 
             signal.original_metadata.add_node('stack_elements')
 

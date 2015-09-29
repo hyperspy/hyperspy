@@ -688,7 +688,7 @@ def write_empty_signal(fileobj,
     return expg
 
 
-def get_temp_hdf5_file(prefix='tmp_hs',
+def get_temp_hdf5_file(prefix='tmp_hs_',
                        directory='.',
                        suffix='.hdf5',
                        maxnames=100):

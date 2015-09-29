@@ -1,5 +1,6 @@
 import os.path
 from os import remove
+from os.path import exists as os_exists
 import datetime
 import h5py
 import gc
@@ -8,6 +9,7 @@ import nose.tools as nt
 import numpy as np
 
 from hyperspy.io import load
+from hyperspy.io_plugins.hdf5 import get_temp_hdf5_file
 from hyperspy.signal import Signal
 
 my_path = os.path.dirname(__file__)
@@ -267,3 +269,13 @@ class TestLoadingOOMReadOnly:
         except:
             # Don't fail tests if we cannot remove
             pass
+
+
+def test_temp_hdf5_file():
+    f = get_temp_hdf5_file()
+    name = f.name
+    print name
+    nt.assert_equal(f.file.filename, name)
+    nt.assert_true(os_exists(name))
+    f.close()
+    nt.assert_false(os_exists(name))
