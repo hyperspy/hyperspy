@@ -192,14 +192,14 @@ def load(filenames=None,
         if len(filenames) > 1:
             messages.information('Loading individual files')
         if stack is True:
-            if load_to_memory:
+            if load_to_memory is False:
+                signal = (load_single_file(filename, **kwds)
+                          for filename in filenames)
+            else:  # True or None
                 signal = [
                     load_single_file(
                         filename,
                         **kwds) for filename in filenames]
-            else:
-                signal = (load_single_file(filename, **kwds)
-                          for filename in filenames)
             signal = hyperspy.utils.stack(signal,
                                           axis=stack_axis,
                                           new_axis_name=new_axis_name,

@@ -684,6 +684,7 @@ def write_empty_signal(fileobj,
                         chunks=get_signal_chunks(shape, dtype, metadata),
                         maxshape=tuple(None for _ in shape),
                         shuffle=True,
+                        fillvalue=0,
                         )
     return expg
 
