@@ -9,7 +9,7 @@ import nose.tools as nt
 import numpy as np
 
 from hyperspy.io import load
-from hyperspy.io_plugins.hdf5 import get_temp_hdf5_file
+from hyperspy.io_plugins.hdf5 import get_temp_hdf5_file, deepcopy2hdf5
 from hyperspy.signal import Signal
 
 my_path = os.path.dirname(__file__)
@@ -246,7 +246,7 @@ def test_rgba16():
     nt.assert_true((s.data == data).all())
 
 
-class TestLoadingOOMReadOnly:
+class TestLoadingOOM:
 
     def setUp(self):
         s = Signal(np.empty((5, 5, 5)))
@@ -284,8 +284,34 @@ class TestLoadingOOMReadOnly:
 def test_temp_hdf5_file():
     f = get_temp_hdf5_file()
     name = f.name
-    print name
-    nt.assert_equal(f.file.filename, name)
-    nt.assert_true(os_exists(name))
+    try:
+        print name
+        nt.assert_equal(f.file.filename, name)
+        nt.assert_true(os_exists(name))
+        f.close()
+        nt.assert_false(os_exists(name))
+    finally:
+        try:
+            remove(name)
+        except:
+            pass
+
+
+def test_deepcopy2hdf5():
+    f = get_temp_hdf5_file()
+    g = f.file.create_group('test')
+    g.attrs['one'] = 1
+    d1 = {
+        u'one': 1,
+        u'two': u'du',
+        u'three': {
+            u'1': 1,
+            u'2': [
+                1,
+                2],
+            u'3': np.arange(3)}}
+    d2 = deepcopy2hdf5(d1, g, load_to_memory=True)
+    np.testing.assert_equal(d1, d2)
+    nt.assert_is_not(d1['three']['3'], d2['three']['3'])
+    np.testing.assert_array_equal(g['three/3'].value, np.arange(3))
     f.close()
-    nt.assert_false(os_exists(name))
