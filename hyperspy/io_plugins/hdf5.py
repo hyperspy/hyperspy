@@ -519,7 +519,13 @@ def hdfgroup2dict(group, dictionary=None, load_to_memory=True):
         elif key.startswith('_bs_'):
             dictionary[key[len('_bs_'):]] = value.tostring()
         elif key.startswith('_datetime_'):
-            dictionary[key.replace("_datetime_", "")] = eval(value)
+            if value.startswith('datetime.date'):
+                ans = datetime.date(*[int(i) for i in value[14:-1].split(',')])
+            elif value.startswith('datetime.time'):
+                ans = datetime.time(*[int(i) for i in value[14:-1].split(',')])
+            else:
+                continue
+            dictionary[key.replace("_datetime_", "")] = ans
         else:
             dictionary[key] = value
     if not isinstance(group, h5py.Dataset):
@@ -549,15 +555,15 @@ def hdfgroup2dict(group, dictionary=None, load_to_memory=True):
             elif key.startswith('_hspy_AxesManager_'):
                 dictionary[key[len('_hspy_AxesManager_'):]] = \
                     AxesManager([i
-                                 for k, i in sorted(iter(
+                                 for _, i in sorted(iter(
                                      hdfgroup2dict(group[key], load_to_memory=load_to_memory).iteritems()))])
             elif key.startswith('_list_'):
                 dictionary[key[7 + key[6:].find('_'):]] = \
-                    [i for k, i in sorted(iter(
+                    [i for _, i in sorted(iter(
                         hdfgroup2dict(group[key], load_to_memory=load_to_memory).iteritems()))]
             elif key.startswith('_tuple_'):
                 dictionary[key[8 + key[7:].find('_'):]] = tuple(
-                    [i for k, i in sorted(iter(
+                    [i for _, i in sorted(iter(
                         hdfgroup2dict(group[key], load_to_memory=load_to_memory).iteritems()))])
             else:
                 dictionary[key] = {}
@@ -693,7 +699,7 @@ def get_temp_hdf5_file(prefix='tmp_hs_',
     import tempfile
     import os
     names = tempfile._get_candidate_names()
-    for seq in xrange(maxnames):
+    for _ in xrange(maxnames):
         name = names.next()
         fname = os.path.join(directory, prefix + name + suffix)
         if os.path.exists(fname):

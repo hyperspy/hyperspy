@@ -817,9 +817,7 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
 
     import h5py
     from hyperspy.io_plugins.hdf5 import write_empty_signal, write_signal, deepcopy2hdf5, get_temp_hdf5_file
-    import dask.array as da
     axis_input = copy.deepcopy(axis)
-    dask_arrays = []
     if load_to_memory is None:
         load_to_memory = True
 
