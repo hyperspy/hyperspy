@@ -612,8 +612,7 @@ def write_signal(signal, group, compression='gzip'):
             # if the shape or dtype/etc do not match,
             # we delete the old one and create new in the next loop run
             del group['data']
-
-    if data is signal.data:
+    if data == signal.data:
         # just a reference to already created thing
         pass
     else:

@@ -889,7 +889,6 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
                 else:
                     data = np.empty(obj.data.shape,
                                     dtype=obj.data.dtype)
-
                 signal = obj._deepcopy_with_new_data(data)
 
             signal.original_metadata.add_node('stack_elements')
