@@ -233,7 +233,7 @@ def hdfgroup2signaldict(group, load_to_memory=True):
             break
     if len(axes) != len(exp['data'].shape):  # broke from the previous loop
         try:
-            axes = [i for k, i in sorted(iter(hdfgroup2dict(
+            axes = [i for _, i in sorted(iter(hdfgroup2dict(
                 group['_list_' + str(len(exp['data'].shape)) + '_axes'],
                 load_to_memory=load_to_memory).iteritems()))]
         except KeyError:
