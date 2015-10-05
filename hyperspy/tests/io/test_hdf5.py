@@ -86,7 +86,8 @@ class TestExample1_10(Example1):
         self.s = load(os.path.join(
             my_path,
             "hdf5_files",
-            "example1_v1.0.hdf5"))
+            "example1_v1.0.hdf5"),
+            load_to_memory=True)
 
 
 class TestExample1_11(Example1):
@@ -95,7 +96,8 @@ class TestExample1_11(Example1):
         self.s = load(os.path.join(
             my_path,
             "hdf5_files",
-            "example1_v1.1.hdf5"))
+            "example1_v1.1.hdf5"),
+            load_to_memory=True)
 
 
 class TestExample1_12(Example1):
@@ -104,7 +106,8 @@ class TestExample1_12(Example1):
         self.s = load(os.path.join(
             my_path,
             "hdf5_files",
-            "example1_v1.2.hdf5"))
+            "example1_v1.2.hdf5"),
+            load_to_memory=True)
 
     def test_date(self):
         nt.assert_equal(
@@ -124,7 +127,8 @@ class TestLoadingNewSavedMetadata:
         self.s = load(os.path.join(
             my_path,
             "hdf5_files",
-            "with_lists_etc.hdf5"))
+            "with_lists_etc.hdf5"),
+            load_to_memory=True)
 
     def test_signal_inside(self):
         nt.assert_true(
@@ -170,7 +174,8 @@ class TestSavingMetadataContainers:
         s = self.s
         s.metadata.set_item('test', [u'a', u'b', u'\u6f22\u5b57'])
         s.save('tmp.hdf5', overwrite=True)
-        l = load('tmp.hdf5')
+        l = load('tmp.hdf5',
+                 load_to_memory=True)
         nt.assert_is_instance(l.metadata.test[0], unicode)
         nt.assert_is_instance(l.metadata.test[1], unicode)
         nt.assert_is_instance(l.metadata.test[2], unicode)
@@ -186,7 +191,8 @@ class TestSavingMetadataContainers:
         s = self.s
         s.metadata.set_item('test', [[1., 2], ('3', 4)])
         s.save('tmp.hdf5', overwrite=True)
-        l = load('tmp.hdf5')
+        l = load('tmp.hdf5',
+                 load_to_memory=True)
         nt.assert_is_instance(l.metadata.test, list)
         nt.assert_is_instance(l.metadata.test[0], list)
         nt.assert_is_instance(l.metadata.test[1], tuple)
@@ -195,7 +201,8 @@ class TestSavingMetadataContainers:
         s = self.s
         s.metadata.set_item('test', [[1., 2], ['3', 4]])
         s.save('tmp.hdf5', overwrite=True)
-        l = load('tmp.hdf5')
+        l = load('tmp.hdf5',
+                 load_to_memory=True)
         nt.assert_is_instance(l.metadata.test[0][0], float)
         nt.assert_is_instance(l.metadata.test[0][1], float)
         nt.assert_is_instance(l.metadata.test[1][0], basestring)
@@ -205,7 +212,8 @@ class TestSavingMetadataContainers:
         s = self.s
         s.metadata.set_item('test', (Signal([1]), 0.1, 'test_string'))
         s.save('tmp.hdf5', overwrite=True)
-        l = load('tmp.hdf5')
+        l = load('tmp.hdf5',
+                 load_to_memory=True)
         nt.assert_is_instance(l.metadata.test, tuple)
         nt.assert_is_instance(l.metadata.test[0], Signal)
         nt.assert_is_instance(l.metadata.test[1], float)
@@ -220,7 +228,8 @@ def test_none_metadata():
     s = load(os.path.join(
         my_path,
         "hdf5_files",
-        "none_metadata.hdf5"))
+        "none_metadata.hdf5"),
+        load_to_memory=True)
     nt.assert_is(s.metadata.should_be_None, None)
 
 
@@ -228,7 +237,8 @@ def test_rgba16():
     s = load(os.path.join(
         my_path,
         "hdf5_files",
-        "test_rgba16.hdf5"))
+        "test_rgba16.hdf5"),
+        load_to_memory=True)
     data = np.load(os.path.join(
         my_path,
         "npy_files",
@@ -255,7 +265,7 @@ class TestLoadingOOMReadOnly:
 
     @nt.raises(MemoryError, ValueError)
     def test_in_memory_loading(self):
-        s = load('tmp.hdf5')
+        s = load('tmp.hdf5', load_to_memory=True)
 
     def test_oom_loading(self):
         s = load('tmp.hdf5', load_to_memory=False)

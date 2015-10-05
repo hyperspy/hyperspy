@@ -3057,7 +3057,7 @@ class Signal(FancySlicing,
         ns : Signal
 
         """
-        if isinstance(self.data, h5py.Dataset) and (isinstance(data, h5py.Dataset) or data is None):
+        if isinstance(data, h5py.Dataset) or (isinstance(self.data, h5py.Dataset) and data is None):
             try:
                 old_data = self.data
                 if data is None:

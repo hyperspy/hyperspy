@@ -70,7 +70,8 @@ def test_content():
 
 def check_load(filename, subfolder, key):
     try:
-        s = load(filename)
+        s = load(filename,
+                 load_to_memory=True)
         ok = True
         # Store the data for the next tests
         data_dict[subfolder][key] = s.data

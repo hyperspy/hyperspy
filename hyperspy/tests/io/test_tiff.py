@@ -12,7 +12,8 @@ def test_rgba16():
     s = hs.load(os.path.join(
         my_path,
         "tiff_files",
-        "test_rgba16.tif"))
+        "test_rgba16.tif"),
+        load_to_memory=True)
     data = np.load(os.path.join(
         my_path,
         "npy_files",

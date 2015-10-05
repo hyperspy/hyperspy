@@ -793,9 +793,10 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
         If mmap_dir is not None, and stack and mmap are True, the memory
         mapped file will be created in the given directory,
         otherwise the default directory is used.
-    load_to_memory : bool, None
-        if True (default), loads all data to memory.
-        If False, only loads the data upon request.
+    load_to_memory : bool
+        If True loads all data to memory.
+        If False only loads the data upon request.
+        If None loads to memory
 
     Returns
     -------
@@ -887,6 +888,7 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
                 else:
                     data = np.empty(obj.data.shape,
                                     dtype=obj.data.dtype)
+
                 signal = obj._deepcopy_with_new_data(data)
 
             signal.original_metadata.add_node('stack_elements')
@@ -925,7 +927,8 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
     if axis is not None and not isinstance(signal.data, h5py.Dataset):
         signal.data = np.concatenate([signal_.data for signal_ in signal_list],
                                      axis=axis.index_in_array)
-        signal.get_dimensions_from_data()
+
+    signal.get_dimensions_from_data()
 
     if axis_input is None:
         axis_input = signal.axes_manager[-1 + 1j].index_in_axes_manager
@@ -942,7 +945,7 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
         step_sizes)
 
     if isinstance(signal.data, h5py.Dataset):
-        write_signal(signal, data.parent)
+        write_signal(signal, signal.data.parent)
     return signal
 
 

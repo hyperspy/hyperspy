@@ -86,7 +86,8 @@ class TestExample1:
         self.s = load(os.path.join(
             my_path,
             "msa_files",
-            "example1.msa"))
+            "example1.msa"),
+            load_to_memory=True)
 
     def test_data(self):
         assert_equal(
@@ -124,7 +125,8 @@ class TestExample2:
         self.s = load(os.path.join(
             my_path,
             "msa_files",
-            "example2.msa"))
+            "example2.msa"),
+            load_to_memory=True)
 
     def test_data(self):
         assert_equal(
