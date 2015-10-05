@@ -3061,13 +3061,12 @@ class Signal(FancySlicing,
             try:
                 old_data = self.data
                 if data is None:
-                    self.data = old_data.parent.create_dataset('temp_dset',
-                                                               shape=old_data.shape,
-                                                               dtype=old_data.dtype,
-                                                               compression=old_data.compression,
-                                                               chunks=old_data.chunks,
-                                                               maxshape=old_data.maxshape,
-                                                               shuffle=True)
+                    from hyperspy.io_plugins.hdf5 import get_temp_hdf5_file, write_empty_signal
+                    tempf = get_temp_hdf5_file()
+                    self.data = write_empty_signal(tempf.file,
+                                                   old_data.shape,
+                                                   old_data.dtype,
+                                                   metadata=self.metadata)['data']
                 else:
                     self.data = data
 		old_models = self.models._models
@@ -3077,8 +3076,6 @@ class Signal(FancySlicing,
             finally:
                 self.data = old_data
 		self.models._models = old_models
-                if data is None:
-                    del old_data.parent['temp_dset']
         else:
             try:
                 old_data = self.data

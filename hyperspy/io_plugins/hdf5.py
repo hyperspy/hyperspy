@@ -610,9 +610,7 @@ def write_signal(signal, group, compression='gzip'):
         # just a reference to already created thing
         pass
     else:
-        import dask.array as da
-        da.store(da.from_array(signal.data, chunks=data.chunks), data)
-        # data[:] = signal.data[:]
+        data[:] = signal.data[:]
     if default_version < StrictVersion("1.2"):
         metadata_dict["_internal_parameters"] = \
             metadata_dict.pop("_HyperSpy")
