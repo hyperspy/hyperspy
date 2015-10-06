@@ -77,7 +77,7 @@ class TestAlignTools:
         # Check the numbers of NaNs to make sure expansion happened properly
         ds = self.ishifts.max(0) - self.ishifts.min(0)
         Nnan = np.sum(ds) * 100 + np.prod(ds)
-        Nnan_data = np.sum(1*np.isnan(s.data), axis=(1, 2))
+        Nnan_data = np.sum(1 * np.isnan(s.data), axis=(1, 2))
         # Due to interpolation, the number of NaNs in the data might
         # be 2 higher (left and right side) than expected
         nt.assert_true(np.all(Nnan_data - Nnan <= 2))
