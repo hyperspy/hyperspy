@@ -1525,3 +1525,5 @@ class ModelSpecialSlicers(object):
                 _model._calculate_chisq()
 
         return _model
+
+# vim: textwidth=80
