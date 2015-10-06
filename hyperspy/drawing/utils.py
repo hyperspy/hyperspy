@@ -188,7 +188,7 @@ class ColorCycle:
 
 
 def plot_signals(signal_list, sync=True, navigator="auto",
-                 navigator_list=None):
+                 navigator_list=None, **kwargs):
     """Plot several signals at the same time.
 
     Parameters
@@ -207,6 +207,8 @@ def plot_signals(signal_list, sync=True, navigator="auto",
         navigator arguments: "auto", None, "spectrum", "slider", or a
         hyperspy Signal. The list must have the same size as signal_list.
         If None, the argument specified in navigator will be used.
+    **kwargs
+        Any extra keyword arguments are passed to each signal `plot` method.
 
     Example
     -------
@@ -281,7 +283,9 @@ def plot_signals(signal_list, sync=True, navigator="auto",
         for signal, navigator, axes_manager in zip(signal_list,
                                                    navigator_list,
                                                    axes_manager_list):
-            signal.plot(axes_manager=axes_manager, navigator=navigator)
+            signal.plot(axes_manager=axes_manager,
+                        navigator=navigator,
+                        **kwargs)
 
     # If sync is False
     else:
@@ -289,7 +293,8 @@ def plot_signals(signal_list, sync=True, navigator="auto",
             navigator_list = []
             navigator_list.extend([navigator] * len(signal_list))
         for signal, navigator in zip(signal_list, navigator_list):
-            signal.plot(navigator=navigator)
+            signal.plot(navigator=navigator,
+                        **kwargs)
 
 
 def _make_heatmap_subplot(spectra):
