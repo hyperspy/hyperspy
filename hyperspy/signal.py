@@ -4416,16 +4416,16 @@ class Signal(FancySlicing,
             **kwargs):
         """Apply a function to the signal data at all the coordinates.
 
-        If `out=False` ,the function must operate on numpy arrays and the output
-        *must have the same dimensions as the input*. If `out` is False, the
-        function is applied to the data at each coordinate and the result is
-        stored in the current signal i.e. this method operates *in-place*. Any
-        extra keyword argument is passed to the function. The keywords can take
-        different values at different coordinates. If the function takes an
-        `axis` or `axes` argument, the function is assumed to be vectorial and
-        the signal axes are assigned to `axis` or `axes`. Otherwise, the signal
-        is iterated over the navigation axes and a progress bar is displayed to
-        monitor the progress.
+        If `out=False`,the function must operate on numpy arrays and the output
+        *must have the same dimensions as the input* (the function is applied to
+        the data at each coordinate and the result is stored in the current
+        signal i.e. this method operates *in-place*). Any extra keyword
+        arguments are passed to the function. The keywords can take different
+        values at different coordinates. If the function takes an `axis` or
+        `axes` argument, the function is assumed to be vectorial and the signal
+        axes are assigned to `axis` or `axes`. Otherwise, the signal is iterated
+        over the navigation axes and a progress bar is displayed to monitor the
+        progress.
 
         Parameters
         ----------
@@ -4467,12 +4467,16 @@ class Signal(FancySlicing,
         >>> im.map(scipy.ndimage.gaussian_filter, sigma=sigmas)
 
         Rotate the image and create a new signal with results.
+
         >>> im = hs.signals.Image(np.random.random((10, 64, 32)))
         >>> res = im.map(scipy.ndimage.rotate, out=True, angle=15)
         >>> res.data.shape
         (10,70,47)
 
-        Now overwrite the data in the original signal by passing itself as the output signal
+        Now overwrite the data in the original signal by passing itself as the
+        output signal. Note that if different angles were passed, the output
+        shapes would be different and a list of signals would be returned
+        instead.
         >>> im = hs.signals.Image(np.random.random((10, 64, 32)))
         >>> im.map(scipy.ndimage.rotate, out=im, angle=15)
         >>> im.data.shape
@@ -4485,7 +4489,11 @@ class Signal(FancySlicing,
 
         if show_progressbar is None:
             show_progressbar = preferences.General.show_progressbar
-        if not isinstance(out, Signal) and not isinstance(out, bool):
+        need_output = False
+        if out is True:
+            out = self._deepcopy_with_new_data()
+            need_output = True
+        if not isinstance(out, Signal) and out is not False:
             warnings.warn("Can only pass bool or Signal to 'out'")
             out = False
         # Sepate ndkwargs
@@ -4516,6 +4524,7 @@ class Signal(FancySlicing,
             # inspect.
             fargs = []
 
+        shapes = set()
         if not ndkwargs and (self.axes_manager.signal_dimension == 1 and
                              "axis" in fargs):
             kwargs['axis'] = \
@@ -4547,25 +4556,30 @@ class Signal(FancySlicing,
                 for (key, value), datum in zip(ndkwargs, data[1:]):
                     kwargs[key] = datum[0]
                 if out:
-                    res_data.append(run_function(data[0], **kwargs))
+                    ans = run_function(data[0], **kwargs)
+                    # res_data.append(run_function(data[0], **kwargs))
+                    res_data.append(ans)
+                    shapes.add(ans.shape)
                 else:
                     data[0][:] = run_function(data[0], **kwargs)
                 pbar.next()
             pbar.finish()
         if out:
-            if isinstance(out, Signal):
+            if len(shapes) < 2:
                 nav_shape = out.axes_manager._navigation_shape_in_array
-            else:
-                nav_shape = self.axes_manager._navigation_shape_in_array
-            if isinstance(res_data, list):
-                res_data = np.array(res_data)
-            res_data = res_data.reshape(nav_shape + res_data.shape[1:])
-            if isinstance(out, Signal):
+                if isinstance(res_data, list):
+                    res_data = np.array(res_data)
+                res_data = res_data.reshape(nav_shape + res_data.shape[1:])
                 out.data = res_data
                 out.get_dimensions_from_data()
+                if need_output:
+                    return out
             else:
-                res = self._deepcopy_with_new_data(res_data)
-                res.get_dimensions_from_data()
+                res = [out.__class__(data,
+                                     axes=out.axes_manager._get_signal_axes_dicts()) for data in
+                       res_data]
+                for r in res:
+                    r.get_dimensions_from_data()
                 return res
 
     def copy(self):

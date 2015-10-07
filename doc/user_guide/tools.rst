@@ -594,24 +594,44 @@ external function can be more easily accomplished using the
 
   Rotation of images by the same amount using :py:meth:`~.signal.Signal.map`.
 
-The :py:meth:`~.signal.Signal.map` method can also take variable
-arguments as in the following example.
+Not only :py:meth:`~.signal.Signal.map` method can take variable arguments, if
+``out`` is not ``False``, the function is no longer applied in-place, and an output
+with different shape can be generated. If the output shape changes with
+arguments, a list of signals is retured, as in the following example.
 
 .. code-block:: python
 
     >>> import scipy.ndimage
     >>> image_stack = hs.signals.Image(np.array([scipy.misc.lena()]*4))
-    >>> image_stack.axes_manager[1].name = "x"
-    >>> image_stack.axes_manager[2].name = "y"
     >>> angles = hs.signals.Signal(np.array([0, 45, 90, 135]))
     >>> angles.axes_manager.set_signal_dimension(0)
     >>> modes = hs.signals.Signal(np.array(['constant', 'nearest', 'reflect', 'wrap']))
     >>> modes.axes_manager.set_signal_dimension(0)
+    >>> result = image_stack.map(scipy.ndimage.rotate,
+    ...                          out=True,
+    ...                          angle=angles,
+    ...                          reshape=True,
+    ...                          mode=modes)
+    calculating 100% |#############################################| ETA:  00:00:00
+    >>> result
+    [<Image, title: , dimensions: (|627, 627)>,
+     <Image, title: , dimensions: (|724, 724)>,
+     <Image, title: , dimensions: (|512, 512)>,
+     <Image, title: , dimensions: (|724, 724)>]
     >>> image_stack.map(scipy.ndimage.rotate,
-    ...                            angle=angles,
-    ...                            reshape=False,
-    ...                            mode=modes)
-    calculating 100% |#############################################| ETA:  00:00:00Cropping
+    ...                 angle=137,
+    ...                 reshape=True,
+    ...                 out=image_stack,
+    ...                 mode=modes)
+    calculating 100% |#############################################| ETA:  00:00:00
+    >>> image_stack
+    <Image, title: , dimensions: (4|724, 724)>
+    >>> hs.plot.plot_images(result+[image_stack,],
+    ...                     per_row=4,
+    ...                     colorbar='single',
+    ...                     axes_decor=None,
+    ...                     padding={'wspace': 0})
+
 
 .. figure::  images/rotate_lena_apply_ndkwargs.png
   :align:   center
