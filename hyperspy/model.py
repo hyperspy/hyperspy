@@ -2224,7 +2224,7 @@ class Model(list):
             return list.__getitem__(self, value)
 
 
-class ModelSpecialSlicers:
+class ModelSpecialSlicers(object):
 
     def __init__(self, model, isNavigation):
         self.isNavigation = isNavigation
@@ -2249,7 +2249,6 @@ class ModelSpecialSlicers:
             _model.channel_switches[:] = \
                 np.atleast_1d(
                     self.model.channel_switches[tuple(array_slices[-dims[1]:])])
-        from hyperspy import components
         for _ in xrange(len(_model)):
             _model.remove(0)
         twin_dict = {}

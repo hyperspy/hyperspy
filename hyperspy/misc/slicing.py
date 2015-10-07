@@ -5,7 +5,7 @@ from hyperspy.misc.export_dictionary import parse_flag_string
 import numpy as np
 
 
-def slice_thing(thing, dims, both_slices=None, slice_nav=None, issignal=False):
+def slice_thing(thing, dims, both_slices, slice_nav=None, issignal=False):
     if slice_nav is None:
         return thing
     if thing is None:
@@ -65,7 +65,7 @@ def copy_slice_from_whitelist(_from, _to, dims, both_slices, isNav):
             attrsetter(_to, key, thing)
 
 
-class SpecialSlicers:
+class SpecialSlicers(object):
 
     def __init__(self, obj, isNavigation):
         self.isNavigation = isNavigation
@@ -141,7 +141,7 @@ class FancySlicing(object):
         for slice_, axis in zip(array_slices, _obj.axes_manager._axes):
             if (isinstance(slice_, slice) or
                     len(self.axes_manager._axes) < 2):
-                _ = axis._slice_me(slice_)
+                axis._slice_me(slice_)
             else:
                 _obj._remove_axis(axis.index_in_axes_manager)
         if hasattr(self, "_additional_slicing_targets"):
