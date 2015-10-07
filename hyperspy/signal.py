@@ -4411,19 +4411,21 @@ class Signal(FancySlicing,
         return hist_spec
 
     def map(self, function,
-            show_progressbar=None, **kwargs):
+            show_progressbar=None,
+            out=False,
+            **kwargs):
         """Apply a function to the signal data at all the coordinates.
 
-        The function must operate on numpy arrays and the output *must have the
-        same dimensions as the input*. The function is applied to the data at
-        each coordinate and the result is stored in the current signal i.e.
-        this method operates *in-place*.  Any extra keyword argument is passed
-        to the function. The keywords can take different values at different
-        coordinates. If the function takes an `axis` or `axes` argument, the
-        function is assumed to be vectorial and the signal axes are assigned to
-        `axis` or `axes`.  Otherwise, the signal is iterated over the
-        navigation axes and a progress bar is displayed to monitor the
-        progress.
+        If `out=False` ,the function must operate on numpy arrays and the output
+        *must have the same dimensions as the input*. If `out` is False, the
+        function is applied to the data at each coordinate and the result is
+        stored in the current signal i.e. this method operates *in-place*. Any
+        extra keyword argument is passed to the function. The keywords can take
+        different values at different coordinates. If the function takes an
+        `axis` or `axes` argument, the function is assumed to be vectorial and
+        the signal axes are assigned to `axis` or `axes`. Otherwise, the signal
+        is iterated over the navigation axes and a progress bar is displayed to
+        monitor the progress.
 
         Parameters
         ----------
@@ -4433,8 +4435,12 @@ class Signal(FancySlicing,
         show_progressbar : None or bool
             If True, display a progress bar. If None the default is set in
             `preferences`.
+        out : Signal or bool (default False)
+            If True, will return a signal with result.
+            If signal, the the result will overwrite its data.
+            In either case the navigation shape will be preserved
         keyword arguments : any valid keyword argument
-            All extra keyword arguments are passed to the
+            All extra keyword arguments are passed to the function.
 
         Notes
         -----
@@ -4452,7 +4458,7 @@ class Signal(FancySlicing,
         >>> im = hs.signals.Image(np.random.random((10, 64, 64)))
         >>> im.map(scipy.ndimage.gaussian_filter, sigma=2.5)
 
-        Apply a gaussian filter to all the images in the dataset. The sigmal
+        Apply a gaussian filter to all the images in the dataset. The sigma
         parameter is variable.
 
         >>> im = hs.signals.Image(np.random.random((10, 64, 64)))
@@ -4460,9 +4466,28 @@ class Signal(FancySlicing,
         >>> sigmas.axes_manager.set_signal_dimension(0)
         >>> im.map(scipy.ndimage.gaussian_filter, sigma=sigmas)
 
+        Rotate the image and create a new signal with results.
+        >>> im = hs.signals.Image(np.random.random((10, 64, 32)))
+        >>> res = im.map(scipy.ndimage.rotate, out=True, angle=15)
+        >>> res.data.shape
+        (10,70,47)
+
+        Now overwrite the data in the original signal by passing itself as the output signal
+        >>> im = hs.signals.Image(np.random.random((10, 64, 32)))
+        >>> im.map(scipy.ndimage.rotate, out=im, angle=15)
+        >>> im.data.shape
+        (10,70,47)
+
         """
+        def run_function(d, **_kwargs):
+            # Will be expanded later, when working with oom data
+            return function(d, **_kwargs)
+
         if show_progressbar is None:
             show_progressbar = preferences.General.show_progressbar
+        if not isinstance(out, Signal) and not isinstance(out, bool):
+            warnings.warn("Can only pass bool or Signal to 'out'")
+            out = False
         # Sepate ndkwargs
         ndkwargs = ()
         for key, value in kwargs.iteritems():
@@ -4495,28 +4520,53 @@ class Signal(FancySlicing,
                              "axis" in fargs):
             kwargs['axis'] = \
                 self.axes_manager.signal_axes[-1].index_in_array
-
-            self.data = function(self.data, **kwargs)
+            if out:
+                res_data = run_function(self.data, **kwargs)
+            else:
+                self.data = run_function(self.data, **kwargs)
         # If the function has an axes argument
         # we suppose that it can operate on the full array and we don't
-        # interate over the coordinates.
+        # iterate over the coordinates.
         elif not ndkwargs and "axes" in fargs:
-            kwargs['axes'] = tuple([axis.index_in_array for axis in
-                                    self.axes_manager.signal_axes])
-            self.data = function(self.data, **kwargs)
+            kwargs['axes'] = tuple(axis.index_in_array for axis in
+                                   self.axes_manager.signal_axes)
+            if out:
+                res_data = run_function(self.data, **kwargs)
+            else:
+                self.data = run_function(self.data, **kwargs)
         else:
             # Iteration over coordinates.
             pbar = progressbar(
                 maxval=self.axes_manager.navigation_size,
                 disabled=not show_progressbar)
-            iterators = [signal[1]._iterate_signal() for signal in ndkwargs]
-            iterators = tuple([self._iterate_signal()] + iterators)
+            iterators = tuple(signal[1]._iterate_signal()
+                              for signal in ndkwargs)
+            iterators = (self._iterate_signal(),) + iterators
+            res_data = []
             for data in zip(*iterators):
                 for (key, value), datum in zip(ndkwargs, data[1:]):
                     kwargs[key] = datum[0]
-                data[0][:] = function(data[0], **kwargs)
+                if out:
+                    res_data.append(run_function(data[0], **kwargs))
+                else:
+                    data[0][:] = run_function(data[0], **kwargs)
                 pbar.next()
             pbar.finish()
+        if out:
+            if isinstance(out, Signal):
+                nav_shape = out.axes_manager._navigation_shape_in_array
+            else:
+                nav_shape = self.axes_manager._navigation_shape_in_array
+            if isinstance(res_data, list):
+                res_data = np.array(res_data)
+            res_data = res_data.reshape(nav_shape + res_data.shape[1:])
+            if isinstance(out, Signal):
+                out.data = res_data
+                out.get_dimensions_from_data()
+            else:
+                res = self._deepcopy_with_new_data(res_data)
+                res.get_dimensions_from_data()
+                return res
 
     def copy(self):
         try:
