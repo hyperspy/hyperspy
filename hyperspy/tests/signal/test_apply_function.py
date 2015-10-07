@@ -17,7 +17,6 @@ class TestImage:
             [[[1.68829507, 2.2662213, 2.84414753],
               [3.42207377, 4., 4.57792623],
               [5.15585247, 5.7337787, 6.31170493]],
-
              [[10.68829507, 11.2662213, 11.84414753],
               [12.42207377, 13., 13.57792623],
               [14.15585247, 14.7337787, 15.31170493]]])))
@@ -40,7 +39,6 @@ class TestImage:
             [[[0., 1., 2.],
                 [3., 4., 5.],
                 [6., 7., 8.]],
-
              [[10.68829507, 11.2662213, 11.84414753],
               [12.42207377, 13., 13.57792623],
               [14.15585247, 14.7337787, 15.31170493]]])))
@@ -52,10 +50,80 @@ class TestImage:
             [[[0., 2.23223305, 0.],
               [0.46446609, 4., 7.53553391],
               [0., 5.76776695, 0.]],
-
              [[0., 11.23223305, 0.],
               [9.46446609, 13., 16.53553391],
               [0., 14.76776695, 0.]]])))
+
+    def test_out_different_shape_new_signal(self):
+        im = self.im
+        res = im.map(
+            rotate,
+            angle=45,
+            reshape=True,
+            show_progressbar=None,
+            out=True)
+        np.testing.assert_allclose(res.data,
+                                   np.array([[[0., 0., 0., 0.],
+                                              [0., 1.34834957, 4.88388348, 0.],
+                                              [0., 3.11611652, 6.65165043, 0.],
+                                              [0., 0., 0., 0.]],
+                                             [[0., 0., 0., 0.],
+                                              [0.,
+                                               10.34834957,
+                                               13.88388348,
+                                               0.],
+                                              [0.,
+                                               12.11611652,
+                                               15.65165043,
+                                               0.],
+                                              [0., 0., 0., 0.]]]))
+
+    def test_out_different_shape_given_signal(self):
+        im = self.im
+        im.map(rotate, angle=45, reshape=True, show_progressbar=None, out=im)
+        np.testing.assert_allclose(im.data,
+                                   np.array([[[0., 0., 0., 0.],
+                                              [0., 1.34834957, 4.88388348, 0.],
+                                              [0., 3.11611652, 6.65165043, 0.],
+                                              [0., 0., 0., 0.]],
+                                             [[0., 0., 0., 0.],
+                                              [0.,
+                                               10.34834957,
+                                               13.88388348,
+                                               0.],
+                                              [0.,
+                                               12.11611652,
+                                               15.65165043,
+                                               0.],
+                                              [0., 0., 0., 0.]]]))
+
+    def test_out_different_shape_lists(self):
+        im = self.im
+        angles = hs.signals.Signal([0, 45])
+        angles.axes_manager.set_signal_dimension(0)
+        # if the result shapes are the same, nothing should be returned, means
+        # map is broken
+        res = im.map(
+            rotate,
+            angle=angles,
+            reshape=True,
+            show_progressbar=None,
+            out=im)
+        np.testing.assert_allclose(res[0].data,
+                                   np.array([[0., 1., 2.],
+                                            [3., 4., 5.],
+                                            [6., 7., 8.]]), atol=1e-12)
+        np.testing.assert_allclose(res[1].data,
+                                   np.array([[0., 0., 0., 0.],
+                                             [0.,
+                                              10.34834957,
+                                              13.88388348,
+                                              0.],
+                                             [0.,
+                                              12.11611652,
+                                              15.65165043,
+                                              0.],
+                                             [0., 0., 0., 0.]]))
 
 
 class TestSpectrum:
