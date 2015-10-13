@@ -45,6 +45,5 @@ from hyperspy._signals.dielectric_function import DielectricFunction
 from hyperspy._signals.simulation import Simulation
 from hyperspy._signals.image_simulation import ImageSimulation
 from hyperspy._signals.spectrum_simulation import SpectrumSimulation
-from hyperspy._signals.eels_spectrum_simulation import (
-    EELSSpectrumSimulation)
+from hyperspy._signals.eels_spectrum_simulation import EELSSpectrumSimulation
 from hyperspy.signal import Signal
