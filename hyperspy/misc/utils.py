@@ -280,8 +280,8 @@ class DictionaryTreeBrowser(object):
                             len(strvalue) > 2 * max_len:
                         right_limit = min(max_len,
                                           len(strvalue) - max_len)
-                        value = u'%s ... %s' % (strvalue[:max_len],
-                                                strvalue[-right_limit:])
+                        strvalue = u'%s ... %s' % (strvalue[:max_len],
+                                                   strvalue[-right_limit:])
                     string += u"%s%s%s = %s\n" % (
                         padding, symbol, key, strvalue)
             j += 1
