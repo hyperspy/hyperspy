@@ -200,16 +200,19 @@ class SemperFormat(object):
             assert np.frombuffer(f.read(4), dtype=np.int32)[0] == rec_length
             # Read title:
             title = ''
-            assert np.frombuffer(f.read(4), dtype=np.int32)[0] == ntitle  # length of title
             if ntitle > 0:
+                assert np.frombuffer(f.read(4), dtype=np.int32)[0] == ntitle  # length of title
                 title_bytes = np.frombuffer(f.read(ntitle), dtype=np.byte)
                 title = ''.join(map(chr, title_bytes))
-            assert np.frombuffer(f.read(4), dtype=np.int32)[0] == ntitle
+                assert np.frombuffer(f.read(4), dtype=np.int32)[0] == ntitle
             # Read label:
-            iwp, date, range_string, ipltype, a = [None] * 5  # Initialization!
+            iwp, date, range_string, ipltyp = [None] * 4  # Initialization!
             iccoln, icrown, iclayn = [None] * 3
-            rec_length = np.frombuffer(f.read(4), dtype=np.int32)[0]  # length of label
-            if ilabel and rec_length > 0:
+            x0, y0, z0 = 0., 0., 0.
+            dx, dy, dz = 1., 1., 1.
+            ux, uy, uz = '', '', ''
+            if ilabel:
+                rec_length = np.frombuffer(f.read(4), dtype=np.int32)[0]  # length of label
                 label = np.frombuffer(f.read(512), dtype=np.int16)
                 assert ''.join([chr(l) for l in label[:6]]) == 'Semper'
                 assert struct.unpack('>h', ''.join([chr(x) for x in label[6:8]]))[0] == ncol
@@ -237,7 +240,7 @@ class SemperFormat(object):
                 ux = ''.join([chr(l) for l in label[244:248]]).replace('\x00', '')
                 uy = ''.join([chr(l) for l in label[248:252]]).replace('\x00', '')
                 uz = ''.join([chr(l) for l in label[252:256]]).replace('\x00', '')
-            assert np.frombuffer(f.read(4), dtype=np.int32)[0] == rec_length
+                assert np.frombuffer(f.read(4), dtype=np.int32)[0] == rec_length
             # Read picture data:
             data = np.empty((nlay, nrow, ncol), dtype=data_format)
             for k in range(nlay):
@@ -298,9 +301,10 @@ class SemperFormat(object):
                     f.write(struct.pack('h', element))  # 2 byte format!
                 f.write(struct.pack('I', 2*len(header)))  # record length!
                 # Write title:
-                f.write(struct.pack('I', len(self.title)))  # record length, 4 byte format!
-                f.write(self.title)
-                f.write(struct.pack('I', len(self.title)))  # record length, 4 byte format!
+                if len(self.title) > 0:
+                    f.write(struct.pack('I', len(self.title)))  # record length, 4 byte format!
+                    f.write(self.title)
+                    f.write(struct.pack('I', len(self.title)))  # record length, 4 byte format!
                 # Create label:
                 if self.ilabel:
                     label = np.zeros(256, dtype=np.int32)
@@ -334,8 +338,7 @@ class SemperFormat(object):
                     label[244:248] = [ord(c) for c in self.units[0]] + [0]*(4-len(self.units[0]))
                     label[248:252] = [ord(c) for c in self.units[1]] + [0]*(4-len(self.units[1]))
                     label[252:256] = [ord(c) for c in self.units[2]] + [0]*(4-len(self.units[2]))
-                # Write label:
-                if self.ilabel:
+                    # Write label:
                     f.write(struct.pack('I', 2*256))  # record length, 4 byte format!
                     for element in label:
                         f.write(struct.pack('h', element))  # 2 byte format!
@@ -388,14 +391,17 @@ class SemperFormat(object):
         iclass = cls.ICLASS_DICT_INV.get(signal.metadata.Signal.record_by, 6)  # 6: undefined
         if data.dtype.name == 'int8':
             iform = 0  # byte
-        elif data.dtype.name in ['int16', 'int32']:
+        elif 'int' in data.dtype.name:
+            data = data.astype(np.int32, casting='safe')
             iform = 1  # int
-        elif data.dtype.name in ['float16', 'float32']:
+        elif 'float' in data.dtype.name:
+            data = data.astype(np.float32, casting='safe')
             iform = 2  # float
-        elif data.dtype.name == 'complex64':
+        elif 'complex' in data.dtype.name:
+            data = data.astype(np.complex64, casting='safe')
             iform = 3  #
         else:
-            raise TypeError('Data type not understood!')
+            raise TypeError('Data type not understood ({}))!'.format(data.dtype.name))
         arg_dict = {'data': data,
                     'title': signal.metadata.General.as_dictionary().get('title', 'HyperSpy'),
                     'offsets': offsets,
