@@ -6,13 +6,10 @@ Subpackages
 
 .. toctree::
 
-    hyperspy.misc.borrowed
     hyperspy.misc.eds
     hyperspy.misc.eels
     hyperspy.misc.io
     hyperspy.misc.machine_learning
-    hyperspy.misc.mpfit
-    hyperspy.misc.tests
 
 Submodules
 ----------
@@ -37,6 +34,30 @@ hyperspy.misc.elements module
 -----------------------------
 
 .. automodule:: hyperspy.misc.elements
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+hyperspy.misc.example_signals_loading module
+--------------------------------------------
+
+.. automodule:: hyperspy.misc.example_signals_loading
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+hyperspy.misc.hspy_warnings module
+----------------------------------
+
+.. automodule:: hyperspy.misc.hspy_warnings
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+hyperspy.misc.hyperspy_magics module
+------------------------------------
+
+.. automodule:: hyperspy.misc.hyperspy_magics
     :members:
     :undoc-members:
     :show-inheritance:
@@ -93,14 +114,6 @@ hyperspy.misc.physics_tools module
 ----------------------------------
 
 .. automodule:: hyperspy.misc.physics_tools
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-hyperspy.misc.progressbar module
---------------------------------
-
-.. automodule:: hyperspy.misc.progressbar
     :members:
     :undoc-members:
     :show-inheritance:

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2015 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -36,68 +36,6 @@ class Spectrum(Signal):
         Signal.__init__(self, *args, **kwargs)
         self.axes_manager.set_signal_dimension(1)
 
-    def to_EELS(self):
-        warnings.warn(
-            'This method is deprecated and and will be removed '
-            'in the next version. '
-            'Please use `set_signal_type("EELS")` instead',
-            DeprecationWarning)
-        s = self.deepcopy()
-        s.set_signal_type("EELS")
-        return s
-
-    def to_EDS(self, microscope=None):
-        warnings.warn(
-            'This method is deprecated and and will be removed '
-            'in the next version. '
-            'Please use `set_signal_type("EDS_TEM")` or '
-            '`set_signal_type("EDS_SEM")` instead',
-            DeprecationWarning)
-        if microscope is None:
-            if self.metadata.Signal.signal_type == 'EDS_SEM':
-                microscope = 'SEM'
-            elif self.metadata.Signal.signal_type == 'EDS_TEM':
-                microscope = 'TEM'
-            else:
-                microscope = 'TEM'
-        s = self.deepcopy()
-        s.set_signal_type("EDS_" + microscope)
-        return s
-
-        #"""Return a EDSSpectrum from a Spectrum
-        # The microscope, which defines the quantification methods, needs
-        # to be set.
-        # Parameters
-        #----------------
-        # microscope : {None | 'TEM' | 'SEM'}
-            # If None the microscope defined in signal_type is used
-            #(EDS_TEM or EDS_SEM). If 'TEM' or 'SEM', the signal_type is
-            # overwritten.
-        #"""
-        #from hyperspy._signals.eds_tem import EDSTEMSpectrum
-        #from hyperspy._signals.eds_sem import EDSSEMSpectrum
-        # if microscope == None:
-            # if self.metadata.Signal.signal_type == 'EDS_SEM':
-                #microscope = 'SEM'
-            # elif self.metadata.Signal.signal_type == 'EDS_TEM':
-                #microscope = 'TEM'
-            # else:
-                # raise ValueError("Set a microscope. Valid microscopes "
-                #"are: 'SEM' or 'TEM'")
-        #dic = self._get_signal_dict()
-        # if microscope == 'SEM':
-            #dic['metadata']['signal_type'] = 'EDS_SEM'
-            #eds = EDSSEMSpectrum(**dic)
-        # elif microscope == 'TEM':
-            #dic['metadata']['signal_type'] = 'EDS_TEM'
-            #eds = EDSTEMSpectrum(**dic)
-        # else:
-            # raise ValueError("Unkown microscope. Valid microscopes "
-                #"are: 'SEM' or 'TEM'")
-        # if hasattr(self, 'learning_results'):
-            #eds.learning_results = copy.deepcopy(self.learning_results)
-        #eds.tmp_parameters = self.tmp_parameters.deepcopy()
-        # return eds
     def to_image(self):
         """Returns the spectrum as an image.
 
@@ -145,10 +83,32 @@ class Spectrum(Signal):
         if navigation_mask is not None:
             dc = dc[~navigation_mask, :]
         der = np.abs(np.diff(dc, 1, -1))
-        plt.figure()
-        plt.hist(np.ravel(der.max(-1)), 100)
-        plt.xlabel('Threshold')
-        plt.ylabel('Counts')
+        n = ((~navigation_mask).sum() if navigation_mask else
+             self.axes_manager.navigation_size)
+
+        # arbitrary cutoff for number of spectra necessary before histogram
+        # data is compressed by finding maxima of each spectrum
+        tmp = Signal(der) if n < 2000 else Signal(np.ravel(der.max(-1)))
+
+        # get histogram signal using smart binning and plot
+        tmph = tmp.get_histogram()
+        tmph.plot()
+
+        # Customize plot appearance
+        plt.gca().set_title('')
+        plt.gca().fill_between(tmph.axes_manager[0].axis,
+                               tmph.data,
+                               facecolor='#fddbc7',
+                               interpolate=True,
+                               color='none')
+        ax = tmph._plot.signal_plot.ax
+        axl = tmph._plot.signal_plot.ax_lines[0]
+        axl.set_line_properties(color='#b2182b')
+        plt.xlabel('Derivative magnitude')
+        plt.ylabel('Log(Counts)')
+        ax.set_yscale('log')
+        ax.set_ylim(10 ** -1, plt.ylim()[1])
+        ax.set_xlim(plt.xlim()[0], 1.1 * plt.xlim()[1])
         plt.draw()
 
     def spikes_removal_tool(self, signal_mask=None,
@@ -175,3 +135,16 @@ class Spectrum(Signal):
                            signal_mask=signal_mask)
         sr.configure_traits()
         return sr
+
+    def create_model(self):
+        """Create a model for the current data.
+
+        Returns
+        -------
+        model : `Model` instance.
+
+        """
+
+        from hyperspy.model import Model
+        model = Model(self)
+        return model

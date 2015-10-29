@@ -8,8 +8,9 @@ import scipy.interpolate
 from hyperspy.misc.eels.base_gos import GOSBase
 from hyperspy.misc.physical_constants import R
 
-XU = [.82, .52, .52, .42, .30, .29, .22, .30, .22, .16, .12, .13, .13, .14, .16,
-      .18, .19, .22, .14, .11, .12, .12, .12, .10, .10, .10]
+XU = [
+    .82, .52, .52, .42, .30, .29, .22, .30, .22, .16, .12, .13, .13, .14, .16,
+    .18, .19, .22, .14, .11, .12, .12, .12, .10, .10, .10]
 # IE3=[73,99,135,164,200,245,294,347,402,455,513,575,641,710,
 # 779,855,931,1021,1115,1217,1323,1436,1550,1675]
 
@@ -77,10 +78,10 @@ class HydrogenicGOS(GOSBase):
                 50, 3, 50)
         elif self.subshell[:1] == 'L':
             self.gosfunc = self.gosfuncL
-            self.onset_energy_L3 = self.element_dict['Atomic_properties']['Binding_energies']['L3'][
-                'onset_energy (eV)']
-            self.onset_energy_L1 = self.element_dict['Atomic_properties']['Binding_energies']['L1'][
-                'onset_energy (eV)']
+            self.onset_energy_L3 = self.element_dict['Atomic_properties'][
+                'Binding_energies']['L3']['onset_energy (eV)']
+            self.onset_energy_L1 = self.element_dict['Atomic_properties'][
+                'Binding_energies']['L1']['onset_energy (eV)']
             self.onset_energy = self.onset_energy_L3
             relative_axis = self.get_parametrized_energy_axis(
                 50, 3, 50)
@@ -89,8 +90,9 @@ class HydrogenicGOS(GOSBase):
                 relative_axis[:relative_axis.searchsorted(dL3L2)],
                 relative_axis + dL3L2))
         else:
-            raise ValueError('The Hydrogenic GOS currently can only'
-                             'compute K or L shells. Try using Hartree-Slater GOS')
+            raise ValueError(
+                'The Hydrogenic GOS currently can only'
+                'compute K or L shells. Try using Hartree-Slater GOS')
 
         self.energy_axis = self.rel_energy_axis + self.onset_energy
         print "\nHydrogenic GOS"
@@ -144,8 +146,8 @@ class HydrogenicGOS(GOSBase):
             c = np.e ** ((-2 / akh) * bp)
         else:
             d = 1
-            y = -1 / akh * np.log((q + 1 - kh2 + 2 * akh) / (q + 1 - kh2
-                                                             - 2 * akh))
+            y = -1 / akh * np.log((q + 1 - kh2 + 2 * akh) / (
+                q + 1 - kh2 - 2 * akh))
             c = np.e ** y
         a = ((q - kh2 + 1) ** 2 + 4 * kh2) ** 3
         return 128 * rnk * E / (
@@ -168,8 +170,6 @@ class HydrogenicGOS(GOSBase):
         else:
             # Egerton's correction to the Hydrogenic XS
             u = XU[np.int(iz)]
-        #el3 = IE3[np.int(iz) - 1]
-        #el1 = IE1[np.int(iz) - 1]
         el3 = self.onset_energy_L3 + self.energy_shift
         el1 = self.onset_energy_L1 + self.energy_shift
 
@@ -197,13 +197,14 @@ class HydrogenicGOS(GOSBase):
 
             a = ((q - kh2 + 0.25) ** 2 + kh2) ** 5
         else:
-            g = q ** 3 - (5 / 3 * kh2 + 11 / 12) * q ** 2 + (kh2 * kh2 / 3 + 1.5 * kh2
-                                                             + 65 / 48) * q + kh2 ** 3 / 3 + 0.75 * kh2 * kh2 + 23 / 48 * kh2 + 5 / 64
+            g = q ** 3 - (5 / 3 * kh2 + 11 / 12) * q ** 2 + (
+                kh2 * kh2 / 3 + 1.5 * kh2 + 65 / 48) * q + kh2 ** 3 / 3 + \
+                0.75 * kh2 * kh2 + 23 / 48 * kh2 + 5 / 64
             a = ((q - kh2 + 0.25) ** 2 + kh2) ** 4
         rf = ((E + 0.1 - el3) / 1.8 / z / z) ** u
         # The following commented lines are to give a more accurate GOS
         # for edges presenting white lines. However, this is not relevant
         # for quantification by curve fitting.
         # if np.abs(iz - 11) <= 5 and E - el3 <= 20:
-        #rf = 1
+        #     rf = 1
         return rf * 32 * g * c / a / d * E / r / r / zs ** 4

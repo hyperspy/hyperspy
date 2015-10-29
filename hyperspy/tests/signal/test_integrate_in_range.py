@@ -5,7 +5,7 @@ from hyperspy.signals import Signal
 from hyperspy.components import Gaussian
 
 
-class Test1D():
+class Test1D:
 
     def setUp(self):
         gaussian = Gaussian()

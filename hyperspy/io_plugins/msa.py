@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2015 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -33,7 +33,7 @@ from hyperspy.misc.utils import DictionaryTreeBrowser
 # ----------------------
 format_name = 'MSA'
 description = ''
-full_suport = False
+full_support = False
 file_extensions = ('msa', 'ems', 'mas', 'emsa', 'EMS', 'MAS', 'EMSA', 'MSA')
 default_extension = 0
 
@@ -89,10 +89,12 @@ keywords = {
     'ZPOSITION': {'dtype': float, 'mapped_to': None},
 
     # EELS
+    # in ms:
     'INTEGTIME': {'dtype': float, 'mapped_to':
-                  'Acquisition_instrument.TEM.Detector.EELS.exposure'},  # in ms
+                  'Acquisition_instrument.TEM.Detector.EELS.exposure'},
+    # in ms:
     'DWELLTIME': {'dtype': float, 'mapped_to':
-                  'Acquisition_instrument.TEM.Detector.EELS.dwell_time'},  # in ms
+                  'Acquisition_instrument.TEM.Detector.EELS.dwell_time'},
     'COLLANGLE': {'dtype': float, 'mapped_to':
                   'Acquisition_instrument.TEM.Detector.EELS.collection_angle'},
     'ELSDET': {'dtype': unicode, 'mapped_to': None},
@@ -109,7 +111,8 @@ keywords = {
     'REALTIME': {'dtype': float, 'mapped_to':
                  'Acquisition_instrument.TEM.Detector.EDS.real_time'},
     'FWHMMNKA': {'dtype': float, 'mapped_to':
-                 'Acquisition_instrument.TEM.Detector.EDS.energy_resolution_MnKa'},
+                 'Acquisition_instrument.TEM.Detector.EDS.' +
+                 'energy_resolution_MnKa'},
     'TBEWIND': {'dtype': float, 'mapped_to': None},
     'TAUWIND': {'dtype': float, 'mapped_to': None},
     'TDEADLYR': {'dtype': float, 'mapped_to': None},
@@ -238,9 +241,7 @@ def parse_msa_string(string, filename=None):
                       "the developers")
     locale.setlocale(locale.LC_TIME, loc)  # restore saved locale
 
-    axes = []
-
-    axes.append({
+    axes = [{
         'size': len(y),
         'index_in_array': 0,
         'name': parameters['XLABEL'] if 'XLABEL' in parameters else '',
@@ -305,14 +306,15 @@ def file_writer(filename, signal, format=None, separator=', ',
                     "%d-%b-%Y")
                 locale.setlocale(locale.LC_TIME, loc)  # restore saved locale
             except:
-                warnings.warn("I couldn't write the date information due to"
-                              "an unexpected error. Please report this error to "
-                              "the developers")
+                warnings.warn(
+                    "I couldn't write the date information due to"
+                    "an unexpected error. Please report this error to "
+                    "the developers")
     keys_from_signal = {
         # Required parameters
         'FORMAT': FORMAT,
         'VERSION': '1.0',
-        #'TITLE' : signal.title[:64] if hasattr(signal, "title") else '',
+        # 'TITLE' : signal.title[:64] if hasattr(signal, "title") else '',
         'DATE': '',
         'TIME': '',
         'OWNER': '',

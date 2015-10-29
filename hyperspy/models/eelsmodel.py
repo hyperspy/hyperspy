@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2015 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -27,6 +27,7 @@ from hyperspy.defaults_parser import preferences
 import hyperspy.messages as messages
 from hyperspy import components
 from hyperspy._signals.eels import EELSSpectrum
+from hyperspy.misc.hspy_warnings import VisibleDeprecationWarning
 
 
 def _give_me_delta(master, slave):
@@ -68,8 +69,8 @@ class EELSModel(Model):
 
     def __init__(self, spectrum, auto_background=True,
                  auto_add_edges=True, ll=None,
-                 GOS=None, *args, **kwargs):
-        Model.__init__(self, spectrum, *args, **kwargs)
+                 GOS=None):
+        Model.__init__(self, spectrum)
         self._suspend_auto_fine_structure_width = False
         self.convolved = False
         self.low_loss = ll
@@ -79,6 +80,10 @@ class EELSModel(Model):
             interactive_ns = get_interactive_ns()
             background = PowerLaw()
             background.name = 'background'
+            warnings.warn(
+                "Adding \"background\" to the user namespace. "
+                "This feature will be removed in HyperSpy 0.9.",
+                VisibleDeprecationWarning)
             interactive_ns['background'] = background
             self.append(background)
 
@@ -115,10 +120,11 @@ class EELSModel(Model):
         self._background_components = []
         for component in self:
             if isinstance(component, EELSCLEdge):
+                tem = self.spectrum.metadata.Acquisition_instrument.TEM
                 component.set_microscope_parameters(
-                    E0=self.spectrum.metadata.Acquisition_instrument.TEM.beam_energy,
-                    alpha=self.spectrum.metadata.Acquisition_instrument.TEM.convergence_angle,
-                    beta=self.spectrum.metadata.Acquisition_instrument.TEM.Detector.EELS.collection_angle,
+                    E0=tem.beam_energy,
+                    alpha=tem.convergence_angle,
+                    beta=tem.Detector.EELS.collection_angle,
                     energy_scale=self.axis.scale)
                 component.energy_scale = self.axis.scale
                 component._set_fine_structure_coeff()
@@ -176,8 +182,16 @@ class EELSModel(Model):
         self.GOS = master_edge.GOS._name
         self.append(master_edge)
         interactive_ns[self[-1].name] = self[-1]
+        warnings.warn("Adding \"%s\" to the user namespace. "
+                      "This feature will be removed in HyperSpy 0.9." % self[
+                          -1].name,
+                      VisibleDeprecationWarning)
         element = master_edge.element
         interactive_ns[element] = []
+        warnings.warn(
+            "Adding \"%s\" to the user namespace. "
+            "This feature will be removed in HyperSpy 0.9." % element,
+            VisibleDeprecationWarning)
         interactive_ns[element].append(self[-1])
         while len(e_shells) > 0:
             next_element = e_shells[-1].split('_')[0]
@@ -206,10 +220,17 @@ class EELSModel(Model):
                 self.append(edge)
                 if copy2interactive_ns is True:
                     interactive_ns[edge.name] = edge
+                    warnings.warn(
+                        "Adding \"%s\" to the user namespace. "
+                        "This feature will be removed in HyperSpy 0.9." %
+                        edge.name,
+                        VisibleDeprecationWarning)
                     interactive_ns[element].append(edge)
 
     def resolve_fine_structure(
-            self, preedge_safe_window_width=preferences.EELS.preedge_safe_window_width, i1=0):
+            self,
+            preedge_safe_window_width=preferences.EELS.preedge_safe_window_width,
+            i1=0):
         """Adjust the fine structure of all edges to avoid overlapping
 
         This function is called automatically everytime the position of an edge
@@ -237,13 +258,15 @@ class EELSModel(Model):
                     i2 < len(self._active_edges) - 1):
                 i2 += 1
             if self._active_edges[i2].fine_structure_active is True:
-                distance_between_edges = self._active_edges[i2].onset_energy.value - \
-                    self._active_edges[i1].onset_energy.value
-                if self._active_edges[i1].fine_structure_width > distance_between_edges - \
-                        preedge_safe_window_width:
+                distance_between_edges = (
+                    self._active_edges[i2].onset_energy.value -
+                    self._active_edges[i1].onset_energy.value)
+                if (self._active_edges[i1].fine_structure_width >
+                        distance_between_edges - preedge_safe_window_width):
+                    min_d = preferences.EELS.\
+                        min_distance_between_edges_for_fine_structure
                     if (distance_between_edges -
-                            preedge_safe_window_width) <= \
-                            preferences.EELS.min_distance_between_edges_for_fine_structure:
+                            preedge_safe_window_width) <= min_d:
                         print " Automatically desactivating the fine \
                         structure of edge number", i2 + 1, "to avoid conflicts\
                          with edge number", i1 + 1
@@ -252,15 +275,16 @@ class EELSModel(Model):
                             i2].fine_structure_coeff.free = False
                         self.resolve_fine_structure(i1=i2)
                     else:
-                        new_fine_structure_width = distance_between_edges - \
-                            preedge_safe_window_width
-                        print "Automatically changing the fine structure \
-                        width of edge", i1 + 1, "from", \
-                            self._active_edges[i1].fine_structure_width, "eV to", new_fine_structure_width, \
-                            new_fine_structure_width, \
-                            "eV to avoid conflicts with edge number", i2 + 1
-                        self._active_edges[
-                            i1].fine_structure_width = new_fine_structure_width
+                        new_fine_structure_width = (
+                            distance_between_edges - preedge_safe_window_width)
+                        print (
+                            "Automatically changing the fine structure "
+                            "width of edge", i1 + 1, "from",
+                            self._active_edges[i1].fine_structure_width,
+                            "eV to", new_fine_structure_width,
+                            "eV to avoid conflicts with edge number", i2 + 1)
+                        self._active_edges[i1].fine_structure_width = \
+                            new_fine_structure_width
                         self.resolve_fine_structure(i1=i2)
                 else:
                     self.resolve_fine_structure(i1=i2)
@@ -475,59 +499,56 @@ class EELSModel(Model):
             start_energy = ea[0]
         preedge_safe_window_width = preferences.EELS.preedge_safe_window_width
         # Declare variables
-        edge = self._active_edges[edgenumber]
-        if edge.intensity.twin is not None or edge.active is False or \
-                edge.onset_energy.value < start_energy or edge.onset_energy.value > ea[-1]:
+        active_edges = self._active_edges
+        edge = active_edges[edgenumber]
+        if (edge.intensity.twin is not None or
+                edge.active is False or
+                edge.onset_energy.value < start_energy or
+                edge.onset_energy.value > ea[-1]):
             return 1
-        #~print "Fitting edge ", edge.name
-        last_index = len(self._active_edges) - 1
+        # Fitting edge 'edge.name'
+        last_index = len(self._active_edges) - 1    # Last edge index
         i = 1
         twins = []
-        #~print "Last edge index", last_index
         while edgenumber + i <= last_index and (
-                self._active_edges[edgenumber + i].intensity.twin is not None or
-                self._active_edges[edgenumber + i].active is False):
-            if self._active_edges[edgenumber + i].intensity.twin is not None:
+                active_edges[edgenumber + i].intensity.twin is not None or
+                active_edges[edgenumber + i].active is False):
+            if active_edges[edgenumber + i].intensity.twin is not None:
                 twins.append(self._active_edges[edgenumber + i])
             i += 1
-        #~print "twins", twins
-        #~print "next_edge_index", edgenumber + i
         if (edgenumber + i) > last_index:
             nextedgeenergy = ea[-1]
         else:
-            nextedgeenergy = self._active_edges[edgenumber + i].onset_energy.value - \
-                preedge_safe_window_width
+            nextedgeenergy = (
+                active_edges[edgenumber + i].onset_energy.value -
+                preedge_safe_window_width)
 
         # Backup the fsstate
         to_activate_fs = []
         for edge_ in [edge, ] + twins:
-            if edge_.fine_structure_active is True and edge_.fine_structure_coeff.free is True:
+            if (edge_.fine_structure_active is True and
+                    edge_.fine_structure_coeff.free is True):
                 to_activate_fs.append(edge_)
         self.disable_fine_structure(to_activate_fs)
 
         # Smart Fitting
 
-        #~print("Fitting region: %s-%s" % (start_energy,nextedgeenergy))
-
         # Without fine structure to determine onset_energy
         edges_to_activate = []
         for edge_ in self._active_edges[edgenumber + 1:]:
-            if edge_.active is True and edge_.onset_energy.value >= nextedgeenergy:
+            if (edge_.active is True and
+                    edge_.onset_energy.value >= nextedgeenergy):
                 edge_.active = False
                 edges_to_activate.append(edge_)
-        #~print "edges_to_activate", edges_to_activate
-        #~print "Fine structure to fit", to_activate_fs
 
         self.set_signal_range(start_energy, nextedgeenergy)
         if edge.free_onset_energy is True:
-            #~print "Fit without fine structure, onset_energy free"
             edge.onset_energy.free = True
             self.fit(**kwargs)
             edge.onset_energy.free = False
             print "onset_energy = ", edge.onset_energy.value
             self._touch()
         elif edge.intensity.free is True:
-            #~print "Fit without fine structure"
             self.enable_fine_structure(to_activate_fs)
             self.remove_fine_structure_data(to_activate_fs)
             self.disable_fine_structure(to_activate_fs)
@@ -536,7 +557,6 @@ class EELSModel(Model):
         if len(to_activate_fs) > 0:
             self.set_signal_range(start_energy, nextedgeenergy)
             self.enable_fine_structure(to_activate_fs)
-            #~print "Fit with fine structure"
             self.fit(**kwargs)
 
         self.enable_edges(edges_to_activate)
@@ -571,7 +591,8 @@ class EELSModel(Model):
 
     def remove_fine_structure_data(self, edges_list=None):
         """Remove the fine structure data from the fitting routine as
-        defined in the fine_structure_width parameter of the component.EELSCLEdge
+        defined in the fine_structure_width parameter of the
+        component.EELSCLEdge
 
         Parameters
         ----------
@@ -594,7 +615,8 @@ class EELSModel(Model):
         else:
             edges_list = [self._get_component(x) for x in edges_list]
         for edge in edges_list:
-            if edge.isbackground is False and edge.fine_structure_active is True:
+            if (edge.isbackground is False and
+                    edge.fine_structure_active is True):
                 start = edge.onset_energy.value
                 stop = start + edge.fine_structure_width
                 self.remove_signal_range(start, stop)
@@ -781,8 +803,8 @@ class EELSModel(Model):
         smart fit for the edges listed in edges_list.
         If edges_list is None (default) the onset_energy of all the edges
         with onset in the spectrum energy region will not be freed.
-        Note that if their atribute edge.onset_energy.free is True, the parameter
-        will be free during the smart fit.
+        Note that if their atribute edge.onset_energy.free is True, the
+        parameter will be free during the smart fit.
 
         Parameters
         ----------
