@@ -248,7 +248,7 @@ def parse_msa_string(string, filename=None):
         'scale': parameters['XPERCHAN'] if 'XPERCHAN' in parameters else 1,
         'offset': parameters['OFFSET'] if 'OFFSET' in parameters else 0,
         'units': parameters['XUNITS'] if 'XUNITS' in parameters else '',
-    })
+    }]
     if filename is not None:
         mapped.set_item('General.original_filename',
                         os.path.split(filename)[1])
@@ -277,6 +277,7 @@ def file_reader(filename, encoding='latin-1', **kwds):
             errors='replace') as spectrum_file:
         return parse_msa_string(string=spectrum_file,
                                 filename=filename)
+
 
 def file_writer(filename, signal, format=None, separator=', ',
                 encoding='latin-1'):
