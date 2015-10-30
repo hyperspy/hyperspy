@@ -145,7 +145,7 @@ class SemperFormat(object):
 
     ICLASS_DICT_INV = {v: k for k, v in ICLASS_DICT.iteritems()}
 
-    IFORM_DICT = {0: np.byte, 1: np.int32, 2: np.float32, 3: np.complex64}
+    IFORM_DICT = {0: np.byte, 1: np.int16, 2: np.float32, 3: np.complex64, 4: np.int32}
 
     IFORM_DICT_INV = {v: k for k, v in IFORM_DICT.iteritems()}
 
@@ -170,7 +170,7 @@ class SemperFormat(object):
         self._log.debug('Created '+str(self))
 
     @classmethod
-    def load_from_unf(self, filename):
+    def load_from_unf(cls, filename):
         """Load a `.unf`-file into a :class:`~.SemperFormat` object.
 
         Parameters
@@ -184,7 +184,7 @@ class SemperFormat(object):
             Semper file format object containing the loaded information.
 
         """
-        self._log.debug('Calling from_file')
+        cls._log.debug('Calling from_file')
         with open(filename, 'rb') as f:
             # Read header:
             rec_length = np.frombuffer(f.read(4), dtype=np.int32)[0]  # length of header
@@ -192,7 +192,7 @@ class SemperFormat(object):
             ncol, nrow, nlay = header[:3]
             iclass = header[3]
             iform = header[4]
-            data_format = self.IFORM_DICT[iform]
+            data_format = cls.IFORM_DICT[iform]
             iflag = header[5]
             iversn, remain = divmod(iflag, 10000)
             ilabel, ntitle = divmod(remain, 1000)
@@ -246,7 +246,10 @@ class SemperFormat(object):
             for k in range(nlay):
                 for j in range(nrow):
                     rec_length = np.frombuffer(f.read(4), dtype=np.int32)[0]  # length of row
-                    row = np.frombuffer(f.read(rec_length), dtype=data_format)
+                    # [:ncol] is used because Semper always writes an even number of bytes which
+                    # is a problem when reading in single bytes (IFORM = 0, np.byte). If ncol is
+                    # odd, an empty byte (0) is added which has to be skipped during read in:
+                    row = np.frombuffer(f.read(rec_length), dtype=data_format)[:ncol]
                     data[k, j, :] = row
                     assert np.frombuffer(f.read(4), dtype=np.int32)[0] == rec_length
         arg_dict = {'data': data,
@@ -265,7 +268,7 @@ class SemperFormat(object):
                     'ICCOLN': iccoln,
                     'ICROWN': icrown,
                     'ICLAYN': iclayn}
-        return SemperFormat(arg_dict)
+        return cls(arg_dict)
 
     def save_to_unf(self, filename='semper.unf', skip_header=False):
         """Save a :class:`~.SemperFormat` to a file.
@@ -347,21 +350,25 @@ class SemperFormat(object):
             for k in range(nlay):
                 for j in range(nrow):
                     row = self.data[k, j, :]
-                    factor = 8 if self.iform == 3 else 4  # complex numbers need more space!
-                    f.write(struct.pack('I', factor*ncol))  # record length, 4 byte format!
-                    if self.iform == 0:  # bytes:
-                        raise Exception('Byte data is not supported! Use int, float or complex!')
-                    elif self.iform == 1:  # int:
+                    record_length = np.dtype(self.iform).itemsize * ncol  # bytes per entry * ncol
+                    f.write(struct.pack('I', record_length))  # record length, 4 byte format!
+                    if self.iform == 0:  # byte:
                         for element in row:
-                            f.write(struct.pack('i', element))  # 4 bytes per data entry!
-                    elif self.iform == 2:  # float:
+                            f.write(struct.pack('b', element))  # 1 byte per data entry!
+                    elif self.iform == 1:  # int16:
+                        for element in row:
+                            f.write(struct.pack('h', element))  # 2 bytes per data entry!
+                    elif self.iform == 2:  # float32:
                         for element in row:
                             f.write(struct.pack('f', element))  # 4 bytes per data entry!
                     elif self.iform == 3:  # complex:
                         for element in row:
                             f.write(struct.pack('f', element.real))  # 4 bytes per data entry!
                             f.write(struct.pack('f', element.imag))  # 4 bytes per data entry!
-                    f.write(struct.pack('I', factor*ncol))  # record length, 4 byte format!
+                    elif self.iform == 4:  # int32:
+                        for element in row:
+                            f.write(struct.pack('i', element))  # 4 bytes per data entry!
+                    f.write(struct.pack('I', record_length))  # record length, 4 byte format!
 
     @classmethod
     def from_signal(cls, signal):
@@ -418,7 +425,7 @@ class SemperFormat(object):
                     'ICCOLN': data.shape[2]//2 + 1,
                     'ICROWN': data.shape[1]//2 + 1,
                     'ICLAYN': data.shape[0]//2 + 1}
-        return SemperFormat(arg_dict)
+        return cls(arg_dict)
 
     def to_signal(self):
         """Export a :class:`~.SemperFormat` object to a :class:`~hyperspy.signals.Signal` object.
