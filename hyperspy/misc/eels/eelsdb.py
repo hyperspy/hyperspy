@@ -4,6 +4,7 @@ import requests
 from hyperspy.io_plugins.msa import parse_msa_string
 from hyperspy.io import dict2signal
 
+
 def eelsdb(type=None, title=None, author=None, element=None, formula=None,
            edge=None, min_energy=None, max_energy=None, resolution=None,
            min_energy_compare="gt", max_energy_compare="lt",
@@ -103,7 +104,7 @@ def eelsdb(type=None, title=None, author=None, element=None, formula=None,
     """
     # Verify arguments
     if type is not None and type not in {
-        'coreloss', 'lowloss', 'zeroloss', 'xrayabs'}:
+            'coreloss', 'lowloss', 'zeroloss', 'xrayabs'}:
         raise ValueError("type must be one of \'coreloss\', \'lowloss\', "
                          "\'zeroloss\', \'xrayabs\'.")
     valid_edges = [
@@ -163,12 +164,12 @@ def eelsdb(type=None, title=None, author=None, element=None, formula=None,
     if order_direction is not None and order_direction not in ["ASC", "DESC"]:
         raise ValueError("`order_direction` must be \"ASC\" or \"DESC\".")
     for kwarg, label in (
-        (resolution_compare, "resolution_compare"),
-        (min_energy_compare, "min_energy_compare"),
-        (max_energy_compare, "max_energy_compare")):
+            (resolution_compare, "resolution_compare"),
+            (min_energy_compare, "min_energy_compare"),
+            (max_energy_compare, "max_energy_compare")):
         if kwarg not in ("lt", "gt", "eq"):
             raise ValueError("`%s` must be \"lt\", \"eq\" or \"gt\"." %
-            label)
+                             label)
     params = {
         "type": type,
         "title": title,
