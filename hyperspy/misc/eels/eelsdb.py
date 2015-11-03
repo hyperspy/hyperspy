@@ -211,7 +211,7 @@ def eelsdb(type=None, title=None, author=None, element=None, formula=None,
             s = dict2signal(parse_msa_string(msa_string)[0])
             emsa = s.original_metadata
             s.original_metadata = s.original_metadata.__class__(
-                {'json' : json_spectrum})
+                {'json': json_spectrum})
             s.original_metadata.emsa = emsa
             spectra.append(s)
 
@@ -222,15 +222,14 @@ def eelsdb(type=None, title=None, author=None, element=None, formula=None,
             # the latter doesn't support unicode and the titles often contain
             # non-ASCII characters.
             messages.warning(
-            "Failed to load spectrum. "
-            "Title: %s id: %s."
-            "Please report this error to http://eelsdb.eu/about" %
-            (json_spectrum["title"], json_spectrum["id"]))
+                "Failed to load spectrum. "
+                "Title: %s id: %s."
+                "Please report this error to http://eelsdb.eu/about" %
+                (json_spectrum["title"], json_spectrum["id"]))
     if not spectra:
         messages.information(
             "The EELS database does not contain any spectra matching your query"
             ". If you have some, why not submitting them "
             "https://eelsdb.eu/submit-data/ ?")
-
 
     return spectra
