@@ -198,7 +198,13 @@ def eelsdb(type=None, title=None, author=None, element=None, formula=None,
     request = requests.get('http://api.eelsdb.eu/spectra',
                            params=params, verify=verify)
     spectra = []
-    for json_spectrum in request.json():
+    jsons = request.json()
+    if "message" in jsons:
+        # Invalid query, EELSdb raises error.
+        raise IOError(
+            "Please report the following error to the HyperSpy developers: "
+            "%s" % jsons["message"])
+    for json_spectrum in jsons:
         download_link = json_spectrum['download_link']
         msa_string = requests.get(download_link).text
         try:
@@ -210,14 +216,15 @@ def eelsdb(type=None, title=None, author=None, element=None, formula=None,
             # the latter doesn't support unicode and the titles often contain
             # non-ASCII characters.
             messages.warning(
-                "Failed to load spectrum. "
-                "Title: %s id: %s."
-                "Please report this error to http://eelsdb.eu/about" %
-                (json_spectrum["title"], json_spectrum["id"]))
+            "Failed to load spectrum. "
+            "Title: %s id: %s."
+            "Please report this error to http://eelsdb.eu/about" %
+            (json_spectrum["title"], json_spectrum["id"]))
     if not spectra:
         messages.information(
             "The EELS database does not contain any spectra matching your query"
             ". If you have some, why not submitting them "
             "https://eelsdb.eu/submit-data/ ?")
+
 
     return spectra
