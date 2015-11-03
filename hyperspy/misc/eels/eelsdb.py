@@ -3,6 +3,7 @@ import requests
 
 from hyperspy.io_plugins.msa import parse_msa_string
 from hyperspy.io import dict2signal
+from hyperspy.messages import warning
 
 
 def eelsdb(type=None, title=None, author=None, element=None, formula=None,
@@ -203,6 +204,15 @@ def eelsdb(type=None, title=None, author=None, element=None, formula=None,
         try:
             spectra.append(dict2signal(parse_msa_string(msa_string)[0]))
         except:
-            print(download_link)
+            # parse_msa_string or dict2signal may fail if the EMSA file is not
+            # a valid one.
+            # We use hyperspy.message.warning instead of warnings.warn because
+            # the latter doesn't support unicode and the titles often contain
+            # non-ASCII characters.
+            warning(
+            "Failed to load spectrum. "
+            "Title: %s id: %s."
+            "Please report this error to http://eelsdb.eu/about" %
+            (json_spectrum["title"], json_spectrum["id"]))
 
     return spectra
