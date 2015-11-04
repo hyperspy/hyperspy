@@ -198,7 +198,6 @@ def eelsdb(type=None, title=None, author=None, element=None, formula=None,
 
     request = requests.get('http://api.eelsdb.eu/spectra',
                            params=params, verify=verify)
-    print request.url
     spectra = []
     jsons = request.json()
     if "message" in jsons:
