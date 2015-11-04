@@ -18,6 +18,7 @@
 
 import os
 import glob
+from psutil import virtual_memory
 
 from hyperspy import messages
 import hyperspy.defaults_parser
@@ -225,9 +226,12 @@ def load(filenames=None,
         if hyperspy.defaults_parser.preferences.Plot.plot_on_load:
             for obj in objects:
                 obj.plot()
+        if load_to_memory is False:
+            for obj in objects:
+                obj._available_memory = virtual_memory().available
         if len(objects) == 1:
             objects = objects[0]
-    return objects
+        return objects
 
 
 def load_single_file(filename,
