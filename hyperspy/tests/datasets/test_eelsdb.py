@@ -3,6 +3,7 @@ from nose.plugins.skip import SkipTest
 import requests
 from hyperspy.misc.eels.eelsdb import eelsdb
 
+
 def test_eelsdb_eels():
     try:
         request = requests.get('http://api.eelsdb.eu',)
@@ -36,6 +37,7 @@ def test_eelsdb_eels():
     nt.assert_true("parallel" in ss[1].metadata.Sample.description)
     nt.assert_equal(md.Sample.chemical_formula, "BN")
     nt.assert_equal(md.Acquisition_instrument.TEM.microscope, "STEM-VG")
+
 
 def test_eelsdb_xas():
     try:
