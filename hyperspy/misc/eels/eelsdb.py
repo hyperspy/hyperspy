@@ -171,6 +171,8 @@ def eelsdb(type=None, title=None, author=None, element=None, formula=None,
         if kwarg not in ("lt", "gt", "eq"):
             raise ValueError("`%s` must be \"lt\", \"eq\" or \"gt\"." %
                              label)
+    if monochromated is not None:
+        monochromated = "Yes" if monochromated else "No"
     params = {
         "type": type,
         "title": title,
@@ -196,6 +198,7 @@ def eelsdb(type=None, title=None, author=None, element=None, formula=None,
 
     request = requests.get('http://api.eelsdb.eu/spectra',
                            params=params, verify=verify)
+    print request.url
     spectra = []
     jsons = request.json()
     if "message" in jsons:
@@ -210,7 +213,7 @@ def eelsdb(type=None, title=None, author=None, element=None, formula=None,
             s = dict2signal(parse_msa_string(msa_string)[0])
             emsa = s.original_metadata
             s.original_metadata = s.original_metadata.__class__(
-                {'json': json_spectrum})
+                {'json' : json_spectrum})
             s.original_metadata.emsa = emsa
             spectra.append(s)
 
@@ -221,10 +224,10 @@ def eelsdb(type=None, title=None, author=None, element=None, formula=None,
             # the latter doesn't support unicode and the titles often contain
             # non-ASCII characters.
             messages.warning(
-                "Failed to load spectrum. "
-                "Title: %s id: %s."
-                "Please report this error to http://eelsdb.eu/about" %
-                (json_spectrum["title"], json_spectrum["id"]))
+            "Failed to load spectrum. "
+            "Title: %s id: %s."
+            "Please report this error to http://eelsdb.eu/about" %
+            (json_spectrum["title"], json_spectrum["id"]))
     if not spectra:
         messages.information(
             "The EELS database does not contain any spectra matching your query"
@@ -235,7 +238,7 @@ def eelsdb(type=None, title=None, author=None, element=None, formula=None,
         # Values with units are not yet supported by HyperSpy (v0.8) so
         # we can't get map those fields.
         for s in spectra:
-            if type == "xrayabs":
+            if type=="xrayabs":
                 s.set_signal_type("XAS")
             json_md = s.original_metadata.json
             s.metadata.General.title = json_md.title
@@ -245,31 +248,31 @@ def eelsdb(type=None, title=None, author=None, element=None, formula=None,
                         s.add_elements(json_md.elements)
                     except ValueError:
                         messages.warning(
-                            "The following spectrum contains invalid chemical "
-                            "element information: "
-                            "Title: %s id: %s. Elements: %s. "
-                            "Please report this error to http://eelsdb.eu/about" %
-                            (json_md.title, json_md.id, json_md.elements))
+                        "The following spectrum contains invalid chemical "
+                        "element information: "
+                        "Title: %s id: %s. Elements: %s. "
+                        "Please report this error to http://eelsdb.eu/about" %
+                        (json_md.title, json_md.id, json_md.elements))
                 alpha, beta, beamenergy = None, None, None
                 if "collection" in json_md and " mrad" in json_md.collection:
                     beta = float(json_md.collection.replace(" mrad", ""))
                     s.metadata.set_item(
-                        "Acquisition_instrument.TEM.Detector.EELS.collection_angle",
-                        beta)
+                    "Acquisition_instrument.TEM.Detector.EELS.collection_angle",
+                    beta)
                 if "convergence" in json_md and " mrad" in json_md.convergence:
                     alpha = float(json_md.convergence.replace(" mrad", ""))
                     s.metadata.set_item(
-                        "Acquisition_instrument.TEM.convergence_angle", alpha)
+                    "Acquisition_instrument.TEM.convergence_angle", alpha)
                 if "beamenergy" in json_md and " kV" in json_md.beamenergy:
                     beam_energy = float(json_md.beamenergy.replace(" kV", ""))
                     s.metadata.set_item(
-                        "Acquisition_instrument.TEM.beam_energy", beam_energy)
+                    "Acquisition_instrument.TEM.beam_energy", beam_energy)
             # We don't yet support units, so we cannot map the thickness
             # s.metadata.set_item("Sample.thickness", json_md.thickness)
             s.metadata.set_item("Sample.description", json_md.description)
             s.metadata.set_item("Sample.chemical_formula", json_md.formula)
             s.metadata.set_item("General.author", json_md.author.name)
             s.metadata.set_item("Acquisition_instrument.TEM.microscope",
-                                json_md.microscope)
+                json_md.microscope)
 
     return spectra
