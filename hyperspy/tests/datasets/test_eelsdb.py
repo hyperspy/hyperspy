@@ -12,7 +12,7 @@ def test_eelsdb_eels():
     ss = eelsdb(
         title="Boron Nitride Multiwall Nanotube",
         formula="BN",
-        type="coreloss",
+        spectrum_type="coreloss",
         edge="K",
         min_energy=370,
         max_energy=1000,
@@ -45,7 +45,7 @@ def test_eelsdb_xas():
     except requests.exceptions.ConnectionError:
         raise SkipTest
     ss = eelsdb(
-        type="xrayabs", max_n=1,)
+        spectrum_type="xrayabs", max_n=1,)
     nt.assert_equal(len(ss), 1)
     md = ss[0].metadata
     nt.assert_equal(md.Signal.signal_type, "XAS")
