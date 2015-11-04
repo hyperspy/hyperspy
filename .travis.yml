@@ -13,10 +13,10 @@ install:
   - source activate testenv
   - conda install --yes $DEPS
   - conda install pip
-  - pip install coverage coveralls
+  - pip install coverage coveralls request
   # The following two lines set hyperspy to run headless. This is a temporary
   # workaround until we fix hyperspy so that this is not required.
-  - mkdir ~/.hyperspy 
+  - mkdir ~/.hyperspy
   - printf "[General]\ndefault_toolkit = None" > ~/.hyperspy/hyperspyrc
   - python setup.py install
 
@@ -28,6 +28,6 @@ before_install:
   - export PATH=/home/travis/miniconda/bin:$PATH
   # miniconda is not always up-to-date with conda.
   - conda update --yes conda
-script: python continuous_integration/nosetest.py --with-coverage hyperspy 
+script: python continuous_integration/nosetest.py --with-coverage hyperspy
 after_success:
     coveralls

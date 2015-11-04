@@ -154,6 +154,7 @@ with update_version_when_dev() as version:
                   'hyperspy.tests',
                   'hyperspy.tests.axes',
                   'hyperspy.tests.component',
+                  'hyperspy.tests.datasets',
                   'hyperspy.tests.drawing',
                   'hyperspy.tests.io',
                   'hyperspy.tests.model',
