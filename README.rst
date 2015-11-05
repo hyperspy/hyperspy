@@ -40,3 +40,8 @@ Cite
 
 .. |DOI| image:: https://zenodo.org/badge/doi/10.5281/zenodo.28025.svg
 .. _DOI: http://dx.doi.org/10.5281/zenodo.28025
+
+
+.. image:: https://badges.gitter.im/Join%20Chat.svg
+   :alt: Join the chat at https://gitter.im/hyperspy/hyperspy
+   :target: https://gitter.im/hyperspy/hyperspy?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
