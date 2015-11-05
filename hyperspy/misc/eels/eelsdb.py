@@ -219,15 +219,15 @@ def eelsdb(spectrum_type=None, title=None, author=None, element=None, formula=No
             # the latter doesn't support unicode and the titles often contain
             # non-ASCII characters.
             messages.warning(
-                "Failed to load spectrum. "
-                "Title: %s id: %s."
-                "Please report this error to http://eelsdb.eu/about" %
+                "Failed to load the spectrum.\n"
+                "Title: %s id: %s.\n"
+                "Please report this error to http://eelsdb.eu/about \n" %
                 (json_spectrum["title"], json_spectrum["id"]))
     if not spectra:
         messages.information(
             "The EELS database does not contain any spectra matching your query"
             ". If you have some, why not submitting them "
-            "https://eelsdb.eu/submit-data/ ?")
+            "https://eelsdb.eu/submit-data/ ?\n")
     else:
         # Add some info from json to metadata
         # Values with units are not yet supported by HyperSpy (v0.8) so
@@ -244,11 +244,11 @@ def eelsdb(spectrum_type=None, title=None, author=None, element=None, formula=No
                     except ValueError:
                         messages.warning(
                             "The following spectrum contains invalid chemical "
-                            "element information: "
-                            "Title: %s id: %s. Elements: %s. "
-                            "Please report this error to http://eelsdb.eu/about" %
+                            "element information:\n"
+                            "Title: %s id: %s. Elements: %s.\n"
+                            "Please report this error in "
+                            "http://eelsdb.eu/about \n" %
                             (json_md.title, json_md.id, json_md.elements))
-                alpha, beta, beamenergy = None, None, None
                 if "collection" in json_md and " mrad" in json_md.collection:
                     beta = float(json_md.collection.replace(" mrad", ""))
                     s.metadata.set_item(
