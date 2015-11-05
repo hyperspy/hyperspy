@@ -31,7 +31,6 @@ def test_eelsdb_eels():
         md.Acquisition_instrument.TEM.Detector.EELS.collection_angle, 24)
     nt.assert_equal(md.Acquisition_instrument.TEM.convergence_angle, 15)
     nt.assert_equal(md.Acquisition_instrument.TEM.beam_energy, 100)
-    nt.assert_equal(md.Acquisition_instrument.TEM.beam_energy, 100)
     nt.assert_equal(md.Signal.signal_type, "EELS")
     nt.assert_true("perpendicular" in md.Sample.description)
     nt.assert_true("parallel" in ss[1].metadata.Sample.description)

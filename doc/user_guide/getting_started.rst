@@ -309,11 +309,13 @@ signals:
     >>> hs.datasets.example_signals.EDS_TEM_Spectrum().plot()
 
 .. versionadded:: 0.9
+    :py:func:`~.misc.eels.eelsdb.eelsdb` function.
 
-    The :py:func:`~.misc.eels.eelsdb.eelsdb` function in `hs.datasets` can
-    directly load spectra from `The EELS Database <http://eelsdb.eu>`_. For
-    example, the following loads all the boron trioxide spectra currently
-    available in the database:
+
+The :py:func:`~.misc.eels.eelsdb.eelsdb` function in `hs.datasets` can
+directly load spectra from `The EELS Database <http://eelsdb.eu>`_. For
+example, the following loads all the boron trioxide spectra currently
+available in the database:
 
 .. code-block:: python
 
