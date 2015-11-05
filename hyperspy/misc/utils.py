@@ -255,6 +255,14 @@ class DictionaryTreeBrowser(object):
             if not isinstance(key_, types.MethodType):
                 key = ensure_unicode(value['key'])
                 value = value['_dtb_value_']
+                if isinstance(value, list):
+                    key += u" <list>"
+                    value = DictionaryTreeBrowser(
+                        {u'[%d]' % i: v for i, v in enumerate(value)})
+                if isinstance(value, tuple):
+                    key += u" <tuple>"
+                    value = DictionaryTreeBrowser(
+                        {u'[%d]' % i: v for i, v in enumerate(value)})
                 if isinstance(value, DictionaryTreeBrowser):
                     if j == eoi - 1:
                         symbol = u'└── '
