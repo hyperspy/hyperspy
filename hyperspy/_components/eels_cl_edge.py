@@ -96,6 +96,9 @@ class EELSCLEdge(Component):
 
         self._whitelist['element_subshell'] = ('init', element_subshell)
         self._whitelist['GOS'] = ('init', GOS)
+        self._whitelist['fine_structure_smoothing'] = None
+        self._whitelist['fine_structure_active'] = None
+        self._whitelist['fine_structure_width'] = None
         self.name = element_subshell
         self.element, self.subshell = element_subshell.split('_')
         self.energy_scale = None
