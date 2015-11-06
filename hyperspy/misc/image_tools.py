@@ -55,8 +55,8 @@ def hanning2d(M, N):
 
 
 def sobel_filter(im):
-    sx = sp.ndimage.sobel(im, axis=0, mode='constant')
-    sy = sp.ndimage.sobel(im, axis=1, mode='constant')
+    sx = sp.ndimage.sobel(im, axis=0)
+    sy = sp.ndimage.sobel(im, axis=1)
     sob = np.hypot(sx, sy)
     return sob
 
