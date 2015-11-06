@@ -17,6 +17,7 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import copy
+import h5py
 import os.path
 import warnings
 import math
@@ -264,7 +265,7 @@ class Signal2DTools(object):
             del ref
         return shifts
 
-    def align2D(self, crop=True, fill_value=np.nan, shifts=None,
+    def align2D(self, crop=True, fill_value=np.nan, shifts=None, expand=False,
                 roi=None,
                 sobel=True,
                 medfilter=True,
@@ -293,6 +294,9 @@ class Signal2DTools(object):
         shifts : None or list of tuples
             If None the shifts are estimated using
             `estimate_shift2D`.
+        expand : bool
+            If True, the data will be expanded to fit all data after alignment.
+            Overrides `crop`.
 
         Returns
         -------
@@ -331,6 +335,38 @@ class Signal2DTools(object):
             return_shifts = True
         else:
             return_shifts = False
+
+        if expand:
+            # Expand to fit all valid data
+            left, right = (int(np.floor(shifts[:, 1].min())) if
+                           shifts[:, 1].min() < 0 else 0,
+                           int(np.ceil(shifts[:, 1].max())) if
+                           shifts[:, 1].max() > 0 else 0)
+            top, bottom = (int(np.floor(shifts[:, 0].min())) if
+                           shifts[:, 0].min() < 0 else 0,
+                           int(np.ceil(shifts[:, 0].max())) if
+                           shifts[:, 0].max() > 0 else 0)
+            xaxis = self.axes_manager.signal_axes[0]
+            yaxis = self.axes_manager.signal_axes[1]
+            padding = []
+            for i in xrange(self.data.ndim):
+                if i == xaxis.index_in_array:
+                    padding.append((right, -left))
+                elif i == yaxis.index_in_array:
+                    padding.append((bottom, -top))
+                else:
+                    padding.append((0, 0))
+            self.data = np.pad(self.data, padding, mode='constant',
+                               constant_values=(fill_value,))
+            if left < 0:
+                xaxis.offset += left * xaxis.scale
+            if np.any((left < 0, right > 0)):
+                xaxis.size += right - left
+            if top < 0:
+                yaxis.offset += top * yaxis.scale
+            if np.any((top < 0, bottom > 0)):
+                yaxis.size += bottom - top
+
         # Translate with sub-pixel precision if necesary
         for im, shift in zip(self._iterate_signal(),
                              shifts):
@@ -339,8 +375,8 @@ class Signal2DTools(object):
                             fill_value=fill_value)
                 del im
 
-        # Crop the image to the valid size
-        if crop is True:
+        if crop and not expand:
+            # Crop the image to the valid size
             shifts = -shifts
             bottom, top = (int(np.floor(shifts[:, 0].min())) if
                            shifts[:, 0].min() < 0 else None,
@@ -352,6 +388,7 @@ class Signal2DTools(object):
                            shifts[:, 1].max() > 0 else 0)
             self.crop_image(top, bottom, left, right)
             shifts = -shifts
+
         if return_shifts:
             return shifts
 
@@ -384,6 +421,7 @@ class Signal1DTools(object):
                 shift_array,
                 interpolation_method='linear',
                 crop=True,
+                expand=False,
                 fill_value=np.nan,
                 show_progressbar=None):
         """Shift the data in place over the signal axis by the amount specified
@@ -402,6 +440,9 @@ class Signal1DTools(object):
         crop : bool
             If True automatically crop the signal axis at both ends if
             needed.
+        expand : bool
+            If True, the data will be expanded to fit all data after alignment.
+            Overrides `crop`.
         fill_value : float
             If crop is False fill the data outside of the original
             interval with the given value where needed.
@@ -418,11 +459,37 @@ class Signal1DTools(object):
             show_progressbar = preferences.General.show_progressbar
         self._check_signal_dimension_equals_one()
         axis = self.axes_manager.signal_axes[0]
-        offset = axis.offset
-        original_axis = axis.axis.copy()
         pbar = progressbar(
             maxval=self.axes_manager.navigation_size,
             disabled=not show_progressbar)
+
+        # Figure out min/max shifts, and translate to shifts in index as well
+        minimum, maximum = np.nanmin(shift_array), np.nanmax(shift_array)
+        if minimum < 0:
+            ihigh = 1 + axis.value2index(
+                axis.high_value + minimum,
+                rounding=math.floor)
+        else:
+            ihigh = axis.high_index + 1
+        if maximum > 0:
+            ilow = axis.value2index(axis.offset + maximum,
+                                    rounding=math.ceil)
+        else:
+            ilow = axis.low_index
+        if expand:
+            padding = []
+            for i in xrange(self.data.ndim):
+                if i == axis.index_in_array:
+                    padding.append(
+                        (axis.high_index - ihigh + 1, ilow - axis.low_index))
+                else:
+                    padding.append((0, 0))
+            self.data = np.pad(self.data, padding, mode='constant',
+                               constant_values=(fill_value,))
+            axis.offset += minimum
+            axis.size += axis.high_index - ihigh + 1 + ilow - axis.low_index
+        offset = axis.offset
+        original_axis = axis.axis.copy()
         for i, (dat, shift) in enumerate(zip(
                 self._iterate_signal(),
                 shift_array.ravel(()))):
@@ -439,21 +506,10 @@ class Signal1DTools(object):
 
         axis.offset = offset
 
-        if crop is True:
-            minimum, maximum = np.nanmin(shift_array), np.nanmax(shift_array)
-            if minimum < 0:
-                iminimum = 1 + axis.value2index(
-                    axis.high_value + minimum,
-                    rounding=math.floor)
-                print iminimum
-                self.crop(axis.index_in_axes_manager,
-                          None,
-                          iminimum)
-            if maximum > 0:
-                imaximum = axis.value2index(offset + maximum,
-                                            rounding=math.ceil)
-                self.crop(axis.index_in_axes_manager,
-                          imaximum)
+        if crop and not expand:
+            self.crop(axis.index_in_axes_manager,
+                      ilow,
+                      ihigh)
 
     def interpolate_in_between(self, start, end, delta=3,
                                show_progressbar=None, **kwargs):
@@ -620,6 +676,7 @@ class Signal1DTools(object):
                 number_of_interpolation_points=5,
                 interpolation_method='linear',
                 crop=True,
+                expand=False,
                 fill_value=np.nan,
                 also_align=[],
                 mask=None,
@@ -660,6 +717,9 @@ class Signal1DTools(object):
         crop : bool
             If True automatically crop the signal axis at both ends if
             needed.
+        expand : bool
+            If True, the data will be expanded to fit all data after alignment.
+            Overrides `crop`.
         fill_value : float
             If crop is False fill the data outside of the original
             interval with the given value where needed.
@@ -706,6 +766,7 @@ class Signal1DTools(object):
                            interpolation_method=interpolation_method,
                            crop=crop,
                            fill_value=fill_value,
+                           expand=expand,
                            show_progressbar=show_progressbar)
 
     def integrate_in_range(self, signal_range='interactive'):
@@ -2820,6 +2881,17 @@ class Signal(MVA,
             string += str(self.data.dtype)
         print string
 
+    @property
+    def data(self):
+        return self._data
+
+    @data.setter
+    def data(self, value):
+        if isinstance(value, h5py.Dataset):
+            self._data = value
+        else:
+            self._data = np.atleast_1d(np.asanyarray(value))
+
     def _load_dictionary(self, file_data_dict):
         """Load data from dictionary.
 
@@ -2848,7 +2920,7 @@ class Signal(MVA,
 
         """
 
-        self.data = np.atleast_1d(np.asanyarray(file_data_dict['data']))
+        self.data = file_data_dict['data']
         if 'axes' not in file_data_dict:
             file_data_dict['axes'] = self._get_undefined_axes_list()
         self.axes_manager = AxesManager(

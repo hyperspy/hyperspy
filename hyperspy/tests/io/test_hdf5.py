@@ -1,6 +1,7 @@
 import os.path
 from os import remove
 import datetime
+import h5py
 
 import nose.tools as nt
 import numpy as np
@@ -229,3 +230,33 @@ def test_rgba16():
         "npy_files",
         "test_rgba16.npy"))
     nt.assert_true((s.data == data).all())
+
+
+class TestLoadingOOMReadOnly:
+
+    def setUp(self):
+        s = Signal(np.empty((5, 5, 5)))
+        s.save('tmp.hdf5')
+        self.shape = (10000, 10000, 100)
+        del s
+        f = h5py.File('tmp.hdf5', model='r+')
+        s = f['Experiments/__unnamed__']
+        del s['data']
+        s.create_dataset(
+            'data',
+            shape=self.shape,
+            dtype='float64',
+            chunks=True)
+        f.close()
+
+    @nt.raises(MemoryError)
+    def test_in_memory_loading(self):
+        s = load('tmp.hdf5')
+
+    def test_oom_loading(self):
+        s = load('tmp.hdf5', load_to_memory=False)
+        nt.assert_equal(self.shape, s.data.shape)
+        nt.assert_is_instance(s.data, h5py.Dataset)
+
+    def tearDown(self):
+        remove('tmp.hdf5')

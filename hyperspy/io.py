@@ -124,6 +124,10 @@ def load(filenames=None,
         mapped file will be created in the given directory,
         otherwise the default directory is used.
 
+    load_to_memory: bool
+        for HDF5 files, if True (default) loads all data to memory. If False,
+        enables only loading the data upon request
+
     Returns
     -------
     Signal instance or list of signal instances
@@ -353,7 +357,7 @@ def dict2signal(signal_dict):
         if "Signal" in mp and "signal_origin" in mp["Signal"]:
             signal_origin = mp["Signal"]['signal_origin']
     if (not record_by and 'data' in signal_dict and
-            signal_dict['data'].ndim < 2):
+            len(signal_dict['data'].shape) < 2):
         record_by = "spectrum"
 
     signal = assign_signal_subclass(record_by=record_by,
