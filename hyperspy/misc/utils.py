@@ -252,7 +252,7 @@ class DictionaryTreeBrowser(object):
         from hyperspy.defaults_parser import preferences
 
         def check_long_string(value, max_len):
-            if not isinstance(value, (str, np.string_)):
+            if not isinstance(value, (basestring, np.string_)):
                 value = repr(value)
             value = ensure_unicode(value)
             strvalue = unicode(value)
