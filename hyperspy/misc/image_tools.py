@@ -148,12 +148,12 @@ def estimate_image_shift(ref, image, roi=None, sobel=True,
 
     # Apply filters
     for im in (ref, image):
-        if hanning is True:
-            im *= hanning2d(*im.shape)
         if medfilter is True:
             im[:] = sp.signal.medfilt(im)
         if sobel is True:
             im[:] = sobel_filter(im)
+        if hanning is True:
+            im *= hanning2d(*im.shape)
 
     phase_correlation = fft_correlation(ref, image,
                                         normalize=normalize_corr)
