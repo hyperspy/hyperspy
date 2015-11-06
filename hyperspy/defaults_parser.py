@@ -72,6 +72,7 @@ else:
 
 
 class GeneralConfig(t.HasTraits):
+
     default_file_format = t.Enum(
         'hdf5',
         'rpl',
@@ -120,6 +121,13 @@ class GeneralConfig(t.HasTraits):
         desc='If enabled, when starting HyperSpy using the `hyperspy` '
              'IPython magic of the starting scripts, all the contents of '
              '``hyperspy.hspy`` are imported in the user namespace. ')
+
+    dtb_expand_structures = t.CBool(
+        True,
+        label='Expand structures in DictionaryTreeBrowser',
+        desc='If enabled, when printing DictionaryTreeBrowser (e.g. metadata), '
+             'long lists and tuples will be expanded and any dictionaries in them will be '
+             'printed similar to DictionaryTreeBrowser, but with double lines')
 
     def _logger_on_changed(self, old, new):
         if new is True:
