@@ -33,16 +33,20 @@ def _parse_only_lines(only_lines):
     return only_lines
 
 
-def get_xray_lines_near_energy(energy, spread=0.1, only_lines=None):
-    """Find xray lines near a specific energy, more specifically search in
-    range 'energy' +/- 'spread'
+def get_xray_lines_near_energy(energy, width=0.2, only_lines=None):
+    """Find xray lines near a specific energy, more specifically all xray lines
+    that satisfy only_lines and are within the given energy window width around
+    the passed energy.
 
     Parameters
     ----------
     energy : float
         Energy to search near in keV
-    spread : float
-        Spread in keV around energy in which to search
+    width : float
+        Window width in keV around energy in which to find nearby energies,
+        i.e. a value of 0.2 keV (the default) means to search +/- 0.1 keV.
+    only_lines :
+        If not None, only the given lines will be added (eg. ('a','Kb')).
 
     Returns
     -------
@@ -50,7 +54,7 @@ def get_xray_lines_near_energy(energy, spread=0.1, only_lines=None):
     """
     only_lines = _parse_only_lines(only_lines)
     valid_lines = []
-    E_min, E_max = energy - spread, energy + spread
+    E_min, E_max = energy - width/2., energy + width/2.
     for element, el_props in elements_db.iteritems():
         # Not all elements in the DB have the keys, so catch KeyErrors
         try:
