@@ -123,7 +123,7 @@ class GeneralConfig(t.HasTraits):
              '``hyperspy.hspy`` are imported in the user namespace. ')
 
     dtb_expand_structures = t.CBool(
-        False,
+        True,
         label='Expand structures in DictionaryTreeBrowser',
         desc='If enabled, when printing DictionaryTreeBrowser (e.g. metadata), '
              'long lists and tuples will be expanded and any dictionaries in them will be '
