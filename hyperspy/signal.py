@@ -4867,8 +4867,14 @@ class Signal(MVA,
         if plot_marker:
             marker.plot()
 
-    def create_model(self):
+    def create_model(self, dictionary=None):
         """Create a model for the current signal
+
+        Parameters
+        __________
+        dictionary : {None, dict}, optional
+            A dictionary to be used to recreate a model. Usually generated using
+            :meth:`hyperspy.model.as_dictionary`
 
         Returns
         -------
@@ -4876,7 +4882,7 @@ class Signal(MVA,
 
         """
         from hyperspy.model import Model
-        return Model(self)
+        return Model(self, dictionary=dictionary)
 
 
 # Implement binary operators

@@ -1223,7 +1223,7 @@ class EELSSpectrum(Spectrum):
             return eps, output
 
     def create_model(self, ll=None, auto_background=True, auto_add_edges=True,
-                     GOS=None):
+                     GOS=None, dictionary=None):
         """Create a model for the current EELS data.
 
         Parameters
@@ -1247,6 +1247,9 @@ class EELSSpectrum(Spectrum):
             The generalized oscillation strenght calculations to use for the
             core-loss EELS edges. If None the Hartree-Slater GOS are used if
             available, otherwise it uses the hydrogenic GOS.
+        dictionary : {None | dict}, optional
+            A dictionary to be used to recreate a model. Usually generated using
+            :meth:`hyperspy.model.as_dictionary`
 
         Returns
         -------
@@ -1259,5 +1262,6 @@ class EELSSpectrum(Spectrum):
                           ll=ll,
                           auto_background=auto_background,
                           auto_add_edges=auto_add_edges,
-                          GOS=GOS)
+                          GOS=GOS,
+                          dictionary=dictionary)
         return model

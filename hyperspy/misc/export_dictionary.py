@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2014 The HyperSpy developers
+# Copyright 2007-2015 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -62,51 +62,57 @@ def parse_flag_string(flags):
     return flags.replace(' ', '').split(',')
 
 
-def export_to_dictionary(target, whitelist, dic, picklable=False):
+def export_to_dictionary(target, whitelist, dic, fullcopy=True):
     """ Exports attributes of target from whitelist.keys() to dictionary dic
-        All values are references only by default.
-        If picklable=True, the functions are copies (hence allows arbitrary closure)
+    All values are references only by default.
 
-        Parameters
-        ----------
-            target : object
-                must contain the (nested) attributes of the whitelist.keys()
-            whitelist : dictionary
-                A dictionary, keys of which are used as attributes for exporting. Key 'self' is only available
-                with tag 'id', when the id of the target is saved.
-                The values are either None, or a tuple, where:
-                    - the first item a string, which containts flags, separated by commas.
-                    - the second item is None if no 'init' flag is given, otherwise the object required for
-                      the initialization.
-                The flag conventions are as follows:
-                * 'init':
-                    object used for initialization of the target. The object is saved in the tuple in
-                    whitelist
-                * 'fn':
-                    the targeted attribute is a function, and may be pickled (preferably with dill package).
-                    A tuple of (thing, value) will be exported to the dictionary, where thing is None if
-                    function is passed as-is, and bool if dill package is used to pickle the function, and
-                    value is the result.
-                * 'id':
-                    the id of the targeted attribute is exported (e.g. id(target.name) )
-                * 'sig':
-                    The targeted attribute is a signal, and will be converted to a dictionary if
-                    picklable=True
-                * 'inav':
-                    The targeted attribute should be sliced when slicing navigation dimension of the original
-                    object
-                * 'isig':
-                    The targeted attribute should be sliced when slicing signal dimension of the original
-                    object
-            dic : dictionary
-                A dictionary where the object will be exported
+    Parameters
+    ----------
+        target : object
+            must contain the (nested) attributes of the whitelist.keys()
+        whitelist : dictionary
+            A dictionary, keys of which are used as attributes for exporting.
+            Key 'self' is only available with tag 'id', when the id of the
+            target is saved. The values are either None, or a tuple, where:
+                - the first item a string, which containts flags, separated by
+                commas.
+                - the second item is None if no 'init' flag is given, otherwise
+                the object required for the initialization.
+            The flag conventions are as follows:
+            * 'init':
+                object used for initialization of the target. The object is
+                saved in the tuple in whitelist
+            * 'fn':
+                the targeted attribute is a function, and may be pickled
+                (preferably with dill package). A tuple of (thing, value) will
+                be exported to the dictionary, where thing is None if function
+                is passed as-is, and bool if dill package is used to pickle the
+                function, and value is the result.
+            * 'id':
+                the id of the targeted attribute is exported (e.g.
+                id(target.name))
+            * 'sig':
+                The targeted attribute is a signal, and will be converted to a
+                dictionary if fullcopy=True
+            * 'inav':
+                The targeted attribute should be sliced when slicing navigation
+                dimension of the original object
+            * 'isig':
+                The targeted attribute should be sliced when slicing signal
+                dimension of the original object
+        dic : dictionary
+            A dictionary where the object will be exported
+        fullcopy : bool
+            Copies of objects are stored, not references. If any found,
+            functions will be pickled and signals converted to dictionaries
+
     """
     whitelist_flags = {}
     for key, value in whitelist.iteritems():
         if value is None:
             # No flags and/or values are given, just save the target
             thing = attrgetter(key)(target)
-            if picklable:
+            if fullcopy:
                 thing = deepcopy(thing)
             dic[key] = thing
             whitelist_flags[key] = ''
@@ -130,20 +136,20 @@ def export_to_dictionary(target, whitelist, dic, picklable=False):
             value = attrgetter(key)(target)
         # here value either id(thing), or an actual target to export
         if 'sig' in flags:
-            if picklable:
+            if fullcopy:
                 from hyperspy.signal import Signal
                 if isinstance(value, Signal):
                     value = value._to_dictionary()
                     value['data'] = deepcopy(value['data'])
         elif 'fn' in flags:
-            if picklable:
+            if fullcopy:
                 if dill_avail:
                     value = (True, dill.dumps(value))
                 else:
                     value = (False, marshal.dumps(value.func_code))
             else:
                 value = (None, value)
-        elif picklable:
+        elif fullcopy:
             value = deepcopy(value)
 
         dic[key] = value
@@ -151,42 +157,42 @@ def export_to_dictionary(target, whitelist, dic, picklable=False):
 
     if '_whitelist' not in dic:
         dic['_whitelist'] = {}
-    # the saved whitelist does not have any values, as they are saved in the original dictionary. Have to
-    # restore then when loading from dictionary, most notably all with 'init'
-    # flags!!
+    # the saved whitelist does not have any values, as they are saved in the
+    # original dictionary. Have to restore then when loading from dictionary,
+    # most notably all with 'init' flags!!
     dic['_whitelist'].update(whitelist_flags)
 
 
 def load_from_dictionary(target, dic):
     """ Loads attributes of target to dictionary dic
-        The attribute list is read from dic['_whitelist'].keys()
-        All values are references only
+    The attribute list is read from dic['_whitelist'].keys()
 
-        Parameters
-        ----------
-            target : object
-                must contain the (nested) attributes of the whitelist.keys()
-            dic : dictionary
-                A dictionary, containing field '_whitelist', which is a dictionary with all keys that were
-                exported, with values being flag strings.
-                The convention of the flags is as follows:
-                * 'init':
-                    object used for initialization of the target. Will be copied to the _whitelist after
-                    loading
-                * 'fn':
-                    the targeted attribute is a function, and may have been pickled (preferably with dill package).
-                * 'id':
-                    the id of the original object was exported and the attribute will not be set. The key has
-                    to be '_id_'
-                * 'sig':
-                    The targeted attribute was a signal, and may have been converted to a dictionary if
-                    picklable=True
-                * 'inav':
-                    The targeted attribute should be sliced when slicing navigation dimension of the original
-                    object
-                * 'isig':
-                    The targeted attribute should be sliced when slicing signal dimension of the original
-                    object
+    Parameters
+    ----------
+        target : object
+            must contain the (nested) attributes of the whitelist.keys()
+        dic : dictionary
+            A dictionary, containing field '_whitelist', which is a dictionary
+            with all keys that were exported, with values being flag strings.
+            The convention of the flags is as follows:
+            * 'init':
+                object used for initialization of the target. Will be copied to
+                the _whitelist after loading
+            * 'fn':
+                the targeted attribute is a function, and may have been pickled
+                (preferably with dill package).
+            * 'id':
+                the id of the original object was exported and the attribute
+                will not be set. The key has to be '_id_'
+            * 'sig':
+                The targeted attribute was a signal, and may have been converted
+                to a dictionary if fullcopy=True
+            * 'inav':
+                The targeted attribute should be sliced when slicing navigation
+                dimension of the original object
+            * 'isig':
+                The targeted attribute should be sliced when slicing signal
+                dimension of the original object
 
     """
     new_whitelist = {}
@@ -211,7 +217,8 @@ def load_from_dictionary(target, dic):
 
 
 def reconstruct_object(flags, value):
-    """ Reconstructs the value (if necessary) after having saved it in a dictionary
+    """ Reconstructs the value (if necessary) after having saved it in a
+    dictionary
     """
     if not isinstance(flags, list):
         flags = parse_flag_string(flags)
@@ -229,8 +236,8 @@ def reconstruct_object(flags, value):
             return types.FunctionType(marshal.loads(thing), globals())
         if ifdill in [True, 'True']:
             if not dill_avail:
-                raise ValueError( "the dictionary was constructed using \"dill\" package, which is not\
-                available on the system")
+                raise ValueError("the dictionary was constructed using "
+                                 "\"dill\" package, which is not available on the system")
             else:
                 return dill.loads(thing)
         # should not be reached

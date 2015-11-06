@@ -155,10 +155,9 @@ class TestComponentDictionary:
 
     def test_load_dictionary(self):
         c = self.comp
-        d = c.as_dictionary()
+        d = c.as_dictionary(True)
         n = Component(self.parameter_names)
-        print self.parameter_names
-        print d
+
         n._id_name = 'dummy names yay!'
         _ = n._load_dictionary(d)
         nt.assert_equal(c.name, n.name)
@@ -168,11 +167,22 @@ class TestComponentDictionary:
             n.active_is_multidimensional)
 
         for pn, pc in zip(n.parameters, c.parameters):
+            rn = np.random.random()
+            nt.assert_equal(pn.twin_function(rn), pc.twin_function(rn))
+            nt.assert_equal(
+                pn.twin_inverse_function(rn),
+                pc.twin_inverse_function(rn))
             dn = pn.as_dictionary()
             del dn['self']
+            del dn['twin_function']
+            del dn['twin_inverse_function']
             dc = pc.as_dictionary()
             del dc['self']
-            nt.assert_true(dn == dc)
+            del dc['twin_function']
+            del dc['twin_inverse_function']
+            print dn.keys()
+            print dc.keys()
+            nt.assert_dict_equal(dn, dc)
 
     @nt.raises(ValueError)
     def test_invalid_component_name(self):

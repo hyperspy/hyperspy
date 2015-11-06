@@ -180,6 +180,8 @@ class Model(list):
     set_parameters_value
         Set the value of a parameter in components in a model to a specified
         value.
+    as_dictionary
+        Exports the model to a dictionary that can be saved in a file.
 
     Examples
     --------
@@ -263,10 +265,9 @@ class Model(list):
         self.free_parameters_boundaries = None
         self._low_loss = None
         self.convolved = False
-	self.components = ModelComponents(self)
+        self.components = ModelComponents(self)
         if dictionary is not None:
             self._load_dictionary(dictionary)
-        
 
     def _load_dictionary(self, dic):
         """Load data from dictionary.
@@ -275,11 +276,12 @@ class Model(list):
         ----------
         dic : dictionary
             _whitelist : dictionary
-                a dictionary with keys used as references of  save attributes, for more information, see
+                a dictionary with keys used as references of  save attributes,
+                for more information, see
                 :meth:`hyperspy.misc.export_dictionary.load_from_dictionary`
             components : dictionary (optional)
-                Dictionary, with information about components of the model
-                (see the documentation of component.to_dictionary() method)
+                Dictionary, with information about components of the model (see
+                the documentation of component.as_dictionary() method)
             * any field from _whitelist.keys() *
         """
 
@@ -2092,24 +2094,25 @@ class Model(list):
                         _parameter.value = value
                         _parameter.assign_current_value_to_all()
 
-    def as_dictionary(self, picklable=False):
-        """Returns a dictionary of the model, including all components, degrees of freedom (dof) and
-        chi-squared (chisq) with values.
-
-        All values (except functions) are references
+    def as_dictionary(self, fullcopy=True):
+        """Returns a dictionary of the model, including all components, degrees
+        of freedom (dof) and chi-squared (chisq) with values.
 
         Parameters
         ----------
-        picklable : Bool (optional, False)
-            If any found, functions will be pickled and signals converted to dictionaries
+        fullcopy : Bool (optional, True)
+            Copies of objects are stored, not references. If any found,
+            functions will be pickled and signals converted to dictionaries
 
         Returns
         -------
-        dictionary : a complete dictionary of the model, which includes at least the following fields:
+        dictionary : a complete dictionary of the model, which includes at least
+        the following fields:
             components : list
                 a list of dictionaries of components, one per
             _whitelist : dictionary
-                a dictionary with keys used as references for saved attributes, for more information, see
+                a dictionary with keys used as references for saved attributes,
+                for more information, see
                 :meth:`hyperspy.misc.export_dictionary.export_to_dictionary`
             * any field from _whitelist.keys() *
         Examples
@@ -2124,9 +2127,9 @@ class Model(list):
         >>> m2 = s.create_model(dictionary=d)
 
         """
-        dic = {'components': [c.as_dictionary(picklable) for c in self]}
+        dic = {'components': [c.as_dictionary(fullcopy) for c in self]}
 
-        export_to_dictionary(self, self._whitelist, dic, picklable)
+        export_to_dictionary(self, self._whitelist, dic, fullcopy)
 
         def remove_empty_numpy_strings(dic):
             for k, v in dic.iteritems():
@@ -2216,3 +2219,5 @@ class Model(list):
                     "\" not found in model")
         else:
             return list.__getitem__(self, value)
+
+# vim: textwidth=80

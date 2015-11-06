@@ -146,16 +146,18 @@ class Parameter(t.HasTraits):
         dict : dictionary
             A dictionary containing at least the following items:
             _id_name : string
-                _id_name of the original parameter, used to create the dictionary. Has to match with the
-                self._id_name
+                _id_name of the original parameter, used to create the
+                dictionary. Has to match with the self._id_name
             _whitelist : dictionary
-                a dictionary, which keys are used as keywords to match with the parameter attributes.
-                For more information see :meth:`hyperspy.misc.export_dictionary.load_from_dictionary`
+                a dictionary, which keys are used as keywords to match with the
+                parameter attributes.  For more information see
+                :meth:`hyperspy.misc.export_dictionary.load_from_dictionary`
             * any field from _whitelist.keys() *
         Returns
         -------
         id_value : int
-            the ID value of the original parameter, to be later used for setting up the correct twins
+            the ID value of the original parameter, to be later used for setting
+            up the correct twins
 
         """
         if dictionary['_id_name'] == self._id_name:
@@ -513,30 +515,33 @@ class Parameter(t.HasTraits):
             self.as_signal(field='std').save(append2pathname(
                 filename, '_std'))
 
-    def as_dictionary(self, picklable=False):
-        """Returns parameter as a dictionary, saving all attributes from self._whitelist.keys()
-                For more information see :meth:`hyperspy.misc.export_dictionary.export_to_dictionary`
+    def as_dictionary(self, fullcopy=True):
+        """Returns parameter as a dictionary, saving all attributes from
+        self._whitelist.keys() For more information see
+        :meth:`hyperspy.misc.export_dictionary.export_to_dictionary`
 
         Parameters
         ----------
-        picklable : Bool (optional, False)
-            If any found functions will be pickled, and signals converted to dictionaries
+        fullcopy : Bool (optional, False)
+            Copies of objects are stored, not references. If any found,
+            functions will be pickled and signals converted to dictionaries
         Returns
         -------
         dic : dictionary with the following keys:
             _id_name : string
-                _id_name of the original parameter, used to create the dictionary. Has to match with the
-                self._id_name
+                _id_name of the original parameter, used to create the
+                dictionary. Has to match with the self._id_name
             _twins : list
                 a list of ids of the twins of the parameter
             _whitelist : dictionary
-                a dictionary, which keys are used as keywords to match with the parameter attributes.
-                For more information see :meth:`hyperspy.misc.export_dictionary.export_to_dictionary`
+                a dictionary, which keys are used as keywords to match with the
+                parameter attributes.  For more information see
+                :meth:`hyperspy.misc.export_dictionary.export_to_dictionary`
             * any field from _whitelist.keys() *
 
         """
         dic = {'_twins': [id(t) for t in self._twins]}
-        export_to_dictionary(self, self._whitelist, dic, picklable)
+        export_to_dictionary(self, self._whitelist, dic, fullcopy)
         return dic
 
     def default_traits_view(self):
@@ -989,16 +994,17 @@ class Component(t.HasTraits):
         for _parameter in parameter_list:
             _parameter.free = False
 
-    def as_dictionary(self, picklable=False):
+    def as_dictionary(self, fullcopy=True):
         """Returns component as a dictionary
 
-        All items are references. For more information on method and conventions, see
+        For more information on method and conventions, see
         :meth:`hyperspy.misc.export_dictionary.export_to_dictionary`
 
         Parameters
         ----------
-        picklable : Bool (optional, False)
-            If any found functions will be pickled
+        fullcopy : Bool (optional, False)
+            Copies of objects are stored, not references. If any found,
+            functions will be pickled and signals converted to dictionaries
 
         Returns
         -------
@@ -1007,14 +1013,15 @@ class Component(t.HasTraits):
             parameters : list
                 a list of dictionaries of the parameters, one per
             _whitelist : dictionary
-                a dictionary with keys used as references saved attributes, for more information, see
+                a dictionary with keys used as references saved attributes, for
+                more information, see
                 :meth:`hyperspy.misc.export_dictionary.export_to_dictionary`
             * any field from _whitelist.keys() *
         """
         dic = {
             'parameters': [
-                p.as_dictionary(picklable) for p in self.parameters]}
-        export_to_dictionary(self, self._whitelist, dic, picklable)
+                p.as_dictionary(fullcopy) for p in self.parameters]}
+        export_to_dictionary(self, self._whitelist, dic, fullcopy)
         return dic
 
     def _load_dictionary(self, dic):
@@ -1025,21 +1032,23 @@ class Component(t.HasTraits):
         dict : dictionary
             A dictionary containing following items:
             _id_name : string
-                _id_name of the original component, used to create the dictionary. Has to match with the
-                self._id_name
+                _id_name of the original component, used to create the
+                dictionary. Has to match with the self._id_name
             parameters : list
-                A list of dictionaries, one per parameter of the component (see parameter.as_dictionary()
-                documentation for more)
+                A list of dictionaries, one per parameter of the component (see
+                parameter.as_dictionary() documentation for more)
             _whitelist : dictionary
-                a dictionary, which keys are used as keywords to match with the component attributes.
-                For more information see :meth:`hyperspy.misc.export_dictionary.load_from_dictionary`
+                a dictionary, which keys are used as keywords to match with the
+                component attributes.  For more information see
+                :meth:`hyperspy.misc.export_dictionary.load_from_dictionary`
             * any field from _whitelist.keys() *
 
         Returns
         -------
         twin_dict : dictionary
-            Dictionary of 'id' values from input dictionary as keys with all of the parameters of the
-            component, to be later used for setting up correct twins.
+            Dictionary of 'id' values from input dictionary as keys with all of
+            the parameters of the component, to be later used for setting up
+            correct twins.
 
         """
         if dic['_id_name'] == self._id_name:
@@ -1058,3 +1067,6 @@ class Component(t.HasTraits):
         else:
             raise ValueError( "_id_name of component and dictionary do not match, \ncomponent._id_name = %s\
                     \ndictionary['_id_name'] = %s" % (self._id_name, dic['_id_name']))
+
+
+# vim: textwidth=80
