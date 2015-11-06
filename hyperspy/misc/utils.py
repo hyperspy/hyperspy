@@ -371,7 +371,7 @@ class DictionaryTreeBrowser(object):
         for key_, item_ in self.__dict__.iteritems():
             if not isinstance(item_, types.MethodType):
                 key = item_['key']
-                if key == "_db_index":
+                if key in ["_db_index", "_double_lines"]:
                     continue
                 if isinstance(item_['_dtb_value_'], DictionaryTreeBrowser):
                     item = item_['_dtb_value_'].as_dictionary()
