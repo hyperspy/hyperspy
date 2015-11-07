@@ -13,9 +13,64 @@ def _get_element_and_line(Xray_line):
 
 
 def _get_energy_xray_line(xray_line):
-    energy, line = _get_element_and_line(xray_line)
-    return elements_db[energy]['Atomic_properties']['Xray_lines'][
+    element, line = _get_element_and_line(xray_line)
+    return elements_db[element]['Atomic_properties']['Xray_lines'][
         line]['energy (keV)']
+
+
+def _parse_only_lines(only_lines):
+    if hasattr(only_lines, '__iter__'):
+        if any(isinstance(line, basestring) is False for line in only_lines):
+            return only_lines
+    elif isinstance(only_lines, basestring) is False:
+        return only_lines
+    only_lines = list(only_lines)
+    for only_line in only_lines:
+        if only_line == 'a':
+            only_lines.extend(['Ka', 'La', 'Ma'])
+        elif only_line == 'b':
+            only_lines.extend(['Kb', 'Lb1', 'Mb'])
+    return only_lines
+
+
+def get_xray_lines_near_energy(energy, width=0.2, only_lines=None):
+    """Find xray lines near a specific energy, more specifically all xray lines
+    that satisfy only_lines and are within the given energy window width around
+    the passed energy.
+
+    Parameters
+    ----------
+    energy : float
+        Energy to search near in keV
+    width : float
+        Window width in keV around energy in which to find nearby energies,
+        i.e. a value of 0.2 keV (the default) means to search +/- 0.1 keV.
+    only_lines :
+        If not None, only the given lines will be added (eg. ('a','Kb')).
+
+    Returns
+    -------
+    List of xray-lines sorted by energy difference to given energy.
+    """
+    only_lines = _parse_only_lines(only_lines)
+    valid_lines = []
+    E_min, E_max = energy - width/2., energy + width/2.
+    for element, el_props in elements_db.iteritems():
+        # Not all elements in the DB have the keys, so catch KeyErrors
+        try:
+            lines = el_props['Atomic_properties']['Xray_lines']
+        except KeyError:
+            continue
+        for line, l_props in lines.iteritems():
+            if only_lines and line not in only_lines:
+                continue
+            line_energy = l_props['energy (keV)']
+            if E_min <= line_energy <= E_max:
+                # Store line in Element_Line format, and energy difference
+                valid_lines.append((element + "_" + line,
+                                    np.abs(line_energy - energy)))
+    # Sort by energy difference, but return only the line names
+    return [line for line, _ in sorted(valid_lines, key=lambda x: x[1])]
 
 
 def get_FWHM_at_Energy(energy_resolution_MnKa, E):
