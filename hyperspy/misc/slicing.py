@@ -5,31 +5,66 @@ from hyperspy.misc.export_dictionary import parse_flag_string
 import numpy as np
 
 
-def slice_thing(thing, dims, both_slices, slice_nav=None, issignal=False):
+def _slice_target(target, dims, both_slices, slice_nav=None, issignal=False):
+    """Slices the target if appropriate
+
+    Parameters
+    ----------
+    target : object
+        Target object
+    dims : tuple
+        (navigation_dimensions, signal_dimensions) of the original object that
+        is sliced
+    both_slices : tuple
+        (original_slices, array_slices) of the operation that is performed
+    slice_nav : {bool, None}
+        if None, target is returned as-is. Otherwise navigation and signal
+        dimensions are sliced for True and False values respectively.
+    issignal : bool
+        if the target is signal and should be sliced as one
+    """
     if slice_nav is None:
-        return thing
-    if thing is None:
+        return target
+    if target is None:
         return None
     nav_dims, sig_dims = dims
     slices, array_slices = both_slices
     if slice_nav is True:  # check explicitly for safety
         if issignal:
-            return thing.inav[slices]
-        if isinstance(thing, np.ndarray):
-            return np.atleast_1d(thing[tuple(array_slices[:nav_dims])])
+            return target.inav[slices]
+        if isinstance(target, np.ndarray):
+            return np.atleast_1d(target[tuple(array_slices[:nav_dims])])
         raise ValueError(
             'tried to slice with navigation dimensions, but was neither a signal nor an array')
     if slice_nav is False:  # check explicitly
         if issignal:
-            return thing.isig[slices]
-        if isinstance(thing, np.ndarray):
-            return np.atleast_1d(thing[tuple(array_slices[-sig_dims:])])
+            return target.isig[slices]
+        if isinstance(target, np.ndarray):
+            return np.atleast_1d(target[tuple(array_slices[-sig_dims:])])
         raise ValueError(
             'tried to slice with signal dimensions, but was neither a signal nor an array')
     # return thing
 
 
 def copy_slice_from_whitelist(_from, _to, dims, both_slices, isNav):
+    """Copies things from one object to another, according to whitelist, slicing
+    where required.
+
+    Parameters
+    ----------
+    _from : object
+        Original object
+    _to : object
+        Target object
+    dims : tuple
+        (navigation_dimensions, signal_dimensions) of the original object that
+        is sliced
+    both_slices : tuple
+        (original_slices, array_slices) of the operation that is performed
+    isNav : bool
+        if the slicing operation is performed on navigation dimensions of the
+        object
+    """
 
     def make_decision(flags, isnav):
         if isnav:
@@ -56,7 +91,7 @@ def copy_slice_from_whitelist(_from, _to, dims, both_slices, isNav):
         if 'inav' in flags or 'isig' in flags:
             thing = attrgetter(key)(_from)
             slice_nav = make_decision(flags, isNav)
-            thing = slice_thing(
+            thing = _slice_target(
                 thing,
                 dims,
                 both_slices,
@@ -160,3 +195,5 @@ class FancySlicing(object):
         _obj.get_dimensions_from_data()
 
         return _obj
+
+# vim: textwidth=80

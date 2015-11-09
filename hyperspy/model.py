@@ -2249,8 +2249,7 @@ class ModelSpecialSlicers(object):
             _model.channel_switches[:] = \
                 np.atleast_1d(
                     self.model.channel_switches[tuple(array_slices[-dims[1]:])])
-        for _ in xrange(len(_model)):
-            _model.remove(0)
+
         twin_dict = {}
         for comp in self.model:
             init_args = {}
@@ -2262,7 +2261,6 @@ class ModelSpecialSlicers(object):
                     init_args[k] = value
             _model.append(getattr(components, comp._id_name)(**init_args))
 
-        # TODO: create sliceable whitelist? Deal with low_loss slicing, etc.
         copy_slice_from_whitelist(
             self.model,
             _model,
