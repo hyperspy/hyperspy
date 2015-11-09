@@ -60,11 +60,8 @@ class TestModelIndexing:
         for ic, c in enumerate(m):
             for p_new, p_old in zip(c.parameters, self.model[ic].parameters):
                 assert_true((p_old.map == p_new.map).all())
-        assert_true(
-            np.allclose(
-                m.chisq.data +
-                m1.chisq.data,
-                self.model.chisq.data))
+        np.testing.assert_array_almost_equal(m.chisq.data + m1.chisq.data,
+                                             self.model.chisq.data)
 
         self.model.channel_switches[0] = False
         m = self.model.isig[:-100.]

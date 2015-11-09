@@ -1127,13 +1127,12 @@ class Model(list):
             variance = self.spectrum.metadata.Signal.Noise_properties.variance
             if isinstance(variance, Signal):
                 variance = variance.data.__getitem__(
-                    self.spectrum.axes_manager._getitem_tuple
-                )[self.channel_switches]
+                    self.axes_manager._getitem_tuple)[self.channel_switches]
         else:
             variance = 1.0
         d = self(onlyactive=True) - self.spectrum()[self.channel_switches]
         d *= d / (1. * variance)  # d = difference^2 / variance.
-        self.chisq.data[self.spectrum.axes_manager.indices[::-1]] = sum(d)
+        self.chisq.data[self.axes_manager.indices[::-1]] = sum(d)
 
     def _set_current_degrees_of_freedom(self):
         self.dof.data[self.spectrum.axes_manager.indices[::-1]] = len(self.p0)
@@ -2288,10 +2287,10 @@ class ModelSpecialSlicers(object):
         _model.chisq.data = _model.chisq.data.copy()
         _model.dof.data = _model.dof.data.copy()
         if not self.isNavigation:
-            # strange bug, skips the first pixel when iterating for the first time -
-            # maybe the axes_manager is not initialised correctly?
-            for _ in _model.axes_manager:
-                pass
+            # Since indices =(0,...), to begin with, iterator does not have to change
+            # anything, hence the stored value is not fetched and we have to do it manually
+            # before the first run
+            _model.fetch_stored_values()
             for _ in _model.axes_manager:
                 _model._calculate_chisq()
 
