@@ -352,9 +352,9 @@ database:
 
 .. code-block:: python
 
-    >>> s = utils.example_signals.EDS_SEM_Spectrum()
+    >>> s = hs.datasets.example_signals.EDS_SEM_Spectrum()
     >>> P = s.find_peaks1D_ohaver(maxpeakn=1)[0]
-    >>> utils.eds.get_xray_lines_near_energy(P['position'], only_lines=['a', 'b'])
+    >>> hs.eds.get_xray_lines_near_energy(P['position'], only_lines=['a', 'b'])
     ['C_Ka', 'Ca_La', 'B_Ka']
 
 The lines are returned in order of closeness to the specified energy, and can
