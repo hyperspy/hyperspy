@@ -127,13 +127,13 @@ class Parameter(t.HasTraits):
                            'value': None,
                            'std': None,
                            'free': None,
-                           'self': ('id', None),
                            'units': None,
-                           'map': ('inav', None),
+                           'map': None,
                            '_bounds': None,
                            'ext_bounded': None,
                            'name': None,
                            'ext_force_positive': None,
+                           'self': ('id', None),
                            'twin_function': ('fn', None),
                            'twin_inverse_function': ('fn', None),
                            }
@@ -587,7 +587,7 @@ class Component(t.HasTraits):
         self._whitelist = {'_id_name': None,
                            'name': None,
                            'active_is_multidimensional': None,
-                           '_active_array': ('inav', None),
+                           '_active_array': None,
                            'active': None
                            }
 

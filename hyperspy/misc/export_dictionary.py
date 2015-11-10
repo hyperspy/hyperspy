@@ -30,8 +30,6 @@ except ImportError:
 
 def check_that_flags_make_sense(flags):
 # one of: fn, id, sig
-# if fn: no inav, isig
-# if id: no inav, isig
     def do_error(f1, f2):
         raise ValueError(
             'The flags "%s" and "%s" are not compatible' %
@@ -41,18 +39,10 @@ def check_that_flags_make_sense(flags):
             do_error('fn', 'id')
         if 'sig' in flags:
             do_error('fn', 'sig')
-        if 'inav' in flags:
-            do_error('fn', 'inav')
-        if 'isig' in flags:
-            do_error('fn', 'isig')
     if 'id' in flags:
         # fn done previously
         if 'sig' in flags:
             do_error('id', 'sig')
-        if 'inav' in flags:
-            do_error('id', 'inav')
-        if 'isig' in flags:
-            do_error('id', 'isig')
         if 'init' in flags:
             do_error('id', 'init')
     # all sig cases already covered
@@ -94,12 +84,6 @@ def export_to_dictionary(target, whitelist, dic, fullcopy=True):
             * 'sig':
                 The targeted attribute is a signal, and will be converted to a
                 dictionary if fullcopy=True
-            * 'inav':
-                The targeted attribute should be sliced when slicing navigation
-                dimension of the original object
-            * 'isig':
-                The targeted attribute should be sliced when slicing signal
-                dimension of the original object
         dic : dictionary
             A dictionary where the object will be exported
         fullcopy : bool
@@ -187,12 +171,6 @@ def load_from_dictionary(target, dic):
             * 'sig':
                 The targeted attribute was a signal, and may have been converted
                 to a dictionary if fullcopy=True
-            * 'inav':
-                The targeted attribute should be sliced when slicing navigation
-                dimension of the original object
-            * 'isig':
-                The targeted attribute should be sliced when slicing signal
-                dimension of the original object
 
     """
     new_whitelist = {}

@@ -239,12 +239,12 @@ class Model(list):
         self._adjust_position_all = None
         self._plot_components = False
         self._whitelist = {
-            'channel_switches': ('isig', None),
+            'channel_switches': None,
             'convolved': None,
             'free_parameters_boundaries': None,
-            'low_loss': ('sig,inav', None),
-            'chisq.data': ('inav', None),
-            'dof.data': ('inav', None)
+            'low_loss': ('sig', None),
+            'chisq.data': None,
+            'dof.data': None
         }
 
         self.spectrum = spectrum
