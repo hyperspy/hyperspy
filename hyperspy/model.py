@@ -247,6 +247,11 @@ class Model(list):
             'chisq.data': None,
             'dof.data': None
         }
+        self._slicing_whitelist = {
+            'channel_switches': 'isig',
+            'low_loss': 'inav',
+            'chisq.data': 'inav',
+            'dof.data': 'inav'}
 
         self.spectrum = spectrum
         self.axes_manager = self.spectrum.axes_manager
@@ -2259,13 +2264,12 @@ class ModelSpecialSlicers(object):
                 if 'init' in parse_flag_string(flags_str):
                     init_args[k] = value
             _model.append(getattr(components, comp._id_name)(**init_args))
-
-        copy_slice_from_whitelist(
-            self.model,
-            _model,
-            dims,
-            (slices, array_slices),
-            self.isNavigation)
+        copy_slice_from_whitelist(self.model,
+                                  _model,
+                                  dims,
+                                  (slices, array_slices),
+                                  self.isNavigation,
+                                  )
         for co, cn in zip(self.model, _model):
             copy_slice_from_whitelist(co,
                                       cn,
@@ -2286,11 +2290,8 @@ class ModelSpecialSlicers(object):
 
         _model.chisq.data = _model.chisq.data.copy()
         _model.dof.data = _model.dof.data.copy()
+        _model.fetch_stored_values()  # to update and have correct values
         if not self.isNavigation:
-            # Since indices =(0,...), to begin with, iterator does not have to change
-            # anything, hence the stored value is not fetched and we have to do it manually
-            # before the first run
-            _model.fetch_stored_values()
             for _ in _model.axes_manager:
                 _model._calculate_chisq()
 

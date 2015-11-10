@@ -66,7 +66,7 @@ def copy_slice_from_whitelist(_from, _to, dims, both_slices, isNav):
         object
     """
 
-    def make_decision(flags, isnav):
+    def make_slice_navigation_decision(flags, isnav):
         if isnav:
             if 'inav' in flags:
                 return True
@@ -75,29 +75,45 @@ def copy_slice_from_whitelist(_from, _to, dims, both_slices, isNav):
             return False
         return None
 
+    swl = None
+    if hasattr(_from, '_slicing_whitelist'):
+        swl = _from._slicing_whitelist
+
     for key, val in _from._whitelist.iteritems():
+        if key == 'self':
+            target = None
+        else:
+            target = attrgetter(key)(_from)
+
         if val is None:
-            attrsetter(_to, key, attrgetter(key)(_from))
-            continue
-        flags_str, value = val
-        flags = parse_flag_string(flags_str)
+            # attrsetter(_to, key, attrgetter(key)(_from))
+            # continue
+            flags = []
+        else:
+            flags_str = val[0]
+            flags = parse_flag_string(flags_str)
+
+        if swl is not None and key in swl:
+            flags.extend(parse_flag_string(swl[key]))
+
         if 'init' in flags:
             continue
         if 'id' in flags:
             continue
-        if 'fn' in flags:
-            attrsetter(_to, key, attrgetter(key)(_from))
-            continue
         if 'inav' in flags or 'isig' in flags:
-            thing = attrgetter(key)(_from)
-            slice_nav = make_decision(flags, isNav)
-            thing = _slice_target(
-                thing,
+            slice_nav = make_slice_navigation_decision(flags, isNav)
+            result = _slice_target(
+                target,
                 dims,
                 both_slices,
                 slice_nav,
                 'sig' in flags)
-            attrsetter(_to, key, thing)
+            attrsetter(_to, key, result)
+            continue
+        else:
+# 'fn' in flag or no flags at all
+            attrsetter(_to, key, target)
+            continue
 
 
 class SpecialSlicers(object):

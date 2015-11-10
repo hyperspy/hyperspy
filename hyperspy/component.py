@@ -137,6 +137,7 @@ class Parameter(t.HasTraits):
                            'twin_function': ('fn', None),
                            'twin_inverse_function': ('fn', None),
                            }
+        self._slicing_whitelist = {'map': 'inav'}
 
     def _load_dictionary(self, dictionary):
         """Load data from dictionary
@@ -590,6 +591,7 @@ class Component(t.HasTraits):
                            '_active_array': None,
                            'active': None
                            }
+        self._slicing_whitelist = {'_active_array': 'inav'}
 
     _name = ''
     _active_is_multidimensional = False
@@ -1067,6 +1069,5 @@ class Component(t.HasTraits):
         else:
             raise ValueError( "_id_name of component and dictionary do not match, \ncomponent._id_name = %s\
                     \ndictionary['_id_name'] = %s" % (self._id_name, dic['_id_name']))
-
 
 # vim: textwidth=80
