@@ -62,6 +62,6 @@ def file_reader(filename, *args, **kwds):
     """
     ext = os.path.splitext(filename)[1][1:]
     if ext in spd_extensions:
-        return [spd_reader(filename, *args, **kwds),]
+        return [spd_reader(filename, *args, **kwds), ]
     elif ext in spc_extensions:
         return spc_reader(filename, *args, **kwds)
