@@ -605,9 +605,9 @@ def spd_reader(filename, endianess='<', *args):
 
         # Get name of .ipr file from the bitmap image:
         ipr_fname = os.path.splitext(
-                        os.path.basename(
-                            original_metadata['spd_header'][
-                                'fName']))[0] + '.ipr'
+            os.path.basename(
+                original_metadata['spd_header'][
+                    'fName']))[0] + '.ipr'
         read_ipr = os.path.isfile(ipr_fname)
 
         # dimensions of map data:
@@ -615,10 +615,10 @@ def spd_reader(filename, endianess='<', *args):
         ny = original_metadata['spd_header']['nLines']
         nz = original_metadata['spd_header']['nChannels']
         data_offset = original_metadata['spd_header']['dataOffset']
-        data_type = {'1':'u1',
-                     '2':'u2',
-                     '4':'u4'}[str(original_metadata['spd_header'][
-                                                           'countBytes'])]
+        data_type = {'1': 'u1',
+                     '2': 'u2',
+                     '4': 'u4'}[str(original_metadata['spd_header'][
+                         'countBytes'])]
 
         # Read data from file into a numpy memmap object
         data = np.memmap(f, mode='c', offset=data_offset, dtype=data_type
@@ -639,8 +639,6 @@ def spd_reader(filename, endianess='<', *args):
                                      dtype=get_spc_dtype_list(endianess),
                                      count=1)
             original_metadata['spc_header'] = sarray2dict(spc_header)
-
-
 
         # dictionary = {'data': data,
         #               'axes': axes,
@@ -668,6 +666,5 @@ def file_reader(filename, endianess='<', *args):
         return spd_reader(filename, endianess, *args)
     elif ext in spc_extensions:
         return spc_reader(filename, endianess, *args)
-
 
     return dictionary
