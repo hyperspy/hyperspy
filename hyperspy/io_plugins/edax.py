@@ -563,6 +563,10 @@ def spc_reader(filename, endianess='<', *args):
     -------
 
     """
+    # dictionary = {'data': data,
+    #               'axes': axes,
+    #               'metadata': metadata,
+    #               'original_metadata': original_metadata}
 
 
 def spd_reader(filename, endianess='<', *args):
@@ -581,11 +585,67 @@ def spd_reader(filename, endianess='<', *args):
     -------
 
     """
-    f = open(filename, 'rb')
-    spd_header = np.fromfile(f,
-                             dtype=get_spd_dtype_list(endianess),
-                             count=1)
+    with open(filename, 'rb') as f:
+        spd_header = np.fromfile(f,
+                                 dtype=get_spd_dtype_list(endianess),
+                                 count=1)
 
+        original_metadata = {'spd_header': sarray2dict(spd_header)}
+
+        # Convert char arrays to strings:
+        original_metadata['spd_header']['tag'] = \
+            spd_header['tag'][0].view('S16')[0]
+        # fName is the name of the .bmp (and .ipr) file of the map
+        original_metadata['spd_header']['fName'] = \
+            spd_header['fName'][0].view('S120')[0]
+
+        # Get name of .spc file from the .spd map:
+        spc_fname = os.path.splitext(os.path.basename(filename))[0] + '.spc'
+        read_spc = os.path.isfile(spc_fname)
+
+        # Get name of .ipr file from the bitmap image:
+        ipr_fname = os.path.splitext(
+                        os.path.basename(
+                            original_metadata['spd_header'][
+                                'fName']))[0] + '.ipr'
+        read_ipr = os.path.isfile(ipr_fname)
+
+        # dimensions of map data:
+        nx = original_metadata['spd_header']['nPoints']
+        ny = original_metadata['spd_header']['nLines']
+        nz = original_metadata['spd_header']['nChannels']
+        data_offset = original_metadata['spd_header']['dataOffset']
+        data_type = {'1':'u1',
+                     '2':'u2',
+                     '4':'u4'}[str(original_metadata['spd_header'][
+                                                           'countBytes'])]
+
+        # Read data from file into a numpy memmap object
+        data = np.memmap(f, mode='c', offset=data_offset, dtype=data_type
+                         ).squeeze().reshape((nz, nx, ny), order='F').T
+
+    # Read the .ipr header (if possible)
+    if read_ipr:
+        with open(ipr_fname, 'rb') as f:
+            ipr_header = np.fromfile(f,
+                                     dtype=get_ipr_dtype_list(endianess),
+                                     count=1)
+            original_metadata['ipr_header'] = sarray2dict(ipr_header)
+
+    # Read the .spc header (if possible)
+    if read_spc:
+        with open(spc_fname, 'rb') as f:
+            spc_header = np.fromfile(f,
+                                     dtype=get_spc_dtype_list(endianess),
+                                     count=1)
+            original_metadata['spc_header'] = sarray2dict(spc_header)
+
+
+
+        # dictionary = {'data': data,
+        #               'axes': axes,
+        #               'metadata': metadata,
+        #               'original_metadata': original_metadata}
 
 
 def file_reader(filename, endianess='<', *args):
@@ -608,3 +668,6 @@ def file_reader(filename, endianess='<', *args):
         return spd_reader(filename, endianess, *args)
     elif ext in spc_extensions:
         return spc_reader(filename, endianess, *args)
+
+
+    return dictionary
