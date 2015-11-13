@@ -21,12 +21,8 @@
 # and http://ami.scripps.edu/software/mrctools/mrc_specification.php
 
 import os
-
 import numpy as np
-from traits.api import Undefined
-
 from hyperspy.misc.array_tools import sarray2dict
-
 
 # Plugin characteristics
 # ----------------------
@@ -551,14 +547,57 @@ def get_ipr_dtype_list(endianess='<'):
     return dtype_list
 
 
-def file_reader(filename, *args, **kwds):
+def spc_reader(filename, endianess='<', *args):
+    """
+    Read data from an SPC spectrum specified by filename.
+
+    Parameters
+    ----------
+    filename : str
+        Name of SPC file to read
+    endianess : char
+        Byte-order of data to read
+    args
+
+    Returns
+    -------
+
+    """
+
+
+def spd_reader(filename, endianess='<', *args):
+    """
+    Read data from an SPD spectral map specified by filename.
+
+    Parameters
+    ----------
+    filename : str
+        Name of SPD file to read
+    endianess : char
+        Byte-order of data to read
+    args
+
+    Returns
+    -------
+
+    """
+    f = open(filename, 'rb')
+    spd_header = np.fromfile(f,
+                             dtype=get_spd_dtype_list(endianess),
+                             count=1)
+
+
+
+def file_reader(filename, endianess='<', *args):
     """
 
     Parameters
     ----------
-    filename
+    filename : str
+        Name of file to read
+    endianess : char
+        Byte-order of data to read
     args
-    kwds
 
     Returns
     -------
@@ -566,6 +605,6 @@ def file_reader(filename, *args, **kwds):
     """
     ext = os.path.splitext(filename)[1][1:]
     if ext in spd_extensions:
-        return [spd_reader(filename, *args, **kwds), ]
+        return spd_reader(filename, endianess, *args)
     elif ext in spc_extensions:
-        return spc_reader(filename, *args, **kwds)
+        return spc_reader(filename, endianess, *args)
