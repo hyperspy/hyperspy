@@ -69,7 +69,7 @@ class HyperspyMagics(Magics):
                         "sip.setapi('QDateTime', 2)\n"
                         "sip.setapi('QTextStream', 2)\n"
                         "sip.setapi('QTime', 2)\n"
-                        "sip.setapi('QUrl', 2)\n" )
+                        "sip.setapi('QUrl', 2)\n")
         else:
             gui = True
 
