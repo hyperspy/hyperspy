@@ -41,6 +41,7 @@ class Polynomial(Component):
 
     def __init__(self, order=2):
         Component.__init__(self, ['coefficients', ])
+        self._whitelist['order'] = ('init', order)
         self.coefficients._number_of_elements = order + 1
         self.coefficients.value = np.zeros((order + 1,))
         self.coefficients.grad = self.grad_coefficients

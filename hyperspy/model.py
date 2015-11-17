@@ -48,7 +48,12 @@ from hyperspy.drawing.widgets import (DraggableVerticalLine,
                                       DraggableLabel)
 from hyperspy.gui.tools import ComponentFit
 from hyperspy.component import Component
+from hyperspy import components
 from hyperspy.signal import Signal
+from hyperspy.misc.export_dictionary import (export_to_dictionary,
+                                             load_from_dictionary,
+                                             parse_flag_string,
+                                             reconstruct_object)
 from hyperspy.misc.utils import slugify, shorten_name
 
 
@@ -175,6 +180,8 @@ class Model(list):
     set_parameters_value
         Set the value of a parameter in components in a model to a specified
         value.
+    as_dictionary
+        Exports the model to a dictionary that can be saved in a file.
 
     Examples
     --------
@@ -221,35 +228,86 @@ class Model(list):
         # raise an exception when using windows.connect
         return id(self)
 
-    def __init__(self, spectrum):
-        self.convolved = False
+    def __init__(self, spectrum, dictionary=None):
+
+        self._plot = None
+        self._position_widgets = []
+        self._adjust_position_all = None
+        self._plot_components = False
+        self._suspend_update = False
+        self._model_line = None
+        self._adjust_position_all = None
+        self._plot_components = False
+        self._whitelist = {
+            'channel_switches': None,
+            'convolved': None,
+            'free_parameters_boundaries': None,
+            'low_loss': ('sig', None),
+            'chisq.data': None,
+            'dof.data': None
+        }
+
         self.spectrum = spectrum
         self.axes_manager = self.spectrum.axes_manager
         self.axis = self.axes_manager.signal_axes[0]
         self.axes_manager.connect(self.fetch_stored_values)
-
-        self.free_parameters_boundaries = None
         self.channel_switches = np.array([True] * len(self.axis.axis))
-        self._low_loss = None
-        self._position_widgets = []
-        self._plot = None
-        self._model_line = None
 
-        self.chisq = spectrum._get_navigation_signal()
+        self.chisq = self.spectrum._get_navigation_signal()
         self.chisq.change_dtype("float")
         self.chisq.data.fill(np.nan)
-        self.chisq.metadata.General.title = \
-            self.spectrum.metadata.General.title + ' chi-squared'
+        self.chisq.metadata.General.title = self.spectrum.metadata.General.title + \
+            ' chi-squared'
         self.dof = self.chisq._deepcopy_with_new_data(
-            np.zeros_like(
-                self.chisq.data,
-                dtype='int'))
-        self.dof.metadata.General.title = \
-            self.spectrum.metadata.General.title + ' degrees of freedom'
-        self._suspend_update = False
-        self._adjust_position_all = None
-        self._plot_components = False
+            np.zeros_like(self.chisq.data, dtype='int'))
+        self.dof.metadata.General.title = self.spectrum.metadata.General.title + \
+            ' degrees of freedom'
+        self.free_parameters_boundaries = None
+        self._low_loss = None
+        self.convolved = False
         self.components = ModelComponents(self)
+        if dictionary is not None:
+            self._load_dictionary(dictionary)
+
+    def _load_dictionary(self, dic):
+        """Load data from dictionary.
+
+        Parameters
+        ----------
+        dic : dictionary
+            _whitelist : dictionary
+                a dictionary with keys used as references of  save attributes,
+                for more information, see
+                :meth:`hyperspy.misc.export_dictionary.load_from_dictionary`
+            components : dictionary (optional)
+                Dictionary, with information about components of the model (see
+                the documentation of component.as_dictionary() method)
+            * any field from _whitelist.keys() *
+        """
+
+        if 'components' in dic:
+            while len(self) != 0:
+                self.remove(self[0])
+            id_dict = {}
+
+            for comp in dic['components']:
+                init_args = {}
+                for k, flags_str in comp['_whitelist'].iteritems():
+                    if not len(flags_str):
+                        continue
+                    if 'init' in parse_flag_string(flags_str):
+                        init_args[k] = reconstruct_object(flags_str, comp[k])
+
+                self.append(getattr(components, comp['_id_name'])(**init_args))
+                id_dict.update(self[-1]._load_dictionary(comp))
+            # deal with twins:
+            for comp in dic['components']:
+                for par in comp['parameters']:
+                    for tw in par['_twins']:
+                        id_dict[tw].twin = id_dict[par['self']]
+
+        if '_whitelist' in dic:
+            load_from_dictionary(self, dic)
 
     def __repr__(self):
         title = self.spectrum.metadata.General.title
@@ -2036,6 +2094,60 @@ class Model(list):
                         _parameter.value = value
                         _parameter.assign_current_value_to_all()
 
+    def as_dictionary(self, fullcopy=True):
+        """Returns a dictionary of the model, including all components, degrees
+        of freedom (dof) and chi-squared (chisq) with values.
+
+        Parameters
+        ----------
+        fullcopy : Bool (optional, True)
+            Copies of objects are stored, not references. If any found,
+            functions will be pickled and signals converted to dictionaries
+
+        Returns
+        -------
+        dictionary : a complete dictionary of the model, which includes at least
+        the following fields:
+            components : list
+                a list of dictionaries of components, one per
+            _whitelist : dictionary
+                a dictionary with keys used as references for saved attributes,
+                for more information, see
+                :meth:`hyperspy.misc.export_dictionary.export_to_dictionary`
+            * any field from _whitelist.keys() *
+        Examples
+        --------
+        >>> s = signals.Spectrum(np.random.random((10,100)))
+        >>> m = s.create_model()
+        >>> l1 = components.Lorentzian()
+        >>> l2 = components.Lorentzian()
+        >>> m.append(l1)
+        >>> m.append(l2)
+        >>> d = m.as_dictionary()
+        >>> m2 = s.create_model(dictionary=d)
+
+        """
+        dic = {'components': [c.as_dictionary(fullcopy) for c in self]}
+
+        export_to_dictionary(self, self._whitelist, dic, fullcopy)
+
+        def remove_empty_numpy_strings(dic):
+            for k, v in dic.iteritems():
+                if isinstance(v, dict):
+                    remove_empty_numpy_strings(v)
+                elif isinstance(v, list):
+                    for vv in v:
+                        if isinstance(vv, dict):
+                            remove_empty_numpy_strings(vv)
+                        elif isinstance(vv, np.string_) and len(vv) == 0:
+                            vv = ''
+                elif isinstance(v, np.string_) and len(v) == 0:
+                    del dic[k]
+                    dic[k] = ''
+        remove_empty_numpy_strings(dic)
+
+        return dic
+
     def set_component_active_value(
             self, value, component_list=None, only_current=False):
         """
@@ -2107,3 +2219,5 @@ class Model(list):
                     "\" not found in model")
         else:
             return list.__getitem__(self, value)
+
+# vim: textwidth=80
