@@ -75,6 +75,7 @@ from hyperspy.misc.utils import underline
 from hyperspy.external.astroML.histtools import histogram
 from hyperspy.drawing.utils import animate_legend
 from hyperspy.misc.hspy_warnings import VisibleDeprecationWarning
+from hyperspy.misc.slicing import SpecialSlicers, FancySlicing
 
 
 class Signal2DTools(object):
@@ -2574,7 +2575,21 @@ class MVATools(object):
         factors.plot(navigator=factors_navigator)
 
 
-class Signal(MVA,
+class SpecialSlicersSignal(SpecialSlicers):
+
+    def __setitem__(self, i, j):
+        """x.__setitem__(i, y) <==> x[i]=y
+        """
+        if isinstance(j, Signal):
+            j = j.data
+        self.obj._slicer(i, self.isNavigation).data[:] = j
+
+    def __len__(self):
+        return self.obj.axes_manager.signal_shape[0]
+
+
+class Signal(FancySlicing,
+             MVA,
              MVATools,
              Signal1DTools,
              Signal2DTools,):
@@ -2582,6 +2597,9 @@ class Signal(MVA,
     _record_by = ""
     _signal_type = ""
     _signal_origin = ""
+    _additional_slicing_targets = [
+        "metadata.Signal.Noise_properties.variance",
+    ]
 
     def __init__(self, data, **kwds):
         """Create a Signal from a numpy array.
@@ -2606,15 +2624,14 @@ class Signal(MVA,
             imported from the original data file.
 
         """
-
         self._create_metadata()
         self.learning_results = LearningResults()
         kwds['data'] = data
         self._load_dictionary(kwds)
         self._plot = None
         self.auto_replot = True
-        self.inav = SpecialSlicers(self, True)
-        self.isig = SpecialSlicers(self, False)
+        self.inav = SpecialSlicersSignal(self, True)
+        self.isig = SpecialSlicersSignal(self, False)
 
     def _create_metadata(self):
         self.metadata = DictionaryTreeBrowser()
@@ -4884,7 +4901,6 @@ class Signal(MVA,
         from hyperspy.model import Model
         return Model(self, dictionary=dictionary)
 
-
 # Implement binary operators
 for name in (
     # Arithmetic operators
@@ -4912,8 +4928,7 @@ for name in (
 ):
     exec(
         ("def %s(self, other):\n" % name) +
-        ("   return self._binary_operator_ruler(other, \'%s\')\n" %
-         name))
+        ("   return self._binary_operator_ruler(other, \'%s\')\n" % name))
     exec("%s.__doc__ = int.%s.__doc__" % (name, name))
     exec("setattr(Signal, \'%s\', %s)" % (name, name))
     # The following commented line enables the operators with swapped
@@ -4934,23 +4949,3 @@ for name in (
         ("   return self._unary_operator_ruler(\'%s\')" % name))
     exec("%s.__doc__ = int.%s.__doc__" % (name, name))
     exec("setattr(Signal, \'%s\', %s)" % (name, name))
-
-
-class SpecialSlicers:
-
-    def __init__(self, signal, isNavigation):
-        self.isNavigation = isNavigation
-        self.signal = signal
-
-    def __getitem__(self, slices):
-        return self.signal.__getitem__(slices, self.isNavigation)
-
-    def __setitem__(self, i, j):
-        """x.__setitem__(i, y) <==> x[i]=y
-        """
-        if isinstance(j, Signal):
-            j = j.data
-        self.signal.__getitem__(i, self.isNavigation).data[:] = j
-
-    def __len__(self):
-        return self.signal.axes_manager.signal_shape[0]
