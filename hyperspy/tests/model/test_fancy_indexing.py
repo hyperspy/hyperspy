@@ -16,7 +16,7 @@
 # along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
-from nose.tools import assert_true
+from nose.tools import assert_true, assert_false
 
 from hyperspy._signals.spectrum_simulation import SpectrumSimulation
 from hyperspy._signals.eels import EELSSpectrum
@@ -43,6 +43,7 @@ class TestModelIndexing:
         g.A.ext_force_positive = True
         g.A.ext_bounded = True
         m.append(g)
+        g.active_is_multidimensional = True
         for index in m.axes_manager:
             m.fit()
         self.model = m
@@ -69,13 +70,21 @@ class TestModelIndexing:
         assert_true(np.all(m.channel_switches[1:] == True))
 
     def test_model_navigation_indexer_slice(self):
+        self.model.axes_manager.indices = (0, 0)
+        self.model[0].active = False
         m = self.model.inav[0::2]
         assert_true((m.chisq.data == self.model.chisq.data[:, 0::2]).all())
         assert_true((m.dof.data == self.model.dof.data[:, 0::2]).all())
         assert_true(m.inav[:2][0].A.ext_force_positive ==
                     m[0].A.ext_force_positive)
         assert_true(m.chisq.data.shape == (4, 2))
+        assert_false(m[0]._active_array[0, 0])
         for ic, c in enumerate(m):
+            np.testing.assert_equal(
+                c._active_array,
+                self.model[ic]._active_array[
+                    :,
+                    0::2])
             for p_new, p_old in zip(c.parameters, self.model[ic].parameters):
                 assert_true((p_old.map[:, 0::2] == p_new.map).all())
 
@@ -118,8 +127,6 @@ class TestEELSModelSlicing:
             auto_background=False,
             auto_add_edges=False)
         g = Gaussian()
-        g.A.ext_force_positive = True
-        g.A.ext_bounded = True
         m.append(g)
         self.model = m
 
