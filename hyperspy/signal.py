@@ -76,6 +76,123 @@ from hyperspy.external.astroML.histtools import histogram
 from hyperspy.drawing.utils import animate_legend
 from hyperspy.misc.hspy_warnings import VisibleDeprecationWarning
 from hyperspy.misc.slicing import SpecialSlicers, FancySlicing
+from hyperspy.misc.utils import slugify
+from datetime import datetime
+
+
+class ModelManager(object):
+
+    """Container for models
+
+    """
+
+    class ModelStub(object):
+
+        def __init__(self, mm, name):
+            self._name = name
+            self.restore = lambda: mm.restore(self._name)
+            self.remove = lambda: mm.remove(self._name)
+
+    def __init__(self, signal, dictionary=None):
+        self._signal = signal
+        self._models = DictionaryTreeBrowser()
+        self._add_dictionary(dictionary)
+
+    def _add_dictionary(self, dictionary=None):
+        if dictionary is not None:
+            for k, v in dictionary.iteritems():
+                if k.startswith('_') or k in ['restore', 'remove']:
+                    raise KeyError("Can't add dictionary with key '%s'" % k)
+                k = slugify(k, True)
+                self._models.set_item(k, v)
+                setattr(self, k, self.ModelStub(self, k))
+
+    def _set_nice_description(self, node, names):
+        ans = {'date': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+               'dimensions': self._signal.axes_manager._get_dimension_str(),
+               }
+        node.add_dictionary(ans)
+        for n in names:
+            node.add_node('components.' + n)
+
+    def _save(self, name, dictionary):
+
+        from itertools import product
+        _abc = 'abcdefghijklmnopqrstuvwxyz'
+
+        def get_letter(models):
+            l = len(models)
+            if not l:
+                return 'a'
+            order = int(np.log(l) / np.log(26)) + 1
+            letters = [_abc, ] * order
+            for comb in product(*letters):
+                guess = "".join(comb)
+                if not guess in models.keys():
+                    return guess
+
+        if name is None:
+            name = get_letter(self._models)
+        else:
+            name = self._check_name(name)
+
+        if name in self._models:
+            self.remove(name)
+
+        self._models.add_node(name)
+        node = self._models.get_item(name)
+        names = [c['name'] for c in dictionary['components']]
+        self._set_nice_description(node, names)
+
+        node.set_item('_dict', dictionary)
+        setattr(self, name, self.ModelStub(self, name))
+
+    def _check_name(self, name):
+        if not isinstance(name, basestring):
+            raise ValueError('Name has to be a string')
+        if name.startswith('_'):
+            raise ValueError('Name cannot start with "_" symbol')
+        if '.' in name:
+            raise ValueError('Name cannot contain dots (".")')
+        return slugify(name, True)
+
+    def remove(self, name):
+        """Removes the given model
+
+        Parameters
+        ----------
+        name : string
+            the name of the model.
+
+        See Also
+        --------
+        restore
+        """
+        name = self._check_name(name)
+        delattr(self, name)
+        self._models.__delattr__(name)
+
+    def restore(self, name):
+        """Returns the restored model
+
+        Parameters
+        ----------
+        name : string
+            the name of model
+
+        See Also
+        --------
+        remove
+        """
+        name = self._check_name(name)
+        d = self._models.get_item(name + '._dict').as_dictionary()
+        return self._signal.create_model(dictionary=copy.deepcopy(d))
+
+    def __repr__(self):
+        return repr(self._models)
+
+    def __len__(self):
+        return len(self._models)
 
 
 class Signal2DTools(object):
@@ -2582,7 +2699,8 @@ class SpecialSlicersSignal(SpecialSlicers):
         """
         if isinstance(j, Signal):
             j = j.data
-        self.obj._slicer(i, self.isNavigation).data[:] = j
+        array_slices = self.obj._get_array_slices(slices, self.isNavigation)
+        self.obj.data[array_slices] = j
 
     def __len__(self):
         return self.obj.axes_manager.signal_shape[0]
@@ -2632,6 +2750,8 @@ class Signal(FancySlicing,
         self.auto_replot = True
         self.inav = SpecialSlicersSignal(self, True)
         self.isig = SpecialSlicersSignal(self, False)
+
+        self.models = ModelManager(self)
 
     def _create_metadata(self):
         self.metadata = DictionaryTreeBrowser()
@@ -2876,12 +2996,15 @@ class Signal(FancySlicing,
             self.data = None
             old_plot = self._plot
             self._plot = None
+            old_models = self.models._models
+            self.models._models = DictionaryTreeBrowser()
             ns = self.deepcopy()
             ns.data = np.atleast_1d(data)
             return ns
         finally:
             self.data = old_data
             self._plot = old_plot
+            self.models._models = old_models
 
     def _print_summary(self):
         string = "\n\tTitle: "
@@ -4344,6 +4467,10 @@ class Signal(FancySlicing,
         dc = type(self)(**self._to_dictionary())
         if dc.data is not None:
             dc.data = dc.data.copy()
+
+        dc.models._add_dictionary(
+            copy.deepcopy(
+                self.models._models.as_dictionary()))
         # The Signal subclasses might change the view on init
         # The following code just copies the original view
         for oaxis, caxis in zip(self.axes_manager._axes,

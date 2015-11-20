@@ -56,230 +56,6 @@ from hyperspy.misc.export_dictionary import (export_to_dictionary,
                                              reconstruct_object)
 from hyperspy.misc.utils import slugify, shorten_name
 from hyperspy.misc.slicing import copy_slice_from_whitelist
-from datetime import datetime
-
-
-class ModelStash(object):
-
-    """Container for model stashes
-
-    Enables saving history of models and saving (and recovering) models in
-    metadata of the original signal.
-
-    """
-
-    def __init__(self, model):
-        self._model = model
-
-    def _configure_metadata(self, populate=True):
-        if not self._model.spectrum.metadata.has_item('Analysis.models'):
-            if not populate:
-                return None
-            self._model.spectrum.metadata.add_node('Analysis.models')
-            self._model.spectrum.metadata.set_item(
-                'Analysis.models._history',
-                [])
-        return self._model.spectrum.metadata.Analysis.models
-
-    def _get_nice_description(self, node):
-        ans = {'date': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-               'dimensions': self._model.axes_manager._get_dimension_str(),
-               }
-        node.add_dictionary(ans)
-        for c in self._model:
-            node.add_node('components.' + c.name)
-
-    def _save(self, name, dictionary):
-        models = self._configure_metadata()
-        models.add_node(name)
-        self._get_nice_description(models.get_item(name))
-        models.set_item(name + '._dict', dictionary)
-        if name in models._history:
-            models._history.remove(name)
-        models._history.insert(0, name)
-
-    def fetch_values(self, name=None, component_list=None, parameter_list=None,
-                     mask=None):
-        """Fetches values to current model from a stash
-
-        Parameters
-        ----------
-        name : string, None
-            the name of the stash to fetch values from
-        component_list : None, list of components of component names
-            a list of components to fetch values from. Must have components with
-            the same name in the current active model to fetch.
-        parameter_list : None, list of parameter names
-            a list of parameter names to fetch values from. Must have parameters
-            with the same name in the curent active model to fetch.
-        mask : None, bool array
-            if None, all map values are fetched. If bool array (of navigation
-            size), only indices with True are fetched.
-        """
-        if mask is not None:
-            mask = np.asanyarray(mask, dtype=bool)
-        if mask is not None and (
-            mask.shape != tuple(
-                self._model.axes_manager._navigation_shape_in_array)):
-            messages.warning_exit(
-                "The mask must be a numpy array of boolen type with "
-                " shape: %s" +
-                str(self._model.axes_manager._navigation_shape_in_array))
-        if component_list is None:
-            comp_namelist = [c.name for c in self._model]
-        else:
-            comp_namelist = [
-                self._model._get_component(c).name for c in component_list]
-        name = self._get_name(name)
-        models = self._configure_metadata(False)
-        for dc in models[name]._dict.components:
-            if dc['name'] in comp_namelist:
-                for p in dc['parameters']:
-                    if parameter_list is None or p['name'] in parameter_list:
-                        par = getattr(self._model[dc['name']], p['name'])
-                        par.value = p['value']
-                        if mask is None:
-                            par.map = copy.deepcopy(p['map'])
-                        else:
-                            par.map[mask] = copy.deepcopy(p['map'][mask])
-
-    def save(self, name=None):
-        """Stashes the current model state. Overwrites
-
-        Parameters
-        ----------
-        name : string, None
-            the name of the stash. If None, a combination of alphabet letters
-            will be picked. The default naming sequence goes as 'a, ... , z, aa,
-            ... , az, ba, ...'
-
-        See Also
-        --------
-        pop
-        apply
-        remove
-        """
-        from itertools import product
-        _abc = 'abcdefghijklmnopqrstuvwxyz'
-
-        def get_letter(models):
-            l = len(models._history)
-            if not l:
-                return 'a'
-            order = int(np.log(l) / np.log(26)) + 1
-            letters = [_abc, ] * order
-            for comb in product(*letters):
-                guess = "".join(comb)
-                if not guess in models._history:
-                    return guess
-
-        def check_valid_names(name):
-            if name.startswith('_'):
-                raise KeyError(
-                    'The model stash name cannot start with "_" symbol')
-            return slugify(name, True)
-
-        models = self._configure_metadata()
-        if name is None:
-            name = get_letter(models)
-        else:
-            name = check_valid_names(name)
-        res = self._model.as_dictionary(True)
-        self._save(name, res)
-
-    def _get_name(self, name):
-        m = self._configure_metadata(False)
-        if m is not None:
-            if len(m._history):
-                if name is None:
-                    name = m._history[0]
-                elif name not in m._history:
-                    raise KeyError(
-                        'No model was saved with the given name "%s"' %
-                        name)
-                return name
-        raise KeyError('No models were stashed yet')
-
-    def remove(self, name=None):
-        """Removes the given stash
-
-        Parameters
-        ----------
-        name : string, None
-            the name of the stash. If None, the latest stash will be removed
-
-        See Also
-        --------
-        pop
-        apply
-        save
-        """
-        name = self._get_name(name)
-        m = self._configure_metadata(False)
-        m.__delattr__(name)
-        m._history.remove(name)
-
-    def pop(self, name=None, backup=None):
-        """Applies the given stash and removes it
-
-        Parameters
-        ----------
-        name : string, None
-            the name of the stash. If None, the latest stash will be popped
-        backup : bool, None
-            If None, the default value from preferences is used. If True and the
-            current model is not empty, the state of the model is saved to a
-            "backup" stash in order to prevent data loss.
-
-        See Also
-        --------
-        apply
-        remove
-        save
-        """
-        self.apply(name=name, backup=backup)
-        self.remove(name)
-
-    def apply(self, name=None, backup=None):
-        """Applies (restores) the given stash.
-
-        Parameters
-        ----------
-        name : string, None
-            the name of the stash. If None, the latest stash will be applied
-        backup : bool, None
-            If None, the default value from preferences is used. If True and the
-            current model is not empty, the state of the model is saved to a
-            "backup" stash in order to prevent data loss.
-
-        See Also
-        --------
-        pop
-        remove
-        save
-        """
-        if backup is None:
-            backup = preferences.Model.stash_save
-        name = self._get_name(name)
-        m = self._configure_metadata(False)
-        d = m.get_item(name + '._dict').as_dictionary()
-        if backup and len(self._model):
-            self.save('backup')
-        self._model._load_dictionary(d)
-
-    def __repr__(self):
-        m = self._configure_metadata(False)
-        if m is None:
-            return ''
-        else:
-            return repr(m)
-
-    def __len__(self):
-        m = self._configure_metadata(False)
-        if m is None:
-            return 0
-        else:
-            return len(m._history)
 
 
 class ModelComponents(object):
@@ -500,7 +276,20 @@ class Model(list):
             self._load_dictionary(dictionary)
         self.inav = ModelSpecialSlicers(self, True)
         self.isig = ModelSpecialSlicers(self, False)
-        self.stash = ModelStash(self)
+
+    def store(self, name=None):
+        if self.spectrum is None:
+            raise ValueError("Cannot store models with no signal")
+        s = self.spectrum
+        s.models._save(name, self.as_dictionary())
+
+    def save(self, fname, name=None, append=True):
+        if self.spectrum is None:
+            # TODO: write to file with no spectrum
+            return
+        else:
+            # TODO: write to file with spectrum
+            return
 
     def _load_dictionary(self, dic):
         """Load data from dictionary.
