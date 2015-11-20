@@ -271,20 +271,25 @@ def load_with_reader(filename,
     objects = []
 
     for signal_dict in file_data_list:
-        if "Signal" not in signal_dict["metadata"]:
-            signal_dict["metadata"]["Signal"] = {}
-        if record_by is not None:
-            signal_dict['metadata']["Signal"]['record_by'] = record_by
-        if signal_type is not None:
-            signal_dict['metadata']["Signal"]['signal_type'] = signal_type
-        if signal_origin is not None:
-            signal_dict['metadata']["Signal"]['signal_origin'] = signal_origin
-        objects.append(dict2signal(signal_dict))
-        folder, filename = os.path.split(os.path.abspath(filename))
-        filename, extension = os.path.splitext(filename)
-        objects[-1].tmp_parameters.folder = folder
-        objects[-1].tmp_parameters.filename = filename
-        objects[-1].tmp_parameters.extension = extension.replace('.', '')
+        if 'metadata' in signal_dict:
+            if "Signal" not in signal_dict["metadata"]:
+                signal_dict["metadata"]["Signal"] = {}
+            if record_by is not None:
+                signal_dict['metadata']["Signal"]['record_by'] = record_by
+            if signal_type is not None:
+                signal_dict['metadata']["Signal"]['signal_type'] = signal_type
+            if signal_origin is not None:
+                signal_dict['metadata']["Signal"][
+                    'signal_origin'] = signal_origin
+            objects.append(dict2signal(signal_dict))
+            folder, filename = os.path.split(os.path.abspath(filename))
+            filename, extension = os.path.splitext(filename)
+            objects[-1].tmp_parameters.folder = folder
+            objects[-1].tmp_parameters.filename = filename
+            objects[-1].tmp_parameters.extension = extension.replace('.', '')
+        else:
+            # it's a standalone model
+            continue
 
     if len(objects) == 1:
         objects = objects[0]

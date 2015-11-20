@@ -2743,6 +2743,7 @@ class Signal(FancySlicing,
 
         """
         self._create_metadata()
+        self.models = ModelManager(self)
         self.learning_results = LearningResults()
         kwds['data'] = data
         self._load_dictionary(kwds)
@@ -2750,8 +2751,6 @@ class Signal(FancySlicing,
         self.auto_replot = True
         self.inav = SpecialSlicersSignal(self, True)
         self.isig = SpecialSlicersSignal(self, False)
-
-        self.models = ModelManager(self)
 
     def _create_metadata(self):
         self.metadata = DictionaryTreeBrowser()
@@ -3061,6 +3060,8 @@ class Signal(FancySlicing,
         """
 
         self.data = file_data_dict['data']
+        if 'models' in file_data_dict:
+            self.models._add_dictionary(file_data_dict['models'])
         if 'axes' not in file_data_dict:
             file_data_dict['axes'] = self._get_undefined_axes_list()
         self.axes_manager = AxesManager(
