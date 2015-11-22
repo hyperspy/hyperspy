@@ -83,7 +83,6 @@ from datetime import datetime
 class ModelManager(object):
 
     """Container for models
-
     """
 
     class ModelStub(object):
@@ -128,7 +127,7 @@ class ModelManager(object):
             letters = [_abc, ] * order
             for comb in product(*letters):
                 guess = "".join(comb)
-                if not guess in models.keys():
+                if guess not in models.keys():
                     return guess
 
         if name is None:
@@ -168,7 +167,7 @@ class ModelManager(object):
         Parameters
         ----------
         name : string
-            the name of the model.
+            the name of the model to remove
 
         See Also
         --------
@@ -184,7 +183,7 @@ class ModelManager(object):
         Parameters
         ----------
         name : string
-            the name of model
+            the name of the model to restore
 
         See Also
         --------

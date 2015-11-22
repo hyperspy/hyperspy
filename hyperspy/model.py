@@ -278,22 +278,33 @@ class Model(list):
         self.isig = ModelSpecialSlicers(self, False)
 
     def store(self, name=None):
+        """Stores current model in the original spectrum
+
+        Parameters
+        ----------
+            name : {None, str}
+                Stored model name. Auto-generated if left empty
+        """
         if self.spectrum is None:
             raise ValueError("Cannot store models with no signal")
         s = self.spectrum
         s.models._save(name, self.as_dictionary())
 
-    def save(self, fname, name=None, append=True):
-        # TODO: actually use append
-        """
+    def save(self, file_name, name=None):
+        """Saves spectrum and its model to a file
+
+        Parameters
+        ----------
+            file_name : str
+                Name of the file
+            name : {None, str}
+                Stored model name. Auto-generated if left empty
         """
         if self.spectrum is None:
-            # TODO: write to file with no spectrum
-            return
+            raise ValueError("Currently cannot store models with no signal")
         else:
             self.store(name)
-            self.spectrum.save(fname)
-            return
+            self.spectrum.save(file_name)
 
     def _load_dictionary(self, dic):
         """Load data from dictionary.
