@@ -769,53 +769,46 @@ The :py:class:`~.model.Model` :py:meth:`~.model.Model.plot_results`,
 can be used to visualise the result of the fit **when fitting multidimensional
 datasets**.
 
+.. _storing_models:
 
-Stash
-^^^^^
-.. versionadded:: 0.9 :py:class:`~.model.ModelStash`
+Storing models
+^^^^^^^^^^^^^^
+.. versionadded:: 0.9 :py:class:`~.signal.ModelManager`
 
-When analysing a signal, it is often useful to save intermediate or alternative
-states of a model and come back to them with ease.
-:py:class:`~.model.ModelStash` provides these functions, allowing creating
-a history of the model that can be reverted to and saved. The stash can be accessed via
-:py:attr:`~.model.Model.stash` attribute, and has the following methods:
- - :py:meth:`~.model.ModelStash.save` - saves the current state of the model to a stash
- - :py:meth:`~.model.ModelStash.remove` - removes a saved stash
- - :py:meth:`~.model.ModelStash.apply`- restores one of the saved stashes. If
-   the current model is not empty, its state is first saved to a new stash
-   named "backup" before restoring, in order to prevent data loss. This
-   behaviour can be turned off in ``Preferences``.
- - :py:meth:`~.model.ModelStash.pop` - restores and then removes the saved stash immediately
+Multiple models can be stored in the same signal. In particular, when
+:py:meth:`~.model.store` is called, a full "frozen" copy of the model is stored
+in :py:attr:`~.signal.models`. The stored models can be recreated at any time
+by calling :py:meth:`~.signal.models.restore` with the stored model name as an
+argument. To remove a model from storage, simply call
+:py:meth:`~.signal.models.remove`
 
-The saved stashes can be either given a name, or assigned one automatically.
+The stored models can be either given a name, or assigned one automatically.
 The automatic naming follows alphabetical scheme, with the sequence being (a,
 b, ..., z, aa, ab, ..., az, ba, ...).
 
-The saved stashes are stored in the original signal ``metadata.Analysis.models``.
+.. NOTE::
 
-Current stashes can be listed by calling :py:attr:`~.model.Model.stash`:
+    Stored models are not copied to signal slices. If you want a slice of the
+    model, you have to perform the operation on the model itself, not its
+    stored version
+
+Current stored models can be listed by calling :py:attr:`~.signal.models`:
 
 .. code-block:: python
 
     >>> m = s.create_model()
     >>> m.append(hs.model.components.Lorentzian())
-    >>> m.stash.save('myname')
-    >>> m.stash
+    >>> m.store('myname')
+    >>> s.models
     └── myname
         ├── components
         │   └── Lorentzian
         ├── date = 2015-09-07 12:01:50
         └── dimensions = (|100)
 
-Stash also has in-built history, so recovering stash
-(:py:meth:`~.model.ModelStash.apply`) with no arguments will always use the
-latest one.
-
-.. code-block:: python
-
     >>> m.append(hs.model.components.Exponential())
-    >>> m.stash.save() # assign stash name automatically
-    >>> m.stash
+    >>> m.store() # assign model name automatically
+    >>> s.models
     ├── a
     │   ├── components
     │   │   ├── Exponential
@@ -827,37 +820,28 @@ latest one.
         │   └── Lorentzian
         ├── date = 2015-09-07 12:01:50
         └── dimensions = (|100)
-    >>> m.stash.apply('myname')
-    >>> m.components
+    >>> m1 = s.models.restore('myname')
+    >>> m1.components
        # |            Attribute Name |            Component Name |            Component Type
     ---- | ------------------------- | ------------------------- | -------------------------
        0 |                Lorentzian |                Lorentzian |                Lorentzian
-    >>> m.stash.apply() # apply the latest stash ('a')
-    >>> m.components
-       # |            Attribute Name |            Component Name |            Component Type
-    ---- | ------------------------- | ------------------------- | -------------------------
-       0 |                Lorentzian |                Lorentzian |                Lorentzian
-       1 |               Exponential |               Exponential |               Exponential
 
 Saving and loading the result of the fit
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. versionadded:: 0.9
 
-The easiest way to save a model is by using :py:class:`~.model.ModelStash`.
-Since it is saved in the original signal ``metadata``, all that is required is
-just stashing the current state of the model and then saving the original
-signal. Only the hyperspy HDF5 files are able to contain all metadata formatted
-correctly.
+To save a model, a convenience function :py:meth:`~.model.save` is provided,
+which stores the current model into its signal and saves the signal. As
+described in :ref:`storing_models`, more than just one model can be saved with
+one signal.
 
 .. code-block:: python
 
     >>> m = s.create_model()
     >>> # analysis and fitting goes here
-    >>> m.stash.save()
-    >>> s.save('my_filename')
+    >>> m.save('my_filename', 'model_name')
     >>> l = hs.load('my_filename.hdf5')
-    >>> m = l.create_model()
-    >>> m.stash.apply() # restore the latest stash
+    >>> m = l.models.restore('model_name') # or l.models.model_name.restore()
 
 For older versions of HyperSpy (before 0.9), the instructions were as follows:
 

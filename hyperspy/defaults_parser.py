@@ -136,10 +136,6 @@ class ModelConfig(t.HasTraits):
     default_fitter = t.Enum('leastsq', 'mpfit',
                             desc='Choose leastsq if no bounding is required. '
                             'Otherwise choose mpfit')
-    stash_save = t.CBool(
-        True,
-        desc='If enabled, HyperSpy will first store current state of the model'
-        'when loading a stash to prevent data loss')
 
 
 class MachineLearningConfig(t.HasTraits):
