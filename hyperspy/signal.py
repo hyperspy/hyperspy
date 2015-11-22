@@ -147,14 +147,20 @@ class ModelManager(object):
         node.set_item('_dict', dictionary)
         setattr(self, name, self.ModelStub(self, name))
 
-    def _check_name(self, name):
+    def _check_name(self, name, existing=False):
         if not isinstance(name, basestring):
-            raise ValueError('Name has to be a string')
+            raise KeyError('Name has to be a string')
         if name.startswith('_'):
-            raise ValueError('Name cannot start with "_" symbol')
+            raise KeyError('Name cannot start with "_" symbol')
         if '.' in name:
-            raise ValueError('Name cannot contain dots (".")')
-        return slugify(name, True)
+            raise KeyError('Name cannot contain dots (".")')
+        name = slugify(name, True)
+        if existing:
+            if name not in self._models:
+                raise KeyError(
+                    "Model named '%s' is not currently saved" %
+                    name)
+        return name
 
     def remove(self, name):
         """Removes the given model
@@ -168,7 +174,7 @@ class ModelManager(object):
         --------
         restore
         """
-        name = self._check_name(name)
+        name = self._check_name(name, True)
         delattr(self, name)
         self._models.__delattr__(name)
 
@@ -184,7 +190,7 @@ class ModelManager(object):
         --------
         remove
         """
-        name = self._check_name(name)
+        name = self._check_name(name, True)
         d = self._models.get_item(name + '._dict').as_dictionary()
         return self._signal.create_model(dictionary=copy.deepcopy(d))
 
@@ -2699,7 +2705,7 @@ class SpecialSlicersSignal(SpecialSlicers):
         """
         if isinstance(j, Signal):
             j = j.data
-        array_slices = self.obj._get_array_slices(slices, self.isNavigation)
+        array_slices = self.obj._get_array_slices(i, self.isNavigation)
         self.obj.data[array_slices] = j
 
     def __len__(self):
@@ -4469,9 +4475,12 @@ class Signal(FancySlicing,
         if dc.data is not None:
             dc.data = dc.data.copy()
 
-        dc.models._add_dictionary(
-            copy.deepcopy(
-                self.models._models.as_dictionary()))
+        # uncomment if we want to deepcopy models as well:
+
+        # dc.models._add_dictionary(
+        #     copy.deepcopy(
+        #         self.models._models.as_dictionary()))
+
         # The Signal subclasses might change the view on init
         # The following code just copies the original view
         for oaxis, caxis in zip(self.axes_manager._axes,

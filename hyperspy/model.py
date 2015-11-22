@@ -284,11 +284,15 @@ class Model(list):
         s.models._save(name, self.as_dictionary())
 
     def save(self, fname, name=None, append=True):
+        # TODO: actually use append
+        """
+        """
         if self.spectrum is None:
             # TODO: write to file with no spectrum
             return
         else:
-            # TODO: write to file with spectrum
+            self.store(name)
+            self.spectrum.save(fname)
             return
 
     def _load_dictionary(self, dic):
