@@ -51,6 +51,13 @@ class TestModelStoring:
             d,
             m.spectrum.models._models.a._dict.as_dictionary())
 
+    def test_actually_stored(self):
+        m = self.m
+        m.store()
+        m[0].A.map['values'][0] += 13.33
+        m1 = m.spectrum.models.a.restore()
+        nt.assert_not_equals(m[0].A.map['values'], m1[0].A.map['values'])
+
     def test_models_restore_remove(self):
         m = self.m
         s = m.spectrum
