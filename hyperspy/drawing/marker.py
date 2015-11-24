@@ -51,7 +51,7 @@ class MarkerBase(object):
     @marker_properties.setter
     def marker_properties(self, kwargs):
 
-        for key, item in kwargs.iteritems():
+        for key, item in kwargs.items():
             if item is None and key in self._marker_properties:
                 del self._marker_properties[key]
             else:
@@ -100,8 +100,10 @@ class MarkerBase(object):
         self._is_marker_static()
 
     def _is_marker_static(self):
-        if np.alltrue([hasattr(self.data[key].item()[()], "__iter__") is False
-                       for key in self.data.dtype.names]):
+        isiterable = lambda obj: not isinstance(obj, (str, bytes)) and hasattr(obj, '__iter__')
+        test = [isiterable(self.data[key].item()[()]) is False
+                       for key in self.data.dtype.names]
+        if np.alltrue(test):
             self.auto_update = False
         else:
             self.auto_update = True

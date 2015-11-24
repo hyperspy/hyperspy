@@ -151,7 +151,7 @@ def install_start_menu_entries():
                     os.path.expanduser("~"),
                     os.path.join(logo_path,
                                  'hyperspy_qtconsole_logo.ico'))
-    print "Installed HyperSpy (QtConsole) shortcut"
+    print("Installed HyperSpy (QtConsole) shortcut")
     create_shortcut(hyperspy_notebook_bat,
                     'HyperSpy Notebook',
                     notebook_link_path,
@@ -159,7 +159,7 @@ def install_start_menu_entries():
                     os.path.expanduser("~"),
                     os.path.join(logo_path,
                                  'hyperspy_notebook_logo.ico'))
-    print "Installed HyperSpy (Notebook) shortcut"
+    print("Installed HyperSpy (Notebook) shortcut")
     file_created(qtconsole_link_path)
     file_created(notebook_link_path)
 
@@ -179,12 +179,12 @@ def install_start_menu_entries():
     ]
     for link in links:
         create_weblink(**link)
-    print "Installed HyperSpy web links"
+    print("Installed HyperSpy web links")
 
 if __name__ == "__main__":
     if admin_rights() is True:
         install_start_menu_entries()
-        print "All Start Menu entries were installed correctly"
+        print("All Start Menu entries were installed correctly")
     else:
         print("To add start menu entries, run this script "
               "with administrator rights")

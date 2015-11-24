@@ -350,7 +350,7 @@ class Signal2DTools(object):
             xaxis = self.axes_manager.signal_axes[0]
             yaxis = self.axes_manager.signal_axes[1]
             padding = []
-            for i in xrange(self.data.ndim):
+            for i in range(self.data.ndim):
                 if i == xaxis.index_in_array:
                     padding.append((right, -left))
                 elif i == yaxis.index_in_array:
@@ -479,7 +479,7 @@ class Signal1DTools(object):
             ilow = axis.low_index
         if expand:
             padding = []
-            for i in xrange(self.data.ndim):
+            for i in range(self.data.ndim):
                 if i == axis.index_in_array:
                     padding.append(
                         (axis.high_index - ihigh + 1, ilow - axis.low_index))
@@ -555,10 +555,10 @@ class Signal1DTools(object):
             disabled=not show_progressbar)
         for i, dat in enumerate(self._iterate_signal()):
             dat_int = sp.interpolate.interp1d(
-                range(i0, i1) + range(i2, i3),
+                list(range(i0, i1)) + list(range(i2, i3)),
                 dat[i0:i1].tolist() + dat[i2:i3].tolist(),
                 **kwargs)
-            dat[i1:i2] = dat_int(range(i1, i2))
+            dat[i1:i2] = dat_int(list(range(i1, i2)))
             pbar.update(i + 1)
 
     def _check_navigation_mask(self, mask):
@@ -1454,10 +1454,10 @@ class MVATools(object):
         if same_window is None:
             same_window = preferences.MachineLearning.same_window
         if comp_ids is None:
-            comp_ids = xrange(factors.shape[1])
+            comp_ids = range(factors.shape[1])
 
         elif not hasattr(comp_ids, '__iter__'):
-            comp_ids = xrange(comp_ids)
+            comp_ids = range(comp_ids)
 
         n = len(comp_ids)
         if same_window:
@@ -1472,7 +1472,7 @@ class MVATools(object):
             f = plt.figure(figsize=(4 * per_row, 3 * rows))
         else:
             f = plt.figure()
-        for i in xrange(len(comp_ids)):
+        for i in range(len(comp_ids)):
             if self.axes_manager.signal_dimension == 1:
                 if same_window:
                     ax = plt.gca()
@@ -1521,10 +1521,10 @@ class MVATools(object):
         if same_window is None:
             same_window = preferences.MachineLearning.same_window
         if comp_ids is None:
-            comp_ids = xrange(loadings.shape[0])
+            comp_ids = range(loadings.shape[0])
 
         elif not hasattr(comp_ids, '__iter__'):
-            comp_ids = xrange(comp_ids)
+            comp_ids = range(comp_ids)
 
         n = len(comp_ids)
         if same_window:
@@ -1540,7 +1540,7 @@ class MVATools(object):
         else:
             f = plt.figure()
 
-        for i in xrange(n):
+        for i in range(n):
             if self.axes_manager.navigation_dimension == 1:
                 if same_window:
                     ax = plt.gca()
@@ -1619,7 +1619,7 @@ class MVATools(object):
 
         # Select the desired factors
         if comp_ids is None:
-            comp_ids = xrange(factors.shape[1])
+            comp_ids = range(factors.shape[1])
         elif not hasattr(comp_ids, '__iter__'):
             comp_ids = range(comp_ids)
         mask = np.zeros(factors.shape[1], dtype=np.bool)
@@ -1640,7 +1640,7 @@ class MVATools(object):
                                                      per_row=per_row,
                                                      quiver_color=quiver_color,
                                                      vector_scale=vector_scale)
-            for idx in xrange(len(comp_ids)):
+            for idx in range(len(comp_ids)):
                 filename = '%s_%02i.%s' % (factor_prefix, comp_ids[idx],
                                            save_figures_format)
                 if folder is not None:
@@ -1781,7 +1781,7 @@ class MVATools(object):
                                            comp_label=comp_label,
                                            cmap=cmap, no_nans=no_nans,
                                            per_row=per_row)
-            for idx in xrange(len(comp_ids)):
+            for idx in range(len(comp_ids)):
                 filename = '%s_%02i.%s' % (loading_prefix, comp_ids[idx],
                                            save_figures_format)
                 if folder is not None:
@@ -2663,7 +2663,7 @@ class Signal(FancySlicing,
 
         string += '>'
 
-        return string.encode('utf8')
+        return string
 
     def __getitem__(self, slices, isNavigation=None):
         try:
@@ -2834,18 +2834,21 @@ class Signal(FancySlicing,
                 odata = other.data
                 new_axes = [axis.copy()
                             for axis in self.axes_manager._axes]
-            exec("result = sdata.%s(odata)" % op_name)
+            result = getattr(sdata, op_name)(odata)
+            # exec("result = sdata.%s(odata)" % op_name)
             new_signal = self._deepcopy_with_new_data(result)
             new_signal.axes_manager._axes = new_axes
             new_signal.axes_manager.set_signal_dimension(
                 self.axes_manager.signal_dimension)
             return new_signal
         else:
-            exec("result = self.data.%s(other)" % op_name)
+            result = getattr(self.data, op_name)(other)
+            # exec("result = self.data.%s(other)" % op_name)
             return self._deepcopy_with_new_data(result)
 
     def _unary_operator_ruler(self, op_name):
-        exec("result = self.data.%s()" % op_name)
+        result = getattr(self.data, op_name)()
+        # exec("result = self.data.%s()" % op_name)
         return self._deepcopy_with_new_data(result)
 
     def _check_signal_dimension_equals_one(self):
@@ -2896,7 +2899,7 @@ class Signal(FancySlicing,
             string += self.metadata.Signal.record_by
             string += "\n\tData type: "
             string += str(self.data.dtype)
-        print string
+        print(string)
 
     @property
     def data(self):
@@ -2947,10 +2950,10 @@ class Signal(FancySlicing,
         if 'original_metadata' not in file_data_dict:
             file_data_dict['original_metadata'] = {}
         if 'attributes' in file_data_dict:
-            for key, value in file_data_dict['attributes'].iteritems():
+            for key, value in file_data_dict['attributes'].items():
                 if hasattr(self, key):
                     if isinstance(value, dict):
-                        for k, v in value.iteritems():
+                        for k, v in value.items():
                             eval('self.%s.__setattr__(k,v)' % key)
                     else:
                         self.__setattr__(key, value)
@@ -3009,7 +3012,7 @@ class Signal(FancySlicing,
 
     def _get_undefined_axes_list(self):
         axes = []
-        for i in xrange(len(self.data.shape)):
+        for i in range(len(self.data.shape)):
             axes.append({'size': int(self.data.shape[i]), })
         return axes
 
@@ -3501,7 +3504,7 @@ class Signal(FancySlicing,
         cut_index = np.array([0] + step_sizes).cumsum()
 
         axes_dict = signal_dict['axes']
-        for i in xrange(len(cut_index) - 1):
+        for i in range(len(cut_index) - 1):
             axes_dict[axis]['offset'] = \
                 self.axes_manager._axes[axis].index2value(cut_index[i])
             axes_dict[axis]['size'] = cut_index[i + 1] - cut_index[i]
@@ -3543,7 +3546,7 @@ class Signal(FancySlicing,
             "HyperSpy 0.9. Please use `unfold` instead.",
             VisibleDeprecationWarning)
         if len(self.axes_manager._axes) > 2:
-            print "Automatically unfolding the data"
+            print("Automatically unfolding the data")
             self.unfold()
             return True
         else:
@@ -3593,12 +3596,12 @@ class Signal(FancySlicing,
         to_remove = []
         for axis, dim in zip(self.axes_manager._axes, new_shape):
             if dim == 1:
-                uname += ',' + unicode(axis)
-                uunits = ',' + unicode(axis.units)
+                uname += ',' + str(axis)
+                uunits = ',' + str(axis.units)
                 to_remove.append(axis)
         ua = self.axes_manager._axes[unfolded_axis]
-        ua.name = unicode(ua) + uname
-        ua.units = unicode(ua.units) + uunits
+        ua.name = str(ua) + uname
+        ua.units = str(ua.units) + uunits
         ua.size = self.data.shape[unfolded_axis]
         for axis in to_remove:
             self.axes_manager.remove(axis.index_in_axes_manager)
@@ -3737,7 +3740,7 @@ class Signal(FancySlicing,
         new_shape[unfolded_axis] = -1
         # Warning! if the data is not contigous it will make a copy!!
         data = self.data.reshape(new_shape)
-        for i in xrange(data.shape[unfolded_axis]):
+        for i in range(data.shape[unfolded_axis]):
             getitem = [0] * len(data.shape)
             for axis in axes:
                 getitem[axis] = slice(None)
@@ -4279,7 +4282,7 @@ class Signal(FancySlicing,
             show_progressbar = preferences.General.show_progressbar
         # Sepate ndkwargs
         ndkwargs = ()
-        for key, value in kwargs.iteritems():
+        for key, value in kwargs.items():
             if isinstance(value, Signal):
                 ndkwargs += ((key, value),)
 
@@ -4329,7 +4332,7 @@ class Signal(FancySlicing,
                 for (key, value), datum in zip(ndkwargs, data[1:]):
                     kwargs[key] = datum[0]
                 data[0][:] = function(data[0], **kwargs)
-                pbar.next()
+                next(pbar)
             pbar.finish()
 
     def copy(self):
@@ -4655,8 +4658,8 @@ class Signal(FancySlicing,
         self.axes_manager.__iter__()
         return self
 
-    def next(self):
-        self.axes_manager.next()
+    def __next__(self):
+        next(self.axes_manager)
         return self.get_current_signal()
 
     def __len__(self):
@@ -4829,7 +4832,7 @@ class Signal(FancySlicing,
         print(underline("Summary statistics"))
         print("mean:\t" + formatter % data.mean())
         print("std:\t" + formatter % data.std())
-        print
+        print()
         print("min:\t" + formatter % data.min())
         print("Q1:\t" + formatter % np.percentile(data,
                                                   25))
@@ -4916,7 +4919,7 @@ for name in (
     "__and__",
     "__xor__",
     "__or__",
-    "__div__",
+    "__mod__",
     "__truediv__",
     # Comparison operators
     "__lt__",

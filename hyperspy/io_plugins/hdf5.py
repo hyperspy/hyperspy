@@ -153,11 +153,11 @@ def hdfgroup2signaldict(group, load_to_memory=True):
         data = np.asanyarray(data)
     exp['data'] = data
     axes = []
-    for i in xrange(len(exp['data'].shape)):
+    for i in range(len(exp['data'].shape)):
         try:
             axes.append(dict(group['axis-%i' % i].attrs))
             axis = axes[-1]
-            for key, item in axis.iteritems():
+            for key, item in axis.items():
                 axis[key] = ensure_unicode(item)
         except KeyError:
             break
@@ -165,7 +165,7 @@ def hdfgroup2signaldict(group, load_to_memory=True):
         try:
             axes = [i for k, i in sorted(iter(hdfgroup2dict(
                 group['_list_' + str(len(exp['data'].shape)) + '_axes'],
-                load_to_memory=load_to_memory).iteritems()))]
+                load_to_memory=load_to_memory).items()))]
         except KeyError:
             raise IOError(not_valid_format)
     exp['axes'] = axes
@@ -317,14 +317,14 @@ def dict2hdfgroup(dictionary, group, compression=None):
         except ValueError:
             tmp = np.array([[0]])
         if tmp.dtype is np.dtype('O') or tmp.ndim is not 1:
-            dict2hdfgroup(dict(zip(
-                [unicode(i) for i in xrange(len(value))], value)),
+            dict2hdfgroup(dict(list(zip(
+                [str(i) for i in range(len(value))], value))),
                 group.create_group(_type + str(len(value)) + '_' + key),
                 compression=compression)
         elif tmp.dtype.type is np.unicode_:
             group.create_dataset(_type + key,
                                  tmp.shape,
-                                 dtype=h5py.special_dtype(vlen=unicode),
+                                 dtype=h5py.special_dtype(vlen=str),
                                  compression=compression)
             group[_type + key][:] = tmp[:]
         else:
@@ -333,7 +333,7 @@ def dict2hdfgroup(dictionary, group, compression=None):
                 data=tmp,
                 compression=compression)
 
-    for key, value in dictionary.iteritems():
+    for key, value in dictionary.items():
         if isinstance(value, dict):
             dict2hdfgroup(value, group.create_group(key),
                           compression=compression)
@@ -364,7 +364,7 @@ def dict2hdfgroup(dictionary, group, compression=None):
             except ValueError:
                 try:
                     # Store strings as unicode using the default encoding
-                    group.attrs[key] = unicode(value)
+                    group.attrs[key] = str(value)
                 except UnicodeEncodeError:
                     pass
                 except UnicodeDecodeError:
@@ -400,7 +400,7 @@ def dict2hdfgroup(dictionary, group, compression=None):
 def hdfgroup2dict(group, dictionary=None, load_to_memory=True):
     if dictionary is None:
         dictionary = {}
-    for key, value in group.attrs.iteritems():
+    for key, value in group.attrs.items():
         if isinstance(value, (np.string_, str)):
             if value == '_None_':
                 value = None
@@ -451,15 +451,15 @@ def hdfgroup2dict(group, dictionary=None, load_to_memory=True):
                 dictionary[key[len('_hspy_AxesManager_'):]] = \
                     AxesManager([i
                                  for k, i in sorted(iter(
-                                     hdfgroup2dict(group[key], load_to_memory=load_to_memory).iteritems()))])
+                                     hdfgroup2dict(group[key], load_to_memory=load_to_memory).items()))])
             elif key.startswith('_list_'):
                 dictionary[key[7 + key[6:].find('_'):]] = \
                     [i for k, i in sorted(iter(
-                        hdfgroup2dict(group[key], load_to_memory=load_to_memory).iteritems()))]
+                        hdfgroup2dict(group[key], load_to_memory=load_to_memory).items()))]
             elif key.startswith('_tuple_'):
                 dictionary[key[8 + key[7:].find('_'):]] = tuple(
                     [i for k, i in sorted(iter(
-                        hdfgroup2dict(group[key], load_to_memory=load_to_memory).iteritems()))])
+                        hdfgroup2dict(group[key], load_to_memory=load_to_memory).items()))])
             else:
                 dictionary[key] = {}
                 hdfgroup2dict(

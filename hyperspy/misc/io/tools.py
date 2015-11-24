@@ -64,11 +64,11 @@ def overwrite(fname):
     if os.path.isfile(fname):
         message = "Overwrite '%s' (y/n)?\n" % fname
         try:
-            answer = raw_input(message)
+            answer = input(message)
             answer = answer.lower()
             while (answer != 'y') and (answer != 'n'):
                 print('Please answer y or n.')
-                answer = raw_input(message)
+                answer = input(message)
             if answer.lower() == 'y':
                 return True
             elif answer.lower() == 'n':

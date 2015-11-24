@@ -23,7 +23,7 @@
 
 import codecs
 import os.path
-from StringIO import StringIO
+from io import StringIO
 
 import numpy as np
 
@@ -80,14 +80,14 @@ rpl_keys = {
     # HyperSpy-specific keys
     'depth-origin': float,
     'depth-scale': float,
-    'depth-units': unicode,
+    'depth-units': str,
     'width-origin': float,
     'width-scale': float,
-    'width-units': unicode,
+    'width-units': str,
     'height-origin': float,
     'height-scale': float,
-    'height-units': unicode,
-    'signal': unicode,
+    'height-units': str,
+    'signal': str,
     # EELS HyperSpy keys
     'collection-angle': float,
     # TEM Hyperespy keys
@@ -377,17 +377,17 @@ def file_reader(filename, rpl_info=None, encoding="latin-1",
         data = read_raw(rpl_info, rawfname, mmap_mode=mmap_mode)
 
     if rpl_info['record-by'] == 'vector':
-        print 'Loading as spectrum'
+        print('Loading as spectrum')
         record_by = 'spectrum'
     elif rpl_info['record-by'] == 'image':
-        print 'Loading as Image'
+        print('Loading as Image')
         record_by = 'image'
     else:
         if len(data.shape) == 1:
-            print 'Loading as spectrum'
+            print('Loading as spectrum')
             record_by = 'spectrum'
         else:
-            print 'Loading as image'
+            print('Loading as image')
             record_by = 'image'
 
     if rpl_info['record-by'] == 'vector':
@@ -400,7 +400,7 @@ def file_reader(filename, rpl_info=None, encoding="latin-1",
     scales = [1, 1, 1]
     origins = [0, 0, 0]
     units = ['', '', '']
-    sizes = [rpl_info[names[i]] for i in xrange(3)]
+    sizes = [rpl_info[names[i]] for i in range(3)]
 
     if 'signal' not in rpl_info:
         rpl_info['signal'] = ""
@@ -485,7 +485,7 @@ def file_reader(filename, rpl_info=None, encoding="latin-1",
 
     axes = []
     index_in_array = 0
-    for i in xrange(3):
+    for i in range(3):
         if sizes[i] > 1:
             axes.append({
                 'size': sizes[i],
@@ -631,8 +631,8 @@ def write_rpl(filename, keys_dictionary, encoding='ascii'):
     f.write('key\tvalue\n')
     # Even if it is not necessary, we sort the keywords when writing
     # to make the rpl file more human friendly
-    for key, value in iter(sorted(keys_dictionary.iteritems())):
-        if not isinstance(value, basestring):
+    for key, value in iter(sorted(keys_dictionary.items())):
+        if not isinstance(value, str):
             value = str(value)
         f.write(key + '\t' + value + '\n')
     f.close()

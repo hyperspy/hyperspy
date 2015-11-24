@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-from __future__ import division
+
 
 import matplotlib.pyplot as plt
 import matplotlib.widgets
@@ -24,7 +24,7 @@ import matplotlib.transforms as transforms
 import numpy as np
 import traits
 
-from utils import on_figure_window_close
+from .utils import on_figure_window_close
 from hyperspy.misc.math_tools import closest_nice_number
 
 

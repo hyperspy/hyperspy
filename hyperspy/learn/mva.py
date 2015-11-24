@@ -17,7 +17,7 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from __future__ import division
+
 import types
 import warnings
 
@@ -292,7 +292,7 @@ class MVA():
                 factors = sk.components_.T
 
             elif algorithm == 'mlpca' or algorithm == 'fast_mlpca':
-                print "Performing the MLPCA training"
+                print("Performing the MLPCA training")
                 if output_dimension is None:
                     raise ValueError(
                         "For MLPCA it is mandatory to define the "
@@ -822,7 +822,7 @@ class MVA():
 
     def _auto_reverse_bss_component(self, target):
         n_components = target.bss_factors.shape[1]
-        for i in xrange(n_components):
+        for i in range(n_components):
             minimum = np.nanmin(target.bss_loadings[:, i])
             maximum = np.nanmax(target.bss_loadings[:, i])
             if minimum < 0 and -minimum > maximum:
@@ -863,7 +863,7 @@ class MVA():
         elif hasattr(components, '__iter__'):
             tfactors = np.zeros((factors.shape[0], len(components)))
             tloadings = np.zeros((len(components), loadings.shape[1]))
-            for i in xrange(len(components)):
+            for i in range(len(components)):
                 tfactors[:, i] = factors[:, components[i]]
                 tloadings[i, :] = loadings[components[i], :]
             a = np.dot(tfactors, tloadings)
@@ -1070,7 +1070,7 @@ class MVA():
 
     def undo_treatments(self):
         """Undo normalize_poissonian_noise"""
-        print "Undoing data pre-treatments"
+        print("Undoing data pre-treatments")
         self.data = self._data_before_treatments
         del self._data_before_treatments
 
@@ -1130,11 +1130,11 @@ class LearningResults(object):
         filename : string
         """
         decomposition = np.load(filename)
-        for key, value in decomposition.iteritems():
+        for key, value in decomposition.items():
             if value.dtype == np.dtype('object'):
                 value = None
             setattr(self, key, value)
-        print "\n%s loaded correctly" % filename
+        print("\n%s loaded correctly" % filename)
         # For compatibility with old version ##################
         if hasattr(self, 'algorithm'):
             self.decomposition_algorithm = self.algorithm
@@ -1181,27 +1181,27 @@ class LearningResults(object):
         """Prints a summary of the decomposition and demixing parameters
          to the stdout
         """
-        print
-        print "Decomposition parameters:"
-        print "-------------------------"
-        print "Decomposition algorithm : ", self.decomposition_algorithm
-        print "Poissonian noise normalization : %s" % \
-            self.poissonian_noise_normalized
-        print "Output dimension : %s" % self.output_dimension
-        print "Centre : %s" % self.centre
+        print()
+        print("Decomposition parameters:")
+        print("-------------------------")
+        print("Decomposition algorithm : ", self.decomposition_algorithm)
+        print("Poissonian noise normalization : %s" % \
+            self.poissonian_noise_normalized)
+        print("Output dimension : %s" % self.output_dimension)
+        print("Centre : %s" % self.centre)
         if self.bss_algorithm is not None:
-            print
-            print "Demixing parameters:"
-            print "---------------------"
-            print "BSS algorithm : %s" % self.bss_algorithm
-            print "Number of components : %i" % len(self.unmixing_matrix)
+            print()
+            print("Demixing parameters:")
+            print("---------------------")
+            print("BSS algorithm : %s" % self.bss_algorithm)
+            print("Number of components : %i" % len(self.unmixing_matrix))
 
     def crop_decomposition_dimension(self, n):
         """
         Crop the score matrix up to the given number.
         It is mainly useful to save memory and reduce the storage size
         """
-        print "trimming to %i dimensions" % n
+        print("trimming to %i dimensions" % n)
         self.loadings = self.loadings[:, :n]
         if self.explained_variance is not None:
             self.explained_variance = self.explained_variance[:n]

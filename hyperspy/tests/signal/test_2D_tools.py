@@ -42,7 +42,7 @@ class TestAlignTools:
                                  (2, 2), (5, 6), (-9, -9), (-9, -9), (-6, -9)])
         self.new_offsets = self.offsets - self.ishifts.min(0) * self.scales
         zlp_pos = self.ishifts + self.izlp
-        for i in xrange(10):
+        for i in range(10):
             slices = self.lena_offset - zlp_pos[i, ...]
             s.data[i, ...] = im[slices[0]:slices[0] + 100,
                                 slices[1]:slices[1] + 100]
@@ -59,8 +59,8 @@ class TestAlignTools:
     def test_estimate_shift(self):
         s = self.spectrum
         shifts = s.estimate_shift2D()
-        print shifts
-        print self.ishifts
+        print(shifts)
+        print(self.ishifts)
         nt.assert_true(np.allclose(shifts, self.ishifts))
 
     def test_align(self):

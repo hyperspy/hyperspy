@@ -79,7 +79,7 @@ def copy_slice_from_whitelist(_from, _to, dims, both_slices, isNav):
     if hasattr(_from, '_slicing_whitelist'):
         swl = _from._slicing_whitelist
 
-    for key, val in _from._whitelist.iteritems():
+    for key, val in _from._whitelist.items():
         if key == 'self':
             target = None
         else:

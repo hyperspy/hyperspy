@@ -26,7 +26,7 @@ from hyperspy.components import Gaussian, Lorentzian, ScalableFixedPattern
 
 
 def remove_empty_numpy_strings(dic):
-    for k, v in dic.iteritems():
+    for k, v in dic.items():
         if isinstance(v, dict):
             remove_empty_numpy_strings(v)
         elif isinstance(v, list):
@@ -180,8 +180,8 @@ class TestComponentDictionary:
             del dc['self']
             del dc['twin_function']
             del dc['twin_inverse_function']
-            print dn.keys()
-            print dc.keys()
+            print(list(dn.keys()))
+            print(list(dc.keys()))
             nt.assert_dict_equal(dn, dc)
 
     @nt.raises(ValueError)

@@ -1,4 +1,4 @@
-from __future__ import division
+
 import os
 import math
 
@@ -99,10 +99,10 @@ class HartreeSlaterGOS(GOSBase):
         return dic
 
     def readgosfile(self):
-        print "\nHartree-Slater GOS"
-        print "\tElement: ", self.element
-        print "\tSubshell: ", self.subshell
-        print "\tOnset Energy = ", self.onset_energy
+        print("\nHartree-Slater GOS")
+        print("\tElement: ", self.element)
+        print("\tSubshell: ", self.subshell)
+        print("\tOnset Energy = ", self.onset_energy)
         element = self.element
         subshell = self.subshell
         filename = os.path.join(
@@ -140,7 +140,7 @@ class HartreeSlaterGOS(GOSBase):
         # tabulated GOS
         gamma = 1 + E0 / 511.06
         T = 511060 * (1 - 1 / gamma ** 2) / 2
-        for i in xrange(0, self.gos_array.shape[0]):
+        for i in range(0, self.gos_array.shape[0]):
             E = self.energy_axis[i] + energy_shift
             # Calculate the limits of the q integral
             qa0sqmin = (E ** 2) / (4 * R * T) + (E ** 3) / (

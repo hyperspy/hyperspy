@@ -275,9 +275,9 @@ class EELSModel(Model):
                         min_distance_between_edges_for_fine_structure
                     if (distance_between_edges -
                             preedge_safe_window_width) <= min_d:
-                        print " Automatically desactivating the fine \
+                        print(" Automatically desactivating the fine \
                         structure of edge number", i2 + 1, "to avoid conflicts\
-                         with edge number", i1 + 1
+                         with edge number", i1 + 1)
                         self._active_edges[i2].fine_structure_active = False
                         self._active_edges[
                             i2].fine_structure_coeff.free = False
@@ -285,7 +285,7 @@ class EELSModel(Model):
                     else:
                         new_fine_structure_width = (
                             distance_between_edges - preedge_safe_window_width)
-                        print (
+                        print(
                             "Automatically changing the fine structure "
                             "width of edge", i1 + 1, "from",
                             self._active_edges[i1].fine_structure_width,
@@ -389,7 +389,7 @@ class EELSModel(Model):
         self.fit_background(start_energy, **kwargs)
 
         # Fit the edges
-        for i in xrange(0, len(self._active_edges)):
+        for i in range(0, len(self._active_edges)):
             self._fit_edge(i, start_energy, **kwargs)
 
     def _get_first_ionization_edge_energy(self, start_energy=None):
@@ -554,7 +554,7 @@ class EELSModel(Model):
             edge.onset_energy.free = True
             self.fit(**kwargs)
             edge.onset_energy.free = False
-            print "onset_energy = ", edge.onset_energy.value
+            print("onset_energy = ", edge.onset_energy.value)
             self._touch()
         elif edge.intensity.free is True:
             self.enable_fine_structure(to_activate_fs)
@@ -584,18 +584,18 @@ class EELSModel(Model):
                 if element not in elements:
                     elements[element] = {}
                 elements[element][subshell] = edge.intensity.value
-        print
-        print "Absolute quantification:"
-        print "Elem.\tIntensity"
+        print()
+        print("Absolute quantification:")
+        print("Elem.\tIntensity")
         for element in elements:
             if len(elements[element]) == 1:
                 for subshell in elements[element]:
-                    print "%s\t%f" % (
-                        element, elements[element][subshell])
+                    print("%s\t%f" % (
+                        element, elements[element][subshell]))
             else:
                 for subshell in elements[element]:
-                    print "%s_%s\t%f" % (element, subshell,
-                                         elements[element][subshell])
+                    print("%s_%s\t%f" % (element, subshell,
+                                         elements[element][subshell]))
 
     def remove_fine_structure_data(self, edges_list=None):
         """Remove the fine structure data from the fitting routine as

@@ -15,7 +15,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
-from __future__ import division
+
 
 import traits.api as t
 
@@ -220,7 +220,7 @@ class EDSSEMSpectrum(EDSSpectrum):
             'Acquisition_instrument.SEM.Detector.EDS.energy_resolution_MnKa':
             'tem_par.energy_resolution_MnKa', }
 
-        for key, value in mapping.iteritems():
+        for key, value in mapping.items():
             if self.metadata.has_item(key):
                 exec('%s = self.metadata.%s' % (value, key))
         tem_par.edit_traits()
@@ -237,7 +237,7 @@ class EDSSEMSpectrum(EDSSpectrum):
             'Acquisition_instrument.SEM.Detector.EDS.energy_resolution_MnKa':
             tem_par.energy_resolution_MnKa, }
 
-        for key, value in mapping.iteritems():
+        for key, value in mapping.items():
             if value != t.Undefined:
                 self.metadata.set_item(key, value)
         self._are_microscope_parameters_missing()

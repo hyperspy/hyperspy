@@ -112,14 +112,14 @@ def file_reader(filename, record_by='image', **kwds):
         op = {}
         names = [axes_label_codes[axis] for axis in axes]
         axes = [{'size': size,
-                 'name': unicode(name),
+                 'name': str(name),
                  #'scale': scales[i],
                  #'offset' : origins[i],
                  #'units' : unicode(units[i]),
                  }
                 for size, name in zip(dc.shape, names)]
         op = {}
-        for key, tag in tiff[0].tags.iteritems():
+        for key, tag in tiff[0].tags.items():
             op[key] = tag.value
     return [
         {

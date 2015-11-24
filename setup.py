@@ -99,7 +99,7 @@ class update_version_when_dev:
                 if p.returncode != 0:
                     raise EnvironmentError
                 else:
-                    version = stdout[1:].strip()
+                    version = stdout[1:].strip().decode()
                     if str(self.release_version[:-4] + '-') in version:
                         version = version.replace(
                             self.release_version[:-4] + '-',
@@ -115,9 +115,9 @@ class update_version_when_dev:
             for line in fileinput.FileInput("hyperspy/Release.py",
                                             inplace=1):
                 if line.startswith('version = '):
-                    print "version = \"%s\"" % self.version
+                    print("version = \"%s\"" % self.version)
                 else:
-                    print line,
+                    print(line, end=' ')
             self.restore_version = True
         else:
             self.version = self.release_version
@@ -128,9 +128,9 @@ class update_version_when_dev:
             for line in fileinput.FileInput("hyperspy/Release.py",
                                             inplace=1):
                 if line.startswith('version = '):
-                    print "version = \"%s\"" % self.release_version
+                    print("version = \"%s\"" % self.release_version)
                 else:
-                    print line,
+                    print(line, end=' ')
 
 
 with update_version_when_dev() as version:

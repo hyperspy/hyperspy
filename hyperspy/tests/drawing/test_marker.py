@@ -27,7 +27,7 @@ class Test_markers:
 
     def test_get_data(self):
         s = Image(np.zeros([3, 2, 2]))
-        m = markers.line_segment(x1=range(3), x2=range(3), y1=1.3, y2=1.5)
+        m = markers.line_segment(x1=list(range(3)), x2=list(range(3)), y1=1.3, y2=1.5)
         m.axes_manager = s.axes_manager
         nose.tools.assert_true(m.get_data_position('x1') == 0)
         nose.tools.assert_true(m.get_data_position('y1') == 1.3)
@@ -68,7 +68,7 @@ class Test_markers:
 
     def test_auto_update(self):
         m = markers.text(y=1, x=2, text='a')
-        nose.tools.assert_true(m.auto_update is False)
+        nose.tools.assert_false(m.auto_update)
         m = markers.text(y=[1, 2], x=2, text='a')
         nose.tools.assert_true(m.auto_update is True)
         m.add_data(y1=1)

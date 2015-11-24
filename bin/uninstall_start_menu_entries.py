@@ -56,10 +56,10 @@ def uninstall_start_menu_entries():
     if os.path.isdir(hspy_sm_path):
         try:
             shutil.rmtree(hspy_sm_path)
-            print "HyperSpy Start Menu entries uninstalled correctly"
+            print("HyperSpy Start Menu entries uninstalled correctly")
         except:
             # Sometimes we get a permission error
-            print "Something has gone wrong. Start menu entries were not removed."
+            print("Something has gone wrong. Start menu entries were not removed.")
             pass
 
 

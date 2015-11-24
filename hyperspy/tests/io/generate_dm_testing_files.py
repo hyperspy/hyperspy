@@ -59,7 +59,7 @@ dm4_data_types = {
 
 
 def generate_1D_files(f, data_types, dmversion):
-    for key in data_types.iterkeys():
+    for key in data_types.keys():
         f.write(
             'filename = "'
             'dm%i_1D_data\\\\test-%i.dm%i"\n'
@@ -70,7 +70,7 @@ def generate_1D_files(f, data_types, dmversion):
 
 
 def generate_2D_files(f, data_types, dmversion):
-    for key in data_types.iterkeys():
+    for key in data_types.keys():
         f.write(
             'filename = "'
             'dm%i_2D_data\\\\test-%i.dm%i"\n'
@@ -83,7 +83,7 @@ def generate_2D_files(f, data_types, dmversion):
 
 
 def generate_3D_files(f, data_types, dmversion):
-    for key in data_types.iterkeys():
+    for key in data_types.keys():
         f.write(
             'filename = "'
             'dm%i_3D_data\\\\test-%i.dm%i"\n'
@@ -100,7 +100,7 @@ def generate_3D_files(f, data_types, dmversion):
 
 
 def generate_4D_files(f, data_types, dmversion):
-    for key in data_types.iterkeys():
+    for key in data_types.keys():
         f.write(
             'filename = "'
             'dm%i_4D_data\\\\test-%i.dm%i"\n'

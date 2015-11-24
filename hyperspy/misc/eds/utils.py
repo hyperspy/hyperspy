@@ -1,4 +1,4 @@
-from __future__ import division
+
 
 import numpy as np
 import math
@@ -20,9 +20,9 @@ def _get_energy_xray_line(xray_line):
 
 def _parse_only_lines(only_lines):
     if hasattr(only_lines, '__iter__'):
-        if any(isinstance(line, basestring) is False for line in only_lines):
+        if any(isinstance(line, str) is False for line in only_lines):
             return only_lines
-    elif isinstance(only_lines, basestring) is False:
+    elif isinstance(only_lines, str) is False:
         return only_lines
     only_lines = list(only_lines)
     for only_line in only_lines:
@@ -55,13 +55,13 @@ def get_xray_lines_near_energy(energy, width=0.2, only_lines=None):
     only_lines = _parse_only_lines(only_lines)
     valid_lines = []
     E_min, E_max = energy - width/2., energy + width/2.
-    for element, el_props in elements_db.iteritems():
+    for element, el_props in elements_db.items():
         # Not all elements in the DB have the keys, so catch KeyErrors
         try:
             lines = el_props['Atomic_properties']['Xray_lines']
         except KeyError:
             continue
-        for line, l_props in lines.iteritems():
+        for line, l_props in lines.items():
             if only_lines and line not in only_lines:
                 continue
             line_energy = l_props['energy (keV)']
@@ -334,7 +334,7 @@ def _quantification_cliff_lorimer(intensities,
     composition = np.ones_like(intensities, dtype='float')
     # ab = Ia/Ib / kab
 
-    other_index = range(len(kfactors))
+    other_index = list(range(len(kfactors)))
     other_index.pop(ref_index)
     for i in other_index:
         ab[i] = intensities[ref_index] * kfactors[ref_index]  \
