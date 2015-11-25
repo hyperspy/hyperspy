@@ -189,12 +189,18 @@ class FancySlicing(object):
     def _slicer(self, slices, isNavigation=None):
         array_slices = self._get_array_slices(slices, isNavigation)
         _obj = self._deepcopy_with_new_data(self.data[array_slices])
+        _will_remove = []
         for slice_, axis in zip(array_slices, _obj.axes_manager._axes):
             if (isinstance(slice_, slice) or
                     len(self.axes_manager._axes) < 2):
                 axis._slice_me(slice_)
             else:
-                _obj._remove_axis(axis.index_in_axes_manager)
+                _will_remove.append(axis.index_in_axes_manager)
+        if _will_remove:
+            _will_remove.sort(reverse=True)
+            for _i in _will_remove:
+                _obj._remove_axis(_i)
+
         if hasattr(self, "_additional_slicing_targets"):
             for ta in self._additional_slicing_targets:
                 try:

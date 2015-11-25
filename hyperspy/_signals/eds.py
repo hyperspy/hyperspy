@@ -495,6 +495,7 @@ class EDSSpectrum(Spectrum):
         only_lines = utils_eds._parse_only_lines(only_lines)
         beam_energy = self._get_beam_energy()
         lines = []
+        elements = [el if isinstance(el, str) else el.decode() for el in elements]
         for element in elements:
             # Possible line (existing and excited by electron)
             element_lines = []

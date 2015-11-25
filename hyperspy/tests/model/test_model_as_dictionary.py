@@ -205,7 +205,7 @@ class TestModelDictionary:
     def setUp(self):
         s = Spectrum(np.array([1.0, 2, 4, 7, 12, 7, 4, 2, 1]))
         m = s.create_model()
-        m._low_loss = (s + 3.0).deepcopy()
+        m.low_loss = (s + 3.0).deepcopy()
         self.model = m
         self.s = s
 

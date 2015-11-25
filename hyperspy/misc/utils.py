@@ -315,7 +315,7 @@ class DictionaryTreeBrowser(object):
         return string
 
     def __repr__(self):
-        return self._get_print_items().encode('utf8', errors='ignore')
+        return self._get_print_items()
 
     def __getitem__(self, key):
         return self.__getattribute__(key)
@@ -324,6 +324,8 @@ class DictionaryTreeBrowser(object):
         self.__setattr__(key, value)
 
     def __getattribute__(self, name):
+        if isinstance(name, bytes):
+            name = name.decode()
         name = slugify(name, valid_variable_name=True)
         item = super(DictionaryTreeBrowser, self).__getattribute__(name)
         if isinstance(item, dict) and '_dtb_value_' in item and "key" in item:
@@ -572,7 +574,7 @@ def strlist2enumeration(lst):
 
 
 def ensure_unicode(stuff, encoding='utf8', encoding2='latin-1'):
-    if not isinstance(stuff, (str, np.string_)):
+    if not isinstance(stuff, (bytes, np.string_)):
         return stuff
     else:
         string = stuff

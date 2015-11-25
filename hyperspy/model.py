@@ -322,10 +322,9 @@ class Model(list):
         class_name = str(self.__class__).split("'")[1].split('.')[-1]
 
         if len(title):
-            return "<%s, title: %s>".encode(
-                'utf8') % (class_name, self.spectrum.metadata.General.title)
+            return "<%s, title: %s>" % (class_name, self.spectrum.metadata.General.title)
         else:
-            return "<%s>".encode('utf8') % class_name
+            return "<%s>" % class_name
 
     def _get_component(self, thing):
         if isinstance(thing, int) or isinstance(thing, str):
@@ -413,9 +412,12 @@ class Model(list):
             self.append(object)
 
     def __delitem__(self, thing):
-        thing = self.__getitem__(thing)
-        thing.model = None
-        list.__delitem__(self, self.index(thing))
+        things = self.__getitem__(thing)
+        if not isinstance(things, list):
+            things = [things,]
+        for thing in things:
+            thing.model = None
+            list.__delitem__(self, self.index(thing))
         self._touch()
 
     def remove(self, thing, touch=True):

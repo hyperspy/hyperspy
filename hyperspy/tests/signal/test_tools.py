@@ -339,7 +339,7 @@ class Test4D:
 
 def test_signal_iterator():
     s = Signal(np.arange(3).reshape((3, 1)))
-    nt.assert_equal(s.next().data[0], 0)
+    nt.assert_equal(next(s).data[0], 0)
     # If the following fails it can be because the iteration index was not
     # restarted
     for i, signal in enumerate(s):

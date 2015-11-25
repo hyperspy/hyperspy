@@ -23,7 +23,6 @@ import datetime
 import h5py
 import numpy as np
 from traits.api import Undefined
-
 from hyperspy.misc.utils import ensure_unicode
 from hyperspy.axes import AxesManager
 
@@ -83,6 +82,8 @@ default_version = StrictVersion(version)
 def get_hspy_format_version(f):
     if "file_format_version" in f.attrs:
         version = f.attrs["file_format_version"]
+        if isinstance(version, bytes):
+            version = version.decode()
         if isinstance(version, float):
             version = str(round(version, 2))
     elif "Experiments" in f:
@@ -355,20 +356,14 @@ def dict2hdfgroup(dictionary, group, compression=None):
                                  compression=compression)
         elif value is None:
             group.attrs[key] = '_None_'
-        elif isinstance(value, str):
+        elif isinstance(value, bytes):
             try:
-                # binary string if has any null characters (otherwise not
-                # supported by hdf5)
-                _ = value.index('\x00')
+                _ = value.index(b'\x00')
                 group.attrs['_bs_' + key] = np.void(value)
             except ValueError:
-                try:
-                    # Store strings as unicode using the default encoding
-                    group.attrs[key] = str(value)
-                except UnicodeEncodeError:
-                    pass
-                except UnicodeDecodeError:
-                    group.attrs['_bs_' + key] = np.void(value)  # binary string
+                group.attrs[key] = value.decode()
+        elif isinstance(value, str):
+            group.attrs[key] = value
         elif isinstance(value, AxesManager):
             dict2hdfgroup(value.as_dictionary(),
                           group.create_group('_hspy_AxesManager_' + key),
@@ -401,6 +396,8 @@ def hdfgroup2dict(group, dictionary=None, load_to_memory=True):
     if dictionary is None:
         dictionary = {}
     for key, value in group.attrs.items():
+        if isinstance(value, bytes):
+            value = value.decode()
         if isinstance(value, (np.string_, str)):
             if value == '_None_':
                 value = None

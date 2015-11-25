@@ -130,6 +130,8 @@ def export_to_dictionary(target, whitelist, dic, fullcopy=True):
                 if dill_avail:
                     value = (True, dill.dumps(value))
                 else:
+# Apparently this fails because Python does not guarantee backwards-compatibility for marshal, and pickle does
+# not work for our lambda functions. Hence drop marshal support and only work with dill package
                     value = (False, marshal.dumps(value.__code__))
             else:
                 value = (None, value)

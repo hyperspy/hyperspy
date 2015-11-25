@@ -23,7 +23,7 @@ class TestImage:
               [14.15585247, 14.7337787, 15.31170493]]])))
 
     def test_constant_sigma_navdim0(self):
-        im = self.im[0]
+        im = self.im.inav[0]
         im.map(gaussian_filter, sigma=1, show_progressbar=None)
         nose.tools.assert_true(np.allclose(im.data, np.array(
             [[1.68829507, 2.2662213, 2.84414753],
@@ -32,7 +32,10 @@ class TestImage:
 
     def test_variable_sigma(self):
         im = self.im
-        sigmas = hs.signals.Signal(np.array([0, 1]))
+# Here sigmas have to be floats because the fix for https://github.com/numpy/numpy/issues/2951 has not
+# propagated yet to the conda environments
+        sigmas = hs.signals.Signal(np.array([0., 1.]))
+        
         sigmas.axes_manager.set_signal_dimension(0)
         im.map(gaussian_filter,
                sigma=sigmas, show_progressbar=None)

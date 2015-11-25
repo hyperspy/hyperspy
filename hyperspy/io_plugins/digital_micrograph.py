@@ -336,7 +336,7 @@ class DigitalMicrographReader(object):
                     'size_bytes': size_bytes,
                     'offset': offset,
                     'endian': self.endian, }
-        data = ''
+        data = b''
         if self.endian == 'little':
             s = L_char
         elif self.endian == 'big':
