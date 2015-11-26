@@ -318,8 +318,8 @@ def dict2hdfgroup(dictionary, group, compression=None):
         except ValueError:
             tmp = np.array([[0]])
         if tmp.dtype is np.dtype('O') or tmp.ndim is not 1:
-            dict2hdfgroup(dict(list(zip(
-                [str(i) for i in range(len(value))], value))),
+            dict2hdfgroup(dict(zip(
+                [str(i) for i in range(len(value))], value)),
                 group.create_group(_type + str(len(value)) + '_' + key),
                 compression=compression)
         elif tmp.dtype.type is np.unicode_:
