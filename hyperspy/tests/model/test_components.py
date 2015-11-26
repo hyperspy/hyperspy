@@ -2,7 +2,7 @@ import numpy as np
 import nose.tools as nt
 
 import hyperspy.api as hs
-from hyperspy.model import Model
+from hyperspy.model import Model1D
 
 
 class TestPowerLaw:
@@ -147,7 +147,7 @@ class TestPolynomial:
     def test_2d_signal(self):
         # This code should run smoothly, any exceptions should trigger failure
         s = self.m_2d.as_signal(show_progressbar=None)
-        model = Model(s)
+        model = Model1D(s)
         p = hs.model.components.Polynomial(order=2)
         model.append(p)
         p.estimate_parameters(s, 0, 100, only_current=False)
@@ -157,7 +157,7 @@ class TestPolynomial:
     def test_3d_signal(self):
         # This code should run smoothly, any exceptions should trigger failure
         s = self.m_3d.as_signal(show_progressbar=None)
-        model = Model(s)
+        model = Model1D(s)
         p = hs.model.components.Polynomial(order=2)
         model.append(p)
         p.estimate_parameters(s, 0, 100, only_current=False)

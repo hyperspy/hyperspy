@@ -573,6 +573,6 @@ class TestCreateModel:
         self.s = hs.signals.Spectrum(np.asarray([0, ]))
 
     def test_create_model(self):
-        from hyperspy.model import Model
+        from hyperspy.model import Model1D
         nose.tools.assert_is_instance(
-            self.s.create_model(), Model)
+            self.s.create_model(), Model1D)
