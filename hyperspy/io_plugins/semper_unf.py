@@ -72,10 +72,18 @@
 #  57-99   all free/zero except for use by DATA cmd
 # 101-256  title (ic chars)
 
+try:
+    from collections import OrderedDict
+    ordict = True
+except ImportError:  # happens with Python < 2.7
+    ordict = False
 
 from time import strftime
 import numpy as np
+from traits.api import Undefined
 import struct
+
+from hyperspy.misc.array_tools import sarray2dict
 
 import logging
 
@@ -112,35 +120,15 @@ class SemperFormat(object):
         Grid spacing (nm per pixel) in x, y, z.
     units : tuple (N=3) of strings
         Units of the grid in x, y, z.
-    date : string
-        The date of file construction.
-    iclass : int
-        Defines the image class defined in `ICLASS_DICT`. Normally `image` (1) is chosen.
-    iform : int
-        Defines the data format defined in 'IFORM_DICT'.
-    iversn :
-        Current `.unf`-format version. Current: 2.
-    ilabel : int
-        Defines if a label is present (1) or not (0).
-    iformat : int
-        Defines if the file is formatted (1) or not (0).
-    iwp : int
-        Write protect flag, determining if picture is (1) or is not (0) write-projtected.
-    ipltyp : int
-        Position type list. Standard seems to be 0 (picture not a position list).
-    iccoln : int
-        Column number of picture origin.
-    icrown : int
-        Row number of picture origin.
-    iclayn : int
-        Layer number of picture origin.
+    metadata : dictionary
+        A dictionary of all flags and metadata present in the `.unf`-file.
 
     """
 
     _log = logging.getLogger(__name__)
 
     ICLASS_DICT = {1: 'image', 2: 'macro', 3: 'fourier', 4: 'spectrum',
-                   5: 'correlation', 6: 'undefined', 7: 'walsh', 8: 'position list',
+                   5: 'correlation', 6: Undefined, 7: 'walsh', 8: 'position list',
                    9: 'histogram', 10: 'display look-up table'}
 
     ICLASS_DICT_INV = {v: k for k, v in ICLASS_DICT.iteritems()}
@@ -149,25 +137,191 @@ class SemperFormat(object):
 
     IFORM_DICT_INV = {v: k for k, v in IFORM_DICT.iteritems()}
 
-    def __init__(self, arg_dict):
+    HEADER_DTYPES = [('NCOL', '<i2'),
+                     ('NROW', '<i2'),
+                     ('NLAY', '<i2'),
+                     ('ICLASS', '<i2'),
+                     ('IFORM', '<i2'),
+                     ('IFLAG', '<i2'),
+                     ('IFORM', '<i2')]
+
+    LABEL_DTYPES = [('SEMPER', ('<i2', 6)),   # Bytes 1-6
+                    ('NCOL', ('<i2', 2)),     # Bytes 7,8
+                    ('NROW', ('<i2', 2)),     # Bytes 9,10
+                    ('NLAY', ('<i2', 2)),     # Bytes 11,12
+                    ('ICCOLN', ('<i2', 2)),   # Bytes 13,14
+                    ('ICROWN', ('<i2', 2)),   # Bytes 15,16
+                    ('ICLAYN', ('<i2', 2)),   # Bytes 17,18
+                    ('ICLASS', '<i2'),        # Bytes 19
+                    ('IFORM', '<i2'),         # Bytes 20
+                    ('IWP', '<i2'),           # Bytes 21
+                    ('DATE', ('<i2', 6)),     # Bytes 22-27
+                    ('NCRANG', '<i2'),        # Bytes 28
+                    ('RANGE', ('<i2', 27)),   # Bytes 29-55
+                    ('IPLTYP', '<i2'),        # Bytes 56
+                    ('NCOLH', '<i2'),         # Bytes 57
+                    ('NROWH', '<i2'),         # Bytes 58
+                    ('NLAYH', '<i2'),         # Bytes 59
+                    ('ICCOLNH', '<i2'),       # Bytes 60
+                    ('ICROWNH', '<i2'),       # Bytes 61
+                    ('ICLAYNH', '<i2'),       # Bytes 62
+                    ('REALCO', '<i2'),        # Bytes 63
+                    ('NBLOCK', '<i2'),        # Bytes 64
+                    ('FREE', ('<i2', 3)),     # Bytes 65-67
+                    ('DATAV6', ('<i2', 4)),   # Bytes 68-71
+                    ('DATAV7', ('<i2', 4)),   # Bytes 72-75
+                    ('DZV5', ('<i2', 4)),     # Bytes 76-79
+                    ('Z0V4', ('<i2', 4)),     # Bytes 80-83
+                    ('DYV3', ('<i2', 4)),     # Bytes 84-87
+                    ('Y0V2', ('<i2', 4)),     # Bytes 88-91
+                    ('DXV1', ('<i2', 4)),     # Bytes 92-95
+                    ('X0V0', ('<i2', 4)),     # Bytes 96-99
+                    ('NTITLE', '<i2'),        # Bytes 100
+                    ('TITLE', ('<i2', 144)),  # Bytes 101-244
+                    ('XUNIT', ('<i2', 4)),    # Bytes 245-248
+                    ('YUNIT', ('<i2', 4)),    # Bytes 249-252
+                    ('ZUNIT', ('<i2', 4))]    # Bytes 253-256
+
+    def __init__(self, data, title=Undefined, offsets=(0., 0., 0.), scales=(1., 1., 1.),
+                 units=(Undefined, Undefined, Undefined), metadata=None):
         self._log.debug('Calling __init__')
-        self.data = arg_dict['data']
-        self.title = arg_dict['title']
-        self.offsets = arg_dict['offsets']
-        self.scales = arg_dict['scales']
-        self.units = arg_dict['units']
-        self.date = arg_dict['date']
-        self.iclass = arg_dict['ICLASS']
-        self.iform = arg_dict['IFORM']
-        self.iversn = arg_dict['IVERSN']
-        self.ilabel = arg_dict['ILABEL']
-        self.iformat = arg_dict['IFORMAT']
-        self.iwp = arg_dict['IWP']
-        self.ipltyp = arg_dict['IPLTYP']
-        self.iccoln = arg_dict['ICCOLN']
-        self.icrown = arg_dict['ICROWN']
-        self.iclayn = arg_dict['ICLAYN']
+        if metadata is None:
+            metadata = {}
+        for i in range(3 - len(data.shape)):  # Make sure data is 3D!
+            data = np.expand_dims(data, axis=0)
+        self.data = data
+        self.title = title
+        self.offsets = offsets
+        self.scales = scales
+        self.units = units
+        self.metadata = metadata
         self._log.debug('Created '+str(self))
+
+    @classmethod
+    def _read_label(cls, unf_file):
+        rec_length = np.fromfile(unf_file, dtype='<i4', count=1)[0]  # length of label
+        label = sarray2dict(np.fromfile(unf_file, dtype=cls.LABEL_DTYPES, count=1))
+        label.update({'SEMPER': ''.join([str(unichr(l)) for l in label['SEMPER']])})
+        assert label['SEMPER'] == 'Semper'
+        # Process dimensions:
+        for key in ['NCOL', 'NROW', 'NLAY', 'ICCOLN', 'ICROWN', 'ICLAYN']:
+            value = 256**2*label.pop(key+'H') + 256*label[key][0] + label[key][1]
+            label.update({key: value})
+        # Process date:
+        date = '{}-{}-{} {}:{}:{}'.format(label['DATE'][0]+1900, *label['DATE'][1:])
+        label.update({'DATE': date})
+        # Process range:
+        if label['NCRANG'] == 255:
+            range_min = struct.unpack('<f', ''.join([chr(x) for x in label['RANGE'][:4]]))[0]
+            range_max = struct.unpack('<f', ''.join([chr(x) for x in label['RANGE'][4:8]]))[0]
+            range_string = '{:.6g},{:.6g}'.format(range_min, range_max)
+        else:
+            range_string = ''.join([str(unichr(l)) for l in label['RANGE'][:label['NCRANG']]])
+        label.update({'RANGE': range_string})
+        # Process real coords:
+        x0 = struct.unpack('<f', ''.join([chr(x) for x in label.pop('X0V0')]))[0]
+        dx = struct.unpack('<f', ''.join([chr(x) for x in label.pop('DXV1')]))[0]
+        y0 = struct.unpack('<f', ''.join([chr(x) for x in label.pop('Y0V2')]))[0]
+        dy = struct.unpack('<f', ''.join([chr(x) for x in label.pop('DYV3')]))[0]
+        z0 = struct.unpack('<f', ''.join([chr(x) for x in label.pop('Z0V4')]))[0]
+        dz = struct.unpack('<f', ''.join([chr(x) for x in label.pop('DZV5')]))[0]
+        if label['REALCO'] == 1:
+            label.update({'X0V0': x0})
+            label.update({'DXV1': dx})
+            label.update({'Y0V2': y0})
+            label.update({'DYV3': dy})
+            label.update({'Z0V4': z0})
+            label.update({'DZV5': dz})
+        # Process additional commands (unused, not sure about the purpose):
+        data_v6 = struct.unpack('<f', ''.join([chr(x) for x in label['DATAV6']]))[0]
+        data_v7 = struct.unpack('<f', ''.join([chr(x) for x in label['DATAV7']]))[0]
+        label.update({'DATAV6': data_v6})
+        label.update({'DATAV7': data_v7})
+        # Process title:
+        title = ''.join([str(unichr(l)) for l in label['TITLE'][:label['NTITLE']]])
+        label.update({'TITLE': title})
+        # Process units:
+        label.update({'XUNIT': ''.join([chr(l) for l in label['XUNIT']]).replace('\x00', '')})
+        label.update({'YUNIT': ''.join([chr(l) for l in label['YUNIT']]).replace('\x00', '')})
+        label.update({'ZUNIT': ''.join([chr(l) for l in label['ZUNIT']]).replace('\x00', '')})
+        # Sanity check:
+        assert np.fromfile(unf_file, dtype='<i4', count=1)[0] == rec_length
+        # Return label:
+        return label
+
+    def _get_label(self):
+        nlay, nrow, ncol = self.data.shape
+        data, iform = self._check_format(self.data)
+        title = self.title if self.title is not Undefined else ''
+        # Create label:
+        label = np.zeros((1,), dtype=self.LABEL_DTYPES)
+        # Fill label:
+        label['SEMPER'] = [ord(c) for c in 'Semper']
+        label['NCOLH'], remain = divmod(ncol, 256**2)
+        label['NCOL'] = divmod(remain, 256)
+        label['NROWH'], remain = divmod(nrow, 256**2)
+        label['NROW'] = divmod(remain, 256)
+        label['NLAYH'], remain = divmod(nlay, 256**2)
+        label['NLAY'] = divmod(remain, 256)
+        iccoln = self.metadata.get('ICCOLN', self.data.shape[2]//2+1)
+        label['ICCOLNH'], remain = divmod(iccoln, 256**2)
+        label['ICCOLN'] = divmod(remain, 256)
+        icrown = self.metadata.get('ICROWN', self.data.shape[1]//2+1)
+        label['ICROWNH'], remain = divmod(icrown, 256**2)
+        label['ICROWN'] = divmod(remain, 256)
+        iclayn = self.metadata.get('ICLAYN', self.data.shape[0]//2+1)
+        label['ICLAYNH'], remain = divmod(iclayn, 256**2)
+        label['ICLAYN'] = divmod(remain, 256)
+        label['ICLASS'] = self.metadata.get('ICLASS', 6)  # 6: Undefined!
+        label['IFORM'] = iform
+        label['IWP'] = self.metadata.get('IWP', 0)  # seems standard
+        date = self.metadata.get('DATE', strftime('%Y-%m-%d %H:%M:%S'))
+        year, time = date.split(' ')
+        date_ints = map(int, year.split('-')) + map(int, time.split(':'))
+        date_ints[0] -= 1900  # Modify year integer!
+        label['DATE'] = date_ints
+        range_string = '{:.4g},{:.4g}'.format(self.data.min(), self.data.max())
+        label['NCRANG'] = len(range_string)
+        label['RANGE'][:, :len(range_string)] = [ord(c) for c in range_string]
+        label['IPLTYP'] = self.metadata.get('IPLTYP', 248)  # seems standard
+        label['REALCO'] = 1  # Real coordinates are used!
+        label['NBLOCK'] = 4  # Always 4 64b blocks!
+        label['FREE'] = [0, 0, 0]
+        label['DATAV6'] = [ord(c) for c in struct.pack('<f4', 0.)]  # Not used!
+        label['DATAV7'] = [ord(c) for c in struct.pack('<f4', 0.)]  # Not used!
+        label['DZV5'] = [ord(c) for c in struct.pack('<f4', self.scales[2])]  # DZ
+        label['Z0V4'] = [ord(c) for c in struct.pack('<f4', self.offsets[2])]  # Z0
+        label['DYV3'] = [ord(c) for c in struct.pack('<f4', self.scales[1])]  # DY
+        label['Y0V2'] = [ord(c) for c in struct.pack('<f4', self.offsets[1])]  # Y0
+        label['DXV1'] = [ord(c) for c in struct.pack('<f4', self.scales[0])]  # DX
+        label['X0V0'] = [ord(c) for c in struct.pack('<f4', self.offsets[0])]  # X0
+        label['NTITLE'] = len(title)
+        label['TITLE'][:, :len(title)] = [ord(s) for s in title]
+        xunit = self.units[0] if self.units[0] is not Undefined else ''
+        label['XUNIT'][:, :len(xunit)] = [ord(c) for c in xunit]
+        yunit = self.units[0] if self.units[0] is not Undefined else ''
+        label['YUNIT'][:, :len(yunit)] = [ord(c) for c in yunit]
+        zunit = self.units[0] if self.units[0] is not Undefined else ''
+        label['ZUNIT'][:, :len(zunit)] = [ord(c) for c in zunit]
+        return label
+
+    @classmethod
+    def _check_format(cls, data):
+        if data.dtype.name == 'int8':
+            iform = 0  # byte
+        elif data.dtype.name == 'int16':
+            iform = 1  # int16
+        elif 'float' in data.dtype.name and data.dtype.itemsize <= 4:
+            data = data.astype(np.float32)
+            iform = 2  # float (4 byte or less)
+        elif 'complex' in data.dtype.name and data.dtype.itemsize <= 8:
+            data = data.astype(np.complex64)
+            iform = 3  # complex (8 byte or less)
+        elif data.dtype.name == 'int32':
+            iform = 4  # int32
+        else:
+            raise TypeError('Data type not understood ({}))!'.format(data.dtype.name))
+        return data, iform
 
     @classmethod
     def load_from_unf(cls, filename):
@@ -184,91 +338,59 @@ class SemperFormat(object):
             Semper file format object containing the loaded information.
 
         """
-        cls._log.debug('Calling from_file')
+        cls._log.debug('Calling load_from_file')
+        if ordict:
+            metadata = OrderedDict()
+        else:
+            cls._log.warning('OrderedDict is not available, using a standard dictionary.\n')
+            metadata = {}
         with open(filename, 'rb') as f:
             # Read header:
-            rec_length = np.frombuffer(f.read(4), dtype=np.int32)[0]  # length of header
-            header = np.frombuffer(f.read(rec_length), dtype=np.int16)
-            ncol, nrow, nlay = header[:3]
-            iclass = header[3]
-            iform = header[4]
-            data_format = cls.IFORM_DICT[iform]
-            iflag = header[5]
-            iversn, remain = divmod(iflag, 10000)
+            rec_length = np.fromfile(f, dtype='<i4', count=1)[0]  # length of header
+            header = np.fromfile(f, dtype=cls.HEADER_DTYPES[:rec_length//2], count=1)
+            metadata.update(sarray2dict(header))
+            assert np.frombuffer(f.read(4), dtype=np.int32)[0] == rec_length, \
+                'Error while reading the header (length is not correct)!'
+            data_format = cls.IFORM_DICT[metadata['IFORM']]
+            iversn, remain = divmod(metadata['IFLAG'], 10000)
             ilabel, ntitle = divmod(remain, 1000)
-            iformat = header[6] if len(header) == 7 else None
-            assert np.frombuffer(f.read(4), dtype=np.int32)[0] == rec_length
+            metadata.update({'IVERSN': iversn, 'ILABEL': ilabel, 'NTITLE': ntitle})
             # Read title:
-            title = ''
+            title = Undefined
             if ntitle > 0:
-                assert np.frombuffer(f.read(4), dtype=np.int32)[0] == ntitle  # length of title
-                title_bytes = np.frombuffer(f.read(ntitle), dtype=np.byte)
-                title = ''.join(map(chr, title_bytes))
-                assert np.frombuffer(f.read(4), dtype=np.int32)[0] == ntitle
-            # Read label:
-            iwp, date, range_string, ipltyp = [None] * 4  # Initialization!
-            iccoln, icrown, iclayn = [None] * 3
-            x0, y0, z0 = 0., 0., 0.
-            dx, dy, dz = 1., 1., 1.
-            ux, uy, uz = '', '', ''
+                assert np.fromfile(f, dtype='<i4', count=1)[0] == ntitle  # length of title
+                title = ''.join(np.fromfile(f, dtype='c', count=ntitle))
+                metadata.update({'TITLE': title})
+                assert np.fromfile(f, dtype='<i4', count=1)[0] == ntitle
             if ilabel:
-                rec_length = np.frombuffer(f.read(4), dtype=np.int32)[0]  # length of label
-                label = np.frombuffer(f.read(512), dtype=np.int16)
-                assert ''.join([chr(l) for l in label[:6]]) == 'Semper'
-                assert struct.unpack('>h', ''.join([chr(x) for x in label[6:8]]))[0] == ncol
-                assert struct.unpack('>h', ''.join([chr(x) for x in label[8:10]]))[0] == nrow
-                assert struct.unpack('>h', ''.join([chr(x) for x in label[10:12]]))[0] == nlay
-                iccoln = struct.unpack('>h', ''.join([chr(x) for x in label[12:14]]))[0]
-                icrown = struct.unpack('>h', ''.join([chr(x) for x in label[14:16]]))[0]
-                iclayn = struct.unpack('>h', ''.join([chr(x) for x in label[16:18]]))[0]
-                assert label[18] == iclass
-                assert label[19] == iform
-                iwp = label[20]
-                date = '{}-{}-{} {}:{}:{}'.format(label[21]+1900, *label[22:27])
-                # No test for ncrang, range is extracted from data itself (also prone to errors)!
-                ipltyp = label[55]  # position list type
-                real_coords = label[62]
-                dz, dy, dx, z0, y0, x0 = [1., 1., 1., 0., 0., 0.]
-                if real_coords:
-                    dz = struct.unpack('<f', ''.join([chr(x) for x in label[75:79]]))[0]
-                    z0 = struct.unpack('<f', ''.join([chr(x) for x in label[79:83]]))[0]
-                    dy = struct.unpack('<f', ''.join([chr(x) for x in label[83:87]]))[0]
-                    y0 = struct.unpack('<f', ''.join([chr(x) for x in label[87:91]]))[0]
-                    dx = struct.unpack('<f', ''.join([chr(x) for x in label[91:95]]))[0]
-                    x0 = struct.unpack('<f', ''.join([chr(x) for x in label[95:99]]))[0]
-                assert ''.join([str(unichr(l)) for l in label[100:100+ntitle]]) == title
-                ux = ''.join([chr(l) for l in label[244:248]]).replace('\x00', '')
-                uy = ''.join([chr(l) for l in label[248:252]]).replace('\x00', '')
-                uz = ''.join([chr(l) for l in label[252:256]]).replace('\x00', '')
-                assert np.frombuffer(f.read(4), dtype=np.int32)[0] == rec_length
+                try:
+                    metadata.update(cls._read_label(f))
+                except Exception as e:
+                    warning = 'Could not read label, trying to proceed without it!'
+                    warning += ' (Error message: {})'.format(str(e))
+                    cls._log.warning(warning)
             # Read picture data:
+            nlay, nrow, ncol = metadata['NLAY'], metadata['NROW'], metadata['NCOL']
             data = np.empty((nlay, nrow, ncol), dtype=data_format)
             for k in range(nlay):
                 for j in range(nrow):
-                    rec_length = np.frombuffer(f.read(4), dtype=np.int32)[0]  # length of row
+                    rec_length = np.fromfile(f, dtype='<i4', count=1)[0]  # length of row
+                    row = np.fromfile(f, dtype=data_format, count=ncol)
                     # [:ncol] is used because Semper always writes an even number of bytes which
                     # is a problem when reading in single bytes (IFORM = 0, np.byte). If ncol is
                     # odd, an empty byte (0) is added which has to be skipped during read in:
-                    row = np.frombuffer(f.read(rec_length), dtype=data_format)[:ncol]
-                    data[k, j, :] = row
-                    assert np.frombuffer(f.read(4), dtype=np.int32)[0] == rec_length
-        arg_dict = {'data': data,
-                    'title': title,
-                    'offsets': (x0, y0, z0),
-                    'scales': (dx, dy, dz),
-                    'units': (ux, uy, uz),
-                    'date': date,
-                    'ICLASS': iclass,
-                    'IFORM': iform,
-                    'IVERSN': iversn,
-                    'ILABEL': ilabel,
-                    'IFORMAT': iformat,
-                    'IWP': iwp,
-                    'IPLTYP': ipltyp,
-                    'ICCOLN': iccoln,
-                    'ICROWN': icrown,
-                    'ICLAYN': iclayn}
-        return cls(arg_dict)
+                    data[k, j, :] = row[:ncol]
+                    assert np.fromfile(f, dtype='<i4', count=1)[0] == rec_length
+        offsets = (metadata.get('X0V0', 0.),
+                   metadata.get('Y0V2', 0.),
+                   metadata.get('Z0V4', 0.))
+        scales = (metadata.get('DXV1', 1.),
+                  metadata.get('DYV3', 1.),
+                  metadata.get('DZV5', 1.))
+        units = (metadata.get('XUNIT', Undefined),
+                 metadata.get('YUNIT', Undefined),
+                 metadata.get('ZUNIT', Undefined))
+        return cls(data, title, offsets, scales, units, metadata)
 
     def save_to_unf(self, filename='semper.unf', skip_header=False):
         """Save a :class:`~.SemperFormat` to a file.
@@ -288,87 +410,43 @@ class SemperFormat(object):
         """
         self._log.debug('Calling to_file')
         nlay, nrow, ncol = self.data.shape
+        data, iform = self._check_format(self.data)
+        title = self.title if self.title is not Undefined else ''
         with open(filename, 'wb') as f:
             if not skip_header:
                 # Create header:
-                header = []
-                header.extend(reversed(list(self.data.shape)))  # inverse order!
-                header.append(self.iclass)
-                header.append(self.iform)
-                header.append(self.iversn*10000 + self.ilabel*1000 + len(self.title))
-                if self.iformat is not None:
-                    header.append(self.iformat)
+                header = np.zeros((1,), dtype=self.HEADER_DTYPES[:-1])  # IFORMAT is not used!
+                # Fill header:
+                header['NCOL'] = self.data.shape[2]
+                header['NROW'] = self.data.shape[1]
+                header['NLAY'] = self.data.shape[0]
+                header['ICLASS'] = self.metadata.get('ICLASS', 6)  # 6: Undefined!
+                header['IFORM'] = iform
+                header['IFLAG'] = 2*10000 + 1000 + len(title)  # IVERSN: 2; ILABEL:1 (True)
                 # Write header:
-                f.write(struct.pack('I', 2*len(header)))  # record length, 4 byte format!
-                for element in header:
-                    f.write(struct.pack('h', element))  # 2 byte format!
-                f.write(struct.pack('I', 2*len(header)))  # record length!
+                f.write(struct.pack('<i4', 12))  # record length, 4 byte format!
+                f.write(header.tobytes())
+                f.write(struct.pack('<i4', 12))  # record length, 4 byte format!
                 # Write title:
-                if len(self.title) > 0:
-                    f.write(struct.pack('I', len(self.title)))  # record length, 4 byte format!
-                    f.write(self.title)
-                    f.write(struct.pack('I', len(self.title)))  # record length, 4 byte format!
+                if len(title) > 0:
+                    f.write(struct.pack('<i4', len(title)))  # record length, 4 byte format!
+                    f.write(title)
+                    f.write(struct.pack('<i4', len(title)))  # record length, 4 byte format!
                 # Create label:
-                if self.ilabel:
-                    label = np.zeros(256, dtype=np.int32)
-                    label[:6] = [ord(c) for c in 'Semper']
-                    label[6:8] = divmod(ncol, 256)
-                    label[8:10] = divmod(nrow, 256)
-                    label[10:12] = divmod(nlay, 256)
-                    label[12:14] = divmod(self.iccoln, 256)
-                    label[14:16] = divmod(self.icrown, 256)
-                    label[16:18] = divmod(self.iclayn, 256)
-                    label[18] = self.iclass
-                    label[19] = self.iform
-                    label[20] = self.iwp
-                    year, time = self.date.split(' ')
-                    label[21:24] = map(int, year.split('-'))
-                    label[21] -= 1900
-                    label[24:27] = map(int, time.split(':'))
-                    range_string = '{:.4g},{:.4g}'.format(self.data.min(), self.data.max())
-                    ncrang = len(range_string)
-                    label[27] = ncrang
-                    label[28:28+ncrang] = [ord(c) for c in range_string]
-                    label[55] = self.ipltyp
-                    label[62] = 1  # Use real coords!
-                    label[75:79] = [ord(c) for c in struct.pack('<f', self.scales[2])]  # DZ
-                    label[79:83] = [ord(c) for c in struct.pack('<f', self.offsets[2])]  # Z0
-                    label[83:87] = [ord(c) for c in struct.pack('<f', self.scales[1])]  # DY
-                    label[87:91] = [ord(c) for c in struct.pack('<f', self.offsets[1])]  # Y0
-                    label[91:95] = [ord(c) for c in struct.pack('<f', self.scales[0])]  # DX
-                    label[95:99] = [ord(c) for c in struct.pack('<f', self.offsets[0])]  # X0
-                    label[100:100+len(self.title)] = [ord(s) for s in self.title]
-                    label[244:248] = [ord(c) for c in self.units[0]] + [0]*(4-len(self.units[0]))
-                    label[248:252] = [ord(c) for c in self.units[1]] + [0]*(4-len(self.units[1]))
-                    label[252:256] = [ord(c) for c in self.units[2]] + [0]*(4-len(self.units[2]))
-                    # Write label:
-                    f.write(struct.pack('I', 2*256))  # record length, 4 byte format!
-                    for element in label:
-                        f.write(struct.pack('h', element))  # 2 byte format!
-                    f.write(struct.pack('I', 2*256))  # record length!
+                label = self._get_label()
+                # Write label:
+                f.write(struct.pack('<i4', 2*256))  # record length, 4 byte format!
+                f.write(label.tobytes())
+                f.write(struct.pack('<i4', 2*256))  # record length, 4 byte format!
             # Write picture data:
             for k in range(nlay):
                 for j in range(nrow):
                     row = self.data[k, j, :]
-                    record_length = np.dtype(self.iform).itemsize * ncol  # bytes per entry * ncol
-                    f.write(struct.pack('I', record_length))  # record length, 4 byte format!
-                    if self.iform == 0:  # byte:
-                        for element in row:
-                            f.write(struct.pack('b', element))  # 1 byte per data entry!
-                    elif self.iform == 1:  # int16:
-                        for element in row:
-                            f.write(struct.pack('h', element))  # 2 bytes per data entry!
-                    elif self.iform == 2:  # float32:
-                        for element in row:
-                            f.write(struct.pack('f', element))  # 4 bytes per data entry!
-                    elif self.iform == 3:  # complex:
-                        for element in row:
-                            f.write(struct.pack('f', element.real))  # 4 bytes per data entry!
-                            f.write(struct.pack('f', element.imag))  # 4 bytes per data entry!
-                    elif self.iform == 4:  # int32:
-                        for element in row:
-                            f.write(struct.pack('i', element))  # 4 bytes per data entry!
-                    f.write(struct.pack('I', record_length))  # record length, 4 byte format!
+                    # Record length = bytes per entry * ncol:
+                    record_length = np.dtype(self.IFORM_DICT[iform]).itemsize * ncol
+                    f.write(struct.pack('<i4', record_length))  # record length, 4 byte format!
+                    f.write(row.tobytes())
+                    f.write(struct.pack('<i4', record_length))  # record length, 4 byte format!
 
     @classmethod
     def from_signal(cls, signal):
@@ -386,46 +464,33 @@ class SemperFormat(object):
         """
         data = signal.data
         assert len(data.shape) <= 3, 'Only up to 3-dimensional datasets can be handled!'
-        scales, offsets, units = [1., 1., 1.], [0., 0., 0.], ['', '', '']
+        scales, offsets, units = [1.]*3, [0.]*3, [Undefined]*3  # Defaults!
         for i in range(len(data.shape)):
             scales[i] = signal.axes_manager[i].scale
             offsets[i] = signal.axes_manager[i].offset
             units[i] = signal.axes_manager[i].units
-            if str(units[i]) == '<undefined>':
-                units[i] = ''   # Traits can not be written!
         for i in range(3 - len(data.shape)):  # Make sure data is 3D!
             data = np.expand_dims(data, axis=0)
         iclass = cls.ICLASS_DICT_INV.get(signal.metadata.Signal.record_by, 6)  # 6: undefined
-        if data.dtype.name == 'int8':
-            iform = 0  # byte
-        elif 'int' in data.dtype.name:
-            data = data.astype(np.int32, casting='safe')
-            iform = 1  # int
-        elif 'float' in data.dtype.name:
-            data = data.astype(np.float32, casting='safe')
-            iform = 2  # float
-        elif 'complex' in data.dtype.name:
-            data = data.astype(np.complex64, casting='safe')
-            iform = 3  #
+        data, iform = cls._check_format(data)
+        title = signal.metadata.General.as_dictionary().get('title', Undefined)
+        if ordict:
+            metadata = OrderedDict()
         else:
-            raise TypeError('Data type not understood ({}))!'.format(data.dtype.name))
-        arg_dict = {'data': data,
-                    'title': signal.metadata.General.as_dictionary().get('title', 'HyperSpy'),
-                    'offsets': offsets,
-                    'scales': scales,
-                    'units': units,
-                    'date': strftime('%y-%m-%d %H:%M:%S'),
-                    'ICLASS': iclass,
-                    'IFORM': iform,
-                    'IVERSN': 2,  # current standard
-                    'ILABEL': 1,  # True
-                    'IFORMAT': None,  # not needed
-                    'IWP': 0,  # seems standard
-                    'IPLTYP': 248,  # seems standard
-                    'ICCOLN': data.shape[2]//2 + 1,
-                    'ICROWN': data.shape[1]//2 + 1,
-                    'ICLAYN': data.shape[0]//2 + 1}
-        return cls(arg_dict)
+            print("\nWARNING:")
+            print("OrderedDict is not available, using a standard dictionary.\n")
+            metadata = {}
+        metadata.update({'DATE': strftime('%Y-%m-%d %H:%M:%S'),
+                         'ICLASS': iclass,
+                         'IFORM': iform,
+                         'IVERSN': 2,  # Current standard
+                         'ILABEL': 1,  # True
+                         'IWP': 0,  # Seems standard
+                         'IPLTYP': 248,  # Seems standard
+                         'ICCOLN': data.shape[2]//2 + 1,
+                         'ICROWN': data.shape[1]//2 + 1,
+                         'ICLAYN': data.shape[0]//2 + 1})
+        return cls(data, title, offsets, scales, units, metadata)
 
     def to_signal(self):
         """Export a :class:`~.SemperFormat` object to a :class:`~hyperspy.signals.Signal` object.
@@ -442,29 +507,25 @@ class SemperFormat(object):
         """
         import hyperspy.api as hp
         data = np.squeeze(self.data)  # Reduce unneeded dimensions!
-        if self.ICLASS_DICT[self.iclass] == 'spectrum':
+        iclass = self.ICLASS_DICT.get(self.metadata.get('ICLASS'))
+        if iclass == 'spectrum':
             signal = hp.signals.Spectrum(data)
-        elif self.ICLASS_DICT[self.iclass] == 'image':
+        elif iclass == 'image':
             signal = hp.signals.Image(data)
-        else:
-            signal = hp.signals.Signal(data)
+        else:  # Class is not given, but can be determined by the data shape:
+            if len(data.shape) == 1:
+                signal = hp.signals.Spectrum(data)
+            elif len(data.shape) == 2:
+                signal = hp.signals.Image(data)
+            else:  # 3D data!
+                signal = hp.signals.Signal(data)
         for i in range(len(data.shape)):
             signal.axes_manager[i].name = {0: 'x', 1: 'y', 2: 'z'}[i]
             signal.axes_manager[i].scale = self.scales[i]
             signal.axes_manager[i].offset = self.offsets[i]
             signal.axes_manager[i].units = self.units[i]
         signal.metadata.General.title = self.title
-        signal.original_metadata.add_dictionary({'date': self.date,
-                                                 'ICLASS': self.iclass,
-                                                 'IFORM': self.iform,
-                                                 'IVERSN': self.iversn,
-                                                 'ILABEL': self.ilabel,
-                                                 'IFORMAT': self.iformat,
-                                                 'IWP': self.iwp,
-                                                 'IPLTYP': self.ipltyp,
-                                                 'ICCOLN': self.iccoln,
-                                                 'ICROWN': self.icrown,
-                                                 'ICLAYN': self.iclayn})
+        signal.original_metadata.add_dictionary(self.metadata)
         return signal
 
     def print_info(self):
@@ -482,23 +543,14 @@ class SemperFormat(object):
         self._log.debug('Calling print_info')
         print '\n------------------------------------------------------'
         print self.title
-        print self.date, '\n'
         print 'dimensions: x: {}, y: {}, z: {}'.format(*reversed(self.data.shape))
         print 'scaling:    x: {:.3g}, y: {:.3g}, z: {:.3g}'.format(*self.scales)
         print 'offsets:    x: {:.3g}, y: {:.3g}, z: {:.3g}'.format(*self.offsets)
         print 'units:      x: {}, y: {}, z: {}'.format(*self.units)
         print 'data range:', (self.data.min(), self.data.max()), '\n'
-        print 'ICLASS: ', self.ICLASS_DICT[self.iclass]
-        print 'IFORM : ', self.IFORM_DICT[self.iform]
-        print 'IVERSN: ', self.iversn
-        print 'ILABEL: ', self.ilabel == 1
-        if self.iformat is not None:
-            print 'IFORMAT:', self.iformat
-        if self.ilabel:
-            print 'IWP   : ', self.iwp
-            print 'ICCOLN: ', self.iccoln
-            print 'ICROWN: ', self.icrown
-            print 'ICLAYN: ', self.iclayn
+        print 'metadata:'
+        for k, v in self.metadata.iteritems():
+            print '    {}: {}'.format(k, v)
         print '------------------------------------------------------\n'
 
 
@@ -506,20 +558,7 @@ def file_reader(filename, print_info=False, **kwds):
     semper = SemperFormat.load_from_unf(filename)
     if print_info:
         semper.print_info()
-    signal = semper.to_signal()
-    axes = []
-    for i in range(len(signal.data.shape)):
-        axes.append({'size': signal.axes_manager[i].size,
-                     'index_in_array': signal.axes_manager[i].index_in_array,
-                     'name': signal.axes_manager[i].name,
-                     'scale': signal.axes_manager[i].scale,
-                     'offset': signal.axes_manager[i].offset,
-                     'units': signal.axes_manager[i].units})
-    dictionary = {'data': signal.data,
-                  'axes': axes,
-                  'metadata': signal.metadata.as_dictionary(),
-                  'original_metadata': signal.original_metadata.as_dictionary()}
-    return [dictionary]
+    return [semper.to_signal()._to_dictionary()]
 
 
 def file_writer(filename, signal, **kwds):
