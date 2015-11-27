@@ -52,6 +52,21 @@ class TestMultidimensionalActive:
         nt.assert_false(c.active)
 
 
+def test_update_number_free_parameters():
+    c = Component(['one', 'two', 'three'])
+    c.one.free = False
+    c.two.free = True
+    c.three.free = True
+    c.two._number_of_elements = 2
+    c.three._number_of_elements = 3
+    c._nfree_param = 0
+    c._update_free_parameters()
+    nt.assert_equal(c._nfree_param, 5)
+    # check that only the correct parameters are in the list _AND_ the list is
+    # name-ordered
+    nt.assert_equal([c.three, c.two], c.free_parameters)
+
+
 class TestGeneralMethods:
 
     def setUp(self):
@@ -97,13 +112,6 @@ class TestGeneralMethods:
         c.export(only_free=False, **call_args)
         nt.assert_dict_equal(c.one.export.call_args[1], call_args)
         nt.assert_false(c.two.export.called)
-
-    def test_update_number_free_parameters(self):
-        self.c._nfree_param = 0
-        self.c._update_free_parameters()
-        nt.assert_equal(self.c._nfree_param, 2)
-        nt.assert_in(self.c.two, self.c.free_parameters)
-        nt.assert_not_in(self.c.one, self.c.free_parameters)
 
     def test_update_number_parameters(self):
         self.c.nparam = 0
