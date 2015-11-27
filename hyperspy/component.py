@@ -466,8 +466,10 @@ class Parameter(t.HasTraits):
 
         s = Signal(data=self.map[field],
                    axes=self._axes_manager._get_navigation_axes_dicts())
-        if self.component.active_is_multidimensional:
+        if self.component is not None and \
+                self.component.active_is_multidimensional:
             s.data[np.logical_not(self.component._active_array)] = np.nan
+
         s.metadata.General.title = ("%s parameter" % self.name
                                     if self.component is None
                                     else "%s parameter of %s component" %
@@ -750,15 +752,9 @@ class Component(t.HasTraits):
         return text
 
     def _update_free_parameters(self):
-        self.free_parameters = set()
-        for parameter in self.parameters:
-            if parameter.free:
-                self.free_parameters.add(parameter)
-        # update_number_free_parameters(self):
-        i = 0
-        for parameter in self.free_parameters:
-            i += parameter._number_of_elements
-        self._nfree_param = i
+        self.free_parameters = {par for par in self.parameters if par.free}
+        self._nfree_param = sum([par._number_of_elements for par in
+                                 self.free_parameters])
 
     def update_number_parameters(self):
         i = 0
@@ -910,20 +906,18 @@ class Component(t.HasTraits):
         if axes_manager is not self.model.axes_manager:
             old_axes_manager = self.model.axes_manager
             self.model.axes_manager = axes_manager
-            self.charge()
         s = self.__call__()
         if not self.active:
             s.fill(np.nan)
         if self.model.spectrum.metadata.Signal.binned is True:
             s *= self.model.spectrum.axes_manager.signal_axes[0].scale
-        if old_axes_manager is not None:
-            self.model.axes_manager = old_axes_manager
-            self.charge()
         if out_of_range2nans is True:
             ns = np.empty(self.model.axis.axis.shape)
             ns.fill(np.nan)
             ns[self.model.channel_switches] = s
             s = ns
+        if old_axes_manager is not None:
+            self.model.axes_manager = old_axes_manager
         return s
 
     def set_parameters_free(self, parameter_name_list=None):
