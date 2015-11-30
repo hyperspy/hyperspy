@@ -19,8 +19,8 @@
 
 from hyperspy import messages
 from hyperspy.io_plugins import (msa, digital_micrograph, fei, mrc,
-                                 ripple, tiff)
-io_plugins = [msa, digital_micrograph, fei, mrc, ripple, tiff]
+                                 ripple, tiff, semper_unf)
+io_plugins = [msa, digital_micrograph, fei, mrc, ripple, tiff, semper_unf]
 try:
     from hyperspy.io_plugins import netcdf
     io_plugins.append(netcdf)
@@ -34,6 +34,8 @@ except ImportError:
 try:
     from hyperspy.io_plugins import hdf5
     io_plugins.append(hdf5)
+    from hyperspy.io_plugins import emd
+    io_plugins.append(emd)
 except ImportError:
     messages.warning('The HDF5 IO features are not available. '
                      'It is highly reccomended to install h5py')
