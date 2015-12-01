@@ -76,6 +76,10 @@ class Expression(Component):
         self.compile_function(module=module)
         # Initialise component
         Component.__init__(self, self._parameter_strings)
+        self._whitelist['expression'] = ('init', expression)
+        self._whitelist['name'] = ('init', name)
+        self._whitelist['position'] = ('init', position)
+        self._whitelist['module'] = ('init', module)
         self.name = name
         # Set the position parameter
         if position:

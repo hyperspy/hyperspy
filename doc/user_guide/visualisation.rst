@@ -749,7 +749,7 @@ signals must have the same dimensions. To plot two spectra at the same time:
   :width:   500
 
   The :py:func:`~.drawing.utils.plot_signals` plots several signals with
-  optinal syncronised navigation.
+  optional synchronized navigation.
 
 The navigator can be specified by using the navigator argument, where the
 different options are "auto", None, "spectrum", "slider" or Signal.
