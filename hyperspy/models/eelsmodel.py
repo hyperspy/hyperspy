@@ -40,7 +40,7 @@ def _give_me_idelta(master, slave):
 
 class EELSModel(Model):
 
-    """Build a fit a model
+    """Build an EELS model
 
     Parameters
     ----------
@@ -64,18 +64,26 @@ class EELSModel(Model):
         The GOS to use when auto adding core-loss EELS edges.
         If None it will use the Hartree-Slater GOS if
         they are available, otherwise it will use the hydrogenic GOS.
+    dictionary : {dict, None}
+        A dictionary to be used to recreate a model. Usually generated using
+        :meth:`hyperspy.model.as_dictionary`
 
     """
 
     def __init__(self, spectrum, auto_background=True,
                  auto_add_edges=True, ll=None,
-                 GOS=None):
+                 GOS=None, dictionary=None):
         Model.__init__(self, spectrum)
         self._suspend_auto_fine_structure_width = False
         self.convolved = False
         self.low_loss = ll
         self.GOS = GOS
         self.edges = list()
+        if dictionary is not None:
+            auto_background = False
+            auto_add_edges = False
+            self._load_dictionary(dictionary)
+
         if auto_background is True:
             interactive_ns = get_interactive_ns()
             background = PowerLaw()

@@ -56,6 +56,7 @@ class Arctan(Component):
         self.x0.grad = self.grad_x0
 
         self.minimum_at_zero = minimum_at_zero
+        self._whitelist['minimum_at_zero'] = ('init', minimum_at_zero)
 
         self.isbackground = False
         self.isconvolved = False

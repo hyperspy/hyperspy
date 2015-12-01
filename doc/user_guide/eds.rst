@@ -343,6 +343,24 @@ An elemental database is available with the energy of the X-ray lines.
 
 .. _eds_plot-label:
 
+Finding elements from energy
+----------------------------
+
+To find the nearest xray lines to a given energy, use the utility function
+:py:meth:`~.utils.eds.get_xray_lines_near_energy` to look up in the elemental
+database:
+
+.. code-block:: python
+
+    >>> s = hs.datasets.example_signals.EDS_SEM_Spectrum()
+    >>> P = s.find_peaks1D_ohaver(maxpeakn=1)[0]
+    >>> hs.eds.get_xray_lines_near_energy(P['position'], only_lines=['a', 'b'])
+    ['C_Ka', 'Ca_La', 'B_Ka']
+
+The lines are returned in order of closeness to the specified energy, and can
+be limited by additional, optional arguments.
+
+
 Plotting
 --------
 

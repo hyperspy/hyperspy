@@ -281,8 +281,8 @@ To enable this feature for a given component set the
 
     >>> s = hs.signals.Spectrum(np.arange(100).reshape(10,10))
     >>> m = s.create_model()
-    >>> g1 = hs.components.Gaussian()
-    >>> g2 = hs.components.Gaussian()
+    >>> g1 = hs.model.components.Gaussian()
+    >>> g2 = hs.model.components.Gaussian()
     >>> m.extend([g1,g2])
     >>> g1.active_is_multidimensional = True
     >>> g1._active_array
@@ -298,6 +298,29 @@ To enable this feature for a given component set the
     >>> g1.active_is_multidimensional = False
     >>> g1._active_array is None
     True
+
+
+Indexing model
+^^^^^^^^^^^^^^
+
+.. versionadded:: 0.9 model indexing
+
+Often it is useful to consider only part of the model - for example at
+a particular location (i.e. a slice in the navigation space) or energy range
+(i.e. a slice in the signal space). This can be done using exactly the same
+syntax that we use for signal indexing (:ref:`signal.indexing`).
+:py:attr:`~.model.red_chisq` and :py:attr:`~.model.dof` are automatically
+recomputed for the resulting slices. 
+
+.. code-block:: python
+
+    >>> s = hs.signals.Spectrum(np.arange(100).reshape(10,10))
+    >>> m = s.create_model()
+    >>> m.append(hs.model.components.Gaussian())
+    >>> # select first three navigation pixels and last five signal channels
+    >>> m1 = m.inav[:3].isig[-5:]
+    >>> m1.spectrum
+    <Spectrum, title: , dimensions: (3|5)>
 
 
 Getting and setting parameter values and attributes

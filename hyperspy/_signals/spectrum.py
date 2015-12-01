@@ -136,15 +136,19 @@ class Spectrum(Signal):
         sr.configure_traits()
         return sr
 
-    def create_model(self):
-        """Create a model for the current data.
+    def create_model(self, dictionary=None):
+        """Create a model for the current signal
+
+        Parameters
+        __________
+        dictionary : {None, dict}, optional
+            A dictionary to be used to recreate a model. Usually generated using
+            :meth:`hyperspy.model.as_dictionary`
 
         Returns
         -------
-        model : `Model` instance.
+        A Model class
 
         """
-
         from hyperspy.model import Model
-        model = Model(self)
-        return model
+        return Model(self, dictionary=dictionary)
