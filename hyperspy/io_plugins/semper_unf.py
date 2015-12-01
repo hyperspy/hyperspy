@@ -187,8 +187,7 @@ class SemperFormat(object):
         self._log.debug('Calling __init__')
         if metadata is None:
             metadata = {}
-        for i in range(3 - len(data.shape)):  # Make sure data is 3D!
-            data = np.expand_dims(data, axis=0)
+        data = data[tuple(None for _ in xrange(3-len(data.shape)))]  # Make sure data is 3D!
         self.data = data
         self.title = title
         self.offsets = offsets
@@ -469,16 +468,14 @@ class SemperFormat(object):
             scales[i] = signal.axes_manager[i].scale
             offsets[i] = signal.axes_manager[i].offset
             units[i] = signal.axes_manager[i].units
-        for i in range(3 - len(data.shape)):  # Make sure data is 3D!
-            data = np.expand_dims(data, axis=0)
+        data = data[tuple(None for _ in xrange(3-len(data.shape)))]  # Make sure data is 3D!
         iclass = cls.ICLASS_DICT_INV.get(signal.metadata.Signal.record_by, 6)  # 6: undefined
         data, iform = cls._check_format(data)
         title = signal.metadata.General.as_dictionary().get('title', Undefined)
         if ordict:
             metadata = OrderedDict()
         else:
-            print("\nWARNING:")
-            print("OrderedDict is not available, using a standard dictionary.\n")
+            cls._log.warning('OrderedDict is not available, using a standard dictionary!')
             metadata = {}
         metadata.update({'DATE': strftime('%Y-%m-%d %H:%M:%S'),
                          'ICLASS': iclass,
