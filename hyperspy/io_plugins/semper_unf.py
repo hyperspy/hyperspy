@@ -200,15 +200,15 @@ class SemperFormat(object):
     def _read_label(cls, unf_file):
         rec_length = np.fromfile(unf_file, dtype='<i4', count=1)[0]  # length of label
         label = sarray2dict(np.fromfile(unf_file, dtype=cls.LABEL_DTYPES, count=1))
-        label.update({'SEMPER': ''.join([str(unichr(l)) for l in label['SEMPER']])})
+        label['SEMPER'] = ''.join([str(unichr(l)) for l in label['SEMPER']])
         assert label['SEMPER'] == 'Semper'
         # Process dimensions:
         for key in ['NCOL', 'NROW', 'NLAY', 'ICCOLN', 'ICROWN', 'ICLAYN']:
             value = 256**2*label.pop(key+'H') + 256*label[key][0] + label[key][1]
-            label.update({key: value})
+            label[key] = value
         # Process date:
         date = '{}-{}-{} {}:{}:{}'.format(label['DATE'][0]+1900, *label['DATE'][1:])
-        label.update({'DATE': date})
+        label['DATE'] = date
         # Process range:
         if label['NCRANG'] == 255:
             range_min = struct.unpack('<f', ''.join([chr(x) for x in label['RANGE'][:4]]))[0]
@@ -216,7 +216,7 @@ class SemperFormat(object):
             range_string = '{:.6g},{:.6g}'.format(range_min, range_max)
         else:
             range_string = ''.join([str(unichr(l)) for l in label['RANGE'][:label['NCRANG']]])
-        label.update({'RANGE': range_string})
+        label['RANGE'] = range_string
         # Process real coords:
         x0 = struct.unpack('<f', ''.join([chr(x) for x in label.pop('X0V0')]))[0]
         dx = struct.unpack('<f', ''.join([chr(x) for x in label.pop('DXV1')]))[0]
@@ -225,24 +225,24 @@ class SemperFormat(object):
         z0 = struct.unpack('<f', ''.join([chr(x) for x in label.pop('Z0V4')]))[0]
         dz = struct.unpack('<f', ''.join([chr(x) for x in label.pop('DZV5')]))[0]
         if label['REALCO'] == 1:
-            label.update({'X0V0': x0})
-            label.update({'DXV1': dx})
-            label.update({'Y0V2': y0})
-            label.update({'DYV3': dy})
-            label.update({'Z0V4': z0})
-            label.update({'DZV5': dz})
+            label['X0V0'] = x0
+            label['DXV1'] = dx
+            label['Y0V2'] = y0
+            label['DYV3'] = dy
+            label['Z0V4'] = z0
+            label['DZV5'] = dz
         # Process additional commands (unused, not sure about the purpose):
         data_v6 = struct.unpack('<f', ''.join([chr(x) for x in label['DATAV6']]))[0]
         data_v7 = struct.unpack('<f', ''.join([chr(x) for x in label['DATAV7']]))[0]
-        label.update({'DATAV6': data_v6})
-        label.update({'DATAV7': data_v7})
+        label['DATAV6'] = data_v6
+        label['DATAV7'] = data_v7
         # Process title:
         title = ''.join([str(unichr(l)) for l in label['TITLE'][:label['NTITLE']]])
-        label.update({'TITLE': title})
+        label['TITLE'] = title
         # Process units:
-        label.update({'XUNIT': ''.join([chr(l) for l in label['XUNIT']]).replace('\x00', '')})
-        label.update({'YUNIT': ''.join([chr(l) for l in label['YUNIT']]).replace('\x00', '')})
-        label.update({'ZUNIT': ''.join([chr(l) for l in label['ZUNIT']]).replace('\x00', '')})
+        label['XUNIT'] = ''.join([chr(l) for l in label['XUNIT']]).replace('\x00', '')
+        label['YUNIT'] = ''.join([chr(l) for l in label['YUNIT']]).replace('\x00', '')
+        label['ZUNIT'] = ''.join([chr(l) for l in label['ZUNIT']]).replace('\x00', '')
         # Sanity check:
         assert np.fromfile(unf_file, dtype='<i4', count=1)[0] == rec_length
         # Return label:
@@ -359,7 +359,7 @@ class SemperFormat(object):
             if ntitle > 0:
                 assert np.fromfile(f, dtype='<i4', count=1)[0] == ntitle  # length of title
                 title = ''.join(np.fromfile(f, dtype='c', count=ntitle))
-                metadata.update({'TITLE': title})
+                metadata['TITLE'] = title
                 assert np.fromfile(f, dtype='<i4', count=1)[0] == ntitle
             if ilabel:
                 try:
