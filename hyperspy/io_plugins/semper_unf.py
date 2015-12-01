@@ -82,6 +82,7 @@ from time import strftime
 import numpy as np
 from traits.api import Undefined
 import struct
+from functools import partial
 
 from hyperspy.misc.array_tools import sarray2dict
 
@@ -198,6 +199,8 @@ class SemperFormat(object):
 
     @classmethod
     def _read_label(cls, unf_file):
+        cls._log.debug('Calling _read_label')
+        unpack = partial(unpack_from_intbytes, '<f4')  # Unpacking function for 4 byte floats!
         rec_length = np.fromfile(unf_file, dtype='<i4', count=1)[0]  # length of label
         label = sarray2dict(np.fromfile(unf_file, dtype=cls.LABEL_DTYPES, count=1))
         label['SEMPER'] = ''.join([str(unichr(l)) for l in label['SEMPER']])
@@ -211,29 +214,25 @@ class SemperFormat(object):
         label['DATE'] = date
         # Process range:
         if label['NCRANG'] == 255:
-            range_min = struct.unpack('<f', ''.join([chr(x) for x in label['RANGE'][:4]]))[0]
-            range_max = struct.unpack('<f', ''.join([chr(x) for x in label['RANGE'][4:8]]))[0]
+            range_min = unpack(label['RANGE'][:4])
+            range_max = unpack(label['RANGE'][4:8])
             range_string = '{:.6g},{:.6g}'.format(range_min, range_max)
         else:
             range_string = ''.join([str(unichr(l)) for l in label['RANGE'][:label['NCRANG']]])
         label['RANGE'] = range_string
         # Process real coords:
-        x0 = struct.unpack('<f', ''.join([chr(x) for x in label.pop('X0V0')]))[0]
-        dx = struct.unpack('<f', ''.join([chr(x) for x in label.pop('DXV1')]))[0]
-        y0 = struct.unpack('<f', ''.join([chr(x) for x in label.pop('Y0V2')]))[0]
-        dy = struct.unpack('<f', ''.join([chr(x) for x in label.pop('DYV3')]))[0]
-        z0 = struct.unpack('<f', ''.join([chr(x) for x in label.pop('Z0V4')]))[0]
-        dz = struct.unpack('<f', ''.join([chr(x) for x in label.pop('DZV5')]))[0]
+        x0 = unpack(label.pop('X0V0'))
+        dx = unpack(label.pop('DXV1'))
+        y0 = unpack(label.pop('Y0V2'))
+        dy = unpack(label.pop('DYV3'))
+        z0 = unpack(label.pop('Z0V4'))
+        dz = unpack(label.pop('DZV5'))
         if label['REALCO'] == 1:
-            label['X0V0'] = x0
-            label['DXV1'] = dx
-            label['Y0V2'] = y0
-            label['DYV3'] = dy
-            label['Z0V4'] = z0
-            label['DZV5'] = dz
+            label.update({'X0V0': x0, 'Y0V2': y0, 'Z0V4': z0,
+                          'DXV1': dx, 'DYV3': dy, 'DZV5': dz})
         # Process additional commands (unused, not sure about the purpose):
-        data_v6 = struct.unpack('<f', ''.join([chr(x) for x in label['DATAV6']]))[0]
-        data_v7 = struct.unpack('<f', ''.join([chr(x) for x in label['DATAV7']]))[0]
+        data_v6 = unpack(label['DATAV6'])
+        data_v7 = unpack(label['DATAV7'])
         label['DATAV6'] = data_v6
         label['DATAV7'] = data_v7
         # Process title:
@@ -249,6 +248,8 @@ class SemperFormat(object):
         return label
 
     def _get_label(self):
+        self._log.debug('Calling _get_label')
+        pack = partial(pack_to_intbytes, '<f4')  # Packing function for 4 byte floats!
         nlay, nrow, ncol = self.data.shape
         data, iform = self._check_format(self.data)
         title = self.title if self.title is not Undefined else ''
@@ -286,14 +287,14 @@ class SemperFormat(object):
         label['REALCO'] = 1  # Real coordinates are used!
         label['NBLOCK'] = 4  # Always 4 64b blocks!
         label['FREE'] = [0, 0, 0]
-        label['DATAV6'] = [ord(c) for c in struct.pack('<f4', 0.)]  # Not used!
-        label['DATAV7'] = [ord(c) for c in struct.pack('<f4', 0.)]  # Not used!
-        label['DZV5'] = [ord(c) for c in struct.pack('<f4', self.scales[2])]  # DZ
-        label['Z0V4'] = [ord(c) for c in struct.pack('<f4', self.offsets[2])]  # Z0
-        label['DYV3'] = [ord(c) for c in struct.pack('<f4', self.scales[1])]  # DY
-        label['Y0V2'] = [ord(c) for c in struct.pack('<f4', self.offsets[1])]  # Y0
-        label['DXV1'] = [ord(c) for c in struct.pack('<f4', self.scales[0])]  # DX
-        label['X0V0'] = [ord(c) for c in struct.pack('<f4', self.offsets[0])]  # X0
+        label['DATAV6'] = pack(0.)  # Not used!
+        label['DATAV7'] = pack(0.)  # Not used!
+        label['DZV5'] = pack(self.scales[2])   # DZ
+        label['Z0V4'] = pack(self.offsets[2])  # Z0
+        label['DYV3'] = pack(self.scales[1])   # DY
+        label['Y0V2'] = pack(self.offsets[1])  # Y0
+        label['DXV1'] = pack(self.scales[0])   # DX
+        label['X0V0'] = pack(self.offsets[0])  # X0
         label['NTITLE'] = len(title)
         label['TITLE'][:, :len(title)] = [ord(s) for s in title]
         xunit = self.units[0] if self.units[0] is not Undefined else ''
@@ -306,6 +307,7 @@ class SemperFormat(object):
 
     @classmethod
     def _check_format(cls, data):
+        cls._log.debug('Calling _check_format')
         if data.dtype.name == 'int8':
             iform = 0  # byte
         elif data.dtype.name == 'int16':
@@ -379,7 +381,8 @@ class SemperFormat(object):
                     # is a problem when reading in single bytes (IFORM = 0, np.byte). If ncol is
                     # odd, an empty byte (0) is added which has to be skipped during read in:
                     data[k, j, :] = row[:ncol]
-                    assert np.fromfile(f, dtype='<i4', count=1)[0] == rec_length
+                    test = np.fromfile(f, dtype='<i4', count=1)[0]
+                    assert test == rec_length
         offsets = (metadata.get('X0V0', 0.),
                    metadata.get('Y0V2', 0.),
                    metadata.get('Z0V4', 0.))
@@ -549,6 +552,16 @@ class SemperFormat(object):
         for k, v in self.metadata.iteritems():
             print '    {}: {}'.format(k, v)
         print '------------------------------------------------------\n'
+
+
+def unpack_from_intbytes(fmt, byte_list):
+    """Read in a list of bytes (as int with range 0-255) and unpack them with format `fmt`."""
+    return struct.unpack(fmt, ''.join(map(chr, byte_list)))[0]
+
+
+def pack_to_intbytes(fmt, value):
+    """Pack a `value` into a byte list using format `fmt` and represent it as int (range 0-255)."""
+    return [ord(c) for c in struct.pack(fmt, value)]
 
 
 def file_reader(filename, print_info=False, **kwds):
