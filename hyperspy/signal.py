@@ -1010,8 +1010,8 @@ class Signal1DTools(object):
     def _remove_background_cli(
             self, signal_range, background_estimator, estimate_background=True,
             show_progressbar=None):
-        from hyperspy.model import Model
-        model = Model(self)
+        from hyperspy.model import Model1D
+        model = Model1D(self)
         model.append(background_estimator)
         if estimate_background:
             background_estimator.estimate_parameters(
@@ -4883,23 +4883,6 @@ class Signal(FancySlicing,
             self._plot.navigator_plot.add_marker(marker)
         if plot_marker:
             marker.plot()
-
-    def create_model(self, dictionary=None):
-        """Create a model for the current signal
-
-        Parameters
-        __________
-        dictionary : {None, dict}, optional
-            A dictionary to be used to recreate a model. Usually generated using
-            :meth:`hyperspy.model.as_dictionary`
-
-        Returns
-        -------
-        A Model class
-
-        """
-        from hyperspy.model import Model
-        return Model(self, dictionary=dictionary)
 
 # Implement binary operators
 for name in (
