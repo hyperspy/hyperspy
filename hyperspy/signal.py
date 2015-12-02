@@ -89,8 +89,14 @@ class ModelManager(object):
 
         def __init__(self, mm, name):
             self._name = name
+            self._mm = mm
             self.restore = lambda: mm.restore(self._name)
             self.remove = lambda: mm.remove(self._name)
+            self.restore.__doc__ = "Returns the stored model"
+            self.remove.__doc__ = "Removes the stored model"
+
+        def __repr__(self):
+            return repr(self._mm._models[self._name])
 
     def __init__(self, signal, dictionary=None):
         self._signal = signal
@@ -120,10 +126,10 @@ class ModelManager(object):
         _abc = 'abcdefghijklmnopqrstuvwxyz'
 
         def get_letter(models):
-            l = len(models)
-            if not l:
+            howmany = len(models)
+            if not howmany:
                 return 'a'
-            order = int(np.log(l) / np.log(26)) + 1
+            order = int(np.log(howmany) / np.log(26)) + 1
             letters = [_abc, ] * order
             for comb in product(*letters):
                 guess = "".join(comb)
@@ -146,6 +152,28 @@ class ModelManager(object):
         node.set_item('_dict', dictionary)
         setattr(self, name, self.ModelStub(self, name))
 
+    def store(self, model, name=None):
+        """If the given model was created from this signal, stores it
+
+        Parameters
+        ----------
+        model : model
+            the model to store in the signal
+        name : {string, None}
+            the name for the model to be stored with
+
+        See Also
+        --------
+        remove
+        restore
+        pop
+        """
+        if model.spectrum is self._signal:
+            self._save(name, model.as_dictionary())
+        else:
+            raise ValueError("The model is created from a different signal, you "
+                             "should store it there")
+
     def _check_name(self, name, existing=False):
         if not isinstance(name, basestring):
             raise KeyError('Name has to be a string')
@@ -157,7 +185,7 @@ class ModelManager(object):
         if existing:
             if name not in self._models:
                 raise KeyError(
-                    "Model named '%s' is not currently saved" %
+                    "Model named '%s' is not currently stored" %
                     name)
         return name
 
@@ -172,10 +200,31 @@ class ModelManager(object):
         See Also
         --------
         restore
+        store
+        pop
         """
         name = self._check_name(name, True)
         delattr(self, name)
         self._models.__delattr__(name)
+
+    def pop(self, name):
+        """Returns the restored model and removes it from storage
+
+        Parameters
+        ----------
+        name : string
+            the name of the model to restore and remove
+
+        See Also
+        --------
+        restore
+        store
+        remove
+        """
+        name = self._check_name(name, True)
+        model = self.restore(name)
+        self.remove(name)
+        return model
 
     def restore(self, name):
         """Returns the restored model
@@ -188,6 +237,8 @@ class ModelManager(object):
         See Also
         --------
         remove
+        store
+        pop
         """
         name = self._check_name(name, True)
         d = self._models.get_item(name + '._dict').as_dictionary()
@@ -198,6 +249,10 @@ class ModelManager(object):
 
     def __len__(self):
         return len(self._models)
+
+    def __getitem__(self, name):
+        name = self._check_name(name, True)
+        return getattr(self, name)
 
 
 class Signal2DTools(object):

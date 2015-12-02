@@ -145,15 +145,11 @@ def file_reader(filename, record_by, mode='r', driver='core',
             exp = hdfgroup2signaldict(exg, load_to_memory)
             # assign correct models, if found:
             _tmp = {}
-            _to_remove = []
-            for i, (key, _dict) in enumerate(models_with_signals):
+            for (key, _dict) in reversed(models_with_signals):
                 if key == exg.name:
                     _tmp.update(_dict)
-                    _to_remove.append(i)
+                    models_with_signals.remove((key, _dict))
             exp['models'] = _tmp
-            _to_remove.reverse()
-            for i in _to_remove:
-                models_with_signals.pop(i)
 
             exp_dict_list.append(exp)
 

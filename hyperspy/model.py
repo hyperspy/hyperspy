@@ -288,7 +288,7 @@ class Model(list):
         if self.spectrum is None:
             raise ValueError("Cannot store models with no signal")
         s = self.spectrum
-        s.models._save(name, self.as_dictionary())
+        s.models.store(self, name)
 
     def save(self, file_name, name=None):
         """Saves spectrum and its model to a file
