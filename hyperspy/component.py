@@ -889,6 +889,9 @@ class Component(t.HasTraits):
                                                parameter.std,
                                                parameter.units)
 
+    def __tempcall2d__(self, p, x, y, onlyfree=True):
+        self.fetch_values_from_array(p, onlyfree=onlyfree)
+        return self.function(x, y)
     def __tempcall__(self, p, x, onlyfree=True):
         self.fetch_values_from_array(p, onlyfree=onlyfree)
         return self.function(x)
@@ -946,8 +949,8 @@ class Component(t.HasTraits):
         See also
         --------
         set_parameters_not_free
-        hyperspy.model.Model.set_parameters_free
-        hyperspy.model.Model.set_parameters_not_free
+        hyperspy.model.BaseModel.set_parameters_free
+        hyperspy.model.BaseModel.set_parameters_not_free
         """
 
         parameter_list = []
@@ -981,8 +984,8 @@ class Component(t.HasTraits):
         See also
         --------
         set_parameters_free
-        hyperspy.model.Model.set_parameters_free
-        hyperspy.model.Model.set_parameters_not_free
+        hyperspy.model.BaseModel.set_parameters_free
+        hyperspy.model.BaseModel.set_parameters_not_free
         """
 
         parameter_list = []
