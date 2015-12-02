@@ -22,6 +22,7 @@
 
 import os
 
+from traits.api import Undefined
 import numpy as np
 
 from hyperspy.misc.array_tools import sarray2dict, dict2sarray
@@ -104,6 +105,7 @@ def get_header_from_signal(signal, endianess='<'):
     if DP_SZ[0] != DP_SZ[1]:
         raise ValueError('Blockfiles require signal shape to be square!')
     DP_SZ = DP_SZ[0]
+    SDP = 100. / signal.axes_manager.signal_axes[0].scale
 
     offset2 = NX*NY + header['Data_offset_1']
     # Based on inspected files, the DPs are stored at 16-bit boundary...
@@ -114,6 +116,7 @@ def get_header_from_signal(signal, endianess='<'):
         'NX': NX, 'NY': NY,
         'DP_SZ': DP_SZ,
         'SX': SX, 'SY': SY,
+        'SDP': SDP,
         'Data_offset_2': offset2,
         }, sarray=header)
     return header, note
@@ -127,7 +130,11 @@ def file_reader(filename, endianess='<', **kwds):
     note = str(f.read(header['Data_offset_1'] - f.tell()))
     header['Note'] = note
     NX, NY = header['NX'], header['NY']
-    NDP = header['DP_SZ']
+    DP_SZ = header['DP_SZ']
+    if header['SDP']:
+        SDP = 100. / header['SDP']
+    else:
+        SDP = Undefined
     original_metadata = {'blockfile_header': header}
 
     # A Virtual BF/DF is stored first
@@ -141,17 +148,17 @@ def file_reader(filename, endianess='<', **kwds):
     offset2 = header['Data_offset_2']
     f.seek(offset2)
     data = np.memmap(f, mode='c', offset=offset2,
-                     dtype=endianess+'u1', shape=(NY, NX, NDP*NDP + 6)
+                     dtype=endianess+'u1', shape=(NY, NX, DP_SZ*DP_SZ + 6)
                      )
 
     # Every frame is preceeded by a 6 byte sequence (AA 55, and then a 4 byte
     # integer specifying frame number)
     data = data[:, :, 6:]
-    data = data.reshape((NY, NX, NDP, NDP), order='C')
+    data = data.reshape((NY, NX, DP_SZ, DP_SZ), order='C')
 
-    units = ['nm', '1/nm', '1/nm', 'nm']
+    units = ['nm', 'cm', 'cm', 'nm']
     names = ['x', 'dy', 'dx', 'y']
-    scales = [header['SX'], 1.0, 1.0, header['SY']]
+    scales = [header['SX'], SDP, SDP, header['SY']]
     metadata = {'General': {'original_filename': os.path.split(filename)[1]},
                 "Signal": {'signal_type': "",
                            'record_by': 'image', },
