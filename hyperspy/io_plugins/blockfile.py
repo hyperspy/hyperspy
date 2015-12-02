@@ -18,9 +18,9 @@
 
 import os
 from datetime import datetime, timedelta
+from dateutil import tz
 from traits.api import Undefined
 import numpy as np
-import logging
 
 from hyperspy.misc.array_tools import sarray2dict, dict2sarray
 
@@ -41,14 +41,15 @@ writes = [(2, 2)]
 
 def _from_serial_date(serial):
     # Excel date&time format
-    origin = datetime(1899, 12, 30)
+    origin = datetime(1899, 12, 30, tzinfo=tz.tzutc())
     secs = (serial % 1.0) * 86400.0
     dt = timedelta(int(serial), secs, secs/1000)
-    return origin + dt
+    utc = origin+dt
+    return utc.astimezone(tz.tzlocal())
 
 
 def _to_serial_date(dt):
-    origin = datetime(1899, 12, 30)
+    origin = datetime(1899, 12, 30, tzinfo=tz.tzutc())
     delta = dt - origin
     return float(delta.days) + (float(delta.seconds) / 86400)
 
