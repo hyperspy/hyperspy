@@ -92,8 +92,10 @@ class ModelManager(object):
             self._mm = mm
             self.restore = lambda: mm.restore(self._name)
             self.remove = lambda: mm.remove(self._name)
+            self.pop = lambda: mm.pop(self._name)
             self.restore.__doc__ = "Returns the stored model"
             self.remove.__doc__ = "Removes the stored model"
+            self.pop.__doc__ = "Returns the stored model and removes it from storage"
 
         def __repr__(self):
             return repr(self._mm._models[self._name])

@@ -23,6 +23,7 @@ import nose.tools as nt
 from hyperspy._signals.spectrum import Spectrum
 from hyperspy.io import load
 from hyperspy.components import Gaussian, Lorentzian
+import mock
 
 
 def clean_model_dictionary(d):
@@ -42,6 +43,43 @@ class TestModelStoring:
         m.append(Gaussian())
         m.fit()
         self.m = m
+
+    def test_models_getattr(self):
+        m = self.m
+        s = m.spectrum
+        m.store()
+        nt.assert_is(s.models.a, s.models['a'])
+
+    def test_models_stub_methods(self):
+        m = self.m
+        s = m.spectrum
+        m.store()
+        s.models.pop = mock.MagicMock()
+        s.models.remove = mock.MagicMock()
+        s.models.restore = mock.MagicMock()
+        s.models.a.restore()
+        s.models.a.remove()
+        s.models.a.pop()
+
+        nt.assert_equal(s.models.pop.call_count, 1)
+        nt.assert_equal(s.models.remove.call_count, 1)
+        nt.assert_equal(s.models.restore.call_count, 1)
+
+        nt.assert_equal(s.models.pop.call_args[0], ('a',))
+        nt.assert_equal(s.models.remove.call_args[0], ('a',))
+        nt.assert_equal(s.models.restore.call_args[0], ('a',))
+
+    def test_models_pop(self):
+        m = self.m
+        s = m.spectrum
+        m.store()
+        s.models.remove = mock.MagicMock()
+        s.models.restore = mock.MagicMock()
+        s.models.pop('a')
+        nt.assert_equal(s.models.remove.call_count, 1)
+        nt.assert_equal(s.models.restore.call_count, 1)
+        nt.assert_equal(s.models.remove.call_args[0], ('a',))
+        nt.assert_equal(s.models.restore.call_args[0], ('a',))
 
     def test_model_store(self):
         m = self.m
