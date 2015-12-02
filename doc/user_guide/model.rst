@@ -788,9 +788,9 @@ b, ..., z, aa, ab, ..., az, ba, ...).
 
 .. NOTE::
 
-    Stored models are not copied to signal slices. If you want a slice of the
-    model, you have to perform the operation on the model itself, not its
-    stored version
+    Stored models are not copied when the signal is changed (i.e. an operation
+    is performed) or to its slices. If you want a slice of the model, you have
+    to perform the operation on the model itself, not its stored version
 
 Current stored models can be listed by calling :py:attr:`~.signal.models`:
 
