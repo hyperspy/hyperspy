@@ -59,9 +59,9 @@ mapping = {
     'blockfile_header.Aquisiton_time':
     ("General.time", _from_serial_date),
     'blockfile_header.Camera_length':
-    ("Acquisition_instrument.TEM.Camera_length", lambda x: x * 1e-4),
+    ("Acquisition_instrument.TEM.camera_length", lambda x: x * 1e-4),
     'blockfile_header.Scan_rotation':
-    ("Acquisition_instrument.TEM.Scan_rotation", lambda x: x * 1e-2),
+    ("Acquisition_instrument.TEM.scan_rotation", lambda x: x * 1e-2),
 }
 
 
