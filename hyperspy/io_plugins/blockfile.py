@@ -106,11 +106,16 @@ def get_header_from_signal(signal, endianess='<'):
         raise ValueError('Blockfiles require signal shape to be square!')
     DP_SZ = DP_SZ[0]
 
+    offset2 = NX*NY + header['Data_offset_1']
+    # Based on inspected files, the DPs are stored at 16-bit boundary...
+    # Normally, you'd expect word alignment (32-bits) ¯\_(°_o)_/¯
+    offset2 += offset2 % 16
+
     header = dict2sarray({
         'NX': NX, 'NY': NY,
         'DP_SZ': DP_SZ,
         'SX': SX, 'SY': SY,
-        'Data_offset_2': NX*NY + header['Data_offset_1'],
+        'Data_offset_2': offset2,
         }, sarray=header)
     return header, note
 
