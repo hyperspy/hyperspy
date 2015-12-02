@@ -795,8 +795,8 @@ b, ..., z, aa, ab, ..., az, ba, ...).
 
     Modifying a signal in-place (e.g. :py:meth:`~.signal.map`,
     :py:meth:`~.signal.crop`, :py:meth:`~.signal.align1D`,
-    :py:meth:`~.signal.align2D`, ``s += s_new`` and similar) will remove all
-    stored models. This is done intentionally.
+    :py:meth:`~.signal.align2D` and similar) will invalidate all stored models.
+    This is done intentionally.
 
 Current stored models can be listed by calling :py:attr:`~.signal.models`:
 
