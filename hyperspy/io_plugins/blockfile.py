@@ -42,28 +42,34 @@ writes = False
 # currently disabled
 
 
+mapping = {
+    'blockfile_header.Beam_energy':
+    ("Acquisition_instrument.TEM.beam_energy", lambda x: x / 1e3),
+}
+
+
 def get_header_dtype_list(endianess='<'):
     end = endianess
     dtype_list = \
         [
             ('ID', (bytes, 6)),
             ('MAGIC', end + 'u2'),
-            ('DATA_OFFSET_1', end + 'u4'),
-            ('DATA_OFFSET_2', end + 'u4'),
+            ('Data_offset_1', end + 'u4'),
+            ('Data_offset_2', end + 'u4'),
             ('UNKNOWN1', end + 'u4'),
             ('DP_SZ', end + 'u2'),
             ('UNKNOWN2', end + 'u2'),
             ('NX', end + 'u2'),
             ('NY', end + 'u2'),
-            ('UNKNOWN3', end + 'u2'),
+            ('UNKNOWN3', end + 'u2'),   # Seems like NX*NY + ???
             ('SX', end + 'f8'),
             ('SY', end + 'f8'),
-            ('UNKNOWN4', end + 'u4'),
+            ('Beam_energy', end + 'u4'),   # kV
             ('UNKNOWN5', end + 'u2'),
             ('UNKNOWN6', end + 'u4'),
             ('UNKNOWN7', end + 'f8'),
-            # There are also two more unknown doubles (f8) in the header.
-            # Possibly, they specify scale in diffraction image
+        ] + [
+            ('DISTROTION%d' % i, 'f8') for i in xrange(22)
         ]
 
     return dtype_list
@@ -73,9 +79,12 @@ def file_reader(filename, endianess='<', **kwds):
     metadata = {}
     f = open(filename, 'rb')
     header = np.fromfile(f, dtype=get_header_dtype_list(endianess), count=1)
-    NX, NY = int(header['NX']), int(header['NY'])
-    NDP = int(header['DP_SZ'])
-    original_metadata = {'blockfile_header': sarray2dict(header)}
+    header = sarray2dict(header)
+    note = str(f.read(header['Data_offset_1'] - f.tell()))
+    header['Note'] = note
+    NX, NY = header['NX'], header['NY']
+    NDP = header['DP_SZ']
+    original_metadata = {'blockfile_header': header}
 
     # A Virtual BF/DF is stored first
 #    offset1 = int(header['DATA_OFFSET_1'][0])
@@ -85,21 +94,20 @@ def file_reader(filename, endianess='<', **kwds):
 #    print len(data_pre)
 
     # Then comes actual blockfile
-    offset2 = int(header['DATA_OFFSET_2'])
+    offset2 = header['Data_offset_2']
     f.seek(offset2)
     data = np.memmap(f, mode='c', offset=offset2,
-                     dtype=endianess+'u1'
+                     dtype=endianess+'u1', shape=(NY, NX, NDP*NDP + 6)
                      )
 
     # Every frame is preceeded by a 6 byte sequence (AA 55, and then a 4 byte
     # integer specifying frame number)
-    data = data.squeeze().reshape((NY, NX, NDP*NDP + 6), order='C')
     data = data[:, :, 6:]
     data = data.reshape((NY, NX, NDP, NDP), order='C')
 
     units = ['nm', '1/nm', '1/nm', 'nm']
     names = ['x', 'dy', 'dx', 'y']
-    scales = [float(header['SX']), 1.0, 1.0, float(header['SY'])]
+    scales = [header['SX'], 1.0, 1.0, header['SY']]
     metadata = {'General': {'original_filename': os.path.split(filename)[1]},
                 "Signal": {'signal_type': "",
                            'record_by': 'image', },
@@ -119,6 +127,7 @@ def file_reader(filename, endianess='<', **kwds):
     dictionary = {'data': data,
                   'axes': axes,
                   'metadata': metadata,
-                  'original_metadata': original_metadata, }
+                  'original_metadata': original_metadata,
+                  'mapping': mapping, }
 
     return [dictionary, ]
