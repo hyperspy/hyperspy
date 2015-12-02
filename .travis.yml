@@ -6,7 +6,7 @@ python:
   - 2.7
 
 env:
-  - DEPS="nose numpy scipy matplotlib traits traitsui ipython h5py sympy scikit-learn dill"
+  - DEPS="nose numpy scipy matplotlib traits traitsui ipython h5py sympy scikit-learn dill mock"
 
 install:
   - conda create -n testenv --yes python=$TRAVIS_PYTHON_VERSION
