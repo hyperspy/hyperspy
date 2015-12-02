@@ -53,40 +53,39 @@ def get_header_dtype_list(endianess='<'):
         [
             ('ID', (bytes, 6)),
             ('MAGIC', end + 'u2'),
-            ('Data_offset_1', end + 'u4'),
-            ('Data_offset_2', end + 'u4'),
-            ('UNKNOWN1', end + 'u4'),
-            ('DP_SZ', end + 'u2'),
-            ('UNKNOWN2', end + 'u2'),
-            ('NX', end + 'u2'),
-            ('NY', end + 'u2'),
-            ('UNKNOWN3', end + 'u2'),   # Seems like NX*NY + ???
-            ('SX', end + 'f8'),
-            ('SY', end + 'f8'),
-            ('Beam_energy', end + 'u4'),   # kV
-            ('UNKNOWN5', end + 'u2'),
-            ('UNKNOWN6', end + 'u4'),
-            ('UNKNOWN7', end + 'f8'),
+            ('Data_offset_1', end + 'u4'),      # Offset VBF
+            ('Data_offset_2', end + 'u4'),      # Offset DPs
+            ('UNKNOWN1', end + 'u4'),           # Flags for ASTAR software?
+            ('DP_SZ', end + 'u2'),              # Pixel dim DPs
+            ('DP_rotation', end + 'u2'),        # [degrees ( * 100 ?)]
+            ('NX', end + 'u2'),                 # Scan dim 1
+            ('NY', end + 'u2'),                 # Scan dim 2
+            ('Scan_rotation', end + 'u2'),      # [100 * degrees]
+            ('SX', end + 'f8'),                 # Pixel size [nm]
+            ('SY', end + 'f8'),                 # Pixel size [nm]
+            ('Beam_energy', end + 'u4'),        # [V]
+            ('SDP', end + 'u2'),                # Pixel size [100 * ppcm]
+            ('Camera_length', end + 'u4'),      # [10 * mm]
+            ('Aquisiton_time', end + 'f8'),     # [Serial date]
         ] + [
-            ('DISTROTION%d' % i, 'f8') for i in xrange(22)
+            ('Centering_N%d' % i, 'f8') for i in xrange(8)
+        ] + [
+            ('Distortion_N%02d' % i, 'f8') for i in xrange(14)
         ]
 
     return dtype_list
 
 
 def get_default_header(endianess='<'):
+    """Returns a header pre-populated with default values.
+    """
     dt = np.dtype(get_header_dtype_list())
     header = np.zeros((1,), dtype=dt)
     header['ID'][0] = bytes('IMGBLO')
     header['MAGIC'][0] = 0x0102
-    header['Data_offset_1'][0] = 0x1000
-    header['UNKNOWN1'][0] = 131141
-    header['UNKNOWN2'][0] = 0
-    header['UNKNOWN3'][0] = 0
-    header['BEAM_ENERGY'][0] = 200000
-    header['UNKNOWN5'][0] = 6226
-    header['UNKNOWN6'][0] = 2000
-    header['UNKNOWN7'][0] = 42200.76572
+    header['Data_offset_1'][0] = 0x1000     # Always this value observed
+    header['UNKNOWN1'][0] = 131141          # Very typical value (always?)
+    header['Aquisiton_time'][0] = _to_serial_date(datetime.utcnow())
     return header
 
 
