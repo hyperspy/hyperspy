@@ -788,9 +788,15 @@ b, ..., z, aa, ab, ..., az, ba, ...).
 
 .. NOTE::
 
-    Stored models are not copied when the signal is changed (i.e. an operation
-    is performed) or to its slices. If you want a slice of the model, you have
-    to perform the operation on the model itself, not its stored version
+    If you want to slice a model, you have to perform the operation on the
+    model itself, not its stored version
+
+.. WARNING::
+
+    Modifying a signal in-place (e.g. :py:meth:`~.signal.map`,
+    :py:meth:`~.signal.crop`, :py:meth:`~.signal.align1D`,
+    :py:meth:`~.signal.align2D`, ``s += s_new`` and similar) will remove all
+    stored models. This is done intentionally.
 
 Current stored models can be listed by calling :py:attr:`~.signal.models`:
 
