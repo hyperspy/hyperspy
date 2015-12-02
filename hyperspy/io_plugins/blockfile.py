@@ -28,7 +28,7 @@ from hyperspy.misc.array_tools import sarray2dict, dict2sarray
 # Plugin characteristics
 # ----------------------
 format_name = 'Blockfile'
-description = 'Read support for ASTAR blockfiles'
+description = 'Read/write support for ASTAR blockfiles'
 full_support = False
 # Recognised file extension
 file_extensions = ['blo', 'BLO']
