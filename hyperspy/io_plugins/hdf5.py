@@ -41,7 +41,7 @@ default_extension = 4
 
 # Writing capabilities
 writes = True
-version = "1.3"
+version = "2.0"
 
 # -----------------------
 # File format description
@@ -88,6 +88,9 @@ def get_hspy_format_version(f):
     elif "Experiments" in f:
         # Chances are that this is a HSpy hdf5 file version 1.0
         version = "1.0"
+    elif "Analysis" in f:
+        # Starting version 2.0 we have "Analysis" field as well
+        version = "2.0"
     else:
         raise IOError(not_valid_format)
     return StrictVersion(version)
@@ -109,6 +112,26 @@ def file_reader(filename, record_by, mode='r', driver='core',
             "if I fail, it is likely that I will be more successful at "
             "this and other tasks if you upgrade me.")
 
+    models_with_signals = []
+    standalone_models = []
+    if 'Analysis/models' in f:
+        try:
+            m_gr = f.require_group('Analysis/models')
+            for model_name in m_gr:
+                if '_signal' in m_gr[model_name].attrs:
+                    key = m_gr[model_name].attrs['_signal']
+                    # del m_gr[model_name].attrs['_signal']
+                    res = hdfgroup2dict(
+                        m_gr[model_name],
+                        load_to_memory=load_to_memory)
+                    del res['_signal']
+                    models_with_signals.append((key, {model_name: res}))
+                else:
+                    standalone_models.append({model_name: hdfgroup2dict(m_gr[model_name],
+                                                                        load_to_memory=load_to_memory)})
+        except TypeError:
+            raise IOError(not_valid_format)
+
     experiments = []
     exp_dict_list = []
     if 'Experiments' in f:
@@ -116,15 +139,25 @@ def file_reader(filename, record_by, mode='r', driver='core',
             if isinstance(f['Experiments'][ds], h5py.Group):
                 if 'data' in f['Experiments'][ds]:
                     experiments.append(ds)
-                    d = f['Experiments'][ds]['data']
-        if not experiments:
-            raise IOError(not_valid_format)
         # Parse the file
         for experiment in experiments:
             exg = f['Experiments'][experiment]
             exp = hdfgroup2signaldict(exg, load_to_memory)
+            # assign correct models, if found:
+            _tmp = {}
+            for (key, _dict) in reversed(models_with_signals):
+                if key == exg.name:
+                    _tmp.update(_dict)
+                    models_with_signals.remove((key, _dict))
+            exp['models'] = _tmp
+
             exp_dict_list.append(exp)
-    else:
+
+    for _, m in models_with_signals:
+        standalone_models.append(m)
+
+    exp_dict_list.extend(standalone_models)
+    if not len(exp_dict_list):
         raise IOError('This is not a valid HyperSpy HDF5 file. '
                       'You can still load the data using a hdf5 reader, '
                       'e.g. h5py, and manually create a Signal. '
@@ -505,6 +538,14 @@ def write_signal(signal, group, compression='gzip'):
             'peak_learning_results')
         dict2hdfgroup(signal.peak_learning_results.__dict__,
                       peak_learning_results, compression=compression)
+
+    if len(signal.models):
+        model_group = group.file.require_group('Analysis/models')
+        dict2hdfgroup(signal.models._models.as_dictionary(),
+                      model_group,
+                      compression=compression)
+        for model in model_group.values():
+            model.attrs['_signal'] = group.name
 
 
 def file_writer(filename,
