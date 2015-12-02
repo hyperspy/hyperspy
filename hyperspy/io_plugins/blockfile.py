@@ -30,7 +30,7 @@ from hyperspy.misc.array_tools import sarray2dict
 # Plugin characteristics
 # ----------------------
 format_name = 'Blockfile'
-description = ''
+description = 'Read support for ASTAR blockfiles'
 full_support = False
 # Recognised file extension
 file_extensions = ['blo', 'BLO']
@@ -46,7 +46,7 @@ def get_header_dtype_list(endianess='<'):
     end = endianess
     dtype_list = \
         [
-            ('ID', (str, 6)),
+            ('ID', (bytes, 6)),
             ('MAGIC', end + 'u2'),
             ('DATA_OFFSET_1', end + 'u4'),
             ('DATA_OFFSET_2', end + 'u4'),
@@ -75,7 +75,7 @@ def file_reader(filename, endianess='<', **kwds):
     header = np.fromfile(f, dtype=get_header_dtype_list(endianess), count=1)
     NX, NY = int(header['NX']), int(header['NY'])
     NDP = int(header['DP_SZ'])
-    original_metadata = {'header': sarray2dict(header)}
+    original_metadata = {'blockfile_header': sarray2dict(header)}
 
     # A Virtual BF/DF is stored first
 #    offset1 = int(header['DATA_OFFSET_1'][0])
