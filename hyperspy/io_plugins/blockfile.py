@@ -24,7 +24,7 @@ import os
 
 import numpy as np
 
-from hyperspy.misc.array_tools import sarray2dict
+from hyperspy.misc.array_tools import sarray2dict, dict2sarray
 
 
 # Plugin characteristics
@@ -37,9 +37,8 @@ file_extensions = ['blo', 'BLO']
 default_extension = 0
 
 # Writing capabilities:
-writes = False
-# Limited write abilities should be possible if shape hasn't changed, but
-# currently disabled
+# writes = False
+writes = [(2, 2)]
 
 
 mapping = {
@@ -73,6 +72,47 @@ def get_header_dtype_list(endianess='<'):
         ]
 
     return dtype_list
+
+
+def get_default_header(endianess='<'):
+    dt = np.dtype(get_header_dtype_list())
+    header = np.zeros((1,), dtype=dt)
+    header['ID'][0] = bytes('IMGBLO')
+    header['MAGIC'][0] = 0x0102
+    header['Data_offset_1'][0] = 0x1000
+    header['UNKNOWN1'][0] = 131141
+    header['UNKNOWN2'][0] = 0
+    header['UNKNOWN3'][0] = 0
+    header['BEAM_ENERGY'][0] = 200000
+    header['UNKNOWN5'][0] = 6226
+    header['UNKNOWN6'][0] = 2000
+    header['UNKNOWN7'][0] = 42200.76572
+    return header
+
+
+def get_header_from_signal(signal, endianess='<'):
+    if 'blockfile_header' in signal.original_metadata:
+        header = dict2sarray(signal.original_metadata['blockfile_header'],
+                             dtype=get_header_dtype_list(endianess))
+        note = signal.original_metadata['blockfile_header']['Note']
+    else:
+        header = get_default_header(endianess)
+        note = ''
+    NX, NY = signal.axes_manager.navigation_shape
+    SX = signal.axes_manager.navigation_axes[0].scale
+    SY = signal.axes_manager.navigation_axes[0].scale
+    DP_SZ = signal.axes_manager.signal_shape
+    if DP_SZ[0] != DP_SZ[1]:
+        raise ValueError('Blockfiles require signal shape to be square!')
+    DP_SZ = DP_SZ[0]
+
+    header = dict2sarray({
+        'NX': NX, 'NY': NY,
+        'DP_SZ': DP_SZ,
+        'SX': SX, 'SY': SY,
+        'Data_offset_2': NX*NY + header['Data_offset_1'],
+        }, sarray=header)
+    return header, note
 
 
 def file_reader(filename, endianess='<', **kwds):
@@ -131,3 +171,38 @@ def file_reader(filename, endianess='<', **kwds):
                   'mapping': mapping, }
 
     return [dictionary, ]
+
+
+def file_writer(filename, signal, **kwds):
+    endianess = kwds.pop('endianess', '<')
+    header, note = get_header_from_signal(signal, endianess=endianess)
+    with open(filename, 'wb') as f:
+        # TODO. Use memmap
+        # Write header
+        header.tofile(f)
+        # Write header note field:
+        if len(note) > int(header['Data_offset_1']) - f.tell():
+            note = note[:int(header['Data_offset_1']) - f.tell() - len(note)]
+        f.write(note)
+        # Zero pad until next data block
+        zero_pad = int(header['Data_offset_1']) - f.tell()
+        np.zeros((zero_pad,), np.byte).tofile(f)
+        # Write virtual bright field
+        vbf = signal.mean(2j).mean(2j).data.astype(endianess+'u1')
+        vbf.tofile(f)
+        # Zero pad until next data block
+        zero_pad = int(header['Data_offset_2']) - f.tell()
+        np.zeros((zero_pad,), np.byte).tofile(f)
+
+        # Write full data stack:
+        # We need to pad each image with magic 'AA55', then a u32 serial
+        dp_head = np.zeros((1,), dtype=[('MAGIC', endianess+'u2'),
+                           ('ID', endianess+'u4')])
+        dp_head['MAGIC'] = 0x55AA
+        # Write by loop:
+        for img in signal._iterate_signal():
+            dp_head.tofile(f)
+            img.astype(endianess+'u1').tofile(f)
+            dp_head['ID'] += 1
+            if dp_head['ID'] > header['NX'] * header['NY']:
+                raise ValueError('Unexpected navigation size.')
