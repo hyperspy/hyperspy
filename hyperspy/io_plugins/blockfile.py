@@ -16,14 +16,11 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-# The details of the format were taken from
-# http://www.biochem.mpg.de/doc_tom/TOM_Release_2008/IOfun/tom_mrcread.html
-# and http://ami.scripps.edu/software/mrctools/mrc_specification.php
-
 import os
-
+from datetime import datetime, timedelta
 from traits.api import Undefined
 import numpy as np
+import logging
 
 from hyperspy.misc.array_tools import sarray2dict, dict2sarray
 
@@ -42,9 +39,29 @@ default_extension = 0
 writes = [(2, 2)]
 
 
+def _from_serial_date(serial):
+    # Excel date&time format
+    origin = datetime(1899, 12, 30)
+    secs = (serial % 1.0) * 86400.0
+    dt = timedelta(int(serial), secs, secs/1000)
+    return origin + dt
+
+
+def _to_serial_date(dt):
+    origin = datetime(1899, 12, 30)
+    delta = dt - origin
+    return float(delta.days) + (float(delta.seconds) / 86400)
+
+
 mapping = {
     'blockfile_header.Beam_energy':
-    ("Acquisition_instrument.TEM.beam_energy", lambda x: x / 1e3),
+    ("Acquisition_instrument.TEM.beam_energy", lambda x: x * 1e-3),
+    'blockfile_header.Aquisiton_time':
+    ("General.time", _from_serial_date),
+    'blockfile_header.Camera_length':
+    ("Acquisition_instrument.TEM.Camera_length", lambda x: x * 1e-4),
+    'blockfile_header.Scan_rotation':
+    ("Acquisition_instrument.TEM.Scan_rotation", lambda x: x * 1e-2),
 }
 
 
