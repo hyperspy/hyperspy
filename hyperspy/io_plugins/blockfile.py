@@ -165,9 +165,12 @@ def file_reader(filename, endianess='<', **kwds):
     # Then comes actual blockfile
     offset2 = header['Data_offset_2']
     f.seek(offset2)
-    data = np.memmap(f, mode='c', offset=offset2,
-                     dtype=endianess+'u1', shape=(NY, NX, DP_SZ*DP_SZ + 6)
-                     )
+    data = np.fromfile(f, dtype=endianess+'u1')
+    data = data.reshape((NY, NX, DP_SZ*DP_SZ + 6))
+
+#    data = np.memmap(f, mode='c', offset=offset2,
+#                     dtype=endianess+'u1', shape=(NY, NX, DP_SZ*DP_SZ + 6)
+#                     )
 
     # Every frame is preceeded by a 6 byte sequence (AA 55, and then a 4 byte
     # integer specifying frame number)
