@@ -1,10 +1,19 @@
 Curve fitting
 *************
 
-HyperSpy can perform curve fitting in n-dimensional data sets. It can create a
-model from a linear combinantion of predefined components and can use multiple
-optimisation algorithms to fit the model to experimental data. It supports
-bounds and weights.
+HyperSpy can perform curve fitting of one-dimensional signals (spectra) and
+two-dimensional signals (images) in n-dimensional data sets. Models can be
+created as a linear combination of predefined components and multiple
+optimisation algorithms can be used to fit the model to experimental data. 
+Bounds and weights are supported.
+
+.. versionadded:: 0.9
+    
+    Models can be created and and fit to experimental data in one and two
+    dimensions i.e. spectra and images respectively. Most of the syntax is
+    identical in either case. A one-dimensional model is created when a model
+    is created for a :py:class:`~._signals.spectrum.Spectrum` whereas a two-
+    dimensional model is created for a :py:class:`._signals.image.Image`.
 
 .. versionadded:: 0.7
 

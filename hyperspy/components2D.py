@@ -10,4 +10,5 @@ For more details see each component docstring.
 
 '''
 
-from hyperspy._2d_components.gaussian2d import Gaussian2D
+from hyperspy._components.gaussian2D import Gaussian2D
+from hyperspy._components.scalable_fixed_pattern2D import ScalableFixedPattern2D 
