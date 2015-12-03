@@ -100,11 +100,14 @@ class ModelComponents(object):
 class BaseModel(list):
 
     """Model and data fitting for one or two dimensional signals.
+    
+    Models of one-dimensional signals should use the :class:`Model1D` and
+    models of two-dimensional signals should use the :class:`Model2D`.
 
     A model is constructed as a linear combination of :mod:`components` that
     are added to the model using :meth:`append` or :meth:`extend`. There
     are many predifined components available in the in the :mod:`components`
-    module. If needed, new components can easyly created using the code of
+    module. If needed, new components can be created easily using the code of
     existing components as a template.
 
     Once defined, the model can be fitted to the data using :meth:`fit` or
@@ -1468,9 +1471,12 @@ class BaseModel(list):
 class Model2D(BaseModel):
 
     """
-    TODO: add docstring specific for 2D model
+    The class for models of two-dimensional signals i.e. images.
+
+    Methods are defined for creating and fitting 2D models but plotting features
+    are not yet provided.
     """
-    #Rewrite in progress dnj23 06/05/15
+    
     def __init__(self, image, dictionary=None):
 	self.image = image
         self.signal = self.image
@@ -1519,22 +1525,21 @@ class Model2D(BaseModel):
             raise WrongObjectError(str(type(value)), 'Image')
 
     # TODO: write 2D secific plotting tools
-    def _connect_parameters2update_plot(self):
-        pass
+    # def _connect_parameters2update_plot(self):
+    #    pass
 
     # Plotting code to rewrite
-    def _disconnect_parameters2update_plot(self):
-        pass
+    # def _disconnect_parameters2update_plot(self):
+    #    pass
 
     # To rewrite
-    def as_signal(self):
-        pass
+    # def as_signal(self):
+    #    pass
 
     # Plotting code to rewrite
-    def update_plot(self):
-        pass
+    # def update_plot(self):
+    #    pass
 
-    # Rewrite in progress dnj23 06/05/15
     def __call__(self, onlyactive=False):
         """Returns the corresponding 2D model for the current coordinates
 
@@ -1560,7 +1565,6 @@ class Model2D(BaseModel):
                        sum_)
         return sum_
 
-    # Rewrite in progress dnj23 06/05/15
     def _model_function(self, param):
 
         xaxis, yaxis = (self.xaxis, self.yaxis)
@@ -1582,6 +1586,13 @@ class Model2D(BaseModel):
 
 
 class Model1D(BaseModel):
+    
+    """
+    The class for models of one-dimensional signals i.e. Spectra.
+
+    Methods are defined for creating, fitting, and  plotting 1D models.
+    """
+
     def __init__(self, spectrum, dictionary=None):
 
         self._plot = None

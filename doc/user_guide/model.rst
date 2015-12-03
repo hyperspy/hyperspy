@@ -22,26 +22,40 @@ Bounds and weights are supported.
     model depends on this parameter. See :ref:`signal.binned` for more details.
 
 Creating a model
-^^^^^^^^^^^^^^^^
+----------------
 
-A :py:class:`~.model.Model` can be created using the
-:py:meth:`~._signals.spectrum.Spectrum.create_model` method:
+A :py:class:`~.model.Model1D` can be created for data in the :py:class:`~._signals.spectrum.Spectrum` 
+class using the :py:meth:`~._signals.spectrum.Spectrum.create_model` method:
 
 .. code-block:: python
 
     >>> s = hs.load('YourDataFilenameHere') # Load the data from a file
-    >>> m = s.create_model() # Create the model and asign it to the variable m
+    >>> m = s.create_model() # Create the 1D-Model and asign it to the variable m
 
-At this point you may be prompted to provide any necessary information not
+Similarly A :py:class:`~.model.Model2D` can be created for data in the :py:class:`~._signals.image.Image` 
+class using the :py:meth:`~._signals.image.Image.create_model` method:
+
+.. code-block:: python
+
+    >>> im = hs.load('YourDataFilenameHere') # Load the data from a file
+    >>> mod = im.create_model() # Create the 2D-Model and asign it to the variable mod
+
+The syntax for creating both one-dimensional and two-dimensional models is thus
+identical for the user in practice. Nevertheless, it is important to be aware
+that the create_model method is indeed a separate method in each case.
+
+When a model is created  you may be prompted to provide key  information not
 already included in the datafile, e.g.if s is EELS data, you may be asked for
 the accelerating voltage, convergence and collection angles etc.
 
 Adding components to the model
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+------------------------------
 
-In HyperSpy a model consists of a linear combination of :py:mod:`~.components`.
-These are some of the components which are currently available:
+In HyperSpy a model consists of a linear combination of :py:mod:`~.components` 
+and various components are available in one and two-dimensions to construct a
+model.
 
+The following components are currently available for one-dimensional models:
 
 * :py:class:`~._components.eels_cl_edge.EELSCLEdge`
 * :py:class:`~._components.volume_plasmon_drude.VolumePlasmonDrude`
@@ -59,10 +73,15 @@ These are some of the components which are currently available:
 * :py:class:`~._components.pes_see.SEE`
 * :py:class:`~._components.arctan.Arctan`
 
+.. versionadded:: 0.9 The following components are currently available for two-dimensional models:
 
+* :py:class:`~._components.scalable_fixed_pattern.ScalableFixedPattern2D`
+* :py:class:`~._components.gaussian.Gaussian2D`
 
 However, this doesn't mean that you have to limit yourself to this meagre list of function.
 
+Specifying custom components
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. _expression_component-label:
 
@@ -310,7 +329,7 @@ To enable this feature for a given component set the
 
 
 Indexing model
-^^^^^^^^^^^^^^
+--------------
 
 .. versionadded:: 0.9 model indexing
 
@@ -333,7 +352,7 @@ recomputed for the resulting slices.
 
 
 Getting and setting parameter values and attributes
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+---------------------------------------------------
 
 :py:meth:`~.model.Model.print_current_values` prints the value of the
 parameters of the components in the current coordinates.
@@ -525,7 +544,7 @@ example:
 .. _model.fitting:
 
 Fitting the model to the data
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+-----------------------------
 
 To fit the model to the data at the current coordinates (e.g. to fit one
 spectrum at a particular point in a spectrum-image) use
@@ -742,37 +761,37 @@ way of setting the position of the components with a well define position.
 Exclude data from the fitting process
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The following :py:class:`~.model.Model` methods can be used to exclude
+The following :py:class:`~.model.BaseModel` methods can be used to exclude
 undesired spectral channels from the fitting process:
 
-* :py:meth:`~.model.Model.set_signal_range`
-* :py:meth:`~.model.Model.remove_signal_range`
-* :py:meth:`~.model.Model.reset_signal_range`
+* :py:meth:`~.model.BaseModel.set_signal_range`
+* :py:meth:`~.model.BaseModel.remove_signal_range`
+* :py:meth:`~.model.BaseModel.reset_signal_range`
 
 Fitting multidimensional datasets
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 To fit the model to all the elements of a multidimensional datataset use
-:py:meth:`~.model.Model.multifit`, e.g.:
+:py:meth:`~.model.BaseModel.multifit`, e.g.:
 
 .. code-block:: python
 
     >>> m.multifit() # warning: this can be a lengthy process on large datasets
 
-:py:meth:`~.model.Model.multifit` fits the model at the first position,
+:py:meth:`~.model.BaseModel.multifit` fits the model at the first position,
 store the result of the fit internally and move to the next position until
 reaching the end of the dataset.
 
 Sometimes one may like to store and fetch the value of the parameters at a
 given position manually. This is possible using
-:py:meth:`~.model.Model.store_current_values` and
-:py:meth:`~.model.Model.fetch_stored_values`.
+:py:meth:`~.model.BaseModel.store_current_values` and
+:py:meth:`~.model.BaseModel.fetch_stored_values`.
 
 
 Visualising the result of the fit
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The :py:class:`~.model.Model` :py:meth:`~.model.Model.plot_results`,
+The :py:class:`~.model.Model1D` :py:meth:`~.model.Model1D.plot_results`,
 :py:class:`~.component.Component` :py:meth:`~.component.Component.plot` and
 :py:class:`~.component.Parameter` :py:meth:`~.component.Parameter.plot` methods
 can be used to visualise the result of the fit **when fitting multidimensional
@@ -781,7 +800,7 @@ datasets**.
 .. _storing_models:
 
 Storing models
-^^^^^^^^^^^^^^
+--------------
 .. versionadded:: 0.9 :py:class:`~.signal.ModelManager`
 
 Multiple models can be stored in the same signal. In particular, when
@@ -871,7 +890,7 @@ For older versions of HyperSpy (before 0.9), the instructions were as follows:
     To save a model:
 
     1. Save the parameter arrays to a file using
-       :py:meth:`~.model.Model.save_parameters2file`.
+       :py:meth:`~.model.BaseModel.save_parameters2file`.
 
     2. Save all the commands that used to create the model to a file. This
        can be done in the form of an IPython notebook or a Python script.
@@ -882,26 +901,26 @@ For older versions of HyperSpy (before 0.9), the instructions were as follows:
 
     1. Execute the IPython notebook or Python script.
 
-    2. Use :py:meth:`~.model.Model.load_parameters_from_file` to load back the
+    2. Use :py:meth:`~.model.BaseModel.load_parameters_from_file` to load back the
        parameter values and arrays.
 
 
 Exporting the result of the fit
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The :py:class:`~.model.Model` :py:meth:`~.model.Model.export_results`,
+The :py:class:`~.model.BaseModel` :py:meth:`~.model.BaseModel.export_results`,
 :py:class:`~.component.Component` :py:meth:`~.component.Component.export` and
 :py:class:`~.component.Parameter` :py:meth:`~.component.Parameter.export`
 methods can be used to export the result of the optimization in all supported
 formats.
 
 Batch setting of parameter attributes
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+-------------------------------------
 .. versionadded:: 0.6
 
 The following methods can be used to ease the task of setting some important
 parameter attributes:
 
-* :py:meth:`~.model.Model.set_parameters_not_free`
-* :py:meth:`~.model.Model.set_parameters_free`
-* :py:meth:`~.model.Model.set_parameters_value`
+* :py:meth:`~.model.BaseModel.set_parameters_not_free`
+* :py:meth:`~.model.BaseModel.set_parameters_free`
+* :py:meth:`~.model.BaseModel.set_parameters_value`
