@@ -62,6 +62,7 @@ from hyperspy.gui.egerton_quantification import BackgroundRemoval
 from hyperspy.decorators import only_interactive
 from hyperspy.decorators import interactive_range_selector
 from scipy.ndimage.filters import gaussian_filter1d
+from skimage.feature import peak_local_max
 from hyperspy.misc.spectrum_tools import find_peaks_ohaver
 from hyperspy.misc.image_tools import (shift_image, estimate_image_shift)
 from hyperspy.misc.math_tools import symmetrize, antisymmetrize
@@ -593,6 +594,38 @@ class Signal2DTools(object):
         self.crop(self.axes_manager.signal_axes[0].index_in_axes_manager,
                   left,
                   right)
+
+    def find_peaks2D(self, min_distance=10):
+        """Find peaks in a 2D signal/image.
+
+        Function to locate the positive peaks in an image, which are returned as
+        a structured array for easy plotting. At present this uses the
+        peak_local_max method from skimage although other methods could easily
+        be implemented.
+
+        Parameters
+        ----------
+
+        min_distance: int
+
+        minimum number of pixels separating peaks
+
+        Returns
+        -------
+        peaks: structured array of shape _navigation_shape_in_array in which
+               each cell contains an array with dimensions (npeaks, 2) that
+               contains the x,y coordinates of peaks found in each image.
+        """
+        arr_shape = (self.axes_manager._navigation_shape_in_array
+                     if self.axes_manager.navigation_size > 0
+                     else [1, ])
+        peaks = np.zeros(arr_shape, dtype=object)
+
+        for z, indices in zip(self._iterate_signal(),
+                              self.axes_manager._array_indices_generator()):
+            peaks[indices] = peak_local_max(z,
+                                            min_distance=min_distance)
+        return peaks
 
 
 class Signal1DTools(object):
