@@ -907,6 +907,7 @@ class Component(t.HasTraits):
         if axes_manager is not self.model.axes_manager:
             old_axes_manager = self.model.axes_manager
             self.model.axes_manager = axes_manager
+            self.fetch_stored_values()
         s = self.__call__()
         if not self.active:
             s.fill(np.nan)
@@ -919,6 +920,7 @@ class Component(t.HasTraits):
             s = ns
         if old_axes_manager is not None:
             self.model.axes_manager = old_axes_manager
+            self.fetch_stored_values()
         return s
 
     def set_parameters_free(self, parameter_name_list=None):

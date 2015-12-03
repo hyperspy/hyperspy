@@ -480,7 +480,7 @@ class Model(list):
             idx = self.index(thing)
             self.spectrum._plot.signal_plot.ax_lines.remove(
                 self.spectrum._plot.signal_plot.ax_lines[2 + idx])
-        list.__delitem__(self, self.index(thing))
+        list.remove(self, thing)
         thing.model = None
         if touch is True:
             self._touch()
