@@ -21,7 +21,10 @@ from nose.tools import (assert_true,
                         assert_false,
                         assert_equal,
                         raises)
+import nose.tools as nt
 from hyperspy.component import Parameter
+from hyperspy.exceptions import NavigationDimensionError
+import mock
 
 
 class Dummy:
@@ -282,3 +285,60 @@ class TestParameterTwin:
         assert_equal(dummy.value, 3)
         self.p2.value = 10
         assert_equal(dummy.value, 4)
+
+
+class TestGeneralMethods:
+
+    def setUp(self):
+        self.par = Parameter()
+        self.par._axes_manager = mock.MagicMock()
+        self.par.map = np.array([(a, b, c) for a, b, c in zip([1, 3, 5], [2, 4, 6], [0, 0, 0])],
+                                dtype=[('values', 'float'), ('std', 'float'), ('is_set', bool)])
+
+    @raises(NavigationDimensionError)
+    def test_as_signal_no_navigation(self):
+        par = self.par
+        par._axes_manager.navigation_dimension = 0
+        s = par.as_signal('std')
+
+    def test_as_signal(self):
+        par = self.par
+
+        # additional setup
+        par._axes_manager._get_navigation_axes_dicts.return_value = [{'name': 'one', 'navigate': True,
+                                                                      'offset': 0.0, 'scale': 1.0, 'size': 3,
+                                                                      'units': 'bar'}, ]
+        par._number_of_elements = 2
+        par.component = mock.MagicMock()
+        par.component.active_is_multidimensional = True
+        par.component._active_array = np.array([1, 0, 1], dtype=bool)
+
+        # testing
+        s = par.as_signal('std')
+        np.testing.assert_array_equal(s.data, np.array([2, np.nan, 6]))
+        nt.assert_equal(s.axes_manager[-1].name, 'one')
+        nt.assert_true(par._axes_manager._get_navigation_axes_dicts.called)
+        nt.assert_equal(len(s.axes_manager._axes), 2)
+        nt.assert_false(s.axes_manager[-1].navigate)
+        nt.assert_true(s.axes_manager[0].navigate)
+        nt.assert_equal(s.axes_manager[0].size, 2)
+
+    def test_store_current_values_normal_indices(self):
+        par = self.par
+        par._axes_manager.indices = (1,)
+        par.value = 3.5
+        par.std = 4.5
+        par.store_current_value_in_array()
+        nt.assert_true(par.map['is_set'][1])
+        nt.assert_equal(par.map['std'][1], 4.5)
+        nt.assert_equal(par.map['values'][1], 3.5)
+
+    def test_store_current_values_no_indices(self):
+        par = self.par
+        par._axes_manager.indices = ()
+        par.value = 3.5
+        par.std = 4.5
+        par.store_current_value_in_array()
+        nt.assert_true(par.map['is_set'][0])
+        nt.assert_equal(par.map['std'][0], 4.5)
+        nt.assert_equal(par.map['values'][0], 3.5)

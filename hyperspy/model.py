@@ -582,6 +582,304 @@ class BaseModel(list):
                     comp_p_std, onlyfree=True)
                 counter += component._nfree_param
 
+    # Defines the functions for the fitting process -------------------------
+    def _model2plot(self, axes_manager, out_of_range2nans=True):
+        old_axes_manager = None
+        if axes_manager is not self.axes_manager:
+            old_axes_manager = self.axes_manager
+            self.axes_manager = axes_manager
+            self.fetch_stored_values()
+        s = self.__call__(non_convolved=False, onlyactive=True)
+        if old_axes_manager is not None:
+            self.axes_manager = old_axes_manager
+            self.fetch_stored_values()
+        if out_of_range2nans is True:
+            ns = np.empty(self.axis.axis.shape)
+            ns.fill(np.nan)
+            ns[self.channel_switches] = s
+            s = ns
+        return s
+
+    def __call__(self, non_convolved=False, onlyactive=False):
+        """Returns the corresponding model for the current coordinates
+
+        Parameters
+        ----------
+        non_convolved : bool
+            If True it will return the deconvolved model
+        only_active : bool
+            If True, only the active components will be used to build the
+            model.
+
+        cursor: 1 or 2
+
+        Returns
+        -------
+        numpy array
+        """
+
+        if self.convolved is False or non_convolved is True:
+            axis = self.axis.axis[self.channel_switches]
+            sum_ = np.zeros(len(axis))
+            if onlyactive is True:
+                for component in self:  # Cut the parameters list
+                    if component.active:
+                        np.add(sum_, component.function(axis),
+                               sum_)
+            else:
+                for component in self:  # Cut the parameters list
+                    np.add(sum_, component.function(axis),
+                           sum_)
+            to_return = sum_
+
+        else:  # convolved
+            counter = 0
+            sum_convolved = np.zeros(len(self.convolution_axis))
+            sum_ = np.zeros(len(self.axis.axis))
+            for component in self:  # Cut the parameters list
+                if onlyactive:
+                    if component.active:
+                        if component.convolved:
+                            np.add(sum_convolved,
+                                   component.function(
+                                       self.convolution_axis), sum_convolved)
+                        else:
+                            np.add(sum_,
+                                   component.function(self.axis.axis), sum_)
+                        counter += component._nfree_param
+                else:
+                    if component.convolved:
+                        np.add(sum_convolved,
+                               component.function(self.convolution_axis),
+                               sum_convolved)
+                    else:
+                        np.add(sum_, component.function(self.axis.axis),
+                               sum_)
+                    counter += component._nfree_param
+            to_return = sum_ + np.convolve(
+                self.low_loss(self.axes_manager),
+                sum_convolved, mode="valid")
+            to_return = to_return[self.channel_switches]
+        if self.spectrum.metadata.Signal.binned is True:
+            to_return *= self.spectrum.axes_manager[-1].scale
+        return to_return
+
+    # TODO: the way it uses the axes
+    def _set_signal_range_in_pixels(self, i1=None, i2=None):
+        """Use only the selected spectral range in the fitting routine.
+
+        Parameters
+        ----------
+        i1 : Int
+        i2 : Int
+
+        Notes
+        -----
+        To use the full energy range call the function without arguments.
+        """
+
+        self.backup_channel_switches = copy.copy(self.channel_switches)
+        self.channel_switches[:] = False
+        self.channel_switches[i1:i2] = True
+        self.update_plot()
+
+    @interactive_range_selector
+    def set_signal_range(self, x1=None, x2=None):
+        """Use only the selected spectral range defined in its own units in the
+        fitting routine.
+
+        Parameters
+        ----------
+        E1 : None or float
+        E2 : None or float
+
+        Notes
+        -----
+        To use the full energy range call the function without arguments.
+        """
+        i1, i2 = self.axis.value_range_to_indices(x1, x2)
+        self._set_signal_range_in_pixels(i1, i2)
+
+    def _remove_signal_range_in_pixels(self, i1=None, i2=None):
+        """Removes the data in the given range from the data range that
+        will be used by the fitting rountine
+
+        Parameters
+        ----------
+        x1 : None or float
+        x2 : None or float
+        """
+        self.channel_switches[i1:i2] = False
+        self.update_plot()
+
+    @interactive_range_selector
+    def remove_signal_range(self, x1=None, x2=None):
+        """Removes the data in the given range from the data range that
+        will be used by the fitting rountine
+
+        Parameters
+        ----------
+        x1 : None or float
+        x2 : None or float
+
+        """
+        i1, i2 = self.axis.value_range_to_indices(x1, x2)
+        self._remove_signal_range_in_pixels(i1, i2)
+
+    def reset_signal_range(self):
+        """Resets the data range"""
+        self._set_signal_range_in_pixels()
+
+    def _add_signal_range_in_pixels(self, i1=None, i2=None):
+        """Adds the data in the given range from the data range that
+        will be used by the fitting rountine
+
+        Parameters
+        ----------
+        x1 : None or float
+        x2 : None or float
+        """
+        self.channel_switches[i1:i2] = True
+        self.update_plot()
+
+    @interactive_range_selector
+    def add_signal_range(self, x1=None, x2=None):
+        """Adds the data in the given range from the data range that
+        will be used by the fitting rountine
+
+        Parameters
+        ----------
+        x1 : None or float
+        x2 : None or float
+
+        """
+        i1, i2 = self.axis.value_range_to_indices(x1, x2)
+        self._add_signal_range_in_pixels(i1, i2)
+
+    def reset_the_signal_range(self):
+        self.channel_switches[:] = True
+        self.update_plot()
+
+    def _model_function(self, param):
+
+        if self.convolved is True:
+            counter = 0
+            sum_convolved = np.zeros(len(self.convolution_axis))
+            sum = np.zeros(len(self.axis.axis))
+            for component in self:  # Cut the parameters list
+                if component.active:
+                    if component.convolved is True:
+                        np.add(sum_convolved, component.__tempcall__(param[
+                            counter:counter + component._nfree_param],
+                            self.convolution_axis), sum_convolved)
+                    else:
+                        np.add(
+                            sum,
+                            component.__tempcall__(
+                                param[
+                                    counter:counter +
+                                    component._nfree_param],
+                                self.axis.axis),
+                            sum)
+                    counter += component._nfree_param
+
+            to_return = (sum + np.convolve(self.low_loss(self.axes_manager),
+                                           sum_convolved, mode="valid"))[
+                self.channel_switches]
+
+        else:
+            axis = self.axis.axis[self.channel_switches]
+            counter = 0
+            first = True
+            for component in self:  # Cut the parameters list
+                if component.active:
+                    if first is True:
+                        sum = component.__tempcall__(
+                            param[
+                                counter:counter +
+                                component._nfree_param],
+                            axis)
+                        first = False
+                    else:
+                        sum += component.__tempcall__(
+                            param[
+                                counter:counter +
+                                component._nfree_param],
+                            axis)
+                    counter += component._nfree_param
+            to_return = sum
+
+        if self.spectrum.metadata.Signal.binned is True:
+            to_return *= self.spectrum.axes_manager[-1].scale
+        return to_return
+
+    # noinspection PyAssignmentToLoopOrWithParameter
+    def _jacobian(self, param, y, weights=None):
+        if self.convolved is True:
+            counter = 0
+            grad = np.zeros(len(self.axis.axis))
+            for component in self:  # Cut the parameters list
+                if component.active:
+                    component.fetch_values_from_array(
+                        param[
+                            counter:counter +
+                            component._nfree_param],
+                        onlyfree=True)
+                    if component.convolved:
+                        for parameter in component.free_parameters:
+                            par_grad = np.convolve(
+                                parameter.grad(self.convolution_axis),
+                                self.low_loss(self.axes_manager),
+                                mode="valid")
+                            if parameter._twins:
+                                for par in parameter._twins:
+                                    np.add(par_grad, np.convolve(
+                                        par.grad(
+                                            self.convolution_axis),
+                                        self.low_loss(self.axes_manager),
+                                        mode="valid"), par_grad)
+                            grad = np.vstack((grad, par_grad))
+                        counter += component._nfree_param
+                    else:
+                        for parameter in component.free_parameters:
+                            par_grad = parameter.grad(self.axis.axis)
+                            if parameter._twins:
+                                for par in parameter._twins:
+                                    np.add(par_grad, par.grad(
+                                        self.axis.axis), par_grad)
+                            grad = np.vstack((grad, par_grad))
+                        counter += component._nfree_param
+            if weights is None:
+                to_return = grad[1:, self.channel_switches]
+            else:
+                to_return = grad[1:, self.channel_switches] * weights
+        else:
+            axis = self.axis.axis[self.channel_switches]
+            counter = 0
+            grad = axis
+            for component in self:  # Cut the parameters list
+                if component.active:
+                    component.fetch_values_from_array(
+                        param[
+                            counter:counter +
+                            component._nfree_param],
+                        onlyfree=True)
+                    for parameter in component.free_parameters:
+                        par_grad = parameter.grad(axis)
+                        if parameter._twins:
+                            for par in parameter._twins:
+                                np.add(par_grad, par.grad(
+                                    axis), par_grad)
+                        grad = np.vstack((grad, par_grad))
+                    counter += component._nfree_param
+            if weights is None:
+                to_return = grad[1:, :]
+            else:
+                to_return = grad[1:, :] * weights
+        if self.spectrum.metadata.Signal.binned is True:
+            to_return *= self.spectrum.axes_manager[-1].scale
+        return to_return
+
     def _function4odr(self, param, x):
         return self._model_function(param)
 
@@ -603,9 +901,9 @@ class BaseModel(list):
     def _errfunc(self, param, y, weights=None):
         errfunc = self._model_function(param) - y
         if weights is None:
-            return errfunc.ravel()
+            return errfunc
         else:
-            return (errfunc * weights).ravel()
+            return errfunc * weights
 
     def _errfunc2(self, param, y, weights=None):
         if weights is None:

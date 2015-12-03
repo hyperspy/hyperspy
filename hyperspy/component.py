@@ -466,8 +466,10 @@ class Parameter(t.HasTraits):
 
         s = Signal(data=self.map[field],
                    axes=self._axes_manager._get_navigation_axes_dicts())
-        if self.component.active_is_multidimensional:
+        if self.component is not None and \
+                self.component.active_is_multidimensional:
             s.data[np.logical_not(self.component._active_array)] = np.nan
+
         s.metadata.General.title = ("%s parameter" % self.name
                                     if self.component is None
                                     else "%s parameter of %s component" %
@@ -913,20 +915,20 @@ class Component(t.HasTraits):
         if axes_manager is not self.model.axes_manager:
             old_axes_manager = self.model.axes_manager
             self.model.axes_manager = axes_manager
-            self.charge()
+            self.fetch_stored_values()
         s = self.__call__()
         if not self.active:
             s.fill(np.nan)
         if self.model.spectrum.metadata.Signal.binned is True:
             s *= self.model.spectrum.axes_manager.signal_axes[0].scale
-        if old_axes_manager is not None:
-            self.model.axes_manager = old_axes_manager
-            self.charge()
         if out_of_range2nans is True:
             ns = np.empty(self.model.axis.axis.shape)
             ns.fill(np.nan)
             ns[self.model.channel_switches] = s
             s = ns
+        if old_axes_manager is not None:
+            self.model.axes_manager = old_axes_manager
+            self.fetch_stored_values()
         return s
 
     def set_parameters_free(self, parameter_name_list=None):
