@@ -100,7 +100,7 @@ class ModelComponents(object):
 class BaseModel(list):
 
     """Model and data fitting for one or two dimensional signals.
-    
+
     Models of one-dimensional signals should use the :class:`Model1D` and
     models of two-dimensional signals should use the :class:`Model2D`.
 
@@ -1774,7 +1774,7 @@ class Model2D(BaseModel):
     Methods are defined for creating and fitting 2D models but plotting features
     are not yet provided.
     """
-    
+
     def __init__(self, image, dictionary=None):
 	self.image = image
         self.signal = self.image
@@ -1884,7 +1884,7 @@ class Model2D(BaseModel):
 
 
 class Model1D(BaseModel):
-    
+
     """
     The class for models of one-dimensional signals i.e. Spectra.
 
@@ -2687,6 +2687,7 @@ class Model1D(BaseModel):
             cf.edit_traits()
         else:
             cf.apply()
+
 
 class ModelSpecialSlicers(object):
 

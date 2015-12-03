@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2015 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -17,22 +17,19 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import math
-
 import numpy as np
-
 from hyperspy.component import Component
 
 pi2 = 2 * math.pi
+sigma2fwhm = 2 * math.sqrt(2 * math.log(2))
 
 
 class Gaussian2D(Component):
-
     """Normalized 2D eliptical gaussian function component
 
     .. math::
-
-        f(x,y) = \\frac{A}{2\pi s_x s_y}}}e^{-\\frac{\left(x-x0\\right)^{2}}{2s_{x}^{2}}                     \\frac{\left(y-y0\\right)^{2}}{2s_{y}^{2}}}
-
+        f(x,y) = \\frac{A}{2\pi s_x s_y}}}e^{-\\frac{\left(x-x0\\right)^{2}}{2s_{x}^{2}}
+                                \\frac{\left(y-y0\\right)^{2}}{2s_{y}^{2}}}
     +------------+-----------+
     | Parameter  | Attribute |
     +------------+-----------+
@@ -43,6 +40,8 @@ class Gaussian2D(Component):
     +------------+-----------+
     |   s_x,s_y  |   sigma   |
     +------------+-----------+
+    |    theta   | rotation  |
+    +------------+-----------+
 
     """
 
@@ -51,21 +50,25 @@ class Gaussian2D(Component):
                  sigma_x=1.,
                  sigma_y=1.,
                  centre_x=0.,
-                 centre_y=0,
-                ):
+                 centre_y=0.,
+                 rotation=0.,
+                 ):
         Component.__init__(self, ['A',
                                   'sigma_x',
                                   'sigma_y',
                                   'centre_x',
                                   'centre_y',
-                                 ])
+                                  'rotation',
+                                  ])
         self.A.value = A
         self.sigma_x.value = sigma_x
         self.sigma_y.value = sigma_y
         self.centre_x.value = centre_x
         self.centre_y.value = centre_y
+        self.rotation.value = rotation
+        self.rotation.free = False
 
-    #TODO: add in boundaries and gradients for enhancement
+# TODO: add boundaries and gradients for enhancement
 
     def function(self, x, y):
         A = self.A.value
@@ -73,9 +76,42 @@ class Gaussian2D(Component):
         sy = self.sigma_y.value
         x0 = self.centre_x.value
         y0 = self.centre_y.value
+        theta = self.rotation.value
 
-        return A * (1 / (sx * sy * pi2)) * np.exp(
-            -((x - x0) ** 2 / (2 * sx ** 2) +
-              (y - y0) ** 2 / (2 * sy ** 2)))
+        sx2 = sx**2
+        sy2 = sy**2
+        cos2_theta = math.cos(theta)**2
+        sin2_theta = math.sin(theta)**2
+        sin_theta2 = math.sin(2*theta)
 
-   #TODO: add further useful properties of 2D gaussian e.g. ellipticity (sigma ratio), fwhm in each direction...
+        a = cos2_theta/(2*sx2) + sin2_theta/(2*sy2)
+        b = -sin_theta2/(4*sx2) + sin_theta2/(4*sy2)
+        c = sin2_theta/(2*sx2) + cos2_theta/(2*sy2)
+
+        return A * (1 / (sx * sy * pi2)) * np.exp(-(a*(x - x0) ** 2 +
+                                                    2*b*(x - x0) * (y - y0) +
+                                                    c*(y - y0) ** 2))
+
+    @property
+    def fwhm_x(self):
+        return self.sigma_x.value*sigma2fwhm
+
+    @fwhm_x.setter
+    def fwhm_x(self, value):
+        self.sigma_x.value = value/sigma2fwhm
+
+    @property
+    def fwhm_y(self):
+        return self.sigma_y.value*sigma2fwhm
+
+    @fwhm_y.setter
+    def fwhm_y(self, value):
+        self.sigma_y.value = value/sigma2fwhm
+
+    # Rotation compared to "x"-axis
+    @property
+    def rotation_degrees(self):
+        if self.sigma_x.value > self.sigma_y.value:
+            return math.degrees(self.rotation.value)
+        else:
+            return math.degrees(self.rotation.value-pi2/4)
