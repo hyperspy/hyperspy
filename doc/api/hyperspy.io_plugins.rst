@@ -75,6 +75,14 @@ hyperspy.io_plugins.tiff module
     :members:
     :undoc-members:
     :show-inheritance:
+	
+hyperspy.io_plugins.semper module
+-------------------------------
+
+.. automodule:: hyperspy.io_plugins.semper_unf
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 
 Module contents

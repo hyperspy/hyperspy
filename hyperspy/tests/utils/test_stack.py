@@ -5,7 +5,7 @@ from hyperspy.signal import Signal
 from hyperspy import utils
 
 
-class TestUtilsStack():
+class TestUtilsStack:
 
     def setUp(self):
         s = Signal(np.ones((3, 2, 5)))

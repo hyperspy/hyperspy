@@ -1,12 +1,13 @@
 import os.path
+from os import remove
 import datetime
+import h5py
 
-from nose.tools import (assert_equal,
-                        assert_true,
-                        assert_is)
+import nose.tools as nt
 import numpy as np
 
 from hyperspy.io import load
+from hyperspy.signal import Signal
 
 my_path = os.path.dirname(__file__)
 
@@ -44,10 +45,10 @@ example1_original_metadata = {
     u'YUNITS': u'Intensity'}
 
 
-class Example1():
+class Example1:
 
     def test_data(self):
-        assert_equal(
+        nt.assert_equal(
             [4066.0,
              3996.0,
              3932.0,
@@ -71,7 +72,7 @@ class Example1():
              4217.0], self.s.data.tolist())
 
     def test_original_metadata(self):
-        assert_equal(
+        nt.assert_equal(
             example1_original_metadata,
             self.s.original_metadata.as_dictionary())
 
@@ -103,10 +104,112 @@ class TestExample1_12(Example1):
             "example1_v1.2.hdf5"))
 
     def test_date(self):
-        assert_equal(self.s.metadata.General.date, datetime.date(1991, 10, 1))
+        nt.assert_equal(
+            self.s.metadata.General.date,
+            datetime.date(
+                1991,
+                10,
+                1))
 
     def test_time(self):
-        assert_equal(self.s.metadata.General.time, datetime.time(12, 0))
+        nt.assert_equal(self.s.metadata.General.time, datetime.time(12, 0))
+
+
+class TestLoadingNewSavedMetadata:
+
+    def setUp(self):
+        self.s = load(os.path.join(
+            my_path,
+            "hdf5_files",
+            "with_lists_etc.hdf5"))
+
+    def test_signal_inside(self):
+        nt.assert_true(
+            np.all(
+                self.s.data == self.s.metadata.Signal.Noise_properties.variance.data))
+
+    def test_empty_things(self):
+        nt.assert_equal(self.s.metadata.test.empty_list, [])
+        nt.assert_equal(self.s.metadata.test.empty_tuple, ())
+
+    def test_simple_things(self):
+        nt.assert_equal(self.s.metadata.test.list, [42])
+        nt.assert_equal(self.s.metadata.test.tuple, (1, 2))
+
+    def test_inside_things(self):
+        nt.assert_equal(
+            self.s.metadata.test.list_inside_list, [
+                42, 137, [
+                    0, 1]])
+        nt.assert_equal(self.s.metadata.test.list_inside_tuple, (137, [42, 0]))
+        nt.assert_equal(
+            self.s.metadata.test.tuple_inside_tuple, (137, (123, 44)))
+        nt.assert_equal(
+            self.s.metadata.test.tuple_inside_list, [
+                137, (123, 44)])
+
+    def test_binary_string(self):
+        import marshal
+        import types
+        f = types.FunctionType(
+            marshal.loads(
+                self.s.metadata.test.binary_string),
+            globals())
+        nt.assert_equal(f(3.5), 4.5)
+
+
+class TestSavingMetadataContainers:
+
+    def setUp(self):
+        self.s = Signal([0.1])
+
+    def test_save_unicode(self):
+        s = self.s
+        s.metadata.set_item('test', [u'a', u'b', u'\u6f22\u5b57'])
+        s.save('tmp.hdf5', overwrite=True)
+        l = load('tmp.hdf5')
+        nt.assert_is_instance(l.metadata.test[0], unicode)
+        nt.assert_is_instance(l.metadata.test[1], unicode)
+        nt.assert_is_instance(l.metadata.test[2], unicode)
+        nt.assert_equal(l.metadata.test[2], u'\u6f22\u5b57')
+
+    @nt.timed(0.1)
+    def test_save_long_list(self):
+        s = self.s
+        s.metadata.set_item('long_list', range(10000))
+        s.save('tmp.hdf5', overwrite=True)
+
+    def test_numpy_only_inner_lists(self):
+        s = self.s
+        s.metadata.set_item('test', [[1., 2], ('3', 4)])
+        s.save('tmp.hdf5', overwrite=True)
+        l = load('tmp.hdf5')
+        nt.assert_is_instance(l.metadata.test, list)
+        nt.assert_is_instance(l.metadata.test[0], list)
+        nt.assert_is_instance(l.metadata.test[1], tuple)
+
+    def test_numpy_general_type(self):
+        s = self.s
+        s.metadata.set_item('test', [[1., 2], ['3', 4]])
+        s.save('tmp.hdf5', overwrite=True)
+        l = load('tmp.hdf5')
+        nt.assert_is_instance(l.metadata.test[0][0], float)
+        nt.assert_is_instance(l.metadata.test[0][1], float)
+        nt.assert_is_instance(l.metadata.test[1][0], basestring)
+        nt.assert_is_instance(l.metadata.test[1][1], basestring)
+
+    def test_general_type_not_working(self):
+        s = self.s
+        s.metadata.set_item('test', (Signal([1]), 0.1, 'test_string'))
+        s.save('tmp.hdf5', overwrite=True)
+        l = load('tmp.hdf5')
+        nt.assert_is_instance(l.metadata.test, tuple)
+        nt.assert_is_instance(l.metadata.test[0], Signal)
+        nt.assert_is_instance(l.metadata.test[1], float)
+        nt.assert_is_instance(l.metadata.test[2], unicode)
+
+    def tearDown(self):
+        remove('tmp.hdf5')
 
 
 def test_none_metadata():
@@ -114,7 +217,7 @@ def test_none_metadata():
         my_path,
         "hdf5_files",
         "none_metadata.hdf5"))
-    assert_is(s.metadata.should_be_None, None)
+    nt.assert_is(s.metadata.should_be_None, None)
 
 
 def test_rgba16():
@@ -126,4 +229,34 @@ def test_rgba16():
         my_path,
         "npy_files",
         "test_rgba16.npy"))
-    assert_true((s.data == data).all())
+    nt.assert_true((s.data == data).all())
+
+
+class TestLoadingOOMReadOnly:
+
+    def setUp(self):
+        s = Signal(np.empty((5, 5, 5)))
+        s.save('tmp.hdf5')
+        self.shape = (10000, 10000, 100)
+        del s
+        f = h5py.File('tmp.hdf5', model='r+')
+        s = f['Experiments/__unnamed__']
+        del s['data']
+        s.create_dataset(
+            'data',
+            shape=self.shape,
+            dtype='float64',
+            chunks=True)
+        f.close()
+
+    @nt.raises(MemoryError)
+    def test_in_memory_loading(self):
+        s = load('tmp.hdf5')
+
+    def test_oom_loading(self):
+        s = load('tmp.hdf5', load_to_memory=False)
+        nt.assert_equal(self.shape, s.data.shape)
+        nt.assert_is_instance(s.data, h5py.Dataset)
+
+    def tearDown(self):
+        remove('tmp.hdf5')

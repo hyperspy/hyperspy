@@ -70,29 +70,41 @@ class TestDictionaryBrowser:
         d['_sig_Some name']['data'] = 0
         nose.tools.assert_equal(
             {
-                "Node1": {"leaf11": 11,
-                          "Node11": {"leaf111": 111},
-                          },
-                "Node2": {"leaf21": 21,
-                          "Node21": {"leaf211": 211},
-                          },
-                "_sig_Some name": {'axes': [{'name': 'x',
-                                             'navigate': False,
-                                             'offset': 0.0,
-                                             'scale': 1.0,
-                                             'size': 3,
-                                             'units': 'ly'}],
-                                   'data': 0,
-                                   'learning_results': {},
-                                   'metadata': {'General': {'title': ''},
-                                                'Signal': {'binned': False,
-                                                           'record_by': '',
-                                                           'signal_origin': '',
-                                                           'signal_type': ''},
-                                                '_HyperSpy': {'Folding': {'original_axes_manager': None,
-                                                                          'original_shape': None,
-                                                                          'unfolded': False}}},
-                                   'original_metadata': {},
-                                   'tmp_parameters': {}
-                                   }
-            }, d)
+                "Node1": {
+                    "leaf11": 11,
+                    "Node11": {
+                        "leaf111": 111},
+                },
+                "Node2": {
+                    "leaf21": 21,
+                    "Node21": {
+                        "leaf211": 211},
+                },
+                "_sig_Some name": {
+                    'axes': [
+                        {
+                            'name': 'x',
+                            'navigate': False,
+                                    'offset': 0.0,
+                                    'scale': 1.0,
+                                    'size': 3,
+                                    'units': 'ly'}],
+                    'data': 0,
+                    'learning_results': {},
+                    'metadata': {
+                        'General': {
+                            'title': ''},
+                        'Signal': {
+                            'binned': False,
+                            'record_by': '',
+                            'signal_origin': '',
+                            'signal_type': ''},
+                        '_HyperSpy': {
+                            'Folding': {
+                                'original_axes_manager': None,
+                                'original_shape': None,
+                                'unfolded': False,
+                                'signal_unfolded': False}}},
+                    'original_metadata': {},
+                    'tmp_parameters': {}}},
+            d)

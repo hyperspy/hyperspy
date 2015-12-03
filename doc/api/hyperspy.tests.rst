@@ -10,6 +10,7 @@ Subpackages
     hyperspy.tests.component
     hyperspy.tests.drawing
     hyperspy.tests.io
+    hyperspy.tests.misc
     hyperspy.tests.model
     hyperspy.tests.mva
     hyperspy.tests.signal
