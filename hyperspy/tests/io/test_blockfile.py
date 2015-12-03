@@ -21,6 +21,7 @@ import os
 import nose.tools as nt
 import hyperspy.api as hs
 import numpy as np
+import gc
 
 
 dirpath = os.path.dirname(__file__)
@@ -121,4 +122,7 @@ def test_save_load_cycle():
                         sig_reload.original_metadata.as_dictionary())
         nt.assert_is_instance(signal, hs.signals.Image)
     finally:
+        # Delete reference to close memmap file!
+        del sig_reload
+        gc.collect()
         os.remove(save_path)

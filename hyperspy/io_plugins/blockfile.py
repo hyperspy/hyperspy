@@ -140,7 +140,8 @@ def get_header_from_signal(signal, endianess='<'):
     return header, note
 
 
-def file_reader(filename, endianess='<', **kwds):
+def file_reader(filename, endianess='<', load_to_memory=False, mmap_mode='c',
+                **kwds):
     metadata = {}
     f = open(filename, 'rb')
     header = np.fromfile(f, dtype=get_header_dtype_list(endianess), count=1)
@@ -164,13 +165,13 @@ def file_reader(filename, endianess='<', **kwds):
 
     # Then comes actual blockfile
     offset2 = header['Data_offset_2']
-    f.seek(offset2)
-    data = np.fromfile(f, dtype=endianess+'u1')
-    data = data.reshape((NY, NX, DP_SZ*DP_SZ + 6))
-
-#    data = np.memmap(f, mode='c', offset=offset2,
-#                     dtype=endianess+'u1', shape=(NY, NX, DP_SZ*DP_SZ + 6)
-#                     )
+    if load_to_memory:
+        f.seek(offset2)
+        data = np.fromfile(f, dtype=endianess+'u1')
+        data = data.reshape((NY, NX, DP_SZ*DP_SZ + 6))
+    else:
+        data = np.memmap(f, mode=mmap_mode, offset=offset2,
+                         dtype=endianess+'u1', shape=(NY, NX, DP_SZ*DP_SZ + 6))
 
     # Every frame is preceeded by a 6 byte sequence (AA 55, and then a 4 byte
     # integer specifying frame number)
