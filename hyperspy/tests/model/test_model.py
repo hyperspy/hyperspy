@@ -265,15 +265,12 @@ class TestModel:
         m[0].A.value = 1.3
         m[0].centre.value = 0.003
         m[0].sigma.value = 0.1
-        old_p0 = (10., 20., 30.)
-        m.p0 = old_p0
         param = (100, 0.1, 0.2)
         np.testing.assert_array_almost_equal(176.03266338,
                                              m._model_function(param))
-        nt.assert_equal(m.p0, old_p0)
-        nt.assert_equal(m[0].A.value, 1.3)
-        nt.assert_equal(m[0].centre.value, 0.003)
-        nt.assert_equal(m[0].sigma.value, 0.1)
+        nt.assert_equal(m[0].A.value, 100)
+        nt.assert_equal(m[0].centre.value, 0.1)
+        nt.assert_equal(m[0].sigma.value, 0.2)
 
     @nt.raises(ValueError)
     def test_append_existing_component(self):

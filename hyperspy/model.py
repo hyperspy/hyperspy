@@ -975,15 +975,9 @@ class Model(list):
         self.update_plot()
 
     def _model_function(self, param):
-        old_p0 = self.p0
-        self._set_p0()
-        old_values = self.p0
         self.p0 = param
         self._fetch_values_from_p0()
         to_return = self.__call__(non_convolved=False, onlyactive=True)
-        self.p0 = old_values
-        self._fetch_values_from_p0()
-        self.p0 = old_p0
         return to_return
 
     def _jacobian(self, param, y, weights=None):
