@@ -22,8 +22,9 @@ from os import remove
 import nose.tools as nt
 from hyperspy._signals.spectrum import Spectrum
 from hyperspy.io import load
-from hyperspy.components import Gaussian, Lorentzian
+from hyperspy.components import Gaussian
 import mock
+import gc
 
 
 def clean_model_dictionary(d):
@@ -150,7 +151,6 @@ class TestModelSaving:
 
     def test_save_and_load_model(self):
         m = self.m
-        s = m.spectrum
         m.save('tmp.hdf5')
         l = load('tmp.hdf5')
         nt.assert_true(hasattr(l.models, 'a'))
@@ -158,4 +158,5 @@ class TestModelSaving:
         nt.assert_equal(n.components.something.A.value, 13)
 
     def tearDown(self):
+        gc.collect()        # Make sure any memmaps are closed first!
         remove('tmp.hdf5')

@@ -2,6 +2,7 @@ import os.path
 from os import remove
 import datetime
 import h5py
+import gc
 
 import nose.tools as nt
 import numpy as np
@@ -209,6 +210,7 @@ class TestSavingMetadataContainers:
         nt.assert_is_instance(l.metadata.test[2], unicode)
 
     def tearDown(self):
+        gc.collect()        # Make sure any memmaps are closed first!
         remove('tmp.hdf5')
 
 
@@ -259,4 +261,5 @@ class TestLoadingOOMReadOnly:
         nt.assert_is_instance(s.data, h5py.Dataset)
 
     def tearDown(self):
+        gc.collect()        # Make sure any memmaps are closed first!
         remove('tmp.hdf5')
