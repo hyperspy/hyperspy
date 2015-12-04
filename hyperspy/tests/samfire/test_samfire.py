@@ -21,7 +21,6 @@ import nose.tools as nt
 import dill
 import copy
 import hyperspy.hspy as hs
-from hyperspy.model import Model
 from hyperspy._samfire_utils.samfire_kernel import multi_kernel
 from hyperspy.misc.utils import DictionaryTreeBrowser
 
@@ -289,13 +288,15 @@ class TestSamfireEmpty:
         nt.assert_equal(samf.metadata.marker[ind], -1)
         nt.assert_equal(samf._active_strategy_ind, 2)
 
-        samf.change_strategy(1)
+        samf.change_strategy(samf.strategies[1])
         nt.assert_equal(samf._active_strategy_ind, 1)
         nt.assert_equal(samf.metadata.marker[ind], -2)
 
-        samf.strategies.append(histogram_strategy())
+        new_strat = histogram_strategy()
+        samf.strategies.append(new_strat)
         samf.change_strategy(3)
         nt.assert_equal(samf._active_strategy_ind, 3)
+        nt.assert_is(samf.active_strategy, new_strat)
         nt.assert_equal(samf.metadata.marker[ind], -2)
 
 
