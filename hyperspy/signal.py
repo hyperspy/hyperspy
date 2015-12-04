@@ -4494,7 +4494,7 @@ class Signal(FancySlicing,
             out = self._deepcopy_with_new_data()
             need_output = True
         if not isinstance(out, Signal) and out is not False:
-            warnings.warn("Can only pass bool or Signal to 'out'")
+            raise ValueError("Can only pass bool or Signal to 'out'")
             out = False
         # Sepate ndkwargs
         ndkwargs = ()
@@ -4556,7 +4556,7 @@ class Signal(FancySlicing,
                 for (key, value), datum in zip(ndkwargs, data[1:]):
                     kwargs[key] = datum[0]
                 if out:
-                    ans = run_function(data[0], **kwargs)
+                    ans = np.atleast_1d(run_function(data[0], **kwargs))
                     # res_data.append(run_function(data[0], **kwargs))
                     res_data.append(ans)
                     shapes.add(ans.shape)
