@@ -1509,7 +1509,6 @@ class Model2D(BaseModel):
         return sum_
 
 
-
 class Model1D(BaseModel):
 
     """
@@ -1517,9 +1516,7 @@ class Model1D(BaseModel):
 
     Methods are defined for creating, fitting, and  plotting 1D models.
     """
-
     def __init__(self, spectrum, dictionary=None):
-
         self._plot = None
         self._position_widgets = []
         self._adjust_position_all = None
@@ -1543,7 +1540,6 @@ class Model1D(BaseModel):
             'dof.data': 'inav'}
 
         self.spectrum = spectrum
-        self.signal = self.spectrum
         self.axes_manager = self.spectrum.axes_manager
         self.axis = self.axes_manager.signal_axes[0]
         self.axes_manager.connect(self.fetch_stored_values)
@@ -1598,6 +1594,8 @@ class Model1D(BaseModel):
             self.convolution_axis = None
             self.convolved = False
 
+    # Extend the list methods to call the _touch when the model is modified
+
     def set_convolution_axis(self):
         """
         Creates an axis to use to generate the data of the model in the precise
@@ -1610,8 +1608,6 @@ class Model1D(BaseModel):
         knot_position = ll_axis.size - ll_axis.value2index(0) - 1
         self.convolution_axis = generate_axis(self.axis.offset, step,
                                               dimension, knot_position)
-
-    # Extend the list methods to call the _touch when the model is modified
 
     def _connect_parameters2update_plot(self):
         if self._plot_active is False:
@@ -1727,6 +1723,13 @@ class Model1D(BaseModel):
                         component_._toggle_connect_active_array(True)
         return spectrum
 
+    @property
+    def _plot_active(self):
+        if self._plot is not None and self._plot.is_active() is True:
+            return True
+        else:
+            return False
+
     def update_plot(self, *args, **kwargs):
         """Update model plot.
 
@@ -1747,28 +1750,54 @@ class Model1D(BaseModel):
             except:
                 self._disconnect_parameters2update_plot()
 
+    def suspend_update(self):
+        """Prevents plot from updating until resume_update() is called
+
+        See Also
+        --------
+        resume_update
+        update_plot
+        """
+        if self._suspend_update is False:
+            self._suspend_update = True
+            self._disconnect_parameters2update_plot()
+        else:
+            warnings.warn("Update already suspended, does nothing.")
+
+    def resume_update(self, update=True):
+        """Resumes plot update after suspension by suspend_update()
+
+        Parameters
+        ----------
+        update : bool, optional
+            If True, also updates plot after resuming (default).
+
+        See Also
+        --------
+        suspend_update
+        update_plot
+        """
+        if self._suspend_update is True:
+            self._suspend_update = False
+            self._connect_parameters2update_plot()
+            if update is True:
+                # Ideally, the update flag should in stead work like this:
+                # If update is true, update_plot is called if any action
+                # would have called it while updating was suspended.
+                # However, this is prohibitively difficult to track, so
+                # in stead it is simply assume that a change has happened
+                # between suspend and resume, and therefore that the plot
+                # needs to update. As we do not know what has changed,
+                # all components need to update. This can however be
+                # suppressed by setting update to false
+                self.update_plot()
+        else:
+            warnings.warn("Update not suspended, nothing to resume.")
+
     def _update_model_line(self):
         if (self._plot_active is True and
                 self._model_line is not None):
             self._model_line.update()
-
-    # Defines the functions for the fitting process -------------------------
-    def _model2plot(self, axes_manager, out_of_range2nans=True):
-        old_axes_manager = None
-        if axes_manager is not self.axes_manager:
-            old_axes_manager = self.axes_manager
-            self.axes_manager = axes_manager
-            self.fetch_stored_values()
-        s = self.__call__(non_convolved=False, onlyactive=True)
-        if old_axes_manager is not None:
-            self.axes_manager = old_axes_manager
-            self.fetch_stored_values()
-        if out_of_range2nans is True:
-            ns = np.empty(self.axis.axis.shape)
-            ns.fill(np.nan)
-            ns[self.channel_switches] = s
-            s = ns
-        return s
 
     def __call__(self, non_convolved=False, onlyactive=False):
         """Returns the corresponding model for the current coordinates
@@ -1792,40 +1821,32 @@ class Model1D(BaseModel):
             axis = self.axis.axis[self.channel_switches]
             sum_ = np.zeros(len(axis))
             if onlyactive is True:
-                for component in self:  # Cut the parameters list
+                for component in self:
                     if component.active:
-                        np.add(sum_, component.function(axis),
-                               sum_)
+                        sum_ += component.function(axis)
             else:
-                for component in self:  # Cut the parameters list
-                    np.add(sum_, component.function(axis),
-                           sum_)
+                for component in self:
+                    sum_ += component.function(axis)
             to_return = sum_
 
         else:  # convolved
-            counter = 0
             sum_convolved = np.zeros(len(self.convolution_axis))
             sum_ = np.zeros(len(self.axis.axis))
             for component in self:  # Cut the parameters list
                 if onlyactive:
                     if component.active:
                         if component.convolved:
-                            np.add(sum_convolved,
-                                   component.function(
-                                       self.convolution_axis), sum_convolved)
+                            sum_convolved += component.function(
+                                self.convolution_axis)
                         else:
-                            np.add(sum_,
-                                   component.function(self.axis.axis), sum_)
-                        counter += component._nfree_param
+                            sum_ += component.function(self.axis.axis)
                 else:
                     if component.convolved:
-                        np.add(sum_convolved,
-                               component.function(self.convolution_axis),
-                               sum_convolved)
+                        sum_convolved += component.function(
+                            self.convolution_axis)
                     else:
-                        np.add(sum_, component.function(self.axis.axis),
-                               sum_)
-                    counter += component._nfree_param
+                        sum_ += component.function(self.axis.axis)
+
             to_return = sum_ + np.convolve(
                 self.low_loss(self.axes_manager),
                 sum_convolved, mode="valid")
@@ -1931,59 +1952,14 @@ class Model1D(BaseModel):
         self.update_plot()
 
     def _model_function(self, param):
-
-        if self.convolved is True:
-            counter = 0
-            sum_convolved = np.zeros(len(self.convolution_axis))
-            sum = np.zeros(len(self.axis.axis))
-            for component in self:  # Cut the parameters list
-                if component.active:
-                    if component.convolved is True:
-                        np.add(sum_convolved, component.__tempcall__(param[
-                            counter:counter + component._nfree_param],
-                            self.convolution_axis), sum_convolved)
-                    else:
-                        np.add(
-                            sum,
-                            component.__tempcall__(
-                                param[
-                                    counter:counter +
-                                    component._nfree_param],
-                                self.axis.axis),
-                            sum)
-                    counter += component._nfree_param
-
-            to_return = (sum + np.convolve(self.low_loss(self.axes_manager),
-                                           sum_convolved, mode="valid"))[
-                self.channel_switches]
-
-        else:
-            axis = self.axis.axis[self.channel_switches]
-            counter = 0
-            first = True
-            for component in self:  # Cut the parameters list
-                if component.active:
-                    if first is True:
-                        sum = component.__tempcall__(
-                            param[
-                                counter:counter +
-                                component._nfree_param],
-                            axis)
-                        first = False
-                    else:
-                        sum += component.__tempcall__(
-                            param[
-                                counter:counter +
-                                component._nfree_param],
-                            axis)
-                    counter += component._nfree_param
-            to_return = sum
-
-        if self.spectrum.metadata.Signal.binned is True:
-            to_return *= self.spectrum.axes_manager[-1].scale
+        self.p0 = param
+        self._fetch_values_from_p0()
+        to_return = self.__call__(non_convolved=False, onlyactive=True)
         return to_return
 
     def _jacobian(self, param, y, weights=None):
+        if weights is None:
+            weights = 1.
         if self.convolved is True:
             counter = 0
             grad = np.zeros(len(self.axis.axis))
@@ -2008,7 +1984,6 @@ class Model1D(BaseModel):
                                         self.low_loss(self.axes_manager),
                                         mode="valid"), par_grad)
                             grad = np.vstack((grad, par_grad))
-                        counter += component._nfree_param
                     else:
                         for parameter in component.free_parameters:
                             par_grad = parameter.grad(self.axis.axis)
@@ -2017,11 +1992,8 @@ class Model1D(BaseModel):
                                     np.add(par_grad, par.grad(
                                         self.axis.axis), par_grad)
                             grad = np.vstack((grad, par_grad))
-                        counter += component._nfree_param
-            if weights is None:
-                to_return = grad[1:, self.channel_switches]
-            else:
-                to_return = grad[1:, self.channel_switches] * weights
+                    counter += component._nfree_param
+            to_return = grad[1:, self.channel_switches] * weights
         else:
             axis = self.axis.axis[self.channel_switches]
             counter = 0
@@ -2041,13 +2013,22 @@ class Model1D(BaseModel):
                                     axis), par_grad)
                         grad = np.vstack((grad, par_grad))
                     counter += component._nfree_param
-            if weights is None:
-                to_return = grad[1:, :]
-            else:
-                to_return = grad[1:, :] * weights
+            to_return = grad[1:, :] * weights
         if self.spectrum.metadata.Signal.binned is True:
             to_return *= self.spectrum.axes_manager[-1].scale
         return to_return
+
+    def _jacobian4odr(self, param, x):
+        return self._jacobian(param, x)
+
+    def _gradient_ml(self, param, y, weights=None):
+        mf = self._model_function(param)
+        return -(self._jacobian(param, y) * (y / mf - 1)).sum(1)
+
+    def _gradient_ls(self, param, y, weights=None):
+        gls = (2 * self._errfunc(param, y, weights) *
+               self._jacobian(param, y)).sum(1)
+        return gls
 
     def plot(self, plot_components=False):
         """Plots the current spectrum to the screen and a map with a
