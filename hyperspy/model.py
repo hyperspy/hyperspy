@@ -233,22 +233,21 @@ class BaseModel(list):
         # raise an exception when using windows.connect
         return id(self)
 
-
     def store(self, name=None):
-        """Stores current model in the original spectrum
+        """Stores current model in the original signal
 
         Parameters
         ----------
             name : {None, str}
                 Stored model name. Auto-generated if left empty
         """
-        if self.spectrum is None:
+        if self.signal is None:
             raise ValueError("Cannot store models with no signal")
-        s = self.spectrum
+        s = self.signal
         s.models.store(self, name)
 
     def save(self, file_name, name=None):
-        """Saves spectrum and its model to a file
+        """Saves signal and its model to a file
 
         Parameters
         ----------
@@ -257,11 +256,11 @@ class BaseModel(list):
             name : {None, str}
                 Stored model name. Auto-generated if left empty
         """
-        if self.spectrum is None:
+        if self.signal is None:
             raise ValueError("Currently cannot store models with no signal")
         else:
             self.store(name)
-            self.spectrum.save(file_name)
+            self.signal.save(file_name)
 
     def _load_dictionary(self, dic):
         """Load data from dictionary.
@@ -330,10 +329,7 @@ class BaseModel(list):
         # Check if any of the other components in the model has the same name
         if thing in self:
             raise ValueError("Component already in model")
-        component_name_list = []
-        for component in self:
-            component_name_list.append(component.name)
-        name_string = ""
+        component_name_list = [component.name for component in self]
         if thing.name:
             name_string = thing.name
         else:
@@ -367,9 +363,7 @@ class BaseModel(list):
 
     def __delitem__(self, thing):
         thing = self.__getitem__(thing)
-        thing.model = None
-        list.__delitem__(self, self.index(thing))
-        self._touch()
+        self.remove(thing)
 
     def remove(self, thing, touch=True):
         """Remove component from model.
@@ -427,13 +421,6 @@ class BaseModel(list):
             self._connect_parameters2update_plot()
 
     __touch = _touch
-
-    @property
-    def _plot_active(self):
-        if self._plot is not None and self._plot.is_active() is True:
-            return True
-        else:
-            return False
 
     def _set_p0(self):
         self.p0 = ()
@@ -515,50 +502,6 @@ class BaseModel(list):
             self._connect_parameters2update_plot()
             self.update_plot()
 
-    def suspend_update(self):
-        """Prevents plot from updating until resume_update() is called
-
-        See Also
-        --------
-        resume_update
-        update_plot
-        """
-        if self._suspend_update is False:
-            self._suspend_update = True
-            self._disconnect_parameters2update_plot()
-        else:
-            warnings.warn("Update already suspended, does nothing.")
-
-    def resume_update(self, update=True):
-        """Resumes plot update after suspension by suspend_update()
-
-        Parameters
-        ----------
-        update : bool, optional
-            If True, also updates plot after resuming (default).
-
-        See Also
-        --------
-        suspend_update
-        update_plot
-        """
-        if self._suspend_update is True:
-            self._suspend_update = False
-            self._connect_parameters2update_plot()
-            if update is True:
-                # Ideally, the update flag should in stead work like this:
-                # If update is true, update_plot is called if any action
-                # would have called it while updating was suspended.
-                # However, this is prohibitively difficult to track, so
-                # in stead it is simply assume that a change has happened
-                # between suspend and resume, and therefore that the plot
-                # needs to update. As we do not know what has changed,
-                # all components need to update. This can however be
-                # suppressed by setting update to false
-                self.update_plot()
-        else:
-            warnings.warn("Update not suspended, nothing to resume.")
-
     def _fetch_values_from_p0(self, p_std=None):
         """Fetch the parameter values from the output of the optimzer `self.p0`
 
@@ -582,7 +525,6 @@ class BaseModel(list):
                     comp_p_std, onlyfree=True)
                 counter += component._nfree_param
 
-    # Defines the functions for the fitting process -------------------------
     def _model2plot(self, axes_manager, out_of_range2nans=True):
         old_axes_manager = None
         if axes_manager is not self.axes_manager:
@@ -600,291 +542,14 @@ class BaseModel(list):
             s = ns
         return s
 
-    def __call__(self, non_convolved=False, onlyactive=False):
-        """Returns the corresponding model for the current coordinates
-
-        Parameters
-        ----------
-        non_convolved : bool
-            If True it will return the deconvolved model
-        only_active : bool
-            If True, only the active components will be used to build the
-            model.
-
-        cursor: 1 or 2
-
-        Returns
-        -------
-        numpy array
-        """
-
-        if self.convolved is False or non_convolved is True:
-            axis = self.axis.axis[self.channel_switches]
-            sum_ = np.zeros(len(axis))
-            if onlyactive is True:
-                for component in self:  # Cut the parameters list
-                    if component.active:
-                        np.add(sum_, component.function(axis),
-                               sum_)
-            else:
-                for component in self:  # Cut the parameters list
-                    np.add(sum_, component.function(axis),
-                           sum_)
-            to_return = sum_
-
-        else:  # convolved
-            counter = 0
-            sum_convolved = np.zeros(len(self.convolution_axis))
-            sum_ = np.zeros(len(self.axis.axis))
-            for component in self:  # Cut the parameters list
-                if onlyactive:
-                    if component.active:
-                        if component.convolved:
-                            np.add(sum_convolved,
-                                   component.function(
-                                       self.convolution_axis), sum_convolved)
-                        else:
-                            np.add(sum_,
-                                   component.function(self.axis.axis), sum_)
-                        counter += component._nfree_param
-                else:
-                    if component.convolved:
-                        np.add(sum_convolved,
-                               component.function(self.convolution_axis),
-                               sum_convolved)
-                    else:
-                        np.add(sum_, component.function(self.axis.axis),
-                               sum_)
-                    counter += component._nfree_param
-            to_return = sum_ + np.convolve(
-                self.low_loss(self.axes_manager),
-                sum_convolved, mode="valid")
-            to_return = to_return[self.channel_switches]
-        if self.spectrum.metadata.Signal.binned is True:
-            to_return *= self.spectrum.axes_manager[-1].scale
-        return to_return
-
-    # TODO: the way it uses the axes
-    def _set_signal_range_in_pixels(self, i1=None, i2=None):
-        """Use only the selected spectral range in the fitting routine.
-
-        Parameters
-        ----------
-        i1 : Int
-        i2 : Int
-
-        Notes
-        -----
-        To use the full energy range call the function without arguments.
-        """
-
-        self.backup_channel_switches = copy.copy(self.channel_switches)
-        self.channel_switches[:] = False
-        self.channel_switches[i1:i2] = True
-        self.update_plot()
-
-    @interactive_range_selector
-    def set_signal_range(self, x1=None, x2=None):
-        """Use only the selected spectral range defined in its own units in the
-        fitting routine.
-
-        Parameters
-        ----------
-        E1 : None or float
-        E2 : None or float
-
-        Notes
-        -----
-        To use the full energy range call the function without arguments.
-        """
-        i1, i2 = self.axis.value_range_to_indices(x1, x2)
-        self._set_signal_range_in_pixels(i1, i2)
-
-    def _remove_signal_range_in_pixels(self, i1=None, i2=None):
-        """Removes the data in the given range from the data range that
-        will be used by the fitting rountine
-
-        Parameters
-        ----------
-        x1 : None or float
-        x2 : None or float
-        """
-        self.channel_switches[i1:i2] = False
-        self.update_plot()
-
-    @interactive_range_selector
-    def remove_signal_range(self, x1=None, x2=None):
-        """Removes the data in the given range from the data range that
-        will be used by the fitting rountine
-
-        Parameters
-        ----------
-        x1 : None or float
-        x2 : None or float
-
-        """
-        i1, i2 = self.axis.value_range_to_indices(x1, x2)
-        self._remove_signal_range_in_pixels(i1, i2)
-
-    def reset_signal_range(self):
-        """Resets the data range"""
-        self._set_signal_range_in_pixels()
-
-    def _add_signal_range_in_pixels(self, i1=None, i2=None):
-        """Adds the data in the given range from the data range that
-        will be used by the fitting rountine
-
-        Parameters
-        ----------
-        x1 : None or float
-        x2 : None or float
-        """
-        self.channel_switches[i1:i2] = True
-        self.update_plot()
-
-    @interactive_range_selector
-    def add_signal_range(self, x1=None, x2=None):
-        """Adds the data in the given range from the data range that
-        will be used by the fitting rountine
-
-        Parameters
-        ----------
-        x1 : None or float
-        x2 : None or float
-
-        """
-        i1, i2 = self.axis.value_range_to_indices(x1, x2)
-        self._add_signal_range_in_pixels(i1, i2)
-
-    def reset_the_signal_range(self):
-        self.channel_switches[:] = True
-        self.update_plot()
-
     def _model_function(self, param):
-
-        if self.convolved is True:
-            counter = 0
-            sum_convolved = np.zeros(len(self.convolution_axis))
-            sum = np.zeros(len(self.axis.axis))
-            for component in self:  # Cut the parameters list
-                if component.active:
-                    if component.convolved is True:
-                        np.add(sum_convolved, component.__tempcall__(param[
-                            counter:counter + component._nfree_param],
-                            self.convolution_axis), sum_convolved)
-                    else:
-                        np.add(
-                            sum,
-                            component.__tempcall__(
-                                param[
-                                    counter:counter +
-                                    component._nfree_param],
-                                self.axis.axis),
-                            sum)
-                    counter += component._nfree_param
-
-            to_return = (sum + np.convolve(self.low_loss(self.axes_manager),
-                                           sum_convolved, mode="valid"))[
-                self.channel_switches]
-
-        else:
-            axis = self.axis.axis[self.channel_switches]
-            counter = 0
-            first = True
-            for component in self:  # Cut the parameters list
-                if component.active:
-                    if first is True:
-                        sum = component.__tempcall__(
-                            param[
-                                counter:counter +
-                                component._nfree_param],
-                            axis)
-                        first = False
-                    else:
-                        sum += component.__tempcall__(
-                            param[
-                                counter:counter +
-                                component._nfree_param],
-                            axis)
-                    counter += component._nfree_param
-            to_return = sum
-
-        if self.spectrum.metadata.Signal.binned is True:
-            to_return *= self.spectrum.axes_manager[-1].scale
-        return to_return
-
-    # noinspection PyAssignmentToLoopOrWithParameter
-    def _jacobian(self, param, y, weights=None):
-        if self.convolved is True:
-            counter = 0
-            grad = np.zeros(len(self.axis.axis))
-            for component in self:  # Cut the parameters list
-                if component.active:
-                    component.fetch_values_from_array(
-                        param[
-                            counter:counter +
-                            component._nfree_param],
-                        onlyfree=True)
-                    if component.convolved:
-                        for parameter in component.free_parameters:
-                            par_grad = np.convolve(
-                                parameter.grad(self.convolution_axis),
-                                self.low_loss(self.axes_manager),
-                                mode="valid")
-                            if parameter._twins:
-                                for par in parameter._twins:
-                                    np.add(par_grad, np.convolve(
-                                        par.grad(
-                                            self.convolution_axis),
-                                        self.low_loss(self.axes_manager),
-                                        mode="valid"), par_grad)
-                            grad = np.vstack((grad, par_grad))
-                        counter += component._nfree_param
-                    else:
-                        for parameter in component.free_parameters:
-                            par_grad = parameter.grad(self.axis.axis)
-                            if parameter._twins:
-                                for par in parameter._twins:
-                                    np.add(par_grad, par.grad(
-                                        self.axis.axis), par_grad)
-                            grad = np.vstack((grad, par_grad))
-                        counter += component._nfree_param
-            if weights is None:
-                to_return = grad[1:, self.channel_switches]
-            else:
-                to_return = grad[1:, self.channel_switches] * weights
-        else:
-            axis = self.axis.axis[self.channel_switches]
-            counter = 0
-            grad = axis
-            for component in self:  # Cut the parameters list
-                if component.active:
-                    component.fetch_values_from_array(
-                        param[
-                            counter:counter +
-                            component._nfree_param],
-                        onlyfree=True)
-                    for parameter in component.free_parameters:
-                        par_grad = parameter.grad(axis)
-                        if parameter._twins:
-                            for par in parameter._twins:
-                                np.add(par_grad, par.grad(
-                                    axis), par_grad)
-                        grad = np.vstack((grad, par_grad))
-                    counter += component._nfree_param
-            if weights is None:
-                to_return = grad[1:, :]
-            else:
-                to_return = grad[1:, :] * weights
-        if self.spectrum.metadata.Signal.binned is True:
-            to_return *= self.spectrum.axes_manager[-1].scale
+        self.p0 = param
+        self._fetch_values_from_p0()
+        to_return = self.__call__(non_convolved=False, onlyactive=True)
         return to_return
 
     def _function4odr(self, param, x):
         return self._model_function(param)
-
-    def _jacobian4odr(self, param, x):
-        return self._jacobian(param, x)
 
     def _poisson_likelihood_function(self, param, y, weights=None):
         """Returns the likelihood function of the model for the given
@@ -894,38 +559,24 @@ class BaseModel(list):
         with np.errstate(invalid='ignore'):
             return -(y * np.log(mf) - mf).sum()
 
-    def _gradient_ml(self, param, y, weights=None):
-        mf = self._model_function(param)
-        return -(self._jacobian(param, y) * (y / mf - 1)).sum(1)
-
     def _errfunc(self, param, y, weights=None):
-        errfunc = self._model_function(param) - y
         if weights is None:
-            return errfunc
-        else:
-            return errfunc * weights
+            weights = 1.
+        errfun = self._model_function(param) - y
+        errfunc = errfun.ravel()
+        return errfunc * weights
 
     def _errfunc2(self, param, y, weights=None):
         if weights is None:
-            return ((self._errfunc(param, y)) ** 2).sum()
-        else:
-            return ((weights * self._errfunc(param, y)) ** 2).sum()
+            weights = 1.
+        return ((weights * self._errfunc(param, y)) ** 2).sum()
 
-    # TODO: adapt for 2D, only required when `grad=True`.
-    def _gradient_ls(self, param, y, weights=None):
-        gls = (2 * self._errfunc(param, y, weights) *
-               self._jacobian(param, y)).sum(1)
-        return gls
-
-    def _errfunc4mpfit(self, p, fjac=None, x=None, y=None,
-                       weights=None):
+    def _errfunc4mpfit(self, p, fjac=None, x=None, y=None, weights=None):
         if fjac is None:
             errfunc = self._model_function(p) - y
             if weights is not None:
                 errfunc *= weights
             status = 0
-            # TODO: adapted for 2D by reshaping errfunc to be 1D
-            errfunc = errfunc.ravel()
             return [status, errfunc]
         else:
             return [0, self._jacobian(p, y).T]
@@ -936,8 +587,7 @@ class BaseModel(list):
             variance = self.signal.metadata.Signal.Noise_properties.variance
             if isinstance(variance, Signal):
                 variance = variance.data.__getitem__(
-                    self.axes_manager._getitem_tuple
-                )[self.channel_switches]
+                    self.axes_manager._getitem_tuple)[self.channel_switches]
         else:
             variance = 1.0
         d = self(onlyactive=True) - self.signal()[self.channel_switches]
@@ -945,7 +595,7 @@ class BaseModel(list):
         self.chisq.data[self.signal.axes_manager.indices[::-1]] = sum(d)
 
     def _set_current_degrees_of_freedom(self):
-        self.dof.data[self.axes_manager.indices[::-1]] = len(self.p0)
+        self.dof.data[self.signal.axes_manager.indices[::-1]] = len(self.p0)
 
     @property
     def red_chisq(self):
@@ -1066,14 +716,14 @@ class BaseModel(list):
                             self.axes_manager._getitem_tuple)[
                             self.channel_switches]
                     else:
-                        raise AttributeError("The `navigation_shape` of the "
-                                             "variance signals is not equal to"
-                                             "the variance shape of the "
-                                             "spectrum")
+                        raise AttributeError(
+                            "The `navigation_shape` of the variance signals "
+                            "is not equal to the variance shape of the "
+                            "signal")
                 elif not isinstance(variance, numbers.Number):
-                    raise AttributeError("Variance must be a number or a "
-                                         "`Signal` instance but currently it is"
-                                         "a %s" % type(variance))
+                    raise AttributeError(
+                        "Variance must be a number or a `Signal` instance but "
+                        "currently it is a %s" % type(variance))
 
             weights = 1. / np.sqrt(variance)
         else:
@@ -1265,8 +915,9 @@ class BaseModel(list):
                                                          autosave_fn))
             messages.information(
                 "When multifit finishes its job the file will be deleted")
-        if mask is not None and \
-                (mask.shape != tuple(self.axes_manager._navigation_shape_in_array)):
+        if mask is not None and (
+            mask.shape != tuple(
+                self.axes_manager._navigation_shape_in_array)):
             messages.warning_exit(
                 "The mask must be a numpy array of boolen type with "
                 " shape: %s" +
@@ -1372,8 +1023,6 @@ class BaseModel(list):
             i += 1
 
         self.fetch_stored_values()
-
-    # Extend the list methods to call the _touch when the model is modified
 
     def assign_current_values_to_all(self, components_list=None, mask=None):
         """Set parameter values for all positions to the current ones.
@@ -1776,7 +1425,7 @@ class Model2D(BaseModel):
     """
 
     def __init__(self, image, dictionary=None):
-	self.image = image
+        self.image = image
         self.signal = self.image
         self.axes_manager = self.signal.axes_manager
         self.xaxis, self.yaxis = np.meshgrid(
@@ -1801,15 +1450,11 @@ class Model2D(BaseModel):
         # self._suspend_update = False
         self._adjust_position_all = None
         self._plot_components = False
-	self.components = ModelComponents(self)
+        self.components = ModelComponents(self)
         if dictionary is not None:
             self._load_dictionary(dictionary)
         self.inav = ModelSpecialSlicers(self, True)
         self.isig = ModelSpecialSlicers(self, False)
-
-
-    #def __repr__(self):
-    #    return u"<2D Model %s>".encode('utf8') % super(Model2D, self).__repr__()
 
     @property
     def image(self):
@@ -1863,24 +1508,6 @@ class Model2D(BaseModel):
                        sum_)
         return sum_
 
-    def _model_function(self, param):
-
-        xaxis, yaxis = (self.xaxis, self.yaxis)
-        counter = 0
-        first = True
-        for component in self:  # Cut the parameters list
-            if component.active:
-                if first is True:
-                    sum = component.__tempcall2d__(param[counter:counter +
-                                                   component._nfree_param],
-                                                   xaxis, yaxis)
-                    first = False
-                else:
-                    sum += component.__tempcall2d__(param[counter:counter +
-                                                    component._nfree_param],
-                                                    xaxis, yaxis)
-                counter += component._nfree_param
-        return sum
 
 
 class Model1D(BaseModel):
@@ -1916,7 +1543,7 @@ class Model1D(BaseModel):
             'dof.data': 'inav'}
 
         self.spectrum = spectrum
-	self.signal = self.spectrum
+        self.signal = self.spectrum
         self.axes_manager = self.spectrum.axes_manager
         self.axis = self.axes_manager.signal_axes[0]
         self.axes_manager.connect(self.fetch_stored_values)
