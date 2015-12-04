@@ -3169,7 +3169,7 @@ class Signal(FancySlicing,
         self.data = self.data.squeeze()
         return self
 
-    def _to_dictionary(self, add_learning_results=True):
+    def _to_dictionary(self, add_learning_results=True, add_models=False):
         """Returns a dictionary that can be used to recreate the signal.
 
         All items but `data` are copies.
@@ -3191,6 +3191,8 @@ class Signal(FancySlicing,
         if add_learning_results and hasattr(self, 'learning_results'):
             dic['learning_results'] = copy.deepcopy(
                 self.learning_results.__dict__)
+        if add_models:
+            dic['models'] = self.models._models.as_dictionary()
         return dic
 
     def _get_undefined_axes_list(self):
@@ -4943,7 +4945,7 @@ class Signal(FancySlicing,
             signal_origin=mp.Signal.signal_origin
             if "Signal.signal_origin" in mp
             else self._signal_origin)
-        self.__init__(**self._to_dictionary())
+        self.__init__(**self._to_dictionary(add_models=True))
 
     def set_signal_type(self, signal_type):
         """Set the signal type and change the current class

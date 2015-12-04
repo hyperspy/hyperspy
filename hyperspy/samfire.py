@@ -311,10 +311,9 @@ class Samfire(object):
     def _save(self, count):
         # maybe add saving marker + strategies as well?
         if count % self.save_every == 0:
-            self.model.stash.save('samfire_backup')
-            self.model.spectrum.save(slugify('backup_' + self.model.spectrum.metadata.General.title),
-                                     overwrite=True)
-            self.model.stash.remove('samfire_backup')
+            self.model.save(slugify('backup_' + self.model.spectrum.metadata.General.title),
+                            name='samfire_backup', overwrite=True)
+            self.model.spectrum.models.remove('samfire_backup')
 
     def _update(self, ind, count, results=None, isgood=None):
         if results is not None and (isgood is None or isgood):
@@ -395,8 +394,9 @@ class Samfire(object):
                 # get starting parameters / array of possible values
                 vals = self.strategies[self.active_strategy].values(ind)
                 m = self.model.inav[ind[::-1]]
-                m.stash.save('z')
+                m.store('z')
                 m_dict = m.spectrum._to_dictionary(False)
+                m_dict['models'] = m.spectrum.models._models.as_dictionary()
                 self._dispatch_worker(ind, m_dict, vals)
                 self._running_pixels.append(ind)
                 self.metadata.marker[ind] = 0.

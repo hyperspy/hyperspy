@@ -306,7 +306,7 @@ class TestSamfireMain:
         self.model, self.lor1, self.g, self.lor2 = generate_test_model()
         self.shape = (7, 15)
 
-    def test_all(self):
+    def test_multiprocessed(self):
         self.model.fit()
         samf = self.model.create_samfire()
         samf.plot_every = np.nan
@@ -330,6 +330,31 @@ class TestSamfireMain:
                         n_c._active_array], p1.map['values'][
                         n_c._active_array], rtol=0.2)
                 nt.assert_true(test)
+
+    # def test_one_core(self):
+    #     self.model.fit()
+    #     samf = self.model.create_samfire(workers=0)
+    #     samf.plot_every = np.nan
+    #     samf.strategies[0].radii = 1.
+    #     samf.strategies.remove(1)
+    #     samf.optional_components = [self.model[2]]
+    #     samf.start(fitter='mpfit', bounded=True)
+    #     nt.assert_true(np.all(samf.metadata.marker == -np.ones(self.shape)))
+    #     for o_c, n_c in zip([self.g, self.lor1, self.lor2], self.model):
+    #         for p, p1 in zip(o_c.parameters, n_c.parameters):
+
+    #             print o_c._id_name, n_c._id_name, p1._id_name, p._id_name
+    #             print p.map['values'][:4, :4]
+    #             print '----------------------------'
+    #             print p1.map['values'][:4, :4]
+    #             print 'ooooooooooooooooooooooooooooooooooooooooooo'
+
+    #             test = np.allclose(
+    #                 p.map['values'][
+    #                     :7, :15][
+    #                     n_c._active_array], p1.map['values'][
+    #                     n_c._active_array], rtol=0.2)
+    #             nt.assert_true(test)
 
 
 class TestSamfireFitKernel:
@@ -424,9 +449,10 @@ class TestSamfireFitKernel:
     def test_main_result(self):
         m = self.model
         result_q = self.q
-        m_dict = m.inav[self.ind[::-1]]
-        m_dict.stash.save('z')
-        m_dict = m_dict.spectrum._to_dictionary()
+        m_slice = m.inav[self.ind[::-1]]
+        m_slice.store('z')
+        m_dict = m_slice.spectrum._to_dictionary(False)
+        m_dict['models'] = m_slice.spectrum.models._models.as_dictionary()
         optional_comps = [1, 2, 3, 4, 5]
         run_args = (self.ind,
                     m_dict,

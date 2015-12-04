@@ -16,7 +16,7 @@
 # along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 
-def single_kernel(m, ind, values, optional_components, _args, test):
+def single_kernel(model, ind, values, optional_components, _args, test):
     from itertools import combinations, product
     import numpy as np
     from hyperspy.utils.model_selection import AICc
@@ -27,20 +27,20 @@ def single_kernel(m, ind, values, optional_components, _args, test):
         name_list = []
         # TODO: put changing _position parameter of each component at the
         # beginning
-        for _c_n, _c in vals.iteritems():
-            if _c_n in turned_on_names:
-                for p_n, p in _c.iteritems():
-                    if not isinstance(p, list):
-                        p = [p]
-                    tmp.append(p)
-                    name_list.append((_c_n, p_n))
+        for _comp_n, _comp in vals.iteritems():
+            if _comp_n in turned_on_names:
+                for par_n, par in _comp.iteritems():
+                    if not isinstance(par, list):
+                        par = [par]
+                    tmp.append(par)
+                    name_list.append((_comp_n, par_n))
         return name_list, product(*tmp)
 
     comb = []
     AICc_fraction = 0.99
-    m.axes_manager.indices = ind[::-1]
-    for c in optional_components:
-        m[c].active = False
+    model.axes_manager.indices = ind[::-1]
+    for comp in optional_components:
+        model[comp].active = False
 
     for num in xrange(len(optional_components) + 1):
         for c in combinations(optional_components, num):
@@ -49,29 +49,29 @@ def single_kernel(m, ind, values, optional_components, _args, test):
     best_AICc, best_dof = np.inf, np.inf
     best_comb, best_values, best_names = None, None, None
 
-    component_names = [c.name for c in m]
+    component_names = [c.name for c in model]
 
-    for c in comb:
+    for combination in comb:
         # iterate all component combinations
-        for component in c:
-            m[component].active = True
+        for component in combination:
+            model[component].active = True
 
-        on_comps = [i for i, _c in enumerate(m) if _c.active]
+        on_comps = [i for i, _c in enumerate(model) if _c.active]
         name_list, iterator = generate_values_iterator(
             component_names, values, on_comps)
 
         ifgood = False
         for it in iterator:
             # iterate all parameter value combinations
-            for (c_n, p_n), v in zip(name_list, it):
+            for (comp_n, par_n), val in zip(name_list, it):
                 try:
-                    getattr(m[c_n], p_n).value = v
+                    getattr(model[comp_n], par_n).value = val
                 except:
                     pass
-            m.fit(**_args)
+            model.fit(**_args)
             # only perform iterations until we find a solution that we think is
             # good enough
-            ifgood = test.test(m, ind)
+            ifgood = test.test(model, ind)
             if ifgood:
                 break
         if ifgood:
@@ -80,36 +80,36 @@ def single_kernel(m, ind, values, optional_components, _args, test):
                 return True
 
             # get model with best chisq here, and test model validation
-            new_AICc = AICc(m.inav[ind[::-1]])
+            new_AICc = AICc(model.inav[ind[::-1]])
 
             if new_AICc < AICc_fraction * best_AICc or \
                     (np.abs(new_AICc - best_AICc) <= np.abs(AICc_fraction * best_AICc)
-                     and len(m.p0) < best_dof):
+                     and len(model.p0) < best_dof):
                 best_values = [
                     getattr(
-                        m[c_n],
-                        p_n).value for c_n,
-                    p_n in name_list]
+                        model[comp_n],
+                        par_n).value for comp_n,
+                    par_n in name_list]
                 best_names = name_list
-                best_comb = c
+                best_comb = combination
                 best_AICc = new_AICc
-                best_dof = len(m.p0)
-        for component in c:
-            m[component].active = False
+                best_dof = len(model.p0)
+        for component in combination:
+            model[component].active = False
 
     # take the best overall combination of components and parameters:
     if best_comb is None:
-        m.chisq.data[ind] = np.nan
+        model.chisq.data[ind] = np.nan
         return False
     else:
         for component in best_comb:
-            m[component].active = True
-        for (c_n, p_n), v in zip(best_names, best_values):
+            model[component].active = True
+        for (comp_n, par_n), val in zip(best_names, best_values):
             try:
-                getattr(m[c_n], p_n).value = v
+                getattr(model[comp_n], par_n).value = val
             except:
                 pass
-        m.fit(**_args)
+        model.fit(**_args)
         return True
 
 
@@ -131,19 +131,19 @@ def multi_kernel(
         name_list = []
         # TODO: put changing _position parameter of each component at the
         # beginning
-        for _c_n, _c in vals.iteritems():
-            if _c_n in turned_on_names:
-                for p_n, p in _c.iteritems():
-                    if not isinstance(p, list):
-                        p = [p]
-                    tmp.append(p)
-                    name_list.append((_c_n, p_n))
+        for _comp_n, _comp in vals.iteritems():
+            if _comp_n in turned_on_names:
+                for par_n, par in _comp.iteritems():
+                    if not isinstance(par, list):
+                        par = [par, ]
+                    tmp.append(par)
+                    name_list.append((_comp_n, par_n))
         return name_list, product(*tmp)
 
-    def send_good_results(m, previous_switching, cur_p, result_q, ind):
-        result = copy.deepcopy(m.as_dictionary(picklable=True))
-        for num, c in enumerate(previous_switching):
-            result['components'][num]['active_is_multidimensional'] = c
+    def send_good_results(model, previous_switching, cur_p, result_q, ind):
+        result = copy.deepcopy(model.as_dictionary())
+        for num, a_i_m in enumerate(previous_switching):
+            result['components'][num]['active_is_multidimensional'] = a_i_m
         result['current'] = cur_p._identity
         result_q.put((ind, result, True))
 
@@ -153,93 +153,98 @@ def multi_kernel(
     comb = []
     AICc_fraction = 0.99
 
-    comp_dict = m_dic['metadata']['Analysis'][
-        'models']['z']['_dict']['components']
-    for num, c in enumerate(comp_dict):
-        previous_switching.append(c['active_is_multidimensional'])
-        c['active_is_multidimensional'] = False
-    for c in optional_components:
-        comp_dict[c]['active'] = False
+    comp_dict = m_dic['models']['z']['_dict']['components']
+    for num, comp in enumerate(comp_dict):
+        previous_switching.append(comp['active_is_multidimensional'])
+        comp['active_is_multidimensional'] = False
+    for comp in optional_components:
+        comp_dict[comp]['active'] = False
 
     for num in xrange(len(optional_components) + 1):
-        for c in combinations(optional_components, num):
-            comb.append(c)
+        for comp in combinations(optional_components, num):
+            comb.append(comp)
 
     best_AICc, best_dof = np.inf, np.inf
     best_comb, best_values, best_names = None, None, None
 
     component_names = [c['name'] for c in comp_dict]
 
-    s = Signal(**m_dic)
-    s._assign_subclass()
-    if s.metadata.Signal.signal_type == 'EELS':
-        additional_kwds = {'low_loss': None,
-                           'auto_background': False,
-                           'auto_add_edges': False,
-                           'GOS': None,
-                           }
-    else:
-        additional_kwds = {}
-    m = s.create_model(**additional_kwds)
-    m.stash.pop('z')
+    sig = Signal(**m_dic)
+    sig._assign_subclass()
+    model = sig.models.z.restore()
+    # if s.metadata.Signal.signal_type == 'EELS':
+    #     additional_kwds = {'low_loss': None,
+    #                        'auto_background': False,
+    #                        'auto_add_edges': False,
+    #                        'GOS': None,
+    #                        }
+    # else:
+    #     additional_kwds = {}
+    # m = s.create_model(**additional_kwds)
+    # m.stash.pop('z')
 
-    for c in comb:
+    for combination in comb:
         # iterate all component combinations
-        for component in c:
-            m[component].active = True
+        for component in combination:
+            model[component].active = True
 
-        on_comps = [i for i, _c in enumerate(m) if _c.active]
+        on_comps = [i for i, _c in enumerate(model) if _c.active]
         name_list, iterator = generate_values_iterator(
             component_names, values, on_comps)
 
         ifgood = False
         for it in iterator:
             # iterate all parameter value combinations
-            for (c_n, p_n), v in zip(name_list, it):
+            for (comp_n, par_n), val in zip(name_list, it):
                 try:
-                    getattr(m[c_n], p_n).value = v
+                    getattr(model[comp_n], par_n).value = val
                 except:
                     pass
-            m.fit(**_args)
+            model.fit(**_args)
             # only perform iterations until we find a solution that we think is
             # good enough
-            ifgood = test.test(m, (0,))
+            ifgood = test.test(model, (0,))
             if ifgood:
                 break
         if ifgood:
             # get model with best chisq here, and test model validation
             if len(comb) == 1:
-                send_good_results(m, previous_switching, cur_p, result_q, ind)
-            new_AICc = AICc(m)
+                send_good_results(
+                    model,
+                    previous_switching,
+                    cur_p,
+                    result_q,
+                    ind)
+            new_AICc = AICc(model)
 
             if new_AICc < AICc_fraction * best_AICc or \
                     (np.abs(new_AICc - best_AICc) <= np.abs(AICc_fraction * best_AICc)
-                     and len(m.p0) < best_dof):
+                     and len(model.p0) < best_dof):
                 best_values = [
                     getattr(
-                        m[c_n],
-                        p_n).value for c_n,
-                    p_n in name_list]
+                        model[comp_n],
+                        par_n).value for comp_n,
+                    par_n in name_list]
                 best_names = name_list
-                best_comb = c
+                best_comb = combination
                 best_AICc = new_AICc
-                best_dof = len(m.p0)
-        for component in c:
-            m[component].active = False
+                best_dof = len(model.p0)
+        for component in combination:
+            model[component].active = False
 
     # take the best overall combination of components and parameters:
     if best_comb is None:
         result_q.put((ind, None, False))
     else:
         for component in best_comb:
-            m[component].active = True
-        for (c_n, p_n), v in zip(best_names, best_values):
+            model[component].active = True
+        for (comp_n, par_n), val in zip(best_names, best_values):
             try:
-                getattr(m[c_n], p_n).value = v
+                getattr(model[comp_n], par_n).value = val
             except:
                 pass
-        m.fit(**_args)
-        send_good_results(m, previous_switching, cur_p, result_q, ind)
+        model.fit(**_args)
+        send_good_results(model, previous_switching, cur_p, result_q, ind)
         # result = copy.deepcopy(m.as_dictionary(picklable=True))
         # for num, c in enumerate(previous_switching):
         #     result['components'][num]['active_is_multidimensional'] = c
