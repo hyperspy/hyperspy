@@ -61,8 +61,8 @@ class Samfire(object):
         fitting order, hence it is randomised.
     metadata : dictionary
         A dictionary for important samfire parameters
-    active_strategy : int
-        Index of the currently active strategy from the strategies list
+    active_strategy : strategy
+        The currently active strategy from the strategies list
     update_every : int
         If segmenter strategy is running, updates the historams every time update_every good fits are found.
     plot_every : int
@@ -95,7 +95,7 @@ class Samfire(object):
     """
 
     _workers = 0
-    _active_strategy = 0
+    __active_strategy_ind = 0
 
     class _strategy_list(list):
 
@@ -125,7 +125,7 @@ class Samfire(object):
                 for n, s in enumerate(self):
                     ans += u"\n"
                     name = repr(s)
-                    a = "->" if self.samf.active_strategy is n else ""
+                    a = u" x" if self.samf._active_strategy_ind == n else u""
                     ans += signature % (a, str(n), name)
             return ans.encode('utf8')
 
@@ -159,7 +159,7 @@ class Samfire(object):
         self.strategies = Samfire._strategy_list(self)
         self.strategies.append(reduced_chi_squared_strategy())
         self.strategies.append(histogram_strategy())
-        self.active_strategy = 0
+        self._active_strategy_ind = 0
         self._result_q = None
         self.update_every = max(
             10,
@@ -175,6 +175,14 @@ class Samfire(object):
         self.single_kernel = single_kernel
         self._max_time_in_seconds = 60
         self.refresh_database()
+
+    @property
+    def active_strategy(self):
+        return self.strategies[self._active_strategy_ind]
+
+    @active_strategy.setter
+    def active_strategy(self, value):
+        self.change_strategy(value)
 
     def _setup(self):
 
@@ -212,11 +220,11 @@ class Samfire(object):
         while True:
             self._run_active_strategy()
             self._plot(0)
-            if self.active_strategy == num_of_strat - 1:
+            if self._active_strategy_ind == num_of_strat - 1:
                 # last one just finished running
                 break
 
-            self.change_strategy(self.active_strategy + 1)
+            self.change_strategy(self._active_strategy_ind + 1)
         self.stop()
 
     def append(self, strategy):
@@ -256,12 +264,12 @@ class Samfire(object):
         self._workers = np.abs(int(value))
 
     @property
-    def active_strategy(self):
-        return self._active_strategy
+    def _active_strategy_ind(self):
+        return self.__active_strategy_ind
 
-    @active_strategy.setter
-    def active_strategy(self, value):
-        self._active_strategy = np.abs(int(value))
+    @_active_strategy_ind.setter
+    def _active_strategy_ind(self, value):
+        self.__active_strategy_ind = np.abs(int(value))
 
     def _run_active_strategy(self):
         if self.workers:
@@ -294,7 +302,7 @@ class Samfire(object):
         count = 0
         while np.any(self.metadata.marker > 0.):
             ind = self._next_pixels(1)[0]
-            vals = self.strategies[self.active_strategy].values(ind)
+            vals = self.active_strategy.values(ind)
             self._running_pixels.append(ind)
             isgood = self.single_kernel(self.model,
                                         ind,
@@ -304,7 +312,7 @@ class Samfire(object):
                                         self.metadata.goodness_test)
             self._running_pixels.remove(ind)
             count += 1
-            self.strategies[self.active_strategy].update(ind, isgood, count)
+            self.active_strategy.update(ind, isgood, count)
             self._plot(count)
             self._save(count)
 
@@ -322,7 +330,7 @@ class Samfire(object):
         if isgood is None:
             isgood = self.metadata.goodness_test.test(self.model, ind)
 
-        self.strategies[self.active_strategy].update(ind, isgood, count)
+        self.active_strategy.update(ind, isgood, count)
         if not isgood and results is not None:
             self._swap_dict_and_model(ind, results)
 
@@ -340,22 +348,30 @@ class Samfire(object):
             self.model,
             calculated_pixels)
 
-        self.strategies[self.active_strategy].refresh(True, calculated_pixels)
+        self.active_strategy.refresh(True, calculated_pixels)
 
     def change_strategy(self, new_strat):
         """Changes current strategy to a new one. Certain rules apply:
         diffusion -> diffusion : resets all "ignored" pixels
-        diffusion -> segmenter : saves already calculated pixels to be ignored when(if) subsequently diffusion
-                                 strategy is run
+        diffusion -> segmenter : saves already calculated pixels to be ignored
+                                 when(if) subsequently diffusion strategy is run
 
         Parameters
         ----------
-            new_strat : int
-                index of the new strategy from the strategies list
+            new_strat : {int | strategy}
+                index of the new strategy from the strategies list or the
+                strategy object itself
         """
+        from numbers import Number
+        if not isinstance(new_strat, Number):
+            try:
+                new_strat = self.strategies.index(new_strat)
+            except ValueError:
+                raise ValueError(
+                    "The passed object is not in current strategies list")
 
         new_strat = np.abs(int(new_strat))
-        if new_strat is self.active_strategy:
+        if new_strat == self._active_strategy_ind:
             self.refresh_database()
 
         # copy previous "done" pixels to the new one, delete old database
@@ -364,7 +380,7 @@ class Samfire(object):
         if new_strat >= len(self.strategies):
             raise ValueError('too big new strategy index')
 
-        current = self.strategies[self.active_strategy]
+        current = self.active_strategy
         new = self.strategies[new_strat]
 
         if isinstance(current, diffusion_strategy) and isinstance(new, diffusion_strategy):
@@ -382,7 +398,7 @@ class Samfire(object):
         current.clean()
         if current.close_plot is not None:
             current.close_plot()
-        self.active_strategy = new_strat
+        self._active_strategy_ind = new_strat
 
     def _add_jobs(self):
         # check that really need more jobs
@@ -392,7 +408,7 @@ class Samfire(object):
             inds = self._next_pixels(need_inds)
             for ind in inds:
                 # get starting parameters / array of possible values
-                vals = self.strategies[self.active_strategy].values(ind)
+                vals = self.active_strategy.values(ind)
                 m = self.model.inav[ind[::-1]]
                 m.store('z')
                 m_dict = m.spectrum._to_dictionary(False)
@@ -492,9 +508,7 @@ class Samfire(object):
         Segmenter strategies plot a collection of histograms, one per parameter
         """
         if self.strategies:
-            self._figure = self.strategies[
-                self.active_strategy].plot(
-                self._figure)
+            self._figure = self.active_strategy.plot(self._figure)
 
     def __repr__(self):
         ans = u"<SAMFire of the signal titled: '"

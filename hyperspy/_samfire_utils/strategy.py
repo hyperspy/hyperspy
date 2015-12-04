@@ -67,6 +67,9 @@ class strategy(object):
     def __repr__(self):
         return self.name.encode('utf8')
 
+    def remove(self):
+        self.samf.strategies.remove(self)
+
 
 class diffusion_strategy(strategy):
 

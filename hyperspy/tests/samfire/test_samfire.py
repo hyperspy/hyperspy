@@ -287,15 +287,15 @@ class TestSamfireEmpty:
         samf.strategies.append(reduced_chi_squared_strategy())
         samf.change_strategy(2)
         nt.assert_equal(samf.metadata.marker[ind], -1)
-        nt.assert_equal(samf.active_strategy, 2)
+        nt.assert_equal(samf._active_strategy_ind, 2)
 
         samf.change_strategy(1)
-        nt.assert_equal(samf.active_strategy, 1)
+        nt.assert_equal(samf._active_strategy_ind, 1)
         nt.assert_equal(samf.metadata.marker[ind], -2)
 
         samf.strategies.append(histogram_strategy())
         samf.change_strategy(3)
-        nt.assert_equal(samf.active_strategy, 3)
+        nt.assert_equal(samf._active_strategy_ind, 3)
         nt.assert_equal(samf.metadata.marker[ind], -2)
 
 
