@@ -752,15 +752,10 @@ class Component(t.HasTraits):
         return text
 
     def _update_free_parameters(self):
-        self.free_parameters = set()
-        for parameter in self.parameters:
-            if parameter.free:
-                self.free_parameters.add(parameter)
-        # update_number_free_parameters(self):
-        i = 0
-        for parameter in self.free_parameters:
-            i += parameter._number_of_elements
-        self._nfree_param = i
+        self.free_parameters = sorted([par for par in self.parameters if
+                                       par.free], key=lambda x: x.name)
+        self._nfree_param = sum([par._number_of_elements for par in
+                                 self.free_parameters])
 
     def update_number_parameters(self):
         i = 0
@@ -775,7 +770,7 @@ class Component(t.HasTraits):
         else:
             parameters = self.parameters
         i = 0
-        for parameter in parameters:
+        for parameter in sorted(parameters, key=lambda x: x.name):
             length = parameter._number_of_elements
             parameter.value = (p[i] if length == 1 else p[i:i + length])
             if p_std is not None:
