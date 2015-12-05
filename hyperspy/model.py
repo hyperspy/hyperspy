@@ -559,12 +559,6 @@ class BaseModel(list):
         with np.errstate(invalid='ignore'):
             return -(y * np.log(mf) - mf).sum()
 
-    def _errfunc(self, param, y, weights=None):
-        if weights is None:
-            weights = 1.
-        errfunc = self._model_function(param) - y
-        return errfunc * weights
-
     def _errfunc2(self, param, y, weights=None):
         if weights is None:
             weights = 1.
@@ -1507,6 +1501,12 @@ class Model2D(BaseModel):
                        sum_)
         return sum_
 
+    def _errfunc(self, param, y, weights=None):
+        if weights is None:
+            weights = 1.
+        errfunc = self._model_function(param) - y
+        return (errfunc * weights).ravel()
+
     # TODO: The methods below are implemented only for Model1D and should be
     # added eventually also for Model2D. Probably there are smarter ways to do
     # it than redefining every method, but it is structured this way now to make
@@ -1966,7 +1966,12 @@ class Model1D(BaseModel):
             to_return *= self.spectrum.axes_manager[-1].scale
         return to_return
 
-    # TODO: the way it uses the axes
+    def _errfunc(self, param, y, weights=None):
+        if weights is None:
+            weights = 1.
+        errfunc = self._model_function(param) - y
+        return errfunc * weights
+
     def _set_signal_range_in_pixels(self, i1=None, i2=None):
         """Use only the selected spectral range in the fitting routine.
 
