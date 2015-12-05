@@ -1507,6 +1507,118 @@ class Model2D(BaseModel):
                        sum_)
         return sum_
 
+    # TODO: The methods below are implemented only for Model1D and should be
+    # added eventually also for Model2D. Probably there are smarter ways to do
+    # it than redefining every method, but it is structured this way now to make
+    # clear what is and isn't available
+    def _connect_parameters2update_plot(self):
+        raise NotImplementedError
+
+    def _disconnect_parameters2update_plot(self):
+        raise NotImplementedError
+
+    def as_signal(self, component_list=None, out_of_range_to_nan=True,
+                  show_progressbar=None):
+        raise NotImplementedError
+
+    @property
+    def _plot_active(self):
+        raise NotImplementedError
+
+    def update_plot(self, *args, **kwargs):
+        raise NotImplementedError
+
+    def suspend_update(self):
+        raise NotImplementedError
+
+    def resume_update(self, update=True):
+        raise NotImplementedError
+
+    def _update_model_line(self):
+        raise NotImplementedError
+
+    def _set_signal_range_in_pixels(self, i1=None, i2=None):
+        raise NotImplementedError
+
+    @interactive_range_selector
+    def set_signal_range(self, x1=None, x2=None):
+        raise NotImplementedError
+
+    def _remove_signal_range_in_pixels(self, i1=None, i2=None):
+        raise NotImplementedError
+
+    @interactive_range_selector
+    def remove_signal_range(self, x1=None, x2=None):
+        raise NotImplementedError
+
+    def reset_signal_range(self):
+        raise NotImplementedError
+
+    def _add_signal_range_in_pixels(self, i1=None, i2=None):
+        raise NotImplementedError
+
+    @interactive_range_selector
+    def add_signal_range(self, x1=None, x2=None):
+        raise NotImplementedError
+
+    def reset_the_signal_range(self):
+        raise NotImplementedError
+
+    def _jacobian(self, param, y, weights=None):
+        raise NotImplementedError
+
+    def _jacobian4odr(self, param, x):
+        raise NotImplementedError
+
+    def _gradient_ml(self, param, y, weights=None):
+        raise NotImplementedError
+
+    def _gradient_ls(self, param, y, weights=None):
+        raise NotImplementedError
+
+    def plot(self, plot_components=False):
+        raise NotImplementedError
+
+    @staticmethod
+    def _connect_component_line(component):
+        raise NotImplementedError
+
+    @staticmethod
+    def _disconnect_component_line(component):
+        raise NotImplementedError
+
+    def _connect_component_lines(self):
+        raise NotImplementedError
+
+    def _disconnect_component_lines(self):
+        raise NotImplementedError
+
+    def _plot_component(self, component):
+        raise NotImplementedError
+
+    @staticmethod
+    def _update_component_line(component):
+        raise NotImplementedError
+
+    def _disable_plot_component(self, component):
+        raise NotImplementedError
+
+    def _close_plot(self):
+        raise NotImplementedError
+
+    def enable_plot_components(self):
+        raise NotImplementedError
+
+    def disable_plot_components(self):
+        raise NotImplementedError
+
+    def enable_adjust_position(
+            self, components=None, fix_them=True, show_label=True):
+        raise NotImplementedError
+
+    def disable_adjust_position(self):
+        raise NotImplementedError
+
 
 class Model1D(BaseModel):
 
@@ -1949,12 +2061,6 @@ class Model1D(BaseModel):
     def reset_the_signal_range(self):
         self.channel_switches[:] = True
         self.update_plot()
-
-    def _model_function(self, param):
-        self.p0 = param
-        self._fetch_values_from_p0()
-        to_return = self.__call__(non_convolved=False, onlyactive=True)
-        return to_return
 
     def _jacobian(self, param, y, weights=None):
         if weights is None:
