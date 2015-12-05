@@ -534,7 +534,8 @@ class EELSModel(Model1D):
         # Backup the fsstate
         to_activate_fs = []
         for edge_ in [edge, ] + twins:
-            if edge_.fine_structure_active is True and edge_.fine_structure_coeff.free is True:
+            if (edge_.fine_structure_active is True and
+                    edge_.fine_structure_coeff.free is True):
                 to_activate_fs.append(edge_)
         self.disable_fine_structure(to_activate_fs)
 
