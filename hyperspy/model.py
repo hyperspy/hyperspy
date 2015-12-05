@@ -562,8 +562,7 @@ class BaseModel(list):
     def _errfunc(self, param, y, weights=None):
         if weights is None:
             weights = 1.
-        errfun = self._model_function(param) - y
-        errfunc = errfun.ravel()
+        errfunc = self._model_function(param) - y
         return errfunc * weights
 
     def _errfunc2(self, param, y, weights=None):
@@ -590,7 +589,7 @@ class BaseModel(list):
                     self.axes_manager._getitem_tuple)[self.channel_switches]
         else:
             variance = 1.0
-        d = self(onlyactive=True) - self.signal()[self.channel_switches]
+        d = self(onlyactive=True) - self.spectrum()[self.channel_switches]
         d *= d / (1. * variance)  # d = difference^2 / variance.
         self.chisq.data[self.signal.axes_manager.indices[::-1]] = sum(d)
 
@@ -705,7 +704,7 @@ class BaseModel(list):
                                           'is only implemented for the "fmin" '
                                           'optimizer')
         elif method == "ls":
-            if "Signal.Noise_properties.variance" not in self.signal.metadata:
+            if "Signal.Noise_properties.variance" not in self.spectrum.metadata:
                 variance = 1
             else:
                 variance = self.signal.metadata.Signal.Noise_properties.variance
@@ -1517,6 +1516,9 @@ class Model1D(BaseModel):
     Methods are defined for creating, fitting, and  plotting 1D models.
     """
     def __init__(self, spectrum, dictionary=None):
+        self.spectrum = spectrum
+        self.signal = self.spectrum
+        self.axes_manager = self.signal.axes_manager
         self._plot = None
         self._position_widgets = []
         self._adjust_position_all = None
@@ -1539,20 +1541,17 @@ class Model1D(BaseModel):
             'chisq.data': 'inav',
             'dof.data': 'inav'}
 
-        self.spectrum = spectrum
-        self.axes_manager = self.spectrum.axes_manager
         self.axis = self.axes_manager.signal_axes[0]
         self.axes_manager.connect(self.fetch_stored_values)
         self.channel_switches = np.array([True] * len(self.axis.axis))
-
-        self.chisq = self.spectrum._get_navigation_signal()
+        self.chisq = spectrum._get_navigation_signal()
         self.chisq.change_dtype("float")
         self.chisq.data.fill(np.nan)
-        self.chisq.metadata.General.title = self.spectrum.metadata.General.title + \
+        self.chisq.metadata.General.title = self.signal.metadata.General.title + \
             ' chi-squared'
         self.dof = self.chisq._deepcopy_with_new_data(
             np.zeros_like(self.chisq.data, dtype='int'))
-        self.dof.metadata.General.title = self.spectrum.metadata.General.title + \
+        self.dof.metadata.General.title = self.signal.metadata.General.title + \
             ' degrees of freedom'
         self.free_parameters_boundaries = None
         self._low_loss = None
