@@ -255,6 +255,9 @@ def file_writer(filename, signal, **kwds):
         vbf = signal.mean(2j).mean(2j).data.astype(endianess+'u1')
         vbf.tofile(f)
         # Zero pad until next data block
+        if f.tell() > int(header['Data_offset_2']):
+            raise ValueError("Signal navigation size does not match "
+                             "data dimensions.")
         zero_pad = int(header['Data_offset_2']) - f.tell()
         np.zeros((zero_pad,), np.byte).tofile(f)
 
@@ -268,5 +271,3 @@ def file_writer(filename, signal, **kwds):
             dp_head.tofile(f)
             img.astype(endianess+'u1').tofile(f)
             dp_head['ID'] += 1
-            if dp_head['ID'] > header['NX'] * header['NY']:
-                raise ValueError('Unexpected navigation size.')

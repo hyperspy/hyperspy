@@ -136,6 +136,18 @@ def test_default_header():
     header = get_default_header()
     nt.assert_is_not_none(header)
 
+def test_non_square():
+    signal = hs.signals.Image((255*np.random.rand(10, 3, 5, 6)
+        ).astype(np.uint8))
+    try:
+        with nt.assert_raises(ValueError):
+            signal.save(save_path)
+    finally:
+        try:
+            os.remove(save_path)
+        except WindowsError:
+            pass    # If we don't do this, we mask real exceptions
+
 def test_load_memmap():
     s = hs.load(file2)
     nt.assert_is_instance(s.data, np.memmap)
