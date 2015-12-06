@@ -93,3 +93,25 @@ def test_d2s_string_cut():
     d = dict(text='Testerstring')
     sa = dict2sarray(d, dtype=dt)
     nt.assert_equal(sa['text'][0], 'Tester')
+
+def test_d2s_array1():
+    dt2 = dt + [('z', (np.uint8, 4)), ('u', (np.uint16, 4))]
+    d = dict(z=2, u=[1,2,3,4])
+    sa = dict2sarray(d, dtype=dt2)
+    np.testing.assert_array_equal(sa['z'][0], [2, 2, 2, 2])
+    np.testing.assert_array_equal(sa['u'][0], [1, 2, 3, 4])
+
+def test_d2s_array2():
+    d = dict(x=2, y=[1,2,3,4])
+    sa = np.zeros((4,), dtype=dt)
+    sa = dict2sarray(d, sarray=sa)
+    np.testing.assert_array_equal(sa['x'], [2, 2, 2, 2])
+    np.testing.assert_array_equal(sa['y'], [1, 2, 3, 4])
+
+def test_d2s_arrayX():
+    dt2 = dt + [('z', (np.uint8, 4)), ('u', (np.uint16, 4))]
+    d = dict(z=2, u=[1,2,3,4])
+    sa = np.zeros((4,), dtype=dt2)
+    sa = dict2sarray(d, sarray=sa)
+    np.testing.assert_array_equal(sa['z'], [[2, 2, 2, 2],]*4)
+    np.testing.assert_array_equal(sa['u'], [[1, 2, 3, 4],]*4)
