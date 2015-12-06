@@ -21,9 +21,12 @@ from datetime import datetime, timedelta
 from dateutil import tz
 from traits.api import Undefined
 import numpy as np
+import logging
 import warnings
 
 from hyperspy.misc.array_tools import sarray2dict, dict2sarray
+
+_logger = logging.getLogger(__name__)
 
 
 # Plugin characteristics
@@ -143,6 +146,7 @@ def get_header_from_signal(signal, endianess='<'):
 
 def file_reader(filename, endianess='<', load_to_memory=False, mmap_mode='c',
                 **kwds):
+    _logger.debug("Reading blockfile: %s" % filename)
     metadata = {}
     # Makes sure we open in right mode:
     if '+' in mmap_mode or ('write' in mmap_mode and
@@ -150,6 +154,7 @@ def file_reader(filename, endianess='<', load_to_memory=False, mmap_mode='c',
         f = open(filename, 'r+b')
     else:
         f = open(filename, 'rb')
+    _logger.debug("File opened")
     
     # Get header
     header = np.fromfile(f, dtype=get_header_dtype_list(endianess), count=1)
@@ -157,6 +162,7 @@ def file_reader(filename, endianess='<', load_to_memory=False, mmap_mode='c',
     note = str(f.read(header['Data_offset_1'] - f.tell()))
     note = note.strip('\x00')
     header['Note'] = note
+    _logger.debug("File header: " + str(header))
     NX, NY = header['NX'], header['NY']
     DP_SZ = header['DP_SZ']
     if header['SDP']:
