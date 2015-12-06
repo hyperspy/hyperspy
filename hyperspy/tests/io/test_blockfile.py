@@ -22,6 +22,9 @@ import nose.tools as nt
 import hyperspy.api as hs
 import numpy as np
 import gc
+from hyperspy.io_plugins.blockfile import get_default_header
+from hyperspy.misc.array_tools import sarray2dict
+import warnings
 
 
 dirpath = os.path.dirname(__file__)
@@ -111,6 +114,7 @@ def test_load2():
 
 
 def test_save_load_cycle():
+    sig_reload = None
     signal = hs.load(file2)
     try:
         signal.save(save_path, overwrite=True)
@@ -126,3 +130,142 @@ def test_save_load_cycle():
         del sig_reload
         gc.collect()
         os.remove(save_path)
+
+def test_default_header():
+    # Simply check that no exceptions are raised
+    header = get_default_header()
+    nt.assert_is_not_none(header)
+
+def test_load_memmap():
+    s = hs.load(file2)
+    nt.assert_is_instance(s.data, np.memmap)
+
+def test_load_to_memory():
+    s = hs.load(file2, load_to_memory=True)
+    nt.assert_is_instance(s.data, np.ndarray)
+    nt.assert_true(not isinstance(s.data, np.memmap))
+
+def test_load_readonly():
+    s = hs.load(file2, mmap_mode='r')
+    with nt.assert_raises(ValueError):
+        s.data[:] = 23
+
+def test_load_inplace():
+    sig_reload = None
+    signal = hs.signals.Image((255*np.random.rand(2, 3, 2, 2)
+        ).astype(np.uint8))
+    try:
+        signal.save(save_path, overwrite=True)
+        del signal
+        sig_reload = hs.load(save_path, mmap_mode='r+')
+        sig_reload.data[:] = 23
+        # Flush and close memmap:
+        del sig_reload
+        gc.collect()
+        # Check if values were written to disk
+        sig_reload = hs.load(save_path, mmap_mode='r')
+        nt.assert_true(np.all(sig_reload.data == 23))
+    finally:
+        # Delete reference to close memmap file!
+        del sig_reload
+        gc.collect()
+        try:
+            os.remove(save_path)
+        except WindowsError:
+            pass    # If we don't do this, we mask real exceptions
+    
+
+def test_write_fresh():
+    sig_reload = None
+    signal = hs.signals.Image((255*np.random.rand(10, 3, 5, 5)
+        ).astype(np.uint8))
+    try:
+        signal.save(save_path, overwrite=True)
+        sig_reload = hs.load(save_path)
+        np.testing.assert_equal(signal.data, sig_reload.data)
+        header = sarray2dict(get_default_header())
+        header.update({
+            'NX': 3, 'NY': 10,
+            'DP_SZ': 5,
+            'SX': 1, 'SY': 1,
+            'SDP': 100,
+            'Data_offset_2': 10*3 + header['Data_offset_1'],
+            'Note': '',
+        })
+        header['Data_offset_2'] += header['Data_offset_2'] % 16
+        nt.assert_equal(
+            sig_reload.original_metadata.blockfile_header.as_dictionary(),
+            header)
+    finally:
+        # Delete reference to close memmap file!
+        del sig_reload
+        gc.collect()
+        try:
+            os.remove(save_path)
+        except WindowsError:
+            pass    # If we don't do this, we mask real exceptions
+
+
+def test_write_data_am_mismatch():
+    signal = hs.signals.Image((255*np.random.rand(10, 3, 5, 5)
+        ).astype(np.uint8))
+    signal.axes_manager.navigation_axes[1].size = 4
+    try:
+        with nt.assert_raises(ValueError):
+            signal.save(save_path)
+    finally:
+        try:
+            os.remove(save_path)
+        except WindowsError:
+            pass    # If we don't do this, we mask real exceptions
+
+
+def test_write_cutoff():
+    sig_reload = None
+    signal = hs.signals.Image((255*np.random.rand(10, 3, 5, 5)
+        ).astype(np.uint8))
+    signal.axes_manager.navigation_axes[0].size = 20
+    try:
+        signal.save(save_path)
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            sig_reload = hs.load(save_path)
+            assert len(w) == 1
+            assert issubclass(w[-1].category, UserWarning)
+            assert "Blockfile header" in str(w[-1].message)
+        cut_data = signal.data.flatten()
+        pw = [(0, 17*10*5*5)]
+        cut_data = np.pad(cut_data, pw, mode='constant')
+        cut_data = cut_data.reshape((10, 20, 5, 5))
+        np.testing.assert_equal(cut_data, sig_reload.data)
+    finally:
+        # Delete reference to close memmap file!
+        del sig_reload
+        gc.collect()
+        try:
+            os.remove(save_path)
+        except WindowsError:
+            pass    # If we don't do this, we mask real exceptions
+    
+
+def test_crop_notes():
+    note_len = 0x1000 - 0xF0
+    note = 'test123' * 1000     # > note_len
+    sig_reload = None
+    signal = hs.signals.Image((255*np.random.rand(2, 3, 2, 2)
+        ).astype(np.uint8))
+    signal.original_metadata.add_node('blockfile_header.Note') 
+    signal.original_metadata.blockfile_header.Note = note
+    try:
+        signal.save(save_path, overwrite=True)
+        sig_reload = hs.load(save_path)
+        nt.assert_equal(sig_reload.original_metadata.blockfile_header.Note,
+                        note[:note_len])
+    finally:
+        # Delete reference to close memmap file!
+        del sig_reload
+        gc.collect()
+        try:
+            os.remove(save_path)
+        except WindowsError:
+            pass    # If we don't do this, we mask real exceptions
