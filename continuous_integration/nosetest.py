@@ -10,4 +10,4 @@ if __name__ == '__main__':
     ETSConfig.toolkit = "null"
     env = os.environ.copy()
     env['PYTHONWARNINGS'] = 'error,ignore::ImportWarning'
-    sys.exit(run_exit())
+    sys.exit(run_exit(env=env))
