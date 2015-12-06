@@ -378,6 +378,11 @@ electron difraction (SPED) measurements, with a limited set of metadata. The
 header of the blockfile contains information about centering and distortions
 of the diffraction patterns, but is not applied to the signal during reading.
 
+.. warning::
+
+   While Blockfiles are supported, it is an proprietary format, and future
+   versions of the format might therefore not be readable.
+
 Blockfiles are by default loaded into memory, but can instead be loaded in a
 "copy-on-write" manner using
 `numpy.memmap <http://docs.scipy.org/doc/numpy/reference/generated/numpy.memmap.html>`_
