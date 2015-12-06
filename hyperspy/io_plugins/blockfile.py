@@ -104,17 +104,17 @@ def get_default_header(endianess='<'):
     header['MAGIC'][0] = 0x0102
     header['Data_offset_1'][0] = 0x1000     # Always this value observed
     header['UNKNOWN1'][0] = 131141          # Very typical value (always?)
-    header['Aquisiton_time'][0] = _to_serial_date(datetime.utcnow())
+    header['Aquisiton_time'][0] = _to_serial_date(datetime.now(tz.tzutc()))
     return header
 
 
 def get_header_from_signal(signal, endianess='<'):
+    header = get_default_header(endianess)
     if 'blockfile_header' in signal.original_metadata:
         header = dict2sarray(signal.original_metadata['blockfile_header'],
-                             dtype=get_header_dtype_list(endianess))
+                             sarray=header)
         note = signal.original_metadata['blockfile_header']['Note']
     else:
-        header = get_default_header(endianess)
         note = ''
     NX, NY = signal.axes_manager.navigation_shape
     SX = signal.axes_manager.navigation_axes[0].scale
@@ -147,6 +147,7 @@ def file_reader(filename, endianess='<', load_to_memory=False, mmap_mode='c',
     header = np.fromfile(f, dtype=get_header_dtype_list(endianess), count=1)
     header = sarray2dict(header)
     note = str(f.read(header['Data_offset_1'] - f.tell()))
+    note = note.strip('\x00')
     header['Note'] = note
     NX, NY = header['NX'], header['NY']
     DP_SZ = header['DP_SZ']
@@ -185,7 +186,7 @@ def file_reader(filename, endianess='<', load_to_memory=False, mmap_mode='c',
                 "Signal": {'signal_type': "",
                            'record_by': 'image', },
                 }
-    # create the axis objects for each axis
+    # Create the axis objects for each axis
     dim = 4
     axes = [
         {
