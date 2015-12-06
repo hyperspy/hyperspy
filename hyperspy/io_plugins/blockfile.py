@@ -145,7 +145,7 @@ def get_header_from_signal(signal, endianess='<'):
     return header, note
 
 
-def file_reader(filename, endianess='<', load_to_memory=False, mmap_mode='c',
+def file_reader(filename, endianess='<', load_to_memory=True, mmap_mode='c',
                 **kwds):
     _logger.debug("Reading blockfile: %s" % filename)
     metadata = {}
