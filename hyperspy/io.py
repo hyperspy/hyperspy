@@ -125,8 +125,11 @@ def load(filenames=None,
         otherwise the default directory is used.
 
     load_to_memory: bool
-        for HDF5 files, if True (default) loads all data to memory. If False,
-        enables only loading the data upon request
+        for HDF5 files and blockfiles, if True (default) loads all data to
+        memory. If False, enables only loading the data upon request
+    mmap_mode: {'r', 'r+', 'c'}
+        Used when loading blockfiles to determine which mode to use for when
+        loading as memmap (i.e. when load_to_memory=False)
 
     Returns
     -------
