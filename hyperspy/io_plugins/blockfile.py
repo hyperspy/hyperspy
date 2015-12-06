@@ -21,6 +21,7 @@ from datetime import datetime, timedelta
 from dateutil import tz
 from traits.api import Undefined
 import numpy as np
+import warnings
 
 from hyperspy.misc.array_tools import sarray2dict, dict2sarray
 
@@ -143,7 +144,14 @@ def get_header_from_signal(signal, endianess='<'):
 def file_reader(filename, endianess='<', load_to_memory=False, mmap_mode='c',
                 **kwds):
     metadata = {}
-    f = open(filename, 'rb')
+    # Makes sure we open in right mode:
+    if '+' in mmap_mode or ('write' in mmap_mode and
+                            'copyonwrite' != mmap_mode):
+        f = open(filename, 'r+b')
+    else:
+        f = open(filename, 'rb')
+    
+    # Get header
     header = np.fromfile(f, dtype=get_header_dtype_list(endianess), count=1)
     header = sarray2dict(header)
     note = str(f.read(header['Data_offset_1'] - f.tell()))
@@ -156,6 +164,8 @@ def file_reader(filename, endianess='<', load_to_memory=False, mmap_mode='c',
     else:
         SDP = Undefined
     original_metadata = {'blockfile_header': header}
+    
+    # Get data:
 
     # A Virtual BF/DF is stored first
 #    offset1 = int(header['DATA_OFFSET_1'][0])
@@ -169,10 +179,20 @@ def file_reader(filename, endianess='<', load_to_memory=False, mmap_mode='c',
     if load_to_memory:
         f.seek(offset2)
         data = np.fromfile(f, dtype=endianess+'u1')
-        data = data.reshape((NY, NX, DP_SZ*DP_SZ + 6))
     else:
         data = np.memmap(f, mode=mmap_mode, offset=offset2,
-                         dtype=endianess+'u1', shape=(NY, NX, DP_SZ*DP_SZ + 6))
+                         dtype=endianess+'u1')
+    try:        
+        data = data.reshape((NY, NX, DP_SZ*DP_SZ + 6))
+    except ValueError:
+        warnings.warn(
+            'Blockfile header dimensions larger than file size! '
+            'Will attempt to load by zero padding incomplete frames.')
+        # Data is stored DP by DP:
+        pw = [(0, NX*NY*(DP_SZ*DP_SZ + 6) - data.size)]
+        data = np.pad(data, pw, mode='constant')
+        data = data.reshape((NY, NX, DP_SZ*DP_SZ + 6))
+        
 
     # Every frame is preceeded by a 6 byte sequence (AA 55, and then a 4 byte
     # integer specifying frame number)
