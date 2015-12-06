@@ -26,10 +26,17 @@ from hyperspy.io_plugins.blockfile import get_default_header
 from hyperspy.misc.array_tools import sarray2dict
 import warnings
 
+
 try:
     WindowsError
 except NameError:
     WindowsError = None
+def _remove_file(filename):
+    try:
+        if os.path.exists(filename):
+            os.remove(filename)
+    except WindowsError:
+        pass    # If we don't do this, we might mask real exceptions
 
 
 dirpath = os.path.dirname(__file__)
@@ -134,7 +141,7 @@ def test_save_load_cycle():
         # Delete reference to close memmap file!
         del sig_reload
         gc.collect()
-        os.remove(save_path)
+        _remove_file(save_path)
 
 def test_default_header():
     # Simply check that no exceptions are raised
@@ -148,11 +155,7 @@ def test_non_square():
         with nt.assert_raises(ValueError):
             signal.save(save_path)
     finally:
-        try:
-            if os.path.exists(save_path):
-                os.remove(save_path)
-        except WindowsError:
-            pass    # If we don't do this, we mask real exceptions
+        _remove_file(save_path)
 
 def test_load_memmap():
     s = hs.load(file2, load_to_memory=False)
@@ -187,10 +190,7 @@ def test_load_inplace():
         # Delete reference to close memmap file!
         del sig_reload
         gc.collect()
-        try:
-            os.remove(save_path)
-        except WindowsError:
-            pass    # If we don't do this, we mask real exceptions
+        _remove_file(save_path)
     
 
 def test_write_fresh():
@@ -215,13 +215,7 @@ def test_write_fresh():
             sig_reload.original_metadata.blockfile_header.as_dictionary(),
             header)
     finally:
-        # Delete reference to close memmap file!
-        del sig_reload
-        gc.collect()
-        try:
-            os.remove(save_path)
-        except WindowsError:
-            pass    # If we don't do this, we mask real exceptions
+        _remove_file(save_path)
 
 
 def test_write_data_am_mismatch():
@@ -232,10 +226,7 @@ def test_write_data_am_mismatch():
         with nt.assert_raises(ValueError):
             signal.save(save_path)
     finally:
-        try:
-            os.remove(save_path)
-        except WindowsError:
-            pass    # If we don't do this, we mask real exceptions
+        _remove_file(save_path)
 
 
 def test_write_cutoff():
@@ -257,13 +248,7 @@ def test_write_cutoff():
         cut_data = cut_data.reshape((10, 20, 5, 5))
         np.testing.assert_equal(cut_data, sig_reload.data)
     finally:
-        # Delete reference to close memmap file!
-        del sig_reload
-        gc.collect()
-        try:
-            os.remove(save_path)
-        except WindowsError:
-            pass    # If we don't do this, we mask real exceptions
+        _remove_file(save_path)
     
 
 def test_crop_notes():
@@ -280,10 +265,4 @@ def test_crop_notes():
         nt.assert_equal(sig_reload.original_metadata.blockfile_header.Note,
                         note[:note_len])
     finally:
-        # Delete reference to close memmap file!
-        del sig_reload
-        gc.collect()
-        try:
-            os.remove(save_path)
-        except WindowsError:
-            pass    # If we don't do this, we mask real exceptions
+        _remove_file(save_path)
