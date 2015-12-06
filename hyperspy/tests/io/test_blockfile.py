@@ -26,6 +26,11 @@ from hyperspy.io_plugins.blockfile import get_default_header
 from hyperspy.misc.array_tools import sarray2dict
 import warnings
 
+try:
+    WindowsError
+except NameError:
+    WindowsError = None
+
 
 dirpath = os.path.dirname(__file__)
 
