@@ -19,6 +19,7 @@ install:
   - mkdir ~/.hyperspy
   - printf "[General]\ndefault_toolkit = None" > ~/.hyperspy/hyperspyrc
   - python setup.py install
+  - export PYTHONWARNINGS=error
 
 before_install:
   # then install python version to test

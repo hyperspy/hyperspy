@@ -3,11 +3,8 @@
 
 if __name__ == '__main__':
     import sys
-    import os
     from nose import run_exit
     from traits.etsconfig.api import ETSConfig
 
     ETSConfig.toolkit = "null"
-    env = os.environ.copy()
-    env['PYTHONWARNINGS'] = 'error'
-    sys.exit(run_exit(env=env))
+    sys.exit(run_exit())
