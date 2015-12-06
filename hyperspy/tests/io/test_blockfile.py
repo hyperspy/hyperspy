@@ -149,7 +149,8 @@ def test_non_square():
             signal.save(save_path)
     finally:
         try:
-            os.remove(save_path)
+            if os.path.exists(save_path):
+                os.remove(save_path)
         except WindowsError:
             pass    # If we don't do this, we mask real exceptions
 
