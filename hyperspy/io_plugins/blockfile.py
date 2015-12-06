@@ -41,6 +41,7 @@ default_extension = 0
 # Writing capabilities:
 # writes = False
 writes = [(2, 2)]
+magics = [0x0102]
 
 
 def _from_serial_date(serial):
@@ -105,7 +106,7 @@ def get_default_header(endianess='<'):
     dt = np.dtype(get_header_dtype_list())
     header = np.zeros((1,), dtype=dt)
     header['ID'][0] = bytes('IMGBLO')
-    header['MAGIC'][0] = 0x0102
+    header['MAGIC'][0] = magics[0]
     header['Data_offset_1'][0] = 0x1000     # Always this value observed
     header['UNKNOWN1'][0] = 131141          # Very typical value (always?)
     header['Aquisiton_time'][0] = _to_serial_date(datetime.now(tz.tzutc()))
@@ -158,6 +159,9 @@ def file_reader(filename, endianess='<', load_to_memory=False, mmap_mode='c',
     
     # Get header
     header = np.fromfile(f, dtype=get_header_dtype_list(endianess), count=1)
+    if header['MAGIC'][0] not in magics:
+        warnings.warn("Blockfile has unrecognized header signature. "
+                      "Will attempt to read, but correcteness not guaranteed!")
     header = sarray2dict(header)
     note = str(f.read(header['Data_offset_1'] - f.tell()))
     note = note.strip('\x00')
@@ -209,7 +213,7 @@ def file_reader(filename, endianess='<', load_to_memory=False, mmap_mode='c',
     names = ['x', 'dy', 'dx', 'y']
     scales = [header['SX'], SDP, SDP, header['SY']]
     metadata = {'General': {'original_filename': os.path.split(filename)[1]},
-                "Signal": {'signal_type': "",
+                "Signal": {'signal_type': "diffraction",
                            'record_by': 'image', },
                 }
     # Create the axis objects for each axis
