@@ -209,9 +209,9 @@ def file_reader(filename, endianess='<', load_to_memory=True, mmap_mode='c',
     data = data[:, :, 6:]
     data = data.reshape((NY, NX, DP_SZ, DP_SZ), order='C')
 
-    units = ['nm', 'cm', 'cm', 'nm']
-    names = ['x', 'dy', 'dx', 'y']
-    scales = [header['SX'], SDP, SDP, header['SY']]
+    units = ['nm', 'nm', 'cm', 'cm']
+    names = ['y', 'x', 'dy', 'dx']
+    scales = [header['SY'], header['SX'], SDP, SDP]
     metadata = {'General': {'original_filename': os.path.split(filename)[1]},
                 "Signal": {'signal_type': "diffraction",
                            'record_by': 'image', },
@@ -222,10 +222,10 @@ def file_reader(filename, endianess='<', load_to_memory=True, mmap_mode='c',
         {
             'size': data.shape[i],
             'index_in_array': i,
-            'name': names[i + 3 - dim],
-            'scale': scales[i + 3 - dim],
+            'name': names[i],
+            'scale': scales[i],
             'offset': 0.0,
-            'units': units[i + 3 - dim], }
+            'units': units[i], }
         for i in xrange(dim)]
 
     dictionary = {'data': data,
