@@ -6,12 +6,16 @@ python:
   - 2.7
 
 env:
-  - export FAIL_ON_EXTERNAL_DEPRECATION='True'
   - export FAIL_ON_EXTERNAL_DEPRECATION='False'
+  - export FAIL_ON_EXTERNAL_DEPRECATION='True'
+
+matrix:
++  allow_failures:
++      env: FAIL_ON_EXTERNAL_DEPRECATION='True'
     
 
 install:
-  - export DEPS="nose numpy scipy matplotlib traits traitsui ipython h5py sympy scikit-learn dill mock"
+  - DEPS="nose numpy scipy matplotlib traits traitsui ipython h5py sympy scikit-learn dill mock"
   - conda create -n testenv --yes python=$TRAVIS_PYTHON_VERSION
   - source activate testenv
   - conda install --yes $DEPS
