@@ -109,7 +109,9 @@ def get_default_header(endianess='<'):
     header['Data_offset_1'][0] = 0x1000     # Always this value observed
     header['UNKNOWN1'][0] = 131141          # Very typical value (always?)
     header['Acquisition_time'][0] = _to_serial_date(
-        datetime.fromtimestamp(0, tz.tzutc()))   # Default to UNIX epoch
+        datetime.fromtimestamp(86400, tz.tzutc()))
+        # Default to UNIX epoch + 1 day
+        # Have to add 1 day, as dateutil's timezones dont work before epoch
     return header
 
 
