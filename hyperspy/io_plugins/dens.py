@@ -22,6 +22,7 @@
 
 
 import numpy as np
+import os
 import scipy
 from datetime import datetime
 
@@ -29,14 +30,21 @@ from datetime import datetime
 # Plugin characteristics
 # ----------------------
 format_name = 'DENS'
-description = ''
+description = 'Reads heater log from a DENS heating holder'
+version = '3.1'
 full_support = False
 # Recognised file extension
-file_extensions = ['dens']
+file_extensions = ['dens', 'DENS']
 default_extension = 0
 
 # Writing capabilities
 writes = False
+
+
+mapping = {
+    'DENS_header.date':
+    ("General.time", None),
+}
 
 
 def _cnv_time(timestr):
@@ -50,15 +58,30 @@ def _cnv_time(timestr):
 
 
 def file_reader(filename, *args, **kwds):
-    rawdata = np.loadtxt(filename, skiprows=5,
-                         converters={1: _cnv_time},
-                         usecols=(1, 3), unpack=True)
+    with open(filename, 'rt') as f:
+        assert str(f.readline()).strip() == ''
+        date, version = str(f.readline()).split('\t')
+        assert version == 'Digiheater 3.1'
+        calib = str(f.readline()).split('\t')
+        str(f.readline())       # delta_t
+        header_line = str(f.readline())
+        R0, a, b, c = [float(v) for v in calib]
+        date = datetime.strptime(date, "%d/%m'%y %H:%M")
+        original_metadata = dict(R0=R0, a=a, b=b, c=c, date=date,
+                                 version=version)
+        
+        assert header_line == ('sample	time	Tset[C]	Tmeas[C]	'
+                               'Rheat[ohm]	Vheat[V]	Iheat[mA]	'
+                               'Pheat [mW]	c')
+        rawdata = np.loadtxt(f, converters={1: _cnv_time}, usecols=(1, 3),
+                             unpack=True)
 
     times = rawdata[0]
     # Add a day worth of seconds to any values after a detected rollover
     # Hopefully unlikely that there is more than one, but we can handle it
     for rollover in 1+np.where(np.diff(times) < 0)[0]:
         times[rollover:] += 60*60*24
+    # Raw data is not necessarily grid aligned. Interpolate onto grid.
     dt = np.diff(times).mean()
     temp = rawdata[1]
     interp = scipy.interpolate.interp1d(times, temp, copy=False,
@@ -66,26 +89,25 @@ def file_reader(filename, *args, **kwds):
     interp_axis = times[0] + dt * np.array(range(len(times)))
     temp_interp = interp(interp_axis)
 
-    units = ['s']
-    names = ['Time']
-    offsets = [times[0]]
-    scales = [dt]
-    navigate = [False]
 
-    axes = [
-        {
-            'size': len(rawdata[i]),
-            'index_in_array': i,
-            'name': names[i],
-            'scale': scales[i],
-            'offset': offsets[i],
-            'units': units[i],
-            'navigate': navigate[i], }
-        for i in xrange(1)]
+    metadata = {'General': {'original_filename': os.path.split(filename)[1]},
+                "Signal": {'signal_type': "temperature",},}
+
+    axes = [ {
+            'size': len(temp_interp),
+            'index_in_array': 0,
+            'name': 'Time',
+            'scale': dt,
+            'offset': times[0],
+            'units': 's',
+            'navigate': False,
+        } ]
 
     dictionary = {'data': temp_interp,
                   'axes': axes,
-                  'metadata': {},
-                  'original_metadata': {}, }
+                  'metadata': metadata,
+                  'original_metadata': {'DENS_header': original_metadata }, 
+                  'mapping': mapping,
+                  }
 
     return [dictionary, ]
