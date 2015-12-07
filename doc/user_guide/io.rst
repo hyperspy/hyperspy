@@ -377,11 +377,15 @@ It is used to store a series of diffraction patterns from scanning precession
 electron difraction (SPED) measurements, with a limited set of metadata. The
 header of the blockfile contains information about centering and distortions
 of the diffraction patterns, but is not applied to the signal during reading.
+Blockfiles only support data values of type 
+`np.uint8 <http://docs.scipy.org/doc/numpy/user/basics.types.html>`_ (integers
+in range 0-255).
 
 .. warning::
 
-   While Blockfiles are supported, it is an proprietary format, and future
-   versions of the format might therefore not be readable.
+   While Blockfiles are supported, it is a proprietary format, and future
+   versions of the format might therefore not be readable. Complete 
+   interoperability with the official software can neither be guaranteed.
 
 Blockfiles are by default loaded into memory, but can instead be loaded in a
 "copy-on-write" manner using
@@ -403,7 +407,7 @@ Examples of ways of loading:
     >>> # Loads data read/write:
     >>> hs.load('file.blo', load_to_memory=False, mmap_mode='r+')
 
-By loading the data read/write, any changes to the orignal data array will be 
-written to disk. The data is written when the orignal data array is deleted, or
-when :py:meth:`Signal.data.flush() <http://docs.scipy.org/doc/numpy/reference/generated/numpy.memmap.flush.html>`_
+By loading the data read/write, any changes to the original data array will be 
+written to disk. The data is written when the original data array is deleted,
+or when :py:meth:`Signal.data.flush() <http://docs.scipy.org/doc/numpy/reference/generated/numpy.memmap.flush.html>`_
 is called.
