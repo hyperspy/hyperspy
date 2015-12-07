@@ -6,9 +6,12 @@ python:
   - 2.7
 
 env:
-  - DEPS="nose numpy scipy matplotlib traits traitsui ipython h5py sympy scikit-learn dill mock"
+  - PYTHONWARNINGS="error,default:DeprecationWarning::(!hyperspy),ignore:UserWarning:Failed to import the optional scikit image package"
+  - PYTHONWARNINGS="error,ignore:DeprecationWarning:BaseException\.message has been deprecated as of Python 2\.6,ignore:UserWarning:Failed to import the optional scikit image package"
+    
 
 install:
+  - export DEPS="nose numpy scipy matplotlib traits traitsui ipython h5py sympy scikit-learn dill mock"
   - conda create -n testenv --yes python=$TRAVIS_PYTHON_VERSION
   - source activate testenv
   - conda install --yes $DEPS
