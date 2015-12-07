@@ -162,6 +162,8 @@ HyperSpy.
     +--------------------+-----------+----------+
     | Blockfile          |    Yes    |    Yes   |
     +--------------------+-----------+----------+
+    | DENS heater log    |    Yes    |    No    |
+    +--------------------+-----------+----------+
 
 .. _hdf5-format:
 
@@ -411,3 +413,15 @@ By loading the data read/write, any changes to the original data array will be
 written to disk. The data is written when the original data array is deleted,
 or when :py:meth:`Signal.data.flush() <http://docs.scipy.org/doc/numpy/reference/generated/numpy.memmap.flush.html>`_
 is called.
+
+
+.. _dens-format:
+
+DENS heater log
+---------------
+
+HyperSpy can read heater log format for DENS solution's heating holder. The
+format stores all the captured data for each timestamp, together with a small
+header in a plain-text format. The reader extracts the measured temperature
+along the time axis, as well as the date and calibration constants stored in
+the header.

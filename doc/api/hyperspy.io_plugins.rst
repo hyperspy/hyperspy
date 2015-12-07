@@ -92,6 +92,14 @@ hyperspy.io_plugins.blockfile module
     :undoc-members:
     :show-inheritance:
 
+hyperspy.io_plugins.dens module
+-------------------------------
+
+.. automodule:: hyperspy.io_plugins.dens
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 
 Module contents
 ---------------
