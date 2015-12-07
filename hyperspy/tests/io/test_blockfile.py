@@ -153,7 +153,7 @@ def test_non_square():
         ).astype(np.uint8))
     try:
         with nt.assert_raises(ValueError):
-            signal.save(save_path)
+            signal.save(save_path, overwrite=True)
     finally:
         _remove_file(save_path)
 
@@ -223,7 +223,7 @@ def test_write_data_line():
     signal = hs.signals.Image((255*np.random.rand(3, 5, 5)
         ).astype(np.uint8))
     try:
-        signal.save(save_path)
+        signal.save(save_path, overwrite=True)
         sig_reload = hs.load(save_path)
         np.testing.assert_equal(signal.data, sig_reload.data)
     finally:
@@ -234,7 +234,7 @@ def test_write_data_single():
     signal = hs.signals.Image((255*np.random.rand(5, 5)
         ).astype(np.uint8))
     try:
-        signal.save(save_path)
+        signal.save(save_path, overwrite=True)
         sig_reload = hs.load(save_path)
         np.testing.assert_equal(signal.data, sig_reload.data)
     finally:
@@ -247,7 +247,7 @@ def test_write_data_am_mismatch():
     signal.axes_manager.navigation_axes[1].size = 4
     try:
         with nt.assert_raises(ValueError):
-            signal.save(save_path)
+            signal.save(save_path, overwrite=True)
     finally:
         _remove_file(save_path)
 
@@ -257,7 +257,7 @@ def test_write_cutoff():
         ).astype(np.uint8))
     signal.axes_manager.navigation_axes[0].size = 20
     try:
-        signal.save(save_path)
+        signal.save(save_path, overwrite=True)
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
             sig_reload = hs.load(save_path)
