@@ -103,7 +103,7 @@ def sarray2dict(sarray, dictionary=None):
     Parameters
     ----------
     sarray: struct array
-    dictionary: None or dic
+    dictionary: None or dict
         If dictionary is not None the content of sarray will be appended to the
         given dictonary
 
@@ -125,3 +125,33 @@ def sarray2dict(sarray, dictionary=None):
         dictionary[name] = sarray[name][0] if len(sarray[name]) == 1 \
             else sarray[name]
     return dictionary
+
+
+def dict2sarray(dictionary, sarray=None, dtype=None):
+    """Populates a struct array from a dictionary
+
+    Parameters
+    ----------
+    dictionary: dict
+    sarray: struct array or None
+        Either sarray or dtype must be given. If sarray is given, it is
+        populated from the dictionary.
+    dtype: None, numpy dtype or dtype list
+        If sarray is None, dtype must be given. If so, a new struct array
+        is created according to the dtype, which is then populated.
+
+    Returns
+    -------
+    Structure array
+
+    """
+    if sarray is None:
+        if dtype is None:
+            raise ValueError("Either sarray or dtype need to be specified.")
+        sarray = np.zeros((1,), dtype=dtype)
+    for name in set(sarray.dtype.names).intersection(set(dictionary.keys())):
+        if len(sarray[name]) == 1:
+            sarray[name][0] = dictionary[name]
+        else:
+            sarray[name] = dictionary[name]
+    return sarray
