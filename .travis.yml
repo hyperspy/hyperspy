@@ -6,8 +6,8 @@ python:
   - 2.7
 
 env:
-  - PYTHONWARNINGS="error,default:DeprecationWarning::(!hyperspy),ignore:UserWarning:Failed to import the optional scikit image package"
-  - PYTHONWARNINGS="error,ignore:DeprecationWarning:BaseException\.message has been deprecated as of Python 2\.6,ignore:UserWarning:Failed to import the optional scikit image package"
+  - export FAIL_ON_EXTERNAL_DEPRECATION='True'
+  - export FAIL_ON_EXTERNAL_DEPRECATION='False'
     
 
 install:
