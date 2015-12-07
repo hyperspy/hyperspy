@@ -39,7 +39,6 @@ file_extensions = ['blo', 'BLO']
 default_extension = 0
 
 # Writing capabilities:
-# writes = False
 writes = [(2, 2), (2, 1), (2, 0)]
 magics = [0x0102]
 
@@ -187,11 +186,10 @@ def file_reader(filename, endianess='<', load_to_memory=True, mmap_mode='c',
     # Get data:
 
     # A Virtual BF/DF is stored first
-#    offset1 = int(header['DATA_OFFSET_1'][0])
+#    offset1 = header['Data_offset_1']
 #    f.seek(offset1)
-#    data_pre = np.array(f.read(offset2 - offset1), dtype=endianess+'u1'
+#    data_pre = np.array(f.read(NX*NY), dtype=endianess+'u1'
 #        ).squeeze().reshape((NX, NY), order='C').T
-#    print len(data_pre)
 
     # Then comes actual blockfile
     offset2 = header['Data_offset_2']
@@ -250,7 +248,6 @@ def file_writer(filename, signal, **kwds):
     endianess = kwds.pop('endianess', '<')
     header, note = get_header_from_signal(signal, endianess=endianess)
     with open(filename, 'wb') as f:
-        # TODO. Use memmap
         # Write header
         header.tofile(f)
         # Write header note field:
