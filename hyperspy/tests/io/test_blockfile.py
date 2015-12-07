@@ -208,12 +208,12 @@ def test_write_fresh():
             'SDP': 100,
             'Data_offset_2': 10*3 + header['Data_offset_1'],
             'Note': '',
-            'Aquisiton_time': 0
+            'Acquisition_time': 0
         })
         header['Data_offset_2'] += header['Data_offset_2'] % 16
         reload_header = sig_reload.original_metadata.blockfile_header
         reload_header = reload_header.as_dictionary()
-        reload_header['Aquisiton_time'] = 0
+        reload_header['Acquisition_time'] = 0
         nt.assert_equal(reload_header, header)
     finally:
         _remove_file(save_path)
