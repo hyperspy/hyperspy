@@ -11,7 +11,7 @@ env:
 
 matrix:
     allow_failures:
-        env: FAIL_ON_EXTERNAL_DEPRECATION='True'
+        env: export FAIL_ON_EXTERNAL_DEPRECATION='True'
     
 
 install:
