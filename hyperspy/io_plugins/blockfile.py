@@ -40,7 +40,7 @@ default_extension = 0
 
 # Writing capabilities:
 # writes = False
-writes = [(2, 2)]
+writes = [(2, 2), (2, 1), (2, 0)]
 magics = [0x0102]
 
 
@@ -121,9 +121,18 @@ def get_header_from_signal(signal, endianess='<'):
         note = signal.original_metadata['blockfile_header']['Note']
     else:
         note = ''
-    NX, NY = signal.axes_manager.navigation_shape
-    SX = signal.axes_manager.navigation_axes[0].scale
-    SY = signal.axes_manager.navigation_axes[0].scale
+    if signal.axes_manager.navigation_dimension == 2: 
+        NX, NY = signal.axes_manager.navigation_shape
+        SX = signal.axes_manager.navigation_axes[0].scale
+        SY = signal.axes_manager.navigation_axes[0].scale
+    elif signal.axes_manager.navigation_dimension == 1:
+        NX = signal.axes_manager.navigation_shape[0]
+        NY = 1
+        SX = signal.axes_manager.navigation_axes[0].scale
+        SY = SX
+    elif signal.axes_manager.navigation_dimension == 0:
+        NX = NY = SX = SY = 1
+            
     DP_SZ = signal.axes_manager.signal_shape
     if DP_SZ[0] != DP_SZ[1]:
         raise ValueError('Blockfiles require signal shape to be square!')
@@ -207,7 +216,7 @@ def file_reader(filename, endianess='<', load_to_memory=True, mmap_mode='c',
     # Every frame is preceeded by a 6 byte sequence (AA 55, and then a 4 byte
     # integer specifying frame number)
     data = data[:, :, 6:]
-    data = data.reshape((NY, NX, DP_SZ, DP_SZ), order='C')
+    data = data.reshape((NY, NX, DP_SZ, DP_SZ), order='C').squeeze()
 
     units = ['nm', 'nm', 'cm', 'cm']
     names = ['y', 'x', 'dy', 'dx']
@@ -217,7 +226,7 @@ def file_reader(filename, endianess='<', load_to_memory=True, mmap_mode='c',
                            'record_by': 'image', },
                 }
     # Create the axis objects for each axis
-    dim = 4
+    dim = data.ndim
     axes = [
         {
             'size': data.shape[i],
