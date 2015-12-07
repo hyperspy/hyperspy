@@ -61,7 +61,7 @@ def _to_serial_date(dt):
 mapping = {
     'blockfile_header.Beam_energy':
     ("Acquisition_instrument.TEM.beam_energy", lambda x: x * 1e-3),
-    'blockfile_header.Aquisiton_time':
+    'blockfile_header.Acquisition_time':
     ("General.time", _from_serial_date),
     'blockfile_header.Camera_length':
     ("Acquisition_instrument.TEM.camera_length", lambda x: x * 1e-4),
@@ -89,7 +89,7 @@ def get_header_dtype_list(endianess='<'):
             ('Beam_energy', end + 'u4'),        # [V]
             ('SDP', end + 'u2'),                # Pixel size [100 * ppcm]
             ('Camera_length', end + 'u4'),      # [10 * mm]
-            ('Aquisiton_time', end + 'f8'),     # [Serial date]
+            ('Acquisition_time', end + 'f8'),   # [Serial date]
         ] + [
             ('Centering_N%d' % i, 'f8') for i in xrange(8)
         ] + [
@@ -108,7 +108,10 @@ def get_default_header(endianess='<'):
     header['MAGIC'][0] = magics[0]
     header['Data_offset_1'][0] = 0x1000     # Always this value observed
     header['UNKNOWN1'][0] = 131141          # Very typical value (always?)
-    header['Aquisiton_time'][0] = _to_serial_date(datetime.now(tz.tzutc()))
+    header['Acquisition_time'][0] = _to_serial_date(
+        datetime.fromtimestamp(86400, tz.tzutc()))
+        # Default to UNIX epoch + 1 day
+        # Have to add 1 day, as dateutil's timezones dont work before epoch
     return header
 
 
