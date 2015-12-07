@@ -376,7 +376,8 @@ class SemperFormat(object):
             for k in range(nlay):
                 for j in range(nrow):
                     rec_length = np.fromfile(f, dtype='<i4', count=1)[0]  # length of row
-                    row = np.fromfile(f, dtype=data_format, count=ncol)
+                    count = rec_length/np.dtype(data_format).itemsize  # Not always ncol, see below
+                    row = np.fromfile(f, dtype=data_format, count=count)
                     # [:ncol] is used because Semper always writes an even number of bytes which
                     # is a problem when reading in single bytes (IFORM = 0, np.byte). If ncol is
                     # odd, an empty byte (0) is added which has to be skipped during read in:
@@ -448,6 +449,11 @@ class SemperFormat(object):
                     record_length = np.dtype(self.IFORM_DICT[iform]).itemsize * ncol
                     f.write(struct.pack('<i4', record_length))  # record length, 4 byte format!
                     f.write(row.tobytes())
+                    # Semper always expects an even number of bytes per row, which is only a
+                    # problem for writing single byte data (IFORM = 0, np.byte). If ncol is odd,
+                    # an empty byte (0) is added:
+                    if self.data.dtype == np.byte and ncol % 2 != 0:
+                        np.zeros(1, dtype=np.byte).tobytes()
                     f.write(struct.pack('<i4', record_length))  # record length, 4 byte format!
 
     @classmethod
