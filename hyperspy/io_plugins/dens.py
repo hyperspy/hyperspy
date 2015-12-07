@@ -16,10 +16,6 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-# The details of the format were taken from
-# http://www.biochem.mpg.de/doc_tom/TOM_Release_2008/IOfun/tom_mrcread.html
-# and http://ami.scripps.edu/software/mrctools/mrc_specification.php
-
 
 import numpy as np
 import os
@@ -56,25 +52,41 @@ def _cnv_time(timestr):
         r = float(timestr)
     return r
 
+def _bad_file(filename):
+    raise AssertionError("Cannot interpret as DENS heater log: %s" % filename)
 
 def file_reader(filename, *args, **kwds):
     with open(filename, 'rt') as f:
-        assert str(f.readline()).strip() == ''
-        date, version = str(f.readline()).split('\t')
-        assert version == 'Digiheater 3.1'
+        # Strip leading, empty lines
+        line = str(f.readline())
+        while line.strip() == '' and not f.closed:
+            line = str(f.readline())
+        try:
+            date, version = line.split('\t')
+        except ValueError:
+            _bad_file(filename)
+        if version.strip() != 'Digiheater 3.1':
+            _bad_file(filename)
         calib = str(f.readline()).split('\t')
         str(f.readline())       # delta_t
         header_line = str(f.readline())
-        R0, a, b, c = [float(v) for v in calib]
-        date = datetime.strptime(date, "%d/%m'%y %H:%M")
+        try:
+            R0, a, b, c = [float(v.split('=')[1]) for v in calib]
+            date = datetime.strptime(date, "%d/%m/'%y %H:%M")
+        except ValueError:
+            _bad_file(filename)
         original_metadata = dict(R0=R0, a=a, b=b, c=c, date=date,
                                  version=version)
         
-        assert header_line == ('sample	time	Tset[C]	Tmeas[C]	'
-                               'Rheat[ohm]	Vheat[V]	Iheat[mA]	'
-                               'Pheat [mW]	c')
-        rawdata = np.loadtxt(f, converters={1: _cnv_time}, usecols=(1, 3),
+        if header_line.strip() != (
+                'sample\ttime\tTset[C]\tTmeas[C]\tRheat[ohm]\tVheat[V]\t'
+                'Iheat[mA]\tPheat [mW]\tc'):
+            _bad_file(filename)
+        try:
+            rawdata = np.loadtxt(f, converters={1: _cnv_time}, usecols=(1, 3),
                              unpack=True)
+        except ValueError:
+            _bad_file(filename)
 
     times = rawdata[0]
     # Add a day worth of seconds to any values after a detected rollover
