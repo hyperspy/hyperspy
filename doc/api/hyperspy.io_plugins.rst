@@ -84,6 +84,14 @@ hyperspy.io_plugins.semper module
     :undoc-members:
     :show-inheritance:
 
+hyperspy.io_plugins.blockfile module
+-------------------------------
+
+.. automodule:: hyperspy.io_plugins.blockfile
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 
 Module contents
 ---------------
