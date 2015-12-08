@@ -33,7 +33,7 @@ from scipy.optimize import (leastsq,
                             fmin_powell)
 from traits.trait_errors import TraitError
 
-from hyperspy.model import BaseModel
+from hyperspy.model import BaseModel, ModelComponents
 from hyperspy import messages
 import hyperspy.drawing.spectrum
 from hyperspy.drawing.utils import on_figure_window_close
