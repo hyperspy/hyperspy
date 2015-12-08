@@ -91,8 +91,8 @@ import logging
 
 # Plugin characteristics
 # ----------------------
-format_name = 'Semper UNF (unformatted)'
-description = 'Read data from Sempers UNF files.'
+format_name = 'SEMPER UNF (unformatted)'
+description = 'Read data from SEMPER UNF files.'
 full_support = True  # Hopefully?
 # Recognised file extension
 file_extensions = ('unf', 'UNF')
@@ -104,9 +104,9 @@ writes = [(1, 0), (1, 1), (1, 2), (2, 0), (2, 1)]  # All up to 3D
 
 class SemperFormat(object):
 
-    """Class for importing and exporting Semper `.unf`-files.
+    """Class for importing and exporting SEMPER `.unf`-files.
 
-    The :class:`~.SemperFormat` class represents a Semper binary file format with a header, which
+    The :class:`~.SemperFormat` class represents a SEMPER binary file format with a header, which
     holds additional information. `.unf`-files can be saved and read from files.
 
     Attributes
@@ -321,7 +321,10 @@ class SemperFormat(object):
         elif data.dtype.name == 'int32':
             iform = 4  # int32
         else:
-            raise TypeError('Data type not understood ({}))!'.format(data.dtype.name))
+            supported_formats = [np.dtype(i).name for i in cls.IFORM_DICT.values()]
+            msg = 'The SEMPER file format does not support {} data type. '.format(data.dtype.name)
+            msg += 'Supported data types are: ' + ', '.join(supported_formats)
+            raise IOError(msg)
         return data, iform
 
     @classmethod
@@ -336,7 +339,7 @@ class SemperFormat(object):
         Returns
         -------
         semper : :class:`~.SemperFormat` (N=1)
-            Semper file format object containing the loaded information.
+            SEMPER file format object containing the loaded information.
 
         """
         cls._log.debug('Calling load_from_file')
@@ -378,7 +381,7 @@ class SemperFormat(object):
                     rec_length = np.fromfile(f, dtype='<i4', count=1)[0]  # length of row
                     count = rec_length/np.dtype(data_format).itemsize  # Not always ncol, see below
                     row = np.fromfile(f, dtype=data_format, count=count)
-                    # [:ncol] is used because Semper always writes an even number of bytes which
+                    # [:ncol] is used because SEMPER always writes an even number of bytes which
                     # is a problem when reading in single bytes (IFORM = 0, np.byte). If ncol is
                     # odd, an empty byte (0) is added which has to be skipped during read in:
                     data[k, j, :] = row[:ncol]
@@ -449,7 +452,7 @@ class SemperFormat(object):
                     record_length = np.dtype(self.IFORM_DICT[iform]).itemsize * ncol
                     f.write(struct.pack('<i4', record_length))  # record length, 4 byte format!
                     f.write(row.tobytes())
-                    # Semper always expects an even number of bytes per row, which is only a
+                    # SEMPER always expects an even number of bytes per row, which is only a
                     # problem for writing single byte data (IFORM = 0, np.byte). If ncol is odd,
                     # an empty byte (0) is added:
                     if self.data.dtype == np.byte and ncol % 2 != 0:

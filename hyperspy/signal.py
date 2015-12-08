@@ -3185,6 +3185,7 @@ class Signal(FancySlicing,
             - hdf5 for HDF5
             - rpl for Ripple (useful to export to Digital Micrograph)
             - msa for EMSA/MSA single spectrum saving.
+            - unf for SEMPER unf binary format.
             - Many image formats such as png, tiff, jpeg...
 
         If no extension is provided the default file format as defined
@@ -3205,8 +3206,8 @@ class Signal(FancySlicing,
         overwrite : None, bool
             If None, if the file exists it will query the user. If
             True(False) it (does not) overwrites the file if it exists.
-        extension : {None, 'hdf5', 'rpl', 'msa',common image extensions e.g.
-                    'tiff', 'png'}
+        extension : {None, 'hdf5', 'rpl', 'msa', 'unf', common image
+                     extensions e.g. 'tiff', 'png'}
             The extension of the file that defines the file format.
             If None, the extension is taken from the first not None in the
             following list:
