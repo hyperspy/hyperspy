@@ -125,8 +125,11 @@ def load(filenames=None,
         otherwise the default directory is used.
 
     load_to_memory: bool
-        for HDF5 files, if True (default) loads all data to memory. If False,
-        enables only loading the data upon request
+        for HDF5 files and blockfiles, if True (default) loads all data to
+        memory. If False, enables only loading the data upon request
+    mmap_mode: {'r', 'r+', 'c'}
+        Used when loading blockfiles to determine which mode to use for when
+        loading as memmap (i.e. when load_to_memory=False)
 
     print_info: bool
         For SEMPER unf-files, if True (default is False) header and label
@@ -276,20 +279,25 @@ def load_with_reader(filename,
     objects = []
 
     for signal_dict in file_data_list:
-        if "Signal" not in signal_dict["metadata"]:
-            signal_dict["metadata"]["Signal"] = {}
-        if record_by is not None:
-            signal_dict['metadata']["Signal"]['record_by'] = record_by
-        if signal_type is not None:
-            signal_dict['metadata']["Signal"]['signal_type'] = signal_type
-        if signal_origin is not None:
-            signal_dict['metadata']["Signal"]['signal_origin'] = signal_origin
-        objects.append(dict2signal(signal_dict))
-        folder, filename = os.path.split(os.path.abspath(filename))
-        filename, extension = os.path.splitext(filename)
-        objects[-1].tmp_parameters.folder = folder
-        objects[-1].tmp_parameters.filename = filename
-        objects[-1].tmp_parameters.extension = extension.replace('.', '')
+        if 'metadata' in signal_dict:
+            if "Signal" not in signal_dict["metadata"]:
+                signal_dict["metadata"]["Signal"] = {}
+            if record_by is not None:
+                signal_dict['metadata']["Signal"]['record_by'] = record_by
+            if signal_type is not None:
+                signal_dict['metadata']["Signal"]['signal_type'] = signal_type
+            if signal_origin is not None:
+                signal_dict['metadata']["Signal"][
+                    'signal_origin'] = signal_origin
+            objects.append(dict2signal(signal_dict))
+            folder, filename = os.path.split(os.path.abspath(filename))
+            filename, extension = os.path.splitext(filename)
+            objects[-1].tmp_parameters.folder = folder
+            objects[-1].tmp_parameters.filename = filename
+            objects[-1].tmp_parameters.extension = extension.replace('.', '')
+        else:
+            # it's a standalone model
+            continue
 
     if len(objects) == 1:
         objects = objects[0]

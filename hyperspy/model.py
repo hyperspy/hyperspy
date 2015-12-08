@@ -277,6 +277,35 @@ class Model(list):
         self.inav = ModelSpecialSlicers(self, True)
         self.isig = ModelSpecialSlicers(self, False)
 
+    def store(self, name=None):
+        """Stores current model in the original spectrum
+
+        Parameters
+        ----------
+            name : {None, str}
+                Stored model name. Auto-generated if left empty
+        """
+        if self.spectrum is None:
+            raise ValueError("Cannot store models with no signal")
+        s = self.spectrum
+        s.models.store(self, name)
+
+    def save(self, file_name, name=None):
+        """Saves spectrum and its model to a file
+
+        Parameters
+        ----------
+            file_name : str
+                Name of the file
+            name : {None, str}
+                Stored model name. Auto-generated if left empty
+        """
+        if self.spectrum is None:
+            raise ValueError("Currently cannot store models with no signal")
+        else:
+            self.store(name)
+            self.spectrum.save(file_name)
+
     def _load_dictionary(self, dic):
         """Load data from dictionary.
 
@@ -377,10 +406,7 @@ class Model(list):
         # Check if any of the other components in the model has the same name
         if thing in self:
             raise ValueError("Component already in model")
-        component_name_list = []
-        for component in self:
-            component_name_list.append(component.name)
-        name_string = ""
+        component_name_list = [component.name for component in self]
         if thing.name:
             name_string = thing.name
         else:
@@ -414,9 +440,7 @@ class Model(list):
 
     def __delitem__(self, thing):
         thing = self.__getitem__(thing)
-        thing.model = None
-        list.__delitem__(self, self.index(thing))
-        self._touch()
+        self.remove(thing)
 
     def remove(self, thing, touch=True):
         """Remove component from model.
@@ -781,7 +805,6 @@ class Model(list):
                     comp_p_std, onlyfree=True)
                 counter += component._nfree_param
 
-    # Defines the functions for the fitting process -------------------------
     def _model2plot(self, axes_manager, out_of_range2nans=True):
         old_axes_manager = None
         if axes_manager is not self.axes_manager:
@@ -821,40 +844,32 @@ class Model(list):
             axis = self.axis.axis[self.channel_switches]
             sum_ = np.zeros(len(axis))
             if onlyactive is True:
-                for component in self:  # Cut the parameters list
+                for component in self:
                     if component.active:
-                        np.add(sum_, component.function(axis),
-                               sum_)
+                        sum_ += component.function(axis)
             else:
-                for component in self:  # Cut the parameters list
-                    np.add(sum_, component.function(axis),
-                           sum_)
+                for component in self:
+                    sum_ += component.function(axis)
             to_return = sum_
 
         else:  # convolved
-            counter = 0
             sum_convolved = np.zeros(len(self.convolution_axis))
             sum_ = np.zeros(len(self.axis.axis))
             for component in self:  # Cut the parameters list
                 if onlyactive:
                     if component.active:
                         if component.convolved:
-                            np.add(sum_convolved,
-                                   component.function(
-                                       self.convolution_axis), sum_convolved)
+                            sum_convolved += component.function(
+                                self.convolution_axis)
                         else:
-                            np.add(sum_,
-                                   component.function(self.axis.axis), sum_)
-                        counter += component._nfree_param
+                            sum_ += component.function(self.axis.axis)
                 else:
                     if component.convolved:
-                        np.add(sum_convolved,
-                               component.function(self.convolution_axis),
-                               sum_convolved)
+                        sum_convolved += component.function(
+                            self.convolution_axis)
                     else:
-                        np.add(sum_, component.function(self.axis.axis),
-                               sum_)
-                    counter += component._nfree_param
+                        sum_ += component.function(self.axis.axis)
+
             to_return = sum_ + np.convolve(
                 self.low_loss(self.axes_manager),
                 sum_convolved, mode="valid")
@@ -960,60 +975,14 @@ class Model(list):
         self.update_plot()
 
     def _model_function(self, param):
-
-        if self.convolved is True:
-            counter = 0
-            sum_convolved = np.zeros(len(self.convolution_axis))
-            sum = np.zeros(len(self.axis.axis))
-            for component in self:  # Cut the parameters list
-                if component.active:
-                    if component.convolved is True:
-                        np.add(sum_convolved, component.__tempcall__(param[
-                            counter:counter + component._nfree_param],
-                            self.convolution_axis), sum_convolved)
-                    else:
-                        np.add(
-                            sum,
-                            component.__tempcall__(
-                                param[
-                                    counter:counter +
-                                    component._nfree_param],
-                                self.axis.axis),
-                            sum)
-                    counter += component._nfree_param
-
-            to_return = (sum + np.convolve(self.low_loss(self.axes_manager),
-                                           sum_convolved, mode="valid"))[
-                self.channel_switches]
-
-        else:
-            axis = self.axis.axis[self.channel_switches]
-            counter = 0
-            first = True
-            for component in self:  # Cut the parameters list
-                if component.active:
-                    if first is True:
-                        sum = component.__tempcall__(
-                            param[
-                                counter:counter +
-                                component._nfree_param],
-                            axis)
-                        first = False
-                    else:
-                        sum += component.__tempcall__(
-                            param[
-                                counter:counter +
-                                component._nfree_param],
-                            axis)
-                    counter += component._nfree_param
-            to_return = sum
-
-        if self.spectrum.metadata.Signal.binned is True:
-            to_return *= self.spectrum.axes_manager[-1].scale
+        self.p0 = param
+        self._fetch_values_from_p0()
+        to_return = self.__call__(non_convolved=False, onlyactive=True)
         return to_return
 
-    # noinspection PyAssignmentToLoopOrWithParameter
     def _jacobian(self, param, y, weights=None):
+        if weights is None:
+            weights = 1.
         if self.convolved is True:
             counter = 0
             grad = np.zeros(len(self.axis.axis))
@@ -1038,7 +1007,6 @@ class Model(list):
                                         self.low_loss(self.axes_manager),
                                         mode="valid"), par_grad)
                             grad = np.vstack((grad, par_grad))
-                        counter += component._nfree_param
                     else:
                         for parameter in component.free_parameters:
                             par_grad = parameter.grad(self.axis.axis)
@@ -1047,11 +1015,8 @@ class Model(list):
                                     np.add(par_grad, par.grad(
                                         self.axis.axis), par_grad)
                             grad = np.vstack((grad, par_grad))
-                        counter += component._nfree_param
-            if weights is None:
-                to_return = grad[1:, self.channel_switches]
-            else:
-                to_return = grad[1:, self.channel_switches] * weights
+                    counter += component._nfree_param
+            to_return = grad[1:, self.channel_switches] * weights
         else:
             axis = self.axis.axis[self.channel_switches]
             counter = 0
@@ -1071,10 +1036,7 @@ class Model(list):
                                     axis), par_grad)
                         grad = np.vstack((grad, par_grad))
                     counter += component._nfree_param
-            if weights is None:
-                to_return = grad[1:, :]
-            else:
-                to_return = grad[1:, :] * weights
+            to_return = grad[1:, :] * weights
         if self.spectrum.metadata.Signal.binned is True:
             to_return *= self.spectrum.axes_manager[-1].scale
         return to_return
@@ -1098,17 +1060,15 @@ class Model(list):
         return -(self._jacobian(param, y) * (y / mf - 1)).sum(1)
 
     def _errfunc(self, param, y, weights=None):
-        errfunc = self._model_function(param) - y
         if weights is None:
-            return errfunc
-        else:
-            return errfunc * weights
+            weights = 1.
+        errfunc = self._model_function(param) - y
+        return errfunc * weights
 
     def _errfunc2(self, param, y, weights=None):
         if weights is None:
-            return ((self._errfunc(param, y)) ** 2).sum()
-        else:
-            return ((weights * self._errfunc(param, y)) ** 2).sum()
+            weights = 1.
+        return ((weights * self._errfunc(param, y)) ** 2).sum()
 
     def _gradient_ls(self, param, y, weights=None):
         gls = (2 * self._errfunc(param, y, weights) *
