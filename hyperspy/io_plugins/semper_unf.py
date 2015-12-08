@@ -417,7 +417,7 @@ class SemperFormat(object):
             data = np.empty((nlay, nrow, ncol), dtype=data_format)
             for k in range(nlay):
                 for j in range(nrow):
-                    rec_length = np.fromfile(
+                    rec_length = np.fromfile(f, dtype='<i4', count=1)[0]
                     count = rec_length/np.dtype(data_format).itemsize  # Not always ncol, see below
                     row = np.fromfile(f, dtype=data_format, count=count)
                     # [:ncol] is used because Semper always writes an even number of bytes which
