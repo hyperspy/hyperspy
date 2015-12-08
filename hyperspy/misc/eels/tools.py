@@ -45,11 +45,11 @@ def _estimate_gain(ns, cs,
     fit = np.polyfit(average2fit, variance2fit, pol_order)
     if weighted is True:
         from hyperspy._signals.spectrum import Spectrum
-        from hyperspy.model import Model
+        from hyperspy.models.model1D import Model1D
         from hyperspy.components import Line
         s = Spectrum(variance2fit)
         s.axes_manager.signal_axes[0].axis = average2fit
-        m = Model(s)
+        m = Model1D(s)
         l = Line()
         l.a.value = fit[1]
         l.b.value = fit[0]

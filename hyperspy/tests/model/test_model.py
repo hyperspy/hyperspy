@@ -221,7 +221,7 @@ class TestModelSettingPZero:
                          ])
 
 
-class TestModel:
+class TestModel1D:
 
     def setUp(self):
         s = hs.signals.Spectrum(np.empty(1))
@@ -865,8 +865,12 @@ class TestCreateModel:
 
     def setUp(self):
         self.s = hs.signals.Spectrum(np.asarray([0, ]))
+        self.im = hs.signals.Image(np.ones([1, 1, ]))
 
     def test_create_model(self):
-        from hyperspy.model import Model
+        from hyperspy.models.model1D import Model1D
+        from hyperspy.models.model2D import Model2D
         nt.assert_is_instance(
-            self.s.create_model(), Model)
+            self.s.create_model(), Model1D)
+        nt.assert_is_instance(
+            self.im.create_model(), Model2D)
