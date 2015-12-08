@@ -97,8 +97,6 @@ class Model2D(BaseModel):
         self.components = ModelComponents(self)
         if dictionary is not None:
             self._load_dictionary(dictionary)
-        self.inav = ModelSpecialSlicers(self, True)
-        self.isig = ModelSpecialSlicers(self, False)
 
     @property
     def image(self):
