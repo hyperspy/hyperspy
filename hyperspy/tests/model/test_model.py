@@ -868,7 +868,8 @@ class TestCreateModel:
         self.im = hs.signals.Image(np.ones([1, 1, ]))
 
     def test_create_model(self):
-        from hyperspy.model import Model1D, Model2D
+        from hyperspy.models.model1D import Model1D
+        from hyperspy.models.model2D import Model2D
         nt.assert_is_instance(
             self.s.create_model(), Model1D)
         nt.assert_is_instance(

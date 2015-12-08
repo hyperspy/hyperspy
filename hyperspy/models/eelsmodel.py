@@ -19,7 +19,7 @@
 import copy
 import warnings
 
-from hyperspy.model import Model1D
+from hyperspy.models.model1D import Model1D
 from hyperspy.components import EELSCLEdge
 from hyperspy.components import PowerLaw
 from hyperspy.misc.ipython_tools import get_interactive_ns

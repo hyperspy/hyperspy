@@ -163,5 +163,5 @@ class Image(Signal):
         A Model class
 
         """
-        from hyperspy.model import Model2D
+        from hyperspy.models.model2D import Model2D
         return Model2D(self, dictionary=dictionary)

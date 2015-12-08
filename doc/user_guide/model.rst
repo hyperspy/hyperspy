@@ -28,7 +28,7 @@ the :py:class`~.model.BaseModel` class is available for both kinds.
 Creating a model
 ----------------
 
-A :py:class:`~.model.Model1D` can be created for data in the :py:class:`~._signals.spectrum.Spectrum` 
+A :py:class:`~.models.model1D.Model1D` can be created for data in the :py:class:`~._signals.spectrum.Spectrum` 
 class using the :py:meth:`~._signals.spectrum.Spectrum.create_model` method:
 
 .. code-block:: python
@@ -36,7 +36,7 @@ class using the :py:meth:`~._signals.spectrum.Spectrum.create_model` method:
     >>> s = hs.load('YourDataFilenameHere') # Load the data from a file
     >>> m = s.create_model() # Create the 1D-Model and asign it to the variable m
 
-Similarly A :py:class:`~.model.Model2D` can be created for data in the :py:class:`~._signals.image.Image` 
+Similarly A :py:class:`~.models.model2D.Model2D` can be created for data in the :py:class:`~._signals.image.Image` 
 class using the :py:meth:`~._signals.image.Image.create_model` method:
 
 .. code-block:: python
@@ -277,7 +277,7 @@ index in the model.
 .. versionadded:: 0.8.1 :py:attr:`components` attribute
 
 In addition, the components can be accessed in the
-:py:attr:`~.model.Model1D.components` `Model` attribute. This is specially
+:py:attr:`~.models.model1D.Model1D.components` `Model` attribute. This is specially
 useful when working in interactive data analysis with IPython because it
 enables tab completion.
 
@@ -746,9 +746,9 @@ by hand.
     :py:meth:`~.model.Model.enable_adjust_position` and
     :py:meth:`~.model.Model.disable_adjust_position`
 
-Also, :py:meth:`~.model.Model1D.enable_adjust_position` provides an interactive
+Also, :py:meth:`~.models.model1D.Model1D.enable_adjust_position` provides an interactive
 way of setting the position of the components with a well define position.
-:py:meth:`~.model.Model1D.disable_adjust_position` disables the tool.
+:py:meth:`~.models.model1D.Model1D.disable_adjust_position` disables the tool.
 
 
 .. figure::  images/model_adjust_position.png
@@ -793,7 +793,7 @@ given position manually. This is possible using
 Visualising the result of the fit
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The :py:class:`~.model.Model1D` :py:meth:`~.model.Model1D.plot_results`,
+The :py:class:`~.models.model1D.Model1D` :py:meth:`~.models.model1D.Model1D.plot_results`,
 :py:class:`~.component.Component` :py:meth:`~.component.Component.plot` and
 :py:class:`~.component.Parameter` :py:meth:`~.component.Parameter.plot` methods
 can be used to visualise the result of the fit **when fitting multidimensional

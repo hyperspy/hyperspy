@@ -150,5 +150,5 @@ class Spectrum(Signal):
         A Model class
 
         """
-        from hyperspy.model import Model1D
+        from hyperspy.models.model1D import Model1D
         return Model1D(self, dictionary=dictionary)

@@ -1189,7 +1189,7 @@ class Signal1DTools(object):
     def _remove_background_cli(
             self, signal_range, background_estimator, estimate_background=True,
             show_progressbar=None):
-        from hyperspy.model import Model1D
+        from hyperspy.models.model1D import Model1D
         model = Model1D(self)
         model.append(background_estimator)
         if estimate_background:
