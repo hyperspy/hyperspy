@@ -6,6 +6,9 @@ plese use :mod:`~hyperspy.api` instead.
 """
 # -*- coding: utf-8 -*-
 
+import matplotlib.pyplot as plt
+plt.rcParams['image.cmap'] = 'gray'
+
 from hyperspy.Release import version as __version__
 from hyperspy import components
 from hyperspy import components2d
@@ -53,6 +56,26 @@ def create_model(signal, *args, **kwargs):
         The GOS to use when auto adding core-loss EELS edges.
         If None it will use the Hartree-Slater GOS if
         they are available, otherwise it will use the hydrogenic GOS.
+
+    If the signal is an EDS signal the following extra parameters
+    are available:
+
+    auto_add_lines : boolean
+        If True, and if spectrum is an EDS instance, it will
+        automatically add Gaussians for all X-rays generated in the energy
+        range by an element.
+    auto_background : boolean
+        If True, and if spectrum is an EDS instance adds automatically
+        a polynomial order 6 to the model.
+
+    Examples
+    --------
+
+    With s an EDS instance
+    >>> m = create_model(s)
+    >>> m.mulifit()
+    >>> m.plot()
+    >>> m.get_lines_intensity(plot_result=True)
 
     Returns
     -------

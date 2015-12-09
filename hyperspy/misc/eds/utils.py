@@ -102,7 +102,7 @@ def get_FWHM_at_Energy(energy_resolution_MnKa, E):
 
 
 def xray_range(xray_line, beam_energy, density='auto'):
-    """Return the Anderson-Hasler X-ray range.
+    '''Return the Anderson-Hasler X-ray range.
 
     Return the maximum range of X-ray generation in a pure bulk material.
 
@@ -241,6 +241,73 @@ def take_off_angle(tilt_stage,
 
     return math.degrees(np.arcsin(-math.cos(a) * math.cos(b) * math.cos(c)
                                   + math.sin(a) * math.sin(c)))
+
+
+def xray_lines_model(elements=['Al', 'Zn'],
+                     beam_energy=200,
+                     weight_percents=[50, 50],
+                     energy_resolution_MnKa=130,
+                     energy_axis={'name': 'E', 'scale': 0.01, 'units': 'keV',
+                                  'offset': -0.1, 'size': 1024}
+                     ):
+    """
+    Generate a model of X-ray lines using a Gaussian epr x-ray lines.
+
+    The area under a main peak (alpha) is equal to 1 and weighted by the
+    composition.
+
+    Parameters
+    ----------
+    elements : list of strings
+        A list of chemical element symbols.
+    beam_energy: float
+        The energy of the beam in keV.
+    weight_percents: list of float
+        The composition in weight percent.
+    energy_resolution_MnKa: float
+        The energy resolution of the detector in eV
+    energy_axis: dic
+        The dictionary for the energy axis. It must contains 'size' and the
+        units must be 'eV' of 'keV'.
+
+    Example
+    -------
+    >>> s = utils_eds.simulate_model(['Cu', 'Fe'], beam_energy=30)
+    >>> s.plot()
+    """
+    from hyperspy._signals.eds_tem import EDSTEMSpectrum
+    from hyperspy.model import Model
+    from hyperspy import components
+    s = EDSTEMSpectrum(np.zeros(energy_axis['size']), axes=[energy_axis])
+    s.set_microscope_parameters(
+        beam_energy=beam_energy,
+        energy_resolution_MnKa=energy_resolution_MnKa)
+    s.add_elements(elements)
+    counts_rate = 1.
+    live_time = 1.
+    if weight_percents is None:
+        weight_percents = [100] * len(elements)
+    m = Model(s)
+    for i, (element, weight_percent) in enumerate(zip(
+            elements, weight_percents)):
+        for line in elements_db[
+                element]['Atomic_properties']['Xray_lines'].keys():
+            line_energy = elements_db[element]['Atomic_properties'][
+                'Xray_lines'][line]['energy (keV)']
+            ratio_line = elements_db[element]['Atomic_properties'][
+                'Xray_lines'][line]['weight']
+            if s._get_xray_lines_in_spectral_range(
+                    [element+'_'+line])[1] == []:
+                g = components.Gaussian()
+                g.centre.value = line_energy
+                g.sigma.value = get_FWHM_at_Energy(
+                    energy_resolution_MnKa, line_energy) / 2.355
+                g.A.value = live_time * counts_rate * \
+                    weight_percent / 100 * ratio_line
+                m.append(g)
+    s.data = m.as_signal().data
+    # s.add_poissonian_noise()
+    return s
 
 
 def quantification_cliff_lorimer(intensities,
