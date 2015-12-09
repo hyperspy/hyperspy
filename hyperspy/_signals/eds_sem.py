@@ -273,3 +273,29 @@ class EDSSEMSpectrum(EDSSpectrum):
                 return True
         else:
             return False
+
+    def create_model(self, auto_background=True, auto_add_lines=True,
+                     *args, **kwargs):
+        """Create a model for the current SEM EDS data.
+
+        Parameters
+        ----------
+        auto_background : boolean, default True
+            If True, adds automatically a polynomial order 6 to the model, using
+            the edsmodel.add_polynomial_background method.
+        auto_add_lines : boolean, default True
+            If True, automatically add Gaussians for all X-rays generated in the
+            energy range by an element using the edsmodel.add_family_lines
+            method.
+
+        Returns
+        -------
+
+        model : `EDSSEMModel` instance.
+
+        """
+        from hyperspy.models.edssemmodel import EDSSEMModel
+        model = EDSSEMModel(self,
+                            auto_background=auto_background,
+                            auto_add_lines=auto_add_lines)
+        return model
