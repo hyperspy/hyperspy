@@ -156,6 +156,12 @@ class Model2D(BaseModel):
         errfunc = self._model_function(param) - y
         return (errfunc * weights).ravel()
 
+    def _model_function(self, param):
+        self.p0 = param
+        self._fetch_values_from_p0()
+        to_return = self.__call__(onlyactive=False)
+        return to_return
+
     # TODO: The methods below are implemented only for Model1D and should be
     # added eventually also for Model2D. Probably there are smarter ways to do
     # it than redefining every method, but it is structured this way now to make
@@ -168,10 +174,6 @@ class Model2D(BaseModel):
 
     def as_signal(self, component_list=None, out_of_range_to_nan=True,
                   show_progressbar=None):
-        raise NotImplementedError
-
-    @property
-    def _plot_active(self):
         raise NotImplementedError
 
     def update_plot(self, *args, **kwargs):

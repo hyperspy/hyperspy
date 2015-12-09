@@ -274,13 +274,6 @@ class Model1D(BaseModel):
                         component_._toggle_connect_active_array(True)
         return spectrum
 
-    @property
-    def _plot_active(self):
-        if self._plot is not None and self._plot.is_active() is True:
-            return True
-        else:
-            return False
-
     def update_plot(self, *args, **kwargs):
         """Update model plot.
 
@@ -404,6 +397,12 @@ class Model1D(BaseModel):
             to_return = to_return[self.channel_switches]
         if self.spectrum.metadata.Signal.binned is True:
             to_return *= self.spectrum.axes_manager[-1].scale
+        return to_return
+
+    def _model_function(self, param):
+        self.p0 = param
+        self._fetch_values_from_p0()
+        to_return = self.__call__(non_convolved=False, onlyactive=True)
         return to_return
 
     def _errfunc(self, param, y, weights=None):

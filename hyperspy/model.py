@@ -422,6 +422,13 @@ class BaseModel(list):
 
     __touch = _touch
 
+    @property
+    def _plot_active(self):
+        if self._plot is not None and self._plot.is_active() is True:
+            return True
+        else:
+            return False
+
     def _set_p0(self):
         self.p0 = ()
         for component in self:
@@ -542,12 +549,6 @@ class BaseModel(list):
             s = ns
         return s
 
-    def _model_function(self, param):
-        self.p0 = param
-        self._fetch_values_from_p0()
-        to_return = self.__call__(non_convolved=False, onlyactive=True)
-        return to_return
-
     def _function4odr(self, param, x):
         return self._model_function(param)
 
@@ -583,9 +584,9 @@ class BaseModel(list):
                     self.axes_manager._getitem_tuple)[self.channel_switches]
         else:
             variance = 1.0
-        d = self(onlyactive=True) - self.spectrum()[self.channel_switches]
+        d = self(onlyactive=True) - self.signal()[self.channel_switches]
         d *= d / (1. * variance)  # d = difference^2 / variance.
-        self.chisq.data[self.signal.axes_manager.indices[::-1]] = sum(d)
+        self.chisq.data[self.signal.axes_manager.indices[::-1]] = d.sum()
 
     def _set_current_degrees_of_freedom(self):
         self.dof.data[self.signal.axes_manager.indices[::-1]] = len(self.p0)
@@ -698,7 +699,7 @@ class BaseModel(list):
                                           'is only implemented for the "fmin" '
                                           'optimizer')
         elif method == "ls":
-            if "Signal.Noise_properties.variance" not in self.spectrum.metadata:
+            if "Signal.Noise_properties.variance" not in self.signal.metadata:
                 variance = 1
             else:
                 variance = self.signal.metadata.Signal.Noise_properties.variance
