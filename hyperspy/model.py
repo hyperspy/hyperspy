@@ -16,10 +16,8 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-import copy
 import os
 import tempfile
-import warnings
 import numbers
 import numpy as np
 import scipy.odr as odr
@@ -31,23 +29,11 @@ from scipy.optimize import (leastsq,
                             fmin_l_bfgs_b,
                             fmin_tnc,
                             fmin_powell)
-from traits.trait_errors import TraitError
 
 from hyperspy import messages
-import hyperspy.drawing.spectrum
-from hyperspy.drawing.utils import on_figure_window_close
 from hyperspy.external import progressbar
-from hyperspy._signals.eels import Spectrum
-from hyperspy._signals.image import Image
 from hyperspy.defaults_parser import preferences
-from hyperspy.axes import generate_axis
-from hyperspy.exceptions import WrongObjectError
-from hyperspy.decorators import interactive_range_selector
 from hyperspy.external.mpfit.mpfit import mpfit
-from hyperspy.axes import AxesManager
-from hyperspy.drawing.widgets import (DraggableVerticalLine,
-                                      DraggableLabel)
-from hyperspy.gui.tools import ComponentFit
 from hyperspy.component import Component
 from hyperspy import components
 from hyperspy.signal import Signal
@@ -56,7 +42,6 @@ from hyperspy.misc.export_dictionary import (export_to_dictionary,
                                              parse_flag_string,
                                              reconstruct_object)
 from hyperspy.misc.utils import slugify, shorten_name
-from hyperspy.misc.slicing import copy_slice_from_whitelist
 
 
 class ModelComponents(object):
@@ -99,7 +84,8 @@ class ModelComponents(object):
 
 class BaseModel(list):
 
-    """Model and data fitting for one or two dimensional signals.
+    """Model and data fitting tools applicable to signals of both one and two
+    dimensions.
 
     Models of one-dimensional signals should use the :class:`Model1D` and
     models of two-dimensional signals should use the :class:`Model2D`.
@@ -188,41 +174,11 @@ class BaseModel(list):
     as_dictionary
         Exports the model to a dictionary that can be saved in a file.
 
-    Examples
+    See also
     --------
-    In the following example we create a histogram from a normal distribution
-    and fit it with a gaussian component. It demonstrates how to create
-    a model from a :class:`~._signals.spectrum.Spectrum` instance, add
-    components to it, adjust the value of the parameters of the components,
-    fit the model to the data and access the components in the model.
 
-    >>> s = hs.signals.Spectrum(
-            np.random.normal(scale=2, size=10000)).get_histogram()
-    >>> g = hs.model.components.Gaussian()
-    >>> m = s.create_model()
-    >>> m.append(g)
-    >>> m.print_current_values()
-    Components	Parameter	Value
-    Gaussian
-                sigma	1.000000
-                A	1.000000
-                centre	0.000000
-    >>> g.centre.value = 3
-    >>> m.print_current_values()
-    Components	Parameter	Value
-    Gaussian
-                sigma	1.000000
-                A	1.000000
-                centre	3.000000
-    >>> g.sigma.value
-    1.0
-    >>> m.fit()
-    >>> g.sigma.value
-    1.9779042300856682
-    >>> m[0].sigma.value
-    1.9779042300856682
-    >>> m["Gaussian"].centre.value
-    -0.072121936813224569
+    Model1D
+    Model2D
 
     """
 
@@ -1407,6 +1363,3 @@ class BaseModel(list):
                     "\" not found in model")
         else:
             return list.__getitem__(self, value)
-
-
-

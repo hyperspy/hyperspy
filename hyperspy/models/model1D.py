@@ -17,55 +17,151 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import copy
-import os
-import tempfile
 import warnings
-import numbers
 import numpy as np
-import scipy.odr as odr
-from scipy.optimize import (leastsq,
-                            fmin,
-                            fmin_cg,
-                            fmin_ncg,
-                            fmin_bfgs,
-                            fmin_l_bfgs_b,
-                            fmin_tnc,
-                            fmin_powell)
 from traits.trait_errors import TraitError
 
 from hyperspy.model import BaseModel, ModelComponents
-from hyperspy import messages
 import hyperspy.drawing.spectrum
 from hyperspy.drawing.utils import on_figure_window_close
 from hyperspy.external import progressbar
 from hyperspy._signals.eels import Spectrum
-from hyperspy._signals.image import Image
 from hyperspy.defaults_parser import preferences
 from hyperspy.axes import generate_axis
 from hyperspy.exceptions import WrongObjectError
 from hyperspy.decorators import interactive_range_selector
-from hyperspy.external.mpfit.mpfit import mpfit
 from hyperspy.axes import AxesManager
 from hyperspy.drawing.widgets import (DraggableVerticalLine,
                                       DraggableLabel)
 from hyperspy.gui.tools import ComponentFit
-from hyperspy.component import Component
 from hyperspy import components
-from hyperspy.signal import Signal
-from hyperspy.misc.export_dictionary import (export_to_dictionary,
-                                             load_from_dictionary,
-                                             parse_flag_string,
-                                             reconstruct_object)
-from hyperspy.misc.utils import slugify, shorten_name
+from hyperspy.misc.export_dictionary import parse_flag_string
 from hyperspy.misc.slicing import copy_slice_from_whitelist
 
 
 class Model1D(BaseModel):
+    """Model and data fitting for one dimensional signals.
 
-    """
-    The class for models of one-dimensional signals i.e. Spectra.
+    A model is constructed as a linear combination of :mod:`components` that
+    are added to the model using :meth:`append` or :meth:`extend`. There
+    are many predifined components available in the in the :mod:`components`
+    module. If needed, new components can be created easily using the code of
+    existing components as a template.
 
-    Methods are defined for creating, fitting, and  plotting 1D models.
+    Once defined, the model can be fitted to the data using :meth:`fit` or
+    :meth:`multifit`. Once the optimizer reaches the convergence criteria or
+    the maximum number of iterations the new value of the component parameters
+    are stored in the components.
+
+    It is possible to access the components in the model by their name or by
+    the index in the model. An example is given at the end of this docstring.
+
+    Attributes
+    ----------
+
+    spectrum : Spectrum instance
+        It contains the data to fit.
+    chisq : A Signal of floats
+        Chi-squared of the signal (or np.nan if not yet fit)
+    dof : A Signal of integers
+        Degrees of freedom of the signal (0 if not yet fit)
+    red_chisq : Signal instance
+        Reduced chi-squared.
+    components : `ModelComponents` instance
+        The components of the model are attributes of this class. This provides
+        a convinient way to access the model components when working in IPython
+        as it enables tab completion.
+
+    Methods
+    -------
+
+    append
+        Append one component to the model.
+    extend
+        Append multiple components to the model.
+    remove
+        Remove component from model.
+    as_signal
+        Generate a Spectrum instance (possible multidimensional)
+        from the model.
+    store_current_values
+        Store the value of the parameters at the current position.
+    fetch_stored_values
+        fetch stored values of the parameters.
+    update_plot
+        Force a plot update. (In most cases the plot should update
+        automatically.)
+    set_signal_range, remove_signal range, reset_signal_range,
+    add signal_range.
+        Customize the signal range to fit.
+    fit, multifit
+        Fit the model to the data at the current position or the
+        full dataset.
+    save_parameters2file, load_parameters_from_file
+        Save/load the parameter values to/from a file.
+    plot
+        Plot the model and the data.
+    enable_plot_components, disable_plot_components
+        Plot each component separately. (Use after `plot`.)
+    set_current_values_to
+        Set the current value of all the parameters of the given component as
+        the value for all the dataset.
+    export_results
+        Save the value of the parameters in separate files.
+    plot_results
+        Plot the value of all parameters at all positions.
+    print_current_values
+        Print the value of the parameters at the current position.
+    enable_adjust_position, disable_adjust_position
+        Enable/disable interactive adjustment of the position of the components
+        that have a well defined position. (Use after `plot`).
+    fit_component
+        Fit just the given component in the given signal range, that can be
+        set interactively.
+    set_parameters_not_free, set_parameters_free
+        Fit the `free` status of several components and parameters at once.
+    set_parameters_value
+        Set the value of a parameter in components in a model to a specified
+        value.
+    as_dictionary
+        Exports the model to a dictionary that can be saved in a file.
+
+    Examples
+    --------
+    In the following example we create a histogram from a normal distribution
+    and fit it with a gaussian component. It demonstrates how to create
+    a model from a :class:`~._signals.spectrum.Spectrum` instance, add
+    components to it, adjust the value of the parameters of the components,
+    fit the model to the data and access the components in the model.
+
+    >>> s = hs.signals.Spectrum(
+            np.random.normal(scale=2, size=10000)).get_histogram()
+    >>> g = hs.model.components.Gaussian()
+    >>> m = s.create_model()
+    >>> m.append(g)
+    >>> m.print_current_values()
+    Components	Parameter	Value
+    Gaussian
+                sigma	1.000000
+                A	1.000000
+                centre	0.000000
+    >>> g.centre.value = 3
+    >>> m.print_current_values()
+    Components	Parameter	Value
+    Gaussian
+                sigma	1.000000
+                A	1.000000
+                centre	3.000000
+    >>> g.sigma.value
+    1.0
+    >>> m.fit()
+    >>> g.sigma.value
+    1.9779042300856682
+    >>> m[0].sigma.value
+    1.9779042300856682
+    >>> m["Gaussian"].centre.value
+    -0.072121936813224569
+
     """
     def __init__(self, spectrum, dictionary=None):
         self.spectrum = spectrum

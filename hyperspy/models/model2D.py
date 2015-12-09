@@ -16,56 +16,73 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-import copy
-import os
-import tempfile
-import warnings
-import numbers
 import numpy as np
-import scipy.odr as odr
-from scipy.optimize import (leastsq,
-                            fmin,
-                            fmin_cg,
-                            fmin_ncg,
-                            fmin_bfgs,
-                            fmin_l_bfgs_b,
-                            fmin_tnc,
-                            fmin_powell)
-from traits.trait_errors import TraitError
 
 from hyperspy.model import BaseModel, ModelComponents
-from hyperspy import messages
-import hyperspy.drawing.spectrum
-from hyperspy.drawing.utils import on_figure_window_close
-from hyperspy.external import progressbar
-from hyperspy._signals.eels import Spectrum
 from hyperspy._signals.image import Image
-from hyperspy.defaults_parser import preferences
-from hyperspy.axes import generate_axis
 from hyperspy.exceptions import WrongObjectError
 from hyperspy.decorators import interactive_range_selector
-from hyperspy.external.mpfit.mpfit import mpfit
-from hyperspy.axes import AxesManager
-from hyperspy.drawing.widgets import (DraggableVerticalLine,
-                                      DraggableLabel)
-from hyperspy.gui.tools import ComponentFit
-from hyperspy.component import Component
-from hyperspy import components
-from hyperspy.signal import Signal
-from hyperspy.misc.export_dictionary import (export_to_dictionary,
-                                             load_from_dictionary,
-                                             parse_flag_string,
-                                             reconstruct_object)
-from hyperspy.misc.utils import slugify, shorten_name
-from hyperspy.misc.slicing import copy_slice_from_whitelist
+
 
 class Model2D(BaseModel):
 
-    """
-    The class for models of two-dimensional signals i.e. images.
+    """Model and data fitting for two dimensional signals.
 
-    Methods are defined for creating and fitting 2D models but plotting features
-    are not yet provided.
+    A model is constructed as a linear combination of :mod:`components2D` that
+    are added to the model using :meth:`append` or :meth:`extend`. There
+    are many predifined components available in the in the :mod:`components2D`
+    module. If needed, new components can be created easily using the code of
+    existing components as a template.
+
+    Once defined, the model can be fitted to the data using :meth:`fit` or
+    :meth:`multifit`. Once the optimizer reaches the convergence criteria or
+    the maximum number of iterations the new value of the component parameters
+    are stored in the components.
+
+    It is possible to access the components in the model by their name or by
+    the index in the model. An example is given at the end of this docstring.
+
+    Note that methods are not yet defined for plotting 2D models or using
+    gradient based optimisation methods - these will be added soon.
+
+    Attributes
+    ----------
+
+    image : Image instance
+        It contains the data to fit.
+    chisq : A Signal of floats
+        Chi-squared of the signal (or np.nan if not yet fit)
+    dof : A Signal of integers
+        Degrees of freedom of the signal (0 if not yet fit)
+    red_chisq : Signal instance
+        Reduced chi-squared.
+    components : `ModelComponents` instance
+        The components of the model are attributes of this class. This provides
+        a convinient way to access the model components when working in IPython
+        as it enables tab completion.
+
+    Methods
+    -------
+
+    append
+        Append one component to the model.
+    extend
+        Append multiple components to the model.
+    remove
+        Remove component from model.
+    fit, multifit
+        Fit the model to the data at the current position or the full dataset.
+
+    See also
+    --------
+    Base Model
+    Model1D
+
+    Example
+    -------
+
+
+
     """
 
     def __init__(self, image, dictionary=None):
@@ -269,5 +286,3 @@ class Model2D(BaseModel):
 
     def disable_adjust_position(self):
         raise NotImplementedError
-
-
