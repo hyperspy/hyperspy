@@ -160,6 +160,8 @@ HyperSpy.
     +--------------------+-----------+----------+
     | Ripple             |    Yes    |    Yes   |
     +--------------------+-----------+----------+
+    | SEMPER unf         |    Yes    |    Yes   |
+    +--------------------+-----------+----------+
     | Blockfile          |    Yes    |    Yes   |
     +--------------------+-----------+----------+
 
@@ -366,6 +368,19 @@ Therefore strongly reccommend to load using the ``.emi`` file instead.
 
 When reading an ``.emi`` file if there are several ``.ser`` files associated
 with it, all of them will be read and returned as a list.
+
+.. _unf-format:
+
+SEMPER unf binary format
+------------------------
+
+SEMPER is a fully portable system of programs for image processing, particularly
+suitable for applications in electron microscopy developed by Owen Saxton (see
+DOI: 10.1016/S0304-3991(79)80044-3 for more information).The unf format is a
+binary format with an extensive header for up to 3 dimensional data.
+HyperSpy can read and write unf-files and will try to convert the data into a
+fitting Signal subclass, based on the information stored in the label.
+Currently version 7 of the format should be fully supported.
 
 .. _blockfile-format:
 
