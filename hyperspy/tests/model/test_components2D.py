@@ -7,7 +7,7 @@ import hyperspy.api as hs
 class TestGaussian2D:
 
     def setUp(self):
-        g = hs.components2D.Gaussian2D(
+        g = hs.model.components2d.Gaussian2D(
             centre_x=-5.,
             centre_y=-5.,
             sigma_x=1.,
@@ -26,7 +26,7 @@ class TestGaussian2D:
     def test_fitting(self):
         im = self.im
         m = im.create_model()
-        m.append(hs.components2D.Gaussian2D)
+        m.append(hs.model.components2d.Gaussian2D)
         m.fit()
         nt.assert_almost_equal(im)
 
@@ -45,7 +45,7 @@ class TestScalableFixedPattern2D:
         im = self.im
         im1 = self.pattern
         m = im.create_model()
-        fp = hs.components2D.ScalableFixedPattern2D(im1)
+        fp = hs.model.components2d.ScalableFixedPattern2d(im1)
         m.append(fp)
         m.fit()
         nt.assert_almost_equal(fp.yscale.value, 100, delta=0.1)
