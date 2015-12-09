@@ -18,7 +18,7 @@ class TestGaussian2D:
         im = hs.signals.Image(g.function(X, Y))
         im.axes_manager[0].scale = 0.01
         im.axes_manager[0].offset = -10
-        im.axes_manager[1].scale = 0.02
+        im.axes_manager[1].scale = 0.01
         im.axes_manager[1].offset = -10
         self.im = im
 
