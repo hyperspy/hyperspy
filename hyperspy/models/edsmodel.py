@@ -21,7 +21,7 @@ from __future__ import division
 import numpy as np
 import math
 
-from hyperspy.model import Model
+from hyperspy.models.model1D import Model1D
 from hyperspy._signals.eds import EDSSpectrum
 from hyperspy.misc.elements import elements as elements_db
 from hyperspy.misc.eds import utils as utils_eds
@@ -56,7 +56,7 @@ def _get_scale(E1, E_ref1, fact):
     return lambda E: E1 + fact * (E - E_ref1)
 
 
-class EDSModel(Model):
+class EDSModel(Model1D):
     """Build a fit a model for EDS instance
 
     Parameters
@@ -83,7 +83,7 @@ class EDSModel(Model):
     def __init__(self, spectrum,
                  auto_add_lines=True,
                  *args, **kwargs):
-        Model.__init__(self, spectrum, *args, **kwargs)
+        Model1D.__init__(self, spectrum, *args, **kwargs)
         self.xray_lines = list()
         self.background_components = list()
         end_energy = self.axes_manager.signal_axes[0].high_value

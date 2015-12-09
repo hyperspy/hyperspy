@@ -18,6 +18,10 @@ def _get_energy_xray_line(xray_line):
         line]['energy (keV)']
 
 
+def _get_xray_lines_family(xray_line):
+    return xray_line[:xray_line.find('_') + 2]
+
+
 def _parse_only_lines(only_lines):
     if hasattr(only_lines, '__iter__'):
         if any(isinstance(line, basestring) is False for line in only_lines):
@@ -102,7 +106,7 @@ def get_FWHM_at_Energy(energy_resolution_MnKa, E):
 
 
 def xray_range(xray_line, beam_energy, density='auto'):
-    '''Return the Anderson-Hasler X-ray range.
+    """Return the Anderson-Hasler X-ray range.
 
     Return the maximum range of X-ray generation in a pure bulk material.
 
@@ -276,8 +280,7 @@ def xray_lines_model(elements=['Al', 'Zn'],
     >>> s.plot()
     """
     from hyperspy._signals.eds_tem import EDSTEMSpectrum
-    from hyperspy.model import Model
-    from hyperspy import components
+    from hyperspy.model import components
     s = EDSTEMSpectrum(np.zeros(energy_axis['size']), axes=[energy_axis])
     s.set_microscope_parameters(
         beam_energy=beam_energy,
@@ -287,7 +290,7 @@ def xray_lines_model(elements=['Al', 'Zn'],
     live_time = 1.
     if weight_percents is None:
         weight_percents = [100] * len(elements)
-    m = Model(s)
+    m = s.create_model()
     for i, (element, weight_percent) in enumerate(zip(
             elements, weight_percents)):
         for line in elements_db[
