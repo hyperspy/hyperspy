@@ -11,13 +11,13 @@ the :py:class`~.model.BaseModel` class is available for both kinds.
 
 .. versionadded:: 0.9
     
-    Models can be created and and fit to experimental data in one and two
+    Models can be created and and fit to experimental data in both one and two
     dimensions i.e. spectra and images respectively. Most of the syntax is
     identical in either case. A one-dimensional model is created when a model
     is created for a :py:class:`~._signals.spectrum.Spectrum` whereas a two-
     dimensional model is created for a :py:class:`._signals.image.Image`. At
-    present plotting tools for the :py:class:`~.model.Model2D` class are not
-    provided but will be added soon.
+    present plotting and gradient fitting methods tools for are not yet 
+    provided for the :py:class:`~.models.model2D.Model2D` class.
 
 .. versionadded:: 0.7
 
@@ -33,15 +33,15 @@ class using the :py:meth:`~._signals.spectrum.Spectrum.create_model` method:
 
 .. code-block:: python
 
-    >>> s = hs.load('YourDataFilenameHere') # Load the data from a file
-    >>> m = s.create_model() # Create the 1D-Model and asign it to the variable m
+    >>> s = hs.signals.Spectrum('SomeDataHere') # Load the data from a file
+    >>> m = s.create_model() # Creates the 1D-Model and asign it to the variable m
 
 Similarly A :py:class:`~.models.model2D.Model2D` can be created for data in the :py:class:`~._signals.image.Image` 
 class using the :py:meth:`~._signals.image.Image.create_model` method:
 
 .. code-block:: python
 
-    >>> im = hs.load('YourDataFilenameHere') # Load the data from a file
+    >>> im = hs.signals.Image('SomeDataHere') # Load the data from a file
     >>> mod = im.create_model() # Create the 2D-Model and asign it to the variable mod
 
 The syntax for creating both one-dimensional and two-dimensional models is thus
@@ -77,10 +77,10 @@ The following components are currently available for one-dimensional models:
 
 .. versionadded:: 0.9 The following components are currently available for two-dimensional models:
 
-* :py:class:`~._components.scalable_fixed_pattern.ScalableFixedPattern2D`
-* :py:class:`~._components.gaussian.Gaussian2D`
+* :py:class:`~._components.gaussian2d.Gaussian2D`
 
-However, this doesn't mean that you have to limit yourself to this meagre list of function.
+However, this doesn't mean that you have to limit yourself to this meagre list of functions.
+A new function can easily be written or a custom function may be specified as below.
 
 Specifying custom components
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
