@@ -20,32 +20,18 @@ class TestGaussian2D:
         im.axes_manager[0].offset = -10
         im.axes_manager[1].scale = 0.02
         im.axes_manager[1].offset = -10
-        im = hs.utils.stack([im]*2)
         self.im = im
 
     def test_fitting(self):
         im = self.im
         m = im.create_model()
-        m.append(hs.model.components2d.Gaussian2D)
+        gt = hs.model.components2d.Gaussian2D(centre_x=-4.5,
+                                              centre_y=-4.5,
+                                              sigma_x=0.5,
+                                              sigma_y=1.5)
+        m.append(gt)
         m.fit()
-        nt.assert_almost_equal(im)
-
-
-class TestScalableFixedPattern2D:
-
-    def setUp(self):
-        im = hs.signals.Image((np.linspace(0., 100., 10), np.linspace(0., 1., 10)) )
-        im1 = hs.signals.Image(np.linspace(0., 1., 10))
-        im.axes_manager[0].scale = 0.1
-        im.axes_manager[0].scale = 0.1
-        self.im = im
-        self.pattern = im1
-
-    def test_fitting(self):
-        im = self.im
-        im1 = self.pattern
-        m = im.create_model()
-        fp = hs.model.components2d.ScalableFixedPattern2d(im1)
-        m.append(fp)
-        m.fit()
-        nt.assert_almost_equal(fp.yscale.value, 100, delta=0.1)
+        nt.assert_almost_equal(gt.centre_x.value, -5.)
+        nt.assert_almost_equal(gt.centre_y.value, -5.)
+        nt.assert_almost_equal(gt.sigma_x.value, 1.)
+        nt.assert_almost_equal(gt.sigma_y.value, 2.)
