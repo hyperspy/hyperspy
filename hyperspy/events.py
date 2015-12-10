@@ -2,7 +2,7 @@ import sys
 import inspect
 
 
-class EventSuppressionContext(object):
+class EventsSuppressionContext(object):
 
     """
     Context manager for event suppression. When passed an Events class,
@@ -54,7 +54,7 @@ class Events(object):
             obj.val_b = b
         obj.events.values_changed.trigger()
         """
-        return EventSuppressionContext(self)
+        return EventsSuppressionContext(self)
 
 
 class Event(object):
