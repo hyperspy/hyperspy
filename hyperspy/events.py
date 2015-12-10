@@ -96,7 +96,8 @@ class Event(object):
 
     def trigger(self, *args):
         if not self.suppress:
-            for nargs, c in self._connected.iteritems():
+            # Loop on copy to deal with callbacks which change connections
+            for nargs, c in self._connected.copy().iteritems():
                 if nargs is 'all':
                     for f in c:
                         f(*args)
@@ -105,7 +106,7 @@ class Event(object):
                         raise ValueError(
                             ("Tried to call %s which require %d args " +
                              "with only %d.") % (str(c), nargs, len(args)))
-                    for f in c:
+                    for f in c.copy():
                         f(*args[0:nargs])
 
     def __deepcopy__(self, memo):
