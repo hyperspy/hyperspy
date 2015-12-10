@@ -1,5 +1,6 @@
 syntax: glob
 .spyderworkspace
+.coverage
 /MANIFEST
 /*.rst
 *.pyc
@@ -32,3 +33,4 @@ doc/gh-pages
 *Thumbs.db
 .ropeproject/*
 .idea/*
+*.pyproj

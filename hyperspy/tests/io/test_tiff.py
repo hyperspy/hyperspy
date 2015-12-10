@@ -3,7 +3,7 @@ import os
 import numpy as np
 from nose.tools import assert_true
 
-import hyperspy.hspy as hs
+import hyperspy.api as hs
 
 my_path = os.path.dirname(__file__)
 

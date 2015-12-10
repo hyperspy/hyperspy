@@ -4,7 +4,8 @@ import scipy.signal
 
 
 def find_peaks_ohaver(y, x=None, slope_thresh=0., amp_thresh=None,
-                      medfilt_radius=5, maxpeakn=30000, peakgroup=10, subchannel=True,):
+                      medfilt_radius=5, maxpeakn=30000, peakgroup=10,
+                      subchannel=True,):
     """Find peaks along a 1D line.
 
     Function to locate the positive peaks in a noisy x-y data set.
@@ -13,6 +14,7 @@ def find_peaks_ohaver(y, x=None, slope_thresh=0., amp_thresh=None,
     derivative that exceed 'slope_thresh'.
 
     Returns an array containing position, height, and width of each peak.
+    Sorted by position.
 
     'slope_thresh' and 'amp_thresh', control sensitivity: higher values will
     neglect smaller features.
@@ -91,8 +93,8 @@ def find_peaks_ohaver(y, x=None, slope_thresh=0., amp_thresh=None,
         d = np.gradient(y)
     n = np.round(peakgroup / 2 + 1)
     peak_dt = np.dtype([('position', np.float),
-                        ('width', np.float),
-                        ('height', np.float)])
+                        ('height', np.float),
+                        ('width', np.float)])
     P = np.array([], dtype=peak_dt)
     peak = 0
     for j in xrange(len(y) - 4):
@@ -153,14 +155,20 @@ def find_peaks_ohaver(y, x=None, slope_thresh=0., amp_thresh=None,
                         # no way to know peak width without
                         # the above measurements.
                         width = 0
-                    if (position > 0 and not np.isnan(position)
-                            and position < x[-1]):
+                    if (not np.isnan(position) and 0 < position < x[-1]):
                         P = np.hstack((P,
                                        np.array([(position, height, width)],
                                                 dtype=peak_dt)))
-                        peak = peak + 1
+                        peak += 1
     # return only the part of the array that contains peaks
     # (not the whole maxpeakn x 3 array)
+    if len(P) > maxpeakn:
+        minh = np.sort(P['height'])[-maxpeakn]
+        P = P[P['height'] >= minh]
+
+    # Sorts the values as a function of position
+    P.sort(0)
+
     return P
 
 

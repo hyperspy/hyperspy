@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2015 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -53,6 +53,18 @@ class EDSSEMSpectrum(EDSSpectrum):
             The live time (real time corrected from the "dead time")
             is divided by the number of pixel (spectrums), giving an
             average live time.
+
+        Examples
+        --------
+        >>> ref = hs.datasets.example_signals.EDS_SEM_Spectrum()
+        >>> s = hs.signals.EDSSEMSpectrum(
+        >>>     hs.datasets.example_signals.EDS_SEM_Spectrum().data)
+        >>> print s.axes_manager[0].scale
+        >>> s.get_calibration_from(ref)
+        >>> print s.axes_manager[0].scale
+        1.0
+        0.01
+
         """
 
         self.original_metadata = ref.original_metadata.deepcopy()
@@ -69,8 +81,9 @@ class EDSSEMSpectrum(EDSSpectrum):
         elif 'Acquisition_instrument.TEM' in ref.metadata:
             mp_ref = ref.metadata.Acquisition_instrument.TEM
         else:
-            raise ValueError("The reference has no metadata.Acquisition_instrument.TEM"
-                             "\n nor metadata.Acquisition_instrument.SEM ")
+            raise ValueError(
+                "The reference has no metadata.Acquisition_instrument.TEM"
+                "\n nor metadata.Acquisition_instrument.SEM ")
 
         mp = self.metadata
 
@@ -81,7 +94,8 @@ class EDSSEMSpectrum(EDSSpectrum):
                 mp_ref.Detector.EDS.live_time / nb_pix
 
     def _load_from_TEM_param(self):
-        """Transfer metadata.Acquisition_instrument.TEM to metadata.Acquisition_instrument.SEM
+        """Transfer metadata.Acquisition_instrument.TEM to
+        metadata.Acquisition_instrument.SEM
 
         """
 
@@ -110,9 +124,11 @@ class EDSSEMSpectrum(EDSSpectrum):
             mp.set_item(
                 "Acquisition_instrument.SEM.Detector.EDS.elevation_angle",
                 preferences.EDS.eds_detector_elevation)
-        if "Acquisition_instrument.SEM.Detector.EDS.energy_resolution_MnKa" not in mp:
+        if "Acquisition_instrument.SEM.Detector.EDS.energy_resolution_MnKa" \
+                not in mp:
             mp.set_item(
-                "Acquisition_instrument.SEM.Detector.EDS.energy_resolution_MnKa",
+                "Acquisition_instrument.SEM.Detector.EDS."
+                "energy_resolution_MnKa",
                 preferences.EDS.eds_mn_ka)
         if "Acquisition_instrument.SEM.Detector.EDS.azimuth_angle" not in mp:
             mp.set_item(
@@ -146,6 +162,19 @@ class EDSSEMSpectrum(EDSSpectrum):
         energy_resolution_MnKa : float
             In eV
 
+        Examples
+        --------
+        >>> s = hs.datasets.example_signals.EDS_SEM_Spectrum()
+        >>> print('Default value %s eV' %
+        >>>       s.metadata.Acquisition_instrument.
+        >>>       SEM.Detector.EDS.energy_resolution_MnKa)
+        >>> s.set_microscope_parameters(energy_resolution_MnKa=135.)
+        >>> print('Now set to %s eV' %
+        >>>       s.metadata.Acquisition_instrument.
+        >>>       SEM.Detector.EDS.energy_resolution_MnKa)
+        Default value 130.0 eV
+        Now set to 135.0 eV
+
         """
         md = self.metadata
 
@@ -167,11 +196,12 @@ class EDSSEMSpectrum(EDSSpectrum):
                 elevation_angle)
         if energy_resolution_MnKa is not None:
             md.set_item(
-                "Acquisition_instrument.SEM.Detector.EDS.energy_resolution_MnKa",
+                "Acquisition_instrument.SEM.Detector.EDS."
+                "energy_resolution_MnKa",
                 energy_resolution_MnKa)
 
-        if set([beam_energy, live_time, tilt_stage, azimuth_angle,
-               elevation_angle, energy_resolution_MnKa]) == {None}:
+        if {beam_energy, live_time, tilt_stage, azimuth_angle,
+                elevation_angle, energy_resolution_MnKa} == {None}:
             self._are_microscope_parameters_missing()
 
     @only_interactive
@@ -181,10 +211,14 @@ class EDSSEMSpectrum(EDSSpectrum):
         mapping = {
             'Acquisition_instrument.SEM.beam_energy': 'tem_par.beam_energy',
             'Acquisition_instrument.SEM.tilt_stage': 'tem_par.tilt_stage',
-            'Acquisition_instrument.SEM.Detector.EDS.live_time': 'tem_par.live_time',
-            'Acquisition_instrument.SEM.Detector.EDS.azimuth_angle': 'tem_par.azimuth_angle',
-            'Acquisition_instrument.SEM.Detector.EDS.elevation_angle': 'tem_par.elevation_angle',
-            'Acquisition_instrument.SEM.Detector.EDS.energy_resolution_MnKa': 'tem_par.energy_resolution_MnKa', }
+            'Acquisition_instrument.SEM.Detector.EDS.live_time':
+            'tem_par.live_time',
+            'Acquisition_instrument.SEM.Detector.EDS.azimuth_angle':
+            'tem_par.azimuth_angle',
+            'Acquisition_instrument.SEM.Detector.EDS.elevation_angle':
+            'tem_par.elevation_angle',
+            'Acquisition_instrument.SEM.Detector.EDS.energy_resolution_MnKa':
+            'tem_par.energy_resolution_MnKa', }
 
         for key, value in mapping.iteritems():
             if self.metadata.has_item(key):
@@ -194,10 +228,14 @@ class EDSSEMSpectrum(EDSSpectrum):
         mapping = {
             'Acquisition_instrument.SEM.beam_energy': tem_par.beam_energy,
             'Acquisition_instrument.SEM.tilt_stage': tem_par.tilt_stage,
-            'Acquisition_instrument.SEM.Detector.EDS.live_time': tem_par.live_time,
-            'Acquisition_instrument.SEM.Detector.EDS.azimuth_angle': tem_par.azimuth_angle,
-            'Acquisition_instrument.SEM.Detector.EDS.elevation_angle': tem_par.elevation_angle,
-            'Acquisition_instrument.SEM.Detector.EDS.energy_resolution_MnKa': tem_par.energy_resolution_MnKa, }
+            'Acquisition_instrument.SEM.Detector.EDS.live_time':
+            tem_par.live_time,
+            'Acquisition_instrument.SEM.Detector.EDS.azimuth_angle':
+            tem_par.azimuth_angle,
+            'Acquisition_instrument.SEM.Detector.EDS.elevation_angle':
+            tem_par.elevation_angle,
+            'Acquisition_instrument.SEM.Detector.EDS.energy_resolution_MnKa':
+            tem_par.energy_resolution_MnKa, }
 
         for key, value in mapping.iteritems():
             if value != t.Undefined:

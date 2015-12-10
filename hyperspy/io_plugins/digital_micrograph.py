@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # Copyright 2010 Stefano Mazzucco
-# Copyright 2011 The HyperSpy developers
+# Copyright 2011-2015 The HyperSpy developers
 #
 # This file is part of  HyperSpy. It is a fork of the original PIL dm3 plugin
 # written by Stefano Mazzucco.
@@ -38,7 +38,7 @@ from hyperspy.misc.utils import DictionaryTreeBrowser
 # ----------------------
 format_name = 'Digital Micrograph dm3'
 description = 'Read data from Gatan Digital Micrograph (TM) files'
-full_suport = False
+full_support = False
 # Recognised file extension
 file_extensions = ('dm3', 'DM3', 'dm4', 'DM4')
 default_extension = 0
@@ -241,10 +241,10 @@ class DigitalMicrographReader(object):
                 raise DM3TagIDError(tag_header['tag_id'])
 
     def get_data_reader(self, enc_dtype):
-    # _data_type dictionary.
-    # The first element of the InfoArray in the TagType
-    # will always be one of _data_type keys.
-    # the tuple reads: ('read bytes function', 'number of bytes', 'type')
+        # _data_type dictionary.
+        # The first element of the InfoArray in the TagType
+        # will always be one of _data_type keys.
+        # the tuple reads: ('read bytes function', 'number of bytes', 'type')
 
         dtype_dict = {
             2: (read_short, 2, 'h'),
@@ -457,7 +457,7 @@ class DigitalMicrographReader(object):
             continue
         position = self.f.tell() - 1
         self.f.seek(position)
-        tag_header = self.parse_tag_header()
+        self.parse_tag_header()
         try:
             self.check_data_tag_delimiter()
             self.f.seek(position)
@@ -491,7 +491,7 @@ class DigitalMicrographReader(object):
         if 'ImageList' not in self.tags_dict:
             return None
         if "Thumbnails" in self.tags_dict:
-            thumbnail_idx = [t['ImageIndex'] for key, t in
+            thumbnail_idx = [tag['ImageIndex'] for key, tag in
                              self.tags_dict['Thumbnails'].iteritems()]
         else:
             thumbnail_idx = []
@@ -516,23 +516,36 @@ class ImageObject(object):
         shape = tuple([dimension[1] for dimension in dimensions])
         return shape[::-1]  # DM uses image indexing X, Y, Z...
 
+    # For some image stacks created using plugins in Digital Micrograph
+    # the metadata under Calibrations.Dimension would not reflect the
+    # actual dimensions in the dataset, leading to these images not
+    # loading properly. To allow HyperSpy to load these files, any missing
+    # dimensions in the metadata is appended with "dummy" values.
+    # This is done for the offsets, scales and units properties, using
+    # the len_diff variable
     @property
     def offsets(self):
         dimensions = self.imdict.ImageData.Calibrations.Dimension
+        len_diff = len(self.shape) - len(dimensions)
         origins = np.array([dimension[1].Origin for dimension in dimensions])
-        return (-1 * origins[::-1] * self.scales)
+        origins = np.append(origins, (0.0,) * len_diff)
+        return -1 * origins[::-1] * self.scales
 
     @property
     def scales(self):
         dimensions = self.imdict.ImageData.Calibrations.Dimension
-        return np.array([dimension[1].Scale for dimension in dimensions])[::-1]
+        len_diff = len(self.shape) - len(dimensions)
+        scales = np.array([dimension[1].Scale for dimension in dimensions])
+        scales = np.append(scales, (1.0,) * len_diff)
+        return scales[::-1]
 
     @property
     def units(self):
         dimensions = self.imdict.ImageData.Calibrations.Dimension
-        return tuple([dimension[1].Units
-                      if dimension[1].Units else ""
-                      for dimension in dimensions])[::-1]
+        len_diff = len(self.shape) - len(dimensions)
+        return (tuple([dimension[1].Units
+                       if dimension[1].Units else ""
+                       for dimension in dimensions]) + ('',) * len_diff)[::-1]
 
     @property
     def names(self):
@@ -572,8 +585,8 @@ class ImageObject(object):
     @property
     def to_spectrum(self):
         if (('ImageTags.Meta_Data.Format' in self.imdict and
-                self.imdict.ImageTags.Meta_Data.Format == "Spectrum image") or (
-                "ImageTags.spim" in self.imdict)) and len(self.scales) > 2:
+                self.imdict.ImageTags.Meta_Data.Format == "Spectrum image") or
+                ("ImageTags.spim" in self.imdict)) and len(self.scales) > 2:
             return True
         else:
             return False
@@ -624,6 +637,8 @@ class ImageObject(object):
     @property
     def signal_type(self):
         if 'ImageTags.Meta_Data.Signal' in self.imdict:
+            if self.imdict.ImageTags.Meta_Data.Signal == "X-ray":
+                return "EDS_TEM"
             return self.imdict.ImageTags.Meta_Data.Signal
         elif 'ImageTags.spim.eels' in self.imdict:  # Orsay's tag group
             return "EELS"
@@ -771,10 +786,39 @@ class ImageObject(object):
         return metadata
 
 mapping = {
-    "ImageList.TagGroup0.ImageTags.EELS.Experimental_Conditions.Collection_semi_angle_mrad": ("Acquisition_instrument.TEM.Detector.EELS.collection_angle", None),
-    "ImageList.TagGroup0.ImageTags.EELS.Experimental_Conditions.Convergence_semi_angle_mrad": ("Acquisition_instrument.TEM.convergence_angle", None),
-    "ImageList.TagGroup0.ImageTags.Acquisition.Parameters.Detector.exposure_s": ("Acquisition_instrument.TEM.dwell_time", None),
-    "ImageList.TagGroup0.ImageTags.Microscope_Info.Voltage": ("Acquisition_instrument.TEM.beam_energy", lambda x: x / 1e3)
+    "ImageList.TagGroup0.ImageTags.EELS.Experimental_Conditions." +
+    "Collection_semi_angle_mrad": (
+        "Acquisition_instrument.TEM.Detector.EELS.collection_angle",
+        None),
+    "ImageList.TagGroup0.ImageTags.EELS.Experimental_Conditions." +
+    "Convergence_semi_angle_mrad": (
+        "Acquisition_instrument.TEM.convergence_angle",
+        None),
+    "ImageList.TagGroup0.ImageTags.Acquisition.Parameters.Detector." +
+    "exposure_s": (
+        "Acquisition_instrument.TEM.dwell_time",
+        None),
+    "ImageList.TagGroup0.ImageTags.Microscope_Info.Voltage": (
+        "Acquisition_instrument.TEM.beam_energy",
+        lambda x: x / 1e3),
+    "ImageList.TagGroup0.ImageTags.EDS.Detector_Info.Azimuthal_angle": (
+        "Acquisition_instrument.TEM.Detector.EDS.azimuth_angle",
+        None),
+    "ImageList.TagGroup0.ImageTags.EDS.Detector_Info.Elevation_angle": (
+        "Acquisition_instrument.TEM.Detector.EDS.elevation_angle",
+        None),
+    "ImageList.TagGroup0.ImageTags.EDS.Detector_Info.Stage_tilt": (
+        "Acquisition_instrument.TEM.tilt_stage",
+        None),
+    "ImageList.TagGroup0.ImageTags.EDS.Solid_angle": (
+        "Acquisition_instrument.TEM.Detector.EDS.solid_angle",
+        None),
+    "ImageList.TagGroup0.ImageTags.EDS.Live_time": (
+        "Acquisition_instrument.TEM.Detector.EDS.live_time",
+        None),
+    "ImageList.TagGroup0.ImageTags.EDS.Real_time": (
+        "Acquisition_instrument.TEM.Detector.EDS.real_time",
+        None),
 }
 
 
