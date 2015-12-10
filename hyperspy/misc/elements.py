@@ -31,20 +31,28 @@ elements = {'Ru': {'Physical_properties': {'density (g/cm^3)': 12.37},
                                                         'Lg1': {'weight': 0.02176,
                                                                 'energy (keV)': 2.9649}},
                                          'Binding_energies': {'M5': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 279.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     279.0,
                                                                      'filename': 'Ru.M5'},
                                                               'M4': {'relevance': 'Major',
-                                                                     'factor': 0.6666666666666666,
-                                                                     'onset_energy (eV)': 279.0,
+                                                                     'factor':
+                                                                         0.6666666666666666,
+                                                                     'onset_energy (eV)':
+                                                                     279.0,
                                                                      'filename': 'Ru.M5'},
                                                               'M3': {'relevance': 'Minor',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 461.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     461.0,
                                                                      'filename': 'Ru.M3'},
                                                               'M2': {'relevance': 'Minor',
-                                                                     'factor': 0.5,
-                                                                     'onset_energy (eV)': 483.0,
+                                                                     'factor':
+                                                                         0.5,
+                                                                     'onset_energy (eV)':
+                                                                     483.0,
                                                                      'filename': 'Ru.M3'}}},
                    'General_properties': {'Z': 44,
                                           'atomic_weight': 101.07,
@@ -87,12 +95,16 @@ elements = {'Ru': {'Physical_properties': {'density (g/cm^3)': 12.37},
                                                         'Mz': {'weight': 0.01344,
                                                                'energy (keV)': 1.4385}},
                                          'Binding_energies': {'M5': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 1883.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     1883.0,
                                                                      'filename': 'Re.M5'},
                                                               'M4': {'relevance': 'Major',
-                                                                     'factor': 0.6666666666666666,
-                                                                     'onset_energy (eV)': 1949.0,
+                                                                     'factor':
+                                                                         0.6666666666666666,
+                                                                     'onset_energy (eV)':
+                                                                     1949.0,
                                                                      'filename': 'Re.M5'}}},
                    'General_properties': {'Z': 75,
                                           'atomic_weight': 186.207,
@@ -149,32 +161,46 @@ elements = {'Ru': {'Physical_properties': {'density (g/cm^3)': 12.37},
                                                         'Lg3': {'weight': 0.0058,
                                                                 'energy (keV)': 2.0651}},
                                          'Binding_energies': {'M2': {'relevance': 'Major',
-                                                                     'factor': 0.5,
-                                                                     'onset_energy (eV)': 247.0,
+                                                                     'factor':
+                                                                         0.5,
+                                                                     'onset_energy (eV)':
+                                                                     247.0,
                                                                      'filename': 'Rb.M3'},
                                                               'M5': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 110.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     110.0,
                                                                      'filename': 'Rb.M5'},
                                                               'M4': {'relevance': 'Major',
-                                                                     'factor': 0.6666666666666666,
-                                                                     'onset_energy (eV)': 110.0,
+                                                                     'factor':
+                                                                         0.6666666666666666,
+                                                                     'onset_energy (eV)':
+                                                                     110.0,
                                                                      'filename': 'Rb.M5'},
                                                               'L2': {'relevance': 'Major',
-                                                                     'factor': 0.5,
-                                                                     'onset_energy (eV)': 1864.0,
+                                                                     'factor':
+                                                                         0.5,
+                                                                     'onset_energy (eV)':
+                                                                     1864.0,
                                                                      'filename': 'Rb.L3'},
                                                               'L3': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 1804.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     1804.0,
                                                                      'filename': 'Rb.L3'},
                                                               'M3': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 238.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     238.0,
                                                                      'filename': 'Rb.M3'},
                                                               'L1': {'relevance': 'Minor',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 2065.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     2065.0,
                                                                      'filename': 'Rb.L1'}}},
                    'General_properties': {'Z': 37,
                                           'atomic_weight': 85.4678,
@@ -237,20 +263,28 @@ elements = {'Ru': {'Physical_properties': {'density (g/cm^3)': 12.37},
                                                         'Lg1': {'weight': 0.02623,
                                                                 'energy (keV)': 3.1436}},
                                          'Binding_energies': {'M5': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 308.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     308.0,
                                                                      'filename': 'Rh.M5'},
                                                               'M4': {'relevance': 'Major',
-                                                                     'factor': 0.6666666666666666,
-                                                                     'onset_energy (eV)': 312.0,
+                                                                     'factor':
+                                                                         0.6666666666666666,
+                                                                     'onset_energy (eV)':
+                                                                     312.0,
                                                                      'filename': 'Rh.M5'},
                                                               'M3': {'relevance': 'Minor',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 496.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     496.0,
                                                                      'filename': 'Rh.M3'},
                                                               'M2': {'relevance': 'Minor',
-                                                                     'factor': 0.5,
-                                                                     'onset_energy (eV)': 521.0,
+                                                                     'factor':
+                                                                         0.5,
+                                                                     'onset_energy (eV)':
+                                                                     521.0,
                                                                      'filename': 'Rh.M3'}}},
                    'General_properties': {'Z': 45,
                                           'atomic_weight': 102.9055,
@@ -260,7 +294,8 @@ elements = {'Ru': {'Physical_properties': {'density (g/cm^3)': 12.37},
                                                               'energy (keV)': 0.0013598}},
                                         'Binding_energies': {'K': {'relevance': 'Major',
                                                                    'factor': 1,
-                                                                   'onset_energy (eV)': 13.598,
+                                                                   'onset_energy (eV)':
+                                                                   13.598,
                                                                    'filename': ''}}},
                   'General_properties': {'Z': 1,
                                          'atomic_weight': 1.00794,
@@ -269,8 +304,10 @@ elements = {'Ru': {'Physical_properties': {'density (g/cm^3)': 12.37},
                    'Atomic_properties': {'Xray_lines': {'Ka': {'weight': 1.0,
                                                                'energy (keV)': 0.0024587}},
                                          'Binding_energies': {'K': {'relevance': 'Major',
-                                                                    'factor': 1,
-                                                                    'onset_energy (eV)': 24.587,
+                                                                    'factor':
+                                                                        1,
+                                                                    'onset_energy (eV)':
+                                                                    24.587,
                                                                     'filename': ''}}},
                    'General_properties': {'Z': 2,
                                           'atomic_weight': 4.002602,
@@ -279,8 +316,10 @@ elements = {'Ru': {'Physical_properties': {'density (g/cm^3)': 12.37},
                    'Atomic_properties': {'Xray_lines': {'Ka': {'weight': 1.0,
                                                                'energy (keV)': 0.10258}},
                                          'Binding_energies': {'K': {'relevance': 'Major',
-                                                                    'factor': 1,
-                                                                    'onset_energy (eV)': 111.0,
+                                                                    'factor':
+                                                                        1,
+                                                                    'onset_energy (eV)':
+                                                                    111.0,
                                                                     'filename': 'Be.K1'}}},
                    'General_properties': {'Z': 4,
                                           'atomic_weight': 9.012182,
@@ -309,28 +348,40 @@ elements = {'Ru': {'Physical_properties': {'density (g/cm^3)': 12.37},
                                                         'Lg1': {'weight': 0.07487,
                                                                 'energy (keV)': 5.5311}},
                                          'Binding_energies': {'M5': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 781.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     781.0,
                                                                      'filename': 'Ba.M5'},
                                                               'M4': {'relevance': 'Major',
-                                                                     'factor': 0.6666666666666666,
-                                                                     'onset_energy (eV)': 796.0,
+                                                                     'factor':
+                                                                         0.6666666666666666,
+                                                                     'onset_energy (eV)':
+                                                                     796.0,
                                                                      'filename': 'Ba.M5'},
                                                               'M3': {'relevance': 'Minor',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 1062.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     1062.0,
                                                                      'filename': 'Ba.M3'},
                                                               'M2': {'relevance': 'Minor',
-                                                                     'factor': 0.5,
-                                                                     'onset_energy (eV)': 1137.0,
+                                                                     'factor':
+                                                                         0.5,
+                                                                     'onset_energy (eV)':
+                                                                     1137.0,
                                                                      'filename': 'Ba.M3'},
                                                               'N4': {'relevance': 'Major',
-                                                                     'factor': 0.6666666666666666,
-                                                                     'onset_energy (eV)': 90.0,
+                                                                     'factor':
+                                                                         0.6666666666666666,
+                                                                     'onset_energy (eV)':
+                                                                     90.0,
                                                                      'filename': 'Ba.N5'},
                                                               'N5': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 90.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     90.0,
                                                                      'filename': 'Ba.N5'}}},
                    'General_properties': {'Z': 56,
                                           'atomic_weight': 137.327,
@@ -373,12 +424,16 @@ elements = {'Ru': {'Physical_properties': {'density (g/cm^3)': 12.37},
                                                         'Mz': {'weight': 0.0058,
                                                                'energy (keV)': 1.9007}},
                                          'Binding_energies': {'M5': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 2580.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     2580.0,
                                                                      'filename': 'Bi.M5'},
                                                               'M4': {'relevance': 'Major',
-                                                                     'factor': 0.6666666666666666,
-                                                                     'onset_energy (eV)': 2688.0,
+                                                                     'factor':
+                                                                         0.6666666666666666,
+                                                                     'onset_energy (eV)':
+                                                                     2688.0,
                                                                      'filename': 'Bi.M5'}}},
                    'General_properties': {'Z': 83,
                                           'atomic_weight': 208.9804,
@@ -399,16 +454,22 @@ elements = {'Ru': {'Physical_properties': {'density (g/cm^3)': 12.37},
                                                         'Lb3': {'weight': 0.04629,
                                                                 'energy (keV)': 1.6005}},
                                          'Binding_energies': {'L2': {'relevance': 'Major',
-                                                                     'factor': 0.5,
-                                                                     'onset_energy (eV)': 1596.0,
+                                                                     'factor':
+                                                                         0.5,
+                                                                     'onset_energy (eV)':
+                                                                     1596.0,
                                                                      'filename': 'Br.L3'},
                                                               'L3': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 1550.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     1550.0,
                                                                      'filename': 'Br.L3'},
                                                               'L1': {'relevance': 'Minor',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 1782.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     1782.0,
                                                                      'filename': 'Br.L1'}}},
                    'General_properties': {'Z': 35,
                                           'atomic_weight': 79.904,
@@ -420,15 +481,20 @@ elements = {'Ru': {'Physical_properties': {'density (g/cm^3)': 12.37},
                                                               'energy (keV)': 2.0133}},
                                         'Binding_energies': {'K': {'relevance': 'Major',
                                                                    'factor': 1,
-                                                                   'onset_energy (eV)': 2146.0,
+                                                                   'onset_energy (eV)':
+                                                                   2146.0,
                                                                    'filename': 'P.K1'},
                                                              'L3': {'relevance': 'Major',
-                                                                    'factor': 1,
-                                                                    'onset_energy (eV)': 132.0,
+                                                                    'factor':
+                                                                        1,
+                                                                    'onset_energy (eV)':
+                                                                    132.0,
                                                                     'filename': 'P.L3'},
                                                              'L1': {'relevance': 'Minor',
-                                                                    'factor': 1,
-                                                                    'onset_energy (eV)': 189.0,
+                                                                    'factor':
+                                                                        1,
+                                                                    'onset_energy (eV)':
+                                                                    189.0,
                                                                     'filename': 'P.L1'}}},
                   'General_properties': {'Z': 15,
                                          'atomic_weight': 30.973762,
@@ -471,12 +537,16 @@ elements = {'Ru': {'Physical_properties': {'density (g/cm^3)': 12.37},
                                                         'Mz': {'weight': 0.01344,
                                                                'energy (keV)': 1.4919}},
                                          'Binding_energies': {'M5': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 1960.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     1960.0,
                                                                      'filename': 'Os.M5'},
                                                               'M4': {'relevance': 'Major',
-                                                                     'factor': 0.6666666666666666,
-                                                                     'onset_energy (eV)': 2031.0,
+                                                                     'factor':
+                                                                         0.6666666666666666,
+                                                                     'onset_energy (eV)':
+                                                                     2031.0,
                                                                      'filename': 'Os.M5'}}},
                    'General_properties': {'Z': 76,
                                           'atomic_weight': 190.23,
@@ -497,16 +567,22 @@ elements = {'Ru': {'Physical_properties': {'density (g/cm^3)': 12.37},
                                                         'Lb3': {'weight': 0.04429,
                                                                 'energy (keV)': 1.2935}},
                                          'Binding_energies': {'L2': {'relevance': 'Major',
-                                                                     'factor': 0.5,
-                                                                     'onset_energy (eV)': 1248.0,
+                                                                     'factor':
+                                                                         0.5,
+                                                                     'onset_energy (eV)':
+                                                                     1248.0,
                                                                      'filename': 'Ge.L3'},
                                                               'L3': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 1217.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     1217.0,
                                                                      'filename': 'Ge.L3'},
                                                               'L1': {'relevance': 'Minor',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 1414.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     1414.0,
                                                                      'filename': 'Ge.L1'}}},
                    'General_properties': {'Z': 32,
                                           'atomic_weight': 72.64,
@@ -545,28 +621,40 @@ elements = {'Ru': {'Physical_properties': {'density (g/cm^3)': 12.37},
                                                         'Mz': {'weight': 0.06,
                                                                'energy (keV)': 0.9143}},
                                          'Binding_energies': {'M5': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 1185.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     1185.0,
                                                                      'filename': 'Gd.M5'},
                                                               'M4': {'relevance': 'Major',
-                                                                     'factor': 0.6666666666666666,
-                                                                     'onset_energy (eV)': 1217.0,
+                                                                     'factor':
+                                                                         0.6666666666666666,
+                                                                     'onset_energy (eV)':
+                                                                     1217.0,
                                                                      'filename': 'Gd.M5'},
                                                               'M3': {'relevance': 'Minor',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 1544.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     1544.0,
                                                                      'filename': 'Gd.M3'},
                                                               'M2': {'relevance': 'Minor',
-                                                                     'factor': 0.5,
-                                                                     'onset_energy (eV)': 1688.0,
+                                                                     'factor':
+                                                                         0.5,
+                                                                     'onset_energy (eV)':
+                                                                     1688.0,
                                                                      'filename': 'Gd.M3'},
                                                               'N4': {'relevance': 'Major',
-                                                                     'factor': 0.6666666666666666,
-                                                                     'onset_energy (eV)': 141.0,
+                                                                     'factor':
+                                                                         0.6666666666666666,
+                                                                     'onset_energy (eV)':
+                                                                     141.0,
                                                                      'filename': 'Gd.N5'},
                                                               'N5': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 141.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     141.0,
                                                                      'filename': 'Gd.N5'}}},
                    'General_properties': {'Z': 64,
                                           'atomic_weight': 157.25,
@@ -587,16 +675,22 @@ elements = {'Ru': {'Physical_properties': {'density (g/cm^3)': 12.37},
                                                         'Lb3': {'weight': 0.0461,
                                                                 'energy (keV)': 1.1948}},
                                          'Binding_energies': {'L2': {'relevance': 'Major',
-                                                                     'factor': 0.5,
-                                                                     'onset_energy (eV)': 1142.0,
+                                                                     'factor':
+                                                                         0.5,
+                                                                     'onset_energy (eV)':
+                                                                     1142.0,
                                                                      'filename': 'Ga.L3'},
                                                               'L3': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 1115.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     1115.0,
                                                                      'filename': 'Ga.L3'},
                                                               'L1': {'relevance': 'Minor',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 1298.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     1298.0,
                                                                      'filename': 'Ga.L1'}}},
                    'General_properties': {'Z': 31,
                                           'atomic_weight': 69.723,
@@ -635,28 +729,40 @@ elements = {'Ru': {'Physical_properties': {'density (g/cm^3)': 12.37},
                                                         'Mz': {'weight': 0.068,
                                                                'energy (keV)': 0.7134}},
                                          'Binding_energies': {'M5': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 931.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     931.0,
                                                                      'filename': 'Pr.M5'},
                                                               'M4': {'relevance': 'Major',
-                                                                     'factor': 0.6666666666666666,
-                                                                     'onset_energy (eV)': 951.0,
+                                                                     'factor':
+                                                                         0.6666666666666666,
+                                                                     'onset_energy (eV)':
+                                                                     951.0,
                                                                      'filename': 'Pr.M5'},
                                                               'M3': {'relevance': 'Minor',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 1242.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     1242.0,
                                                                      'filename': 'Pr.M3'},
                                                               'M2': {'relevance': 'Minor',
-                                                                     'factor': 0.5,
-                                                                     'onset_energy (eV)': 1337.0,
+                                                                     'factor':
+                                                                         0.5,
+                                                                     'onset_energy (eV)':
+                                                                     1337.0,
                                                                      'filename': 'Pr.M3'},
                                                               'N4': {'relevance': 'Major',
-                                                                     'factor': 0.6666666666666666,
-                                                                     'onset_energy (eV)': 114.0,
+                                                                     'factor':
+                                                                         0.6666666666666666,
+                                                                     'onset_energy (eV)':
+                                                                     114.0,
                                                                      'filename': 'Pr.N5'},
                                                               'N5': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 114.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     114.0,
                                                                      'filename': 'Pr.N5'}}},
                    'General_properties': {'Z': 59,
                                           'atomic_weight': 140.90765,
@@ -699,12 +805,16 @@ elements = {'Ru': {'Physical_properties': {'density (g/cm^3)': 12.37},
                                                         'Mz': {'weight': 0.01344,
                                                                'energy (keV)': 1.6026}},
                                          'Binding_energies': {'M5': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 2122.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     2122.0,
                                                                      'filename': 'Pt.M5'},
                                                               'M4': {'relevance': 'Major',
-                                                                     'factor': 0.6666666666666666,
-                                                                     'onset_energy (eV)': 2202.0,
+                                                                     'factor':
+                                                                         0.6666666666666666,
+                                                                     'onset_energy (eV)':
+                                                                     2202.0,
                                                                      'filename': 'Pt.M5'}}},
                    'General_properties': {'Z': 78,
                                           'atomic_weight': 195.084,
@@ -714,11 +824,14 @@ elements = {'Ru': {'Physical_properties': {'density (g/cm^3)': 12.37},
                                                               'energy (keV)': 0.2774}},
                                         'Binding_energies': {'K': {'relevance': 'Major',
                                                                    'factor': 1,
-                                                                   'onset_energy (eV)': 284.0,
+                                                                   'onset_energy (eV)':
+                                                                   284.0,
                                                                    'filename': 'C.K1'},
                                                              'K1a': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 284.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     284.0,
                                                                      'filename': 'C.K1a'}}},
                   'General_properties': {'Z': 6,
                                          'atomic_weight': 12.0107,
@@ -761,12 +874,16 @@ elements = {'Ru': {'Physical_properties': {'density (g/cm^3)': 12.37},
                                                         'Mz': {'weight': 0.0058,
                                                                'energy (keV)': 1.8395}},
                                          'Binding_energies': {'M5': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 2484.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     2484.0,
                                                                      'filename': 'Pb.M5'},
                                                               'M4': {'relevance': 'Major',
-                                                                     'factor': 0.6666666666666666,
-                                                                     'onset_energy (eV)': 2586.0,
+                                                                     'factor':
+                                                                         0.6666666666666666,
+                                                                     'onset_energy (eV)':
+                                                                     2586.0,
                                                                      'filename': 'Pb.M5'}}},
                    'General_properties': {'Z': 82,
                                           'atomic_weight': 207.2,
@@ -835,20 +952,28 @@ elements = {'Ru': {'Physical_properties': {'density (g/cm^3)': 12.37},
                                                         'Lg1': {'weight': 0.03256,
                                                                 'energy (keV)': 3.32485}},
                                          'Binding_energies': {'M5': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 335.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     335.0,
                                                                      'filename': 'Pd.M5'},
                                                               'M4': {'relevance': 'Major',
-                                                                     'factor': 0.6666666666666666,
-                                                                     'onset_energy (eV)': 340.0,
+                                                                     'factor':
+                                                                         0.6666666666666666,
+                                                                     'onset_energy (eV)':
+                                                                     340.0,
                                                                      'filename': 'Pd.M5'},
                                                               'M3': {'relevance': 'Minor',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 531.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     531.0,
                                                                      'filename': 'Pd.M3'},
                                                               'M2': {'relevance': 'Minor',
-                                                                     'factor': 0.5,
-                                                                     'onset_energy (eV)': 559.0,
+                                                                     'factor':
+                                                                         0.5,
+                                                                     'onset_energy (eV)':
+                                                                     559.0,
                                                                      'filename': 'Pd.M3'}}},
                    'General_properties': {'Z': 46,
                                           'atomic_weight': 106.42,
@@ -877,20 +1002,28 @@ elements = {'Ru': {'Physical_properties': {'density (g/cm^3)': 12.37},
                                                         'Lg1': {'weight': 0.0416,
                                                                 'energy (keV)': 3.7177}},
                                          'Binding_energies': {'M5': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 404.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     404.0,
                                                                      'filename': 'Cd.M5'},
                                                               'M4': {'relevance': 'Major',
-                                                                     'factor': 0.6666666666666666,
-                                                                     'onset_energy (eV)': 411.0,
+                                                                     'factor':
+                                                                         0.6666666666666666,
+                                                                     'onset_energy (eV)':
+                                                                     411.0,
                                                                      'filename': 'Cd.M5'},
                                                               'M3': {'relevance': 'Minor',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 616.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     616.0,
                                                                      'filename': 'Cd.M3'},
                                                               'M2': {'relevance': 'Minor',
-                                                                     'factor': 0.5,
-                                                                     'onset_energy (eV)': 651.0,
+                                                                     'factor':
+                                                                         0.5,
+                                                                     'onset_energy (eV)':
+                                                                     651.0,
                                                                      'filename': 'Cd.M3'}}},
                    'General_properties': {'Z': 48,
                                           'atomic_weight': 112.411,
@@ -999,28 +1132,40 @@ elements = {'Ru': {'Physical_properties': {'density (g/cm^3)': 12.37},
                                                         'Mz': {'weight': 0.6629,
                                                                'energy (keV)': 1.0448}},
                                          'Binding_energies': {'M5': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 1351.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     1351.0,
                                                                      'filename': 'Ho.M5'},
                                                               'M4': {'relevance': 'Major',
-                                                                     'factor': 0.6666666666666666,
-                                                                     'onset_energy (eV)': 1391.0,
+                                                                     'factor':
+                                                                         0.6666666666666666,
+                                                                     'onset_energy (eV)':
+                                                                     1391.0,
                                                                      'filename': 'Ho.M5'},
                                                               'M3': {'relevance': 'Minor',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 1741.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     1741.0,
                                                                      'filename': 'Ho.M3'},
                                                               'M2': {'relevance': 'Minor',
-                                                                     'factor': 0.5,
-                                                                     'onset_energy (eV)': 1923.0,
+                                                                     'factor':
+                                                                         0.5,
+                                                                     'onset_energy (eV)':
+                                                                     1923.0,
                                                                      'filename': 'Ho.M3'},
                                                               'N4': {'relevance': 'Major',
-                                                                     'factor': 0.6666666666666666,
-                                                                     'onset_energy (eV)': 161.0,
+                                                                     'factor':
+                                                                         0.6666666666666666,
+                                                                     'onset_energy (eV)':
+                                                                     161.0,
                                                                      'filename': 'Ho.N5'},
                                                               'N5': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 161.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     161.0,
                                                                      'filename': 'Ho.N5'}}},
                    'General_properties': {'Z': 67,
                                           'atomic_weight': 164.93032,
@@ -1059,12 +1204,16 @@ elements = {'Ru': {'Physical_properties': {'density (g/cm^3)': 12.37},
                                                         'Mz': {'weight': 0.06,
                                                                'energy (keV)': 1.2813}},
                                          'Binding_energies': {'M5': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 1662.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     1662.0,
                                                                      'filename': 'Hf.M5'},
                                                               'M4': {'relevance': 'Major',
-                                                                     'factor': 0.6666666666666666,
-                                                                     'onset_energy (eV)': 1716.0,
+                                                                     'factor':
+                                                                         0.6666666666666666,
+                                                                     'onset_energy (eV)':
+                                                                     1716.0,
                                                                      'filename': 'Hf.M5'}}},
                    'General_properties': {'Z': 72,
                                           'atomic_weight': 178.49,
@@ -1107,12 +1256,16 @@ elements = {'Ru': {'Physical_properties': {'density (g/cm^3)': 12.37},
                                                         'Mz': {'weight': 0.01344,
                                                                'energy (keV)': 1.7239}},
                                          'Binding_energies': {'M5': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 2295.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     2295.0,
                                                                      'filename': 'Hg.M5'},
                                                               'M4': {'relevance': 'Major',
-                                                                     'factor': 0.6666666666666666,
-                                                                     'onset_energy (eV)': 2385.0,
+                                                                     'factor':
+                                                                         0.6666666666666666,
+                                                                     'onset_energy (eV)':
+                                                                     2385.0,
                                                                      'filename': 'Hg.M5'}}},
                    'General_properties': {'Z': 80,
                                           'atomic_weight': 200.59,
@@ -1123,20 +1276,28 @@ elements = {'Ru': {'Physical_properties': {'density (g/cm^3)': 12.37},
                                                         'Ka': {'weight': 1.0,
                                                                'energy (keV)': 1.2536}},
                                          'Binding_energies': {'K': {'relevance': 'Major',
-                                                                    'factor': 1,
-                                                                    'onset_energy (eV)': 1305.0,
+                                                                    'factor':
+                                                                        1,
+                                                                    'onset_energy (eV)':
+                                                                    1305.0,
                                                                     'filename': 'Mg.K1'},
                                                               'L2': {'relevance': 'Major',
-                                                                     'factor': 0.5,
-                                                                     'onset_energy (eV)': 51.0,
+                                                                     'factor':
+                                                                         0.5,
+                                                                     'onset_energy (eV)':
+                                                                     51.0,
                                                                      'filename': 'Mg.L3'},
                                                               'L3': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 51.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     51.0,
                                                                      'filename': 'Mg.L3'},
                                                               'L1': {'relevance': 'Minor',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 89.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     89.0,
                                                                      'filename': 'Mg.L1'}}},
                    'General_properties': {'Z': 12,
                                           'atomic_weight': 24.305,
@@ -1147,20 +1308,28 @@ elements = {'Ru': {'Physical_properties': {'density (g/cm^3)': 12.37},
                                                        'Ka': {'weight': 1.0,
                                                               'energy (keV)': 3.3138}},
                                         'Binding_energies': {'L3': {'relevance': 'Major',
-                                                                    'factor': 1,
-                                                                    'onset_energy (eV)': 294.0,
+                                                                    'factor':
+                                                                        1,
+                                                                    'onset_energy (eV)':
+                                                                    294.0,
                                                                     'filename': 'K.L3'},
                                                              'L2': {'relevance': 'Major',
-                                                                    'factor': 0.5,
-                                                                    'onset_energy (eV)': 296.0,
+                                                                    'factor':
+                                                                        0.5,
+                                                                    'onset_energy (eV)':
+                                                                    296.0,
                                                                     'filename': 'K.L3'},
                                                              'L1a': {'relevance': 'Minor',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 377.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     377.0,
                                                                      'filename': 'K.L1a'},
                                                              'L1': {'relevance': 'Minor',
-                                                                    'factor': 1,
-                                                                    'onset_energy (eV)': 377.0,
+                                                                    'factor':
+                                                                        1,
+                                                                    'onset_energy (eV)':
+                                                                    377.0,
                                                                     'filename': 'K.L1'}}},
                   'General_properties': {'Z': 19,
                                          'atomic_weight': 39.0983,
@@ -1179,24 +1348,34 @@ elements = {'Ru': {'Physical_properties': {'density (g/cm^3)': 12.37},
                                                         'Lb3': {'weight': 0.0263,
                                                                 'energy (keV)': 0.7204}},
                                          'Binding_energies': {'M2': {'relevance': 'Major',
-                                                                     'factor': 0.5,
-                                                                     'onset_energy (eV)': 51.0,
+                                                                     'factor':
+                                                                         0.5,
+                                                                     'onset_energy (eV)':
+                                                                     51.0,
                                                                      'filename': 'Mn.M3'},
                                                               'L2': {'relevance': 'Major',
-                                                                     'factor': 0.5,
-                                                                     'onset_energy (eV)': 651.0,
+                                                                     'factor':
+                                                                         0.5,
+                                                                     'onset_energy (eV)':
+                                                                     651.0,
                                                                      'filename': 'Mn.L3'},
                                                               'L3': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 640.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     640.0,
                                                                      'filename': 'Mn.L3'},
                                                               'M3': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 51.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     51.0,
                                                                      'filename': 'Mn.M3'},
                                                               'L1': {'relevance': 'Minor',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 769.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     769.0,
                                                                      'filename': 'Mn.L1'}}},
                    'General_properties': {'Z': 25,
                                           'atomic_weight': 54.938045,
@@ -1206,7 +1385,8 @@ elements = {'Ru': {'Physical_properties': {'density (g/cm^3)': 12.37},
                                                               'energy (keV)': 0.5249}},
                                         'Binding_energies': {'K': {'relevance': 'Major',
                                                                    'factor': 1,
-                                                                   'onset_energy (eV)': 532.0,
+                                                                   'onset_energy (eV)':
+                                                                   532.0,
                                                                    'filename': 'O.K1'}}},
                   'General_properties': {'Z': 8,
                                          'atomic_weight': 15.9994,
@@ -1217,12 +1397,16 @@ elements = {'Ru': {'Physical_properties': {'density (g/cm^3)': 12.37},
                                                        'Ka': {'weight': 1.0,
                                                               'energy (keV)': 2.3072}},
                                         'Binding_energies': {'L3': {'relevance': 'Major',
-                                                                    'factor': 1,
-                                                                    'onset_energy (eV)': 165.0,
+                                                                    'factor':
+                                                                        1,
+                                                                    'onset_energy (eV)':
+                                                                    165.0,
                                                                     'filename': 'S.L3'},
                                                              'L1': {'relevance': 'Minor',
-                                                                    'factor': 1,
-                                                                    'onset_energy (eV)': 229.0,
+                                                                    'factor':
+                                                                        1,
+                                                                    'onset_energy (eV)':
+                                                                    229.0,
                                                                     'filename': 'S.L1'}}},
                   'General_properties': {'Z': 16,
                                          'atomic_weight': 32.065,
@@ -1265,12 +1449,16 @@ elements = {'Ru': {'Physical_properties': {'density (g/cm^3)': 12.37},
                                                        'Mz': {'weight': 0.01344,
                                                               'energy (keV)': 1.3839}},
                                         'Binding_energies': {'M5': {'relevance': 'Major',
-                                                                    'factor': 1,
-                                                                    'onset_energy (eV)': 1809.0,
+                                                                    'factor':
+                                                                        1,
+                                                                    'onset_energy (eV)':
+                                                                    1809.0,
                                                                     'filename': 'W.M5'},
                                                              'M4': {'relevance': 'Major',
-                                                                    'factor': 0.6666666666666666,
-                                                                    'onset_energy (eV)': 1872.0,
+                                                                    'factor':
+                                                                        0.6666666666666666,
+                                                                    'onset_energy (eV)':
+                                                                    1872.0,
                                                                     'filename': 'W.M5'}}},
                   'General_properties': {'Z': 74,
                                          'atomic_weight': 183.84,
@@ -1291,24 +1479,34 @@ elements = {'Ru': {'Physical_properties': {'density (g/cm^3)': 12.37},
                                                         'Lb3': {'weight': 0.002,
                                                                 'energy (keV)': 1.107}},
                                          'Binding_energies': {'M2': {'relevance': 'Minor',
-                                                                     'factor': 0.5,
-                                                                     'onset_energy (eV)': 87.0,
+                                                                     'factor':
+                                                                         0.5,
+                                                                     'onset_energy (eV)':
+                                                                     87.0,
                                                                      'filename': 'Zn.M3'},
                                                               'L2': {'relevance': 'Major',
-                                                                     'factor': 0.5,
-                                                                     'onset_energy (eV)': 1043.0,
+                                                                     'factor':
+                                                                         0.5,
+                                                                     'onset_energy (eV)':
+                                                                     1043.0,
                                                                      'filename': 'Zn.L3'},
                                                               'L3': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 1020.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     1020.0,
                                                                      'filename': 'Zn.L3'},
                                                               'M3': {'relevance': 'Minor',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 87.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     87.0,
                                                                      'filename': 'Zn.M3'},
                                                               'L1': {'relevance': 'Minor',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 1194.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     1194.0,
                                                                      'filename': 'Zn.L1'}}},
                    'General_properties': {'Z': 30,
                                           'atomic_weight': 65.38,
@@ -1347,28 +1545,40 @@ elements = {'Ru': {'Physical_properties': {'density (g/cm^3)': 12.37},
                                                         'Mz': {'weight': 0.06,
                                                                'energy (keV)': 0.8743}},
                                          'Binding_energies': {'M5': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 1131.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     1131.0,
                                                                      'filename': 'Eu.M5'},
                                                               'M4': {'relevance': 'Major',
-                                                                     'factor': 0.6666666666666666,
-                                                                     'onset_energy (eV)': 1161.0,
+                                                                     'factor':
+                                                                         0.6666666666666666,
+                                                                     'onset_energy (eV)':
+                                                                     1161.0,
                                                                      'filename': 'Eu.M5'},
                                                               'M3': {'relevance': 'Minor',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 1481.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     1481.0,
                                                                      'filename': 'Eu.M3'},
                                                               'M2': {'relevance': 'Minor',
-                                                                     'factor': 0.5,
-                                                                     'onset_energy (eV)': 1614.0,
+                                                                     'factor':
+                                                                         0.5,
+                                                                     'onset_energy (eV)':
+                                                                     1614.0,
                                                                      'filename': 'Eu.M3'},
                                                               'N4': {'relevance': 'Major',
-                                                                     'factor': 0.6666666666666666,
-                                                                     'onset_energy (eV)': 134.0,
+                                                                     'factor':
+                                                                         0.6666666666666666,
+                                                                     'onset_energy (eV)':
+                                                                     134.0,
                                                                      'filename': 'Eu.N5'},
                                                               'N5': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 134.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     134.0,
                                                                      'filename': 'Eu.N5'}}},
                    'General_properties': {'Z': 63,
                                           'atomic_weight': 151.964,
@@ -1395,32 +1605,46 @@ elements = {'Ru': {'Physical_properties': {'density (g/cm^3)': 12.37},
                                                         'Lg1': {'weight': 0.006,
                                                                 'energy (keV)': 2.30268}},
                                          'Binding_energies': {'M2': {'relevance': 'Minor',
-                                                                     'factor': 0.5,
-                                                                     'onset_energy (eV)': 344.0,
+                                                                     'factor':
+                                                                         0.5,
+                                                                     'onset_energy (eV)':
+                                                                     344.0,
                                                                      'filename': 'Zr.M3'},
                                                               'M5': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 181.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     181.0,
                                                                      'filename': 'Zr.M5'},
                                                               'M4': {'relevance': 'Major',
-                                                                     'factor': 0.6666666666666666,
-                                                                     'onset_energy (eV)': 181.0,
+                                                                     'factor':
+                                                                         0.6666666666666666,
+                                                                     'onset_energy (eV)':
+                                                                     181.0,
                                                                      'filename': 'Zr.M5'},
                                                               'L2': {'relevance': 'Major',
-                                                                     'factor': 0.5,
-                                                                     'onset_energy (eV)': 2307.0,
+                                                                     'factor':
+                                                                         0.5,
+                                                                     'onset_energy (eV)':
+                                                                     2307.0,
                                                                      'filename': 'Zr.L3'},
                                                               'L3': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 2222.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     2222.0,
                                                                      'filename': 'Zr.L3'},
                                                               'M3': {'relevance': 'Minor',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 330.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     330.0,
                                                                      'filename': 'Zr.M3'},
                                                               'L1': {'relevance': 'Minor',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 2532.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     2532.0,
                                                                      'filename': 'Zr.L1'}}},
                    'General_properties': {'Z': 40,
                                           'atomic_weight': 91.224,
@@ -1459,28 +1683,40 @@ elements = {'Ru': {'Physical_properties': {'density (g/cm^3)': 12.37},
                                                         'Mz': {'weight': 0.06,
                                                                'energy (keV)': 1.0893}},
                                          'Binding_energies': {'M5': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 1409.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     1409.0,
                                                                      'filename': 'Er.M5'},
                                                               'M4': {'relevance': 'Major',
-                                                                     'factor': 0.6666666666666666,
-                                                                     'onset_energy (eV)': 1453.0,
+                                                                     'factor':
+                                                                         0.6666666666666666,
+                                                                     'onset_energy (eV)':
+                                                                     1453.0,
                                                                      'filename': 'Er.M5'},
                                                               'M3': {'relevance': 'Minor',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 1812.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     1812.0,
                                                                      'filename': 'Er.M3'},
                                                               'M2': {'relevance': 'Minor',
-                                                                     'factor': 0.5,
-                                                                     'onset_energy (eV)': 2006.0,
+                                                                     'factor':
+                                                                         0.5,
+                                                                     'onset_energy (eV)':
+                                                                     2006.0,
                                                                      'filename': 'Er.M3'},
                                                               'N4': {'relevance': 'Major',
-                                                                     'factor': 0.6666666666666666,
-                                                                     'onset_energy (eV)': 168.0,
+                                                                     'factor':
+                                                                         0.6666666666666666,
+                                                                     'onset_energy (eV)':
+                                                                     168.0,
                                                                      'filename': 'Er.N5'},
                                                               'N5': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 168.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     168.0,
                                                                      'filename': 'Er.N5'}}},
                    'General_properties': {'Z': 68,
                                           'atomic_weight': 167.259,
@@ -1501,24 +1737,34 @@ elements = {'Ru': {'Physical_properties': {'density (g/cm^3)': 12.37},
                                                         'Lb3': {'weight': 0.00199,
                                                                 'energy (keV)': 0.94}},
                                          'Binding_energies': {'M2': {'relevance': 'Major',
-                                                                     'factor': 0.5,
-                                                                     'onset_energy (eV)': 68.0,
+                                                                     'factor':
+                                                                         0.5,
+                                                                     'onset_energy (eV)':
+                                                                     68.0,
                                                                      'filename': 'Ni.M3'},
                                                               'L2': {'relevance': 'Major',
-                                                                     'factor': 0.5,
-                                                                     'onset_energy (eV)': 872.0,
+                                                                     'factor':
+                                                                         0.5,
+                                                                     'onset_energy (eV)':
+                                                                     872.0,
                                                                      'filename': 'Ni.L3'},
                                                               'L3': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 855.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     855.0,
                                                                      'filename': 'Ni.L3'},
                                                               'M3': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 68.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     68.0,
                                                                      'filename': 'Ni.M3'},
                                                               'L1': {'relevance': 'Minor',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 1008.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     1008.0,
                                                                      'filename': 'Ni.L1'}}},
                    'General_properties': {'Z': 28,
                                           'atomic_weight': 58.6934,
@@ -1529,16 +1775,22 @@ elements = {'Ru': {'Physical_properties': {'density (g/cm^3)': 12.37},
                                                         'Ka': {'weight': 1.0,
                                                                'energy (keV)': 1.041}},
                                          'Binding_energies': {'K': {'relevance': 'Major',
-                                                                    'factor': 1,
-                                                                    'onset_energy (eV)': 1072.0,
+                                                                    'factor':
+                                                                        1,
+                                                                    'onset_energy (eV)':
+                                                                    1072.0,
                                                                     'filename': 'Na.K1'},
                                                               'L3': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 31.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     31.0,
                                                                      'filename': 'Na.L3'},
                                                               'L1': {'relevance': 'Minor',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 63.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     63.0,
                                                                      'filename': 'Na.L1'}}},
                    'General_properties': {'Z': 11,
                                           'atomic_weight': 22.98976928,
@@ -1565,32 +1817,46 @@ elements = {'Ru': {'Physical_properties': {'density (g/cm^3)': 12.37},
                                                         'Lg1': {'weight': 0.00975,
                                                                 'energy (keV)': 2.4615}},
                                          'Binding_energies': {'M2': {'relevance': 'Major',
-                                                                     'factor': 0.5,
-                                                                     'onset_energy (eV)': 378.0,
+                                                                     'factor':
+                                                                         0.5,
+                                                                     'onset_energy (eV)':
+                                                                     378.0,
                                                                      'filename': 'Nb.M3'},
                                                               'M5': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 202.3,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     202.3,
                                                                      'filename': 'Nb.M5'},
                                                               'M4': {'relevance': 'Major',
-                                                                     'factor': 0.6666666666666666,
-                                                                     'onset_energy (eV)': 205.0,
+                                                                     'factor':
+                                                                         0.6666666666666666,
+                                                                     'onset_energy (eV)':
+                                                                     205.0,
                                                                      'filename': 'Nb.M5'},
                                                               'L2': {'relevance': 'Major',
-                                                                     'factor': 0.5,
-                                                                     'onset_energy (eV)': 2465.0,
+                                                                     'factor':
+                                                                         0.5,
+                                                                     'onset_energy (eV)':
+                                                                     2465.0,
                                                                      'filename': 'Nb.L3'},
                                                               'L3': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 2371.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     2371.0,
                                                                      'filename': 'Nb.L3'},
                                                               'M3': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 363.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     363.0,
                                                                      'filename': 'Nb.M3'},
                                                               'L1': {'relevance': 'Minor',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 2698.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     2698.0,
                                                                      'filename': 'Nb.L1'}}},
                    'General_properties': {'Z': 41,
                                           'atomic_weight': 92.90638,
@@ -1629,28 +1895,40 @@ elements = {'Ru': {'Physical_properties': {'density (g/cm^3)': 12.37},
                                                         'Mz': {'weight': 0.069,
                                                                'energy (keV)': 0.7531}},
                                          'Binding_energies': {'M5': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 978.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     978.0,
                                                                      'filename': 'Nd.M5'},
                                                               'M4': {'relevance': 'Major',
-                                                                     'factor': 0.6666666666666666,
-                                                                     'onset_energy (eV)': 1000.0,
+                                                                     'factor':
+                                                                         0.6666666666666666,
+                                                                     'onset_energy (eV)':
+                                                                     1000.0,
                                                                      'filename': 'Nd.M5'},
                                                               'M3': {'relevance': 'Minor',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 1297.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     1297.0,
                                                                      'filename': 'Nd.M3'},
                                                               'M2': {'relevance': 'Minor',
-                                                                     'factor': 0.5,
-                                                                     'onset_energy (eV)': 1403.0,
+                                                                     'factor':
+                                                                         0.5,
+                                                                     'onset_energy (eV)':
+                                                                     1403.0,
                                                                      'filename': 'Nd.M3'},
                                                               'N4': {'relevance': 'Major',
-                                                                     'factor': 0.6666666666666666,
-                                                                     'onset_energy (eV)': 118.0,
+                                                                     'factor':
+                                                                         0.6666666666666666,
+                                                                     'onset_energy (eV)':
+                                                                     118.0,
                                                                      'filename': 'Nd.N5'},
                                                               'N5': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 118.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     118.0,
                                                                      'filename': 'Nd.N5'}}},
                    'General_properties': {'Z': 60,
                                           'atomic_weight': 144.242,
@@ -1661,8 +1939,10 @@ elements = {'Ru': {'Physical_properties': {'density (g/cm^3)': 12.37},
                                                         'Ka': {'weight': 1.0,
                                                                'energy (keV)': 0.8486}},
                                          'Binding_energies': {'K': {'relevance': 'Major',
-                                                                    'factor': 1,
-                                                                    'onset_energy (eV)': 867.0,
+                                                                    'factor':
+                                                                        1,
+                                                                    'onset_energy (eV)':
+                                                                    867.0,
                                                                     'filename': 'Ne.K1'}}},
                    'General_properties': {'Z': 10,
                                           'atomic_weight': 20.1791,
@@ -1715,28 +1995,40 @@ elements = {'Ru': {'Physical_properties': {'density (g/cm^3)': 12.37},
                                                         'Lb3': {'weight': 0.02448,
                                                                 'energy (keV)': 0.7921}},
                                          'Binding_energies': {'K': {'relevance': 'Minor',
-                                                                    'factor': 1,
-                                                                    'onset_energy (eV)': 7113.0,
+                                                                    'factor':
+                                                                        1,
+                                                                    'onset_energy (eV)':
+                                                                    7113.0,
                                                                     'filename': 'Fe.K1'},
                                                               'L1': {'relevance': 'Minor',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 846.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     846.0,
                                                                      'filename': 'Fe.L1'},
                                                               'L2': {'relevance': 'Major',
-                                                                     'factor': 0.5,
-                                                                     'onset_energy (eV)': 721.0,
+                                                                     'factor':
+                                                                         0.5,
+                                                                     'onset_energy (eV)':
+                                                                     721.0,
                                                                      'filename': 'Fe.L3'},
                                                               'L3': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 708.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     708.0,
                                                                      'filename': 'Fe.L3'},
                                                               'M3': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 57.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     57.0,
                                                                      'filename': 'Fe.M3'},
                                                               'M2': {'relevance': 'Major',
-                                                                     'factor': 0.5,
-                                                                     'onset_energy (eV)': 57.0,
+                                                                     'factor':
+                                                                         0.5,
+                                                                     'onset_energy (eV)':
+                                                                     57.0,
                                                                      'filename': 'Fe.M3'}}},
                    'General_properties': {'Z': 26,
                                           'atomic_weight': 55.845,
@@ -1746,7 +2038,8 @@ elements = {'Ru': {'Physical_properties': {'density (g/cm^3)': 12.37},
                                                               'energy (keV)': 0.1833}},
                                         'Binding_energies': {'K': {'relevance': 'Major',
                                                                    'factor': 1,
-                                                                   'onset_energy (eV)': 188.0,
+                                                                   'onset_energy (eV)':
+                                                                   188.0,
                                                                    'filename': 'B.K1'}}},
                   'General_properties': {'Z': 5,
                                          'atomic_weight': 10.811,
@@ -1756,7 +2049,8 @@ elements = {'Ru': {'Physical_properties': {'density (g/cm^3)': 12.37},
                                                               'energy (keV)': 0.6768}},
                                         'Binding_energies': {'K': {'relevance': 'Major',
                                                                    'factor': 1,
-                                                                   'onset_energy (eV)': 685.0,
+                                                                   'onset_energy (eV)':
+                                                                   685.0,
                                                                    'filename': 'F.K1'}}},
                   'General_properties': {'Z': 9,
                                          'atomic_weight': 18.9984032,
@@ -1779,32 +2073,46 @@ elements = {'Ru': {'Physical_properties': {'density (g/cm^3)': 12.37},
                                                         'Lg3': {'weight': 0.0065,
                                                                 'energy (keV)': 2.1964}},
                                          'Binding_energies': {'M2': {'relevance': 'Minor',
-                                                                     'factor': 0.5,
-                                                                     'onset_energy (eV)': 280.0,
+                                                                     'factor':
+                                                                         0.5,
+                                                                     'onset_energy (eV)':
+                                                                     280.0,
                                                                      'filename': 'Sr.M3'},
                                                               'M5': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 134.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     134.0,
                                                                      'filename': 'Sr.M5'},
                                                               'M4': {'relevance': 'Major',
-                                                                     'factor': 0.6666666666666666,
-                                                                     'onset_energy (eV)': 134.0,
+                                                                     'factor':
+                                                                         0.6666666666666666,
+                                                                     'onset_energy (eV)':
+                                                                     134.0,
                                                                      'filename': 'Sr.M5'},
                                                               'L2': {'relevance': 'Minor',
-                                                                     'factor': 0.5,
-                                                                     'onset_energy (eV)': 2007.0,
+                                                                     'factor':
+                                                                         0.5,
+                                                                     'onset_energy (eV)':
+                                                                     2007.0,
                                                                      'filename': 'Sr.L3'},
                                                               'L3': {'relevance': 'Minor',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 1940.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     1940.0,
                                                                      'filename': 'Sr.L3'},
                                                               'M3': {'relevance': 'Minor',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 269.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     269.0,
                                                                      'filename': 'Sr.M3'},
                                                               'L1': {'relevance': 'Minor',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 2216.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     2216.0,
                                                                      'filename': 'Sr.L1'}}},
                    'General_properties': {'Z': 38,
                                           'atomic_weight': 87.62,
@@ -1814,7 +2122,8 @@ elements = {'Ru': {'Physical_properties': {'density (g/cm^3)': 12.37},
                                                               'energy (keV)': 0.3924}},
                                         'Binding_energies': {'K': {'relevance': 'Major',
                                                                    'factor': 1,
-                                                                   'onset_energy (eV)': 401.0,
+                                                                   'onset_energy (eV)':
+                                                                   401.0,
                                                                    'filename': 'N.K1'}}},
                   'General_properties': {'Z': 7,
                                          'atomic_weight': 14.0067,
@@ -1837,24 +2146,34 @@ elements = {'Ru': {'Physical_properties': {'density (g/cm^3)': 12.37},
                                                         'Lg3': {'weight': 0.005,
                                                                 'energy (keV)': 1.921}},
                                          'Binding_energies': {'M5': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 89.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     89.0,
                                                                      'filename': 'Kr.M5'},
                                                               'M4': {'relevance': 'Major',
-                                                                     'factor': 0.6666666666666666,
-                                                                     'onset_energy (eV)': 89.0,
+                                                                     'factor':
+                                                                         0.6666666666666666,
+                                                                     'onset_energy (eV)':
+                                                                     89.0,
                                                                      'filename': 'Kr.M5'},
                                                               'L2': {'relevance': 'Major',
-                                                                     'factor': 0.5,
-                                                                     'onset_energy (eV)': 1727.0,
+                                                                     'factor':
+                                                                         0.5,
+                                                                     'onset_energy (eV)':
+                                                                     1727.0,
                                                                      'filename': 'Kr.L3'},
                                                               'L3': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 1675.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     1675.0,
                                                                      'filename': 'Kr.L3'},
                                                               'L1': {'relevance': 'Minor',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 1921.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     1921.0,
                                                                      'filename': 'Kr.L1'}}},
                    'General_properties': {'Z': 36,
                                           'atomic_weight': 83.798,
@@ -1865,20 +2184,28 @@ elements = {'Ru': {'Physical_properties': {'density (g/cm^3)': 12.37},
                                                         'Ka': {'weight': 1.0,
                                                                'energy (keV)': 1.7397}},
                                          'Binding_energies': {'K': {'relevance': 'Major',
-                                                                    'factor': 1,
-                                                                    'onset_energy (eV)': 1839.0,
+                                                                    'factor':
+                                                                        1,
+                                                                    'onset_energy (eV)':
+                                                                    1839.0,
                                                                     'filename': 'Si.K1'},
                                                               'L2': {'relevance': 'Major',
-                                                                     'factor': 0.5,
-                                                                     'onset_energy (eV)': 99.8,
+                                                                     'factor':
+                                                                         0.5,
+                                                                     'onset_energy (eV)':
+                                                                     99.8,
                                                                      'filename': 'Si.L3'},
                                                               'L3': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 99.2,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     99.2,
                                                                      'filename': 'Si.L3'},
                                                               'L1': {'relevance': 'Minor',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 149.7,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     149.7,
                                                                      'filename': 'Si.L1'}}},
                    'General_properties': {'Z': 14,
                                           'atomic_weight': 28.0855,
@@ -1907,20 +2234,28 @@ elements = {'Ru': {'Physical_properties': {'density (g/cm^3)': 12.37},
                                                         'Lg1': {'weight': 0.058,
                                                                 'energy (keV)': 4.1322}},
                                          'Binding_energies': {'M5': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 485.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     485.0,
                                                                      'filename': 'Sn.M5'},
                                                               'M4': {'relevance': 'Major',
-                                                                     'factor': 0.6666666666666666,
-                                                                     'onset_energy (eV)': 494.0,
+                                                                     'factor':
+                                                                         0.6666666666666666,
+                                                                     'onset_energy (eV)':
+                                                                     494.0,
                                                                      'filename': 'Sn.M5'},
                                                               'M3': {'relevance': 'Minor',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 714.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     714.0,
                                                                      'filename': 'Sn.M3'},
                                                               'M2': {'relevance': 'Minor',
-                                                                     'factor': 0.5,
-                                                                     'onset_energy (eV)': 756.0,
+                                                                     'factor':
+                                                                         0.5,
+                                                                     'onset_energy (eV)':
+                                                                     756.0,
                                                                      'filename': 'Sn.M3'}}},
                    'General_properties': {'Z': 50,
                                           'atomic_weight': 118.71,
@@ -1959,28 +2294,40 @@ elements = {'Ru': {'Physical_properties': {'density (g/cm^3)': 12.37},
                                                         'Mz': {'weight': 0.06,
                                                                'energy (keV)': 0.8328}},
                                          'Binding_energies': {'M5': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 1080.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     1080.0,
                                                                      'filename': 'Sm.M5'},
                                                               'M4': {'relevance': 'Major',
-                                                                     'factor': 0.6666666666666666,
-                                                                     'onset_energy (eV)': 1106.0,
+                                                                     'factor':
+                                                                         0.6666666666666666,
+                                                                     'onset_energy (eV)':
+                                                                     1106.0,
                                                                      'filename': 'Sm.M5'},
                                                               'M3': {'relevance': 'Minor',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 1420.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     1420.0,
                                                                      'filename': 'Sm.M3'},
                                                               'M2': {'relevance': 'Minor',
-                                                                     'factor': 0.5,
-                                                                     'onset_energy (eV)': 1541.0,
+                                                                     'factor':
+                                                                         0.5,
+                                                                     'onset_energy (eV)':
+                                                                     1541.0,
                                                                      'filename': 'Sm.M3'},
                                                               'N4': {'relevance': 'Major',
-                                                                     'factor': 0.6666666666666666,
-                                                                     'onset_energy (eV)': 130.0,
+                                                                     'factor':
+                                                                         0.6666666666666666,
+                                                                     'onset_energy (eV)':
+                                                                     130.0,
                                                                      'filename': 'Sm.N5'},
                                                               'N5': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 130.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     130.0,
                                                                      'filename': 'Sm.N5'}}},
                    'General_properties': {'Z': 62,
                                           'atomic_weight': 150.36,
@@ -1999,24 +2346,34 @@ elements = {'Ru': {'Physical_properties': {'density (g/cm^3)': 12.37},
                                                        'Lb3': {'weight': 0.0154,
                                                                'energy (keV)': 0.5904}},
                                         'Binding_energies': {'M2': {'relevance': 'Major',
-                                                                    'factor': 0.5,
-                                                                    'onset_energy (eV)': 47.0,
+                                                                    'factor':
+                                                                        0.5,
+                                                                    'onset_energy (eV)':
+                                                                    47.0,
                                                                     'filename': 'V.M3'},
                                                              'L2': {'relevance': 'Major',
-                                                                    'factor': 0.5,
-                                                                    'onset_energy (eV)': 521.0,
+                                                                    'factor':
+                                                                        0.5,
+                                                                    'onset_energy (eV)':
+                                                                    521.0,
                                                                     'filename': 'V.L3'},
                                                              'L3': {'relevance': 'Major',
-                                                                    'factor': 1,
-                                                                    'onset_energy (eV)': 513.0,
+                                                                    'factor':
+                                                                        1,
+                                                                    'onset_energy (eV)':
+                                                                    513.0,
                                                                     'filename': 'V.L3'},
                                                              'M3': {'relevance': 'Major',
-                                                                    'factor': 1,
-                                                                    'onset_energy (eV)': 47.0,
+                                                                    'factor':
+                                                                        1,
+                                                                    'onset_energy (eV)':
+                                                                    47.0,
                                                                     'filename': 'V.M3'},
                                                              'L1': {'relevance': 'Minor',
-                                                                    'factor': 1,
-                                                                    'onset_energy (eV)': 628.0,
+                                                                    'factor':
+                                                                        1,
+                                                                    'onset_energy (eV)':
+                                                                    628.0,
                                                                     'filename': 'V.L1'}}},
                   'General_properties': {'Z': 23,
                                          'atomic_weight': 50.9415,
@@ -2035,24 +2392,34 @@ elements = {'Ru': {'Physical_properties': {'density (g/cm^3)': 12.37},
                                                         'Lb3': {'weight': 0.037,
                                                                 'energy (keV)': 0.4681}},
                                          'Binding_energies': {'M2': {'relevance': 'Major',
-                                                                     'factor': 0.5,
-                                                                     'onset_energy (eV)': 32.0,
+                                                                     'factor':
+                                                                         0.5,
+                                                                     'onset_energy (eV)':
+                                                                     32.0,
                                                                      'filename': 'Sc.M3'},
                                                               'L2': {'relevance': 'Major',
-                                                                     'factor': 0.5,
-                                                                     'onset_energy (eV)': 407.0,
+                                                                     'factor':
+                                                                         0.5,
+                                                                     'onset_energy (eV)':
+                                                                     407.0,
                                                                      'filename': 'Sc.L3'},
                                                               'L3': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 402.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     402.0,
                                                                      'filename': 'Sc.L3'},
                                                               'M3': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 32.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     32.0,
                                                                      'filename': 'Sc.M3'},
                                                               'L1': {'relevance': 'Minor',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 500.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     500.0,
                                                                      'filename': 'Sc.L1'}}},
                    'General_properties': {'Z': 21,
                                           'atomic_weight': 44.955912,
@@ -2081,20 +2448,28 @@ elements = {'Ru': {'Physical_properties': {'density (g/cm^3)': 12.37},
                                                         'Lg1': {'weight': 0.06064,
                                                                 'energy (keV)': 4.349}},
                                          'Binding_energies': {'M5': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 528.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     528.0,
                                                                      'filename': 'Sb.M5'},
                                                               'M4': {'relevance': 'Major',
-                                                                     'factor': 0.6666666666666666,
-                                                                     'onset_energy (eV)': 537.0,
+                                                                     'factor':
+                                                                         0.6666666666666666,
+                                                                     'onset_energy (eV)':
+                                                                     537.0,
                                                                      'filename': 'Sb.M5'},
                                                               'M3': {'relevance': 'Minor',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 766.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     766.0,
                                                                      'filename': 'Sb.M3'},
                                                               'M2': {'relevance': 'Minor',
-                                                                     'factor': 0.5,
-                                                                     'onset_energy (eV)': 812.0,
+                                                                     'factor':
+                                                                         0.5,
+                                                                     'onset_energy (eV)':
+                                                                     812.0,
                                                                      'filename': 'Sb.M3'}}},
                    'General_properties': {'Z': 51,
                                           'atomic_weight': 121.76,
@@ -2115,16 +2490,22 @@ elements = {'Ru': {'Physical_properties': {'density (g/cm^3)': 12.37},
                                                         'Lb3': {'weight': 0.047,
                                                                 'energy (keV)': 1.492}},
                                          'Binding_energies': {'L2': {'relevance': 'Major',
-                                                                     'factor': 0.5,
-                                                                     'onset_energy (eV)': 1476.0,
+                                                                     'factor':
+                                                                         0.5,
+                                                                     'onset_energy (eV)':
+                                                                     1476.0,
                                                                      'filename': 'Se.L3'},
                                                               'L3': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 1436.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     1436.0,
                                                                      'filename': 'Se.L3'},
                                                               'L1': {'relevance': 'Minor',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 1654.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     1654.0,
                                                                      'filename': 'Se.L1'}}},
                    'General_properties': {'Z': 34,
                                           'atomic_weight': 78.96,
@@ -2143,24 +2524,34 @@ elements = {'Ru': {'Physical_properties': {'density (g/cm^3)': 12.37},
                                                         'Lb3': {'weight': 0.0238,
                                                                 'energy (keV)': 0.8661}},
                                          'Binding_energies': {'M2': {'relevance': 'Major',
-                                                                     'factor': 0.5,
-                                                                     'onset_energy (eV)': 62.0,
+                                                                     'factor':
+                                                                         0.5,
+                                                                     'onset_energy (eV)':
+                                                                     62.0,
                                                                      'filename': 'Co.M3'},
                                                               'L2': {'relevance': 'Major',
-                                                                     'factor': 0.5,
-                                                                     'onset_energy (eV)': 794.0,
+                                                                     'factor':
+                                                                         0.5,
+                                                                     'onset_energy (eV)':
+                                                                     794.0,
                                                                      'filename': 'Co.L3'},
                                                               'L3': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 779.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     779.0,
                                                                      'filename': 'Co.L3'},
                                                               'M3': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 62.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     62.0,
                                                                      'filename': 'Co.M3'},
                                                               'L1': {'relevance': 'Minor',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 926.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     926.0,
                                                                      'filename': 'Co.L1'}}},
                    'General_properties': {'Z': 27,
                                           'atomic_weight': 58.933195,
@@ -2171,12 +2562,16 @@ elements = {'Ru': {'Physical_properties': {'density (g/cm^3)': 12.37},
                                                         'Ka': {'weight': 1.0,
                                                                'energy (keV)': 2.6224}},
                                          'Binding_energies': {'L3': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 200.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     200.0,
                                                                      'filename': 'Cl.L3'},
                                                               'L1': {'relevance': 'Minor',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 270.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     270.0,
                                                                      'filename': 'Cl.L1'}}},
                    'General_properties': {'Z': 17,
                                           'atomic_weight': 35.453,
@@ -2193,16 +2588,22 @@ elements = {'Ru': {'Physical_properties': {'density (g/cm^3)': 12.37},
                                                         'La': {'weight': 0.0,
                                                                'energy (keV)': 0.3464}},
                                          'Binding_energies': {'L2': {'relevance': 'Major',
-                                                                     'factor': 0.5,
-                                                                     'onset_energy (eV)': 350.0,
+                                                                     'factor':
+                                                                         0.5,
+                                                                     'onset_energy (eV)':
+                                                                     350.0,
                                                                      'filename': 'Ca.L3'},
                                                               'L3': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 346.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     346.0,
                                                                      'filename': 'Ca.L3'},
                                                               'L1': {'relevance': 'Minor',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 438.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     438.0,
                                                                      'filename': 'Ca.L1'}}},
                    'General_properties': {'Z': 20,
                                           'atomic_weight': 40.078,
@@ -2241,28 +2642,40 @@ elements = {'Ru': {'Physical_properties': {'density (g/cm^3)': 12.37},
                                                         'Mz': {'weight': 0.07,
                                                                'energy (keV)': 0.6761}},
                                          'Binding_energies': {'M5': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 883.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     883.0,
                                                                      'filename': 'Ce.M5'},
                                                               'M4': {'relevance': 'Major',
-                                                                     'factor': 0.6666666666666666,
-                                                                     'onset_energy (eV)': 901.0,
+                                                                     'factor':
+                                                                         0.6666666666666666,
+                                                                     'onset_energy (eV)':
+                                                                     901.0,
                                                                      'filename': 'Ce.M5'},
                                                               'M3': {'relevance': 'Minor',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 1185.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     1185.0,
                                                                      'filename': 'Ce.M3'},
                                                               'M2': {'relevance': 'Minor',
-                                                                     'factor': 0.5,
-                                                                     'onset_energy (eV)': 1273.0,
+                                                                     'factor':
+                                                                         0.5,
+                                                                     'onset_energy (eV)':
+                                                                     1273.0,
                                                                      'filename': 'Ce.M3'},
                                                               'N4': {'relevance': 'Major',
-                                                                     'factor': 0.6666666666666666,
-                                                                     'onset_energy (eV)': 110.0,
+                                                                     'factor':
+                                                                         0.6666666666666666,
+                                                                     'onset_energy (eV)':
+                                                                     110.0,
                                                                      'filename': 'Ce.N5'},
                                                               'N5': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 110.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     110.0,
                                                                      'filename': 'Ce.N5'}}},
                    'General_properties': {'Z': 58,
                                           'atomic_weight': 140.116,
@@ -2291,12 +2704,16 @@ elements = {'Ru': {'Physical_properties': {'density (g/cm^3)': 12.37},
                                                         'Lg1': {'weight': 0.06848,
                                                                 'energy (keV)': 5.0397}},
                                          'Binding_energies': {'M5': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 672.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     672.0,
                                                                      'filename': 'Xe.M5'},
                                                               'M4': {'relevance': 'Major',
-                                                                     'factor': 0.6666666666666666,
-                                                                     'onset_energy (eV)': 685.0,
+                                                                     'factor':
+                                                                         0.6666666666666666,
+                                                                     'onset_energy (eV)':
+                                                                     685.0,
                                                                      'filename': 'Xe.M5'}}},
                    'General_properties': {'Z': 54,
                                           'atomic_weight': 131.293,
@@ -2335,28 +2752,40 @@ elements = {'Ru': {'Physical_properties': {'density (g/cm^3)': 12.37},
                                                         'Mz': {'weight': 0.06,
                                                                'energy (keV)': 1.1311}},
                                          'Binding_energies': {'M5': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 1468.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     1468.0,
                                                                      'filename': 'Tm.M5'},
                                                               'M4': {'relevance': 'Major',
-                                                                     'factor': 0.6666666666666666,
-                                                                     'onset_energy (eV)': 1515.0,
+                                                                     'factor':
+                                                                         0.6666666666666666,
+                                                                     'onset_energy (eV)':
+                                                                     1515.0,
                                                                      'filename': 'Tm.M5'},
                                                               'M3': {'relevance': 'Minor',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 1884.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     1884.0,
                                                                      'filename': 'Tm.M3'},
                                                               'M2': {'relevance': 'Minor',
-                                                                     'factor': 0.5,
-                                                                     'onset_energy (eV)': 2090.0,
+                                                                     'factor':
+                                                                         0.5,
+                                                                     'onset_energy (eV)':
+                                                                     2090.0,
                                                                      'filename': 'Tm.M3'},
                                                               'N4': {'relevance': 'Major',
-                                                                     'factor': 0.6666666666666666,
-                                                                     'onset_energy (eV)': 177.0,
+                                                                     'factor':
+                                                                         0.6666666666666666,
+                                                                     'onset_energy (eV)':
+                                                                     177.0,
                                                                      'filename': 'Tm.N5'},
                                                               'N5': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 177.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     177.0,
                                                                      'filename': 'Tm.N5'}}},
                    'General_properties': {'Z': 69,
                                           'atomic_weight': 168.93421,
@@ -2385,28 +2814,40 @@ elements = {'Ru': {'Physical_properties': {'density (g/cm^3)': 12.37},
                                                         'Lg1': {'weight': 0.07215,
                                                                 'energy (keV)': 5.2806}},
                                          'Binding_energies': {'M5': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 726.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     726.0,
                                                                      'filename': 'Cs.M5'},
                                                               'M4': {'relevance': 'Major',
-                                                                     'factor': 0.6666666666666666,
-                                                                     'onset_energy (eV)': 740.0,
+                                                                     'factor':
+                                                                         0.6666666666666666,
+                                                                     'onset_energy (eV)':
+                                                                     740.0,
                                                                      'filename': 'Cs.M5'},
                                                               'M3': {'relevance': 'Minor',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 998.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     998.0,
                                                                      'filename': 'Cs.M3'},
                                                               'M2': {'relevance': 'Minor',
-                                                                     'factor': 0.5,
-                                                                     'onset_energy (eV)': 1065.0,
+                                                                     'factor':
+                                                                         0.5,
+                                                                     'onset_energy (eV)':
+                                                                     1065.0,
                                                                      'filename': 'Cs.M3'},
                                                               'N4': {'relevance': 'Major',
-                                                                     'factor': 0.6666666666666666,
-                                                                     'onset_energy (eV)': 78.0,
+                                                                     'factor':
+                                                                         0.6666666666666666,
+                                                                     'onset_energy (eV)':
+                                                                     78.0,
                                                                      'filename': 'Cs.N5'},
                                                               'N5': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 78.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     78.0,
                                                                      'filename': 'Cs.N5'}}},
                    'General_properties': {'Z': 55,
                                           'atomic_weight': 132.9054519,
@@ -2425,24 +2866,34 @@ elements = {'Ru': {'Physical_properties': {'density (g/cm^3)': 12.37},
                                                         'Lb3': {'weight': 0.0309,
                                                                 'energy (keV)': 0.6521}},
                                          'Binding_energies': {'M2': {'relevance': 'Major',
-                                                                     'factor': 0.5,
-                                                                     'onset_energy (eV)': 48.0,
+                                                                     'factor':
+                                                                         0.5,
+                                                                     'onset_energy (eV)':
+                                                                     48.0,
                                                                      'filename': 'Cr.M3'},
                                                               'L2': {'relevance': 'Major',
-                                                                     'factor': 0.5,
-                                                                     'onset_energy (eV)': 584.0,
+                                                                     'factor':
+                                                                         0.5,
+                                                                     'onset_energy (eV)':
+                                                                     584.0,
                                                                      'filename': 'Cr.L3'},
                                                               'L3': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 575.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     575.0,
                                                                      'filename': 'Cr.L3'},
                                                               'M3': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 48.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     48.0,
                                                                      'filename': 'Cr.M3'},
                                                               'L1': {'relevance': 'Minor',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 695.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     695.0,
                                                                      'filename': 'Cr.L1'}}},
                    'General_properties': {'Z': 24,
                                           'atomic_weight': 51.9961,
@@ -2463,24 +2914,34 @@ elements = {'Ru': {'Physical_properties': {'density (g/cm^3)': 12.37},
                                                         'Lb3': {'weight': 0.00114,
                                                                 'energy (keV)': 1.0225}},
                                          'Binding_energies': {'M2': {'relevance': 'Major',
-                                                                     'factor': 0.5,
-                                                                     'onset_energy (eV)': 74.0,
+                                                                     'factor':
+                                                                         0.5,
+                                                                     'onset_energy (eV)':
+                                                                     74.0,
                                                                      'filename': 'Cu.M3'},
                                                               'L2': {'relevance': 'Major',
-                                                                     'factor': 0.5,
-                                                                     'onset_energy (eV)': 951.0,
+                                                                     'factor':
+                                                                         0.5,
+                                                                     'onset_energy (eV)':
+                                                                     951.0,
                                                                      'filename': 'Cu.L3'},
                                                               'L3': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 931.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     931.0,
                                                                      'filename': 'Cu.L3'},
                                                               'M3': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 74.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     74.0,
                                                                      'filename': 'Cu.M3'},
                                                               'L1': {'relevance': 'Minor',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 1096.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     1096.0,
                                                                      'filename': 'Cu.L1'}}},
                    'General_properties': {'Z': 29,
                                           'atomic_weight': 63.546,
@@ -2519,36 +2980,50 @@ elements = {'Ru': {'Physical_properties': {'density (g/cm^3)': 12.37},
                                                         'Mz': {'weight': 0.06,
                                                                'energy (keV)': 0.6403}},
                                          'Binding_energies': {'M5': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 832.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     832.0,
                                                                      'filename': 'La.M5'},
                                                               'M4': {'relevance': 'Major',
-                                                                     'factor': 0.6666666666666666,
-                                                                     'onset_energy (eV)': 849.0,
+                                                                     'factor':
+                                                                         0.6666666666666666,
+                                                                     'onset_energy (eV)':
+                                                                     849.0,
                                                                      'filename': 'La.M5'},
                                                               'M3': {'relevance': 'Minor',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 1123.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     1123.0,
                                                                      'filename': 'La.M3'},
                                                               'M2': {'relevance': 'Minor',
-                                                                     'factor': 0.5,
-                                                                     'onset_energy (eV)': 1204.0,
+                                                                     'factor':
+                                                                         0.5,
+                                                                     'onset_energy (eV)':
+                                                                     1204.0,
                                                                      'filename': 'La.M3'},
                                                               'N4': {'relevance': 'Major',
-                                                                     'factor': 0.6666666666666666,
-                                                                     'onset_energy (eV)': 99.0,
+                                                                     'factor':
+                                                                         0.6666666666666666,
+                                                                     'onset_energy (eV)':
+                                                                     99.0,
                                                                      'filename': 'La.N5'},
                                                               'N5': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 99.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     99.0,
                                                                      'filename': 'La.N5'}}},
                    'General_properties': {'Z': 57,
                                           'atomic_weight': 138.90547,
                                           'name': 'lanthanum'}},
             'Li': {'Physical_properties': {'density (g/cm^3)': 0.534},
                    'Atomic_properties': {'Binding_energies': {'K': {'relevance': 'Major',
-                                                                    'factor': 1,
-                                                                    'onset_energy (eV)': 55.0,
+                                                                    'factor':
+                                                                        1,
+                                                                    'onset_energy (eV)':
+                                                                    55.0,
                                                                     'filename': 'Li.K1'}}},
                    'General_properties': {'atomic_weight': 6.939,
                                           'Z': 3,
@@ -2591,12 +3066,16 @@ elements = {'Ru': {'Physical_properties': {'density (g/cm^3)': 12.37},
                                                         'Mz': {'weight': 0.0058,
                                                                'energy (keV)': 1.7803}},
                                          'Binding_energies': {'M5': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 2389.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     2389.0,
                                                                      'filename': 'Tl.M5'},
                                                               'M4': {'relevance': 'Major',
-                                                                     'factor': 0.6666666666666666,
-                                                                     'onset_energy (eV)': 2485.0,
+                                                                     'factor':
+                                                                         0.6666666666666666,
+                                                                     'onset_energy (eV)':
+                                                                     2485.0,
                                                                      'filename': 'Tl.M5'}}},
                    'General_properties': {'Z': 81,
                                           'atomic_weight': 204.3833,
@@ -2635,28 +3114,40 @@ elements = {'Ru': {'Physical_properties': {'density (g/cm^3)': 12.37},
                                                         'Mz': {'weight': 0.06,
                                                                'energy (keV)': 1.2292}},
                                          'Binding_energies': {'M5': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 1588.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     1588.0,
                                                                      'filename': 'Lu.M5'},
                                                               'M4': {'relevance': 'Major',
-                                                                     'factor': 0.6666666666666666,
-                                                                     'onset_energy (eV)': 1639.0,
+                                                                     'factor':
+                                                                         0.6666666666666666,
+                                                                     'onset_energy (eV)':
+                                                                     1639.0,
                                                                      'filename': 'Lu.M5'},
                                                               'M3': {'relevance': 'Minor',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 2024.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     2024.0,
                                                                      'filename': 'Lu.M3'},
                                                               'M2': {'relevance': 'Minor',
-                                                                     'factor': 0.5,
-                                                                     'onset_energy (eV)': 2263.0,
+                                                                     'factor':
+                                                                         0.5,
+                                                                     'onset_energy (eV)':
+                                                                     2263.0,
                                                                      'filename': 'Lu.M3'},
                                                               'N4': {'relevance': 'Major',
-                                                                     'factor': 0.6666666666666666,
-                                                                     'onset_energy (eV)': 195.0,
+                                                                     'factor':
+                                                                         0.6666666666666666,
+                                                                     'onset_energy (eV)':
+                                                                     195.0,
                                                                      'filename': 'Lu.N5'},
                                                               'N5': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 195.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     195.0,
                                                                      'filename': 'Lu.N5'}}},
                    'General_properties': {'Z': 71,
                                           'atomic_weight': 174.9668,
@@ -2699,20 +3190,28 @@ elements = {'Ru': {'Physical_properties': {'density (g/cm^3)': 12.37},
                                                         'Mz': {'weight': 0.03512,
                                                                'energy (keV)': 2.3647}},
                                          'Binding_energies': {'M5': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 3332.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     3332.0,
                                                                      'filename': 'Th.M5'},
                                                               'M4': {'relevance': 'Major',
-                                                                     'factor': 0.6666666666666666,
-                                                                     'onset_energy (eV)': 3491.0,
+                                                                     'factor':
+                                                                         0.6666666666666666,
+                                                                     'onset_energy (eV)':
+                                                                     3491.0,
                                                                      'filename': 'Th.M5'},
                                                               'O5': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 83.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     83.0,
                                                                      'filename': 'Th.O5'},
                                                               'O4': {'relevance': 'Major',
-                                                                     'factor': 0.6666666666666666,
-                                                                     'onset_energy (eV)': 83.0,
+                                                                     'factor':
+                                                                         0.6666666666666666,
+                                                                     'onset_energy (eV)':
+                                                                     83.0,
                                                                      'filename': 'Th.O5'}}},
                    'General_properties': {'Z': 90,
                                           'atomic_weight': 232.03806,
@@ -2731,24 +3230,34 @@ elements = {'Ru': {'Physical_properties': {'density (g/cm^3)': 12.37},
                                                         'Lb3': {'weight': 0.166,
                                                                 'energy (keV)': 0.5291}},
                                          'Binding_energies': {'M2': {'relevance': 'Major',
-                                                                     'factor': 0.5,
-                                                                     'onset_energy (eV)': 47.0,
+                                                                     'factor':
+                                                                         0.5,
+                                                                     'onset_energy (eV)':
+                                                                     47.0,
                                                                      'filename': 'Ti.M3'},
                                                               'L2': {'relevance': 'Major',
-                                                                     'factor': 0.5,
-                                                                     'onset_energy (eV)': 462.0,
+                                                                     'factor':
+                                                                         0.5,
+                                                                     'onset_energy (eV)':
+                                                                     462.0,
                                                                      'filename': 'Ti.L3'},
                                                               'L3': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 456.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     456.0,
                                                                      'filename': 'Ti.L3'},
                                                               'M3': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 47.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     47.0,
                                                                      'filename': 'Ti.M3'},
                                                               'L1': {'relevance': 'Minor',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 564.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     564.0,
                                                                      'filename': 'Ti.L1'}}},
                    'General_properties': {'Z': 22,
                                           'atomic_weight': 47.867,
@@ -2777,20 +3286,28 @@ elements = {'Ru': {'Physical_properties': {'density (g/cm^3)': 12.37},
                                                         'Lg1': {'weight': 0.06375,
                                                                 'energy (keV)': 4.5722}},
                                          'Binding_energies': {'M5': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 572.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     572.0,
                                                                      'filename': 'Te.M5'},
                                                               'M4': {'relevance': 'Major',
-                                                                     'factor': 0.6666666666666666,
-                                                                     'onset_energy (eV)': 582.0,
+                                                                     'factor':
+                                                                         0.6666666666666666,
+                                                                     'onset_energy (eV)':
+                                                                     582.0,
                                                                      'filename': 'Te.M5'},
                                                               'M3': {'relevance': 'Minor',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 819.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     819.0,
                                                                      'filename': 'Te.M3'},
                                                               'M2': {'relevance': 'Minor',
-                                                                     'factor': 0.5,
-                                                                     'onset_energy (eV)': 870.0,
+                                                                     'factor':
+                                                                         0.5,
+                                                                     'onset_energy (eV)':
+                                                                     870.0,
                                                                      'filename': 'Te.M3'}}},
                    'General_properties': {'Z': 52,
                                           'atomic_weight': 127.6,
@@ -2829,28 +3346,40 @@ elements = {'Ru': {'Physical_properties': {'density (g/cm^3)': 12.37},
                                                         'Mz': {'weight': 0.06,
                                                                'energy (keV)': 0.9562}},
                                          'Binding_energies': {'M5': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 1241.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     1241.0,
                                                                      'filename': 'Tb.M5'},
                                                               'M4': {'relevance': 'Major',
-                                                                     'factor': 0.6666666666666666,
-                                                                     'onset_energy (eV)': 1275.0,
+                                                                     'factor':
+                                                                         0.6666666666666666,
+                                                                     'onset_energy (eV)':
+                                                                     1275.0,
                                                                      'filename': 'Tb.M5'},
                                                               'M3': {'relevance': 'Minor',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 1611.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     1611.0,
                                                                      'filename': 'Tb.M3'},
                                                               'M2': {'relevance': 'Minor',
-                                                                     'factor': 0.5,
-                                                                     'onset_energy (eV)': 1768.0,
+                                                                     'factor':
+                                                                         0.5,
+                                                                     'onset_energy (eV)':
+                                                                     1768.0,
                                                                      'filename': 'Tb.M3'},
                                                               'N4': {'relevance': 'Major',
-                                                                     'factor': 0.6666666666666666,
-                                                                     'onset_energy (eV)': 148.0,
+                                                                     'factor':
+                                                                         0.6666666666666666,
+                                                                     'onset_energy (eV)':
+                                                                     148.0,
                                                                      'filename': 'Tb.N5'},
                                                               'N5': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 148.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     148.0,
                                                                      'filename': 'Tb.N5'}}},
                    'General_properties': {'Z': 65,
                                           'atomic_weight': 158.92535,
@@ -2917,12 +3446,16 @@ elements = {'Ru': {'Physical_properties': {'density (g/cm^3)': 12.37},
                                                         'Mz': {'weight': 0.01344,
                                                                'energy (keV)': 1.3306}},
                                          'Binding_energies': {'M5': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 1735.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     1735.0,
                                                                      'filename': 'Ta.M5'},
                                                               'M4': {'relevance': 'Major',
-                                                                     'factor': 0.6666666666666666,
-                                                                     'onset_energy (eV)': 1793.0,
+                                                                     'factor':
+                                                                         0.6666666666666666,
+                                                                     'onset_energy (eV)':
+                                                                     1793.0,
                                                                      'filename': 'Ta.M5'}}},
                    'General_properties': {'Z': 73,
                                           'atomic_weight': 180.94788,
@@ -2961,28 +3494,40 @@ elements = {'Ru': {'Physical_properties': {'density (g/cm^3)': 12.37},
                                                         'Mz': {'weight': 0.06,
                                                                'energy (keV)': 1.1843}},
                                          'Binding_energies': {'M5': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 1528.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     1528.0,
                                                                      'filename': 'Yb.M5'},
                                                               'M4': {'relevance': 'Major',
-                                                                     'factor': 0.6666666666666666,
-                                                                     'onset_energy (eV)': 1576.0,
+                                                                     'factor':
+                                                                         0.6666666666666666,
+                                                                     'onset_energy (eV)':
+                                                                     1576.0,
                                                                      'filename': 'Yb.M5'},
                                                               'M3': {'relevance': 'Minor',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 1950.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     1950.0,
                                                                      'filename': 'Yb.M3'},
                                                               'M2': {'relevance': 'Minor',
-                                                                     'factor': 0.5,
-                                                                     'onset_energy (eV)': 2173.0,
+                                                                     'factor':
+                                                                         0.5,
+                                                                     'onset_energy (eV)':
+                                                                     2173.0,
                                                                      'filename': 'Yb.M3'},
                                                               'N4': {'relevance': 'Major',
-                                                                     'factor': 0.6666666666666666,
-                                                                     'onset_energy (eV)': 184.0,
+                                                                     'factor':
+                                                                         0.6666666666666666,
+                                                                     'onset_energy (eV)':
+                                                                     184.0,
                                                                      'filename': 'Yb.N5'},
                                                               'N5': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 184.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     184.0,
                                                                      'filename': 'Yb.N5'}}},
                    'General_properties': {'Z': 70,
                                           'atomic_weight': 173.054,
@@ -3021,28 +3566,40 @@ elements = {'Ru': {'Physical_properties': {'density (g/cm^3)': 12.37},
                                                         'Mz': {'weight': 0.06,
                                                                'energy (keV)': 1.002}},
                                          'Binding_energies': {'M5': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 1295.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     1295.0,
                                                                      'filename': 'Dy.M5'},
                                                               'M4': {'relevance': 'Major',
-                                                                     'factor': 0.6666666666666666,
-                                                                     'onset_energy (eV)': 1332.0,
+                                                                     'factor':
+                                                                         0.6666666666666666,
+                                                                     'onset_energy (eV)':
+                                                                     1332.0,
                                                                      'filename': 'Dy.M5'},
                                                               'M3': {'relevance': 'Minor',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 1676.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     1676.0,
                                                                      'filename': 'Dy.M3'},
                                                               'M2': {'relevance': 'Minor',
-                                                                     'factor': 0.5,
-                                                                     'onset_energy (eV)': 1842.0,
+                                                                     'factor':
+                                                                         0.5,
+                                                                     'onset_energy (eV)':
+                                                                     1842.0,
                                                                      'filename': 'Dy.M3'},
                                                               'N4': {'relevance': 'Major',
-                                                                     'factor': 0.6666666666666666,
-                                                                     'onset_energy (eV)': 154.0,
+                                                                     'factor':
+                                                                         0.6666666666666666,
+                                                                     'onset_energy (eV)':
+                                                                     154.0,
                                                                      'filename': 'Dy.N5'},
                                                               'N5': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 154.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     154.0,
                                                                      'filename': 'Dy.N5'}}},
                    'General_properties': {'Z': 66,
                                           'atomic_weight': 162.5,
@@ -3071,20 +3628,28 @@ elements = {'Ru': {'Physical_properties': {'density (g/cm^3)': 12.37},
                                                        'Lg1': {'weight': 0.06704,
                                                                'energy (keV)': 4.8025}},
                                         'Binding_energies': {'M5': {'relevance': 'Major',
-                                                                    'factor': 1,
-                                                                    'onset_energy (eV)': 620.0,
+                                                                    'factor':
+                                                                        1,
+                                                                    'onset_energy (eV)':
+                                                                    620.0,
                                                                     'filename': 'I.M5'},
                                                              'M4': {'relevance': 'Major',
-                                                                    'factor': 0.6666666666666666,
-                                                                    'onset_energy (eV)': 631.0,
+                                                                    'factor':
+                                                                        0.6666666666666666,
+                                                                    'onset_energy (eV)':
+                                                                    631.0,
                                                                     'filename': 'I.M5'},
                                                              'M3': {'relevance': 'Minor',
-                                                                    'factor': 1,
-                                                                    'onset_energy (eV)': 875.0,
+                                                                    'factor':
+                                                                        1,
+                                                                    'onset_energy (eV)':
+                                                                    875.0,
                                                                     'filename': 'I.M3'},
                                                              'M2': {'relevance': 'Minor',
-                                                                    'factor': 0.5,
-                                                                    'onset_energy (eV)': 930.0,
+                                                                    'factor':
+                                                                        0.5,
+                                                                    'onset_energy (eV)':
+                                                                    930.0,
                                                                     'filename': 'I.M3'}}},
                   'General_properties': {'Z': 53,
                                          'atomic_weight': 126.90447,
@@ -3127,20 +3692,28 @@ elements = {'Ru': {'Physical_properties': {'density (g/cm^3)': 12.37},
                                                        'Mz': {'weight': 0.03512,
                                                               'energy (keV)': 2.5068}},
                                         'Binding_energies': {'M5': {'relevance': 'Major',
-                                                                    'factor': 1,
-                                                                    'onset_energy (eV)': 3552.0,
+                                                                    'factor':
+                                                                        1,
+                                                                    'onset_energy (eV)':
+                                                                    3552.0,
                                                                     'filename': 'U.M5'},
                                                              'M4': {'relevance': 'Major',
-                                                                    'factor': 0.6666666666666666,
-                                                                    'onset_energy (eV)': 3728.0,
+                                                                    'factor':
+                                                                        0.6666666666666666,
+                                                                    'onset_energy (eV)':
+                                                                    3728.0,
                                                                     'filename': 'U.M5'},
                                                              'O5': {'relevance': 'Major',
-                                                                    'factor': 1,
-                                                                    'onset_energy (eV)': 96.0,
+                                                                    'factor':
+                                                                        1,
+                                                                    'onset_energy (eV)':
+                                                                    96.0,
                                                                     'filename': 'U.O5'},
                                                              'O4': {'relevance': 'Major',
-                                                                    'factor': 0.6666666666666666,
-                                                                    'onset_energy (eV)': 96.0,
+                                                                    'factor':
+                                                                        0.6666666666666666,
+                                                                    'onset_energy (eV)':
+                                                                    96.0,
                                                                     'filename': 'U.O5'}}},
                   'General_properties': {'Z': 92,
                                          'atomic_weight': 238.02891,
@@ -3167,32 +3740,46 @@ elements = {'Ru': {'Physical_properties': {'density (g/cm^3)': 12.37},
                                                        'Lg1': {'weight': 0.00264,
                                                                'energy (keV)': 2.1555}},
                                         'Binding_energies': {'M2': {'relevance': 'Minor',
-                                                                    'factor': 0.5,
-                                                                    'onset_energy (eV)': 312.0,
+                                                                    'factor':
+                                                                        0.5,
+                                                                    'onset_energy (eV)':
+                                                                    312.0,
                                                                     'filename': 'Y.M3'},
                                                              'M5': {'relevance': 'Major',
-                                                                    'factor': 1,
-                                                                    'onset_energy (eV)': 160.0,
+                                                                    'factor':
+                                                                        1,
+                                                                    'onset_energy (eV)':
+                                                                    160.0,
                                                                     'filename': 'Y.M5'},
                                                              'M4': {'relevance': 'Major',
-                                                                    'factor': 0.6666666666666666,
-                                                                    'onset_energy (eV)': 160.0,
+                                                                    'factor':
+                                                                        0.6666666666666666,
+                                                                    'onset_energy (eV)':
+                                                                    160.0,
                                                                     'filename': 'Y.M5'},
                                                              'L2': {'relevance': 'Major',
-                                                                    'factor': 0.5,
-                                                                    'onset_energy (eV)': 2155.0,
+                                                                    'factor':
+                                                                        0.5,
+                                                                    'onset_energy (eV)':
+                                                                    2155.0,
                                                                     'filename': 'Y.L3'},
                                                              'L3': {'relevance': 'Major',
-                                                                    'factor': 1,
-                                                                    'onset_energy (eV)': 2080.0,
+                                                                    'factor':
+                                                                        1,
+                                                                    'onset_energy (eV)':
+                                                                    2080.0,
                                                                     'filename': 'Y.L3'},
                                                              'M3': {'relevance': 'Minor',
-                                                                    'factor': 1,
-                                                                    'onset_energy (eV)': 300.0,
+                                                                    'factor':
+                                                                        1,
+                                                                    'onset_energy (eV)':
+                                                                    300.0,
                                                                     'filename': 'Y.M3'},
                                                              'L1': {'relevance': 'Minor',
-                                                                    'factor': 1,
-                                                                    'onset_energy (eV)': 2372.0,
+                                                                    'factor':
+                                                                        1,
+                                                                    'onset_energy (eV)':
+                                                                    2372.0,
                                                                     'filename': 'Y.L1'}}},
                   'General_properties': {'Z': 39,
                                          'atomic_weight': 88.90585,
@@ -3259,20 +3846,28 @@ elements = {'Ru': {'Physical_properties': {'density (g/cm^3)': 12.37},
                                                         'Lg1': {'weight': 0.03735,
                                                                 'energy (keV)': 3.5204}},
                                          'Binding_energies': {'M5': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 367.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     367.0,
                                                                      'filename': 'Ag.M5'},
                                                               'M4': {'relevance': 'Major',
-                                                                     'factor': 0.6666666666666666,
-                                                                     'onset_energy (eV)': 373.0,
+                                                                     'factor':
+                                                                         0.6666666666666666,
+                                                                     'onset_energy (eV)':
+                                                                     373.0,
                                                                      'filename': 'Ag.M5'},
                                                               'M3': {'relevance': 'Minor',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 571.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     571.0,
                                                                      'filename': 'Ag.M3'},
                                                               'M2': {'relevance': 'Minor',
-                                                                     'factor': 0.5,
-                                                                     'onset_energy (eV)': 602.0,
+                                                                     'factor':
+                                                                         0.5,
+                                                                     'onset_energy (eV)':
+                                                                     602.0,
                                                                      'filename': 'Ag.M3'}}},
                    'General_properties': {'Z': 47,
                                           'atomic_weight': 107.8682,
@@ -3315,12 +3910,16 @@ elements = {'Ru': {'Physical_properties': {'density (g/cm^3)': 12.37},
                                                         'Mz': {'weight': 0.01344,
                                                                'energy (keV)': 1.5461}},
                                          'Binding_energies': {'M5': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 2040.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     2040.0,
                                                                      'filename': 'Ir.M5'},
                                                               'M4': {'relevance': 'Major',
-                                                                     'factor': 0.6666666666666666,
-                                                                     'onset_energy (eV)': 2116.0,
+                                                                     'factor':
+                                                                         0.6666666666666666,
+                                                                     'onset_energy (eV)':
+                                                                     2116.0,
                                                                      'filename': 'Ir.M5'}}},
                    'General_properties': {'Z': 77,
                                           'atomic_weight': 192.217,
@@ -3331,16 +3930,22 @@ elements = {'Ru': {'Physical_properties': {'density (g/cm^3)': 12.37},
                                                         'Ka': {'weight': 1.0,
                                                                'energy (keV)': 1.4865}},
                                          'Binding_energies': {'K': {'relevance': 'Major',
-                                                                    'factor': 1,
-                                                                    'onset_energy (eV)': 1560.0,
+                                                                    'factor':
+                                                                        1,
+                                                                    'onset_energy (eV)':
+                                                                    1560.0,
                                                                     'filename': 'Al.K1'},
                                                               'L3': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 73.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     73.0,
                                                                      'filename': 'Al.L3'},
                                                               'L1': {'relevance': 'Minor',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 118.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     118.0,
                                                                      'filename': 'Al.L1'}}},
                    'General_properties': {'Z': 13,
                                           'atomic_weight': 26.9815386,
@@ -3361,16 +3966,22 @@ elements = {'Ru': {'Physical_properties': {'density (g/cm^3)': 12.37},
                                                         'Lb3': {'weight': 0.04769,
                                                                 'energy (keV)': 1.386}},
                                          'Binding_energies': {'L2': {'relevance': 'Major',
-                                                                     'factor': 0.5,
-                                                                     'onset_energy (eV)': 1359.0,
+                                                                     'factor':
+                                                                         0.5,
+                                                                     'onset_energy (eV)':
+                                                                     1359.0,
                                                                      'filename': 'As.L3'},
                                                               'L3': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 1323.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     1323.0,
                                                                      'filename': 'As.L3'},
                                                               'L1': {'relevance': 'Minor',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 1526.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     1526.0,
                                                                      'filename': 'As.L1'}}},
                    'General_properties': {'Z': 33,
                                           'atomic_weight': 74.9216,
@@ -3381,12 +3992,16 @@ elements = {'Ru': {'Physical_properties': {'density (g/cm^3)': 12.37},
                                                         'Ka': {'weight': 1.0,
                                                                'energy (keV)': 2.9577}},
                                          'Binding_energies': {'L3': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 245.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     245.0,
                                                                      'filename': 'Ar.L3'},
                                                               'L1': {'relevance': 'Minor',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 320.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     320.0,
                                                                      'filename': 'Ar.L1'}}},
                    'General_properties': {'Z': 18,
                                           'atomic_weight': 39.948,
@@ -3429,12 +4044,16 @@ elements = {'Ru': {'Physical_properties': {'density (g/cm^3)': 12.37},
                                                         'Mz': {'weight': 0.01344,
                                                                'energy (keV)': 1.6603}},
                                          'Binding_energies': {'M5': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 2206.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     2206.0,
                                                                      'filename': 'Au.M5'},
                                                               'M4': {'relevance': 'Major',
-                                                                     'factor': 0.6666666666666666,
-                                                                     'onset_energy (eV)': 2291.0,
+                                                                     'factor':
+                                                                         0.6666666666666666,
+                                                                     'onset_energy (eV)':
+                                                                     2291.0,
                                                                      'filename': 'Au.M5'}}},
                    'General_properties': {'Z': 79,
                                           'atomic_weight': 196.966569,
@@ -3497,20 +4116,28 @@ elements = {'Ru': {'Physical_properties': {'density (g/cm^3)': 12.37},
                                                         'Lg1': {'weight': 0.04535,
                                                                 'energy (keV)': 3.9218}},
                                          'Binding_energies': {'M5': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 443.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     443.0,
                                                                      'filename': 'In.M5'},
                                                               'M4': {'relevance': 'Major',
-                                                                     'factor': 0.6666666666666666,
-                                                                     'onset_energy (eV)': 451.0,
+                                                                     'factor':
+                                                                         0.6666666666666666,
+                                                                     'onset_energy (eV)':
+                                                                     451.0,
                                                                      'filename': 'In.M5'},
                                                               'M3': {'relevance': 'Minor',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 664.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     664.0,
                                                                      'filename': 'In.M3'},
                                                               'M2': {'relevance': 'Minor',
-                                                                     'factor': 0.5,
-                                                                     'onset_energy (eV)': 702.0,
+                                                                     'factor':
+                                                                         0.5,
+                                                                     'onset_energy (eV)':
+                                                                     702.0,
                                                                      'filename': 'In.M3'}}},
                    'General_properties': {'Z': 49,
                                           'atomic_weight': 114.818,
@@ -3537,32 +4164,46 @@ elements = {'Ru': {'Physical_properties': {'density (g/cm^3)': 12.37},
                                                         'Lg1': {'weight': 0.01335,
                                                                 'energy (keV)': 2.6233}},
                                          'Binding_energies': {'M2': {'relevance': 'Minor',
-                                                                     'factor': 0.5,
-                                                                     'onset_energy (eV)': 410.0,
+                                                                     'factor':
+                                                                         0.5,
+                                                                     'onset_energy (eV)':
+                                                                     410.0,
                                                                      'filename': 'Mo.M3'},
                                                               'M5': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 227.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     227.0,
                                                                      'filename': 'Mo.M5'},
                                                               'M4': {'relevance': 'Major',
-                                                                     'factor': 0.6666666666666666,
-                                                                     'onset_energy (eV)': 228.0,
+                                                                     'factor':
+                                                                         0.6666666666666666,
+                                                                     'onset_energy (eV)':
+                                                                     228.0,
                                                                      'filename': 'Mo.M5'},
                                                               'L2': {'relevance': 'Major',
-                                                                     'factor': 0.5,
-                                                                     'onset_energy (eV)': 2625.0,
+                                                                     'factor':
+                                                                         0.5,
+                                                                     'onset_energy (eV)':
+                                                                     2625.0,
                                                                      'filename': 'Mo.L3'},
                                                               'L3': {'relevance': 'Major',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 2520.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     2520.0,
                                                                      'filename': 'Mo.L3'},
                                                               'M3': {'relevance': 'Minor',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 392.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     392.0,
                                                                      'filename': 'Mo.M3'},
                                                               'L1': {'relevance': 'Minor',
-                                                                     'factor': 1,
-                                                                     'onset_energy (eV)': 2866.0,
+                                                                     'factor':
+                                                                         1,
+                                                                     'onset_energy (eV)':
+                                                                     2866.0,
                                                                      'filename': 'Mo.L1'}}},
                    'General_properties': {'Z': 42,
                                           'atomic_weight': 95.96,

@@ -856,18 +856,22 @@ class EELSSpectrum(Spectrum):
     def _set_microscope_parameters(self):
         tem_par = TEMParametersUI()
         mapping = {
-            'Acquisition_instrument.TEM.convergence_angle': 'tem_par.convergence_angle',
+            'Acquisition_instrument.TEM.convergence_angle':
+                'tem_par.convergence_angle',
             'Acquisition_instrument.TEM.beam_energy': 'tem_par.beam_energy',
-            'Acquisition_instrument.TEM.Detector.EELS.collection_angle': 'tem_par.collection_angle',
+            'Acquisition_instrument.TEM.Detector.EELS.collection_angle':
+                'tem_par.collection_angle',
         }
         for key, value in mapping.iteritems():
             if self.metadata.has_item(key):
                 exec('%s = self.metadata.%s' % (value, key))
         tem_par.edit_traits()
         mapping = {
-            'Acquisition_instrument.TEM.convergence_angle': tem_par.convergence_angle,
+            'Acquisition_instrument.TEM.convergence_angle':
+                tem_par.convergence_angle,
             'Acquisition_instrument.TEM.beam_energy': tem_par.beam_energy,
-            'Acquisition_instrument.TEM.Detector.EELS.collection_angle': tem_par.collection_angle,
+            'Acquisition_instrument.TEM.Detector.EELS.collection_angle':
+                tem_par.collection_angle,
         }
         for key, value in mapping.iteritems():
             if value != t.Undefined:

@@ -127,8 +127,9 @@ def file_reader(filename, record_by, mode='r', driver='core',
                     del res['_signal']
                     models_with_signals.append((key, {model_name: res}))
                 else:
-                    standalone_models.append({model_name: hdfgroup2dict(m_gr[model_name],
-                                                                        load_to_memory=load_to_memory)})
+                    standalone_models.append(
+                        {model_name: hdfgroup2dict(m_gr[model_name],
+                                                   load_to_memory=load_to_memory)})
         except TypeError:
             raise IOError(not_valid_format)
 
@@ -177,9 +178,14 @@ def hdfgroup2signaldict(group, load_to_memory=True):
         metadata = "metadata"
         original_metadata = "original_metadata"
 
-    exp = {'metadata': hdfgroup2dict(group[metadata], load_to_memory=load_to_memory),
-           'original_metadata': hdfgroup2dict(group[original_metadata], load_to_memory=load_to_memory)
-           }
+    exp = {
+        'metadata':
+            hdfgroup2dict(group[metadata], load_to_memory=load_to_memory),
+           'original_metadata':
+               hdfgroup2dict(
+                   group[original_metadata],
+                   load_to_memory=load_to_memory)
+    }
 
     data = group['data']
     if load_to_memory:

@@ -54,7 +54,7 @@ def get_xray_lines_near_energy(energy, width=0.2, only_lines=None):
     """
     only_lines = _parse_only_lines(only_lines)
     valid_lines = []
-    E_min, E_max = energy - width/2., energy + width/2.
+    E_min, E_max = energy - width / 2., energy + width / 2.
     for element, el_props in elements_db.iteritems():
         # Not all elements in the DB have the keys, so catch KeyErrors
         try:
