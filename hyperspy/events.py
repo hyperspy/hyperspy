@@ -60,6 +60,26 @@ class EventSuppressionContext(object):
         # Never suppress exceptions
 
 
+class CallbackSuppressionContext(object):
+
+    """Context manager for suppression of a single callback on an Event. Useful
+    e.g. to prevent infinite recursion if two objects are connected in a loop.
+    """
+
+    def __init__(self, callback, event, nargs):
+        self.event = event
+        self.callback = callback
+        self.nargs = nargs
+
+    def __enter__(self):
+        if self.callback is not None:
+            self.event.disconnect(self.callback)
+
+    def __exit__(self, type, value, tb):
+        if self.callback is not None:
+            self.event.connect(self.callback, self.nargs)
+
+
 class Events(object):
 
     """
@@ -89,17 +109,34 @@ class Event(object):
         self._connected = {}
         self._suppress = False
 
-    def suppress(self):
-        """Use this property with a 'with' statement to temporarily suppress
-        all events in the container. When the 'with' vlock completes, the old
+    def suppress(self, function=None):
+        """Use this function with a 'with' statement to temporarily suppress
+        all events in the container. When the 'with' lock completes, the old
         suppression values will be restored.
+
+        A single callback can optionally be passed. If so this single callback
+        will be prevented from triggering, and all other connected callbacks
+        will trigger.
+
         Example usage pattern:
         with obj.events.myevent.suppress():
             obj.val_a = a
             obj.val_b = b
         obj.events.myevent.trigger()
         """
-        return EventSuppressionContext(self)
+        if function is None:
+            return EventSuppressionContext(self)
+        else:
+            nargs = None
+            found = False
+            for nargs, c in self._connected.iteritems():
+                for f in c:
+                    if f == function:
+                        found = True
+                        break
+            if not found:
+                function = None
+            return CallbackSuppressionContext(function, self, nargs)
 
     def connected(self, nargs=None):
         """Connected functions. The default behavior is to include all
