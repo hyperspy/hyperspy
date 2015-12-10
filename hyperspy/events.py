@@ -215,6 +215,13 @@ class Event(object):
             if function in c:
                 c.remove(function)
 
+    @staticmethod
+    def _trigger_nargs(f, args, nargs):
+        """
+        Basic trigger resolution.
+        """
+        return f(*args[0:nargs])
+
     def trigger(self, *args, **kwargs):
         if not self._suppress:
             # Loop on copy to deal with callbacks which change connections
@@ -228,7 +235,7 @@ class Event(object):
                             ("Tried to call %s which require %d args " +
                              "with only %d.") % (str(c), nargs, len(args)))
                     for f in c.copy():
-                        f(*args[0:nargs])
+                        self._trigger_nargs(f, args, nargs)
 
     def __deepcopy__(self, memo):
         dc = type(self)()
