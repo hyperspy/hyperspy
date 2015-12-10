@@ -19,17 +19,17 @@ class EventsSuppressionContext(object):
         self.old = {}
         try:
             for e in self.events.__dict__.itervalues():
-                self.old[e] = e.suppress
-                e.suppress = True
-        except e:
+                self.old[e] = e._suppress
+                e._suppress = True
+        except:
             self.__exit__(*sys.exc_info())
             raise
         return self
 
     def __exit__(self, type, value, tb):
         for e, oldval in self.old.iteritems():
-            e.suppress = oldval
-        # Never suppress events
+            e._suppress = oldval
+        # Never suppress exceptions
 
 
 class EventSuppressionContext(object):
@@ -69,11 +69,9 @@ class Events(object):
 
     """
 
-    @property
     def suppress(self):
-        """
-        Use this property with a 'with' statement to temporarily suppress all
-        events in the container. When the 'with' vlock completes, the old
+        """Use this function with a 'with' statement to temporarily suppress
+        all events in the container. When the 'with' lock completes, the old
         suppression values will be restored.
 
         Example usage pattern:
@@ -89,7 +87,19 @@ class Event(object):
 
     def __init__(self):
         self._connected = {}
-        self.suppress = False
+        self._suppress = False
+
+    def suppress(self):
+        """Use this property with a 'with' statement to temporarily suppress
+        all events in the container. When the 'with' vlock completes, the old
+        suppression values will be restored.
+        Example usage pattern:
+        with obj.events.myevent.suppress():
+            obj.val_a = a
+            obj.val_b = b
+        obj.events.myevent.trigger()
+        """
+        return EventSuppressionContext(self)
 
     def connected(self, nargs=None):
         """Connected functions. The default behavior is to include all
@@ -143,7 +153,7 @@ class Event(object):
                 c.remove(function)
 
     def trigger(self, *args):
-        if not self.suppress:
+        if not self._suppress:
             # Loop on copy to deal with callbacks which change connections
             for nargs, c in self._connected.copy().iteritems():
                 if nargs is 'all':
