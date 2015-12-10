@@ -32,6 +32,34 @@ class EventsSuppressionContext(object):
         # Never suppress events
 
 
+class EventSuppressionContext(object):
+
+    """Context manager for event suppression. When passed an Event class,
+    it will suppress the event when activated by using it in a 'with'
+    statement. The previous suppression state will be restored when the 'with'
+    block completes, allowing for nested suppression.
+    """
+
+    def __init__(self, event):
+        self.event = event
+        self.old = None
+
+    def __enter__(self):
+        self.old = None
+        try:
+            self.old = self.event._suppress
+            self.event._suppress = True
+        except:
+            self.__exit__(*sys.exc_info())
+            raise
+        return self
+
+    def __exit__(self, type, value, tb):
+        if self.old is not None:
+            self.event._suppress = self.old
+        # Never suppress exceptions
+
+
 class Events(object):
 
     """
