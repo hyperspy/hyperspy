@@ -281,8 +281,8 @@ To enable this feature for a given component set the
 
     >>> s = hs.signals.Spectrum(np.arange(100).reshape(10,10))
     >>> m = s.create_model()
-    >>> g1 = hs.components.Gaussian()
-    >>> g2 = hs.components.Gaussian()
+    >>> g1 = hs.model.components.Gaussian()
+    >>> g2 = hs.model.components.Gaussian()
     >>> m.extend([g1,g2])
     >>> g1.active_is_multidimensional = True
     >>> g1._active_array
@@ -298,6 +298,29 @@ To enable this feature for a given component set the
     >>> g1.active_is_multidimensional = False
     >>> g1._active_array is None
     True
+
+
+Indexing model
+^^^^^^^^^^^^^^
+
+.. versionadded:: 0.9 model indexing
+
+Often it is useful to consider only part of the model - for example at
+a particular location (i.e. a slice in the navigation space) or energy range
+(i.e. a slice in the signal space). This can be done using exactly the same
+syntax that we use for signal indexing (:ref:`signal.indexing`).
+:py:attr:`~.model.red_chisq` and :py:attr:`~.model.dof` are automatically
+recomputed for the resulting slices. 
+
+.. code-block:: python
+
+    >>> s = hs.signals.Spectrum(np.arange(100).reshape(10,10))
+    >>> m = s.create_model()
+    >>> m.append(hs.model.components.Gaussian())
+    >>> # select first three navigation pixels and last five signal channels
+    >>> m1 = m.inav[:3].isig[-5:]
+    >>> m1.spectrum
+    <Spectrum, title: , dimensions: (3|5)>
 
 
 Getting and setting parameter values and attributes
@@ -746,36 +769,112 @@ The :py:class:`~.model.Model` :py:meth:`~.model.Model.plot_results`,
 can be used to visualise the result of the fit **when fitting multidimensional
 datasets**.
 
+.. _storing_models:
 
+Storing models
+^^^^^^^^^^^^^^
+.. versionadded:: 0.9 :py:class:`~.signal.ModelManager`
+
+Multiple models can be stored in the same signal. In particular, when
+:py:meth:`~.model.store` is called, a full "frozen" copy of the model is stored
+in :py:attr:`~.signal.models`. The stored models can be recreated at any time
+by calling :py:meth:`~.signal.models.restore` with the stored model name as an
+argument. To remove a model from storage, simply call
+:py:meth:`~.signal.models.remove`
+
+The stored models can be either given a name, or assigned one automatically.
+The automatic naming follows alphabetical scheme, with the sequence being (a,
+b, ..., z, aa, ab, ..., az, ba, ...).
+
+.. NOTE::
+
+    If you want to slice a model, you have to perform the operation on the
+    model itself, not its stored version
+
+.. WARNING::
+
+    Modifying a signal in-place (e.g. :py:meth:`~.signal.map`,
+    :py:meth:`~.signal.crop`, :py:meth:`~.signal.align1D`,
+    :py:meth:`~.signal.align2D` and similar) will invalidate all stored models.
+    This is done intentionally.
+
+Current stored models can be listed by calling :py:attr:`~.signal.models`:
+
+.. code-block:: python
+
+    >>> m = s.create_model()
+    >>> m.append(hs.model.components.Lorentzian())
+    >>> m.store('myname')
+    >>> s.models
+    └── myname
+        ├── components
+        │   └── Lorentzian
+        ├── date = 2015-09-07 12:01:50
+        └── dimensions = (|100)
+
+    >>> m.append(hs.model.components.Exponential())
+    >>> m.store() # assign model name automatically
+    >>> s.models
+    ├── a
+    │   ├── components
+    │   │   ├── Exponential
+    │   │   └── Lorentzian
+    │   ├── date = 2015-09-07 12:01:57
+    │   └── dimensions = (|100)
+    └── myname
+        ├── components
+        │   └── Lorentzian
+        ├── date = 2015-09-07 12:01:50
+        └── dimensions = (|100)
+    >>> m1 = s.models.restore('myname')
+    >>> m1.components
+       # |            Attribute Name |            Component Name |            Component Type
+    ---- | ------------------------- | ------------------------- | -------------------------
+       0 |                Lorentzian |                Lorentzian |                Lorentzian
 
 Saving and loading the result of the fit
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. versionadded:: 0.9
 
-As of HyperSpy 0.8, the following is the only way to save a model to  a file
-and load it back. Note that this method is known to be brittle i.e. there is no
-guarantee that a version of HyperSpy different from the one used to save the
-model will be able to load it sucessfully.  Also, it is advisable not to use
-this method in combination with functions that alter the value of the
-parameters interactively (e.g.  `enable_adjust_position`) as the modifications
-made by this functions are normally not stored in the IPython notebook or
-Python script.
+To save a model, a convenience function :py:meth:`~.model.save` is provided,
+which stores the current model into its signal and saves the signal. As
+described in :ref:`storing_models`, more than just one model can be saved with
+one signal.
 
-To save a model:
+.. code-block:: python
 
-1. Save the parameter arrays to a file using
-   :py:meth:`~.model.Model.save_parameters2file`.
+    >>> m = s.create_model()
+    >>> # analysis and fitting goes here
+    >>> m.save('my_filename', 'model_name')
+    >>> l = hs.load('my_filename.hdf5')
+    >>> m = l.models.restore('model_name') # or l.models.model_name.restore()
 
-2. Save all the commands that used to create the model to a file. This
-   can be done in the form of an IPython notebook or a Python script.
+For older versions of HyperSpy (before 0.9), the instructions were as follows:
 
-3.  (Optional) Comment out or delete the fitting commangs (e.g. `multifit`).
+    Note that this method is known to be brittle i.e. there is no
+    guarantee that a version of HyperSpy different from the one used to save the
+    model will be able to load it successfully.  Also, it is advisable not to use
+    this method in combination with functions that alter the value of the
+    parameters interactively (e.g.  `enable_adjust_position`) as the modifications
+    made by this functions are normally not stored in the IPython notebook or
+    Python script.
 
-To recreate the model:
+    To save a model:
 
-1. Execute the IPython notebook or Python script.
+    1. Save the parameter arrays to a file using
+       :py:meth:`~.model.Model.save_parameters2file`.
 
-2. Use :py:meth:`~.model.Model.load_parameters_from_file` to load back the
-   parameter values and arrays.
+    2. Save all the commands that used to create the model to a file. This
+       can be done in the form of an IPython notebook or a Python script.
+
+    3.  (Optional) Comment out or delete the fitting commangs (e.g. `multifit`).
+
+    To recreate the model:
+
+    1. Execute the IPython notebook or Python script.
+
+    2. Use :py:meth:`~.model.Model.load_parameters_from_file` to load back the
+       parameter values and arrays.
 
 
 Exporting the result of the fit

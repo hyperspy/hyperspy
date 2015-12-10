@@ -182,6 +182,7 @@ class EELSSpectrum(Spectrum):
             print_stats=True,
             subpixel=True,
             mask=None,
+            signal_range=None,
             show_progressbar=None,
             **kwargs):
         """Align the zero-loss peak.
@@ -211,9 +212,26 @@ class EELSSpectrum(Spectrum):
             It must have signal_dimension = 0 and navigation_shape equal to the
             current signal. Where mask is True the shift is not computed
             and set to nan.
+        signal_range : tuple of integers, tuple of floats. Optional
+            Will only search for the ZLP within the signal_range. If given
+            in integers, the range will be in index values. If given floats,
+            the range will be in spectrum values. Useful if there are features
+            in the spectrum which are more intense than the ZLP.
+            Default is searching in the whole signal.
         show_progressbar : None or bool
             If True, display a progress bar. If None the default is set in
             `preferences`.
+
+        Examples
+        --------
+        >>>> s_ll.align_zero_loss_peak()
+
+        Aligning both the lowloss signal and another signal
+        >>>> s_ll.align_zero_loss_peak(also_align=[s])
+
+        Aligning within a narrow range of the lowloss signal
+        >>>> s_ll.align_zero_loss_peak(signal_range=(-10.,10.))
+
 
         See Also
         --------
@@ -229,7 +247,15 @@ class EELSSpectrum(Spectrum):
             for signal in signals:
                 signal.axes_manager[-1].offset -= value
 
-        zlpc = self.estimate_zero_loss_peak_centre(mask=mask)
+        def estimate_zero_loss_peak_centre(s, mask, signal_range):
+            if signal_range:
+                zlpc = s.isig[signal_range[0]:signal_range[1]].\
+                    estimate_zero_loss_peak_centre(mask=mask)
+            else:
+                zlpc = s.estimate_zero_loss_peak_centre(mask=mask)
+            return zlpc
+
+        zlpc = estimate_zero_loss_peak_centre(self, mask, signal_range)
         mean_ = without_nans(zlpc.data).mean()
         if print_stats is True:
             print
@@ -242,7 +268,7 @@ class EELSSpectrum(Spectrum):
                            mean_, show_progressbar=show_progressbar)
 
         if calibrate is True:
-            zlpc = self.estimate_zero_loss_peak_centre(mask=mask)
+            zlpc = estimate_zero_loss_peak_centre(self, mask, signal_range)
             substract_from_offset(without_nans(zlpc.data).mean(),
                                   also_align + [self])
 
@@ -250,8 +276,8 @@ class EELSSpectrum(Spectrum):
             return
         left, right = -3., 3.
         if calibrate is False:
-            mean_ = without_nans(self.estimate_zero_loss_peak_centre(
-                mask=mask).data).mean()
+            mean_ = without_nans(estimate_zero_loss_peak_centre(
+                self, mask, signal_range).data).mean()
             left += mean_
             right += mean_
 
@@ -1197,7 +1223,7 @@ class EELSSpectrum(Spectrum):
             return eps, output
 
     def create_model(self, ll=None, auto_background=True, auto_add_edges=True,
-                     GOS=None):
+                     GOS=None, dictionary=None):
         """Create a model for the current EELS data.
 
         Parameters
@@ -1221,6 +1247,9 @@ class EELSSpectrum(Spectrum):
             The generalized oscillation strenght calculations to use for the
             core-loss EELS edges. If None the Hartree-Slater GOS are used if
             available, otherwise it uses the hydrogenic GOS.
+        dictionary : {None | dict}, optional
+            A dictionary to be used to recreate a model. Usually generated using
+            :meth:`hyperspy.model.as_dictionary`
 
         Returns
         -------
@@ -1233,5 +1262,6 @@ class EELSSpectrum(Spectrum):
                           ll=ll,
                           auto_background=auto_background,
                           auto_add_edges=auto_add_edges,
-                          GOS=GOS)
+                          GOS=GOS,
+                          dictionary=dictionary)
         return model

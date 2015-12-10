@@ -24,6 +24,8 @@ Background removal
 The :py:meth:`~.signal.Signal1DTools.remove_background` method provides
 background removal capabilities through both a CLI and a GUI. Current
 background type supported are power law, offset, polynomial and gaussian.
+By default the background is estimated, but a full fit can also be used.
+The full fit is more accurate, but slower.
 
 Calibration
 ^^^^^^^^^^^

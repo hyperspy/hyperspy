@@ -67,6 +67,7 @@ class ScalableFixedPattern(Component):
         Component.__init__(self, ['yscale', 'xscale', 'shift'])
 
         self._position = self.shift
+        self._whitelist['spectrum'] = ('init,sig', spectrum)
         self.spectrum = spectrum
         self.yscale.free = True
         self.yscale.value = 1.

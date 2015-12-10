@@ -48,8 +48,14 @@ from hyperspy.drawing.widgets import (DraggableVerticalLine,
                                       DraggableLabel)
 from hyperspy.gui.tools import ComponentFit
 from hyperspy.component import Component
+from hyperspy import components
 from hyperspy.signal import Signal
+from hyperspy.misc.export_dictionary import (export_to_dictionary,
+                                             load_from_dictionary,
+                                             parse_flag_string,
+                                             reconstruct_object)
 from hyperspy.misc.utils import slugify, shorten_name
+from hyperspy.misc.slicing import copy_slice_from_whitelist
 
 
 class ModelComponents(object):
@@ -175,6 +181,8 @@ class Model(list):
     set_parameters_value
         Set the value of a parameter in components in a model to a specified
         value.
+    as_dictionary
+        Exports the model to a dictionary that can be saved in a file.
 
     Examples
     --------
@@ -221,35 +229,122 @@ class Model(list):
         # raise an exception when using windows.connect
         return id(self)
 
-    def __init__(self, spectrum):
-        self.convolved = False
+    def __init__(self, spectrum, dictionary=None):
+
+        self._plot = None
+        self._position_widgets = []
+        self._adjust_position_all = None
+        self._plot_components = False
+        self._suspend_update = False
+        self._model_line = None
+        self._adjust_position_all = None
+        self._plot_components = False
+        self._whitelist = {
+            'channel_switches': None,
+            'convolved': None,
+            'free_parameters_boundaries': None,
+            'low_loss': ('sig', None),
+            'chisq.data': None,
+            'dof.data': None
+        }
+        self._slicing_whitelist = {
+            'channel_switches': 'isig',
+            'low_loss': 'inav',
+            'chisq.data': 'inav',
+            'dof.data': 'inav'}
+
         self.spectrum = spectrum
         self.axes_manager = self.spectrum.axes_manager
         self.axis = self.axes_manager.signal_axes[0]
         self.axes_manager.connect(self.fetch_stored_values)
-
-        self.free_parameters_boundaries = None
         self.channel_switches = np.array([True] * len(self.axis.axis))
-        self._low_loss = None
-        self._position_widgets = []
-        self._plot = None
-        self._model_line = None
 
-        self.chisq = spectrum._get_navigation_signal()
+        self.chisq = self.spectrum._get_navigation_signal()
         self.chisq.change_dtype("float")
         self.chisq.data.fill(np.nan)
-        self.chisq.metadata.General.title = \
-            self.spectrum.metadata.General.title + ' chi-squared'
+        self.chisq.metadata.General.title = self.spectrum.metadata.General.title + \
+            ' chi-squared'
         self.dof = self.chisq._deepcopy_with_new_data(
-            np.zeros_like(
-                self.chisq.data,
-                dtype='int'))
-        self.dof.metadata.General.title = \
-            self.spectrum.metadata.General.title + ' degrees of freedom'
-        self._suspend_update = False
-        self._adjust_position_all = None
-        self._plot_components = False
+            np.zeros_like(self.chisq.data, dtype='int'))
+        self.dof.metadata.General.title = self.spectrum.metadata.General.title + \
+            ' degrees of freedom'
+        self.free_parameters_boundaries = None
+        self._low_loss = None
+        self.convolved = False
         self.components = ModelComponents(self)
+        if dictionary is not None:
+            self._load_dictionary(dictionary)
+        self.inav = ModelSpecialSlicers(self, True)
+        self.isig = ModelSpecialSlicers(self, False)
+
+    def store(self, name=None):
+        """Stores current model in the original spectrum
+
+        Parameters
+        ----------
+            name : {None, str}
+                Stored model name. Auto-generated if left empty
+        """
+        if self.spectrum is None:
+            raise ValueError("Cannot store models with no signal")
+        s = self.spectrum
+        s.models.store(self, name)
+
+    def save(self, file_name, name=None):
+        """Saves spectrum and its model to a file
+
+        Parameters
+        ----------
+            file_name : str
+                Name of the file
+            name : {None, str}
+                Stored model name. Auto-generated if left empty
+        """
+        if self.spectrum is None:
+            raise ValueError("Currently cannot store models with no signal")
+        else:
+            self.store(name)
+            self.spectrum.save(file_name)
+
+    def _load_dictionary(self, dic):
+        """Load data from dictionary.
+
+        Parameters
+        ----------
+        dic : dictionary
+            _whitelist : dictionary
+                a dictionary with keys used as references of  save attributes,
+                for more information, see
+                :meth:`hyperspy.misc.export_dictionary.load_from_dictionary`
+            components : dictionary (optional)
+                Dictionary, with information about components of the model (see
+                the documentation of component.as_dictionary() method)
+            * any field from _whitelist.keys() *
+        """
+
+        if 'components' in dic:
+            while len(self) != 0:
+                self.remove(self[0])
+            id_dict = {}
+
+            for comp in dic['components']:
+                init_args = {}
+                for k, flags_str in comp['_whitelist'].iteritems():
+                    if not len(flags_str):
+                        continue
+                    if 'init' in parse_flag_string(flags_str):
+                        init_args[k] = reconstruct_object(flags_str, comp[k])
+
+                self.append(getattr(components, comp['_id_name'])(**init_args))
+                id_dict.update(self[-1]._load_dictionary(comp))
+            # deal with twins:
+            for comp in dic['components']:
+                for par in comp['parameters']:
+                    for tw in par['_twins']:
+                        id_dict[tw].twin = id_dict[par['self']]
+
+        if '_whitelist' in dic:
+            load_from_dictionary(self, dic)
 
     def __repr__(self):
         title = self.spectrum.metadata.General.title
@@ -311,10 +406,7 @@ class Model(list):
         # Check if any of the other components in the model has the same name
         if thing in self:
             raise ValueError("Component already in model")
-        component_name_list = []
-        for component in self:
-            component_name_list.append(component.name)
-        name_string = ""
+        component_name_list = [component.name for component in self]
         if thing.name:
             name_string = thing.name
         else:
@@ -348,9 +440,7 @@ class Model(list):
 
     def __delitem__(self, thing):
         thing = self.__getitem__(thing)
-        thing.model = None
-        list.__delitem__(self, self.index(thing))
-        self._touch()
+        self.remove(thing)
 
     def remove(self, thing, touch=True):
         """Remove component from model.
@@ -715,7 +805,6 @@ class Model(list):
                     comp_p_std, onlyfree=True)
                 counter += component._nfree_param
 
-    # Defines the functions for the fitting process -------------------------
     def _model2plot(self, axes_manager, out_of_range2nans=True):
         old_axes_manager = None
         if axes_manager is not self.axes_manager:
@@ -755,40 +844,32 @@ class Model(list):
             axis = self.axis.axis[self.channel_switches]
             sum_ = np.zeros(len(axis))
             if onlyactive is True:
-                for component in self:  # Cut the parameters list
+                for component in self:
                     if component.active:
-                        np.add(sum_, component.function(axis),
-                               sum_)
+                        sum_ += component.function(axis)
             else:
-                for component in self:  # Cut the parameters list
-                    np.add(sum_, component.function(axis),
-                           sum_)
+                for component in self:
+                    sum_ += component.function(axis)
             to_return = sum_
 
         else:  # convolved
-            counter = 0
             sum_convolved = np.zeros(len(self.convolution_axis))
             sum_ = np.zeros(len(self.axis.axis))
             for component in self:  # Cut the parameters list
                 if onlyactive:
                     if component.active:
                         if component.convolved:
-                            np.add(sum_convolved,
-                                   component.function(
-                                       self.convolution_axis), sum_convolved)
+                            sum_convolved += component.function(
+                                self.convolution_axis)
                         else:
-                            np.add(sum_,
-                                   component.function(self.axis.axis), sum_)
-                        counter += component._nfree_param
+                            sum_ += component.function(self.axis.axis)
                 else:
                     if component.convolved:
-                        np.add(sum_convolved,
-                               component.function(self.convolution_axis),
-                               sum_convolved)
+                        sum_convolved += component.function(
+                            self.convolution_axis)
                     else:
-                        np.add(sum_, component.function(self.axis.axis),
-                               sum_)
-                    counter += component._nfree_param
+                        sum_ += component.function(self.axis.axis)
+
             to_return = sum_ + np.convolve(
                 self.low_loss(self.axes_manager),
                 sum_convolved, mode="valid")
@@ -894,60 +975,14 @@ class Model(list):
         self.update_plot()
 
     def _model_function(self, param):
-
-        if self.convolved is True:
-            counter = 0
-            sum_convolved = np.zeros(len(self.convolution_axis))
-            sum = np.zeros(len(self.axis.axis))
-            for component in self:  # Cut the parameters list
-                if component.active:
-                    if component.convolved is True:
-                        np.add(sum_convolved, component.__tempcall__(param[
-                            counter:counter + component._nfree_param],
-                            self.convolution_axis), sum_convolved)
-                    else:
-                        np.add(
-                            sum,
-                            component.__tempcall__(
-                                param[
-                                    counter:counter +
-                                    component._nfree_param],
-                                self.axis.axis),
-                            sum)
-                    counter += component._nfree_param
-
-            to_return = (sum + np.convolve(self.low_loss(self.axes_manager),
-                                           sum_convolved, mode="valid"))[
-                self.channel_switches]
-
-        else:
-            axis = self.axis.axis[self.channel_switches]
-            counter = 0
-            first = True
-            for component in self:  # Cut the parameters list
-                if component.active:
-                    if first is True:
-                        sum = component.__tempcall__(
-                            param[
-                                counter:counter +
-                                component._nfree_param],
-                            axis)
-                        first = False
-                    else:
-                        sum += component.__tempcall__(
-                            param[
-                                counter:counter +
-                                component._nfree_param],
-                            axis)
-                    counter += component._nfree_param
-            to_return = sum
-
-        if self.spectrum.metadata.Signal.binned is True:
-            to_return *= self.spectrum.axes_manager[-1].scale
+        self.p0 = param
+        self._fetch_values_from_p0()
+        to_return = self.__call__(non_convolved=False, onlyactive=True)
         return to_return
 
-    # noinspection PyAssignmentToLoopOrWithParameter
     def _jacobian(self, param, y, weights=None):
+        if weights is None:
+            weights = 1.
         if self.convolved is True:
             counter = 0
             grad = np.zeros(len(self.axis.axis))
@@ -972,7 +1007,6 @@ class Model(list):
                                         self.low_loss(self.axes_manager),
                                         mode="valid"), par_grad)
                             grad = np.vstack((grad, par_grad))
-                        counter += component._nfree_param
                     else:
                         for parameter in component.free_parameters:
                             par_grad = parameter.grad(self.axis.axis)
@@ -981,11 +1015,8 @@ class Model(list):
                                     np.add(par_grad, par.grad(
                                         self.axis.axis), par_grad)
                             grad = np.vstack((grad, par_grad))
-                        counter += component._nfree_param
-            if weights is None:
-                to_return = grad[1:, self.channel_switches]
-            else:
-                to_return = grad[1:, self.channel_switches] * weights
+                    counter += component._nfree_param
+            to_return = grad[1:, self.channel_switches] * weights
         else:
             axis = self.axis.axis[self.channel_switches]
             counter = 0
@@ -1005,10 +1036,7 @@ class Model(list):
                                     axis), par_grad)
                         grad = np.vstack((grad, par_grad))
                     counter += component._nfree_param
-            if weights is None:
-                to_return = grad[1:, :]
-            else:
-                to_return = grad[1:, :] * weights
+            to_return = grad[1:, :] * weights
         if self.spectrum.metadata.Signal.binned is True:
             to_return *= self.spectrum.axes_manager[-1].scale
         return to_return
@@ -1032,17 +1060,15 @@ class Model(list):
         return -(self._jacobian(param, y) * (y / mf - 1)).sum(1)
 
     def _errfunc(self, param, y, weights=None):
-        errfunc = self._model_function(param) - y
         if weights is None:
-            return errfunc
-        else:
-            return errfunc * weights
+            weights = 1.
+        errfunc = self._model_function(param) - y
+        return errfunc * weights
 
     def _errfunc2(self, param, y, weights=None):
         if weights is None:
-            return ((self._errfunc(param, y)) ** 2).sum()
-        else:
-            return ((weights * self._errfunc(param, y)) ** 2).sum()
+            weights = 1.
+        return ((weights * self._errfunc(param, y)) ** 2).sum()
 
     def _gradient_ls(self, param, y, weights=None):
         gls = (2 * self._errfunc(param, y, weights) *
@@ -1066,13 +1092,12 @@ class Model(list):
             variance = self.spectrum.metadata.Signal.Noise_properties.variance
             if isinstance(variance, Signal):
                 variance = variance.data.__getitem__(
-                    self.spectrum.axes_manager._getitem_tuple
-                )[self.channel_switches]
+                    self.axes_manager._getitem_tuple)[self.channel_switches]
         else:
             variance = 1.0
         d = self(onlyactive=True) - self.spectrum()[self.channel_switches]
         d *= d / (1. * variance)  # d = difference^2 / variance.
-        self.chisq.data[self.spectrum.axes_manager.indices[::-1]] = sum(d)
+        self.chisq.data[self.axes_manager.indices[::-1]] = sum(d)
 
     def _set_current_degrees_of_freedom(self):
         self.dof.data[self.spectrum.axes_manager.indices[::-1]] = len(self.p0)
@@ -1835,7 +1860,7 @@ class Model(list):
         enable_adjust_position
 
         """
-        self._adjust_position_all = False
+        self._adjust_position_all = None
         while self._position_widgets:
             pw = self._position_widgets.pop()
             if hasattr(pw, 'component'):
@@ -2036,6 +2061,60 @@ class Model(list):
                         _parameter.value = value
                         _parameter.assign_current_value_to_all()
 
+    def as_dictionary(self, fullcopy=True):
+        """Returns a dictionary of the model, including all components, degrees
+        of freedom (dof) and chi-squared (chisq) with values.
+
+        Parameters
+        ----------
+        fullcopy : Bool (optional, True)
+            Copies of objects are stored, not references. If any found,
+            functions will be pickled and signals converted to dictionaries
+
+        Returns
+        -------
+        dictionary : a complete dictionary of the model, which includes at least
+        the following fields:
+            components : list
+                a list of dictionaries of components, one per
+            _whitelist : dictionary
+                a dictionary with keys used as references for saved attributes,
+                for more information, see
+                :meth:`hyperspy.misc.export_dictionary.export_to_dictionary`
+            * any field from _whitelist.keys() *
+        Examples
+        --------
+        >>> s = signals.Spectrum(np.random.random((10,100)))
+        >>> m = s.create_model()
+        >>> l1 = components.Lorentzian()
+        >>> l2 = components.Lorentzian()
+        >>> m.append(l1)
+        >>> m.append(l2)
+        >>> d = m.as_dictionary()
+        >>> m2 = s.create_model(dictionary=d)
+
+        """
+        dic = {'components': [c.as_dictionary(fullcopy) for c in self]}
+
+        export_to_dictionary(self, self._whitelist, dic, fullcopy)
+
+        def remove_empty_numpy_strings(dic):
+            for k, v in dic.iteritems():
+                if isinstance(v, dict):
+                    remove_empty_numpy_strings(v)
+                elif isinstance(v, list):
+                    for vv in v:
+                        if isinstance(vv, dict):
+                            remove_empty_numpy_strings(vv)
+                        elif isinstance(vv, np.string_) and len(vv) == 0:
+                            vv = ''
+                elif isinstance(v, np.string_) and len(v) == 0:
+                    del dic[k]
+                    dic[k] = ''
+        remove_empty_numpy_strings(dic)
+
+        return dic
+
     def set_component_active_value(
             self, value, component_list=None, only_current=False):
         """
@@ -2107,3 +2186,75 @@ class Model(list):
                     "\" not found in model")
         else:
             return list.__getitem__(self, value)
+
+
+class ModelSpecialSlicers(object):
+
+    def __init__(self, model, isNavigation):
+        self.isNavigation = isNavigation
+        self.model = model
+
+    def __getitem__(self, slices):
+        array_slices = self.model.spectrum._get_array_slices(
+            slices,
+            self.isNavigation)
+        _spectrum = self.model.spectrum._slicer(slices, self.isNavigation)
+        if _spectrum.metadata.Signal.signal_type == 'EELS':
+            _model = _spectrum.create_model(
+                auto_background=False,
+                auto_add_edges=False)
+        else:
+            _model = _spectrum.create_model()
+
+        dims = self.model.axes_manager.navigation_dimension, self.model.axes_manager.signal_dimension
+        if self.isNavigation:
+            _model.channel_switches[:] = self.model.channel_switches
+        else:
+            _model.channel_switches[:] = \
+                np.atleast_1d(
+                    self.model.channel_switches[tuple(array_slices[-dims[1]:])])
+
+        twin_dict = {}
+        for comp in self.model:
+            init_args = {}
+            for k, v in comp._whitelist.iteritems():
+                if v is None:
+                    continue
+                flags_str, value = v
+                if 'init' in parse_flag_string(flags_str):
+                    init_args[k] = value
+            _model.append(getattr(components, comp._id_name)(**init_args))
+        copy_slice_from_whitelist(self.model,
+                                  _model,
+                                  dims,
+                                  (slices, array_slices),
+                                  self.isNavigation,
+                                  )
+        for co, cn in zip(self.model, _model):
+            copy_slice_from_whitelist(co,
+                                      cn,
+                                      dims,
+                                      (slices, array_slices),
+                                      self.isNavigation)
+            for po, pn in zip(co.parameters, cn.parameters):
+                copy_slice_from_whitelist(po,
+                                          pn,
+                                          dims,
+                                          (slices, array_slices),
+                                          self.isNavigation)
+                twin_dict[id(po)] = ([id(i) for i in list(po._twins)], pn)
+
+        for k in twin_dict.keys():
+            for tw_id in twin_dict[k][0]:
+                twin_dict[tw_id][1].twin = twin_dict[k][1]
+
+        _model.chisq.data = _model.chisq.data.copy()
+        _model.dof.data = _model.dof.data.copy()
+        _model.fetch_stored_values()  # to update and have correct values
+        if not self.isNavigation:
+            for _ in _model.axes_manager:
+                _model._calculate_chisq()
+
+        return _model
+
+# vim: textwidth=80

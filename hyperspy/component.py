@@ -29,6 +29,7 @@ from hyperspy.misc.utils import slugify
 from hyperspy.misc.io.tools import (incremental_filename,
                                     append2pathname,)
 from hyperspy.exceptions import NavigationDimensionError
+from hyperspy.misc.export_dictionary import export_to_dictionary, load_from_dictionary
 
 
 class NoneFloat(t.CFloat):   # Lazy solution, but usable
@@ -119,8 +120,53 @@ class Parameter(t.HasTraits):
         self.component = None
         self.grad = None
         self.name = ''
+        self.units = ''
         self.map = None
         self.model = None
+        self._whitelist = {'_id_name': None,
+                           'value': None,
+                           'std': None,
+                           'free': None,
+                           'units': None,
+                           'map': None,
+                           '_bounds': None,
+                           'ext_bounded': None,
+                           'name': None,
+                           'ext_force_positive': None,
+                           'self': ('id', None),
+                           'twin_function': ('fn', None),
+                           'twin_inverse_function': ('fn', None),
+                           }
+        self._slicing_whitelist = {'map': 'inav'}
+
+    def _load_dictionary(self, dictionary):
+        """Load data from dictionary
+
+        Parameters
+        ----------
+        dict : dictionary
+            A dictionary containing at least the following items:
+            _id_name : string
+                _id_name of the original parameter, used to create the
+                dictionary. Has to match with the self._id_name
+            _whitelist : dictionary
+                a dictionary, which keys are used as keywords to match with the
+                parameter attributes.  For more information see
+                :meth:`hyperspy.misc.export_dictionary.load_from_dictionary`
+            * any field from _whitelist.keys() *
+        Returns
+        -------
+        id_value : int
+            the ID value of the original parameter, to be later used for setting
+            up the correct twins
+
+        """
+        if dictionary['_id_name'] == self._id_name:
+            load_from_dictionary(self, dictionary)
+            return dictionary['self']
+        else:
+            raise ValueError( "_id_name of parameter and dictionary do not match, \nparameter._id_name = %s\
+                    \ndictionary['_id_name'] = %s" % (self._id_name, dictionary['_id_name']))
 
     def __repr__(self):
         text = ''
@@ -420,8 +466,10 @@ class Parameter(t.HasTraits):
 
         s = Signal(data=self.map[field],
                    axes=self._axes_manager._get_navigation_axes_dicts())
-        if self.component.active_is_multidimensional:
+        if self.component is not None and \
+                self.component.active_is_multidimensional:
             s.data[np.logical_not(self.component._active_array)] = np.nan
+
         s.metadata.General.title = ("%s parameter" % self.name
                                     if self.component is None
                                     else "%s parameter of %s component" %
@@ -470,6 +518,35 @@ class Parameter(t.HasTraits):
             self.as_signal(field='std').save(append2pathname(
                 filename, '_std'))
 
+    def as_dictionary(self, fullcopy=True):
+        """Returns parameter as a dictionary, saving all attributes from
+        self._whitelist.keys() For more information see
+        :meth:`hyperspy.misc.export_dictionary.export_to_dictionary`
+
+        Parameters
+        ----------
+        fullcopy : Bool (optional, False)
+            Copies of objects are stored, not references. If any found,
+            functions will be pickled and signals converted to dictionaries
+        Returns
+        -------
+        dic : dictionary with the following keys:
+            _id_name : string
+                _id_name of the original parameter, used to create the
+                dictionary. Has to match with the self._id_name
+            _twins : list
+                a list of ids of the twins of the parameter
+            _whitelist : dictionary
+                a dictionary, which keys are used as keywords to match with the
+                parameter attributes.  For more information see
+                :meth:`hyperspy.misc.export_dictionary.export_to_dictionary`
+            * any field from _whitelist.keys() *
+
+        """
+        dic = {'_twins': [id(t) for t in self._twins]}
+        export_to_dictionary(self, self._whitelist, dic, fullcopy)
+        return dic
+
     def default_traits_view(self):
         # As mentioned above, the default editor for
         # value = t.Property(t.Either([t.CFloat(0), Array()]))
@@ -510,6 +587,13 @@ class Component(t.HasTraits):
         self._position = None
         self.model = None
         self.name = ''
+        self._whitelist = {'_id_name': None,
+                           'name': None,
+                           'active_is_multidimensional': None,
+                           '_active_array': None,
+                           'active': None
+                           }
+        self._slicing_whitelist = {'_active_array': 'inav'}
 
     _name = ''
     _active_is_multidimensional = False
@@ -640,6 +724,7 @@ class Component(t.HasTraits):
             parameter = Parameter()
             self.parameters.append(parameter)
             parameter.name = name
+            parameter._id_name = name
             setattr(self, name, parameter)
             if hasattr(self, 'grad_' + name):
                 parameter.grad = getattr(self, 'grad_' + name)
@@ -667,15 +752,10 @@ class Component(t.HasTraits):
         return text
 
     def _update_free_parameters(self):
-        self.free_parameters = set()
-        for parameter in self.parameters:
-            if parameter.free:
-                self.free_parameters.add(parameter)
-        # update_number_free_parameters(self):
-        i = 0
-        for parameter in self.free_parameters:
-            i += parameter._number_of_elements
-        self._nfree_param = i
+        self.free_parameters = sorted([par for par in self.parameters if
+                                       par.free], key=lambda x: x.name)
+        self._nfree_param = sum([par._number_of_elements for par in
+                                 self.free_parameters])
 
     def update_number_parameters(self):
         i = 0
@@ -690,7 +770,7 @@ class Component(t.HasTraits):
         else:
             parameters = self.parameters
         i = 0
-        for parameter in parameters:
+        for parameter in sorted(parameters, key=lambda x: x.name):
             length = parameter._number_of_elements
             parameter.value = (p[i] if length == 1 else p[i:i + length])
             if p_std is not None:
@@ -806,10 +886,6 @@ class Component(t.HasTraits):
                                                parameter.std,
                                                parameter.units)
 
-    def __tempcall__(self, p, x, onlyfree=True):
-        self.fetch_values_from_array(p, onlyfree=onlyfree)
-        return self.function(x)
-
     def __call__(self):
         """Returns the corresponding model for the current coordinates
 
@@ -827,20 +903,20 @@ class Component(t.HasTraits):
         if axes_manager is not self.model.axes_manager:
             old_axes_manager = self.model.axes_manager
             self.model.axes_manager = axes_manager
-            self.charge()
+            self.fetch_stored_values()
         s = self.__call__()
         if not self.active:
             s.fill(np.nan)
         if self.model.spectrum.metadata.Signal.binned is True:
             s *= self.model.spectrum.axes_manager.signal_axes[0].scale
-        if old_axes_manager is not None:
-            self.model.axes_manager = old_axes_manager
-            self.charge()
         if out_of_range2nans is True:
             ns = np.empty(self.model.axis.axis.shape)
             ns.fill(np.nan)
             ns[self.model.channel_switches] = s
             s = ns
+        if old_axes_manager is not None:
+            self.model.axes_manager = old_axes_manager
+            self.fetch_stored_values()
         return s
 
     def set_parameters_free(self, parameter_name_list=None):
@@ -912,3 +988,79 @@ class Component(t.HasTraits):
 
         for _parameter in parameter_list:
             _parameter.free = False
+
+    def as_dictionary(self, fullcopy=True):
+        """Returns component as a dictionary
+
+        For more information on method and conventions, see
+        :meth:`hyperspy.misc.export_dictionary.export_to_dictionary`
+
+        Parameters
+        ----------
+        fullcopy : Bool (optional, False)
+            Copies of objects are stored, not references. If any found,
+            functions will be pickled and signals converted to dictionaries
+
+        Returns
+        -------
+        dic : dictionary
+            A dictionary, containing at least the following fields:
+            parameters : list
+                a list of dictionaries of the parameters, one per
+            _whitelist : dictionary
+                a dictionary with keys used as references saved attributes, for
+                more information, see
+                :meth:`hyperspy.misc.export_dictionary.export_to_dictionary`
+            * any field from _whitelist.keys() *
+        """
+        dic = {
+            'parameters': [
+                p.as_dictionary(fullcopy) for p in self.parameters]}
+        export_to_dictionary(self, self._whitelist, dic, fullcopy)
+        return dic
+
+    def _load_dictionary(self, dic):
+        """Load data from dictionary.
+
+        Parameters
+        ----------
+        dict : dictionary
+            A dictionary containing following items:
+            _id_name : string
+                _id_name of the original component, used to create the
+                dictionary. Has to match with the self._id_name
+            parameters : list
+                A list of dictionaries, one per parameter of the component (see
+                parameter.as_dictionary() documentation for more)
+            _whitelist : dictionary
+                a dictionary, which keys are used as keywords to match with the
+                component attributes.  For more information see
+                :meth:`hyperspy.misc.export_dictionary.load_from_dictionary`
+            * any field from _whitelist.keys() *
+
+        Returns
+        -------
+        twin_dict : dictionary
+            Dictionary of 'id' values from input dictionary as keys with all of
+            the parameters of the component, to be later used for setting up
+            correct twins.
+
+        """
+        if dic['_id_name'] == self._id_name:
+            id_dict = {}
+            for p in dic['parameters']:
+                idname = p['_id_name']
+                if hasattr(self, idname):
+                    par = getattr(self, idname)
+                    t_id = par._load_dictionary(p)
+                    id_dict[t_id] = par
+                else:
+                    raise ValueError(
+                        "_id_name of parameters in component and dictionary do not match")
+            load_from_dictionary(self, dic)
+            return id_dict
+        else:
+            raise ValueError( "_id_name of component and dictionary do not match, \ncomponent._id_name = %s\
+                    \ndictionary['_id_name'] = %s" % (self._id_name, dic['_id_name']))
+
+# vim: textwidth=80

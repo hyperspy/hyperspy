@@ -921,11 +921,10 @@ class MVA():
 
         Returns
         -------
-        Signal instance
+        rec : Signal instance
+
         """
         rec = self._calculate_recmatrix(components=components, mva_type='bss',)
-        rec.residual = rec.copy()
-        rec.residual.data = self.data - rec.data
         return rec
 
     def get_explained_variance_ratio(self):

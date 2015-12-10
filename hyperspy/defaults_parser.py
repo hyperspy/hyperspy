@@ -72,14 +72,12 @@ else:
 
 
 class GeneralConfig(t.HasTraits):
+
     default_file_format = t.Enum(
         'hdf5',
         'rpl',
         desc='Using the hdf5 format is highly reccomended because is the '
         'only one fully supported. The Ripple (rpl) format it is useful '
-        'tk is provided for when none of the other toolkits are'
-        ' available. However, when using this toolkit the '
-        'user interface elements are not available. '
         'to export data to other software that do not support hdf5')
     default_toolkit = t.Enum(
         "qt4",
@@ -91,7 +89,6 @@ class GeneralConfig(t.HasTraits):
         "elements. "
         "When using gtk and tk the user interface elements are not"
         " available."
-        "user interface elements are not available. "
         "None is suitable to run headless. "
         "HyperSpy must be restarted for changes to take effect")
     default_export_format = t.Enum(
@@ -101,7 +98,7 @@ class GeneralConfig(t.HasTraits):
         'to export data to other software that do not support hdf5')
     interactive = t.CBool(
         True,
-        desc='If enabled, HyperSpy will prompt the user when optios are '
+        desc='If enabled, HyperSpy will prompt the user when options are '
         'available, otherwise it will use the default values if possible')
     logger_on = t.CBool(
         False,
@@ -120,6 +117,13 @@ class GeneralConfig(t.HasTraits):
         desc='If enabled, when starting HyperSpy using the `hyperspy` '
              'IPython magic of the starting scripts, all the contents of '
              '``hyperspy.hspy`` are imported in the user namespace. ')
+
+    dtb_expand_structures = t.CBool(
+        True,
+        label='Expand structures in DictionaryTreeBrowser',
+        desc='If enabled, when printing DictionaryTreeBrowser (e.g. metadata), '
+             'long lists and tuples will be expanded and any dictionaries in them will be '
+             'printed similar to DictionaryTreeBrowser, but with double lines')
 
     def _logger_on_changed(self, old, new):
         if new is True:

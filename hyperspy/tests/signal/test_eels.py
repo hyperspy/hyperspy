@@ -148,6 +148,20 @@ class TestAlignZLP:
         nose.tools.assert_equal(zlpc.data.mean(), 0)
         nose.tools.assert_equal(zlpc.data.std(), 0)
 
+    def test_align_zero_loss_peak_with_spike_signal_range(self):
+        s = self.spectrum
+        spike = np.zeros((10, 100))
+        spike_amplitude = 20
+        spike[:, 75] = spike_amplitude
+        s.data += spike
+        s.align_zero_loss_peak(
+            print_stats=False, subpixel=False, signal_range=(98., 102.))
+        zlp_max = s.isig[-0.5:0.5].max(-1).data
+        # Max value in the original spectrum is 12, but due to the aligning
+        # the peak is split between two different channels. So 8 is the
+        # maximum value for the aligned spectrum
+        nose.tools.assert_true(np.allclose(zlp_max, 8))
+
 
 class TestPowerLawExtrapolation:
 
