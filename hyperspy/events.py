@@ -94,12 +94,12 @@ class Event(object):
             if function in c:
                 c.remove(function)
 
-    def trigger(self, *args, **kwargs):
+    def trigger(self, *args):
         if not self.suppress:
             for nargs, c in self._connected.iteritems():
                 if nargs is 'all':
                     for f in c:
-                        f(*args, **kwargs)
+                        f(*args)
                 else:
                     if len(args) < nargs:
                         raise ValueError(
