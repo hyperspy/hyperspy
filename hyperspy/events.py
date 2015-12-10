@@ -8,7 +8,7 @@ class EventSuppressionContext(object):
     Context manager for event suppression. When passed an Events class,
     it will suppress all the events in that container when activated by
     using it in a 'with' statement. The previous suppression state will be
-    restored when the 'with' block completes.
+    restored when the 'with' block completes, allowing for nested suppression.
     """
 
     def __init__(self, events):
@@ -64,6 +64,10 @@ class Event(object):
         self.suppress = False
 
     def connected(self, nargs=None):
+        """Connected functions. The default behavior is to include all
+        functions, but by using the 'nargs' argument, it can be filtered by
+        function signature.
+        """
         if nargs is None:
             ret = set()
             ret.update(*self._connected.values())
@@ -75,6 +79,18 @@ class Event(object):
                 return set()
 
     def connect(self, function, nargs='all'):
+        """Connects a function to the event.
+        Arguments:
+        ----------
+        function : callable
+            The function to call when the event triggers.
+        nargs : int, 'all' (default), or 'auto'
+            The number of arguments to supply to the function. If 'all', it
+            will be called with all arguments passed to trigger(). If 'auto'
+            inspect.getargspec() will be used to determine the number of
+            arguments the function accepts (arguments with default values will
+            be included in the count).
+        """
         if not callable(function):
             raise TypeError("Only callables can be registered")
         if nargs == 'auto':
@@ -90,6 +106,10 @@ class Event(object):
         self._connected[nargs].add(function)
 
     def disconnect(self, function):
+        """Disconnects a function from the event. The passed function will be
+        disconnected irregardless of which 'nargs' argument was passed to
+        connect().
+        """
         for c in self._connected.itervalues():
             if function in c:
                 c.remove(function)
