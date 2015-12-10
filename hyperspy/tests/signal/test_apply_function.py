@@ -109,11 +109,12 @@ class TestImage:
             reshape=True,
             show_progressbar=None,
             out=im)
-        np.testing.assert_allclose(res[0].data,
+        nose.tools.assert_is_instance(res, hs.signals.Signal)
+        np.testing.assert_allclose(res.inav[0].data,
                                    np.array([[0., 1., 2.],
                                             [3., 4., 5.],
                                             [6., 7., 8.]]), atol=1e-12)
-        np.testing.assert_allclose(res[1].data,
+        np.testing.assert_allclose(res.inav[1].data,
                                    np.array([[0., 0., 0., 0.],
                                              [0.,
                                               10.34834957,

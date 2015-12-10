@@ -2762,7 +2762,11 @@ class SpecialSlicersSignal(SpecialSlicers):
         if isinstance(j, Signal):
             j = j.data
         array_slices = self.obj._get_array_slices(i, self.isNavigation)
-        self.obj.data[array_slices] = j
+        target = self.obj.data[array_slices]
+        if target.size == 1 and isinstance(target[0], Signal):
+            target[0].data[:] = j
+        else:
+            self.obj.data[array_slices] = j
 
     def __len__(self):
         return self.obj.axes_manager.signal_shape[0]
@@ -3015,14 +3019,20 @@ class Signal(FancySlicing,
                 odata = other.data
                 new_axes = [axis.copy()
                             for axis in self.axes_manager._axes]
-            exec("result = sdata.%s(odata)" % op_name)
+            try:
+                result = getattr(sdata, op_name)(odata)
+            except MemoryError:
+                raise ValueError(exception_message)
             new_signal = self._deepcopy_with_new_data(result)
             new_signal.axes_manager._axes = new_axes
             new_signal.axes_manager.set_signal_dimension(
                 self.axes_manager.signal_dimension)
             return new_signal
         else:
-            exec("result = self.data.%s(other)" % op_name)
+            try:
+                result = getattr(self.data, op_name)(other)
+            except MemoryError:
+                raise ValueError(exception_message)
             return self._deepcopy_with_new_data(result)
 
     def _unary_operator_ruler(self, op_name):
@@ -4575,11 +4585,26 @@ class Signal(FancySlicing,
                 if need_output:
                     return out
             else:
-                res = [out.__class__(data,
-                                     axes=out.axes_manager._get_signal_axes_dicts()) for data in
-                       res_data]
-                for r in res:
-                    r.get_dimensions_from_data()
+                # Get signal axes from 'out' and navigation from the original
+                # signal
+                signal_axes_dicts = out.axes_manager._get_signal_axes_dicts()
+                navigation_axes_dicts = self.axes_manager._get_navigation_axes_dicts(
+                )
+                nav_shape = self.axes_manager._navigation_shape_in_array
+
+                res = Signal(
+                    np.empty(
+                        nav_shape,
+                        dtype='O'),
+                    axes=navigation_axes_dicts)
+                res.axes_manager.set_signal_dimension(0)
+
+                for i, data in enumerate(res_data):
+                    ind = np.unravel_index(i, res.data.shape)
+                    _temp_signal = out.__class__(data,
+                                                 axes=signal_axes_dicts)
+                    _temp_signal.get_dimensions_from_data()
+                    res._data[ind] = _temp_signal
                 return res
 
     def copy(self):

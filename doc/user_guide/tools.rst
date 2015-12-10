@@ -597,7 +597,8 @@ external function can be more easily accomplished using the
 Not only :py:meth:`~.signal.Signal.map` method can take variable arguments, if
 ``out`` is not ``False``, the function is no longer applied in-place, and an output
 with different shape can be generated. If the output shape changes with
-arguments, a list of signals is retured, as in the following example.
+arguments, a signal of signals is retured with navigation dimensions and
+calibration preserved, as in the following example.
 
 .. code-block:: python
 
@@ -614,10 +615,12 @@ arguments, a list of signals is retured, as in the following example.
     ...                          mode=modes)
     calculating 100% |#############################################| ETA:  00:00:00
     >>> result
-    [<Image, title: , dimensions: (|627, 627)>,
-     <Image, title: , dimensions: (|724, 724)>,
-     <Image, title: , dimensions: (|512, 512)>,
-     <Image, title: , dimensions: (|724, 724)>]
+    <Signal, title: , dimensions: (4|)>
+    >>> result.data
+    array([<Image, title: , dimensions: (|512, 512)>,
+           <Image, title: , dimensions: (|724, 724)>,
+           <Image, title: , dimensions: (|512, 512)>,
+           <Image, title: , dimensions: (|724, 724)>], dtype=object)
     >>> image_stack.map(scipy.ndimage.rotate,
     ...                 angle=137,
     ...                 reshape=True,
@@ -626,7 +629,7 @@ arguments, a list of signals is retured, as in the following example.
     calculating 100% |#############################################| ETA:  00:00:00
     >>> image_stack
     <Image, title: , dimensions: (4|724, 724)>
-    >>> hs.plot.plot_images(result+[image_stack,],
+    >>> hs.plot.plot_images(result.data.tolist()+[image_stack,],
     ...                     per_row=4,
     ...                     colorbar='single',
     ...                     axes_decor=None,

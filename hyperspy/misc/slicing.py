@@ -188,6 +188,10 @@ class FancySlicing(object):
 
     def _slicer(self, slices, isNavigation=None):
         array_slices = self._get_array_slices(slices, isNavigation)
+        new_data = self.data[array_slices]
+        from hyperspy.signal import Signal
+        if new_data.size == 1 and isinstance(new_data[0], Signal):
+            return new_data[0]
         _obj = self._deepcopy_with_new_data(self.data[array_slices])
         for slice_, axis in zip(array_slices, _obj.axes_manager._axes):
             if (isinstance(slice_, slice) or
