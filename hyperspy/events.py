@@ -34,7 +34,8 @@ class EventsSuppressionContext(object):
 
 class EventSuppressionContext(object):
 
-    """Context manager for event suppression. When passed an Event class,
+    """
+    Context manager for event suppression. When passed an Event class,
     it will suppress the event when activated by using it in a 'with'
     statement. The previous suppression state will be restored when the 'with'
     block completes, allowing for nested suppression.
@@ -62,7 +63,8 @@ class EventSuppressionContext(object):
 
 class CallbackSuppressionContext(object):
 
-    """Context manager for suppression of a single callback on an Event. Useful
+    """
+    Context manager for suppression of a single callback on an Event. Useful
     e.g. to prevent infinite recursion if two objects are connected in a loop.
     """
 
@@ -90,7 +92,8 @@ class Events(object):
     """
 
     def suppress(self):
-        """Use this function with a 'with' statement to temporarily suppress
+        """
+        Use this function with a 'with' statement to temporarily suppress
         all events in the container. When the 'with' lock completes, the old
         suppression values will be restored.
 
@@ -110,7 +113,8 @@ class Event(object):
         self._suppress = False
 
     def suppress(self, function=None):
-        """Use this function with a 'with' statement to temporarily suppress
+        """
+        Use this function with a 'with' statement to temporarily suppress
         all events in the container. When the 'with' lock completes, the old
         suppression values will be restored.
 
@@ -139,7 +143,8 @@ class Event(object):
             return CallbackSuppressionContext(function, self, nargs)
 
     def connected(self, nargs=None):
-        """Connected functions. The default behavior is to include all
+        """
+        Connected functions. The default behavior is to include all
         functions, but by using the 'nargs' argument, it can be filtered by
         function signature.
         """
@@ -154,7 +159,8 @@ class Event(object):
                 return set()
 
     def connect(self, function, nargs='all'):
-        """Connects a function to the event.
+        """
+        Connects a function to the event.
         Arguments:
         ----------
         function : callable
@@ -181,7 +187,8 @@ class Event(object):
         self._connected[nargs].add(function)
 
     def disconnect(self, function):
-        """Disconnects a function from the event. The passed function will be
+        """
+        Disconnects a function from the event. The passed function will be
         disconnected irregardless of which 'nargs' argument was passed to
         connect().
         """
