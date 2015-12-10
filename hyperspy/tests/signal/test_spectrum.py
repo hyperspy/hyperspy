@@ -4,7 +4,7 @@ import numpy as np
 from hyperspy.signals import Spectrum, Image
 
 
-class Test2D():
+class Test2D:
 
     def setUp(self):
         self.s = Spectrum(np.random.random((2, 3)))
@@ -16,7 +16,7 @@ class Test2D():
         nose.tools.assert_true(im.data.flags["C_CONTIGUOUS"])
 
 
-class Test3D():
+class Test3D:
 
     def setUp(self):
         self.s = Spectrum(np.random.random((2, 3, 4)))
@@ -28,7 +28,7 @@ class Test3D():
         nose.tools.assert_true(im.data.flags["C_CONTIGUOUS"])
 
 
-class Test4D():
+class Test4D:
 
     def setUp(self):
         self.s = Spectrum(np.random.random((2, 3, 4, 5)))

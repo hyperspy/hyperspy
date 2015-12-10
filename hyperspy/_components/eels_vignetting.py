@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2015 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -29,8 +29,15 @@ class Vignetting(Component):
     """
 
     def __init__(self):
-        Component.__init__(self, ['optical_center', 'height', 'period',
-                                  'left_slope', 'right_slope', 'left', 'right', 'sigma'])
+        Component.__init__(self,
+                           ['optical_center',
+                            'height',
+                            'period',
+                            'left_slope',
+                            'right_slope',
+                            'left',
+                            'right',
+                            'sigma'])
         self.left.value = np.nan
         self.right.value = np.nan
         self.side_vignetting = False
@@ -53,7 +60,6 @@ class Vignetting(Component):
         r = self.right.value
         ex = self.extension_nch
         if self.side_vignetting is True:
-            original_nch = len(x)
 
             x = x.tolist()
             x = range(-ex, 0) + x + range(int(x[-1]) + 1, int(x[-1]) + ex + 1)

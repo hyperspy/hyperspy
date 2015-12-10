@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2015 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -26,11 +26,11 @@ class DoublePowerLaw(Component):
     """
     """
 
-    def __init__(self, A=10e5, r=3., origin=0.,):
+    def __init__(self, A=1e-5, r=3., origin=0.,):
         Component.__init__(self, ('A', 'r', 'origin', 'shift', 'ratio'))
-        self.A.value = 1E-5
-        self.r.value = 3.
-        self.origin.value = 0.
+        self.A.value = A
+        self.r.value = r
+        self.origin.value = origin
         self.origin.free = False
         self.shift.value = 20.
         self.shift.free = False
@@ -57,8 +57,9 @@ class DoublePowerLaw(Component):
         s = self.shift.value
         r = self.r.value
         x0 = self.origin.value
-        return np.where(
-            x > self.left_cutoff, a * (b / (-x0 + x - s) ** r + 1 / (x - x0) ** r), 0)
+        return np.where(x > self.left_cutoff,
+                        a * (b / (-x0 + x - s) ** r + 1 / (x - x0) ** r),
+                        0)
 
     def grad_A(self, x):
         return self.function(x) / self.A.value
@@ -76,8 +77,12 @@ class DoublePowerLaw(Component):
         s = self.shift.value
         r = self.r.value
         x0 = self.origin.value
-        return np.where(x > self.left_cutoff, a * (b * r *
-                                                   (-x0 + x - s) ** (-r - 1) + r * (x - x0) ** (-r - 1)), 0)
+        return np.where(
+            x > self.left_cutoff,
+            a * (
+                b * r * (-x0 + x - s) ** (-r - 1) +
+                r * (x - x0) ** (-r - 1)),
+            0)
 
     def grad_shift(self, x):
         a = self.A.value
@@ -94,5 +99,10 @@ class DoublePowerLaw(Component):
         s = self.shift.value
         r = self.r.value
         x0 = self.origin.value
-        return np.where(x > self.left_cutoff, a * (-(b * np.log(-x0 + x - s)) /
-                                                   (-x0 + x - s) ** r - np.log(x - x0) / (x - x0) ** r), 0)
+        return np.where(
+            x > self.left_cutoff,
+            a * (
+                -(b * np.log(-x0 + x - s)) /
+                (-x0 + x - s) ** r - np.log(x - x0) /
+                (x - x0) ** r),
+            0)

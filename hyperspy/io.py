@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2015 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -44,7 +44,7 @@ def load(filenames=None,
     """
     Load potentially multiple supported file into an hyperspy structure
     Supported formats: HDF5, msa, Gatan dm3, Ripple (rpl+raw)
-    FEI ser and emi and hdf5, tif and a number of image formats.
+    FEI ser and emi, hdf5, SEMPER unf, tif and a number of image formats.
 
     Any extra keyword is passed to the corresponsing reader. For
     available options see their individual documentation.
@@ -124,6 +124,18 @@ def load(filenames=None,
         mapped file will be created in the given directory,
         otherwise the default directory is used.
 
+    load_to_memory: bool
+        for HDF5 files and blockfiles, if True (default) loads all data to
+        memory. If False, enables only loading the data upon request
+    mmap_mode: {'r', 'r+', 'c'}
+        Used when loading blockfiles to determine which mode to use for when
+        loading as memmap (i.e. when load_to_memory=False)
+
+    print_info: bool
+        For SEMPER unf-files, if True (default is False) header and label
+        information read from the label are printed for a quick overview.
+
+
     Returns
     -------
     Signal instance or list of signal instances
@@ -132,19 +144,19 @@ def load(filenames=None,
     --------
     Loading a single file providing the signal type:
 
-    >>> d = load('file.dm3', signal_type='EDS_TEM')
+    >>> d = hs.load('file.dm3', signal_type='EDS_TEM')
 
     Loading a single file and overriding its default record_by:
 
-    >>> d = load('file.dm3', record_by='Image')
+    >>> d = hs.load('file.dm3', record_by='Image')
 
     Loading multiple files:
 
-    >>> d = load('file1.dm3','file2.dm3')
+    >>> d = hs.load('file1.dm3','file2.dm3')
 
     Loading multiple files matching the pattern:
 
-    >>>d = load('file*.dm3')
+    >>> d = hs.load('file*.dm3')
 
     """
     kwds['record_by'] = record_by
@@ -173,7 +185,6 @@ def load(filenames=None,
             'The filenames parameter must be a list, tuple, string or None')
     if not filenames:
         raise ValueError('No file provided to reader.')
-        return None
     else:
         if len(filenames) > 1:
             messages.information('Loading individual files')
@@ -216,8 +227,8 @@ def load_single_file(filename,
                      **kwds):
     """
     Load any supported file into an HyperSpy structure
-    Supported formats: netCDF, msa, Gatan dm3, Ripple (rpl+raw)
-    FEI ser and emi and hdf5.
+    Supported formats: netCDF, msa, Gatan dm3, Ripple (rpl+raw),
+    FEI ser and emi, hdf5 and SEMPER unf.
 
     Parameters
     ----------
@@ -268,20 +279,25 @@ def load_with_reader(filename,
     objects = []
 
     for signal_dict in file_data_list:
-        if "Signal" not in signal_dict["metadata"]:
-            signal_dict["metadata"]["Signal"] = {}
-        if record_by is not None:
-            signal_dict['metadata']["Signal"]['record_by'] = record_by
-        if signal_type is not None:
-            signal_dict['metadata']["Signal"]['signal_type'] = signal_type
-        if signal_origin is not None:
-            signal_dict['metadata']["Signal"]['signal_origin'] = signal_origin
-        objects.append(dict2signal(signal_dict))
-        folder, filename = os.path.split(os.path.abspath(filename))
-        filename, extension = os.path.splitext(filename)
-        objects[-1].tmp_parameters.folder = folder
-        objects[-1].tmp_parameters.filename = filename
-        objects[-1].tmp_parameters.extension = extension.replace('.', '')
+        if 'metadata' in signal_dict:
+            if "Signal" not in signal_dict["metadata"]:
+                signal_dict["metadata"]["Signal"] = {}
+            if record_by is not None:
+                signal_dict['metadata']["Signal"]['record_by'] = record_by
+            if signal_type is not None:
+                signal_dict['metadata']["Signal"]['signal_type'] = signal_type
+            if signal_origin is not None:
+                signal_dict['metadata']["Signal"][
+                    'signal_origin'] = signal_origin
+            objects.append(dict2signal(signal_dict))
+            folder, filename = os.path.split(os.path.abspath(filename))
+            filename, extension = os.path.splitext(filename)
+            objects[-1].tmp_parameters.folder = folder
+            objects[-1].tmp_parameters.filename = filename
+            objects[-1].tmp_parameters.extension = extension.replace('.', '')
+        else:
+            # it's a standalone model
+            continue
 
     if len(objects) == 1:
         objects = objects[0]
@@ -354,7 +370,7 @@ def dict2signal(signal_dict):
         if "Signal" in mp and "signal_origin" in mp["Signal"]:
             signal_origin = mp["Signal"]['signal_origin']
     if (not record_by and 'data' in signal_dict and
-            signal_dict['data'].ndim < 2):
+            len(signal_dict['data'].shape) < 2):
         record_by = "spectrum"
 
     signal = assign_signal_subclass(record_by=record_by,
@@ -387,9 +403,10 @@ def save(filename, signal, overwrite=None, **kwds):
             break
 
     if writer is None:
-        raise ValueError('.%s does not correspond ' % extension +
-                         'of any supported format. Supported file extensions are: %s ' %
-                         strlist2enumeration(default_write_ext))
+        raise ValueError(
+            ('.%s does not correspond to any supported format. Supported ' +
+             'file extensions are: %s') %
+            (extension, strlist2enumeration(default_write_ext)))
     else:
         # Check if the writer can write
         sd = signal.axes_manager.signal_dimension
