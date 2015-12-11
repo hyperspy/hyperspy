@@ -180,6 +180,11 @@ class TestEventsSuppression(EventsBase):
             self.trigger_check(self.events.b.trigger, True)
             self.trigger_check(self.events.c.trigger, True)
 
+    def test_suppress_wrong(self):
+        with self.events.a.suppress_callback(f_a):
+            self.trigger_check(self.events.a.trigger, True)
+            self.trigger_check2(self.events.a.trigger, True)
+
 
 def f_a(*args): pass
 def f_b(*args): pass
