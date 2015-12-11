@@ -196,13 +196,13 @@ class Event(object):
             if function in c:
                 c.remove(function)
 
-    def trigger(self, *args):
+    def trigger(self, *args, **kwargs):
         if not self._suppress:
             # Loop on copy to deal with callbacks which change connections
             for nargs, c in self._connected.copy().iteritems():
                 if nargs is 'all':
                     for f in c:
-                        f(*args)
+                        f(*args, **kwargs)
                 else:
                     if len(args) < nargs:
                         raise ValueError(
