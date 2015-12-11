@@ -112,15 +112,11 @@ class Event(object):
         self._connected = {}
         self._suppress = False
 
-    def suppress(self, function=None):
+    def suppress(self):
         """
         Use this function with a 'with' statement to temporarily suppress
         all events in the container. When the 'with' lock completes, the old
         suppression values will be restored.
-
-        A single callback can optionally be passed. If so this single callback
-        will be prevented from triggering, and all other connected callbacks
-        will trigger.
 
         Example usage pattern:
         with obj.events.myevent.suppress():
@@ -128,19 +124,25 @@ class Event(object):
             obj.val_b = b
         obj.events.myevent.trigger()
         """
-        if function is None:
-            return EventSuppressionContext(self)
-        else:
-            nargs = None
-            found = False
-            for nargs, c in self._connected.iteritems():
-                for f in c:
-                    if f == function:
-                        found = True
-                        break
-            if not found:
-                function = None
-            return CallbackSuppressionContext(function, self, nargs)
+        return EventSuppressionContext(self)
+
+    def suppress_callback(self, function):
+        """
+        Use this function with a 'with' statement to temporarily suppress
+        a single callback from being called. All other connected callbacks
+        will trigger. When the 'with' lock completes, the old suppression value
+        will be restored.
+        """
+        nargs = None
+        found = False
+        for nargs, c in self._connected.iteritems():
+            for f in c:
+                if f == function:
+                    found = True
+                    break
+        if not found:
+            function = None
+        return CallbackSuppressionContext(function, self, nargs)
 
     def connected(self, nargs=None):
         """
