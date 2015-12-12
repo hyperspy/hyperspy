@@ -277,7 +277,7 @@ index in the model.
 .. versionadded:: 0.8.1 :py:attr:`components` attribute
 
 In addition, the components can be accessed in the
-:py:attr:`~.models.model1D.Model1D.components` `Model` attribute. This is specially
+:py:attr:`~.model.BaseModel.components` `Model` attribute. This is specially
 useful when working in interactive data analysis with IPython because it
 enables tab completion.
 
