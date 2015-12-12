@@ -599,6 +599,12 @@ class BaseModel(list):
             s = ns
         return s
 
+    def _model_function(self, param):
+        self.p0 = param
+        self._fetch_values_from_p0()
+        to_return = self.__call__(non_convolved=False, onlyactive=True)
+        return to_return
+
     def _errfunc2(self, param, y, weights=None):
         if weights is None:
             weights = 1.

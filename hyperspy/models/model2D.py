@@ -142,7 +142,7 @@ class Model2D(BaseModel):
     # def update_plot(self):
     #    pass
 
-    def __call__(self, onlyactive=False):
+    def __call__(self, non_convolved=True, onlyactive=False):
         """Returns the corresponding 2D model for the current coordinates
 
         Parameters
@@ -211,12 +211,6 @@ class Model2D(BaseModel):
 
     def reset_signal_range(self):
         raise NotImplementedError
-
-    def _model_function(self, param):
-        self.p0 = param
-        self._fetch_values_from_p0()
-        to_return = self.__call__(onlyactive=True)
-        return to_return
 
     def _add_signal_range_in_pixels(self, i1=None, i2=None):
         raise NotImplementedError

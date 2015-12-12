@@ -471,12 +471,6 @@ class Model1D(BaseModel):
         """Resets the data range"""
         self._set_signal_range_in_pixels()
 
-    def _model_function(self, param):
-        self.p0 = param
-        self._fetch_values_from_p0()
-        to_return = self.__call__(non_convolved=False, onlyactive=True)
-        return to_return
-
     def _add_signal_range_in_pixels(self, i1=None, i2=None):
         """Adds the data in the given range from the data range that
         will be used by the fitting rountine
@@ -568,7 +562,7 @@ class Model1D(BaseModel):
             to_return *= self.spectrum.axes_manager[-1].scale
         return to_return
 
-    def _function4odr(self, param,x):
+    def _function4odr(self, param, x):
         return self._model_function(param)
 
     def _jacobian4odr(self, param, x):
