@@ -24,9 +24,7 @@ from traits.trait_errors import TraitError
 from hyperspy.model import BaseModel, ModelComponents
 import hyperspy.drawing.spectrum
 from hyperspy.drawing.utils import on_figure_window_close
-from hyperspy.external import progressbar
 from hyperspy._signals.eels import Spectrum
-from hyperspy.defaults_parser import preferences
 from hyperspy.axes import generate_axis
 from hyperspy.exceptions import WrongObjectError
 from hyperspy.decorators import interactive_range_selector
@@ -276,99 +274,6 @@ class Model1D(BaseModel):
                 parameter.disconnect(self._model_line.update)
         if self._plot_components is True:
             self._disconnect_component_lines()
-
-    def as_signal(self, component_list=None, out_of_range_to_nan=True,
-                  show_progressbar=None):
-        """Returns a recreation of the dataset using the model.
-        the spectral range that is not fitted is filled with nans.
-
-        Parameters
-        ----------
-        component_list : list of hyperspy components, optional
-            If a list of components is given, only the components given in the
-            list is used in making the returned spectrum. The components can
-            be specified by name, index or themselves.
-        out_of_range_to_nan : bool
-            If True the spectral range that is not fitted is filled with nans.
-        show_progressbar : None or bool
-            If True, display a progress bar. If None the default is set in
-            `preferences`.
-
-        Returns
-        -------
-        spectrum : An instance of the same class as `spectrum`.
-
-        Examples
-        --------
-        >>> s = hs.signals.Spectrum(np.random.random((10,100)))
-        >>> m = s.create_model()
-        >>> l1 = hs.model.components.Lorentzian()
-        >>> l2 = hs.model.components.Lorentzian()
-        >>> m.append(l1)
-        >>> m.append(l2)
-        >>> s1 = m.as_signal()
-        >>> s2 = m.as_signal(component_list=[l1])
-
-        """
-        # change actual values to whatever except bool
-        _multi_on_ = '_multi_on_'
-        _multi_off_ = '_multi_off_'
-        if show_progressbar is None:
-            show_progressbar = preferences.General.show_progressbar
-
-        if component_list:
-            component_list = [self._get_component(x) for x in component_list]
-            active_state = []
-            for component_ in self:
-                if component_.active_is_multidimensional:
-                    if component_ not in component_list:
-                        active_state.append(_multi_off_)
-                        component_._toggle_connect_active_array(False)
-                        component_.active = False
-                    else:
-                        active_state.append(_multi_on_)
-                else:
-                    active_state.append(component_.active)
-                    if component_ in component_list:
-                        component_.active = True
-                    else:
-                        component_.active = False
-        data = np.empty(self.spectrum.data.shape, dtype='float')
-        data.fill(np.nan)
-        if out_of_range_to_nan is True:
-            channel_switches_backup = copy.copy(self.channel_switches)
-            self.channel_switches[:] = True
-        maxval = self.axes_manager.navigation_size
-        pbar = progressbar.progressbar(maxval=maxval,
-                                       disabled=not show_progressbar)
-        i = 0
-        for index in self.axes_manager:
-            self.fetch_stored_values(only_fixed=False)
-            data[self.axes_manager._getitem_tuple][
-                self.channel_switches] = self.__call__(
-                non_convolved=not self.convolved, onlyactive=True)
-            i += 1
-            if maxval > 0:
-                pbar.update(i)
-        pbar.finish()
-        if out_of_range_to_nan is True:
-            self.channel_switches[:] = channel_switches_backup
-        spectrum = self.spectrum.__class__(
-            data,
-            axes=self.spectrum.axes_manager._get_axes_dicts())
-        spectrum.metadata.General.title = (
-            self.spectrum.metadata.General.title + " from fitted model")
-        spectrum.metadata.Signal.binned = self.spectrum.metadata.Signal.binned
-
-        if component_list:
-            for component_ in self:
-                active_s = active_state.pop(0)
-                if isinstance(active_s, bool):
-                    component_.active = active_s
-                else:
-                    if active_s == _multi_off_:
-                        component_._toggle_connect_active_array(True)
-        return spectrum
 
     def update_plot(self, *args, **kwargs):
         """Update model plot.

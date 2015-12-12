@@ -189,10 +189,6 @@ class Model2D(BaseModel):
     def _disconnect_parameters2update_plot(self):
         raise NotImplementedError
 
-    def as_signal(self, component_list=None, out_of_range_to_nan=True,
-                  show_progressbar=None):
-        raise NotImplementedError
-
     def update_plot(self, *args, **kwargs):
         raise NotImplementedError
 
