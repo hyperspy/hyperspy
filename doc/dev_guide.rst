@@ -21,22 +21,39 @@ only the specifics that change.
 The best way to start understanding how HyperSpy works and to build a broad 
 overview of the code as it stands is to use it -- so what are you waiting for?
 
-www.hyperspy.org/download.html
+`Download HyperSpy <https://hyperspy.org/download.html>`_
 
 The user-guide also provides a good overview of all the parts of the code that
 are currently implemented as well as much information about how everything works 
 -- so read it well.
 
-www.hyperspy.org/hyperspy-doc/current/index.html
+`HyerSpy User-Guide <www.hyperspy.org/hyperspy-doc/current/index.html>`_
 
 For developing the code the home of hyperspy is on github and you'll see that
 a lot of this guide boils down to using that platform well. so visit the link
 below and poke around the code, issues, and pull requests.
 
-https://github.com/hyperspy/hyperspy
+`HyperSpy on Github <https://github.com/hyperspy/hyperspy>`_
 
-it's probably also worth visiting the github home page https://github.com/
+it's probably also worth visiting the `Github <https://github.com/>`_ home page
 and going through the "boot camp" to get a feel for the terminology.
+
+In brief, to give you a hint on the terminology to search for, the contribution
+pattern is:
+
+    1. Setup git/github if you don't have it.
+    2. Fork HyperSpy on github.
+    3. Checkout your fork on your local machine.
+    4. Create a new branch locally where you will make your changes.
+    5. Push the local changes to your own github fork.
+    6. Create a pull request to the official HyperSpy repository.
+
+Note: You cannot mess up the main HyperSpy project unless you have been promoted
+to write access and the dev-team. So when you're starting out be confident to
+play, get it wrong, and if it all goes wrong you can always get a fresh install
+of HyperSpy!!
+
+PS: If you choose to develop in Windows/Mac you may find `Github Desktop <https://desktop.github.com>` useful.
 
 2. Got a problem? -- ask!
 -------------------------
@@ -49,16 +66,13 @@ centres around the fact that we can do better by working together.
 Much of the conversation happens in 'public' via online platforms. The main two
 forums used by HyperSpy developers are:
 
-Gitter -- where we host a live chat-room in which people can ask questions and
+`Gitter <https://gitter.im/hyperspy/hyperspy>`_ -- where we host a live chat-room in which people can ask questions and
 discuss things in a relatively informal way.
 
-https://gitter.im/hyperspy/hyperspy
-
-Github -- the main repository for the source code also enables issues to be
+`Github <https://github.com/hyperspy/hyperspy/issues>`_ -- the main repository for the source code also enables issues to be
 raised in a way that means they're logged until dealt with. This is also a
-good place to make a proposal for 
-
-https://github.com/hyperspy/hyperspy/issues
+good place to make a proposal for some new feature or tool that you want to
+work on.
 
 
 3. Pick your battles
@@ -67,8 +81,8 @@ https://github.com/hyperspy/hyperspy/issues
 Work out what you want to contribute and break it down in to managable chunks.
 
 You may have a very clear idea of what you want to contribute but if you're 
-not sure where to start you can always look through the issues andpull requests 
-on the GitHub page (https://github.com/hyperspy/hyperspy/). You'll find that 
+not sure where to start you can always look through the issues and pull requests 
+on the `GitHub Page <https://github.com/hyperspy/hyperspy/>`_. You'll find that 
 there are many known areas for development in the issues and a number of 
 pull-requests are part finished projects just sitting there waiting for a keen
 new contributor to come and learn by finishing.
@@ -100,7 +114,7 @@ desktop. By version control we mean that you can separate out your contribution
 to the code into many versions (called branches) and switch between them easily.
 Later you can choose which version you want to have integrated into HyperSpy.
 
-You can learn all about Git here: www.git-scm.com/about
+You can learn all about Git `here <www.git-scm.com/about>`_!
 
 The most important thing for you to do is to separate your contributions so that 
 each branch is small advancement on the "master" code or on another branch. In
@@ -113,16 +127,16 @@ thing has it's own branch! You can merge some together for your personal use.
 
 Diagramatically you should be aiming for something like this:
 
---> Insert picture showing master---many branched---personal local tools etc
+.. figure:: /user_guide/images/branching_schematic.eps1
 
 
 Get the style right
 ^^^^^^^^^^^^^^^^^^^
 
 HyperSpy follows the Style Guide for Python Code - these are just some rules for
-consistency that you can read all about here: https://www.python.org/dev/peps/pep-0008/
+consistency that you can read all about in the `Python Style Guide <https://www.python.org/dev/peps/pep-0008/>`_.
 
-You can check your code with the pep8 code checker: https://pypi.python.org/pypi/pep8
+You can check your code with the `pep8 Code Checker <https://pypi.python.org/pypi/pep8>`_.
 
 Write tests & documentation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
