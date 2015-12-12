@@ -599,17 +599,6 @@ class BaseModel(list):
             s = ns
         return s
 
-    def _function4odr(self, param, x):
-        return self._model_function(param)
-
-    def _poisson_likelihood_function(self, param, y, weights=None):
-        """Returns the likelihood function of the model for the given
-        data and parameters
-        """
-        mf = self._model_function(param)
-        with np.errstate(invalid='ignore'):
-            return -(y * np.log(mf) - mf).sum()
-
     def _errfunc2(self, param, y, weights=None):
         if weights is None:
             weights = 1.

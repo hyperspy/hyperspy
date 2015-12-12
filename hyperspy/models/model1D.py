@@ -400,12 +400,6 @@ class Model1D(BaseModel):
             to_return *= self.spectrum.axes_manager[-1].scale
         return to_return
 
-    def _model_function(self, param):
-        self.p0 = param
-        self._fetch_values_from_p0()
-        to_return = self.__call__(non_convolved=False, onlyactive=True)
-        return to_return
-
     def _errfunc(self, param, y, weights=None):
         if weights is None:
             weights = 1.
@@ -476,6 +470,12 @@ class Model1D(BaseModel):
     def reset_signal_range(self):
         """Resets the data range"""
         self._set_signal_range_in_pixels()
+
+    def _model_function(self, param):
+        self.p0 = param
+        self._fetch_values_from_p0()
+        to_return = self.__call__(non_convolved=False, onlyactive=True)
+        return to_return
 
     def _add_signal_range_in_pixels(self, i1=None, i2=None):
         """Adds the data in the given range from the data range that
@@ -568,8 +568,19 @@ class Model1D(BaseModel):
             to_return *= self.spectrum.axes_manager[-1].scale
         return to_return
 
+    def _function4odr(self, param,x):
+        return self._model_function(param)
+
     def _jacobian4odr(self, param, x):
         return self._jacobian(param, x)
+
+    def _poisson_likelihood_function(self, param, y, weights=None):
+        """Returns the likelihood function of the model for the given
+        data and parameters
+        """
+        mf = self._model_function(param)
+        with np.errstate(invalid='ignore'):
+            return -(y * np.log(mf) - mf).sum()
 
     def _gradient_ml(self, param, y, weights=None):
         mf = self._model_function(param)
