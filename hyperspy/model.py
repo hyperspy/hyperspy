@@ -629,7 +629,7 @@ class BaseModel(list):
                     self.axes_manager._getitem_tuple)[self.channel_switches]
         else:
             variance = 1.0
-        d = self(onlyactive=True) - self.signal()[self.channel_switches]
+        d = self(onlyactive=True).ravel() - self.signal()[self.channel_switches]
         d *= d / (1. * variance)  # d = difference^2 / variance.
         self.chisq.data[self.signal.axes_manager.indices[::-1]] = d.sum()
 

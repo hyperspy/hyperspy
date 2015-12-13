@@ -94,7 +94,7 @@ class Model2D(BaseModel):
             self.axes_manager.signal_axes[1].axis)
         self.axes_manager.connect(self.fetch_stored_values)
         self.free_parameters_boundaries = None
-        self.channel_switches = None
+        self.channel_switches = np.ones(self.xaxis.shape, dtype=bool)
         # self._position_widgets = []
         self._plot = None
         self.chisq = image._get_navigation_signal()
