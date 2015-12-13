@@ -668,9 +668,9 @@ def plot_images(images,
     # Find global min and max values of all the non-rgb images for use with
     # 'single' scalebar
     if colorbar is 'single':
-        global_max = max([i.data.max() for i in non_rgb])
-        global_min = min([i.data.min() for i in non_rgb])
-        g_vmin, g_vmax = contrast_stretching(i.data, saturated_pixels)
+        minmax = [contrast_stretching(i.data, saturated_pixels)
+                  for i in non_rgb]
+        g_vmin, g_vmax = np.min(minmax), np.max(minmax)
         if centre_colormap:
             g_vmin, g_vmax = centre_colormap_values(g_vmin, g_vmax)
 
