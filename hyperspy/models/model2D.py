@@ -126,22 +126,6 @@ class Model2D(BaseModel):
         else:
             raise WrongObjectError(str(type(value)), 'Image')
 
-    # TODO: write 2D secific plotting tools
-    # def _connect_parameters2update_plot(self):
-    #    pass
-
-    # Plotting code to rewrite
-    # def _disconnect_parameters2update_plot(self):
-    #    pass
-
-    # To rewrite
-    # def as_signal(self):
-    #    pass
-
-    # Plotting code to rewrite
-    # def update_plot(self):
-    #    pass
-
     def __call__(self, non_convolved=True, onlyactive=False):
         """Returns the corresponding 2D model for the current coordinates
 
@@ -170,8 +154,8 @@ class Model2D(BaseModel):
     def _errfunc(self, param, y, weights=None):
         if weights is None:
             weights = 1.
-        errfunc = self._model_function(param) - y
-        return (errfunc * weights).ravel()
+        errfunc = self._model_function(param).ravel()- y
+        return errfunc * weights
 
     # TODO: The methods below are implemented only for Model1D and should be
     # added eventually also for Model2D. Probably there are smarter ways to do
