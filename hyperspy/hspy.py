@@ -6,9 +6,6 @@ plese use :mod:`~hyperspy.api` instead.
 """
 # -*- coding: utf-8 -*-
 
-import matplotlib.pyplot as plt
-plt.rcParams['image.cmap'] = 'gray'
-
 from hyperspy.Release import version as __version__
 from hyperspy import components
 from hyperspy import signals
