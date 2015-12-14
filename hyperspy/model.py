@@ -449,7 +449,7 @@ class BaseModel(list):
             self.fetch_stored_values(only_fixed=False)
             data[self.axes_manager._getitem_tuple][
                 self.channel_switches] = self.__call__(
-                non_convolved=not self.convolved, onlyactive=True)
+                non_convolved=not self.convolved, onlyactive=True).ravel()
             i += 1
             if maxval > 0:
                 pbar.update(i)
