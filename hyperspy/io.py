@@ -44,7 +44,7 @@ def load(filenames=None,
     """
     Load potentially multiple supported file into an hyperspy structure
     Supported formats: HDF5, msa, Gatan dm3, Ripple (rpl+raw)
-    FEI ser and emi and hdf5, tif and a number of image formats.
+    FEI ser and emi, hdf5, SEMPER unf, tif and a number of image formats.
 
     Any extra keyword is passed to the corresponsing reader. For
     available options see their individual documentation.
@@ -125,8 +125,16 @@ def load(filenames=None,
         otherwise the default directory is used.
 
     load_to_memory: bool
-        for HDF5 files, if True (default) loads all data to memory. If False,
-        enables only loading the data upon request
+        for HDF5 files and blockfiles, if True (default) loads all data to
+        memory. If False, enables only loading the data upon request
+    mmap_mode: {'r', 'r+', 'c'}
+        Used when loading blockfiles to determine which mode to use for when
+        loading as memmap (i.e. when load_to_memory=False)
+
+    print_info: bool
+        For SEMPER unf-files, if True (default is False) header and label
+        information read from the label are printed for a quick overview.
+
 
     Returns
     -------
@@ -219,8 +227,8 @@ def load_single_file(filename,
                      **kwds):
     """
     Load any supported file into an HyperSpy structure
-    Supported formats: netCDF, msa, Gatan dm3, Ripple (rpl+raw)
-    FEI ser and emi and hdf5.
+    Supported formats: netCDF, msa, Gatan dm3, Ripple (rpl+raw),
+    FEI ser and emi, hdf5 and SEMPER unf.
 
     Parameters
     ----------
