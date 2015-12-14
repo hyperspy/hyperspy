@@ -188,7 +188,8 @@ class SemperFormat(object):
                     ('YUNIT', ('<i2', 4)),    # Bytes 249-252
                     ('ZUNIT', ('<i2', 4))]    # Bytes 253-256
 
-    def __init__(self, data, title=Undefined, offsets=(0., 0., 0.), scales=(1., 1., 1.),
+    def __init__(
+        self, data, title=Undefined, offsets=(0., 0., 0.), scales=(1., 1., 1.),
                  units=(Undefined, Undefined, Undefined), metadata=None):
         self._log.debug('Calling __init__')
         if metadata is None:
@@ -222,7 +223,7 @@ class SemperFormat(object):
         assert label['SEMPER'] == 'Semper'
         # Process dimensions:
         for key in ['NCOL', 'NROW', 'NLAY', 'ICCOLN', 'ICROWN', 'ICLAYN']:
-            value = 256**2 * \
+            value = 256 ** 2 * \
                 label.pop(key + 'H') + 256 * label[key][0] + label[key][1]
             label[key] = value
         # Process date:
@@ -282,20 +283,20 @@ class SemperFormat(object):
         label = np.zeros((1,), dtype=self.LABEL_DTYPES)
         # Fill label:
         label['SEMPER'] = [ord(c) for c in 'Semper']
-        label['NCOLH'], remain = divmod(ncol, 256**2)
+        label['NCOLH'], remain = divmod(ncol, 256 ** 2)
         label['NCOL'] = divmod(remain, 256)
-        label['NROWH'], remain = divmod(nrow, 256**2)
+        label['NROWH'], remain = divmod(nrow, 256 ** 2)
         label['NROW'] = divmod(remain, 256)
-        label['NLAYH'], remain = divmod(nlay, 256**2)
+        label['NLAYH'], remain = divmod(nlay, 256 ** 2)
         label['NLAY'] = divmod(remain, 256)
         iccoln = self.metadata.get('ICCOLN', self.data.shape[2] // 2 + 1)
-        label['ICCOLNH'], remain = divmod(iccoln, 256**2)
+        label['ICCOLNH'], remain = divmod(iccoln, 256 ** 2)
         label['ICCOLN'] = divmod(remain, 256)
         icrown = self.metadata.get('ICROWN', self.data.shape[1] // 2 + 1)
-        label['ICROWNH'], remain = divmod(icrown, 256**2)
+        label['ICROWNH'], remain = divmod(icrown, 256 ** 2)
         label['ICROWN'] = divmod(remain, 256)
         iclayn = self.metadata.get('ICLAYN', self.data.shape[0] // 2 + 1)
-        label['ICLAYNH'], remain = divmod(iclayn, 256**2)
+        label['ICLAYNH'], remain = divmod(iclayn, 256 ** 2)
         label['ICLAYN'] = divmod(remain, 256)
         label['ICLASS'] = self.metadata.get('ICLASS', 6)  # 6: Undefined!
         label['IFORM'] = iform
@@ -346,8 +347,10 @@ class SemperFormat(object):
         elif data.dtype.name == 'int32':
             iform = 4  # int32
         else:
-            supported_formats = [np.dtype(i).name for i in cls.IFORM_DICT.values()]
-            msg = 'The SEMPER file format does not support {} data type. '.format(data.dtype.name)
+            supported_formats = [
+                np.dtype(i).name for i in cls.IFORM_DICT.values()]
+            msg = 'The SEMPER file format does not support {} data type. '.format(
+                data.dtype.name)
             msg += 'Supported data types are: ' + ', '.join(supported_formats)
             raise IOError(msg)
         return data, iform
@@ -418,7 +421,9 @@ class SemperFormat(object):
             for k in range(nlay):
                 for j in range(nrow):
                     rec_length = np.fromfile(f, dtype='<i4', count=1)[0]
-                    count = rec_length/np.dtype(data_format).itemsize  # Not always ncol, see below
+                    count = rec_length / \
+                        np.dtype(
+                            data_format).itemsize  # Not always ncol, see below
                     row = np.fromfile(f, dtype=data_format, count=count)
                     # [:ncol] is used because Semper always writes an even number of bytes which
                     # is a problem when reading in single bytes (IFORM = 0, np.byte). If ncol is
@@ -526,7 +531,8 @@ class SemperFormat(object):
                     # an empty byte (0) is added:
                     if self.data.dtype == np.byte and ncol % 2 != 0:
                         np.zeros(1, dtype=np.byte).tobytes()
-                    f.write(struct.pack('<i4', record_length))  # record length, 4 byte format!
+                    f.write(struct.pack('<i4', record_length))
+                            # record length, 4 byte format!
 
     @classmethod
     def from_signal(cls, signal):

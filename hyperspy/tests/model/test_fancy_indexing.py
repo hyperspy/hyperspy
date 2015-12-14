@@ -67,7 +67,7 @@ class TestModelIndexing:
         self.model.channel_switches[0] = False
         m = self.model.isig[:-100.]
         assert_true(m.channel_switches[0] == False)
-        assert_true(np.all(m.channel_switches[1:] == True))
+        assert_true(np.all(m.channel_switches[1:]))
 
     def test_model_navigation_indexer_slice(self):
         self.model.axes_manager.indices = (0, 0)

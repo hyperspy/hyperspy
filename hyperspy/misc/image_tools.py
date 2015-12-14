@@ -22,10 +22,10 @@ from scipy.fftpack import fftn, ifftn
 import matplotlib.pyplot as plt
 
 
-def shift_image(im, shift, fill_value=np.nan):
+def shift_image(im, shift, fill_value=np.nan, interpolation_order=1):
     fractional, integral = np.modf(shift)
     if fractional.any():
-        order = 3
+        order = interpolation_order
     else:
         # Disable interpolation
         order = 0

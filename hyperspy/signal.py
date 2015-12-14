@@ -455,7 +455,8 @@ class Signal2DTools(object):
                 reference='current',
                 dtype='float',
                 correlation_threshold=None,
-                chunk_size=30):
+                chunk_size=30,
+                interpolation_order=1):
         """Align the images in place using user provided shifts or by
         estimating the shifts.
 
@@ -474,9 +475,13 @@ class Signal2DTools(object):
         shifts : None or list of tuples
             If None the shifts are estimated using
             `estimate_shift2D`.
+        interpolation_order: int, default 1.
+            The order of the spline interpolation. Default is 1, linear
+            interpolation
         expand : bool
             If True, the data will be expanded to fit all data after alignment.
             Overrides `crop`.
+
 
         Returns
         -------
@@ -552,7 +557,8 @@ class Signal2DTools(object):
                              shifts):
             if np.any(shift):
                 shift_image(im, -shift,
-                            fill_value=fill_value)
+                            fill_value=fill_value,
+                            interpolation_order=interpolation_order)
                 del im
 
         if crop and not expand:
@@ -3186,7 +3192,8 @@ class Signal(FancySlicing,
         dic = {'data': self.data,
                'axes': self.axes_manager._get_axes_dicts(),
                'metadata': self.metadata.deepcopy().as_dictionary(),
-               'original_metadata': self.original_metadata.deepcopy().as_dictionary(),
+               'original_metadata':
+                   self.original_metadata.deepcopy().as_dictionary(),
                'tmp_parameters': self.tmp_parameters.deepcopy().as_dictionary()}
         if add_learning_results and hasattr(self, 'learning_results'):
             dic['learning_results'] = copy.deepcopy(
