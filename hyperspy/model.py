@@ -458,7 +458,7 @@ class BaseModel(list):
             self.channel_switches[:] = channel_switches_backup
         signal = self.signal.__class__(
             data,
-            axes=self.spectrum.axes_manager._get_axes_dicts())
+            axes=self.signal.axes_manager._get_axes_dicts())
         signal.metadata.General.title = (
             self.signal.metadata.General.title + " from fitted model")
         signal.metadata.Signal.binned = self.signal.metadata.Signal.binned
