@@ -18,7 +18,7 @@
 
 import numpy as np
 
-from hyperspy.model import BaseModel, ModelComponents
+from hyperspy.model import BaseModel, ModelComponents, ModelSpecialSlicers
 from hyperspy._signals.image import Image
 from hyperspy.exceptions import WrongObjectError
 from hyperspy.decorators import interactive_range_selector
@@ -89,31 +89,44 @@ class Model2D(BaseModel):
         self.image = image
         self.signal = self.image
         self.axes_manager = self.signal.axes_manager
+        self._plot = None
+        self._position_widgets = []
+        self._adjust_position_all = None
+        self._plot_components = False
+        self._suspend_update = False
+        self._model_line = None
+        self._adjust_position_all = None
         self.xaxis, self.yaxis = np.meshgrid(
             self.axes_manager.signal_axes[0].axis,
             self.axes_manager.signal_axes[1].axis)
         self.axes_manager.connect(self.fetch_stored_values)
-        self.free_parameters_boundaries = None
         self.channel_switches = np.ones(self.xaxis.shape, dtype=bool)
-        # self._position_widgets = []
-        self._plot = None
         self.chisq = image._get_navigation_signal()
         self.chisq.change_dtype("float")
         self.chisq.data.fill(np.nan)
         self.chisq.metadata.General.title = self.signal.metadata.General.title + \
             ' chi-squared'
         self.dof = self.chisq._deepcopy_with_new_data(
-            np.zeros_like(
-                self.chisq.data,
-                dtype='int'))
+            np.zeros_like(self.chisq.data, dtype='int'))
         self.dof.metadata.General.title = self.signal.metadata.General.title + \
             ' degrees of freedom'
-        # self._suspend_update = False
-        self._adjust_position_all = None
-        self._plot_components = False
+        self.free_parameters_boundaries = None
+        self.convolved = False
         self.components = ModelComponents(self)
         if dictionary is not None:
             self._load_dictionary(dictionary)
+        self.inav = ModelSpecialSlicers(self, True)
+        self.isig = ModelSpecialSlicers(self, False)
+        self._whitelist = {
+            'channel_switches': None,
+            'convolved': None,
+            'free_parameters_boundaries': None,
+            'chisq.data': None,
+            'dof.data': None}
+        self._slicing_whitelist = {
+            'channel_switches': 'isig',
+            'chisq.data': 'inav',
+            'dof.data': 'inav'}
 
     @property
     def image(self):
@@ -154,7 +167,7 @@ class Model2D(BaseModel):
     def _errfunc(self, param, y, weights=None):
         if weights is None:
             weights = 1.
-        errfunc = self._model_function(param).ravel()- y
+        errfunc = self._model_function(param).ravel() - y
         return errfunc * weights
 
     # TODO: The methods below are implemented only for Model1D and should be

@@ -43,6 +43,7 @@ from hyperspy.misc.export_dictionary import (export_to_dictionary,
                                              parse_flag_string,
                                              reconstruct_object)
 from hyperspy.misc.utils import slugify, shorten_name
+from hyperspy.misc.slicing import copy_slice_from_whitelist
 
 
 class ModelComponents(object):
@@ -1452,3 +1453,73 @@ class BaseModel(list):
                     "\" not found in model")
         else:
             return list.__getitem__(self, value)
+
+
+class ModelSpecialSlicers(object):
+
+    def __init__(self, model, isNavigation):
+        self.isNavigation = isNavigation
+        self.model = model
+
+    def __getitem__(self, slices):
+        array_slices = self.model.signal._get_array_slices(
+            slices,
+            self.isNavigation)
+        _signal = self.model.signal._slicer(slices, self.isNavigation)
+        if _signal.metadata.Signal.signal_type == 'EELS':
+            _model = _signal.create_model(
+                auto_background=False,
+                auto_add_edges=False)
+        else:
+            _model = _signal.create_model()
+
+        dims = self.model.axes_manager.navigation_dimension, self.model.axes_manager.signal_dimension
+        if self.isNavigation:
+            _model.channel_switches[:] = self.model.channel_switches
+        else:
+            _model.channel_switches[:] = \
+                np.atleast_1d(
+                    self.model.channel_switches[tuple(array_slices[-dims[1]:])])
+
+        twin_dict = {}
+        for comp in self.model:
+            init_args = {}
+            for k, v in comp._whitelist.iteritems():
+                if v is None:
+                    continue
+                flags_str, value = v
+                if 'init' in parse_flag_string(flags_str):
+                    init_args[k] = value
+            _model.append(getattr(components, comp._id_name)(**init_args))
+        copy_slice_from_whitelist(self.model,
+                                  _model,
+                                  dims,
+                                  (slices, array_slices),
+                                  self.isNavigation,
+                                  )
+        for co, cn in zip(self.model, _model):
+            copy_slice_from_whitelist(co,
+                                      cn,
+                                      dims,
+                                      (slices, array_slices),
+                                      self.isNavigation)
+            for po, pn in zip(co.parameters, cn.parameters):
+                copy_slice_from_whitelist(po,
+                                          pn,
+                                          dims,
+                                          (slices, array_slices),
+                                          self.isNavigation)
+                twin_dict[id(po)] = ([id(i) for i in list(po._twins)], pn)
+
+        for k in twin_dict.keys():
+            for tw_id in twin_dict[k][0]:
+                twin_dict[tw_id][1].twin = twin_dict[k][1]
+
+        _model.chisq.data = _model.chisq.data.copy()
+        _model.dof.data = _model.dof.data.copy()
+        _model.fetch_stored_values()  # to update and have correct values
+        if not self.isNavigation:
+            for _ in _model.axes_manager:
+                _model._calculate_chisq()
+
+        return _model
