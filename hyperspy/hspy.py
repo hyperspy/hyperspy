@@ -11,7 +11,6 @@ plt.rcParams['image.cmap'] = 'gray'
 
 from hyperspy.Release import version as __version__
 from hyperspy import components
-from hyperspy import components2d
 from hyperspy import signals
 from hyperspy.io import load
 from hyperspy.defaults_parser import preferences

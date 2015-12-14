@@ -449,7 +449,7 @@ class BaseModel(list):
             self.fetch_stored_values(only_fixed=False)
             data[self.axes_manager._getitem_tuple][
                 self.channel_switches] = self.__call__(
-                non_convolved=not self.convolved, onlyactive=True)
+                non_convolved=not self.convolved, onlyactive=True).ravel()
             i += 1
             if maxval > 0:
                 pbar.update(i)
@@ -458,7 +458,7 @@ class BaseModel(list):
             self.channel_switches[:] = channel_switches_backup
         signal = self.signal.__class__(
             data,
-            axes=self.spectrum.axes_manager._get_axes_dicts())
+            axes=self.signal.axes_manager._get_axes_dicts())
         signal.metadata.General.title = (
             self.signal.metadata.General.title + " from fitted model")
         signal.metadata.Signal.binned = self.signal.metadata.Signal.binned

@@ -480,7 +480,7 @@ class TestModel1D:
 class TestModel2D:
 
     def setUp(self):
-        g = hs.model.components2d.Gaussian2D(
+        g = hs.model.components.Gaussian2D(
             centre_x=-5.,
             centre_y=-5.,
             sigma_x=1.,
@@ -498,10 +498,10 @@ class TestModel2D:
     def test_fitting(self):
         im = self.im
         m = im.create_model()
-        gt = hs.model.components2d.Gaussian2D(centre_x=-4.5,
-                                              centre_y=-4.5,
-                                              sigma_x=0.5,
-                                              sigma_y=1.5)
+        gt = hs.model.components.Gaussian2D(centre_x=-4.5,
+                                            centre_y=-4.5,
+                                            sigma_x=0.5,
+                                            sigma_y=1.5)
         m.append(gt)
         m.fit()
         nt.assert_almost_equal(gt.centre_x.value, -5.)

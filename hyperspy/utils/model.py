@@ -9,4 +9,3 @@ components
 """
 
 import hyperspy.components as components
-import hyperspy.components2d as components2d

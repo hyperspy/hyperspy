@@ -170,7 +170,7 @@ class ModelManager(object):
         restore
         pop
         """
-        if model.spectrum is self._signal:
+        if model.signal is self._signal:
             self._save(name, model.as_dictionary())
         else:
             raise ValueError("The model is created from a different signal, you "
