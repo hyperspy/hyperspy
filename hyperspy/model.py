@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
+import copy
 import os
 import tempfile
 import numbers
@@ -42,6 +43,7 @@ from hyperspy.misc.export_dictionary import (export_to_dictionary,
                                              parse_flag_string,
                                              reconstruct_object)
 from hyperspy.misc.utils import slugify, shorten_name
+from hyperspy.misc.slicing import copy_slice_from_whitelist
 
 
 class ModelComponents(object):
@@ -378,6 +380,99 @@ class BaseModel(list):
 
     __touch = _touch
 
+    def as_signal(self, component_list=None, out_of_range_to_nan=True,
+                  show_progressbar=None):
+        """Returns a recreation of the dataset using the model.
+        the spectral range that is not fitted is filled with nans.
+
+        Parameters
+        ----------
+        component_list : list of hyperspy components, optional
+            If a list of components is given, only the components given in the
+            list is used in making the returned spectrum. The components can
+            be specified by name, index or themselves.
+        out_of_range_to_nan : bool
+            If True the spectral range that is not fitted is filled with nans.
+        show_progressbar : None or bool
+            If True, display a progress bar. If None the default is set in
+            `preferences`.
+
+        Returns
+        -------
+        spectrum : An instance of the same class as `spectrum`.
+
+        Examples
+        --------
+        >>> s = hs.signals.Spectrum(np.random.random((10,100)))
+        >>> m = s.create_model()
+        >>> l1 = hs.model.components.Lorentzian()
+        >>> l2 = hs.model.components.Lorentzian()
+        >>> m.append(l1)
+        >>> m.append(l2)
+        >>> s1 = m.as_signal()
+        >>> s2 = m.as_signal(component_list=[l1])
+
+        """
+        # change actual values to whatever except bool
+        _multi_on_ = '_multi_on_'
+        _multi_off_ = '_multi_off_'
+        if show_progressbar is None:
+            show_progressbar = preferences.General.show_progressbar
+
+        if component_list:
+            component_list = [self._get_component(x) for x in component_list]
+            active_state = []
+            for component_ in self:
+                if component_.active_is_multidimensional:
+                    if component_ not in component_list:
+                        active_state.append(_multi_off_)
+                        component_._toggle_connect_active_array(False)
+                        component_.active = False
+                    else:
+                        active_state.append(_multi_on_)
+                else:
+                    active_state.append(component_.active)
+                    if component_ in component_list:
+                        component_.active = True
+                    else:
+                        component_.active = False
+        data = np.empty(self.signal.data.shape, dtype='float')
+        data.fill(np.nan)
+        if out_of_range_to_nan is True:
+            channel_switches_backup = copy.copy(self.channel_switches)
+            self.channel_switches[:] = True
+        maxval = self.axes_manager.navigation_size
+        pbar = progressbar.progressbar(maxval=maxval,
+                                       disabled=not show_progressbar)
+        i = 0
+        for index in self.axes_manager:
+            self.fetch_stored_values(only_fixed=False)
+            data[self.axes_manager._getitem_tuple][
+                self.channel_switches] = self.__call__(
+                non_convolved=not self.convolved, onlyactive=True)
+            i += 1
+            if maxval > 0:
+                pbar.update(i)
+        pbar.finish()
+        if out_of_range_to_nan is True:
+            self.channel_switches[:] = channel_switches_backup
+        signal = self.signal.__class__(
+            data,
+            axes=self.spectrum.axes_manager._get_axes_dicts())
+        signal.metadata.General.title = (
+            self.signal.metadata.General.title + " from fitted model")
+        signal.metadata.Signal.binned = self.signal.metadata.Signal.binned
+
+        if component_list:
+            for component_ in self:
+                active_s = active_state.pop(0)
+                if isinstance(active_s, bool):
+                    component_.active = active_s
+                else:
+                    if active_s == _multi_off_:
+                        component_._toggle_connect_active_array(True)
+        return signal
+
     @property
     def _plot_active(self):
         if self._plot is not None and self._plot.is_active() is True:
@@ -505,16 +600,11 @@ class BaseModel(list):
             s = ns
         return s
 
-    def _function4odr(self, param, x):
-        return self._model_function(param)
-
-    def _poisson_likelihood_function(self, param, y, weights=None):
-        """Returns the likelihood function of the model for the given
-        data and parameters
-        """
-        mf = self._model_function(param)
-        with np.errstate(invalid='ignore'):
-            return -(y * np.log(mf) - mf).sum()
+    def _model_function(self, param):
+        self.p0 = param
+        self._fetch_values_from_p0()
+        to_return = self.__call__(non_convolved=False, onlyactive=True)
+        return to_return
 
     def _errfunc2(self, param, y, weights=None):
         if weights is None:
@@ -540,7 +630,7 @@ class BaseModel(list):
                     self.axes_manager._getitem_tuple)[self.channel_switches]
         else:
             variance = 1.0
-        d = self(onlyactive=True) - self.signal()[self.channel_switches]
+        d = self(onlyactive=True).ravel() - self.signal()[self.channel_switches]
         d *= d / (1. * variance)  # d = difference^2 / variance.
         self.chisq.data[self.signal.axes_manager.indices[::-1]] = d.sum()
 
@@ -551,7 +641,7 @@ class BaseModel(list):
     def red_chisq(self):
         """Reduced chi-squared. Calculated from self.chisq and self.dof
         """
-        tmp = self.chisq / (- self.dof + sum(self.channel_switches) - 1)
+        tmp = self.chisq / (- self.dof + self.channel_switches.sum() - 1)
         tmp.metadata.General.title = self.signal.metadata.General.title + \
             ' reduced chi-squared'
         return tmp
@@ -1363,3 +1453,73 @@ class BaseModel(list):
                     "\" not found in model")
         else:
             return list.__getitem__(self, value)
+
+
+class ModelSpecialSlicers(object):
+
+    def __init__(self, model, isNavigation):
+        self.isNavigation = isNavigation
+        self.model = model
+
+    def __getitem__(self, slices):
+        array_slices = self.model.signal._get_array_slices(
+            slices,
+            self.isNavigation)
+        _signal = self.model.signal._slicer(slices, self.isNavigation)
+        if _signal.metadata.Signal.signal_type == 'EELS':
+            _model = _signal.create_model(
+                auto_background=False,
+                auto_add_edges=False)
+        else:
+            _model = _signal.create_model()
+
+        dims = self.model.axes_manager.navigation_dimension, self.model.axes_manager.signal_dimension
+        if self.isNavigation:
+            _model.channel_switches[:] = self.model.channel_switches
+        else:
+            _model.channel_switches[:] = \
+                np.atleast_1d(
+                    self.model.channel_switches[tuple(array_slices[-dims[1]:])])
+
+        twin_dict = {}
+        for comp in self.model:
+            init_args = {}
+            for k, v in comp._whitelist.iteritems():
+                if v is None:
+                    continue
+                flags_str, value = v
+                if 'init' in parse_flag_string(flags_str):
+                    init_args[k] = value
+            _model.append(getattr(components, comp._id_name)(**init_args))
+        copy_slice_from_whitelist(self.model,
+                                  _model,
+                                  dims,
+                                  (slices, array_slices),
+                                  self.isNavigation,
+                                  )
+        for co, cn in zip(self.model, _model):
+            copy_slice_from_whitelist(co,
+                                      cn,
+                                      dims,
+                                      (slices, array_slices),
+                                      self.isNavigation)
+            for po, pn in zip(co.parameters, cn.parameters):
+                copy_slice_from_whitelist(po,
+                                          pn,
+                                          dims,
+                                          (slices, array_slices),
+                                          self.isNavigation)
+                twin_dict[id(po)] = ([id(i) for i in list(po._twins)], pn)
+
+        for k in twin_dict.keys():
+            for tw_id in twin_dict[k][0]:
+                twin_dict[tw_id][1].twin = twin_dict[k][1]
+
+        _model.chisq.data = _model.chisq.data.copy()
+        _model.dof.data = _model.dof.data.copy()
+        _model.fetch_stored_values()  # to update and have correct values
+        if not self.isNavigation:
+            for _ in _model.axes_manager:
+                _model._calculate_chisq()
+
+        return _model

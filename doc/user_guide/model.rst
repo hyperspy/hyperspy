@@ -45,7 +45,7 @@ class using the :py:meth:`~._signals.image.Image.create_model` method:
     >>> mod = im.create_model() # Create the 2D-Model and asign it to the variable mod
 
 The syntax for creating both one-dimensional and two-dimensional models is thus
-identical for the user in practice.When a model is created  you may be prompted
+identical for the user in practice. When a model is created  you may be prompted
 to provide important information not already included in the datafile, e.g.if s 
 is EELS data, you may be asked for the accelerating voltage, convergence and 
 collection angles etc.
@@ -277,7 +277,7 @@ index in the model.
 .. versionadded:: 0.8.1 :py:attr:`components` attribute
 
 In addition, the components can be accessed in the
-:py:attr:`~.models.model1D.Model1D.components` `Model` attribute. This is specially
+:py:attr:`~.model.BaseModel.components` `Model` attribute. This is specially
 useful when working in interactive data analysis with IPython because it
 enables tab completion.
 
@@ -746,9 +746,9 @@ by hand.
     :py:meth:`~.model.Model.enable_adjust_position` and
     :py:meth:`~.model.Model.disable_adjust_position`
 
-Also, :py:meth:`~.models.model1D.Model1D.enable_adjust_position` provides an interactive
+Also, :py:meth:`~.model.BaseModel.enable_adjust_position` provides an interactive
 way of setting the position of the components with a well define position.
-:py:meth:`~.models.model1D.Model1D.disable_adjust_position` disables the tool.
+:py:meth:`~.model.BaseModel.disable_adjust_position` disables the tool.
 
 
 .. figure::  images/model_adjust_position.png
@@ -793,7 +793,7 @@ given position manually. This is possible using
 Visualising the result of the fit
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The :py:class:`~.models.model1D.Model1D` :py:meth:`~.models.model1D.Model1D.plot_results`,
+The :py:class:`~.model.BaseModel` :py:meth:`~.models.BaseModel.plot_results`,
 :py:class:`~.component.Component` :py:meth:`~.component.Component.plot` and
 :py:class:`~.component.Parameter` :py:meth:`~.component.Parameter.plot` methods
 can be used to visualise the result of the fit **when fitting multidimensional

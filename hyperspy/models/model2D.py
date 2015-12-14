@@ -18,7 +18,7 @@
 
 import numpy as np
 
-from hyperspy.model import BaseModel, ModelComponents
+from hyperspy.model import BaseModel, ModelComponents, ModelSpecialSlicers
 from hyperspy._signals.image import Image
 from hyperspy.exceptions import WrongObjectError
 from hyperspy.decorators import interactive_range_selector
@@ -89,31 +89,44 @@ class Model2D(BaseModel):
         self.image = image
         self.signal = self.image
         self.axes_manager = self.signal.axes_manager
+        self._plot = None
+        self._position_widgets = []
+        self._adjust_position_all = None
+        self._plot_components = False
+        self._suspend_update = False
+        self._model_line = None
+        self._adjust_position_all = None
         self.xaxis, self.yaxis = np.meshgrid(
             self.axes_manager.signal_axes[0].axis,
             self.axes_manager.signal_axes[1].axis)
         self.axes_manager.connect(self.fetch_stored_values)
-        self.free_parameters_boundaries = None
-        self.channel_switches = None
-        # self._position_widgets = []
-        self._plot = None
+        self.channel_switches = np.ones(self.xaxis.shape, dtype=bool)
         self.chisq = image._get_navigation_signal()
         self.chisq.change_dtype("float")
         self.chisq.data.fill(np.nan)
         self.chisq.metadata.General.title = self.signal.metadata.General.title + \
             ' chi-squared'
         self.dof = self.chisq._deepcopy_with_new_data(
-            np.zeros_like(
-                self.chisq.data,
-                dtype='int'))
+            np.zeros_like(self.chisq.data, dtype='int'))
         self.dof.metadata.General.title = self.signal.metadata.General.title + \
             ' degrees of freedom'
-        # self._suspend_update = False
-        self._adjust_position_all = None
-        self._plot_components = False
+        self.free_parameters_boundaries = None
+        self.convolved = False
         self.components = ModelComponents(self)
         if dictionary is not None:
             self._load_dictionary(dictionary)
+        self.inav = ModelSpecialSlicers(self, True)
+        self.isig = ModelSpecialSlicers(self, False)
+        self._whitelist = {
+            'channel_switches': None,
+            'convolved': None,
+            'free_parameters_boundaries': None,
+            'chisq.data': None,
+            'dof.data': None}
+        self._slicing_whitelist = {
+            'channel_switches': 'isig',
+            'chisq.data': 'inav',
+            'dof.data': 'inav'}
 
     @property
     def image(self):
@@ -126,23 +139,7 @@ class Model2D(BaseModel):
         else:
             raise WrongObjectError(str(type(value)), 'Image')
 
-    # TODO: write 2D secific plotting tools
-    # def _connect_parameters2update_plot(self):
-    #    pass
-
-    # Plotting code to rewrite
-    # def _disconnect_parameters2update_plot(self):
-    #    pass
-
-    # To rewrite
-    # def as_signal(self):
-    #    pass
-
-    # Plotting code to rewrite
-    # def update_plot(self):
-    #    pass
-
-    def __call__(self, onlyactive=False):
+    def __call__(self, non_convolved=True, onlyactive=False):
         """Returns the corresponding 2D model for the current coordinates
 
         Parameters
@@ -170,14 +167,8 @@ class Model2D(BaseModel):
     def _errfunc(self, param, y, weights=None):
         if weights is None:
             weights = 1.
-        errfunc = self._model_function(param) - y
-        return (errfunc * weights).ravel()
-
-    def _model_function(self, param):
-        self.p0 = param
-        self._fetch_values_from_p0()
-        to_return = self.__call__(onlyactive=False)
-        return to_return
+        errfunc = self._model_function(param).ravel() - y
+        return errfunc * weights
 
     # TODO: The methods below are implemented only for Model1D and should be
     # added eventually also for Model2D. Probably there are smarter ways to do
@@ -187,10 +178,6 @@ class Model2D(BaseModel):
         raise NotImplementedError
 
     def _disconnect_parameters2update_plot(self):
-        raise NotImplementedError
-
-    def as_signal(self, component_list=None, out_of_range_to_nan=True,
-                  show_progressbar=None):
         raise NotImplementedError
 
     def update_plot(self, *args, **kwargs):
@@ -235,7 +222,13 @@ class Model2D(BaseModel):
     def _jacobian(self, param, y, weights=None):
         raise NotImplementedError
 
+    def _function4odr(self, param, x):
+        raise NotImplementedError
+
     def _jacobian4odr(self, param, x):
+        raise NotImplementedError
+
+    def _poisson_likelihood_function(self, param, y, weights=None):
         raise NotImplementedError
 
     def _gradient_ml(self, param, y, weights=None):

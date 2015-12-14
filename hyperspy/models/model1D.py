@@ -21,12 +21,10 @@ import warnings
 import numpy as np
 from traits.trait_errors import TraitError
 
-from hyperspy.model import BaseModel, ModelComponents
+from hyperspy.model import BaseModel, ModelComponents, ModelSpecialSlicers
 import hyperspy.drawing.spectrum
 from hyperspy.drawing.utils import on_figure_window_close
-from hyperspy.external import progressbar
 from hyperspy._signals.eels import Spectrum
-from hyperspy.defaults_parser import preferences
 from hyperspy.axes import generate_axis
 from hyperspy.exceptions import WrongObjectError
 from hyperspy.decorators import interactive_range_selector
@@ -34,9 +32,6 @@ from hyperspy.axes import AxesManager
 from hyperspy.drawing.widgets import (DraggableVerticalLine,
                                       DraggableLabel)
 from hyperspy.gui.tools import ComponentFit
-from hyperspy import components
-from hyperspy.misc.export_dictionary import parse_flag_string
-from hyperspy.misc.slicing import copy_slice_from_whitelist
 
 
 class Model1D(BaseModel):
@@ -174,21 +169,6 @@ class Model1D(BaseModel):
         self._suspend_update = False
         self._model_line = None
         self._adjust_position_all = None
-        self._plot_components = False
-        self._whitelist = {
-            'channel_switches': None,
-            'convolved': None,
-            'free_parameters_boundaries': None,
-            'low_loss': ('sig', None),
-            'chisq.data': None,
-            'dof.data': None
-        }
-        self._slicing_whitelist = {
-            'channel_switches': 'isig',
-            'low_loss': 'inav',
-            'chisq.data': 'inav',
-            'dof.data': 'inav'}
-
         self.axis = self.axes_manager.signal_axes[0]
         self.axes_manager.connect(self.fetch_stored_values)
         self.channel_switches = np.array([True] * len(self.axis.axis))
@@ -209,6 +189,18 @@ class Model1D(BaseModel):
             self._load_dictionary(dictionary)
         self.inav = ModelSpecialSlicers(self, True)
         self.isig = ModelSpecialSlicers(self, False)
+        self._whitelist = {
+            'channel_switches': None,
+            'convolved': None,
+            'free_parameters_boundaries': None,
+            'low_loss': ('sig', None),
+            'chisq.data': None,
+            'dof.data': None}
+        self._slicing_whitelist = {
+            'channel_switches': 'isig',
+            'low_loss': 'inav',
+            'chisq.data': 'inav',
+            'dof.data': 'inav'}
 
     @property
     def spectrum(self):
@@ -276,99 +268,6 @@ class Model1D(BaseModel):
                 parameter.disconnect(self._model_line.update)
         if self._plot_components is True:
             self._disconnect_component_lines()
-
-    def as_signal(self, component_list=None, out_of_range_to_nan=True,
-                  show_progressbar=None):
-        """Returns a recreation of the dataset using the model.
-        the spectral range that is not fitted is filled with nans.
-
-        Parameters
-        ----------
-        component_list : list of hyperspy components, optional
-            If a list of components is given, only the components given in the
-            list is used in making the returned spectrum. The components can
-            be specified by name, index or themselves.
-        out_of_range_to_nan : bool
-            If True the spectral range that is not fitted is filled with nans.
-        show_progressbar : None or bool
-            If True, display a progress bar. If None the default is set in
-            `preferences`.
-
-        Returns
-        -------
-        spectrum : An instance of the same class as `spectrum`.
-
-        Examples
-        --------
-        >>> s = hs.signals.Spectrum(np.random.random((10,100)))
-        >>> m = s.create_model()
-        >>> l1 = hs.model.components.Lorentzian()
-        >>> l2 = hs.model.components.Lorentzian()
-        >>> m.append(l1)
-        >>> m.append(l2)
-        >>> s1 = m.as_signal()
-        >>> s2 = m.as_signal(component_list=[l1])
-
-        """
-        # change actual values to whatever except bool
-        _multi_on_ = '_multi_on_'
-        _multi_off_ = '_multi_off_'
-        if show_progressbar is None:
-            show_progressbar = preferences.General.show_progressbar
-
-        if component_list:
-            component_list = [self._get_component(x) for x in component_list]
-            active_state = []
-            for component_ in self:
-                if component_.active_is_multidimensional:
-                    if component_ not in component_list:
-                        active_state.append(_multi_off_)
-                        component_._toggle_connect_active_array(False)
-                        component_.active = False
-                    else:
-                        active_state.append(_multi_on_)
-                else:
-                    active_state.append(component_.active)
-                    if component_ in component_list:
-                        component_.active = True
-                    else:
-                        component_.active = False
-        data = np.empty(self.spectrum.data.shape, dtype='float')
-        data.fill(np.nan)
-        if out_of_range_to_nan is True:
-            channel_switches_backup = copy.copy(self.channel_switches)
-            self.channel_switches[:] = True
-        maxval = self.axes_manager.navigation_size
-        pbar = progressbar.progressbar(maxval=maxval,
-                                       disabled=not show_progressbar)
-        i = 0
-        for index in self.axes_manager:
-            self.fetch_stored_values(only_fixed=False)
-            data[self.axes_manager._getitem_tuple][
-                self.channel_switches] = self.__call__(
-                non_convolved=not self.convolved, onlyactive=True)
-            i += 1
-            if maxval > 0:
-                pbar.update(i)
-        pbar.finish()
-        if out_of_range_to_nan is True:
-            self.channel_switches[:] = channel_switches_backup
-        spectrum = self.spectrum.__class__(
-            data,
-            axes=self.spectrum.axes_manager._get_axes_dicts())
-        spectrum.metadata.General.title = (
-            self.spectrum.metadata.General.title + " from fitted model")
-        spectrum.metadata.Signal.binned = self.spectrum.metadata.Signal.binned
-
-        if component_list:
-            for component_ in self:
-                active_s = active_state.pop(0)
-                if isinstance(active_s, bool):
-                    component_.active = active_s
-                else:
-                    if active_s == _multi_off_:
-                        component_._toggle_connect_active_array(True)
-        return spectrum
 
     def update_plot(self, *args, **kwargs):
         """Update model plot.
@@ -493,12 +392,6 @@ class Model1D(BaseModel):
             to_return = to_return[self.channel_switches]
         if self.spectrum.metadata.Signal.binned is True:
             to_return *= self.spectrum.axes_manager[-1].scale
-        return to_return
-
-    def _model_function(self, param):
-        self.p0 = param
-        self._fetch_values_from_p0()
-        to_return = self.__call__(non_convolved=False, onlyactive=True)
         return to_return
 
     def _errfunc(self, param, y, weights=None):
@@ -663,8 +556,19 @@ class Model1D(BaseModel):
             to_return *= self.spectrum.axes_manager[-1].scale
         return to_return
 
+    def _function4odr(self, param, x):
+        return self._model_function(param)
+
     def _jacobian4odr(self, param, x):
         return self._jacobian(param, x)
+
+    def _poisson_likelihood_function(self, param, y, weights=None):
+        """Returns the likelihood function of the model for the given
+        data and parameters
+        """
+        mf = self._model_function(param)
+        with np.errstate(invalid='ignore'):
+            return -(y * np.log(mf) - mf).sum()
 
     def _gradient_ml(self, param, y, weights=None):
         mf = self._model_function(param)
@@ -940,75 +844,3 @@ class Model1D(BaseModel):
             cf.edit_traits()
         else:
             cf.apply()
-
-
-class ModelSpecialSlicers(object):
-
-    def __init__(self, model, isNavigation):
-        self.isNavigation = isNavigation
-        self.model = model
-
-    def __getitem__(self, slices):
-        array_slices = self.model.spectrum._get_array_slices(
-            slices,
-            self.isNavigation)
-        _spectrum = self.model.spectrum._slicer(slices, self.isNavigation)
-        if _spectrum.metadata.Signal.signal_type == 'EELS':
-            _model = _spectrum.create_model(
-                auto_background=False,
-                auto_add_edges=False)
-        else:
-            _model = _spectrum.create_model()
-
-        dims = self.model.axes_manager.navigation_dimension, self.model.axes_manager.signal_dimension
-        if self.isNavigation:
-            _model.channel_switches[:] = self.model.channel_switches
-        else:
-            _model.channel_switches[:] = \
-                np.atleast_1d(
-                    self.model.channel_switches[tuple(array_slices[-dims[1]:])])
-
-        twin_dict = {}
-        for comp in self.model:
-            init_args = {}
-            for k, v in comp._whitelist.iteritems():
-                if v is None:
-                    continue
-                flags_str, value = v
-                if 'init' in parse_flag_string(flags_str):
-                    init_args[k] = value
-            _model.append(getattr(components, comp._id_name)(**init_args))
-        copy_slice_from_whitelist(self.model,
-                                  _model,
-                                  dims,
-                                  (slices, array_slices),
-                                  self.isNavigation,
-                                  )
-        for co, cn in zip(self.model, _model):
-            copy_slice_from_whitelist(co,
-                                      cn,
-                                      dims,
-                                      (slices, array_slices),
-                                      self.isNavigation)
-            for po, pn in zip(co.parameters, cn.parameters):
-                copy_slice_from_whitelist(po,
-                                          pn,
-                                          dims,
-                                          (slices, array_slices),
-                                          self.isNavigation)
-                twin_dict[id(po)] = ([id(i) for i in list(po._twins)], pn)
-
-        for k in twin_dict.keys():
-            for tw_id in twin_dict[k][0]:
-                twin_dict[tw_id][1].twin = twin_dict[k][1]
-
-        _model.chisq.data = _model.chisq.data.copy()
-        _model.dof.data = _model.dof.data.copy()
-        _model.fetch_stored_values()  # to update and have correct values
-        if not self.isNavigation:
-            for _ in _model.axes_manager:
-                _model._calculate_chisq()
-
-        return _model
-
-# vim: textwidth=80
