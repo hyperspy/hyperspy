@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2015 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -20,13 +20,13 @@ import math
 
 import numpy as np
 
-from hyperspy.component import Component
+from hyperspy._components.expression import Expression
 
 sqrt2pi = math.sqrt(2 * math.pi)
 sigma2fwhm = 2 * math.sqrt(2 * math.log(2))
 
 
-class GaussianHF(Component):
+class GaussianHF(Expression):
 
     """Normalized gaussian function component, with a fwhm parameter instead
     of the sigma parameter, and a height parameter instead of the A parameter
@@ -50,7 +50,7 @@ class GaussianHF(Component):
             Location of the gaussian maximum, also the mean position.
         fwhm: float
             The full width half maximum value, i.e. the width of the gaussian
-            at half the value of gaussian peak (at center).
+            at half the value of gaussian peak (at centre).
 
     The helper properties `sigma` and `A` are also defined for compatibilty
     with `Gaussian` component.
@@ -62,11 +62,15 @@ class GaussianHF(Component):
     """
 
     def __init__(self, height=1., fwhm=1., centre=0.):
-        Component.__init__(self, ['height', 'fwhm', 'centre'])
-        self.height.value = height
-        self.fwhm.value = fwhm
-        self.centre.value = centre
-        self._position = self.centre
+        super(GaussianHF, self).__init__(
+            expression="height * exp(-(x - centre)**2 * 4 * log(2)/fwhm**2)",
+            name="GaussianHF",
+            height=height,
+            fwhm=fwhm,
+            centre=centre,
+            position="centre",
+            autodoc=False,
+            )
 
         # Boundaries
         self.height.bmin = None
@@ -77,36 +81,6 @@ class GaussianHF(Component):
 
         self.isbackground = False
         self.convolved = True
-
-        # Gradients
-        self.height.grad = self.grad_height
-        self.fwhm.grad = self.grad_fwhm
-        self.centre.grad = self.grad_centre
-
-    def function(self, x):
-        s = self.sigma
-        c = self.centre.value
-        h = self.height.value
-        x1 = (x-c)
-        return h * np.exp(-x1**2 / (2 * s**2))
-
-    def grad_height(self, x):
-        return self.function(x) / self.A
-
-    def grad_fwhm(self, x):
-        c = self.centre.value
-        s2 = self.sigma ** 2
-        A = self.A
-        x1 = (x-c)
-        return ((x1**2 * np.exp(-x1**2 / (2 * s2)) * A) / (sqrt2pi * s2 ** 2)) \
-                - (np.exp(-x1**2 / (2 * s2)) * A) / (sqrt2pi * s2)
-
-    def grad_centre(self, x):
-        c = self.centre.value
-        s = self.sigma
-        A = self.A
-        x1 = (x-c)
-        return (x1 * np.exp(-x1 ** 2 / (2 * s**2)) * A) / (sqrt2pi * s**3)
 
     def estimate_parameters(self, signal, x1, x2, only_current=False):
         """Estimate the gaussian by calculating the momenta.
@@ -148,6 +122,7 @@ class GaussianHF(Component):
         >>> g.estimate_parameters(s, -10,10, False)
 
         """
+
         axis = signal.axes_manager.signal_axes[0]
         binned = signal.metadata.Signal.binned
         i1, i2 = axis.value_range_to_indices(x1, x2)
@@ -156,7 +131,7 @@ class GaussianHF(Component):
             data = signal()[i1:i2]
             X_shape = (len(X),)
             i = 0
-            center_shape = (1,)
+            centre_shape = (1,)
         else:
             # TODO: write the rest of the code to estimate the parameters of
             # the full dataset
@@ -166,17 +141,17 @@ class GaussianHF(Component):
             data = signal.data[data_gi]
             X_shape = [1, ] * len(signal.data.shape)
             X_shape[axis.index_in_array] = data.shape[i]
-            center_shape = list(data.shape)
-            center_shape[i] = 1
+            centre_shape = list(data.shape)
+            centre_shape[i] = 1
 
-        center = np.sum(X.reshape(X_shape) * data, i) / np.sum(data, i)
+        centre = np.sum(X.reshape(X_shape) * data, i) / np.sum(data, i)
 
-        sigma = np.sqrt(np.abs(np.sum((X.reshape(X_shape) - center.reshape(
-            center_shape)) ** 2 * data, i) / np.sum(data, i)))
+        sigma = np.sqrt(np.abs(np.sum((X.reshape(X_shape) - centre.reshape(
+            centre_shape)) ** 2 * data, i) / np.sum(data, i)))
         fwhm = sigma * sigma2fwhm
         height = data.max(i)
         if only_current is True:
-            self.centre.value = center
+            self.centre.value = centre
             self.fwhm.value = fwhm
             self.height.value = float(height)
             if binned is True:
@@ -192,7 +167,7 @@ class GaussianHF(Component):
             self.height.map['is_set'][:] = True
             self.fwhm.map['values'][:] = fwhm
             self.fwhm.map['is_set'][:] = True
-            self.centre.map['values'][:] = center
+            self.centre.map['values'][:] = centre
             self.centre.map['is_set'][:] = True
             self.fetch_stored_values()
             return True
@@ -217,5 +192,5 @@ class GaussianHF(Component):
         """
         Utility function to get gaussian integral as Signal
         """
-        return self.height.as_signal() * self.fwhm.as_signal() * \
-                sqrt2pi / sigma2fwhm
+        return (self.height.as_signal() * self.fwhm.as_signal() *
+                sqrt2pi / sigma2fwhm)
