@@ -134,9 +134,11 @@ def get_FWHM_at_Energy(energy_resolution_MnKa, E):
 
 
 def xray_range(xray_line, beam_energy, density='auto'):
-    """Return the Anderson-Hasler X-ray range.
+    """Return the maximum range of X-ray generation according to the
+    Anderson-Hasler parameterization.
 
-    Return the maximum range of X-ray generation in a pure bulk material.
+    Note that the magic numbers appearing in the equation are the values from
+    the parameterization mentioned above.
 
     Parameters
     ----------
@@ -186,9 +188,11 @@ def xray_range(xray_line, beam_energy, density='auto'):
 
 
 def electron_range(element, beam_energy, density='auto', tilt=0):
-    """Return the Kanaya-Okayama electron range.
+    """Returns the maximum electron range for a pure bulk material according to
+    the Kanaya-Okayama parameterziation.
 
-    Return the maximum electron range in a pure bulk material.
+    Note that the magic numbers appearing in the equation are the values from
+    the parameterization mentioned above.
 
     Parameters
     ----------
