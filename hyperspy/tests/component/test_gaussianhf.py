@@ -64,3 +64,14 @@ class TestGaussianHF(object):
         np.testing.assert_almost_equal(ref, g2.centre.map['values'])
         for p1, p2 in zip([g1.fwhm, g1.height], [g2.fwhm, g2.height]):
             np.testing.assert_almost_equal(p1.value, p2.map['values'])
+
+    def test_fit_all(self):
+        s = self.s
+        g1 = GaussianHF()
+        s.data[0, 0, :] = g1.function(s.axes_manager.signal_axes[0].axis)
+        g2 = GaussianHF(50015.156, 23, 10)
+        g2.estimate_parameters(s, 0, 100, True)
+        self.m.append(g2)
+        self.m.fit()
+        for p1, p2 in zip(g1.parameters, g2.parameters):
+            nt.assert_almost_equal(p1.value, p2.value)
