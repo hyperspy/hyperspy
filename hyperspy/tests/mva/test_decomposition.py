@@ -73,8 +73,8 @@ class TestNdAxes:
 class TestGetExplainedVarinaceRation:
 
     def setUp(self):
-        s = signals.Signal(np.empty(1))
-        s.learning_results.explained_variance_ratio = np.empty(10)
+        s = signals.Signal(np.zeros(1))
+        s.learning_results.explained_variance_ratio = np.zeros(10)
         self.s = s
 
     def test_data(self):
@@ -89,7 +89,7 @@ class TestGetExplainedVarinaceRation:
 class TestReverseDecompositionComponent:
 
     def setUp(self):
-        s = signals.Signal(np.empty(1))
+        s = signals.Signal(np.zeros(1))
         self.factors = np.ones([2, 3])
         self.loadings = np.ones([2, 3])
         s.learning_results.factors = self.factors.copy()
@@ -140,7 +140,7 @@ class TestReverseDecompositionComponent:
 class TestNormalizeComponents():
 
     def setUp(self):
-        s = signals.Signal(np.empty(1))
+        s = signals.Signal(np.zeros(1))
         self.factors = np.ones([2, 3])
         self.loadings = np.ones([2, 3])
         s.learning_results.factors = self.factors.copy()
