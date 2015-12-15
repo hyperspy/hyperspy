@@ -44,9 +44,22 @@ def _get_iweight(element, line, weight_line=None):
 
 
 def _get_sigma(E, E_ref, units_factor):
-    # 2.5 from Goldstein, / 1000 eV->keV, / 2.355^2 for FWHM -> sigma
+    """
+    Gets sigma value for particular energy.
+
+    energy2sigma_factor : float
+
+    This is a factor that ???? and is set to 2.5 here with reference to
+    Goldstein ???
+
+    """
+    goldstein_factor = 2.5
+    eV2keV = 1000.
+    sigma2fwhm = 2 * math.sqrt(2 * math.log(2))
+    energy2sigma_factor = goldstein_factor * eV2keV / (sigma2fwhm**2)
     return lambda sig_ref: math.sqrt(abs(
-        4.5077 * 1e-4 * (E - E_ref) * units_factor + np.power(sig_ref, 2)))
+        energy2sigma_factor * (E - E_ref) * units_factor +
+        np.power(sig_ref, 2)))
 
 
 def _get_offset(diff):
