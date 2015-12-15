@@ -427,8 +427,8 @@ class EDSModel(Model1D):
         else:
             self.spectrum.set_microscope_parameters(
                 energy_resolution_MnKa=FWHM_MnKa)
-            warnings.warn("Energy resolution (FWHM at Mn Ka) changed from "
-                          + "%lf to %lf eV" % (FWHM_MnKa_old, FWHM_MnKa))
+            warnings.warn("Energy resolution (FWHM at Mn Ka) changed from" +
+                          "%lf to %lf eV" % (FWHM_MnKa_old, FWHM_MnKa))
             for component in self:
                 if component.isbackground is False:
                     line_energy, line_FWHM = self.spectrum._get_line_energy(
@@ -680,8 +680,9 @@ class EDSModel(Model1D):
 
         Parameters
         ----------
-        xray_lines: list of str or 'all'
-            The Xray lines. If 'all', fit all lines
+        xray_lines: list of str, 'all', or 'all_alpha'
+            The Xray lines. If 'all', fit all lines. If 'all_alpha' fit all
+            using all alpha lines.
         bound: float
             the bound around the actual energy, in keV or eV
         """
@@ -729,8 +730,9 @@ class EDSModel(Model1D):
 
         Parameters
         ----------
-        xray_lines: list of str or 'all'
-            The Xray lines. If 'all', fit all lines
+        xray_lines: list of str, 'all', or 'all_alpha'
+            The Xray lines. If 'all', fit all lines. If 'all_alpha' fit all
+            using all alpha lines.
         bound: float
             the bound around the actual energy, in keV or eV
         """
