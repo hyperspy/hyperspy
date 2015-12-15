@@ -7,18 +7,34 @@ from hyperspy.misc.elements import elements as elements_db
 from functools import reduce
 
 
-def _get_element_and_line(Xray_line):
-    lim = Xray_line.find('_')
-    return Xray_line[:lim], Xray_line[lim + 1:]
+def _get_element_and_line(xray_line):
+    """
+    Returns the element name and line character for a particular X-ray line as a
+    tuple.
+
+    By example, if xray_line = 'Mn_Ka' this function returns ('Mn', 'Ka')
+    """
+    lim = xray_line.find('_')
+    return xray_line[:lim], xray_line[lim + 1:]
 
 
 def _get_energy_xray_line(xray_line):
+    """
+    Returns the energy (in keV) associated with a given X-ray line.
+
+    By example, if xray_line = 'Mn_Ka' this function returns 5.8987
+    """
     element, line = _get_element_and_line(xray_line)
     return elements_db[element]['Atomic_properties']['Xray_lines'][
         line]['energy (keV)']
 
 
 def _get_xray_lines_family(xray_line):
+    """
+    Returns the family to which a particular X-ray line belongs.
+
+    By example, if xray_line = 'Mn_Ka' this function returns 'Mn_K'
+    """
     return xray_line[:xray_line.find('_') + 2]
 
 
@@ -247,9 +263,9 @@ def take_off_angle(tilt_stage,
                                   + math.sin(a) * math.sin(c)))
 
 
-def xray_lines_model(elements=['Al', 'Zn'],
+def xray_lines_model(elements,
                      beam_energy=200,
-                     weight_percents=[50, 50],
+                     weight_percents=None,
                      energy_resolution_MnKa=130,
                      energy_axis={'name': 'E', 'scale': 0.01, 'units': 'keV',
                                   'offset': -0.1, 'size': 1024}
@@ -289,27 +305,29 @@ def xray_lines_model(elements=['Al', 'Zn'],
     counts_rate = 1.
     live_time = 1.
     if weight_percents is None:
-        weight_percents = [100] * len(elements)
+        weight_percents = [100 / len(elements)] * len(elements)
     m = s.create_model()
-    for i, (element, weight_percent) in enumerate(zip(
-            elements, weight_percents)):
-        for line in elements_db[
-                element]['Atomic_properties']['Xray_lines'].keys():
-            line_energy = elements_db[element]['Atomic_properties'][
-                'Xray_lines'][line]['energy (keV)']
-            ratio_line = elements_db[element]['Atomic_properties'][
-                'Xray_lines'][line]['weight']
-            if s._get_xray_lines_in_spectral_range(
-                    [element+'_'+line])[1] == []:
-                g = components.Gaussian()
-                g.centre.value = line_energy
-                g.sigma.value = get_FWHM_at_Energy(
-                    energy_resolution_MnKa, line_energy) / 2.355
-                g.A.value = live_time * counts_rate * \
-                    weight_percent / 100 * ratio_line
-                m.append(g)
+    if len(elements) == len(weight_percents):
+        for i, (element, weight_percent) in enumerate(zip(
+                elements, weight_percents)):
+            for line, properties in elements_db[
+                    element]['Atomic_properties']['Xray_lines'].iteritems():
+                line_energy = properties['energy (keV)']
+                ratio_line = properties['weight']
+                if s._get_xray_lines_in_spectral_range(
+                        [element+'_'+line])[1] == []:
+                    g = components.Gaussian()
+                    g.centre.value = line_energy
+                    g.sigma.value = get_FWHM_at_Energy(
+                        energy_resolution_MnKa, line_energy) / 2.355
+                    g.A.value = live_time * counts_rate * \
+                        weight_percent / 100 * ratio_line
+                    m.append(g)
+    else:
+        raise ValueError("The number of elements specified is not the same \
+                         as the number of weight_percents")
+
     s.data = m.as_signal().data
-    # s.add_poissonian_noise()
     return s
 
 

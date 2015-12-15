@@ -453,8 +453,7 @@ class EDSTEMSpectrum(EDSSpectrum):
         self.learning_results.loadings = np.nan_to_num(
             self.learning_results.loadings)
 
-    def create_model(self, auto_background=True, auto_add_lines=True,
-                     *args, **kwargs):
+    def create_model(self, auto_background=True, auto_add_lines=True):
         """Create a model for the current TEM EDS data.
 
         Parameters
@@ -466,6 +465,9 @@ class EDSTEMSpectrum(EDSSpectrum):
             If True, automatically add Gaussians for all X-rays generated in the
             energy range by an element using the edsmodel.add_family_lines
             method.
+        dictionary : {None, dict}, optional
+            A dictionary to be used to recreate a model. Usually generated using
+            :meth:`hyperspy.model.as_dictionary`
 
         Returns
         -------
@@ -478,4 +480,3 @@ class EDSTEMSpectrum(EDSSpectrum):
                             auto_background=auto_background,
                             auto_add_lines=auto_add_lines)
         return model
-

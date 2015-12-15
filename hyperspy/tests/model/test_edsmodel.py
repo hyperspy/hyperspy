@@ -26,7 +26,7 @@ class TestlineFit:
         m.fit()
         nt.assert_true(np.allclose([i.data for i in
                                    m.get_lines_intensity()],
-                                   [[0.5], [0.2], [0.3]], atol=1e-6))
+                                   [[0.5], [0.2], [0.3]], atol=10-4))
 
     def test_calibrate_energy_resolution(self):
         s = self.s
@@ -75,9 +75,11 @@ class TestlineFit:
     def test_calibrate_xray_weight(self):
         s = self.s
         s1 = utils_eds.xray_lines_model(
-            elements=['Co'], energy_axis={'units': 'keV', 'size': 400,
-                                          'scale': 0.01, 'name': 'E',
-                                          'offset': 4.9})
+            elements=['Co'],
+            weight_percents=[50],
+            energy_axis={'units': 'keV', 'size': 400,
+                         'scale': 0.01, 'name': 'E',
+                         'offset': 4.9})
         s = (s+s1/50)
         m = s.create_model()
         m.fit()

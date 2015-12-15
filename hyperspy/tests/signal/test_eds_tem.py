@@ -178,7 +178,8 @@ class Test_vacum_mask:
 class Test_simple_model:
 
     def setUp(self):
-        s = utils_eds.xray_lines_model()
+        s = utils_eds.xray_lines_model(elements=['Al', 'Zn'],
+                                       weight_percents=[50, 50])
         self.signal = s
 
     def test_intensity(self):
