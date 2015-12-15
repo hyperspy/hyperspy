@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2015 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -77,7 +77,8 @@ class PowerLaw(Component):
 
     def grad_origin(self, x):
         return np.where(x > self.left_cutoff, self.r.value *
-                        (x - self.origin.value) ** (-self.r.value - 1) * self.A.value, 0)
+                        (x - self.origin.value) ** (-self.r.value - 1) *
+                        self.A.value, 0)
 
     def estimate_parameters(self, signal, x1, x2, only_current=False):
         """Estimate the parameters by the two area method
@@ -105,6 +106,8 @@ class PowerLaw(Component):
         i1, i2 = axis.value_range_to_indices(x1, x2)
         if not (i2 + i1) % 2 == 0:
             i2 -= 1
+        if i2 == i1:
+            i2 += 2
         i3 = (i2 + i1) / 2
         x1 = axis.index2value(i1)
         x2 = axis.index2value(i2)
@@ -113,8 +116,8 @@ class PowerLaw(Component):
             s = signal.get_current_signal()
         else:
             s = signal
-        I1 = s.isig[i1:i3].integrate1D(2j).data
-        I2 = s.isig[i3:i2].integrate1D(2j).data
+        I1 = s.isig[i1:i3].integrate1D(2j).data.astype("float")
+        I2 = s.isig[i3:i2].integrate1D(2j).data.astype("float")
         try:
             r = 2 * np.log(I1 / I2) / math.log(x2 / x1)
             k = 1 - r

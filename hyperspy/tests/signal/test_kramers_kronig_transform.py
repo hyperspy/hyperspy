@@ -1,4 +1,4 @@
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2015 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -21,7 +21,7 @@ import nose.tools
 
 from hyperspy.components import VolumePlasmonDrude, Lorentzian
 from hyperspy.misc.eels.tools import eels_constant
-import hyperspy.hspy as hs
+import hyperspy.api as hs
 
 
 class Test2D:
@@ -52,7 +52,7 @@ class Test2D:
         k = eels_constant(s, i0, t)
 
         vpm = VolumePlasmonDrude()
-        m = hs.create_model(s, auto_background=False)
+        m = s.create_model(auto_background=False)
         m.append(vpm)
         vpm.intensity.map['values'][:] = 1
         vpm.plasmon_energy.map['values'] = np.array([[8., 18.4, 15.8],
@@ -62,7 +62,7 @@ class Test2D:
         vpm.intensity.map['is_set'][:] = True
         vpm.plasmon_energy.map['is_set'][:] = True
         vpm.fwhm.map['is_set'][:] = True
-        s.data = (m.as_signal() * k).data
+        s.data = (m.as_signal(show_progressbar=None) * k).data
 
         # Create ZLP
         z = s.deepcopy()
@@ -133,8 +133,11 @@ class Test2D:
                                                      iterations=1,
                                                      n=1000.,
                                                      full_output=True)
-        nose.tools.assert_true(np.allclose(self.thickness.data,
-                                           output['thickness'].data, rtol=0.01))
+        nose.tools.assert_true(
+            np.allclose(
+                self.thickness.data,
+                output['thickness'].data,
+                rtol=0.01))
 
     @nose.tools.raises(ValueError)
     def test_thicness_input_array(self):

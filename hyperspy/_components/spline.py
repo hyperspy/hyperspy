@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2015 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -26,6 +26,7 @@ class Spline(Component):
 
     def __init__(self, tck):
         Component.__init__(self, ('c', 'dump'))
+        self._whitelist['tck'] = ('init', tck)
         self.t, self.c.value, self.k = tck
         self.dump.free = False
 

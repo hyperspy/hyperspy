@@ -24,6 +24,8 @@ Background removal
 The :py:meth:`~.signal.Signal1DTools.remove_background` method provides
 background removal capabilities through both a CLI and a GUI. Current
 background type supported are power law, offset, polynomial and gaussian.
+By default the background is estimated, but a full fit can also be used.
+The full fit is more accurate, but slower.
 
 Calibration
 ^^^^^^^^^^^
@@ -70,20 +72,19 @@ interface to remove spikes from spectra.
 
 .. figure::  images/spikes_removal_tool.png
    :align:   center
-   :width:   500    
+   :width:   500
 
-   Spikes removal tool
+   Spikes removal tool.
 
 
 Other methods
 ^^^^^^^^^^^^^^
 
-* Apply a hanning taper to the spectra 
+* Apply a hanning taper to the spectra
   :py:meth:`~.signal.Signal1DTools.hanning_taper`
-* Find peaks in spectra 
+* Find peaks in spectra
   :py:meth:`~.signal.Signal1DTools.find_peaks1D_ohaver`
-* Interpolate the spectra in between two positions 
+* Interpolate the spectra in between two positions
   :py:meth:`~.signal.Signal1DTools.interpolate_in_between`
-* Convolve the spectra with a gaussian 
+* Convolve the spectra with a gaussian
   :py:meth:`~.signal.Signal1DTools.gaussian_filter`
-

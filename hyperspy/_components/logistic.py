@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2015 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -60,7 +60,6 @@ class Logistic(Component):
         """
         Returns d(function)/d(parameter_1)
         """
-        a = self.a.value
         b = self.b.value
         c = self.c.value
         origin = self.origin.value
