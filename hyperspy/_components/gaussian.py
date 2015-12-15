@@ -32,7 +32,7 @@ class Gaussian(Component):
 
     .. math::
 
-        f(x) = \\frac{a}{\sqrt{2\pi c^{2}}}e^{-\\frac{\left(x-b\\right)^{2}}{2c^{2}}}
+        f(x) = \\frac{a}{\\sqrt{2\\pi c^{2}}}exp\\left[-\\frac{\\left(x-b\\right)^{2}}{2c^{2}}\\right]
 
     +------------+-----------+
     | Parameter  | Attribute |

@@ -26,30 +26,38 @@ sqrt2pi = math.sqrt(2 * math.pi)
 sigma2fwhm = 2 * math.sqrt(2 * math.log(2))
 
 
-class Gaussian2(Component):
+class GaussianHF(Component):
 
     """Normalized gaussian function component, with a fwhm parameter instead
-    of the sigma parameter, and a height parameter instead of the A parameter 
-    (scaling difference of sigma * sqrt(2*Pi)). This makes the parameter vs. 
-    peak maximum independent of sigma, and thereby makes locking of the 
+    of the sigma parameter, and a height parameter instead of the A parameter
+    (scaling difference of sigma * sqrt(2*Pi)). This makes the parameter vs.
+    peak maximum independent of sigma, and thereby makes locking of the
     parameter more viable. As long as there it no binning, the height parameter
-    corresponds directly to the peak maximum, if not, the value is scaled by a 
+    corresponds directly to the peak maximum, if not, the value is scaled by a
     linear constant (signal_axis.scale).
 
     .. math::
 
-        f(x) = \\frac{a}{\sqrt{2\pi c^{2}}}e^{-\\frac{\left(x-b\\right)^{2}}{2c^{2}}}
+        f(x) = h \\sqrt{2\\pi}\\mathrm{exp}{\\left[-\\frac{4 \\log{2}\\left(x-c\\right)^{2}}{W^{2}}\\right]}
 
-    +------------+-----------+
-    | Parameter  | Attribute |
-    +------------+-----------+
-    +------------+-----------+
-    |     a      |  height   |
-    +------------+-----------+
-    |     b      |  centre   |
-    +------------+-----------+
-    |     c      |   fwhm    |
-    +------------+-----------+
+
+    Parameters:
+        height: float
+            The height of the peak. If there is no binning, this corresponds
+            directly to the maximum, otherwise the maximum divided by
+            signal_axis.scale
+        centre: float
+            Location of the gaussian maximum, also the mean position.
+        fwhm: float
+            The full width half maximum value, i.e. the width of the gaussian
+            at half the value of gaussian peak (at center).
+
+    The helper properties `sigma` and `A` are also defined for compatibilty
+    with `Gaussian` component.
+
+    See also
+    --------
+    hyperspy.components.Gaussian
 
     """
 
