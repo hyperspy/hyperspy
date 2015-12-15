@@ -70,20 +70,21 @@ class TestNdAxes:
                                              s2.learning_results.loadings)
 
 
-class TestGetExplainedVarinaceRation:
+class TestGetExplainedVarinaceRatio:
 
     def setUp(self):
         s = signals.Signal(np.empty(1))
-        s.learning_results.explained_variance_ratio = np.empty(10)
         self.s = s
 
     def test_data(self):
-        assert_true((self.s.get_explained_variance_ratio().data ==
-                     self.s.learning_results.explained_variance_ratio).all())
+        self.s.learning_results.explained_variance_ratio = np.asarray([2,4])
+        np.testing.assert_array_equal(
+            self.s.get_explained_variance_ratio().data,
+            np.asarray([2,4]))
 
     @raises(AttributeError)
     def test_no_evr(self):
-        self.s.get_explained_variance_ration()
+        self.s.get_explained_variance_ratio()
 
 
 class TestReverseDecompositionComponent:
