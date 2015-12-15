@@ -67,11 +67,27 @@ class TestGaussianHF(object):
 
     def test_fit_all(self):
         s = self.s
-        g1 = GaussianHF()
+        g1 = GaussianHF(50015.156, 23, 10)
         s.data[0, 0, :] = g1.function(s.axes_manager.signal_axes[0].axis)
-        g2 = GaussianHF(50015.156, 23, 10)
+        g2 = GaussianHF()
         g2.estimate_parameters(s, 0, 100, True)
         self.m.append(g2)
         self.m.fit()
         for p1, p2 in zip(g1.parameters, g2.parameters):
             nt.assert_almost_equal(p1.value, p2.value)
+
+    def test_binned(self):
+        s = self.s
+        s.axes_manager.signal_axes[0].scale = 0.3
+        s.metadata.Signal.binned = True
+        g1 = GaussianHF(50015.156, 23, 10)
+        s.data[0, 0, :] = g1.function(s.axes_manager.signal_axes[0].axis)
+        g2 = GaussianHF()
+        g2.estimate_parameters(s, 0, 100, True)
+        self.m.append(g2)
+        self.m.fit()
+        np.testing.assert_almost_equal(
+            g1.height.value/s.axes_manager.signal_axes[0].scale,
+            g2.height.value)
+        for p1, p2 in zip([g1.fwhm, g1.centre], [g2.fwhm, g2.centre]):
+            np.testing.assert_almost_equal(p1.value, p2.value)
