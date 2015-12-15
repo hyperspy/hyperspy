@@ -137,9 +137,6 @@ def xray_range(xray_line, beam_energy, density='auto'):
     """Return the maximum range of X-ray generation according to the
     Anderson-Hasler parameterization.
 
-    Note that the magic numbers appearing in the equation are the values from
-    the parameterization mentioned above.
-
     Parameters
     ----------
     xray_line: str
@@ -182,7 +179,8 @@ def xray_range(xray_line, beam_energy, density='auto'):
             'Physical_properties'][
             'density (g/cm^3)']
     Xray_energy = _get_energy_xray_line(xray_line)
-
+    # Note: magic numbers here are from Andersen-Hasler parameterization. See
+    # docstring for associated references.
     return 0.064 / density * (np.power(beam_energy, 1.68) -
                               np.power(Xray_energy, 1.68))
 
@@ -190,9 +188,6 @@ def xray_range(xray_line, beam_energy, density='auto'):
 def electron_range(element, beam_energy, density='auto', tilt=0):
     """Returns the maximum electron range for a pure bulk material according to
     the Kanaya-Okayama parameterziation.
-
-    Note that the magic numbers appearing in the equation are the values from
-    the parameterization mentioned above.
 
     Parameters
     ----------
@@ -230,7 +225,8 @@ def electron_range(element, beam_energy, density='auto', tilt=0):
             element]['Physical_properties']['density (g/cm^3)']
     Z = elements_db[element]['General_properties']['Z']
     A = elements_db[element]['General_properties']['atomic_weight']
-
+    # Note: magic numbers here are from Kanaya-Okayama parameterization. See
+    # docstring for associated references.
     return (0.0276 * A / np.power(Z, 0.89) / density *
             np.power(beam_energy, 1.67) * math.cos(math.radians(tilt)))
 
@@ -287,7 +283,7 @@ def xray_lines_model(elements,
                                   'offset': -0.1, 'size': 1024}
                      ):
     """
-    Generate a model of X-ray lines using a Gaussian epr x-ray lines.
+    Generate a model of X-ray lines using a Gaussian distribution for each peak.
 
     The area under a main peak (alpha) is equal to 1 and weighted by the
     composition.
