@@ -29,6 +29,9 @@ from hyperspy.misc.elements import elements as elements_db
 from hyperspy.misc.eds import utils as utils_eds
 import hyperspy.components as create_component
 
+eV2keV = 1000.
+sigma2fwhm = 2 * math.sqrt(2 * math.log(2))
+
 
 def _get_weight(element, line, weight_line=None):
     if weight_line is None:
@@ -45,19 +48,35 @@ def _get_iweight(element, line, weight_line=None):
 
 
 def _get_sigma(E, E_ref, units_factor):
+    """Calculates an approximate sigma value, accounting for peak broadening due
+    to the detector, for a peak at energy E given a known width at a reference
+    energy.
+
+    The factor 2.5 is a constant derived by Fiori & Newbury as references below.
+
+    Parameters
+    ----------
+    energy_resolution_MnKa : float
+        Energy resolution of Mn Ka in eV
+    E : float
+        Energy of the peak in keV
+
+    Returns
+    -------
+    float : FWHM of the peak in keV
+
+    Notes
+    -----
+    This method implements the equation derived by Fiori and Newbury as is
+    documented in the following:
+
+        Fiori, C. E., and Newbury, D. E. (1978). In SEM/1978/I, SEM, Inc.,
+        AFM O'Hare, Illinois, p. 401.
+
+        Goldstein et al. (2003). "Scanning Electron Microscopy & X-ray
+        Microanalysis", Plenum, third edition, p 315.
     """
-    Gets sigma value for particular energy.
-
-    energy2sigma_factor : float
-
-    This is a factor that ???? and is set to 2.5 here with reference to
-    Goldstein ???
-
-    """
-    goldstein_factor = 2.5
-    eV2keV = 1000.
-    sigma2fwhm = 2 * math.sqrt(2 * math.log(2))
-    energy2sigma_factor = goldstein_factor * eV2keV / (sigma2fwhm**2)
+    energy2sigma_factor = 2.5 / (eV2keV * (sigma2fwhm**2))
     return lambda sig_ref: math.sqrt(abs(
         energy2sigma_factor * (E - E_ref) * units_factor +
         np.power(sig_ref, 2)))
@@ -141,7 +160,7 @@ class EDSModel(Model1D):
         elif units_name == 'keV':
             return 1.
         else:
-            raise ValueError("Energy univts, %s, not supported" %
+            raise ValueError("Energy units, %s, not supported" %
                              str(units_name))
 
     @property
@@ -397,11 +416,11 @@ class EDSModel(Model1D):
             xray_lines = [compo.name for compo in self.xray_lines]
         energy_Mn_Ka, FWHM_MnKa_old = self.spectrum._get_line_energy('Mn_Ka',
                                                                      'auto')
-        FWHM_MnKa_old *= 1000. / self.units_factor
+        FWHM_MnKa_old *= eV2keV / self.units_factor
         get_sigma_Mn_Ka = _get_sigma(
             energy_Mn_Ka, self[xray_lines[0]].centre.value, self.units_factor)
         FWHM_MnKa = get_sigma_Mn_Ka(self[xray_lines[0]].sigma.value
-                                    ) * 1000. / self.units_factor * 2.355
+                                    ) * eV2keV / self.units_factor * sigma2fwhm
         if FWHM_MnKa < 110:
             warnings.warn("FWHM_MnKa of " + str(FWHM_MnKa) + " smaller than" +
                           "physically possible")
@@ -764,14 +783,14 @@ class EDSModel(Model1D):
         """
 
         if calibrate == 'energy':
-            bound = (bound / 1000.) * self.units_factor
+            bound = (bound / eV2keV) * self.units_factor
             free = self.free_xray_lines_energy
             fix = self.fix_xray_lines_energy
         elif calibrate == 'sub_weight':
             free = self.free_sub_xray_lines_weight
             fix = self.fix_sub_xray_lines_weight
         elif calibrate == 'width':
-            bound = (bound / 1000.) * self.units_factor
+            bound = (bound / eV2keV) * self.units_factor
             free = self.free_xray_lines_width
             fix = self.fix_xray_lines_width
 

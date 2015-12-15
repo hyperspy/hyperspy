@@ -6,6 +6,9 @@ import math
 from hyperspy.misc.elements import elements as elements_db
 from functools import reduce
 
+eV2keV = 1000.
+sigma2fwhm = 2 * math.sqrt(2 * math.log(2))
+
 
 def _get_element_and_line(xray_line):
     """
@@ -94,7 +97,10 @@ def get_xray_lines_near_energy(energy, width=0.2, only_lines=None):
 
 
 def get_FWHM_at_Energy(energy_resolution_MnKa, E):
-    """Calculates the FWHM of a peak at energy E.
+    """Calculates an approximate FWHM, accounting for peak broadening due to the
+    detector, for a peak at energy E given a known width at a reference energy.
+
+    The factor 2.5 is a constant derived by Fiori & Newbury as references below.
 
     Parameters
     ----------
@@ -109,16 +115,22 @@ def get_FWHM_at_Energy(energy_resolution_MnKa, E):
 
     Notes
     -----
-    From the textbook of Goldstein et al., Plenum publisher,
-    third edition p 315
+    This method implements the equation derived by Fiori and Newbury as is
+    documented in the following:
+
+        Fiorie, C. E., and Newbury, D. E. (1978). In SEM/1978/I, SEM, Inc.,
+        AFM O'Hare, Illinois, p. 401.
+
+        Goldstein et al. (2003). "Scanning Electron Microscopy & X-ray
+        Microanalysis", Plenum, third edition, p 315.
 
     """
     FWHM_ref = energy_resolution_MnKa
     E_ref = _get_energy_xray_line('Mn_Ka')
 
-    FWHM_e = 2.5 * (E - E_ref) * 1000 + FWHM_ref * FWHM_ref
+    FWHM_e = 2.5 * (E - E_ref) * eV2keV + FWHM_ref * FWHM_ref
 
-    return math.sqrt(FWHM_e) / 1000  # In mrad
+    return math.sqrt(FWHM_e) / 1000.  # In mrad
 
 
 def xray_range(xray_line, beam_energy, density='auto'):
@@ -319,7 +331,7 @@ def xray_lines_model(elements,
                     g = components.Gaussian()
                     g.centre.value = line_energy
                     g.sigma.value = get_FWHM_at_Energy(
-                        energy_resolution_MnKa, line_energy) / 2.355
+                        energy_resolution_MnKa, line_energy) / sigma2fwhm
                     g.A.value = live_time * counts_rate * \
                         weight_percent / 100 * ratio_line
                     m.append(g)
