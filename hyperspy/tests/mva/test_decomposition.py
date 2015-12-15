@@ -90,7 +90,7 @@ class TestGetExplainedVarinaceRatio:
 class TestReverseDecompositionComponent:
 
     def setUp(self):
-        s = signals.Signal(np.empty(1))
+        s = signals.Signal(np.zeros(1))
         self.factors = np.ones([2, 3])
         self.loadings = np.ones([2, 3])
         s.learning_results.factors = self.factors.copy()
@@ -141,7 +141,7 @@ class TestReverseDecompositionComponent:
 class TestNormalizeComponents():
 
     def setUp(self):
-        s = signals.Signal(np.empty(1))
+        s = signals.Signal(np.zeros(1))
         self.factors = np.ones([2, 3])
         self.loadings = np.ones([2, 3])
         s.learning_results.factors = self.factors.copy()

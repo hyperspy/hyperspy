@@ -10,12 +10,12 @@ def test_spectrum_binned_default():
 
 
 def test_image_binned_default():
-    s = hs.signals.Image(np.empty((2, 2)))
+    s = hs.signals.Image(np.zeros((2, 2)))
     nose.tools.assert_false(s.metadata.Signal.binned)
 
 
 def test_image_simulation_binned_default():
-    s = hs.signals.ImageSimulation(np.empty([2, 2]))
+    s = hs.signals.ImageSimulation(np.zeros([2, 2]))
     nose.tools.assert_false(s.metadata.Signal.binned)
 
 
