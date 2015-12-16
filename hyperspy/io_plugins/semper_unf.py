@@ -188,7 +188,7 @@ class SemperFormat(object):
                     ('YUNIT', ('<i2', 4)),    # Bytes 249-252
                     ('ZUNIT', ('<i2', 4))]    # Bytes 253-256
 
-    def __init__(self, data, title=Undefined, offsets=(0., 0., 0.), scales=(1., 1., 1.),
+    def __init__(self, data, title='', offsets=(0., 0., 0.), scales=(1., 1., 1.),
                  units=(Undefined, Undefined, Undefined), metadata=None):
         self._log.debug('Calling __init__')
         if metadata is None:
@@ -277,7 +277,7 @@ class SemperFormat(object):
             '<f4')  # Packing function for 4 byte floats!
         nlay, nrow, ncol = self.data.shape
         data, iform = self._check_format(self.data)
-        title = self.title if self.title is not Undefined else ''
+        title = self.title
         # Create label:
         label = np.zeros((1,), dtype=self.LABEL_DTYPES)
         # Fill label:
@@ -395,7 +395,7 @@ class SemperFormat(object):
             metadata.update(
                 {'IVERSN': iversn, 'ILABEL': ilabel, 'NTITLE': ntitle})
             # Read title:
-            title = Undefined
+            title = ''
             if ntitle > 0:
                 assert np.fromfile(
                     f,
