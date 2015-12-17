@@ -602,6 +602,7 @@ def spd_reader(filename, endianess='<', *args):
         # Get name of .spc file from the .spd map:
         spc_fname = os.path.splitext(os.path.basename(filename))[0] + '.spc'
         read_spc = os.path.isfile(spc_fname)
+        print spc_fname, read_spc
 
         # Get name of .ipr file from the bitmap image:
         ipr_fname = os.path.splitext(
@@ -609,6 +610,8 @@ def spd_reader(filename, endianess='<', *args):
                 original_metadata['spd_header'][
                     'fName']))[0] + '.ipr'
         read_ipr = os.path.isfile(ipr_fname)
+
+        print ipr_fname, read_ipr
 
         # dimensions of map data:
         nx = original_metadata['spd_header']['nPoints']
@@ -618,7 +621,7 @@ def spd_reader(filename, endianess='<', *args):
         data_type = {'1': 'u1',
                      '2': 'u2',
                      '4': 'u4'}[str(original_metadata['spd_header'][
-                         'countBytes'])]
+                                        'countBytes'])]
 
         # Read data from file into a numpy memmap object
         data = np.memmap(f, mode='c', offset=data_offset, dtype=data_type
@@ -631,6 +634,9 @@ def spd_reader(filename, endianess='<', *args):
                                      dtype=get_ipr_dtype_list(endianess),
                                      count=1)
             original_metadata['ipr_header'] = sarray2dict(ipr_header)
+    else:
+        print "Matching .ipr file was not found. Image calibration will not " \
+              "be available."
 
     # Read the .spc header (if possible)
     if read_spc:
@@ -639,14 +645,76 @@ def spd_reader(filename, endianess='<', *args):
                                      dtype=get_spc_dtype_list(endianess),
                                      count=1)
             original_metadata['spc_header'] = sarray2dict(spc_header)
+    else:
+        print "Matching .spc file was not found. Spectral calibration " \
+              "information will not be available."
 
-        # dictionary = {'data': data,
-        #               'axes': axes,
-        #               'metadata': metadata,
-        #               'original_metadata': original_metadata}
+    # create the axis objects for each axis
+    energy_axis = {
+        'size': data.shape[2],
+        'index_in_array': 2,
+        'name': 'Energy',
+        'scale': original_metadata['spc_header']['evPerChan'] / 1000.0,
+        'offset': original_metadata['spc_header']['startEnergy'],
+        'units': 'keV',
+    }
+
+    x_axis = {
+        'size': data.shape[1],
+        'index_in_array': 1,
+        'name': 'x',
+        'scale': original_metadata['ipr_header']['mppX'],
+        'offset': 0,
+        'units': '$\mu m$',
+    }
+
+    y_axis = {
+        'size': data.shape[0],
+        'index_in_array': 0,
+        'name': 'y',
+        'scale': original_metadata['ipr_header']['mppY'],
+        'offset': 0,
+        'units': '$\mu m$',
+    }
+
+    axes = [y_axis, x_axis, energy_axis]
+
+    # Assign metadata for spectrum image:
+    metadata = {'General': {'original_filename': os.path.split(filename)[1],
+                            'title': 'EDS Spectrum Image'},
+                "Signal": {'signal_type': "EDS_SEM",
+                           'record_by': 'spectrum', },
+                "Acquisition_instrument":
+                    {'SEM':
+                        {'Detector':
+                            {'EDS': {
+                                'azimuth_angle': original_metadata[
+                                    'spc_header']['azimuth'],
+                                'elevation_angle': original_metadata[
+                                    'spc_header']['elevation'],
+                                'energy_resolution_MnKa': original_metadata[
+                                    'spc_header']['detReso'],
+                                'live_time': original_metadata[
+                                    'spc_header']['liveTime']}}},
+                        'beam_energy': original_metadata[
+                            'spc_header']['kV'],
+                        'tilt_stage': original_metadata[
+                            'spc_header']['tilt']
+                    }
+                }
+
+    dictionary = {'data': data,
+                  'axes': axes,
+                  'metadata': metadata,
+                  'original_metadata': original_metadata}
+
+    return [dictionary, ]
 
 
-def file_reader(filename, endianess='<', *args):
+def file_reader(filename,
+                record_by=None,
+                endianess='<',
+                *args):
     """
 
     Parameters
@@ -666,5 +734,5 @@ def file_reader(filename, endianess='<', *args):
         return spd_reader(filename, endianess, *args)
     elif ext in spc_extensions:
         return spc_reader(filename, endianess, *args)
-
-    return dictionary
+    else:
+        raise IOError("Did not understand input file format.")
