@@ -621,7 +621,7 @@ def spd_reader(filename, endianess='<', *args):
         data_type = {'1': 'u1',
                      '2': 'u2',
                      '4': 'u4'}[str(original_metadata['spd_header'][
-                                        'countBytes'])]
+                         'countBytes'])]
 
         # Read data from file into a numpy memmap object
         data = np.memmap(f, mode='c', offset=data_offset, dtype=data_type
@@ -700,7 +700,7 @@ def spd_reader(filename, endianess='<', *args):
                             'spc_header']['kV'],
                         'tilt_stage': original_metadata[
                             'spc_header']['tilt']
-                    }
+                     }
                 }
 
     dictionary = {'data': data,
