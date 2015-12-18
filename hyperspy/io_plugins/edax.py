@@ -48,6 +48,28 @@ writes = False
 spd_extensions = ('spd', 'SPD')
 spc_extensions = ('spc', 'SPC')
 
+atomic_num_dict = {1: 'H', 2: 'He', 3: 'Li', 4: 'Be', 5: 'B', 6: 'C', 7: 'N',
+                   8: 'O', 9: 'F', 10: 'Ne', 11: 'Na', 12: 'Mg', 13: 'Al',
+                   14: 'Si', 15: 'P', 16: 'S', 17: 'Cl', 18: 'Ar', 19: 'K',
+                   20: 'Ca', 21: 'Sc', 22: 'Ti', 23: 'V', 24: 'Cr', 25: 'Mn',
+                   26: 'Fe', 27: 'Co', 28: 'Ni', 29: 'Cu', 30: 'Zn', 31: 'Ga',
+                   32: 'Ge', 33: 'As', 34: 'Se', 35: 'Br', 36: 'Kr', 37: 'Rb',
+                   38: 'Sr', 39: 'Y', 40: 'Zr', 41: 'Nb', 42: 'Mo', 43: 'Tc',
+                   44: 'Ru', 45: 'Rh', 46: 'Pd', 47: 'Ag', 48: 'Cd', 49: 'In',
+                   50: 'Sn', 51: 'Sb', 52: 'Te', 53: 'I', 54: 'Xe', 55: 'Cs',
+                   56: 'Ba', 57: 'La', 58: 'Ce', 59: 'Pr', 60: 'Nd', 61: 'Pm',
+                   62: 'Sm', 63: 'Eu', 64: 'Gd', 65: 'Tb', 66: 'Dy', 67: 'Ho',
+                   68: 'Er', 69: 'Tm', 70: 'Yb', 71: 'Lu', 72: 'Hf', 73: 'Ta',
+                   74: 'W', 75: 'Re', 76: 'Os', 77: 'Ir', 78: 'Pt', 79: 'Au',
+                   80: 'Hg', 81: 'Tl', 82: 'Pb', 83: 'Bi', 84: 'Po', 85: 'At',
+                   86: 'Rn', 87: 'Fr', 88: 'Ra', 89: 'Ac', 90: 'Th', 91: 'Pa',
+                   92: 'U', 93: 'Np', 94: 'Pu', 95: 'Am', 96: 'Cm', 97: 'Bk',
+                   98: 'Cf', 99: 'Es', 100: 'Fm', 101: 'Md', 102: 'No',
+                   103: 'Lr', 104: 'Rf', 105: 'Db', 106: 'Sg', 107: 'Bh',
+                   108: 'Hs', 109: 'Mt', 110: 'Ds', 111: 'Rg', 112: 'Cp',
+                   113: 'Uut', 114: 'Uuq', 115: 'Uup', 116: 'Uuh', 117: 'Uus',
+                   118: 'Uuo'}
+
 
 def get_spd_dtype_list(endianess='<'):
     """
@@ -569,7 +591,10 @@ def spc_reader(filename, endianess='<', *args):
     #               'original_metadata': original_metadata}
 
 
-def spd_reader(filename, endianess='<', *args):
+def spd_reader(filename,
+               endianess='<',
+               units=None,
+               **kwargs):
     """
     Read data from an SPD spectral map specified by filename.
 
@@ -579,7 +604,11 @@ def spd_reader(filename, endianess='<', *args):
         Name of SPD file to read
     endianess : char
         Byte-order of data to read
-    args
+    units : str or None
+        Default units for EDAX data is in microns, so this is the default
+        unit to save in the signal. Can also be specified as 'nm',
+        which will output a signal with nm scale
+    kwargs**
 
     Returns
     -------
@@ -602,7 +631,6 @@ def spd_reader(filename, endianess='<', *args):
         # Get name of .spc file from the .spd map:
         spc_fname = os.path.splitext(os.path.basename(filename))[0] + '.spc'
         read_spc = os.path.isfile(spc_fname)
-        print spc_fname, read_spc
 
         # Get name of .ipr file from the bitmap image:
         ipr_fname = os.path.splitext(
@@ -610,8 +638,6 @@ def spd_reader(filename, endianess='<', *args):
                 original_metadata['spd_header'][
                     'fName']))[0] + '.ipr'
         read_ipr = os.path.isfile(ipr_fname)
-
-        print ipr_fname, read_ipr
 
         # dimensions of map data:
         nx = original_metadata['spd_header']['nPoints']
@@ -621,7 +647,7 @@ def spd_reader(filename, endianess='<', *args):
         data_type = {'1': 'u1',
                      '2': 'u2',
                      '4': 'u4'}[str(original_metadata['spd_header'][
-                         'countBytes'])]
+                                        'countBytes'])]
 
         # Read data from file into a numpy memmap object
         data = np.memmap(f, mode='c', offset=data_offset, dtype=data_type
@@ -659,25 +685,24 @@ def spd_reader(filename, endianess='<', *args):
         'units': 'keV',
     }
 
+    scale = 1000 if units == 'nm' else 1
     x_axis = {
         'size': data.shape[1],
         'index_in_array': 1,
         'name': 'x',
-        'scale': original_metadata['ipr_header']['mppX'],
+        'scale': original_metadata['ipr_header']['mppX'] * scale,
         'offset': 0,
-        'units': '$\mu m$',
+        'units': 'nm' if units == 'nm' else '$\mu m$',
     }
 
     y_axis = {
         'size': data.shape[0],
         'index_in_array': 0,
         'name': 'y',
-        'scale': original_metadata['ipr_header']['mppY'],
+        'scale': original_metadata['ipr_header']['mppY'] * scale,
         'offset': 0,
-        'units': '$\mu m$',
+        'units': 'nm' if units == 'nm' else '$\mu m$',
     }
-
-    axes = [y_axis, x_axis, energy_axis]
 
     # Assign metadata for spectrum image:
     metadata = {'General': {'original_filename': os.path.split(filename)[1],
@@ -695,13 +720,27 @@ def spd_reader(filename, endianess='<', *args):
                                 'energy_resolution_MnKa': original_metadata[
                                     'spc_header']['detReso'],
                                 'live_time': original_metadata[
-                                    'spc_header']['liveTime']}}},
-                        'beam_energy': original_metadata[
-                            'spc_header']['kV'],
-                        'tilt_stage': original_metadata[
-                            'spc_header']['tilt']
-                     }
+                                    'spc_header']['liveTime']}},
+                            'beam_energy': original_metadata[
+                                'spc_header']['kV'],
+                            'tilt_stage': original_metadata[
+                                'spc_header']['tilt']}
+                    }
                 }
+
+    # Get elements stored in spectrum:
+    num_elem = original_metadata['spc_header']['numElem']
+    if num_elem > 0:
+        element_list = sorted([atomic_num_dict[i] for
+                               i in original_metadata['spc_header']['at'][
+                                    :num_elem]])
+        metadata['Sample'] = {'elements': element_list}
+        print "Elemental information was found in the spectral metadata and " \
+              "were added to the signal:"
+        print "{}".format(element_list)
+
+    # Define signal axes:
+    axes = [y_axis, x_axis, energy_axis]
 
     dictionary = {'data': data,
                   'axes': axes,
@@ -714,7 +753,7 @@ def spd_reader(filename, endianess='<', *args):
 def file_reader(filename,
                 record_by=None,
                 endianess='<',
-                *args):
+                **kwargs):
     """
 
     Parameters
@@ -723,7 +762,8 @@ def file_reader(filename,
         Name of file to read
     endianess : char
         Byte-order of data to read
-    args
+    **kwargs
+        Additional keyword arguments supplied to the readers
 
     Returns
     -------
@@ -731,8 +771,8 @@ def file_reader(filename,
     """
     ext = os.path.splitext(filename)[1][1:]
     if ext in spd_extensions:
-        return spd_reader(filename, endianess, *args)
+        return spd_reader(filename, endianess, **kwargs)
     elif ext in spc_extensions:
-        return spc_reader(filename, endianess, *args)
+        return spc_reader(filename, endianess, **kwargs)
     else:
         raise IOError("Did not understand input file format.")
