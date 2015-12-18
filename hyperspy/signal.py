@@ -3966,29 +3966,28 @@ class Signal(FancySlicing,
                 name="Scalar",
                 navigate=False,)
 
-    def _apply_function_on_data_and_remove_axis(self, function, axis):
-        if axis not in ("navigation", "signal"):
-            s = self._deepcopy_with_new_data(
-                function(self.data,
-                         axis=self.axes_manager[axis].index_in_array))
-            s._remove_axis(axis)
-            return s
-
+    def _get_iaxes(self, axis):
+        """
+        Utility function for turning a general `axis` argument into a list of
+        indices to index array. Mainly used to handle "navigation" and
+        "signal" values.
+        """
         if axis == "navigation":
-            s = self.get_current_signal(auto_filename=False, auto_title=False)
-            s.data = s.data.copy() # Don't overwrite self.data 
-
-            iaxes = sorted([ax.index_in_array
+            return sorted([ax.index_in_array
                            for ax in self.axes_manager.navigation_axes])
         elif axis == "signal":
-            s = self._get_navigation_signal()
-            iaxes = sorted([ax.index_in_array
-                            for ax in self.axes_manager.signal_axes])
-        data = self.data
-        while iaxes:
-            data = function(data,
-                            axis=iaxes.pop())
-        s.data[:] = data
+            return sorted([ax.index_in_array
+                           for ax in self.axes_manager.signal_axes])
+        else:
+            return [self.axes_manager[axis].index_in_array]
+
+    def _apply_function_on_data_and_remove_axis(self, function, axis):
+        s = self._deepcopy_with_new_data(self.data)
+        iaxes = self._get_iaxes(axis)
+        for ax in reversed(iaxes):
+            s.data = function(s.data, axis=ax)
+            s._remove_axis(ax)
+
         return s
 
     def sum(self, axis="navigation"):
