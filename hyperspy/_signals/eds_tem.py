@@ -453,7 +453,8 @@ class EDSTEMSpectrum(EDSSpectrum):
         self.learning_results.loadings = np.nan_to_num(
             self.learning_results.loadings)
 
-    def create_model(self, auto_background=True, auto_add_lines=True):
+    def create_model(self, auto_background=True, auto_add_lines=True,
+                     dictionary=None):
         """Create a model for the current TEM EDS data.
 
         Parameters

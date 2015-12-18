@@ -129,7 +129,7 @@ class EDSModel(Model1D):
 
     Example
     -------
-    >>> m = create_model(s)
+    >>> m = s.create_model()
     >>> m.fit()
     >>> m.fit_background()
     >>> m.calibrate_energy_axis('resolution')
@@ -234,14 +234,11 @@ class EDSModel(Model1D):
             component.name = xray_line
             self.append(component)
             self.xray_lines.append(component)
-            init = True
-            if init:
-                self[xray_line].A.map[
-                    'values'] = self.spectrum[..., line_energy].data * \
-                    line_FWHM / self.spectrum.axes_manager[-1].scale
-                self[xray_line].A.map['is_set'] = (
-                    np.ones(self.spectrum[..., line_energy].data.shape) == 1)
-
+            self[xray_line].A.map[
+                'values'] = self.spectrum.isig[line_energy].data * \
+                line_FWHM / self.spectrum.axes_manager[-1].scale
+            self[xray_line].A.map['is_set'] = (
+                np.ones(self.spectrum.isig[line_energy].data.shape) == 1)
             component.A.ext_force_positive = True
             for li in elements_db[element]['Atomic_properties']['Xray_lines']:
                 if line[0] in li and line != li:
@@ -319,7 +316,7 @@ class EDSModel(Model1D):
     def fit_background(self,
                        start_energy=None,
                        end_energy=None,
-                       windows_sigma=[4., 3.],
+                       windows_sigma=(4., 3.),
                        kind='single',
                        **kwargs):
         """
@@ -335,9 +332,9 @@ class EDSModel(Model1D):
         end_energy : {float, None}
             If float, limit the range of energies from the right to the
             given value.
-        windows_sigma: list of two float
-            The upper and lower bounds around each X-ray lines to define
-            the energy range free of X-ray lines.
+        windows_sigma: tuple of two float
+            The (lower, upper) bounds around each X-ray line, each as a float,
+            to define the energy range free of X-ray lines.
         kind : {'single', 'multi'}
             If 'single' fit only the current location. If 'multi'
             use multifit.
@@ -402,7 +399,7 @@ class EDSModel(Model1D):
                     E_ref, E, self.units_factor)
                 component.sigma.twin = component_ref.sigma
 
-    def _set_energy_resolution(self, xray_lines, *args, **kwargs):
+    def _set_energy_resolution(self, xray_lines, ref):
         """
         Adjust the width of all lines and set the fitted energy resolution
         to the spectrum
@@ -422,8 +419,8 @@ class EDSModel(Model1D):
         FWHM_MnKa = get_sigma_Mn_Ka(self[xray_lines[0]].sigma.value
                                     ) * eV2keV / self.units_factor * sigma2fwhm
         if FWHM_MnKa < 110:
-            warnings.warn("FWHM_MnKa of " + str(FWHM_MnKa) + " smaller than" +
-                          "physically possible")
+            raise ValueError("FWHM_MnKa of " + str(FWHM_MnKa) + " smaller than"
+                             + "physically possible")
         else:
             self.spectrum.set_microscope_parameters(
                 energy_resolution_MnKa=FWHM_MnKa)
@@ -474,9 +471,9 @@ class EDSModel(Model1D):
         Parameters
         ----------
         xray_lines: list of str or 'all_alpha'
-            The Xray lines. If 'all_alpha', fit all using all alpha lines
-        ref: float
-            the centre of the first line before the fit
+            The X-ray lines. If 'all_alpha', fit all using all alpha lines
+        ref: list of float
+            The centres, before fitting, of the X-ray lines included
         """
         if xray_lines == 'all_alpha':
             xray_lines = [compo.name for compo in self.xray_lines]
@@ -530,8 +527,8 @@ class EDSModel(Model1D):
         ----------
         xray_lines: list of str or 'all_alpha'
             The Xray lines. If 'all_alpha', fit all using all alpha lines
-        ref: float
-            the centre of the first line before the fit
+        ref: list of float
+            The centres, before fitting, of the X-ray lines included
         """
         if xray_lines == 'all_alpha':
             xray_lines = [compo.name for compo in self.xray_lines]
@@ -602,7 +599,7 @@ class EDSModel(Model1D):
             Bound the height of the peak to a fraction of
             its height
         """
-        def free_twin():
+        def free_twin(component):
             component.A.twin = None
             component.A.free = True
             if component.A.value - bound * component.A.value <= 0:
@@ -622,7 +619,7 @@ class EDSModel(Model1D):
                     free_twin()
                 elif utils_eds._get_xray_lines_family(
                         component.name) in xray_families:
-                    free_twin()
+                    free_twin(component)
 
     def fix_sub_xray_lines_weight(self, xray_lines='all'):
         """
@@ -630,25 +627,29 @@ class EDSModel(Model1D):
 
         Establish the twin on the height of sub-Xray lines (non alpha)
         """
-        def fix_twin():
+        def fix_twin(component):
             component.A.bmin = 0.0
             component.A.bmax = None
             element, line = utils_eds._get_element_and_line(component.name)
             for li in elements_db[element]['Atomic_properties']['Xray_lines']:
                 if line[0] in li and line != li:
                     xray_sub = element + '_' + li
-                    component_sub = self[xray_sub]
-                    component_sub.A.bmin = 1e-10
-                    component_sub.A.bmax = None
-                    weight_line = component_sub.A.value / component.A.value
-                    component_sub.A.twin_function = _get_weight(
-                        element, li, weight_line)
-                    component_sub.A.twin_inverse_function = _get_iweight(
-                        element, li, weight_line)
-                    component_sub.A.twin = component.A
+                    if xray_sub in self:
+                        component_sub = self[xray_sub]
+                        component_sub.A.bmin = 1e-10
+                        component_sub.A.bmax = None
+                        weight_line = component_sub.A.value / component.A.value
+                        component_sub.A.twin_function = _get_weight(
+                            element, li, weight_line)
+                        component_sub.A.twin_inverse_function = _get_iweight(
+                            element, li, weight_line)
+                        component_sub.A.twin = component.A
+                    else:
+                        warnings.warn("The X-ray line expected to be in the "
+                                      "model was not found")
         for component in self.xray_lines:
             if xray_lines == 'all' or component.name in xray_lines:
-                fix_twin()
+                fix_twin(component)
         self.fetch_stored_values()
 
     def free_xray_lines_energy(self, xray_lines='all', bound=0.001):
@@ -665,11 +666,7 @@ class EDSModel(Model1D):
 
         for component in self:
             if component.isbackground is False:
-                if xray_lines == 'all':
-                    component.centre.free = True
-                    component.centre.bmin = component.centre.value - bound
-                    component.centre.bmax = component.centre.value + bound
-                elif component.name in xray_lines:
+                if xray_lines == 'all' or component.name in xray_lines:
                     component.centre.free = True
                     component.centre.bmin = component.centre.value - bound
                     component.centre.bmax = component.centre.value + bound
@@ -690,12 +687,7 @@ class EDSModel(Model1D):
             xray_lines = [compo.name for compo in self.xray_lines]
         for component in self:
             if component.isbackground is False:
-                if xray_lines == 'all':
-                    component.centre.twin = None
-                    component.centre.free = False
-                    component.centre.bmin = None
-                    component.centre.bmax = None
-                elif component.name in xray_lines:
+                if xray_lines == 'all' or component.name in xray_lines:
                     component.centre.twin = None
                     component.centre.free = False
                     component.centre.bmin = None
@@ -715,11 +707,7 @@ class EDSModel(Model1D):
 
         for component in self:
             if component.isbackground is False:
-                if xray_lines == 'all':
-                    component.sigma.free = True
-                    component.sigma.bmin = component.sigma.value - bound
-                    component.sigma.bmax = component.sigma.value + bound
-                elif component.name in xray_lines:
+                if xray_lines == 'all' or component.name in xray_lines:
                     component.sigma.free = True
                     component.sigma.bmin = component.sigma.value - bound
                     component.sigma.bmax = component.sigma.value + bound
@@ -740,12 +728,7 @@ class EDSModel(Model1D):
             xray_lines = [compo.name for compo in self.xray_lines]
         for component in self:
             if component.isbackground is False:
-                if xray_lines == 'all':
-                    component.sigma.twin = None
-                    component.sigma.free = False
-                    component.sigma.bmin = None
-                    component.sigma.bmax = None
-                elif component.name in xray_lines:
+                if xray_lines == 'all' or component.name in xray_lines:
                     component.sigma.twin = None
                     component.sigma.free = False
                     component.sigma.bmin = None
@@ -839,15 +822,13 @@ class EDSModel(Model1D):
         from hyperspy import utils
         intensities = []
         if xray_lines is None:
-            xray_lines = []
-            for component in self.xray_lines:
-                xray_lines.append(component.name)
+            xray_lines = [component.name for component in self.xray_lines]
         else:
             if xray_lines == 'from_metadata':
                 xray_lines = self.spectrum.metadata.Sample.xray_lines
             xray_lines = filter(lambda x: x in [a.name for a in
                                 self], xray_lines)
-        if xray_lines == []:
+        if not xray_lines:
             raise ValueError("These X-ray lines are not part of the model.")
         for xray_line in xray_lines:
             element, line = utils_eds._get_element_and_line(xray_line)

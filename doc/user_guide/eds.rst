@@ -556,7 +556,7 @@ Load the spectrum, define the chemical composition of the sample and set the bea
 
 .. code-block:: python
 
-    >>> s = load('bam.msa')
+    >>> s = hs.load('bam.msa')
     >>> s.add_elements(['Al', 'Ar', 'C', 'Cu', 'Mn', 'Zr'])
     >>> s.set_microscope_parameters(beam_energy=10)
 
@@ -564,7 +564,7 @@ The model is created with :py:func:`~._signals.eds_sem.create_model`. One gaussi
 
 .. code-block:: python
 
-    >>> m = create_model(s)
+    >>> m = s.create_model()
     >>> m.print_current_values()
 
     Components    Parameter    Value

@@ -279,9 +279,7 @@ def xray_lines_model(elements,
                      beam_energy=200,
                      weight_percents=None,
                      energy_resolution_MnKa=130,
-                     energy_axis={'name': 'E', 'scale': 0.01, 'units': 'keV',
-                                  'offset': -0.1, 'size': 1024}
-                     ):
+                     energy_axis=None):
     """
     Generate a model of X-ray lines using a Gaussian distribution for each peak.
 
@@ -309,6 +307,9 @@ def xray_lines_model(elements,
     """
     from hyperspy._signals.eds_tem import EDSTEMSpectrum
     from hyperspy.model import components
+    if energy_axis is None:
+        energy_axis = {'name': 'E', 'scale': 0.01, 'units': 'keV',
+                       'offset': -0.1, 'size': 1024}
     s = EDSTEMSpectrum(np.zeros(energy_axis['size']), axes=[energy_axis])
     s.set_microscope_parameters(
         beam_energy=beam_energy,
@@ -317,7 +318,7 @@ def xray_lines_model(elements,
     counts_rate = 1.
     live_time = 1.
     if weight_percents is None:
-        weight_percents = [100 / len(elements)] * len(elements)
+        weight_percents = [100. / len(elements)] * len(elements)
     m = s.create_model()
     if len(elements) == len(weight_percents):
         for i, (element, weight_percent) in enumerate(zip(
