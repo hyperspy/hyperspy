@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2015 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -38,7 +38,7 @@ emi_extensions = ('emi', 'EMI')
 # ----------------------
 format_name = 'FEI TIA'
 description = ''
-full_suport = False
+full_support = False
 # Recognised file extension
 file_extensions = ser_extensions + emi_extensions
 default_extension = 0
@@ -425,7 +425,7 @@ def ser_reader(filename, objects=None, verbose=False, *args, **kwds):
 
     dc = dc.reshape(array_shape)
     if record_by == 'image':
-        dc = dc[::-1]
+        dc = dc[..., ::-1, :]
     if ordict:
         original_metadata = OrderedDict()
     else:
@@ -441,10 +441,14 @@ def ser_reader(filename, objects=None, verbose=False, *args, **kwds):
     original_metadata['ser_header_parameters'] = header_parameters
     dictionary = {
         'data': dc,
-        'metadata': {'General': {'original_filename': os.path.split(filename)[1]},
-                     "Signal": {'signal_type': "",
-                                'record_by': record_by, },
-                     },
+        'metadata': {
+            'General': {
+                'original_filename': os.path.split(filename)[1]},
+            "Signal": {
+                'signal_type': "",
+                'record_by': record_by,
+            },
+        },
         'axes': axes,
         'original_metadata': original_metadata,
         'mapping': mapping}
@@ -463,9 +467,16 @@ def get_degree(value):
 
 
 mapping = {
-    "ObjectInfo.ExperimentalDescription.High_tension_kV": ("Acquisition_instrument.TEM.beam_energy", None),
-    "ObjectInfo.ExperimentalDescription.Microscope": ("Acquisition_instrument.TEM.microscope", None),
-    "ObjectInfo.ExperimentalDescription.Mode": ("Acquisition_instrument.TEM.acquisition_mode", get_mode),
-    "ObjectInfo.ExperimentalConditions.MicroscopeConditions.Tilt1": ("Acquisition_instrument.TEM.tilt_stage", get_degree),
-
+    "ObjectInfo.ExperimentalDescription.High_tension_kV": (
+        "Acquisition_instrument.TEM.beam_energy",
+        None),
+    "ObjectInfo.ExperimentalDescription.Microscope": (
+        "Acquisition_instrument.TEM.microscope",
+        None),
+    "ObjectInfo.ExperimentalDescription.Mode": (
+        "Acquisition_instrument.TEM.acquisition_mode",
+        get_mode),
+    "ObjectInfo.ExperimentalConditions.MicroscopeConditions.Tilt1": (
+        "Acquisition_instrument.TEM.tilt_stage",
+        get_degree),
 }

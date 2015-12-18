@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2015 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -30,17 +30,23 @@ from hyperspy.axes import AxesManager
 from hyperspy.drawing.widgets import DraggableVerticalLine
 
 
+OurOKButton = tu.Action(name="OK",
+                        action="OK",)
+
 OurApplyButton = tu.Action(name="Apply",
                            action="apply")
 
 OurResetButton = tu.Action(name="Reset",
                            action="reset")
 
-OurFindButton = tu.Action(name="Find",
-                          action="find")
+OurCloseButton = tu.Action(name="Close",
+                           action="close_directly")
 
-OurPreviousButton = tu.Action(name="Previous",
-                              action="back")
+OurFindButton = tu.Action(name="Find next",
+                          action="find",)
+
+OurPreviousButton = tu.Action(name="Find previous",
+                              action="back",)
 
 
 class SmoothingHandler(tu.Handler):
@@ -63,6 +69,10 @@ class SpanSelectorInSpectrumHandler(tu.Handler):
             self.apply(info)
 
         return True
+
+    def close_directly(self, info):
+        if (info.ui.owner is not None) and self.close(info, False):
+            info.ui.owner.close()
 
     def apply(self, info, *args, **kwargs):
         """Handles the **Apply** button being clicked.
@@ -173,8 +183,8 @@ class SpanSelectorInSpectrum(t.HasTraits):
 
     def reset_span_selector(self):
         self.span_selector_switch(False)
-        self.ss_left_value = 0
-        self.ss_right_value = 0
+        self.ss_left_value = np.nan
+        self.ss_right_value = np.nan
         self.span_selector_switch(True)
 
 
@@ -225,7 +235,7 @@ class LineInSpectrum(t.HasTraits):
 
         if new is True and old is False:
             self._line = DraggableVerticalLine(self.axes_manager)
-            self._line.add_axes(self.signal._plot.signal_plot.ax)
+            self._line.set_mpl_ax(self.signal._plot.signal_plot.ax)
             self._line.patch.set_linewidth(2)
             self._color_changed("black", "black")
             # There is not need to call draw because setting the
@@ -401,7 +411,7 @@ class Smoothing(t.HasTraits):
         if new == 0:
             self.turn_diff_line_off()
             return
-        self.smooth_diff_line.update(force_replot=True)
+        self.smooth_diff_line.update(force_replot=False)
 
     def _line_color_changed(self, old, new):
         self.smooth_line.line_properties = {
@@ -427,13 +437,16 @@ class Smoothing(t.HasTraits):
 
 
 class SmoothingSavitzkyGolay(Smoothing):
+
     polynomial_order = t.Int(
         3,
         desc="The order of the polynomial used to fit the samples."
              "`polyorder` must be less than `window_length`.")
+
     window_length = t.Int(
         5,
         desc="`window_length` must be a positive odd integer.")
+
     increase_window_length = t.Button(orientation="horizontal", label="+")
     decrease_window_length = t.Button(orientation="horizontal", label="-")
 
@@ -441,21 +454,26 @@ class SmoothingSavitzkyGolay(Smoothing):
         tu.Group(
             tu.Group(
                 'window_length',
-                tu.Item('decrease_window_length', show_label=False),
-                tu.Item('increase_window_length', show_label=False),
+                tu.Item(
+                    'decrease_window_length',
+                    show_label=False),
+                tu.Item(
+                    'increase_window_length',
+                    show_label=False),
                 orientation="horizontal"),
-
             'polynomial_order',
             tu.Item(
                 name='differential_order',
-                tooltip='The order of the derivative to compute.  This must be a'
-                     'nonnegative integer.  The default is 0, which means to '
-                     'filter the data without differentiating.',),
+                tooltip='The order of the derivative to compute. This must '
+                        'be a nonnegative integer. The default is 0, which '
+                        'means to filter the data without differentiating.',
+            ),
             'line_color'),
         kind='live',
         handler=SmoothingHandler,
         buttons=OKCancelButtons,
-        title='Savitzky-Golay Smoothing',)
+        title='Savitzky-Golay Smoothing',
+    )
 
     def _increase_window_length_fired(self):
         if self.window_length % 2:
@@ -474,7 +492,7 @@ class SmoothingSavitzkyGolay(Smoothing):
             self.window_length = nwl
         else:
             print(
-                "The window lenght must be greated than the polynomial order")
+                "The window length must be greated than the polynomial order")
 
     def _polynomial_order_changed(self, old, new):
         if self.window_length <= new:
@@ -560,8 +578,9 @@ class SmoothingLowess(Smoothing):
         return self.single_spectrum.data
 
     def apply(self):
-        self.signal.smooth_lowess(smoothing_parameter=self.smoothing_parameter,
-                                  number_of_iterations=self.number_of_iterations)
+        self.signal.smooth_lowess(
+            smoothing_parameter=self.smoothing_parameter,
+            number_of_iterations=self.number_of_iterations)
         self.signal._replot()
 
 
@@ -644,7 +663,7 @@ class ImageContrastHandler(tu.Handler):
         info.object.close()
         return True
 
-    def apply(self, info, *args, **kwargs):
+    def apply(self, info):
         """Handles the **Apply** button being clicked.
 
         """
@@ -653,7 +672,8 @@ class ImageContrastHandler(tu.Handler):
 
         return
 
-    def reset(self, info, *args, **kwargs):
+    @staticmethod
+    def reset(info):
         """Handles the **Apply** button being clicked.
 
         """
@@ -661,7 +681,8 @@ class ImageContrastHandler(tu.Handler):
         obj.reset()
         return
 
-    def our_help(self, info, *args, **kwargs):
+    @staticmethod
+    def our_help(info):
         """Handles the **Apply** button being clicked.
 
         """
@@ -722,11 +743,11 @@ class ImageContrastEditor(t.HasTraits):
     def plot_histogram(self):
         vmin, vmax = self.image.vmin, self.image.vmax
         pad = (vmax - vmin) * 0.05
-        vmin = vmin - pad
-        vmax = vmax + pad
+        vmin -= pad
+        vmax += pad
         data = self.image.data_function().ravel()
         self.patches = self.ax.hist(data, 100, range=(vmin, vmax),
-                                    color = 'blue')[2]
+                                    color='blue')[2]
         self.ax.set_xticks([])
         self.ax.set_yticks([])
         self.ax.set_xlim(vmin, vmax)
@@ -757,16 +778,20 @@ class ImageContrastEditor(t.HasTraits):
 
 class ComponentFit(SpanSelectorInSpectrum):
     fit = t.Button()
+    only_current = t.List(t.Bool(True))
 
     view = tu.View(
         tu.Item('fit', show_label=False),
-        buttons=[OKButton, CancelButton],
+        tu.Item('only_current', show_label=False, style='custom',
+                editor=tu.CheckListEditor(values=[(True, 'Only current')])),
+        buttons=[OurCloseButton],
         title='Fit single component',
         handler=SpanSelectorInSpectrumHandler,
     )
 
     def __init__(self, model, component, signal_range=None,
-                 estimate_parameters=True, fit_independent=False, **kwargs):
+                 estimate_parameters=True, fit_independent=False,
+                 only_current=True, **kwargs):
         if model.spectrum.axes_manager.signal_dimension != 1:
             raise SignalDimensionError(
                 model.spectrum.axes_manager.signal_dimension, 1)
@@ -774,6 +799,7 @@ class ComponentFit(SpanSelectorInSpectrum):
         self.signal = model.spectrum
         self.axis = self.signal.axes_manager.signal_axes[0]
         self.span_selector = None
+        self.only_current = [True] if only_current else []  # CheckListEditor
         self.model = model
         self.component = component
         self.signal_range = signal_range
@@ -817,6 +843,7 @@ class ComponentFit(SpanSelectorInSpectrum):
 
         # Setting reasonable initial value for parameters through
         # the components estimate_parameters function (if it has one)
+        only_current = len(self.only_current) > 0   # CheckListEditor
         if self.estimate_parameters:
             if hasattr(self.component, 'estimate_parameters'):
                 if (self.signal_range != "interactive" and
@@ -825,15 +852,18 @@ class ComponentFit(SpanSelectorInSpectrum):
                         self.signal,
                         self.signal_range[0],
                         self.signal_range[1],
-                        only_current=True)
+                        only_current=only_current)
                 elif self.signal_range == "interactive":
                     self.component.estimate_parameters(
                         self.signal,
                         self.ss_left_value,
                         self.ss_right_value,
-                        only_current=True)
+                        only_current=only_current)
 
-        self.model.fit(**self.fit_kwargs)
+        if only_current:
+            self.model.fit(**self.fit_kwargs)
+        else:
+            self.model.multifit(**self.fit_kwargs)
 
         # Restore the signal range
         if self.signal_range is not None:

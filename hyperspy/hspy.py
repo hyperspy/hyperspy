@@ -1,50 +1,10 @@
 """
 
-All public packages, functions and classes are in this package. This package is
-automatically imported in the user namespace when starting HyperSpy using the
-starting script e.g. by typing ``hyperspy`` in a console, using the context
-menu entries or using the links in the ``Start Menu``, the
-:mod:`~hyperspy.hspy` package is imported in the user namespace. When using
-HyperSpy as a library, it is reccommended to import the :mod:`~hyperspy.hspy`
-package as follows:
-
-    from hyperspy import hspy as hs
-
-Functions:
-
-    create_model
-        Create a model for curve fitting.
-
-    get_configuration_directory_path
-        Return the configuration directory path.
-
-    load
-        Load data into Signal instaces from supported files.
-
-    preferences
-        Preferences class instance to configure the default value of different
-        parameters. It has a CLI and a GUI that can be started by execting its
-        `gui` method i.e. `preferences.gui()`.
-
-
-The :mod:`~hyperspy.hspy` package contains the following subpackages:
-
-    :mod:`~hyperspy.hspy.signals`
-        Specialized Signal instances.
-
-    :mod:`~hyperspy.hspy.utils`
-        Functions that operate of Signal instances and other goodies.
-
-    :mod:`~hyperspy.hspy.components`
-        Components that can be used to create a model for curve fitting.
-
-For more details see their doctrings.
+This module is deprecated and will be removed in HyperSpy 0.10,
+plese use :mod:`~hyperspy.api` instead.
 
 """
 # -*- coding: utf-8 -*-
-
-import matplotlib.pyplot as plt
-plt.rcParams['image.cmap'] = 'gray'
 
 from hyperspy.Release import version as __version__
 from hyperspy import components
@@ -52,6 +12,8 @@ from hyperspy import signals
 from hyperspy.io import load
 from hyperspy.defaults_parser import preferences
 from hyperspy import utils
+from hyperspy.datasets import example_signals
+from hyperspy.misc.hspy_warnings import VisibleDeprecationWarning
 
 
 def get_configuration_directory_path():
@@ -97,11 +59,9 @@ def create_model(signal, *args, **kwargs):
     A Model class
 
     """
-
-    from hyperspy._signals.eels import EELSSpectrum
-    from hyperspy.models.eelsmodel import EELSModel
-    from hyperspy.model import Model
-    if isinstance(signal, EELSSpectrum):
-        return EELSModel(signal, *args, **kwargs)
-    else:
-        return Model(signal, *args, **kwargs)
+    import warnings
+    warnings.warn(
+        "This function is deprecated and will be removed in HyperSpy 0.9. "
+        "Please use the equivalent `Signal.create_model` method "
+        "instead.", VisibleDeprecationWarning)
+    return signal.create_model(*args, **kwargs)

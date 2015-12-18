@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2015 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -63,7 +63,6 @@ class Erf(Component):
         return A * erf((x - origin) / math.sqrt(2) / sigma) / 2
 
     def grad_A(self, x):
-        A = self.A.value
         sigma = self.sigma.value
         origin = self.origin.value
         return erf((x - origin) / math.sqrt(2) / sigma) / 2
@@ -72,12 +71,17 @@ class Erf(Component):
         A = self.A.value
         sigma = self.sigma.value
         origin = self.origin.value
-        return ((origin / (math.sqrt(2) * sigma ** 2) - x / (math.sqrt(2) * sigma ** 2)) *
-                np.exp(-(x / (math.sqrt(2) * sigma) - origin / (math.sqrt(2) * sigma)) ** 2) * A) / math.sqrt(math.pi)
+        s2 = math.sqrt(2)
+        return (
+            (origin / (s2 * sigma ** 2) - x / (s2 * sigma ** 2)) *
+            np.exp(-(x / (s2 * sigma) - origin / (s2 * sigma)) ** 2) *
+            A) / math.sqrt(math.pi)
 
     def grad_origin(self, x):
         A = self.A.value
         sigma = self.sigma.value
         origin = self.origin.value
-        return -(np.exp(-(x / (math.sqrt(2) * sigma) - origin / (math.sqrt(2) * sigma)) ** 2)
-                 * A) / (math.sqrt(2) * math.sqrt(math.pi) * sigma)
+        s2 = math.sqrt(2)
+        return -(
+            np.exp(-(x / (s2 * sigma) - origin / (s2 * sigma)) ** 2) *
+            A) / (sqrt2pi * sigma)

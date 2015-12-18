@@ -17,7 +17,7 @@ image lena.jpg you can type:
 
 .. code-block:: python
 
-    >>> s = load("lena.jpg")
+    >>> s = hs.load("lena.jpg")
     
 If the loading was successful, the variable :guilabel:`s` contains a generic
 :py:class:`~.signal.Signal`, a :py:class:`~._signals.spectrum.Spectrum` or an
@@ -36,7 +36,7 @@ providing the ``signal`` keyword, which has to be one of: ``spectrum``,
 
 .. code-block:: python
 
-    >>> s = load("filename", signal = "EELS")
+    >>> s = hs.load("filename", signal = "EELS")
 
 Some file formats store some extra information about the data, which can be
 stored in "attributes". If HyperSpy manages to read some extra information
@@ -69,7 +69,7 @@ functions, e.g.:
 
 .. code-block:: python
 
-    >>> s = load(["file1.hdf5", "file2.hdf5"])
+    >>> s = hs.load(["file1.hdf5", "file2.hdf5"])
     
 or by using `shell-style wildcards <http://docs.python.org/library/glob.html>`_
 
@@ -87,14 +87,14 @@ which case the function will return a list of objects, e.g.:
     >>> ls
     CL1.raw  CL1.rpl~  CL2.rpl  CL3.rpl  CL4.rpl  LL3.raw  shift_map-          SI3.npy
     CL1.rpl  CL2.raw   CL3.raw  CL4.raw  hdf5/    LL3.rpl
-    >>> s = load('*.rpl')
+    >>> s = hs.load('*.rpl')
     >>> s
-   [<EELSSpectrum, title: CL1, dimensions: (64, 64, 1024)>,     
-   <EELSSpectrum, title: CL2, dimensions: (64, 64, 1024)>, 
-   <EELSSpectrum, title: CL3, dimensions: (64, 64, 1024)>, 
-   <EELSSpectrum, title: CL4, dimensions: (64, 64, 1024)>, 
-   <EELSSpectrum, title: LL3, dimensions: (64, 64, 1024)>]
-    >>> s = load('*.rpl', stack=True)
+    [<EELSSpectrum, title: CL1, dimensions: (64, 64, 1024)>,     
+    <EELSSpectrum, title: CL2, dimensions: (64, 64, 1024)>, 
+    <EELSSpectrum, title: CL3, dimensions: (64, 64, 1024)>, 
+    <EELSSpectrum, title: CL4, dimensions: (64, 64, 1024)>, 
+    <EELSSpectrum, title: LL3, dimensions: (64, 64, 1024)>]
+    >>> s = hs.load('*.rpl', stack=True)
     >>> s
     <EELSSpectrum, title: mva, dimensions: (5, 64, 64, 1024)>
 
@@ -110,7 +110,7 @@ extension. If the filename does not contain the extension the default format
 (:ref:`hdf5-format`) is used. For example, if the :py:const:`s` variable
 contains the :py:class:`~.signal.Signal` that you want to write to a file, the
 following will write the data to a file called :file:`spectrum.hdf5` in the
-default :ref:`hdf5-format` format::
+default :ref:`hdf5-format` format:
 
 .. code-block:: python
 
@@ -160,6 +160,12 @@ HyperSpy.
     +--------------------+-----------+----------+
     | Ripple             |    Yes    |    Yes   |
     +--------------------+-----------+----------+
+    | SEMPER unf         |    Yes    |    Yes   |
+    +--------------------+-----------+----------+
+    | Blockfile          |    Yes    |    Yes   |
+    +--------------------+-----------+----------+
+    | DENS heater log    |    Yes    |    No    |
+    +--------------------+-----------+----------+
 
 .. _hdf5-format:
 
@@ -173,7 +179,47 @@ of arbitrary dimensions. It is based on the `HDF5 open standard
 applications
 <http://www.hdfgroup.org/products/hdf5_tools/SWSummarybyName.htm>`_.
 
-Note that only HDF5 files written by HyperSpy are supported.
+Note that only HDF5 files written by HyperSpy are supported
+
+.. versionadded:: 0.8
+    
+It is also possible to save more complex structures (i.e. lists, tuples and signals) in 
+:py:attr:`~.metadata` of the signal. Please note that in order to increase
+saving efficiency and speed, if possible, the inner-most structures are
+converted to numpy arrays when saved. This procedure homogenizes any types of
+the objects inside, most notably casting numbers as strings if any other
+strings are present:
+
+.. code-block:: python
+
+    >>> # before saving:
+    >>> somelist
+    [1, 2.0, 'a name']
+    >>> # after saving:
+    ['1', '2.0', 'a name']
+
+The change of type is done using numpy "safe" rules, so no information is lost,
+as numbers are represented to full machine precision.
+
+This feature is particularly useful when using
+:py:meth:`~._signals.EDSSEMSpectrum.get_lines_intensity` (see :ref:`get lines
+intensity<get_lines_intensity>`):
+
+.. code-block:: python
+
+    >>> s = hs.datasets.example_signals.EDS_SEM_Spectrum()
+    >>> s.metadata.Sample.intensities = s.get_lines_intensity()
+    >>> s.save('EDS_spectrum.hdf5')
+
+    >>> s_new = hs.load('EDS_spectrum.hdf5')
+    >>> s_new.metadata.Sample.intensities
+    [<Signal, title: X-ray line intensity of EDS SEM Spectrum: Al_Ka at 1.49 keV, dimensions: (|)>,
+     <Signal, title: X-ray line intensity of EDS SEM Spectrum: C_Ka at 0.28 keV, dimensions: (|)>,
+     <Signal, title: X-ray line intensity of EDS SEM Spectrum: Cu_La at 0.93 keV, dimensions: (|)>,
+     <Signal, title: X-ray line intensity of EDS SEM Spectrum: Mn_La at 0.63 keV, dimensions: (|)>,
+     <Signal, title: X-ray line intensity of EDS SEM Spectrum: Zr_La at 2.04 keV, dimensions: (|)>]
+        
+
 
 Extra saving arguments
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -325,4 +371,72 @@ Therefore strongly reccommend to load using the ``.emi`` file instead.
 When reading an ``.emi`` file if there are several ``.ser`` files associated
 with it, all of them will be read and returned as a list.
 
+.. _unf-format:
 
+SEMPER unf binary format
+------------------------
+
+SEMPER is a fully portable system of programs for image processing, particularly
+suitable for applications in electron microscopy developed by Owen Saxton (see
+DOI: 10.1016/S0304-3991(79)80044-3 for more information).The unf format is a
+binary format with an extensive header for up to 3 dimensional data.
+HyperSpy can read and write unf-files and will try to convert the data into a
+fitting Signal subclass, based on the information stored in the label.
+Currently version 7 of the format should be fully supported.
+
+.. _blockfile-format:
+
+Blockfile
+---------
+
+HyperSpy can read and write the blockfile format from NanoMegas ASTAR software.
+It is used to store a series of diffraction patterns from scanning precession
+electron difraction (SPED) measurements, with a limited set of metadata. The
+header of the blockfile contains information about centering and distortions
+of the diffraction patterns, but is not applied to the signal during reading.
+Blockfiles only support data values of type 
+`np.uint8 <http://docs.scipy.org/doc/numpy/user/basics.types.html>`_ (integers
+in range 0-255).
+
+.. warning::
+
+   While Blockfiles are supported, it is a proprietary format, and future
+   versions of the format might therefore not be readable. Complete 
+   interoperability with the official software can neither be guaranteed.
+
+Blockfiles are by default loaded into memory, but can instead be loaded in a
+"copy-on-write" manner using
+`numpy.memmap <http://docs.scipy.org/doc/numpy/reference/generated/numpy.memmap.html>`_
+. This behavior can be controlled by the arguments `load_to_memory` and
+`mmap_mode`. For valid values for `mmap_mode`, see the documentation for
+`numpy.memmap <http://docs.scipy.org/doc/numpy/reference/generated/numpy.memmap.html>`_.
+
+Examples of ways of loading:
+.. code-block:: python
+
+    >>> hs.load('file.blo')     # Default loading, equivalent to the next line
+    >>> hs.load('file.blo', load_to_memory=True)    # Load directly to memory
+    >>> # Default memmap loading:
+    >>> hs.load('file.blo', load_to_memory=False, mmap_mode='c') 
+
+    >>> # Loads data read only:
+    >>> hs.load('file.blo', load_to_memory=False, mmap_mode='r')
+    >>> # Loads data read/write:
+    >>> hs.load('file.blo', load_to_memory=False, mmap_mode='r+')
+
+By loading the data read/write, any changes to the original data array will be 
+written to disk. The data is written when the original data array is deleted,
+or when :py:meth:`Signal.data.flush() <http://docs.scipy.org/doc/numpy/reference/generated/numpy.memmap.flush.html>`_
+is called.
+
+
+.. _dens-format:
+
+DENS heater log
+---------------
+
+HyperSpy can read heater log format for DENS solution's heating holder. The
+format stores all the captured data for each timestamp, together with a small
+header in a plain-text format. The reader extracts the measured temperature
+along the time axis, as well as the date and calibration constants stored in
+the header.

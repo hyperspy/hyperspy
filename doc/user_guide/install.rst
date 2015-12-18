@@ -25,14 +25,25 @@ libraries and nothing else is required.
 
 .. _quick-mac-install:
 
-Quick instructions to install HyperSpy in MacOs
--------------------------------------------------
+Quick instructions to install HyperSpy MacOs
+--------------------------------------------
 
 #. Download and install `Anaconda. <https://store.continuum.io/cshop/anaconda/>`_
    Anaconda is recommended for the best performance (it is compiled
    using Intel MKL libraries) and the easiest intallation (all the required
    libraries are included). The academic license is free.
-#. Open a new terminal and type: `pip install hyperspy`
+#. Open a terminal and install traitsui and mkl: 
+
+   .. code-block:: bash
+
+       $ conda install traitsui mkl
+
+#. Install HyperSpy:
+
+   .. code-block:: bash
+
+       $ pip install hyperspy  
+
 
 For more options and details read the rest of the documentation.
 
@@ -45,7 +56,8 @@ Install using Python installers
    Although it is possible to install hyperspy in Windows using the
    instructions of this section, installing using the Windows installer is
    recommended in this platform because the Python installers do not create
-   entries in the ``Start Menu`` or the ``Context Menu``
+   entries in the ``Start Menu`` or the ``Context Menu``. If these are needed,
+   follow the instructions in :ref:`install-dev`
 
 Since version 4.1 HyperSpy is listed in the `Python Package Index
 <http://pypi.python.org/pypi>`_. Therefore, it can be automatically downloaded
@@ -75,7 +87,7 @@ In any case, you must be sure to have all the dependencies installed, see
 Install from a binary
 ---------------------
 
-We provide  binary distributions for Ubuntu Linux and Windows (`see the
+We provide  binary distributions for Windows (`see the
 Downloads section of the website <http://hyperspy.org/download.html>`_). To
 install easily in other platforms see :ref:`install-with-python-installers`
     
@@ -118,7 +130,7 @@ To get the development version from our git repository you need to install `git
 
     $ git clone https://github.com/hyperspy/hyperspy.git
 
-To install HyperSpy you could proceed like in :ref:`iinstall-released-source`.
+To install HyperSpy you could proceed like in :ref:`install-released-source`.
 However, if you are installing from the development version most likely you
 will prefer to install HyperSpy using  `pip <http://www.pip-installer.org>`_
 development mode: 
@@ -138,12 +150,25 @@ so for Ubuntu:
     $ cd hyperspy
     $ sudo pip install -e ./
 
-In addition there as a bug with the IPython version packaged in Ubuntu 12.10,
-which can be fixed by upgrading it through pip:
+
+To install the context menu and Start Menu entries (on Windows), it is necessary to run the following
+from the bin directory of hyperspy (make sure to run as administrator):
 
 .. code-block:: bash
 
-    $ sudo pip install --upgrade ipython
+    $ python install_hyperspy_here.py
+    $ python install_start_menu_entries.py
+
+Likewise, these entries can be removed with the following commands:
+
+.. code-block:: bash
+
+    $ python uninstall_hyperspy_here.py
+    $ python uninstall_start_menu_entries
+
+
+If using Arch Linux, the latest checkout of the master development branch can be installed through
+the AUR by installing the `hyperspy-git package <https://aur.archlinux.org/packages/hyperspy-git/>`_
  
 .. _create-debian-binary: 
     
@@ -185,6 +210,26 @@ In Debian/Ubuntu you can install the libraries as follows:
     $ sudo apt-get install python-numpy python-matplotlib ipython
     ipython-notebook python-traits python-traitsui python-h5py
     python-scikits-learn python-nose python-statsmodels
+
+In Arch Linux, the following command should install the required packages to
+get a fully functional installation:
+
+.. code-block:: bash
+
+    $ sudo pacman -Sy python2 python2-numpy	python2-matplotlib	python2-pip
+    python2-traits python2-traitsui python2-h5py python2-scikit-learn python2-nose
+    python2-statsmodels python2-pillow python2-pyqt4 python2-pyqt5 python2-scipy
+    python2-pandas python2-setuptools ipython2	python2-jinja python2-pyzmq
+    python2-pyqt4 python2-tornado python2-sip python2-pygments
+
+    # Or, just run this command from the root hyperspy directory to import the
+    # list of packages and install automatically:
+    $ xargs sudo pacman -Sy --noconfirm < doc/package_lists/arch_linux_package_list.txt
+
+    # Once these are installed, go to the HyperSpy directory and run:
+    $ sudo pip2 install -e ./
+
+    # If desired, the python2-seaborn library can also be installed from AUR for prettier plotting
 
 .. _known-issues:
 

@@ -1,4 +1,4 @@
-# Copyright 2007-2013 The HyperSpy developers
+# Copyright 2007-2015 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -80,7 +80,7 @@ class MPL_HyperExplorer(object):
             # Add the line to the figure
             sf.add_line(sl)
             sf.plot()
-            self.pointer.add_axes(sf.ax)
+            self.pointer.set_mpl_ax(sf.ax)
             if self.axes_manager.navigation_dimension > 1:
                 navigation_sliders(
                     self.axes_manager.navigation_axes,
@@ -103,11 +103,11 @@ class MPL_HyperExplorer(object):
                         self.axes_manager.navigation_axes,
                         title=self.signal_title + " navigation sliders")
                     for axis in self.axes_manager.navigation_axes[2:]:
-                        axis.connect(imf.update)
+                        axis.connect(imf._update)
 
             imf.title = self.signal_title + ' Navigator'
             imf.plot()
-            self.pointer.add_axes(imf.ax)
+            self.pointer.set_mpl_ax(imf.ax)
             self.navigator_plot = imf
 
     def close_navigator_plot(self):
@@ -117,14 +117,14 @@ class MPL_HyperExplorer(object):
     def is_active(self):
         return True if self.signal_plot.figure else False
 
-    def plot(self):
+    def plot(self, **kwargs):
         if self.pointer is None:
             pointer = self.assign_pointer()
             if pointer is not None:
                 self.pointer = pointer(self.axes_manager)
                 self.pointer.color = 'red'
             self.plot_navigator()
-        self.plot_signal()
+        self.plot_signal(**kwargs)
 
     def assign_pointer(self):
         if self.navigator_data_function is None:
