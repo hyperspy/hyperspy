@@ -634,10 +634,10 @@ def _add_spc_metadata(metadata, spc_header):
     metadata['Acquisition_instrument'] = {
         'SEM':
             {'Detector':
-                 {'EDS': {'azimuth_angle': spc_header['azimuth'],
-                          'elevation_angle': spc_header['elevation'],
-                          'energy_resolution_MnKa': spc_header['detReso'],
-                          'live_time': spc_header['liveTime']}},
+             {'EDS': {'azimuth_angle': spc_header['azimuth'],
+                      'elevation_angle': spc_header['elevation'],
+                      'energy_resolution_MnKa': spc_header['detReso'],
+                      'live_time': spc_header['liveTime']}},
              'beam_energy': spc_header['kV'],
              'tilt_stage': spc_header['tilt']}
     }
@@ -737,7 +737,7 @@ def spd_reader(filename,
         data_type = {'1': 'u1',
                      '2': 'u2',
                      '4': 'u4'}[str(original_metadata['spd_header'][
-                                        'countBytes'])]
+                         'countBytes'])]
 
         # Read data from file into a numpy memmap object
         data = np.memmap(f, mode='c', offset=data_offset, dtype=data_type
@@ -753,7 +753,7 @@ def spd_reader(filename,
     # Get name of .spc file from the .spd map (if not explicitly given):
     if not spc_fname:
         spc_fname = os.path.splitext(os.path.basename(filename))[
-                        0] + '.spc'
+            0] + '.spc'
     read_spc = os.path.isfile(spc_fname)
     if not read_spc:
         print 'Could not find .spc file named {}.\n' \
