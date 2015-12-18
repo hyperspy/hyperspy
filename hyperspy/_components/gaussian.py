@@ -26,6 +26,33 @@ sqrt2pi = math.sqrt(2 * math.pi)
 sigma2fwhm = 2 * math.sqrt(2 * math.log(2))
 
 
+def _estimate_gaussian_parameters(signal, x1, x2, only_current):
+    axis = signal.axes_manager.signal_axes[0]
+    i1, i2 = axis.value_range_to_indices(x1, x2)
+    X = axis.axis[i1:i2]
+    if only_current is True:
+        data = signal()[i1:i2]
+        X_shape = (len(X),)
+        i = 0
+        centre_shape = (1,)
+    else:
+        i = axis.index_in_array
+        data_gi = [slice(None), ] * len(signal.data.shape)
+        data_gi[axis.index_in_array] = slice(i1, i2)
+        data = signal.data[data_gi]
+        X_shape = [1, ] * len(signal.data.shape)
+        X_shape[axis.index_in_array] = data.shape[i]
+        centre_shape = list(data.shape)
+        centre_shape[i] = 1
+
+    centre = np.sum(X.reshape(X_shape) * data, i) / np.sum(data, i)
+
+    sigma = np.sqrt(np.abs(np.sum((X.reshape(X_shape) - centre.reshape(
+        centre_shape)) ** 2 * data, i) / np.sum(data, i)))
+    height = data.max(i)
+    return centre, height, sigma
+
+
 class Gaussian(Component):
 
     """Normalized gaussian function component
@@ -135,36 +162,12 @@ class Gaussian(Component):
         >>> g.estimate_parameters(s, -10,10, False)
 
         """
-        axis = signal.axes_manager.signal_axes[0]
         binned = signal.metadata.Signal.binned
         axis = signal.axes_manager.signal_axes[0]
-        binned = signal.metadata.Signal.binned
-        i1, i2 = axis.value_range_to_indices(x1, x2)
-        X = axis.axis[i1:i2]
+        centre, height, sigma = _estimate_gaussian_parameters(signal, x1, x2,
+                                                              only_current)
         if only_current is True:
-            data = signal()[i1:i2]
-            X_shape = (len(X),)
-            i = 0
-            center_shape = (1,)
-        else:
-            # TODO: write the rest of the code to estimate the parameters of
-            # the full dataset
-            i = axis.index_in_array
-            data_gi = [slice(None), ] * len(signal.data.shape)
-            data_gi[axis.index_in_array] = slice(i1, i2)
-            data = signal.data[data_gi]
-            X_shape = [1, ] * len(signal.data.shape)
-            X_shape[axis.index_in_array] = data.shape[i]
-            center_shape = list(data.shape)
-            center_shape[i] = 1
-
-        center = np.sum(X.reshape(X_shape) * data, i) / np.sum(data, i)
-
-        sigma = np.sqrt(np.abs(np.sum((X.reshape(X_shape) - center.reshape(
-            center_shape)) ** 2 * data, i) / np.sum(data, i)))
-        height = data.max(i)
-        if only_current is True:
-            self.centre.value = center
+            self.centre.value = centre
             self.sigma.value = sigma
             self.A.value = height * sigma * sqrt2pi
             if binned is True:
@@ -180,7 +183,7 @@ class Gaussian(Component):
             self.A.map['is_set'][:] = True
             self.sigma.map['values'][:] = sigma
             self.sigma.map['is_set'][:] = True
-            self.centre.map['values'][:] = center
+            self.centre.map['values'][:] = centre
             self.centre.map['is_set'][:] = True
             self.fetch_stored_values()
             return True

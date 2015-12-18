@@ -18,9 +18,8 @@
 
 import math
 
-import numpy as np
-
 from hyperspy._components.expression import Expression
+from hyperspy._components.gaussian import _estimate_gaussian_parameters
 
 sqrt2pi = math.sqrt(2 * math.pi)
 sigma2fwhm = 2 * math.sqrt(2 * math.log(2))
@@ -123,36 +122,14 @@ class GaussianHF(Expression):
 
         """
 
-        axis = signal.axes_manager.signal_axes[0]
         binned = signal.metadata.Signal.binned
-        i1, i2 = axis.value_range_to_indices(x1, x2)
-        X = axis.axis[i1:i2]
-        if only_current is True:
-            data = signal()[i1:i2]
-            X_shape = (len(X),)
-            i = 0
-            centre_shape = (1,)
-        else:
-            # TODO: write the rest of the code to estimate the parameters of
-            # the full dataset
-            i = axis.index_in_array
-            data_gi = [slice(None), ] * len(signal.data.shape)
-            data_gi[axis.index_in_array] = slice(i1, i2)
-            data = signal.data[data_gi]
-            X_shape = [1, ] * len(signal.data.shape)
-            X_shape[axis.index_in_array] = data.shape[i]
-            centre_shape = list(data.shape)
-            centre_shape[i] = 1
+        axis = signal.axes_manager.signal_axes[0]
+        centre, height, sigma = _estimate_gaussian_parameters(signal, x1, x2,
+                                                              only_current)
 
-        centre = np.sum(X.reshape(X_shape) * data, i) / np.sum(data, i)
-
-        sigma = np.sqrt(np.abs(np.sum((X.reshape(X_shape) - centre.reshape(
-            centre_shape)) ** 2 * data, i) / np.sum(data, i)))
-        fwhm = sigma * sigma2fwhm
-        height = data.max(i)
         if only_current is True:
             self.centre.value = centre
-            self.fwhm.value = fwhm
+            self.fwhm.value = sigma * sigma2fwhm
             self.height.value = float(height)
             if binned is True:
                 self.height.value /= axis.scale
@@ -165,7 +142,7 @@ class GaussianHF(Expression):
             if binned is True:
                 self.height.map['values'][:] /= axis.scale
             self.height.map['is_set'][:] = True
-            self.fwhm.map['values'][:] = fwhm
+            self.fwhm.map['values'][:] = sigma * sigma2fwhm
             self.fwhm.map['is_set'][:] = True
             self.centre.map['values'][:] = centre
             self.centre.map['is_set'][:] = True
