@@ -221,7 +221,7 @@ class EDSModel(Model1D):
         for xray in xray_not_here:
             warnings.warn("%s is not in the data energy range." % (xray))
 
-        for i, xray_line in enumerate(xray_lines):
+        for xray_line in xray_lines:
             element, line = utils_eds._get_element_and_line(xray_line)
             line_energy, line_FWHM = self.spectrum._get_line_energy(
                 xray_line,
@@ -251,10 +251,10 @@ class EDSModel(Model1D):
                                 xray_sub, FWHM_MnKa='auto')
                         component_sub = create_component.Gaussian()
                         component_sub.centre.value = line_energy
-                        component_sub.name = xray_sub
                         component_sub.fwhm = line_FWHM
                         component_sub.centre.free = False
                         component_sub.sigma.free = False
+                        component_sub.name = xray_sub
                         component_sub.A.twin_function = _get_weight(
                             element, li)
                         component_sub.A.twin_inverse_function = _get_iweight(
@@ -399,7 +399,7 @@ class EDSModel(Model1D):
                     E_ref, E, self.units_factor)
                 component.sigma.twin = component_ref.sigma
 
-    def _set_energy_resolution(self, xray_lines, ref):
+    def _set_energy_resolution(self, xray_lines, *args, **kwargs):
         """
         Adjust the width of all lines and set the fitted energy resolution
         to the spectrum
@@ -419,17 +419,17 @@ class EDSModel(Model1D):
         FWHM_MnKa = get_sigma_Mn_Ka(self[xray_lines[0]].sigma.value
                                     ) * eV2keV / self.units_factor * sigma2fwhm
         if FWHM_MnKa < 110:
-            raise ValueError("FWHM_MnKa of " + str(FWHM_MnKa) + " smaller than"
-                             + "physically possible")
+            raise ValueError("FWHM_MnKa of " + str(FWHM_MnKa) +
+                             " smaller than" + "physically possible")
         else:
             self.spectrum.set_microscope_parameters(
                 energy_resolution_MnKa=FWHM_MnKa)
-            warnings.warn("Energy resolution (FWHM at Mn Ka) changed from "
-                          + "%lf to %lf eV" % (FWHM_MnKa_old, FWHM_MnKa))
+            warnings.warn("Energy resolution (FWHM at Mn Ka) changed from " +
+                          "%lf to %lf eV" % (FWHM_MnKa_old, FWHM_MnKa))
             for component in self:
                 if component.isbackground is False:
-                    line_energy, line_FWHM = self.spectrum._get_line_energy(
-                        component.name, FWHM_MnKa='auto')
+                    line_FWHM = self.spectrum._get_line_energy(
+                        component.name, FWHM_MnKa='auto')[1]
                     component.fwhm = line_FWHM
 
     def _twin_xray_lines_scale(self, xray_lines):
@@ -544,7 +544,6 @@ class EDSModel(Model1D):
     def calibrate_energy_axis(self,
                               calibrate='resolution',
                               xray_lines='all_alpha',
-                              spread_to_all_lines=True,
                               **kwargs):
         """
         Calibrate the resolution, the scale or the offset of the energy axis
@@ -616,7 +615,7 @@ class EDSModel(Model1D):
         for component in self:
             if component.isbackground is False:
                 if xray_lines == 'all':
-                    free_twin()
+                    free_twin(component)
                 elif utils_eds._get_xray_lines_family(
                         component.name) in xray_families:
                     free_twin(component)

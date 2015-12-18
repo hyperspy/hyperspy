@@ -321,8 +321,7 @@ def xray_lines_model(elements,
         weight_percents = [100. / len(elements)] * len(elements)
     m = s.create_model()
     if len(elements) == len(weight_percents):
-        for i, (element, weight_percent) in enumerate(zip(
-                elements, weight_percents)):
+        for (element, weight_percent) in zip(elements, weight_percents):
             for line, properties in elements_db[
                     element]['Atomic_properties']['Xray_lines'].iteritems():
                 line_energy = properties['energy (keV)']

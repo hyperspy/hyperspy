@@ -454,7 +454,7 @@ class EDSTEMSpectrum(EDSSpectrum):
             self.learning_results.loadings)
 
     def create_model(self, auto_background=True, auto_add_lines=True,
-                     dictionary=None):
+                     *args, **kwargs):
         """Create a model for the current TEM EDS data.
 
         Parameters

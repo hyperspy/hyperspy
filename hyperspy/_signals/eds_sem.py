@@ -275,7 +275,7 @@ class EDSSEMSpectrum(EDSSpectrum):
             return False
 
     def create_model(self, auto_background=True, auto_add_lines=True,
-                     dictionary=None):
+                     *args, **kwargs):
         """Create a model for the current SEM EDS data.
 
         Parameters
