@@ -482,7 +482,12 @@ def get_spc_dtype_list(load_all=False, endianess='<'):
     else:
         dtype_list = \
             [
-                ('filler1', 'V384'),  # 0
+                ('filler1', 'V28'),  # 0
+
+                ('dataStart', end + 'i4'),  # 28
+                ('numPts', end + 'i2'),  # 32 **
+
+                ('filler1_1', 'V350'),  # 34
 
                 ('evPerChan', end + 'i4'),  # 384 **
 
@@ -655,7 +660,10 @@ def _add_spc_metadata(metadata, spc_header):
     return metadata
 
 
-def spc_reader(filename, endianess='<', *args):
+def spc_reader(filename,
+               endianess='<',
+               load_all_spc=False,
+               **kwargs):
     """
     Read data from an SPC spectrum specified by filename.
 
@@ -665,16 +673,57 @@ def spc_reader(filename, endianess='<', *args):
         Name of SPC file to read
     endianess : char
         Byte-order of data to read
-    args
+    load_all_spc : bool
+        Switch to control if all of the .spc header is read, or just the
+        important parts for import into HyperSpy
+    **kwargs
 
     Returns
     -------
-
+    list
+        list with dictionary of signal information to be passed back to
+        hyperspy.io.load_with_reader
     """
-    # dictionary = {'data': data,
-    #               'axes': axes,
-    #               'metadata': metadata,
-    #               'original_metadata': original_metadata}
+    with open(filename, 'rb') as f:
+        spc_header = np.fromfile(f,
+                                 dtype=get_spc_dtype_list(
+                                     load_all=load_all_spc,
+                                     endianess=endianess),
+                                 count=1)
+
+        spc_dict = sarray2dict(spc_header)
+        original_metadata = {'spc_header': spc_dict}
+
+        nz = original_metadata['spc_header']['numPts']
+        data_offset = original_metadata['spc_header']['dataStart']
+
+        # Read data from file into a numpy memmap object
+        data = np.memmap(f, mode='c', offset=data_offset,
+                         dtype='u4', shape=(1, nz)).squeeze()
+
+    # create the energy axis dictionary:
+    energy_axis = {
+        'size': data.shape[0],
+        'index_in_array': 0,
+        'name': 'Energy',
+        'scale': original_metadata['spc_header']['evPerChan'] / 1000.0,
+        'offset': original_metadata['spc_header']['startEnergy'],
+        'units': 'keV'
+    }
+
+    # Assign metadata for spectrum:
+    metadata = {'General': {'original_filename': os.path.split(filename)[1],
+                            'title': 'EDS Spectrum'},
+                "Signal": {'signal_type': "EDS_SEM",
+                           'record_by': 'spectrum', }, }
+    metadata = _add_spc_metadata(metadata, spc_dict)
+
+    dictionary = {'data': data,
+                  'axes': [energy_axis],
+                  'metadata': metadata,
+                  'original_metadata': original_metadata}
+
+    return [dictionary, ]
 
 
 def spd_reader(filename,
