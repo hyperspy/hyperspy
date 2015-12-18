@@ -647,7 +647,7 @@ def spd_reader(filename,
         data_type = {'1': 'u1',
                      '2': 'u2',
                      '4': 'u4'}[str(original_metadata['spd_header'][
-                                        'countBytes'])]
+                         'countBytes'])]
 
         # Read data from file into a numpy memmap object
         data = np.memmap(f, mode='c', offset=data_offset, dtype=data_type
@@ -725,7 +725,7 @@ def spd_reader(filename,
                                 'spc_header']['kV'],
                             'tilt_stage': original_metadata[
                                 'spc_header']['tilt']}
-                    }
+                     }
                 }
 
     # Get elements stored in spectrum:
@@ -733,7 +733,7 @@ def spd_reader(filename,
     if num_elem > 0:
         element_list = sorted([atomic_num_dict[i] for
                                i in original_metadata['spc_header']['at'][
-                                    :num_elem]])
+            :num_elem]])
         metadata['Sample'] = {'elements': element_list}
         print "Elemental information was found in the spectral metadata and " \
               "were added to the signal:"
