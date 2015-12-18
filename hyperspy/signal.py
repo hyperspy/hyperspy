@@ -4022,7 +4022,7 @@ class Signal(FancySlicing,
         """
         return self._apply_function_on_data_and_remove_axis(np.sum, axis)
 
-    def max(self, axis="navigation", return_signal=False):
+    def max(self, axis="navigation"):
         """Returns a signal with the maximum of the signal along an axis.
 
         Parameters
