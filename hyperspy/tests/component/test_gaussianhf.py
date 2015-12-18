@@ -90,7 +90,6 @@ class TestGaussianHF(object):
             g1.height.value/s.axes_manager.signal_axes[0].scale -
             g2.height.value),
             12.)
-        # TODO: For some reason, this is more accurate than above...
         nt.assert_less(np.abs(g2.centre.value - g1.centre.value), 2.2)
         nt.assert_less(np.abs(g2.fwhm.value - g1.fwhm.value), 6.5)
 
