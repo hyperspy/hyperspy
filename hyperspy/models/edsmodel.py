@@ -427,8 +427,8 @@ class EDSModel(Model1D):
         else:
             self.spectrum.set_microscope_parameters(
                 energy_resolution_MnKa=FWHM_MnKa)
-            warnings.warn("Energy resolution (FWHM at Mn Ka) changed from" +
-                          "%lf to %lf eV" % (FWHM_MnKa_old, FWHM_MnKa))
+            warnings.warn("Energy resolution (FWHM at Mn Ka) changed from "
+                          + "%lf to %lf eV" % (FWHM_MnKa_old, FWHM_MnKa))
             for component in self:
                 if component.isbackground is False:
                     line_energy, line_FWHM = self.spectrum._get_line_energy(
