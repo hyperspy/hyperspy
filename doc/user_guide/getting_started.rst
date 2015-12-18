@@ -47,8 +47,6 @@ can be started as follows:
 
     $ hyperspy notebook
 
-
-
 .. versionchanged:: 0.8.3
 
 Once a new Jupyter notebook is started in a browser window, HyperSpy needs to
@@ -58,6 +56,18 @@ be loaded and started using the :ref:`hyperspy magic <magic-label>`.
 
     >>> %load_ext hyperspy
     >>> %hyperspy
+
+.. note::
+
+    As per `IPython extension documentation
+    <https://ipython.readthedocs.org/en/stable/config/extensions/index.html#using-extensions>`_,
+    the first line, loading HyperSpy extension, can be avoided typing every time by adding it to your default extensions:
+
+    .. code-block:: python
+
+        >>> c.InteractiveShellApp.extensions = [ #some other default extensions
+                'hyperspy',
+                ]
 
 
 Alternatively, hyperspy can be run in two console modes: the terminal you run
