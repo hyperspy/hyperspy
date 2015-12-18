@@ -48,6 +48,10 @@ class Gaussian(Component):
     For convenience the `fwhm` attribute can be used to get and set
     the full-with-half-maximum.
 
+    See also
+    --------
+    hyperspy._components.gaussianhf.GaussianHF
+
     """
 
     def __init__(self, A=1., sigma=1., centre=0.):

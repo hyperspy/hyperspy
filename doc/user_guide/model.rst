@@ -66,6 +66,7 @@ The following components are currently available for one-dimensional models:
 * :py:class:`~._components.exponential.Exponential`
 * :py:class:`~._components.scalable_fixed_pattern.ScalableFixedPattern`
 * :py:class:`~._components.gaussian.Gaussian`
+* :py:class:`~._components.gaussian.GaussianHF`
 * :py:class:`~._components.lorentzian.Lorentzian`
 * :py:class:`~._components.voigt.Voigt`
 * :py:class:`~._components.polynomial.Polynomial`
