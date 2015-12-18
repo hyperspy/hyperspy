@@ -13,9 +13,64 @@ def _get_element_and_line(Xray_line):
 
 
 def _get_energy_xray_line(xray_line):
-    energy, line = _get_element_and_line(xray_line)
-    return elements_db[energy]['Atomic_properties']['Xray_lines'][
+    element, line = _get_element_and_line(xray_line)
+    return elements_db[element]['Atomic_properties']['Xray_lines'][
         line]['energy (keV)']
+
+
+def _parse_only_lines(only_lines):
+    if hasattr(only_lines, '__iter__'):
+        if any(isinstance(line, basestring) is False for line in only_lines):
+            return only_lines
+    elif isinstance(only_lines, basestring) is False:
+        return only_lines
+    only_lines = list(only_lines)
+    for only_line in only_lines:
+        if only_line == 'a':
+            only_lines.extend(['Ka', 'La', 'Ma'])
+        elif only_line == 'b':
+            only_lines.extend(['Kb', 'Lb1', 'Mb'])
+    return only_lines
+
+
+def get_xray_lines_near_energy(energy, width=0.2, only_lines=None):
+    """Find xray lines near a specific energy, more specifically all xray lines
+    that satisfy only_lines and are within the given energy window width around
+    the passed energy.
+
+    Parameters
+    ----------
+    energy : float
+        Energy to search near in keV
+    width : float
+        Window width in keV around energy in which to find nearby energies,
+        i.e. a value of 0.2 keV (the default) means to search +/- 0.1 keV.
+    only_lines :
+        If not None, only the given lines will be added (eg. ('a','Kb')).
+
+    Returns
+    -------
+    List of xray-lines sorted by energy difference to given energy.
+    """
+    only_lines = _parse_only_lines(only_lines)
+    valid_lines = []
+    E_min, E_max = energy - width/2., energy + width/2.
+    for element, el_props in elements_db.iteritems():
+        # Not all elements in the DB have the keys, so catch KeyErrors
+        try:
+            lines = el_props['Atomic_properties']['Xray_lines']
+        except KeyError:
+            continue
+        for line, l_props in lines.iteritems():
+            if only_lines and line not in only_lines:
+                continue
+            line_energy = l_props['energy (keV)']
+            if E_min <= line_energy <= E_max:
+                # Store line in Element_Line format, and energy difference
+                valid_lines.append((element + "_" + line,
+                                    np.abs(line_energy - energy)))
+    # Sort by energy difference, but return only the line names
+    return [line for line, _ in sorted(valid_lines, key=lambda x: x[1])]
 
 
 def get_FWHM_at_Energy(energy_resolution_MnKa, E):
@@ -47,7 +102,7 @@ def get_FWHM_at_Energy(energy_resolution_MnKa, E):
 
 
 def xray_range(xray_line, beam_energy, density='auto'):
-    '''Return the Anderson-Hasler X-ray range.
+    """Return the Anderson-Hasler X-ray range.
 
     Return the maximum range of X-ray generation in a pure bulk material.
 
@@ -68,11 +123,11 @@ def xray_range(xray_line, beam_energy, density='auto'):
     Examples
     --------
     >>> # X-ray range of Cu Ka in pure Copper at 30 kV in micron
-    >>> utils.eds.xray_range('Cu_Ka', 30.)
+    >>> hs.eds.xray_range('Cu_Ka', 30.)
     1.9361716759499248
 
     >>> # X-ray range of Cu Ka in pure Carbon at 30kV in micron
-    >>> utils.eds.xray_range('Cu_Ka', 30., utils.material.elements.C.
+    >>> hs.eds.xray_range('Cu_Ka', 30., hs.material.elements.C.
     >>>                      Physical_properties.density_gcm3)
     7.6418811280855454
 
@@ -84,7 +139,7 @@ def xray_range(xray_line, beam_energy, density='auto'):
     See also the textbook of Goldstein et al., Plenum publisher,
     third edition p 286
 
-    '''
+    """
 
     element, line = _get_element_and_line(xray_line)
     if density == 'auto':
@@ -99,7 +154,7 @@ def xray_range(xray_line, beam_energy, density='auto'):
 
 
 def electron_range(element, beam_energy, density='auto', tilt=0):
-    '''Return the Kanaya-Okayama electron range.
+    """Return the Kanaya-Okayama electron range.
 
     Return the maximum electron range in a pure bulk material.
 
@@ -122,7 +177,7 @@ def electron_range(element, beam_energy, density='auto', tilt=0):
     Examples
     --------
     >>> # Electron range in pure Copper at 30 kV in micron
-    >>> utils.eds.electron_range('Cu', 30.)
+    >>> hs.eds.electron_range('Cu', 30.)
     2.8766744984001607
 
     Notes
@@ -132,7 +187,7 @@ def electron_range(element, beam_energy, density='auto', tilt=0):
     See also the textbook of Goldstein et al., Plenum publisher,
     third edition p 72.
 
-    '''
+    """
 
     if density == 'auto':
         density = elements_db[
@@ -170,7 +225,7 @@ def take_off_angle(tilt_stage,
 
     Examples
     --------
-    >>> utils.eds.take_off_angle(tilt_stage=10.,
+    >>> hs.eds.take_off_angle(tilt_stage=10.,
     >>>                          azimuth_angle=45., elevation_angle=22.)
     28.865971201155283
 

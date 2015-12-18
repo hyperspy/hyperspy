@@ -17,7 +17,7 @@ def closest_nice_number(number):
 
 
 def get_linear_interpolation(p1, p2, x):
-    '''Given two points in 2D returns y for a given x for y = ax + b
+    """Given two points in 2D returns y for a given x for y = ax + b
 
     Parameters
     ----------
@@ -28,7 +28,7 @@ def get_linear_interpolation(p1, p2, x):
     -------
     y : float
 
-    '''
+    """
     x1, y1 = p1
     x2, y2 = p2
     a = (y2 - y1) / (x2 - x1)

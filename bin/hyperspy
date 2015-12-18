@@ -34,12 +34,13 @@ except ImportError:
 
 
 import IPython
-import traits.etsconfig.etsconfig
 
 import hyperspy
 import hyperspy.Release
 import hyperspy.defaults_parser
-from hyperspy.defaults_parser import preferences
+from hyperspy.defaults_parser import preferences, file_version
+from IPython.terminal.ipapp import launch_new_instance
+
 
 # First we split the argv items in two: the firsts for hyperspy,
 # the rest for ipython
@@ -51,44 +52,21 @@ if '--ipython_args' in sys.argv:
 hyperspy_module_path = os.path.dirname(hyperspy.__file__)
 ipy_hspy = os.path.join(hyperspy_module_path, 'ipython_profile')
 ipy_version = LooseVersion(IPython.__version__)
-ipython_environments = ['terminal', ]
-if ipy_version < LooseVersion('0.11'):
-    from IPython.genutils import get_home_dir, get_ipython_dir
-    from IPython.iplib import user_setup
-    ipy_dir = get_ipython_dir()
-    to_copy = [os.path.join(ipy_hspy, 'ipy_profile_hyperspy.py'), ]
-    destination = ipy_dir
-    if not os.path.isdir(ipy_dir):
-        # Platform-dependent suffix.
-        if os.name == 'posix':
-            rc_suffix = ''
-        else:
-            rc_suffix = '.ini'
-        # Use the IPython function to create the ipy_dir
-        user_setup(ipy_dir, rc_suffix, mode='install',
-                   interactive=False)
-        sys.argv.append('--overwrite_profile')
-else:
-    ipy_dir = IPython.utils.path.get_ipython_dir()
-    to_copy = [os.path.join(ipy_hspy, 'ipython_config.py'),
-               os.path.join(ipy_hspy, 'ipython_console_config.py'),
-               os.path.join(ipy_hspy, 'ipython_qtconsole_config.py'),
-               os.path.join(ipy_hspy, 'ipython_notebook_config.py',), ]
-    destination = os.path.join(ipy_dir, 'profile_hyperspy')
-    # The ipy_dir may not exist if it is the first time that the user
-    # runs ipython, therefore we must create it, what is done
-    # automatically when creating a profile
-    if not os.path.isdir(ipy_dir) or not os.path.isdir(destination):
-        # Use the IPython routines to create the directory and profile
-        import IPython.core.profileapp
-        ipy_create_profile = IPython.core.profileapp.ProfileCreate()
-        ipy_create_profile.parse_command_line(['hyperspy', ])
-        ipy_create_profile.init_config_files()
-        sys.argv.append('--overwrite_profile')
-    ipython_environments.extend(['console', 'qtconsole', ])
 
-if ipy_version > LooseVersion('0.11'):
-    ipython_environments.append('notebook')
+ipython_environments = ['terminal', 'console', 'qtconsole', 'notebook']
+
+ipy_dir = IPython.utils.path.get_ipython_dir()
+destination = os.path.join(ipy_dir, 'profile_hyperspy')
+# The ipy_dir may not exist if it is the first time that the user
+# runs ipython, therefore we must create it, what is done
+# automatically when creating a profile
+if not os.path.isdir(ipy_dir) or not os.path.isdir(destination):
+    # Use the IPython routines to create the directory and profile
+    import IPython.core.profileapp
+    ipy_create_profile = IPython.core.profileapp.ProfileCreate()
+    ipy_create_profile.parse_command_line(['hyperspy', ])
+    ipy_create_profile.init_config_files()
+    sys.argv.append('--overwrite_profile')
 
 if argp is True:
     parser = argparse.ArgumentParser(
@@ -106,22 +84,6 @@ parser.add_argument('environment',
                     help=(
                         'Selects the IPython environment in '
                         'which to start Hyperspy. The default is terminal'))
-parser.add_argument('--toolkit',
-                    choices=["qt4", "gtk", "wx", "tk", "None", ],
-                    default=preferences.General.default_toolkit,
-                    help=(
-                        "Pre-load matplotlib and traitsui for interactive use,"
-                        "selecting a particular matplotlib backend and loop "
-                        "integration."
-                        "When using gtk and tk toolkits the "
-                        "user interface elements are not available. "
-                        "None is suitable to run headless."))
-parser.add_argument('--pylab_inline',
-                    action="store_true",
-                    default=preferences.Plot.pylab_inline,
-                    help=("If True the figure are displayed inline. "
-                           "This option only has effect when using the "
-                          "qtconsole or notebook"))
 parser.add_argument('--overwrite_profile',
                     action="store_true",
                     default=False,
@@ -140,11 +102,20 @@ if argp is True:
 else:
     options, args = parser.parse_args()
 
-for f in to_copy:
-    if not os.path.isfile(os.path.join(
-            destination, os.path.split(f)[-1])) or \
-            args.overwrite_profile:
-        shutil.copy(f, destination)
+ipy_config_hspy = os.path.join(ipy_hspy, 'ipython_config.py')
+ipy_config_home = os.path.join(destination, 'ipython_config.py')
+if not os.path.isfile(ipy_config_home) or \
+        args.overwrite_profile or (
+        LooseVersion(file_version(ipy_config_hspy)) >
+        LooseVersion(file_version(ipy_config_home))):
+    shutil.copy(ipy_config_hspy, destination)
+
+additional_dest = os.path.join(destination, 'startup')
+if not os.path.isdir(additional_dest):
+    os.makedirs(additional_dest)
+if not os.path.isfile(os.path.join(additional_dest, 'hyperspy_magics_importer.py')) or \
+        args.overwrite_profile:
+    shutil.copy(os.path.join(ipy_hspy, 'hyperspy_magics_importer.py'), additional_dest)
 
 # Now that the hspy arguments are parsed, we can delete them from
 # sys.argv
@@ -154,58 +125,6 @@ sys.argv = ipy_argv
 # Add the subcommand first
 if args.environment != 'terminal':
     sys.argv.insert(1, args.environment)
-# By default Hyperspy uses the qt backend, but if the user tries to
-# choose a different one using --pylab= , then we grant him the control
-add_pylab = True
-if argp is True:
-    toolkit = args.toolkit
-    if args.toolkit == "None":
-        add_pylab = False
-else:
-    toolkit = options.toolkit
-    if options.toolkit == "None":
-        add_pylab = False
-if argp is True:
-    pylab_inline = args.pylab_inline
-else:
-    pylab_inline = options.pylab_inline
-hyperspy.defaults_parser.current_toolkit = toolkit
-if toolkit in ("qt4", "wx"):
-    traits.etsconfig.etsconfig.ETSConfig.toolkit = toolkit
-else:
-    traits.etsconfig.etsconfig.ETSConfig.toolkit = "null"
-if ipy_version < LooseVersion('0.11'):
-    if add_pylab is True:
-        sys.argv.append('-pylab')
-    add_toolkit = True
-    for arg in sys.argv:
-        if 'thread' in arg:
-            add_toolkit = False
-            break
-    if add_toolkit is True:
-        if toolkit == "qt":
-            sys.argv.append('-qthread')
-        elif toolkit == "gtk":
-            sys.argv.append('-gthread')
-        elif toolkit == "wx":
-            sys.argv.append('-wthread')
-        elif toolkit == "tk":
-            sys.argv.append('-tkthread')
-    sys.argv.extend(('-p', 'hyperspy'))
-    from IPython.ipapi import launch_new_instance
-    sys.exit(launch_new_instance())
-else:
-    if ipy_version >= LooseVersion('1.0'):
-        from IPython.terminal.ipapp import launch_new_instance
-    else:
-        from IPython.frontend.terminal.ipapp import launch_new_instance
-    sys.argv.append('--profile=hyperspy')
-    for arg in sys.argv:
-        if 'pylab' in arg:
-            add_pylab = False
-    if pylab_inline is True and args.environment in ("notebook",
-                                                     "qtconsole"):
-        sys.argv.append('--pylab=inline')
-    elif add_pylab is True:
-        sys.argv.append('--pylab=%s' % toolkit.replace("qt4", "qt"))
-    sys.exit(launch_new_instance())
+sys.argv.append('--profile=hyperspy')
+sys.exit(launch_new_instance())
+

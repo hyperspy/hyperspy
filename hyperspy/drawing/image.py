@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2015 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -30,7 +30,9 @@ from hyperspy.drawing import utils
 from hyperspy.gui.tools import ImageContrastEditor
 from hyperspy.misc import math_tools
 from hyperspy.misc import rgb_tools
-from hyperspy.misc.image_tools import contrast_stretching
+from hyperspy.misc.image_tools import (contrast_stretching,
+                                       MPL_DIVERGING_COLORMAPS,
+                                       centre_colormap_values)
 from hyperspy.drawing.figure import BlittedFigure
 
 
@@ -61,6 +63,10 @@ class ImagePlot(BlittedFigure):
         The percentage of pixels that are left out of the bounds.  For example,
         the low and high bounds of a value of 1 are the 0.5% and 99.5%
         percentiles. It must be in the [0, 100] range.
+    centre_colormap : {"auto", True, False}
+        If True the centre of the color scheme is set to zero. This is
+        specially useful when using diverging color schemes. If "auto"
+        (default), diverging color schemes are automatically centred.
 
     """
 
@@ -95,6 +101,7 @@ class ImagePlot(BlittedFigure):
         self._user_axes_ticks = None
         self._auto_axes_ticks = True
         self.no_nans = False
+        self.centre_colormap = "auto"
 
     @property
     def axes_ticks(self):
@@ -164,8 +171,8 @@ class ImagePlot(BlittedFigure):
 
     def optimize_contrast(self, data):
         if (self.vmin is not None and
-            self.vmax is not None and
-            not self.auto_contrast):
+                self.vmax is not None and
+                not self.auto_contrast):
             return
         if 'complex' in data.dtype.name:
             data = np.log(np.abs(data))
@@ -214,7 +221,8 @@ class ImagePlot(BlittedFigure):
             data = rgb_tools.rgbx2regular_array(data, plot_friendly=True)
         if self.vmin is not None or self.vmax is not None:
             warnings.warn(
-                'vmin or vmax value given, hence auto_contrast is set to False')
+                'vmin or vmax value given, hence '
+                'auto_contrast is set to False')
             self.auto_contrast = False
         self.optimize_contrast(data)
         if (not self.axes_manager or
@@ -264,10 +272,21 @@ class ImagePlot(BlittedFigure):
         self.ax_markers.append(marker)
 
     def update(self, auto_contrast=None, **kwargs):
+        # Turn on centre_colormap if a diverging colormap is used.
+        if self.centre_colormap == "auto":
+            if "cmap" in kwargs:
+                cmap = kwargs["cmap"]
+            else:
+                cmap = plt.cm.get_cmap().name
+            if cmap in MPL_DIVERGING_COLORMAPS:
+                self.centre_colormap = True
+            else:
+                self.centre_colormap = False
         ims = self.ax.images
         redraw_colorbar = False
-        data = rgb_tools.rgbx2regular_array(self.data_function(axes_manager=self.axes_manager),
-                                            plot_friendly=True)
+        data = rgb_tools.rgbx2regular_array(
+            self.data_function(axes_manager=self.axes_manager),
+            plot_friendly=True)
         numrows, numcols = data.shape[:2]
         for marker in self.ax_markers:
             marker.update()
@@ -283,9 +302,9 @@ class ImagePlot(BlittedFigure):
                     row = -1
                 if col >= 0 and row >= 0:
                     z = data[row, col]
-                    return 'x=%1.4f, y=%1.4f, intensity=%1.4f' % (x, y, z)
+                    return 'x=%1.4g, y=%1.4g, intensity=%1.4g' % (x, y, z)
                 else:
-                    return 'x=%1.4f, y=%1.4f' % (x, y)
+                    return 'x=%1.4g, y=%1.4g' % (x, y)
             self.ax.format_coord = format_coord
         if (auto_contrast is True or
                 auto_contrast is None and self.auto_contrast is True):
@@ -298,12 +317,16 @@ class ImagePlot(BlittedFigure):
         if 'complex' in data.dtype.name:
             data = np.log(np.abs(data))
         if self.plot_indices is True:
-            self._text.set_text((self.axes_manager.indices))
+            self._text.set_text(self.axes_manager.indices)
         if self.no_nans:
             data = np.nan_to_num(data)
+        if self.centre_colormap:
+            vmin, vmax = centre_colormap_values(self.vmin, self.vmax)
+        else:
+            vmin, vmax = self.vmin, self.vmax
         if ims:
             ims[0].set_data(data)
-            ims[0].norm.vmax, ims[0].norm.vmin = self.vmax, self.vmin
+            ims[0].norm.vmax, ims[0].norm.vmin = vmax, vmin
             if redraw_colorbar is True:
                 ims[0].autoscale()
                 self._colorbar.draw_all()
@@ -317,13 +340,12 @@ class ImagePlot(BlittedFigure):
             if np.isnan(data).any():
                 self.figure.canvas.draw()
         else:
-            new_args = {}
-            new_args['interpolation'] = 'nearest'
-            new_args['vmin'] = self.vmin
-            new_args['vmax'] = self.vmax
-            new_args['extent'] = self._extent
-            new_args['aspect'] = self._aspect
-            new_args['animated'] = True
+            new_args = {'interpolation': 'nearest',
+                        'vmin': vmin,
+                        'vmax': vmax,
+                        'extent': self._extent,
+                        'aspect': self._aspect,
+                        'animated': True}
             new_args.update(kwargs)
             self.ax.imshow(data,
                            **new_args)
@@ -368,8 +390,10 @@ class ImagePlot(BlittedFigure):
             self.colorbar_vmin = math.floor(vmin / 10 ** oom) * 10 ** oom
             self.colorbar_vmax = self.colorbar_vmin + \
                 self.colorbar_step * (number_of_ticks - 1)
-            self.colorbar_locs = np.arange(0, number_of_ticks
-                                           ) * self.colorbar_step + self.colorbar_vmin
+            self.colorbar_locs = (
+                np.arange(0, number_of_ticks) *
+                self.colorbar_step +
+                self.colorbar_vmin)
 
         def check_tolerance():
             if abs(self.colorbar_vmax - vmax) / vmax > (

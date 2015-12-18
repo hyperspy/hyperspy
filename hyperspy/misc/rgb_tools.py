@@ -50,7 +50,10 @@ def rgbx2regular_array(data, plot_friendly=False):
     """
     # Make sure that the data is contiguous
     if data.flags['C_CONTIGUOUS'] is False:
-        data = np.ascontiguousarray(data)
+        if np.ma.is_masked(data):
+            data = data.copy(order='C')
+        else:
+            data = np.ascontiguousarray(data)
     if is_rgba(data) is True:
         dt = data.dtype.fields['B'][0]
         data = data.view((dt, 4))
@@ -68,7 +71,10 @@ def rgbx2regular_array(data, plot_friendly=False):
 def regular_array2rgbx(data):
     # Make sure that the data is contiguous
     if data.flags['C_CONTIGUOUS'] is False:
-        data = np.ascontiguousarray(data)
+        if np.ma.is_masked(data):
+            data = data.copy(order='C')
+        else:
+            data = np.ascontiguousarray(data)
     if data.shape[-1] == 3:
         names = rgb8.names
     elif data.shape[-1] == 4:

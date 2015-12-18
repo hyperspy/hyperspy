@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2015 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -38,20 +38,19 @@ class EELSCLEdge(Component):
     Hydrogenic GOS are limited to K and L shells.
 
     Currently it only supports Peter Rez's Hartree Slater cross sections
-    parametrised as distributed by Gatan in their
-    Digital Micrograph (DM) software. If Digital Micrograph is installed
-    in the system HyperSpy in the standard location HyperSpy should
-    find the path to the HS GOS folder. Otherwise, the location of the
-    folder can be defined in HyperSpy preferences, which can be done through
-        preferences.gui() or the preferences.EELS.eels_gos_files_path variable.
-
-    Calling this class with a numpy.array
-
+    parametrised as distributed by Gatan in their Digital Micrograph (DM)
+    software. If Digital Micrograph is installed in the system HyperSpy in the
+    standard location HyperSpy should find the path to the HS GOS folder.
+    Otherwise, the location of the folder can be defined in HyperSpy
+    preferences, which can be done through hs.preferences.gui() or the
+    hs.preferences.EELS.eels_gos_files_path variable.
 
     Parameters
     ----------
-    element_subshell : str
-            For example, 'Ti_L3' for the GOS of the titanium L3 subshell
+    element_subshell : {str, dict}
+        Usually a string, for example, 'Ti_L3' for the GOS of the titanium L3
+        subshell. If a dictionary is passed, it is assumed that Hartree Slater
+        GOS was exported using `GOS.as_dictionary`, and will be reconstructed.
 
     GOS : {'hydrogenic', 'Hartree-Slater', None}
         The GOS to use. If None it will use the Hartree-Slater GOS if
@@ -93,8 +92,12 @@ class EELSCLEdge(Component):
                             'fine_structure_coeff',
                             'effective_angle',
                             'onset_energy'])
-        self.name = element_subshell
-        self.element, self.subshell = element_subshell.split('_')
+        if isinstance(element_subshell, dict):
+            self.element = element_subshell['element']
+            self.subshell = element_subshell['subshell']
+        else:
+            self.element, self.subshell = element_subshell.split('_')
+        self.name = "_".join([self.element, self.subshell])
         self.energy_scale = None
         self.effective_angle.free = False
         self.fine_structure_active = preferences.EELS.fine_structure_active
@@ -109,7 +112,7 @@ class EELSCLEdge(Component):
             except IOError:
                 GOS = 'hydrogenic'
                 messages.information(
-                    'Hartree-Slater GOS not available'
+                    'Hartree-Slater GOS not available. '
                     'Using hydrogenic GOS')
         if self.GOS is None:
             if GOS == 'Hartree-Slater':
@@ -128,6 +131,17 @@ class EELSCLEdge(Component):
         self.intensity.value = 1
         self.intensity.bmin = 0.
         self.intensity.bmax = None
+
+        self._whitelist['GOS'] = ('init', GOS)
+        if GOS == 'Hartree-Slater':
+            self._whitelist['element_subshell'] = (
+                'init',
+                self.GOS.as_dictionary(True))
+        elif GOS == 'hydrogenic':
+            self._whitelist['element_subshell'] = ('init', element_subshell)
+        self._whitelist['fine_structure_active'] = None
+        self._whitelist['fine_structure_width'] = None
+        self._whitelist['fine_structure_smoothing'] = None
 
     # Automatically fix the fine structure when the fine structure is
     # disable.
@@ -274,11 +288,14 @@ class EELSCLEdge(Component):
     def _calculate_knots(self):
         start = self.onset_energy.value
         stop = start + self.fine_structure_width
-        self.__knots = np.r_[[start] * 4,
-                             np.linspace(start,
-                                         stop,
-                                         self.fine_structure_coeff._number_of_elements
-                                         )[2:-2], [stop] * 4]
+        self.__knots = np.r_[
+            [start] * 4,
+            np.linspace(
+                start,
+                stop,
+                self.fine_structure_coeff._number_of_elements)[
+                2:-2],
+            [stop] * 4]
 
     def function(self, E):
         """Returns the number of counts in barns
@@ -290,9 +307,11 @@ class EELSCLEdge(Component):
         if self.fine_structure_active is True:
             bfs = bsignal * (
                 E < (self.onset_energy.value + self.fine_structure_width))
-            cts[bfs] = splev(E[bfs],
-                             (self.__knots, self.fine_structure_coeff.value + (0,) * 4,
-                              3))
+            cts[bfs] = splev(
+                E[bfs], (
+                    self.__knots,
+                    self.fine_structure_coeff.value + (0,) * 4,
+                    3))
             bsignal[bfs] = False
         itab = bsignal * (E <= Emax)
         cts[itab] = self.tab_xsection(E[itab])
@@ -313,8 +332,9 @@ class EELSCLEdge(Component):
         if len(fs) == len(self.__knots):
             self.fine_structure_coeff.value = fs
         else:
-            messages.warning_exit("The provided fine structure file "
-                                  "doesn't match the size of the current fine structure")
+            messages.warning_exit(
+                "The provided fine structure file "
+                "doesn't match the size of the current fine structure")
 
     def get_fine_structure_as_spectrum(self):
         """Returns a spectrum containing the fine structure.

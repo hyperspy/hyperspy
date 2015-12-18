@@ -6,7 +6,7 @@ from hyperspy import signals
 from hyperspy.exceptions import DataDimensionError
 
 
-class Test1d():
+class Test1d:
 
     def setUp(self):
         self.s = Signal(np.arange(2))
@@ -25,7 +25,7 @@ class Test1d():
         assert_true(isinstance(s, signals.EELSSpectrum))
 
 
-class Test2d():
+class Test2d:
 
     def setUp(self):
         self.s = Signal(np.random.random((2, 3)))
@@ -51,12 +51,12 @@ class Test2d():
         s.set_signal_type("EELS")
         im = s.as_image((1, 0))
         assert_equal(im.metadata.Signal.signal_type, "EELS")
-        s = im.as_spectrum((0))
+        s = im.as_spectrum(0)
         assert_equal(s.metadata.Signal.signal_type, "EELS")
         assert_true(isinstance(s, signals.EELSSpectrum))
 
 
-class Test3d():
+class Test3d:
 
     def setUp(self):
         self.s = Signal(np.random.random((2, 3, 4)))

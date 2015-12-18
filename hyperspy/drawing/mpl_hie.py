@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2015 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -32,6 +32,7 @@ class MPL_HyperImage_Explorer(MPL_HyperExplorer):
                     vmin=None,
                     vmax=None,
                     no_nans=False,
+                    centre_colormap="auto",
                     **kwargs
                     ):
         """Plot image.
@@ -81,6 +82,7 @@ class MPL_HyperImage_Explorer(MPL_HyperExplorer):
         imf.no_nans = no_nans
         imf.scalebar_color = scalebar_color
         imf.auto_contrast = auto_contrast
+        imf.centre_colormap = centre_colormap
         imf.plot(**kwargs)
         self.signal_plot = imf
 
