@@ -2,14 +2,6 @@
 
 # Set the PyQt API to 2 to avoid incompatibilities between matplotlib
 # traitsui
-import sip
-sip.setapi('QVariant', 2)
-sip.setapi('QDate', 2)
-sip.setapi('QDateTime', 2)
-sip.setapi('QTextStream', 2)
-sip.setapi('QTime', 2)
-sip.setapi('QUrl', 2)
-del sip
 
 from hyperspy import docstrings
 

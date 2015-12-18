@@ -16,8 +16,6 @@ install:
   - pip install coverage coveralls
   # The following two lines set hyperspy to run headless. This is a temporary
   # workaround until we fix hyperspy so that this is not required.
-  - mkdir ~/.hyperspy
-  - printf "[General]\ndefault_toolkit = None" > ~/.hyperspy/hyperspyrc
   - python setup.py install
 
 before_install:
