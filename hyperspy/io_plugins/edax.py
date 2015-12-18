@@ -23,6 +23,7 @@
 import os
 import numpy as np
 from hyperspy.misc.array_tools import sarray2dict
+import traits.api as t
 
 # Plugin characteristics
 # ----------------------
@@ -119,11 +120,17 @@ def get_spd_dtype_list(endianess='<'):
     return dtype_list
 
 
-def get_spc_dtype_list(endianess='<'):
+def get_spc_dtype_list(load_all=False, endianess='<'):
     """
     Get the data type list for an SPC spectrum.
     Further information about the file format is available `here
     <https://github.com/hyperspy/hyperspy/files/29506/SPECTRUM-V70.pdf>`__.
+
+    Parameters
+    ----------
+    load_all : bool
+        Switch to control if all the data is loaded, or if just the
+        important pieces of the signal will be read (speeds up loading time)
 
     Table of header tags:
         - fVersion: 4 byte float; *File format Version*
@@ -303,173 +310,210 @@ def get_spc_dtype_list(endianess='<'):
         read an SPC file header.
     """
     end = endianess
-    dtype_list = \
-        [
-            ('fVersion', end + 'f4'),
-            ('aVersion', end + 'f4'),
-            ('fileName', '8i1'),
-            ('collectDateYear', end + 'i2'),
-            ('collectDateDay', end + 'i1'),
-            ('collectDateMon', end + 'i1'),
-            ('collectTimeMin', end + 'i1'),
-            ('collectTimeHour', end + 'i1'),
-            ('collectTimeHund', end + 'i1'),
-            ('collectTimeSec', end + 'i1'),
-            ('fileSize', end + 'i4'),
-            ('dataStart', end + 'i4'),
-            ('numPts', end + 'i2'),
-            ('intersectingDist', end + 'i2'),
-            ('workingDist', end + 'i2'),
-            ('scaleSetting', end + 'i2'),
+    # important parameters are marked by "**" in comment
+    if load_all:
+        dtype_list = \
+            [  # data offset (bytes)
+                ('fVersion', end + 'f4'),  # 0
+                ('aVersion', end + 'f4'),  # 4
+                ('fileName', '8i1'),  # 8
+                ('collectDateYear', end + 'i2'),  # 16
+                ('collectDateDay', end + 'i1'),  # 17
+                ('collectDateMon', end + 'i1'),
+                ('collectTimeMin', end + 'i1'),
+                ('collectTimeHour', end + 'i1'),
+                ('collectTimeHund', end + 'i1'),
+                ('collectTimeSec', end + 'i1'),
+                ('fileSize', end + 'i4'),  # 24
+                ('dataStart', end + 'i4'),  # 28
+                ('numPts', end + 'i2'),  # 32
+                ('intersectingDist', end + 'i2'),  # 34
+                ('workingDist', end + 'i2'),  # 36
+                ('scaleSetting', end + 'i2'),  # 38
 
-            ('filler1', 'V24'),
+                ('filler1', 'V24'),  # 40
 
-            ('spectrumLabel', '256i1'),
-            ('imageFilename', '8i1'),
-            ('spotX', end + 'i2'),
-            ('spotY', end + 'i2'),
-            ('imageADC', end + 'i2'),
-            ('discrValues', end + '5i4'),
-            ('discrEnabled', end + '5i1'),
-            ('pileupProcessed', end + 'i1'),
-            ('fpgaVersion', end + 'i4'),
-            ('pileupProcVersion', end + 'i4'),
-            ('NB5000CFG', end + 'i4'),
+                ('spectrumLabel', '256i1'),  # 64
+                ('imageFilename', '8i1'),  # 320
+                ('spotX', end + 'i2'),  # 328
+                ('spotY', end + 'i2'),  # 330
+                ('imageADC', end + 'i2'),  # 332
+                ('discrValues', end + '5i4'),  # 334
+                ('discrEnabled', end + '5i1'),  # 354
+                ('pileupProcessed', end + 'i1'),  # 359
+                ('fpgaVersion', end + 'i4'),  # 360
+                ('pileupProcVersion', end + 'i4'),  # 364
+                ('NB5000CFG', end + 'i4'),  # 368
 
-            ('filler2', 'V12'),
+                ('filler2', 'V12'),  # 380
 
-            ('evPerChan', end + 'i4'),
-            ('ADCTimeConstant', end + 'i2'),
-            ('analysisType', end + 'i2'),
-            ('preset', end + 'f4'),
-            ('maxp', end + 'i4'),
-            ('maxPeakCh', end + 'i4'),
-            ('xRayTubeZ', end + 'i2'),
-            ('filterZ', end + 'i2'),
-            ('current', end + 'f4'),
-            ('sampleCond', end + 'i2'),
-            ('sampleType', end + 'i2'),
-            ('xrayCollimator', end + 'u2'),
-            ('xrayCapilaryType', end + 'u2'),
-            ('xrayCapilarySize', end + 'u2'),
-            ('xrayFilterThickness', end + 'u2'),
-            ('spectrumSmoothed', end + 'u2'),
-            ('detector_Size_SiLi', end + 'u2'),
-            ('spectrumReCalib', end + 'u2'),
-            ('eagleSystem', end + 'u2'),
-            ('sumPeakRemoved', end + 'u2'),
-            ('edaxSoftwareType', end + 'u2'),
+                ('evPerChan', end + 'i4'),  # 384 **
+                ('ADCTimeConstant', end + 'i2'),  # 388
+                ('analysisType', end + 'i2'),  # 390
+                ('preset', end + 'f4'),  # 392
+                ('maxp', end + 'i4'),  # 396
+                ('maxPeakCh', end + 'i4'),  # 400
+                ('xRayTubeZ', end + 'i2'),  # 404
+                ('filterZ', end + 'i2'),  # 406
+                ('current', end + 'f4'),  # 408
+                ('sampleCond', end + 'i2'),  # 412
+                ('sampleType', end + 'i2'),  # 414
+                ('xrayCollimator', end + 'u2'),  # 416
+                ('xrayCapilaryType', end + 'u2'),  # 418
+                ('xrayCapilarySize', end + 'u2'),  # 420
+                ('xrayFilterThickness', end + 'u2'),  # 422
+                ('spectrumSmoothed', end + 'u2'),  # 424
+                ('detector_Size_SiLi', end + 'u2'),  # 426
+                ('spectrumReCalib', end + 'u2'),  # 428
+                ('eagleSystem', end + 'u2'),  # 430
+                ('sumPeakRemoved', end + 'u2'),  # 432
+                ('edaxSoftwareType', end + 'u2'),  # 434
 
-            ('filler3', 'V6'),
+                ('filler3', 'V6'),  # 436
 
-            ('escapePeakRemoved', end + 'u2'),
-            ('analyzerType', end + 'u4'),
-            ('startEnergy', end + 'f4'),
-            ('endEnergy', end + 'f4'),
-            ('liveTime', end + 'f4'),
-            ('tilt', end + 'f4'),
-            ('takeoff', end + 'f4'),
-            ('beamCurFact', end + 'f4'),
-            ('detReso', end + 'f4'),
-            ('detectType', end + 'u4'),
-            ('parThick', end + 'f4'),
-            ('alThick', end + 'f4'),
-            ('beWinThick', end + 'f4'),
-            ('auThick', end + 'f4'),
-            ('siDead', end + 'f4'),
-            ('siLive', end + 'f4'),
-            ('xrayInc', end + 'f4'),
-            ('azimuth', end + 'f4'),
-            ('elevation', end + 'f4'),
-            ('bCoeff', end + 'f4'),
-            ('cCoeff', end + 'f4'),
-            ('tailMax', end + 'f4'),
-            ('tailHeight', end + 'f4'),
-            ('kV', end + 'f4'),
-            ('apThick', end + 'f4'),
-            ('xTilt', end + 'f4'),
-            ('yTilt', end + 'f4'),
-            ('yagStatus', end + 'u4'),
+                ('escapePeakRemoved', end + 'u2'),  # 442
+                ('analyzerType', end + 'u4'),  # 444
+                ('startEnergy', end + 'f4'),  # 448 **
+                ('endEnergy', end + 'f4'),  # 452
+                ('liveTime', end + 'f4'),  # 456 **
+                ('tilt', end + 'f4'),  # 460 **
+                ('takeoff', end + 'f4'),  # 464
+                ('beamCurFact', end + 'f4'),  # 468
+                ('detReso', end + 'f4'),  # 472 **
+                ('detectType', end + 'u4'),  # 476
+                ('parThick', end + 'f4'),  # 480
+                ('alThick', end + 'f4'),  # 484
+                ('beWinThick', end + 'f4'),  # 488
+                ('auThick', end + 'f4'),  # 492
+                ('siDead', end + 'f4'),  # 496
+                ('siLive', end + 'f4'),  # 500
+                ('xrayInc', end + 'f4'),  # 504
+                ('azimuth', end + 'f4'),  # 508 **
+                ('elevation', end + 'f4'),  # 512 **
+                ('bCoeff', end + 'f4'),  # 516
+                ('cCoeff', end + 'f4'),  # 520
+                ('tailMax', end + 'f4'),  # 524
+                ('tailHeight', end + 'f4'),  # 528
+                ('kV', end + 'f4'),  # 532 **
+                ('apThick', end + 'f4'),  # 536
+                ('xTilt', end + 'f4'),  # 540
+                ('yTilt', end + 'f4'),  # 544
+                ('yagStatus', end + 'u4'),  # 548
 
-            ('filler4', 'V24'),
+                ('filler4', 'V24'),  # 552
 
-            ('rawDataType', end + 'u2'),
-            ('totalBkgdCount', end + 'f4'),
-            ('totalSpectralCount', end + 'u4'),
-            ('avginputCount', end + 'f4'),
-            ('stdDevInputCount', end + 'f4'),
-            ('peakToBack', end + 'u2'),
-            ('peakToBackValue', end + 'f4'),
+                ('rawDataType', end + 'u2'),  # 576
+                ('totalBkgdCount', end + 'f4'),  # 578
+                ('totalSpectralCount', end + 'u4'),  # 582
+                ('avginputCount', end + 'f4'),  # 586
+                ('stdDevInputCount', end + 'f4'),  # 590
+                ('peakToBack', end + 'u2'),  # 594
+                ('peakToBackValue', end + 'f4'),  # 596
 
-            ('filler5', 'V38'),
+                ('filler5', 'V38'),  # 600
 
-            ('numElem', end + 'i2'),
-            ('at', end + '48u2'),
-            ('line', end + '48u2'),
-            ('energy', end + '48f4'),
-            ('height', end + '48u4'),
-            ('spkht', end + '48i2'),
+                ('numElem', end + 'i2'),  # 638 **
+                ('at', end + '48u2'),  # 640 **
+                ('line', end + '48u2'),  # 736
+                ('energy', end + '48f4'),  # 832
+                ('height', end + '48u4'),  # 1024
+                ('spkht', end + '48i2'),  # 1216
 
-            ('filler5_1', 'V30'),
+                ('filler5_1', 'V30'),  # 1312
 
-            ('numRois', end + 'i2'),
-            ('st', end + '48i2'),
-            ('end', end + '48i2'),
-            ('roiEnable', end + '48i2'),
-            ('roiNames', '(24,8)i1'),
+                ('numRois', end + 'i2'),  # 1342
+                ('st', end + '48i2'),  # 1344
+                ('end', end + '48i2'),  # 1440
+                ('roiEnable', end + '48i2'),  # 1536
+                ('roiNames', '(24,8)i1'),  # 1632
 
-            ('filler5_2', 'V1'),
+                ('filler5_2', 'V1'),  # 1824
 
-            ('userID', '80i1'),
+                ('userID', '80i1'),  # 1825
 
-            ('filler5_3', 'V111'),
+                ('filler5_3', 'V111'),  # 1905
 
-            ('sRoi', end + '48i2'),
-            ('scaNum', end + '48i2'),
+                ('sRoi', end + '48i2'),  # 2016
+                ('scaNum', end + '48i2'),  # 2112
 
-            ('filler6', 'V12'),
+                ('filler6', 'V12'),  # 2208
 
-            ('backgrdWidth', end + 'i2'),
-            ('manBkgrdPerc', end + 'f4'),
-            ('numBkgrdPts', end + 'i2'),
-            ('backMethod', end + 'u4'),
-            ('backStEng', end + 'f4'),
-            ('backEndEng', end + 'f4'),
-            ('bg', end + '64i2'),
-            ('bgType', end + 'u4'),
-            ('concenKev1', end + 'f4'),
-            ('concenKev2', end + 'f4'),
-            ('concenMethod', end + 'i2'),
-            ('jobFilename', end + '32i1'),
+                ('backgrdWidth', end + 'i2'),  # 2220
+                ('manBkgrdPerc', end + 'f4'),  # 2222
+                ('numBkgrdPts', end + 'i2'),  # 2226
+                ('backMethod', end + 'u4'),  # 2228
+                ('backStEng', end + 'f4'),  # 2232
+                ('backEndEng', end + 'f4'),  # 2236
+                ('bg', end + '64i2'),  # 2240
+                ('bgType', end + 'u4'),  # 2368
+                ('concenKev1', end + 'f4'),  # 2372
+                ('concenKev2', end + 'f4'),  # 2376
+                ('concenMethod', end + 'i2'),  # 2380
+                ('jobFilename', end + '32i1'),  # 2382
 
-            ('filler7', 'V16'),
+                ('filler7', 'V16'),  # 2414
 
-            ('numLabels', end + 'i2'),
-            ('label', end + '(10,32)i1'),
-            ('labelx', end + '10i2'),
-            ('labely', end + '10i4'),
-            ('zListFlag', end + 'i4'),
-            ('bgPercents', end + '64f4'),
-            ('IswGBg', end + 'i2'),
-            ('BgPoints', end + '5f4'),
-            ('IswGConc', end + 'i2'),
-            ('numConcen', end + 'i2'),
-            ('ZList', end + '24i2'),
-            ('GivenConc', end + '24f4'),
+                ('numLabels', end + 'i2'),  # 2430
+                ('label', end + '(10,32)i1'),  # 2432
+                ('labelx', end + '10i2'),  # 2752
+                ('labely', end + '10i4'),  # 2772
+                ('zListFlag', end + 'i4'),  # 2812
+                ('bgPercents', end + '64f4'),  # 2816
+                ('IswGBg', end + 'i2'),  # 3072
+                ('BgPoints', end + '5f4'),  # 3074
+                ('IswGConc', end + 'i2'),  # 3094
+                ('numConcen', end + 'i2'),  # 3096
+                ('ZList', end + '24i2'),  # 3098
+                ('GivenConc', end + '24f4'),  # 3146
 
-            ('filler8', 'V598'),
+                ('filler8', 'V598'),  # 3242
 
-            ('s', end + '4096i4'),
-            ('longFileName', end + '256i1'),
-            ('longImageFileName', end + '256i1'),
-            ('ADCTimeConstantNew', end + 'f4'),
+                ('s', end + '4096i4'),  # 3840
+                ('longFileName', end + '256i1'),  # 20224
+                ('longImageFileName', end + '256i1'),  # 20480
+                ('ADCTimeConstantNew', end + 'f4'),  # 20736
 
-            ('filler9', 'V60'),
+                ('filler9', 'V60'),  # 20740
 
-            ('numZElements', end + 'i2'),
-            ('zAtoms', end + '48i2'),
-            ('zShells', end + '48i2'),
-        ]
+                ('numZElements', end + 'i2'),  # 20800
+                ('zAtoms', end + '48i2'),  # 20802
+                ('zShells', end + '48i2'),  # 20898
+            ]
+    else:
+        dtype_list = \
+            [
+                ('filler1', 'V384'),  # 0
+
+                ('evPerChan', end + 'i4'),  # 384 **
+
+                ('filler2', 'V60'),  # 388
+
+                ('startEnergy', end + 'f4'),  # 448 **
+                ('endEnergy', end + 'f4'),  # 452
+                ('liveTime', end + 'f4'),  # 456 **
+                ('tilt', end + 'f4'),  # 460 **
+
+                ('filler3', 'V8'),  # 464
+
+                ('detReso', end + 'f4'),  # 472 **
+
+                ('filler4', 'V32'),  # 476
+
+                ('azimuth', end + 'f4'),  # 508 **
+                ('elevation', end + 'f4'),  # 512 **
+
+                ('filler5', 'V16'),  # 516
+
+                ('kV', end + 'f4'),  # 532 **
+
+                ('filler6', 'V102'),  # 536
+
+                ('numElem', end + 'i2'),  # 638 **
+                ('at', end + '48u2'),  # 640 **
+
+                ('filler7', 'V20258'),  # 736
+
+            ]
     return dtype_list
 
 
@@ -569,6 +613,48 @@ def get_ipr_dtype_list(endianess='<'):
     return dtype_list
 
 
+def _add_spc_metadata(metadata, spc_header):
+    """
+    Return metadata with information from the .spc header added
+
+    Parameters
+    ----------
+    metadata : dict
+        current metadata of signal without spectral calibration information
+        added
+    spc_header : dict
+        header of .spc file that contains spectral information such as
+        azimuth and elevation angles, energy resolution, etc.
+
+    Returns
+    -------
+    metadata : dict
+        copy of original dictionary with spectral calibration added
+    """
+    metadata['Acquisition_instrument'] = {
+        'SEM':
+            {'Detector':
+                 {'EDS': {'azimuth_angle': spc_header['azimuth'],
+                          'elevation_angle': spc_header['elevation'],
+                          'energy_resolution_MnKa': spc_header['detReso'],
+                          'live_time': spc_header['liveTime']}},
+             'beam_energy': spc_header['kV'],
+             'tilt_stage': spc_header['tilt']}
+    }
+
+    # Get elements stored in spectrum:
+    num_elem = spc_header['numElem']
+    if num_elem > 0:
+        element_list = sorted([atomic_num_dict[i] for
+                               i in spc_header['at'][:num_elem]])
+        metadata['Sample'] = {'elements': element_list}
+        print "Elemental information found in the spectral metadata " \
+              "was added to the signal.\n" \
+              "Elements found were: {}\n".format(element_list)
+
+    return metadata
+
+
 def spc_reader(filename, endianess='<', *args):
     """
     Read data from an SPC spectrum specified by filename.
@@ -593,7 +679,10 @@ def spc_reader(filename, endianess='<', *args):
 
 def spd_reader(filename,
                endianess='<',
-               units=None,
+               nav_units=None,
+               spc_fname=None,
+               ipr_fname=None,
+               load_all_spc=False,
                **kwargs):
     """
     Read data from an SPD spectral map specified by filename.
@@ -604,15 +693,34 @@ def spd_reader(filename,
         Name of SPD file to read
     endianess : char
         Byte-order of data to read
-    units : str or None
-        Default units for EDAX data is in microns, so this is the default
-        unit to save in the signal. Can also be specified as 'nm',
-        which will output a signal with nm scale
+    nav_units : 'nm', 'um', or None
+        Default navigation units for EDAX data is in microns, so this is the
+        default unit to save in the signal. Can also be specified as 'nm',
+        which will output a signal with nm scale instead.
+    spc_fname : None or str
+        Name of file from which to read the spectral calibration. If data
+        was exported fully from EDAX TEAM software, an .spc file with the
+        same name as the .spd should be present.
+        If `None`, the default filename will be searched for.
+        Otherwise, the name of the .spc file to use for calibration can
+        be explicitly given as a string.
+    ipr_fname : None or str
+        Name of file from which to read the spatial calibration. If data
+        was exported fully from EDAX TEAM software, an .ipr file with the
+        same name as the .spd (plus a \"_Img\" suffix) should be present.
+        If `None`, the default filename will be searched for.
+        Otherwise, the name of the .ipr file to use for spatial calibration
+        can be explicitly given as a string.
+    load_all_spc : bool
+        Switch to control if all of the .spc header is read, or just the
+        important parts for import into HyperSpy
     kwargs**
 
     Returns
     -------
-
+    list
+        list with dictionary of signal information to be passed back to
+        hyperspy.io.load_with_reader
     """
     with open(filename, 'rb') as f:
         spd_header = np.fromfile(f,
@@ -620,24 +728,6 @@ def spd_reader(filename,
                                  count=1)
 
         original_metadata = {'spd_header': sarray2dict(spd_header)}
-
-        # Convert char arrays to strings:
-        original_metadata['spd_header']['tag'] = \
-            spd_header['tag'][0].view('S16')[0]
-        # fName is the name of the .bmp (and .ipr) file of the map
-        original_metadata['spd_header']['fName'] = \
-            spd_header['fName'][0].view('S120')[0]
-
-        # Get name of .spc file from the .spd map:
-        spc_fname = os.path.splitext(os.path.basename(filename))[0] + '.spc'
-        read_spc = os.path.isfile(spc_fname)
-
-        # Get name of .ipr file from the bitmap image:
-        ipr_fname = os.path.splitext(
-            os.path.basename(
-                original_metadata['spd_header'][
-                    'fName']))[0] + '.ipr'
-        read_ipr = os.path.isfile(ipr_fname)
 
         # dimensions of map data:
         nx = original_metadata['spd_header']['nPoints']
@@ -647,11 +737,38 @@ def spd_reader(filename,
         data_type = {'1': 'u1',
                      '2': 'u2',
                      '4': 'u4'}[str(original_metadata['spd_header'][
-                         'countBytes'])]
+                                        'countBytes'])]
 
         # Read data from file into a numpy memmap object
         data = np.memmap(f, mode='c', offset=data_offset, dtype=data_type
                          ).squeeze().reshape((nz, nx, ny), order='F').T
+
+    # Convert char arrays to strings:
+    original_metadata['spd_header']['tag'] = \
+        spd_header['tag'][0].view('S16')[0]
+    # fName is the name of the .bmp (and .ipr) file of the map
+    original_metadata['spd_header']['fName'] = \
+        spd_header['fName'][0].view('S120')[0]
+
+    # Get name of .spc file from the .spd map (if not explicitly given):
+    if not spc_fname:
+        spc_fname = os.path.splitext(os.path.basename(filename))[
+                        0] + '.spc'
+    read_spc = os.path.isfile(spc_fname)
+    if not read_spc:
+        print 'Could not find .spc file named {}.\n' \
+              'No spectral metadata will be loaded.\n'.format(spc_fname)
+
+    # Get name of .ipr file from bitmap image (if not explicitly given):
+    if not ipr_fname:
+        ipr_fname = os.path.splitext(
+            os.path.basename(
+                original_metadata['spd_header'][
+                    'fName']))[0] + '.ipr'
+    read_ipr = os.path.isfile(ipr_fname)
+    if not read_ipr:
+        print 'Could not find .ipr file named {}.\n' \
+              'No spatial calibration will be loaded.\n'.format(ipr_fname)
 
     # Read the .ipr header (if possible)
     if read_ipr:
@@ -660,86 +777,70 @@ def spd_reader(filename,
                                      dtype=get_ipr_dtype_list(endianess),
                                      count=1)
             original_metadata['ipr_header'] = sarray2dict(ipr_header)
-    else:
-        print "Matching .ipr file was not found. Image calibration will not " \
-              "be available."
 
     # Read the .spc header (if possible)
     if read_spc:
         with open(spc_fname, 'rb') as f:
             spc_header = np.fromfile(f,
-                                     dtype=get_spc_dtype_list(endianess),
+                                     dtype=get_spc_dtype_list(
+                                         load_all=load_all_spc,
+                                         endianess=endianess),
                                      count=1)
-            original_metadata['spc_header'] = sarray2dict(spc_header)
-    else:
-        print "Matching .spc file was not found. Spectral calibration " \
-              "information will not be available."
+            spc_dict = sarray2dict(spc_header)
+            original_metadata['spc_header'] = spc_dict
 
-    # create the axis objects for each axis
+    # create the energy axis dictionary:
     energy_axis = {
         'size': data.shape[2],
         'index_in_array': 2,
         'name': 'Energy',
-        'scale': original_metadata['spc_header']['evPerChan'] / 1000.0,
-        'offset': original_metadata['spc_header']['startEnergy'],
-        'units': 'keV',
+        'scale': original_metadata['spc_header']['evPerChan'] / 1000.0 if
+        read_spc else 1,
+        'offset': original_metadata['spc_header']['startEnergy'] if
+        read_spc else 1,
+        'units': 'keV' if read_spc else t.Undefined,
     }
 
-    scale = 1000 if units == 'nm' else 1
+    # Handle navigation units input:
+    scale = 1000 if nav_units == 'nm' else 1
+    if nav_units is not 'nm':
+        if nav_units not in [None, 'um']:
+            print "Did not understand nav_units input \"{}\". Defaulting to " \
+                  "microns.\n".format(nav_units)
+        nav_units = '$\mu m$'
+
+    # Create navigation axes dictionaries:
     x_axis = {
         'size': data.shape[1],
         'index_in_array': 1,
         'name': 'x',
-        'scale': original_metadata['ipr_header']['mppX'] * scale,
+        'scale': original_metadata['ipr_header']['mppX'] * scale if read_ipr
+        else 1,
         'offset': 0,
-        'units': 'nm' if units == 'nm' else '$\mu m$',
+        'units': nav_units if read_ipr else t.Undefined,
     }
 
     y_axis = {
         'size': data.shape[0],
         'index_in_array': 0,
         'name': 'y',
-        'scale': original_metadata['ipr_header']['mppY'] * scale,
+        'scale': original_metadata['ipr_header']['mppY'] * scale if read_ipr
+        else 1,
         'offset': 0,
-        'units': 'nm' if units == 'nm' else '$\mu m$',
+        'units': nav_units if read_ipr else t.Undefined,
     }
 
     # Assign metadata for spectrum image:
     metadata = {'General': {'original_filename': os.path.split(filename)[1],
                             'title': 'EDS Spectrum Image'},
                 "Signal": {'signal_type': "EDS_SEM",
-                           'record_by': 'spectrum', },
-                "Acquisition_instrument":
-                    {'SEM':
-                        {'Detector':
-                            {'EDS': {
-                                'azimuth_angle': original_metadata[
-                                    'spc_header']['azimuth'],
-                                'elevation_angle': original_metadata[
-                                    'spc_header']['elevation'],
-                                'energy_resolution_MnKa': original_metadata[
-                                    'spc_header']['detReso'],
-                                'live_time': original_metadata[
-                                    'spc_header']['liveTime']}},
-                            'beam_energy': original_metadata[
-                                'spc_header']['kV'],
-                            'tilt_stage': original_metadata[
-                                'spc_header']['tilt']}
-                     }
-                }
+                           'record_by': 'spectrum', }, }
 
-    # Get elements stored in spectrum:
-    num_elem = original_metadata['spc_header']['numElem']
-    if num_elem > 0:
-        element_list = sorted([atomic_num_dict[i] for
-                               i in original_metadata['spc_header']['at'][
-            :num_elem]])
-        metadata['Sample'] = {'elements': element_list}
-        print "Elemental information was found in the spectral metadata and " \
-              "were added to the signal:"
-        print "{}".format(element_list)
+    # Add spectral calibration and elements (if present):
+    if read_spc:
+        metadata = _add_spc_metadata(metadata, spc_dict)
 
-    # Define signal axes:
+    # Define navigation and signal axes:
     axes = [y_axis, x_axis, energy_axis]
 
     dictionary = {'data': data,
@@ -751,7 +852,7 @@ def spd_reader(filename,
 
 
 def file_reader(filename,
-                record_by=None,
+                record_by='spectrum',
                 endianess='<',
                 **kwargs):
     """
@@ -760,6 +861,9 @@ def file_reader(filename,
     ----------
     filename : str
         Name of file to read
+    record_by : str
+        EDAX EDS data is always recorded by 'spectrum', so this parameter
+        is not used
     endianess : char
         Byte-order of data to read
     **kwargs
@@ -771,8 +875,12 @@ def file_reader(filename,
     """
     ext = os.path.splitext(filename)[1][1:]
     if ext in spd_extensions:
-        return spd_reader(filename, endianess, **kwargs)
+        return spd_reader(filename,
+                          endianess,
+                          **kwargs)
     elif ext in spc_extensions:
-        return spc_reader(filename, endianess, **kwargs)
+        return spc_reader(filename,
+                          endianess,
+                          **kwargs)
     else:
         raise IOError("Did not understand input file format.")
