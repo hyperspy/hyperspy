@@ -1,5 +1,16 @@
 # -*- coding: utf-8 -*-
 
+# Set the PyQt API to 2 to avoid incompatibilities between matplotlib
+# traitsui
+import sip
+sip.setapi('QVariant', 2)
+sip.setapi('QDate', 2)
+sip.setapi('QDateTime', 2)
+sip.setapi('QTextStream', 2)
+sip.setapi('QTime', 2)
+sip.setapi('QUrl', 2)
+del sip
+
 from hyperspy import docstrings
 
 __doc__ = """
@@ -54,6 +65,7 @@ For more details see their doctrings.
 
 # Remove the module to avoid polluting the namespace
 del docstrings
+
 
 from hyperspy.Release import version as __version__
 from hyperspy import signals

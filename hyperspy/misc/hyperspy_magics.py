@@ -60,16 +60,6 @@ class HyperspyMagics(Magics):
         if toolkit == "None":
             mpl_code = ("import matplotlib\n"
                         "matplotlib.use('Agg')\n")
-        elif toolkit == 'qt4':
-            gui = True
-            mpl_code = ("import os\n"
-                        "os.environ['QT_API'] = 'pyqt'\n"
-                        "import sip\n"
-                        "sip.setapi('QDate', 2)\n"
-                        "sip.setapi('QDateTime', 2)\n"
-                        "sip.setapi('QTextStream', 2)\n"
-                        "sip.setapi('QTime', 2)\n"
-                        "sip.setapi('QUrl', 2)\n")
         else:
             gui = True
 
