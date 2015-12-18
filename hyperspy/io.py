@@ -31,6 +31,13 @@ import hyperspy.misc.io.tools
 from hyperspy.io_plugins import io_plugins, default_write_ext
 
 
+# Utility string:
+f_error_fmt = (
+    "\tFile %d:\n"
+    "\t\t%d signals\n"
+    "\t\tPath: %s")
+
+
 def load(filenames=None,
          record_by=None,
          signal_type=None,
@@ -178,29 +185,48 @@ def load(filenames=None,
         if len(filenames) > 1:
             messages.information('Loading individual files')
         if stack is True:
+            # We are loading a stack!
+            # Note that while each file might contain several signals, all
+            # files are required to contain the same number of signals. We
+            # therefore use the first file to determine the number of signals.
             for i, filename in enumerate(filenames):
                 obj = load_single_file(filename,
                                        **kwds)
                 if i == 0:
+                    # First iteration, determine number of signals, if several:
                     if isinstance(obj, (list, tuple)):
                         n = len(obj)
                     else:
                         n = 1
+                    # Initialize signal 2D list:
                     signals = [[] for j in xrange(n)]
                 else:
+                    # Check that number of signals per file doesn't change
+                    # for other files:
                     if isinstance(obj, (list, tuple)):
                         if n != len(obj):
-                            raise ValueError()
+                            raise ValueError(
+                                "The number of sub-signals per file does not "
+                                "match:\n" +
+                                (f_error_fmt % (1, n, filenames[0])) +
+                                (f_error_fmt % (i, len(obj), filename)))
                     elif n != 1:
-                        raise ValueError()
+                        raise ValueError(
+                            "The number of sub-signals per file does not "
+                            "match:\n" +
+                            (f_error_fmt % (1, n, filenames[0])) +
+                            (f_error_fmt % (i, len(obj), filename)))
+                # Append loaded signals to 2D list:
                 if n == 1:
                     signals[0].append(obj)
                 elif n > 1:
                     for j in xrange(n):
                         signals[j].append(obj[j])
+            # Next, merge the signals in the `stack_axis` direction:
+            # When each file had N signals, we create N stacks!
             objects = []
             for i in xrange(n):
-                signal = signals[i]
+                signal = signals[i]   # Sublist, with len = len(filenames)
                 signal = hyperspy.utils.stack(signal,
                                               axis=stack_axis,
                                               new_axis_name=new_axis_name,
@@ -215,6 +241,7 @@ def load(filenames=None,
                 signal._print_summary()
                 objects.append(signal)
         else:
+            # No stack, so simply we load all signals in all files separately
             objects = [load_single_file(filename,
                                         **kwds)
                        for filename in filenames]
