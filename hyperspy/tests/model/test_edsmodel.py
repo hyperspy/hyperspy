@@ -98,3 +98,54 @@ class TestlineFit:
                                bound=10)
         np.testing.assert_allclose(sigma, m['Fe_Ka'].sigma.value,
                                    atol=1e-2)
+
+
+class TestMaps:
+
+    def setUp(self):
+        beam_energy = 200
+        energy_resolution_MnKa = 130
+        energy_axis = {'units': 'keV', 'size': 1200, 'scale': 0.01,
+                       'name': 'E'}
+        s1 = utils_eds.xray_lines_model(
+            elements=['Fe', 'Cr'], weight_percents=[30, 70],
+            beam_energy=beam_energy,
+            energy_resolution_MnKa=energy_resolution_MnKa,
+            energy_axis=energy_axis)
+        s2 = utils_eds.xray_lines_model(
+            elements=['Ga', 'As'], weight_percents=[50, 50],
+            beam_energy=beam_energy,
+            energy_resolution_MnKa=energy_resolution_MnKa,
+            energy_axis=energy_axis)
+        # Make a circular mixing pattern with diffuse edge
+        mix = np.mgrid[-10:10, -10:10]
+        mix = np.sqrt(mix[0, ...]**2 + mix[1, ...]**2)
+        mix = np.clip((mix-4), 0., 5.0) / 5.0
+        mix_data = np.tile(s1.data, mix.shape + (1,))
+        s = s1._deepcopy_with_new_data(mix_data)
+        a = s.axes_manager._axes.pop(0).get_axis_dictionary()
+        s.axes_manager.create_axes([{'size': mix.shape[0],
+                                     'navigate': True}]*2 + [a])
+        s.add_elements(s2.metadata.Sample.elements)
+
+        for d, m in zip(s._iterate_signal(), mix.flatten()):
+            d[:] = d*m + (1-m)*s2.data
+        self.mix = mix
+        self.s = s
+
+    def test_lines_intensity(self):
+        s = self.s
+        m = s.create_model()
+        m.fit()
+        w1 = np.array([0.3, 0.7])
+        w2 = np.array([0.5, 0.5])
+        w = np.zeros((4,) + self.mix.shape)
+        for x in xrange(self.mix.shape[0]):
+            for y in xrange(self.mix.shape[1]):
+                w[0:2, x, y] = w1 * self.mix[x, y]
+                w[2:4, x, y] = w2 * (1-self.mix[x, y])
+        xray_lines = s._get_lines_from_elements(
+            s.metadata.Sample.elements, only_lines=('Ka',))
+        np.testing.assert_allclose([i.data for i in
+                                   m.get_lines_intensity(xray_lines)],
+                                   w, atol=10-4)
