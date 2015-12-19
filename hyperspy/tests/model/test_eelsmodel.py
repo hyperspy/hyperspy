@@ -7,7 +7,7 @@ import hyperspy.api as hs
 class TestCreateEELSModel:
 
     def setUp(self):
-        s = hs.signals.EELSSpectrum(np.empty(200))
+        s = hs.signals.EELSSpectrum(np.zeros(200))
         s.set_microscope_parameters(100, 10, 10)
         s.axes_manager[-1].offset = 150
         s.add_elements(("B", "C"))
@@ -62,7 +62,7 @@ class TestCreateEELSModel:
 class TestEELSModel:
 
     def setUp(self):
-        s = hs.signals.EELSSpectrum(np.empty(200))
+        s = hs.signals.EELSSpectrum(np.zeros(200))
         s.set_microscope_parameters(100, 10, 10)
         s.axes_manager[-1].offset = 150
         s.add_elements(("B", "C"))
