@@ -45,21 +45,21 @@ class TestlineFit:
         s = self.s
         m = s.create_model()
         m.fit()
-        scale = s.axes_manager[-1].scale
-        s.axes_manager[-1].scale += 0.0004
+        ax = s.axes_manager[-1]
+        scale = ax.scale
+        ax.scale += 0.0004
         m.calibrate_energy_axis('scale')
-        np.testing.assert_allclose(s.axes_manager[-1].scale,
-                                   scale, atol=1e-5)
+        np.testing.assert_allclose(ax.scale, scale, atol=1e-5)
 
     def test_calibrate_energy_offset(self):
         s = self.s
         m = s.create_model()
         m.fit()
-        offset = s.axes_manager[-1].offset
-        s.axes_manager[-1].offset += 0.04
+        ax = s.axes_manager[-1]
+        offset = ax.offset
+        ax.offset += 0.04
         m.calibrate_energy_axis('offset')
-        np.testing.assert_allclose(s.axes_manager[-1].offset,
-                                   offset, atol=1e-5)
+        np.testing.assert_allclose(ax.offset, offset, atol=1e-5)
 
     def test_calibrate_xray_energy(self):
         s = self.s
