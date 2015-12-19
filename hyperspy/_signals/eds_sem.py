@@ -300,5 +300,6 @@ class EDSSEMSpectrum(EDSSpectrum):
         from hyperspy.models.edssemmodel import EDSSEMModel
         model = EDSSEMModel(self,
                             auto_background=auto_background,
-                            auto_add_lines=auto_add_lines)
+                            auto_add_lines=auto_add_lines,
+                             *args, **kwargs)
         return model
