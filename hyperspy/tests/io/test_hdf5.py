@@ -251,7 +251,7 @@ class TestLoadingOOMReadOnly:
             chunks=True)
         f.close()
 
-    @nt.raises(MemoryError)
+    @nt.raises(MemoryError, ValueError)
     def test_in_memory_loading(self):
         s = load('tmp.hdf5')
 
@@ -262,4 +262,8 @@ class TestLoadingOOMReadOnly:
 
     def tearDown(self):
         gc.collect()        # Make sure any memmaps are closed first!
-        remove('tmp.hdf5')
+        try:
+            remove('tmp.hdf5')
+        except:
+            # Don't fail tests if we cannot remove
+            pass
