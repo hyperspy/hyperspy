@@ -290,7 +290,7 @@ class Model(list):
         s = self.spectrum
         s.models.store(self, name)
 
-    def save(self, file_name, name=None):
+    def save(self, file_name, name=None, **kwargs):
         """Saves spectrum and its model to a file
 
         Parameters
@@ -299,12 +299,14 @@ class Model(list):
                 Name of the file
             name : {None, str}
                 Stored model name. Auto-generated if left empty
+            **kwargs :
+                Other keyword arguments are passed onto `Signal.save()`
         """
         if self.spectrum is None:
             raise ValueError("Currently cannot store models with no signal")
         else:
             self.store(name)
-            self.spectrum.save(file_name)
+            self.spectrum.save(file_name, **kwargs)
 
     def _load_dictionary(self, dic):
         """Load data from dictionary.
