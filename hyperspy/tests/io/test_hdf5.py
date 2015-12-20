@@ -238,7 +238,7 @@ class TestLoadingOOMReadOnly:
 
     def setUp(self):
         s = Signal(np.empty((5, 5, 5)))
-        s.save('tmp.hdf5')
+        s.save('tmp.hdf5', overwrite=True)
         self.shape = (10000, 10000, 100)
         del s
         f = h5py.File('tmp.hdf5', model='r+')
