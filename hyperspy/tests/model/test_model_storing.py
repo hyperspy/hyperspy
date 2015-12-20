@@ -151,7 +151,7 @@ class TestModelSaving:
 
     def test_save_and_load_model(self):
         m = self.m
-        m.save('tmp.hdf5')
+        m.save('tmp.hdf5', overwrite=True)
         l = load('tmp.hdf5')
         nt.assert_true(hasattr(l.models, 'a'))
         n = l.models.restore('a')
