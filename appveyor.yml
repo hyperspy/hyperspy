@@ -60,6 +60,7 @@ init:
   - "ECHO %APPVEYOR_BUILD_FOLDER%"
 
 install:
+  - ps: Add-AppveyorMessage "Starting install..."
   # Prepend Python to the PATH
   - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
 
@@ -68,8 +69,10 @@ install:
   - "python -c \"import struct; print(struct.calcsize('P') * 8)\""
 
   # Install the dependencies of the project.
+  - ps: Add-AppveyorMessage "Installing conda packages..."
   - "%CMD_IN_ENV% conda install -yq %TEST_DEPS%"
   - "%CMD_IN_ENV% conda install -yq %DEPS%"
+  - ps: Add-AppveyorMessage "Installing hyperspy..."
   - "mkdir %APPDATA%\\.hyperspy"
   - "printf \"[General]\\ndefault_toolkit = None\" > %APPDATA%/.hyperspy/hyperspyrc"
   - "python setup.py install"
@@ -78,12 +81,16 @@ build: false  # Not a C# project, build stuff at the test step instead.
 
 test_script:
   # Run the project tests
+  - ps: Add-AppveyorMessage "Running tests..."
   - "python continuous_integration/nosetest.py hyperspy"
+  - ps: Add-AppveyorMessage "Testing completed."
 
 # Auto-deployment of bundle installer for tags:
 before_deploy:
+  - ps: Add-AppveyorMessage "Running deployment step..."
   - "pip install winpython"
   # Download WinPython installer if not cached
+  - ps: Add-AppveyorMessage "Installing WinPython..."
   - "SET WP_INSTDIR=%APPDATA%\\wpdir\\WinPython-%PYTHON_ARCH%bit\\"
   - "SET WP_EXE=%APPDATA%/wpdir/WinPython%PYTHON_MAJOR%-%PYTHON_ARCH%bit.exe"
   - "mkdir %APPDATA%\\wpdir"
@@ -93,6 +100,7 @@ before_deploy:
   - "ls %WP_INSTDIR%"
 
   # Patch NSIS to allow longer strings
+  - ps: Add-AppveyorMessage "Setting up WinPython environment..."
   - ps: Start-FileDownload ('http://freefr.dl.sourceforge.net/project/nsis/NSIS%202/2.46/nsis-2.46-strlen_8192.zip') ../nsis_patch.zip
   - "7z x ../nsis_patch.zip -o%NSIS_DIR -aoa"
   - ps: Start-FileDownload ('http://nsis.sourceforge.net/mediawiki/images/e/eb/Textreplace.zip') ../Textreplace.zip
@@ -104,8 +112,10 @@ before_deploy:
   - ps: (& ((gci -path $Env:WP_INSTDIR -filter 'pip.exe' -Recurse).FullName) install --upgrade configobj)
   # Custom installer step
   # TODO: Re-run tests in WinPython environment
+  - ps: Add-AppveyorMessage "Creating installer..."
   - "python continuous_integration/windeploy.py %APPDATA%/wpdir %PYTHON_ARCH% %APPVEYOR_REPO_TAG_NAME%"
   - "\"%NSIS_DIR%/makensis.exe\" /V3 NSIS_installer_script-%PYTHON_ARCH%bit.nsi"
+  - ps: Add-AppveyorMessage "Installer created! Pushing to GitHub..."
   - "appveyor PushArtifact HyperSpy-%APPVEYOR_REPO_TAG_NAME%-Bundle-Windows-%PYTHON_ARCH%bit.exe"
 
 deploy:
