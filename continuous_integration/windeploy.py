@@ -28,11 +28,6 @@ def get_current_hyperspy_version():
     return js['info']['version']
 
 
-def download_hyperspy_license():
-    urlretrieve("https://raw.github.com/hyperspy/hyperspy/master",
-                "COPYING.txt")
-
-
 def create_delete_macro(path, name, add_uninstaller=True):
     """Create a NSIS macro to delete file structructure in path.
     """
@@ -65,59 +60,8 @@ def create_delete_macro(path, name, add_uninstaller=True):
 
 
 class HSpyBundleInstaller:
-    needed_packages = [
-        'colorama',
-        'configobj',
-        'docutils',
-        'ets',
-        'formlayout',
-        'guidata',
-        'guiqwt',
-        'h5py',
-        'hyperspy',
-        'ipython',
-        'Jinja2',
-        'logilab-astng',
-        'logilab-common',
-        'MarkupSafe',
-        'matplotlib',
-        'mock',
-        'nose',
-        'numba',
-        'numexpr',
-        'numpy',
-        'Pillow',
-        'pip',
-        'Pygments',
-        'pylint',
-        'pyparsing',
-        'PyQt',
-        'PyQtdoc',
-        'PyQwt',
-        'pyreadline',
-        'PySide',
-        'python-dateutil',
-        'pytz',
-        'pywin32',
-        'pyzmq',
-        'scikit-image',
-        'scikit-learn',
-        'scipy',
-        'seaborn',
-        'setuptools',
-        'simplejson',
-        'six',
-        'Sphinx',
-        'spyder',
-        'sympy',
-        'traits',
-        'traitsui',
-        'tornado',
-        'VTK',
-        'winpython',
-    ]
 
-    def __init__(self, dist_path, arch=("32", "64")):
+    def __init__(self, dist_path, hspy_version, arch=("32", "64")):
         """Tool to customize WinPython distributions to create the HyperSpy
         bundle installer for Windows.
         The "distribution path" must have the following structure:
@@ -147,64 +91,13 @@ class HSpyBundleInstaller:
             (a, winpython.wppm.Distribution(
                 self.get_full_paths("python-*", a)))
             for a in arch))
-        self.hspy_version = get_current_hyperspy_version()
+        self.hspy_version = hspy_version
 
     def get_full_paths(self, rel_path, arch):
         fp = glob(os.path.join(self.wppath[arch], rel_path))
         if len(fp) == 1:
             fp = fp[0]
         return fp
-
-    def uninstall_unneeded_packages(self):
-        print "Uninstalling unneeded packages."
-        for distribution in self.distributions.values():
-            for package in distribution.get_installed_packages():
-                try:
-                    if package.name not in self.needed_packages:
-                        print "Uninstalling:", package.name
-                except:
-                    print("Uninstallation error")
-
-    def remove_tools(self):
-        for arch in self.arch:
-            to_remove = []  # list(self.get_full_paths("Qt*", arch))
-            if self.get_full_paths("TortoiseHg*", arch):
-                to_remove.append(self.get_full_paths("TortoiseHg*", arch))
-            for f in to_remove:
-                print "Removing %s from WinPython %s bit" % (f, arch)
-                os.remove(f)
-            hg_dir = self.get_full_paths(
-                os.path.join('tools', 'TortoiseHg'), arch)
-            if hg_dir:
-                shutil.rmtree(hg_dir)
-
-    def install_local_packages(self):
-        for arch in self.arch:
-            if arch == "32":
-                packages = glob(os.path.join(self.dist_path,
-                                             "packages2install\\*win32*"))
-            else:
-                packages = glob(os.path.join(self.dist_path,
-                                             "packages2install\\*amd64*"))
-            packages += glob(os.path.join(self.dist_path,
-                                          "packages2install\\*any*"))
-            for package in packages:
-                print("Installing %s" % package)
-                try:
-                    self.distributions[arch].install(
-                        winpython.wppm.Package(package))
-                except:
-                    print("Error installing %s in WinPython %s bit " %
-                          (package, arch))
-
-    def install_pip_packages(self, packages):
-        for wppath in self.wppath.values():
-            for package in packages:
-                print("Installing %s in %s" % (
-                    package, wppath))
-                call(['cmd.exe', '/C',
-                      "%s\\WinPython Command Prompt.exe" % wppath,
-                      "pip", "install", "--upgrade", package])
 
     def test_hyperspy(self):
         for wppath in self.wppath.values():
@@ -269,6 +162,10 @@ class HSpyBundleInstaller:
 if __name__ == "__main__":
     import sys
 
+    if len(sys.argv) > 3:
+        hspy_version = sys.argv[3]
+    else:
+        hspy_version = get_current_hyperspy_version()
     if len(sys.argv) > 2:
         arch = sys.argv[2].split(',')
     else:
@@ -278,11 +175,6 @@ if __name__ == "__main__":
     else:
         bundle_dir = os.path.join(os.path.dirname(sys.executable),
                                   '..', '..')
-    p = HSpyBundleInstaller(bundle_dir, arch)
-    if len(sys.argv) > 3:
-        p.hspy_version = sys.argv[3]
-    p.uninstall_unneeded_packages()
-    p.remove_tools()
-    p.install_local_packages()
+    p = HSpyBundleInstaller(bundle_dir, hspy_version, arch)
     p.create_delete_macros()
     p.create_installers()
