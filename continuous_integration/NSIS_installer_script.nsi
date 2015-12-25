@@ -13,8 +13,6 @@
 !include "StrFunc.nsh"
 !include "LogicLib.nsh"
 !include "X64.nsh"
-!include "hspy_delete06_32.nsh"
-!include "hspy_delete06_64.nsh"
 !include "__DELETE_MACRO_NAME__.nsh"
 !define APPNAME "HyperSpy"
 !define APPVERSION "__VERSION__"
@@ -203,9 +201,9 @@ OutFile "${S_NAME}.exe"
 				${Else}
 					${If} $0 <> 0
 						${If} $0 = 1062
-							MessageBox mb_iconstop "Unable to elevate, Secondary Logon service not running!"
+							MessageBox MB_ICONSTOP "Unable to elevate, Secondary Logon service not running!"
 						${Else}
-							MessageBox mb_iconstop "Unable to elevate, error $0"
+							MessageBox MB_ICONSTOP "Unable to elevate, error $0"
 						${EndIf}
 					Abort
 					${EndIf}
@@ -247,19 +245,17 @@ OutFile "${S_NAME}.exe"
 					Exec 'cmd.exe /C ""$R2\WinPython Command Prompt.exe" uninstall_hyperspy_here & exit"'
 					Sleep 3000
 				${EndIf}
-				# Remove StartMenu entries
-				Delete "$SMPROGRAMS\${APPNAME}\${APPNAME}.lnk"
-				Delete "$SMPROGRAMS\${APPNAME}\${APPNAME} QtConsole.lnk"
-				Delete "$SMPROGRAMS\${APPNAME}\${APPNAME} Notebook.lnk"
-				Delete "$SMPROGRAMS\${APPNAME}\Uninstall ${APPNAME}.lnk"
-				RMDir "$SMPROGRAMS\${APPNAME}"
-				DeleteRegKey SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}"
-				Delete /REBOOTOK $R0 ; delete the evil uninstaller
-				${If} ${FileExists} `$R2\python-2.7.4.amd64\*.*`
-					!insertmacro hspy_delete06_64 $R2
-				${ElseIf} ${FileExists} `$R2\python-2.7.4\*.*`
-					!insertmacro hspy_delete06_32 $R2
-				${EndIf}
+
+				; Execute fixed, embedded 06 uninstaller
+				ClearErrors
+				File "continuous_integration\NSISPlugins\uninstaller_06.exe"
+				ExecWait '"$INSTDIR\uninstaller_06.exe" /S _?=$INSTDIR'
+				IfErrors error_uninstalling_06
+				Goto uninstall_06_complete
+				error_uninstalling_06:
+					Abort
+				uninstall_06_complete:
+				Delete $INSTDIR\uninstaller_06.exe
 			${Else}
 				Exec $R0
 			${EndIf}
