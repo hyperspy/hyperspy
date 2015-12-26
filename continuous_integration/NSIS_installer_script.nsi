@@ -361,7 +361,8 @@ OutFile "${S_NAME}.exe"
 
 !macro CreateUninstaller extractTo mode
 	!tempfile UNINSTEXE
-	!system '"${NSISDIR}\MakeNSIS" /DBUILDUNINST=${mode} /DUNINSTEXE=${UNINSTEXE}.exe "${__FILE__}"' = 0
+	; Verbosity needs to be hard-coded...
+	!system '"${NSISDIR}\MakeNSIS" /V3 /DBUILDUNINST=${mode} /DUNINSTEXE=${UNINSTEXE}.exe "${__FILE__}"' = 0
 	!system '"${UNINSTEXE}.exe"' = 0
 	/* We run it two times as a workaround because otherwise the file might
 	not still exists when running the next command */
