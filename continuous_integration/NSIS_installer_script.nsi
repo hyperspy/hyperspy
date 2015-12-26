@@ -35,7 +35,7 @@
 !define MUI_ICON "__HSPY_ICON__"
 !define MUI_UNICON "${NSISDIR}\Contrib\Graphics\Icons\orange-uninstall.ico"
 
-SetCompressor ZLIB
+SetCompressor /SOLID ZLIB
 
 Name "${S_NAME}"
 OutFile "${S_NAME}.exe"
