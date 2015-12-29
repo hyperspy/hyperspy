@@ -556,7 +556,7 @@ class EDSModel(Model1D):
         calibrate: 'resolution' or 'scale' or 'offset'
             If 'resolution', fits the width of Gaussians place at all x-ray
             lines. The width is given by a model of the detector resolution,
-            obtained by extrapolation the `energy_resolution_MnKa` in
+            obtained by extrapolating the `energy_resolution_MnKa` in
             `metadata`.
             This method will update the value of `energy_resolution_MnKa`.
             If 'scale', calibrate the scale of the energy axis
