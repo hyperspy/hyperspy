@@ -1,0 +1,131 @@
+
+shallow_clone: true
+
+environment:
+
+  global:
+    TEST_DEPS: "nose wheel pip"
+    DEPS: "numpy scipy matplotlib traits traitsui ipython h5py sympy scikit-learn dill mock"
+    NSIS_DIR: "%PROGRAMFILES(x86)%/NSIS"
+
+
+  matrix:
+
+    # Pre-installed Python versions, which Appveyor may upgrade to
+    # a later point release.
+
+    - PYTHON: "C:\\Miniconda"
+      PYTHON_VERSION: "2.7.x"
+      PYTHON_MAJOR: 2
+      PYTHON_ARCH: "32"
+      CONDA_PY: "27"
+      CONDA_NPY: "19"
+      WP_URL: 'http://heanet.dl.sourceforge.net/project/winpython/WinPython_2.7/2.7.10.3/WinPython-32bit-2.7.10.3.exe'
+
+    - PYTHON: "C:\\Miniconda-x64"
+      PYTHON_VERSION: "2.7.x"
+      PYTHON_MAJOR: 2
+      PYTHON_ARCH: "64"
+      CONDA_PY: "27"
+      CONDA_NPY: "19"
+      WP_URL: 'http://heanet.dl.sourceforge.net/project/winpython/WinPython_2.7/2.7.10.3/WinPython-64bit-2.7.10.3.exe'
+
+    - PYTHON: "C:\\Miniconda3"
+      PYTHON_VERSION: "3.5.x"
+      PYTHON_MAJOR: 3
+      PYTHON_ARCH: "32"
+      CONDA_PY: "35"
+      CONDA_NPY: "19"
+      WP_URL: 'http://heanet.dl.sourceforge.net/project/winpython/WinPython_3.5/3.5.1.1/WinPython-64bit-3.5.1.1.exe'
+
+    - PYTHON: "C:\\Miniconda3-x64"
+      PYTHON_VERSION: "3.5.x"
+      PYTHON_MAJOR: 3
+      PYTHON_ARCH: "64"
+      CONDA_PY: "35"
+      CONDA_NPY: "19"
+      WINDOWS_SDK_VERSION: "v7.1"
+      WP_URL: 'http://heanet.dl.sourceforge.net/project/winpython/WinPython_3.5/3.5.1.1/WinPython-64bit-3.5.1.1.exe'
+
+matrix:
+  allow_failures:
+    - PYTHON_VERSION: "3.5.x"
+
+cache:
+  - '%PYTHON%\pkgs'
+  - '%PYTHON%\envs'
+
+init:
+  - "ECHO %PYTHON% %PYTHON_VERSION% %PYTHON_ARCH%"
+  - "ECHO %APPVEYOR_BUILD_FOLDER%"
+
+install:
+  - ps: Add-AppveyorMessage "Starting install..."
+  # Prepend Python to the PATH
+  - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
+
+  # Check that we have the expected version and architecture for Python
+  - "python --version"
+  - "python -c \"import struct; print(struct.calcsize('P') * 8)\""
+
+  # Install the dependencies of the project.
+  - ps: Add-AppveyorMessage "Installing conda packages..."
+  - "%CMD_IN_ENV% conda install -yq %TEST_DEPS%"
+  - "%CMD_IN_ENV% conda install -yq %DEPS%"
+  - ps: Add-AppveyorMessage "Installing hyperspy..."
+  - "mkdir %APPDATA%\\.hyperspy"
+  - "printf \"[General]\\ndefault_toolkit = None\" > %APPDATA%/.hyperspy/hyperspyrc"
+  - "python setup.py install"
+
+build: false  # Not a C# project, build stuff at the test step instead.
+
+test_script:
+  # Run the project tests
+  - ps: Add-AppveyorMessage "Running tests..."
+  - "python continuous_integration/nosetest.py hyperspy"
+  - ps: Add-AppveyorMessage "Testing completed."
+
+# Auto-deployment of bundle installer for tags:
+before_deploy:
+  - ps: Add-AppveyorMessage "Running deployment step..."
+  - "pip install winpython"
+  # Download WinPython installer if not cached
+  - ps: Add-AppveyorMessage "Installing WinPython..."
+  - "SET WP_INSTDIR=%APPDATA%\\wpdir\\WinPython-%PYTHON_ARCH%bit\\"
+  - "SET WP_EXE=%APPDATA%/wpdir/WinPython%PYTHON_MAJOR%-%PYTHON_ARCH%bit.exe"
+  - "mkdir %APPDATA%\\wpdir"
+  - ps: appveyor DownloadFile $Env:WP_URL -FileName $Env:WP_EXE
+  - ps: (& $Env:WP_EXE /S /D=$Env:WP_INSTDIR | Out-Null )
+  - "ls %APPDATA%/wpdir"
+  - "ls %WP_INSTDIR%"
+
+  # Patch NSIS to allow longer strings
+  - ps: Add-AppveyorMessage "Setting up WinPython environment..."
+  - ps: Start-FileDownload ('http://freefr.dl.sourceforge.net/project/nsis/NSIS%202/2.46/nsis-2.46-strlen_8192.zip') ../nsis_patch.zip
+  - "7z x ../nsis_patch.zip -o%NSIS_DIR -aoa"
+  - ps: Start-FileDownload ('http://nsis.sourceforge.net/mediawiki/images/e/eb/Textreplace.zip') ../Textreplace.zip
+  - "7z x ../Textreplace.zip -o%NSIS_DIR% -aoa"
+  - ps: Start-FileDownload ('http://nsis.sourceforge.net/mediawiki/images/8/8f/UAC.zip') ../UAC.zip
+  - "7z x ../UAC.zip -o%NSIS_DIR% -aoa"
+  # Install current hyperspy in WinPython
+  - ps: (& ((gci -path $Env:WP_INSTDIR -filter 'python.exe' -Recurse).FullName) setup.py install)
+  - ps: (& ((gci -path $Env:WP_INSTDIR -filter 'pip.exe' -Recurse).FullName) install --upgrade configobj)
+  # Custom installer step
+  # TODO: Re-run tests in WinPython environment
+  - ps: Add-AppveyorMessage "Creating installer..."
+  - "python continuous_integration/windeploy.py %APPDATA%/wpdir %PYTHON_ARCH% %APPVEYOR_REPO_TAG_NAME%"
+  - "\"%NSIS_DIR%/makensis.exe\" /V3 NSIS_installer_script-%PYTHON_ARCH%bit.nsi"
+  - ps: Add-AppveyorMessage "Installer created! Pushing to GitHub..."
+  - "appveyor PushArtifact HyperSpy-%APPVEYOR_REPO_TAG_NAME%-Bundle-Windows-%PYTHON_ARCH%bit.exe"
+
+deploy:
+  release: $(APPVEYOR_REPO_TAG_NAME)
+  description: 'Release: $(APPVEYOR_REPO_COMMIT_MESSAGE)'
+  provider: GitHub
+  auth_token:
+    secure: KwAfARhGEqOnZHltPB6kKu8xmnoiGSk7NMYJBIEbWvFCuVnepoPV7ZcIjUN3pUpK
+  artifact: /.*\.exe/              # upload all exe installers to release assets
+  draft: true
+  prerelease: false
+  on:
+    appveyor_repo_tag: true        # deploy on tag push only
