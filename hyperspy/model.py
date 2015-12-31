@@ -227,7 +227,7 @@ class BaseModel(list):
         ----------
         dic : dictionary
             _whitelist : dictionary
-                a dictionary with keys used as references of  save attributes,
+                a dictionary with keys used as references of save attributes,
                 for more information, see
                 :meth:`hyperspy.misc.export_dictionary.load_from_dictionary`
             components : dictionary (optional)

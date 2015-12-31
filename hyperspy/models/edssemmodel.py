@@ -37,7 +37,6 @@ class EDSSEMModel(EDSModel):
         using the edsmodel.add_polynomial_background method.
 
     Any extra arguments are passed to the Model constructor.
-
     """
 
     def __init__(self, spectrum,

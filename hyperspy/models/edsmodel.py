@@ -135,8 +135,8 @@ class EDSModel(Model1D):
     >>> m.fit()
     >>> m.fit_background()
     >>> m.calibrate_energy_axis('resolution')
-    >>> m.calibrate_xray_lines('energy',['Au_Ma'])
-    >>> m.calibrate_xray_lines('sub_weight',['Mn_La'],bound=10)
+    >>> m.calibrate_xray_lines('energy', ['Au_Ma'])
+    >>> m.calibrate_xray_lines('sub_weight',['Mn_La'], bound=10)
     """
 
     def __init__(self, spectrum,

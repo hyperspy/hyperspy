@@ -281,15 +281,15 @@ class EDSSEMSpectrum(EDSSpectrum):
         Parameters
         ----------
         auto_background : boolean, default True
-            If True, adds automatically a polynomial order 6 to the model, using
-            the edsmodel.add_polynomial_background method.
+            If True, adds automatically a polynomial order 6 to the model,
+            using the edsmodel.add_polynomial_background method.
         auto_add_lines : boolean, default True
-            If True, automatically add Gaussians for all X-rays generated in the
-            energy range by an element using the edsmodel.add_family_lines
+            If True, automatically add Gaussians for all X-rays generated in
+            the energy range by an element using the edsmodel.add_family_lines
             method.
         dictionary : {None, dict}, optional
-            A dictionary to be used to recreate a model. Usually generated using
-            :meth:`hyperspy.model.as_dictionary`
+            A dictionary to be used to recreate a model. Usually generated
+            using :meth:`hyperspy.model.as_dictionary`
 
         Returns
         -------
@@ -301,5 +301,5 @@ class EDSSEMSpectrum(EDSSpectrum):
         model = EDSSEMModel(self,
                             auto_background=auto_background,
                             auto_add_lines=auto_add_lines,
-                             *args, **kwargs)
+                            *args, **kwargs)
         return model
