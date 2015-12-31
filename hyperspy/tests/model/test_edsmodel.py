@@ -28,6 +28,53 @@ class TestlineFit:
                                    m.get_lines_intensity()],
                                    [[0.5], [0.2], [0.3]], atol=10-4)
 
+    def _check_model_creation(self):
+        s = self.s
+        # Default:
+        m = s.create_model()
+        nt.assert_equal(
+            [c.name for c in m],
+            ['background_order_6', 'Cr_Ka', 'Cr_Kb',
+             'Fe_Ka', 'Fe_Kb', 'Zn_Ka'])
+        # No auto componentes:
+        m = s.create_model(False, False)
+        nt.assert_equal([c.name for c in m], [])
+
+    def test_model_creation(self):
+        self._check_model_creation()
+
+    def test_semmodel_creation(self):
+        self.s.set_signal_type("EDS_SEM")
+        self._check_model_creation()
+
+    def test_temmodel_creation(self):
+        self.s.set_signal_type("EDS_TEM")
+        self._check_model_creation()
+
+    def _check_model_store(self):
+        # Simply check that storing/restoring of EDSModels work
+        # This also checks that creation from dictionary works
+        s = self.s
+        # Default:
+        m = s.create_model()
+        m.store()
+        m1 = s.models.a.restore()
+        nt.assert_equal(
+            [c.name for c in m], [c.name for c in m1])
+        nt.assert_equal([c.name for c in m.xray_lines],
+                        [c.name for c in m1.xray_lines])
+
+    def test_edsmodel_store(self):
+        self._check_model_store()
+
+    def test_semmodel_store(self):
+        self.s.set_signal_type("EDS_SEM")
+        self._check_model_store()
+
+    def test_temmodel_store(self):
+        self.s.set_signal_type("EDS_TEM")
+        self._check_model_store()
+
     def test_calibrate_energy_resolution(self):
         s = self.s
         m = s.create_model()

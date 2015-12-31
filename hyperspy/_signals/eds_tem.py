@@ -479,5 +479,6 @@ class EDSTEMSpectrum(EDSSpectrum):
         from hyperspy.models.edstemmodel import EDSTEMModel
         model = EDSTEMModel(self,
                             auto_background=auto_background,
-                            auto_add_lines=auto_add_lines)
+                            auto_add_lines=auto_add_lines,
+                            *args, **kwargs)
         return model

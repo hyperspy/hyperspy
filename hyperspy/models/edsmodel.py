@@ -149,10 +149,20 @@ class EDSModel(Model1D):
         self.end_energy = min(end_energy, self.spectrum._get_beam_energy())
         self.start_energy = self.axes_manager.signal_axes[0].low_value
         self.background_components = list()
+        if 'dictionary' in kwargs or len(args) > 1:
+            d = args[0] if len(args) > 1 else kwargs['dictionary']
+            if len(d['background_components']) > 0:
+                auto_background = False
+            if len(d['xray_lines']) > 0:
+                auto_add_lines = False
         if auto_background is True:
             self.add_polynomial_background()
         if auto_add_lines is True:
             self.add_family_lines()
+        self._whitelist.update({
+            'background_components': None,
+            'xray_lines': None,
+            })
 
     @property
     def units_factor(self):
