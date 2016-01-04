@@ -1566,8 +1566,9 @@ class MVATools(object):
                 if folder is not None:
                     filename = os.path.join(folder, filename)
                 ensure_directory(filename)
-                fac_plots[idx].savefig(filename, save_figures_format,
-                                       dpi=600)
+                _args = {'dpi': 600,
+                         'format': save_figures_format}
+                fac_plots[idx].savefig(filename, **_args)
             plt.ion()
 
         elif multiple_files is False:
