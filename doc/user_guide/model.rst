@@ -4,19 +4,19 @@ Curve fitting
 HyperSpy can perform curve fitting of one-dimensional signals (spectra) and
 two-dimensional signals (images) in n-dimensional data sets. Models can be
 created as a linear combination of predefined components and multiple
-optimisation algorithms can be used to fit the model to experimental data. 
+optimisation algorithms can be used to fit the model to experimental data.
 Bounds and weights are supported. The syntax for creating both kinds of model
 is essentially the same as in this documentation any method referred to in
 the :py:class`~.model.BaseModel` class is available for both kinds.
 
 .. versionadded:: 0.9
-    
+
     Models can be created and and fit to experimental data in both one and two
     dimensions i.e. spectra and images respectively. Most of the syntax is
     identical in either case. A one-dimensional model is created when a model
     is created for a :py:class:`~._signals.spectrum.Spectrum` whereas a two-
     dimensional model is created for a :py:class:`._signals.image.Image`. At
-    present plotting and gradient fitting methods tools for are not yet 
+    present plotting and gradient fitting methods tools for are not yet
     provided for the :py:class:`~.models.model2D.Model2D` class.
 
 .. versionadded:: 0.7
@@ -28,7 +28,7 @@ the :py:class`~.model.BaseModel` class is available for both kinds.
 Creating a model
 ----------------
 
-A :py:class:`~.models.model1D.Model1D` can be created for data in the :py:class:`~._signals.spectrum.Spectrum` 
+A :py:class:`~.models.model1D.Model1D` can be created for data in the :py:class:`~._signals.spectrum.Spectrum`
 class using the :py:meth:`~._signals.spectrum.Spectrum.create_model` method:
 
 .. code-block:: python
@@ -36,7 +36,7 @@ class using the :py:meth:`~._signals.spectrum.Spectrum.create_model` method:
     >>> s = hs.signals.Spectrum('SomeDataHere') # Load the data from a file
     >>> m = s.create_model() # Creates the 1D-Model and asign it to the variable m
 
-Similarly A :py:class:`~.models.model2D.Model2D` can be created for data in the :py:class:`~._signals.image.Image` 
+Similarly A :py:class:`~.models.model2D.Model2D` can be created for data in the :py:class:`~._signals.image.Image`
 class using the :py:meth:`~._signals.image.Image.create_model` method:
 
 .. code-block:: python
@@ -46,14 +46,14 @@ class using the :py:meth:`~._signals.image.Image.create_model` method:
 
 The syntax for creating both one-dimensional and two-dimensional models is thus
 identical for the user in practice. When a model is created  you may be prompted
-to provide important information not already included in the datafile, e.g.if s 
-is EELS data, you may be asked for the accelerating voltage, convergence and 
+to provide important information not already included in the datafile, e.g.if s
+is EELS data, you may be asked for the accelerating voltage, convergence and
 collection angles etc.
 
 Adding components to the model
 ------------------------------
 
-In HyperSpy a model consists of a linear combination of :py:mod:`~.components` 
+In HyperSpy a model consists of a linear combination of :py:mod:`~.components`
 and various components are available in one and two-dimensions to construct a
 model.
 
@@ -66,6 +66,7 @@ The following components are currently available for one-dimensional models:
 * :py:class:`~._components.exponential.Exponential`
 * :py:class:`~._components.scalable_fixed_pattern.ScalableFixedPattern`
 * :py:class:`~._components.gaussian.Gaussian`
+* :py:class:`~._components.gaussian.GaussianHF`
 * :py:class:`~._components.lorentzian.Lorentzian`
 * :py:class:`~._components.voigt.Voigt`
 * :py:class:`~._components.polynomial.Polynomial`
@@ -340,7 +341,7 @@ a particular location (i.e. a slice in the navigation space) or energy range
 (i.e. a slice in the signal space). This can be done using exactly the same
 syntax that we use for signal indexing (:ref:`signal.indexing`).
 :py:attr:`~.model.red_chisq` and :py:attr:`~.model.dof` are automatically
-recomputed for the resulting slices. 
+recomputed for the resulting slices.
 
 .. code-block:: python
 
