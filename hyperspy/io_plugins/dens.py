@@ -45,7 +45,7 @@ mapping = {
 
 def _cnv_time(timestr):
     try:
-        t = datetime.strptime(timestr, '%H:%M:%S.%f')
+        t = datetime.strptime(timestr.decode(), '%H:%M:%S.%f')
         dt = t - datetime(t.year, t.month, t.day)
         r = float(dt.seconds) + float(dt.microseconds) * 1e-6
     except ValueError:

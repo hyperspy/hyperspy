@@ -92,7 +92,7 @@ def test_d2s_type_cast_invalid():
 def test_d2s_string_cut():
     d = dict(text='Testerstring')
     sa = dict2sarray(d, dtype=dt)
-    nt.assert_equal(sa['text'][0], 'Tester')
+    nt.assert_equal(sa['text'][0], b'Tester')
 
 def test_d2s_array1():
     dt2 = dt + [('z', (np.uint8, 4)), ('u', (np.uint16, 4))]

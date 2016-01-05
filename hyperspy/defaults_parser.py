@@ -335,7 +335,10 @@ if preferences.General.logger_on:
     turn_logging_on(verbose=0)
 
 current_toolkit = preferences.General.default_toolkit
-
+try:
+    f.close()
+except NameError:
+    pass
 
 def file_version(fname):
     with open(fname, 'r') as f:

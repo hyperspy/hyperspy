@@ -212,9 +212,9 @@ def reconstruct_object(flags, value):
         ifdill, thing = value
         if ifdill is None:
             return thing
-        if ifdill in [False, 'False']:
+        if ifdill in [False, 'False', b'False']:
             return types.FunctionType(marshal.loads(thing), globals())
-        if ifdill in [True, 'True']:
+        if ifdill in [True, 'True', b'True']:
             if not dill_avail:
                 raise ValueError("the dictionary was constructed using "
                                  "\"dill\" package, which is not available on the system")

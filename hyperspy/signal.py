@@ -177,7 +177,7 @@ class ModelManager(object):
                              "should store it there")
 
     def _check_name(self, name, existing=False):
-        if not isinstance(name, basestring):
+        if not isinstance(name, str):
             raise KeyError('Name has to be a string')
         if name.startswith('_'):
             raise KeyError('Name cannot start with "_" symbol')

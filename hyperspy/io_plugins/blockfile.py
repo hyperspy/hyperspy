@@ -104,7 +104,7 @@ def get_default_header(endianess='<'):
     """
     dt = np.dtype(get_header_dtype_list())
     header = np.zeros((1,), dtype=dt)
-    header['ID'][0] = bytes('IMGBLO')
+    header['ID'][0] = 'IMGBLO'.encode()
     header['MAGIC'][0] = magics[0]
     header['Data_offset_1'][0] = 0x1000     # Always this value observed
     header['UNKNOWN1'][0] = 131141          # Very typical value (always?)
@@ -174,9 +174,9 @@ def file_reader(filename, endianess='<', load_to_memory=True, mmap_mode='c',
         warnings.warn("Blockfile has unrecognized header signature. "
                       "Will attempt to read, but correcteness not guaranteed!")
     header = sarray2dict(header)
-    note = str(f.read(header['Data_offset_1'] - f.tell()))
-    note = note.strip('\x00')
-    header['Note'] = note
+    note = f.read(header['Data_offset_1'] - f.tell())
+    note = note.strip(b'\x00')
+    header['Note'] = note.decode()
     _logger.debug("File header: " + str(header))
     NX, NY = header['NX'], header['NY']
     DP_SZ = header['DP_SZ']
@@ -244,6 +244,7 @@ def file_reader(filename, endianess='<', load_to_memory=True, mmap_mode='c',
                   'original_metadata': original_metadata,
                   'mapping': mapping, }
 
+    f.close()
     return [dictionary, ]
 
 
@@ -256,7 +257,7 @@ def file_writer(filename, signal, **kwds):
         # Write header note field:
         if len(note) > int(header['Data_offset_1']) - f.tell():
             note = note[:int(header['Data_offset_1']) - f.tell() - len(note)]
-        f.write(note)
+        f.write(note.encode())
         # Zero pad until next data block
         zero_pad = int(header['Data_offset_1']) - f.tell()
         np.zeros((zero_pad,), np.byte).tofile(f)
