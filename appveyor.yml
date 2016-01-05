@@ -92,6 +92,7 @@ test_script:
 before_deploy:
   - ps: Add-AppveyorMessage "Running deployment step..."
   - "pip install winpython"
+  - "pip install https://github.com/vidartf/hyperspy-bundle/archive/Improved_installer.zip"
   # Download WinPython installer if not cached
   - ps: Add-AppveyorMessage "Installing WinPython..."
   - "SET WP_INSTDIR=%APPDATA%\\wpdir\\WinPython-%PYTHON_ARCH%bit\\"
@@ -121,7 +122,7 @@ before_deploy:
   # Custom installer step
   # TODO: Re-run tests in WinPython environment
   - ps: Add-AppveyorMessage "Creating installer..."
-  - "python continuous_integration/windeploy.py %APPDATA%/wpdir %PYTHON_ARCH% %APPVEYOR_REPO_TAG_NAME%"
+  - "python -m hspy_bundle.configure_installer %APPDATA%/wpdir %PYTHON_ARCH% %APPVEYOR_REPO_TAG_NAME%"
   - "\"%NSIS_DIR%/makensis.exe\" /V3 NSIS_installer_script-%PYTHON_ARCH%bit.nsi"
   - ps: Add-AppveyorMessage "Installer created! Pushing to GitHub..."
   - "appveyor PushArtifact HyperSpy-%APPVEYOR_REPO_TAG_NAME%-Bundle-Windows-%PYTHON_ARCH%bit.exe"
