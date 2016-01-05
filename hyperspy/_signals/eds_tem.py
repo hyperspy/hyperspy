@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2015 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -452,3 +452,32 @@ class EDSTEMSpectrum(EDSSpectrum):
             navigation_mask=navigation_mask, *args, **kwargs)
         self.learning_results.loadings = np.nan_to_num(
             self.learning_results.loadings)
+
+    def create_model(self, auto_background=True, auto_add_lines=True,
+                     *args, **kwargs):
+        """Create a model for the current TEM EDS data.
+
+        Parameters
+        ----------
+        auto_background : boolean, default True
+            If True, adds automatically a polynomial order 6 to the model, using
+            the edsmodel.add_polynomial_background method.
+        auto_add_lines : boolean, default True
+            If True, automatically add Gaussians for all X-rays generated in the
+            energy range by an element using the edsmodel.add_family_lines
+            method.
+        dictionary : {None, dict}, optional
+            A dictionary to be used to recreate a model. Usually generated using
+            :meth:`hyperspy.model.as_dictionary`
+
+        Returns
+        -------
+
+        model : `EDSTEMModel` instance.
+
+        """
+        from hyperspy.models.edstemmodel import EDSTEMModel
+        model = EDSTEMModel(self,
+                            auto_background=auto_background,
+                            auto_add_lines=auto_add_lines)
+        return model

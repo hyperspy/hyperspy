@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2015 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -76,6 +76,185 @@ from hyperspy.external.astroML.histtools import histogram
 from hyperspy.drawing.utils import animate_legend
 from hyperspy.misc.hspy_warnings import VisibleDeprecationWarning
 from hyperspy.misc.slicing import SpecialSlicers, FancySlicing
+from hyperspy.misc.utils import slugify
+from datetime import datetime
+
+
+class ModelManager(object):
+
+    """Container for models
+    """
+
+    class ModelStub(object):
+
+        def __init__(self, mm, name):
+            self._name = name
+            self._mm = mm
+            self.restore = lambda: mm.restore(self._name)
+            self.remove = lambda: mm.remove(self._name)
+            self.pop = lambda: mm.pop(self._name)
+            self.restore.__doc__ = "Returns the stored model"
+            self.remove.__doc__ = "Removes the stored model"
+            self.pop.__doc__ = "Returns the stored model and removes it from storage"
+
+        def __repr__(self):
+            return repr(self._mm._models[self._name])
+
+    def __init__(self, signal, dictionary=None):
+        self._signal = signal
+        self._models = DictionaryTreeBrowser()
+        self._add_dictionary(dictionary)
+
+    def _add_dictionary(self, dictionary=None):
+        if dictionary is not None:
+            for k, v in dictionary.items():
+                if k.startswith('_') or k in ['restore', 'remove']:
+                    raise KeyError("Can't add dictionary with key '%s'" % k)
+                k = slugify(k, True)
+                self._models.set_item(k, v)
+                setattr(self, k, self.ModelStub(self, k))
+
+    def _set_nice_description(self, node, names):
+        ans = {'date': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+               'dimensions': self._signal.axes_manager._get_dimension_str(),
+               }
+        node.add_dictionary(ans)
+        for n in names:
+            node.add_node('components.' + n)
+
+    def _save(self, name, dictionary):
+
+        from itertools import product
+        _abc = 'abcdefghijklmnopqrstuvwxyz'
+
+        def get_letter(models):
+            howmany = len(models)
+            if not howmany:
+                return 'a'
+            order = int(np.log(howmany) / np.log(26)) + 1
+            letters = [_abc, ] * order
+            for comb in product(*letters):
+                guess = "".join(comb)
+                if guess not in models.keys():
+                    return guess
+
+        if name is None:
+            name = get_letter(self._models)
+        else:
+            name = self._check_name(name)
+
+        if name in self._models:
+            self.remove(name)
+
+        self._models.add_node(name)
+        node = self._models.get_item(name)
+        names = [c['name'] for c in dictionary['components']]
+        self._set_nice_description(node, names)
+
+        node.set_item('_dict', dictionary)
+        setattr(self, name, self.ModelStub(self, name))
+
+    def store(self, model, name=None):
+        """If the given model was created from this signal, stores it
+
+        Parameters
+        ----------
+        model : model
+            the model to store in the signal
+        name : {string, None}
+            the name for the model to be stored with
+
+        See Also
+        --------
+        remove
+        restore
+        pop
+        """
+        if model.signal is self._signal:
+            self._save(name, model.as_dictionary())
+        else:
+            raise ValueError("The model is created from a different signal, you "
+                             "should store it there")
+
+    def _check_name(self, name, existing=False):
+        if not isinstance(name, basestring):
+            raise KeyError('Name has to be a string')
+        if name.startswith('_'):
+            raise KeyError('Name cannot start with "_" symbol')
+        if '.' in name:
+            raise KeyError('Name cannot contain dots (".")')
+        name = slugify(name, True)
+        if existing:
+            if name not in self._models:
+                raise KeyError(
+                    "Model named '%s' is not currently stored" %
+                    name)
+        return name
+
+    def remove(self, name):
+        """Removes the given model
+
+        Parameters
+        ----------
+        name : string
+            the name of the model to remove
+
+        See Also
+        --------
+        restore
+        store
+        pop
+        """
+        name = self._check_name(name, True)
+        delattr(self, name)
+        self._models.__delattr__(name)
+
+    def pop(self, name):
+        """Returns the restored model and removes it from storage
+
+        Parameters
+        ----------
+        name : string
+            the name of the model to restore and remove
+
+        See Also
+        --------
+        restore
+        store
+        remove
+        """
+        name = self._check_name(name, True)
+        model = self.restore(name)
+        self.remove(name)
+        return model
+
+    def restore(self, name):
+        """Returns the restored model
+
+        Parameters
+        ----------
+        name : string
+            the name of the model to restore
+
+        See Also
+        --------
+        remove
+        store
+        pop
+        """
+        name = self._check_name(name, True)
+        d = self._models.get_item(name + '._dict').as_dictionary()
+        return self._signal.create_model(dictionary=copy.deepcopy(d))
+
+    def __repr__(self):
+        return repr(self._models)
+
+    def __len__(self):
+        return len(self._models)
+
+    def __getitem__(self, name):
+        name = self._check_name(name, True)
+        return getattr(self, name)
 
 
 class Signal2DTools(object):
@@ -1010,8 +1189,8 @@ class Signal1DTools(object):
     def _remove_background_cli(
             self, signal_range, background_estimator, estimate_background=True,
             show_progressbar=None):
-        from hyperspy.model import Model
-        model = Model(self)
+        from hyperspy.models.model1D import Model1D
+        model = Model1D(self)
         model.append(background_estimator)
         if estimate_background:
             background_estimator.estimate_parameters(
@@ -2582,7 +2761,8 @@ class SpecialSlicersSignal(SpecialSlicers):
         """
         if isinstance(j, Signal):
             j = j.data
-        self.obj._slicer(i, self.isNavigation).data[:] = j
+        array_slices = self.obj._get_array_slices(i, self.isNavigation)
+        self.obj.data[array_slices] = j
 
     def __len__(self):
         return self.obj.axes_manager.signal_shape[0]
@@ -2625,6 +2805,7 @@ class Signal(FancySlicing,
 
         """
         self._create_metadata()
+        self.models = ModelManager(self)
         self.learning_results = LearningResults()
         kwds['data'] = data
         self._load_dictionary(kwds)
@@ -2796,12 +2977,15 @@ class Signal(FancySlicing,
             self.data = None
             old_plot = self._plot
             self._plot = None
+            old_models = self.models._models
+            self.models._models = DictionaryTreeBrowser()
             ns = self.deepcopy()
             ns.data = np.atleast_1d(data)
             return ns
         finally:
             self.data = old_data
             self._plot = old_plot
+            self.models._models = old_models
 
     def _print_summary(self):
         string = "\n\tTitle: "
@@ -2858,6 +3042,8 @@ class Signal(FancySlicing,
         """
 
         self.data = file_data_dict['data']
+        if 'models' in file_data_dict:
+            self.models._add_dictionary(file_data_dict['models'])
         if 'axes' not in file_data_dict:
             file_data_dict['axes'] = self._get_undefined_axes_list()
         self.axes_manager = AxesManager(
@@ -3105,12 +3291,15 @@ class Signal(FancySlicing,
             - hdf5 for HDF5
             - rpl for Ripple (useful to export to Digital Micrograph)
             - msa for EMSA/MSA single spectrum saving.
+            - unf for SEMPER unf binary format.
+            - blo for Blockfile diffraction stack saving.
             - Many image formats such as png, tiff, jpeg...
 
         If no extension is provided the default file format as defined
         in the `preferences` is used.
         Please note that not all the formats supports saving datasets of
-        arbitrary dimensions, e.g. msa only supports 1D data.
+        arbitrary dimensions, e.g. msa only supports 1D data, and blockfiles
+        only support image stacks with a navigation dimension < 2.
 
         Each format accepts a different set of parameters. For details
         see the specific format documentation.
@@ -3125,8 +3314,8 @@ class Signal(FancySlicing,
         overwrite : None, bool
             If None, if the file exists it will query the user. If
             True(False) it (does not) overwrites the file if it exists.
-        extension : {None, 'hdf5', 'rpl', 'msa',common image extensions e.g.
-                    'tiff', 'png'}
+        extension : {None, 'hdf5', 'rpl', 'msa', 'unf', 'blo', common image
+                     extensions e.g. 'tiff', 'png'}
             The extension of the file that defines the file format.
             If None, the extension is taken from the first not None in the
             following list:
@@ -4264,6 +4453,13 @@ class Signal(FancySlicing,
         dc = type(self)(**self._to_dictionary())
         if dc.data is not None:
             dc.data = dc.data.copy()
+
+        # uncomment if we want to deepcopy models as well:
+
+        # dc.models._add_dictionary(
+        #     copy.deepcopy(
+        #         self.models._models.as_dictionary()))
+
         # The Signal subclasses might change the view on init
         # The following code just copies the original view
         for oaxis, caxis in zip(self.axes_manager._axes,
@@ -4803,23 +4999,6 @@ class Signal(FancySlicing,
             self._plot.navigator_plot.add_marker(marker)
         if plot_marker:
             marker.plot()
-
-    def create_model(self, dictionary=None):
-        """Create a model for the current signal
-
-        Parameters
-        __________
-        dictionary : {None, dict}, optional
-            A dictionary to be used to recreate a model. Usually generated using
-            :meth:`hyperspy.model.as_dictionary`
-
-        Returns
-        -------
-        A Model class
-
-        """
-        from hyperspy.model import Model
-        return Model(self, dictionary=dictionary)
 
 # Implement binary operators
 for name in (

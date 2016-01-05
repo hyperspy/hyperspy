@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2015 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -78,9 +78,6 @@ class GeneralConfig(t.HasTraits):
         'rpl',
         desc='Using the hdf5 format is highly reccomended because is the '
         'only one fully supported. The Ripple (rpl) format it is useful '
-        'tk is provided for when none of the other toolkits are'
-        ' available. However, when using this toolkit the '
-        'user interface elements are not available. '
         'to export data to other software that do not support hdf5')
     default_toolkit = t.Enum(
         "qt4",
@@ -92,7 +89,6 @@ class GeneralConfig(t.HasTraits):
         "elements. "
         "When using gtk and tk the user interface elements are not"
         " available."
-        "user interface elements are not available. "
         "None is suitable to run headless. "
         "HyperSpy must be restarted for changes to take effect")
     default_export_format = t.Enum(
@@ -102,7 +98,7 @@ class GeneralConfig(t.HasTraits):
         'to export data to other software that do not support hdf5')
     interactive = t.CBool(
         True,
-        desc='If enabled, HyperSpy will prompt the user when optios are '
+        desc='If enabled, HyperSpy will prompt the user when options are '
         'available, otherwise it will use the default values if possible')
     logger_on = t.CBool(
         False,

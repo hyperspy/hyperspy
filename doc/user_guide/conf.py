@@ -50,7 +50,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'HyperSpy User Guide [Draft]'
-copyright = '2011-2015, The HyperSpy Developers'
+copyright = '2011-2016, The HyperSpy Developers'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -258,7 +258,7 @@ texinfo_documents = [
 epub_title = 'HyperSpy User Guide'
 epub_author = 'The HyperSpy Developers'
 epub_publisher = 'he HyperSpy Developers'
-epub_copyright = '2011-2013, he HyperSpy Developers'
+epub_copyright = '2011-2016, he HyperSpy Developers'
 
 # The language of the text. It defaults to the language option
 # or en if the language is not set.

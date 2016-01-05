@@ -1,4 +1,4 @@
-# Copyright 2007-2015 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -173,6 +173,20 @@ class Test_vacum_mask:
         s = self.signal
         assert_equal(s.vacuum_mask().data[0], True)
         assert_equal(s.vacuum_mask().data[-1], False)
+
+
+class Test_simple_model:
+
+    def setUp(self):
+        s = utils_eds.xray_lines_model(elements=['Al', 'Zn'],
+                                       weight_percents=[50, 50])
+        self.signal = s
+
+    def test_intensity(self):
+        s = self.signal
+        assert_true(np.allclose(
+            [i.data for i in s.get_lines_intensity(
+                integration_window_factor=5.0)], [0.5, 0.5], atol=1e-1))
 
 
 class Test_get_lines_intentisity:

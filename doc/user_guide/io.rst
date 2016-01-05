@@ -160,6 +160,12 @@ HyperSpy.
     +--------------------+-----------+----------+
     | Ripple             |    Yes    |    Yes   |
     +--------------------+-----------+----------+
+    | SEMPER unf         |    Yes    |    Yes   |
+    +--------------------+-----------+----------+
+    | Blockfile          |    Yes    |    Yes   |
+    +--------------------+-----------+----------+
+    | DENS heater log    |    Yes    |    No    |
+    +--------------------+-----------+----------+
 
 .. _hdf5-format:
 
@@ -365,4 +371,72 @@ Therefore strongly reccommend to load using the ``.emi`` file instead.
 When reading an ``.emi`` file if there are several ``.ser`` files associated
 with it, all of them will be read and returned as a list.
 
+.. _unf-format:
 
+SEMPER unf binary format
+------------------------
+
+SEMPER is a fully portable system of programs for image processing, particularly
+suitable for applications in electron microscopy developed by Owen Saxton (see
+DOI: 10.1016/S0304-3991(79)80044-3 for more information).The unf format is a
+binary format with an extensive header for up to 3 dimensional data.
+HyperSpy can read and write unf-files and will try to convert the data into a
+fitting Signal subclass, based on the information stored in the label.
+Currently version 7 of the format should be fully supported.
+
+.. _blockfile-format:
+
+Blockfile
+---------
+
+HyperSpy can read and write the blockfile format from NanoMegas ASTAR software.
+It is used to store a series of diffraction patterns from scanning precession
+electron difraction (SPED) measurements, with a limited set of metadata. The
+header of the blockfile contains information about centering and distortions
+of the diffraction patterns, but is not applied to the signal during reading.
+Blockfiles only support data values of type 
+`np.uint8 <http://docs.scipy.org/doc/numpy/user/basics.types.html>`_ (integers
+in range 0-255).
+
+.. warning::
+
+   While Blockfiles are supported, it is a proprietary format, and future
+   versions of the format might therefore not be readable. Complete 
+   interoperability with the official software can neither be guaranteed.
+
+Blockfiles are by default loaded into memory, but can instead be loaded in a
+"copy-on-write" manner using
+`numpy.memmap <http://docs.scipy.org/doc/numpy/reference/generated/numpy.memmap.html>`_
+. This behavior can be controlled by the arguments `load_to_memory` and
+`mmap_mode`. For valid values for `mmap_mode`, see the documentation for
+`numpy.memmap <http://docs.scipy.org/doc/numpy/reference/generated/numpy.memmap.html>`_.
+
+Examples of ways of loading:
+.. code-block:: python
+
+    >>> hs.load('file.blo')     # Default loading, equivalent to the next line
+    >>> hs.load('file.blo', load_to_memory=True)    # Load directly to memory
+    >>> # Default memmap loading:
+    >>> hs.load('file.blo', load_to_memory=False, mmap_mode='c') 
+
+    >>> # Loads data read only:
+    >>> hs.load('file.blo', load_to_memory=False, mmap_mode='r')
+    >>> # Loads data read/write:
+    >>> hs.load('file.blo', load_to_memory=False, mmap_mode='r+')
+
+By loading the data read/write, any changes to the original data array will be 
+written to disk. The data is written when the original data array is deleted,
+or when :py:meth:`Signal.data.flush() <http://docs.scipy.org/doc/numpy/reference/generated/numpy.memmap.flush.html>`_
+is called.
+
+
+.. _dens-format:
+
+DENS heater log
+---------------
+
+HyperSpy can read heater log format for DENS solution's heating holder. The
+format stores all the captured data for each timestamp, together with a small
+header in a plain-text format. The reader extracts the measured temperature
+along the time axis, as well as the date and calibration constants stored in
+the header.

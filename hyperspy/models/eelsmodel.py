@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2015 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -19,7 +19,7 @@
 import copy
 import warnings
 
-from hyperspy.model import Model
+from hyperspy.models.model1D import Model1D
 from hyperspy.components import EELSCLEdge
 from hyperspy.components import PowerLaw
 from hyperspy.misc.ipython_tools import get_interactive_ns
@@ -38,7 +38,7 @@ def _give_me_idelta(master, slave):
     return lambda x: x - slave + master
 
 
-class EELSModel(Model):
+class EELSModel(Model1D):
 
     """Build an EELS model
 
@@ -73,7 +73,7 @@ class EELSModel(Model):
     def __init__(self, spectrum, auto_background=True,
                  auto_add_edges=True, ll=None,
                  GOS=None, dictionary=None):
-        Model.__init__(self, spectrum)
+        Model1D.__init__(self, spectrum)
         self._suspend_auto_fine_structure_width = False
         self.convolved = False
         self.low_loss = ll
@@ -123,7 +123,7 @@ class EELSModel(Model):
         the fine structure.
 
         """
-        self._Model__touch()
+        self._BaseModel__touch()
         self.edges = []
         self._background_components = []
         for component in self:
@@ -353,7 +353,7 @@ class EELSModel(Model):
                            update_plot=update_plot,
                            **kwargs)
         elif kind == 'std':
-            Model.fit(self,
+            Model1D.fit(self,
                       fitter=fitter,
                       method=method,
                       grad=grad,

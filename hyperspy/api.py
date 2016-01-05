@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
 
+# Set the PyQt API to 2 to avoid incompatibilities between matplotlib
+# traitsui
+
 from hyperspy import docstrings
 
 __doc__ = """
@@ -54,6 +57,7 @@ For more details see their doctrings.
 
 # Remove the module to avoid polluting the namespace
 del docstrings
+
 
 from hyperspy.Release import version as __version__
 from hyperspy import signals
