@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2015 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -204,7 +204,7 @@ class BaseModel(list):
         s = self.signal
         s.models.store(self, name)
 
-    def save(self, file_name, name=None):
+    def save(self, file_name, name=None, **kwargs):
         """Saves signal and its model to a file
 
         Parameters
@@ -213,12 +213,14 @@ class BaseModel(list):
                 Name of the file
             name : {None, str}
                 Stored model name. Auto-generated if left empty
+            **kwargs :
+                Other keyword arguments are passed onto `Signal.save()`
         """
         if self.signal is None:
             raise ValueError("Currently cannot store models with no signal")
         else:
             self.store(name)
-            self.signal.save(file_name)
+            self.signal.save(file_name, **kwargs)
 
     def _load_dictionary(self, dic):
         """Load data from dictionary.
