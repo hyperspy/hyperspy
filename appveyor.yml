@@ -92,7 +92,7 @@ test_script:
 before_deploy:
   - ps: Add-AppveyorMessage "Running deployment step..."
   - "pip install winpython"
-  - "pip install https://github.com/vidartf/hyperspy-bundle/archive/Improved_installer.zip"
+  - "pip install https://github.com/hyperspy/hyperspy-bundle/archive/master.zip"
   # Download WinPython installer if not cached
   - ps: Add-AppveyorMessage "Installing WinPython..."
   - "SET WP_INSTDIR=%APPDATA%\\wpdir\\WinPython-%PYTHON_ARCH%bit\\"
