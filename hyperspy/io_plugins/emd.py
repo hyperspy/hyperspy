@@ -112,21 +112,22 @@ class EMD(object):
     def _write_signal_to_group(self, signal_group, signal):
         self._log.debug('Calling _write_signal_to_group')
         # Save data:
-        dataset = signal_group.create_group(signal.metadata.General.title)
+        dataset = signal_group.require_group(signal.metadata.General.title)
         maxshape = tuple(None for _ in signal.data.shape)
         dataset.create_dataset('data', data=signal.data, chunks=True, maxshape=maxshape)
         # Iterate over all dimensions:
         for i in range(len(signal.data.shape)):
             key = 'dim{}'.format(i+1)
-            offset = signal.axes_manager[i].offset
-            scale = signal.axes_manager[i].scale
+            axis = signal.axes_manager._axes[i]
+            offset = axis.offset
+            scale = axis.scale
             dim = dataset.create_dataset(key, data=[offset, offset+scale])
-            name = signal.axes_manager[i].name
+            name = axis.name
             from traits.trait_base import _Undefined
             if type(name) is _Undefined:
                 name = ''
             dim.attrs['name'] = name
-            units = signal.axes_manager[i].units
+            units = axis.units
             if type(units) is _Undefined:
                 units = ''
             else:
@@ -135,11 +136,14 @@ class EMD(object):
         # Write metadata:
         dataset.attrs['emd_group_type'] = 1
         for key, value in signal.metadata.Signal:
-            dataset.attrs[key] = value
+            try:  # If something h5py can't handle is saved in the metadata:
+                dataset.attrs[key] = value
+            except Exception:
+                pass  # just don't add what can't be added!
 
     def _read_signal_from_group(self, name, group, load_to_memory=True):
         self._log.debug('Calling _read_signal_from_group')
-        import hyperspy.api as hs
+        from hyperspy import signals
         # Extract essential data:
         data = group.get('data')
         if load_to_memory:
@@ -147,11 +151,11 @@ class EMD(object):
         record_by = group.attrs.get('record_by', '')
         # Create Signal, Image or Spectrum:
         if record_by == 'spectrum':
-            signal = hs.signals.Spectrum(data)
+            signal = signals.Spectrum(data)
         if record_by == 'image':
-            signal = hs.signals.Image(data)
+            signal = signals.Image(data)
         else:
-            signal = hs.signals.Signal(data)
+            signal = signals.Signal(data)
         # Set signal properties:
         signal.set_signal_origin = group.attrs.get('signal_origin', '')
         signal.set_signal_type = group.attrs.get('signal_type', '')
@@ -224,6 +228,8 @@ class EMD(object):
         signal.metadata.General.sample.add_dictionary(self.sample)
         signal.metadata.General.add_node('comments')
         signal.metadata.General.comments.add_dictionary(self.comments)
+        # Also save metadata as original_metadata:
+        signal.original_metadata.add_dictionary(signal.metadata.as_dictionary())
         # Add signal:
         self.signals[name] = signal
 
@@ -244,11 +250,11 @@ class EMD(object):
             A :class:`~.EMD` object containing the loaded signals.
 
         """
-        cls._log.debug('Calling load_from_ems')
+        cls._log.debug('Calling load_from_emd')
         # Read in file:
         emd_file = h5py.File(filename, 'r')
         # Creat empty EMD instance:
-        emd = EMD()
+        emd = cls()
         # Extract user:
         user_group = emd_file.get('user')
         if user_group is not None:
@@ -309,23 +315,23 @@ class EMD(object):
         emd_file.attrs['version_major'] = ver_maj
         emd_file.attrs['version_minor'] = ver_min
         # Write user:
-        user_group = emd_file.create_group('user')
+        user_group = emd_file.require_group('user')
         for key, value in self.user.iteritems():
             user_group.attrs[key] = value
         # Write microscope:
-        microscope_group = emd_file.create_group('microscope')
+        microscope_group = emd_file.require_group('microscope')
         for key, value in self.microscope.iteritems():
             microscope_group.attrs[key] = value
         # Write sample:
-        sample_group = emd_file.create_group('sample')
+        sample_group = emd_file.require_group('sample')
         for key, value in self.sample.iteritems():
             sample_group.attrs[key] = value
         # Write comments:
-        comments_group = emd_file.create_group('comments')
+        comments_group = emd_file.require_group('comments')
         for key, value in self.comments.iteritems():
             comments_group.attrs[key] = value
         # Write signals:
-        signal_group = emd_file.create_group('signals')
+        signal_group = emd_file.require_group('signals')
         for signal in self.signals.values():
             self._write_signal_to_group(signal_group, signal)
         # Close file and return EMD object:
@@ -369,24 +375,28 @@ def file_reader(filename, load_to_memory=True, print_info=False, **kwds):
         emd.print_info()
     dictionaries = []
     for signal in emd.signals.values():
-        axes = []
-        for i in range(len(signal.data.shape)):
-            axes.append({'size': signal.axes_manager[i].size,
-                         'index_in_array': signal.axes_manager[i].index_in_array,
-                         'name': signal.axes_manager[i].name,
-                         'scale': signal.axes_manager[i].scale,
-                         'offset': signal.axes_manager[i].offset,
-                         'units': signal.axes_manager[i].units})
-        dictionary = {'data': signal.data,
-                      'axes': axes,
-                      'metadata': signal.metadata.as_dictionary(),
-                      'original_metadata': signal.original_metadata.as_dictionary()}
-        dictionaries.append(dictionary)
+        dictionaries.append(signal._to_dictionary())
     return dictionaries
 
 
 def file_writer(filename, signal, signal_metadata=None, user=None,
                 microscope=None, sample=None, comments=None, **kwds):
+    if user is None:  # If not provided, look in metadata:
+        user = signal.metadata.General.as_dictionary().get('user')
+    if user is None:  # If not found, check original_metadata:
+        user = signal.original_metadata.General.as_dictionary().get('user')
+    if microscope is None:  # If not provided, look in metadata:
+        microscope = signal.metadata.General.as_dictionary().get('microscope')
+    if microscope is None:  # If not found, check original_metadata:
+        microscope = signal.original_metadata.General.as_dictionary().get('microscope')
+    if sample is None:  # If not provided, look in metadata:
+        sample = signal.metadata.General.as_dictionary().get('sample')
+    if sample is None:  # If not found, check original_metadata:
+        sample = signal.original_metadata.General.as_dictionary().get('sample')
+    if comments is None:  # If not provided, look in metadata:
+        comments = signal.metadata.General.as_dictionary().get('comments')
+    if comments is None:  # If not found, check original_metadata:
+        comments = signal.original_metadata.General.as_dictionary().get('comments')
     emd = EMD(user=user, microscope=microscope, sample=sample, comments=comments)
     emd.add_signal(signal, metadata=signal_metadata)
     emd.save_to_emd(filename)

@@ -8,7 +8,7 @@ try:
     sip.setapi('QTime', 2)
     sip.setapi('QUrl', 2)
     del sip
-except ImportError:
+except (ImportError, ValueError):
     pass
 
 from hyperspy import docstrings
