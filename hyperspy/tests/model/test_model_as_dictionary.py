@@ -22,7 +22,6 @@ import nose.tools as nt
 from hyperspy._signals.spectrum import Spectrum
 from hyperspy.component import Parameter, Component
 from hyperspy.components import Gaussian, Lorentzian, ScalableFixedPattern
-from hyperspy.model import Model
 
 
 def remove_empty_numpy_strings(dic):
