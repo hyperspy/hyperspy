@@ -367,13 +367,13 @@ A mass absorption coefficient database (Chantler2005 see http://physics.nist.gov
 
 .. code-block:: python
 
-    >>> utils.material.mass_absorption_coefficient(
+    >>> hs.material.mass_absorption_coefficient(
     >>>     element='Al', energies=['C_Ka','Al_Ka'])
     array([ 26330.38933818,    372.02616732])
 
 .. code-block:: python
 
-        >>> utils.material.mass_absorption_coefficient_of_mixture_of_pure_elements(
+        >>> hs.material.mass_absorption_coefficient_of_mixture_of_pure_elements(
     >>>     elements=['Al','Zn'], weight_percent=[50,50], energies='Al_Ka')
     2587.4161643905127
 

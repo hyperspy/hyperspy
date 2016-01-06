@@ -277,13 +277,13 @@ def mass_absorption_coefficient(element, energies):
 
     Examples
     --------
-    >>> utils.material.mass_absorption_coefficient(
+    >>> hs.material.mass_absorption_coefficient(
     >>>     element='Al', energies=['C_Ka','Al_Ka'])
     array([ 26330.38933818,    372.02616732])
 
     See also
     --------
-    utils.material.mass_absorption_coefficient_of_mixture_of_pure_elements
+    hs.material.mass_absorption_coefficient_of_mixture_of_pure_elements
 
     Note
     ----
@@ -303,10 +303,10 @@ def mass_absorption_coefficient(element, energies):
             if isinstance(energy, str):
                 energies[i] = utils_eds._get_energy_xray_line(energy)
     index = np.searchsorted(energies_db, energies)
-    mac_res = np.exp(np.log(macs[index - 1])
-                     + np.log(macs[index] / macs[index - 1])
-                     * (np.log(energies / energies_db[index - 1])
-                     / np.log(energies_db[index] / energies_db[index - 1])))
+    mac_res = np.exp(np.log(macs[index - 1]) +
+                     np.log(macs[index] / macs[index - 1]) *
+                     (np.log(energies / energies_db[index - 1]) /
+                     np.log(energies_db[index] / energies_db[index - 1])))
     return np.nan_to_num(mac_res)
 
 
@@ -332,7 +332,7 @@ def _mass_absorption_coefficient_of_mixture_of_pure_elements(weight_percent,
 
     Examples
     --------
-    >>> utils.material.mass_absorption_coefficient_of_mixture_of_pure_elements(
+    >>> hs.material.mass_absorption_coefficient_of_mixture_of_pure_elements(
     >>>     elements=['Al','Zn'], weight_percent=[50,50], energies='Al_Ka')
     2587.4161643905127
 
@@ -343,7 +343,7 @@ def _mass_absorption_coefficient_of_mixture_of_pure_elements(weight_percent,
 
     See also
     --------
-    utils.material.mass_absorption_coefficient
+    hs.material.mass_absorption_coefficient
 
     Note
     ----
@@ -354,7 +354,7 @@ def _mass_absorption_coefficient_of_mixture_of_pure_elements(weight_percent,
     """
     if len(elements) != len(weight_percent):
         raise ValueError(
-            "Elements and weight_fraction should have the same lenght")
+            "Elements and weight_fraction should have the same length")
     if hasattr(weight_percent[0], '__iter__'):
         weight_fraction = np.array(weight_percent)
         weight_fraction /= np.sum(weight_fraction, 0)
@@ -395,7 +395,7 @@ def mass_absorption_coefficient_of_mixture_of_pure_elements(weight_percent,
 
     Examples
     --------
-    >>> utils.material.mass_absorption_coefficient_of_mixture_of_pure_elements(
+    >>> hs.material.mass_absorption_coefficient_of_mixture_of_pure_elements(
     >>>     elements=['Al','Zn'], weight_percent=[50,50], energies='Al_Ka')
     2587.41616439
 
@@ -406,7 +406,7 @@ def mass_absorption_coefficient_of_mixture_of_pure_elements(weight_percent,
 
     See also
     --------
-    utils.material.mass_absorption_coefficient
+    hs.material.mass_absorption_coefficient
 
     Note
     ----
