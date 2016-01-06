@@ -8,7 +8,7 @@ from hyperspy.models.model1D import Model1D
 class TestPowerLaw:
 
     def setUp(self):
-        s = hs.signals.Spectrum(np.empty(1024))
+        s = hs.signals.Spectrum(np.zeros(1024))
         s.axes_manager[0].offset = 100
         s.axes_manager[0].scale = 0.01
         m = s.create_model()
@@ -71,7 +71,7 @@ class TestPowerLaw:
 class TestOffset:
 
     def setUp(self):
-        s = hs.signals.Spectrum(np.empty(10))
+        s = hs.signals.Spectrum(np.zeros(10))
         s.axes_manager[0].scale = 0.01
         m = s.create_model()
         m.append(hs.model.components.Offset())
@@ -104,7 +104,7 @@ class TestOffset:
 class TestPolynomial:
 
     def setUp(self):
-        s = hs.signals.Spectrum(np.empty(1024))
+        s = hs.signals.Spectrum(np.zeros(1024))
         s.axes_manager[0].offset = -5
         s.axes_manager[0].scale = 0.01
         m = s.create_model()
@@ -168,7 +168,7 @@ class TestPolynomial:
 class TestGaussian:
 
     def setUp(self):
-        s = hs.signals.Spectrum(np.empty(1024))
+        s = hs.signals.Spectrum(np.zeros(1024))
         s.axes_manager[0].offset = -5
         s.axes_manager[0].scale = 0.01
         m = s.create_model()
