@@ -167,7 +167,6 @@ with update_version_when_dev() as version:
                   'hyperspy.misc.machine_learning',
                   'hyperspy.external',
                   'hyperspy.external.mpfit',
-                  'hyperspy.external.mpfit.tests',
                   'hyperspy.external.astroML',
                   ],
         requires=install_req,
