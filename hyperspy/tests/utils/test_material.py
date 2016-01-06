@@ -65,39 +65,34 @@ def test_density_of_mixture():
             wt, elements)[0, 0])
 
 
-def test_mass_absorption_coefficient():
-    def test_mac(self):
-        nt.assert_almost_equal(
-            hs.material.mass_absorption_coefficient('Al', 3.5),
-            506.0153356472)
-        nt.assert_true(np.allclose(
-            hs.material.mass_absorption_coefficient('Ta', [1, 3.2, 2.3]),
-            [3343.7083701143229, 1540.0819991890, 3011.264941118]))
-        nt.assert_almost_equal(
-            hs.material.mass_absorption_coefficient('Zn', 'Zn_La'),
-            1413.291119134)
-        nt.assert_true(np.allclose(
-            hs.material.mass_absorption_coefficient(
-                'Zn', ['Cu_La', 'Nb_La']), [1704.7912903000029,
-                                            1881.2081950943339]))
+def test_mac():
+    nt.assert_almost_equal(
+        hs.material.mass_absorption_coefficient('Al', 3.5), 506.0153356472)
+    nt.assert_true(np.allclose(
+        hs.material.mass_absorption_coefficient('Ta', [1, 3.2, 2.3]),
+        [3343.7083701143229, 1540.0819991890, 3011.264941118]))
+    nt.assert_almost_equal(
+        hs.material.mass_absorption_coefficient('Zn', 'Zn_La'),
+        1413.291119134)
+    nt.assert_true(np.allclose(
+        hs.material.mass_absorption_coefficient(
+            'Zn', ['Cu_La', 'Nb_La']), [1704.7912903000029,
+                                        1881.2081950943339]))
 
-    def test_mixture_mac(self):
-        nt.assert_almost_equal(
-            hs.material.
-            mass_absorption_coefficient_of_mixture_of_pure_elements(
-                ['Al', 'Zn'], [0.5, 0.5], 'Al_Ka'), 2587.4161643905127)
-        elements = ("Cu", "Sn")
-        lines = [0.5, 'Al_Ka']
-        wt = np.array([[[88.]*2]*3, [[12.]*2]*3])
-        nt.assert_true(np.allclose(
-            hs.material.
-            mass_absorption_coefficient_of_mixture_of_pure_elements(
-                wt, elements, lines)[:, 0, 0],
-            np.array([8003.05391481,  4213.4235561], atol=1e-3)))
-        wt = hs.signals.Image(wt).split()
-        mac = hs.material. \
-            mass_absorption_coefficient_of_mixture_of_pure_elements(
-                wt, elements, lines)
-        nt.assert_true(np.allclose(mac[0].data[0, 0], 8003.053914, atol=1e-3))
-        nt.assert_true(np.allclose(
-            [m.metadata.Sample.xray_lines for m in mac], lines))
+
+def test_mixture_mac():
+    nt.assert_almost_equal(
+        hs.material.
+        mass_absorption_coefficient_of_mixture_of_pure_elements(
+            [50, 50], ['Al', 'Zn'], 'Al_Ka'), 2587.4161643905127)
+    elements = ("Cu", "Sn")
+    lines = [0.5, 'Al_Ka']
+    wt = np.array([[[88.]*2]*3, [[12.]*2]*3])
+    np.testing.assert_array_almost_equal(
+        hs.material.mass_absorption_coefficient_of_mixture_of_pure_elements(
+            wt, elements, lines)[:, 0, 0],
+        np.array([8003.05391481,  4213.4235561]))
+    wt = hs.signals.Image(wt).split()
+    mac = hs.material.mass_absorption_coefficient_of_mixture_of_pure_elements(
+            wt, elements, lines)
+    np.testing.assert_array_almost_equal(mac[0].data[0, 0], 8003.053914)
