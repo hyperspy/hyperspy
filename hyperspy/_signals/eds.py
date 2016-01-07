@@ -153,7 +153,7 @@ class EDSSpectrum(Spectrum):
                 xray_lines_not_in_range.append(xray_line)
         return xray_lines_in_range, xray_lines_not_in_range
 
-    def sum(self, axis):
+    def sum(self, axis, out=None):
         """Sum the data over the given axis.
 
         Parameters
@@ -178,7 +178,7 @@ class EDSSpectrum(Spectrum):
 
         """
         # modify time spend per spectrum
-        s = super(EDSSpectrum, self).sum(axis)
+        s = super(EDSSpectrum, self).sum(axis, out)
         if "Acquisition_instrument.SEM" in s.metadata:
             mp = s.metadata.Acquisition_instrument.SEM
         else:

@@ -3971,10 +3971,7 @@ class Signal(FancySlicing,
 
     def _apply_function_on_data_and_remove_axis(self, function, axis,
                                                 out=None):
-        if out is None:
-            s = self._deepcopy_with_new_data(None)
-        else:
-            s = out
+        s = out or self._deepcopy_with_new_data(None)
         s.data = function(self.data,
                           axis=self.axes_manager[axis].index_in_array)
         if out is None:
@@ -4880,7 +4877,7 @@ class Signal(FancySlicing,
         nitem = nitem if nitem > 0 else 1
         return nitem
 
-    def as_spectrum(self, spectral_axis):
+    def as_spectrum(self, spectral_axis, out=None):
         """Return the Signal as a spectrum.
 
         The chosen spectral axis is moved to the last index in the
@@ -4908,9 +4905,13 @@ class Signal(FancySlicing,
         sp = self.rollaxis(spectral_axis, -1 + 3j)
         sp.metadata.Signal.record_by = "spectrum"
         sp._assign_subclass()
-        return sp
+        if out is None:
+            return sp
+        else:
+            out.data[:] = sp.data
+            out.events.data_changed.trigger()
 
-    def as_image(self, image_axes):
+    def as_image(self, image_axes, out=None):
         """Convert signal to image.
 
         The chosen image axes are moved to the last indices in the
@@ -4949,7 +4950,11 @@ class Signal(FancySlicing,
             iaxes[1] - np.argmax(iaxes) + 3j, -2 + 3j)
         im.metadata.Signal.record_by = "image"
         im._assign_subclass()
-        return im
+        if out is None:
+            return im
+        else:
+            out.data[:] = im.data
+            out.events.data_changed.trigger()
 
     def _assign_subclass(self):
         mp = self.metadata
