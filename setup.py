@@ -42,7 +42,6 @@ install_req = ['scipy',
 
 
 
-
 class update_version_when_dev:
 
     def __enter__(self):
@@ -135,7 +134,7 @@ with update_version_when_dev() as version:
         requires=install_req,
         package_data={
             'hyperspy':
-            ['data/*.ico',
+            [
              'misc/eds/example_signals/*.hdf5',
              'tests/io/blockfile_data/*.blockfile'
              'tests/io/dens_data/*.dens'
@@ -163,7 +162,6 @@ with update_version_when_dev() as version:
         license=Release.license,
         platforms=Release.platforms,
         url=Release.url,
-        #~ test_suite = 'nose.collector',
         keywords=Release.keywords,
         classifiers=[
             "Programming Language :: Python :: 2.7",
