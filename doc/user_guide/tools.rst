@@ -690,12 +690,12 @@ to reverse the :py:func:`~.utils.stack` function:
 FFT and iFFT
 ^^^^^^^^^^^^
 
-Fast Fourier transform and its inverse can be applied on a signal with the :py:meth:`~.signal.Signal.fft` and the :py:meth:`~.signal.Signal.ifft` methods.
+The Fast Fourier transform and its inverse can be applied on a signal with the :py:meth:`~.signal.Signal.fft` and the :py:meth:`~.signal.Signal.ifft` methods.
 
 .. code-block:: python
 
-    >>> image = signals.Image(scipy.misc.lena())
-    >>> image.fft().plot()
+    >>> im = hs.signals.Image(scipy.misc.lena())
+    >>> im.fft().plot()
 
 .. figure::  images/lena_fft.png
   :align:   center

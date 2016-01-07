@@ -4250,7 +4250,8 @@ class Signal(FancySlicing,
         """Compute the discrete Fourier Transform.
 
         This function computes the discrete Fourier Transform over the signal
-        axes by means of the Fast Fourier Transform (FFT).
+        axes by means of the Fast Fourier Transform (FFT) as implemented in
+        numpy.
 
         Return
         ------
@@ -4259,7 +4260,7 @@ class Signal(FancySlicing,
         Examples
         --------
         >>> import scipy.ndimage
-        >>> im = signals.Image(scipy.misc.lena())
+        >>> im = hs.signals.Image(scipy.misc.lena())
         >>> im.fft()
         <Image, title: , dimensions: (|512, 512)>
 
@@ -4299,7 +4300,7 @@ class Signal(FancySlicing,
         Examples
         --------
         >>> import scipy.ndimage
-        >>> im = signals.Image(scipy.misc.lena())
+        >>> im = hs.signals.Image(scipy.misc.lena())
         >>> imfft = im.fft()
         >>> imfft.ifft()
         <Image, title: , dimensions: (|512, 512)>
