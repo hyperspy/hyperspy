@@ -162,12 +162,13 @@ class EMD(object):
         # Iterate over all dimensions:
         for i in range(len(data.shape)):
             dim = group.get('dim{}'.format(i+1))
-            signal.axes_manager[i].name = dim.attrs.get('name', '')
+            axis = signal.axes_manager._axes[i]
+            axis.name = dim.attrs.get('name', '')
             units = re.findall('[^_\W]+', dim.attrs.get('units', ''))
-            signal.axes_manager[i].units = ''.join(units)
+            axis.units = ''.join(units)
             try:
-                signal.axes_manager[i].scale = dim[1] - dim[0]
-                signal.axes_manager[i].offset = dim[0]
+                axis.scale = dim[1] - dim[0]
+                axis.offset = dim[0]
             except (IndexError, TypeError) as e:  # Hyperspy then uses defaults (1.0 and 0.0)!
                 self._log.warning('Could not calculate scale/offset of axis {}: {}'.format(i, e))
         # Extract metadata:

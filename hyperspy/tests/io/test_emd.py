@@ -22,19 +22,7 @@ my_path = os.path.dirname(__file__)
 data_signal = np.arange(27).reshape((3, 3, 3))
 data_image = np.arange(9).reshape((3, 3))
 data_spectrum = np.arange(3)
-
-
-
-
-#data_image_byte = np.arange(25, dtype=np.byte).reshape((5, 5))  # Odd dim. tests strange read/write
-#data_image_int16 = np.arange(16, dtype=np.int16).reshape((4, 4))
-#data_image_int32 = np.arange(16, dtype=np.int32).reshape((4, 4))
-#data_image_complex = (data_image_int32 + 1j*data_image).astype(np.complex64)
-
-
-#filename, signal, signal_metadata=None, user=None,
-#                microscope=None, sample=None, comments=None, **kwds
-
+data_save = np.arange(24).reshape((2, 3, 4))
 sig_metadata = {'a': 1, 'b': 2}
 user = {'name': 'John Doe', 'institution': 'TestUniversity',
         'department': 'Microscopy', 'email': 'johndoe@web.de'}
@@ -78,13 +66,19 @@ def test_metadata():
 class TestCaseSaveAndRead():
 
     def test_save_and_read(self):
-        signal_ref = Image(data_image)
+        signal_ref = Signal(data_save)
         signal_ref.metadata.General.title = test_title
+        signal_ref.axes_manager[0].name = 'x'
+        signal_ref.axes_manager[1].name = 'y'
+        signal_ref.axes_manager[2].name = 'z'
         signal_ref.save(os.path.join(my_path, 'emd_files', 'example_temp.emd'), overwrite=True,
                         signal_metadata=sig_metadata, user=user, microscope=microscope,
                         sample=sample, comments=comments)
         signal = load(os.path.join(my_path, 'emd_files', 'example_temp.emd'))
         np.testing.assert_equal(signal.data, signal_ref.data)
+        np.testing.assert_equal(signal_ref.axes_manager[0].name, 'x')
+        np.testing.assert_equal(signal_ref.axes_manager[1].name, 'y')
+        np.testing.assert_equal(signal_ref.axes_manager[2].name, 'z')
         np.testing.assert_equal(signal.metadata.General.title, test_title)
         np.testing.assert_equal(signal.metadata.General.user.as_dictionary(), user)
         np.testing.assert_equal(signal.metadata.General.microscope.as_dictionary(), microscope)
@@ -92,7 +86,7 @@ class TestCaseSaveAndRead():
         np.testing.assert_equal(signal.metadata.General.comments.as_dictionary(), comments)
         for key, ref_value in sig_metadata.iteritems():
             np.testing.assert_equal(signal.metadata.Signal.as_dictionary().get(key), ref_value)
-        nt.assert_is_instance(signal, Image)
+        nt.assert_is_instance(signal, Signal)
 
     def tearDown(self):
         remove(os.path.join(my_path, 'emd_files', 'example_temp.emd'))
