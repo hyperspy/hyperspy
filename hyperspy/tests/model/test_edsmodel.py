@@ -164,10 +164,8 @@ class TestMaps:
             beam_energy=beam_energy,
             energy_resolution_MnKa=energy_resolution_MnKa,
             energy_axis=energy_axis)
-        # Make a circular mixing pattern with diffuse edge
-        mix = np.mgrid[-10:10, -10:10]
-        mix = np.sqrt(mix[0, ...]**2 + mix[1, ...]**2)
-        mix = np.clip((mix-4), 0., 5.0) / 5.0
+
+        mix = np.linspace(0., 1., 4).reshape(2, 2)
         mix_data = np.tile(s1.data, mix.shape + (1,))
         s = s1._deepcopy_with_new_data(mix_data)
         a = s.axes_manager._axes.pop(0).get_axis_dictionary()
@@ -183,16 +181,15 @@ class TestMaps:
     def test_lines_intensity(self):
         s = self.s
         m = s.create_model()
-        m.fit()
-        w1 = np.array([0.3, 0.7])
-        w2 = np.array([0.5, 0.5])
+        m.multifit()    # m.fit() is just too inaccurate
+        ws = np.array([0.5, 0.7, 0.3, 0.5])
         w = np.zeros((4,) + self.mix.shape)
         for x in xrange(self.mix.shape[0]):
             for y in xrange(self.mix.shape[1]):
-                w[0:2, x, y] = w1 * self.mix[x, y]
-                w[2:4, x, y] = w2 * (1-self.mix[x, y])
+                for i in xrange(4):
+                    mix = self.mix[x, y] if i in (1, 2) else 1 - self.mix[x, y]
+                    w[i, x, y] = ws[i] * mix
         xray_lines = s._get_lines_from_elements(
             s.metadata.Sample.elements, only_lines=('Ka',))
-        np.testing.assert_allclose([i.data for i in
-                                   m.get_lines_intensity(xray_lines)],
-                                   w, atol=10-4)
+        np.testing.assert_allclose(
+            [i.data for i in m.get_lines_intensity(xray_lines)], w, atol=1e-7)
