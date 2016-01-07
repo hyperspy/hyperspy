@@ -74,6 +74,8 @@ install:
   - "python -c \"import struct; print(struct.calcsize('P') * 8)\""
 
   # Install the dependencies of the project.
+  # TODO: Remove once anaconda taitsui is at v5:
+  - "%CMD_IN_ENV% pip install --upgrade traitsui"
   - ps: Add-AppveyorMessage "Installing conda packages..."
   - "%CMD_IN_ENV% conda install -yq %TEST_DEPS%"
   - "%CMD_IN_ENV% conda install -yq %DEPS%"
@@ -118,7 +120,7 @@ before_deploy:
   - "7z x ../UAC.zip -o%NSIS_DIR% -aoa"
   # Install current hyperspy in WinPython
   - ps: (& ((gci -path $Env:WP_INSTDIR -filter 'python.exe' -Recurse).FullName) setup.py install)
-  - ps: (& ((gci -path $Env:WP_INSTDIR -filter 'pip.exe' -Recurse).FullName) install --upgrade configobj)
+  - ps: (& ((gci -path $Env:WP_INSTDIR -filter 'pip.exe' -Recurse).FullName) install --upgrade configobj traitsui)
   # Custom installer step
   # TODO: Re-run tests in WinPython environment
   - ps: Add-AppveyorMessage "Creating installer..."
