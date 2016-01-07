@@ -687,6 +687,19 @@ to reverse the :py:func:`~.utils.stack` function:
 
   Splitting example.
 
+FFT and iFFT
+^^^^^^^^^^^^
+
+Fast Fourier transform and its inverse can be applied on a signal with the :py:meth:`~.signal.Signal.fft` and the :py:meth:`~.signal.Signal.ifft` methods.
+
+.. code-block:: python
+
+    >>> image = signals.Image(scipy.misc.lena())
+    >>> image.fft().plot()
+
+.. figure::  images/lena_fft.png
+  :align:   center
+  :width:   400 
 
 Simple operations over one axis
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
