@@ -41,7 +41,7 @@ two lines in the IPython terminal:
 .. code-block:: python
 
    In [1]: import hyperspy.api as hs
-   Im [2]: %matplotlib
+   In [2]: %matplotlib
 
 This documentation assumes that numpy and matplotlib are also imported as
 follows:
