@@ -34,7 +34,8 @@ context menu <https://github.com/hyperspy/start_jupyter_cm>`_ or by
 Typically you will need to `set up IPython for interactive plotting with
 matplotlib
 <http://ipython.readthedocs.org/en/stable/interactive/plotting.html>`_ using the
-``%matplotlib`` magic. So, typically, after starting IPython, you can import
+``%matplotlib`` magic *before executing any plotting command*. So, typically,
+after starting IPython, you can import
 HyperSpy and set up interactive matplotlib plotting by executing the following
 two lines in the IPython terminal:
 
@@ -42,6 +43,13 @@ two lines in the IPython terminal:
 
    In [1]: import hyperspy.api as hs
    In [2]: %matplotlib
+
+.. warning::
+        When using the qt4 backend it is important to import hyperspy
+        before executing the ``%matplotlib`` magic as above to ensure that
+        matplotlib uses version 2 of the PyQt API. This is necessary to avoid
+        conflicts with other libraries.
+
 
 This documentation assumes that numpy and matplotlib are also imported as
 follows:
