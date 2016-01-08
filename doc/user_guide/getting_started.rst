@@ -34,7 +34,7 @@ context menu <https://github.com/hyperspy/start_jupyter_cm>`_ or by
 Typically you will need to `set up IPython for interactive plotting with
 matplotlib
 <http://ipython.readthedocs.org/en/stable/interactive/plotting.html>`_ using the
-```%matplotlib`` magic. So, typically, after starting IPython, you can import
+``%matplotlib`` magic. So, typically, after starting IPython, you can import
 HyperSpy and set up interactive matplotlib plotting by executing the following
 two lines in the IPython terminal:
 
