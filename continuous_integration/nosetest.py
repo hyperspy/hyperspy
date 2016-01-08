@@ -7,4 +7,6 @@ if __name__ == '__main__':
     from traits.etsconfig.api import ETSConfig
 
     ETSConfig.toolkit = "null"
+    import matplotlib
+    matplotlib.use("Agg")
     sys.exit(run_exit())

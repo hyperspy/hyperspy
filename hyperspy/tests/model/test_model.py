@@ -224,7 +224,7 @@ class TestModelSettingPZero:
 class TestModel:
 
     def setUp(self):
-        s = hs.signals.Spectrum(np.empty(1))
+        s = hs.signals.Spectrum(np.zeros(1))
         m = s.create_model()
         self.model = m
 
@@ -728,7 +728,7 @@ class TestModelSignalVariance:
 class TestMultifit:
 
     def setUp(self):
-        s = hs.signals.Spectrum(np.empty((2, 200)))
+        s = hs.signals.Spectrum(np.zeros((2, 200)))
         s.axes_manager[-1].offset = 1
         s.data[:] = 2 * s.axes_manager[-1].axis ** (-3)
         m = s.create_model()

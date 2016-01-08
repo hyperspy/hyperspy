@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2015 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -47,7 +47,6 @@ class EELSSpectrum(Spectrum):
         self.edges = list()
         if hasattr(self.metadata, 'Sample') and \
                 hasattr(self.metadata.Sample, 'elements'):
-            print('Elemental composition read from file')
             self.add_elements(self.metadata.Sample.elements)
         self.metadata.Signal.binned = True
 
@@ -128,7 +127,6 @@ class EELSSpectrum(Spectrum):
                             <= end_energy:
                         subshell = '%s_%s' % (element, shell)
                         if subshell not in self.subshells:
-                            print "Adding %s subshell" % subshell
                             self.subshells.add(
                                 '%s_%s' % (element, shell))
                             e_shells.append(subshell)
