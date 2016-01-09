@@ -173,8 +173,8 @@ class ModelManager(object):
         if model.signal is self._signal:
             self._save(name, model.as_dictionary())
         else:
-            raise ValueError("The model is created from a different signal, you "
-                             "should store it there")
+            raise ValueError("The model is created from a different signal, "
+                             "you should store it there")
 
     def _check_name(self, name, existing=False):
         if not isinstance(name, basestring):
@@ -1242,11 +1242,13 @@ class Signal1DTools(object):
 
         Using command line, returns a spectrum
 
-        >>>> s = s.remove_background(signal_range=(400,450), background_type='PowerLaw')
+        >>>> s = s.remove_background(signal_range=(400,450),
+                                     background_type='PowerLaw')
 
         Using a full model to fit the background
 
-        >>>> s = s.remove_background(signal_range=(400,450), estimate_background=False)
+        >>>> s = s.remove_background(signal_range=(400,450),
+                                     estimate_background=False)
 
         Raises
         ------
@@ -4259,10 +4261,9 @@ class Signal(FancySlicing,
 
         Examples
         --------
-        >>> import scipy.ndimage
         >>> im = hs.signals.Image(scipy.misc.lena())
         >>> im.fft()
-        <Image, title: , dimensions: (|512, 512)>
+        <Image, title: FFT of , dimensions: (|512, 512)>
 
         Notes
         -----
@@ -4285,7 +4286,7 @@ class Signal(FancySlicing,
             axis.offset = -axis.high_value / 2.
         return im_fft
 
-    def ifft(self, shape_ifft=None, axes=None):
+    def ifft(self):
         """
         Compute the inverse discrete Fourier Transform.
 
@@ -4299,11 +4300,10 @@ class Signal(FancySlicing,
 
         Examples
         --------
-        >>> import scipy.ndimage
         >>> im = hs.signals.Image(scipy.misc.lena())
         >>> imfft = im.fft()
         >>> imfft.ifft()
-        <Image, title: , dimensions: (|512, 512)>
+        <Image, title: iFFT of FFT of , dimensions: (|512, 512)>
 
         Notes
         -----
