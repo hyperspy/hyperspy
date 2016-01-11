@@ -31,6 +31,7 @@ from hyperspy.misc.io.tools import (incremental_filename,
 from hyperspy.exceptions import NavigationDimensionError
 from hyperspy.misc.export_dictionary import export_to_dictionary, \
                                             load_from_dictionary
+from hyperspy.events import Events, Event
 
 
 class NoneFloat(t.CFloat):   # Lazy solution, but usable
@@ -114,7 +115,8 @@ class Parameter(t.HasTraits):
 
     def __init__(self):
         self._twins = set()
-        self.connected_functions = list()
+        self.events = Events()
+        self.events.parameter_changed = Event()
         self.twin_function = lambda x: x
         self.twin_inverse_function = lambda x: x
         self.std = None
@@ -181,16 +183,10 @@ class Parameter(t.HasTraits):
         return self._number_of_elements
 
     def connect(self, f):
-        if f not in self.connected_functions:
-            self.connected_functions.append(f)
-            if self.twin:
-                self.twin.connect(f)
+        self.events.parameter_changed.connect(f)
 
     def disconnect(self, f):
-        if f in self.connected_functions:
-            self.connected_functions.remove(f)
-            if self.twin:
-                self.twin.disconnect(f)
+        self.events.parameter_changed.disconnect(f)
 
     def _get_value(self):
         if self.twin is None:
@@ -245,11 +241,7 @@ class Parameter(t.HasTraits):
                 not isinstance(self.__value, tuple)):
             self.__value = tuple(self.__value)
         if old_value != self.__value:
-            for f in self.connected_functions:
-                try:
-                    f()
-                except:
-                    self.disconnect(f)
+            self.events.parameter_changed.trigger()
         self.trait_property_changed('value', old_value, self.__value)
 
     # Fix the parameter when coupled
@@ -274,16 +266,16 @@ class Parameter(t.HasTraits):
                 twin_value = self.value
                 if self in self.twin._twins:
                     self.twin._twins.remove(self)
-                    for f in self.connected_functions:
-                        self.twin.disconnect(f)
+                    self.twin.events.parameter_changed.disconnect(
+                        self.events.parameter_changed.trigger)
 
                 self.__twin = arg
                 self.value = twin_value
         else:
             if self not in arg._twins:
                 arg._twins.add(self)
-                for f in self.connected_functions:
-                    arg.connect(f)
+                arg.events.parameter_changed.connect(
+                    self.events.parameter_changed.trigger, 0)
             self.__twin = arg
 
         if self.component is not None:
@@ -574,7 +566,8 @@ class Component(t.HasTraits):
     name = t.Property(t.Str(''))
 
     def __init__(self, parameter_name_list):
-        self.connected_functions = list()
+        self.events = Events()
+        self.events.component_changed = Event()
         self.parameters = []
         self.init_parameters(parameter_name_list)
         self._update_free_parameters()
@@ -663,38 +656,10 @@ class Component(t.HasTraits):
         self.__axes_manager = value
 
     def connect(self, f):
-        if f not in self.connected_functions:
-            self.connected_functions.append(f)
+        self.events.component_changed.connect(f, 0)
 
     def disconnect(self, f):
-        if f in self.connected_functions:
-            self.connected_functions.remove(f)
-
-    def _toggle_connect_active_array(self, if_on):
-        # nothing to do (was never multidimensional)
-        if self._active_array is None:
-            return
-        # as it should be (both True)
-        if self.active_is_multidimensional and if_on:
-            return
-        # as it should be (both False)
-        if not self.active_is_multidimensional and not if_on:
-            return
-        # active_is_multidimensional = True, want to set to False
-        if not if_on:
-            self._active_is_multidimensional = False
-            self.active = self._active
-            return
-        if if_on:  # a_i_m = False, want to set to False
-            # check that dimensions are correct
-            shape = self._axes_manager._navigation_shape_in_array
-            if self._active_array.shape != shape:
-                warnings.warn(
-                    '`_active_array` of wrong shape, skipping',
-                    RuntimeWarning)
-                return
-            self._active_is_multidimensional = True
-            self.active = self.active
+        self.events.component_changed.disconnect(f)
 
     def _get_active(self):
         if self.active_is_multidimensional is True:
@@ -713,11 +678,7 @@ class Component(t.HasTraits):
         if self.active_is_multidimensional is True:
             self._store_active_value_in_array(arg)
 
-        for f in self.connected_functions:
-            try:
-                f()
-            except:
-                self.disconnect(f)
+        self.events.component_changed.trigger()
         self.trait_property_changed('active', old_value, self._active)
 
     def init_parameters(self, parameter_name_list):
