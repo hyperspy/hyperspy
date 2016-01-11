@@ -18,7 +18,7 @@ class EventsSuppressionContext(object):
     def __enter__(self):
         self.old = {}
         try:
-            for e in self.events.__dict__.itervalues():
+            for e in self.events._events.itervalues():
                 self.old[e] = e._suppress
                 e._suppress = True
         except:
@@ -90,6 +90,8 @@ class Events(object):
     All available events are attributes of this class.
 
     """
+    def __init__(self):
+        self._events = {}
 
     def suppress(self):
         """
@@ -104,6 +106,21 @@ class Events(object):
         obj.events.values_changed.trigger()
         """
         return EventsSuppressionContext(self)
+
+    def __setattr__(self, name, value):
+        if isinstance(value, Event):
+            self._events[name] = value
+        else:
+            object.__setattr__(self, name, value)
+
+    def __getattr__(self, name):
+        return self._events[name]
+
+    def __delattr__(self, name):
+        if name in self._events:
+            del self._events[name]
+        else:
+            object.__delattr__(name)
 
 
 class Event(object):
