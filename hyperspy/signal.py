@@ -95,7 +95,8 @@ class ModelManager(object):
             self.pop = lambda: mm.pop(self._name)
             self.restore.__doc__ = "Returns the stored model"
             self.remove.__doc__ = "Removes the stored model"
-            self.pop.__doc__ = "Returns the stored model and removes it from storage"
+            self.pop.__doc__ = \
+                "Returns the stored model and removes it from storage"
 
         def __repr__(self):
             return repr(self._mm._models[self._name])
@@ -173,8 +174,8 @@ class ModelManager(object):
         if model.signal is self._signal:
             self._save(name, model.as_dictionary())
         else:
-            raise ValueError("The model is created from a different signal, you "
-                             "should store it there")
+            raise ValueError("The model is created from a different signal, "
+                             "you should store it there")
 
     def _check_name(self, name, existing=False):
         if not isinstance(name, basestring):
@@ -2857,8 +2858,9 @@ class Signal(FancySlicing,
         _orig_slices = slices
         if isNavigation is None:
             warnings.warn(
-                "Indexing the `Signal` class is deprecated and will be removed "
-                "in HyperSpy 0.9. Please use `.isig` and/or `.inav` instead.",
+                "Indexing the `Signal` class is deprecated and will be "
+                "removed in HyperSpy 0.9. Please use `.isig` and/or `.inav` "
+                "instead.",
                 VisibleDeprecationWarning)
 
         has_nav = True if isNavigation is None else isNavigation
@@ -3195,8 +3197,10 @@ class Signal(FancySlicing,
         dic = {'data': self.data,
                'axes': self.axes_manager._get_axes_dicts(),
                'metadata': self.metadata.deepcopy().as_dictionary(),
-               'original_metadata': self.original_metadata.deepcopy().as_dictionary(),
-               'tmp_parameters': self.tmp_parameters.deepcopy().as_dictionary()}
+               'original_metadata':
+                   self.original_metadata.deepcopy().as_dictionary(),
+               'tmp_parameters':
+                   self.tmp_parameters.deepcopy().as_dictionary()}
         if add_learning_results and hasattr(self, 'learning_results'):
             dic['learning_results'] = copy.deepcopy(
                 self.learning_results.__dict__)
