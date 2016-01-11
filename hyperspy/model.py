@@ -1426,9 +1426,7 @@ class BaseModel(list):
             if _component.active_is_multidimensional:
                 if only_current:
                     _component._active_array[
-                        self.axes_manager.indices[
-                            ::-
-                            1]] = value
+                        self.axes_manager.indices[::-1]] = value
                 else:
                     _component._active_array.fill(value)
 

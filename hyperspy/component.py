@@ -29,7 +29,8 @@ from hyperspy.misc.utils import slugify
 from hyperspy.misc.io.tools import (incremental_filename,
                                     append2pathname,)
 from hyperspy.exceptions import NavigationDimensionError
-from hyperspy.misc.export_dictionary import export_to_dictionary, load_from_dictionary
+from hyperspy.misc.export_dictionary import export_to_dictionary, \
+                                            load_from_dictionary
 
 
 class NoneFloat(t.CFloat):   # Lazy solution, but usable
