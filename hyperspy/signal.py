@@ -4941,7 +4941,6 @@ class Signal(FancySlicing,
             return sp
         else:
             out.data[:] = sp.data
-            out.events.data_changed.trigger()
 
     def as_image(self, image_axes, out=None):
         """Convert signal to image.
@@ -4990,7 +4989,6 @@ class Signal(FancySlicing,
             return im
         else:
             out.data[:] = im.data
-            out.events.data_changed.trigger()
 
     def _assign_subclass(self):
         mp = self.metadata
