@@ -23,6 +23,7 @@ import numpy as np
 import traits.api as t
 from traits.trait_errors import TraitError
 
+from hyperspy.events import Events, Event
 from hyperspy.misc.utils import isiterable, ordinal
 from hyperspy.misc.math_tools import isfloat
 
@@ -82,6 +83,10 @@ class DataAxis(t.HasTraits):
                  units=t.Undefined,
                  navigate=t.Undefined):
         super(DataAxis, self).__init__()
+        self.events = Events()
+        self.events.axis_changed = Event()
+        self.events.navigated = Event()
+        self.events.value_changed = Event()
         self.name = name
         self.units = units
         self.scale = scale
@@ -99,6 +104,7 @@ class DataAxis(t.HasTraits):
         self.on_trait_change(self.set_index_from_value, 'value')
         self.on_trait_change(self._update_slice, 'navigate')
         self.on_trait_change(self.update_index_bounds, 'size')
+        self.on_trait_change(self.events.value_changed.trigger, 1)
         # The slice must be updated even if the default value did not
         # change to correctly set its value.
         self._update_slice(self.navigate)
@@ -237,12 +243,6 @@ class DataAxis(t.HasTraits):
     def __str__(self):
         return self._get_name() + " axis"
 
-    def connect(self, f, trait='value'):
-        self.on_trait_change(f, trait)
-
-    def disconnect(self, f, trait='value'):
-        self.on_trait_change(f, trait, remove=True)
-
     def update_index_bounds(self):
         self.high_index = self.size - 1
 
@@ -251,6 +251,7 @@ class DataAxis(t.HasTraits):
         if len(self.axis) != 0:
             self.low_value, self.high_value = (
                 self.axis.min(), self.axis.max())
+        self.events.axis_changed.trigger()
 
     def _update_slice(self, value):
         if value is False:
@@ -280,7 +281,9 @@ class DataAxis(t.HasTraits):
         return cp
 
     def update_value(self):
-        self.value = self.axis[self.index]
+        with self.events.navigated.suppress():
+            self.value = self.axis[self.index]
+        self.events.navigated.trigger()
 
     def value2index(self, value, rounding=round):
         """Return the closest index to the given value if between the limit.
@@ -331,10 +334,12 @@ class DataAxis(t.HasTraits):
             return self.axis[index]
 
     def set_index_from_value(self, value):
-        self.index = self.value2index(value)
-        # If the value is above the limits we must correct the value
-        if self.continuous_value is False:
-            self.value = self.index2value(self.index)
+        with self.events.navigated.suppress():
+            self.index = self.value2index(value)
+            # If the value is above the limits we must correct the value
+            if self.continuous_value is False:
+                self.value = self.index2value(self.index)
+        self.events.navigated.trigger()
 
     def calibrate(self, value_tuple, index_tuple, modify_calibration=True):
         scale = (value_tuple[1] - value_tuple[0]) /\
@@ -469,6 +474,8 @@ class AxesManager(t.HasTraits):
 
     def __init__(self, axes_list):
         super(AxesManager, self).__init__()
+        self._events = Events()
+        self._events.axes_changed = Event()
         self.create_axes(axes_list)
         # set_signal_dimension is called only if there is no current
         # view. It defaults to spectrum
@@ -482,6 +489,17 @@ class AxesManager(t.HasTraits):
         self.on_trait_change(self._update_attributes, '_axes.index')
         self.on_trait_change(self._update_attributes, '_axes.size')
         self._index = None  # index for the iterator
+
+    @property
+    def events(self):
+        # Collect all axes' events for easy supression!
+        events = Events()
+        events._events.update(self._events._events)
+        for ax in self._axes:
+            child = [(k + ax._get_name(), e)
+                     for (k, e) in ax.events._events.iteritems()]
+            events._events.update(child)
+        return events
 
     def _get_positive_index(self, axis):
         if axis < 0:
@@ -693,6 +711,7 @@ class AxesManager(t.HasTraits):
         self.signal_size = (np.cumprod(self.signal_shape)[-1]
                             if self.signal_shape else 0)
         self._update_max_index()
+        self._events.axes_changed.trigger()
 
     def set_signal_dimension(self, value):
         """Set the dimension of the signal.
@@ -725,14 +744,10 @@ class AxesManager(t.HasTraits):
             axis.navigate = tl.pop(0)
 
     def connect(self, f):
-        for axis in self._axes:
-            if axis.slice is None:
-                axis.on_trait_change(f, 'index')
+        self._events.axes_changed.connect(f, 0)
 
     def disconnect(self, f):
-        for axis in self._axes:
-            if axis.slice is None:
-                axis.on_trait_change(f, 'index', remove=True)
+        self._events.axes_changed.disconnect(f)
 
     def key_navigator(self, event):
         if len(self.navigation_axes) not in (1, 2):
