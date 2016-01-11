@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2015 by Forschungszentrum Juelich GmbH
+# Copyright 2016 by Forschungszentrum Juelich GmbH
 # Author: Jan Caron
 #
 
@@ -133,7 +133,8 @@ class TestCaseSaveAndReadByte():
     def test_save_and_read(self):
         signal_ref = Image(data_image_byte)
         signal_ref.metadata.General.title = test_title
-        signal_ref.save(os.path.join(my_path, 'unf_files', 'example_temp.unf'), overwrite=True)
+        signal_ref.save(os.path.join(my_path, 'unf_files', 'example_temp.unf'),
+                        overwrite=True)
         signal = load(os.path.join(my_path, 'unf_files', 'example_temp.unf'))
         np.testing.assert_equal(signal.data, signal_ref.data)
         np.testing.assert_equal(signal.metadata.General.title, test_title)
