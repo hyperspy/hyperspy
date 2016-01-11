@@ -9,6 +9,10 @@ class EventsSuppressionContext(object):
     it will suppress all the events in that container when activated by
     using it in a 'with' statement. The previous suppression state will be
     restored when the 'with' block completes, allowing for nested suppression.
+
+    See also
+    --------
+    Events.suppress
     """
 
     def __init__(self, events):
@@ -39,6 +43,10 @@ class EventSuppressionContext(object):
     it will suppress the event when activated by using it in a 'with'
     statement. The previous suppression state will be restored when the 'with'
     block completes, allowing for nested suppression.
+
+    See also
+    --------
+    Event.suppress
     """
 
     def __init__(self, event):
@@ -66,6 +74,10 @@ class CallbackSuppressionContext(object):
     """
     Context manager for suppression of a single callback on an Event. Useful
     e.g. to prevent infinite recursion if two objects are connected in a loop.
+
+    See also
+    --------
+    Event.suppress_callback
     """
 
     def __init__(self, callback, event, nargs):
@@ -99,11 +111,19 @@ class Events(object):
         all events in the container. When the 'with' lock completes, the old
         suppression values will be restored.
 
-        Example usage pattern:
+        Example usage
+        -------------
         with obj.events.suppress:
+            # Any events triggered by assignments are prevented:
             obj.val_a = a
             obj.val_b = b
+        # Trigger one event instead:
         obj.events.values_changed.trigger()
+
+        See also
+        --------
+        Event.suppress
+        Event.suppress_callback
         """
         return EventsSuppressionContext(self)
 
@@ -135,11 +155,19 @@ class Event(object):
         all events in the container. When the 'with' lock completes, the old
         suppression values will be restored.
 
-        Example usage pattern:
+        Example usage
+        -------------
         with obj.events.myevent.suppress():
+            # These would normally both trigger myevent:
             obj.val_a = a
             obj.val_b = b
+        # Trigger manually once:
         obj.events.myevent.trigger()
+
+        See also
+        --------
+        suppress_callback
+        Events.suppress
         """
         return EventSuppressionContext(self)
 
@@ -149,6 +177,20 @@ class Event(object):
         a single callback from being called. All other connected callbacks
         will trigger. When the 'with' lock completes, the old suppression value
         will be restored.
+
+        Example usage
+        -------------
+        with obj.events.myevent.suppress_callback(f):
+            # Events will trigger as normal, but `f` will not be called
+            obj.val_a = a
+            obj.val_b = b
+        # Here, `f` will be called as before:
+        obj.events.myevent.trigger()
+
+        See also
+        --------
+        suppress
+        Events.suppress
         """
         nargs = None
         found = False
@@ -190,6 +232,10 @@ class Event(object):
             inspect.getargspec() will be used to determine the number of
             arguments the function accepts (arguments with default values will
             be included in the count).
+
+        See also
+        --------
+        disconnect
         """
         if not callable(function):
             raise TypeError("Only callables can be registered")
@@ -210,6 +256,15 @@ class Event(object):
         Disconnects a function from the event. The passed function will be
         disconnected irregardless of which 'nargs' argument was passed to
         connect().
+
+        If you only need to temporarily prevent a function from being called,
+        single callback suppression is supported by the `suppress_callback`
+        context manager.
+
+        See also
+        --------
+        connect
+        suppress_callback
         """
         for c in self._connected.itervalues():
             if function in c:
@@ -223,6 +278,17 @@ class Event(object):
         return f(*args[0:nargs])
 
     def trigger(self, *args, **kwargs):
+        """
+        Triggers the event. If the event is suppressed, this does nothing.
+        Otherwise it calls all the connected functions with the arguments as
+        specified when connected.
+
+        See also
+        --------
+        suppress
+        suppress_callback
+        Events.suppress
+        """
         if not self._suppress:
             # Loop on copy to deal with callbacks which change connections
             for nargs, c in self._connected.copy().iteritems():
