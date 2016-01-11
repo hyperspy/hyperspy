@@ -3552,7 +3552,7 @@ class Signal(FancySlicing,
         s._make_sure_data_is_contiguous()
         return s
 
-    def rebin(self, new_shape):
+    def rebin(self, new_shape, out=None):
         """Returns the object with the data rebinned.
 
         Parameters
@@ -3560,6 +3560,10 @@ class Signal(FancySlicing,
         new_shape: tuple of ints
             The new shape elements must be divisors of the original shape
             elements.
+        out : {Signal, None}
+            If None, a new Signal is created with the result of the operation
+            and returned (default). If a Signal is passed, it is used to
+            receive the output of the operation, and nothing is returned.
 
         Returns
         -------
@@ -3591,17 +3595,19 @@ class Signal(FancySlicing,
                 new_shape[axis.index_in_axes_manager])
         factors = (np.array(self.data.shape) /
                    np.array(new_shape_in_array))
-        s = self._deepcopy_with_new_data(
-            array_tools.rebin(self.data, new_shape_in_array))
-        for axis in s.axes_manager._axes:
-            axis.scale *= factors[axis.index_in_array]
+        s = out or self._deepcopy_with_new_data(None)
+        s.data = array_tools.rebin(self.data, new_shape_in_array)
+        for axis, axis_src in zip(s.axes_manager._axes,
+                                  self.axes_manager._axes):
+            axis.scale = axis_src.scale * factors[axis.index_in_array]
         s.get_dimensions_from_data()
         if s.metadata.has_item('Signal.Noise_properties.variance'):
             if isinstance(s.metadata.Signal.Noise_properties.variance, Signal):
                 var = s.metadata.Signal.Noise_properties.variance
                 s.metadata.Signal.Noise_properties.variance = var.rebin(
                     new_shape)
-        return s
+        if out is None:
+            return s
 
     def split(self,
               axis='auto',
@@ -4186,7 +4192,7 @@ class Signal(FancySlicing,
         return self._apply_function_on_data_and_remove_axis(np.var, axis,
                                                             out=out)
 
-    def diff(self, axis, order=1):
+    def diff(self, axis, order=1, out=None):
         """Returns a signal with the n-th order discrete difference along
         given axis.
         Parameters
@@ -4195,6 +4201,10 @@ class Signal(FancySlicing,
            The axis can be specified using the index of the axis in
            `axes_manager` or the axis name.
         order: the order of the derivative
+        out : {Signal, None}
+            If None, a new Signal is created with the result of the operation
+            and returned (default). If a Signal is passed, it is used to
+            receive the output of the operation, and nothing is returned.
         See also
         --------
         mean, sum
@@ -4207,17 +4217,17 @@ class Signal(FancySlicing,
         >>> s.diff(-1).data.shape
         (64,64,1023)
         """
-
-        s = self._deepcopy_with_new_data(
-            np.diff(self.data,
-                    n=order,
-                    axis=self.axes_manager[axis].index_in_array))
-        axis = s.axes_manager[axis]
-        axis.offset += (order * axis.scale / 2)
+        s = out or self._deepcopy_with_new_data(None)
+        s.data = np.diff(self.data, n=order,
+                         axis=self.axes_manager[axis].index_in_array)
+        axis2 = s.axes_manager[axis]
+        new_offset = self.axes_manager[axis].offset + (order * axis2.scale / 2)
+        axis2.offset = new_offset
         s.get_dimensions_from_data()
-        return s
+        if out is None:
+            return s
 
-    def derivative(self, axis, order=1):
+    def derivative(self, axis, order=1, out=None):
         """Numerical derivative along the given axis.
 
         Currently only the first order finite difference method is implemented.
@@ -4231,13 +4241,17 @@ class Signal(FancySlicing,
             The order of the derivative. (Note that this is the order of the
             derivative i.e. `order=2` does not use second order finite
             differences method.)
+        out : {Signal, None}
+            If None, a new Signal is created with the result of the operation
+            and returned (default). If a Signal is passed, it is used to
+            receive the output of the operation, and nothing is returned.
 
         Returns
         -------
         der : Signal
             Note that the size of the data on the given `axis` decreases by the
-            given `order` i.e. if `axis` is "x" and `order` is 2 the x dimension
-            is N, der's x dimension is N - 2.
+            given `order` i.e. if `axis` is "x" and `order` is 2 the
+            x dimension is N, der's x dimension is N - 2.
 
         See also
         --------
@@ -4245,12 +4259,14 @@ class Signal(FancySlicing,
 
         """
 
-        der = self.diff(order=order, axis=axis)
+        der = self.diff(order=order, axis=axis, out=out)
+        der = out or der
         axis = self.axes_manager[axis]
         der.data /= axis.scale ** order
-        return der
+        if out is None:
+            return der
 
-    def integrate_simpson(self, axis):
+    def integrate_simpson(self, axis, out=None):
         """Returns a signal with the result of calculating the integral
         of the signal along an axis using Simpson's rule.
 
@@ -4259,6 +4275,10 @@ class Signal(FancySlicing,
         axis : {int | string}
            The axis can be specified using the index of the axis in
            `axes_manager` or the axis name.
+        out : {Signal, None}
+            If None, a new Signal is created with the result of the operation
+            and returned (default). If a Signal is passed, it is used to
+            receive the output of the operation, and nothing is returned.
 
         Returns
         -------
@@ -4279,14 +4299,14 @@ class Signal(FancySlicing,
 
         """
         axis = self.axes_manager[axis]
-        s = self._deepcopy_with_new_data(
-            sp.integrate.simps(y=self.data,
-                               x=axis.axis,
-                               axis=axis.index_in_array))
-        s._remove_axis(axis.index_in_axes_manager)
-        return s
+        s = out or self._deepcopy_with_new_data(None)
+        s.data = sp.integrate.simps(y=self.data, x=axis.axis,
+                                    axis=axis.index_in_array)
+        if out is None:
+            s._remove_axis(axis.index_in_axes_manager)
+            return s
 
-    def integrate1D(self, axis):
+    def integrate1D(self, axis, out=None):
         """Integrate the signal over the given axis.
 
         The integration is performed using Simpson's rule if
@@ -4298,6 +4318,10 @@ class Signal(FancySlicing,
         axis : {int | string}
            The axis can be specified using the index of the axis in
            `axes_manager` or the axis name.
+        out : {Signal, None}
+            If None, a new Signal is created with the result of the operation
+            and returned (default). If a Signal is passed, it is used to
+            receive the output of the operation, and nothing is returned.
 
         Returns
         -------
@@ -4318,9 +4342,9 @@ class Signal(FancySlicing,
 
         """
         if self.metadata.Signal.binned is False:
-            return self.integrate_simpson(axis)
+            return self.integrate_simpson(axis=axis, out=out)
         else:
-            return self.sum(axis)
+            return self.sum(axis=axis, out=out)
 
     def indexmax(self, axis, out=None):
         """Returns a signal with the index of the maximum along an axis.
@@ -4357,7 +4381,7 @@ class Signal(FancySlicing,
         return self._apply_function_on_data_and_remove_axis(np.argmax, axis,
                                                             out=out)
 
-    def valuemax(self, axis):
+    def valuemax(self, axis, out=None):
         """Returns a signal with the value of the maximum along an axis.
 
         Parameters
@@ -4365,6 +4389,10 @@ class Signal(FancySlicing,
         axis : {int | string}
            The axis can be specified using the index of the axis in
            `axes_manager` or the axis name.
+        out : {Signal, None}
+            If None, a new Signal is created with the result of the operation
+            and returned (default). If a Signal is passed, it is used to
+            receive the output of the operation, and nothing is returned.
 
         Returns
         -------
@@ -4385,11 +4413,14 @@ class Signal(FancySlicing,
         (64,64)
 
         """
-        s = self.indexmax(axis)
+        s = self.indexmax(axis, out=out)
+        s = out or s
         s.data = self.axes_manager[axis].index2value(s.data)
-        return s
+        if out is None:
+            return s
 
-    def get_histogram(self, bins='freedman', range_bins=None, **kwargs):
+    def get_histogram(self, bins='freedman', range_bins=None, out=None,
+                      **kwargs):
         """Return a histogram of the signal data.
 
         More sophisticated algorithms for determining bins can be used.
@@ -4407,6 +4438,10 @@ class Signal(FancySlicing,
         range_bins : tuple or None, optional
             the minimum and maximum range for the histogram. If not specified,
             it will be (x.min(), x.max())
+        out : {Signal, None}
+            If None, a new Signal is created with the result of the operation
+            and returned (default). If a Signal is passed, it is used to
+            receive the output of the operation, and nothing is returned.
         **kwargs
             other keyword arguments (weight and density) are described in
             np.histogram().
@@ -4441,7 +4476,11 @@ class Signal(FancySlicing,
                                     bins=bins,
                                     range=range_bins,
                                     **kwargs)
-        hist_spec = signals.Spectrum(hist)
+        if out is None:
+            hist_spec = signals.Spectrum(hist)
+        else:
+            hist_spec = out
+            hist_spec.data = hist
         if bins == 'blocks':
             hist_spec.axes_manager.signal_axes[0].axis = bin_edges[:-1]
             warnings.warn(
