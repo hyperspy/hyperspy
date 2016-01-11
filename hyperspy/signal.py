@@ -4732,7 +4732,10 @@ class Signal(FancySlicing,
 
         """
         from hyperspy import signals
-        data = self.data[~np.isnan(self.data)].flatten()
+        if isinstance(self.data, h5py.Dataset):
+            data = da.from_array(self.data, self._get_dask_chunks())
+        else:
+            data = self.data[~np.isnan(self.data)].flatten()
         hist, bin_edges = histogram(data,
                                     bins=bins,
                                     range=range_bins,
