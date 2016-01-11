@@ -3986,6 +3986,10 @@ class Signal(FancySlicing,
         axis : {int, string}
            The axis can be specified using the index of the axis in
            `axes_manager` or the axis name.
+        out : {Signal, None}
+            If None, a new Signal is created with the result of the operation
+            and returned (default). If a Signal is passed, it is used to
+            receive the output of the operation, and nothing is returned.
 
         Returns
         -------
@@ -4018,6 +4022,10 @@ class Signal(FancySlicing,
         axis : {int | string}
            The axis can be specified using the index of the axis in
            `axes_manager` or the axis name.
+        out : {Signal, None}
+            If None, a new Signal is created with the result of the operation
+            and returned (default). If a Signal is passed, it is used to
+            receive the output of the operation, and nothing is returned.
 
         Returns
         -------
@@ -4048,6 +4056,10 @@ class Signal(FancySlicing,
         axis : {int | string}
            The axis can be specified using the index of the axis in
            `axes_manager` or the axis name.
+        out : {Signal, None}
+            If None, a new Signal is created with the result of the operation
+            and returned (default). If a Signal is passed, it is used to
+            receive the output of the operation, and nothing is returned.
 
         Returns
         -------
@@ -4079,6 +4091,10 @@ class Signal(FancySlicing,
         axis : {int | string}
            The axis can be specified using the index of the axis in
            `axes_manager` or the axis name.
+        out : {Signal, None}
+            If None, a new Signal is created with the result of the operation
+            and returned (default). If a Signal is passed, it is used to
+            receive the output of the operation, and nothing is returned.
 
         Returns
         -------
@@ -4110,6 +4126,10 @@ class Signal(FancySlicing,
         axis : {int | string}
            The axis can be specified using the index of the axis in
            `axes_manager` or the axis name.
+        out : {Signal, None}
+            If None, a new Signal is created with the result of the operation
+            and returned (default). If a Signal is passed, it is used to
+            receive the output of the operation, and nothing is returned.
 
         Returns
         -------
@@ -4140,6 +4160,10 @@ class Signal(FancySlicing,
         axis : {int | string}
            The axis can be specified using the index of the axis in
            `axes_manager` or the axis name.
+        out : {Signal, None}
+            If None, a new Signal is created with the result of the operation
+            and returned (default). If a Signal is passed, it is used to
+            receive the output of the operation, and nothing is returned.
 
         Returns
         -------
@@ -4306,6 +4330,10 @@ class Signal(FancySlicing,
         axis : {int | string}
            The axis can be specified using the index of the axis in
            `axes_manager` or the axis name.
+        out : {Signal, None}
+            If None, a new Signal is created with the result of the operation
+            and returned (default). If a Signal is passed, it is used to
+            receive the output of the operation, and nothing is returned.
 
         Returns
         -------
@@ -4889,6 +4917,10 @@ class Signal(FancySlicing,
         ----------
         spectral_axis : {int, complex, str}
             Select the spectral axis to-be using its index or name.
+        out : {Signal, None}
+            If None, a new Signal is created with the result of the operation
+            and returned (default). If a Signal is passed, it is used to
+            receive the output of the operation, and nothing is returned.
 
         Examples
         --------
@@ -4923,6 +4955,10 @@ class Signal(FancySlicing,
         image_axes : tuple of {int, complex, str}
             Select the image axes. Note that the order of the axes matters
             and it is given in the "natural" i.e. X, Y, Z... order.
+        out : {Signal, None}
+            If None, a new Signal is created with the result of the operation
+            and returned (default). If a Signal is passed, it is used to
+            receive the output of the operation, and nothing is returned.
 
         Examples
         --------
