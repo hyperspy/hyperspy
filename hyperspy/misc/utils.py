@@ -111,6 +111,14 @@ def unfold_if_multidim(signal):
     return None
 
 
+class dummy_context_mgr():
+    def __enter__(self):
+        return None
+
+    def __exit__(self):
+        return False
+
+
 def str2num(string, **kargs):
     """Transform a a table in string form into a numpy array
 

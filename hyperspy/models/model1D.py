@@ -768,7 +768,7 @@ class Model1D(BaseModel):
                 self._plot.signal_plot.ax)
         # Create widget -> parameter connection
         am._axes[0].continuous_value = True
-        am._axes[0].on_trait_change(set_value, 'value')
+        am._axes[0].events.value_changed.connect(set_value, 1)
         # Create parameter -> widget connection
         # This is done with a duck typing trick
         # We disguise the AxesManager axis of Parameter by adding

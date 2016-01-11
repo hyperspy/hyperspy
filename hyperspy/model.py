@@ -42,7 +42,7 @@ from hyperspy.misc.export_dictionary import (export_to_dictionary,
                                              load_from_dictionary,
                                              parse_flag_string,
                                              reconstruct_object)
-from hyperspy.misc.utils import slugify, shorten_name
+from hyperspy.misc.utils import slugify, shorten_name, dummy_context_mgr
 from hyperspy.misc.slicing import copy_slice_from_whitelist
 
 
@@ -909,6 +909,7 @@ class BaseModel(list):
 
     def multifit(self, mask=None, fetch_only_fixed=False,
                  autosave=False, autosave_every=10, show_progressbar=None,
+                 interactive_plot=False,
                  **kwargs):
         """Fit the data to the model at all the positions of the
         navigation dimensions.
@@ -932,6 +933,10 @@ class BaseModel(list):
         show_progressbar : None or bool
             If True, display a progress bar. If None the default is set in
             `preferences`.
+        interactive_plot : bool
+            If True, update the plot for every position as they are processed.
+            Note that this slows down the fitting by a lot, but it allows for
+            interactive monitoring of the fitting (if in interactive mode).
 
         **kwargs : key word arguments
             Any extra key word argument will be passed to
@@ -984,18 +989,29 @@ class BaseModel(list):
                 kwargs['bounded'] = False
         i = 0
         self.axes_manager.disconnect(self.fetch_stored_values)
-        for index in self.axes_manager:
-            if mask is None or not mask[index[::-1]]:
-                self.fetch_stored_values(only_fixed=fetch_only_fixed)
-                self.fit(**kwargs)
-                i += 1
+        if not interactive_plot:
+            self.suspend_update()
+            idx = self.axes_manager.indices
+        try:
+            with (self.axes_manager.events.suppress() if not interactive_plot
+                    else dummy_context_mgr()):
+                for index in self.axes_manager:
+                    if mask is None or not mask[index[::-1]]:
+                        self.fetch_stored_values(only_fixed=fetch_only_fixed)
+                        self.fit(**kwargs)
+                        i += 1
+                        if maxval > 0:
+                            pbar.update(i)
+                    if autosave is True and i % autosave_every == 0:
+                        self.save_parameters2file(autosave_fn)
                 if maxval > 0:
-                    pbar.update(i)
-            if autosave is True and i % autosave_every == 0:
-                self.save_parameters2file(autosave_fn)
-        if maxval > 0:
-            pbar.finish()
-        self.axes_manager.connect(self.fetch_stored_values)
+                    pbar.finish()
+            if not interactive_plot:
+                self.axes_manager.indices = idx
+        finally:
+            self.axes_manager.connect(self.fetch_stored_values)
+            if not interactive_plot:
+                self.resume_update()
         if autosave is True:
             messages.information(
                 'Deleting the temporary file %s pixels' % (
