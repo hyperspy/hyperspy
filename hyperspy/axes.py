@@ -104,7 +104,7 @@ class DataAxis(t.HasTraits):
         self.on_trait_change(self.set_index_from_value, 'value')
         self.on_trait_change(self._update_slice, 'navigate')
         self.on_trait_change(self.update_index_bounds, 'size')
-        self.on_trait_change(self.events.value_changed.trigger, 1)
+        self.on_trait_change(lambda v: self.events.value_changed.trigger(v))
         # The slice must be updated even if the default value did not
         # change to correctly set its value.
         self._update_slice(self.navigate)
