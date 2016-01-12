@@ -2912,7 +2912,7 @@ class Signal(FancySlicing,
                 if isinstance(slice_, float):
                     slice_ = axis.value2index(slice_)
                 array_slices.append(slice_)
-                _signal._remove_axis(axis.index_in_axes_manager)
+                _signal._remove_axes(axis.index_in_axes_manager)
 
         _signal.data = _signal.data[array_slices]
         if self.metadata.has_item('Signal.Noise_properties.variance'):
@@ -3168,7 +3168,7 @@ class Signal(FancySlicing,
         self = self._deepcopy_with_new_data(self.data)
         for axis in self.axes_manager._axes:
             if axis.size == 1:
-                self._remove_axis(axis.index_in_axes_manager)
+                self._remove_axes(axis.index_in_axes_manager)
         self.data = self.data.squeeze()
         return self
 
@@ -3300,8 +3300,8 @@ class Signal(FancySlicing,
         def get_1D_sum_explorer_wrapper(*args, **kwargs):
             navigator = self
             # Sum over all but the first navigation axis.
-            while len(navigator.axes_manager.shape) > 1:
-                navigator = navigator.sum(-1)
+            am = navigator.axes_manager
+            navigator = navigator.sum(am.signal_axes + am.navigation_axes[1:])
             return np.nan_to_num(navigator.data).squeeze()
 
         def get_dynamic_explorer_wrapper(*args, **kwargs):
@@ -3318,9 +3318,7 @@ class Signal(FancySlicing,
                 if self.axes_manager.signal_dimension == 0:
                     navigator = self.deepcopy()
                 else:
-                    navigator = self
-                    while navigator.axes_manager.signal_dimension > 0:
-                        navigator = navigator.sum(-1)
+                    navigator = self.sum(self.axes_manager.signal_axes)
                 if navigator.axes_manager.navigation_dimension == 1:
                     navigator = navigator.as_spectrum(0)
                 else:
@@ -3708,7 +3706,7 @@ class Signal(FancySlicing,
             for i, spectrum in enumerate(splitted):
                 spectrum.data = spectrum.data[
                     spectrum.axes_manager._get_data_slice([(axis, 0)])]
-                spectrum._remove_axis(axis_in_manager)
+                spectrum._remove_axes(axis_in_manager)
 
         if mode == 'auto' and hasattr(
                 self.original_metadata, 'stack_elements'):
@@ -3936,12 +3934,15 @@ class Signal(FancySlicing,
             getitem[unfolded_axis] = i
             yield(data[getitem])
 
-    def _remove_axis(self, axis):
+    def _remove_axes(self, axes):
         am = self.axes_manager
-        axis = am[axis]
-        if am.navigation_dimension + am.signal_dimension > 1:
-            am.remove(axis.index_in_axes_manager)
-            if axis.navigate is False:  # The removed axis is a signal axis
+        axes = am[axes]
+        if not np.iterable(axes):
+            axes = (axes,)
+        if am.navigation_dimension + am.signal_dimension > len(axes):
+            old_signal_dimension = am.signal_dimension
+            am.remove(axes)
+            if old_signal_dimension != am.signal_dimension:
                 if am.signal_dimension == 2:
                     self._record_by = "image"
                 elif am.signal_dimension == 1:
@@ -3955,7 +3956,7 @@ class Signal(FancySlicing,
         else:
             # Create a "Scalar" axis because the axis is the last one left and
             # HyperSpy does not # support 0 dimensions
-            am.remove(axis.index_in_axes_manager)
+            am.remove(axes)
             am._append_axis(
                 size=1,
                 scale=1,
@@ -3963,21 +3964,28 @@ class Signal(FancySlicing,
                 name="Scalar",
                 navigate=False,)
 
-    def _apply_function_on_data_and_remove_axis(self, function, axis):
+    def _apply_function_on_data_and_remove_axes(self, function, axes):
+        axes = self.axes_manager[axes]
+        if not np.iterable(axes):
+            axes = (axes,)
+        ar_axes = tuple(ax.index_in_array for ax in axes)
+        if len(ar_axes) == 1:
+            ar_axes = ar_axes[0]
         s = self._deepcopy_with_new_data(
             function(self.data,
-                     axis=self.axes_manager[axis].index_in_array))
-        s._remove_axis(axis)
+                     axis=ar_axes))
+        s._remove_axes([ax.index_in_axes_manager for ax in axes])
         return s
 
-    def sum(self, axis):
-        """Sum the data over the given axis.
+    def sum(self, axes):
+        """Sum the data over the given axes.
 
         Parameters
         ----------
-        axis : {int, string}
+        axes : {int, string, tuple, axis}
            The axis can be specified using the index of the axis in
-           `axes_manager` or the axis name.
+           `axes_manager`, the axis name, axis itself, or a tuple of any of the
+           above
 
         Returns
         -------
@@ -3999,16 +4007,18 @@ class Signal(FancySlicing,
         s.sum(-1, True).plot()
 
         """
-        return self._apply_function_on_data_and_remove_axis(np.sum, axis)
+        return self._apply_function_on_data_and_remove_axes(np.sum, axes)
 
-    def max(self, axis, return_signal=False):
-        """Returns a signal with the maximum of the signal along an axis.
+    def max(self, axes, return_signal=False):
+        """Returns a signal with the maximum of the signal along at least one
+        axis.
 
         Parameters
         ----------
-        axis : {int | string}
+        axes : {int, string, tuple, axis}
            The axis can be specified using the index of the axis in
-           `axes_manager` or the axis name.
+           `axes_manager`, the axis name, axis itself, or a tuple of any of the
+           above
 
         Returns
         -------
@@ -4028,16 +4038,18 @@ class Signal(FancySlicing,
         (64,64)
 
         """
-        return self._apply_function_on_data_and_remove_axis(np.max, axis)
+        return self._apply_function_on_data_and_remove_axes(np.max, axes)
 
-    def min(self, axis):
-        """Returns a signal with the minimum of the signal along an axis.
+    def min(self, axes):
+        """Returns a signal with the minimum of the signal along at least one
+        axis.
 
         Parameters
         ----------
-        axis : {int | string}
+        axes : {int, string, tuple, axis}
            The axis can be specified using the index of the axis in
-           `axes_manager` or the axis name.
+           `axes_manager`, the axis name, axis itself, or a tuple of any of the
+           above
 
         Returns
         -------
@@ -4058,16 +4070,18 @@ class Signal(FancySlicing,
 
         """
 
-        return self._apply_function_on_data_and_remove_axis(np.min, axis)
+        return self._apply_function_on_data_and_remove_axes(np.min, axes)
 
-    def mean(self, axis):
-        """Returns a signal with the average of the signal along an axis.
+    def mean(self, axes):
+        """Returns a signal with the average of the signal along at least one
+        axis.
 
         Parameters
         ----------
-        axis : {int | string}
+        axes : {int, string, tuple, axis}
            The axis can be specified using the index of the axis in
-           `axes_manager` or the axis name.
+           `axes_manager`, the axis name, axis itself, or a tuple of any of the
+           above
 
         Returns
         -------
@@ -4087,18 +4101,18 @@ class Signal(FancySlicing,
         (64,64)
 
         """
-        return self._apply_function_on_data_and_remove_axis(np.mean,
-                                                            axis)
+        return self._apply_function_on_data_and_remove_axes(np.mean, axes)
 
-    def std(self, axis):
+    def std(self, axes):
         """Returns a signal with the standard deviation of the signal along
-        an axis.
+        at least one axis.
 
         Parameters
         ----------
-        axis : {int | string}
+        axes : {int, string, tuple, axis}
            The axis can be specified using the index of the axis in
-           `axes_manager` or the axis name.
+           `axes_manager`, the axis name, axis itself, or a tuple of any of the
+           above
 
         Returns
         -------
@@ -4118,16 +4132,18 @@ class Signal(FancySlicing,
         (64,64)
 
         """
-        return self._apply_function_on_data_and_remove_axis(np.std, axis)
+        return self._apply_function_on_data_and_remove_axes(np.std, axes)
 
-    def var(self, axis):
-        """Returns a signal with the variances of the signal along an axis.
+    def var(self, axes):
+        """Returns a signal with the variances of the signal along at least one
+        axis.
 
         Parameters
         ----------
-        axis : {int | string}
+        axes : {int, string, tuple, axis}
            The axis can be specified using the index of the axis in
-           `axes_manager` or the axis name.
+           `axes_manager`, the axis name, axis itself, or a tuple of any of the
+           above
 
         Returns
         -------
@@ -4147,16 +4163,16 @@ class Signal(FancySlicing,
         (64,64)
 
         """
-        return self._apply_function_on_data_and_remove_axis(np.var, axis)
+        return self._apply_function_on_data_and_remove_axes(np.var, axes)
 
     def diff(self, axis, order=1):
         """Returns a signal with the n-th order discrete difference along
         given axis.
         Parameters
         ----------
-        axis : {int | string}
+        axis : {int | string | axis}
            The axis can be specified using the index of the axis in
-           `axes_manager` or the axis name.
+           `axes_manager`, the axis name or the axis itself can be passed
         order: the order of the derivative
         See also
         --------
@@ -4187,9 +4203,9 @@ class Signal(FancySlicing,
 
         Parameters
         ----------
-        axis : {int | string}
+        axis : {int | string | axis}
            The axis can be specified using the index of the axis in
-           `axes_manager` or the axis name.
+           `axes_manager`, the axis name or the axis itself can be passed
         order: int
             The order of the derivative. (Note that this is the order of the
             derivative i.e. `order=2` does not use second order finite
@@ -4219,9 +4235,9 @@ class Signal(FancySlicing,
 
         Parameters
         ----------
-        axis : {int | string}
+        axis : {int | string | axis}
            The axis can be specified using the index of the axis in
-           `axes_manager` or the axis name.
+           `axes_manager`, the axis name or the axis itself can be passed
 
         Returns
         -------
@@ -4246,7 +4262,7 @@ class Signal(FancySlicing,
             sp.integrate.simps(y=self.data,
                                x=axis.axis,
                                axis=axis.index_in_array))
-        s._remove_axis(axis.index_in_axes_manager)
+        s._remove_axes(axis.index_in_axes_manager)
         return s
 
     def integrate1D(self, axis):
@@ -4258,9 +4274,9 @@ class Signal(FancySlicing,
 
         Parameters
         ----------
-        axis : {int | string}
+        axis : {int | string | axis}
            The axis can be specified using the index of the axis in
-           `axes_manager` or the axis name.
+           `axes_manager`, the axis name or the axis itself can be passed
 
         Returns
         -------
@@ -4290,9 +4306,9 @@ class Signal(FancySlicing,
 
         Parameters
         ----------
-        axis : {int | string}
+        axis : {int | string | axis}
            The axis can be specified using the index of the axis in
-           `axes_manager` or the axis name.
+           `axes_manager`, the axis name or the axis itself can be passed
 
         Returns
         -------
@@ -4313,16 +4329,16 @@ class Signal(FancySlicing,
         (64,64)
 
         """
-        return self._apply_function_on_data_and_remove_axis(np.argmax, axis)
+        return self._apply_function_on_data_and_remove_axes(np.argmax, axis)
 
     def valuemax(self, axis):
         """Returns a signal with the value of the maximum along an axis.
 
         Parameters
         ----------
-        axis : {int | string}
+        axis : {int | string | axis}
            The axis can be specified using the index of the axis in
-           `axes_manager` or the axis name.
+           `axes_manager`, the axis name or the axis itself can be passed
 
         Returns
         -------

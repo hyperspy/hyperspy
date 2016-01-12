@@ -97,5 +97,5 @@ class Test3d:
 
     def test_remove_axis(self):
         im = self.s.as_image((-2, -1))
-        im._remove_axis(-1)
+        im._remove_axes(-1)
         assert_true(isinstance(im, signals.Spectrum))
