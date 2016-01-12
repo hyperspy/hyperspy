@@ -12,6 +12,7 @@ class Events(object):
     """
     def __init__(self):
         self._events = {}
+        self.children = []
 
     @contextmanager
     def suppress(self):
@@ -31,6 +32,7 @@ class Events(object):
 
         See also
         --------
+        suppress_hierarchy
         Event.suppress
         Event.suppress_callback
         """
@@ -45,6 +47,48 @@ class Events(object):
         finally:
             for e, oldval in old.iteritems():
                 e._suppress = oldval
+
+    @contextmanager
+    def suppress_hierarchy(self):
+        """
+        Use this function with a 'with' statement to temporarily suppress
+        all events in the container and do the same for all child event
+        containers (`children`). When the 'with' lock completes, the old
+        suppression values will be restored.
+
+        Example usage
+        -------------
+        >>> obj.events.children.append(obj.child.events)
+        >>> with obj.events.suppress_hierarchy():
+        ...     # Any events triggered both in obj and obj.child are
+        ...     # suppressed:
+        ...     obj.val_a = a
+        ...     obj.child.val_b = a
+        >>> # Trigger one event instead:
+        >>> obj.events.values_changed.trigger()
+
+        See also
+        --------
+        suppress
+        Event.suppress
+        Event.suppress_callback
+        """
+        # We don't suppress any exceptions, so we can use simple CM management:
+        cms = []
+        cm = self.suppress()                    # Get our CM
+        try:
+            cm.__enter__()
+            cms.append(cm)                      # Only add entered CMs to list
+            for events in self.children:
+                cm = events.suppress_hierarchy()    # Get child outer CM
+                cm.__enter__()
+                cms.append(cm)                  # Only add entered CMs to list
+            yield
+        finally:
+            # Completed succefully or exception occured, unwind hierarchy
+            for cm in reversed(cms):
+                # We don't use exception info, so simply pass blanks
+                cm.__exit__(None, None, None)
 
     def update(self, other, prefix=''):
         if prefix:

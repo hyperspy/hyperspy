@@ -185,6 +185,52 @@ class TestEventsSuppression(EventsBase):
             self.trigger_check(self.events.a.trigger, True)
             self.trigger_check2(self.events.a.trigger, True)
 
+    def test_hierarchy(self):
+        outer = he.Events()
+        outer.a = he.Event()
+        middle1 = he.Events()
+        middle1.b = he.Event()
+        middle2 = he.Events()
+        middle2.c = he.Event()
+        outer.children.extend((middle1, middle2))
+        middle2.children.append(self.events)
+        for e in [outer.a, middle1.b, middle2.c]:
+            e.connect(self.on_trigger)
+
+        all_events = [outer.a, middle1.b, middle2.c,
+                      self.events.a, self.events.b, self.events.c]
+
+        # First check that every event triggers normally
+        for e in all_events:
+            self.trigger_check(e.trigger, True)
+
+        # Supress entire hierachy. Check that no event fires
+        with outer.suppress_hierarchy():
+            for e in all_events:
+                self.trigger_check(e.trigger, False)
+
+        # Supress part of hierachy. Check that only correct parts fire
+        with middle2.suppress_hierarchy():
+            for e in all_events[:2]:
+                self.trigger_check(e.trigger, True)
+            for e in all_events[2:]:
+                self.trigger_check(e.trigger, False)
+
+        # Check that is plays nice with others
+        with self.events.a.suppress():
+            with outer.suppress_hierarchy():
+                for e in all_events:
+                    self.trigger_check(e.trigger, False)
+            # Check that 'a' still doesn't fire
+            self.trigger_check(self.events.a.trigger, False)
+            # Check that all others do
+            others = list(all_events)
+            others.remove(self.events.a)
+            for e in others:
+                self.trigger_check(e.trigger, True)
+            # Check that 'a' fires again
+        self.trigger_check(self.events.a.trigger, True)
+
 
 def f_a(*args): pass
 def f_b(*args): pass
