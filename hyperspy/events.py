@@ -142,6 +142,9 @@ class Events(object):
         else:
             object.__delattr__(name)
 
+    def __repr__(self):
+        return "hyperspy.events.Events: " + str(self._events)
+
 
 class Event(object):
 
@@ -307,3 +310,6 @@ class Event(object):
         dc = type(self)()
         memo[id(self)] = dc
         return dc
+
+    def __repr__(self):
+        return "hyperspy.events.Event: " + str(self._connected)
