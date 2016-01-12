@@ -101,7 +101,8 @@ class Events(object):
         return sorted(set(d))
 
     def __repr__(self):
-        return "hyperspy.events.Events: " + str(self._events)
+        text = "<hyperspy.events.Events: " + repr(self._events) + ">"
+        return text.encode('utf8')
 
 
 class Event(object):
@@ -282,4 +283,5 @@ class Event(object):
         return dc
 
     def __repr__(self):
-        return "hyperspy.events.Event: " + str(self._connected)
+        text = "<hyperspy.events.Event: " + repr(self._connected) + ">"
+        return text.encode('utf8')
