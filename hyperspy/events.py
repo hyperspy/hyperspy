@@ -22,12 +22,12 @@ class Events(object):
 
         Example usage
         -------------
-        with obj.events.suppress:
-            # Any events triggered by assignments are prevented:
-            obj.val_a = a
-            obj.val_b = b
-        # Trigger one event instead:
-        obj.events.values_changed.trigger()
+        >>> with obj.events.suppress():
+        ...     # Any events triggered by assignments are prevented:
+        ...     obj.val_a = a
+        ...     obj.val_b = b
+        >>> # Trigger one event instead:
+        >>> obj.events.values_changed.trigger()
 
         See also
         --------
@@ -121,12 +121,12 @@ class Event(object):
 
         Example usage
         -------------
-        with obj.events.myevent.suppress():
-            # These would normally both trigger myevent:
-            obj.val_a = a
-            obj.val_b = b
-        # Trigger manually once:
-        obj.events.myevent.trigger()
+        >>> with obj.events.myevent.suppress():
+        ...     # These would normally both trigger myevent:
+        ...     obj.val_a = a
+        ...     obj.val_b = b
+        >>> # Trigger manually once:
+        >>> obj.events.myevent.trigger()
 
         See also
         --------
@@ -150,12 +150,13 @@ class Event(object):
 
         Example usage
         -------------
-        with obj.events.myevent.suppress_callback(f):
-            # Events will trigger as normal, but `f` will not be called
-            obj.val_a = a
-            obj.val_b = b
-        # Here, `f` will be called as before:
-        obj.events.myevent.trigger()
+
+        >>> with obj.events.myevent.suppress_callback(f):
+        ...     # Events will trigger as normal, but `f` will not be called
+        ...     obj.val_a = a
+        ...     obj.val_b = b
+        >>> # Here, `f` will be called as before:
+        >>> obj.events.myevent.trigger()
 
         See also
         --------
