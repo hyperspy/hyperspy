@@ -127,6 +127,12 @@ class Events(object):
         """
         return EventsSuppressionContext(self)
 
+    def update(self, other, prefix=''):
+        if prefix:
+            other = [(prefix + '_' + k, e)
+                     for (k, e) in other._events.iteritems()]
+        self._events.update(other)
+
     def __setattr__(self, name, value):
         if isinstance(value, Event):
             self._events[name] = value

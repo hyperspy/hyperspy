@@ -499,9 +499,7 @@ class AxesManager(t.HasTraits):
         events = Events()
         events._events.update(self._events._events)
         for ax in self._axes:
-            child = [(k + ax._get_name(), e)
-                     for (k, e) in ax.events._events.iteritems()]
-            events._events.update(child)
+            events.update(ax.events, prefix=ax._get_name())
         return events
 
     def _get_positive_index(self, axis):
