@@ -77,6 +77,7 @@ from hyperspy.drawing.utils import animate_legend
 from hyperspy.misc.hspy_warnings import VisibleDeprecationWarning
 from hyperspy.misc.slicing import SpecialSlicers, FancySlicing
 from hyperspy.misc.utils import slugify
+from hyperspy.events import Events, Event
 from datetime import datetime
 
 
@@ -2816,6 +2817,9 @@ class Signal(FancySlicing,
         self.auto_replot = True
         self.inav = SpecialSlicersSignal(self, True)
         self.isig = SpecialSlicersSignal(self, False)
+        self.events = Events()
+        self.events.data_changed = Event()
+        self.events.axes_changed = Event()
 
     def _create_metadata(self):
         self.metadata = DictionaryTreeBrowser()
@@ -2849,7 +2853,7 @@ class Signal(FancySlicing,
 
         return string.encode('utf8')
 
-    def __getitem__(self, slices, isNavigation=None):
+    def __getitem__(self, slices, isNavigation=None, out=None):
         try:
             len(slices)
         except TypeError:
@@ -2865,7 +2869,15 @@ class Signal(FancySlicing,
         has_signal = True if isNavigation is None else not isNavigation
 
         # Create a deepcopy of self that contains a view of self.data
-        _signal = self._deepcopy_with_new_data(self.data)
+        if out is None:
+            _signal = self._deepcopy_with_new_data(self.data)
+        else:
+            out.data = self.data
+            for out_axis, self_axis in zip(out.axes_manager._axes,
+                                           self.axes_manager._axes):
+                out_axis.update_from(self_axis,
+                                     fields=('offset', 'scale', 'size'))
+            _signal = out
 
         nav_idx = [el.index_in_array for el in
                    _signal.axes_manager.navigation_axes]
@@ -2922,7 +2934,11 @@ class Signal(FancySlicing,
                     variance.__getitem__(_orig_slices, isNavigation)
         _signal.get_dimensions_from_data()
 
-        return _signal
+        if out is None:
+            return _signal
+        else:
+            out.events.axes_changed.trigger()
+            out.events.data_changed.trigger()
 
     def __setitem__(self, i, j):
         """x.__setitem__(i, y) <==> x[i]=y
@@ -3365,6 +3381,7 @@ class Signal(FancySlicing,
                     " \"slider\", None, a Signal instance")
 
         self._plot.plot(**kwargs)
+        self.events.data_changed.connect(self.update_plot)
 
     def save(self, filename=None, overwrite=None, extension=None,
              **kwds):
@@ -3429,6 +3446,14 @@ class Signal(FancySlicing,
         if self._plot is not None:
             if self._plot.is_active() is True:
                 self.plot()
+
+    def update_plot(self):
+        if self._plot is not None:
+            if self._plot.is_active() is True:
+                if self._plot.signal_plot is not None:
+                    self._plot.signal_plot.update()
+                if self._plot.navigator_plot is not None:
+                    self._plot.navigator_plot.update()
 
     @auto_replot
     def get_dimensions_from_data(self):
@@ -3963,14 +3988,48 @@ class Signal(FancySlicing,
                 name="Scalar",
                 navigate=False,)
 
-    def _apply_function_on_data_and_remove_axis(self, function, axis):
-        s = self._deepcopy_with_new_data(
-            function(self.data,
-                     axis=self.axes_manager[axis].index_in_array))
-        s._remove_axis(axis)
-        return s
+    def _apply_function_on_data_and_remove_axis(self, function, axis,
+                                                out=None):
+        if axis not in ("navigation", "signal"):
+            if out is None:
+                s = self._deepcopy_with_new_data(None)
+            else:
+                s = out
+            s.data = function(self.data,
+                            axis=self.axes_manager[axis].index_in_array)
+            if out is None:
+                s._remove_axis(axis)
+                return s
+            else:
+                return
 
-    def sum(self, axis):
+        if axis == "navigation":
+            if out is None:
+                s = self.get_current_signal(auto_filename=False,
+                                            auto_title=False)
+                s.data = s.data.copy() # Don't overwrite self.data 
+            else:
+                s = out
+            iaxes = sorted([ax.index_in_array
+                           for ax in self.axes_manager.navigation_axes])
+        elif axis == "signal":
+            if out is None:
+                s = self._get_navigation_signal()
+            else:
+                s = out
+            iaxes = sorted([ax.index_in_array
+                            for ax in self.axes_manager.signal_axes])
+        data = self.data
+        while iaxes:
+            data = function(data,
+                            axis=iaxes.pop())
+        s.data[:] = data
+        if out is None:
+            return s
+        else:
+            out.events.data_changed.trigger()
+
+    def sum(self, axis="navigation", out=None):
         """Sum the data over the given axis.
 
         Parameters
@@ -3999,9 +4058,10 @@ class Signal(FancySlicing,
         s.sum(-1, True).plot()
 
         """
-        return self._apply_function_on_data_and_remove_axis(np.sum, axis)
+        return self._apply_function_on_data_and_remove_axis(np.sum, axis,
+                                                            out=out)
 
-    def max(self, axis, return_signal=False):
+    def max(self, axis="navigation", out=None):
         """Returns a signal with the maximum of the signal along an axis.
 
         Parameters
@@ -4028,9 +4088,10 @@ class Signal(FancySlicing,
         (64,64)
 
         """
-        return self._apply_function_on_data_and_remove_axis(np.max, axis)
+        return self._apply_function_on_data_and_remove_axis(np.max, axis,
+                                                            out=out)
 
-    def min(self, axis):
+    def min(self, axis="navigation", out=None):
         """Returns a signal with the minimum of the signal along an axis.
 
         Parameters
@@ -4058,9 +4119,10 @@ class Signal(FancySlicing,
 
         """
 
-        return self._apply_function_on_data_and_remove_axis(np.min, axis)
+        return self._apply_function_on_data_and_remove_axis(np.min, axis,
+                                                            out=out)
 
-    def mean(self, axis):
+    def mean(self, axis="navigation", out=None):
         """Returns a signal with the average of the signal along an axis.
 
         Parameters
@@ -4087,10 +4149,10 @@ class Signal(FancySlicing,
         (64,64)
 
         """
-        return self._apply_function_on_data_and_remove_axis(np.mean,
-                                                            axis)
+        return self._apply_function_on_data_and_remove_axis(np.mean, axis,
+                                                            out=out)
 
-    def std(self, axis):
+    def std(self, axis="navigation", out=None):
         """Returns a signal with the standard deviation of the signal along
         an axis.
 
@@ -4118,9 +4180,10 @@ class Signal(FancySlicing,
         (64,64)
 
         """
-        return self._apply_function_on_data_and_remove_axis(np.std, axis)
+        return self._apply_function_on_data_and_remove_axis(np.std, axis,
+                                                            out=out)
 
-    def var(self, axis):
+    def var(self, axis="navigation", out=None):
         """Returns a signal with the variances of the signal along an axis.
 
         Parameters
@@ -4147,7 +4210,8 @@ class Signal(FancySlicing,
         (64,64)
 
         """
-        return self._apply_function_on_data_and_remove_axis(np.var, axis)
+        return self._apply_function_on_data_and_remove_axis(np.var, axis,
+                                                            out=out)
 
     def diff(self, axis, order=1):
         """Returns a signal with the n-th order discrete difference along
@@ -4285,7 +4349,7 @@ class Signal(FancySlicing,
         else:
             return self.sum(axis)
 
-    def indexmax(self, axis):
+    def indexmax(self, axis="navigation", out=None):
         """Returns a signal with the index of the maximum along an axis.
 
         Parameters
@@ -4313,7 +4377,8 @@ class Signal(FancySlicing,
         (64,64)
 
         """
-        return self._apply_function_on_data_and_remove_axis(np.argmax, axis)
+        return self._apply_function_on_data_and_remove_axis(np.argmax, axis,
+                                                            out=out)
 
     def valuemax(self, axis):
         """Returns a signal with the value of the maximum along an axis.

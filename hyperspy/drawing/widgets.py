@@ -26,6 +26,7 @@ import traits
 
 from utils import on_figure_window_close
 from hyperspy.misc.math_tools import closest_nice_number
+from hyperspy.events import Events, Event
 
 
 class DraggablePatch(object):
@@ -215,8 +216,6 @@ class DraggableSquare(ResizebleDraggablePatch):
             yaxis = self.axes_manager.navigation_axes[1]
             wxindex = xaxis.value2index(event.xdata)
             wyindex = yaxis.value2index(event.ydata)
-            wxindex = xaxis.value2index(event.xdata)
-            wyindex = yaxis.value2index(event.ydata)
             if self.axes_manager.indices[1] != wyindex:
                 try:
                     yaxis.index = wyindex
@@ -230,6 +229,288 @@ class DraggableSquare(ResizebleDraggablePatch):
                 except traits.api.TraitError:
                     # Index out of range, we do nothing
                     pass
+
+
+class ResizebleDraggableRectangle(ResizebleDraggablePatch):
+
+    def __init__(self, axes_manager):
+        super(ResizebleDraggableRectangle, self).__init__(axes_manager)
+        self.xsize = 1
+        self.ysize = 1
+        self.bounds = []
+        self.pick_on_frame = False
+        self.pick_offset = (0,0)
+        self.resize_color = 'lime'
+        self.resize_pixel_size = (5,5)  # Set to None to make one data pixel
+        self.resizers = []
+        self.border_thickness = 2
+        self.events = Events()
+        self.events.changed = Event()
+
+    def set_size(self, size):
+        self.size = size
+        self.xsize = size
+        self.ysize = size
+        self.update_patch_size()
+        self._apply_geometry()
+
+    def set_xsize(self, xsize):
+        self.xsize = xsize
+        self.size = max(self.xsize, self.ysize)
+        self.update_patch_size()
+        self._apply_geometry()
+
+    def increase_xsize(self):
+        self.set_xsize(self.xsize + 1)
+
+    def decrease_xsize(self):
+        if self.xsize >= 2:
+            self.set_xsize(self.xsize - 1)
+
+    def set_ysize(self, ysize):
+        self.ysize = ysize
+        self.size = max(self.xsize, self.ysize)
+        self.update_patch_size()
+        self._apply_geometry()
+
+    def increase_ysize(self):
+        self.set_ysize(self.ysize + 1)
+
+    def decrease_ysize(self):
+        if self.ysize >= 2:
+            self.set_ysize(self.ysize - 1)
+
+    def on_key_press(self, event):
+        if event.key == "x":
+            self.increase_xsize()
+        elif event.key == "c":
+            self.decrease_xsize()
+        elif event.key == "y":
+            self.increase_ysize()
+        elif event.key == "u":
+            self.decrease_ysize()
+        else:
+            super(ResizebleDraggableRectangle, self).on_key_press(event)
+
+    def _get_resizer_size(self):
+        invtrans = self.ax.transData.inverted()
+        if self.resize_pixel_size is None:
+            dx = self._xsize / self.xsize
+            dy = self._ysize / self.ysize
+            rsize = (dx, dy)
+        else:
+            rsize = np.abs(invtrans.transform(self.resize_pixel_size) -
+                        invtrans.transform((0, 0)))
+        return rsize
+
+    def _get_resizer_pos(self):
+        invtrans = self.ax.transData.inverted()
+        border = self.border_thickness
+        dl = np.abs(invtrans.transform((border, border)) -
+                        invtrans.transform((0, 0)))/2
+        rsize = self._get_resizer_size()
+
+        positions = []
+        p = self._position - rsize + dl
+        positions.append(p)
+        p = self._position + (self._xsize - dl[0], -rsize[1] + dl[1])
+        positions.append(p)
+        p = self._position + (-rsize[0] + dl[1], self._ysize - dl[1])
+        positions.append(p)
+        p = self._position + (self._xsize - dl[0], self._ysize - dl[1])
+        positions.append(p)
+        return positions
+
+    def set_patch(self):
+        self.calculate_size()
+        self.calculate_position()
+        self.calculate_bounds()
+        self.patch = plt.Rectangle(
+            self._position, self._xsize, self._ysize,
+            animated=self.blit,
+            fill=False,
+            lw=self.border_thickness,
+            ec=self.color,
+            picker=True,)
+            
+        self.resizers = []
+        rsize = self._get_resizer_size()
+        pos = self._get_resizer_pos()
+        for i in xrange(4):
+            r = plt.Rectangle(pos[i], rsize[0], rsize[1], animated=self.blit,
+                              fill=True, lw=0, fc=self.resize_color, 
+                              picker=True,)
+            self.resizers.append(r)
+
+    def calculate_size(self):
+        xaxis = self.axes_manager.navigation_axes[0]
+        yaxis = self.axes_manager.navigation_axes[1]
+        self._xsize = xaxis.scale * self.xsize
+        self._ysize = yaxis.scale * self.ysize
+
+    def calculate_position(self):
+        coordinates = np.array(self.axes_manager.coordinates[:2])
+        self._position = coordinates - (
+            self._xsize / (2.*self.xsize),
+            self._ysize / (2.*self.ysize))
+
+    def calculate_bounds(self):
+        position = self._position
+        x0 = position[0]
+        x1 = position[0] + self._xsize
+        y0 = position[1]
+        y1 = position[1] + self._ysize
+        self.bounds = [x0,y0,x1,y1]
+        
+    def update_resizers(self):
+        pos = self._get_resizer_pos()
+        rsize = self._get_resizer_size()
+        for i in xrange(4):
+            self.resizers[i].set_xy(pos[i])
+            self.resizers[i].set_width(rsize[0])
+            self.resizers[i].set_height(rsize[1])
+            
+    def update_patch_size(self):
+        self.update_patch_geometry()
+
+    def update_patch_position(self):
+        self.calculate_position()
+        self.patch.set_xy(self._position)
+        self.calculate_bounds()
+        self.update_resizers()
+        self.draw_patch()
+        
+    def update_patch_geometry(self):
+        self.calculate_size()
+        self.calculate_position()
+        self.calculate_bounds()
+        p = self._position
+        self.patch.set_bounds(p[0], p[1], self._xsize, self._ysize)
+        self.update_resizers()
+        self.draw_patch()
+        
+    def _apply_geometry(self, x1=None, y1=None):
+        xaxis = self.axes_manager.navigation_axes[0]
+        yaxis = self.axes_manager.navigation_axes[1]
+            
+        try:
+            xaxis.index = x1
+        except traits.api.TraitError:
+            # Index out of range, we do nothing
+            pass
+        try:
+            yaxis.index = y1
+        except traits.api.TraitError:
+            # Index out of range, we do nothing
+            pass
+        self.events.changed.trigger()
+        
+    def v2i(self, axis, v):
+        try:
+            return axis.value2index(v)
+        except ValueError:
+            return axis.high_index+1
+        
+    def onpick(self, event):
+        super(ResizebleDraggableRectangle, self).onpick(event)
+        if event.artist in self.resizers:
+            corner = self.resizers.index(event.artist)
+            self.pick_on_frame = corner
+            self.picked = True
+        elif self.picked:
+            x = event.mouseevent.xdata
+            y = event.mouseevent.ydata
+            dx = self._xsize / self.xsize
+            dy = self._ysize / self.ysize
+            xaxis = self.axes_manager.navigation_axes[0]
+            yaxis = self.axes_manager.navigation_axes[1]
+            ix = self.v2i(xaxis, x + 0.5*dx)
+            iy = self.v2i(yaxis, y + 0.5*dy)
+            self.pick_offset = (ix-xaxis.index, iy-yaxis.index)
+            self.pick_on_frame = False
+        
+    def onmove(self, event):
+        'on mouse motion draw the cursor if picked'
+        if self.picked is True and event.inaxes:
+            xaxis = self.axes_manager.navigation_axes[0]
+            yaxis = self.axes_manager.navigation_axes[1]
+            dx = self._xsize / self.xsize
+            dy = self._ysize / self.ysize
+            ix = self.v2i(xaxis, event.xdata + 0.5*dx)
+            iy = self.v2i(yaxis, event.ydata + 0.5*dy)
+            ibounds = [xaxis.index, yaxis.index, xaxis.index + self.xsize,
+                       yaxis.index + self.ysize]
+            if self.pick_on_frame is not False:
+                posx = None
+                posy = None
+                corner = self.pick_on_frame
+                if corner % 2 == 0: # Left side start
+                    if ix > ibounds[2]:    # flipped to right
+                        posx = ibounds[2]
+                        self.xsize = ix - ibounds[2]
+                        self.pick_on_frame += 1
+                    elif ix == ibounds[2]:
+                        posx = ix - 1
+                        self.xsize = ibounds[2] - posx
+                    else:
+                        posx = ix
+                        self.xsize = ibounds[2] - posx
+                else:   # Right side start
+                    if ix < ibounds[0]:  # Flipped to left
+                        posx = ix
+                        self.xsize = ibounds[0] - posx
+                        self.pick_on_frame -= 1
+                    else:
+                        self.xsize = ix - ibounds[0]
+                if corner // 2 == 0: # Top side start
+                    if iy > ibounds[3]:    # flipped to botton
+                        posy = ibounds[3]
+                        self.ysize = iy - ibounds[3]
+                        self.pick_on_frame += 2
+                    elif iy == ibounds[3]:
+                        posy = iy - 1
+                        self.ysize = ibounds[3] - posy
+                    else:
+                        posy = iy
+                        self.ysize = ibounds[3] - iy
+                else:   # Bottom side start
+                    if iy < ibounds[1]:  # Flipped to top
+                        posy = iy
+                        self.ysize = ibounds[1] - iy
+                        self.pick_on_frame -= 2
+                    else:
+                        self.ysize = iy - ibounds[1]
+                if self.xsize < 1:
+                    self.xsize = 1
+                if self.ysize < 1:
+                    self.ysize = 1
+                self._apply_geometry(posx, posy)
+                self.update_patch_geometry()
+            else:
+                ix -= self.pick_offset[0]
+                iy -= self.pick_offset[1]
+                self._apply_geometry(ix, iy)
+                self.update_patch_position()
+                
+    def set_on(self, value):
+        if value is not self.is_on():
+            if value is False:
+                for container in [
+                        self.ax.patches,
+                        self.ax.lines,
+                        self.ax.artists,
+                        self.ax.texts]:
+                    for r in self.resizers:
+                        if r in container:
+                            container.remove(r)
+        super(ResizebleDraggableRectangle, self).set_on(value)
+
+    def add_patch_to(self, ax):
+        super(ResizebleDraggableRectangle, self).add_patch_to(ax)
+        for r in self.resizers:
+            ax.add_artist(r)
+            r.set_animated(hasattr(ax, 'hspy_fig'))
+            
 
 
 class DraggableHorizontalLine(DraggablePatch):
