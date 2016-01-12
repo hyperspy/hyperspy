@@ -2,13 +2,13 @@ import numpy as np
 import nose.tools as nt
 
 import hyperspy.api as hs
-from hyperspy.model import Model
+from hyperspy.models.model1D import Model1D
 
 
 class TestPowerLaw:
 
     def setUp(self):
-        s = hs.signals.Spectrum(np.empty(1024))
+        s = hs.signals.Spectrum(np.zeros(1024))
         s.axes_manager[0].offset = 100
         s.axes_manager[0].scale = 0.01
         m = s.create_model()
@@ -71,7 +71,7 @@ class TestPowerLaw:
 class TestOffset:
 
     def setUp(self):
-        s = hs.signals.Spectrum(np.empty(10))
+        s = hs.signals.Spectrum(np.zeros(10))
         s.axes_manager[0].scale = 0.01
         m = s.create_model()
         m.append(hs.model.components.Offset())
@@ -104,7 +104,7 @@ class TestOffset:
 class TestPolynomial:
 
     def setUp(self):
-        s = hs.signals.Spectrum(np.empty(1024))
+        s = hs.signals.Spectrum(np.zeros(1024))
         s.axes_manager[0].offset = -5
         s.axes_manager[0].scale = 0.01
         m = s.create_model()
@@ -147,7 +147,7 @@ class TestPolynomial:
     def test_2d_signal(self):
         # This code should run smoothly, any exceptions should trigger failure
         s = self.m_2d.as_signal(show_progressbar=None)
-        model = Model(s)
+        model = Model1D(s)
         p = hs.model.components.Polynomial(order=2)
         model.append(p)
         p.estimate_parameters(s, 0, 100, only_current=False)
@@ -157,7 +157,7 @@ class TestPolynomial:
     def test_3d_signal(self):
         # This code should run smoothly, any exceptions should trigger failure
         s = self.m_3d.as_signal(show_progressbar=None)
-        model = Model(s)
+        model = Model1D(s)
         p = hs.model.components.Polynomial(order=2)
         model.append(p)
         p.estimate_parameters(s, 0, 100, only_current=False)
@@ -168,7 +168,7 @@ class TestPolynomial:
 class TestGaussian:
 
     def setUp(self):
-        s = hs.signals.Spectrum(np.empty(1024))
+        s = hs.signals.Spectrum(np.zeros(1024))
         s.axes_manager[0].offset = -5
         s.axes_manager[0].scale = 0.01
         m = s.create_model()

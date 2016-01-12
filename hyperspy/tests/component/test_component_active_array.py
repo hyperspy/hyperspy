@@ -1,4 +1,4 @@
-# Copyright 2007-2015 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -26,7 +26,7 @@ class TestParametersAsSignals:
 
     def setUp(self):
         self.gaussian = Gaussian()
-        self.gaussian._axes_manager = Signal(np.empty((3, 3, 1))).axes_manager
+        self.gaussian._axes_manager = Signal(np.zeros((3, 3, 1))).axes_manager
 
     def test_always_active(self):
         g = self.gaussian

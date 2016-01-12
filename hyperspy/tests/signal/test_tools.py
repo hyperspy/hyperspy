@@ -193,7 +193,7 @@ class Test3D:
     def test_get_navigation_signal_given_data(self):
         s = self.signal
         s.axes_manager.set_signal_dimension(1)
-        data = np.empty(s.axes_manager._navigation_shape_in_array)
+        data = np.zeros(s.axes_manager._navigation_shape_in_array)
         ns = s._get_navigation_signal(data=data)
         nt.assert_is(ns.data, data)
 
@@ -244,7 +244,7 @@ class Test3D:
     def test_get_signal_signal_given_data(self):
         s = self.signal
         s.axes_manager.set_signal_dimension(2)
-        data = np.empty(s.axes_manager._signal_shape_in_array)
+        data = np.zeros(s.axes_manager._signal_shape_in_array)
         ns = s._get_signal_signal(data=data)
         nt.assert_is(ns.data, data)
 

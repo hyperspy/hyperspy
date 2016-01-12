@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2015 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -150,5 +150,5 @@ class Spectrum(Signal):
         A Model class
 
         """
-        from hyperspy.model import Model
-        return Model(self, dictionary=dictionary)
+        from hyperspy.models.model1D import Model1D
+        return Model1D(self, dictionary=dictionary)

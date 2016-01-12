@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2015 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -171,7 +171,7 @@ class ModelManager(object):
         restore
         pop
         """
-        if model.spectrum is self._signal:
+        if model.signal is self._signal:
             self._save(name, model.as_dictionary())
         else:
             raise ValueError("The model is created from a different signal, you "
@@ -1190,8 +1190,8 @@ class Signal1DTools(object):
     def _remove_background_cli(
             self, signal_range, background_estimator, estimate_background=True,
             show_progressbar=None):
-        from hyperspy.model import Model
-        model = Model(self)
+        from hyperspy.models.model1D import Model1D
+        model = Model1D(self)
         model.append(background_estimator)
         if estimate_background:
             background_estimator.estimate_parameters(
@@ -1826,8 +1826,9 @@ class MVATools(object):
                 if folder is not None:
                     filename = os.path.join(folder, filename)
                 ensure_directory(filename)
-                fac_plots[idx].savefig(filename, save_figures_format,
-                                       dpi=600)
+                _args = {'dpi': 600,
+                         'format': save_figures_format}
+                fac_plots[idx].savefig(filename, **_args)
             plt.ion()
 
         elif multiple_files is False:
@@ -1967,7 +1968,9 @@ class MVATools(object):
                 if folder is not None:
                     filename = os.path.join(folder, filename)
                 ensure_directory(filename)
-                sc_plots[idx].savefig(filename, dpi=600)
+                _args = {'dpi': 600,
+                         'format': save_figures_format}
+                sc_plots[idx].savefig(filename, **_args)
             plt.ion()
         elif multiple_files is False:
             if self.axes_manager.navigation_dimension == 2:
@@ -5083,23 +5086,6 @@ class Signal(FancySlicing,
             self._plot.navigator_plot.add_marker(marker)
         if plot_marker:
             marker.plot()
-
-    def create_model(self, dictionary=None):
-        """Create a model for the current signal
-
-        Parameters
-        __________
-        dictionary : {None, dict}, optional
-            A dictionary to be used to recreate a model. Usually generated using
-            :meth:`hyperspy.model.as_dictionary`
-
-        Returns
-        -------
-        A Model class
-
-        """
-        from hyperspy.model import Model
-        return Model(self, dictionary=dictionary)
 
 # Implement binary operators
 for name in (
