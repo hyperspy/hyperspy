@@ -77,6 +77,7 @@ from hyperspy.drawing.utils import animate_legend
 from hyperspy.misc.hspy_warnings import VisibleDeprecationWarning
 from hyperspy.misc.slicing import SpecialSlicers, FancySlicing
 from hyperspy.misc.utils import slugify
+from hyperspy.docstrings.signal import OUT_ARG
 from datetime import datetime
 
 
@@ -3564,10 +3565,7 @@ class Signal(FancySlicing,
         new_shape: tuple of ints
             The new shape elements must be divisors of the original shape
             elements.
-        out : {Signal, None}
-            If None, a new Signal is created with the result of the operation
-            and returned (default). If a Signal is passed, it is used to
-            receive the output of the operation, and nothing is returned.
+        %s
 
         Returns
         -------
@@ -3590,7 +3588,7 @@ class Signal(FancySlicing,
         >>> s.rebin((5, 100))
         <Spectrum, title: , dimensions: (5|100)>
         I
-        """
+        """ % OUT_ARG
         if len(new_shape) != len(self.data.shape):
             raise ValueError("Wrong shape size")
         new_shape_in_array = []
@@ -3996,10 +3994,7 @@ class Signal(FancySlicing,
         axis : {int, string}
            The axis can be specified using the index of the axis in
            `axes_manager` or the axis name.
-        out : {Signal, None}
-            If None, a new Signal is created with the result of the operation
-            and returned (default). If a Signal is passed, it is used to
-            receive the output of the operation, and nothing is returned.
+        %s
 
         Returns
         -------
@@ -4020,7 +4015,7 @@ class Signal(FancySlicing,
         # If we just want to plot the result of the operation
         s.sum(-1, True).plot()
 
-        """
+        """ % OUT_ARG
         return self._apply_function_on_data_and_remove_axis(np.sum, axis,
                                                             out=out)
 
@@ -4032,10 +4027,7 @@ class Signal(FancySlicing,
         axis : {int | string}
            The axis can be specified using the index of the axis in
            `axes_manager` or the axis name.
-        out : {Signal, None}
-            If None, a new Signal is created with the result of the operation
-            and returned (default). If a Signal is passed, it is used to
-            receive the output of the operation, and nothing is returned.
+        %s
 
         Returns
         -------
@@ -4054,7 +4046,7 @@ class Signal(FancySlicing,
         >>> s.max(-1).data.shape
         (64,64)
 
-        """
+        """ % OUT_ARG
         return self._apply_function_on_data_and_remove_axis(np.max, axis,
                                                             out=out)
 
@@ -4066,10 +4058,7 @@ class Signal(FancySlicing,
         axis : {int | string}
            The axis can be specified using the index of the axis in
            `axes_manager` or the axis name.
-        out : {Signal, None}
-            If None, a new Signal is created with the result of the operation
-            and returned (default). If a Signal is passed, it is used to
-            receive the output of the operation, and nothing is returned.
+        %s
 
         Returns
         -------
@@ -4088,7 +4077,7 @@ class Signal(FancySlicing,
         >>> s.min(-1).data.shape
         (64,64)
 
-        """
+        """ % OUT_ARG
 
         return self._apply_function_on_data_and_remove_axis(np.min, axis,
                                                             out=out)
@@ -4101,10 +4090,7 @@ class Signal(FancySlicing,
         axis : {int | string}
            The axis can be specified using the index of the axis in
            `axes_manager` or the axis name.
-        out : {Signal, None}
-            If None, a new Signal is created with the result of the operation
-            and returned (default). If a Signal is passed, it is used to
-            receive the output of the operation, and nothing is returned.
+        %s
 
         Returns
         -------
@@ -4123,7 +4109,7 @@ class Signal(FancySlicing,
         >>> s.mean(-1).data.shape
         (64,64)
 
-        """
+        """ % OUT_ARG
         return self._apply_function_on_data_and_remove_axis(np.mean, axis,
                                                             out=out)
 
@@ -4136,10 +4122,7 @@ class Signal(FancySlicing,
         axis : {int | string}
            The axis can be specified using the index of the axis in
            `axes_manager` or the axis name.
-        out : {Signal, None}
-            If None, a new Signal is created with the result of the operation
-            and returned (default). If a Signal is passed, it is used to
-            receive the output of the operation, and nothing is returned.
+        %s
 
         Returns
         -------
@@ -4158,7 +4141,7 @@ class Signal(FancySlicing,
         >>> s.std(-1).data.shape
         (64,64)
 
-        """
+        """ % OUT_ARG
         return self._apply_function_on_data_and_remove_axis(np.std, axis,
                                                             out=out)
 
@@ -4170,10 +4153,7 @@ class Signal(FancySlicing,
         axis : {int | string}
            The axis can be specified using the index of the axis in
            `axes_manager` or the axis name.
-        out : {Signal, None}
-            If None, a new Signal is created with the result of the operation
-            and returned (default). If a Signal is passed, it is used to
-            receive the output of the operation, and nothing is returned.
+        %s
 
         Returns
         -------
@@ -4192,7 +4172,7 @@ class Signal(FancySlicing,
         >>> s.var(-1).data.shape
         (64,64)
 
-        """
+        """ % OUT_ARG
         return self._apply_function_on_data_and_remove_axis(np.var, axis,
                                                             out=out)
 
@@ -4205,10 +4185,7 @@ class Signal(FancySlicing,
            The axis can be specified using the index of the axis in
            `axes_manager` or the axis name.
         order: the order of the derivative
-        out : {Signal, None}
-            If None, a new Signal is created with the result of the operation
-            and returned (default). If a Signal is passed, it is used to
-            receive the output of the operation, and nothing is returned.
+        %s
         See also
         --------
         mean, sum
@@ -4220,7 +4197,7 @@ class Signal(FancySlicing,
         (64,64,1024)
         >>> s.diff(-1).data.shape
         (64,64,1023)
-        """
+        """ % OUT_ARG
         s = out or self._deepcopy_with_new_data(None)
         s.data = np.diff(self.data, n=order,
                          axis=self.axes_manager[axis].index_in_array)
@@ -4245,10 +4222,7 @@ class Signal(FancySlicing,
             The order of the derivative. (Note that this is the order of the
             derivative i.e. `order=2` does not use second order finite
             differences method.)
-        out : {Signal, None}
-            If None, a new Signal is created with the result of the operation
-            and returned (default). If a Signal is passed, it is used to
-            receive the output of the operation, and nothing is returned.
+        %s
 
         Returns
         -------
@@ -4261,7 +4235,7 @@ class Signal(FancySlicing,
         --------
         diff
 
-        """
+        """ % OUT_ARG
 
         der = self.diff(order=order, axis=axis, out=out)
         der = out or der
@@ -4279,10 +4253,7 @@ class Signal(FancySlicing,
         axis : {int | string}
            The axis can be specified using the index of the axis in
            `axes_manager` or the axis name.
-        out : {Signal, None}
-            If None, a new Signal is created with the result of the operation
-            and returned (default). If a Signal is passed, it is used to
-            receive the output of the operation, and nothing is returned.
+        %s
 
         Returns
         -------
@@ -4301,7 +4272,7 @@ class Signal(FancySlicing,
         >>> s.var(-1).data.shape
         (64,64)
 
-        """
+        """ % OUT_ARG
         axis = self.axes_manager[axis]
         s = out or self._deepcopy_with_new_data(None)
         s.data = sp.integrate.simps(y=self.data, x=axis.axis,
@@ -4322,10 +4293,7 @@ class Signal(FancySlicing,
         axis : {int | string}
            The axis can be specified using the index of the axis in
            `axes_manager` or the axis name.
-        out : {Signal, None}
-            If None, a new Signal is created with the result of the operation
-            and returned (default). If a Signal is passed, it is used to
-            receive the output of the operation, and nothing is returned.
+        %s
 
         Returns
         -------
@@ -4344,7 +4312,7 @@ class Signal(FancySlicing,
         >>> s.var(-1).data.shape
         (64,64)
 
-        """
+        """ % OUT_ARG
         if self.metadata.Signal.binned is False:
             return self.integrate_simpson(axis=axis, out=out)
         else:
@@ -4358,10 +4326,7 @@ class Signal(FancySlicing,
         axis : {int | string}
            The axis can be specified using the index of the axis in
            `axes_manager` or the axis name.
-        out : {Signal, None}
-            If None, a new Signal is created with the result of the operation
-            and returned (default). If a Signal is passed, it is used to
-            receive the output of the operation, and nothing is returned.
+        %s
 
         Returns
         -------
@@ -4381,7 +4346,7 @@ class Signal(FancySlicing,
         >>> s.indexmax(-1).data.shape
         (64,64)
 
-        """
+        """ % OUT_ARG
         return self._apply_function_on_data_and_remove_axis(np.argmax, axis,
                                                             out=out)
 
@@ -4393,10 +4358,7 @@ class Signal(FancySlicing,
         axis : {int | string}
            The axis can be specified using the index of the axis in
            `axes_manager` or the axis name.
-        out : {Signal, None}
-            If None, a new Signal is created with the result of the operation
-            and returned (default). If a Signal is passed, it is used to
-            receive the output of the operation, and nothing is returned.
+        %s
 
         Returns
         -------
@@ -4416,7 +4378,7 @@ class Signal(FancySlicing,
         >>> s.valuemax(-1).data.shape
         (64,64)
 
-        """
+        """ % OUT_ARG
         s = self.indexmax(axis, out=out)
         s = out or s
         s.data = self.axes_manager[axis].index2value(s.data)
@@ -4442,10 +4404,7 @@ class Signal(FancySlicing,
         range_bins : tuple or None, optional
             the minimum and maximum range for the histogram. If not specified,
             it will be (x.min(), x.max())
-        out : {Signal, None}
-            If None, a new Signal is created with the result of the operation
-            and returned (default). If a Signal is passed, it is used to
-            receive the output of the operation, and nothing is returned.
+        %s
         **kwargs
             other keyword arguments (weight and density) are described in
             np.histogram().
@@ -4473,7 +4432,7 @@ class Signal(FancySlicing,
         Plot the histogram of the signal at the current coordinates
         >>> s.get_current_signal().get_histogram().plot()
 
-        """
+        """ % OUT_ARG
         from hyperspy import signals
         data = self.data[~np.isnan(self.data)].flatten()
         hist, bin_edges = histogram(data,
@@ -4960,10 +4919,7 @@ class Signal(FancySlicing,
         ----------
         spectral_axis : {int, complex, str}
             Select the spectral axis to-be using its index or name.
-        out : {Signal, None}
-            If None, a new Signal is created with the result of the operation
-            and returned (default). If a Signal is passed, it is used to
-            receive the output of the operation, and nothing is returned.
+        %s
 
         Examples
         --------
@@ -4975,7 +4931,7 @@ class Signal(FancySlicing,
         >>> img.to_spectrum(0)
         <Spectrum, title: , dimensions: (6, 5, 3, 4)>
 
-        """
+        """ % OUT_ARG
         # Roll the spectral axis to-be to the latex index in the array
         sp = self.rollaxis(spectral_axis, -1 + 3j)
         sp.metadata.Signal.record_by = "spectrum"
@@ -4997,10 +4953,7 @@ class Signal(FancySlicing,
         image_axes : tuple of {int, complex, str}
             Select the image axes. Note that the order of the axes matters
             and it is given in the "natural" i.e. X, Y, Z... order.
-        out : {Signal, None}
-            If None, a new Signal is created with the result of the operation
-            and returned (default). If a Signal is passed, it is used to
-            receive the output of the operation, and nothing is returned.
+        %s
 
         Examples
         --------
@@ -5017,7 +4970,7 @@ class Signal(FancySlicing,
         ------
         DataDimensionError : when data.ndim < 2
 
-        """
+        """ % OUT_ARG
         if self.data.ndim < 2:
             raise DataDimensionError(
                 "A Signal dimension must be >= 2 to be converted to an Image")
