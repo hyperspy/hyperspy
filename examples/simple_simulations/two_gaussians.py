@@ -4,18 +4,21 @@ This example can serve as starting point to test other functionalities on the
 simulated hyperspectrum.
 
 """
+import numpy as np
+import hyperspy.api as hs
+import matplotlib.pyplot as plt
 
 
 # Create an empty spectrum
-s = signals.Spectrum(np.zeros((32, 32, 1024)))
+s = hs.signals.Spectrum(np.zeros((32, 32, 1024)))
 
 # Generate some simple data: two Gaussians with random centers and area
 
 # First we create a model
-m = create_model(s)
+m = s.create_model()
 
 # Define the first gaussian
-gs1 = components.Gaussian()
+gs1 = hs.model.components.Gaussian()
 # Add it to the model
 m.append(gs1)
 
@@ -30,7 +33,7 @@ gs1.A.map['values'][:] = 10000 * np.random.random((32, 32))
 gs1.A.map['is_set'][:] = True
 
 # Second gaussian
-gs2 = components.Gaussian()
+gs2 = hs.model.components.Gaussian()
 # Add it to the model
 m.append(gs2)
 
@@ -55,4 +58,4 @@ s_model.add_poissonian_noise()
 # Plot the result
 s_model.plot()
 
-show()
+plt.show()
