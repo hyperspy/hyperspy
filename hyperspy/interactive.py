@@ -12,7 +12,8 @@ class Interactive:
             self.out = self.f(*args, **kwargs)
             if recompute_out_event:
                 recompute_out_event.connect(self._recompute_out)
-        event.connect(self.update)
+        if event:
+            event.connect(self.update, 0)
 
     def _recompute_out(self):
         out = self.f(*self.args, **self.kwargs)
@@ -33,8 +34,9 @@ def interactive(f, event, recompute_out_event=None, *args, **kwargs):
     f: function or method
         A function that returns an object and that optionally can place the
         result in an object given through the `out` keyword.
-    event: Event.
+    event: {Event | None}
         Update the result of the operation when the event is triggered.
+        Optional.
     recompute_out_event: {Event | None}
         Optional argument. If supplied, this event causes a full recomputation
         of a new object. Both the data and axes of the new object are then
