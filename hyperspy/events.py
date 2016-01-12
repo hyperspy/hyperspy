@@ -1,97 +1,5 @@
-import sys
 import inspect
-
-
-class EventsSuppressionContext(object):
-
-    """
-    Context manager for event suppression. When passed an Events class,
-    it will suppress all the events in that container when activated by
-    using it in a 'with' statement. The previous suppression state will be
-    restored when the 'with' block completes, allowing for nested suppression.
-
-    See also
-    --------
-    Events.suppress
-    """
-
-    def __init__(self, events):
-        self.events = events
-        self.old = {}
-
-    def __enter__(self):
-        self.old = {}
-        try:
-            for e in self.events._events.itervalues():
-                self.old[e] = e._suppress
-                e._suppress = True
-        except:
-            self.__exit__(*sys.exc_info())
-            raise
-        return self
-
-    def __exit__(self, type, value, tb):
-        for e, oldval in self.old.iteritems():
-            e._suppress = oldval
-        # Never suppress exceptions
-
-
-class EventSuppressionContext(object):
-
-    """
-    Context manager for event suppression. When passed an Event class,
-    it will suppress the event when activated by using it in a 'with'
-    statement. The previous suppression state will be restored when the 'with'
-    block completes, allowing for nested suppression.
-
-    See also
-    --------
-    Event.suppress
-    """
-
-    def __init__(self, event):
-        self.event = event
-        self.old = None
-
-    def __enter__(self):
-        self.old = None
-        try:
-            self.old = self.event._suppress
-            self.event._suppress = True
-        except:
-            self.__exit__(*sys.exc_info())
-            raise
-        return self
-
-    def __exit__(self, type, value, tb):
-        if self.old is not None:
-            self.event._suppress = self.old
-        # Never suppress exceptions
-
-
-class CallbackSuppressionContext(object):
-
-    """
-    Context manager for suppression of a single callback on an Event. Useful
-    e.g. to prevent infinite recursion if two objects are connected in a loop.
-
-    See also
-    --------
-    Event.suppress_callback
-    """
-
-    def __init__(self, callback, event, nargs):
-        self.event = event
-        self.callback = callback
-        self.nargs = nargs
-
-    def __enter__(self):
-        if self.callback is not None:
-            self.event.disconnect(self.callback)
-
-    def __exit__(self, type, value, tb):
-        if self.callback is not None:
-            self.event.connect(self.callback, self.nargs)
+from contextlib import contextmanager
 
 
 class Events(object):
@@ -105,6 +13,7 @@ class Events(object):
     def __init__(self):
         self._events = {}
 
+    @contextmanager
     def suppress(self):
         """
         Use this function with a 'with' statement to temporarily suppress
@@ -125,7 +34,17 @@ class Events(object):
         Event.suppress
         Event.suppress_callback
         """
-        return EventsSuppressionContext(self)
+
+        old = {}
+
+        try:
+            for e in self._events.itervalues():
+                old[e] = e._suppress
+                e._suppress = True
+            yield
+        finally:
+            for e, oldval in old.iteritems():
+                e._suppress = oldval
 
     def update(self, other, prefix=''):
         if prefix:
@@ -158,6 +77,7 @@ class Event(object):
         self._connected = {}
         self._suppress = False
 
+    @contextmanager
     def suppress(self):
         """
         Use this function with a 'with' statement to temporarily suppress
@@ -178,8 +98,14 @@ class Event(object):
         suppress_callback
         Events.suppress
         """
-        return EventSuppressionContext(self)
+        old = self._suppress
+        self._suppress = True
+        try:
+            yield
+        finally:
+            self._suppress = old
 
+    @contextmanager
     def suppress_callback(self, function):
         """
         Use this function with a 'with' statement to temporarily suppress
@@ -208,9 +134,14 @@ class Event(object):
                 if f == function:
                     found = True
                     break
-        if not found:
-            function = None
-        return CallbackSuppressionContext(function, self, nargs)
+        if found:
+            self.disconnect(function)
+            try:
+                yield
+            finally:
+                self.connect(function, nargs)
+        else:
+            yield   # Do nothing
 
     def connected(self, nargs=None):
         """
