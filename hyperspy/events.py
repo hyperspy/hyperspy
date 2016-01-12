@@ -53,19 +53,52 @@ class Events(object):
         self._events.update(other)
 
     def __setattr__(self, name, value):
+        """
+        Magic to enable having `Event`s as attributes, and keeping them
+        separate from other attributes.
+
+        If it's an `Event`, store it in self._events, otherwise set attribute
+        in normal way.
+        """
         if isinstance(value, Event):
             self._events[name] = value
         else:
-            object.__setattr__(self, name, value)
+            super(Events, self).__setattr__(name, value)
 
     def __getattr__(self, name):
+        """
+        Magic to enable having `Event`s as attributes, and keeping them
+        separate from other attributes.
+
+        Returns Event attribute `name` (__getattr__ is only called if attribute
+        could not be found in the normal way).
+        """
         return self._events[name]
 
     def __delattr__(self, name):
+        """
+        Magic to enable having `Event`s as attributes, and keeping them
+        separate from other attributes.
+
+        Deletes attribute from self._events if present, otherwise delete
+        attribute in normal way.
+        """
         if name in self._events:
             del self._events[name]
         else:
-            object.__delattr__(name)
+            super(Events, self).__delattr__(name)
+
+    def __dir__(self):
+        """
+        Magic to enable having `Event`s as attributes, and keeping them
+        separate from other attributes.
+
+        Makes sure tab-completion works in IPython etc.
+        """
+        d = dir(type(self))
+        d.extend(self.__dict__.iterkeys())
+        d.extend(self._events.iterkeys())
+        return sorted(set(d))
 
     def __repr__(self):
         return "hyperspy.events.Events: " + str(self._events)
