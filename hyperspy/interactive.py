@@ -1,11 +1,11 @@
 class Interactive:
-    def __init__(self, f, event, 
+    def __init__(self, f, event,
                  recompute_out_event=None,
                  *args, **kwargs):
         self.f = f
         self.args = args
         self.kwargs = kwargs
-        if kwargs.has_key('out'):
+        if 'out' in kwargs:
             self.f(*args, **kwargs)
             self.out = kwargs.pop('out')
         else:
@@ -25,18 +25,21 @@ class Interactive:
         self.f(out=self.out, *self.args, **self.kwargs)
 
 
-def interactive(f, event, *args, **kwargs):
+def interactive(f, event, recompute_out_event=None, *args, **kwargs):
     """Update operation result when a given event is triggered.
 
     Parameters
     ----------
-    obj: anything
-        The target of the operation.
     f: function or method
-        A function that operates on `obj` and that can place the result in an
-        object given through the `out` keyword.
+        A function that returns an object and that optionally can place the
+        result in an object given through the `out` keyword.
     event: Event.
         Update the result of the operation when the event is triggered.
+    recompute_out_event: {Event | None}
+        Optional argument. If supplied, this event causes a full recomputation
+        of a new object. Both the data and axes of the new object are then
+        copied over to the existing `out` object. Only useful for `Signal` or
+        other objects that have an attribute `axes_manager`.
 
     *args, **kwargs
         Arguments and keyword arguments to be passed to `f`.
@@ -44,5 +47,5 @@ def interactive(f, event, *args, **kwargs):
 
     """
 
-    cls = Interactive(f, event, *args, **kwargs)
+    cls = Interactive(f, event, recompute_out_event, *args, **kwargs)
     return cls.out
