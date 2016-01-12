@@ -26,6 +26,7 @@ import codecs
 import collections
 import tempfile
 import unicodedata
+from contextlib import contextmanager
 
 import numpy as np
 
@@ -111,12 +112,9 @@ def unfold_if_multidim(signal):
     return None
 
 
-class dummy_context_mgr():
-    def __enter__(self):
-        return None
-
-    def __exit__(self):
-        return False
+@contextmanager
+def dummy_context_mgr(*args, **kwargs):
+    yield
 
 
 def str2num(string, **kargs):
