@@ -153,7 +153,7 @@ class EDSSpectrum(Spectrum):
                 xray_lines_not_in_range.append(xray_line)
         return xray_lines_in_range, xray_lines_not_in_range
 
-    def sum(self, axis):
+    def sum(self, axis="navigation"):
         """Sum the data over the given axis.
 
         Parameters
@@ -184,8 +184,10 @@ class EDSSpectrum(Spectrum):
         else:
             mp = s.metadata.Acquisition_instrument.TEM
         if mp.has_item('Detector.EDS.live_time'):
-            mp.Detector.EDS.live_time = mp.Detector.EDS.live_time * \
-                self.axes_manager[axis].size
+            iaxes = self._get_iaxes(axis)
+            for ax in iaxes:
+                mp.Detector.EDS.live_time = mp.Detector.EDS.live_time * \
+                    self.axes_manager[ax+3j].size
         return s
 
     def rebin(self, new_shape):
@@ -814,10 +816,12 @@ class EDSSpectrum(Spectrum):
         for xray_line in xray_lines:
             line_energy, line_FWHM = self._get_line_energy(xray_line,
                                                            FWHM_MnKa='auto')
-            tmp = [line_energy - line_FWHM * line_width[0] - line_FWHM * windows_width,
+            tmp = [(line_energy - line_FWHM * line_width[0] -
+                    line_FWHM * windows_width),
                    line_energy - line_FWHM * line_width[0],
                    line_energy + line_FWHM * line_width[1],
-                   line_energy + line_FWHM * line_width[1] + line_FWHM * windows_width]
+                   (line_energy + line_FWHM * line_width[1] +
+                    line_FWHM * windows_width)]
             windows_position.append(tmp)
         windows_position = np.array(windows_position)
         # merge ovelapping windows
