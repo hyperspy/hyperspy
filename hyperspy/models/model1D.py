@@ -19,6 +19,7 @@
 import copy
 import numpy as np
 from traits.trait_errors import TraitError
+from contextlib import contextmanager
 
 from hyperspy.model import BaseModel, ModelComponents, ModelSpecialSlicers
 import hyperspy.drawing.spectrum
@@ -31,6 +32,7 @@ from hyperspy.axes import AxesManager
 from hyperspy.drawing.widgets import (DraggableVerticalLine,
                                       DraggableLabel)
 from hyperspy.gui.tools import ComponentFit
+from hyperspy.events import Events
 
 
 class Model1D(BaseModel):
@@ -276,7 +278,6 @@ class Model1D(BaseModel):
         See Also
         --------
         suspend_update
-        resume_update
 
         """
         if self._plot_active is True and self._suspend_update is False:
@@ -288,49 +289,30 @@ class Model1D(BaseModel):
             except:
                 self._disconnect_parameters2update_plot()
 
-    def suspend_update(self):
-        """Prevents plot from updating until resume_update() is called
+    @contextmanager
+    def suspend_update(self, update_on_resume=True):
+        """Prevents plot from updating until with clause completes.
 
         See Also
         --------
-        resume_update
         update_plot
         """
-        if self._suspend_update is False:
-            self._suspend_update = True
-            self._disconnect_parameters2update_plot()
-        else:
-            warnings.warn("Update already suspended, does nothing.")
 
-    def resume_update(self, update=True):
-        """Resumes plot update after suspension by suspend_update()
+        evs = Events()
+        for component in self:
+            evs.update(component.events, prefix=component.name)
+            for parameter in component.parameters:
+                evs.update(parameter.events, prefix=component.name + '.' +
+                           parameter.name)
+        old = self._suspend_update
+        self._suspend_update = True
+        with evs.suppress():
+            with self.axes_manager.events.navigated.suppress():
+                yield
+        self._suspend_update = old
 
-        Parameters
-        ----------
-        update : bool, optional
-            If True, also updates plot after resuming (default).
-
-        See Also
-        --------
-        suspend_update
-        update_plot
-        """
-        if self._suspend_update is True:
-            self._suspend_update = False
-            self._connect_parameters2update_plot()
-            if update is True:
-                # Ideally, the update flag should in stead work like this:
-                # If update is true, update_plot is called if any action
-                # would have called it while updating was suspended.
-                # However, this is prohibitively difficult to track, so
-                # in stead it is simply assume that a change has happened
-                # between suspend and resume, and therefore that the plot
-                # needs to update. As we do not know what has changed,
-                # all components need to update. This can however be
-                # suppressed by setting update to false
-                self.update_plot()
-        else:
-            warnings.warn("Update not suspended, nothing to resume.")
+        if update_on_resume is True:
+            self.update_plot()
 
     def _update_model_line(self):
         if (self._plot_active is True and

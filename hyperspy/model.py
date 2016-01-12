@@ -553,14 +553,10 @@ class BaseModel(list):
         store_current_values
 
         """
-        switch_aap = self._plot_active is not False
-        if switch_aap is True:
-            self._disconnect_parameters2update_plot()
-        for component in self:
-            component.fetch_stored_values(only_fixed=only_fixed)
-        if switch_aap is True:
-            self._connect_parameters2update_plot()
-            self.update_plot()
+        cm = self.suspend_update if self._plot_active else dummy_context_mgr
+        with cm(update_on_resume=True):
+            for component in self:
+                component.fetch_stored_values(only_fixed=only_fixed)
 
     def _fetch_values_from_p0(self, p_std=None):
         """Fetch the parameter values from the output of the optimzer `self.p0`
@@ -988,13 +984,15 @@ class BaseModel(list):
                 kwargs['bounded'] = False
         i = 0
         self.axes_manager.disconnect(self.fetch_stored_values)
-        if not interactive_plot:
-            self.suspend_update()
-            idx = self.axes_manager.indices
-        try:
-            with (self.axes_manager.events.suppress() if not interactive_plot
-                    else dummy_context_mgr()):
-                for index in self.axes_manager:
+        if interactive_plot:
+            outer = dummy_context_mgr
+            inner = self.suspend_update
+        else:
+            outer = self.suspend_update
+            inner = dummy_context_mgr
+        with outer(update_on_resume=True):
+            for index in self.axes_manager:
+                with inner(update_on_resume=True):
                     if mask is None or not mask[index[::-1]]:
                         self.fetch_stored_values(only_fixed=fetch_only_fixed)
                         self.fit(**kwargs)
@@ -1003,14 +1001,9 @@ class BaseModel(list):
                             pbar.update(i)
                     if autosave is True and i % autosave_every == 0:
                         self.save_parameters2file(autosave_fn)
-                if maxval > 0:
-                    pbar.finish()
-            if not interactive_plot:
-                self.axes_manager.indices = idx
-        finally:
-            self.axes_manager.connect(self.fetch_stored_values)
-            if not interactive_plot:
-                self.resume_update()
+            if maxval > 0:
+                pbar.finish()
+        self.axes_manager.connect(self.fetch_stored_values)
         if autosave is True:
             messages.information(
                 'Deleting the temporary file %s pixels' % (
