@@ -504,15 +504,11 @@ class AxesManager(t.HasTraits):
         """x.__getitem__(y) <==> x[y]
 
         """
-        return_one = False
         if isinstance(y, basestring) or not np.iterable(y):
-            y = (y,)
-            return_one = True
+            return self[(y,)][0]
         axes = [self._axes_getter(ax) for ax in y]
         _, indices = np.unique(axes, return_index=True)
         ans = tuple(axes[i] for i in sorted(indices))
-        if return_one:
-            ans = ans[0]
         return ans
 
     def _axes_getter(self, y):
