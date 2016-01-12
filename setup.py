@@ -167,7 +167,6 @@ with update_version_when_dev() as version:
                   'hyperspy.misc.machine_learning',
                   'hyperspy.external',
                   'hyperspy.external.mpfit',
-                  'hyperspy.external.mpfit.tests',
                   'hyperspy.external.astroML',
                   ],
         requires=install_req,
@@ -178,6 +177,8 @@ with update_version_when_dev() as version:
              'ipython_profile/*',
              'data/*.ico',
              'misc/eds/example_signals/*.hdf5',
+             'tests/io/blockfile_data/*.blockfile'
+             'tests/io/dens_data/*.dens'
              'tests/io/dm_stackbuilder_plugin/test_stackbuilder_imagestack.dm3',
              'tests/io/dm3_1D_data/*.dm3',
              'tests/io/dm3_2D_data/*.dm3',
@@ -189,6 +190,7 @@ with update_version_when_dev() as version:
              'tests/io/hdf5_files/*.hdf5',
              'tests/io/tiff_files/*.tif',
              'tests/io/npy_files/*.npy',
+             'tests/io/unf_files/*.unf'
              'tests/drawing/*.ipynb',
              ],
         },

@@ -545,3 +545,125 @@ either with :py:func:`~.misc.material.weight_to_atomic`. The reverse method is :
 
     >>> # With weight_percent from before
     >>> atomic_percent = hs.material.weight_to_atomic(weight_percent)
+
+EDS curve fitting
+-----------------
+
+HyperSpy makes it really easy to extract the intensity of X-ray lines by curve fitting as it is shown in the next example for an EDS-SEM spectrum recorded on a test material EDS-TM001 provided by `BAM <http://www.webshop.bam.de>`_. 
+
+Load the spectrum, define the chemical composition of the sample and set the beam energy.
+
+
+.. code-block:: python
+
+    >>> s = hs.load('bam.msa')
+    >>> s.add_elements(['Al', 'Ar', 'C', 'Cu', 'Mn', 'Zr'])
+    >>> s.set_microscope_parameters(beam_energy=10)
+
+The model is created with :py:func:`~._signals.eds_sem.create_model`. One gaussian is automatically created per X-ray line and a polynomial for the backgronud.
+
+.. code-block:: python
+
+    >>> m = s.create_model()
+    >>> m.print_current_values()
+
+    Components    Parameter    Value
+    Al_Ka
+                  A            65241.4
+    Al_Kb
+    Ar_Ka
+                  A            3136.88
+    Ar_Kb
+    C_Ka
+                  A            79258.9
+    Cu_Ka
+                  A            1640.8
+    Cu_Kb
+    Cu_La
+                  A            74032.6
+    Cu_Lb1
+    Cu_Ln
+    Cu_Ll
+    Cu_Lb3
+    Mn_Ka
+                  A            47796.6
+    Mn_Kb
+    Mn_La
+                  A            73665.7
+    Mn_Ln
+    Mn_Ll
+    Mn_Lb3
+    Zr_La
+                  A            68703.8
+    Zr_Lb1
+    Zr_Lb2
+    Zr_Ln
+    Zr_Lg3
+    Zr_Ll
+    Zr_Lg1
+    Zr_Lb3
+    background_order_6
+
+The width and the energy are fixed. The height of the sub-X-ray lines are twinned to the main X-ray lines (alpha lines). The model can be fitted.
+
+.. code-block:: python
+
+    >>> m.fit()
+
+The background fitting can be improved with the :py:meth:`~.models.edsmodel.EDSModel.fit_background` method by enabling only the energy ranges with no X-ray lines.
+
+.. code-block:: python
+
+    >>> m.fit_background()
+
+The width of the X-ray lines is defined from the energy resolution (FWHM at Mn Ka) provided by `energy_resolution_MnKa` in `metadata`. This parameters can be calibrated by fitting with the :py:meth:`~.models.edsmodel.EDSModel.calibrate_energy_axis` method.
+
+.. code-block:: python
+
+    >>> m.calibrate_energy_axis(calibrate='resolution')
+    Energy resolution (FWHM at Mn Ka) changed from 130.000000 to 131.927922 eV
+
+Fine tuning of the parameters of specific X-ray lines can be done with the :py:meth:`~.models.edsmodel.EDSModel.calibrate_xray_lines` method.
+
+.. code-block:: python
+
+    >>> m.calibrate_xray_lines('energy', ['Ar_Ka'], bound=10)
+    >>> m.calibrate_xray_lines('width', ['Ar_Ka'], bound=10)
+    >>> m.calibrate_xray_lines('sub_weight', ['Mn_La'], bound=10)
+
+The result of the fit is obtained with the :py:meth:`~.models.edsmodel.EDSModel.get_lines_intensity` method.
+
+.. code-block:: python
+
+    >>> result = m.get_lines_intensity(plot_result=True)
+    Al_Ka at 1.4865 keV : Intensity = 65241.42
+    Ar_Ka at 2.9577 keV : Intensity = 3136.88
+    C_Ka at 0.2774 keV : Intensity = 79258.95
+    Cu_Ka at 8.0478 keV : Intensity = 1640.80
+    Cu_La at 0.9295 keV : Intensity = 74032.56
+    Mn_Ka at 5.8987 keV : Intensity = 47796.57
+    Mn_La at 0.63316 keV : Intensity = 73665.70
+    Zr_La at 2.0423 keV : Intensity = 68703.75
+
+Visualize the result
+
+.. code-block:: python
+
+    >>> m.plot()
+
+.. figure::  images/EDS_fitting.png
+   :align:   center
+   :width:   500
+
+The following methods permit to easily enable/disable several X-ray lines functionalities:
+
+* :py:meth:`~.models.edsmodel.EDSModel.free_background`
+* :py:meth:`~.models.edsmodel.EDSModel.fix_background`
+* :py:meth:`~.models.edsmodel.EDSModel.enable_xray_lines`
+* :py:meth:`~.models.edsmodel.EDSModel.disable_xray_lines`
+* :py:meth:`~.models.edsmodel.EDSModel.free_sub_xray_lines_weight`
+* :py:meth:`~.models.edsmodel.EDSModel.fix_sub_xray_lines_weight`
+* :py:meth:`~.models.edsmodel.EDSModel.free_xray_lines_energy`
+* :py:meth:`~.models.edsmodel.EDSModel.fix_xray_lines_energy`
+* :py:meth:`~.models.edsmodel.EDSModel.free_xray_lines_width`
+* :py:meth:`~.models.edsmodel.EDSModel.fix_xray_lines_width`
