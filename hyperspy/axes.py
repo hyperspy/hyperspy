@@ -476,6 +476,7 @@ class AxesManager(t.HasTraits):
         super(AxesManager, self).__init__()
         self._events = Events()
         self._events.axes_changed = Event()
+        self._events.navigated = Event()
         self.create_axes(axes_list)
         # set_signal_dimension is called only if there is no current
         # view. It defaults to spectrum
@@ -485,9 +486,11 @@ class AxesManager(t.HasTraits):
             self.set_signal_dimension(1)
 
         self._update_attributes()
-        self.on_trait_change(self._update_attributes, '_axes.slice')
-        self.on_trait_change(self._update_attributes, '_axes.index')
-        self.on_trait_change(self._update_attributes, '_axes.size')
+        self.on_trait_change(self._on_navigate, '_axes.index')
+        self.on_trait_change(self._on_nav_axes_changed, '_axes.slice')
+        self.on_trait_change(self._on_axes_size_changed, '_axes.size')
+        self.on_trait_change(self._events.axes_changed.trigger, '_axes.scale')
+        self.on_trait_change(self._events.axes_changed.trigger, '_axes.offset')
         self._index = None  # index for the iterator
 
     @property
@@ -673,6 +676,18 @@ class AxesManager(t.HasTraits):
         axis.axes_manager = self
         self._axes.append(axis)
 
+    def _on_navigate(self):
+        self._update_attributes()
+        self._events.navigated.trigger()
+
+    def _on_nav_axes_changed(self):
+        self._update_attributes()
+        self._events.axes_changed.trigger()
+
+    def _on_axes_size_changed(self):
+        self._update_attributes()
+        self._events.axes_changed.trigger()
+
     def _update_attributes(self):
         getitem_tuple = ()
         values = []
@@ -711,7 +726,6 @@ class AxesManager(t.HasTraits):
         self.signal_size = (np.cumprod(self.signal_shape)[-1]
                             if self.signal_shape else 0)
         self._update_max_index()
-        self._events.axes_changed.trigger()
 
     def set_signal_dimension(self, value):
         """Set the dimension of the signal.
@@ -744,10 +758,10 @@ class AxesManager(t.HasTraits):
             axis.navigate = tl.pop(0)
 
     def connect(self, f):
-        self._events.axes_changed.connect(f, 0)
+        self._events.navigated.connect(f, 0)
 
     def disconnect(self, f):
-        self._events.axes_changed.disconnect(f)
+        self._events.navigated.disconnect(f)
 
     def key_navigator(self, event):
         if len(self.navigation_axes) not in (1, 2):
