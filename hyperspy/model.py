@@ -909,8 +909,7 @@ class BaseModel(list):
 
     def multifit(self, mask=None, fetch_only_fixed=False,
                  autosave=False, autosave_every=10, show_progressbar=None,
-                 interactive_plot=False,
-                 **kwargs):
+                 interactive_plot=False, **kwargs):
         """Fit the data to the model at all the positions of the
         navigation dimensions.
 

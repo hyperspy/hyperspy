@@ -962,8 +962,7 @@ class EELSModel(Model1D):
 
         See Also
         --------
-        resume_update
-        update_plot
+        resume_auto_fine_structure_width
 
         """
         if self._suspend_auto_fine_structure_width is False:
@@ -983,8 +982,7 @@ class EELSModel(Model1D):
 
         See Also
         --------
-        suspend_update
-        update_plot
+        suspend_auto_fine_structure_width
 
         """
         if self._suspend_auto_fine_structure_width is True:

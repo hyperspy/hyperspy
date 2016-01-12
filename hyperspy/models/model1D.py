@@ -17,7 +17,6 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import copy
-import warnings
 import numpy as np
 from traits.trait_errors import TraitError
 
@@ -627,14 +626,14 @@ class Model1D(BaseModel):
                 parameter.disconnect(component._model_plot_line.update)
 
     def _connect_component_lines(self):
-        for component in [component for component in self if
-                          component.active]:
-            self._connect_component_line(component)
+        for component in self:
+            if component.active:
+                self._connect_component_line(component)
 
     def _disconnect_component_lines(self):
-        for component in [component for component in self if
-                          component.active]:
-            self._disconnect_component_line(component)
+        for component in self:
+            if component.active:
+                self._disconnect_component_line(component)
 
     def _plot_component(self, component):
         line = hyperspy.drawing.spectrum.SpectrumLine()
