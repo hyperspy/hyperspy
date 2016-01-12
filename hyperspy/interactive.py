@@ -23,7 +23,7 @@ class Interactive:
             self.out.events.axes_changed.trigger(self.out)
 
     def update(self):
-        self.f(out=self.out, *self.args, **self.kwargs)
+        self.f(*self.args, out=self.out, **self.kwargs)
 
 
 def interactive(f, event, recompute_out_event=None, *args, **kwargs):
