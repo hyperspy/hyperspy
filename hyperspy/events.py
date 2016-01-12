@@ -107,7 +107,8 @@ class Events(object):
 
 class Event(object):
 
-    def __init__(self):
+    def __init__(self, doc=''):
+        self.__doc__ = doc
         self._connected = {}
         self._suppress = False
 
