@@ -10,8 +10,8 @@ class Interactive:
             self.out = kwargs.pop('out')
         else:
             self.out = self.f(*args, **kwargs)
-            if recompute_out_event:
-                recompute_out_event.connect(self._recompute_out)
+        if recompute_out_event:
+            recompute_out_event.connect(self._recompute_out, 0)
         if event:
             event.connect(self.update, 0)
 
