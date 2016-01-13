@@ -539,7 +539,7 @@ class AxesManager(t.HasTraits):
 
         self._update_attributes()
         self.on_trait_change(self._on_index_changed, '_axes.index')
-        self.on_trait_change(self._on_nav_axes_changed, '_axes.slice')
+        self.on_trait_change(self._on_view_changed, '_axes.slice')
         self.on_trait_change(self._on_axes_size_changed, '_axes.size')
         self.on_trait_change(self.events.axes_changed.trigger, '_axes.scale')
         self.on_trait_change(self.events.axes_changed.trigger, '_axes.offset')
@@ -721,7 +721,7 @@ class AxesManager(t.HasTraits):
         self._update_attributes()
         self.events.indices_changed.trigger(axes_manager=self)
 
-    def _on_nav_axes_changed(self):
+    def _on_view_changed(self):
         self._update_attributes()
         self.events.axes_changed.trigger()
 
