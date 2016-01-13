@@ -34,7 +34,7 @@ class Test_metadata:
         s.metadata.Acquisition_instrument.TEM.beam_energy = 15.0
         self.signal = s
 
-    def test_sum_live_time(self):
+    def test_sum_live_time1(self):
         s = self.signal
         old_metadata = s.metadata.deepcopy()
         sSum = s.sum(0)
@@ -42,6 +42,20 @@ class Test_metadata:
             sSum.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time,
             3.1 *
             2)
+        # Check that metadata is unchanged
+        print old_metadata, s.metadata      # Capture for comparison on error
+        assert_dict_equal(old_metadata.as_dictionary(),
+                          s.metadata.as_dictionary(),
+                          "Source metadata changed")
+
+    def test_sum_live_time2(self):
+        s = self.signal
+        old_metadata = s.metadata.deepcopy()
+        sSum = s.sum((0, 1))
+        assert_equal(
+            sSum.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time,
+            3.1 *
+            2 * 4)
         # Check that metadata is unchanged
         print old_metadata, s.metadata      # Capture for comparison on error
         assert_dict_equal(old_metadata.as_dictionary(),
