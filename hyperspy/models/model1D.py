@@ -299,15 +299,11 @@ class Model1D(BaseModel):
         update_plot
         """
 
-        evs = Events()
-        for component in self:
-            evs.update(component.events, prefix=component.name)
-            for parameter in component.parameters:
-                evs.update(parameter.events, prefix=component.name + '.' +
-                           parameter.name)
+        all_comp_param_events = Events()
+        all_comp_param_events.children = lambda: [c.events for c in self]
         old = self._suspend_update
         self._suspend_update = True
-        with evs.suppress():
+        with all_comp_param_events.suppress_hierarchy():
             with self.axes_manager.events.indices_changed.suppress():
                 yield
         self._suspend_update = old

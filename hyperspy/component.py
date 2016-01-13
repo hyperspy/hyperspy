@@ -578,6 +578,7 @@ class Component(t.HasTraits):
 
     def __init__(self, parameter_name_list):
         self.events = Events()
+        self.events.children = lambda: [p.events for p in self.parameters]
         self.events.active_changed = Event()
         self.parameters = []
         self.init_parameters(parameter_name_list)

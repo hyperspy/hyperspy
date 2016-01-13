@@ -51,10 +51,11 @@ class Events(object):
     @contextmanager
     def suppress_hierarchy(self):
         """
-        Use this function with a 'with' statement to temporarily suppress
-        all events in the container and do the same for all child event
-        containers (`children`). When the 'with' lock completes, the old
-        suppression values will be restored.
+        Use this function with a 'with' statement to temporarily suppress all
+        events in the container and do the same for all child event containers
+        (`children`). When the 'with' lock completes, the old suppression
+        values will be restored. Alternatively, `children` can be a callable
+        which returns a list of children.
 
         Example usage
         -------------
@@ -76,10 +77,14 @@ class Events(object):
         # We don't suppress any exceptions, so we can use simple CM management:
         cms = []
         cm = self.suppress()                    # Get our CM
+        if callable(self.children):
+            children = self.children()
+        else:
+            children = self.children
         try:
             cm.__enter__()
             cms.append(cm)                      # Only add entered CMs to list
-            for events in self.children:
+            for events in children:
                 cm = events.suppress_hierarchy()    # Get child outer CM
                 cm.__enter__()
                 cms.append(cm)                  # Only add entered CMs to list
