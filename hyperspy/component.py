@@ -117,7 +117,19 @@ class Parameter(t.HasTraits):
     def __init__(self):
         self._twins = set()
         self.events = Events()
-        self.events.value_changed = Event()
+        self.events.value_changed = Event("""
+            Event that triggers when the `Parameter.value` changes.
+
+            The event triggers after the internal state of the `Parameter` has
+            been updated.
+
+            Arguments
+            ---------
+            value : {float | array}
+                The new value of the parameter
+            parameter : Parameter
+                The `Parameter` that the event belongs to
+            """)
         self.twin_function = lambda x: x
         self.twin_inverse_function = lambda x: x
         self.std = None
@@ -252,7 +264,8 @@ class Parameter(t.HasTraits):
                 not isinstance(self.__value, tuple)):
             self.__value = tuple(self.__value)
         if old_value != self.__value:
-            self.events.value_changed.trigger(self.__value, parameter=self)
+            self.events.value_changed.trigger(value=self.__value,
+                                              parameter=self)
         self.trait_property_changed('value', old_value, self.__value)
 
     # Fix the parameter when coupled
@@ -579,7 +592,19 @@ class Component(t.HasTraits):
     def __init__(self, parameter_name_list):
         self.events = Events()
         self.events.children = lambda: [p.events for p in self.parameters]
-        self.events.active_changed = Event()
+        self.events.active_changed = Event("""
+            Event that triggers when the `Component.active` changes.
+
+            The event triggers after the internal state of the `Component` has
+            been updated.
+
+            Arguments
+            ---------
+            active : bool
+                The new active state
+            component : Component
+                The `Component` that the event belongs to
+            """)
         self.parameters = []
         self.init_parameters(parameter_name_list)
         self._update_free_parameters()
@@ -726,7 +751,7 @@ class Component(t.HasTraits):
         if self.active_is_multidimensional is True:
             self._store_active_value_in_array(arg)
 
-        self.events.active_changed.trigger(value=self._active, component=self)
+        self.events.active_changed.trigger(active=self._active, component=self)
         self.trait_property_changed('active', old_value, self._active)
 
     def init_parameters(self, parameter_name_list):
