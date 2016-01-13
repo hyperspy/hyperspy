@@ -96,12 +96,6 @@ class Events(object):
                 # We don't use exception info, so simply pass blanks
                 cm.__exit__(None, None, None)
 
-    def update(self, other, prefix=''):
-        if prefix:
-            other = [(prefix + '_' + k, e)
-                     for (k, e) in other._events.iteritems()]
-        self._events.update(other)
-
     def __setattr__(self, name, value):
         """
         Magic to enable having `Event`s as attributes, and keeping them
@@ -219,19 +213,19 @@ class Event(object):
         suppress
         Events.suppress
         """
-        nargs = None
-        found = False
+        found = []
         for nargs, c in self._connected.iteritems():
             for f in c:
                 if f == function:
-                    found = True
+                    found.append(nargs)
                     break
         if found:
             self.disconnect(function)
             try:
                 yield
             finally:
-                self.connect(function, nargs)
+                for nargs in found:
+                    self.connect(function, nargs)
         else:
             yield   # Do nothing
 
