@@ -341,7 +341,7 @@ class SpectrumLine(object):
             self.ax.lines.remove(self.line)
         if self.text and self.text in self.ax.texts:
             self.ax.texts.remove(self.text)
-        self.axes_manager.events.indices_changed.disconnect(self.update, 0)
+        self.axes_manager.events.indices_changed.disconnect(self.update)
         if self.sf_lines and self in self.sf_lines:
             self.sf_lines.remove(self)
         try:
