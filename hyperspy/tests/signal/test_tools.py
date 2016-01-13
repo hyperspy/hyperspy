@@ -128,6 +128,13 @@ class Test3D:
         self.signal.axes_manager[0].scale = 0.5
         self.data = self.signal.data.copy()
 
+    def test_default_navigation_sum(self):
+        s = self.signal.sum()
+        np.testing.assert_array_equal(self.data.sum(axis=(0, 1)), s.data)
+        nt.assert_equal(s.data.ndim, 1)
+        nt.assert_equal(s.axes_manager.signal_dimension, 1)
+        nt.assert_equal(s.axes_manager.navigation_dimension, 0)
+
     def test_rebin(self):
         self.signal.estimate_poissonian_noise_variance()
         new_s = self.signal.rebin((2, 1, 6))
