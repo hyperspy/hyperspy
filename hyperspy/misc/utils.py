@@ -113,7 +113,7 @@ def unfold_if_multidim(signal):
 
 
 @contextmanager
-def dummy_context_mgr(*args, **kwargs):
+def dummy_context_manager(*args, **kwargs):
     yield
 
 

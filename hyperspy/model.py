@@ -42,7 +42,7 @@ from hyperspy.misc.export_dictionary import (export_to_dictionary,
                                              load_from_dictionary,
                                              parse_flag_string,
                                              reconstruct_object)
-from hyperspy.misc.utils import slugify, shorten_name, dummy_context_mgr
+from hyperspy.misc.utils import slugify, shorten_name, dummy_context_manager
 from hyperspy.misc.slicing import copy_slice_from_whitelist
 
 
@@ -553,7 +553,8 @@ class BaseModel(list):
         store_current_values
 
         """
-        cm = self.suspend_update if self._plot_active else dummy_context_mgr
+        cm = (self.suspend_update if self._plot_active
+              else dummy_context_manager)
         with cm(update_on_resume=True):
             for component in self:
                 component.fetch_stored_values(only_fixed=only_fixed)
@@ -986,11 +987,11 @@ class BaseModel(list):
         self.axes_manager.events.indices_changed.disconnect(
             self.fetch_stored_values)
         if interactive_plot:
-            outer = dummy_context_mgr
+            outer = dummy_context_manager
             inner = self.suspend_update
         else:
             outer = self.suspend_update
-            inner = dummy_context_mgr
+            inner = dummy_context_manager
         with outer(update_on_resume=True):
             for index in self.axes_manager:
                 with inner(update_on_resume=True):
