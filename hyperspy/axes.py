@@ -84,9 +84,39 @@ class DataAxis(t.HasTraits):
                  navigate=t.Undefined):
         super(DataAxis, self).__init__()
         self.events = Events()
-        self.events.axis_changed = Event()
-        self.events.index_changed = Event()
-        self.events.value_changed = Event()
+        self.events.axis_changed = Event("""
+            Event that triggers when an axis changes size, calibration or space
+
+            Triggers whenever the `DataAxis` has a change in one of these
+            attributes: `size`, `scale` or `offset`. Triggers after the
+            internal state of the `DataAxis` has been updated.
+
+            Arguments:
+            ---------
+            axis : The DataAxis that the event belongs to.
+            """)
+        self.events.index_changed = Event("""
+            Event that triggers when the index of the `DataAxis` changes
+
+            Triggers after the internal state of the `DataAxis` has been
+            updated.
+
+            Arguments:
+            ---------
+            index : The new index
+            axis : The DataAxis that the event belongs to.
+            """)
+        self.events.value_changed = Event("""
+            Event that triggers when the value of the `DataAxis` changes
+
+            Triggers after the internal state of the `DataAxis` has been
+            updated.
+
+            Arguments:
+            ---------
+            value : The new value
+            axis : The DataAxis that the event belongs to.
+            """)
         self.name = name
         self.units = units
         self.scale = scale
@@ -104,8 +134,6 @@ class DataAxis(t.HasTraits):
         self.on_trait_change(self.set_index_from_value, 'value')
         self.on_trait_change(self._update_slice, 'navigate')
         self.on_trait_change(self.update_index_bounds, 'size')
-        self.on_trait_change(lambda v: self.events.value_changed.trigger(v),
-                             'value')
         # The slice must be updated even if the default value did not
         # change to correctly set its value.
         self._update_slice(self.navigate)
@@ -252,7 +280,7 @@ class DataAxis(t.HasTraits):
         if len(self.axis) != 0:
             self.low_value, self.high_value = (
                 self.axis.min(), self.axis.max())
-        self.events.axis_changed.trigger()
+        self.events.axis_changed.trigger(axis=self)
 
     def _update_slice(self, value):
         if value is False:
@@ -284,7 +312,8 @@ class DataAxis(t.HasTraits):
     def update_value(self):
         with self.events.index_changed.suppress():
             self.value = self.axis[self.index]
-        self.events.index_changed.trigger()
+        self.events.index_changed.trigger(index=self.index, axis=self)
+        self.events.value_changed.trigger(value=self.index, axis=self)
 
     def value2index(self, value, rounding=round):
         """Return the closest index to the given value if between the limit.
@@ -340,7 +369,8 @@ class DataAxis(t.HasTraits):
             # If the value is above the limits we must correct the value
             if self.continuous_value is False:
                 self.value = self.index2value(self.index)
-        self.events.index_changed.trigger()
+        self.events.index_changed.trigger(index=self.index, axis=self)
+        self.events.value_changed.trigger(value=self.index, axis=self)
 
     def calibrate(self, value_tuple, index_tuple, modify_calibration=True):
         scale = (value_tuple[1] - value_tuple[0]) /\
