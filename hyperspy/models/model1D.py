@@ -253,10 +253,10 @@ class Model1D(BaseModel):
         if self._plot_active is False:
             return
         for i, component in enumerate(self):
-            component.connect(
+            component.events.active_changed.connect(
                 self._model_line.update)
             for parameter in component.parameters:
-                parameter.connect(self._model_line.update)
+                parameter.events.value_changed.connect(self._model_line.update)
         if self._plot_components is True:
             self._connect_component_lines()
 
@@ -264,9 +264,10 @@ class Model1D(BaseModel):
         if self._model_line is None:
             return
         for component in self:
-            component.disconnect(self._model_line.update)
+            component.events.active_changed.disconnect(self._model_line.update)
             for parameter in component.parameters:
-                parameter.disconnect(self._model_line.update)
+                parameter.events.value_changed.disconnect(
+                    self._model_line.update)
         if self._plot_components is True:
             self._disconnect_component_lines()
 
@@ -596,16 +597,18 @@ class Model1D(BaseModel):
     @staticmethod
     def _connect_component_line(component):
         if hasattr(component, "_model_plot_line"):
-            component.connect(component._model_plot_line.update)
+            f = component._model_plot_line.update
+            component.events.active_changed.connect(f)
             for parameter in component.parameters:
-                parameter.connect(component._model_plot_line.update)
+                parameter.events.value_changed.connect(f)
 
     @staticmethod
     def _disconnect_component_line(component):
         if hasattr(component, "_model_plot_line"):
-            component.disconnect(component._model_plot_line.update)
+            f = component._model_plot_line.update
+            component.events.active_changed.disconnect(f)
             for parameter in component.parameters:
-                parameter.disconnect(component._model_plot_line.update)
+                parameter.events.value_changed.disconnect(f)
 
     def _connect_component_lines(self):
         for component in self:
@@ -750,10 +753,11 @@ class Model1D(BaseModel):
         # Create widget -> parameter connection
         am._axes[0].continuous_value = True
         am._axes[0].events.value_changed.connect(set_value, 1)
+        component._position.events.value_changed.connect(
+            am._axes[0].set_index_from_value, 1)
         # Create parameter -> widget connection
         # This is done with a duck typing trick
-        # We disguise the AxesManager axis of Parameter by adding
-        # the _twin attribute
+        # We disguise the DataAxis as a Parameter by adding the _twin attribute
         am._axes[0]._twins = set()
         component._position.twin = am._axes[0]
 
