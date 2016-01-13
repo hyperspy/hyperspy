@@ -171,7 +171,8 @@ class Model1D(BaseModel):
         self._model_line = None
         self._adjust_position_all = None
         self.axis = self.axes_manager.signal_axes[0]
-        self.axes_manager.connect(self.fetch_stored_values)
+        self.axes_manager.events.indices_changed.connect(
+            self.fetch_stored_values, 0)
         self.channel_switches = np.array([True] * len(self.axis.axis))
         self.chisq = spectrum._get_navigation_signal()
         self.chisq.change_dtype("float")

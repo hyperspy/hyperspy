@@ -983,7 +983,8 @@ class BaseModel(list):
                     "following fitters instead: mpfit, tnc, l_bfgs_b")
                 kwargs['bounded'] = False
         i = 0
-        self.axes_manager.disconnect(self.fetch_stored_values)
+        self.axes_manager.events.indices_changed.disconnect(
+            self.fetch_stored_values)
         if interactive_plot:
             outer = dummy_context_mgr
             inner = self.suspend_update
@@ -1003,7 +1004,8 @@ class BaseModel(list):
                         self.save_parameters2file(autosave_fn)
             if maxval > 0:
                 pbar.finish()
-        self.axes_manager.connect(self.fetch_stored_values)
+        self.axes_manager.events.indices_changed.connect(
+            self.fetch_stored_values, 0)
         if autosave is True:
             messages.information(
                 'Deleting the temporary file %s pixels' % (

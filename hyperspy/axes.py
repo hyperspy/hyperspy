@@ -27,6 +27,9 @@ from hyperspy.events import Events, Event
 from hyperspy.misc.utils import isiterable, ordinal
 from hyperspy.misc.math_tools import isfloat
 
+import warnings
+from hyperspy.misc.hspy_warnings import VisibleDeprecationWarning
+
 
 class ndindex_nat(np.ndindex):
 
@@ -799,9 +802,19 @@ class AxesManager(t.HasTraits):
             axis.navigate = tl.pop(0)
 
     def connect(self, f):
+        warnings.warn(
+            "The method `AxesManager.connect()` has been deprecated and will "
+            "be removed in HyperSpy 0.10. Please use "
+            "`AxesManager.events.indices_changed.connect()` instead.",
+            VisibleDeprecationWarning)
         self.events.indices_changed.connect(f, 0)
 
     def disconnect(self, f):
+        warnings.warn(
+            "The method `AxesManager.disconnect()` has been deprecated and "
+            "will be removed in HyperSpy 0.10. Please use "
+            "`AxesManager.events.indices_changed.disconnect()` instead.",
+            VisibleDeprecationWarning)
         self.events.indices_changed.disconnect(f)
 
     def key_navigator(self, event):

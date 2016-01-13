@@ -361,7 +361,7 @@ class ImagePlot(BlittedFigure):
                                        self.on_key_press)
         self.figure.canvas.draw()
         if self.axes_manager:
-            self.axes_manager.connect(self.update)
+            self.axes_manager.events.indices_changed.connect(self.update, 0)
 
     def on_key_press(self, event):
         if event.key == 'h':
@@ -406,7 +406,7 @@ class ImagePlot(BlittedFigure):
 
     def disconnect(self):
         if self.axes_manager:
-            self.axes_manager.disconnect(self.update)
+            self.axes_manager.events.indices_changed.disconnect(self.update)
 
     def close(self):
         for marker in self.ax_markers:
