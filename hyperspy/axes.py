@@ -301,10 +301,17 @@ class DataAxis(t.HasTraits):
         return cp
 
     def update_value(self):
-        with self.events.index_changed.suppress():
+        # To prevent firing events before value checks, suppress events,
+        # and only fire if final result is different
+        old_val = self.value
+        old_idx = self.index
+        with self.events.index_changed.suppress(), \
+                self.events.value_changed.suppress():
             self.value = self.axis[self.index]
-        self.events.index_changed.trigger(index=self.index, axis=self)
-        self.events.value_changed.trigger(value=self.index, axis=self)
+        if old_val != self.value:
+            self.events.value_changed.trigger(value=self.index, axis=self)
+        if old_idx != self.index:
+            self.events.index_changed.trigger(index=self.index, axis=self)
 
     def value2index(self, value, rounding=round):
         """Return the closest index to the given value if between the limit.
@@ -355,13 +362,18 @@ class DataAxis(t.HasTraits):
             return self.axis[index]
 
     def set_index_from_value(self, value):
-        with self.events.index_changed.suppress():
+        old_idx = self.index
+        old_val = self.value
+        with self.events.index_changed.suppress(), \
+                self.events.value_changed.suppress():
             self.index = self.value2index(value)
             # If the value is above the limits we must correct the value
             if self.continuous_value is False:
                 self.value = self.index2value(self.index)
-        self.events.index_changed.trigger(index=self.index, axis=self)
-        self.events.value_changed.trigger(value=self.index, axis=self)
+        if old_idx != self.index:
+            self.events.index_changed.trigger(index=self.index, axis=self)
+        if old_val != self.value:
+            self.events.value_changed.trigger(value=self.index, axis=self)
 
     def calibrate(self, value_tuple, index_tuple, modify_calibration=True):
         scale = (value_tuple[1] - value_tuple[0]) /\
