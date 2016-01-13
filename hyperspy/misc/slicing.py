@@ -194,7 +194,7 @@ class FancySlicing(object):
                     len(self.axes_manager._axes) < 2):
                 axis._slice_me(slice_)
             else:
-                _obj._remove_axes(axis.index_in_axes_manager)
+                _obj._remove_axis(axis.index_in_axes_manager)
         if hasattr(self, "_additional_slicing_targets"):
             for ta in self._additional_slicing_targets:
                 try:
