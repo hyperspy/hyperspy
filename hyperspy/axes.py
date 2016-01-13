@@ -87,17 +87,6 @@ class DataAxis(t.HasTraits):
                  navigate=t.Undefined):
         super(DataAxis, self).__init__()
         self.events = Events()
-        self.events.axis_changed = Event("""
-            Event that triggers when an axis changes size, calibration or space
-
-            Triggers whenever the `DataAxis` has a change in one of these
-            attributes: `size`, `scale` or `offset`. Triggers after the
-            internal state of the `DataAxis` has been updated.
-
-            Arguments:
-            ---------
-            axis : The DataAxis that the event belongs to.
-            """)
         self.events.index_changed = Event("""
             Event that triggers when the index of the `DataAxis` changes
 
@@ -283,7 +272,6 @@ class DataAxis(t.HasTraits):
         if len(self.axis) != 0:
             self.low_value, self.high_value = (
                 self.axis.min(), self.axis.max())
-        self.events.axis_changed.trigger(axis=self)
 
     def _update_slice(self, value):
         if value is False:
@@ -509,18 +497,6 @@ class AxesManager(t.HasTraits):
     def __init__(self, axes_list):
         super(AxesManager, self).__init__()
         self.events = Events()
-        self.events.axes_changed = Event("""
-            Event that triggers when an axis changes size, calibration or space
-
-            Triggers whenever any `DataAxis` in the `AxesManager` has a change
-            in one of these attributes: `navigate`, `size`, `scale` or
-            `offset`. Triggers after the internal state of the `AxesManager`
-            has been updated.
-
-            Arguments:
-            ---------
-            axes_manager : The AxesManager that the event belongs to.
-            """)
         self.events.indices_changed = Event("""
             Event that triggers when the indices of the `AxesManager` changes
 
@@ -542,10 +518,8 @@ class AxesManager(t.HasTraits):
 
         self._update_attributes()
         self.on_trait_change(self._on_index_changed, '_axes.index')
-        self.on_trait_change(self._on_view_changed, '_axes.slice')
-        self.on_trait_change(self._on_axes_size_changed, '_axes.size')
-        self.on_trait_change(self.events.axes_changed.trigger, '_axes.scale')
-        self.on_trait_change(self.events.axes_changed.trigger, '_axes.offset')
+        self.on_trait_change(self._update_attributes, '_axes.slice')
+        self.on_trait_change(self._update_attributes, '_axes.size')
         self._index = None  # index for the iterator
 
     def _get_positive_index(self, axis):
@@ -723,14 +697,6 @@ class AxesManager(t.HasTraits):
     def _on_index_changed(self):
         self._update_attributes()
         self.events.indices_changed.trigger(axes_manager=self)
-
-    def _on_view_changed(self):
-        self._update_attributes()
-        self.events.axes_changed.trigger()
-
-    def _on_axes_size_changed(self):
-        self._update_attributes()
-        self.events.axes_changed.trigger()
 
     def _update_attributes(self):
         getitem_tuple = ()
