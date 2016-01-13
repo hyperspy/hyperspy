@@ -3588,7 +3588,7 @@ class Signal(FancySlicing,
         >>> s.rebin((5, 100))
         <Spectrum, title: , dimensions: (5|100)>
         I
-        """ % OUT_ARG
+        """
         if len(new_shape) != len(self.data.shape):
             raise ValueError("Wrong shape size")
         new_shape_in_array = []
@@ -3610,6 +3610,7 @@ class Signal(FancySlicing,
                     new_shape)
         if out is None:
             return s
+    rebin.__doc__ %= OUT_ARG
 
     def split(self,
               axis='auto',
@@ -4015,9 +4016,10 @@ class Signal(FancySlicing,
         # If we just want to plot the result of the operation
         s.sum(-1, True).plot()
 
-        """ % OUT_ARG
+        """
         return self._apply_function_on_data_and_remove_axis(np.sum, axis,
                                                             out=out)
+    sum.__doc__ %= OUT_ARG
 
     def max(self, axis, out=None):
         """Returns a signal with the maximum of the signal along an axis.
@@ -4046,9 +4048,10 @@ class Signal(FancySlicing,
         >>> s.max(-1).data.shape
         (64,64)
 
-        """ % OUT_ARG
+        """
         return self._apply_function_on_data_and_remove_axis(np.max, axis,
                                                             out=out)
+    max.__doc__ %= OUT_ARG
 
     def min(self, axis, out=None):
         """Returns a signal with the minimum of the signal along an axis.
@@ -4077,10 +4080,11 @@ class Signal(FancySlicing,
         >>> s.min(-1).data.shape
         (64,64)
 
-        """ % OUT_ARG
+        """
 
         return self._apply_function_on_data_and_remove_axis(np.min, axis,
                                                             out=out)
+    min.__doc__ %= OUT_ARG
 
     def mean(self, axis, out=None):
         """Returns a signal with the average of the signal along an axis.
@@ -4109,9 +4113,10 @@ class Signal(FancySlicing,
         >>> s.mean(-1).data.shape
         (64,64)
 
-        """ % OUT_ARG
+        """
         return self._apply_function_on_data_and_remove_axis(np.mean, axis,
                                                             out=out)
+    mean.__doc__ %= OUT_ARG
 
     def std(self, axis, out=None):
         """Returns a signal with the standard deviation of the signal along
@@ -4141,9 +4146,10 @@ class Signal(FancySlicing,
         >>> s.std(-1).data.shape
         (64,64)
 
-        """ % OUT_ARG
+        """
         return self._apply_function_on_data_and_remove_axis(np.std, axis,
                                                             out=out)
+    std.__doc__ %= OUT_ARG
 
     def var(self, axis, out=None):
         """Returns a signal with the variances of the signal along an axis.
@@ -4172,9 +4178,10 @@ class Signal(FancySlicing,
         >>> s.var(-1).data.shape
         (64,64)
 
-        """ % OUT_ARG
+        """
         return self._apply_function_on_data_and_remove_axis(np.var, axis,
                                                             out=out)
+    var.__doc__ %= OUT_ARG
 
     def diff(self, axis, order=1, out=None):
         """Returns a signal with the n-th order discrete difference along
@@ -4197,7 +4204,7 @@ class Signal(FancySlicing,
         (64,64,1024)
         >>> s.diff(-1).data.shape
         (64,64,1023)
-        """ % OUT_ARG
+        """
         s = out or self._deepcopy_with_new_data(None)
         s.data = np.diff(self.data, n=order,
                          axis=self.axes_manager[axis].index_in_array)
@@ -4207,6 +4214,7 @@ class Signal(FancySlicing,
         s.get_dimensions_from_data()
         if out is None:
             return s
+    diff.__doc__ %= OUT_ARG
 
     def derivative(self, axis, order=1, out=None):
         """Numerical derivative along the given axis.
@@ -4235,7 +4243,7 @@ class Signal(FancySlicing,
         --------
         diff
 
-        """ % OUT_ARG
+        """
 
         der = self.diff(order=order, axis=axis, out=out)
         der = out or der
@@ -4243,6 +4251,7 @@ class Signal(FancySlicing,
         der.data /= axis.scale ** order
         if out is None:
             return der
+    derivative.__doc__ %= OUT_ARG
 
     def integrate_simpson(self, axis, out=None):
         """Returns a signal with the result of calculating the integral
@@ -4272,7 +4281,7 @@ class Signal(FancySlicing,
         >>> s.var(-1).data.shape
         (64,64)
 
-        """ % OUT_ARG
+        """
         axis = self.axes_manager[axis]
         s = out or self._deepcopy_with_new_data(None)
         s.data = sp.integrate.simps(y=self.data, x=axis.axis,
@@ -4280,6 +4289,7 @@ class Signal(FancySlicing,
         if out is None:
             s._remove_axis(axis.index_in_axes_manager)
             return s
+    integrate_simpson.__doc__ %= OUT_ARG
 
     def integrate1D(self, axis, out=None):
         """Integrate the signal over the given axis.
@@ -4312,11 +4322,12 @@ class Signal(FancySlicing,
         >>> s.var(-1).data.shape
         (64,64)
 
-        """ % OUT_ARG
+        """
         if self.metadata.Signal.binned is False:
             return self.integrate_simpson(axis=axis, out=out)
         else:
             return self.sum(axis=axis, out=out)
+    integrate1D.__doc__ %= OUT_ARG
 
     def indexmax(self, axis, out=None):
         """Returns a signal with the index of the maximum along an axis.
@@ -4346,9 +4357,10 @@ class Signal(FancySlicing,
         >>> s.indexmax(-1).data.shape
         (64,64)
 
-        """ % OUT_ARG
+        """
         return self._apply_function_on_data_and_remove_axis(np.argmax, axis,
                                                             out=out)
+    indexmax.__doc__ %= OUT_ARG
 
     def valuemax(self, axis, out=None):
         """Returns a signal with the value of the maximum along an axis.
@@ -4378,12 +4390,13 @@ class Signal(FancySlicing,
         >>> s.valuemax(-1).data.shape
         (64,64)
 
-        """ % OUT_ARG
+        """
         s = self.indexmax(axis, out=out)
         s = out or s
         s.data = self.axes_manager[axis].index2value(s.data)
         if out is None:
             return s
+    valuemax.__doc__ %= OUT_ARG
 
     def get_histogram(self, bins='freedman', range_bins=None, out=None,
                       **kwargs):
@@ -4432,7 +4445,7 @@ class Signal(FancySlicing,
         Plot the histogram of the signal at the current coordinates
         >>> s.get_current_signal().get_histogram().plot()
 
-        """ % OUT_ARG
+        """
         from hyperspy import signals
         data = self.data[~np.isnan(self.data)].flatten()
         hist, bin_edges = histogram(data,
@@ -4459,6 +4472,7 @@ class Signal(FancySlicing,
                                             " histogram")
         hist_spec.metadata.Signal.binned = True
         return hist_spec
+    get_histogram.__doc__ %= OUT_ARG
 
     def map(self, function,
             show_progressbar=None, **kwargs):
@@ -4931,7 +4945,7 @@ class Signal(FancySlicing,
         >>> img.to_spectrum(0)
         <Spectrum, title: , dimensions: (6, 5, 3, 4)>
 
-        """ % OUT_ARG
+        """
         # Roll the spectral axis to-be to the latex index in the array
         sp = self.rollaxis(spectral_axis, -1 + 3j)
         sp.metadata.Signal.record_by = "spectrum"
@@ -4940,6 +4954,7 @@ class Signal(FancySlicing,
             return sp
         else:
             out.data[:] = sp.data
+    as_spectrum.__doc__ %= OUT_ARG
 
     def as_image(self, image_axes, out=None):
         """Convert signal to image.
@@ -4970,7 +4985,7 @@ class Signal(FancySlicing,
         ------
         DataDimensionError : when data.ndim < 2
 
-        """ % OUT_ARG
+        """
         if self.data.ndim < 2:
             raise DataDimensionError(
                 "A Signal dimension must be >= 2 to be converted to an Image")
@@ -4985,6 +5000,7 @@ class Signal(FancySlicing,
             return im
         else:
             out.data[:] = im.data
+    as_image.__doc__ %= OUT_ARG
 
     def _assign_subclass(self):
         mp = self.metadata
