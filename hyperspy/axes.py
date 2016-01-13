@@ -504,6 +504,16 @@ class AxesManager(t.HasTraits):
         """x.__getitem__(y) <==> x[y]
 
         """
+        if isinstance(y, basestring) or not np.iterable(y):
+            return self[(y,)][0]
+        axes = [self._axes_getter(ax) for ax in y]
+        _, indices = np.unique(axes, return_index=True)
+        ans = tuple(axes[i] for i in sorted(indices))
+        return ans
+
+    def _axes_getter(self, y):
+        if y in self._axes:
+            return y
         if isinstance(y, basestring):
             axes = list(self._get_axes_in_natural_order())
             while axes:
@@ -556,7 +566,16 @@ class AxesManager(t.HasTraits):
                      else tuple())
         return nav_shape + sig_shape
 
-    def remove(self, axis):
+    def remove(self, axes):
+        """Remove one or more axes
+        """
+        axes = self[axes]
+        if not np.iterable(axes):
+            axes = (axes,)
+        for ax in axes:
+            self._remove_one_axis(ax)
+
+    def _remove_one_axis(self, axis):
         """Remove the given Axis.
 
         Raises
@@ -564,7 +583,7 @@ class AxesManager(t.HasTraits):
         ValueError if the Axis is not present.
 
         """
-        axis = self[axis]
+        axis = self._axes_getter(axis)
         axis.axes_manager = None
         self._axes.remove(axis)
 

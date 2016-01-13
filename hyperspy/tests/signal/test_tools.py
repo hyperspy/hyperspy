@@ -5,6 +5,13 @@ from hyperspy.signal import Signal
 from hyperspy import signals
 
 
+def _verify_test_sum_x_E(self, s):
+    np.testing.assert_array_equal(self.signal.data.sum(), s.data)
+    nt.assert_equal(s.data.ndim, 1)
+    # Check that there is still one signal axis.
+    nt.assert_equal(s.axes_manager.signal_dimension, 1)
+
+
 class Test2D:
 
     def setUp(self):
@@ -21,11 +28,14 @@ class Test2D:
         nt.assert_equal(s.axes_manager.navigation_dimension, 0)
 
     def test_sum_x_E(self):
+        s = self.signal.sum(("x", "E"))
+        _verify_test_sum_x_E(self, s)
+        s = self.signal.sum((0, "E"))
+        _verify_test_sum_x_E(self, s)
+        s = self.signal.sum((self.signal.axes_manager[0], "E"))
+        _verify_test_sum_x_E(self, s)
         s = self.signal.sum("x").sum("E")
-        np.testing.assert_array_equal(self.signal.data.sum(), s.data)
-        nt.assert_equal(s.data.ndim, 1)
-        # Check that there is still one signal axis.
-        nt.assert_equal(s.axes_manager.signal_dimension, 1)
+        _verify_test_sum_x_E(self, s)
 
     def test_axis_by_str(self):
         s1 = self.signal.deepcopy()
