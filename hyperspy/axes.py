@@ -85,7 +85,7 @@ class DataAxis(t.HasTraits):
         super(DataAxis, self).__init__()
         self.events = Events()
         self.events.axis_changed = Event()
-        self.events.navigated = Event()
+        self.events.index_changed = Event()
         self.events.value_changed = Event()
         self.name = name
         self.units = units
@@ -282,9 +282,9 @@ class DataAxis(t.HasTraits):
         return cp
 
     def update_value(self):
-        with self.events.navigated.suppress():
+        with self.events.index_changed.suppress():
             self.value = self.axis[self.index]
-        self.events.navigated.trigger()
+        self.events.index_changed.trigger()
 
     def value2index(self, value, rounding=round):
         """Return the closest index to the given value if between the limit.
@@ -335,12 +335,12 @@ class DataAxis(t.HasTraits):
             return self.axis[index]
 
     def set_index_from_value(self, value):
-        with self.events.navigated.suppress():
+        with self.events.index_changed.suppress():
             self.index = self.value2index(value)
             # If the value is above the limits we must correct the value
             if self.continuous_value is False:
                 self.value = self.index2value(self.index)
-        self.events.navigated.trigger()
+        self.events.index_changed.trigger()
 
     def calibrate(self, value_tuple, index_tuple, modify_calibration=True):
         scale = (value_tuple[1] - value_tuple[0]) /\
@@ -475,9 +475,29 @@ class AxesManager(t.HasTraits):
 
     def __init__(self, axes_list):
         super(AxesManager, self).__init__()
-        self._events = Events()
-        self._events.axes_changed = Event()
-        self._events.navigated = Event()
+        self.events = Events()
+        self.events.axes_changed = Event("""
+            Event that triggers when an axis changes size, calibration or space
+
+            Triggers whenever any `DataAxis` in the `AxesManager` has a change
+            in one of these attributes: `navigate`, `size`, `scale` or
+            `offset`. Triggers after the internal state of the `AxesManager`
+            has been updated.
+
+            Arguments:
+            ---------
+            axes_manager : The AxesManager that the event belongs to.
+            """)
+        self.events.indices_changed = Event("""
+            Event that triggers when the indices of the `AxesManager` changes
+
+            Triggers after the internal state of the `AxesManager` has been
+            updated.
+
+            Arguments:
+            ---------
+            axes_manager : The AxesManager that the event belongs to.
+            """)
         self.create_axes(axes_list)
         # set_signal_dimension is called only if there is no current
         # view. It defaults to spectrum
@@ -487,21 +507,12 @@ class AxesManager(t.HasTraits):
             self.set_signal_dimension(1)
 
         self._update_attributes()
-        self.on_trait_change(self._on_navigate, '_axes.index')
+        self.on_trait_change(self._on_index_changed, '_axes.index')
         self.on_trait_change(self._on_nav_axes_changed, '_axes.slice')
         self.on_trait_change(self._on_axes_size_changed, '_axes.size')
-        self.on_trait_change(self._events.axes_changed.trigger, '_axes.scale')
-        self.on_trait_change(self._events.axes_changed.trigger, '_axes.offset')
+        self.on_trait_change(self.events.axes_changed.trigger, '_axes.scale')
+        self.on_trait_change(self.events.axes_changed.trigger, '_axes.offset')
         self._index = None  # index for the iterator
-
-    @property
-    def events(self):
-        # Collect all axes' events for easy supression!
-        events = Events()
-        events._events.update(self._events._events)
-        for ax in self._axes:
-            events.update(ax.events, prefix=ax._get_name())
-        return events
 
     def _get_positive_index(self, axis):
         if axis < 0:
@@ -675,17 +686,17 @@ class AxesManager(t.HasTraits):
         axis.axes_manager = self
         self._axes.append(axis)
 
-    def _on_navigate(self):
+    def _on_index_changed(self):
         self._update_attributes()
-        self._events.navigated.trigger()
+        self.events.indices_changed.trigger(axes_manager=self)
 
     def _on_nav_axes_changed(self):
         self._update_attributes()
-        self._events.axes_changed.trigger()
+        self.events.axes_changed.trigger()
 
     def _on_axes_size_changed(self):
         self._update_attributes()
-        self._events.axes_changed.trigger()
+        self.events.axes_changed.trigger()
 
     def _update_attributes(self):
         getitem_tuple = ()
@@ -757,10 +768,10 @@ class AxesManager(t.HasTraits):
             axis.navigate = tl.pop(0)
 
     def connect(self, f):
-        self._events.navigated.connect(f, 0)
+        self.events.indices_changed.connect(f, 0)
 
     def disconnect(self, f):
-        self._events.navigated.disconnect(f)
+        self.events.indices_changed.disconnect(f)
 
     def key_navigator(self, event):
         if len(self.navigation_axes) not in (1, 2):

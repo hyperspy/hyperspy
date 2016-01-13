@@ -308,7 +308,7 @@ class Model1D(BaseModel):
         old = self._suspend_update
         self._suspend_update = True
         with evs.suppress():
-            with self.axes_manager.events.navigated.suppress():
+            with self.axes_manager.events.indices_changed.suppress():
                 yield
         self._suspend_update = old
 
