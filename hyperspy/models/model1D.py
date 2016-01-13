@@ -32,7 +32,7 @@ from hyperspy.axes import AxesManager
 from hyperspy.drawing.widgets import (DraggableVerticalLine,
                                       DraggableLabel)
 from hyperspy.gui.tools import ComponentFit
-from hyperspy.events import Events
+from hyperspy.events import Events, EventSupressor
 
 
 class Model1D(BaseModel):
@@ -294,20 +294,24 @@ class Model1D(BaseModel):
 
     @contextmanager
     def suspend_update(self, update_on_resume=True):
-        """Prevents plot from updating until with clause completes.
+        """Prevents plot from updating until 'with' clause completes.
 
         See Also
         --------
         update_plot
         """
 
-        all_comp_param_events = Events()
-        all_comp_param_events.children = lambda: [c.events for c in self]
+        es = EventSupressor()
+        es.add(self.axes_manager.events.indices_changed)
+        for c in self:
+            es.add(c.events, self.update_plot)
+            for p in c.parameters:
+                es.add(p.events, self.update_plot)
+
         old = self._suspend_update
         self._suspend_update = True
-        with all_comp_param_events.suppress_hierarchy():
-            with self.axes_manager.events.indices_changed.suppress():
-                yield
+        with es.suppress():
+            yield
         self._suspend_update = old
 
         if update_on_resume is True:

@@ -1,4 +1,5 @@
 import inspect
+import collections
 from contextlib import contextmanager
 
 
@@ -148,6 +149,12 @@ class Events(object):
         d.extend(self.__dict__.iterkeys())
         d.extend(self._events.iterkeys())
         return sorted(set(d))
+
+    def __iter__(self):
+        """
+        Allows iteraction of all events in the container
+        """
+        return self._events.itervalues()
 
     def __repr__(self):
         text = "<hyperspy.events.Events: " + repr(self._events) + ">"
@@ -336,3 +343,118 @@ class Event(object):
     def __repr__(self):
         text = "<hyperspy.events.Event: " + repr(self._connected) + ">"
         return text.encode('utf8')
+
+
+class EventSupressor(object):
+
+    """
+    Object to enforce a variety of suppression types simultaneously
+
+    Targets to be suppressed can be added by the function `add()`, or given
+    in the constructor. Valid targets are:
+     - `Event`: The entire Event will be suppressed
+     - `Events`: All events in th container will be suppressed
+     - (Event, callback): The callback will be suppressed in Event
+     - (Events, callback): The callback will be suppressed in each event in
+         Events where it is connected.
+     - Any iterable collection of the above target types
+
+    Example usage
+    -------------
+    >>> es = EventSupressor((event1, callback1), (event1, callback2))
+    >>> es.add(event2, callback2)
+    >>> es.add(event3)
+    >>> es.add(events_container1)
+    >>> es.add(events_container2, callback1)
+    >>> es.add(event4, (events_container3, callback2))
+    >>>
+    >>> with es.supress():
+    ...     do_something()
+    """
+
+    def __init__(self, *to_suppress):
+        self._cms = []
+        if len(to_suppress) > 0:
+            self.add(*to_suppress)
+
+    def _add_single(self, target):
+        # Identify and initializes the CM, but doesn't enter it
+        if self._is_tuple_target(target):
+            if isinstance(target[0], Event):
+                cm = target[0].suppress_callback(target[1])
+                self._cms.append(cm)
+            else:
+                # Don't check for function presence in event now:
+                # suppress_callback does this when entering
+                for e in target[0]:
+                    self._cms.append(e.suppress_callback(target[1]))
+        else:
+            cm = target.suppress()
+            self._cms.append(cm)
+
+    def _is_tuple_target(self, candidate):
+        v = (isinstance(candidate, collections.Iterable) and
+             len(candidate) == 2 and
+             isinstance(candidate[0], (Event, Events)) and
+             callable(candidate[1]))
+        return v
+
+    def _is_target(self, candidate):
+        v = (isinstance(candidate, (Event, Events)) or
+             self._is_tuple_target(candidate))
+        return v
+
+    def add(self, *to_suppress):
+        """
+        Add one or more targets to be suppressed
+
+        Valid targets are:
+         - `Event`: The entire Event will be suppressed
+         - `Events`: All events in th container will be suppressed
+         - (Event, callback): The callback will be suppressed in Event
+         - (Events, callback): The callback will be suppressed in each event
+           in Events where it is connected.
+         - Any iterable collection of the above target types
+        """
+        # Remove useless layers of iterables:
+        while (isinstance(to_suppress, collections.Iterable) and
+                len(to_suppress) == 1):
+            to_suppress = to_suppress[0]
+        # If single target passed, add directly:
+        if self._is_target(to_suppress):
+            self._add_single(to_suppress)
+        elif isinstance(to_suppress, collections.Iterable):
+            if len(to_suppress) == 0:
+                raise ValueError("No viable suppression targets added!")
+            for t in to_suppress:
+                if self._is_target(t):
+                    self._add_single(t)
+        else:
+            raise ValueError("No viable suppression targets added!")
+
+    @contextmanager
+    def suppress(self):
+        """
+        Use this function with a 'with' statement to temporarily suppress
+        all events added. When the 'with' lock completes, the old suppression
+        values will be restored.
+
+        See also
+        --------
+        Events.suppress
+        Events.suppress_hierarchy
+        Event.suppress
+        Event.suppress_callback
+        """
+        # We don't suppress any exceptions, so we can use simple CM management:
+        cms = []
+        try:
+            for cm in self._cms:
+                cm.__enter__()
+                cms.append(cm)                  # Only add entered CMs to list
+            yield
+        finally:
+            # Completed succefully or exception occured, unwind hierarchy
+            for cm in reversed(cms):
+                # We don't use exception info, so simply pass blanks
+                cm.__exit__(None, None, None)
