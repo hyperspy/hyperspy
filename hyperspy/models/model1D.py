@@ -757,11 +757,6 @@ class Model1D(BaseModel):
         am._axes[0].events.value_changed.connect(set_value, 1)
         component._position.events.value_changed.connect(
             am._axes[0].set_index_from_value, 1)
-        # Create parameter -> widget connection
-        # This is done with a duck typing trick
-        # We disguise the DataAxis as a Parameter by adding the _twin attribute
-        am._axes[0]._twins = set()
-        component._position.twin = am._axes[0]
 
     def disable_adjust_position(self):
         """Disables the interactive adjust position feature
