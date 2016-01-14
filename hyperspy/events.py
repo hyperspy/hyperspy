@@ -220,13 +220,16 @@ class Event(object):
         ----------
         function : callable
             The function to call when the event triggers.
-        nargs : int, 'all' (default), or 'auto'
+        nargs : int, 'all' (default), 'auto', or 'fullauto'
             The number of arguments to supply to the function. If 'all', it
             will be called with all arguments passed to trigger(). If 'auto'
             inspect.getargspec() will be used to determine the number of
             arguments the function accepts (arguments with default values will
             be included in the count). If the function accepts *args or
-            **kwargs, all arguments will be passed.
+            **kwargs, all arguments will be passed. For 'fullauto', the
+            mapping of the arguments passed to trigger to the function will
+            be inferred when triggered. Note that 'fullauto' only works for
+            events who where passed a list `kwarg_order` when created.
 
         See also
         --------
@@ -234,14 +237,17 @@ class Event(object):
         """
         if not callable(function):
             raise TypeError("Only callables can be registered")
-        if nargs == 'auto':
-            spec = inspect.getargspec(function)
-            if spec.varargs or spec.keywords:
-                nargs = 'all'
-            elif spec.args is None:
-                nargs = 0
-            else:
-                nargs = len(spec.args)
+        if isinstance(nargs, basestring):
+            if nargs == 'auto':
+                spec = inspect.getargspec(function)
+                if spec.varargs or spec.keywords:
+                    nargs = 'all'
+                elif spec.args is None:
+                    nargs = 0
+                else:
+                    nargs = len(spec.args)
+            elif nargs not in ('all', 'fullauto'):
+                raise ValueError("Invalid value for `nargs`: %s" % nargs)
         elif nargs is None:
             nargs = 0
         if nargs not in self._connected:
@@ -293,22 +299,34 @@ class Event(object):
                 args.extend(matches[:nargs-len(args)])
         return f(*args[0:nargs])
 
-    def _trigger_all(self, f, args, kwargs):
+    def _trigger_auto(self, f, args, kwargs):
         """
-        Trigger resolution matching kwargs.
+        Automatic trigger resolution matching kwargs.
 
         If we're passed keyword arguments, and we have the order, check if we
         have enough args and matched keywords to call without failing. If not
         convert any unmatched
         """
-        # Only check kwargs if passed and we have order:
+        if self._kwarg_order:
+            print args, kwargs
+            args = list(args)
+            kwargs = kwargs.copy()
+        if args and self._kwarg_order and len(self._kwarg_order) >= len(args):
+            candidates = self._kwarg_order[:len(args)]
+            if not set(candidates).intersection(kwargs.iterkeys()):
+                # No conflict with specified kwargs
+                kwargs.update((k, a) for (k, a) in zip(candidates, args))
+                args = []
+
+        # Nothing to inferr from if we don't have kwargs:
         if kwargs and self._kwarg_order:
+            print args, kwargs
             spec = inspect.getargspec(f)
             # If we have too few args, convert unmatched keywords
             # First, figure out how many args we need:
             f_args = list(spec.args)
             if inspect.ismethod(f):
-                f_args.pop(0)                            # Remove `self`
+                f_args.pop(0)                           # Remove `self`
             f_args = f_args[len(args):]                 # Remove supplied args
             # Are we missing more arguments than there are default values?
             if spec.defaults is None or len(f_args) >= len(spec.defaults):
@@ -321,7 +339,8 @@ class Event(object):
                     defaults_to_exclude = len(spec.defaults)
                     if unmatched and not spec.keywords:
                         defaults_to_exclude -= len(unmatched)
-                    f_args = f_args[-defaults_to_exclude:]
+                    if defaults_to_exclude > 0:
+                        f_args = f_args[-defaults_to_exclude:]
                 args = list(args)
                 # Fill up args from matched and unmatched keyword arguments
                 for a in f_args:
@@ -331,10 +350,13 @@ class Event(object):
                         args.append(kwargs.pop(unmatched.pop(0)))
             # Remove any unmatched keywords if we have nowhere to put it:
             if not spec.keywords:
-                for kw in kwargs:
-                    if kw not in spec.args:
+                for kw in kwargs.copy():
+                    if (len(spec.args) >= len(args) or
+                            kw not in (spec.args[len(args)])):
                         kwargs.pop(kw)
 
+            print args, kwargs
+        print "exec:", args, kwargs
         return f(*args, **kwargs)
 
     def trigger(self, *args, **kwargs):
@@ -354,7 +376,10 @@ class Event(object):
             for nargs, c in self._connected.copy().iteritems():
                 if nargs is 'all':
                     for f in c:
-                        self._trigger_all(f, args, kwargs)
+                        f(*args, **kwargs)
+                elif nargs is 'fullauto':
+                    for f in c:
+                        self._trigger_auto(f, args, kwargs)
                 else:
                     if len(args) + len(kwargs) < nargs:
                         raise ValueError(
