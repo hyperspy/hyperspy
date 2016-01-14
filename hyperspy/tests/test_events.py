@@ -305,3 +305,82 @@ class TestEventsSignatures(EventsBase):
     def test_type(self):
         self.events.a.connect('f_a')
 
+
+class TestTripperArgResolution(EventsBase):
+
+    def setup(self):
+        self.events = he.Events()
+        self.events.a = he.Event(kwarg_order=['A', 'B'])
+        self.events.b = he.Event(kwarg_order=['A', 'B', 'C'])
+
+    def test_nargs_resolution(self):
+        self.events.a.connect(lambda x=None: nt.assert_equal(x, None), 0)
+        self.events.a.connect(lambda x: nt.assert_equal(x, 'vA'), 1)
+        self.events.a.connect(lambda x, y:
+                              nt.assert_equal((x, y), ('vA', 'vB')), 2)
+        self.events.a.connect(lambda x, A:
+                              nt.assert_equal((x, A), ('vA', 'vB')), 2)
+        self.events.a.connect(lambda x, y=None, A=None:
+                              nt.assert_equal((x, y, A),
+                                              ('vA', 'vB', None)), 2)
+        self.events.a.connect(lambda B, A:
+                              nt.assert_equal((B, A), ('vA', 'vB')), 2)
+        self.events.a.connect(lambda B, y:
+                              nt.assert_equal((B, y), ('vA', 'vB')), 2)
+        self.events.a.connect(lambda B, A=None:
+                              nt.assert_equal(B, 'vA'), 1)
+        self.events.a.connect(lambda B, y=None:
+                              nt.assert_equal(B, 'vA'), 1)
+
+        self.events.a.trigger('vA', 'vB')
+        self.events.a.trigger('vA', 'vB', 'vC', 'vD')
+        self.events.a.trigger(A='vA', B='vB')
+        self.events.a.trigger('vA', B='vB')
+        self.events.a.trigger(B='vB', A='vA')
+        self.events.a.trigger('vA', C='vC', B='vB', D='vD')
+
+    def test_all_args_resolution(self):
+        self.events.a.connect(lambda x, y:
+                              nt.assert_equal((x, y), ('vA', 'vB')), 'all')
+        self.events.a.connect(lambda x, y, A=None, B=None:
+                              nt.assert_equal((x, y, A, B),
+                                              ('vA', 'vB', None, None)), 'all')
+
+        self.events.a.trigger('vA', 'vB')
+
+    def test_all_kwargs_resolution(self):
+        self.events.a.connect(lambda A, B:
+                              nt.assert_equal((A, B), ('vA', 'vB')), 'all')
+        self.events.a.connect(lambda x=None, y=None, A=None, B=None:
+                              nt.assert_equal((x, y, A, B),
+                                              (None, None, 'vA', 'vB')), 'all')
+
+        self.events.a.trigger(A='vA', B='vB')
+
+    def test_all_mixed_resolution(self):
+        self.events.b.connect(lambda A, B, C:
+                              nt.assert_equal((A, B), ('vA', 'vB')), 'all')
+        self.events.b.connect(lambda x=None, y=None, A=None, B=None, C=None:
+                              nt.assert_equal((x, y, A, B, C),
+                                              (None, None, 'vA', 'vB', 'vC')),
+                              'all')
+
+        self.events.a.trigger('vA', B='vC', C='vB')
+        self.events.a.trigger('vA', C='vC', B='vB')
+
+    def test_fullauto_resolution(self):
+        self.events.b.connect(lambda x: nt.assert_equal(x, 'vA'), 'fullauto')
+        self.events.b.connect(lambda x, A, B=None:
+                              nt.assert_equal((A, B, x), ('vA', 'vB', 'vC')),
+                              'fullauto')
+        self.events.b.connect(lambda B, A:
+                              nt.assert_equal((A, B), ('vA', 'vB')),
+                              'fullauto')
+        self.events.b.connect(lambda B, A=None:
+                              nt.assert_equal((A, B), ('vA', 'vB')),
+                              'fullauto')
+        self.events.b.connect(lambda B, y=None:
+                              nt.assert_equal(B, 'vB'), 'fullauto')
+
+        self.events.b.trigger(A='vA', B='vB', C='vC', D='vD')
+        self.events.b.trigger('vA', C='vC', B='vB', D='vD')
