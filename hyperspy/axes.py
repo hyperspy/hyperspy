@@ -519,7 +519,6 @@ class AxesManager(t.HasTraits):
             ---------
             axes_manager : The AxesManager that the event belongs to.
             """)
-        self.events.children = lambda: [ax.events for ax in self._axes]
         self.create_axes(axes_list)
         # set_signal_dimension is called only if there is no current
         # view. It defaults to spectrum

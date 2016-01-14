@@ -591,7 +591,6 @@ class Component(t.HasTraits):
 
     def __init__(self, parameter_name_list):
         self.events = Events()
-        self.events.children = lambda: [p.events for p in self.parameters]
         self.events.active_changed = Event("""
             Event that triggers when the `Component.active` changes.
 
