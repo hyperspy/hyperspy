@@ -269,7 +269,7 @@ of them are just wrapped numpy functions, as an example:
 
 Other functions that support similar behavior: :py:func:`~.signal.sum`,
 :py:func:`~.signal.max`, :py:func:`~.signal.min`, :py:func:`~.signal.mean`,
-:py:func:`~.signal.std`, :py:func:`~.signal.var`, :py:func:`~.signal.idexmax`,
+:py:func:`~.signal.std`, :py:func:`~.signal.var`, :py:func:`~.signal.indexmax`,
 :py:func:`~.signal.amax`. Similar functions that can only be performed on one
 axis at a time: :py:func:`~.signal.diff`, :py:func:`~.signal.derivative`,
 :py:func:`~.signal.integrate_simpson`, :py:func:`~.signal.integrate1D`,
@@ -722,19 +722,6 @@ to reverse the :py:func:`~.utils.stack` function:
 
   Splitting example.
 
-
-Simple operations over one axis
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-* :py:meth:`~.signal.Signal.sum`
-* :py:meth:`~.signal.Signal.mean`
-* :py:meth:`~.signal.Signal.max`
-* :py:meth:`~.signal.Signal.min`
-* :py:meth:`~.signal.Signal.std`
-* :py:meth:`~.signal.Signal.var`
-* :py:meth:`~.signal.Signal.diff`
-* :py:meth:`~.signal.Signal.derivative`
-* :py:meth:`~.signal.Signal.integrate_simpson`
 
 .. _signal.change_dtype:
 
