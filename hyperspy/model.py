@@ -42,7 +42,7 @@ from hyperspy.misc.export_dictionary import (export_to_dictionary,
                                              load_from_dictionary,
                                              parse_flag_string,
                                              reconstruct_object)
-from hyperspy.misc.utils import slugify, shorten_name
+from hyperspy.misc.utils import slugify, shorten_name, stash_active_state
 from hyperspy.misc.slicing import copy_slice_from_whitelist
 
 
@@ -415,64 +415,46 @@ class BaseModel(list):
         >>> s2 = m.as_signal(component_list=[l1])
 
         """
-        # change actual values to whatever except bool
-        _multi_on_ = '_multi_on_'
-        _multi_off_ = '_multi_off_'
         if show_progressbar is None:
             show_progressbar = preferences.General.show_progressbar
 
-        if component_list:
-            component_list = [self._get_component(x) for x in component_list]
-            active_state = []
-            for component_ in self:
-                if component_.active_is_multidimensional:
-                    if component_ not in component_list:
-                        active_state.append(_multi_off_)
-                        component_._toggle_connect_active_array(False)
-                        component_.active = False
-                    else:
-                        active_state.append(_multi_on_)
-                else:
-                    active_state.append(component_.active)
-                    if component_ in component_list:
-                        component_.active = True
-                    else:
-                        component_.active = False
-        data = np.empty(self.signal.data.shape, dtype='float')
-        data.fill(np.nan)
-        if out_of_range_to_nan is True:
-            channel_switches_backup = copy.copy(self.channel_switches)
-            self.channel_switches[:] = True
-        maxval = self.axes_manager.navigation_size
-        pbar = progressbar.progressbar(maxval=maxval,
-                                       disabled=not show_progressbar)
-        i = 0
-        for index in self.axes_manager:
-            self.fetch_stored_values(only_fixed=False)
-            data[self.axes_manager._getitem_tuple][
-                self.channel_switches] = self.__call__(
-                non_convolved=not self.convolved, onlyactive=True).ravel()
-            i += 1
-            if maxval > 0:
-                pbar.update(i)
-        pbar.finish()
-        if out_of_range_to_nan is True:
-            self.channel_switches[:] = channel_switches_backup
-        signal = self.signal.__class__(
-            data,
-            axes=self.signal.axes_manager._get_axes_dicts())
-        signal.metadata.General.title = (
-            self.signal.metadata.General.title + " from fitted model")
-        signal.metadata.Signal.binned = self.signal.metadata.Signal.binned
-
-        if component_list:
-            for component_ in self:
-                active_s = active_state.pop(0)
-                if isinstance(active_s, bool):
-                    component_.active = active_s
-                else:
-                    if active_s == _multi_off_:
-                        component_._toggle_connect_active_array(True)
+        with stash_active_state(self if component_list else []):
+            if component_list:
+                component_list = [self._get_component(x)
+                                  for x in component_list]
+                for component_ in self:
+                    active = component_ in component_list
+                    if component_.active_is_multidimensional:
+                        if active:
+                            continue    # Keep active_map
+                        component_.active_is_multidimensional = False
+                    component_.active = active
+            data = np.empty(self.signal.data.shape, dtype='float')
+            data.fill(np.nan)
+            if out_of_range_to_nan is True:
+                channel_switches_backup = copy.copy(self.channel_switches)
+                self.channel_switches[:] = True
+            maxval = self.axes_manager.navigation_size
+            pbar = progressbar.progressbar(maxval=maxval,
+                                           disabled=not show_progressbar)
+            i = 0
+            for index in self.axes_manager:
+                self.fetch_stored_values(only_fixed=False)
+                data[self.axes_manager._getitem_tuple][
+                    self.channel_switches] = self.__call__(
+                    non_convolved=not self.convolved, onlyactive=True).ravel()
+                i += 1
+                if maxval > 0:
+                    pbar.update(i)
+            pbar.finish()
+            if out_of_range_to_nan is True:
+                self.channel_switches[:] = channel_switches_backup
+            signal = self.signal.__class__(
+                data,
+                axes=self.signal.axes_manager._get_axes_dicts())
+            signal.metadata.General.title = (
+                self.signal.metadata.General.title + " from fitted model")
+            signal.metadata.Signal.binned = self.signal.metadata.Signal.binned
         return signal
 
     @property

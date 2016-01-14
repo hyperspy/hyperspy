@@ -26,6 +26,7 @@ import codecs
 import collections
 import tempfile
 import unicodedata
+from contextlib import contextmanager
 
 import numpy as np
 
@@ -109,6 +110,25 @@ def unfold_if_multidim(signal):
                   "0.9 please use Signal.unfold instead",
                   VisibleDeprecationWarning)
     return None
+
+
+@contextmanager
+def stash_active_state(model):
+    active_state = []
+    for component in model:
+        if component.active_is_multidimensional:
+            active_state.append(component._active_array)
+        else:
+            active_state.append(component.active)
+    yield
+    for component in model:
+        active_s = active_state.pop(0)
+        if isinstance(active_s, bool):
+            component.active = active_s
+        else:
+            if not component.active_is_multidimensional:
+                component.active_is_multidimensional = True
+            component._active_array[:] = active_s
 
 
 def str2num(string, **kargs):
