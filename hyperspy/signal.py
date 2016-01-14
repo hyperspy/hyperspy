@@ -4351,7 +4351,7 @@ class Signal(FancySlicing,
         """
         return self._apply_function_on_data_and_remove_axis(np.argmax, axis,
                                                             out=out)
-    indexmax.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG)
+    indexmax.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
 
     def amax(self, axis, out=None):
         """Returns a signal with the value of the maximum along an axis.
@@ -4982,7 +4982,7 @@ class Signal(FancySlicing,
 
         Parameters
         ----------
-        image_axes : tuple of {int, complex, str}
+        image_axes : tuple of {int | str | axis}
             Select the image axes. Note that the order of the axes matters
             and it is given in the "natural" i.e. X, Y, Z... order.
         %s
