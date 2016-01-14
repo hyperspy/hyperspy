@@ -185,6 +185,77 @@ class TestEventsSuppression(EventsBase):
             self.trigger_check(self.events.a.trigger, True)
             self.trigger_check2(self.events.a.trigger, True)
 
+    def test_suppressor_init_args(self):
+        with self.events.b.suppress():
+            es = he.EventSupressor((self.events.a, self.on_trigger),
+                                   self.events.c)
+            with es.suppress():
+                self.trigger_check(self.events.a.trigger, False)
+                self.trigger_check2(self.events.a.trigger, True)
+                self.trigger_check(self.events.b.trigger, False)
+                self.trigger_check(self.events.c.trigger, False)
+                with self.events.a.suppress_callback(self.on_trigger2):
+                    self.trigger_check2(self.events.a.trigger, False)
+                self.trigger_check2(self.events.a.trigger, True)
+
+            self.trigger_check(self.events.a.trigger, True)
+            self.trigger_check2(self.events.a.trigger, True)
+            self.trigger_check(self.events.b.trigger, False)
+            self.trigger_check(self.events.c.trigger, True)
+
+        self.trigger_check(self.events.a.trigger, True)
+        self.trigger_check2(self.events.a.trigger, True)
+        self.trigger_check(self.events.b.trigger, True)
+        self.trigger_check(self.events.c.trigger, True)
+
+    def test_suppressor_add_args(self):
+        with self.events.b.suppress():
+            es = he.EventSupressor()
+            es.add((self.events.a, self.on_trigger), self.events.c)
+            with es.suppress():
+                self.trigger_check(self.events.a.trigger, False)
+                self.trigger_check2(self.events.a.trigger, True)
+                self.trigger_check(self.events.b.trigger, False)
+                self.trigger_check(self.events.c.trigger, False)
+                with self.events.a.suppress_callback(self.on_trigger2):
+                    self.trigger_check2(self.events.a.trigger, False)
+                self.trigger_check2(self.events.a.trigger, True)
+
+            self.trigger_check(self.events.a.trigger, True)
+            self.trigger_check2(self.events.a.trigger, True)
+            self.trigger_check(self.events.b.trigger, False)
+            self.trigger_check(self.events.c.trigger, True)
+
+        self.trigger_check(self.events.a.trigger, True)
+        self.trigger_check2(self.events.a.trigger, True)
+        self.trigger_check(self.events.b.trigger, True)
+        self.trigger_check(self.events.c.trigger, True)
+
+    def test_suppressor_all_callback_in_events(self):
+        with self.events.b.suppress():
+            es = he.EventSupressor()
+            es.add((self.events, self.on_trigger),)
+            with es.suppress():
+                self.trigger_check(self.events.a.trigger, False)
+                self.trigger_check2(self.events.a.trigger, True)
+                self.trigger_check(self.events.b.trigger, False)
+                self.trigger_check(self.events.c.trigger, False)
+                with self.events.a.suppress_callback(self.on_trigger2):
+                    self.trigger_check2(self.events.a.trigger, False)
+                self.trigger_check2(self.events.a.trigger, True)
+
+
+            self.trigger_check(self.events.a.trigger, True)
+            self.trigger_check2(self.events.a.trigger, True)
+            self.trigger_check(self.events.b.trigger, False)
+            self.trigger_check(self.events.c.trigger, True)
+
+        self.trigger_check(self.events.a.trigger, True)
+        self.trigger_check2(self.events.a.trigger, True)
+        self.trigger_check(self.events.b.trigger, True)
+        self.trigger_check(self.events.c.trigger, True)
+
+
 
 def f_a(*args): pass
 def f_b(*args): pass
@@ -233,3 +304,4 @@ class TestEventsSignatures(EventsBase):
     @nt.raises(TypeError)
     def test_type(self):
         self.events.a.connect('f_a')
+

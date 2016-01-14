@@ -439,7 +439,7 @@ class EventSupressor(object):
 
         Valid targets are:
          - `Event`: The entire Event will be suppressed
-         - `Events`: All events in th container will be suppressed
+         - `Events`: All events in the container will be suppressed
          - (Event, callback): The callback will be suppressed in Event
          - (Events, callback): The callback will be suppressed in each event
            in Events where it is connected.
