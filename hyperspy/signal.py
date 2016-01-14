@@ -3977,7 +3977,8 @@ class Signal(FancySlicing,
                 name="Scalar",
                 navigate=False,)
 
-    def _apply_function_on_data_and_remove_axis(self, function, axes):
+    def _apply_function_on_data_and_remove_axis(self, function, axes,
+                                                out=None):
         axes = self.axes_manager[axes]
         if not np.iterable(axes):
             axes = (axes,)
@@ -4348,7 +4349,6 @@ class Signal(FancySlicing,
         (64,64)
 
         """
-        return self._apply_function_on_data_and_remove_axis(np.argmax, axis)
         return self._apply_function_on_data_and_remove_axis(np.argmax, axis,
                                                             out=out)
     indexmax.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG)
@@ -4949,8 +4949,7 @@ class Signal(FancySlicing,
 
         Parameters
         ----------
-        spectral_axis : {int, complex, str}
-            Select the spectral axis to-be using its index or name.
+        spectral_axis %s
         %s
 
         Examples
@@ -4972,7 +4971,7 @@ class Signal(FancySlicing,
             return sp
         else:
             out.data[:] = sp.data
-    as_spectrum.__doc__ %= OUT_ARG
+    as_spectrum.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
 
     def as_image(self, image_axes, out=None):
         """Convert signal to image.

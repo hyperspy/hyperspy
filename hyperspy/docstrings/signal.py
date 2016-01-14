@@ -5,8 +5,8 @@
 
 ONE_AXIS_PARAMETER = \
     """: {int | string | axis}
-            The axis can be passed directly, or specified using the index of the
-            axis in `axes_manager` or the axis name."""
+            The axis can be passed directly, or specified using the index of
+            the axis in `axes_manager` or the axis name."""
 MANY_AXIS_PARAMETER = \
     """: {int | string | axis | tuple}
             Either one on its own, or many axes in a tuple can be passed. In
