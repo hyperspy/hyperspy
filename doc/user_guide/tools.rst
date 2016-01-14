@@ -243,7 +243,7 @@ subclasses.
 Simple mathematical operations
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. versionchaned:: 0.9
+.. versionchanged:: 0.9
 
 A number of simple operations are supported by :py:class:`~.signal.Signal`. Most
 of them are just wrapped numpy functions, as an example:
