@@ -23,6 +23,7 @@ import warnings
 import math
 import inspect
 from contextlib import contextmanager
+from datetime import datetime
 
 import numpy as np
 import numpy.ma as ma
@@ -77,8 +78,8 @@ from hyperspy.drawing.utils import animate_legend
 from hyperspy.misc.hspy_warnings import VisibleDeprecationWarning
 from hyperspy.misc.slicing import SpecialSlicers, FancySlicing
 from hyperspy.misc.utils import slugify
-from hyperspy.docstrings.signal import OUT_ARG
-from datetime import datetime
+from hyperspy.docstrings.signal import (
+	ONE_AXIS_PARAMETER, MANY_AXIS_PARAMETER, OUT_ARG)
 
 
 class ModelManager(object):
@@ -3311,8 +3312,8 @@ class Signal(FancySlicing,
         def get_1D_sum_explorer_wrapper(*args, **kwargs):
             navigator = self
             # Sum over all but the first navigation axis.
-            while len(navigator.axes_manager.shape) > 1:
-                navigator = navigator.sum(-1)
+            am = navigator.axes_manager
+            navigator = navigator.sum(am.signal_axes + am.navigation_axes[1:])
             return np.nan_to_num(navigator.data).squeeze()
 
         def get_dynamic_explorer_wrapper(*args, **kwargs):
@@ -3329,9 +3330,7 @@ class Signal(FancySlicing,
                 if self.axes_manager.signal_dimension == 0:
                     navigator = self.deepcopy()
                 else:
-                    navigator = self
-                    while navigator.axes_manager.signal_dimension > 0:
-                        navigator = navigator.sum(-1)
+                    navigator = self.sum(self.axes_manager.signal_axes)
                 if navigator.axes_manager.navigation_dimension == 1:
                     navigator = navigator.as_spectrum(0)
                 else:
@@ -3487,10 +3486,7 @@ class Signal(FancySlicing,
 
         Parameters
         ----------
-        axis1, axis2 : {int | str}
-            Specify the data axes in which to perform the operation.
-            The axis can be specified using the index of the
-            axis in `axes_manager` or the axis name.
+        axis1, axis2 %s
 
         Returns
         -------
@@ -3507,17 +3503,16 @@ class Signal(FancySlicing,
         s.axes_manager._update_attributes()
         s._make_sure_data_is_contiguous()
         return s
+    swap_axes.__doc__ %= ONE_AXIS_PARAMETER
 
     def rollaxis(self, axis, to_axis):
         """Roll the specified axis backwards, until it lies in a given position.
 
         Parameters
         ----------
-        axis : {int, str}
-            The axis to roll backwards.  The positions of the other axes do not
+        axis %s The axis to roll backwards.  The positions of the other axes do not
             change relative to one another.
-        to_axis : {int, str}
-            The axis is rolled until it lies before this other axis.
+        to_axis %s The axis is rolled until it lies before this other axis.
 
         Returns
         -------
@@ -3556,6 +3551,7 @@ class Signal(FancySlicing,
         s.axes_manager._update_attributes()
         s._make_sure_data_is_contiguous()
         return s
+    rollaxis.__doc__ %= (ONE_AXIS_PARAMETER, ONE_AXIS_PARAMETER)
 
     def rebin(self, new_shape, out=None):
         """Returns the object with the data rebinned.
@@ -3951,12 +3947,15 @@ class Signal(FancySlicing,
             getitem[unfolded_axis] = i
             yield(data[getitem])
 
-    def _remove_axis(self, axis):
+    def _remove_axis(self, axes):
         am = self.axes_manager
-        axis = am[axis]
-        if am.navigation_dimension + am.signal_dimension > 1:
-            am.remove(axis.index_in_axes_manager)
-            if axis.navigate is False:  # The removed axis is a signal axis
+        axes = am[axes]
+        if not np.iterable(axes):
+            axes = (axes,)
+        if am.navigation_dimension + am.signal_dimension > len(axes):
+            old_signal_dimension = am.signal_dimension
+            am.remove(axes)
+            if old_signal_dimension != am.signal_dimension:
                 if am.signal_dimension == 2:
                     self._record_by = "image"
                 elif am.signal_dimension == 1:
@@ -3970,7 +3969,7 @@ class Signal(FancySlicing,
         else:
             # Create a "Scalar" axis because the axis is the last one left and
             # HyperSpy does not # support 0 dimensions
-            am.remove(axis.index_in_axes_manager)
+            am.remove(axes)
             am._append_axis(
                 size=1,
                 scale=1,
@@ -3978,23 +3977,27 @@ class Signal(FancySlicing,
                 name="Scalar",
                 navigate=False,)
 
-    def _apply_function_on_data_and_remove_axis(self, function, axis,
-                                                out=None):
+    def _apply_function_on_data_and_remove_axis(self, function, axes):
+        axes = self.axes_manager[axes]
+        if not np.iterable(axes):
+            axes = (axes,)
+        ar_axes = tuple(ax.index_in_array for ax in axes)
+        if len(ar_axes) == 1:
+            ar_axes = ar_axes[0]
+
         s = out or self._deepcopy_with_new_data(None)
         s.data = function(self.data,
-                          axis=self.axes_manager[axis].index_in_array)
+                          axis=ar_axes)
         if out is None:
-            s._remove_axis(axis)
+            s._remove_axis([ax.index_in_axes_manager for ax in axes])
             return s
 
     def sum(self, axis, out=None):
-        """Sum the data over the given axis.
+        """Sum the data over the given axes.
 
         Parameters
         ----------
-        axis : {int, string}
-           The axis can be specified using the index of the axis in
-           `axes_manager` or the axis name.
+        axis %s
         %s
 
         Returns
@@ -4003,7 +4006,7 @@ class Signal(FancySlicing,
 
         See also
         --------
-        sum_in_mask, mean
+        max, min, mean, std, var, indexmax, valuemax, amax
 
         Examples
         --------
@@ -4019,16 +4022,15 @@ class Signal(FancySlicing,
         """
         return self._apply_function_on_data_and_remove_axis(np.sum, axis,
                                                             out=out)
-    sum.__doc__ %= OUT_ARG
+    sum.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG)
 
     def max(self, axis, out=None):
-        """Returns a signal with the maximum of the signal along an axis.
+        """Returns a signal with the maximum of the signal along at least one
+        axis.
 
         Parameters
         ----------
-        axis : {int | string}
-           The axis can be specified using the index of the axis in
-           `axes_manager` or the axis name.
+        axis %s
         %s
 
         Returns
@@ -4037,7 +4039,7 @@ class Signal(FancySlicing,
 
         See also
         --------
-        sum, mean, min
+        min, sum, mean, std, var, indexmax, valuemax, amax
 
         Examples
         --------
@@ -4051,16 +4053,15 @@ class Signal(FancySlicing,
         """
         return self._apply_function_on_data_and_remove_axis(np.max, axis,
                                                             out=out)
-    max.__doc__ %= OUT_ARG
+    max.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG)
 
     def min(self, axis, out=None):
-        """Returns a signal with the minimum of the signal along an axis.
+        """Returns a signal with the minimum of the signal along at least one
+        axis.
 
         Parameters
         ----------
-        axis : {int | string}
-           The axis can be specified using the index of the axis in
-           `axes_manager` or the axis name.
+        axis %s
         %s
 
         Returns
@@ -4069,7 +4070,7 @@ class Signal(FancySlicing,
 
         See also
         --------
-        sum, mean, max, std, var
+        max, sum, mean, std, var, indexmax, valuemax, amax
 
         Examples
         --------
@@ -4081,19 +4082,17 @@ class Signal(FancySlicing,
         (64,64)
 
         """
-
         return self._apply_function_on_data_and_remove_axis(np.min, axis,
                                                             out=out)
-    min.__doc__ %= OUT_ARG
+    min.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG)
 
     def mean(self, axis, out=None):
-        """Returns a signal with the average of the signal along an axis.
+        """Returns a signal with the average of the signal along at least one
+        axis.
 
         Parameters
         ----------
-        axis : {int | string}
-           The axis can be specified using the index of the axis in
-           `axes_manager` or the axis name.
+        axis %s
         %s
 
         Returns
@@ -4102,7 +4101,7 @@ class Signal(FancySlicing,
 
         See also
         --------
-        sum_in_mask, mean
+        max, min, sum, std, var, indexmax, valuemax, amax
 
         Examples
         --------
@@ -4116,17 +4115,15 @@ class Signal(FancySlicing,
         """
         return self._apply_function_on_data_and_remove_axis(np.mean, axis,
                                                             out=out)
-    mean.__doc__ %= OUT_ARG
+    mean.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG)
 
     def std(self, axis, out=None):
         """Returns a signal with the standard deviation of the signal along
-        an axis.
+        at least one axis.
 
         Parameters
         ----------
-        axis : {int | string}
-           The axis can be specified using the index of the axis in
-           `axes_manager` or the axis name.
+        axis %s
         %s
 
         Returns
@@ -4135,7 +4132,7 @@ class Signal(FancySlicing,
 
         See also
         --------
-        sum_in_mask, mean
+        max, min, sum, mean, var, indexmax, valuemax, amax
 
         Examples
         --------
@@ -4149,16 +4146,15 @@ class Signal(FancySlicing,
         """
         return self._apply_function_on_data_and_remove_axis(np.std, axis,
                                                             out=out)
-    std.__doc__ %= OUT_ARG
+    std.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG)
 
     def var(self, axis, out=None):
-        """Returns a signal with the variances of the signal along an axis.
+        """Returns a signal with the variances of the signal along at least one
+        axis.
 
         Parameters
         ----------
-        axis : {int | string}
-           The axis can be specified using the index of the axis in
-           `axes_manager` or the axis name.
+        axis %s
         %s
 
         Returns
@@ -4167,7 +4163,7 @@ class Signal(FancySlicing,
 
         See also
         --------
-        sum_in_mask, mean
+        max, min, sum, mean, std, indexmax, valuemax, amax
 
         Examples
         --------
@@ -4181,21 +4177,23 @@ class Signal(FancySlicing,
         """
         return self._apply_function_on_data_and_remove_axis(np.var, axis,
                                                             out=out)
-    var.__doc__ %= OUT_ARG
+    var.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG)
 
     def diff(self, axis, order=1, out=None):
         """Returns a signal with the n-th order discrete difference along
         given axis.
+
         Parameters
         ----------
-        axis : {int | string}
-           The axis can be specified using the index of the axis in
-           `axes_manager` or the axis name.
-        order: the order of the derivative
-        %s
+        axis %s
+        order : int
+            the order of the derivative
+		%s
+
         See also
         --------
-        mean, sum
+        max, min, sum, mean, std, var, indexmax, valuemax, amax
+
         Examples
         --------
         >>> import numpy as np
@@ -4214,7 +4212,7 @@ class Signal(FancySlicing,
         s.get_dimensions_from_data()
         if out is None:
             return s
-    diff.__doc__ %= OUT_ARG
+    diff.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
 
     def derivative(self, axis, order=1, out=None):
         """Numerical derivative along the given axis.
@@ -4223,9 +4221,7 @@ class Signal(FancySlicing,
 
         Parameters
         ----------
-        axis : {int | string}
-           The axis can be specified using the index of the axis in
-           `axes_manager` or the axis name.
+        axis %s
         order: int
             The order of the derivative. (Note that this is the order of the
             derivative i.e. `order=2` does not use second order finite
@@ -4251,7 +4247,7 @@ class Signal(FancySlicing,
         der.data /= axis.scale ** order
         if out is None:
             return der
-    derivative.__doc__ %= OUT_ARG
+    derivative.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
 
     def integrate_simpson(self, axis, out=None):
         """Returns a signal with the result of calculating the integral
@@ -4259,9 +4255,7 @@ class Signal(FancySlicing,
 
         Parameters
         ----------
-        axis : {int | string}
-           The axis can be specified using the index of the axis in
-           `axes_manager` or the axis name.
+        axis %s
         %s
 
         Returns
@@ -4270,7 +4264,7 @@ class Signal(FancySlicing,
 
         See also
         --------
-        sum_in_mask, mean
+        max, min, sum, mean, std, var, indexmax, valuemax, amax
 
         Examples
         --------
@@ -4289,7 +4283,7 @@ class Signal(FancySlicing,
         if out is None:
             s._remove_axis(axis.index_in_axes_manager)
             return s
-    integrate_simpson.__doc__ %= OUT_ARG
+    integrate_simpson.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
 
     def integrate1D(self, axis, out=None):
         """Integrate the signal over the given axis.
@@ -4300,9 +4294,7 @@ class Signal(FancySlicing,
 
         Parameters
         ----------
-        axis : {int | string}
-           The axis can be specified using the index of the axis in
-           `axes_manager` or the axis name.
+        axis %s
         %s
 
         Returns
@@ -4311,7 +4303,7 @@ class Signal(FancySlicing,
 
         See also
         --------
-        sum_in_mask, mean
+        integrate_simpson, diff, derivative
 
         Examples
         --------
@@ -4327,16 +4319,14 @@ class Signal(FancySlicing,
             return self.integrate_simpson(axis=axis, out=out)
         else:
             return self.sum(axis=axis, out=out)
-    integrate1D.__doc__ %= OUT_ARG
+    integrate1D.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
 
     def indexmax(self, axis, out=None):
         """Returns a signal with the index of the maximum along an axis.
 
         Parameters
         ----------
-        axis : {int | string}
-           The axis can be specified using the index of the axis in
-           `axes_manager` or the axis name.
+        axis %s
         %s
 
         Returns
@@ -4346,7 +4336,7 @@ class Signal(FancySlicing,
 
         See also
         --------
-        sum, mean, min
+        max, min, sum, mean, std, var, valuemax, amax
 
         Usage
         -----
@@ -4358,28 +4348,56 @@ class Signal(FancySlicing,
         (64,64)
 
         """
+        return self._apply_function_on_data_and_remove_axis(np.argmax, axis)
         return self._apply_function_on_data_and_remove_axis(np.argmax, axis,
                                                             out=out)
-    indexmax.__doc__ %= OUT_ARG
+    indexmax.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG)
 
-    def valuemax(self, axis, out=None):
+    def amax(self, axis, out=None):
         """Returns a signal with the value of the maximum along an axis.
 
         Parameters
         ----------
-        axis : {int | string}
-           The axis can be specified using the index of the axis in
-           `axes_manager` or the axis name.
+        axis %s
         %s
 
         Returns
         -------
         s : Signal
-            The data dtype is always int.
 
         See also
         --------
-        sum, mean, min
+        max, min, sum, mean, std, var, indexmax, valuemax
+
+        Usage
+        -----
+        >>> import numpy as np
+        >>> s = Signal(np.random.random((64,64,1024)))
+        >>> s.data.shape
+        (64,64,1024)
+        >>> s.amax(-1).data.shape
+        (64,64)
+
+        """
+        return self._apply_function_on_data_and_remove_axis(np.amax, axis,
+														    out=out)
+    amax.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG)
+
+    def valuemax(self, axis, out=None):
+        """Returns a signal with the value of coordinates of the maximum along an axis.
+
+        Parameters
+        ----------
+        axis %s
+        %s
+
+        Returns
+        -------
+        s : Signal
+
+        See also
+        --------
+        max, min, sum, mean, std, var, indexmax, amax
 
         Usage
         -----
@@ -4396,7 +4414,7 @@ class Signal(FancySlicing,
         s.data = self.axes_manager[axis].index2value(s.data)
         if out is None:
             return s
-    valuemax.__doc__ %= OUT_ARG
+    valuemax.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
 
     def get_histogram(self, bins='freedman', range_bins=None, out=None,
                       **kwargs):
