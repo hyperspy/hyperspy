@@ -179,14 +179,18 @@ class EDSSpectrum(Spectrum):
         """
         # modify time spend per spectrum
         s = super(EDSSpectrum, self).sum(axis, out)
+        s = out or s
         if "Acquisition_instrument.SEM" in s.metadata:
             mp = s.metadata.Acquisition_instrument.SEM
+            mp_old = self.metadata.Acquisition_instrument.SEM
         else:
             mp = s.metadata.Acquisition_instrument.TEM
+            mp_old = self.metadata.Acquisition_instrument.TEM
         if mp.has_item('Detector.EDS.live_time'):
-            mp.Detector.EDS.live_time = mp.Detector.EDS.live_time * \
+            mp.Detector.EDS.live_time = mp_old.Detector.EDS.live_time * \
                 self.data.size / s.data.size
-        return s
+        if out is None:
+            return s
 
     def rebin(self, new_shape):
         """Rebins the data to the new shape
