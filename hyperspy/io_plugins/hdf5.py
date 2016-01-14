@@ -131,7 +131,6 @@ def file_reader(filename, record_by, mode='r',
                                                                         load_to_memory=load_to_memory)})
         except TypeError:
             raise IOError(not_valid_format)
-
     experiments = []
     exp_dict_list = []
     if 'Experiments' in f:

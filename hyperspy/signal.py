@@ -3118,8 +3118,8 @@ class Signal(FancySlicing,
                                                    metadata=self.metadata)['data']
                 else:
                     self.data = data
-		old_models = self.models._models
-		self.models._models = DictionaryTreeBrowser()
+                old_models = self.models._models
+                self.models._models = DictionaryTreeBrowser()
                 ns = self.deepcopy()
                 if isinstance(data, da.Array):
                     data.store(ns.data)
@@ -3127,22 +3127,22 @@ class Signal(FancySlicing,
                 return ns
             finally:
                 self.data = old_data
-		self.models._models = old_models
+                self.models._models = old_models
         else:
             try:
                 old_data = self.data
                 self.data = None
                 old_plot = self._plot
                 self._plot = None
-		old_models = self.models._models
-		self.models._models = DictionaryTreeBrowser()
+                old_models = self.models._models
+                self.models._models = DictionaryTreeBrowser()
                 ns = self.deepcopy()
                 ns.data = data
                 return ns
             finally:
                 self.data = old_data
                 self._plot = old_plot
-		self.models._models = old_models
+                self.models._models = old_models
 
     def _print_summary(self):
         string = "\n\tTitle: "
@@ -3213,10 +3213,7 @@ class Signal(FancySlicing,
 
         """
 
-        if 'metadata' not in file_data_dict:
-            file_data_dict['metadata'] = {}
-        self.metadata.add_dictionary(
-            file_data_dict['metadata'])
+        self.metadata.add_dictionary(file_data_dict.get('metadata', {}))
         if "title" not in self.metadata.General:
             self.metadata.General.title = ''
         if (self._record_by or
@@ -3230,16 +3227,13 @@ class Signal(FancySlicing,
             self.metadata.Signal.signal_type = self._signal_type
 
         self.data = file_data_dict['data']
+        self.models._add_dictionary(file_data_dict.get('models', {}))
 
-        if 'axes' not in file_data_dict:
-            file_data_dict['axes'] = self._get_undefined_axes_list()
-        self.axes_manager = AxesManager(
-            file_data_dict['axes'])
+        self.axes_manager = AxesManager(file_data_dict.get('axes',
+                                                           self._get_undefined_axes_list()))
 
-        if 'original_metadata' not in file_data_dict:
-            file_data_dict['original_metadata'] = {}
-        self.original_metadata.add_dictionary(
-            file_data_dict['original_metadata'])
+        self.original_metadata.add_dictionary(file_data_dict.get('original_metadata',
+                                                                 {}))
 
         if 'attributes' in file_data_dict:
             for key, value in file_data_dict['attributes'].iteritems():
@@ -3247,7 +3241,6 @@ class Signal(FancySlicing,
                     if isinstance(value, dict):
                         for k, v in value.iteritems():
                             getattr(self, key).__setattr__(k, v)
-                            # eval('self.%s.__setattr__(k,v)' % key)
                     else:
                         self.__setattr__(key, value)
 
@@ -3599,7 +3592,7 @@ class Signal(FancySlicing,
             current_data = da.from_array(self.data,
                                          chunks=self._get_dask_chunks())
             new_data = current_data[_slices]
-	    # TODO: Should not work
+            # TODO: Should not work
             self = self._deepcopy_with_new_data(new_data)
         else:
             self.data = self.data[_slices]
@@ -3641,10 +3634,9 @@ class Signal(FancySlicing,
 
         Parameters
         ----------
-        axis %s The axis to roll backwards.
-            The positions of the other axes do not change relative to one another.
-        to_axis %s The axis is rolled until it
-            lies before this other axis.
+        axis %s The axis to roll backwards.  The positions of the other axes do not
+            change relative to one another.
+        to_axis %s The axis is rolled until it lies before this other axis.
 
         Returns
         -------
@@ -4149,9 +4141,9 @@ class Signal(FancySlicing,
             axis.size = int(dc.shape[axis.index_in_array])
 
         if axis is not None:
-    	    need_axes = self.axes_manager[axis]
-	    if not np.iterable(need_axes):
-	    	need_axes = [need_axes,]
+            need_axes = self.axes_manager[axis]
+            if not np.iterable(need_axes):
+                need_axes = [need_axes, ]
         else:
             need_axes = self.axes_manager.signal_axes
 
@@ -4201,7 +4193,7 @@ class Signal(FancySlicing,
         return tuple(chunks)
 
     def _dask_function_and_remove_axis(self, function_name, axes):
-	    axes = self.axes_manager[axes]
+        axes = self.axes_manager[axes]
         if not np.iterable(axes):
             axes = (axes,)
         ar_axes = tuple(ax.index_in_array for ax in axes)
@@ -4321,6 +4313,7 @@ class Signal(FancySlicing,
         (64,64)
 
         """
+
         if axis is None:
             axis = self.axes_manager.navigation_axes
         if isinstance(self.data, h5py.Dataset):
@@ -5462,6 +5455,7 @@ class Signal(FancySlicing,
             self._plot.navigator_plot.add_marker(marker)
         if plot_marker:
             marker.plot()
+
 
 # Implement binary operators
 for name in (
