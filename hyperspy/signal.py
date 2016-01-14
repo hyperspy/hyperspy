@@ -3589,11 +3589,11 @@ class Signal(FancySlicing,
         _slices = (slice(None),) * axis.index_in_array + (slice(i1, i2),
                                                           Ellipsis)
         if isinstance(self.data, h5py.Dataset):
-            current_data = da.from_array(self.data,
-                                         chunks=self._get_dask_chunks())
-            new_data = current_data[_slices]
-            # TODO: Should not work
-            self = self._deepcopy_with_new_data(new_data)
+            raise TypeError('The data is read directly from file, cannot modify the data in-place. '
+                            'Please use indexing instead.')
+            # current_data = da.from_array(self.data,
+            #                              chunks=self._get_dask_chunks())
+            # new_data = current_data[_slices]
         else:
             self.data = self.data[_slices]
 
@@ -5215,17 +5215,18 @@ class Signal(FancySlicing,
         nitem = nitem if nitem > 0 else 1
         return nitem
 
-    def as_spectrum(self, spectral_axis):
+    def as_spectrum(self, spectral_axis, reorder_data=None):
         """Return the Signal as a spectrum.
-
-        The chosen spectral axis is moved to the last index in the
-        array and the data is made contiguous for effecient
-        iteration over spectra.
-
 
         Parameters
         ----------
         spectral_axis %s
+        reorder_data : {None, bool}
+            If True, the chosen spectral axis is moved to the last index in the
+            array and the data is made contiguous for effecient iteration over
+            spectra.If None, by default reorders for in-memory signals and
+            leaves data as-is for out-of-memory signals.
+
 
         Examples
         --------
@@ -5239,24 +5240,41 @@ class Signal(FancySlicing,
 
         """
         # Roll the spectral axis to-be to the latex index in the array
-        sp = self.rollaxis(spectral_axis, -1 + 3j)
-        sp.metadata.Signal.record_by = "spectrum"
-        sp._assign_subclass()
+        if reorder_data is None:
+            if isinstance(self.data, h5py.Dataset):
+                reorder_data = False
+            else:
+                reorder_data = True
+        spectral_axis = self.axes_manager[spectral_axis]
+        if reorder_data is True:
+            sp = self.rollaxis(spectral_axis, -1 + 3j)
+            sp.metadata.Signal.record_by = "spectrum"
+            sp._assign_subclass()
+        elif reorder_data is False:
+            sp = self
+            sp.metadata.Signal.record_by = "spectrum"
+            sp._assign_subclass()
+            for ax in self.axes_manager._axes:
+                if ax.index_in_array is spectral_axis.index_in_array:
+                    ax.navigate = False
+                else:
+                    ax.navigate = True
         return sp
     as_spectrum.__doc__ %= ONE_AXIS_PARAMETER
 
-    def as_image(self, image_axes):
+    def as_image(self, image_axes, reorder_data=None):
         """Convert signal to image.
-
-        The chosen image axes are moved to the last indices in the
-        array and the data is made contiguous for effecient
-        iteration over images.
 
         Parameters
         ----------
         image_axes : tuple of {int, complex, str}
             Select the image axes. Note that the order of the axes matters
             and it is given in the "natural" i.e. X, Y, Z... order.
+        reorder_data : {None, bool}
+            If True, the chosen image axes are moved to the last indices in the
+            array and the data is made contiguous for effecient iteration over
+            images. If None, by default reorders for in-memory signals and
+            leaves data as-is for out-of-memory signals.
 
         Examples
         --------
@@ -5280,10 +5298,25 @@ class Signal(FancySlicing,
         axes = (self.axes_manager[image_axes[0]],
                 self.axes_manager[image_axes[1]])
         iaxes = [axis.index_in_array for axis in axes]
-        im = self.rollaxis(iaxes[0] + 3j, -1 + 3j).rollaxis(
-            iaxes[1] - np.argmax(iaxes) + 3j, -2 + 3j)
-        im.metadata.Signal.record_by = "image"
-        im._assign_subclass()
+        if reorder_data is None:
+            if isinstance(self.data, h5py.Dataset):
+                reorder_data = False
+            else:
+                reorder_data = True
+        if reorder_data is True:
+            im = self.rollaxis(iaxes[0] + 3j, -1 + 3j).rollaxis(
+                iaxes[1] - np.argmax(iaxes) + 3j, -2 + 3j)
+            im.metadata.Signal.record_by = "image"
+            im._assign_subclass()
+        elif reorder_data is False:
+            im = self
+            im.metadata.Signal.record_by = "image"
+            im._assign_subclass()
+            for ax in self.axes_manager._axes:
+                if ax.index_in_array in iaxes:
+                    ax.navigate = False
+                else:
+                    ax.navigate = True
         return im
 
     def _assign_subclass(self):
