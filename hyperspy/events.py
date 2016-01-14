@@ -224,7 +224,8 @@ class Event(object):
             will be called with all arguments passed to trigger(). If 'auto'
             inspect.getargspec() will be used to determine the number of
             arguments the function accepts (arguments with default values will
-            be included in the count).
+            be included in the count). If the function accepts *args or
+            **kwargs, all arguments will be passed.
 
         See also
         --------
@@ -233,11 +234,13 @@ class Event(object):
         if not callable(function):
             raise TypeError("Only callables can be registered")
         if nargs == 'auto':
-            spec = inspect.getargspec(function)[0]
-            if spec is None:
+            spec = inspect.getargspec(function)
+            if spec.varargs or spec.keywords:
+                nargs = 'all'
+            elif spec.args is None:
                 nargs = 0
             else:
-                nargs = len(spec)
+                nargs = len(spec.args)
         elif nargs is None:
             nargs = 0
         if nargs not in self._connected:
