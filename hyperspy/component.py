@@ -282,6 +282,10 @@ class Parameter(t.HasTraits):
             self.component._update_free_parameters()
         self.trait_property_changed('free', old_value, self.__free)
 
+    def _on_twin_update(self, value, twin):
+        with twin.events.value_changed.suppress_callback(self._on_twin_update):
+            self.events.value_changed.trigger(value=value, parameter=self)
+
     def _set_twin(self, arg):
         if arg is None:
             if self.twin is not None:
@@ -291,15 +295,14 @@ class Parameter(t.HasTraits):
                 if self in self.twin._twins:
                     self.twin._twins.remove(self)
                     self.twin.events.value_changed.disconnect(
-                        self.events.value_changed.trigger)
+                        self._on_twin_update)
 
                 self.__twin = arg
                 self.value = twin_value
         else:
             if self not in arg._twins:
                 arg._twins.add(self)
-                arg.events.value_changed.connect(
-                    self.events.value_changed.trigger, 0)
+                arg.events.value_changed.connect(self._on_twin_update)
             self.__twin = arg
 
         if self.component is not None:
