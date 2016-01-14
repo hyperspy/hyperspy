@@ -373,7 +373,7 @@ class DataAxis(t.HasTraits):
         if old_idx != self.index:
             self.events.index_changed.trigger(index=self.index, axis=self)
         if old_val != self.value:
-            self.events.value_changed.trigger(value=self.index, axis=self)
+            self.events.value_changed.trigger(value=self.value, axis=self)
 
     def calibrate(self, value_tuple, index_tuple, modify_calibration=True):
         scale = (value_tuple[1] - value_tuple[0]) /\
