@@ -47,6 +47,20 @@ class Events(object):
             for e, oldval in old.iteritems():
                 e._suppress = oldval
 
+    def _update_doc(self):
+        """
+        Updates the doc to reflect the events that are contained
+        """
+        new_doc = self.__class__.__doc__
+        new_doc += '\n\tEvents:\n\t-------\n'
+        for name, e in self._events.iteritems():
+            edoc = inspect.getdoc(e) or ''
+            doclines = edoc.splitlines()
+            e_short = doclines[0] if len(doclines) > 0 else edoc
+            new_doc += '\t%s :\n\t\t%s\n' % (name, e_short)
+        new_doc = new_doc.replace('\t', '    ')
+        self.__doc__ = new_doc
+
     def __setattr__(self, name, value):
         """
         Magic to enable having `Event`s as attributes, and keeping them
@@ -57,6 +71,7 @@ class Events(object):
         """
         if isinstance(value, Event):
             self._events[name] = value
+            self._update_doc()
         else:
             super(Events, self).__setattr__(name, value)
 
@@ -80,6 +95,7 @@ class Events(object):
         """
         if name in self._events:
             del self._events[name]
+            self._update_doc()
         else:
             super(Events, self).__delattr__(name)
 
