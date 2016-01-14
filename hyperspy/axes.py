@@ -97,7 +97,7 @@ class DataAxis(t.HasTraits):
             ---------
             index : The new index
             axis : The DataAxis that the event belongs to.
-            """)
+            """, kwarg_order=['index', 'axis'])
         self.events.value_changed = Event("""
             Event that triggers when the value of the `DataAxis` changes
 
@@ -108,7 +108,7 @@ class DataAxis(t.HasTraits):
             ---------
             value : The new value
             axis : The DataAxis that the event belongs to.
-            """)
+            """, kwarg_order=['value', 'axis'])
         self.name = name
         self.units = units
         self.scale = scale
@@ -518,7 +518,7 @@ class AxesManager(t.HasTraits):
             Arguments:
             ---------
             axes_manager : The AxesManager that the event belongs to.
-            """)
+            """, kwarg_order=['axes_manager'])
         self.create_axes(axes_list)
         # set_signal_dimension is called only if there is no current
         # view. It defaults to spectrum

@@ -124,8 +124,9 @@ class Events(object):
 
 class Event(object):
 
-    def __init__(self, doc=''):
+    def __init__(self, doc='', kwarg_order=None):
         self.__doc__ = doc
+        self._kwarg_order = kwarg_order
         self._connected = {}
         self._suppress = False
 
@@ -266,11 +267,31 @@ class Event(object):
             if function in c:
                 c.remove(function)
 
-    @staticmethod
-    def _trigger_nargs(f, args, nargs):
+    def _trigger_nargs(self, f, args, kwargs, nargs):
         """
         Basic trigger resolution.
         """
+
+        if len(args) < nargs:
+            # To few args!
+            # We try to fill with ordered kwargs if present.
+            # If order kwargs not present, or not enough, fill with matching
+            # kwargs in the order that function defines them
+            args = list(args)
+            kwargs = kwargs.copy()
+            if self._kwarg_order:
+                i = 0
+                while len(args) < nargs and i < len(self._kwarg_order):
+                    if self._kwarg_order[i] in kwargs:
+                        args.append(kwargs.pop(self._kwarg_order[i]))
+                    i += 1
+            if len(args) < nargs:
+                spec = inspect.getargspec(f)
+                candidates = list(spec.args)[len(args):]
+                if inspect.ismethod(f):
+                    candidates = candidates[1:]     # Remove `self`
+                matches = [kwargs[c] for c in candidates if c in kwargs]
+                args.extend(matches[:nargs-len(args)])
         return f(*args[0:nargs])
 
     def trigger(self, *args, **kwargs):
@@ -292,12 +313,13 @@ class Event(object):
                     for f in c:
                         f(*args, **kwargs)
                 else:
-                    if len(args) < nargs:
+                    if len(args) + len(kwargs) < nargs:
                         raise ValueError(
                             ("Tried to call %s which require %d args " +
-                             "with only %d.") % (str(c), nargs, len(args)))
+                             "with only %d.") % (str(c), nargs, len(args) +
+                                                 len(kwargs)))
                     for f in c.copy():
-                        self._trigger_nargs(f, args, nargs)
+                        self._trigger_nargs(f, args, kwargs, nargs)
 
     def __deepcopy__(self, memo):
         dc = type(self)()
