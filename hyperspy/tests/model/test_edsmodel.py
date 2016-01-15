@@ -1,5 +1,6 @@
 import nose.tools as nt
 import numpy as np
+from hyperspy.misc.test_utils import assert_warns
 
 from hyperspy.misc.eds import utils as utils_eds
 from hyperspy.misc.elements import elements as elements_db
@@ -36,7 +37,9 @@ class TestlineFit:
         reso = s.metadata.Acquisition_instrument.TEM.Detector.EDS.\
             energy_resolution_MnKa,
         s.set_microscope_parameters(energy_resolution_MnKa=150)
-        m.calibrate_energy_axis(calibrate='resolution')
+        with assert_warns(message=r"Energy resolution (FWHM at Mn Ka) changed "
+                          "from"):
+            m.calibrate_energy_axis(calibrate='resolution')
         nt.assert_true(np.allclose(
             s.metadata.Acquisition_instrument.TEM.Detector.EDS.
             energy_resolution_MnKa, reso, atol=1))
@@ -83,8 +86,11 @@ class TestlineFit:
         s = (s+s1/50)
         m = s.create_model()
         m.fit()
-        m.calibrate_xray_lines(calibrate='sub_weight',
-                               xray_lines=['Fe_Ka'], bound=100)
+        with assert_warns(message='The X-ray line expected to be in the model '
+                          'was not found'):
+            m.calibrate_xray_lines(calibrate='sub_weight',
+                                   xray_lines=['Fe_Ka'], bound=100)
+
         nt.assert_true(np.allclose(0.0347, m['Fe_Kb'].A.value,
                        atol=1e-3))
 
