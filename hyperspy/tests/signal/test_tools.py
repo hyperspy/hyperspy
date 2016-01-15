@@ -450,9 +450,6 @@ class TestOutArg:
     def test_min(self):
         self._run_single(self.s.min, self.s, dict(axis=('x', 'z')))
 
-    def test_amax(self):
-        self._run_single(self.s.amax, self.s, dict(axis=('x', 'z')))
-
     def test_std(self):
         self._run_single(self.s.std, self.s, dict(axis=('x', 'z')))
 
