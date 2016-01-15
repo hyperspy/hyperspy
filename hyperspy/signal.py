@@ -4297,7 +4297,7 @@ class Signal(FancySlicing,
             return self.sum(axis)
     integrate1D.__doc__ %= ONE_AXIS_PARAMETER
 
-    def indexmax(self, axis=None):
+    def indexmax(self, axis):
         """Returns a signal with the index of the maximum along an axis.
 
         Parameters
@@ -4323,10 +4323,8 @@ class Signal(FancySlicing,
         (64,64)
 
         """
-        if axis is None:
-            axis = self.axes_manager.navigation_axes
         return self._apply_function_on_data_and_remove_axis(np.argmax, axis)
-    indexmax.__doc__ %= MANY_AXIS_PARAMETER
+    indexmax.__doc__ %= ONE_AXIS_PARAMETER
 
     def valuemax(self, axis):
         """Returns a signal with the value of coordinates of the maximum along an axis.

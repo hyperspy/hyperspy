@@ -118,6 +118,15 @@ class Test2D:
         nt.assert_true(s.unfold())
 
 
+def _test_default_navigation_signal_operations_over_many_axes(self, op):
+    s = getattr(self.signal, op)()
+    ar = getattr(self.data, op)(axis=(0, 1))
+    np.testing.assert_array_equal(ar, s.data)
+    nt.assert_equal(s.data.ndim, 1)
+    nt.assert_equal(s.axes_manager.signal_dimension, 1)
+    nt.assert_equal(s.axes_manager.navigation_dimension, 0)
+
+
 class Test3D:
 
     def setUp(self):
@@ -128,12 +137,39 @@ class Test3D:
         self.signal.axes_manager[0].scale = 0.5
         self.data = self.signal.data.copy()
 
-    def test_default_navigation_sum(self):
-        s = self.signal.sum()
-        np.testing.assert_array_equal(self.data.sum(axis=(0, 1)), s.data)
-        nt.assert_equal(s.data.ndim, 1)
+    def test_indexmax(self):
+        s = self.signal.indexmax('E')
+        ar = self.data.argmax(2)
+        np.testing.assert_array_equal(ar, s.data)
+        nt.assert_equal(s.data.ndim, 2)
+        nt.assert_equal(s.axes_manager.signal_dimension, 0)
+        nt.assert_equal(s.axes_manager.navigation_dimension, 2)
+
+    def test_valuemax(self):
+        s = self.signal.valuemax('x')
+        ar = self.signal.axes_manager['x'].index2value(self.data.argmax(1))
+        np.testing.assert_array_equal(ar, s.data)
+        nt.assert_equal(s.data.ndim, 2)
         nt.assert_equal(s.axes_manager.signal_dimension, 1)
-        nt.assert_equal(s.axes_manager.navigation_dimension, 0)
+        nt.assert_equal(s.axes_manager.navigation_dimension, 1)
+
+    def test_default_navigation_sum(self):
+        _test_default_navigation_signal_operations_over_many_axes(self, 'sum')
+
+    def test_default_navigation_max(self):
+        _test_default_navigation_signal_operations_over_many_axes(self, 'max')
+
+    def test_default_navigation_min(self):
+        _test_default_navigation_signal_operations_over_many_axes(self, 'min')
+
+    def test_default_navigation_mean(self):
+        _test_default_navigation_signal_operations_over_many_axes(self, 'mean')
+
+    def test_default_navigation_std(self):
+        _test_default_navigation_signal_operations_over_many_axes(self, 'std')
+
+    def test_default_navigation_var(self):
+        _test_default_navigation_signal_operations_over_many_axes(self, 'var')
 
     def test_rebin(self):
         self.signal.estimate_poissonian_noise_variance()
