@@ -3510,9 +3510,10 @@ class Signal(FancySlicing,
 
         Parameters
         ----------
-        axis %s The axis to roll backwards.  The positions of the other axes do not
-            change relative to one another.
-        to_axis %s The axis is rolled until it lies before this other axis.
+        axis %s The axis to roll backwards.
+            The positions of the other axes do not change relative to one another.
+        to_axis %s The axis is rolled until it
+            lies before this other axis.
 
         Returns
         -------
@@ -3993,7 +3994,7 @@ class Signal(FancySlicing,
             s._remove_axis([ax.index_in_axes_manager for ax in axes])
             return s
 
-    def sum(self, axis, out=None):
+    def sum(self, axis=None, out=None):
         """Sum the data over the given axes.
 
         Parameters
@@ -4017,15 +4018,15 @@ class Signal(FancySlicing,
         (64,64,1024)
         >>> s.sum(-1).data.shape
         (64,64)
-        # If we just want to plot the result of the operation
-        s.sum(-1, True).plot()
 
         """
+        if axis is None:
+            axis = self.axes_manager.navigation_axes
         return self._apply_function_on_data_and_remove_axis(np.sum, axis,
                                                             out=out)
     sum.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG)
 
-    def max(self, axis, out=None):
+    def max(self, axis=None, out=None):
         """Returns a signal with the maximum of the signal along at least one
         axis.
 
@@ -4052,11 +4053,13 @@ class Signal(FancySlicing,
         (64,64)
 
         """
+        if axis is None:
+            axis = self.axes_manager.navigation_axes
         return self._apply_function_on_data_and_remove_axis(np.max, axis,
                                                             out=out)
     max.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG)
 
-    def min(self, axis, out=None):
+    def min(self, axis=None, out=None):
         """Returns a signal with the minimum of the signal along at least one
         axis.
 
@@ -4083,11 +4086,13 @@ class Signal(FancySlicing,
         (64,64)
 
         """
+        if axis is None:
+            axis = self.axes_manager.navigation_axes
         return self._apply_function_on_data_and_remove_axis(np.min, axis,
                                                             out=out)
     min.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG)
 
-    def mean(self, axis, out=None):
+    def mean(self, axis=None, out=None):
         """Returns a signal with the average of the signal along at least one
         axis.
 
@@ -4114,11 +4119,13 @@ class Signal(FancySlicing,
         (64,64)
 
         """
+        if axis is None:
+            axis = self.axes_manager.navigation_axes
         return self._apply_function_on_data_and_remove_axis(np.mean, axis,
                                                             out=out)
     mean.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG)
 
-    def std(self, axis, out=None):
+    def std(self, axis=None, out=None):
         """Returns a signal with the standard deviation of the signal along
         at least one axis.
 
@@ -4145,11 +4152,13 @@ class Signal(FancySlicing,
         (64,64)
 
         """
+        if axis is None:
+            axis = self.axes_manager.navigation_axes
         return self._apply_function_on_data_and_remove_axis(np.std, axis,
                                                             out=out)
     std.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG)
 
-    def var(self, axis, out=None):
+    def var(self, axis=None, out=None):
         """Returns a signal with the variances of the signal along at least one
         axis.
 
@@ -4176,6 +4185,8 @@ class Signal(FancySlicing,
         (64,64)
 
         """
+        if axis is None:
+            axis = self.axes_manager.navigation_axes
         return self._apply_function_on_data_and_remove_axis(np.var, axis,
                                                             out=out)
     var.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG)
@@ -4352,36 +4363,6 @@ class Signal(FancySlicing,
         return self._apply_function_on_data_and_remove_axis(np.argmax, axis,
                                                             out=out)
     indexmax.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
-
-    def amax(self, axis, out=None):
-        """Returns a signal with the value of the maximum along an axis.
-
-        Parameters
-        ----------
-        axis %s
-        %s
-
-        Returns
-        -------
-        s : Signal
-
-        See also
-        --------
-        max, min, sum, mean, std, var, indexmax, valuemax
-
-        Usage
-        -----
-        >>> import numpy as np
-        >>> s = Signal(np.random.random((64,64,1024)))
-        >>> s.data.shape
-        (64,64,1024)
-        >>> s.amax(-1).data.shape
-        (64,64)
-
-        """
-        return self._apply_function_on_data_and_remove_axis(np.amax, axis,
-														    out=out)
-    amax.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG)
 
     def valuemax(self, axis, out=None):
         """Returns a signal with the value of coordinates of the maximum along an axis.

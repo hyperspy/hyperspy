@@ -153,7 +153,7 @@ class EDSSpectrum(Spectrum):
                 xray_lines_not_in_range.append(xray_line)
         return xray_lines_in_range, xray_lines_not_in_range
 
-    def sum(self, axis, out=None):
+    def sum(self, axis=None, out=None):
         """Sum the data over the given axis.
 
         Parameters
@@ -177,6 +177,8 @@ class EDSSpectrum(Spectrum):
         array(1000279)
 
         """
+        if axis is None:
+            axis = self.axes_manager.navigation_axes
         # modify time spend per spectrum
         s = super(EDSSpectrum, self).sum(axis, out)
         s = out or s
