@@ -32,8 +32,8 @@ if __name__ == '__main__':
         # Don't care about warnings in hyperspy in this mode!
         warnings.filterwarnings('default', module="hyperspy")
     else:
-		# We allow extrernal warnings:
-        warnings.filterwarnings('default', category=DeprecationWarning,
+        # We allow extrernal warnings:
+        warnings.filterwarnings('default',
                                 module="(?!hyperspy)")
 
     sys.exit(run_exit())
