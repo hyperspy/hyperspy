@@ -17,7 +17,7 @@
 
 
 import numpy as np
-import nose.tools
+import nose.tools as nt
 
 import hyperspy.api as hs
 
@@ -51,7 +51,7 @@ class Test_Estimate_Elastic_Scattering_Threshold:
             window_length=5,
             tol=0.00001,
         )
-        nose.tools.assert_true(np.allclose(thr.data, 2.5))
+        nt.assert_true(np.allclose(thr.data, 2.5))
 
     def test_min_in_window_without_smoothing_single_spectrum(self):
         s = self.signal.inav[0, 0]
@@ -60,7 +60,7 @@ class Test_Estimate_Elastic_Scattering_Threshold:
             window_length=0,
             tol=0.001,
         )
-        nose.tools.assert_true(np.allclose(thr.data, 2.49))
+        nt.assert_true(np.allclose(thr.data, 2.49))
 
     def test_min_in_window_without_smoothing(self):
         s = self.signal
@@ -69,7 +69,7 @@ class Test_Estimate_Elastic_Scattering_Threshold:
             window_length=0,
             tol=0.001,
         )
-        nose.tools.assert_true(np.allclose(thr.data, 2.49))
+        nt.assert_true(np.allclose(thr.data, 2.49))
 
     def test_min_not_in_window(self):
         # If I use a much lower window, this is the value that has to be
@@ -78,7 +78,7 @@ class Test_Estimate_Elastic_Scattering_Threshold:
         data = s.estimate_elastic_scattering_threshold(window=1.5,
                                                        tol=0.001,
                                                        ).data
-        nose.tools.assert_true(np.all(np.isnan(data)))
+        nt.assert_true(np.all(np.isnan(data)))
 
 
 class TestEstimateZLPCentre:
@@ -91,7 +91,7 @@ class TestEstimateZLPCentre:
 
     def test_estimate_zero_loss_peak_centre(self):
         s = self.spectrum
-        nose.tools.assert_true(
+        nt.assert_true(
             np.allclose(
                 s.estimate_zero_loss_peak_centre().data,
                 np.arange(
@@ -125,8 +125,8 @@ class TestAlignZLP:
             print_stats=False,
             show_progressbar=None)
         zlpc = s.estimate_zero_loss_peak_centre()
-        nose.tools.assert_true(np.allclose(zlpc.data.mean(), 0))
-        nose.tools.assert_true(np.allclose(zlpc.data.std(), 0))
+        nt.assert_true(np.allclose(zlpc.data.mean(), 0))
+        nt.assert_true(np.allclose(zlpc.data.std(), 0))
 
     def test_align_zero_loss_peak_calibrate_false(self):
         s = self.spectrum
@@ -135,7 +135,7 @@ class TestAlignZLP:
             print_stats=False,
             show_progressbar=None)
         zlpc = s.estimate_zero_loss_peak_centre()
-        nose.tools.assert_true(np.allclose(zlpc.data.std(), 0))
+        nt.assert_true(np.allclose(zlpc.data.std(), 0))
 
     def test_also_aligns(self):
         s = self.spectrum
@@ -145,8 +145,8 @@ class TestAlignZLP:
                                also_align=[s2],
                                show_progressbar=None)
         zlpc = s2.estimate_zero_loss_peak_centre()
-        nose.tools.assert_equal(zlpc.data.mean(), 0)
-        nose.tools.assert_equal(zlpc.data.std(), 0)
+        nt.assert_equal(zlpc.data.mean(), 0)
+        nt.assert_equal(zlpc.data.std(), 0)
 
     def test_align_zero_loss_peak_with_spike_signal_range(self):
         s = self.spectrum
@@ -160,7 +160,7 @@ class TestAlignZLP:
         # Max value in the original spectrum is 12, but due to the aligning
         # the peak is split between two different channels. So 8 is the
         # maximum value for the aligned spectrum
-        nose.tools.assert_true(np.allclose(zlp_max, 8))
+        nt.assert_true(np.allclose(zlp_max, 8))
 
 
 class TestPowerLawExtrapolation:
@@ -175,11 +175,11 @@ class TestPowerLawExtrapolation:
     def test_unbinned(self):
         sc = self.s.isig[:300]
         s = sc.power_law_extrapolation(extrapolation_size=100)
-        nose.tools.assert_true(np.allclose(s.data, self.s.data))
+        nt.assert_true(np.allclose(s.data, self.s.data))
 
     def test_binned(self):
         self.s.data *= self.s.axes_manager[-1].scale
         self.s.metadata.Signal.binned = True
         sc = self.s.isig[:300]
         s = sc.power_law_extrapolation(extrapolation_size=100)
-        nose.tools.assert_true(np.allclose(s.data, self.s.data))
+        nt.assert_true(np.allclose(s.data, self.s.data))
