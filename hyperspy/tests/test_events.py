@@ -306,7 +306,7 @@ class TestEventsSignatures(EventsBase):
         self.events.a.connect('f_a')
 
 
-class TestTripperArgResolution(EventsBase):
+class TestTriggerArgResolution(EventsBase):
 
     def setup(self):
         self.events = he.Events()
@@ -367,20 +367,3 @@ class TestTripperArgResolution(EventsBase):
 
         self.events.a.trigger('vA', B='vC', C='vB')
         self.events.a.trigger('vA', C='vC', B='vB')
-
-    def test_fullauto_resolution(self):
-        self.events.b.connect(lambda x: nt.assert_equal(x, 'vA'), 'fullauto')
-        self.events.b.connect(lambda x, A, B=None:
-                              nt.assert_equal((A, B, x), ('vA', 'vB', 'vC')),
-                              'fullauto')
-        self.events.b.connect(lambda B, A:
-                              nt.assert_equal((A, B), ('vA', 'vB')),
-                              'fullauto')
-        self.events.b.connect(lambda B, A=None:
-                              nt.assert_equal((A, B), ('vA', 'vB')),
-                              'fullauto')
-        self.events.b.connect(lambda B, y=None:
-                              nt.assert_equal(B, 'vB'), 'fullauto')
-
-        self.events.b.trigger(A='vA', B='vB', C='vC', D='vD')
-        self.events.b.trigger('vA', C='vC', B='vB', D='vD')
