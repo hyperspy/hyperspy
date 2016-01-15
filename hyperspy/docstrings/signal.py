@@ -13,4 +13,4 @@ MANY_AXIS_PARAMETER = \
             both cases the axes can be passed directly, or specified using the
             index in `axes_manager` or the name of the axis. Any duplicates are
             removed. If None, the operation is performed over all navigation
-            axes."""
+            axes (default)."""

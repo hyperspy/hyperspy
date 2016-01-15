@@ -4328,36 +4328,6 @@ class Signal(FancySlicing,
         return self._apply_function_on_data_and_remove_axis(np.argmax, axis)
     indexmax.__doc__ %= MANY_AXIS_PARAMETER
 
-    def amax(self, axis=None):
-        """Returns a signal with the value of the maximum along an axis.
-
-        Parameters
-        ----------
-        axis %s
-
-        Returns
-        -------
-        s : Signal
-
-        See also
-        --------
-        max, min, sum, mean, std, var, indexmax, valuemax
-
-        Usage
-        -----
-        >>> import numpy as np
-        >>> s = Signal(np.random.random((64,64,1024)))
-        >>> s.data.shape
-        (64,64,1024)
-        >>> s.amax(-1).data.shape
-        (64,64)
-
-        """
-        if axis is None:
-            axis = self.axes_manager.navigation_axes
-        return self._apply_function_on_data_and_remove_axis(np.amax, axis)
-    amax.__doc__ %= MANY_AXIS_PARAMETER
-
     def valuemax(self, axis):
         """Returns a signal with the value of coordinates of the maximum along an axis.
 
