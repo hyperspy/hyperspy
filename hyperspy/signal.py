@@ -4126,7 +4126,7 @@ class Signal(FancySlicing,
 
         Parameters
         ----------
-        axis : {int, string, None, axis}
+        axis : {int, string, None, axis, tuple}
             If axis is None (default), returns chunks for current data shape so
             that at least one signal is in the chunk. If an axis is specified,
             only that particular axis is guaranteed to be "not sliced".
