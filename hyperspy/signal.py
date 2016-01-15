@@ -74,7 +74,6 @@ from hyperspy import components
 from hyperspy.misc.utils import underline
 from hyperspy.external.astroML.histtools import histogram
 from hyperspy.drawing.utils import animate_legend
-from hyperspy.misc.hspy_warnings import VisibleDeprecationWarning
 from hyperspy.misc.slicing import SpecialSlicers, FancySlicing
 from hyperspy.misc.utils import slugify
 from datetime import datetime
@@ -1011,7 +1010,7 @@ class Signal1DTools(object):
     def _integrate_in_range_commandline(self, signal_range):
         e1 = signal_range[0]
         e2 = signal_range[1]
-        integrated_spectrum = self[..., e1:e2].integrate1D(-1)
+        integrated_spectrum = self.isig[..., e1:e2].integrate1D(-1)
         return integrated_spectrum
 
     @only_interactive
@@ -1517,7 +1516,7 @@ class Signal1DTools(object):
         for i, spectrum in enumerate(self):
             if window is not None:
                 vmax = axis.index2value(spectrum.data.argmax())
-                spectrum = spectrum[vmax - window / 2.:vmax + window / 2.]
+                spectrum = spectrum.isig[vmax - window / 2.:vmax + window / 2.]
                 x = spectrum.axes_manager[0].axis
             spline = scipy.interpolate.UnivariateSpline(
                 x,
@@ -1525,11 +1524,11 @@ class Signal1DTools(object):
                 s=0)
             roots = spline.roots()
             if len(roots) == 2:
-                left[self.axes_manager.indices] = roots[0]
-                right[self.axes_manager.indices] = roots[1]
+                left.isig[self.axes_manager.indices] = roots[0]
+                right.isig[self.axes_manager.indices] = roots[1]
             else:
-                left[self.axes_manager.indices] = np.nan
-                right[self.axes_manager.indices] = np.nan
+                left.isig[self.axes_manager.indices] = np.nan
+                right.isig[self.axes_manager.indices] = np.nan
             if maxval > 0:
                 pbar.update(i)
         if maxval > 0:
@@ -2849,14 +2848,6 @@ class Signal(FancySlicing,
         string += '>'
 
         return string.encode('utf8')
-
-    def __setitem__(self, i, j):
-        """x.__setitem__(i, y) <==> x[i]=y
-
-        """
-        if isinstance(j, Signal):
-            j = j.data
-        self.__getitem__(i).data[:] = j
 
     def _binary_operator_ruler(self, other, op_name):
         exception_message = (

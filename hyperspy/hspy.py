@@ -15,11 +15,7 @@ from hyperspy import utils
 from hyperspy.datasets import example_signals
 import warnings
 from hyperspy.misc.hspy_warnings import VisibleDeprecationWarning
-
-
-def get_configuration_directory_path():
-    import hyperspy.misc.config_dir
-    return hyperspy.misc.config_dir.config_path
+from hyperspy.api import get_configuration_directory_path
 
 warnings.warn(
     "This module is deprecated and will be removed in HyperSpy 0.10,"

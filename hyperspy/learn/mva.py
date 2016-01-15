@@ -39,7 +39,6 @@ from hyperspy.decorators import do_not_replot
 from scipy import linalg
 from hyperspy.misc.machine_learning.orthomax import orthomax
 from hyperspy.misc.utils import stack
-from hyperspy.misc.hspy_warnings import VisibleDeprecationWarning
 
 
 def centering_and_whitening(X):
@@ -477,7 +476,6 @@ class MVA():
 
         """
         from hyperspy.signal import Signal
-        from hyperspy._signals.spectrum import Spectrum
 
         lr = self.learning_results
 
