@@ -91,27 +91,6 @@ def generate_axis(origin, step, N, index=0):
         origin - index * step, origin + step * (N - 1 - index), N)
 
 
-# TODO: Remove in 0.9
-def unfold_if_multidim(signal):
-    """Unfold the SI if it is 2D
-
-    Parameters
-    ----------
-    signal : Signal instance
-
-    Returns
-    -------
-
-    Boolean. True if the SI was unfolded by the function.
-
-    """
-    import warnings
-    warnings.warn("unfold_if_multidim is deprecated and will be removed in "
-                  "0.9 please use Signal.unfold instead",
-                  VisibleDeprecationWarning)
-    return None
-
-
 @contextmanager
 def stash_active_state(model):
     active_state = []

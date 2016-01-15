@@ -2850,81 +2850,6 @@ class Signal(FancySlicing,
 
         return string.encode('utf8')
 
-    def __getitem__(self, slices, isNavigation=None):
-        try:
-            len(slices)
-        except TypeError:
-            slices = (slices,)
-        _orig_slices = slices
-        if isNavigation is None:
-            warnings.warn(
-                "Indexing the `Signal` class is deprecated and will be removed "
-                "in HyperSpy 0.9. Please use `.isig` and/or `.inav` instead.",
-                VisibleDeprecationWarning)
-
-        has_nav = True if isNavigation is None else isNavigation
-        has_signal = True if isNavigation is None else not isNavigation
-
-        # Create a deepcopy of self that contains a view of self.data
-        _signal = self._deepcopy_with_new_data(self.data)
-
-        nav_idx = [el.index_in_array for el in
-                   _signal.axes_manager.navigation_axes]
-        signal_idx = [el.index_in_array for el in
-                      _signal.axes_manager.signal_axes]
-
-        if not has_signal:
-            idx = nav_idx
-        elif not has_nav:
-            idx = signal_idx
-        else:
-            idx = nav_idx + signal_idx
-
-        # Add support for Ellipsis
-        if Ellipsis in _orig_slices:
-            _orig_slices = list(_orig_slices)
-            # Expand the first Ellipsis
-            ellipsis_index = _orig_slices.index(Ellipsis)
-            _orig_slices.remove(Ellipsis)
-            _orig_slices = (
-                _orig_slices[:ellipsis_index] +
-                [slice(None), ] * max(0, len(idx) - len(_orig_slices)) +
-                _orig_slices[ellipsis_index:])
-            # Replace all the following Ellipses by :
-            while Ellipsis in _orig_slices:
-                _orig_slices[_orig_slices.index(Ellipsis)] = slice(None)
-            _orig_slices = tuple(_orig_slices)
-
-        if len(_orig_slices) > len(idx):
-            raise IndexError("too many indices")
-
-        slices = np.array([slice(None,)] *
-                          len(_signal.axes_manager._axes))
-
-        slices[idx] = _orig_slices + (slice(None),) * max(
-            0, len(idx) - len(_orig_slices))
-
-        array_slices = []
-        for slice_, axis in zip(slices, _signal.axes_manager._axes):
-            if (isinstance(slice_, slice) or
-                    len(_signal.axes_manager._axes) < 2):
-                array_slices.append(axis._slice_me(slice_))
-            else:
-                if isinstance(slice_, float):
-                    slice_ = axis.value2index(slice_)
-                array_slices.append(slice_)
-                _signal._remove_axis(axis.index_in_axes_manager)
-
-        _signal.data = _signal.data[array_slices]
-        if self.metadata.has_item('Signal.Noise_properties.variance'):
-            variance = self.metadata.Signal.Noise_properties.variance
-            if isinstance(variance, Signal):
-                _signal.metadata.Signal.Noise_properties.variance = \
-                    variance.__getitem__(_orig_slices, isNavigation)
-        _signal.get_dimensions_from_data()
-
-        return _signal
-
     def __setitem__(self, i, j):
         """x.__setitem__(i, y) <==> x[i]=y
 
@@ -3717,25 +3642,6 @@ class Signal(FancySlicing,
                 spectrum.metadata.General.title = se.metadata.General.title
 
         return splitted
-
-    # TODO: remove in HyperSpy 0.9
-    @staticmethod
-    def unfold_if_multidim():
-        """Unfold the datacube if it is >2D
-
-        Deprecated method, please use unfold.
-
-        """
-        warnings.warn(
-            "`unfold_if_multidim` is deprecated and will be removed in "
-            "HyperSpy 0.9. Please use `unfold` instead.",
-            VisibleDeprecationWarning)
-        if len(self.axes_manager._axes) > 2:
-            print "Automatically unfolding the data"
-            self.unfold()
-            return True
-        else:
-            return False
 
     @auto_replot
     def _unfold(self, steady_axes, unfolded_axis):
