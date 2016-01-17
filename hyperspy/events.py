@@ -197,11 +197,11 @@ class Event(object):
         """ % (arglist, arg_pass)
         wrap_code = wrap_code.replace("        ", "")      # Remove indentation
         # Execute dynamic code:
-        gl = globals()
-        loc = locals()
+        gl = dict(globals())
+        gl.update(locals())
         gl.update({'f': orig_f})    # Make sure it keeps the original!
-        exec wrap_code in gl, loc
-        new_f = loc['trigger']
+        exec wrap_code in gl, locals()
+        new_f = trigger
         # Replace the trigger function with the new one
         if defaults:
             new_f.func_defaults = tuple(defaults)

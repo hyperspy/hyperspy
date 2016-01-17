@@ -344,13 +344,18 @@ class TestTriggerArgResolution(EventsBase):
                          'vA', C='vC', B='vB', D='vD')
 
     def test_all_args_resolution(self):
-        self.events.a.connect(lambda x, y:
+        self.events.c.connect(lambda x, y:
                               nt.assert_equal((x, y), ('vA', 'vB')), 'all')
+        self.events.c.trigger('vA', 'vB')
+        self.events.c.connect(lambda x, y, A=None, B=None:
+                              nt.assert_equal((x, y, A, B),
+                                              ('vA', 'vB', None, None)), 'all')
+        self.events.c.trigger('vA', 'vB')
+
         self.events.a.connect(lambda x, y, A=None, B=None:
                               nt.assert_equal((x, y, A, B),
                                               ('vA', 'vB', None, None)), 'all')
-
-        self.events.a.trigger('vA', 'vB')
+        nt.assert_raises(TypeError, self.events.a.trigger, 'vA', 'vB')
 
     def test_all_kwargs_resolution(self):
         self.events.a.connect(lambda A, B:
