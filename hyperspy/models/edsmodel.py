@@ -48,11 +48,13 @@ def _get_iweight(element, line, weight_line=None):
 
 
 def _get_sigma(E, E_ref, units_factor):
-    """Calculates an approximate sigma value, accounting for peak broadening due
+    """
+    Calculates an approximate sigma value, accounting for peak broadening due
     to the detector, for a peak at energy E given a known width at a reference
     energy.
 
-    The factor 2.5 is a constant derived by Fiori & Newbury as references below.
+    The factor 2.5 is a constant derived by Fiori & Newbury as references
+    below.
 
     Parameters
     ----------
@@ -535,7 +537,8 @@ class EDSModel(Model1D):
         calibrate: 'resolution' or 'scale' or 'offset'
             If 'resolution', fits the width of Gaussians place at all x-ray
             lines. The width is given by a model of the detector resolution,
-            obtained by extrapolation the `energy_resolution_MnKa` in `metadata`
+            obtained by extrapolation the `energy_resolution_MnKa` in
+            `metadata`.
             This method will update the value of `energy_resolution_MnKa`.
             If 'scale', calibrate the scale of the energy axis
             If 'offset', calibrate the offset of the energy axis

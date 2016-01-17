@@ -17,9 +17,9 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import copy
-import warnings
 import numpy as np
 from traits.trait_errors import TraitError
+from contextlib import contextmanager
 
 from hyperspy.model import BaseModel, ModelComponents, ModelSpecialSlicers
 import hyperspy.drawing.spectrum
@@ -32,6 +32,7 @@ from hyperspy.axes import AxesManager
 from hyperspy.drawing.widgets import (DraggableVerticalLine,
                                       DraggableLabel)
 from hyperspy.gui.tools import ComponentFit
+from hyperspy.events import Events, EventSupressor
 
 
 class Model1D(BaseModel):
@@ -170,7 +171,8 @@ class Model1D(BaseModel):
         self._model_line = None
         self._adjust_position_all = None
         self.axis = self.axes_manager.signal_axes[0]
-        self.axes_manager.connect(self.fetch_stored_values)
+        self.axes_manager.events.indices_changed.connect(
+            self.fetch_stored_values, 0)
         self.channel_switches = np.array([True] * len(self.axis.axis))
         self.chisq = spectrum._get_navigation_signal()
         self.chisq.change_dtype("float")
@@ -252,10 +254,11 @@ class Model1D(BaseModel):
         if self._plot_active is False:
             return
         for i, component in enumerate(self):
-            component.connect(
-                self._model_line.update)
+            component.events.active_changed.connect(
+                self._model_line.update, 0)
             for parameter in component.parameters:
-                parameter.connect(self._model_line.update)
+                parameter.events.value_changed.connect(
+                    self._model_line.update, 0)
         if self._plot_components is True:
             self._connect_component_lines()
 
@@ -263,9 +266,10 @@ class Model1D(BaseModel):
         if self._model_line is None:
             return
         for component in self:
-            component.disconnect(self._model_line.update)
+            component.events.active_changed.disconnect(self._model_line.update)
             for parameter in component.parameters:
-                parameter.disconnect(self._model_line.update)
+                parameter.events.value_changed.disconnect(
+                    self._model_line.update)
         if self._plot_components is True:
             self._disconnect_component_lines()
 
@@ -277,7 +281,6 @@ class Model1D(BaseModel):
         See Also
         --------
         suspend_update
-        resume_update
 
         """
         if self._plot_active is True and self._suspend_update is False:
@@ -289,49 +292,30 @@ class Model1D(BaseModel):
             except:
                 self._disconnect_parameters2update_plot()
 
-    def suspend_update(self):
-        """Prevents plot from updating until resume_update() is called
+    @contextmanager
+    def suspend_update(self, update_on_resume=True):
+        """Prevents plot from updating until 'with' clause completes.
 
         See Also
         --------
-        resume_update
         update_plot
         """
-        if self._suspend_update is False:
-            self._suspend_update = True
-            self._disconnect_parameters2update_plot()
-        else:
-            warnings.warn("Update already suspended, does nothing.")
 
-    def resume_update(self, update=True):
-        """Resumes plot update after suspension by suspend_update()
+        es = EventSupressor()
+        es.add(self.axes_manager.events.indices_changed)
+        for c in self:
+            es.add(c.events, self.update_plot)
+            for p in c.parameters:
+                es.add(p.events, self.update_plot)
 
-        Parameters
-        ----------
-        update : bool, optional
-            If True, also updates plot after resuming (default).
+        old = self._suspend_update
+        self._suspend_update = True
+        with es.suppress():
+            yield
+        self._suspend_update = old
 
-        See Also
-        --------
-        suspend_update
-        update_plot
-        """
-        if self._suspend_update is True:
-            self._suspend_update = False
-            self._connect_parameters2update_plot()
-            if update is True:
-                # Ideally, the update flag should in stead work like this:
-                # If update is true, update_plot is called if any action
-                # would have called it while updating was suspended.
-                # However, this is prohibitively difficult to track, so
-                # in stead it is simply assume that a change has happened
-                # between suspend and resume, and therefore that the plot
-                # needs to update. As we do not know what has changed,
-                # all components need to update. This can however be
-                # suppressed by setting update to false
-                self.update_plot()
-        else:
-            warnings.warn("Update not suspended, nothing to resume.")
+        if update_on_resume is True:
+            self.update_plot()
 
     def _update_model_line(self):
         if (self._plot_active is True and
@@ -615,26 +599,28 @@ class Model1D(BaseModel):
     @staticmethod
     def _connect_component_line(component):
         if hasattr(component, "_model_plot_line"):
-            component.connect(component._model_plot_line.update)
+            f = component._model_plot_line.update
+            component.events.active_changed.connect(f, 0)
             for parameter in component.parameters:
-                parameter.connect(component._model_plot_line.update)
+                parameter.events.value_changed.connect(f, 0)
 
     @staticmethod
     def _disconnect_component_line(component):
         if hasattr(component, "_model_plot_line"):
-            component.disconnect(component._model_plot_line.update)
+            f = component._model_plot_line.update
+            component.events.active_changed.disconnect(f)
             for parameter in component.parameters:
-                parameter.disconnect(component._model_plot_line.update)
+                parameter.events.value_changed.disconnect(f)
 
     def _connect_component_lines(self):
-        for component in [component for component in self if
-                          component.active]:
-            self._connect_component_line(component)
+        for component in self:
+            if component.active:
+                self._connect_component_line(component)
 
     def _disconnect_component_lines(self):
-        for component in [component for component in self if
-                          component.active]:
-            self._disconnect_component_line(component)
+        for component in self:
+            if component.active:
+                self._disconnect_component_line(component)
 
     def _plot_component(self, component):
         line = hyperspy.drawing.spectrum.SpectrumLine()
@@ -768,13 +754,9 @@ class Model1D(BaseModel):
                 self._plot.signal_plot.ax)
         # Create widget -> parameter connection
         am._axes[0].continuous_value = True
-        am._axes[0].on_trait_change(set_value, 'value')
-        # Create parameter -> widget connection
-        # This is done with a duck typing trick
-        # We disguise the AxesManager axis of Parameter by adding
-        # the _twin attribute
-        am._axes[0]._twins = set()
-        component._position.twin = am._axes[0]
+        am._axes[0].events.value_changed.connect(set_value, 1)
+        component._position.events.value_changed.connect(
+            am._axes[0].set_index_from_value, 1)
 
     def disable_adjust_position(self):
         """Disables the interactive adjust position feature

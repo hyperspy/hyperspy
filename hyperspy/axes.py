@@ -23,8 +23,12 @@ import numpy as np
 import traits.api as t
 from traits.trait_errors import TraitError
 
+from hyperspy.events import Events, Event
 from hyperspy.misc.utils import isiterable, ordinal
 from hyperspy.misc.math_tools import isfloat
+
+import warnings
+from hyperspy.misc.hspy_warnings import VisibleDeprecationWarning
 
 
 class ndindex_nat(np.ndindex):
@@ -82,6 +86,29 @@ class DataAxis(t.HasTraits):
                  units=t.Undefined,
                  navigate=t.Undefined):
         super(DataAxis, self).__init__()
+        self.events = Events()
+        self.events.index_changed = Event("""
+            Event that triggers when the index of the `DataAxis` changes
+
+            Triggers after the internal state of the `DataAxis` has been
+            updated.
+
+            Arguments:
+            ---------
+            index : The new index
+            axis : The DataAxis that the event belongs to.
+            """, kwarg_order=['index', 'axis'])
+        self.events.value_changed = Event("""
+            Event that triggers when the value of the `DataAxis` changes
+
+            Triggers after the internal state of the `DataAxis` has been
+            updated.
+
+            Arguments:
+            ---------
+            value : The new value
+            axis : The DataAxis that the event belongs to.
+            """, kwarg_order=['value', 'axis'])
         self.name = name
         self.units = units
         self.scale = scale
@@ -237,12 +264,6 @@ class DataAxis(t.HasTraits):
     def __str__(self):
         return self._get_name() + " axis"
 
-    def connect(self, f, trait='value'):
-        self.on_trait_change(f, trait)
-
-    def disconnect(self, f, trait='value'):
-        self.on_trait_change(f, trait, remove=True)
-
     def update_index_bounds(self):
         self.high_index = self.size - 1
 
@@ -280,7 +301,17 @@ class DataAxis(t.HasTraits):
         return cp
 
     def update_value(self):
-        self.value = self.axis[self.index]
+        # To prevent firing events before value checks, suppress events,
+        # and only fire if final result is different
+        old_val = self.value
+        old_idx = self.index
+        with self.events.index_changed.suppress(), \
+                self.events.value_changed.suppress():
+            self.value = self.axis[self.index]
+        if old_val != self.value:
+            self.events.value_changed.trigger(value=self.index, axis=self)
+        if old_idx != self.index:
+            self.events.index_changed.trigger(index=self.index, axis=self)
 
     def value2index(self, value, rounding=round):
         """Return the closest index to the given value if between the limit.
@@ -331,10 +362,18 @@ class DataAxis(t.HasTraits):
             return self.axis[index]
 
     def set_index_from_value(self, value):
-        self.index = self.value2index(value)
-        # If the value is above the limits we must correct the value
-        if self.continuous_value is False:
-            self.value = self.index2value(self.index)
+        old_idx = self.index
+        old_val = self.value
+        with self.events.index_changed.suppress(), \
+                self.events.value_changed.suppress():
+            self.index = self.value2index(value)
+            # If the value is above the limits we must correct the value
+            if self.continuous_value is False:
+                self.value = self.index2value(self.index)
+        if old_idx != self.index:
+            self.events.index_changed.trigger(index=self.index, axis=self)
+        if old_val != self.value:
+            self.events.value_changed.trigger(value=self.value, axis=self)
 
     def calibrate(self, value_tuple, index_tuple, modify_calibration=True):
         scale = (value_tuple[1] - value_tuple[0]) /\
@@ -469,6 +508,17 @@ class AxesManager(t.HasTraits):
 
     def __init__(self, axes_list):
         super(AxesManager, self).__init__()
+        self.events = Events()
+        self.events.indices_changed = Event("""
+            Event that triggers when the indices of the `AxesManager` changes
+
+            Triggers after the internal state of the `AxesManager` has been
+            updated.
+
+            Arguments:
+            ---------
+            axes_manager : The AxesManager that the event belongs to.
+            """, kwarg_order=['axes_manager'])
         self.create_axes(axes_list)
         # set_signal_dimension is called only if there is no current
         # view. It defaults to spectrum
@@ -478,8 +528,8 @@ class AxesManager(t.HasTraits):
             self.set_signal_dimension(1)
 
         self._update_attributes()
+        self.on_trait_change(self._on_index_changed, '_axes.index')
         self.on_trait_change(self._update_attributes, '_axes.slice')
-        self.on_trait_change(self._update_attributes, '_axes.index')
         self.on_trait_change(self._update_attributes, '_axes.size')
         self._index = None  # index for the iterator
 
@@ -674,6 +724,10 @@ class AxesManager(t.HasTraits):
         axis.axes_manager = self
         self._axes.append(axis)
 
+    def _on_index_changed(self):
+        self._update_attributes()
+        self.events.indices_changed.trigger(axes_manager=self)
+
     def _update_attributes(self):
         getitem_tuple = ()
         values = []
@@ -744,14 +798,20 @@ class AxesManager(t.HasTraits):
             axis.navigate = tl.pop(0)
 
     def connect(self, f):
-        for axis in self._axes:
-            if axis.slice is None:
-                axis.on_trait_change(f, 'index')
+        warnings.warn(
+            "The method `AxesManager.connect()` has been deprecated and will "
+            "be removed in HyperSpy 0.10. Please use "
+            "`AxesManager.events.indices_changed.connect()` instead.",
+            VisibleDeprecationWarning)
+        self.events.indices_changed.connect(f, 0)
 
     def disconnect(self, f):
-        for axis in self._axes:
-            if axis.slice is None:
-                axis.on_trait_change(f, 'index', remove=True)
+        warnings.warn(
+            "The method `AxesManager.disconnect()` has been deprecated and "
+            "will be removed in HyperSpy 0.10. Please use "
+            "`AxesManager.events.indices_changed.disconnect()` instead.",
+            VisibleDeprecationWarning)
+        self.events.indices_changed.disconnect(f)
 
     def key_navigator(self, event):
         if len(self.navigation_axes) not in (1, 2):

@@ -80,6 +80,7 @@ from hyperspy.misc.slicing import SpecialSlicers, FancySlicing
 from hyperspy.misc.utils import slugify
 from hyperspy.docstrings.signal import (
 	ONE_AXIS_PARAMETER, MANY_AXIS_PARAMETER, OUT_ARG)
+from hyperspy.events import Events, Event
 
 
 class ModelManager(object):
@@ -2819,6 +2820,20 @@ class Signal(FancySlicing,
         self.auto_replot = True
         self.inav = SpecialSlicersSignal(self, True)
         self.isig = SpecialSlicersSignal(self, False)
+        self.events = Events()
+        self.events.data_changed = Event("""
+            Event that triggers when the data has changed
+
+            The event trigger when the data is ready for consumption by any
+            process that depend on it as input. Plotted signals automatically
+            connect this Event to its `Signal.plot()`.
+
+            Note: The event only fires at certain specific times, not everytime
+            that the `Signal.data` array changes values.
+
+            Arguments:
+                signal: The signal that owns the data.
+            """, kwarg_order=['signal'])
 
     def _create_metadata(self):
         self.metadata = DictionaryTreeBrowser()
@@ -3375,6 +3390,7 @@ class Signal(FancySlicing,
                     " \"slider\", None, a Signal instance")
 
         self._plot.plot(**kwargs)
+        self.events.data_changed.connect(self.update_plot)
 
     def save(self, filename=None, overwrite=None, extension=None,
              **kwds):
@@ -3439,6 +3455,14 @@ class Signal(FancySlicing,
         if self._plot is not None:
             if self._plot.is_active() is True:
                 self.plot()
+
+    def update_plot(self):
+        if self._plot is not None:
+            if self._plot.is_active() is True:
+                if self._plot.signal_plot is not None:
+                    self._plot.signal_plot.update()
+                if self._plot.navigator_plot is not None:
+                    self._plot.navigator_plot.update()
 
     @auto_replot
     def get_dimensions_from_data(self):
