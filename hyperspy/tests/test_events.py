@@ -185,6 +185,77 @@ class TestEventsSuppression(EventsBase):
             self.trigger_check(self.events.a.trigger, True)
             self.trigger_check2(self.events.a.trigger, True)
 
+    def test_suppressor_init_args(self):
+        with self.events.b.suppress():
+            es = he.EventSupressor((self.events.a, self.on_trigger),
+                                   self.events.c)
+            with es.suppress():
+                self.trigger_check(self.events.a.trigger, False)
+                self.trigger_check2(self.events.a.trigger, True)
+                self.trigger_check(self.events.b.trigger, False)
+                self.trigger_check(self.events.c.trigger, False)
+                with self.events.a.suppress_callback(self.on_trigger2):
+                    self.trigger_check2(self.events.a.trigger, False)
+                self.trigger_check2(self.events.a.trigger, True)
+
+            self.trigger_check(self.events.a.trigger, True)
+            self.trigger_check2(self.events.a.trigger, True)
+            self.trigger_check(self.events.b.trigger, False)
+            self.trigger_check(self.events.c.trigger, True)
+
+        self.trigger_check(self.events.a.trigger, True)
+        self.trigger_check2(self.events.a.trigger, True)
+        self.trigger_check(self.events.b.trigger, True)
+        self.trigger_check(self.events.c.trigger, True)
+
+    def test_suppressor_add_args(self):
+        with self.events.b.suppress():
+            es = he.EventSupressor()
+            es.add((self.events.a, self.on_trigger), self.events.c)
+            with es.suppress():
+                self.trigger_check(self.events.a.trigger, False)
+                self.trigger_check2(self.events.a.trigger, True)
+                self.trigger_check(self.events.b.trigger, False)
+                self.trigger_check(self.events.c.trigger, False)
+                with self.events.a.suppress_callback(self.on_trigger2):
+                    self.trigger_check2(self.events.a.trigger, False)
+                self.trigger_check2(self.events.a.trigger, True)
+
+            self.trigger_check(self.events.a.trigger, True)
+            self.trigger_check2(self.events.a.trigger, True)
+            self.trigger_check(self.events.b.trigger, False)
+            self.trigger_check(self.events.c.trigger, True)
+
+        self.trigger_check(self.events.a.trigger, True)
+        self.trigger_check2(self.events.a.trigger, True)
+        self.trigger_check(self.events.b.trigger, True)
+        self.trigger_check(self.events.c.trigger, True)
+
+    def test_suppressor_all_callback_in_events(self):
+        with self.events.b.suppress():
+            es = he.EventSupressor()
+            es.add((self.events, self.on_trigger),)
+            with es.suppress():
+                self.trigger_check(self.events.a.trigger, False)
+                self.trigger_check2(self.events.a.trigger, True)
+                self.trigger_check(self.events.b.trigger, False)
+                self.trigger_check(self.events.c.trigger, False)
+                with self.events.a.suppress_callback(self.on_trigger2):
+                    self.trigger_check2(self.events.a.trigger, False)
+                self.trigger_check2(self.events.a.trigger, True)
+
+
+            self.trigger_check(self.events.a.trigger, True)
+            self.trigger_check2(self.events.a.trigger, True)
+            self.trigger_check(self.events.b.trigger, False)
+            self.trigger_check(self.events.c.trigger, True)
+
+        self.trigger_check(self.events.a.trigger, True)
+        self.trigger_check2(self.events.a.trigger, True)
+        self.trigger_check(self.events.b.trigger, True)
+        self.trigger_check(self.events.c.trigger, True)
+
+
 
 def f_a(*args): pass
 def f_b(*args): pass
@@ -233,3 +304,66 @@ class TestEventsSignatures(EventsBase):
     @nt.raises(TypeError)
     def test_type(self):
         self.events.a.connect('f_a')
+
+
+class TestTriggerArgResolution(EventsBase):
+
+    def setup(self):
+        self.events = he.Events()
+        self.events.a = he.Event(kwarg_order=['A', 'B'])
+        self.events.b = he.Event(kwarg_order=['A', 'B', 'C'])
+
+    def test_nargs_resolution(self):
+        self.events.a.connect(lambda x=None: nt.assert_equal(x, None), 0)
+        self.events.a.connect(lambda x: nt.assert_equal(x, 'vA'), 1)
+        self.events.a.connect(lambda x, y:
+                              nt.assert_equal((x, y), ('vA', 'vB')), 2)
+        self.events.a.connect(lambda x, A:
+                              nt.assert_equal((x, A), ('vA', 'vB')), 2)
+        self.events.a.connect(lambda x, y=None, A=None:
+                              nt.assert_equal((x, y, A),
+                                              ('vA', 'vB', None)), 2)
+        self.events.a.connect(lambda B, A:
+                              nt.assert_equal((B, A), ('vA', 'vB')), 2)
+        self.events.a.connect(lambda B, y:
+                              nt.assert_equal((B, y), ('vA', 'vB')), 2)
+        self.events.a.connect(lambda B, A=None:
+                              nt.assert_equal(B, 'vA'), 1)
+        self.events.a.connect(lambda B, y=None:
+                              nt.assert_equal(B, 'vA'), 1)
+
+        self.events.a.trigger('vA', 'vB')
+        self.events.a.trigger('vA', 'vB', 'vC', 'vD')
+        self.events.a.trigger(A='vA', B='vB')
+        self.events.a.trigger('vA', B='vB')
+        self.events.a.trigger(B='vB', A='vA')
+        self.events.a.trigger('vA', C='vC', B='vB', D='vD')
+
+    def test_all_args_resolution(self):
+        self.events.a.connect(lambda x, y:
+                              nt.assert_equal((x, y), ('vA', 'vB')), 'all')
+        self.events.a.connect(lambda x, y, A=None, B=None:
+                              nt.assert_equal((x, y, A, B),
+                                              ('vA', 'vB', None, None)), 'all')
+
+        self.events.a.trigger('vA', 'vB')
+
+    def test_all_kwargs_resolution(self):
+        self.events.a.connect(lambda A, B:
+                              nt.assert_equal((A, B), ('vA', 'vB')), 'all')
+        self.events.a.connect(lambda x=None, y=None, A=None, B=None:
+                              nt.assert_equal((x, y, A, B),
+                                              (None, None, 'vA', 'vB')), 'all')
+
+        self.events.a.trigger(A='vA', B='vB')
+
+    def test_all_mixed_resolution(self):
+        self.events.b.connect(lambda A, B, C:
+                              nt.assert_equal((A, B), ('vA', 'vB')), 'all')
+        self.events.b.connect(lambda x=None, y=None, A=None, B=None, C=None:
+                              nt.assert_equal((x, y, A, B, C),
+                                              (None, None, 'vA', 'vB', 'vC')),
+                              'all')
+
+        self.events.a.trigger('vA', B='vC', C='vB')
+        self.events.a.trigger('vA', C='vC', B='vB')

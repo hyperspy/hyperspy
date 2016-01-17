@@ -21,7 +21,7 @@ from __future__ import division
 import warnings
 import numpy as np
 import math
-from contextlib import contextmanager
+from hyperspy.misc.utils import stash_active_state
 
 from hyperspy.models.model1D import Model1D
 from hyperspy._signals.eds import EDSSpectrum
@@ -48,11 +48,13 @@ def _get_iweight(element, line, weight_line=None):
 
 
 def _get_sigma(E, E_ref, units_factor):
-    """Calculates an approximate sigma value, accounting for peak broadening due
+    """
+    Calculates an approximate sigma value, accounting for peak broadening due
     to the detector, for a peak at energy E given a known width at a reference
     energy.
 
-    The factor 2.5 is a constant derived by Fiori & Newbury as references below.
+    The factor 2.5 is a constant derived by Fiori & Newbury as references
+    below.
 
     Parameters
     ----------
@@ -88,25 +90,6 @@ def _get_offset(diff):
 
 def _get_scale(E1, E_ref1, fact):
     return lambda E: E1 + fact * (E - E_ref1)
-
-
-@contextmanager
-def stash_active_state(model):
-    active_state = []
-    for component in model:
-        if component.active_is_multidimensional:
-            active_state.append(component._active_array)
-        else:
-            active_state.append(component.active)
-    yield
-    for component in model:
-        active_s = active_state.pop(0)
-        if isinstance(active_s, bool):
-            component.active = active_s
-        else:
-            if not component.active_is_multidimensional:
-                component.active_is_multidimensional = True
-            component._active_array[:] = active_s
 
 
 class EDSModel(Model1D):
@@ -554,7 +537,8 @@ class EDSModel(Model1D):
         calibrate: 'resolution' or 'scale' or 'offset'
             If 'resolution', fits the width of Gaussians place at all x-ray
             lines. The width is given by a model of the detector resolution,
-            obtained by extrapolation the `energy_resolution_MnKa` in `metadata`
+            obtained by extrapolation the `energy_resolution_MnKa` in
+            `metadata`.
             This method will update the value of `energy_resolution_MnKa`.
             If 'scale', calibrate the scale of the energy axis
             If 'offset', calibrate the offset of the energy axis

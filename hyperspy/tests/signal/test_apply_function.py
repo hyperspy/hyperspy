@@ -23,7 +23,7 @@ class TestImage:
               [14.15585247, 14.7337787, 15.31170493]]])))
 
     def test_constant_sigma_navdim0(self):
-        im = self.im[0]
+        im = self.im.inav[0]
         im.map(gaussian_filter, sigma=1, show_progressbar=None)
         nose.tools.assert_true(np.allclose(im.data, np.array(
             [[1.68829507, 2.2662213, 2.84414753],

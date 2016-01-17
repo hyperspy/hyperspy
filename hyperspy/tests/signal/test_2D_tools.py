@@ -20,7 +20,7 @@ import numpy as np
 import nose.tools as nt
 from scipy.misc import lena
 
-import hyperspy.hspy as hs
+import hyperspy.api as hs
 
 
 class TestAlignTools:
