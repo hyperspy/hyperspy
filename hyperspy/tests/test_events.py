@@ -310,8 +310,9 @@ class TestTriggerArgResolution(EventsBase):
 
     def setup(self):
         self.events = he.Events()
-        self.events.a = he.Event(kwarg_order=['A', 'B'])
-        self.events.b = he.Event(kwarg_order=['A', 'B', 'C'])
+        self.events.a = he.Event(arguments=['A', 'B'])
+        self.events.b = he.Event(arguments=['A', 'B', 'C'])
+        self.events.c = he.Event()
 
     def test_nargs_resolution(self):
         self.events.a.connect(lambda x=None: nt.assert_equal(x, None), 0)
@@ -331,13 +332,16 @@ class TestTriggerArgResolution(EventsBase):
                               nt.assert_equal(B, 'vA'), 1)
         self.events.a.connect(lambda B, y=None:
                               nt.assert_equal(B, 'vA'), 1)
+        # Update if internal code changes, not testing this line:
+        self.events.c._connected = self.events.a._connected
 
         self.events.a.trigger('vA', 'vB')
-        self.events.a.trigger('vA', 'vB', 'vC', 'vD')
+        nt.assert_raises(TypeError, self.events.a.trigger, 'vA', 'vB', 'vC')
         self.events.a.trigger(A='vA', B='vB')
         self.events.a.trigger('vA', B='vB')
         self.events.a.trigger(B='vB', A='vA')
-        self.events.a.trigger('vA', C='vC', B='vB', D='vD')
+        nt.assert_raises(TypeError, self.events.a.trigger,
+                         'vA', C='vC', B='vB', D='vD')
 
     def test_all_args_resolution(self):
         self.events.a.connect(lambda x, y:
@@ -365,5 +369,5 @@ class TestTriggerArgResolution(EventsBase):
                                               (None, None, 'vA', 'vB', 'vC')),
                               'all')
 
-        self.events.a.trigger('vA', B='vC', C='vB')
-        self.events.a.trigger('vA', C='vC', B='vB')
+        self.events.b.trigger('vA', B='vB', C='vC')
+        self.events.b.trigger('vA', C='vC', B='vB')

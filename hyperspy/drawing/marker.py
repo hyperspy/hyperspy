@@ -54,7 +54,7 @@ class MarkerBase(object):
             ---------
             marker : Marker
                 The marker that was closed.
-            """, kwarg_order=['marker'])
+            """, arguments=['marker'])
         self._closing = False
 
     @property

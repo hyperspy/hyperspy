@@ -1,6 +1,8 @@
 import inspect
 import collections
 from contextlib import contextmanager
+from functools import wraps
+import re
 
 
 class Events(object):
@@ -124,11 +126,87 @@ class Events(object):
 
 class Event(object):
 
-    def __init__(self, doc='', kwarg_order=None):
+    def __init__(self, doc='', arguments=None):
+        """
+        Create an Event object.
+
+        Arguments:
+        ----------
+            doc : str
+                Optional docstring for the new Event.
+            arguments : iterable
+                Pass to define the arguments of the trigger() function. Each
+                element must either be an argument name, or a tuple containing
+                the argument name and the argument's default value.
+
+        Example usage:
+        --------------
+            >>> Event()
+            <hyperspy.events.Event: {}
+            >>> Event(doc="This event has a docstring!").__doc__
+            'This event has a docstring!'
+            >>> e1 = Event()
+            >>> e2 = Event(arguments=('arg1', ('arg2', None)))
+            >>> e1.trigger(12, 43, 'str', 4.3)  # Can trigger with whatever
+            >>> e2.trigger(11, 22, 3.4)
+            TypeError: trigger() takes at most 3 arguments (4 given)
+        """
         self.__doc__ = doc
-        self._kwarg_order = kwarg_order
+        self._arguments = tuple(arguments) if arguments else None
         self._connected = {}
         self._suppress = False
+
+        if arguments:
+            self._trigger_maker(arguments)
+
+    @property
+    def arguments(self):
+        return self._arguments
+
+    # Regex for confirming valid python identifier
+    _re_arg_name = re.compile("[a-zA-Z_][a-zA-Z0-9_]*")
+
+    def _trigger_maker(self, arguments):
+        """
+        Dynamically creates a function with a signature equal to `arguments`.
+
+        Ensures that trigger can only be called with the correct arguments
+        """
+        orig_f = self.trigger
+        # Validate code for exec!
+        defaults = []
+        for arg in arguments:
+            if isinstance(arg, (tuple, list)):
+                defaults.append(arg[1])
+                arg = arg[0]
+            elif len(defaults) > 0:
+                raise SyntaxError(
+                    "non-default argument follows default argument")
+            m = self._re_arg_name.match(arg)
+            if m is None or m.end() != len(arg):
+                raise ValueError("Argument name invalid: %s" % arg)
+        arguments = [a[0] if isinstance(a, (tuple, list))
+                     else a for a in arguments]
+        # Create the dynamic code:
+        arglist = ', '.join(arguments)
+        arg_pass = ', '.join([a + '=' + a for a in arguments])
+        wrap_code = u"""
+        @wraps(f)
+        def trigger(self, %s):
+            return f(%s)
+        """ % (arglist, arg_pass)
+        wrap_code = wrap_code.replace("        ", "")      # Remove indentation
+        # Execute dynamic code:
+        gl = globals()
+        loc = locals()
+        gl.update({'f': orig_f})    # Make sure it keeps the original!
+        exec wrap_code in gl, loc
+        new_f = loc['trigger']
+        # Replace the trigger function with the new one
+        if defaults:
+            new_f.func_defaults = tuple(defaults)
+        new_f = new_f.__get__(self, self.__class__)     # Bind method to self
+        self.trigger = new_f
 
     @contextmanager
     def suppress(self):
@@ -279,11 +357,11 @@ class Event(object):
             # kwargs in the order that function defines them
             args = list(args)
             kwargs = kwargs.copy()
-            if self._kwarg_order:
+            if self.arguments:
                 i = 0
-                while len(args) < nargs and i < len(self._kwarg_order):
-                    if self._kwarg_order[i] in kwargs:
-                        args.append(kwargs.pop(self._kwarg_order[i]))
+                while len(args) < nargs and i < len(self.arguments):
+                    if self.arguments[i] in kwargs:
+                        args.append(kwargs.pop(self.arguments[i]))
                     i += 1
             if len(args) < nargs:
                 spec = inspect.getargspec(f)
