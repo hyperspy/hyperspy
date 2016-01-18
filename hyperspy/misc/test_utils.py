@@ -10,12 +10,21 @@ import nose.tools as nt
 @contextmanager
 def assert_warns(message=None, category=None):
     """
-    Runs function f, and checks that it gives a warning.
+    Creates a context where a warning is expected to be given.
+
+    Use in a `with` statement to enter the context. The warning should be
+    raised before the context exits.
 
     If `message` is given, it checks that the passed string is a part of the
     warnings message (~`message in warning.message`).
     If `category` is given, it checks that the warning category is a subclass
     of the passed `category`.
+
+    Examples:
+    ---------
+        >>> with assert_warns("This is a warning", UserWarning):
+        ...     function_that_should_warn()
+        ... # Code continues here
     """
     with warnings.catch_warnings(record=True) as w:
         warnings.simplefilter('always')
