@@ -544,6 +544,17 @@ class AxesManager(t.HasTraits):
             ----------
             axes_manager : The AxesManager that the event belongs to.
             """, arguments=['axes_manager'])
+        self.events.transformed = Event("""
+            Event that trigger when the space defined by the axes transforms.
+
+            Specifically, it triggers when one or more of the folloing
+            attributes changes on one or more of the axes:
+                `offset`, `size`, `scale`
+
+            Arguments:
+            ----------
+            axes_manager : The AxesManager that the event belongs to.
+            """, arguments=['axes_manager'])
         self.create_axes(axes_list)
         # set_signal_dimension is called only if there is no current
         # view. It defaults to spectrum
@@ -554,8 +565,10 @@ class AxesManager(t.HasTraits):
 
         self._update_attributes()
         self.on_trait_change(self._on_index_changed, '_axes.index')
-        self.on_trait_change(self._update_attributes, '_axes.slice')
-        self.on_trait_change(self._update_attributes, '_axes.size')
+        self.on_trait_change(self._on_slice_changed, '_axes.slice')
+        self.on_trait_change(self._on_size_changed, '_axes.size')
+        self.on_trait_change(self._on_scale_changed, '_axes.scale')
+        self.on_trait_change(self._on_offset_changed, '_axes.offset')
         self._index = None  # index for the iterator
 
     def _get_positive_index(self, axis):
@@ -752,6 +765,19 @@ class AxesManager(t.HasTraits):
     def _on_index_changed(self):
         self._update_attributes()
         self.events.indices_changed.trigger(axes_manager=self)
+
+    def _on_slice_changed(self):
+        self._update_attributes()
+
+    def _on_size_changed(self):
+        self._update_attributes()
+        self.events.transformed.trigger(self)
+
+    def _on_scale_changed(self):
+        self.events.transformed.trigger(self)
+
+    def _on_offset_changed(self):
+        self.events.transformed.trigger(self)
 
     def _update_attributes(self):
         getitem_tuple = ()
