@@ -20,6 +20,7 @@ import numpy as np
 import nose.tools as nt
 
 import hyperspy.api as hs
+from hyperspy.misc.test_utils import assert_warns
 
 
 class Test_Estimate_Elastic_Scattering_Threshold:
@@ -75,8 +76,10 @@ class Test_Estimate_Elastic_Scattering_Threshold:
         # If I use a much lower window, this is the value that has to be
         # returned as threshold.
         s = self.signal
-        data = s.estimate_elastic_scattering_threshold(
-            window=1.5, tol=0.001).data
+        with assert_warns("No inflexion point could be found in some "
+                          "positions that have been marked with nans."):
+            data = s.estimate_elastic_scattering_threshold(
+                window=1.5, tol=0.001).data
         nt.assert_true(np.all(np.isnan(data)))
 
 
