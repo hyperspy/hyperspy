@@ -41,3 +41,13 @@ def assert_warns(message=None, category=None):
                     (w[0].category, category))
         if message is not None:
             nt.assert_in(message, w[0].message[0])
+
+
+@contextmanager
+def ignore_warning(message="", category=None):
+    with warnings.catch_warnings():
+        if category:
+            warnings.filterwarnings('ignore', message, category=category)
+        else:
+            warnings.filterwarnings('ignore', message)
+        yield
