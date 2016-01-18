@@ -411,8 +411,8 @@ class DataAxis(t.HasTraits):
         return i1, i2
 
     def update_from(self, axis, fields=('offset', 'scale')):
-        """Copy values of specified axes fields from the passed AxesManager. 
-        
+        """Copy values of specified axes fields from the passed AxesManager.
+
         Parameters
         ----------
         axis : DataAxis
@@ -420,7 +420,7 @@ class DataAxis(t.HasTraits):
         fields : iterable container of strings
             The name of the fields to update. If the field does not exist in
             either of the AxesManagers, an AttributeError will be raised.
-        
+
         Returns
         -------
         A boolean indicating whether any changes were made.
@@ -541,7 +541,7 @@ class AxesManager(t.HasTraits):
             updated.
 
             Arguments:
-            ---------
+            ----------
             axes_manager : The AxesManager that the event belongs to.
             """, arguments=['axes_manager'])
         self.create_axes(axes_list)
@@ -791,7 +791,7 @@ class AxesManager(t.HasTraits):
         self.signal_size = (np.cumprod(self.signal_shape)[-1]
                             if self.signal_shape else 0)
         self._update_max_index()
-    
+
     def set_signal_dimension(self, value):
         """Set the dimension of the signal.
 
