@@ -80,6 +80,7 @@ from hyperspy.misc.utils import slugify
 from hyperspy.docstrings.signal import (
 	ONE_AXIS_PARAMETER, MANY_AXIS_PARAMETER, OUT_ARG)
 from hyperspy.events import Events, Event
+from hyperspy.interactive import interactive
 
 
 class ModelManager(object):
@@ -3254,11 +3255,22 @@ class Signal(FancySlicing,
                 if self.axes_manager.signal_dimension == 0:
                     navigator = self.deepcopy()
                 else:
-                    navigator = self.sum(self.axes_manager.signal_axes)
+                    navigator = interactive(
+                        self.sum,
+                        self.events.data_changed,
+                        self.axes_manager.events.transformed,
+                        self.axes_manager.signal_axes)
                 if navigator.axes_manager.navigation_dimension == 1:
-                    navigator = navigator.as_spectrum(0)
+                    navigator = interactive(
+                        navigator.as_spectrum,
+                        navigator.events.data_changed,
+                        navigator.axes_manager.events.transformed, 0)
                 else:
-                    navigator = navigator.as_image((0, 1))
+                    navigator = interactive(
+                        navigator.as_image,
+                        navigator.events.data_changed,
+                        navigator.axes_manager.events.transformed,
+                        (0, 1))
             else:
                 navigator = None
         # Navigator properties
@@ -3907,6 +3919,8 @@ class Signal(FancySlicing,
         if out is None:
             s._remove_axis([ax.index_in_axes_manager for ax in axes])
             return s
+        else:
+            s.events.data_changed.trigger(self)
 
     def sum(self, axis=None, out=None):
         """Sum the data over the given axes.
