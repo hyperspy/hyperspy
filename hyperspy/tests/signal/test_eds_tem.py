@@ -34,7 +34,7 @@ class Test_metadata:
         s.metadata.Acquisition_instrument.TEM.beam_energy = 15.0
         self.signal = s
 
-    def test_sum_live_time(self):
+    def test_sum_live_time1(self):
         s = self.signal
         old_metadata = s.metadata.deepcopy()
         sSum = s.sum(0)
@@ -47,6 +47,32 @@ class Test_metadata:
         assert_dict_equal(old_metadata.as_dictionary(),
                           s.metadata.as_dictionary(),
                           "Source metadata changed")
+
+    def test_sum_live_time2(self):
+        s = self.signal
+        old_metadata = s.metadata.deepcopy()
+        sSum = s.sum((0, 1))
+        assert_equal(
+            sSum.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time,
+            3.1 *
+            2 * 4)
+        # Check that metadata is unchanged
+        print old_metadata, s.metadata      # Capture for comparison on error
+        assert_dict_equal(old_metadata.as_dictionary(),
+                          s.metadata.as_dictionary(),
+                          "Source metadata changed")
+
+    def test_sum_live_time_out_arg(self):
+        s = self.signal
+        sSum = s.sum(0)
+        s.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time = 4.2
+        s_resum = s.sum(0)
+        r = s.sum(0, out=sSum)
+        assert_equal(r, None)
+        assert_equal(
+            s_resum.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time,
+            sSum.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time)
+        np.testing.assert_allclose(s_resum.data, sSum.data)
 
     def test_rebin_live_time(self):
         s = self.signal
