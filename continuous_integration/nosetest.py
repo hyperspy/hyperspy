@@ -17,13 +17,9 @@ if __name__ == '__main__':
         fail_on_external = (fail_on_external.lower() in
                             ['true', 't', '1', 'yes', 'y', 'set'])
 
-    # Fall-back filter: Error
-    warnings.simplefilter('error')
-    warnings.filterwarnings(
-        'ignore', "Failed to import the optional scikit image package",
-        UserWarning)
-
     if fail_on_external:
+        warnings.filterwarnings(
+            'error', category=DeprecationWarning)
         # Travis setup has these warnings, so ignore:
         warnings.filterwarnings(
             'ignore',
@@ -32,6 +28,11 @@ if __name__ == '__main__':
         # Don't care about warnings in hyperspy in this mode!
         warnings.filterwarnings('default', module="hyperspy")
     else:
+        # Fall-back filter: Error
+        warnings.simplefilter('error')
+        warnings.filterwarnings(
+            'ignore', "Failed to import the optional scikit image package",
+            UserWarning)
         # We allow extrernal warnings:
         warnings.filterwarnings('default',
                                 module="(?!hyperspy)")
