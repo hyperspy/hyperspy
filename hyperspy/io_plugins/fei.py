@@ -328,32 +328,45 @@ def ser_reader(filename, objects=None, verbose=False, *args, **kwds):
     ndim = int(header['NumberDimensions'])
     if record_by == 'spectrum':
         array_shape = [None, ] * int(ndim)
-        if len(data['PositionY']) > 1 and \
-                (data['PositionY'][0] == data['PositionY'][1]):
-            # The spatial dimensions are stored in F order i.e. X, Y, ...
-            order = "F"
-        else:
-            # The spatial dimensions are stored in C order i.e. ..., Y, X
-            order = "C"
-        # Extra dimensions
-        for i in xrange(ndim):
-            if i == ndim - 1:
-                name = 'x'
-            elif i == ndim - 2:
-                name = 'y'
-            else:
-                name = t.Undefined
-            idim = 1 + i if order == "C" else ndim - i
+        if ndim == 0 and header["ValidNumberElements"] != 0:
+            # Line spectrum. The coordinates are stored in PositionX/Y
+            array_shape = [header["ValidNumberElements"]]
             axes.append({
-                'name': name,
-                'offset': header['Dim-%i_CalibrationOffset' % idim][0],
-                'scale': header['Dim-%i_CalibrationDelta' % idim][0],
-                'units': header['Dim-%i_Units' % idim][0],
-                'size': header['Dim-%i_DimensionSize' % idim][0],
-                'index_in_array': i
+                'name': "Position",
+                'offset': 0,
+                'scale': 1,
+                'units': "",
+                'size': header["ValidNumberElements"],
+                'index_in_array': 0
             })
-            array_shape[i] = \
-                header['Dim-%i_DimensionSize' % idim][0]
+
+        else:
+            if len(data['PositionY']) > 1 and \
+                    (data['PositionY'][0] == data['PositionY'][1]):
+                # The spatial dimensions are stored in F order i.e. X, Y, ...
+                order = "F"
+            else:
+                # The spatial dimensions are stored in C order i.e. ..., Y, X
+                order = "C"
+            # Extra dimensions
+            for i in xrange(ndim):
+                if i == ndim - 1:
+                    name = 'x'
+                elif i == ndim - 2:
+                    name = 'y'
+                else:
+                    name = t.Undefined
+                idim = 1 + i if order == "C" else ndim - i
+                axes.append({
+                    'name': name,
+                    'offset': header['Dim-%i_CalibrationOffset' % idim][0],
+                    'scale': header['Dim-%i_CalibrationDelta' % idim][0],
+                    'units': header['Dim-%i_Units' % idim][0],
+                    'size': header['Dim-%i_DimensionSize' % idim][0],
+                    'index_in_array': i
+                })
+                array_shape[i] = \
+                    header['Dim-%i_DimensionSize' % idim][0]
         # FEI seems to use the international system of units (SI) for the
         # spatial scale. However, we prefer to work in nm
         for axis in axes:
@@ -379,15 +392,27 @@ def ser_reader(filename, objects=None, verbose=False, *args, **kwds):
     elif record_by == 'image':
         array_shape = []
         # Extra dimensions
-        for i in xrange(ndim):
-            if header['Dim-%i_DimensionSize' % (i + 1)][0] != 1:
-                axes.append({
-                    'offset': header['Dim-%i_CalibrationOffset' % (i + 1)][0],
-                    'scale': header['Dim-%i_CalibrationDelta' % (i + 1)][0],
-                    'units': header['Dim-%i_Units' % (i + 1)][0],
-                    'size': header['Dim-%i_DimensionSize' % (i + 1)][0],
-                })
-            array_shape.append(header['Dim-%i_DimensionSize' % (i + 1)][0])
+        if ndim == 0 and header["ValidNumberElements"] != 0:
+            # Line scan. The coordinates are stored in PositionX/Y
+            array_shape = [header["ValidNumberElements"]]
+            axes.append({
+                'name': "Position",
+                'offset': 0,
+                'scale': 1,
+                'units': "",
+                'size': header["ValidNumberElements"],
+                'index_in_array': 0
+            })
+        else:
+            for i in xrange(ndim):
+                if header['Dim-%i_DimensionSize' % (i + 1)][0] != 1:
+                    axes.append({
+                        'offset': header['Dim-%i_CalibrationOffset' % (i + 1)][0],
+                        'scale': header['Dim-%i_CalibrationDelta' % (i + 1)][0],
+                        'units': header['Dim-%i_Units' % (i + 1)][0],
+                        'size': header['Dim-%i_DimensionSize' % (i + 1)][0],
+                    })
+                array_shape.append(header['Dim-%i_DimensionSize' % (i + 1)][0])
         # Y axis
         axes.append({
             'name': 'y',
