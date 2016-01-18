@@ -22,11 +22,12 @@ class Interactive:
         # and trigger manually below if there were any changes.
         changes = False
         with self.out.axes_manager.events.suppress():
-            for ax_src, ax_dst in zip(out.axes_manager, self.out.axes_manager):
+            for ax_src, ax_dst in zip(out.axes_manager._axes,
+                                      self.out.axes_manager._axes):
                 c = ax_dst.update_from(ax_src, ('offset', 'scale', 'size'))
                 changes = changes or c
         if changes:
-            self.out.axes_manager.events.axes_changed.trigger(self.out)
+            self.out.axes_manager.events.transformed.trigger(self.out)
 
     def update(self):
         self.f(*self.args, out=self.out, **self.kwargs)
