@@ -129,7 +129,7 @@ class Parameter(t.HasTraits):
                 The new value of the parameter
             parameter : Parameter
                 The `Parameter` that the event belongs to
-            """, kwarg_order=['value', 'parameter'])
+            """, arguments=['value', 'parameter'])
         self.twin_function = lambda x: x
         self.twin_inverse_function = lambda x: x
         self.std = None
@@ -611,7 +611,7 @@ class Component(t.HasTraits):
                 The new active state
             component : Component
                 The `Component` that the event belongs to
-            """, kwarg_order=['active', 'component'])
+            """, arguments=['active', 'component'])
         self.parameters = []
         self.init_parameters(parameter_name_list)
         self._update_free_parameters()

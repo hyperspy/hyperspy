@@ -2832,7 +2832,7 @@ class Signal(FancySlicing,
 
             Arguments:
                 signal: The signal that owns the data.
-            """, kwarg_order=['signal'])
+            """, arguments=['signal'])
 
     def _create_metadata(self):
         self.metadata = DictionaryTreeBrowser()
