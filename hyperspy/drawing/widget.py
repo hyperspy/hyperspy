@@ -426,3 +426,197 @@ class DraggableWidgetBase(WidgetBase):
         if self.picked is True:
             self.picked = False
 
+
+class ResizableDraggableWidgetBase(DraggableWidgetBase):
+
+    """Adds the `size` property and get_size_in_axes method, and adds a
+    framework for letting the user resize the patch, including resizing by
+    key strokes ('+', '-'). Also adds the 'resized' event.
+
+    Utility functions for resizing are implemented by `increase_size` and
+    `decrease_size`, which will in-/decrement the size by 1. Other utility
+    functions include `get_centre` and `get_centre_indices` which returns the
+    center position, and the internal _apply_changes which helps make sure that
+    only one 'changed' event is fired for a combined move and resize.
+
+    Any inheritors must override these methods:
+        _update_patch_position(self)
+        _update_patch_size(self)
+        _update_patch_geometry(self)
+        _set_patch(self)
+    """
+
+    def __init__(self, axes_manager, **kwargs):
+        super(ResizableDraggableWidgetBase, self).__init__(
+            axes_manager, **kwargs)
+        if self.axes:
+            self._size = np.array([self.axes[0].scale])
+        else:
+            self._size = np.array([1])
+        self.size_step = 1      # = one step in index space
+        self._snap_size = True
+        self.events.resized = Event(doc="""
+            Event that triggers when the widget was resized.
+
+            The event triggers after the internal state of the widget has been
+            updated. This event does not differentiate on how the size of
+            the widget was changed, so it is the responsibility of the user
+            to suppress events as neccessary to avoid closed loops etc.
+
+            Arguments:
+            ----------
+                widget:
+                    The widget that was resized.
+            """, arguments=['widget'])
+
+    def _get_size(self):
+        """Getter for 'size' property. Returns the size as a tuple (to prevent
+        unintended in-place changes).
+        """
+        return tuple(self._size.tolist())
+
+    def _set_size(self, value):
+        """Setter for the 'size' property. Calls _size_changed to handle size
+        change, if the value has changed.
+        """
+        value = np.minimum(value, [ax.size * ax.scale for ax in self.axes])
+        value = np.maximum(value,
+                           self.size_step * [ax.scale for ax in self.axes])
+        if self.snap_size:
+            value = self._do_snap_size(value)
+        if np.any(self._size != value):
+            self._size = value
+            self._size_changed()
+
+    size = property(lambda s: s._get_size(), lambda s, v: s._set_size(v))
+
+    def _do_snap_size(self, value=None):
+        value = np.array(value) if value is not None else self._size
+        for i, ax in enumerate(self.axes):
+            value[i] = round(value[i] / ax.scale) * ax.scale
+        return value
+
+    def _set_snap_size(self, value):
+        self._snap_size = value
+        if value:
+            snap_value = self._do_snap_size(self._size)
+            if np.any(self._size != snap_value):
+                self._size = snap_value
+                self._size_changed()
+
+    snap_size = property(lambda s: s._snap_size,
+                         lambda s, v: s._set_snap_size(v))
+
+    def _set_snap_all(self, value):
+        # Snap position first, as snapped size can depend on position.
+        self.snap_position = value
+        self.snap_size = value
+
+    snap_all = property(lambda s: s.snap_size and s.snap_position,
+                        lambda s, v: s._set_snap_all(v))
+
+    def increase_size(self):
+        """Increment all sizes by 1. Applied via 'size' property.
+        """
+        self.size = np.array(self.size) + \
+            self.size_step * np.array([a.scale for a in self.axes])
+
+    def decrease_size(self):
+        """Decrement all sizes by 1. Applied via 'size' property.
+        """
+        self.size = np.array(self.size) - \
+            self.size_step * np.array([a.scale for a in self.axes])
+
+    def _size_changed(self):
+        """Triggers resize and changed events, and updates the patch.
+        """
+        self.events.resized.trigger(self)
+        self.events.changed.trigger(self)
+        self._update_patch_size()
+
+    def get_size_in_indices(self):
+        """Gets the size property converted to the index space (via 'axes'
+        attribute).
+        """
+        s = list()
+        for i in xrange(len(self.axes)):
+            s.append(int(self._size[i] / self.axes[i].scale))
+        return np.array(s)
+
+    def set_size_in_indices(self, value):
+        """Sets the size property converted to the index space (via 'axes'
+        attribute).
+        """
+        s = list()
+        for i in xrange(len(self.axes)):
+            s.append(int(value[i] * self.axes[i].scale))
+        self.size = s   # Use property to get full processing
+
+    def get_centre(self):
+        """Get's the center indices. The default implementation is simply the
+        position + half the size in axes space, which should work for any
+        symmetric widget, but more advanced widgets will need to decide whether
+        to return the center of gravity or the geometrical center of the
+        bounds.
+        """
+        return self._pos + self._size() / 2.0
+
+    def get_centre_index(self):
+        """Get's the center position (in index space). The default
+        implementation is simply the indices + half the size, which should
+        work for any symmetric widget, but more advanced widgets will need to
+        decide whether to return the center of gravity or the geometrical
+        center of the bounds.
+        """
+        return self.indices + self.get_size_in_indices() / 2.0
+
+    def _update_patch_size(self):
+        """Updates the size of the patch on the plot.
+        """
+        # This method must be provided by the subclass
+        pass
+
+    def _update_patch_geometry(self):
+        """Updates all geometry of the patch on the plot.
+        """
+        # This method must be provided by the subclass
+        pass
+
+    def on_key_press(self, event):
+        if event.key == "+":
+            self.increase_size()
+        if event.key == "-":
+            self.decrease_size()
+
+    def connect(self, ax):
+        super(ResizableDraggableWidgetBase, self).connect(ax)
+        canvas = ax.figure.canvas
+        self.cids.append(canvas.mpl_connect('key_press_event',
+                                            self.on_key_press))
+
+    def _apply_changes(self, old_size, old_position):
+        """Evalutes whether the widget has been moved/resized, and triggers
+        the correct events and updates the patch geometry. This function has
+        the advantage that the geometry is updated only once, preventing
+        flickering, and the 'changed' event only fires once.
+        """
+        moved = self.position != old_position
+        resized = self.size != old_size
+        if moved:
+            if self._navigating:
+                e = self.axes_manager.events.indices_changed
+                with e.suppress_callback(self._on_navigate):
+                    for i in xrange(len(self.axes)):
+                        self.axes[i].index = self.indices[i]
+            self.events.moved.trigger(self)
+        if resized:
+            self.events.resized.trigger(self)
+        if moved or resized:
+            self.events.changed.trigger(self)
+            if moved and resized:
+                self._update_patch_geometry()
+            elif moved:
+                self._update_patch_position()
+            else:
+                self._update_patch_size()
+
