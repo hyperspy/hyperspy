@@ -42,7 +42,7 @@ from hyperspy.misc.export_dictionary import (export_to_dictionary,
                                              load_from_dictionary,
                                              parse_flag_string,
                                              reconstruct_object)
-from hyperspy.misc.utils import slugify, shorten_name
+from hyperspy.misc.utils import slugify, shorten_name, dummy_context_manager
 from hyperspy.misc.slicing import copy_slice_from_whitelist
 
 
@@ -553,14 +553,11 @@ class BaseModel(list):
         store_current_values
 
         """
-        switch_aap = self._plot_active is not False
-        if switch_aap is True:
-            self._disconnect_parameters2update_plot()
-        for component in self:
-            component.fetch_stored_values(only_fixed=only_fixed)
-        if switch_aap is True:
-            self._connect_parameters2update_plot()
-            self.update_plot()
+        cm = (self.suspend_update if self._plot_active
+              else dummy_context_manager)
+        with cm(update_on_resume=True):
+            for component in self:
+                component.fetch_stored_values(only_fixed=only_fixed)
 
     def _fetch_values_from_p0(self, p_std=None):
         """Fetch the parameter values from the output of the optimzer `self.p0`
@@ -909,7 +906,7 @@ class BaseModel(list):
 
     def multifit(self, mask=None, fetch_only_fixed=False,
                  autosave=False, autosave_every=10, show_progressbar=None,
-                 **kwargs):
+                 interactive_plot=False, **kwargs):
         """Fit the data to the model at all the positions of the
         navigation dimensions.
 
@@ -932,6 +929,10 @@ class BaseModel(list):
         show_progressbar : None or bool
             If True, display a progress bar. If None the default is set in
             `preferences`.
+        interactive_plot : bool
+            If True, update the plot for every position as they are processed.
+            Note that this slows down the fitting by a lot, but it allows for
+            interactive monitoring of the fitting (if in interactive mode).
 
         **kwargs : key word arguments
             Any extra key word argument will be passed to
@@ -983,19 +984,29 @@ class BaseModel(list):
                     "following fitters instead: mpfit, tnc, l_bfgs_b")
                 kwargs['bounded'] = False
         i = 0
-        self.axes_manager.disconnect(self.fetch_stored_values)
-        for index in self.axes_manager:
-            if mask is None or not mask[index[::-1]]:
-                self.fetch_stored_values(only_fixed=fetch_only_fixed)
-                self.fit(**kwargs)
-                i += 1
-                if maxval > 0:
-                    pbar.update(i)
-            if autosave is True and i % autosave_every == 0:
-                self.save_parameters2file(autosave_fn)
-        if maxval > 0:
-            pbar.finish()
-        self.axes_manager.connect(self.fetch_stored_values)
+        self.axes_manager.events.indices_changed.disconnect(
+            self.fetch_stored_values)
+        if interactive_plot:
+            outer = dummy_context_manager
+            inner = self.suspend_update
+        else:
+            outer = self.suspend_update
+            inner = dummy_context_manager
+        with outer(update_on_resume=True):
+            for index in self.axes_manager:
+                with inner(update_on_resume=True):
+                    if mask is None or not mask[index[::-1]]:
+                        self.fetch_stored_values(only_fixed=fetch_only_fixed)
+                        self.fit(**kwargs)
+                        i += 1
+                        if maxval > 0:
+                            pbar.update(i)
+                    if autosave is True and i % autosave_every == 0:
+                        self.save_parameters2file(autosave_fn)
+            if maxval > 0:
+                pbar.finish()
+        self.axes_manager.events.indices_changed.connect(
+            self.fetch_stored_values, 0)
         if autosave is True:
             messages.information(
                 'Deleting the temporary file %s pixels' % (
@@ -1426,9 +1437,7 @@ class BaseModel(list):
             if _component.active_is_multidimensional:
                 if only_current:
                     _component._active_array[
-                        self.axes_manager.indices[
-                            ::-
-                            1]] = value
+                        self.axes_manager.indices[::-1]] = value
                 else:
                     _component._active_array.fill(value)
 

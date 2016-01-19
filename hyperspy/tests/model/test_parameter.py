@@ -92,7 +92,7 @@ class TestParameterLen1:
 
     def test_connect_disconnect(self):
         dummy = Dummy()
-        self.par.connect(dummy.add_one)
+        self.par.events.value_changed.connect(dummy.add_one, 0)
         self.par.value = 1
         assert_equal(dummy.value, 2)
 
@@ -101,7 +101,7 @@ class TestParameterLen1:
         assert_equal(dummy.value, 2)
 
         # After disconnecting dummy.value should not change
-        self.par.disconnect(dummy.add_one)
+        self.par.events.value_changed.disconnect(dummy.add_one)
         self.par.value = 2
         assert_equal(dummy.value, 2)
 
@@ -182,7 +182,7 @@ class TestParameterLen2:
 
     def test_connect_disconnect(self):
         dummy = Dummy()
-        self.par.connect(dummy.add_one)
+        self.par.events.value_changed.connect(dummy.add_one, 0)
         self.par.value = (1, 1)
         assert_equal(dummy.value, 2)
 
@@ -191,7 +191,7 @@ class TestParameterLen2:
         assert_equal(dummy.value, 2)
 
         # After disconnecting dummy.value should not change
-        self.par.disconnect(dummy.add_one)
+        self.par.events.value_changed.disconnect(dummy.add_one)
         self.par.value = (2, 2)
         assert_equal(dummy.value, 2)
 
@@ -274,7 +274,7 @@ class TestParameterTwin:
 
     def test_inherit_connections(self):
         dummy = Dummy()
-        self.p2.connect(dummy.add_one)
+        self.p2.events.value_changed.connect(dummy.add_one, 0)
         self.p2.twin = self.p1
         self.p1.value = 2
         assert_equal(dummy.value, 2)

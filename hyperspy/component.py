@@ -29,7 +29,10 @@ from hyperspy.misc.utils import slugify
 from hyperspy.misc.io.tools import (incremental_filename,
                                     append2pathname,)
 from hyperspy.exceptions import NavigationDimensionError
-from hyperspy.misc.export_dictionary import export_to_dictionary, load_from_dictionary
+from hyperspy.misc.export_dictionary import export_to_dictionary, \
+                                            load_from_dictionary
+from hyperspy.events import Events, Event
+from hyperspy.misc.hspy_warnings import VisibleDeprecationWarning
 
 
 class NoneFloat(t.CFloat):   # Lazy solution, but usable
@@ -113,7 +116,20 @@ class Parameter(t.HasTraits):
 
     def __init__(self):
         self._twins = set()
-        self.connected_functions = list()
+        self.events = Events()
+        self.events.value_changed = Event("""
+            Event that triggers when the `Parameter.value` changes.
+
+            The event triggers after the internal state of the `Parameter` has
+            been updated.
+
+            Arguments
+            ---------
+            value : {float | array}
+                The new value of the parameter
+            parameter : Parameter
+                The `Parameter` that the event belongs to
+            """, arguments=['value', 'parameter'])
         self.twin_function = lambda x: x
         self.twin_inverse_function = lambda x: x
         self.std = None
@@ -180,16 +196,20 @@ class Parameter(t.HasTraits):
         return self._number_of_elements
 
     def connect(self, f):
-        if f not in self.connected_functions:
-            self.connected_functions.append(f)
-            if self.twin:
-                self.twin.connect(f)
+        warnings.warn(
+            "The method `Parameter.connect()` has been deprecated and will be "
+            "removed in HyperSpy 0.10. Please use "
+            "`Parameter.events.value_changed.connect()` instead.",
+            VisibleDeprecationWarning)
+        self.events.value_changed.connect(f, 0)
 
     def disconnect(self, f):
-        if f in self.connected_functions:
-            self.connected_functions.remove(f)
-            if self.twin:
-                self.twin.disconnect(f)
+        warnings.warn(
+            "The method `Parameter.disconnect()` has been deprecated and will "
+            "be removed in HyperSpy 0.10. Please use "
+            "`Parameter.events.value_changed.disconnect()` instead.",
+            VisibleDeprecationWarning)
+        self.events.value_changed.disconnect(f)
 
     def _get_value(self):
         if self.twin is None:
@@ -244,11 +264,8 @@ class Parameter(t.HasTraits):
                 not isinstance(self.__value, tuple)):
             self.__value = tuple(self.__value)
         if old_value != self.__value:
-            for f in self.connected_functions:
-                try:
-                    f()
-                except:
-                    self.disconnect(f)
+            self.events.value_changed.trigger(value=self.__value,
+                                              parameter=self)
         self.trait_property_changed('value', old_value, self.__value)
 
     # Fix the parameter when coupled
@@ -265,6 +282,15 @@ class Parameter(t.HasTraits):
             self.component._update_free_parameters()
         self.trait_property_changed('free', old_value, self.__free)
 
+    def _on_twin_update(self, value, twin=None):
+        if (twin is None or not hasattr(twin, 'events') or
+                not hasattr(twin.events, 'value_changed')):
+            self.events.value_changed.trigger(value=value, parameter=self)
+        else:
+            with twin.events.value_changed.suppress_callback(
+                    self._on_twin_update):
+                self.events.value_changed.trigger(value=value, parameter=self)
+
     def _set_twin(self, arg):
         if arg is None:
             if self.twin is not None:
@@ -273,16 +299,15 @@ class Parameter(t.HasTraits):
                 twin_value = self.value
                 if self in self.twin._twins:
                     self.twin._twins.remove(self)
-                    for f in self.connected_functions:
-                        self.twin.disconnect(f)
+                    self.twin.events.value_changed.disconnect(
+                        self._on_twin_update)
 
                 self.__twin = arg
                 self.value = twin_value
         else:
             if self not in arg._twins:
                 arg._twins.add(self)
-                for f in self.connected_functions:
-                    arg.connect(f)
+                arg.events.value_changed.connect(self._on_twin_update, 2)
             self.__twin = arg
 
         if self.component is not None:
@@ -573,7 +598,20 @@ class Component(t.HasTraits):
     name = t.Property(t.Str(''))
 
     def __init__(self, parameter_name_list):
-        self.connected_functions = list()
+        self.events = Events()
+        self.events.active_changed = Event("""
+            Event that triggers when the `Component.active` changes.
+
+            The event triggers after the internal state of the `Component` has
+            been updated.
+
+            Arguments
+            ---------
+            active : bool
+                The new active state
+            component : Component
+                The `Component` that the event belongs to
+            """, arguments=['active', 'component'])
         self.parameters = []
         self.init_parameters(parameter_name_list)
         self._update_free_parameters()
@@ -662,12 +700,20 @@ class Component(t.HasTraits):
         self.__axes_manager = value
 
     def connect(self, f):
-        if f not in self.connected_functions:
-            self.connected_functions.append(f)
+        warnings.warn(
+            "The method `Component.connect()` has been deprecated and will be "
+            "removed in HyperSpy 0.10. Please use "
+            "`Component.events.active_changed.connect()` instead.",
+            VisibleDeprecationWarning)
+        self.events.active_changed.connect(f, 0)
 
     def disconnect(self, f):
-        if f in self.connected_functions:
-            self.connected_functions.remove(f)
+        warnings.warn(
+            "The method `Component.disconnect()` has been deprecated and will "
+            "be removed in HyperSpy 0.10. Please use "
+            "`Component.events.active_changed.disconnect()` instead.",
+            VisibleDeprecationWarning)
+        self.events.active_changed.disconnect(f)
 
     def _toggle_connect_active_array(self, if_on):
         # nothing to do (was never multidimensional)
@@ -712,11 +758,7 @@ class Component(t.HasTraits):
         if self.active_is_multidimensional is True:
             self._store_active_value_in_array(arg)
 
-        for f in self.connected_functions:
-            try:
-                f()
-            except:
-                self.disconnect(f)
+        self.events.active_changed.trigger(active=self._active, component=self)
         self.trait_property_changed('active', old_value, self._active)
 
     def init_parameters(self, parameter_name_list):

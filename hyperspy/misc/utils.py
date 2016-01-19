@@ -26,6 +26,7 @@ import codecs
 import collections
 import tempfile
 import unicodedata
+from contextlib import contextmanager
 
 import numpy as np
 
@@ -109,6 +110,11 @@ def unfold_if_multidim(signal):
                   "0.9 please use Signal.unfold instead",
                   VisibleDeprecationWarning)
     return None
+
+
+@contextmanager
+def dummy_context_manager(*args, **kwargs):
+    yield
 
 
 def str2num(string, **kargs):

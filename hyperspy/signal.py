@@ -2818,7 +2818,19 @@ class Signal(FancySlicing,
         self.inav = SpecialSlicersSignal(self, True)
         self.isig = SpecialSlicersSignal(self, False)
         self.events = Events()
-        self.events.data_changed = Event()
+        self.events.data_changed = Event("""
+            Event that triggers when the data has changed
+
+            The event trigger when the data is ready for consumption by any
+            process that depend on it as input. Plotted signals automatically
+            connect this Event to its `Signal.plot()`.
+
+            Note: The event only fires at certain specific times, not everytime
+            that the `Signal.data` array changes values.
+
+            Arguments:
+                signal: The signal that owns the data.
+            """, arguments=['signal'])
 
     def _create_metadata(self):
         self.metadata = DictionaryTreeBrowser()
@@ -3433,6 +3445,14 @@ class Signal(FancySlicing,
         if self._plot is not None:
             if self._plot.is_active() is True:
                 self.plot()
+
+    def update_plot(self):
+        if self._plot is not None:
+            if self._plot.is_active() is True:
+                if self._plot.signal_plot is not None:
+                    self._plot.signal_plot.update()
+                if self._plot.navigator_plot is not None:
+                    self._plot.navigator_plot.update()
 
     @auto_replot
     def get_dimensions_from_data(self):
