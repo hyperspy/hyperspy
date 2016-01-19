@@ -245,8 +245,10 @@ class ModelManager(object):
         pop
         """
         name = self._check_name(name, True)
-        d = self._models.get_item(name + '._dict').as_dictionary()
-        return self._signal.create_model(dictionary=copy.deepcopy(d))
+        dictionary = self._models.get_item(name + '._dict').as_dictionary()
+        if not isinstance(self._signal.data, h5py.Dataset):
+            dictionary = copy.deepcopy(dictionary)
+        return self._signal.create_model(dictionary=dictionary)
 
     def __repr__(self):
         return repr(self._models)

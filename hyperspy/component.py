@@ -380,6 +380,7 @@ class Parameter(t.HasTraits):
         # If it is a single spectrum indices is ()
         if not indices:
             indices = (0,)
+        # TODO: when oom, concatenate slices, e.g. map['std', 0, 0]
         self.map['values'][indices] = self.value
         self.map['is_set'][indices] = True
         if self.std is not None:
@@ -403,7 +404,7 @@ class Parameter(t.HasTraits):
             self.std = self.map['std'][indices]
 
     def assign_current_value_to_all(self, mask=None):
-        """Assign the current value attribute to all the  indices
+        """Assign the current value attribute to all the indices
 
         Parameters
         ----------
@@ -416,6 +417,7 @@ class Parameter(t.HasTraits):
         store_current_value_in_array, fetch
 
         """
+        # TODO: mask==False will not work with dask arrays / oom map
         if mask is None:
             mask = np.zeros(self.map.shape, dtype='bool')
         self.map['values'][mask == False] = self.value
@@ -435,6 +437,8 @@ class Parameter(t.HasTraits):
             ('is_set', 'bool', 1)])
         if (self.map is None or self.map.shape != shape or
                 self.map.dtype != dtype_):
+            # TODO: Use da.zeros, get chunks from signal. Requires creating
+            # arrays in hdf5 in the correct places
             self.map = np.zeros(shape, dtype_)
             self.map['std'].fill(np.nan)
             # TODO: in the future this class should have access to
@@ -463,7 +467,7 @@ class Parameter(t.HasTraits):
         from hyperspy.signal import Signal
         if self._axes_manager.navigation_dimension == 0:
             raise NavigationDimensionError(0, '>0')
-
+        # TODO: use dask to get 'field' of a map
         s = Signal(data=self.map[field],
                    axes=self._axes_manager._get_navigation_axes_dicts())
         if self.component is not None and \
@@ -484,6 +488,7 @@ class Parameter(t.HasTraits):
         return s
 
     def plot(self):
+        # TODO: use some sort of lazy signal for plotting..?
         self.as_signal().plot()
 
     def export(self, folder=None, name=None, format=None,
@@ -635,6 +640,7 @@ class Component(t.HasTraits):
 
     def _set_name(self, value):
         old_value = self._name
+        # TODO: if oom, change the name in the hdf5
         if self.model:
             for component in self.model:
                 if value == component.name:
@@ -755,6 +761,7 @@ class Component(t.HasTraits):
 
     def _create_active_array(self):
         shape = self._axes_manager._navigation_shape_in_array
+        # TODO: dask.ones
         if len(shape) == 1 and shape[0] == 0:
             shape = [1, ]
         if (not isinstance(self._active_array, np.ndarray)
@@ -868,7 +875,7 @@ class Component(t.HasTraits):
         numpy array
         """
 
-        axis = self.model.axis.axis[self.model.channel_switches]
+        axis = self.model.axis.axis[np.where(self.model.channel_switches)]
         component_array = self.function(axis)
         return component_array
 
