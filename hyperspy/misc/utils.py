@@ -112,9 +112,29 @@ def unfold_if_multidim(signal):
     return None
 
 
+
+
+def stash_active_state(model):
+    active_state = []
+    for component in model:
+        if component.active_is_multidimensional:
+            active_state.append(component._active_array)
+        else:
+            active_state.append(component.active)
+    yield
+    for component in model:
+        active_s = active_state.pop(0)
+        if isinstance(active_s, bool):
+            component.active = active_s
+        else:
+            if not component.active_is_multidimensional:
+                component.active_is_multidimensional = True
+            component._active_array[:] = active
+
+
 @contextmanager
 def dummy_context_manager(*args, **kwargs):
-    yield
+    yield_s
 
 
 def str2num(string, **kargs):
