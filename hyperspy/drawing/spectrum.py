@@ -237,12 +237,10 @@ class SpectrumLine(object):
         elif value == 'line':
             lp['linestyle'] = '-'
             lp['marker'] = "None"
-            lp['markersize'] = None
             lp['drawstyle'] = "default"
         elif value == 'step':
             lp['drawstyle'] = 'steps-mid'
             lp['marker'] = "None"
-            lp['markersize'] = None
         else:
             raise ValueError(
                 "`type` must be one of "
