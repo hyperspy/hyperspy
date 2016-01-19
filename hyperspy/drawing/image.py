@@ -243,7 +243,7 @@ class ImagePlot(BlittedFigure):
         self.update(**kwargs)
         if self.scalebar is True:
             if self.pixel_units is not None:
-                self.ax.scalebar = widgets.Scale_Bar(
+                self.ax.scalebar = widgets.ScaleBar(
                     ax=self.ax,
                     units=self.pixel_units,
                     animated=True,

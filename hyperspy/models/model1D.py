@@ -29,8 +29,7 @@ from hyperspy.axes import generate_axis
 from hyperspy.exceptions import WrongObjectError
 from hyperspy.decorators import interactive_range_selector
 from hyperspy.axes import AxesManager
-from hyperspy.drawing.widgets import (DraggableVerticalLine,
-                                      DraggableLabel)
+from hyperspy.drawing.widgets import (VerticalLine, Label)
 from hyperspy.gui.tools import ComponentFit
 from hyperspy.events import Events, EventSupressor
 
@@ -732,8 +731,8 @@ class Model1D(BaseModel):
         # Create the vertical line and labels
         if show_label:
             self._position_widgets.extend((
-                DraggableVerticalLine(am),
-                DraggableLabel(am),))
+                VerticalLine(am),
+                Label(am),))
             # Store the component for bookkeeping, and to reset
             # its twin when disabling adjust position
             self._position_widgets[-2].component = component
@@ -744,14 +743,17 @@ class Model1D(BaseModel):
             w.set_mpl_ax(self._plot.signal_plot.ax)
             self._position_widgets[-2].set_mpl_ax(
                 self._plot.signal_plot.ax)
+            w.connect_navigate()
+            self._position_widgets[-2].connect_navigate()
         else:
             self._position_widgets.extend((
-                DraggableVerticalLine(am),))
+                VerticalLine(am),))
             # Store the component for bookkeeping, and to reset
             # its twin when disabling adjust position
             self._position_widgets[-1].component = component
             self._position_widgets[-1].set_mpl_ax(
                 self._plot.signal_plot.ax)
+            self._position_widgets[-1].connect_navigate()
         # Create widget -> parameter connection
         am._axes[0].continuous_value = True
         am._axes[0].events.value_changed.connect(set_value, 1)

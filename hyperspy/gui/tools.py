@@ -27,7 +27,7 @@ from hyperspy import drawing
 from hyperspy.exceptions import SignalDimensionError
 from hyperspy.gui import messages
 from hyperspy.axes import AxesManager
-from hyperspy.drawing.widgets import DraggableVerticalLine
+from hyperspy.drawing.widgets import VerticalLine
 
 
 OurOKButton = tu.Action(name="OK",
@@ -235,7 +235,7 @@ class LineInSpectrum(t.HasTraits):
             return
 
         if new is True and old is False:
-            self._line = DraggableVerticalLine(self.axes_manager)
+            self._line = VerticalLine(self.axes_manager)
             self._line.set_mpl_ax(self.signal._plot.signal_plot.ax)
             self._line.patch.set_linewidth(2)
             self._color_changed("black", "black")
