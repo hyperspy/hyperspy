@@ -763,7 +763,7 @@ def without_nans(data):
 
 
 def stack(signal_list, axis=None, new_axis_name='stack_element',
-          mmap=False, mmap_dir=None,):
+          mmap=False, mmap_dir=None, load_to_memory=None):
     """Concatenate the signals in the list over a given axis or a new axis.
 
     The title is set to that of the first signal in the list.
@@ -793,6 +793,10 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
         If mmap_dir is not None, and stack and mmap are True, the memory
         mapped file will be created in the given directory,
         otherwise the default directory is used.
+    load_to_memory : bool
+        If True loads all data to memory.
+        If False only loads the data upon request.
+        If None loads to memory
 
     Returns
     -------
@@ -811,26 +815,48 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
 
     """
 
+    import h5py
+    from hyperspy.io_plugins.hdf5 import write_empty_signal, write_signal, deepcopy2hdf5, get_temp_hdf5_file
     axis_input = copy.deepcopy(axis)
+    if load_to_memory is None:
+        load_to_memory = True
 
     for i, obj in enumerate(signal_list):
         if i == 0:
             if axis is None:
                 original_shape = obj.data.shape
-                stack_shape = tuple([len(signal_list), ]) + original_shape
-                tempf = None
-                if mmap is False:
-                    data = np.empty(stack_shape,
-                                    dtype=obj.data.dtype)
-                else:
-                    tempf = tempfile.NamedTemporaryFile(
-                        dir=mmap_dir)
-                    data = np.memmap(tempf,
-                                     dtype=obj.data.dtype,
-                                     mode='w+',
-                                     shape=stack_shape,)
 
-                signal = type(obj)(data=data)
+                # Get the title from 1st object
+                newtitle = "Stack of " + obj.metadata.General.title
+                new_metadata = DictionaryTreeBrowser({'General': {'title': newtitle},
+                                                      'Signal': {'record_by':
+                                                                 obj.metadata.Signal.record_by}})
+
+                if isinstance(obj.data, h5py.Dataset) or not load_to_memory:
+                    tempf = get_temp_hdf5_file()
+                    data = write_empty_signal(tempf.file,
+                                              (1,) + original_shape,
+                                              obj.data.dtype,
+                                              metadata=new_metadata)['data']
+                    data[0, ...] = obj.data
+                    md = deepcopy2hdf5(
+                        obj.metadata.as_dictionary(),
+                        data.parent.require_group('metadata'))
+                    signal = type(obj)(data=data, metadata=md)
+                    signal._tempfile = tempf
+                else:
+                    stack_shape = (len(signal_list),) + original_shape
+                    if mmap is False:
+                        data = np.empty(stack_shape,
+                                        dtype=obj.data.dtype)
+                    else:
+                        tempf = tempfile.NamedTemporaryFile(prefix='tmp_hs_',
+                                                            dir=mmap_dir)
+                        data = np.memmap(tempf,
+                                         dtype=obj.data.dtype,
+                                         mode='w+',
+                                         shape=stack_shape,)
+                    signal = type(obj)(data=data)
                 signal.axes_manager._axes[
                     1:] = copy.deepcopy(
                     obj.axes_manager._axes)
@@ -844,37 +870,63 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
                 eaxis = signal.axes_manager._axes[0]
                 eaxis.name = axis_name
                 eaxis.navigate = True  # This triggers _update_parameters
-                signal.metadata = copy.deepcopy(obj.metadata)
-                # Get the title from 1st object
-                signal.metadata.General.title = (
-                    "Stack of " + obj.metadata.General.title)
+
+                signal.metadata.General.title = newtitle
                 signal.original_metadata = DictionaryTreeBrowser({})
             else:
                 axis = obj.axes_manager[axis]
-                signal = obj.deepcopy()
+                tempf = None
+                if isinstance(obj.data, h5py.Dataset) or not load_to_memory:
+                    tempf = get_temp_hdf5_file()
+                    data = write_empty_signal(tempf.file,
+                                              obj.data.shape,
+                                              obj.data.dtype,
+                                              metadata=obj.metadata)['data']
+                    data[:] = obj.data
+                else:
+                    data = np.empty(obj.data.shape,
+                                    dtype=obj.data.dtype)
+
+                signal = obj._deepcopy_with_new_data(data)
 
             signal.original_metadata.add_node('stack_elements')
 
-        # Store parameters
-        signal.original_metadata.stack_elements.add_node(
-            'element%i' % i)
-        node = signal.original_metadata.stack_elements[
-            'element%i' % i]
-        node.original_metadata = \
-            obj.original_metadata.as_dictionary()
-        node.metadata = \
-            obj.metadata.as_dictionary()
+        signal.original_metadata.stack_elements.set_item('element%i.original_metadata' % i,
+                                                         obj.original_metadata.as_dictionary())
+        signal.original_metadata.stack_elements.set_item('element%i.metadata' % i,
+                                                         obj.metadata.as_dictionary())
 
-        if axis is None:
+        if isinstance(signal.data, h5py.Dataset):
+            # have to extend the data to the required size, do it incrementally so that we don't have to load
+            # all the files at once
+            if i != 0:
+                old_shape = signal.data.shape
+                current_shape = np.array(signal.data.shape)
+                if axis is None:
+                    if obj.data.shape != original_shape:
+                        raise IOError(
+                            "Only files with data of the same shape can be stacked")
+                    ax_ind = 0
+                    current_shape[ax_ind] += 1
+                    slices = (i,) + tuple(slice(None) for _ in old_shape[1:])
+                else:
+                    ax_ind = axis.index_in_array
+                    current_shape[ax_ind] += obj.data.shape[ax_ind]
+                    slices = tuple(slice(None) if j != ax_ind
+                                   else slice(old_shape[j], None) for j in xrange(len(current_shape)))
+                signal.data.resize(tuple(current_shape))
+                signal.data[slices] = obj.data
+        elif axis is None:
             if obj.data.shape != original_shape:
                 raise IOError(
                     "Only files with data of the same shape can be stacked")
             signal.data[i, ...] = obj.data
             del obj
-    if axis is not None:
+    if axis is not None and not isinstance(signal.data, h5py.Dataset):
         signal.data = np.concatenate([signal_.data for signal_ in signal_list],
                                      axis=axis.index_in_array)
-        signal.get_dimensions_from_data()
+
+    signal.get_dimensions_from_data()
 
     if axis_input is None:
         axis_input = signal.axes_manager[-1 + 1j].index_in_axes_manager
@@ -890,6 +942,8 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
         'Stacking_history.step_sizes',
         step_sizes)
 
+    if isinstance(signal.data, h5py.Dataset):
+        write_signal(signal, signal.data.parent)
     return signal
 
 

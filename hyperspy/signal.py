@@ -2808,6 +2808,7 @@ class Signal(FancySlicing,
             imported from the original data file.
 
         """
+
         self._create_metadata()
         self.models = ModelManager(self)
         self.learning_results = LearningResults()
@@ -3056,20 +3057,40 @@ class Signal(FancySlicing,
         ns : Signal
 
         """
-        try:
-            old_data = self.data
-            self.data = None
-            old_plot = self._plot
-            self._plot = None
-            old_models = self.models._models
-            self.models._models = DictionaryTreeBrowser()
-            ns = self.deepcopy()
-            ns.data = np.atleast_1d(data)
-            return ns
-        finally:
-            self.data = old_data
-            self._plot = old_plot
-            self.models._models = old_models
+        if isinstance(data, h5py.Dataset) or (isinstance(self.data, h5py.Dataset) and data is None):
+            try:
+                old_data = self.data
+                if data is None:
+                    from hyperspy.io_plugins.hdf5 import get_temp_hdf5_file, write_empty_signal
+                    tempf = get_temp_hdf5_file()
+                    self.data = write_empty_signal(tempf.file,
+                                                   old_data.shape,
+                                                   old_data.dtype,
+                                                   metadata=self.metadata)['data']
+                else:
+                    self.data = data
+		old_models = self.models._models
+            	self.models._models = DictionaryTreeBrowser()
+                ns = self.deepcopy()
+                return ns
+            finally:
+                self.data = old_data
+		self.models._models = old_models
+        else:
+            try:
+                old_data = self.data
+                self.data = None
+                old_plot = self._plot
+                self._plot = None
+		old_models = self.models._models
+            	self.models._models = DictionaryTreeBrowser()
+                ns = self.deepcopy()
+                ns.data = data
+                return ns
+            finally:
+                self.data = old_data
+                self._plot = old_plot
+		self.models._models = old_models
 
     def _print_summary(self):
         string = "\n\tTitle: "
@@ -4542,16 +4563,17 @@ class Signal(FancySlicing,
             self._plot = backup_plot
 
     def __deepcopy__(self, memo):
-        dc = type(self)(**self._to_dictionary())
-        if dc.data is not None:
-            dc.data = dc.data.copy()
-
-        # uncomment if we want to deepcopy models as well:
-
-        # dc.models._add_dictionary(
-        #     copy.deepcopy(
-        #         self.models._models.as_dictionary()))
-
+        if isinstance(self.data, h5py.Dataset):
+            from hyperspy.io_plugins.hdf5 import get_temp_hdf5_file, file_writer
+            from hyperspy.io import load
+            tempf = get_temp_hdf5_file()
+            file_writer(tempf.name, self, fileobj=tempf.file)
+            dc = load(tempf.name, load_to_memory=False, mode='r+')
+            dc._tempfile = tempf
+        else:
+            dc = type(self)(**self._to_dictionary())
+            if dc.data is not None:
+                dc.data = dc.data.copy()
         # The Signal subclasses might change the view on init
         # The following code just copies the original view
         for oaxis, caxis in zip(self.axes_manager._axes,

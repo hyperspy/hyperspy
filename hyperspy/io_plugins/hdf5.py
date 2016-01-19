@@ -96,9 +96,9 @@ def get_hspy_format_version(f):
     return StrictVersion(version)
 
 
-def file_reader(filename, record_by, mode='r', driver='core',
+def file_reader(filename, record_by, mode='r',
                 backing_store=False, load_to_memory=True, **kwds):
-    f = h5py.File(filename, mode=mode, driver=driver, **kwds)
+    f = h5py.File(filename, mode=mode, **kwds)
     # Getting the format version here also checks if it is a valid HSpy
     # hdf5 file, so the following two lines must not be deleted or moved
     # elsewhere.
@@ -165,6 +165,43 @@ def file_reader(filename, record_by, mode='r', driver='core',
     if load_to_memory:
         f.close()
     return exp_dict_list
+
+
+def get_signal_chunks(shape, dtype, metadata=None):
+    typesize = np.dtype(dtype).itemsize
+    keepdims = None
+    if metadata is not None:
+        if metadata['Signal']['record_by'] == "spectrum":
+            keepdims = 1
+        if metadata['Signal']['record_by'] == "image":
+            keepdims = 2
+    if keepdims is None:
+        return h5py._hl.filters.guess_chunk(shape, None, typesize)
+
+    # largely based on the guess_chunk in h5py
+    CHUNK_MAX = 1024 * 1024
+    want_to_keep = np.product(shape[-keepdims:]) * typesize
+    if want_to_keep >= CHUNK_MAX:
+        chunks = [1 for _ in shape]
+        for i in xrange(keepdims):
+            chunks[-i - 1] = shape[-i - 1]
+        return tuple(chunks)
+
+    chunks = [i for i in shape]
+    nchange = len(shape) - keepdims
+    idx = 0
+    while True:
+        chunk_bytes = np.product(chunks) * typesize
+
+        if chunk_bytes < CHUNK_MAX:
+            break
+
+        if np.product(chunks[:nchange]) == 1:
+            break
+
+        chunks[idx % nchange] = np.ceil(chunks[idx % nchange] / 2.0)
+        idx += 1
+    return tuple(long(x) for x in chunks)
 
 
 def hdfgroup2signaldict(group, load_to_memory=True):
@@ -335,6 +372,7 @@ def hdfgroup2signaldict(group, load_to_memory=True):
 
 
 def dict2hdfgroup(dictionary, group, compression=None):
+# Overwrites
     from hyperspy.misc.utils import DictionaryTreeBrowser
     from hyperspy.signal import Signal
 
@@ -352,15 +390,19 @@ def dict2hdfgroup(dictionary, group, compression=None):
         if tmp.dtype is np.dtype('O') or tmp.ndim is not 1:
             dict2hdfgroup(dict(zip(
                 [unicode(i) for i in xrange(len(value))], value)),
-                group.create_group(_type + str(len(value)) + '_' + key),
+                group.require_group(_type + str(len(value)) + '_' + key),
                 compression=compression)
         elif tmp.dtype.type is np.unicode_:
-            group.create_dataset(_type + key,
-                                 tmp.shape,
-                                 dtype=h5py.special_dtype(vlen=unicode),
-                                 compression=compression)
-            group[_type + key][:] = tmp[:]
+            if _type + key in group:
+                del group[_type + key]
+            dset = group.create_dataset(_type + key,
+                                        tmp.shape,
+                                        dtype=h5py.special_dtype(vlen=unicode),
+                                        compression=compression)
+            dset[:] = tmp[:]
         else:
+            if _type + key in group:
+                del group[_type + key]
             group.create_dataset(
                 _type + key,
                 data=tmp,
@@ -368,24 +410,48 @@ def dict2hdfgroup(dictionary, group, compression=None):
 
     for key, value in dictionary.iteritems():
         if isinstance(value, dict):
-            dict2hdfgroup(value, group.create_group(key),
+            dict2hdfgroup(value, group.require_group(key),
                           compression=compression)
         elif isinstance(value, DictionaryTreeBrowser):
             dict2hdfgroup(value.as_dictionary(),
-                          group.create_group(key),
+                          group.require_group(key),
                           compression=compression)
         elif isinstance(value, Signal):
-            if key.startswith('_sig_'):
-                try:
-                    write_signal(value, group[key])
-                except:
-                    write_signal(value, group.create_group(key))
-            else:
-                write_signal(value, group.create_group('_sig_' + key))
+            kn = key
+            if not key.startswith('_sig_'):
+                kn = '_sig_' + key
+            write_signal(value, group.require_group(kn))
         elif isinstance(value, np.ndarray):
+            if key in group:
+                del group[key]
             group.create_dataset(key,
                                  data=value,
-                                 compression=compression)
+                                 compression=compression,
+                                 chunks=True,
+                                 shuffle=True)
+        elif isinstance(value, h5py.Dataset):
+            got_data = False
+            while not got_data:
+                try:
+                    dset = group.require_dataset(key,
+                                                 shape=value.shape,
+                                                 dtype=value.dtype,
+                                                 exact=True,
+                                                 maxshape=value.maxshape,
+                                                 chunks=value.chunks,
+                                                 shuffle=True)
+                    got_data = True
+                except TypeError:
+                    # if the shape or dtype/etc do not match,
+                    # we delete the old one and create new in the next loop run
+                    del group[key]
+            if dset is value:
+                # just a reference to already created thing
+                continue
+            else:
+                import dask.array as da
+                da.store(da.from_array(value, chunks=value.chunks), dset)
+                # dset[:] = value[:]
         elif value is None:
             group.attrs[key] = '_None_'
         elif isinstance(value, str):
@@ -404,7 +470,7 @@ def dict2hdfgroup(dictionary, group, compression=None):
                     group.attrs['_bs_' + key] = np.void(value)  # binary string
         elif isinstance(value, AxesManager):
             dict2hdfgroup(value.as_dictionary(),
-                          group.create_group('_hspy_AxesManager_' + key),
+                          group.require_group('_hspy_AxesManager_' + key),
                           compression=compression)
         elif isinstance(value, (datetime.date, datetime.time)):
             group.attrs["_datetime_" + key] = repr(value)
@@ -453,7 +519,13 @@ def hdfgroup2dict(group, dictionary=None, load_to_memory=True):
         elif key.startswith('_bs_'):
             dictionary[key[len('_bs_'):]] = value.tostring()
         elif key.startswith('_datetime_'):
-            dictionary[key.replace("_datetime_", "")] = eval(value)
+            if value.startswith('datetime.date'):
+                ans = datetime.date(*[int(i) for i in value[14:-1].split(',')])
+            elif value.startswith('datetime.time'):
+                ans = datetime.time(*[int(i) for i in value[14:-1].split(',')])
+            else:
+                continue
+            dictionary[key.replace("_datetime_", "")] = ans
         else:
             dictionary[key] = value
     if not isinstance(group, h5py.Dataset):
@@ -483,15 +555,15 @@ def hdfgroup2dict(group, dictionary=None, load_to_memory=True):
             elif key.startswith('_hspy_AxesManager_'):
                 dictionary[key[len('_hspy_AxesManager_'):]] = \
                     AxesManager([i
-                                 for k, i in sorted(iter(
+                                 for _, i in sorted(iter(
                                      hdfgroup2dict(group[key], load_to_memory=load_to_memory).iteritems()))])
             elif key.startswith('_list_'):
                 dictionary[key[7 + key[6:].find('_'):]] = \
-                    [i for k, i in sorted(iter(
+                    [i for _, i in sorted(iter(
                         hdfgroup2dict(group[key], load_to_memory=load_to_memory).iteritems()))]
             elif key.startswith('_tuple_'):
                 dictionary[key[8 + key[7:].find('_'):]] = tuple(
-                    [i for k, i in sorted(iter(
+                    [i for _, i in sorted(iter(
                         hdfgroup2dict(group[key], load_to_memory=load_to_memory).iteritems()))])
             else:
                 dictionary[key] = {}
@@ -510,31 +582,54 @@ def write_signal(signal, group, compression='gzip'):
         metadata = "metadata"
         original_metadata = "original_metadata"
 
-    group.create_dataset('data',
-                         data=signal.data,
-                         compression=compression)
     for axis in signal.axes_manager._axes:
         axis_dict = axis.get_axis_dictionary()
         # For the moment we don't store the navigate attribute
         del(axis_dict['navigate'])
-        coord_group = group.create_group(
+        coord_group = group.require_group(
             'axis-%s' % axis.index_in_array)
         dict2hdfgroup(axis_dict, coord_group, compression=compression)
-    mapped_par = group.create_group(metadata)
+    mapped_par = group.require_group(metadata)
     metadata_dict = signal.metadata.as_dictionary()
+
+    got_data = False
+    while not got_data:
+        try:
+            data = group.require_dataset('data',
+                                         shape=signal.data.shape,
+                                         dtype=signal.data.dtype,
+                                         exact=True,
+                                         compression=compression,
+                                         maxshape=tuple(
+                                             None for _ in signal.data.shape),
+                                         chunks=get_signal_chunks(signal.data.shape,
+                                                                  signal.data.dtype,
+                                                                  metadata_dict),
+                                         shuffle=True,
+                                         )
+            got_data = True
+        except TypeError:
+            # if the shape or dtype/etc do not match,
+            # we delete the old one and create new in the next loop run
+            del group['data']
+    if data == signal.data:
+        # just a reference to already created thing
+        pass
+    else:
+        data[:] = signal.data[:]
     if default_version < StrictVersion("1.2"):
         metadata_dict["_internal_parameters"] = \
             metadata_dict.pop("_HyperSpy")
     dict2hdfgroup(metadata_dict,
                   mapped_par, compression=compression)
-    original_par = group.create_group(original_metadata)
+    original_par = group.require_group(original_metadata)
     dict2hdfgroup(signal.original_metadata.as_dictionary(),
                   original_par, compression=compression)
-    learning_results = group.create_group('learning_results')
+    learning_results = group.require_group('learning_results')
     dict2hdfgroup(signal.learning_results.__dict__,
                   learning_results, compression=compression)
     if hasattr(signal, 'peak_learning_results'):
-        peak_learning_results = group.create_group(
+        peak_learning_results = group.require_group(
             'peak_learning_results')
         dict2hdfgroup(signal.peak_learning_results.__dict__,
                       peak_learning_results, compression=compression)
@@ -548,15 +643,67 @@ def write_signal(signal, group, compression='gzip'):
             model.attrs['_signal'] = group.name
 
 
+def deepcopy2hdf5(
+        dictionary, group, compression='gzip', overwrite=True, load_to_memory=False):
+    if len(group) and overwrite:
+        groupn = group.name
+        parent = group.parent
+        del parent[groupn]
+        group = parent.create_group(groupn)
+    dict2hdfgroup(dictionary, group, compression=compression)
+    return hdfgroup2dict(group, load_to_memory=load_to_memory)
+
+
 def file_writer(filename,
                 signal,
                 compression='gzip',
+                fileobj=None,
                 *args, **kwds):
-    with h5py.File(filename, mode='w') as f:
-        f.attrs['file_format'] = "HyperSpy"
-        f.attrs['file_format_version'] = version
-        exps = f.create_group('Experiments')
-        group_name = signal.metadata.General.title if \
-            signal.metadata.General.title else '__unnamed__'
-        expg = exps.create_group(group_name)
-        write_signal(signal, expg, compression=compression)
+    if fileobj is None or fileobj.filename != filename:
+        fileobj = h5py.File(filename, mode='w')
+    expg = write_empty_signal(fileobj,
+                              signal.data.shape,
+                              signal.data.dtype,
+                              compression=compression,
+                              metadata=signal.metadata)
+    write_signal(signal, expg, compression=compression)
+
+
+def write_empty_signal(fileobj,
+                       shape,
+                       dtype,
+                       compression='gzip',
+                       metadata=None):
+    fileobj.attrs['file_format'] = "HyperSpy"
+    fileobj.attrs['file_format_version'] = version
+    exps = fileobj.require_group('Experiments')
+    group_name = metadata.General.title if metadata is not None and \
+        metadata.General.title else '__unnamed__'
+    expg = exps.require_group(group_name)
+    expg.create_dataset(name='data',
+                        shape=shape,
+                        dtype=dtype,
+                        compression=compression,
+                        chunks=get_signal_chunks(shape, dtype, metadata),
+                        maxshape=tuple(None for _ in shape),
+                        shuffle=True,
+                        fillvalue=0,
+                        )
+    return expg
+
+
+def get_temp_hdf5_file(prefix='tmp_hs_',
+                       directory='.',
+                       suffix='.hdf5',
+                       maxnames=100):
+    import tempfile
+    import os
+    names = tempfile._get_candidate_names()
+    for _ in xrange(maxnames):
+        name = names.next()
+        fname = os.path.join(directory, prefix + name + suffix)
+        if os.path.exists(fname):
+            continue
+        fileobj = h5py.File(fname, mode='w')
+        return tempfile._TemporaryFileWrapper(fileobj, fname, True)
+    raise IOError("No usable temporary file name found")

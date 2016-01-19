@@ -118,6 +118,11 @@ class GeneralConfig(t.HasTraits):
              'IPython magic of the starting scripts, all the contents of '
              '``hyperspy.hspy`` are imported in the user namespace. ')
 
+    load_to_memory = t.CBool(
+        True,
+        label='Load to memory',
+        desc='If enabled, signals are by default loaded to memory')
+
     dtb_expand_structures = t.CBool(
         True,
         label='Expand structures in DictionaryTreeBrowser',
