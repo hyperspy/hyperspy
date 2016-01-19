@@ -620,3 +620,70 @@ class ResizableDraggableWidgetBase(DraggableWidgetBase):
             else:
                 self._update_patch_size()
 
+
+class Widget2DBase(ResizableDraggableWidgetBase):
+
+    """A base class for 2D widgets. It sets the right dimensions for size and
+    position, adds the 'border_thickness' attribute and initalizes the 'axes'
+    attribute to the first two navigation axes if possible, if not, the two
+    first signal_axes are used. Other than that it mainly supplies common
+    utility functions for inheritors, and implements required functions for
+    ResizableDraggableWidgetBase.
+
+    The implementation for ResizableDraggableWidgetBase methods all assume that
+    a Rectangle patch will be used, centered on position. If not, the
+    inheriting class will have to override those as applicable.
+    """
+
+    def __init__(self, axes_manager, **kwargs):
+        super(Widget2DBase, self).__init__(axes_manager, **kwargs)
+        self.border_thickness = 2
+
+        # Set default axes
+        if self.axes_manager is not None:
+            if self.axes_manager.navigation_dimension > 1:
+                self.axes = self.axes_manager.navigation_axes[0:2]
+            elif self.axes_manager.signal_dimension > 1:
+                self.axes = self.axes_manager.signal_axes[0:2]
+            elif len(self.axes_manager.shape) > 1:
+                self.axes = (self.axes_manager.signal_axes +
+                             self.axes_manager.navigation_axes)
+            else:
+                raise ValueError("2D widget needs at least two axes!")
+            self._pos = np.array([self.axes[0].offset, self.axes[1].offset])
+            self._size = np.array([self.axes[0].scale, self.axes[1].scale])
+        else:
+            self._pos = np.array([0, 0])
+            self._size = np.array([1, 1])
+
+    def _get_patch_xy(self):
+        """Returns the xy position of the widget. In this default
+        implementation, the widget is centered on the position.
+        """
+        return np.array(self.position) - np.array(self.size) / 2.
+
+    def _get_patch_bounds(self):
+        """Returns the bounds of the patch in the form of a tuple in the order
+        left, top, width, height. In matplotlib, 'bottom' is used instead of
+        'top' as the naming assumes an upwards pointing y-axis, meaning the
+        lowest value corresponds to bottom. However, our widgets will normally
+        only go on images (which has an inverted y-axis in MPL by default), so
+        we define the lowest value to be termed 'top'.
+        """
+        xy = self._get_patch_xy()
+        xs, ys = self.size
+        return (xy[0], xy[1], xs, ys)        # x,y,w,h
+
+    def _update_patch_position(self):
+        if self.is_on() and self.patch:
+            self.patch[0].set_xy(self._get_patch_xy())
+            self.draw_patch()
+
+    def _update_patch_size(self):
+        self._update_patch_geometry()
+
+    def _update_patch_geometry(self):
+        if self.is_on() and self.patch:
+            self.patch[0].set_bounds(*self._get_patch_bounds())
+            self.draw_patch()
+
