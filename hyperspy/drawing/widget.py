@@ -234,3 +234,195 @@ class WidgetBase(object):
             else:
                 raise
 
+
+class DraggableWidgetBase(WidgetBase):
+
+    """Adds the `position` and `indices` properties, and adds a framework for
+    letting the user drag the patch around. Also adds the `moved` event.
+
+    The default behavior is that `position` snaps to the values corresponding
+    to the values of the axes grid (i.e. no subpixel values). This behavior
+    can be controlled by the property `snap_position`.
+
+    Any inheritors must override these methods:
+        _onmousemove(self, event)
+        _update_patch_position(self)
+        _set_patch(self)
+    """
+
+    def __init__(self, axes_manager, **kwargs):
+        super(DraggableWidgetBase, self).__init__(axes_manager, **kwargs)
+        self.events.moved = Event(doc="""
+            Event that triggers when the widget was moved.
+
+            The event triggers after the internal state of the widget has been
+            updated. This event does not differentiate on how the position of
+            the widget was changed, so it is the responsibility of the user
+            to suppress events as neccessary to avoid closed loops etc.
+
+            Arguments:
+            ----------
+                position:
+                widget:
+                    The widget that was moved.
+            """, arguments=['widget'])
+        self._snap_position = True
+
+        # Set default axes
+        if self.axes_manager is not None:
+            if self.axes_manager.navigation_dimension > 0:
+                self.axes = self.axes_manager.navigation_axes[0:1]
+            else:
+                self.axes = self.axes_manager.signal_axes[0:1]
+            self._pos = np.array([self.axes[0].low_value])
+        else:
+            self._pos = np.array([0.])
+
+    def _get_indices(self):
+        """Returns a tuple with the position (indices).
+        """
+        idx = []
+        pos = self.position
+        for i in xrange(len(self.axes)):
+            idx.append(self.axes[i].value2index(pos[i]))
+        return tuple(idx)
+
+    def _set_indices(self, value):
+        """Sets the position of the widget (by indices). The dimensions should
+        correspond to that of the 'axes' attribute. Calls _pos_changed if the
+        value has changed, which is then responsible for triggering any
+        relevant events.
+        """
+        if np.ndim(value) == 0 and len(self.axes) == 1:
+            self.position = [self.axes[0].index2value(value)]
+        elif len(self.axes) != len(value):
+            raise ValueError()
+        else:
+            p = []
+            for i in xrange(len(self.axes)):
+                p.append(self.axes[i].index2value(value[i]))
+            self.position = p
+
+    indices = property(lambda s: s._get_indices(),
+                       lambda s, v: s._set_indices(v))
+
+    def _pos_changed(self):
+        """Call when the position of the widget has changed. It triggers the
+        relevant events, and updates the patch position.
+        """
+        if self._navigating:
+            with self.axes_manager.events.indices_changed.suppress_callback(
+                    self._on_navigate):
+                for i in xrange(len(self.axes)):
+                    self.axes[i].value = self.position[i]
+        self.events.moved.trigger(self)
+        self.events.changed.trigger(self)
+        self._update_patch_position()
+
+    def _validate_pos(self, pos):
+        """Validates the passed position. Depending on the position and the
+        implementation, this can either fire a ValueError, or return a modified
+        position that has valid values. Or simply return the unmodified
+        position if everything is ok.
+
+        This default implementation raises a ValueError if the position is out
+        of bounds (as defiend by the axes).
+        """
+        if len(pos) != len(self.axes):
+            raise ValueError()
+        for i in xrange(len(pos)):
+            if not (self.axes[i].low_value <= pos[i] <=
+                    self.axes[i].high_value):
+                raise ValueError()
+        if self.snap_position:
+            pos = self._do_snap_position(pos)
+        return pos
+
+    def _get_position(self):
+        """Providies the position of the widget (by values) in a tuple.
+        """
+        return tuple(
+            self._pos.tolist())  # Don't pass reference, and make it clear
+
+    def _set_position(self, position):
+        """Sets the position of the widget (by values). The dimensions should
+        correspond to that of the 'axes' attribute. Calls _pos_changed if the
+        value has changed, which is then responsible for triggering any
+        relevant events.
+        """
+        position = self._validate_pos(position)
+        if np.any(self._pos != position):
+            self._pos = np.array(position)
+            self._pos_changed()
+
+    position = property(lambda s: s._get_position(),
+                        lambda s, v: s._set_position(v))
+
+    def _do_snap_position(self, value=None):
+        """Snaps position to axes grid. Returns True if postion was adjusted,
+        otherwise False.
+        """
+        value = np.array(value) if value is not None else self._pos
+        for i, ax in enumerate(self.axes):
+            value[i] = ax.index2value(ax.value2index(value[i]))
+        return value
+
+    def _set_snap_position(self, value):
+        self._snap_position = value
+        if value:
+            snap_value = self._do_snap_position(self._pos)
+            if np.any(self._pos != snap_value):
+                self._pos = snap_value
+                self._pos_changed()
+
+    snap_position = property(lambda s: s._snap_position,
+                             lambda s, v: s._set_snap_position(v))
+
+    def connect(self, ax):
+        super(DraggableWidgetBase, self).connect(ax)
+        canvas = ax.figure.canvas
+        self.cids.append(
+            canvas.mpl_connect('motion_notify_event', self._onmousemove))
+        self.cids.append(canvas.mpl_connect('pick_event', self.onpick))
+        self.cids.append(canvas.mpl_connect(
+            'button_release_event', self.button_release))
+
+    def _on_navigate(self, axes_manager):
+        if axes_manager is self.axes_manager:
+            p = list(self.position)
+            for i, a in enumerate(self.axes):
+                p[i] = a.value
+            self.position = p    # Use property to trigger events
+
+    def onpick(self, event):
+        # Callback for MPL pick event
+        self.picked = (event.artist in self.patch)
+        if hasattr(super(DraggableWidgetBase, self), 'onpick'):
+            super(DraggableWidgetBase, self).onpick(event)
+
+    def _onmousemove(self, event):
+        """Callback for mouse movement. For dragging, the implementor would
+        normally check that the widget is picked, and that the event.inaxes
+        Axes equals self.ax.
+        """
+        # This method must be provided by the subclass
+        pass
+
+    def _update_patch_position(self):
+        """Updates the position of the patch on the plot.
+        """
+        # This method must be provided by the subclass
+        pass
+
+    def _update_patch_geometry(self):
+        """Updates all geometry of the patch on the plot.
+        """
+        self._update_patch_position()
+
+    def button_release(self, event):
+        """whenever a mouse button is released"""
+        if event.button != 1:
+            return
+        if self.picked is True:
+            self.picked = False
+
