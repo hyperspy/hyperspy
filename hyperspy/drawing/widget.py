@@ -687,3 +687,191 @@ class Widget2DBase(ResizableDraggableWidgetBase):
             self.patch[0].set_bounds(*self._get_patch_bounds())
             self.draw_patch()
 
+
+class ResizersMixin(object):
+    """
+    Widget mix-in for adding resizing manipulation handles.
+
+    The default handles are green boxes displayed on the outside corners of the
+    boundaries. By default, the handles are only displayed when the widget is
+    selected (`picked` in matplotlib terminology).
+
+    Attributes:
+    -----------
+        resizers : {bool}
+            Property that determines whether the resizer handles should be used
+        resize_color : {matplotlib color}
+            The color of the resize handles.
+        resize_pixel_size : {tuple | None}
+            Size of the resize handles in screen pixels. If None, it is set
+            equal to the size of one 'data-pixel' (image pixel size).
+        resizer_picked : {False | int}
+            Inidcates which, if any, resizer was selected the last time the
+            widget was picked. `False` if another patch was picked, or the
+            index of the resizer handle that was picked.
+
+    """
+
+    def __init__(self, resizers=True, **kwargs):
+        super(ResizersMixin, self).__init__(**kwargs)
+        self.resizer_picked = False
+        self.pick_offset = (0, 0)
+        self.resize_color = 'lime'
+        self.resize_pixel_size = (5, 5)  # Set to None to make one data pixel
+        self._resizers = resizers
+        self._resizer_handles = []
+        self._resizers_on = False
+        # The `_resizers_on` attribute reflects whether handles are actually on
+        # as compared to `_resizers` which is whether the user wants them on.
+        # The difference is e.g. for turning on and off handles when the
+        # widget is selected/deselected.
+
+    @property
+    def resizers(self):
+        return self._resizers
+
+    @resizers.setter
+    def resizers(self, value):
+        if self._resizers != value:
+            self._resizers = value
+            self._set_resizers(value, self.ax)
+
+    def _update_resizers(self):
+        """Update resizer handles' patch geometry.
+        """
+        pos = self._get_resizer_pos()
+        rsize = self._get_resizer_size()
+        for i, r in enumerate(self._resizer_handles):
+            r.set_xy(pos[i])
+            r.set_width(rsize[0])
+            r.set_height(rsize[1])
+
+    def _set_resizers(self, value, ax):
+        """Turns the resizers on/off, in much the same way that _set_patch
+        works.
+        """
+        if ax is not None:
+            if value:
+                for r in self._resizer_handles:
+                    ax.add_artist(r)
+                    r.set_animated(hasattr(ax, 'hspy_fig'))
+            else:
+                for container in [
+                        ax.patches,
+                        ax.lines,
+                        ax.artists,
+                        ax.texts]:
+                    for r in self._resizer_handles:
+                        if r in container:
+                            container.remove(r)
+            self._resizers_on = value
+            self.draw_patch()
+
+    def _get_resizer_size(self):
+        """Gets the size of the resizer handles in axes coordinates. If
+        'resize_pixel_size' is None, a size of one pixel will be used.
+        """
+        invtrans = self.ax.transData.inverted()
+        if self.resize_pixel_size is None:
+            rsize = self._size / self.get_size_in_indices()
+        else:
+            rsize = np.abs(invtrans.transform(self.resize_pixel_size) -
+                           invtrans.transform((0, 0)))
+        return rsize
+
+    def _get_resizer_offset(self):
+        """Utility for getting the distance from the boundary box to the
+        center of the resize handles.
+        """
+        invtrans = self.ax.transData.inverted()
+        border = self.border_thickness
+        # Transform the border thickness into data values
+        dl = np.abs(invtrans.transform((border, border)) -
+                    invtrans.transform((0, 0))) / 2
+        rsize = self._get_resizer_size()
+        return rsize/2 + dl
+
+    def _get_resizer_pos(self):
+        """Get the positions of the resizer handles.
+        """
+        invtrans = self.ax.transData.inverted()
+        border = self.border_thickness
+        # Transform the border thickness into data values
+        dl = np.abs(invtrans.transform((border, border)) -
+                    invtrans.transform((0, 0))) / 2
+        rsize = self._get_resizer_size()
+        xs, ys = self._size
+
+        positions = []
+        rp = np.array(self._get_patch_xy())
+        p = rp - rsize + dl                         # Top left
+        positions.append(p)
+        p = rp + (xs - dl[0], -rsize[1] + dl[1])    # Top right
+        positions.append(p)
+        p = rp + (-rsize[0] + dl[0], ys - dl[1])    # Bottom left
+        positions.append(p)
+        p = rp + (xs - dl[0], ys - dl[1])           # Bottom right
+        positions.append(p)
+        return positions
+
+    def _set_patch(self):
+        """Creates the resizer handles, irregardless of whether they will be
+        used or not.
+        """
+        if hasattr(super(ResizersMixin, self), '_set_patch'):
+            super(ResizersMixin, self)._set_patch()
+
+        self._resizer_handles = []
+        rsize = self._get_resizer_size()
+        pos = self._get_resizer_pos()
+        for i in xrange(4):
+            r = plt.Rectangle(pos[i], rsize[0], rsize[1], animated=self.blit,
+                              fill=True, lw=0, fc=self.resize_color,
+                              picker=True,)
+            self._resizer_handles.append(r)
+
+    def set_on(self, value):
+        """Turns on/off resizers whet widget is turned on/off.
+        """
+        if value is not self.is_on() and self.resizers:
+            self._set_resizers(value, self.ax)
+        if hasattr(super(ResizersMixin, self), 'set_on'):
+            super(ResizersMixin, self).set_on(value)
+
+    def onpick(self, event):
+        """Picking of main patch is same as for widget base, but this also
+        handles picking of the resize handles. If a resize handles is picked,
+        `picked` is set to `True`, and `resizer_picked` is set to an integer
+        indicating which handle was picked (0-3 for top left, top right, bottom
+        left, bottom right). It is set to `False` if another widget was picked.
+
+        If the main patch is picked, the offset from the picked pixel to the
+        `position` is stored in `pick_offset`. This can be used in e.g.
+        `_onmousemove` to ease dragging code (prevent widget center/corner
+        snapping to mouse).
+        """
+        if event.artist in self._resizer_handles:
+            corner = self._resizer_handles.index(event.artist)
+            self.resizer_picked = corner
+            self.picked = True
+        elif self.picked:
+            if self.resizers and not self._resizers_on:
+                self._set_resizers(True, self.ax)
+            x = event.mouseevent.xdata
+            y = event.mouseevent.ydata
+            p = self.position
+            self.pick_offset = (x - p[0], y - p[1])
+            self.resizer_picked = False
+        else:
+            self._set_resizers(False, self.ax)
+        if hasattr(super(ResizersMixin, self), 'onpick'):
+            super(ResizersMixin, self).onpick(event)
+
+    def _add_patch_to(self, ax):
+        """Same as widget base, but also adds resizers if 'resizers' property
+        is True.
+        """
+        if self.resizers:
+            self._set_resizers(True, ax)
+        if hasattr(super(ResizersMixin, self), '_add_patch_to'):
+            super(ResizersMixin, self)._add_patch_to(ax)
