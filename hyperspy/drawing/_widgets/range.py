@@ -120,12 +120,9 @@ class DraggableResizableRange(ResizableDraggableWidgetBase):
         constant (note: width will be kept, not right).
         """
 
-        x, w = self._parse_bounds_args(args, kwargs)
-
-        if not (self.axes[0].low_index <= x <= self.axes[0].high_index):
-            raise ValueError()
-        if not (self.axes[0].low_index <= x + w <= self.axes[0].high_index):
-            raise ValueError()
+        ix, iw = self._parse_bounds_args(args, kwargs)
+        x = self.axes[0].index2value(ix)
+        w = self._i2v(self.axes[0], ix + iw) - x
 
         old_position, old_size = self.position, self.size
         self._pos = np.array([x])
@@ -145,11 +142,15 @@ class DraggableResizableRange(ResizableDraggableWidgetBase):
         """
 
         x, w = self._parse_bounds_args(args, kwargs)
-        ix = self.axes[0].value2index(x)
-        w = self._v2i(self.axes[0], x + w) - ix
+
+        if not (self.axes[0].low_value <= x <= self.axes[0].high_value):
+            raise ValueError()
+        if not (self.axes[0].low_value <= x + w <= self.axes[0].high_value +
+                self.axes[0].scale):
+            raise ValueError()
 
         old_position, old_size = self.position, self.size
-        self._pos = np.array([ix])
+        self._pos = np.array([x])
         self._size = np.array([w])
         self._apply_changes(old_size=old_size, old_position=old_position)
 
