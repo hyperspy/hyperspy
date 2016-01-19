@@ -152,21 +152,18 @@ HyperSpy has created the model and configured it automatically:
        1 |                       N_K |                       N_K |                EELSCLEdge
        2 |                       B_K |                       B_K |                EELSCLEdge
 
-
-Conveniently, variables named as the element symbol contain all the eels
-core-loss components of the element to facilitate applying some methods to all
-of them at once. Although in this example the list contains just one component
-this is not generally the case.
+Conveniently, all the EELS core-loss components of the added elements are added
+automatically, names after its element symbol.
 
 .. code-block:: python
+    >>> m.components.N_K
+    <N_K (EELSCLEdge component)>
+    >>> m.components.B_K
+    <B_K (EELSCLEdge component)>
 
-    >>> N
-    [<N_K (EELSCLEdge component)>]
-
-
-By default the fine structure features are disabled (although the default value
-can be configured (see :ref:`configuring-hyperspy-label`). We must enable them
-to accurately fit this spectrum.
+By default the fine structure features are disabled (although
+the default value can be configured (see :ref:`configuring-hyperspy-label`).
+We must enable them to accurately fit this spectrum.
 
 .. code-block:: python
 

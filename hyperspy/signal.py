@@ -1010,7 +1010,7 @@ class Signal1DTools(object):
     def _integrate_in_range_commandline(self, signal_range):
         e1 = signal_range[0]
         e2 = signal_range[1]
-        integrated_spectrum = self.isig[..., e1:e2].integrate1D(-1)
+        integrated_spectrum = self.isig[e1:e2].integrate1D(-1)
         return integrated_spectrum
 
     @only_interactive
