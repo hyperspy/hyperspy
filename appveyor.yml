@@ -77,7 +77,7 @@ install:
   - ps: Add-AppveyorMessage "Installing conda packages..."
   - "%CMD_IN_ENV% conda install -yq %TEST_DEPS%"
   - "%CMD_IN_ENV% conda install -yq %DEPS%"
-  - "%CMD_IN_ENV% conda install pip
+  - "%CMD_IN_ENV% conda install pip"
   # TODO: Remove once anaconda taitsui package is at v5:
   - "IF \"%PYTHON_MAJOR%\" EQU \"3\" pip install --upgrade traitsui"
   - ps: Add-AppveyorMessage "Installing hyperspy..."
