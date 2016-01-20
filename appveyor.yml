@@ -43,13 +43,12 @@ environment:
       WP_CRC: '8b3b111b911b9f0c2c3ec22f1f23ae07919ec59db63f87e1f12de132da073b4d'
       DEPS: "numpy scipy matplotlib ipython h5py sympy scikit-learn dill mock"
 
-    - PYTHON: "C:\\Miniconda3-x64"
+    - PYTHON: "C:\\Miniconda35-x64"
       PYTHON_VERSION: "3.5.x"
       PYTHON_MAJOR: 3
       PYTHON_ARCH: "64"
       CONDA_PY: "35"
       CONDA_NPY: "19"
-      WINDOWS_SDK_VERSION: "v7.1"
       WP_URL: 'http://heanet.dl.sourceforge.net/project/winpython/WinPython_3.5/3.5.1.1/WinPython-64bit-3.5.1.1.exe'
       WP_CRC: '82057650e7950e6562affc73fd711e9fae1e6b8829cd6d65527f5a79429241ac'
       DEPS: "numpy scipy matplotlib ipython h5py sympy scikit-learn dill mock"
