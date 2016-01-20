@@ -74,11 +74,12 @@ install:
   - "python -c \"import struct; print(struct.calcsize('P') * 8)\""
 
   # Install the dependencies of the project.
-  # TODO: Remove once anaconda taitsui is at v5:
-  - "IF \"%PYTHON_MAJOR%\" EQU \"3\" %CMD_IN_ENV% pip install --upgrade traitsui"
   - ps: Add-AppveyorMessage "Installing conda packages..."
   - "%CMD_IN_ENV% conda install -yq %TEST_DEPS%"
   - "%CMD_IN_ENV% conda install -yq %DEPS%"
+  - "%CMD_IN_ENV% conda install pip
+  # TODO: Remove once anaconda taitsui package is at v5:
+  - "IF \"%PYTHON_MAJOR%\" EQU \"3\" pip install --upgrade traitsui"
   - ps: Add-AppveyorMessage "Installing hyperspy..."
   - "python setup.py install"
 
