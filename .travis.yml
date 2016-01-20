@@ -13,7 +13,7 @@ install:
   - source activate testenv
   - conda install --yes $DEPS
   - conda install pip
-  - pip install coverage coveralls
+  - pip install coverage coveralls tqdm
   - python setup.py install
 
 before_install:

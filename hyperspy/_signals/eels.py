@@ -30,7 +30,7 @@ from hyperspy.decorators import only_interactive
 from hyperspy.gui.eels import TEMParametersUI
 from hyperspy.defaults_parser import preferences
 import hyperspy.gui.messages as messagesui
-from hyperspy.external.progressbar import progressbar
+from tqdm import tqdm as progressbar
 from hyperspy.components import PowerLaw
 from hyperspy.misc.utils import isiterable, closest_power_of_two, underline
 from hyperspy.misc.utils import without_nans
@@ -345,18 +345,16 @@ class EELSSpectrum(Spectrum):
             bk_I0_navigate = (
                 I0.axes_manager._get_axis_attribute_values('navigate'))
             I0.axes_manager.set_signal_dimension(0)
-            pbar = hyperspy.external.progressbar.progressbar(
-                maxval=self.axes_manager.navigation_size,
-            )
-            for i, s in enumerate(self):
+            for i, s in progressbar(enumerate(self),
+                                    total=self.axes_maanger.navigation_size,
+                                    disable=not show_progressbar,
+                                    leave=True):
                 threshold_ = threshold[self.axes_manager.indices].data[0]
                 if np.isnan(threshold_):
                     I0[self.axes_manager.indices] = np.nan
                 else:
                     I0[self.axes_manager.indices].data[:] = (
                         s[:threshold_].integrate1D(-1).data)
-                pbar.update(i)
-            pbar.finish()
             threshold.axes_manager._set_axis_attribute_values(
                 'navigate',
                 bk_threshold_navigate)
@@ -764,10 +762,10 @@ class EELSSpectrum(Spectrum):
         imax = kernel.argmax()
         j = 0
         maxval = self.axes_manager.navigation_size
-        if maxval > 0:
-            pbar = progressbar(maxval=maxval,
-                               disabled=not show_progressbar)
-        for D in self:
+        show_progressbar = show_progressbar and (maxval > 0)
+        for D in progressbar(self, total=maxval,
+                             disable=not show_progressbar,
+                             leave=True):
             D = D.data.copy()
             if psf.axes_manager.navigation_dimension != 0:
                 kernel = psf(axes_manager=self.axes_manager)
@@ -782,10 +780,6 @@ class EELSSpectrum(Spectrum):
                                      D / first)[mimax: mimax + psf_size])
             s[:] = O
             j += 1
-            if maxval > 0:
-                pbar.update(j)
-        if maxval > 0:
-            pbar.finish()
 
         return ds
 
