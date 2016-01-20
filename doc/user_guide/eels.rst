@@ -46,8 +46,8 @@ The :py:meth:`~._signals.eels.EELSSpectrum.estimate_zero_loss_peak_centre` can b
 
 The :py:meth:`~._signals.eels.EELSSpectrum.align_zero_loss_peak` can
 align the ZLP with subpixel accuracy. It is more robust and easy to use than
-:py:meth:`~.signal.Signal1DTools.align1D` for the task. Note that it is 
-possible to apply the same alignment to other spectra using the `also_align` 
+:py:meth:`~.signal.Signal1DTools.align1D` for the task. Note that it is
+possible to apply the same alignment to other spectra using the `also_align`
 argument. This can be useful e.g. to align core-loss spectra acquired quasi-simultaneously.
 If there are other features in the low loss signal which are more intense than the
 ZLP, the `signal_range` argument can narrow down the energy range for searching for the
@@ -148,57 +148,22 @@ HyperSpy has created the model and configured it automatically:
     >>> m.components
        # |            Attribute Name |            Component Name |            Component Type
     ---- | ------------------------- | ------------------------- | -------------------------
-       0 |                background |                background |                  PowerLaw
+       0 |                  PowerLaw |                  PowerLaw |                  PowerLaw
        1 |                       N_K |                       N_K |                EELSCLEdge
        2 |                       B_K |                       B_K |                EELSCLEdge
 
-.. warning::
-
-   Notice that the PowerLaw component has been automatically renamed to
-   "background". This behaviour is deprecated and will be removed in
-   HyperSpy 0.9. From them on this component will keep its original name,
-   "PowerLaw".
-
-
-Furthermore, the components are available in the user namespace
+Conveniently, all the EELS core-loss components of the added elements are added
+automatically, names after its element symbol.
 
 .. code-block:: python
-
-    >>> N_K
+    >>> m.components.N_K
     <N_K (EELSCLEdge component)>
-    >>> B_K
+    >>> m.components.B_K
     <B_K (EELSCLEdge component)>
-    >>> background
-    <background (PowerLaw component)>
 
-.. warning::
-
-   This feature is deprecated and will be removed in HyperSpy 0.9. To access
-   the automatically created component use the following equivalent syntax:
-
-    .. code-block:: python
-
-        >>> m.components.N_K
-        <N_K (EELSCLEdge component)>
-        >>> m.components.B_K
-        <B_K (EELSCLEdge component)>
-        >>> m.background
-        <background (PowerLaw component)>
-
-Conveniently, variables named as the element symbol contain all the eels
-core-loss components of the element to facilitate applying some methods to all
-of them at once. Although in this example the list contains just one component
-this is not generally the case.
-
-.. code-block:: python
-
-    >>> N
-    [<N_K (EELSCLEdge component)>]
-
-
-By default the fine structure features are disabled (although the default value
-can be configured (see :ref:`configuring-hyperspy-label`). We must enable them
-to accurately fit this spectrum.
+By default the fine structure features are disabled (although
+the default value can be configured (see :ref:`configuring-hyperspy-label`).
+We must enable them to accurately fit this spectrum.
 
 .. code-block:: python
 

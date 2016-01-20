@@ -5,6 +5,13 @@ from hyperspy.signal import Signal
 from hyperspy import signals
 
 
+def _verify_test_sum_x_E(self, s):
+    np.testing.assert_array_equal(self.signal.data.sum(), s.data)
+    nt.assert_equal(s.data.ndim, 1)
+    # Check that there is still one signal axis.
+    nt.assert_equal(s.axes_manager.signal_dimension, 1)
+
+
 class Test2D:
 
     def setUp(self):
@@ -21,11 +28,14 @@ class Test2D:
         nt.assert_equal(s.axes_manager.navigation_dimension, 0)
 
     def test_sum_x_E(self):
+        s = self.signal.sum(("x", "E"))
+        _verify_test_sum_x_E(self, s)
+        s = self.signal.sum((0, "E"))
+        _verify_test_sum_x_E(self, s)
+        s = self.signal.sum((self.signal.axes_manager[0], "E"))
+        _verify_test_sum_x_E(self, s)
         s = self.signal.sum("x").sum("E")
-        np.testing.assert_array_equal(self.signal.data.sum(), s.data)
-        nt.assert_equal(s.data.ndim, 1)
-        # Check that there is still one signal axis.
-        nt.assert_equal(s.axes_manager.signal_dimension, 1)
+        _verify_test_sum_x_E(self, s)
 
     def test_axis_by_str(self):
         s1 = self.signal.deepcopy()
@@ -108,6 +118,15 @@ class Test2D:
         nt.assert_true(s.unfold())
 
 
+def _test_default_navigation_signal_operations_over_many_axes(self, op):
+    s = getattr(self.signal, op)()
+    ar = getattr(self.data, op)(axis=(0, 1))
+    np.testing.assert_array_equal(ar, s.data)
+    nt.assert_equal(s.data.ndim, 1)
+    nt.assert_equal(s.axes_manager.signal_dimension, 1)
+    nt.assert_equal(s.axes_manager.navigation_dimension, 0)
+
+
 class Test3D:
 
     def setUp(self):
@@ -117,6 +136,40 @@ class Test3D:
         self.signal.axes_manager[2].name = "E"
         self.signal.axes_manager[0].scale = 0.5
         self.data = self.signal.data.copy()
+
+    def test_indexmax(self):
+        s = self.signal.indexmax('E')
+        ar = self.data.argmax(2)
+        np.testing.assert_array_equal(ar, s.data)
+        nt.assert_equal(s.data.ndim, 2)
+        nt.assert_equal(s.axes_manager.signal_dimension, 0)
+        nt.assert_equal(s.axes_manager.navigation_dimension, 2)
+
+    def test_valuemax(self):
+        s = self.signal.valuemax('x')
+        ar = self.signal.axes_manager['x'].index2value(self.data.argmax(1))
+        np.testing.assert_array_equal(ar, s.data)
+        nt.assert_equal(s.data.ndim, 2)
+        nt.assert_equal(s.axes_manager.signal_dimension, 1)
+        nt.assert_equal(s.axes_manager.navigation_dimension, 1)
+
+    def test_default_navigation_sum(self):
+        _test_default_navigation_signal_operations_over_many_axes(self, 'sum')
+
+    def test_default_navigation_max(self):
+        _test_default_navigation_signal_operations_over_many_axes(self, 'max')
+
+    def test_default_navigation_min(self):
+        _test_default_navigation_signal_operations_over_many_axes(self, 'min')
+
+    def test_default_navigation_mean(self):
+        _test_default_navigation_signal_operations_over_many_axes(self, 'mean')
+
+    def test_default_navigation_std(self):
+        _test_default_navigation_signal_operations_over_many_axes(self, 'std')
+
+    def test_default_navigation_var(self):
+        _test_default_navigation_signal_operations_over_many_axes(self, 'var')
 
     def test_rebin(self):
         self.signal.estimate_poissonian_noise_variance()
