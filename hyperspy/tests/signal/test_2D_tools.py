@@ -1,4 +1,4 @@
-# Copyright 2007-2015 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -20,7 +20,7 @@ import numpy as np
 import nose.tools as nt
 from scipy.misc import lena
 
-import hyperspy.hspy as hs
+import hyperspy.api as hs
 
 
 class TestAlignTools:

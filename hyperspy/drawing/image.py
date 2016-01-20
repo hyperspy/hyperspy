@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2015 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -351,11 +351,6 @@ class ImagePlot(BlittedFigure):
                            **new_args)
             self.figure.canvas.draw()
 
-    def _update(self):
-        # This "wrapper" because on_trait_change fiddles with the
-        # method arguments and auto_contrast does not work then
-        self.update()
-
     def adjust_contrast(self):
         ceditor = ImageContrastEditor(self)
         ceditor.edit_traits()
@@ -366,7 +361,7 @@ class ImagePlot(BlittedFigure):
                                        self.on_key_press)
         self.figure.canvas.draw()
         if self.axes_manager:
-            self.axes_manager.connect(self._update)
+            self.axes_manager.events.indices_changed.connect(self.update, 0)
 
     def on_key_press(self, event):
         if event.key == 'h':
@@ -411,7 +406,7 @@ class ImagePlot(BlittedFigure):
 
     def disconnect(self):
         if self.axes_manager:
-            self.axes_manager.disconnect(self._update)
+            self.axes_manager.events.indices_changed.disconnect(self.update)
 
     def close(self):
         for marker in self.ax_markers:

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2015 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -223,7 +223,8 @@ class LineInSpectrum(t.HasTraits):
         # range by default
         am._axes[0].index = int(round(am._axes[0].size / 2))
         self.axes_manager = am
-        self.axes_manager.connect(self.update_position)
+        self.axes_manager.events.indices_changed.connect(
+            self.update_position, 0)
         self.on_trait_change(self.switch_on_off, 'on')
 
     def draw(self):

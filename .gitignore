@@ -2,7 +2,6 @@ syntax: glob
 .spyderworkspace
 .coverage
 /MANIFEST
-/*.rst
 *.pyc
 *.pyd
 *.swp
@@ -14,7 +13,7 @@ dist
 *.deb
 *.swo
 build/*
-bin/*
+bin/*.bat
 PortableInstall/*
 hyperspy.egg-info/*
 deb_dist/*
@@ -25,11 +24,11 @@ doc/_build/*
 doc/.build/*
 doc/user_guide/_build/*
 doc/user_guide/.build/*
-doc/api/*.rst
 setup/windows/requires/*
 setup/windows/reccomends/*
 doc/examples
 doc/gh-pages
+doc/log.txt
 *Thumbs.db
 .ropeproject/*
 .idea/*

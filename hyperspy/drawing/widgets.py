@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2015 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -97,7 +97,8 @@ class DraggablePatch(object):
         self.cids.append(canvas.mpl_connect('pick_event', self.onpick))
         self.cids.append(canvas.mpl_connect(
             'button_release_event', self.button_release))
-        self.axes_manager.connect(self._update_patch_position)
+        self.axes_manager.events.indices_changed.connect(
+            self._update_patch_position, 0)
         on_figure_window_close(ax.figure, self.close)
 
     def disconnect(self, ax):
@@ -106,7 +107,8 @@ class DraggablePatch(object):
                 ax.figure.canvas.mpl_disconnect(cid)
             except:
                 pass
-        self.axes_manager.disconnect(self._update_patch_position)
+        self.axes_manager.events.indices_changed.disconnect(
+            self._update_patch_position)
 
     def close(self, window=None):
         self.set_on(False)

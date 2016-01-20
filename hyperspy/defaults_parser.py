@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2015 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -110,13 +110,6 @@ class GeneralConfig(t.HasTraits):
         True,
         label='Show progress bar',
         desc='If enabled, show a progress bar when available')
-
-    import_hspy = t.CBool(
-        True,
-        label='from hspy import all',
-        desc='If enabled, when starting HyperSpy using the `hyperspy` '
-             'IPython magic of the starting scripts, all the contents of '
-             '``hyperspy.hspy`` are imported in the user namespace. ')
 
     dtb_expand_structures = t.CBool(
         True,

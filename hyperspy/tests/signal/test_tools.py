@@ -5,6 +5,13 @@ from hyperspy.signal import Signal
 from hyperspy import signals
 
 
+def _verify_test_sum_x_E(self, s):
+    np.testing.assert_array_equal(self.signal.data.sum(), s.data)
+    nt.assert_equal(s.data.ndim, 1)
+    # Check that there is still one signal axis.
+    nt.assert_equal(s.axes_manager.signal_dimension, 1)
+
+
 class Test2D:
 
     def setUp(self):
@@ -21,11 +28,14 @@ class Test2D:
         nt.assert_equal(s.axes_manager.navigation_dimension, 0)
 
     def test_sum_x_E(self):
+        s = self.signal.sum(("x", "E"))
+        _verify_test_sum_x_E(self, s)
+        s = self.signal.sum((0, "E"))
+        _verify_test_sum_x_E(self, s)
+        s = self.signal.sum((self.signal.axes_manager[0], "E"))
+        _verify_test_sum_x_E(self, s)
         s = self.signal.sum("x").sum("E")
-        np.testing.assert_array_equal(self.signal.data.sum(), s.data)
-        nt.assert_equal(s.data.ndim, 1)
-        # Check that there is still one signal axis.
-        nt.assert_equal(s.axes_manager.signal_dimension, 1)
+        _verify_test_sum_x_E(self, s)
 
     def test_axis_by_str(self):
         s1 = self.signal.deepcopy()
@@ -108,6 +118,15 @@ class Test2D:
         nt.assert_true(s.unfold())
 
 
+def _test_default_navigation_signal_operations_over_many_axes(self, op):
+    s = getattr(self.signal, op)()
+    ar = getattr(self.data, op)(axis=(0, 1))
+    np.testing.assert_array_equal(ar, s.data)
+    nt.assert_equal(s.data.ndim, 1)
+    nt.assert_equal(s.axes_manager.signal_dimension, 1)
+    nt.assert_equal(s.axes_manager.navigation_dimension, 0)
+
+
 class Test3D:
 
     def setUp(self):
@@ -117,6 +136,40 @@ class Test3D:
         self.signal.axes_manager[2].name = "E"
         self.signal.axes_manager[0].scale = 0.5
         self.data = self.signal.data.copy()
+
+    def test_indexmax(self):
+        s = self.signal.indexmax('E')
+        ar = self.data.argmax(2)
+        np.testing.assert_array_equal(ar, s.data)
+        nt.assert_equal(s.data.ndim, 2)
+        nt.assert_equal(s.axes_manager.signal_dimension, 0)
+        nt.assert_equal(s.axes_manager.navigation_dimension, 2)
+
+    def test_valuemax(self):
+        s = self.signal.valuemax('x')
+        ar = self.signal.axes_manager['x'].index2value(self.data.argmax(1))
+        np.testing.assert_array_equal(ar, s.data)
+        nt.assert_equal(s.data.ndim, 2)
+        nt.assert_equal(s.axes_manager.signal_dimension, 1)
+        nt.assert_equal(s.axes_manager.navigation_dimension, 1)
+
+    def test_default_navigation_sum(self):
+        _test_default_navigation_signal_operations_over_many_axes(self, 'sum')
+
+    def test_default_navigation_max(self):
+        _test_default_navigation_signal_operations_over_many_axes(self, 'max')
+
+    def test_default_navigation_min(self):
+        _test_default_navigation_signal_operations_over_many_axes(self, 'min')
+
+    def test_default_navigation_mean(self):
+        _test_default_navigation_signal_operations_over_many_axes(self, 'mean')
+
+    def test_default_navigation_std(self):
+        _test_default_navigation_signal_operations_over_many_axes(self, 'std')
+
+    def test_default_navigation_var(self):
+        _test_default_navigation_signal_operations_over_many_axes(self, 'var')
 
     def test_rebin(self):
         self.signal.estimate_poissonian_noise_variance()
@@ -193,7 +246,7 @@ class Test3D:
     def test_get_navigation_signal_given_data(self):
         s = self.signal
         s.axes_manager.set_signal_dimension(1)
-        data = np.empty(s.axes_manager._navigation_shape_in_array)
+        data = np.zeros(s.axes_manager._navigation_shape_in_array)
         ns = s._get_navigation_signal(data=data)
         nt.assert_is(ns.data, data)
 
@@ -244,7 +297,7 @@ class Test3D:
     def test_get_signal_signal_given_data(self):
         s = self.signal
         s.axes_manager.set_signal_dimension(2)
-        data = np.empty(s.axes_manager._signal_shape_in_array)
+        data = np.zeros(s.axes_manager._signal_shape_in_array)
         ns = s._get_signal_signal(data=data)
         nt.assert_is(ns.data, data)
 
@@ -362,3 +415,75 @@ class TestDerivative:
         nt.assert_true(np.allclose(der.data,
                                    np.sin(der.axes_manager[0].axis),
                                    atol=1e-2),)
+
+
+class TestOutArg:
+
+    def setup(self):
+        s = signals.Spectrum(np.random.rand(5, 4, 3, 6))
+        for axis, name in zip(
+                s.axes_manager._get_axes_in_natural_order(),
+                ['x', 'y', 'z', 'E']):
+            axis.name = name
+        self.s = s
+
+    def _run_single(self, f, s, kwargs):
+        s1 = f(**kwargs)
+        s.data = s.data + 2
+        s2 = f(**kwargs)
+        r = f(out=s1, **kwargs)
+        nt.assert_equal(r, None)
+        nt.assert_equal(s1, s2)
+
+    def test_get_histogram(self):
+        self._run_single(self.s.get_histogram, self.s, dict())
+
+    def test_sum(self):
+        self._run_single(self.s.sum, self.s, dict(axis=('x', 'z')))
+
+    def test_mean(self):
+        self._run_single(self.s.mean, self.s, dict(axis=('x', 'z')))
+
+    def test_max(self):
+        self._run_single(self.s.max, self.s, dict(axis=('x', 'z')))
+
+    def test_min(self):
+        self._run_single(self.s.min, self.s, dict(axis=('x', 'z')))
+
+    def test_std(self):
+        self._run_single(self.s.std, self.s, dict(axis=('x', 'z')))
+
+    def test_var(self):
+        self._run_single(self.s.var, self.s, dict(axis=('x', 'z')))
+
+    def test_diff(self):
+        self._run_single(self.s.diff, self.s, dict(axis=0))
+
+    def test_derivative(self):
+        self._run_single(self.s.derivative, self.s, dict(axis=0))
+
+    def test_integrate_simpson(self):
+        self._run_single(self.s.integrate_simpson, self.s, dict(axis=0))
+
+    def test_integrate1D(self):
+        self._run_single(self.s.integrate1D, self.s, dict(axis=0))
+
+    def test_indexmax(self):
+        self._run_single(self.s.indexmax, self.s, dict(axis=0))
+
+    def test_valuemax(self):
+        self._run_single(self.s.valuemax, self.s, dict(axis=0))
+
+    def test_rebin(self):
+        s = self.s
+        new_shape = (3, 2, 1, 3)
+        self._run_single(s.rebin, s, dict(new_shape=new_shape))
+
+    def test_as_spectrum(self):
+        s = self.s
+        self._run_single(s.as_spectrum, s, dict(spectral_axis=1))
+
+    def test_as_image(self):
+        s = self.s
+        self._run_single(s.as_image, s, dict(image_axes=(
+            s.axes_manager.navigation_axes[0:2])))

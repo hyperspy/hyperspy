@@ -1,4 +1,4 @@
-# Copyright 2007-2015 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -34,7 +34,7 @@ class Test_metadata:
         s.metadata.Acquisition_instrument.TEM.beam_energy = 15.0
         self.signal = s
 
-    def test_sum_live_time(self):
+    def test_sum_live_time1(self):
         s = self.signal
         old_metadata = s.metadata.deepcopy()
         sSum = s.sum(0)
@@ -47,6 +47,32 @@ class Test_metadata:
         assert_dict_equal(old_metadata.as_dictionary(),
                           s.metadata.as_dictionary(),
                           "Source metadata changed")
+
+    def test_sum_live_time2(self):
+        s = self.signal
+        old_metadata = s.metadata.deepcopy()
+        sSum = s.sum((0, 1))
+        assert_equal(
+            sSum.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time,
+            3.1 *
+            2 * 4)
+        # Check that metadata is unchanged
+        print old_metadata, s.metadata      # Capture for comparison on error
+        assert_dict_equal(old_metadata.as_dictionary(),
+                          s.metadata.as_dictionary(),
+                          "Source metadata changed")
+
+    def test_sum_live_time_out_arg(self):
+        s = self.signal
+        sSum = s.sum(0)
+        s.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time = 4.2
+        s_resum = s.sum(0)
+        r = s.sum(0, out=sSum)
+        assert_equal(r, None)
+        assert_equal(
+            s_resum.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time,
+            sSum.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time)
+        np.testing.assert_allclose(s_resum.data, sSum.data)
 
     def test_rebin_live_time(self):
         s = self.signal
@@ -83,7 +109,7 @@ class Test_metadata:
             preferences.EDS.eds_mn_ka)
 
     def test_SEM_to_TEM(self):
-        s = self.signal[0, 0]
+        s = self.signal.inav[0, 0]
         signal_type = 'EDS_SEM'
         mp = s.metadata
         mp.Acquisition_instrument.TEM.Detector.EDS.energy_resolution_MnKa =\
@@ -173,6 +199,20 @@ class Test_vacum_mask:
         s = self.signal
         assert_equal(s.vacuum_mask().data[0], True)
         assert_equal(s.vacuum_mask().data[-1], False)
+
+
+class Test_simple_model:
+
+    def setUp(self):
+        s = utils_eds.xray_lines_model(elements=['Al', 'Zn'],
+                                       weight_percents=[50, 50])
+        self.signal = s
+
+    def test_intensity(self):
+        s = self.signal
+        assert_true(np.allclose(
+            [i.data for i in s.get_lines_intensity(
+                integration_window_factor=5.0)], [0.5, 0.5], atol=1e-1))
 
 
 class Test_get_lines_intentisity:

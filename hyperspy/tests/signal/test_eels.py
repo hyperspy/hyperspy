@@ -1,4 +1,4 @@
-# Copyright 2007-2015 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -54,7 +54,7 @@ class Test_Estimate_Elastic_Scattering_Threshold:
         nose.tools.assert_true(np.allclose(thr.data, 2.5))
 
     def test_min_in_window_without_smoothing_single_spectrum(self):
-        s = self.signal[0, 0]
+        s = self.signal.inav[0, 0]
         thr = s.estimate_elastic_scattering_threshold(
             window=5,
             window_length=0,
