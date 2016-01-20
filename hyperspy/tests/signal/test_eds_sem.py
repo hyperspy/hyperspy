@@ -132,7 +132,7 @@ class Test_metadata:
             preferences.EDS.eds_mn_ka)
 
     def test_SEM_to_TEM(self):
-        s = self.signal[0, 0]
+        s = self.signal.inav[0, 0]
         signal_type = 'EDS_TEM'
         mp = s.metadata
         mp.Acquisition_instrument.SEM.Detector.EDS.energy_resolution_MnKa = \
@@ -187,18 +187,15 @@ class Test_get_lines_intentisity:
                                     integration_windows=5)[0]
         nose.tools.assert_true(
             np.allclose(24.99516, sAl.data[0, 0, 0], atol=1e-3))
-        sAl = s[0].get_lines_intensity(["Al_Ka"],
-                                       plot_result=False,
-                                       integration_windows=5)[0]
+        sAl = s.inav[0].get_lines_intensity(
+            ["Al_Ka"], plot_result=False, integration_windows=5)[0]
         nose.tools.assert_true(
             np.allclose(24.99516, sAl.data[0, 0], atol=1e-3))
-        sAl = s[0, 0].get_lines_intensity(["Al_Ka"],
-                                          plot_result=False,
-                                          integration_windows=5)[0]
+        sAl = s.inav[0, 0].get_lines_intensity(
+            ["Al_Ka"], plot_result=False, integration_windows=5)[0]
         nose.tools.assert_true(np.allclose(24.99516, sAl.data[0], atol=1e-3))
-        sAl = s[0, 0, 0].get_lines_intensity(["Al_Ka"],
-                                             plot_result=False,
-                                             integration_windows=5)[0]
+        sAl = s.inav[0, 0, 0].get_lines_intensity(
+            ["Al_Ka"], plot_result=False, integration_windows=5)[0]
         nose.tools.assert_true(np.allclose(24.99516, sAl.data, atol=1e-3))
         s.axes_manager[-1].offset = 1.0
         sC = s.get_lines_intensity(["C_Ka"], plot_result=False)
