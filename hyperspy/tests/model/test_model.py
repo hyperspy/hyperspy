@@ -869,8 +869,8 @@ class TestAsSignal:
 
         self.m[0]._active_array[0] = False
         s = self.m.as_signal(show_progressbar=None)
-        nt.assert_true(
-            np.all(s.data == np.array([np.ones(5) * 2, np.ones(5) * 4])))
+        np.testing.assert_array_equal(
+            s.data, np.array([np.ones(5) * 2, np.ones(5) * 4]))
         nt.assert_true(self.m[0].active_is_multidimensional)
 
     def test_one_component_multidim(self):
@@ -882,7 +882,7 @@ class TestAsSignal:
         nt.assert_false(self.m[1].active_is_multidimensional)
 
         s = self.m.as_signal(component_list=[1], show_progressbar=None)
-        nt.assert_true(np.all(s.data == 2.))
+        np.testing.assert_equal(s.data, 2.)
         nt.assert_true(self.m[0].active_is_multidimensional)
 
         self.m[0]._active_array[0] = False

@@ -154,7 +154,7 @@ class TestFindPeaks1D:
         self.spectrum = s
 
     def test_single_spectrum(self):
-        peaks = self.spectrum[0].find_peaks1D_ohaver()
+        peaks = self.spectrum.inav[0].find_peaks1D_ohaver()
         nt.assert_true(np.allclose(
             peaks[0]['position'], self.peak_positions0, rtol=1e-5, atol=1e-4))
 
@@ -190,16 +190,16 @@ class TestInterpolateInBetween:
     def setUp(self):
         s = hs.signals.Spectrum(np.arange(40).reshape((2, 20)))
         s.axes_manager.signal_axes[0].scale = 0.1
-        s[:, 8:12] = 0
+        s.isig[8:12] = 0
         self.s = s
 
     def test_single_spectrum(self):
-        s = self.s[0]
+        s = self.s.inav[0]
         s.interpolate_in_between(8, 12, show_progressbar=None)
         nt.assert_true((s.data == np.arange(20)).all())
 
     def test_single_spectrum_in_units(self):
-        s = self.s[0]
+        s = self.s.inav[0]
         s.interpolate_in_between(0.8, 1.2, show_progressbar=None)
         nt.assert_true((s.data == np.arange(20)).all())
 
@@ -209,7 +209,7 @@ class TestInterpolateInBetween:
         nt.assert_true((s.data == np.arange(40).reshape(2, 20)).all())
 
     def test_delta_int(self):
-        s = self.s[0]
+        s = self.s.inav[0]
         s.change_dtype('float')
         s.data[12] *= 10
         s.interpolate_in_between(8, 12, delta=2, kind='cubic')
@@ -218,7 +218,7 @@ class TestInterpolateInBetween:
             s.data[8:12], np.array([44., 95.4, 139.6, 155.]))
 
     def test_delta_float(self):
-        s = self.s[0]
+        s = self.s.inav[0]
         s.change_dtype('float')
         s.data[12] *= 10.
         s.interpolate_in_between(8, 12, delta=0.31, kind='cubic')
