@@ -85,6 +85,26 @@ def file_writer(filename, signal, **kwds):
         if signal.metadata.General.title:
             kwds['description'] = signal.metadata.General.title
 
+    # resolution can only be provided in pixels / inch, so have to calculate
+    # the correct values:
+    def get_scale_factor(axis):
+        unit = axis.units
+        from traits.api import Undefined
+        if unit is Undefined or not isinstance(unit, basestring):
+            # does not matter, no units
+            return 0
+        from sympy.physics import units as u
+        unit = getattr(u, unit)
+        scale = axis.scale * unit / u.inch
+        from sympy.core.numbers import Rational
+        if isinstance(scale, Rational):
+            return scale.as_numer_demon()[::-1]
+        return 1 / float(scale)
+
+    resolution = (get_scale_factor(signal.axes_manager.signal_axes[0]),
+                  get_scale_factor(signal.axes_manager.signal_axes[1]))
+    if not (resolution[0] is 0 or resolution[1] is 0):
+        kwds['resolution'] = kwds.pop('resolution', resolution)
     imsave(filename, data,
            software="hyperspy",
            photometric=photometric,
