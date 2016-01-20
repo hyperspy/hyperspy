@@ -37,8 +37,8 @@ class TestlineFit:
         reso = s.metadata.Acquisition_instrument.TEM.Detector.EDS.\
             energy_resolution_MnKa,
         s.set_microscope_parameters(energy_resolution_MnKa=150)
-        with assert_warns(message=r"Energy resolution (FWHM at Mn Ka) changed "
-                          "from"):
+        with assert_warns(message=r"Energy resolution \(FWHM at Mn Ka\) "
+                          "changed from"):
             m.calibrate_energy_axis(calibrate='resolution')
         nt.assert_true(np.allclose(
             s.metadata.Acquisition_instrument.TEM.Detector.EDS.
