@@ -3595,7 +3595,11 @@ class Signal(FancySlicing,
         factors = (np.array(self.data.shape) /
                    np.array(new_shape_in_array))
         s = out or self._deepcopy_with_new_data(None)
-        s.data = array_tools.rebin(self.data, new_shape_in_array)
+        data = array_tools.rebin(self.data, new_shape_in_array)
+        if out:
+            out.data[:] = data
+        else:
+            s.data = data
         for axis, axis_src in zip(s.axes_manager._axes,
                                   self.axes_manager._axes):
             axis.scale = axis_src.scale * factors[axis.index_in_array]
@@ -3988,9 +3992,10 @@ class Signal(FancySlicing,
             ar_axes = ar_axes[0]
 
         s = out or self._deepcopy_with_new_data(None)
-        s.data = function(self.data,
-                          axis=ar_axes)
-        if out is None:
+        if out:
+            function(self.data, axis=ar_axes, out=out.data)
+        else:
+            s.data = function(self.data, axis=ar_axes)
             s._remove_axis([ax.index_in_axes_manager for ax in axes])
             return s
 
@@ -4390,11 +4395,14 @@ class Signal(FancySlicing,
         (64,64)
 
         """
-        s = self.indexmax(axis, out=out)
-        s = out or s
-        s.data = self.axes_manager[axis].index2value(s.data)
+        idx = self.indexmax(axis)
+        s = out or idx
+        data = self.axes_manager[axis].index2value(idx.data)
         if out is None:
-            return s
+            idx.data = data
+            return idx
+        else:
+            out.data[:] = data
     valuemax.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
 
     def get_histogram(self, bins='freedman', range_bins=None, out=None,
@@ -4455,7 +4463,7 @@ class Signal(FancySlicing,
             hist_spec = signals.Spectrum(hist)
         else:
             hist_spec = out
-            hist_spec.data = hist
+            hist_spec.data[:] = hist
         if bins == 'blocks':
             hist_spec.axes_manager.signal_axes[0].axis = bin_edges[:-1]
             warnings.warn(
