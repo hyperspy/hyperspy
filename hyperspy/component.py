@@ -31,6 +31,10 @@ from hyperspy.misc.io.tools import (incremental_filename,
 from hyperspy.exceptions import NavigationDimensionError
 from hyperspy.misc.export_dictionary import export_to_dictionary, load_from_dictionary
 
+import logging
+
+_logger = logging.getLogger(__name__)
+
 
 class NoneFloat(t.CFloat):   # Lazy solution, but usable
     default_value = None
@@ -609,9 +613,8 @@ class Component(t.HasTraits):
             raise ValueError('Only boolean values are permitted')
 
         if value == self.active_is_multidimensional:
-            warnings.warn(
-                '`active_is_multidimensional` already %s for %s' %
-                (str(value), self.name), RuntimeWarning)
+            _logger.warn('`active_is_multidimensional` already %s for %s' %
+                         (str(value), self.name))
             return
 
         if value:  # Turn on

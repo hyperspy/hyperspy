@@ -53,8 +53,8 @@ class TestAlignTools:
         smax = self.ishifts.max(0)
         offsets = self.lena_offset + self.offsets / self.scales - smin
         size = np.array((100, 100)) - (smax - smin)
-        self.aligned = im[offsets[0]:offsets[0] + size[0],
-                          offsets[1]:offsets[1] + size[1]]
+        self.aligned = im[int(offsets[0]):int(offsets[0] + size[0]),
+                          int(offsets[1]):int(offsets[1] + size[1])]
 
     def test_estimate_shift(self):
         s = self.spectrum
