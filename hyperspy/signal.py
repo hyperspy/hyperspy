@@ -79,7 +79,7 @@ from hyperspy.misc.hspy_warnings import VisibleDeprecationWarning
 from hyperspy.misc.slicing import SpecialSlicers, FancySlicing
 from hyperspy.misc.utils import slugify
 from hyperspy.docstrings.signal import (
-	ONE_AXIS_PARAMETER, MANY_AXIS_PARAMETER, OUT_ARG)
+    ONE_AXIS_PARAMETER, MANY_AXIS_PARAMETER, OUT_ARG)
 
 
 class ModelManager(object):
@@ -3200,9 +3200,9 @@ class Signal(FancySlicing,
                'axes': self.axes_manager._get_axes_dicts(),
                'metadata': self.metadata.deepcopy().as_dictionary(),
                'original_metadata':
-                   self.original_metadata.deepcopy().as_dictionary(),
+               self.original_metadata.deepcopy().as_dictionary(),
                'tmp_parameters':
-                   self.tmp_parameters.deepcopy().as_dictionary()}
+               self.tmp_parameters.deepcopy().as_dictionary()}
         if add_learning_results and hasattr(self, 'learning_results'):
             dic['learning_results'] = copy.deepcopy(
                 self.learning_results.__dict__)
@@ -4200,7 +4200,7 @@ class Signal(FancySlicing,
         axis %s
         order : int
             the order of the derivative
-		%s
+                %s
 
         See also
         --------

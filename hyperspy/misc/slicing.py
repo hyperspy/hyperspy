@@ -193,7 +193,7 @@ class FancySlicing(object):
         else:
             _obj = out
             _obj.axes_manager = self.axes_manager.deepcopy()
-            _obj.data = self._data[array_slices] # Changes data id!
+            _obj.data = self._data[array_slices]  # Changes data id!
         for slice_, axis in zip(array_slices, _obj.axes_manager._axes):
             if (isinstance(slice_, slice) or
                     len(self.axes_manager._axes) < 2):

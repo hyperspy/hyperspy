@@ -323,6 +323,6 @@ class Test_energy_units:
         s.axes_manager.signal_axes[0].units = 'keV'
 
         nt.assert_equal(s._get_line_energy('Al_Ka', FWHM_MnKa='auto'),
-                                (1.4865, 0.07661266213883969))
+                        (1.4865, 0.07661266213883969))
         nt.assert_equal(s._get_line_energy('Al_Ka', FWHM_MnKa=128),
-                                (1.4865, 0.073167615787314))
+                        (1.4865, 0.073167615787314))

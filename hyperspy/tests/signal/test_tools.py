@@ -488,22 +488,27 @@ class TestOutArg:
         s = self.s
         self._run_single(s.as_image, s, dict(image_axes=(
             s.axes_manager.navigation_axes[0:2])))
+
     def test_inav(self):
         s = self.s
         self._run_single(s.inav.__getitem__, s, {
-            "slices":(slice(2, 4, None), slice(None), slice(0,2,None))})
+            "slices": (slice(2, 4, None), slice(None), slice(0, 2, None))})
 
     def test_isig(self):
         s = self.s
         self._run_single(s.isig.__getitem__, s, {
-            "slices":(slice(2, 4, None),)})
+            "slices": (slice(2, 4, None),)})
 
     def test_inav_variance(self):
         s = self.s
         s.metadata.set_item("Signal.Noise_properties.variance",
-            s.deepcopy())
+                            s.deepcopy())
         f = s.inav.__getitem__
-        kwargs = {"slices":(slice(2, 4, None), slice(None), slice(0,2,None))}
+        kwargs = {
+            "slices": (
+                slice(
+                    2, 4, None), slice(None), slice(
+                    0, 2, None))}
         s1 = f(**kwargs)
         s2 = f(**kwargs)
         assert_array_equal(s1.metadata.Signal.Noise_properties.variance.data,
@@ -512,9 +517,9 @@ class TestOutArg:
     def test_isig_variance(self):
         s = self.s
         s.metadata.set_item("Signal.Noise_properties.variance",
-            s.deepcopy())
+                            s.deepcopy())
         f = s.isig.__getitem__
-        kwargs = {"slices":(slice(2, 4, None),)}
+        kwargs = {"slices": (slice(2, 4, None),)}
         s1 = f(**kwargs)
         s2 = f(**kwargs)
         assert_array_equal(s1.metadata.Signal.Noise_properties.variance.data,
