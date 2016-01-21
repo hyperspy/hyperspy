@@ -23,6 +23,7 @@ from hyperspy.signals import EDSSEMSpectrum
 from hyperspy.defaults_parser import preferences
 from hyperspy.components import Gaussian
 from hyperspy import utils
+from hyperspy.misc.test_utils import assert_warns
 
 
 class Test_metadata:
@@ -146,7 +147,8 @@ class Test_metadata:
         s.metadata.Acquisition_instrument.SEM.beam_energy = 200
         s.set_elements(['Au', 'Ni'])
         s.set_lines([])
-        nt.assert_equal(s.metadata.Sample.xray_lines, ['Au_La', 'Ni_Ka'])
+        nt.assert_equal(s.metadata.Sample.xray_lines,
+                        ['Au_La', 'Ni_Ka'])
 
     def test_default_param(self):
         s = self.signal
@@ -156,7 +158,7 @@ class Test_metadata:
             preferences.EDS.eds_mn_ka)
 
     def test_SEM_to_TEM(self):
-        s = self.signal[0, 0]
+        s = self.signal.inav[0, 0]
         signal_type = 'EDS_TEM'
         mp = s.metadata
         mp.Acquisition_instrument.SEM.Detector.EDS.energy_resolution_MnKa = \
@@ -211,21 +213,19 @@ class Test_get_lines_intentisity:
                                     integration_windows=5)[0]
         nt.assert_true(
             np.allclose(24.99516, sAl.data[0, 0, 0], atol=1e-3))
-        sAl = s[0].get_lines_intensity(["Al_Ka"],
-                                       plot_result=False,
-                                       integration_windows=5)[0]
+        sAl = s.inav[0].get_lines_intensity(
+            ["Al_Ka"], plot_result=False, integration_windows=5)[0]
         nt.assert_true(
             np.allclose(24.99516, sAl.data[0, 0], atol=1e-3))
-        sAl = s[0, 0].get_lines_intensity(["Al_Ka"],
-                                          plot_result=False,
-                                          integration_windows=5)[0]
+        sAl = s.inav[0, 0].get_lines_intensity(
+            ["Al_Ka"], plot_result=False, integration_windows=5)[0]
         nt.assert_true(np.allclose(24.99516, sAl.data[0], atol=1e-3))
-        sAl = s[0, 0, 0].get_lines_intensity(["Al_Ka"],
-                                             plot_result=False,
-                                             integration_windows=5)[0]
+        sAl = s.inav[0, 0, 0].get_lines_intensity(
+            ["Al_Ka"], plot_result=False, integration_windows=5)[0]
         nt.assert_true(np.allclose(24.99516, sAl.data, atol=1e-3))
         s.axes_manager[-1].offset = 1.0
-        sC = s.get_lines_intensity(["C_Ka"], plot_result=False)
+        with assert_warns(message="C_Ka is not in the data energy range."):
+            sC = s.get_lines_intensity(["C_Ka"], plot_result=False)
         nt.assert_equal(len(sC), 0)
         nt.assert_true(sAl.metadata.Sample.elements, ["Al"])
         nt.assert_true(sAl.metadata.Sample.xray_lines, ["Al_Ka"])
