@@ -441,7 +441,7 @@ class BaseModel(list):
                                      leave=True):
                 self.fetch_stored_values(only_fixed=False)
                 data[self.axes_manager._getitem_tuple][
-                    self.channel_switches] = self.__call__(
+                    np.where(self.channel_switches)] = self.__call__(
                     non_convolved=not self.convolved, onlyactive=True).ravel()
             if out_of_range_to_nan is True:
                 self.channel_switches[:] = channel_switches_backup
@@ -576,7 +576,7 @@ class BaseModel(list):
         if out_of_range2nans is True:
             ns = np.empty(self.axis.axis.shape)
             ns.fill(np.nan)
-            ns[self.channel_switches] = s
+            ns[np.where(self.channel_switches)] = s
             s = ns
         return s
 
@@ -607,11 +607,12 @@ class BaseModel(list):
             variance = self.signal.metadata.Signal.Noise_properties.variance
             if isinstance(variance, Signal):
                 variance = variance.data.__getitem__(
-                    self.axes_manager._getitem_tuple)[self.channel_switches]
+                    self.axes_manager._getitem_tuple)[np.where(
+                    self.channel_switches)]
         else:
             variance = 1.0
-        d = self(onlyactive=True).ravel() - \
-            self.signal()[self.channel_switches]
+        d = self(onlyactive=True).ravel() - self.signal()[np.where(
+            self.channel_switches)]
         d *= d / (1. * variance)  # d = difference^2 / variance.
         self.chisq.data[self.signal.axes_manager.indices[::-1]] = d.sum()
 
@@ -735,7 +736,7 @@ class BaseModel(list):
                             self.signal.axes_manager.navigation_shape):
                         variance = variance.data.__getitem__(
                             self.axes_manager._getitem_tuple)[
-                            self.channel_switches]
+                            np.where(self.channel_switches)]
                     else:
                         raise AttributeError(
                             "The `navigation_shape` of the variance signals "
@@ -751,7 +752,7 @@ class BaseModel(list):
             raise ValueError(
                 'method must be "ls" or "ml" but %s given' %
                 method)
-        args = (self.signal()[self.channel_switches],
+        args = (self.signal()[np.where(self.channel_switches)],
                 weights)
 
         # Least squares "dedicated" fitters
@@ -772,10 +773,12 @@ class BaseModel(list):
         elif fitter == "odr":
             modelo = odr.Model(fcn=self._function4odr,
                                fjacb=odr_jacobian)
-            mydata = odr.RealData(self.axis.axis[self.channel_switches],
-                                  self.signal()[self.channel_switches],
-                                  sx=None,
-                                  sy=(1 / weights if weights is not None else None))
+            mydata = odr.RealData(self.axis.axis[np.where(
+                self.channel_switches)],
+                self.signal()[np.where(
+                    self.channel_switches)],
+                sx=None,
+                sy=(1 / weights if weights is not None else None))
             myodr = odr.ODR(mydata, modelo, beta0=self.p0[:])
             myoutput = myodr.run()
             result = myoutput.beta
