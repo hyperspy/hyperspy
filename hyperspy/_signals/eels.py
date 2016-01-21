@@ -346,7 +346,7 @@ class EELSSpectrum(Spectrum):
                 I0.axes_manager._get_axis_attribute_values('navigate'))
             I0.axes_manager.set_signal_dimension(0)
             for i, s in progressbar(enumerate(self),
-                                    total=self.axes_maanger.navigation_size,
+                                    total=self.axes_manager.navigation_size,
                                     disable=not show_progressbar,
                                     leave=True):
                 threshold_ = threshold[self.axes_manager.indices].data[0]
