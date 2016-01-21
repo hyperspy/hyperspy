@@ -2851,7 +2851,6 @@ class Signal(FancySlicing,
 
         return string.encode('utf8')
 
-
     def _binary_operator_ruler(self, other, op_name):
         exception_message = (
             "Invalid dimensions for this operation")

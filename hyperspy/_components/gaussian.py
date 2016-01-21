@@ -107,20 +107,20 @@ class Gaussian(Component):
         A = self.A.value
         s = self.sigma.value
         c = self.centre.value
-        return A * (1 / (s * sqrt2pi)) * np.exp(-(x-c)**2 / (2 * s**2))
+        return A * (1 / (s * sqrt2pi)) * np.exp(-(x - c)**2 / (2 * s**2))
 
     def grad_A(self, x):
         return self.function(x) / self.A.value
 
     def grad_sigma(self, x):
-        d2 = (x-self.centre.value)**2
+        d2 = (x - self.centre.value)**2
         s2 = self.sigma.value**2
         A = self.A.value
-        return (d2 * A * np.exp(-d2 / (2*s2))) / (sqrt2pi * s2**2) - \
-            (np.exp(-d2 / (2*s2)) * A) / (sqrt2pi * s2)
+        return (d2 * A * np.exp(-d2 / (2 * s2))) / (sqrt2pi * s2**2) - \
+            (np.exp(-d2 / (2 * s2)) * A) / (sqrt2pi * s2)
 
     def grad_centre(self, x):
-        d = x-self.centre.value
+        d = x - self.centre.value
         s = self.sigma.value
         A = self.A.value
         return (d * np.exp(-d**2 / (2 * s**2)) * A) / (sqrt2pi * s**3)
