@@ -32,7 +32,7 @@ from scipy.optimize import (leastsq,
                             fmin_powell)
 
 from hyperspy import messages
-from tqdm import tqdm as progressbar
+from hyperspy.external.progressbar import progressbar
 from hyperspy.defaults_parser import preferences
 from hyperspy.external.mpfit.mpfit import mpfit
 from hyperspy.component import Component
