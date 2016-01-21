@@ -4470,7 +4470,8 @@ class Signal(FancySlicing,
         hist_spec.metadata.General.title = (self.metadata.General.title +
                                             " histogram")
         hist_spec.metadata.Signal.binned = True
-        return hist_spec
+        if out is None:
+            return hist_spec
     get_histogram.__doc__ %= OUT_ARG
 
     def map(self, function,

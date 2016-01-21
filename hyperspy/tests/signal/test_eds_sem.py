@@ -73,7 +73,7 @@ class Test_metadata:
         s.metadata.Acquisition_instrument.SEM.Detector.EDS.live_time = 4.2
         s_resum = s.sum(0)
         r = s.sum(0, out=sSum)
-        nt.assert_equal(r, None)
+        nt.assert_is_none(r)
         nt.assert_equal(
             s_resum.metadata.Acquisition_instrument.SEM.Detector.EDS.live_time,
             sSum.metadata.Acquisition_instrument.SEM.Detector.EDS.live_time)

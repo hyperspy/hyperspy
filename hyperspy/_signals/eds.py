@@ -180,7 +180,7 @@ class EDSSpectrum(Spectrum):
         if axis is None:
             axis = self.axes_manager.navigation_axes
         # modify time spend per spectrum
-        s = super(EDSSpectrum, self).sum(axis, out)
+        s = super(EDSSpectrum, self).sum(axis=axis, out=out)
         s = out or s
         if "Acquisition_instrument.SEM" in s.metadata:
             mp = s.metadata.Acquisition_instrument.SEM
