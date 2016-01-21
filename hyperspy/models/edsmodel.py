@@ -21,7 +21,7 @@ from __future__ import division
 import warnings
 import numpy as np
 import math
-from contextlib import contextmanager
+from hyperspy.misc.utils import stash_active_state
 
 from hyperspy.models.model1D import Model1D
 from hyperspy._signals.eds import EDSSpectrum
@@ -88,25 +88,6 @@ def _get_offset(diff):
 
 def _get_scale(E1, E_ref1, fact):
     return lambda E: E1 + fact * (E - E_ref1)
-
-
-@contextmanager
-def stash_active_state(model):
-    active_state = []
-    for component in model:
-        if component.active_is_multidimensional:
-            active_state.append(component._active_array)
-        else:
-            active_state.append(component.active)
-    yield
-    for component in model:
-        active_s = active_state.pop(0)
-        if isinstance(active_s, bool):
-            component.active = active_s
-        else:
-            if not component.active_is_multidimensional:
-                component.active_is_multidimensional = True
-            component._active_array[:] = active_s
 
 
 class EDSModel(Model1D):
