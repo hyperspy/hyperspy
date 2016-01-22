@@ -199,3 +199,174 @@ class BaseROI(t.HasTraits):
                 raise ValueError("Could not find valid axes configuration.")
 
         return axes_out
+
+
+def _get_mpl_ax(plot, axes):
+    """
+    Returns MPL Axes that contains the `axes`.
+
+    The space of the first DataAxis in axes will be used to determine which
+    plot's matplotlib Axes to return.
+
+    Arguments:
+    ----------
+        plot : MPL_HyperExplorer
+            The explorer that contains the navigation and signal plots
+        axes : collection of DataAxis
+            The axes to infer from.
+    """
+    if axes[0].navigate:
+        ax = plot.navigator_plot.ax
+    else:
+        ax = plot.signal_plot.ax
+    return ax
+
+
+class BaseInteractiveROI(BaseROI):
+
+    """Base class for interactive ROIs, i.e. ROIs with widget interaction.
+    The base class defines a lot of the common code for interacting with
+    widgets, but inhertors need to implement the following functions:
+
+    _get_widget_type()
+    _apply_roi2widget(widget)
+    _set_from_widget(widget)
+    """
+
+    def __init__(self):
+        super(BaseInteractiveROI, self).__init__()
+        self.widgets = set()
+
+    def update(self):
+        """Function responsible for updating anything that depends on the ROI.
+        It should be called by implementors whenever the ROI changes.
+        This implementation  updates the widgets associated with it, and
+        triggers the changed event.
+        """
+        if self.is_valid():
+            self._update_widgets()
+            self.events.changed.trigger(self)
+
+    def _update_widgets(self, exclude=set()):
+        """Internal function for updating the associated widgets to the
+        geometry contained in the ROI.
+
+        Arguments
+        ---------
+        exclude : set()
+            A set of widgets to exclude from the update. Useful e.g. if a
+            widget has triggered a change in the ROI: Then all widgets,
+            excluding the one that was the source for the change, should be
+            updated.
+        """
+        if not isinstance(exclude, set):
+            exclude = set(exclude)
+        for w in self.widgets - exclude:
+            with w.events.changed.suppress_callback(self._on_widget_change):
+                self._apply_roi2widget(w)
+
+    def _get_widget_type(self, axes, signal):
+        """Get the type of a widget that can represent the ROI on the given
+        axes and signal.
+        """
+        raise NotImplementedError()
+
+    def _apply_roi2widget(self, widget):
+        """This function is responsible for applying the ROI geometry to the
+        widget. When this function is called, the widget's events are already
+        suppressed, so this should not be necessary for _apply_roi2widget to
+        handle.
+        """
+        raise NotImplementedError()
+
+    def _set_from_widget(self, widget):
+        """Sets the internal representation of the ROI from the passed widget,
+        without doing anything to events.
+        """
+        raise NotImplementedError()
+
+    def _on_widget_change(self, widget):
+        """Callback for widgets' 'changed' event. Updates the internal state
+        from the widget, and triggers events (excluding connections to the
+        source widget).
+        """
+        with self.events.suppress():
+            self._bounds_check = False
+            try:
+                self._set_from_widget(widget)
+            finally:
+                self._bounds_check = True
+        self._update_widgets(exclude=(widget,))
+        self.events.changed.trigger(self)
+
+    def add_widget(self, signal, axes=None, widget=None, color='green'):
+        """Add a widget to visually represent the ROI, and connect it so any
+        changes in either are reflected in the other. Note that only one
+        widget can be added per signal/axes combination.
+
+        Arguments:
+        ----------
+        signal : Signal
+            The signal to witch the widget is added. This is used to determine
+            with plot to add the widget to, and it supplies the axes_manager
+            for the widget.
+        axes : specification of axes to use, default = None
+            The axes argument specifies which axes the ROI will be applied on.
+            The DataAxis in the collection can be either of the following:
+                * "navigation" or "signal", in which the first axes of that
+                  space's axes will be used.
+                * a tuple of:
+                    - DataAxis. These will not be checked with
+                      signal.axes_manager.
+                    - anything that will index signal.axes_manager
+                * For any other value, it will check whether the navigation
+                  space can fit the right number of axis, and use that if it
+                  fits. If not, it will try the signal space.
+        widget : Widget or None (default)
+            If specified, this is the widget that will be added. If None, the
+            default widget will be used, as given by _get_widget_type().
+        color : Matplotlib color specifier (default: 'green')
+            The color for the widget. Any format that matplotlib uses should be
+            ok. This will not change the color fo any widget passed with the
+            'widget' argument.
+        """
+        axes = self._parse_axes(axes, signal.axes_manager,)
+        if widget is None:
+            widget = self._get_widget_type(axes, signal)(signal.axes_manager)
+            widget.color = color
+
+        # Remove existing ROI, if it exsists and axes match
+        if signal in self.signal_map and \
+                self.signal_map[signal][1] == axes:
+            self.remove_widget(signal)
+
+        if axes is not None:
+            # Set DataAxes
+            widget.axes = axes
+        with widget.events.changed.suppress_callback(self._on_widget_change):
+            self._apply_roi2widget(widget)
+        if widget.ax is None:
+            ax = _get_mpl_ax(signal._plot, axes)
+            widget.set_mpl_ax(ax)
+
+        # Connect widget changes to on_widget_change
+        widget.events.changed.connect(self._on_widget_change, 1)
+        # When widget closes, remove from internal list
+        widget.events.closed.connect(self._remove_widget, 1)
+        self.widgets.add(widget)
+        self.signal_map[signal] = (widget, axes)
+        return widget
+
+    def _remove_widget(self, widget):
+        widget.events.closed.disconnect(self._remove_widget)
+        widget.events.changed.disconnect(self._on_widget_change)
+        widget.close()
+        for signal, w in self.signal_map.iteritems():
+            if w == widget:
+                self.signal_map.pop(signal)
+                break
+
+    def remove_widget(self, signal):
+        if signal in self.signal_map:
+            w = self.signal_map.pop(signal)[0]
+            self._remove_widget(w)
