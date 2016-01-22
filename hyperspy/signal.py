@@ -3121,7 +3121,8 @@ class Signal(FancySlicing,
         dic = {'data': self.data,
                'axes': self.axes_manager._get_axes_dicts(),
                'metadata': self.metadata.deepcopy().as_dictionary(),
-               'original_metadata': self.original_metadata.deepcopy().as_dictionary(),
+               'original_metadata':
+                   self.original_metadata.deepcopy().as_dictionary(),
                'tmp_parameters': self.tmp_parameters.deepcopy().as_dictionary()}
         if add_learning_results and hasattr(self, 'learning_results'):
             dic['learning_results'] = copy.deepcopy(

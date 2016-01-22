@@ -169,7 +169,7 @@ class Test_quantification:
         with ignore_warning(message="divide by zero encountered",
                             category=RuntimeWarning):
             quant = utils_eds.quantification_cliff_lorimer(
-                    intens, [1, 1, 3]).T
+                intens, [1, 1, 3]).T
         assert_true(np.allclose(
             quant,
             np.array([[0.2, 0.2, 0.6],

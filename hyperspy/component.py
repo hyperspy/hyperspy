@@ -30,7 +30,7 @@ from hyperspy.misc.io.tools import (incremental_filename,
                                     append2pathname,)
 from hyperspy.exceptions import NavigationDimensionError
 from hyperspy.misc.export_dictionary import export_to_dictionary, \
-                                            load_from_dictionary
+    load_from_dictionary
 from hyperspy.events import Events, Event
 from hyperspy.misc.hspy_warnings import VisibleDeprecationWarning
 
