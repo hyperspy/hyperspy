@@ -415,9 +415,9 @@ class ResizableDraggableRectangle(DraggableSquare, ResizersMixin):
                 if self._size[1] < yaxis.scale:
                     self._size[1] = yaxis.scale
                 if posx is not None:
-                    posx += 0.5
+                    posx += 0.5 * xaxis.scale
                 if posy is not None:
-                    posy += 0.5
+                    posy += 0.5 * yaxis.scale
                 # Validate the geometry
                 self._validate_geometry(posx, posy)
             # Finally, apply any changes and trigger events/redraw:
