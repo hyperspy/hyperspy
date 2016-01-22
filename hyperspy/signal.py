@@ -3920,12 +3920,11 @@ class Signal(FancySlicing,
         s = out or self._deepcopy_with_new_data(None)
         if out:
             function(self.data, axis=ar_axes, out=out.data)
+            s.events.data_changed.trigger(self)
         else:
             s.data = function(self.data, axis=ar_axes)
             s._remove_axis([ax.index_in_axes_manager for ax in axes])
             return s
-        else:
-            s.events.data_changed.trigger(self)
 
     def sum(self, axis=None, out=None):
         """Sum the data over the given axes.
@@ -4133,7 +4132,7 @@ class Signal(FancySlicing,
         axis %s
         order : int
             the order of the derivative
-                %s
+        %s
 
         See also
         --------
