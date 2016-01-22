@@ -742,3 +742,243 @@ class CircleROI(BaseInteractiveROI):
                 self.cy,
                 self.r,
                 self.r_inner)
+
+
+class Line2DROI(BaseInteractiveROI):
+
+    x1, y1, x2, y2, linewidth = (t.CFloat(t.Undefined),) * 5
+    _ndim = 2
+
+    def __init__(self, x1, y1, x2, y2, linewidth):
+        super(Line2DROI, self).__init__()
+        self.x1, self.y1, self.x2, self.y2 = x1, y1, x2, y2
+        self.linewidth = linewidth
+
+    def is_valid(self):
+        return t.Undefined not in (self.x1, self.y1, self.x2, self.y2)
+
+    def _x1_changed(self, old, new):
+        self.update()
+
+    def _x2_changed(self, old, new):
+        self.update()
+
+    def _y1_changed(self, old, new):
+        self.update()
+
+    def _y2_changed(self, old, new):
+        self.update()
+
+    def _linewidth_changed(self, old, new):
+        self.update()
+
+    def _set_from_widget(self, widget):
+        """Sets the internal representation of the ROI from the passed widget,
+        without doing anything to events.
+        """
+        c = widget.position
+        s = widget.size[0]
+        (self.x1, self.y1), (self.x2, self.y2) = c
+        self.linewidth = s
+
+    def _apply_roi2widget(self, widget):
+        widget.position = (self.x1, self.y1), (self.x2, self.y2)
+        widget.size = np.array([self.linewidth])
+
+    def _get_widget_type(self, axes, signal):
+        return widgets.DraggableResizable2DLine
+
+    @staticmethod
+    def _line_profile_coordinates(src, dst, linewidth=1):
+        """Return the coordinates of the profile of an image along a scan line.
+        Parameters
+        ----------
+        src : 2-tuple of numeric scalar (float or int)
+            The start point of the scan line.
+        dst : 2-tuple of numeric scalar (float or int)
+            The end point of the scan line.
+        linewidth : int, optional
+            Width of the scan, perpendicular to the line
+        Returns
+        -------
+        coords : array, shape (2, N, C), float
+            The coordinates of the profile along the scan line. The length of
+            the profile is the ceil of the computed length of the scan line.
+        Notes
+        -----
+        This is a utility method meant to be used internally by skimage
+        functions. The destination point is included in the profile, in
+        contrast to standard numpy indexing.
+        """
+        src_row, src_col = src = np.asarray(src, dtype=float)
+        dst_row, dst_col = dst = np.asarray(dst, dtype=float)
+        d_row, d_col = dst - src
+        theta = np.arctan2(d_row, d_col)
+
+        length = np.ceil(np.hypot(d_row, d_col) + 1)
+        # we add one above because we include the last point in the profile
+        # (in contrast to standard numpy indexing)
+        line_col = np.linspace(src_col, dst_col, length)
+        line_row = np.linspace(src_row, dst_row, length)
+
+        data = np.zeros((2, length, linewidth))
+        data[0, :, :] = np.tile(line_col, [linewidth, 1]).T
+        data[1, :, :] = np.tile(line_row, [linewidth, 1]).T
+
+        if linewidth != 1:
+            # we subtract 1 from linewidth to change from pixel-counting
+            # (make this line 3 pixels wide) to point distances (the
+            # distance between pixel centers)
+            col_width = (linewidth - 1) * np.sin(-theta) / 2
+            row_width = (linewidth - 1) * np.cos(theta) / 2
+            row_off = np.linspace(-row_width, row_width, linewidth)
+            col_off = np.linspace(-col_width, col_width, linewidth)
+            data[0, :, :] += np.tile(col_off, [length, 1])
+            data[1, :, :] += np.tile(row_off, [length, 1])
+        return data
+
+    @property
+    def length(self):
+        p0 = np.array((self.x1, self.y1), dtype=np.float)
+        p1 = np.array((self.x2, self.y2), dtype=np.float)
+        d_row, d_col = p1 - p0
+        return np.hypot(d_row, d_col)
+
+    @staticmethod
+    def profile_line(img, src, dst, axes, linewidth=1,
+                     order=1, mode='constant', cval=0.0):
+        """Return the intensity profile of an image measured along a scan line.
+        Parameters
+        ----------
+        img : numeric array, shape (M, N[, C])
+            The image, either grayscale (2D array) or multichannel
+            (3D array, where the final axis contains the channel
+            information).
+        src : 2-tuple of numeric scalar (float or int)
+            The start point of the scan line.
+        dst : 2-tuple of numeric scalar (float or int)
+            The end point of the scan line.
+        linewidth : int, optional
+            Width of the scan, perpendicular to the line
+        order : int in {0, 1, 2, 3, 4, 5}, optional
+            The order of the spline interpolation to compute image values at
+            non-integer coordinates. 0 means nearest-neighbor interpolation.
+        mode : string, one of {'constant', 'nearest', 'reflect', 'wrap'},
+                optional
+            How to compute any values falling outside of the image.
+        cval : float, optional
+            If `mode` is 'constant', what constant value to use outside the
+            image.
+        Returns
+        -------
+        return_value : array
+            The intensity profile along the scan line. The length of the
+            profile is the ceil of the computed length of the scan line.
+        Examples
+        --------
+        >>> x = np.array([[1, 1, 1, 2, 2, 2]])
+        >>> img = np.vstack([np.zeros_like(x), x, x, x, np.zeros_like(x)])
+        >>> img
+        array([[0, 0, 0, 0, 0, 0],
+               [1, 1, 1, 2, 2, 2],
+               [1, 1, 1, 2, 2, 2],
+               [1, 1, 1, 2, 2, 2],
+               [0, 0, 0, 0, 0, 0]])
+        >>> profile_line(img, (2, 1), (2, 4))
+        array([ 1.,  1.,  2.,  2.])
+        Notes
+        -----
+        The destination point is included in the profile, in contrast to
+        standard numpy indexing.
+        """
+
+        import scipy.ndimage as nd
+        p0 = ((src[0] - axes[0].offset) / axes[0].scale,
+              (src[1] - axes[1].offset) / axes[1].scale)
+        p1 = ((dst[0] - axes[0].offset) / axes[0].scale,
+              (dst[1] - axes[1].offset) / axes[1].scale)
+        perp_lines = Line2DROI._line_profile_coordinates(p0, p1,
+                                                         linewidth=linewidth)
+        if img.ndim > 2:
+            img = np.rollaxis(img, axes[0].index_in_array, 0)
+            img = np.rollaxis(img, axes[1].index_in_array, 1)
+            orig_shape = img.shape
+            img = np.reshape(img, orig_shape[0:2] +
+                             (np.product(orig_shape[2:]),))
+            pixels = [nd.map_coordinates(img[..., i], perp_lines,
+                                         order=order, mode=mode, cval=cval)
+                      for i in xrange(img.shape[2])]
+            i0 = min(axes[0].index_in_array, axes[1].index_in_array)
+            pixels = np.transpose(np.asarray(pixels), (1, 2, 0))
+            intensities = pixels.mean(axis=1)
+            intensities = np.rollaxis(
+                np.reshape(intensities,
+                           intensities.shape[0:1] + orig_shape[2:]),
+                0, i0)
+        else:
+            pixels = nd.map_coordinates(img, perp_lines,
+                                        order=order, mode=mode, cval=cval)
+            intensities = pixels.mean(axis=1)
+
+        return intensities
+
+    def __call__(self, signal, axes=None, order=0):
+        """Slice the signal according to the ROI, and return it.
+
+        Arguments
+        ---------
+        signal : Signal
+            The signal to slice with the ROI.
+        axes : specification of axes to use, default = None
+            The axes argument specifies which axes the ROI will be applied on.
+            The items in the collection can be either of the following:
+                * a tuple of:
+                    - DataAxis. These will not be checked with
+                      signal.axes_manager.
+                    - anything that will index signal.axes_manager
+                * For any other value, it will check whether the navigation
+                  space can fit the right number of axis, and use that if it
+                  fits. If not, it will try the signal space.
+        """
+        if axes is None and signal in self.signal_map:
+            axes = self.signal_map[signal][1]
+        else:
+            axes = self._parse_axes(axes, signal.axes_manager)
+        print axes
+        profile = Line2DROI.profile_line(signal.data,
+                                         (self.x1, self.y1),
+                                         (self.x2, self.y2),
+                                         axes=axes,
+                                         linewidth=self.linewidth,
+                                         order=order)
+        length = np.linalg.norm(np.diff(
+                np.array(((self.x1, self.y1), (self.x2, self.y2))), axis=0),
+                axis=1)[0]
+        axm = signal.axes_manager.deepcopy()
+        idx = []
+        for ax in axes:
+            idx.append(ax.index_in_axes_manager)
+        for i in reversed(sorted(idx)):  # Remove in reversed order
+            axm.remove(i)
+        axis = DataAxis(len(profile),
+                        scale=length/len(profile),
+                        units=axes[0].units,
+                        navigate=axes[0].navigate)
+        axis.axes_manager = axm
+        i0 = min(axes[0].index_in_array, axes[1].index_in_array)
+        axm._axes.insert(i0, axis)
+        from hyperspy.signals import Signal
+        roi = Signal(profile, axes=axm._get_axes_dicts(),
+                     metadata=signal.metadata.deepcopy().as_dictionary(),
+                     original_metadata=signal.original_metadata.
+                     deepcopy().as_dictionary())
+        return roi
+
+    def __repr__(self):
+        return "%s(x1=%f, y1=%f, x2=%f, y2=%f, linewidth=%f)" % (
+            self.__class__.__name__,
+            self.x1,
+            self.y1,
+            self.x2,
+            self.y2,
+            self.linewidth)
