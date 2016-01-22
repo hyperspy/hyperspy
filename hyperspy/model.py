@@ -610,7 +610,7 @@ class BaseModel(list):
             if isinstance(variance, Signal):
                 variance = variance.data.__getitem__(
                     self.axes_manager._getitem_tuple)[np.where(
-                        self.channel_switches)]
+                    self.channel_switches)]
         else:
             variance = 1.0
         d = self(onlyactive=True).ravel() - self.signal()[np.where(
@@ -776,11 +776,11 @@ class BaseModel(list):
             modelo = odr.Model(fcn=self._function4odr,
                                fjacb=odr_jacobian)
             mydata = odr.RealData(self.axis.axis[np.where(
-                                      self.channel_switches)],
-                                  self.signal()[np.where(
-                                      self.channel_switches)],
-                                  sx=None,
-                                  sy=(1 / weights if weights is not None else None))
+                self.channel_switches)],
+                self.signal()[np.where(
+                    self.channel_switches)],
+                sx=None,
+                sy=(1 / weights if weights is not None else None))
             myodr = odr.ODR(mydata, modelo, beta0=self.p0[:])
             myoutput = myodr.run()
             result = myoutput.beta

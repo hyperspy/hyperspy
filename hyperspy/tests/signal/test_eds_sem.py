@@ -74,7 +74,7 @@ class Test_metadata:
         s.metadata.Acquisition_instrument.SEM.Detector.EDS.live_time = 4.2
         s_resum = s.sum(0)
         r = s.sum(0, out=sSum)
-        nt.assert_equal(r, None)
+        nt.assert_is_none(r)
         nt.assert_equal(
             s_resum.metadata.Acquisition_instrument.SEM.Detector.EDS.live_time,
             sSum.metadata.Acquisition_instrument.SEM.Detector.EDS.live_time)
@@ -147,7 +147,8 @@ class Test_metadata:
         s.metadata.Acquisition_instrument.SEM.beam_energy = 200
         s.set_elements(['Au', 'Ni'])
         s.set_lines([])
-        nt.assert_equal(s.metadata.Sample.xray_lines, ['Au_La', 'Ni_Ka'])
+        nt.assert_equal(s.metadata.Sample.xray_lines,
+                        ['Au_La', 'Ni_Ka'])
 
     def test_default_param(self):
         s = self.signal

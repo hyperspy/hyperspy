@@ -937,10 +937,10 @@ will be placed into that signal, instead of being returned in a new signal.
     >>> s_sum = s.sum(0)
     >>> s_sum.data
     array(45)
-    >>> s[:5].sum(0, out=s_sum)
+    >>> s.inav[:5].sum(0, out=s_sum)
     >>> s_sum.data
     10
-    >>> s_roi = s[:3]
+    >>> s_roi = s.inav[:3]
     >>> s_roi
     <Spectrum, title: , dimensions: (|3)>
     >>> s.__getitem__(slice(None, 5), out=s_roi)

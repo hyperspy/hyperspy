@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # Copyright 2007-2016 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
 #  HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 from __future__ import division
 
@@ -272,17 +272,19 @@ class ImagePlot(BlittedFigure):
         self.ax_markers.append(marker)
 
     def update(self, auto_contrast=None, **kwargs):
+        ims = self.ax.images
         # Turn on centre_colormap if a diverging colormap is used.
         if self.centre_colormap == "auto":
             if "cmap" in kwargs:
                 cmap = kwargs["cmap"]
+            elif ims:
+                cmap = ims[0].get_cmap().name
             else:
                 cmap = plt.cm.get_cmap().name
             if cmap in MPL_DIVERGING_COLORMAPS:
                 self.centre_colormap = True
             else:
                 self.centre_colormap = False
-        ims = self.ax.images
         redraw_colorbar = False
         data = rgb_tools.rgbx2regular_array(
             self.data_function(axes_manager=self.axes_manager),

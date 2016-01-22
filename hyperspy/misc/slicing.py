@@ -122,8 +122,8 @@ class SpecialSlicers(object):
         self.isNavigation = isNavigation
         self.obj = obj
 
-    def __getitem__(self, slices):
-        return self.obj._slicer(slices, self.isNavigation)
+    def __getitem__(self, slices, out=None):
+        return self.obj._slicer(slices, self.isNavigation, out=out)
 
 
 class FancySlicing(object):
@@ -186,9 +186,14 @@ class FancySlicing(object):
                 array_slices.append(slice_)
         return array_slices
 
-    def _slicer(self, slices, isNavigation=None):
+    def _slicer(self, slices, isNavigation=None, out=None):
         array_slices = self._get_array_slices(slices, isNavigation)
-        _obj = self._deepcopy_with_new_data(self.data[array_slices])
+        if out is None:
+            _obj = self._deepcopy_with_new_data(self.data[array_slices])
+        else:
+            _obj = out
+            _obj.axes_manager = self.axes_manager.deepcopy()
+            _obj.data = self._data[array_slices]  # Changes data id!
         for slice_, axis in zip(array_slices, _obj.axes_manager._axes):
             if (isinstance(slice_, slice) or
                     len(self.axes_manager._axes) < 2):
@@ -199,17 +204,25 @@ class FancySlicing(object):
             for ta in self._additional_slicing_targets:
                 try:
                     t = attrgetter(ta)(self)
-                    if hasattr(t, '_slicer'):
-                        attrsetter(
-                            _obj,
-                            ta,
-                            t._slicer(
-                                slices,
-                                isNavigation))
+                    if out is None:
+                        if hasattr(t, '_slicer'):
+                            attrsetter(
+                                _obj,
+                                ta,
+                                t._slicer(
+                                    slices,
+                                    isNavigation))
+                    else:
+                        target = attrgetter(ta)(_obj)
+                        t._slicer(
+                            slices,
+                            isNavigation,
+                            out=target)
+
                 except AttributeError:
                     pass
         _obj.get_dimensions_from_data()
-
-        return _obj
+        if out is None:
+            return _obj
 
 # vim: textwidth=80
