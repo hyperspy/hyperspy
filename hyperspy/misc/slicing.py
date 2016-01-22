@@ -111,7 +111,7 @@ def copy_slice_from_whitelist(_from, _to, dims, both_slices, isNav):
             attrsetter(_to, key, result)
             continue
         else:
-# 'fn' in flag or no flags at all
+            # 'fn' in flag or no flags at all
             attrsetter(_to, key, target)
             continue
 

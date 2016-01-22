@@ -371,8 +371,7 @@ class DataAxis(t.HasTraits):
             i2 = self.size - 1
         return i1, i2
 
-    def update_from(self, axis, attributes=
-                    ["scale", "offset", "units"]):
+    def update_from(self, axis, attributes=["scale", "offset", "units"]):
         """Copy values of specified axes fields from the passed AxesManager.
         Parameters
         ----------
@@ -396,6 +395,7 @@ class DataAxis(t.HasTraits):
             self.trait_set(**changed)
             any_changes = True
         return any_changes
+
 
 class AxesManager(t.HasTraits):
 
