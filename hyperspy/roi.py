@@ -475,3 +475,55 @@ class Point2DROI(BasePointROI):
         return "%s(x=%f, y=%f)" % (
             self.__class__.__name__,
             self.x, self.y)
+
+
+class SpanROI(BaseInteractiveROI):
+
+    """Selects a range in a 1D space. The coordinates of the range in
+    the 1D space are stored in the traits 'left' and 'right'.
+    """
+    left, right = (t.CFloat(t.Undefined),) * 2
+    _ndim = 1
+
+    def __init__(self, left, right):
+        super(SpanROI, self).__init__()
+        self._bounds_check = True   # Use reponsibly!
+        self.left, self.right = left, right
+
+    def is_valid(self):
+        return (t.Undefined not in (self.left, self.right) and
+                self.right >= self.left)
+
+    def _right_changed(self, old, new):
+        if self._bounds_check and \
+                self.left is not t.Undefined and new <= self.left:
+            self.right = old
+        else:
+            self.update()
+
+    def _left_changed(self, old, new):
+        if self._bounds_check and \
+                self.right is not t.Undefined and new >= self.right:
+            self.left = old
+        else:
+            self.update()
+
+    def _get_ranges(self):
+        ranges = ((self.left, self.right),)
+        return ranges
+
+    def _set_from_widget(self, widget):
+        value = (widget.position[0], widget.position[0] + widget.size[0])
+        self.left, self.right = value
+
+    def _apply_roi2widget(self, widget):
+        widget.set_bounds(left=self.left, right=self.right)
+
+    def _get_widget_type(self, axes, signal):
+        return widgets.Range
+
+    def __repr__(self):
+        return "%s(left=%f, right=%f)" % (
+            self.__class__.__name__,
+            self.left,
+            self.right)

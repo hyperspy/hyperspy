@@ -71,3 +71,23 @@ class TestROIs():
                         s.axes_manager.signal_shape[2:])
         np.testing.assert_equal(
             sr.data, s.data[..., 2/scale, 1/scale])
+
+    def test_span_spectrum_nav(self):
+        s = self.s_s
+        r = SpanROI(15, 30)
+        sr = r(s)
+        scale = s.axes_manager[0].scale
+        n = (30 - 15) / scale
+        nt.assert_equal(sr.axes_manager.navigation_shape,
+                        (n, ) + s.axes_manager.navigation_shape[1:])
+        np.testing.assert_equal(
+            sr.data, s.data[:, 15/scale:30/scale, ...])
+
+    def test_span_spectrum_sig(self):
+        s = self.s_s
+        r = SpanROI(1, 3)
+        sr = r(s, axes=s.axes_manager.signal_axes)
+        scale = s.axes_manager.signal_axes[0].scale
+        n = (3 - 1) / scale
+        nt.assert_equal(sr.axes_manager.signal_shape, (n, ))
+        np.testing.assert_equal(sr.data, s.data[..., 1/scale:3/scale])
