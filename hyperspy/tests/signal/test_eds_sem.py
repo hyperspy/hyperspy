@@ -47,13 +47,38 @@ class Test_metadata:
         sSum = s.sum(0)
         nt.assert_equal(
             sSum.metadata.Acquisition_instrument.SEM.Detector.EDS.live_time,
-            3.1 *
-            2)
+            3.1 * 2)
         # Check that metadata is unchanged
         print old_metadata, s.metadata      # Capture for comparison on error
         nt.assert_dict_equal(old_metadata.as_dictionary(),
                              s.metadata.as_dictionary(),
                              "Source metadata changed")
+
+    def test_sum_live_time2(self):
+        s = self.signal
+        old_metadata = s.metadata.deepcopy()
+        sSum = s.sum((0, 1))
+        nt.assert_equal(
+            sSum.metadata.Acquisition_instrument.SEM.Detector.EDS.live_time,
+            3.1 *
+            2 * 4)
+        # Check that metadata is unchanged
+        print old_metadata, s.metadata      # Capture for comparison on error
+        nt.assert_dict_equal(old_metadata.as_dictionary(),
+                             s.metadata.as_dictionary(),
+                             "Source metadata changed")
+
+    def test_sum_live_time_out_arg(self):
+        s = self.signal
+        sSum = s.sum(0)
+        s.metadata.Acquisition_instrument.SEM.Detector.EDS.live_time = 4.2
+        s_resum = s.sum(0)
+        r = s.sum(0, out=sSum)
+        nt.assert_is_none(r)
+        nt.assert_equal(
+            s_resum.metadata.Acquisition_instrument.SEM.Detector.EDS.live_time,
+            sSum.metadata.Acquisition_instrument.SEM.Detector.EDS.live_time)
+        np.testing.assert_allclose(s_resum.data, sSum.data)
 
     def test_rebin_live_time(self):
         s = self.signal
@@ -145,7 +170,8 @@ class Test_metadata:
             mp.Acquisition_instrument.SEM.Detector.EDS.energy_resolution_MnKa,
             signal_type]
         resultsTEM = [
-            mpTEM.Acquisition_instrument.TEM.Detector.EDS.energy_resolution_MnKa,
+            (mpTEM.Acquisition_instrument.TEM.Detector.EDS.
+             energy_resolution_MnKa),
             mpTEM.Signal.signal_type]
         nt.assert_equal(results, resultsTEM)
 
