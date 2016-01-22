@@ -4353,7 +4353,10 @@ class Signal(FancySlicing,
             hist_spec = signals.Spectrum(hist)
         else:
             hist_spec = out
-            hist_spec.data[:] = hist
+            if hist_spec.data.shape == hist.shape:
+                hist_spec.data[:] = hist
+            else:
+                hist_spec.data = hist
         if bins == 'blocks':
             hist_spec.axes_manager.signal_axes[0].axis = bin_edges[:-1]
             warnings.warn(
@@ -4363,7 +4366,7 @@ class Signal(FancySlicing,
         else:
             hist_spec.axes_manager[0].scale = bin_edges[1] - bin_edges[0]
             hist_spec.axes_manager[0].offset = bin_edges[0]
-
+            hist_spec.axes_manager[0].size = hist.shape[-1]
         hist_spec.axes_manager[0].name = 'value'
         hist_spec.metadata.General.title = (self.metadata.General.title +
                                             " histogram")
