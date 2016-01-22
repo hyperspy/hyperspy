@@ -425,11 +425,11 @@ class Point1DROI(BasePointROI):
         if plotdim == 2:  # Plot is an image
             # axdim == 1 and plotdim == 2 indicates "spectrum stack"
             if idx == 0 and axdim != 1:    # Axis is horizontal
-                return widgets.VerticalLine
+                return widgets.VerticalLineWidget
             else:  # Axis is vertical
-                return widgets.HorizontalLine
+                return widgets.HorizontalLineWidget
         elif plotdim == 1:  # It is a spectrum
-            return widgets.VerticalLine
+            return widgets.VerticalLineWidget
         else:
             raise ValueError("Could not find valid widget type")
 
@@ -522,7 +522,7 @@ class SpanROI(BaseInteractiveROI):
         widget.set_bounds(left=self.left, right=self.right)
 
     def _get_widget_type(self, axes, signal):
-        return widgets.Range
+        return widgets.RangeWidget
 
     def __repr__(self):
         return "%s(left=%f, right=%f)" % (
@@ -591,7 +591,7 @@ class RectangularROI(BaseInteractiveROI):
                           right=self.right, top=self.top)
 
     def _get_widget_type(self, axes, signal):
-        return widgets.Rectangle
+        return widgets.RectangleWidget
 
     def __repr__(self):
         return "%s(left=%f, top=%f, right=%f, bottom=%f)" % (
@@ -651,7 +651,7 @@ class CircleROI(BaseInteractiveROI):
         widget.size = (self.r, inner)
 
     def _get_widget_type(self, axes, signal):
-        return widgets.Circle
+        return widgets.CircleWidget
 
     def navigate(self, signal):
         raise NotImplementedError("CircleROI does not support navigation.")
@@ -786,7 +786,7 @@ class Line2DROI(BaseInteractiveROI):
         widget.size = np.array([self.linewidth])
 
     def _get_widget_type(self, axes, signal):
-        return widgets.DraggableResizable2DLine
+        raise NotImplementedError()
 
     @staticmethod
     def _line_profile_coordinates(src, dst, linewidth=1):
