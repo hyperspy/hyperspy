@@ -239,6 +239,7 @@ class BaseInteractiveROI(BaseROI):
     def __init__(self):
         super(BaseInteractiveROI, self).__init__()
         self.widgets = set()
+        self._applying_widget_change = False
 
     def update(self):
         """Function responsible for updating anything that depends on the ROI.
@@ -247,7 +248,8 @@ class BaseInteractiveROI(BaseROI):
         triggers the changed event.
         """
         if self.is_valid():
-            self._update_widgets()
+            if not self._applying_widget_change:
+                self._update_widgets()
             self.events.changed.trigger(self)
 
     def _update_widgets(self, exclude=set()):
@@ -295,10 +297,12 @@ class BaseInteractiveROI(BaseROI):
         """
         with self.events.suppress():
             self._bounds_check = False
+            self._applying_widget_change = True
             try:
                 self._set_from_widget(widget)
             finally:
                 self._bounds_check = True
+                self._applying_widget_change = False
         self._update_widgets(exclude=(widget,))
         self.events.changed.trigger(self)
 
