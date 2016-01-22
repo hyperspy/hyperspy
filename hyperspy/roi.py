@@ -17,6 +17,8 @@
 # along with HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import traits.api as t
+import numpy as np
+
 from hyperspy.events import Events, Event
 from hyperspy.axes import DataAxis
 from hyperspy.drawing import widgets
@@ -527,3 +529,74 @@ class SpanROI(BaseInteractiveROI):
             self.__class__.__name__,
             self.left,
             self.right)
+
+
+class RectangularROI(BaseInteractiveROI):
+
+    """Selects a range in a 2D space. The coordinates of the range in
+    the 2D space are stored in the traits 'left', 'right', 'top' and 'bottom'.
+    """
+    top, bottom, left, right = (t.CFloat(t.Undefined),) * 4
+    _ndim = 2
+
+    def __init__(self, left, top, right, bottom):
+        super(RectangularROI, self).__init__()
+        self._bounds_check = True   # Use reponsibly!
+        self.top, self.bottom, self.left, self.right = top, bottom, left, right
+
+    def is_valid(self):
+        return (t.Undefined not in (self.top, self.bottom,
+                                    self.left, self.right) and
+                self.right >= self.left and self.bottom >= self.top)
+
+    def _top_changed(self, old, new):
+        if self._bounds_check and \
+                self.bottom is not t.Undefined and new >= self.bottom:
+            self.top = old
+        else:
+            self.update()
+
+    def _bottom_changed(self, old, new):
+        if self._bounds_check and \
+                self.top is not t.Undefined and new <= self.top:
+            self.bottom = old
+        else:
+            self.update()
+
+    def _right_changed(self, old, new):
+        if self._bounds_check and \
+                self.left is not t.Undefined and new <= self.left:
+            self.right = old
+        else:
+            self.update()
+
+    def _left_changed(self, old, new):
+        if self._bounds_check and \
+                self.right is not t.Undefined and new >= self.right:
+            self.left = old
+        else:
+            self.update()
+
+    def _get_ranges(self):
+        ranges = ((self.left, self.right), (self.top, self.bottom),)
+        return ranges
+
+    def _set_from_widget(self, widget):
+        p = np.array(widget.position)
+        s = np.array(widget.size)
+        (self.left, self.top), (self.right, self.bottom) = (p, p + s)
+
+    def _apply_roi2widget(self, widget):
+        widget.set_bounds(left=self.left, bottom=self.bottom,
+                          right=self.right, top=self.top)
+
+    def _get_widget_type(self, axes, signal):
+        return widgets.Rectangle
+
+    def __repr__(self):
+        return "%s(left=%f, top=%f, right=%f, bottom=%f)" % (
+            self.__class__.__name__,
+            self.left,
+            self.top,
+            self.right,
+            self.bottom)

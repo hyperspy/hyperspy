@@ -91,3 +91,18 @@ class TestROIs():
         n = (3 - 1) / scale
         nt.assert_equal(sr.axes_manager.signal_shape, (n, ))
         np.testing.assert_equal(sr.data, s.data[..., 1/scale:3/scale])
+
+    def test_rect_image(self):
+        s = self.s_i
+        s.axes_manager[0].scale = 0.2
+        s.axes_manager[1].scale = 0.8
+        r = RectangularROI(left=2.3, top=5.6, right=3.5, bottom=12.2)
+        sr = r(s)
+        scale0 = s.axes_manager[0].scale
+        scale1 = s.axes_manager[1].scale
+        n = ((round(2.3 / scale0), round(3.5 / scale0),),
+             (round(5.6 / scale1), round(12.2 / scale1),))
+        nt.assert_equal(sr.axes_manager.navigation_shape,
+                        (n[0][1] - n[0][0], n[1][1] - n[1][0]))
+        np.testing.assert_equal(
+            sr.data, s.data[n[1][0]:n[1][1], n[0][0]:n[0][1], ...])
