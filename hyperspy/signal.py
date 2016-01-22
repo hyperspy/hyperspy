@@ -3874,13 +3874,20 @@ class Signal(FancySlicing,
 
     def _ma_workaround(self, s, function, axes, ar_axes, out):
         # TODO: Remove if and when numpy.ma accepts tuple `axis`
-        intermediate = self
-        for a in ar_axes[:-1]:
-            intermediate = function(intermediate.data, axis=a)
+
+        # Basically perform unfolding, but only on data. We don't care about
+        # the axes since the function will consume it/them.
+        ar_axes = sorted(ar_axes)
+        new_shape = list(self.data.shape)
+        for index in ar_axes[1:]:
+            new_shape[index] = 1
+        new_shape[ar_axes[0]] = -1
+        data = self.data.reshape(new_shape).squeeze()
+
         if out:
-            function(intermediate.data, axis=ar_axes[-1], out=out.data)
+            function(data, axis=ar_axes[0], out=out.data)
         else:
-            s.data = function(intermediate.data, axis=ar_axes[-1])
+            s.data = function(data, axis=ar_axes[0])
             s._remove_axis([ax.index_in_axes_manager for ax in axes])
             return s
 
