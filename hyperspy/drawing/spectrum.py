@@ -119,7 +119,7 @@ class SpectrumFigure(BlittedFigure):
             marker.plot()
         plt.xlim(np.min(x_axis_lower_lims), np.max(x_axis_upper_lims))
         # To be discussed
-        self.axes_manager.events.indices_changed.connect(self.update, 0)
+        self.axes_manager.events.indices_changed.connect(self.update, [])
         if hasattr(self.figure, 'tight_layout'):
             try:
                 self.figure.tight_layout()
@@ -290,7 +290,7 @@ class SpectrumLine(object):
         self.line, = self.ax.plot(self.axis, data,
                                   **self.line_properties)
         self.line.set_animated(True)
-        self.axes_manager.events.indices_changed.connect(self.update, 0)
+        self.axes_manager.events.indices_changed.connect(self.update, [])
         if not self.axes_manager or self.axes_manager.navigation_size == 0:
             self.plot_indices = False
         if self.plot_indices is True:

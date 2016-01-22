@@ -86,7 +86,7 @@ class MPL_HyperExplorer(object):
                     self.axes_manager.navigation_axes,
                     title=self.signal_title + " navigation sliders")
                 for axis in self.axes_manager.navigation_axes[:-2]:
-                    axis.events.index_changed.connect(sf.update, 0)
+                    axis.events.index_changed.connect(sf.update, [])
             self.navigator_plot = sf
         elif len(self.navigator_data_function().shape) >= 2:
             imf = image.ImagePlot()
@@ -103,7 +103,7 @@ class MPL_HyperExplorer(object):
                         self.axes_manager.navigation_axes,
                         title=self.signal_title + " navigation sliders")
                     for axis in self.axes_manager.navigation_axes[2:]:
-                        axis.events.index_changed.connect(imf.update, 0)
+                        axis.events.index_changed.connect(imf.update, [])
 
             imf.title = self.signal_title + ' Navigator'
             imf.plot()

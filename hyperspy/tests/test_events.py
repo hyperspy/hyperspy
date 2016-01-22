@@ -270,19 +270,18 @@ class TestEventsSignatures(EventsBase):
         self.events.a = he.Event()
 
     def test_basic_triggers(self):
-        self.events.a.connect(lambda *args, **kwargs: 0)
-        self.events.a.connect(lambda: 0, None)
-        self.events.a.connect(lambda x: 0, 1)
-        self.events.a.connect(lambda x, y: 0, 2)
+        self.events.a.connect(lambda **kwargs: 0)
+        self.events.a.connect(lambda: 0, [])
+        self.events.a.connect(lambda x: 0, ["one"])
+        self.events.a.connect(lambda x, y: 0, ["one", "two"])
         self.events.a.connect(lambda x, y=988:
-                              nt.assert_equal(y, 988), 1)
+                              nt.assert_equal(y, 988), ["one"])
         self.events.a.connect(lambda x, y=988:
-                              nt.assert_not_equal(y, 988), 2)
-        self.events.a.trigger(2, 5)
-
+                              nt.assert_not_equal(y, 988), ["one", "two"])
+        self.events.a.trigger(one=2, two=5)
         nt.assert_raises(ValueError, self.events.a.trigger)
-        nt.assert_raises(ValueError, self.events.a.trigger, 2)
-        self.events.a.trigger(2, 5, 8)
+        nt.assert_raises(ValueError, self.events.a.trigger, one=2)
+        self.events.a.trigger(one=2, two=5, three=8)
 
     def test_connected(self):
         self.events.a.connect(f_a)

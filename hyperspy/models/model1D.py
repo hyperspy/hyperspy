@@ -172,7 +172,7 @@ class Model1D(BaseModel):
         self._adjust_position_all = None
         self.axis = self.axes_manager.signal_axes[0]
         self.axes_manager.events.indices_changed.connect(
-            self.fetch_stored_values, 0)
+            self.fetch_stored_values, [])
         self.channel_switches = np.array([True] * len(self.axis.axis))
         self.chisq = spectrum._get_navigation_signal()
         self.chisq.change_dtype("float")
@@ -255,10 +255,10 @@ class Model1D(BaseModel):
             return
         for i, component in enumerate(self):
             component.events.active_changed.connect(
-                self._model_line.update, 0)
+                self._model_line.update, [])
             for parameter in component.parameters:
                 parameter.events.value_changed.connect(
-                    self._model_line.update, 0)
+                    self._model_line.update, [])
         if self._plot_components is True:
             self._connect_component_lines()
 
@@ -600,9 +600,9 @@ class Model1D(BaseModel):
     def _connect_component_line(component):
         if hasattr(component, "_model_plot_line"):
             f = component._model_plot_line.update
-            component.events.active_changed.connect(f, 0)
+            component.events.active_changed.connect(f, [])
             for parameter in component.parameters:
-                parameter.events.value_changed.connect(f, 0)
+                parameter.events.value_changed.connect(f, [])
 
     @staticmethod
     def _disconnect_component_line(component):
@@ -754,9 +754,9 @@ class Model1D(BaseModel):
                 self._plot.signal_plot.ax)
         # Create widget -> parameter connection
         am._axes[0].continuous_value = True
-        am._axes[0].events.value_changed.connect(set_value, 1)
+        am._axes[0].events.value_changed.connect(set_value, ["value"])
         component._position.events.value_changed.connect(
-            am._axes[0].set_index_from_value, 1)
+            am._axes[0].set_index_from_value, ["value"])
 
     def disable_adjust_position(self):
         """Disables the interactive adjust position feature

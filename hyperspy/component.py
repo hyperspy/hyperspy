@@ -205,7 +205,7 @@ class Parameter(t.HasTraits):
             "removed in HyperSpy 0.10. Please use "
             "`Parameter.events.value_changed.connect()` instead.",
             VisibleDeprecationWarning)
-        self.events.value_changed.connect(f, 0)
+        self.events.value_changed.connect(f, [])
 
     def disconnect(self, f):
         warnings.warn(
@@ -311,7 +311,7 @@ class Parameter(t.HasTraits):
         else:
             if self not in arg._twins:
                 arg._twins.add(self)
-                arg.events.value_changed.connect(self._on_twin_update, 2)
+                arg.events.value_changed.connect(self._on_twin_update)
             self.__twin = arg
 
         if self.component is not None:
@@ -708,7 +708,7 @@ class Component(t.HasTraits):
             "removed in HyperSpy 0.10. Please use "
             "`Component.events.active_changed.connect()` instead.",
             VisibleDeprecationWarning)
-        self.events.active_changed.connect(f, 0)
+        self.events.active_changed.connect(f, [])
 
     def disconnect(self, f):
         warnings.warn(

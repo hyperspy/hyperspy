@@ -153,7 +153,9 @@ class Event(object):
         """
         self.__doc__ = doc
         self._arguments = tuple(arguments) if arguments else None
-        self._connected = {}
+        self._connected_all = set()
+        self._connected_some = {}
+        self._connected_map = {}
         self._suppress = False
 
         if arguments:
@@ -259,39 +261,27 @@ class Event(object):
         suppress
         Events.suppress
         """
-        found = []
-        for nargs, c in self._connected.iteritems():
-            for f in c:
-                if f == function:
-                    found.append(nargs)
-                    break
-        if found:
-            self.disconnect(function)
+        if function in self.connected:
+            connection_kwargs = self.disconnect(
+                function=function, return_connection_kwargs=True)
             try:
                 yield
             finally:
-                for nargs in found:
-                    self.connect(function, nargs)
+                self.connect(function=function, kwargs=connection_kwargs)
         else:
             yield   # Do nothing
 
-    def connected(self, nargs=None):
+    @property
+    def connected(self):
+        """ Connected functions.
         """
-        Connected functions. The default behavior is to include all
-        functions, but by using the 'nargs' argument, it can be filtered by
-        function signature.
-        """
-        if nargs is None:
-            ret = set()
-            ret.update(*self._connected.values())
-            return ret
-        else:
-            if nargs in self._connected:
-                return self._connected[nargs]
-            else:
-                return set()
+        ret = set()
+        ret.update(*self._connected_all)
+        ret.update(self._connected_some.keys())
+        ret.update(self._connected_map.keys())
+        return ret
 
-    def connect(self, function, nargs='all'):
+    def connect(self, function, kwargs='all'):
         """
         Connects a function to the event.
         Arguments:
@@ -312,22 +302,27 @@ class Event(object):
         """
         if not callable(function):
             raise TypeError("Only callables can be registered")
-
-        if nargs == 'auto':
+        if function in self.connected:
+            raise ValueError("Function %s already connected to this event." %
+                             function)
+        if kwargs == 'auto':
             spec = inspect.getargspec(function)
             if spec.varargs or spec.keywords:
-                nargs = 'all'
+                kwargs = 'all'
             elif spec.args is None:
-                nargs = 0
+                kwargs = []
             else:
-                nargs = len(spec.args)
-        elif nargs is None:
-            nargs = 0
-        if nargs not in self._connected:
-            self._connected[nargs] = set()
-        self._connected[nargs].add(function)
+                kwargs = spec.args
+        if kwargs == "all":
+            self._connected_all.add(function)
+        elif isinstance(kwargs, dict):
+            self._connected_map[function] = kwargs
+        elif isinstance(kwargs, (tuple, list)):
+            self._connected_some[function] = tuple(kwargs)
+        else:
+            raise ValueError("Invalid value passed to kwargs.")
 
-    def disconnect(self, function):
+    def disconnect(self, function, return_connection_kwargs=False):
         """
         Disconnects a function from the event. The passed function will be
         disconnected irregardless of which 'nargs' argument was passed to
@@ -336,43 +331,33 @@ class Event(object):
         If you only need to temporarily prevent a function from being called,
         single callback suppression is supported by the `suppress_callback`
         context manager.
+        Parameters
+        ----------
+        function: function
+        return_connection_kwargs: Bool, default False
+            If True, returns the kwargs that would reconnect the function as
+            it was.
 
         See also
         --------
         connect
         suppress_callback
         """
-        for c in self._connected.itervalues():
-            if function in c:
-                c.remove(function)
+        if function in self._connected_all:
+            self._connected_all.remove(function)
+            kwargs = "all"
+        elif function in self._connected_some:
+            kwargs = self._connected_some[function]
+            del self._connected_some[function]
+        elif function in self._connected_map:
+            kwargs = self._connected_map[function]
+            del self._connected_map[function]
+        else:
+            raise ValueError("The %s function is not connected." % function)
+        if return_connection_kwargs:
+            return kwargs
 
-    def _trigger_nargs(self, f, args, kwargs, nargs):
-        """
-        Basic trigger resolution.
-        """
-        if len(args) < nargs:
-            # To few args!
-            # We try to fill with ordered kwargs if present.
-            # If order kwargs not present, or not enough, fill with matching
-            # kwargs in the order that function defines them
-            args = list(args)
-            kwargs = kwargs.copy()
-            if self.arguments:
-                i = 0
-                while len(args) < nargs and i < len(self.arguments):
-                    if self.arguments[i] in kwargs:
-                        args.append(kwargs.pop(self.arguments[i]))
-                    i += 1
-            if len(args) < nargs:
-                spec = inspect.getargspec(f)
-                candidates = list(spec.args)[len(args):]
-                if inspect.ismethod(f):
-                    candidates = candidates.pop()     # Remove `self`
-                matches = [kwargs[c] for c in candidates if c in kwargs]
-                args.extend(matches[:nargs-len(args)])
-        return f(*args[0:nargs])
-
-    def trigger(self, *args, **kwargs):
+    def trigger(self, **kwargs):
         """
         Triggers the event. If the event is suppressed, this does nothing.
         Otherwise it calls all the connected functions with the arguments as
@@ -384,20 +369,15 @@ class Event(object):
         suppress_callback
         Events.suppress
         """
-        if not self._suppress:
-            # Loop on copy to deal with callbacks which change connections
-            for nargs, c in self._connected.copy().iteritems():
-                if nargs is 'all':
-                    for f in c:
-                        f(*args, **kwargs)
-                else:
-                    if len(args) + len(kwargs) < nargs:
-                        raise ValueError(
-                            ("Tried to call %s which require %d args " +
-                             "with only %d.") % (str(c), nargs, len(args) +
-                                                 len(kwargs)))
-                    for f in c.copy():
-                        self._trigger_nargs(f, args, kwargs, nargs)
+        if self._suppress:
+            return
+        # Loop on copy to deal with callbacks which change connections
+        for function in self._connected_all:
+            function(**kwargs)
+        for function, kwsl in self._connected_some.iteritems():
+            function(**{kw: kwargs.get(kw, None) for kw in kwsl})
+        for function, kwsd in self._connected_map.iteritems():
+            function(**{kwf: kwargs[kwt] for kwt, kwf in kwsd.iteritems()})
 
     def __deepcopy__(self, memo):
         dc = type(self)()
@@ -405,7 +385,7 @@ class Event(object):
         return dc
 
     def __repr__(self):
-        text = "<hyperspy.events.Event: " + repr(self._connected) + ">"
+        text = "<hyperspy.events.Event: " + repr(self.connected) + ">"
         return text.encode('utf8')
 
 
