@@ -31,11 +31,11 @@ class Draggable2DCircle(Widget2DBase, ResizersMixin):
 
     def __init__(self, axes_manager, **kwargs):
         super(Draggable2DCircle, self).__init__(axes_manager, **kwargs)
-        self.size_step = 0.5
+        self.size_step = 1
 
     def _set_axes(self, axes):
         super(Draggable2DCircle, self)._set_axes(axes)
-        if self.axes:
+        if self.axes and len(self.axes) > 1:
             self._size[1] = 0
 
     def _do_snap_size(self, value=None):
@@ -121,20 +121,20 @@ class Draggable2DCircle(Widget2DBase, ResizersMixin):
         return np.array(self._size / self.axes[0].scale)
 
     def _update_patch_position(self):
-        if self.is_on() and self.patch is not None:
+        if self.is_on() and self.patch:
             self.patch[0].center = self._get_patch_xy()
             self._update_resizers()
             self.draw_patch()
 
     def _update_patch_size(self):
-        if self.is_on() and self.patch is not None:
+        if self.is_on() and self.patch:
             ro, ri = self.size
             self.patch[0].radius = ro
             self._update_resizers()
             self.draw_patch()
 
     def _update_patch_geometry(self):
-        if self.is_on() and self.patch is not None:
+        if self.is_on() and self.patch:
             ro, ri = self.size
             self.patch[0].center = self._get_patch_xy()
             self.patch[0].radius = ro
