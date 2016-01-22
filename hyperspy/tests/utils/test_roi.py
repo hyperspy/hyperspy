@@ -280,3 +280,29 @@ class TestROIs():
               [0.56463766,  0.73848284,  0.41183566,  0.37515417],
               [0.48426503,  0.23582684,  0.45947953,  0.49322732]]]
         )))
+
+
+class TestInteractive:
+
+    def setup(self):
+        self.s = Spectrum(np.arange(2000).reshape((20, 10, 10)))
+
+    def test_out(self):
+        s = self.s
+        r = RectangularROI(left=3, right=7, top=2, bottom=5)
+        sr = r(s)
+        d = s.data.sum()
+        sr.data += 2
+        nt.assert_equal(d + sr.data.size * 2, s.data.sum())
+        sr2 = r(s)
+        r(s, out=sr)
+        np.testing.assert_array_equal(sr2.data, sr.data)
+
+    def test_interactive(self):
+        s = self.s
+        r = RectangularROI(left=3, right=7, top=2, bottom=5)
+        sr = r.interactive(s, None)
+        r.right += 5
+        r.left += 5
+        sr2 = r(s)
+        np.testing.assert_array_equal(sr.data, sr2.data)
