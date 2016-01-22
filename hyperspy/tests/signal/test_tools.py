@@ -514,13 +514,32 @@ class TestOutArg:
         assert_array_equal(s1.metadata.Signal.Noise_properties.variance.data,
                            s2.metadata.Signal.Noise_properties.variance.data,)
 
+    def test_inav_variance(self):
+        s = self.s
+        s.metadata.set_item("Signal.Noise_properties.variance",
+                            s.deepcopy())
+        s1 = s.inav[2:4, 0:2]
+        s2 = s.inav[2:4, 1:3]
+        s.inav.__getitem__(slices=(slice(2, 4, None), slice(1, 3, None),
+            slice(None)), out=s1)
+        assert_array_equal(s1.metadata.Signal.Noise_properties.variance.data,
+                           s2.metadata.Signal.Noise_properties.variance.data,)
     def test_isig_variance(self):
         s = self.s
         s.metadata.set_item("Signal.Noise_properties.variance",
                             s.deepcopy())
-        f = s.isig.__getitem__
-        kwargs = {"slices": (slice(2, 4, None),)}
-        s1 = f(**kwargs)
-        s2 = f(**kwargs)
+        s1 = s.isig[2:4]
+        s2 = s.isig[1:5]
+        s.isig.__getitem__(slices=(slice(1,5,None)), out=s1)
         assert_array_equal(s1.metadata.Signal.Noise_properties.variance.data,
                            s2.metadata.Signal.Noise_properties.variance.data,)
+
+
+    def test_histogram_axis_changes(self):
+        s = self.s
+        h1 = s.get_histogram(bins=4)
+        h2 = s.get_histogram(bins=5)
+        s.get_histogram(bins=5, out=h1)
+        assert_array_equal(h1.data, h2.data)
+        nt.assert_equal(h1.axes_manager[-1].size,
+                        h2.axes_manager[-1].size,)
