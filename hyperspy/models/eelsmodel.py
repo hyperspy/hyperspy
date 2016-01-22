@@ -22,12 +22,10 @@ import warnings
 from hyperspy.models.model1D import Model1D
 from hyperspy.components import EELSCLEdge
 from hyperspy.components import PowerLaw
-from hyperspy.misc.ipython_tools import get_interactive_ns
 from hyperspy.defaults_parser import preferences
 import hyperspy.messages as messages
 from hyperspy import components
 from hyperspy._signals.eels import EELSSpectrum
-from hyperspy.misc.hspy_warnings import VisibleDeprecationWarning
 
 
 def _give_me_delta(master, slave):
@@ -85,14 +83,7 @@ class EELSModel(Model1D):
             self._load_dictionary(dictionary)
 
         if auto_background is True:
-            interactive_ns = get_interactive_ns()
             background = PowerLaw()
-            background.name = 'background'
-            warnings.warn(
-                "Adding \"background\" to the user namespace. "
-                "This feature will be removed in HyperSpy 0.9.",
-                VisibleDeprecationWarning)
-            interactive_ns['background'] = background
             self.append(background)
 
         if self.spectrum.subshells and auto_add_edges is True:
@@ -170,17 +161,12 @@ class EELSModel(Model1D):
     def _active_background_components(self):
         return [bc for bc in self._background_components if bc.active]
 
-    def _add_edges_from_subshells_names(self, e_shells=None,
-                                        copy2interactive_ns=True):
+    def _add_edges_from_subshells_names(self, e_shells=None):
         """Create the Edge instances and configure them appropiately
         Parameters
         ----------
         e_shells : list of strings
-        copy2interactive_ns : bool
-            If True, variables with the format Element_Shell will be
-            created in IPython's interactive shell
         """
-        interactive_ns = get_interactive_ns()
         if e_shells is None:
             e_shells = list(self.spectrum.subshells)
         e_shells.sort()
@@ -189,18 +175,7 @@ class EELSModel(Model1D):
         # we reassing the value of self.GOS
         self.GOS = master_edge.GOS._name
         self.append(master_edge)
-        interactive_ns[self[-1].name] = self[-1]
-        warnings.warn("Adding \"%s\" to the user namespace. "
-                      "This feature will be removed in HyperSpy 0.9." % self[
-                          -1].name,
-                      VisibleDeprecationWarning)
         element = master_edge.element
-        interactive_ns[element] = []
-        warnings.warn(
-            "Adding \"%s\" to the user namespace. "
-            "This feature will be removed in HyperSpy 0.9." % element,
-            VisibleDeprecationWarning)
-        interactive_ns[element].append(self[-1])
         while len(e_shells) > 0:
             next_element = e_shells[-1].split('_')[0]
             if next_element != element:
@@ -226,14 +201,6 @@ class EELSModel(Model1D):
                 edge.onset_energy.twin = master_edge.onset_energy
                 edge.free_onset_energy = False
                 self.append(edge)
-                if copy2interactive_ns is True:
-                    interactive_ns[edge.name] = edge
-                    warnings.warn(
-                        "Adding \"%s\" to the user namespace. "
-                        "This feature will be removed in HyperSpy 0.9." %
-                        edge.name,
-                        VisibleDeprecationWarning)
-                    interactive_ns[element].append(edge)
 
     def resolve_fine_structure(
             self,
@@ -354,13 +321,13 @@ class EELSModel(Model1D):
                            **kwargs)
         elif kind == 'std':
             Model1D.fit(self,
-                      fitter=fitter,
-                      method=method,
-                      grad=grad,
-                      bounded=bounded,
-                      ext_bounding=ext_bounding,
-                      update_plot=update_plot,
-                      **kwargs)
+                        fitter=fitter,
+                        method=method,
+                        grad=grad,
+                        bounded=bounded,
+                        ext_bounding=ext_bounding,
+                        update_plot=update_plot,
+                        **kwargs)
         else:
             raise ValueError('kind must be either \'std\' or \'smart\'.'
                              '\'%s\' provided.' % kind)
@@ -897,8 +864,6 @@ class EELSModel(Model1D):
         for edge in edges_list:
             if edge.isbackground is False:
                 edge.intensity.free = True
-                #edge.onset_energy.free = True
-                #edge.fine_structure_coeff.free = True
 
     def fix_fine_structure(self, edges_list=None):
         """Fixes all the parameters of the edges given in edges_list.
