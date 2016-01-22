@@ -624,17 +624,20 @@ class ResizableDraggableWidgetBase(DraggableWidgetBase):
                 with e.suppress_callback(self._on_navigate):
                     for i in xrange(len(self.axes)):
                         self.axes[i].index = self.indices[i]
-            self.events.moved.trigger(self)
-        if resized:
-            self.events.resized.trigger(self)
         if moved or resized:
-            self.events.changed.trigger(self)
+            # Update patch first
             if moved and resized:
                 self._update_patch_geometry()
             elif moved:
                 self._update_patch_position()
             else:
                 self._update_patch_size()
+            # Then fire events
+            if moved:
+                self.events.moved.trigger(self)
+            if resized:
+                self.events.resized.trigger(self)
+            self.events.changed.trigger(self)
 
 
 class Widget2DBase(ResizableDraggableWidgetBase):
