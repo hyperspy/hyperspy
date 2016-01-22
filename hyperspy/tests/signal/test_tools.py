@@ -415,3 +415,75 @@ class TestDerivative:
         nt.assert_true(np.allclose(der.data,
                                    np.sin(der.axes_manager[0].axis),
                                    atol=1e-2),)
+
+
+class TestOutArg:
+
+    def setup(self):
+        s = signals.Spectrum(np.random.rand(5, 4, 3, 6))
+        for axis, name in zip(
+                s.axes_manager._get_axes_in_natural_order(),
+                ['x', 'y', 'z', 'E']):
+            axis.name = name
+        self.s = s
+
+    def _run_single(self, f, s, kwargs):
+        s1 = f(**kwargs)
+        s.data = s.data + 2
+        s2 = f(**kwargs)
+        r = f(out=s1, **kwargs)
+        nt.assert_equal(r, None)
+        nt.assert_equal(s1, s2)
+
+    def test_get_histogram(self):
+        self._run_single(self.s.get_histogram, self.s, dict())
+
+    def test_sum(self):
+        self._run_single(self.s.sum, self.s, dict(axis=('x', 'z')))
+
+    def test_mean(self):
+        self._run_single(self.s.mean, self.s, dict(axis=('x', 'z')))
+
+    def test_max(self):
+        self._run_single(self.s.max, self.s, dict(axis=('x', 'z')))
+
+    def test_min(self):
+        self._run_single(self.s.min, self.s, dict(axis=('x', 'z')))
+
+    def test_std(self):
+        self._run_single(self.s.std, self.s, dict(axis=('x', 'z')))
+
+    def test_var(self):
+        self._run_single(self.s.var, self.s, dict(axis=('x', 'z')))
+
+    def test_diff(self):
+        self._run_single(self.s.diff, self.s, dict(axis=0))
+
+    def test_derivative(self):
+        self._run_single(self.s.derivative, self.s, dict(axis=0))
+
+    def test_integrate_simpson(self):
+        self._run_single(self.s.integrate_simpson, self.s, dict(axis=0))
+
+    def test_integrate1D(self):
+        self._run_single(self.s.integrate1D, self.s, dict(axis=0))
+
+    def test_indexmax(self):
+        self._run_single(self.s.indexmax, self.s, dict(axis=0))
+
+    def test_valuemax(self):
+        self._run_single(self.s.valuemax, self.s, dict(axis=0))
+
+    def test_rebin(self):
+        s = self.s
+        new_shape = (3, 2, 1, 3)
+        self._run_single(s.rebin, s, dict(new_shape=new_shape))
+
+    def test_as_spectrum(self):
+        s = self.s
+        self._run_single(s.as_spectrum, s, dict(spectral_axis=1))
+
+    def test_as_image(self):
+        s = self.s
+        self._run_single(s.as_image, s, dict(image_axes=(
+            s.axes_manager.navigation_axes[0:2])))

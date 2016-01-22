@@ -25,3 +25,4 @@ import hyperspy.datasets.example_signals
 import hyperspy.utils.model
 from hyperspy.misc.utils import stack
 from hyperspy import roi
+from hyperspy.interactive import interactive
