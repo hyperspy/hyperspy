@@ -13,6 +13,7 @@ class Events(object):
     All available events are attributes of this class.
 
     """
+
     def __init__(self):
         self._events = {}
 
@@ -202,7 +203,7 @@ class Event(object):
         gl = dict(globals())
         gl.update(locals())
         gl.update({'f': orig_f})    # Make sure it keeps the original!
-        exec wrap_code in gl, locals()
+        exec(wrap_code, gl, locals())
         new_f = trigger
         # Replace the trigger function with the new one
         if defaults:

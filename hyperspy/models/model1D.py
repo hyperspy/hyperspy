@@ -36,6 +36,7 @@ from hyperspy.events import Events, EventSupressor
 
 
 class Model1D(BaseModel):
+
     """Model and data fitting for one dimensional signals.
 
     A model is constructed as a linear combination of :mod:`components` that
@@ -159,6 +160,7 @@ class Model1D(BaseModel):
     -0.072121936813224569
 
     """
+
     def __init__(self, spectrum, dictionary=None):
         self.spectrum = spectrum
         self.signal = self.spectrum

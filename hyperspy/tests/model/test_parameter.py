@@ -292,7 +292,8 @@ class TestGeneralMethods:
     def setUp(self):
         self.par = Parameter()
         self.par._axes_manager = mock.MagicMock()
-        self.par.map = np.array([(a, b, c) for a, b, c in zip([1, 3, 5], [2, 4, 6], [0, 0, 0])],
+        self.par.map = np.array(
+            [(a, b, c) for a, b, c in zip([1, 3, 5], [2, 4, 6], [0, 0, 0])],
                                 dtype=[('values', 'float'), ('std', 'float'), ('is_set', bool)])
 
     @raises(NavigationDimensionError)
@@ -305,9 +306,11 @@ class TestGeneralMethods:
         par = self.par
 
         # additional setup
-        par._axes_manager._get_navigation_axes_dicts.return_value = [{'name': 'one', 'navigate': True,
-                                                                      'offset': 0.0, 'scale': 1.0, 'size': 3,
-                                                                      'units': 'bar'}, ]
+        par._axes_manager._get_navigation_axes_dicts.return_value = [
+            {'name': 'one', 'navigate': True,
+             'offset': 0.0, 'scale':
+             1.0, 'size': 3,
+             'units': 'bar'}, ]
         par._number_of_elements = 2
         par.component = mock.MagicMock()
         par.component.active_is_multidimensional = True

@@ -3,6 +3,7 @@ import hyperspy.events as he
 
 
 class EventsBase():
+
     def on_trigger(self, *args, **kwargs):
         self.triggered = True
 
@@ -244,7 +245,6 @@ class TestEventsSuppression(EventsBase):
                     self.trigger_check2(self.events.a.trigger, False)
                 self.trigger_check2(self.events.a.trigger, True)
 
-
             self.trigger_check(self.events.a.trigger, True)
             self.trigger_check2(self.events.a.trigger, True)
             self.trigger_check(self.events.b.trigger, False)
@@ -256,10 +256,15 @@ class TestEventsSuppression(EventsBase):
         self.trigger_check(self.events.c.trigger, True)
 
 
-
 def f_a(*args): pass
+
+
 def f_b(*args): pass
+
+
 def f_c(*args): pass
+
+
 def f_d(a, b, c): pass
 
 
