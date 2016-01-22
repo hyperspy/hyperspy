@@ -20,6 +20,7 @@ import traits.api as t
 import numpy as np
 
 from hyperspy.events import Events, Event
+import hyperspy.interactive as hsi
 from hyperspy.axes import DataAxis
 from hyperspy.drawing import widgets
 
@@ -300,6 +301,39 @@ class BaseInteractiveROI(BaseROI):
         without doing anything to events.
         """
         raise NotImplementedError()
+
+    def interactive(self, signal, navigation_signal="same", out=None,
+                    **kwargs):
+        """Creates an interactively sliced Signal (sliced by this ROI) via
+        hyperspy.interactive.
+
+        Arguments:
+        ----------
+        signal : Signal
+            The source signal to slice
+        navigation_signal : Signal, None or "same" (default)
+            If not None, it will automatically create a widget on
+            navigation_signal. Passing "same" is identical to passing the same
+            signal to 'signal' and 'navigation_signal', but is less ambigous,
+            and allows "same" to be the default value.
+        out : Signal
+            If not None, it will use 'out' as the output instead of returning
+            a new Signal.
+        """
+        if navigation_signal == "same":
+            navigation_signal = signal
+        if navigation_signal is not None:
+            if navigation_signal not in self.signal_map:
+                self.add_widget(navigation_signal)
+        if out is None:
+            return hsi.interactive(self.__call__,
+                                   event=self.events.changed,
+                                   signal=signal,
+                                   **kwargs)
+        else:
+            return hsi.interactive(self.__call__,
+                                   event=self.events.changed,
+                                   signal=signal, out=out, **kwargs)
 
     def _on_widget_change(self, widget):
         """Callback for widgets' 'changed' event. Updates the internal state
