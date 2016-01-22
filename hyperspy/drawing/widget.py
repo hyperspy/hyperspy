@@ -104,7 +104,9 @@ class WidgetBase(object):
         all events. If turning on, the patch(es) will be added to the
         matplotlib axes, and the widget will connect to its default events.
         """
+        did_something = False
         if value is not self.is_on() and self.ax is not None:
+            did_something = True
             if value is True:
                 self._add_patch_to(self.ax)
                 self.connect(self.ax)
@@ -118,14 +120,12 @@ class WidgetBase(object):
                         if p in container:
                             container.remove(p)
                 self.disconnect(self.ax)
-            try:
-                self.draw_patch()
-            except:  # figure does not exist
-                pass
-            if value is False:
-                self.ax = None
         if hasattr(super(WidgetBase, self), 'set_on'):
             super(WidgetBase, self).set_on(value)
+        if did_something:
+            self.draw_patch()
+            if value is False:
+                self.ax = None
         self.__is_on = value
 
     def _set_patch(self):
@@ -160,14 +160,14 @@ class WidgetBase(object):
         if self.is_on() is True:
             self._add_patch_to(ax)
             self.connect(ax)
-            if self._navigating:
-                self.connect_navigate()
             canvas.draw()
 
     def connect(self, ax):
         """Connect to the matplotlib Axes' events.
         """
         on_figure_window_close(ax.figure, self.close)
+        if self._navigating:
+            self.connect_navigate()
 
     def connect_navigate(self):
         """Connect to the axes_manager such that changes in the widget or in
@@ -213,7 +213,7 @@ class WidgetBase(object):
         """
         if hasattr(self.ax, 'hspy_fig'):
             self.ax.hspy_fig._draw_animated()
-        else:
+        elif self.ax.figure is not None:
             self.ax.figure.canvas.draw_idle()
 
     def _v2i(self, axis, v):
@@ -838,6 +838,8 @@ class ResizersMixin(object):
         if hasattr(super(ResizersMixin, self), '_set_patch'):
             super(ResizersMixin, self)._set_patch()
 
+        if self._resizer_handles:
+            self._set_resizers(False, self.ax)
         self._resizer_handles = []
         rsize = self._get_resizer_size()
         pos = self._get_resizer_pos()
@@ -850,7 +852,7 @@ class ResizersMixin(object):
     def set_on(self, value):
         """Turns on/off resizers whet widget is turned on/off.
         """
-        if value is not self.is_on() and self.resizers:
+        if self.resizers and value != self._resizers_on:
             self._set_resizers(value, self.ax)
         if hasattr(super(ResizersMixin, self), 'set_on'):
             super(ResizersMixin, self).set_on(value)
