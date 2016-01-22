@@ -137,11 +137,11 @@ class MPL_HyperExplorer(object):
 
         if nav_dim == 2:  # It is an image
             if self.axes_manager.navigation_dimension > 1:
-                Pointer = widgets.Square
+                Pointer = widgets.SquareWidget
             else:  # It is the image of a "spectrum stack"
-                Pointer = widgets.HorizontalLine
+                Pointer = widgets.HorizontalLineWidget
         elif nav_dim == 1:  # It is a spectrum
-            Pointer = widgets.VerticalLine
+            Pointer = widgets.VerticalLineWidget
         else:
             Pointer = None
         self._pointer_nav_dim = nav_dim

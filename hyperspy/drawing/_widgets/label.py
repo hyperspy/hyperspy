@@ -22,7 +22,7 @@ import matplotlib.transforms as transforms
 from hyperspy.drawing.widgets import DraggableWidgetBase
 
 
-class DraggableLabel(DraggableWidgetBase):
+class LabelWidget(DraggableWidgetBase):
 
     """A draggable text widget. Adds the attributes 'string', 'text_color' and
     'bbox'. These are all arguments for matplotlib's Text artist. The default
@@ -30,7 +30,7 @@ class DraggableLabel(DraggableWidgetBase):
     """
 
     def __init__(self, axes_manager):
-        super(DraggableLabel, self).__init__(axes_manager)
+        super(LabelWidget, self).__init__(axes_manager)
         self.string = ''
         self._snap_position = False
         if not self.axes:
@@ -39,7 +39,7 @@ class DraggableLabel(DraggableWidgetBase):
         self.bbox = None
 
     def _set_axes(self, axes):
-        super(DraggableLabel, self)._set_axes(axes)
+        super(LabelWidget, self)._set_axes(axes)
         if len(self.axes) == 1:
             self._pos = np.array((self.axes[0].offset, 0.9))
         else:

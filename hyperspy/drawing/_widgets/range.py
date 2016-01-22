@@ -31,9 +31,9 @@ def in_interval(number, interval):
         return False
 
 
-class DraggableResizableRange(ResizableDraggableWidgetBase):
+class RangeWidget(ResizableDraggableWidgetBase):
 
-    """DraggableResizableRange is a span-patch based widget, which can be
+    """RangeWidget is a span-patch based widget, which can be
     dragged and resized by mouse/keys. Basically a wrapper for
     ModifiablepanSelector so that it conforms to the common widget interface.
 
@@ -43,7 +43,7 @@ class DraggableResizableRange(ResizableDraggableWidgetBase):
     """
 
     def __init__(self, axes_manager):
-        super(DraggableResizableRange, self).__init__(axes_manager)
+        super(RangeWidget, self).__init__(axes_manager)
         self.span = None
 
     def set_on(self, value):
@@ -165,18 +165,18 @@ class DraggableResizableRange(ResizableDraggableWidgetBase):
             self.span.range = self._get_range()
 
     def disconnect(self, ax):
-        super(DraggableResizableRange, self).disconnect(ax)
+        super(RangeWidget, self).disconnect(ax)
         if self.span and self.ax == ax:
             self.span.turn_off()
             self.span = None
 
     def _set_snap_position(self, value):
-        super(DraggableResizableRange, self)._set_snap_position(value)
+        super(RangeWidget, self)._set_snap_position(value)
         self.span.snap_position = value
         self._update_patch_geometry()
 
     def _set_snap_size(self, value):
-        super(DraggableResizableRange, self)._set_snap_size(value)
+        super(RangeWidget, self)._set_snap_size(value)
         self.span.snap_size = value
         self._update_patch_size()
 

@@ -29,9 +29,9 @@ from hyperspy.axes import generate_axis
 from hyperspy.exceptions import WrongObjectError
 from hyperspy.decorators import interactive_range_selector
 from hyperspy.axes import AxesManager
-from hyperspy.drawing.widgets import (VerticalLine, Label)
+from hyperspy.drawing.widgets import VerticalLineWidget, LabelWidget
 from hyperspy.gui.tools import ComponentFit
-from hyperspy.events import Events, EventSupressor
+from hyperspy.events import EventSupressor
 
 
 class Model1D(BaseModel):
@@ -731,8 +731,8 @@ class Model1D(BaseModel):
         # Create the vertical line and labels
         if show_label:
             self._position_widgets.extend((
-                VerticalLine(am),
-                Label(am),))
+                VerticalLineWidget(am),
+                LabelWidget(am),))
             # Store the component for bookkeeping, and to reset
             # its twin when disabling adjust position
             self._position_widgets[-2].component = component
@@ -747,7 +747,7 @@ class Model1D(BaseModel):
             self._position_widgets[-2].connect_navigate()
         else:
             self._position_widgets.extend((
-                VerticalLine(am),))
+                VerticalLineWidget(am),))
             # Store the component for bookkeeping, and to reset
             # its twin when disabling adjust position
             self._position_widgets[-1].component = component

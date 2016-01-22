@@ -21,7 +21,7 @@ import numpy as np
 from hyperspy.drawing.widgets import DraggableWidgetBase
 
 
-class DraggableVerticalLine(DraggableWidgetBase):
+class VerticalLineWidget(DraggableWidgetBase):
 
     """A draggable, vertical line widget.
     """
@@ -34,13 +34,13 @@ class DraggableVerticalLine(DraggableWidgetBase):
     def _set_patch(self):
         ax = self.ax
         self.patch = [ax.axvline(self.position[0],
-                                color=self.color,
-                                picker=5)]
+                                 color=self.color,
+                                 picker=5)]
 
     def _validate_pos(self, pos):
         pos = np.maximum(pos, self.axes[0].low_value)
         pos = np.minimum(pos, self.axes[0].high_value)
-        return super(DraggableVerticalLine, self)._validate_pos(pos)
+        return super(VerticalLineWidget, self)._validate_pos(pos)
 
     def _onmousemove(self, event):
         """on mouse motion draw the cursor if picked"""

@@ -22,17 +22,17 @@ import matplotlib.pyplot as plt
 from hyperspy.drawing.widgets import Widget2DBase, ResizersMixin
 
 
-class DraggableSquare(Widget2DBase):
+class SquareWidget(Widget2DBase):
 
-    """DraggableSquare is a symmetric, Rectangle-patch based widget, which can
-    be dragged, and resized by keystrokes/code. As the widget is normally only
+    """SquareWidget is a symmetric, Rectangle-patch based widget, which can be
+    dragged, and resized by keystrokes/code. As the widget is normally only
     meant to indicate position, the sizing is deemed purely visual, but there
     is nothing that forces this use. However, it should be noted that the outer
     bounds only correspond to pure indices for odd sizes.
     """
 
     def __init__(self, axes_manager):
-        super(DraggableSquare, self).__init__(axes_manager)
+        super(SquareWidget, self).__init__(axes_manager)
 
     def _set_patch(self):
         """Sets the patch to a matplotlib Rectangle with the correct geometry.
@@ -47,7 +47,7 @@ class DraggableSquare(Widget2DBase):
             lw=self.border_thickness,
             ec=self.color,
             picker=True,)]
-        super(DraggableSquare, self)._set_patch()
+        super(SquareWidget, self)._set_patch()
 
     def _onmousemove(self, event):
         """on mouse motion move the patch if picked"""
@@ -55,13 +55,13 @@ class DraggableSquare(Widget2DBase):
             self.position = (event.xdata, event.ydata)
 
 
-class ResizableDraggableRectangle(DraggableSquare, ResizersMixin):
+class RectangleWidget(SquareWidget, ResizersMixin):
 
-    """ResizableDraggableRectangle is a asymmetric, Rectangle-patch based
-    widget, which can be dragged and resized by mouse/keys. For resizing by
-    mouse, it adds a small Rectangle patch on the outer border of the main
-    patch, to serve as resize handles. This feature can be enabled/disabled by
-    the 'resizers' property, and the size/color of the handles are set by
+    """RectangleWidget is a asymmetric, Rectangle-patch based widget, which can
+    be dragged and resized by mouse/keys. For resizing by mouse, it adds a
+    small Rectangle patch on the outer border of the main patch, to serve as
+    resize handles. This feature can be enabled/disabled by the 'resizers'
+    property, and the size/color of the handles are set by
     'resize_color'/'resize_pixel_size'.
 
     For optimized changes of geometry, the class implements two methods
@@ -164,7 +164,7 @@ class ResizableDraggableRectangle(DraggableSquare, ResizersMixin):
                      self.axes[0].scale),
                  min(value[1], self.axes[1].high_value - self._size[1] +
                      self.axes[1].scale))
-        return super(ResizableDraggableRectangle, self)._validate_pos(value)
+        return super(RectangleWidget, self)._validate_pos(value)
 
     @property
     def width(self):
@@ -248,7 +248,7 @@ class ResizableDraggableRectangle(DraggableSquare, ResizersMixin):
         elif event.key == "u":
             self._decrease_ysize()
         else:
-            super(ResizableDraggableRectangle, self).on_key_press(event)
+            super(RectangleWidget, self).on_key_press(event)
 
     # --- End internals that trigger events ---
 

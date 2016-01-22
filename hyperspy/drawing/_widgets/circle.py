@@ -23,18 +23,18 @@ import matplotlib.pyplot as plt
 from hyperspy.drawing.widgets import Widget2DBase, ResizersMixin
 
 
-class Draggable2DCircle(Widget2DBase, ResizersMixin):
+class CircleWidget(Widget2DBase, ResizersMixin):
 
-    """Draggable2DCircle is a symmetric, Cicle-patch based widget, which can
+    """CircleWidget is a symmetric, Cicle-patch based widget, which can
     be dragged, and resized by keystrokes/code.
     """
 
     def __init__(self, axes_manager, **kwargs):
-        super(Draggable2DCircle, self).__init__(axes_manager, **kwargs)
+        super(CircleWidget, self).__init__(axes_manager, **kwargs)
         self.size_step = 1
 
     def _set_axes(self, axes):
-        super(Draggable2DCircle, self)._set_axes(axes)
+        super(CircleWidget, self)._set_axes(axes)
         if self.axes and len(self.axes) > 1:
             self._size[1] = 0
 
@@ -93,7 +93,7 @@ class Draggable2DCircle(Widget2DBase, ResizersMixin):
         """Sets the patch to a matplotlib Circle with the correct geometry.
         The geometry is defined by _get_patch_xy, and size.
         """
-        super(Draggable2DCircle, self)._set_patch()
+        super(CircleWidget, self)._set_patch()
         xy = self._get_patch_xy()
         ro, ri = self.size
         self.patch = [plt.Circle(
@@ -115,7 +115,7 @@ class Draggable2DCircle(Widget2DBase, ResizersMixin):
                      0.5 * self.axes[0].scale),
                  max(value[1], self.axes[1].low_value + self._size[0] -
                      0.5 * self.axes[1].scale))
-        return super(Draggable2DCircle, self)._validate_pos(value)
+        return super(CircleWidget, self)._validate_pos(value)
 
     def get_size_in_indices(self):
         return np.array(self._size / self.axes[0].scale)
