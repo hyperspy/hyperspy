@@ -819,13 +819,13 @@ class Line2DROI(BaseInteractiveROI):
         d_row, d_col = dst - src
         theta = np.arctan2(d_row, d_col)
 
-        length = np.ceil(np.hypot(d_row, d_col) + 1)
+        length = np.ceil(np.hypot(d_row, d_col) + 1).astype(int)
         # we add one above because we include the last point in the profile
         # (in contrast to standard numpy indexing)
         line_col = np.linspace(src_col, dst_col, length)
         line_row = np.linspace(src_row, dst_row, length)
 
-        data = np.zeros((2, length, linewidth))
+        data = np.zeros((2, length, int(linewidth)))
         data[0, :, :] = np.tile(line_col, [linewidth, 1]).T
         data[1, :, :] = np.tile(line_row, [linewidth, 1]).T
 
