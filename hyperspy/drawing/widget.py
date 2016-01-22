@@ -341,15 +341,12 @@ class DraggableWidgetBase(WidgetBase):
         position that has valid values. Or simply return the unmodified
         position if everything is ok.
 
-        This default implementation raises a ValueError if the position is out
-        of bounds (as defiend by the axes).
+        This default implementation bounds the position within the axes limits.
         """
         if len(pos) != len(self.axes):
             raise ValueError()
-        for i in xrange(len(pos)):
-            if not (self.axes[i].low_value <= pos[i] <=
-                    self.axes[i].high_value):
-                raise ValueError()
+        pos = np.maximum(pos, [ax.low_value for ax in self.axes])
+        pos = np.minimum(pos, [ax.high_value for ax in self.axes])
         if self.snap_position:
             pos = self._do_snap_position(pos)
         return pos
