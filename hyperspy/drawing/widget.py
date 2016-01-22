@@ -46,7 +46,7 @@ class WidgetBase(object):
 
     def __init__(self, axes_manager=None, **kwargs):
         self.axes_manager = axes_manager
-        self.axes = list()
+        self._axes = list()
         self.ax = None
         self.picked = False
         self._size = 1.
@@ -80,6 +80,18 @@ class WidgetBase(object):
             """, arguments=['widget'])
         self._navigating = False
         super(WidgetBase, self).__init__(**kwargs)
+
+    def _get_axes(self):
+        return self._axes
+
+    def _set_axes(self, axes):
+        if axes is None:
+            self._axes = list()
+        else:
+            self._axes = axes
+
+    axes = property(lambda s: s._get_axes(),
+                    lambda s, v: s._set_axes(v))
 
     def is_on(self):
         """Determines if the widget is set to draw if valid (turned on).
@@ -274,9 +286,13 @@ class DraggableWidgetBase(WidgetBase):
                 self.axes = self.axes_manager.navigation_axes[0:1]
             else:
                 self.axes = self.axes_manager.signal_axes[0:1]
-            self._pos = np.array([self.axes[0].low_value])
         else:
             self._pos = np.array([0.])
+
+    def _set_axes(self, axes):
+        super(DraggableWidgetBase, self)._set_axes(axes)
+        if self.axes:
+            self._pos = np.array([ax.low_value for ax in self.axes])
 
     def _get_indices(self):
         """Returns a tuple with the position (indices).
@@ -449,9 +465,7 @@ class ResizableDraggableWidgetBase(DraggableWidgetBase):
     def __init__(self, axes_manager, **kwargs):
         super(ResizableDraggableWidgetBase, self).__init__(
             axes_manager, **kwargs)
-        if self.axes:
-            self._size = np.array([self.axes[0].scale])
-        else:
+        if not self.axes:
             self._size = np.array([1])
         self.size_step = 1      # = one step in index space
         self._snap_size = True
@@ -468,6 +482,11 @@ class ResizableDraggableWidgetBase(DraggableWidgetBase):
                 widget:
                     The widget that was resized.
             """, arguments=['widget'])
+
+    def _set_axes(self, axes):
+        super(ResizableDraggableWidgetBase, self)._set_axes(axes)
+        if self.axes:
+            self._size = np.array([ax.scale for ax in self.axes])
 
     def _get_size(self):
         """Getter for 'size' property. Returns the size as a tuple (to prevent
@@ -650,8 +669,6 @@ class Widget2DBase(ResizableDraggableWidgetBase):
                              self.axes_manager.navigation_axes)
             else:
                 raise ValueError("2D widget needs at least two axes!")
-            self._pos = np.array([self.axes[0].offset, self.axes[1].offset])
-            self._size = np.array([self.axes[0].scale, self.axes[1].scale])
         else:
             self._pos = np.array([0, 0])
             self._size = np.array([1, 1])

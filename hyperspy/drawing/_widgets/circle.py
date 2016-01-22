@@ -33,6 +33,11 @@ class Draggable2DCircle(Widget2DBase, ResizersMixin):
         super(Draggable2DCircle, self).__init__(axes_manager, **kwargs)
         self.size_step = 0.5
 
+    def _set_axes(self, axes):
+        super(Draggable2DCircle, self)._set_axes(axes)
+        if self.axes:
+            self._size[1] = 0
+
     def _do_snap_size(self, value=None):
         value = np.array(value) if value is not None else self._size
         snap_spacing = self.axes[0].scale * self.size_step

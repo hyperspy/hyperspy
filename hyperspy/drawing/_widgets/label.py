@@ -33,16 +33,18 @@ class DraggableLabel(DraggableWidgetBase):
         super(DraggableLabel, self).__init__(axes_manager)
         self.string = ''
         self._snap_position = False
-        if self.axes:
-            if len(self.axes) == 1:
-                self._pos = np.array((self.axes[0].offset, 0.9))
-            else:
-                self._pos = np.array((self.axes[0].offset,
-                                      self.axes[1].offset))
-        else:
+        if not self.axes:
             self._pos = np.array((0, 0.9))
         self.text_color = 'black'
         self.bbox = None
+
+    def _set_axes(self, axes):
+        super(DraggableLabel, self)._set_axes(axes)
+        if len(self.axes) == 1:
+            self._pos = np.array((self.axes[0].offset, 0.9))
+        else:
+            self._pos = np.array((self.axes[0].offset,
+                                  self.axes[1].offset))
 
     def _validate_pos(self, pos):
         if len(self.axes) == 1:
