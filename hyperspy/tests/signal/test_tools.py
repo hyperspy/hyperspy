@@ -521,19 +521,19 @@ class TestOutArg:
         s1 = s.inav[2:4, 0:2]
         s2 = s.inav[2:4, 1:3]
         s.inav.__getitem__(slices=(slice(2, 4, None), slice(1, 3, None),
-            slice(None)), out=s1)
+                                   slice(None)), out=s1)
         assert_array_equal(s1.metadata.Signal.Noise_properties.variance.data,
                            s2.metadata.Signal.Noise_properties.variance.data,)
+
     def test_isig_variance(self):
         s = self.s
         s.metadata.set_item("Signal.Noise_properties.variance",
                             s.deepcopy())
         s1 = s.isig[2:4]
         s2 = s.isig[1:5]
-        s.isig.__getitem__(slices=(slice(1,5,None)), out=s1)
+        s.isig.__getitem__(slices=(slice(1, 5, None)), out=s1)
         assert_array_equal(s1.metadata.Signal.Noise_properties.variance.data,
                            s2.metadata.Signal.Noise_properties.variance.data,)
-
 
     def test_histogram_axis_changes(self):
         s = self.s
