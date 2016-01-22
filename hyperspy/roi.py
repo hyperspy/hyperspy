@@ -600,3 +600,145 @@ class RectangularROI(BaseInteractiveROI):
             self.top,
             self.right,
             self.bottom)
+
+
+class CircleROI(BaseInteractiveROI):
+
+    cx, cy, r, r_inner = (t.CFloat(t.Undefined),) * 4
+    _ndim = 2
+
+    def __init__(self, cx, cy, r, r_inner=None):
+        super(CircleROI, self).__init__()
+        self._bounds_check = True   # Use reponsibly!
+        self.cx, self.cy, self.r = cx, cy, r
+        if r_inner:
+            self.r_inner = r_inner
+
+    def is_valid(self):
+        return (t.Undefined not in (self.cx, self.cy, self.r,) and
+                self.r_inner == t.Undefined or self.r >= self.r_inner)
+
+    def _cx_changed(self, old, new):
+        self.update()
+
+    def _cy_changed(self, old, new):
+        self.update()
+
+    def _r_changed(self, old, new):
+        if self._bounds_check and \
+                self.r_inner is not t.Undefined and new < self.r_inner:
+            self.r = old
+        else:
+            self.update()
+
+    def _r_inner_changed(self, old, new):
+        if self._bounds_check and \
+                self.r is not t.Undefined and new >= self.r:
+            self.r_inner = old
+        else:
+            self.update()
+
+    def _set_from_widget(self, widget):
+        """Sets the internal representation of the ROI from the passed widget,
+        without doing anything to events.
+        """
+        self.cx, self.cy = widget.position
+        self.r, self.r_inner = widget.size
+
+    def _apply_roi2widget(self, widget):
+        widget.position = (self.cx, self.cy)
+        inner = self.r_inner if self.r_inner != t.Undefined else 0.0
+        widget.size = (self.r, inner)
+
+    def _get_widget_type(self, axes, signal):
+        return widgets.Circle
+
+    def navigate(self, signal):
+        raise NotImplementedError("CircleROI does not support navigation.")
+
+    def __call__(self, signal, axes=None):
+        """Slice the signal according to the ROI, and return it.
+
+        Arguments
+        ---------
+        signal : Signal
+            The signal to slice with the ROI.
+        axes : specification of axes to use, default = None
+            The axes argument specifies which axes the ROI will be applied on.
+            The items in the collection can be either of the following:
+                * a tuple of:
+                    - DataAxis. These will not be checked with
+                      signal.axes_manager.
+                    - anything that will index signal.axes_manager
+                * For any other value, it will check whether the navigation
+                  space can fit the right number of axis, and use that if it
+                  fits. If not, it will try the signal space.
+        """
+
+        if axes is None and signal in self.signal_map:
+            axes = self.signal_map[signal][1]
+        else:
+            axes = self._parse_axes(axes, signal.axes_manager)
+
+        natax = signal.axes_manager._get_axes_in_natural_order()
+        # Slice original data with a circumscribed rectangle
+        cx = self.cx + 0.5 * axes[0].scale
+        cy = self.cy + 0.5 * axes[1].scale
+        ranges = [[cx - self.r, cx + self.r],
+                  [cy - self.r, cy + self.r]]
+        slices = self._make_slices(natax, axes, ranges)
+        ir = [slices[natax.index(axes[0])],
+              slices[natax.index(axes[1])]]
+        vx = axes[0].axis[ir[0]] - cx
+        vy = axes[1].axis[ir[1]] - cy
+        gx, gy = np.meshgrid(vx, vy)
+        gr = gx**2 + gy**2
+        mask = gr > self.r**2
+        if self.r_inner != t.Undefined:
+            mask |= gr < self.r_inner**2
+        tiles = []
+        shape = []
+        for i in xrange(len(slices)):
+            if i == natax.index(axes[0]):
+                tiles.append(1)
+                shape.append(mask.shape[0])
+            elif i == natax.index(axes[1]):
+                tiles.append(1)
+                shape.append(mask.shape[1])
+            else:
+                tiles.append(signal.axes_manager.shape[i])
+                shape.append(1)
+        mask = mask.reshape(shape)
+        mask = np.tile(mask, tiles)
+
+        if axes[0].navigate:
+            if len(axes) == 2 and not axes[1].navigate:
+                # Special case, since we can no longer slice axes in different
+                # spaces together.
+                roi = signal.inav[slices[0]].isig[slices[1]]
+            else:
+                slicer = signal.inav.__getitem__
+                slices = slices[0:signal.axes_manager.navigation_dimension]
+                roi = slicer(slices)
+        else:
+            slicer = signal.isig.__getitem__
+            slices = slices[signal.axes_manager.navigation_dimension:]
+            roi = slicer(slices)
+        roi.data = np.ma.masked_array(roi.data, mask, hard_mask=True)
+
+        return roi
+
+    def __repr__(self):
+        if self.r_inner == t.Undefined:
+            return "%s(cx=%f, cy=%f, r=%f)" % (
+                self.__class__.__name__,
+                self.cx,
+                self.cy,
+                self.r)
+        else:
+            return "%s(cx=%f, cy=%f, r=%f, r_inner=%f)" % (
+                self.__class__.__name__,
+                self.cx,
+                self.cy,
+                self.r,
+                self.r_inner)

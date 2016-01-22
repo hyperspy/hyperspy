@@ -106,3 +106,25 @@ class TestROIs():
                         (n[0][1] - n[0][0], n[1][1] - n[1][0]))
         np.testing.assert_equal(
             sr.data, s.data[n[1][0]:n[1][1], n[0][0]:n[0][1], ...])
+
+    def test_circle_spec(self):
+        s = self.s_s
+        s.data = np.ones_like(s.data)
+        r = CircleROI(20, 25, 20)
+        sr = r(s)
+        scale = s.axes_manager[0].scale
+        n = int(round(40 / scale))
+        nt.assert_equal(sr.axes_manager.navigation_shape, (n, n))
+        # Check that mask is same for all images:
+        for i in xrange(n):
+            for j in xrange(n):
+                nt.assert_true(np.all(sr.data.mask[j, i, :] == True) or
+                               np.all(sr.data.mask[j, i, :] == False))
+        # Check that the correct elements has been masked out:
+        mask = sr.data.mask[:, :, 0]
+        print mask   # To help debugging, this shows the shape of the mask
+        np.testing.assert_array_equal(
+            np.where(mask.flatten())[0],
+            [0,  1,  6,  7,  8, 15, 48, 55, 56, 57, 62, 63])
+        # Check that mask works for sum
+        nt.assert_equal(np.sum(sr.data), (n**2 - 3*4)*4)
