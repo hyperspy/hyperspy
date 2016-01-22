@@ -28,7 +28,7 @@ class TestROIs():
         nt.assert_equal(sr.axes_manager.navigation_shape,
                         s.axes_manager.navigation_shape[1:])
         np.testing.assert_equal(
-            sr.data, s.data[:, 35/scale, ...])
+            sr.data, s.data[:, int(35/scale), ...])
 
     def test_point1d_spectrum_ronded_coord(self):
         s = self.s_s
@@ -36,11 +36,11 @@ class TestROIs():
         sr = r(s)
         scale = s.axes_manager[0].scale
         np.testing.assert_equal(
-            sr.data, s.data[:, round(37/scale), ...])
+            sr.data, s.data[:, int(round(37/scale)), ...])
         r = Point1DROI(39.)
         sr = r(s)
         np.testing.assert_equal(
-            sr.data, s.data[:, round(39/scale), ...])
+            sr.data, s.data[:, int(round(39/scale)), ...])
 
     def test_point1d_image(self):
         s = self.s_i
@@ -50,7 +50,7 @@ class TestROIs():
         nt.assert_equal(sr.axes_manager.navigation_shape,
                         s.axes_manager.navigation_shape[1:])
         np.testing.assert_equal(
-            sr.data, s.data[:, 35/scale, ...])
+            sr.data, s.data[:, int(35/scale), ...])
 
     def test_point2d_image(self):
         s = self.s_i
@@ -60,7 +60,7 @@ class TestROIs():
         nt.assert_equal(sr.axes_manager.navigation_shape,
                         s.axes_manager.navigation_shape[2:])
         np.testing.assert_equal(
-            sr.data, s.data[40/scale, 35/scale, ...])
+            sr.data, s.data[int(40/scale), int(35/scale), ...])
 
     def test_point2d_image_sig(self):
         s = self.s_i
@@ -70,7 +70,7 @@ class TestROIs():
         nt.assert_equal(sr.axes_manager.signal_shape,
                         s.axes_manager.signal_shape[2:])
         np.testing.assert_equal(
-            sr.data, s.data[..., 2/scale, 1/scale])
+            sr.data, s.data[..., int(2/scale), int(1/scale)])
 
     def test_span_spectrum_nav(self):
         s = self.s_s
@@ -81,7 +81,7 @@ class TestROIs():
         nt.assert_equal(sr.axes_manager.navigation_shape,
                         (n, ) + s.axes_manager.navigation_shape[1:])
         np.testing.assert_equal(
-            sr.data, s.data[:, 15/scale:30/scale, ...])
+            sr.data, s.data[:, int(15/scale):int(30//scale), ...])
 
     def test_span_spectrum_sig(self):
         s = self.s_s
@@ -90,7 +90,8 @@ class TestROIs():
         scale = s.axes_manager.signal_axes[0].scale
         n = (3 - 1) / scale
         nt.assert_equal(sr.axes_manager.signal_shape, (n, ))
-        np.testing.assert_equal(sr.data, s.data[..., 1/scale:3/scale])
+        np.testing.assert_equal(sr.data, s.data[...,
+                                                int(1/scale):int(3/scale)])
 
     def test_rect_image(self):
         s = self.s_i
@@ -100,8 +101,8 @@ class TestROIs():
         sr = r(s)
         scale0 = s.axes_manager[0].scale
         scale1 = s.axes_manager[1].scale
-        n = ((round(2.3 / scale0), round(3.5 / scale0),),
-             (round(5.6 / scale1), round(12.2 / scale1),))
+        n = ((int(round(2.3 / scale0)), int(round(3.5 / scale0)),),
+             (int(round(5.6 / scale1)), int(round(12.2 / scale1)),))
         nt.assert_equal(sr.axes_manager.navigation_shape,
                         (n[0][1] - n[0][0], n[1][1] - n[1][0]))
         np.testing.assert_equal(
