@@ -3860,6 +3860,19 @@ class Signal(FancySlicing,
                 name="Scalar",
                 navigate=False,)
 
+    def _ma_workaround(self, s, function, axes, ar_axes, out):
+        # TODO: Remove if and when numpy.ma accepts tuple `axis`
+        intermediate = self
+        for a in ar_axes[:-1]:
+            intermediate = function(intermediate.data, axis=a)
+        if out:
+            function(intermediate.data, axis=ar_axes[-1], out=out.data)
+            s.events.data_changed.trigger(self)
+        else:
+            s.data = function(intermediate.data, axis=ar_axes[-1])
+            s._remove_axis([ax.index_in_axes_manager for ax in axes])
+            return s
+
     def _apply_function_on_data_and_remove_axis(self, function, axes,
                                                 out=None):
         axes = self.axes_manager[axes]
@@ -3871,6 +3884,8 @@ class Signal(FancySlicing,
 
         s = out or self._deepcopy_with_new_data(None)
 
+        if np.ma.is_masked(self.data):
+            return self._ma_workaround(s, function, axes, ar_axes, out)
         if out:
             function(self.data, axis=ar_axes, out=out.data)
             s.events.data_changed.trigger(self)
