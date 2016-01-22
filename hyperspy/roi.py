@@ -19,6 +19,7 @@
 import traits.api as t
 from hyperspy.events import Events, Event
 from hyperspy.axes import DataAxis
+from hyperspy.drawing import widgets
 
 
 class BaseROI(t.HasTraits):
@@ -370,3 +371,107 @@ class BaseInteractiveROI(BaseROI):
         if signal in self.signal_map:
             w = self.signal_map.pop(signal)[0]
             self._remove_widget(w)
+
+
+class BasePointROI(BaseInteractiveROI):
+
+    """Base ROI class for point ROIs, i.e. ROIs with a unit size in each of its
+    dimensions.
+    """
+    pass    # Only used for identification purposes currently
+
+
+class Point1DROI(BasePointROI):
+
+    """Selects a single point in a 1D space. The coordinate of the point in the
+    1D space is stored in the 'value' trait.
+    """
+    value = t.CFloat(t.Undefined)
+    _ndim = 1
+
+    def __init__(self, value):
+        super(Point1DROI, self).__init__()
+        self.value = value
+
+    def is_valid(self):
+        return self.value != t.Undefined
+
+    def _value_changed(self, old, new):
+        self.update()
+
+    def _get_ranges(self):
+        ranges = ((self.value,),)
+        return ranges
+
+    def _set_from_widget(self, widget):
+        self.value = widget.position[0]
+
+    def _apply_roi2widget(self, widget):
+        widget.position = (self.value,)
+
+    def _get_widget_type(self, axes, signal):
+        # Figure out whether to use horizontal or veritcal line:
+        if axes[0].navigate:
+            plotdim = len(signal._plot.navigator_data_function().shape)
+            axdim = signal.axes_manager.navigation_dimension
+            idx = signal.axes_manager.navigation_axes.index(axes[0])
+        else:
+            plotdim = len(signal._plot.signal_data_function().shape)
+            axdim = signal.axes_manager.signal_dimension
+            idx = signal.axes_manager.signal_axes.index(axes[0])
+
+        if plotdim == 2:  # Plot is an image
+            # axdim == 1 and plotdim == 2 indicates "spectrum stack"
+            if idx == 0 and axdim != 1:    # Axis is horizontal
+                return widgets.VerticalLine
+            else:  # Axis is vertical
+                return widgets.HorizontalLine
+        elif plotdim == 1:  # It is a spectrum
+            return widgets.VerticalLine
+        else:
+            raise ValueError("Could not find valid widget type")
+
+    def __repr__(self):
+        return "%s(value=%f)" % (
+            self.__class__.__name__,
+            self.value)
+
+
+class Point2DROI(BasePointROI):
+
+    """Selects a single point in a 2D space. The coordinates of the point in
+    the 2D space are stored in the traits 'x' and 'y'.
+    """
+    x, y = (t.CFloat(t.Undefined),) * 2
+    _ndim = 2
+
+    def __init__(self, x, y):
+        super(Point2DROI, self).__init__()
+        self.x, self.y = x, y
+
+    def is_valid(self):
+        return t.Undefined not in (self.x, self.y)
+
+    def _x_changed(self, old, new):
+        self.update()
+
+    def _y_changed(self, old, new):
+        self.update()
+
+    def _get_ranges(self):
+        ranges = ((self.x,), (self.y,),)
+        return ranges
+
+    def _set_from_widget(self, widget):
+        self.x, self.y = widget.position
+
+    def _apply_roi2widget(self, widget):
+        widget.position = (self.x, self.y)
+
+    def _get_widget_type(self, axes, signal):
+        return widgets.DraggableSquare
+
+    def __repr__(self):
+        return "%s(x=%f, y=%f)" % (
+            self.__class__.__name__,
+            self.x, self.y)
