@@ -111,13 +111,6 @@ class GeneralConfig(t.HasTraits):
         label='Show progress bar',
         desc='If enabled, show a progress bar when available')
 
-    import_hspy = t.CBool(
-        True,
-        label='from hspy import all',
-        desc='If enabled, when starting HyperSpy using the `hyperspy` '
-             'IPython magic of the starting scripts, all the contents of '
-             '``hyperspy.hspy`` are imported in the user namespace. ')
-
     dtb_expand_structures = t.CBool(
         True,
         label='Expand structures in DictionaryTreeBrowser',
