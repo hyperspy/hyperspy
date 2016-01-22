@@ -3860,18 +3860,24 @@ class Signal(FancySlicing,
                 name="Scalar",
                 navigate=False,)
 
-    def _apply_function_on_data_and_remove_axis(self, function, axes):
+    def _apply_function_on_data_and_remove_axis(self, function, axes,
+                                                out=None):
         axes = self.axes_manager[axes]
         if not np.iterable(axes):
             axes = (axes,)
         ar_axes = tuple(ax.index_in_array for ax in axes)
         if len(ar_axes) == 1:
             ar_axes = ar_axes[0]
-        s = self._deepcopy_with_new_data(
-            function(self.data,
-                     axis=ar_axes))
-        s._remove_axis([ax.index_in_axes_manager for ax in axes])
-        return s
+
+        s = out or self._deepcopy_with_new_data(None)
+
+        if out:
+            function(self.data, axis=ar_axes, out=out.data)
+            s.events.data_changed.trigger(self)
+        else:
+            s.data = function(self.data, axis=ar_axes)
+            s._remove_axis([ax.index_in_axes_manager for ax in axes])
+            return s
 
     def sum(self, axis=None):
         """Sum the data over the given axes.
