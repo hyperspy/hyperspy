@@ -4,20 +4,20 @@ import hyperspy.events as he
 
 class EventsBase():
 
-    def on_trigger(self, *args, **kwargs):
+    def on_trigger(self, **kwargs):
         self.triggered = True
 
-    def on_trigger2(self, *args, **kwargs):
+    def on_trigger2(self, **kwargs):
         self.triggered2 = True
 
-    def trigger_check(self, trigger, should_trigger, *args):
+    def trigger_check(self, trigger, should_trigger, **kwargs):
         self.triggered = False
-        trigger(*args)
+        trigger(**kwargs)
         nt.assert_equal(self.triggered, should_trigger)
 
-    def trigger_check2(self, trigger, should_trigger, *args):
+    def trigger_check2(self, trigger, should_trigger, **kwargs):
         self.triggered2 = False
-        trigger(*args)
+        trigger(**kwargs)
         nt.assert_equal(self.triggered2, should_trigger)
 
 
@@ -256,13 +256,13 @@ class TestEventsSuppression(EventsBase):
         self.trigger_check(self.events.c.trigger, True)
 
 
-def f_a(*args): pass
+def f_a(**kwargs): pass
 
 
-def f_b(*args): pass
+def f_b(**kwargs): pass
 
 
-def f_c(*args): pass
+def f_c(**kwargs): pass
 
 
 def f_d(a, b, c): pass
@@ -277,33 +277,24 @@ class TestEventsSignatures(EventsBase):
     def test_basic_triggers(self):
         self.events.a.connect(lambda **kwargs: 0)
         self.events.a.connect(lambda: 0, [])
-        self.events.a.connect(lambda x: 0, ["one"])
-        self.events.a.connect(lambda x, y: 0, ["one", "two"])
-        self.events.a.connect(lambda x, y=988:
-                              nt.assert_equal(y, 988), ["one"])
-        self.events.a.connect(lambda x, y=988:
-                              nt.assert_not_equal(y, 988), ["one", "two"])
+        self.events.a.connect(lambda one: 0, ["one"])
+        self.events.a.connect(lambda one, two: 0, ["one", "two"])
+        self.events.a.connect(lambda one, two=988:
+                              nt.assert_equal(two, 988), ["one"])
+        self.events.a.connect(lambda one, two=988:
+                              nt.assert_not_equal(two, 988), ["one", "two"])
         self.events.a.trigger(one=2, two=5)
-        nt.assert_raises(ValueError, self.events.a.trigger)
-        nt.assert_raises(ValueError, self.events.a.trigger, one=2)
         self.events.a.trigger(one=2, two=5, three=8)
+        self.events.a.connect(lambda one, two: 0, )
+        nt.assert_raises(TypeError, self.events.a.trigger,three=None)
+        nt.assert_raises(TypeError, self.events.a.trigger, one=2)
 
     def test_connected(self):
         self.events.a.connect(f_a)
-        self.events.a.connect(f_a, None)
-        self.events.a.connect(f_b, 2)
-        self.events.a.connect(f_c, 5)
+        self.events.a.connect(f_b, ["A", "B"])
+        self.events.a.connect(f_c, {"a": "A", "b": "B"})
         self.events.a.connect(f_d, 'auto')
-
-        ref = {'all': set([f_a]), 0: set([f_a]), 1: set(), 2: set([f_b]),
-               3: set([f_d]), 5: set([f_c]),
-               None: set([f_a, f_b, f_c, f_d])}
-        for k, v in ref.iteritems():
-            con = self.events.a.connected(k)
-            nt.assert_equal(con, v)
-
-        con = self.events.a.connected()
-        nt.assert_equal(con, ref[None])
+        nt.assert_equal(self.events.a.connected, set([f_a, f_b, f_c, f_d]))
 
     @nt.raises(TypeError)
     def test_type(self):
@@ -319,64 +310,29 @@ class TestTriggerArgResolution(EventsBase):
         self.events.c = he.Event()
 
     def test_nargs_resolution(self):
-        self.events.a.connect(lambda x=None: nt.assert_equal(x, None), 0)
-        self.events.a.connect(lambda x: nt.assert_equal(x, 'vA'), 1)
-        self.events.a.connect(lambda x, y:
-                              nt.assert_equal((x, y), ('vA', 'vB')), 2)
-        self.events.a.connect(lambda x, A:
-                              nt.assert_equal((x, A), ('vA', 'vB')), 2)
-        self.events.a.connect(lambda x, y=None, A=None:
-                              nt.assert_equal((x, y, A),
-                                              ('vA', 'vB', None)), 2)
-        self.events.a.connect(lambda B, A:
-                              nt.assert_equal((B, A), ('vA', 'vB')), 2)
-        self.events.a.connect(lambda B, y:
-                              nt.assert_equal((B, y), ('vA', 'vB')), 2)
-        self.events.a.connect(lambda B, A=None:
-                              nt.assert_equal(B, 'vA'), 1)
-        self.events.a.connect(lambda B, y=None:
-                              nt.assert_equal(B, 'vA'), 1)
-        # Update if internal code changes, not testing this line:
-        self.events.c._connected = self.events.a._connected
-
-        self.events.a.trigger('vA', 'vB')
-        nt.assert_raises(TypeError, self.events.a.trigger, 'vA', 'vB', 'vC')
+        self.events.a.connect(lambda x=None: nt.assert_equal(x, None), [])
+        self.events.a.connect(lambda A: nt.assert_equal(A, 'vA'), ["A"])
+        self.events.a.connect(lambda A, B:
+                              nt.assert_equal((A, B), ('vA', 'vB')), ["A", "B"])
+        self.events.a.connect(lambda A, B:
+                              nt.assert_equal((A, B), ('vA', 'vB')), "auto")
+        self.events.a.connect(lambda A, B=None, C=None:
+                              nt.assert_equal((A, B, C),
+                                              ('vA', 'vB', None)), ["A", "B"])
         self.events.a.trigger(A='vA', B='vB')
-        self.events.a.trigger('vA', B='vB')
+        nt.assert_raises(TypeError, self.events.a.trigger, A='vA', B='vB',
+                         C='vC')
+        self.events.a.trigger(A='vA', B='vB')
         self.events.a.trigger(B='vB', A='vA')
         nt.assert_raises(TypeError, self.events.a.trigger,
                          'vA', C='vC', B='vB', D='vD')
 
-    def test_all_args_resolution(self):
-        self.events.c.connect(lambda x, y:
-                              nt.assert_equal((x, y), ('vA', 'vB')), 'all')
-        self.events.c.trigger('vA', 'vB')
-        self.events.c.connect(lambda x, y, A=None, B=None:
-                              nt.assert_equal((x, y, A, B),
-                                              ('vA', 'vB', None, None)), 'all')
-        self.events.c.trigger('vA', 'vB')
-
-        self.events.a.connect(lambda x, y, A=None, B=None:
-                              nt.assert_equal((x, y, A, B),
-                                              ('vA', 'vB', None, None)), 'all')
-        nt.assert_raises(TypeError, self.events.a.trigger, 'vA', 'vB')
 
     def test_all_kwargs_resolution(self):
         self.events.a.connect(lambda A, B:
-                              nt.assert_equal((A, B), ('vA', 'vB')), 'all')
+                              nt.assert_equal((A, B), ('vA', 'vB')), )
         self.events.a.connect(lambda x=None, y=None, A=None, B=None:
                               nt.assert_equal((x, y, A, B),
-                                              (None, None, 'vA', 'vB')), 'all')
+                                              (None, None, 'vA', 'vB')))
 
         self.events.a.trigger(A='vA', B='vB')
-
-    def test_all_mixed_resolution(self):
-        self.events.b.connect(lambda A, B, C:
-                              nt.assert_equal((A, B), ('vA', 'vB')), 'all')
-        self.events.b.connect(lambda x=None, y=None, A=None, B=None, C=None:
-                              nt.assert_equal((x, y, A, B, C),
-                                              (None, None, 'vA', 'vB', 'vC')),
-                              'all')
-
-        self.events.b.trigger('vA', B='vB', C='vC')
-        self.events.b.trigger('vA', C='vC', B='vB')

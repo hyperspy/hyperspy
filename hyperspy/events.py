@@ -278,7 +278,7 @@ class Event(object):
         """ Connected functions.
         """
         ret = set()
-        ret.update(*self._connected_all)
+        ret.update(self._connected_all)
         ret.update(self._connected_some.keys())
         ret.update(self._connected_map.keys())
         return ret
