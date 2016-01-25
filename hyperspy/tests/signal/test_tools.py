@@ -421,6 +421,8 @@ class TestDerivative:
 class TestOutArg:
 
     def setup(self):
+        # Some test require consistent random data for reference to be correct
+        np.random.seed(0)
         s = signals.Spectrum(np.random.rand(5, 4, 3, 6))
         for axis, name in zip(
                 s.axes_manager._get_axes_in_natural_order(),
@@ -537,11 +539,14 @@ class TestOutArg:
         sr = s.mean(axis=('x', 'z',))
         np.testing.assert_array_equal(
             sr.data.shape, [ax.size for ax in s.axes_manager[('y', 'E')]])
-        ref = [
-            [123.0, 147.6666666666666, 242.0, 187.8, 196.0, 181.7272727272727],
-            [250.8, 181.85714285714286, 194.0, 93.0, 162.0, 195.8],
-            [230.66666666666666, 181.0, 210.0, 175.0, 184.0, 241.0],
-            [134.5714285714285, 251.0, 170.0, 251.4, 230.0, 201.2857142857142]]
+        print sr.data.tolist()
+        ref = [[202.28571428571428, 203.28571428571428, 182.0,
+                197.66666666666666, 187.0, 177.8],
+               [134.0, 190.0, 191.27272727272728, 170.14285714285714, 172.0,
+                209.85714285714286],
+               [168.0, 161.8, 162.8, 185.4, 197.71428571428572,
+                178.14285714285714],
+               [240.0, 184.33333333333334, 260.0, 229.0, 173.2, 167.0]]
         np.testing.assert_array_equal(sr.data, ref)
 
     def test_masked_array_sum(self):
