@@ -40,6 +40,7 @@ try:
     statsmodels_installed = True
 except:
     statsmodels_installed = False
+from skimage.feature import peak_local_max
 
 from hyperspy.axes import AxesManager
 from hyperspy import io
@@ -64,7 +65,8 @@ from hyperspy.decorators import only_interactive
 from hyperspy.decorators import interactive_range_selector
 from scipy.ndimage.filters import gaussian_filter1d
 from hyperspy.misc.spectrum_tools import find_peaks_ohaver
-from hyperspy.misc.image_tools import (shift_image, estimate_image_shift)
+from hyperspy.misc.image_tools import (shift_image, estimate_image_shift,
+                                       find_image_peaks)
 from hyperspy.misc.math_tools import symmetrize, antisymmetrize
 from hyperspy.exceptions import SignalDimensionError, DataDimensionError
 from hyperspy.misc import array_tools
@@ -595,6 +597,38 @@ class Signal2DTools(object):
         self.crop(self.axes_manager.signal_axes[0].index_in_axes_manager,
                   left,
                   right)
+
+    def find_peaks2D(self, method='skimage', separation=10, threshold=10,
+                     *args, **kwargs):
+        """Find peaks in a 2D signal/image.
+
+        Function to locate the positive peaks in an image using various, user
+        specified, methods. Returns a structured array containing the peak
+        positions.
+
+        Parameters
+        ---------
+        method: keyword
+
+        Returns
+        -------
+        peaks: structured array of shape _navigation_shape_in_array in which
+               each cell contains an array with dimensions (npeaks, 2) that
+               contains the x, y coordinates of peaks found in each image.
+        """
+        arr_shape = (self.axes_manager._navigation_shape_in_array
+                     if self.axes_manager.navigation_size > 0
+                     else [1, ])
+        peaks = np.zeros(arr_shape, dtype=object)
+        for z, indices in zip(self._iterate_signal(),
+                              self.axes_manager._array_indices_generator()):
+            if method == 'skimage':
+                peaks[indices] = peak_local_max(z, min_distance=separation)
+            if method == 'threshold':
+                peaks[indices] = find_image_peaks(z,
+                                                  separation=separation,
+                                                  threshold=threshold)
+        return peaks
 
 
 class Signal1DTools(object):

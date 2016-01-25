@@ -19,6 +19,7 @@
 import numpy as np
 import scipy as sp
 from scipy.fftpack import fftn, ifftn
+import scipy.ndimage as ndi
 import matplotlib.pyplot as plt
 
 
@@ -234,6 +235,45 @@ MPL_DIVERGING_COLORMAPS = [
     "Spectral", ]
 # Add reversed colormaps
 MPL_DIVERGING_COLORMAPS += [cmap + "_r" for cmap in MPL_DIVERGING_COLORMAPS]
+
+
+def find_image_peaks(z, separation, threshold, interpolation_order=3):
+    """
+    Method to locate the positive peaks in an image using a simple thresholding
+    based approach.
+
+    Parameters
+    ----------
+    z: image
+
+    separation: expected distance between peaks
+
+    threshold:
+
+    interpolation order:
+
+    Returns
+    -------
+    peaks: array with dimensions (npeaks, 2) that contains the x, y coordinates
+           for each peak found in the image.
+    """
+    data_max = ndi.filters.maximum_filter(z, separation)
+    maxima = (z == data_max)
+    data_min = ndi.filters.minimum_filter(z, separation)
+    diff = ((data_max - data_min) > threshold)
+    maxima[diff == 0] = 0
+    labeled, num_objects = ndi.label(maxima)
+    slices = ndi.find_objects(labeled)
+    x, y = [], []
+    for dy, dx in slices:
+        x_center = (dx.start + dx.stop - 1) / 2
+        x.append(x_center)
+        y_center = (dy.start + dy.stop - 1) / 2
+        y.append(y_center)
+    p = np.asarray([x, y])
+    peaks = p.T
+
+    return peaks
 
 
 def centre_colormap_values(vmin, vmax):
