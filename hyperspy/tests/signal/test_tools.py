@@ -532,10 +532,17 @@ class TestOutArg:
     def test_masked_array_mean(self):
         s = self.s
         mask = (s.data > 0.5)
-        s.data = np.ones_like(s.data)
+        s.data = np.arange(s.data.size).reshape(s.data.shape)
         s.data = np.ma.masked_array(s.data, mask=mask)
         sr = s.mean(axis=('x', 'z',))
-        np.testing.assert_array_equal(sr.data, 1.0)
+        np.testing.assert_array_equal(
+            sr.data.shape, [ax.size for ax in s.axes_manager[('y', 'E')]])
+        ref = [
+            [123.0, 147.6666666666666, 242.0, 187.8, 196.0, 181.7272727272727],
+            [250.8, 181.85714285714286, 194.0, 93.0, 162.0, 195.8],
+            [230.66666666666666, 181.0, 210.0, 175.0, 184.0, 241.0],
+            [134.5714285714285, 251.0, 170.0, 251.4, 230.0, 201.2857142857142]]
+        np.testing.assert_array_equal(sr.data, ref)
 
     def test_masked_array_sum(self):
         s = self.s
