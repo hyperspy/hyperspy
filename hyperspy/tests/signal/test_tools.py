@@ -421,6 +421,8 @@ class TestDerivative:
 class TestOutArg:
 
     def setup(self):
+        # Some test require consistent random data for reference to be correct
+        np.random.seed(0)
         s = signals.Spectrum(np.random.rand(5, 4, 3, 6))
         for axis, name in zip(
                 s.axes_manager._get_axes_in_natural_order(),
@@ -528,3 +530,35 @@ class TestOutArg:
         assert_array_equal(h1.data, h2.data)
         nt.assert_equal(h1.axes_manager[-1].size,
                         h2.axes_manager[-1].size,)
+
+    def test_masked_array_mean(self):
+        s = self.s
+        mask = (s.data > 0.5)
+        s.data = np.arange(s.data.size).reshape(s.data.shape)
+        s.data = np.ma.masked_array(s.data, mask=mask)
+        sr = s.mean(axis=('x', 'z',))
+        np.testing.assert_array_equal(
+            sr.data.shape, [ax.size for ax in s.axes_manager[('y', 'E')]])
+        print sr.data.tolist()
+        ref = [[202.28571428571428, 203.28571428571428, 182.0,
+                197.66666666666666, 187.0, 177.8],
+               [134.0, 190.0, 191.27272727272728, 170.14285714285714, 172.0,
+                209.85714285714286],
+               [168.0, 161.8, 162.8, 185.4, 197.71428571428572,
+                178.14285714285714],
+               [240.0, 184.33333333333334, 260.0, 229.0, 173.2, 167.0]]
+        np.testing.assert_array_equal(sr.data, ref)
+
+    def test_masked_array_sum(self):
+        s = self.s
+        mask = (s.data > 0.5)
+        s.data = np.ma.masked_array(np.ones_like(s.data), mask=mask)
+        sr = s.sum(axis=('x', 'z',))
+        np.testing.assert_array_equal(sr.data.sum(), (~mask).sum())
+
+    def test_masked_arrays_out(self):
+        s = self.s
+        mask = (s.data > 0.5)
+        s.data = np.ones_like(s.data)
+        s.data = np.ma.masked_array(s.data, mask=mask)
+        self._run_single(s.sum, s, dict(axis=('x', 'z')))
