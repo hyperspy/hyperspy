@@ -286,7 +286,7 @@ class TestEventsSignatures(EventsBase):
         self.events.a.trigger(one=2, two=5)
         self.events.a.trigger(one=2, two=5, three=8)
         self.events.a.connect(lambda one, two: 0, )
-        nt.assert_raises(TypeError, self.events.a.trigger,three=None)
+        nt.assert_raises(TypeError, self.events.a.trigger, three=None)
         nt.assert_raises(TypeError, self.events.a.trigger, one=2)
 
     def test_connected(self):
@@ -326,7 +326,6 @@ class TestTriggerArgResolution(EventsBase):
         self.events.a.trigger(B='vB', A='vA')
         nt.assert_raises(TypeError, self.events.a.trigger,
                          'vA', C='vC', B='vB', D='vD')
-
 
     def test_all_kwargs_resolution(self):
         self.events.a.connect(lambda A, B:
