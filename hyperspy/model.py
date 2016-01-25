@@ -992,7 +992,7 @@ class BaseModel(list):
             if maxval > 0:
                 pbar.finish()
         self.axes_manager.events.indices_changed.connect(
-            self.fetch_stored_values, 0)
+            self.fetch_stored_values, [])
         if autosave is True:
             messages.information(
                 'Deleting the temporary file %s pixels' % (

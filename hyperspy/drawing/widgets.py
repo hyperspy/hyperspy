@@ -98,7 +98,7 @@ class DraggablePatch(object):
         self.cids.append(canvas.mpl_connect(
             'button_release_event', self.button_release))
         self.axes_manager.events.indices_changed.connect(
-            self._update_patch_position, 0)
+            self._update_patch_position, [])
         on_figure_window_close(ax.figure, self.close)
 
     def disconnect(self, ax):

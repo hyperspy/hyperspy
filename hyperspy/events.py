@@ -1,4 +1,5 @@
 import inspect
+import warnings
 import collections
 from contextlib import contextmanager
 from functools import wraps
@@ -304,8 +305,9 @@ class Event(object):
         if not callable(function):
             raise TypeError("Only callables can be registered")
         if function in self.connected:
-            raise ValueError("Function %s already connected to this event." %
-                             function)
+            warnings.warn("Function %s already connected to this event." %
+                          function)
+            return
         if kwargs == 'auto':
             spec = inspect.getargspec(function)
             if spec.varargs or spec.keywords:

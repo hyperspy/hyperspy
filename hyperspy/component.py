@@ -311,7 +311,8 @@ class Parameter(t.HasTraits):
         else:
             if self not in arg._twins:
                 arg._twins.add(self)
-                arg.events.value_changed.connect(self._on_twin_update)
+                arg.events.value_changed.connect(self._on_twin_update,
+                                                 ["value"])
             self.__twin = arg
 
         if self.component is not None:
