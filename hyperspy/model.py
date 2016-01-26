@@ -184,8 +184,6 @@ class BaseModel(list):
 
     """
 
-    _firstimetouch = True
-
     def __hash__(self):
         # This is needed to simulate a hashable object so that PySide does not
         # raise an exception when using windows.connect
@@ -286,6 +284,15 @@ class BaseModel(list):
         raise NotImplementedError
 
     def append(self, thing):
+        """Add component to Model.
+
+        Parameters
+        ----------
+        thing: `Component` instance.
+        """
+        if not isinstance(thing, Component):
+            raise ValueError(
+                "Only `Component` instances can be added to a model")
         # Check if any of the other components in the model has the same name
         if thing in self:
             raise ValueError("Component already in model")
@@ -310,7 +317,8 @@ class BaseModel(list):
         thing.model = self
         setattr(self.components, slugify(name_string,
                                          valid_variable_name=True), thing)
-        self._touch()
+        if self._plot_active is True:
+            self._connect_parameters2update_plot(components=[thing])
         if self._plot_components:
             self._plot_component(thing)
         if self._adjust_position_all is not None:
@@ -325,7 +333,7 @@ class BaseModel(list):
         thing = self.__getitem__(thing)
         self.remove(thing)
 
-    def remove(self, thing, touch=True):
+    def remove(self, thing):
         """Remove component from model.
 
         Examples
@@ -365,22 +373,8 @@ class BaseModel(list):
                 self.signal._plot.signal_plot.ax_lines[2 + idx])
         list.remove(self, thing)
         thing.model = None
-        if touch is True:
-            self._touch()
         if self._plot_active:
             self.update_plot()
-
-    def _touch(self):
-        """Run model setup tasks
-
-        This function is called everytime that we add or remove components
-        from the model.
-
-        """
-        if self._plot_active is True:
-            self._connect_parameters2update_plot()
-
-    __touch = _touch
 
     def as_signal(self, component_list=None, out_of_range_to_nan=True,
                   show_progressbar=None):
@@ -699,7 +693,7 @@ class BaseModel(list):
             fitter = preferences.Model.default_fitter
         switch_aap = (update_plot != self._plot_active)
         if switch_aap is True and update_plot is False:
-            self._disconnect_parameters2update_plot()
+            self._disconnect_parameters2update_plot(components=self)
 
         self.p_std = None
         self._set_p0()
@@ -887,7 +881,7 @@ class BaseModel(list):
         if ext_bounding is True:
             self._disable_ext_bounding()
         if switch_aap is True and update_plot is False:
-            self._connect_parameters2update_plot()
+            self._connect_parameters2update_plot(components=self)
             self.update_plot()
 
     def multifit(self, mask=None, fetch_only_fixed=False,

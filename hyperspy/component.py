@@ -221,18 +221,18 @@ class Parameter(t.HasTraits):
         else:
             return self.twin_function(self.twin.value)
 
-    def _set_value(self, arg):
+    def _set_value(self, value):
         try:
             # Use try/except instead of hasattr("__len__") because a numpy
             # memmap has a __len__ wrapper even for numbers that raises a
             # TypeError when calling. See issue #349.
-            if len(arg) != self._number_of_elements:
+            if len(value) != self._number_of_elements:
                 raise ValueError(
                     "The length of the parameter must be ",
                     self._number_of_elements)
             else:
-                if not isinstance(arg, tuple):
-                    arg = tuple(arg)
+                if not isinstance(value, tuple):
+                    value = tuple(value)
         except TypeError:
             if self._number_of_elements != 1:
                 raise ValueError(
@@ -242,27 +242,27 @@ class Parameter(t.HasTraits):
 
         if self.twin is not None:
             if self.twin_inverse_function is not None:
-                self.twin.value = self.twin_inverse_function(arg)
+                self.twin.value = self.twin_inverse_function(value)
             return
 
         if self.ext_bounded is False:
-            self.__value = arg
+            self.__value = value
         else:
             if self.ext_force_positive is True:
-                arg = np.abs(arg)
+                value = np.abs(value)
             if self._number_of_elements == 1:
-                if self.bmin is not None and arg <= self.bmin:
+                if self.bmin is not None and value <= self.bmin:
                     self.__value = self.bmin
-                elif self.bmax is not None and arg >= self.bmax:
+                elif self.bmax is not None and value >= self.bmax:
                     self.__value = self.bmax
                 else:
-                    self.__value = arg
+                    self.__value = value
             else:
                 bmin = (self.bmin if self.bmin is not None
                         else -np.inf)
                 bmax = (self.bmax if self.bmin is not None
                         else np.inf)
-                self.__value = np.clip(arg, bmin, bmax)
+                self.__value = np.clip(value, bmin, bmax)
 
         if (self._number_of_elements != 1 and
                 not isinstance(self.__value, tuple)):

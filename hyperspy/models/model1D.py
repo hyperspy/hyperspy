@@ -252,10 +252,16 @@ class Model1D(BaseModel):
         self.convolution_axis = generate_axis(self.axis.offset, step,
                                               dimension, knot_position)
 
-    def _connect_parameters2update_plot(self):
+    def remove(self, thing):
+        super(Model1D, self).remove(thing)
+        self._disconnect_parameters2update_plot([thing])
+
+    remove.__doc__ = BaseModel.remove.__doc__
+
+    def _connect_parameters2update_plot(self, components):
         if self._plot_active is False:
             return
-        for i, component in enumerate(self):
+        for i, component in enumerate(components):
             component.events.active_changed.connect(
                 self._model_line.update, [])
             for parameter in component.parameters:
@@ -264,10 +270,10 @@ class Model1D(BaseModel):
         if self._plot_components is True:
             self._connect_component_lines()
 
-    def _disconnect_parameters2update_plot(self):
+    def _disconnect_parameters2update_plot(self, components):
         if self._model_line is None:
             return
-        for component in self:
+        for component in components:
             component.events.active_changed.disconnect(self._model_line.update)
             for parameter in component.parameters:
                 parameter.events.value_changed.disconnect(
@@ -292,7 +298,7 @@ class Model1D(BaseModel):
                                   component.active is True]:
                     self._update_component_line(component)
             except:
-                self._disconnect_parameters2update_plot()
+                self._disconnect_parameters2update_plot(components=self)
 
     @contextmanager
     def suspend_update(self, update_on_resume=True):
@@ -594,7 +600,7 @@ class Model1D(BaseModel):
 
         self._model_line = l2
         self._plot = self.spectrum._plot
-        self._connect_parameters2update_plot()
+        self._connect_parameters2update_plot(self)
         if plot_components is True:
             self.enable_plot_components()
 
@@ -648,7 +654,7 @@ class Model1D(BaseModel):
     def _close_plot(self):
         if self._plot_components is True:
             self.disable_plot_components()
-        self._disconnect_parameters2update_plot()
+        self._disconnect_parameters2update_plot(components=self)
         self._model_line = None
 
     def enable_plot_components(self):
