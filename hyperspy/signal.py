@@ -77,10 +77,10 @@ from hyperspy.external.astroML.histtools import histogram
 from hyperspy.drawing.utils import animate_legend
 from hyperspy.misc.slicing import SpecialSlicers, FancySlicing
 from hyperspy.misc.utils import slugify
-from hyperspy.docstrings.signal import (
-	ONE_AXIS_PARAMETER, MANY_AXIS_PARAMETER, OUT_ARG)
 from hyperspy.events import Events, Event
-from hyperspy.interactive import interactive
+from datetime import datetime
+from hyperspy.docstrings.signal import (
+    ONE_AXIS_PARAMETER, MANY_AXIS_PARAMETER, OUT_ARG)
 
 
 class ModelManager(object):
@@ -3908,6 +3908,25 @@ class Signal(FancySlicing,
                 name="Scalar",
                 navigate=False,)
 
+    def _ma_workaround(self, s, function, axes, ar_axes, out):
+        # TODO: Remove if and when numpy.ma accepts tuple `axis`
+
+        # Basically perform unfolding, but only on data. We don't care about
+        # the axes since the function will consume it/them.
+        ar_axes = sorted(ar_axes)
+        new_shape = list(self.data.shape)
+        for index in ar_axes[1:]:
+            new_shape[index] = 1
+        new_shape[ar_axes[0]] = -1
+        data = self.data.reshape(new_shape).squeeze()
+
+        if out:
+            function(data, axis=ar_axes[0], out=out.data)
+        else:
+            s.data = function(data, axis=ar_axes[0])
+            s._remove_axis([ax.index_in_axes_manager for ax in axes])
+            return s
+
     def _apply_function_on_data_and_remove_axis(self, function, axes,
                                                 out=None):
         axes = self.axes_manager[axes]
@@ -3918,6 +3937,9 @@ class Signal(FancySlicing,
             ar_axes = ar_axes[0]
 
         s = out or self._deepcopy_with_new_data(None)
+
+        if np.ma.is_masked(self.data):
+            return self._ma_workaround(s, function, axes, ar_axes, out)
         if out:
             function(self.data, axis=ar_axes, out=out.data)
             s.events.data_changed.trigger(self)
@@ -4148,8 +4170,12 @@ class Signal(FancySlicing,
         (64,64,1023)
         """
         s = out or self._deepcopy_with_new_data(None)
-        s.data = np.diff(self.data, n=order,
-                         axis=self.axes_manager[axis].index_in_array)
+        data = np.diff(self.data, n=order,
+                       axis=self.axes_manager[axis].index_in_array)
+        if out is not None:
+            out.data[:] = data
+        else:
+            s.data = data
         axis2 = s.axes_manager[axis]
         new_offset = self.axes_manager[axis].offset + (order * axis2.scale / 2)
         axis2.offset = new_offset
@@ -4222,9 +4248,12 @@ class Signal(FancySlicing,
         """
         axis = self.axes_manager[axis]
         s = out or self._deepcopy_with_new_data(None)
-        s.data = sp.integrate.simps(y=self.data, x=axis.axis,
-                                    axis=axis.index_in_array)
-        if out is None:
+        data = sp.integrate.simps(y=self.data, x=axis.axis,
+                                  axis=axis.index_in_array)
+        if out is not None:
+            out.data[:] = data
+        else:
+            s.data = data
             s._remove_axis(axis.index_in_axes_manager)
             return s
     integrate_simpson.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
@@ -4390,7 +4419,10 @@ class Signal(FancySlicing,
             hist_spec = signals.Spectrum(hist)
         else:
             hist_spec = out
-            hist_spec.data[:] = hist
+            if hist_spec.data.shape == hist.shape:
+                hist_spec.data[:] = hist
+            else:
+                hist_spec.data = hist
         if bins == 'blocks':
             hist_spec.axes_manager.signal_axes[0].axis = bin_edges[:-1]
             warnings.warn(
@@ -4400,7 +4432,7 @@ class Signal(FancySlicing,
         else:
             hist_spec.axes_manager[0].scale = bin_edges[1] - bin_edges[0]
             hist_spec.axes_manager[0].offset = bin_edges[0]
-
+            hist_spec.axes_manager[0].size = hist.shape[-1]
         hist_spec.axes_manager[0].name = 'value'
         hist_spec.metadata.General.title = (self.metadata.General.title +
                                             " histogram")

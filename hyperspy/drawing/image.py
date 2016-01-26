@@ -363,7 +363,7 @@ class ImagePlot(BlittedFigure):
                                        self.on_key_press)
         self.figure.canvas.draw()
         if self.axes_manager:
-            self.axes_manager.events.indices_changed.connect(self.update, 0)
+            self.axes_manager.events.indices_changed.connect(self.update, [])
 
     def on_key_press(self, event):
         if event.key == 'h':

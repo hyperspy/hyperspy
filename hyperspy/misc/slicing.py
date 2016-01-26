@@ -111,7 +111,7 @@ def copy_slice_from_whitelist(_from, _to, dims, both_slices, isNav):
             attrsetter(_to, key, result)
             continue
         else:
-# 'fn' in flag or no flags at all
+            # 'fn' in flag or no flags at all
             attrsetter(_to, key, target)
             continue
 
@@ -190,16 +190,25 @@ class FancySlicing(object):
         array_slices = self._get_array_slices(slices, isNavigation)
         if out is None:
             _obj = self._deepcopy_with_new_data(self.data[array_slices])
+            for slice_, axis in zip(array_slices, _obj.axes_manager._axes):
+                if (isinstance(slice_, slice) or
+                        len(self.axes_manager._axes) < 2):
+                    axis._slice_me(slice_)
+                else:
+                    _obj._remove_axis(axis.index_in_axes_manager)
         else:
+            out.data = self.data[array_slices]
             _obj = out
-            _obj.axes_manager = self.axes_manager.deepcopy()
-            _obj.data = self._data[array_slices]  # Changes data id!
-        for slice_, axis in zip(array_slices, _obj.axes_manager._axes):
-            if (isinstance(slice_, slice) or
-                    len(self.axes_manager._axes) < 2):
-                axis._slice_me(slice_)
-            else:
-                _obj._remove_axis(axis.index_in_axes_manager)
+            for slice_, axis_src, axis_dst in zip(
+                    array_slices, self.axes_manager._axes,
+                    out.axes_manager._axes):
+                axis_src = axis_src.copy()
+                if (isinstance(slice_, slice) or
+                        len(self.axes_manager._axes) < 2):
+                    axis_src._slice_me(slice_)
+                axis_dst.update_from(axis_src, attributes=(
+                    "scale", "offset", "size"))
+
         if hasattr(self, "_additional_slicing_targets"):
             for ta in self._additional_slicing_targets:
                 try:

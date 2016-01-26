@@ -19,6 +19,7 @@
 from __future__ import division
 
 import matplotlib.pyplot as plt
+from matplotlib.backend_bases import MouseEvent
 import numpy as np
 
 from utils import on_figure_window_close
@@ -49,6 +50,8 @@ class WidgetBase(object):
         self._axes = list()
         self.ax = None
         self.picked = False
+        self.selected = False
+        self._selected_artist = None
         self._size = 1.
         self.color = 'red'
         self.__is_on = True
@@ -161,6 +164,22 @@ class WidgetBase(object):
             self._add_patch_to(ax)
             self.connect(ax)
             canvas.draw()
+            self.select()
+
+    def select(self):
+        """
+        Cause this widget to be the selected widget in its MPL axes. This
+        assumes that the widget has its patch added to the MPL axes.
+        """
+        if not self.patch or not self.is_on() or not self.ax:
+            return
+
+        canvas = self.ax.figure.canvas
+        # Simulate a pick event
+        x, y = self.patch[0].get_transform().transform_point((0, 0))
+        mouseevent = MouseEvent('pick_event', canvas, x, y)
+        canvas.pick_event(mouseevent, self.patch[0])
+        self.picked = False
 
     def connect(self, ax):
         """Connect to the matplotlib Axes' events.
@@ -211,10 +230,14 @@ class WidgetBase(object):
     def draw_patch(self, *args):
         """Update the patch drawing.
         """
-        if hasattr(self.ax, 'hspy_fig'):
-            self.ax.hspy_fig._draw_animated()
-        elif self.ax.figure is not None:
-            self.ax.figure.canvas.draw_idle()
+        try:
+            if hasattr(self.ax, 'hspy_fig'):
+                self.ax.hspy_fig._draw_animated()
+            elif self.ax.figure is not None:
+                self.ax.figure.canvas.draw_idle()
+        except AttributeError:
+            print "whut"
+            pass  # When figure is None, typically when closing
 
     def _v2i(self, axis, v):
         """Wrapped version of DataAxis.value2index, which bounds the index
@@ -410,8 +433,10 @@ class DraggableWidgetBase(WidgetBase):
     def onpick(self, event):
         # Callback for MPL pick event
         self.picked = (event.artist in self.patch)
+        self._selected_artist = event.artist
         if hasattr(super(DraggableWidgetBase, self), 'onpick'):
             super(DraggableWidgetBase, self).onpick(event)
+        self.selected = self.picked
 
     def _onmousemove(self, event):
         """Callback for mouse movement. For dragging, the implementor would
@@ -624,17 +649,20 @@ class ResizableDraggableWidgetBase(DraggableWidgetBase):
                 with e.suppress_callback(self._on_navigate):
                     for i in xrange(len(self.axes)):
                         self.axes[i].index = self.indices[i]
-            self.events.moved.trigger(self)
-        if resized:
-            self.events.resized.trigger(self)
         if moved or resized:
-            self.events.changed.trigger(self)
+            # Update patch first
             if moved and resized:
                 self._update_patch_geometry()
             elif moved:
                 self._update_patch_position()
             else:
                 self._update_patch_size()
+            # Then fire events
+            if moved:
+                self.events.moved.trigger(self)
+            if resized:
+                self.events.resized.trigger(self)
+            self.events.changed.trigger(self)
 
 
 class Widget2DBase(ResizableDraggableWidgetBase):

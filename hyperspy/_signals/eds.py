@@ -821,7 +821,9 @@ class EDSSpectrum(Spectrum):
         for xray_line in xray_lines:
             line_energy, line_FWHM = self._get_line_energy(xray_line,
                                                            FWHM_MnKa='auto')
-            tmp = [line_energy - line_FWHM * line_width[0] - line_FWHM * windows_width,
+            tmp = [
+                line_energy - line_FWHM *
+                    line_width[0] - line_FWHM * windows_width,
                    line_energy - line_FWHM * line_width[0],
                    line_energy + line_FWHM * line_width[1],
                    line_energy + line_FWHM * line_width[1] + line_FWHM * windows_width]

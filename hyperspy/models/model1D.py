@@ -35,6 +35,7 @@ from hyperspy.events import EventSupressor
 
 
 class Model1D(BaseModel):
+
     """Model and data fitting for one dimensional signals.
 
     A model is constructed as a linear combination of :mod:`components` that
@@ -158,6 +159,7 @@ class Model1D(BaseModel):
     -0.072121936813224569
 
     """
+
     def __init__(self, spectrum, dictionary=None):
         self.spectrum = spectrum
         self.signal = self.spectrum
@@ -171,7 +173,7 @@ class Model1D(BaseModel):
         self._adjust_position_all = None
         self.axis = self.axes_manager.signal_axes[0]
         self.axes_manager.events.indices_changed.connect(
-            self.fetch_stored_values, 0)
+            self.fetch_stored_values, [])
         self.channel_switches = np.array([True] * len(self.axis.axis))
         self.chisq = spectrum._get_navigation_signal()
         self.chisq.change_dtype("float")
@@ -249,22 +251,28 @@ class Model1D(BaseModel):
         self.convolution_axis = generate_axis(self.axis.offset, step,
                                               dimension, knot_position)
 
-    def _connect_parameters2update_plot(self):
+    def remove(self, thing):
+        super(Model1D, self).remove(thing)
+        self._disconnect_parameters2update_plot([thing])
+
+    remove.__doc__ = BaseModel.remove.__doc__
+
+    def _connect_parameters2update_plot(self, components):
         if self._plot_active is False:
             return
-        for i, component in enumerate(self):
+        for i, component in enumerate(components):
             component.events.active_changed.connect(
-                self._model_line.update, 0)
+                self._model_line.update, [])
             for parameter in component.parameters:
                 parameter.events.value_changed.connect(
-                    self._model_line.update, 0)
+                    self._model_line.update, [])
         if self._plot_components is True:
             self._connect_component_lines()
 
-    def _disconnect_parameters2update_plot(self):
+    def _disconnect_parameters2update_plot(self, components):
         if self._model_line is None:
             return
-        for component in self:
+        for component in components:
             component.events.active_changed.disconnect(self._model_line.update)
             for parameter in component.parameters:
                 parameter.events.value_changed.disconnect(
@@ -289,7 +297,7 @@ class Model1D(BaseModel):
                                   component.active is True]:
                     self._update_component_line(component)
             except:
-                self._disconnect_parameters2update_plot()
+                self._disconnect_parameters2update_plot(components=self)
 
     @contextmanager
     def suspend_update(self, update_on_resume=True):
@@ -591,7 +599,7 @@ class Model1D(BaseModel):
 
         self._model_line = l2
         self._plot = self.spectrum._plot
-        self._connect_parameters2update_plot()
+        self._connect_parameters2update_plot(self)
         if plot_components is True:
             self.enable_plot_components()
 
@@ -599,9 +607,9 @@ class Model1D(BaseModel):
     def _connect_component_line(component):
         if hasattr(component, "_model_plot_line"):
             f = component._model_plot_line.update
-            component.events.active_changed.connect(f, 0)
+            component.events.active_changed.connect(f, [])
             for parameter in component.parameters:
-                parameter.events.value_changed.connect(f, 0)
+                parameter.events.value_changed.connect(f, [])
 
     @staticmethod
     def _disconnect_component_line(component):
@@ -645,7 +653,7 @@ class Model1D(BaseModel):
     def _close_plot(self):
         if self._plot_components is True:
             self.disable_plot_components()
-        self._disconnect_parameters2update_plot()
+        self._disconnect_parameters2update_plot(components=self)
         self._model_line = None
 
     def enable_plot_components(self):
@@ -756,9 +764,9 @@ class Model1D(BaseModel):
             self._position_widgets[-1].connect_navigate()
         # Create widget -> parameter connection
         am._axes[0].continuous_value = True
-        am._axes[0].events.value_changed.connect(set_value, 1)
+        am._axes[0].events.value_changed.connect(set_value, ["value"])
         component._position.events.value_changed.connect(
-            am._axes[0].set_index_from_value, 1)
+            am._axes[0].set_index_from_value, ["value"])
 
     def disable_adjust_position(self):
         """Disables the interactive adjust position feature
