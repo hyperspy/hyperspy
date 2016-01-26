@@ -63,6 +63,18 @@ class Test_metadata:
                           s.metadata.as_dictionary(),
                           "Source metadata changed")
 
+    def test_sum_live_time_out_arg(self):
+        s = self.signal
+        sSum = s.sum(0)
+        s.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time = 4.2
+        s_resum = s.sum(0)
+        r = s.sum(0, out=sSum)
+        assert_equal(r, None)
+        assert_equal(
+            s_resum.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time,
+            sSum.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time)
+        np.testing.assert_allclose(s_resum.data, sSum.data)
+
     def test_rebin_live_time(self):
         s = self.signal
         old_metadata = s.metadata.deepcopy()

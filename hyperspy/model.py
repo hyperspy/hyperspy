@@ -609,7 +609,7 @@ class BaseModel(list):
             if isinstance(variance, Signal):
                 variance = variance.data.__getitem__(
                     self.axes_manager._getitem_tuple)[np.where(
-                        self.channel_switches)]
+                    self.channel_switches)]
         else:
             variance = 1.0
         d = self(onlyactive=True).ravel() - self.signal()[np.where(

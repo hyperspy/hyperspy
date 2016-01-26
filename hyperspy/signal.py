@@ -23,6 +23,7 @@ import warnings
 import math
 import inspect
 from contextlib import contextmanager
+from datetime import datetime
 
 import numpy as np
 import numpy.ma as ma
@@ -78,7 +79,8 @@ from hyperspy.misc.slicing import SpecialSlicers, FancySlicing
 from hyperspy.misc.utils import slugify
 from hyperspy.events import Events, Event
 from datetime import datetime
-from docstrings.signal import ONE_AXIS_PARAMETER, MANY_AXIS_PARAMETER
+from hyperspy.docstrings.signal import (
+    ONE_AXIS_PARAMETER, MANY_AXIS_PARAMETER, OUT_ARG)
 
 
 class ModelManager(object):
@@ -96,7 +98,8 @@ class ModelManager(object):
             self.pop = lambda: mm.pop(self._name)
             self.restore.__doc__ = "Returns the stored model"
             self.remove.__doc__ = "Removes the stored model"
-            self.pop.__doc__ = "Returns the stored model and removes it from storage"
+            self.pop.__doc__ = \
+                "Returns the stored model and removes it from storage"
 
         def __repr__(self):
             return repr(self._mm._models[self._name])
@@ -174,8 +177,8 @@ class ModelManager(object):
         if model.signal is self._signal:
             self._save(name, model.as_dictionary())
         else:
-            raise ValueError("The model is created from a different signal, you "
-                             "should store it there")
+            raise ValueError("The model is created from a different signal, "
+                             "you should store it there")
 
     def _check_name(self, name, existing=False):
         if not isinstance(name, basestring):
@@ -3122,8 +3125,9 @@ class Signal(FancySlicing,
                'axes': self.axes_manager._get_axes_dicts(),
                'metadata': self.metadata.deepcopy().as_dictionary(),
                'original_metadata':
-                   self.original_metadata.deepcopy().as_dictionary(),
-               'tmp_parameters': self.tmp_parameters.deepcopy().as_dictionary()}
+               self.original_metadata.deepcopy().as_dictionary(),
+               'tmp_parameters':
+               self.tmp_parameters.deepcopy().as_dictionary()}
         if add_learning_results and hasattr(self, 'learning_results'):
             dic['learning_results'] = copy.deepcopy(
                 self.learning_results.__dict__)
@@ -3484,7 +3488,7 @@ class Signal(FancySlicing,
         return s
     rollaxis.__doc__ %= (ONE_AXIS_PARAMETER, ONE_AXIS_PARAMETER)
 
-    def rebin(self, new_shape):
+    def rebin(self, new_shape, out=None):
         """Returns the object with the data rebinned.
 
         Parameters
@@ -3492,6 +3496,7 @@ class Signal(FancySlicing,
         new_shape: tuple of ints
             The new shape elements must be divisors of the original shape
             elements.
+        %s
 
         Returns
         -------
@@ -3523,17 +3528,24 @@ class Signal(FancySlicing,
                 new_shape[axis.index_in_axes_manager])
         factors = (np.array(self.data.shape) /
                    np.array(new_shape_in_array))
-        s = self._deepcopy_with_new_data(
-            array_tools.rebin(self.data, new_shape_in_array))
-        for axis in s.axes_manager._axes:
-            axis.scale *= factors[axis.index_in_array]
+        s = out or self._deepcopy_with_new_data(None)
+        data = array_tools.rebin(self.data, new_shape_in_array)
+        if out:
+            out.data[:] = data
+        else:
+            s.data = data
+        for axis, axis_src in zip(s.axes_manager._axes,
+                                  self.axes_manager._axes):
+            axis.scale = axis_src.scale * factors[axis.index_in_array]
         s.get_dimensions_from_data()
         if s.metadata.has_item('Signal.Noise_properties.variance'):
             if isinstance(s.metadata.Signal.Noise_properties.variance, Signal):
                 var = s.metadata.Signal.Noise_properties.variance
                 s.metadata.Signal.Noise_properties.variance = var.rebin(
                     new_shape)
-        return s
+        if out is None:
+            return s
+    rebin.__doc__ %= OUT_ARG
 
     def split(self,
               axis='auto',
@@ -3885,25 +3897,52 @@ class Signal(FancySlicing,
                 name="Scalar",
                 navigate=False,)
 
-    def _apply_function_on_data_and_remove_axis(self, function, axes):
+    def _ma_workaround(self, s, function, axes, ar_axes, out):
+        # TODO: Remove if and when numpy.ma accepts tuple `axis`
+
+        # Basically perform unfolding, but only on data. We don't care about
+        # the axes since the function will consume it/them.
+        ar_axes = sorted(ar_axes)
+        new_shape = list(self.data.shape)
+        for index in ar_axes[1:]:
+            new_shape[index] = 1
+        new_shape[ar_axes[0]] = -1
+        data = self.data.reshape(new_shape).squeeze()
+
+        if out:
+            function(data, axis=ar_axes[0], out=out.data)
+        else:
+            s.data = function(data, axis=ar_axes[0])
+            s._remove_axis([ax.index_in_axes_manager for ax in axes])
+            return s
+
+    def _apply_function_on_data_and_remove_axis(self, function, axes,
+                                                out=None):
         axes = self.axes_manager[axes]
         if not np.iterable(axes):
             axes = (axes,)
         ar_axes = tuple(ax.index_in_array for ax in axes)
         if len(ar_axes) == 1:
             ar_axes = ar_axes[0]
-        s = self._deepcopy_with_new_data(
-            function(self.data,
-                     axis=ar_axes))
-        s._remove_axis([ax.index_in_axes_manager for ax in axes])
-        return s
 
-    def sum(self, axis=None):
+        s = out or self._deepcopy_with_new_data(None)
+
+        if np.ma.is_masked(self.data):
+            return self._ma_workaround(s, function, axes, ar_axes, out)
+        if out:
+            function(self.data, axis=ar_axes, out=out.data)
+        else:
+            s.data = function(self.data, axis=ar_axes)
+            s._remove_axis([ax.index_in_axes_manager for ax in axes])
+            return s
+
+    def sum(self, axis=None, out=None):
         """Sum the data over the given axes.
 
         Parameters
         ----------
         axis %s
+        %s
 
         Returns
         -------
@@ -3925,16 +3964,18 @@ class Signal(FancySlicing,
         """
         if axis is None:
             axis = self.axes_manager.navigation_axes
-        return self._apply_function_on_data_and_remove_axis(np.sum, axis)
-    sum.__doc__ %= MANY_AXIS_PARAMETER
+        return self._apply_function_on_data_and_remove_axis(np.sum, axis,
+                                                            out=out)
+    sum.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG)
 
-    def max(self, axis=None):
+    def max(self, axis=None, out=None):
         """Returns a signal with the maximum of the signal along at least one
         axis.
 
         Parameters
         ----------
         axis %s
+        %s
 
         Returns
         -------
@@ -3956,16 +3997,18 @@ class Signal(FancySlicing,
         """
         if axis is None:
             axis = self.axes_manager.navigation_axes
-        return self._apply_function_on_data_and_remove_axis(np.max, axis)
-    max.__doc__ %= MANY_AXIS_PARAMETER
+        return self._apply_function_on_data_and_remove_axis(np.max, axis,
+                                                            out=out)
+    max.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG)
 
-    def min(self, axis=None):
+    def min(self, axis=None, out=None):
         """Returns a signal with the minimum of the signal along at least one
         axis.
 
         Parameters
         ----------
         axis %s
+        %s
 
         Returns
         -------
@@ -3987,16 +4030,18 @@ class Signal(FancySlicing,
         """
         if axis is None:
             axis = self.axes_manager.navigation_axes
-        return self._apply_function_on_data_and_remove_axis(np.min, axis)
-    min.__doc__ %= MANY_AXIS_PARAMETER
+        return self._apply_function_on_data_and_remove_axis(np.min, axis,
+                                                            out=out)
+    min.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG)
 
-    def mean(self, axis=None):
+    def mean(self, axis=None, out=None):
         """Returns a signal with the average of the signal along at least one
         axis.
 
         Parameters
         ----------
         axis %s
+        %s
 
         Returns
         -------
@@ -4018,16 +4063,18 @@ class Signal(FancySlicing,
         """
         if axis is None:
             axis = self.axes_manager.navigation_axes
-        return self._apply_function_on_data_and_remove_axis(np.mean, axis)
-    mean.__doc__ %= MANY_AXIS_PARAMETER
+        return self._apply_function_on_data_and_remove_axis(np.mean, axis,
+                                                            out=out)
+    mean.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG)
 
-    def std(self, axis=None):
+    def std(self, axis=None, out=None):
         """Returns a signal with the standard deviation of the signal along
         at least one axis.
 
         Parameters
         ----------
         axis %s
+        %s
 
         Returns
         -------
@@ -4049,16 +4096,18 @@ class Signal(FancySlicing,
         """
         if axis is None:
             axis = self.axes_manager.navigation_axes
-        return self._apply_function_on_data_and_remove_axis(np.std, axis)
-    std.__doc__ %= MANY_AXIS_PARAMETER
+        return self._apply_function_on_data_and_remove_axis(np.std, axis,
+                                                            out=out)
+    std.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG)
 
-    def var(self, axis=None):
+    def var(self, axis=None, out=None):
         """Returns a signal with the variances of the signal along at least one
         axis.
 
         Parameters
         ----------
         axis %s
+        %s
 
         Returns
         -------
@@ -4080,10 +4129,11 @@ class Signal(FancySlicing,
         """
         if axis is None:
             axis = self.axes_manager.navigation_axes
-        return self._apply_function_on_data_and_remove_axis(np.var, axis)
-    var.__doc__ %= MANY_AXIS_PARAMETER
+        return self._apply_function_on_data_and_remove_axis(np.var, axis,
+                                                            out=out)
+    var.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG)
 
-    def diff(self, axis, order=1):
+    def diff(self, axis, order=1, out=None):
         """Returns a signal with the n-th order discrete difference along
         given axis.
 
@@ -4092,6 +4142,7 @@ class Signal(FancySlicing,
         axis %s
         order : int
             the order of the derivative
+                %s
 
         See also
         --------
@@ -4106,18 +4157,22 @@ class Signal(FancySlicing,
         >>> s.diff(-1).data.shape
         (64,64,1023)
         """
-
-        s = self._deepcopy_with_new_data(
-            np.diff(self.data,
-                    n=order,
-                    axis=self.axes_manager[axis].index_in_array))
-        axis = s.axes_manager[axis]
-        axis.offset += (order * axis.scale / 2)
+        s = out or self._deepcopy_with_new_data(None)
+        data = np.diff(self.data, n=order,
+                       axis=self.axes_manager[axis].index_in_array)
+        if out is not None:
+            out.data[:] = data
+        else:
+            s.data = data
+        axis2 = s.axes_manager[axis]
+        new_offset = self.axes_manager[axis].offset + (order * axis2.scale / 2)
+        axis2.offset = new_offset
         s.get_dimensions_from_data()
-        return s
-    diff.__doc__ %= ONE_AXIS_PARAMETER
+        if out is None:
+            return s
+    diff.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
 
-    def derivative(self, axis, order=1):
+    def derivative(self, axis, order=1, out=None):
         """Numerical derivative along the given axis.
 
         Currently only the first order finite difference method is implemented.
@@ -4129,13 +4184,14 @@ class Signal(FancySlicing,
             The order of the derivative. (Note that this is the order of the
             derivative i.e. `order=2` does not use second order finite
             differences method.)
+        %s
 
         Returns
         -------
         der : Signal
             Note that the size of the data on the given `axis` decreases by the
-            given `order` i.e. if `axis` is "x" and `order` is 2 the x dimension
-            is N, der's x dimension is N - 2.
+            given `order` i.e. if `axis` is "x" and `order` is 2 the
+            x dimension is N, der's x dimension is N - 2.
 
         See also
         --------
@@ -4143,19 +4199,22 @@ class Signal(FancySlicing,
 
         """
 
-        der = self.diff(order=order, axis=axis)
+        der = self.diff(order=order, axis=axis, out=out)
+        der = out or der
         axis = self.axes_manager[axis]
         der.data /= axis.scale ** order
-        return der
-    derivative.__doc__ %= ONE_AXIS_PARAMETER
+        if out is None:
+            return der
+    derivative.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
 
-    def integrate_simpson(self, axis):
+    def integrate_simpson(self, axis, out=None):
         """Returns a signal with the result of calculating the integral
         of the signal along an axis using Simpson's rule.
 
         Parameters
         ----------
         axis %s
+        %s
 
         Returns
         -------
@@ -4176,15 +4235,18 @@ class Signal(FancySlicing,
 
         """
         axis = self.axes_manager[axis]
-        s = self._deepcopy_with_new_data(
-            sp.integrate.simps(y=self.data,
-                               x=axis.axis,
-                               axis=axis.index_in_array))
-        s._remove_axis(axis.index_in_axes_manager)
-        return s
-    integrate_simpson.__doc__ %= ONE_AXIS_PARAMETER
+        s = out or self._deepcopy_with_new_data(None)
+        data = sp.integrate.simps(y=self.data, x=axis.axis,
+                                  axis=axis.index_in_array)
+        if out is not None:
+            out.data[:] = data
+        else:
+            s.data = data
+            s._remove_axis(axis.index_in_axes_manager)
+            return s
+    integrate_simpson.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
 
-    def integrate1D(self, axis):
+    def integrate1D(self, axis, out=None):
         """Integrate the signal over the given axis.
 
         The integration is performed using Simpson's rule if
@@ -4194,6 +4256,7 @@ class Signal(FancySlicing,
         Parameters
         ----------
         axis %s
+        %s
 
         Returns
         -------
@@ -4214,17 +4277,18 @@ class Signal(FancySlicing,
 
         """
         if self.metadata.Signal.binned is False:
-            return self.integrate_simpson(axis)
+            return self.integrate_simpson(axis=axis, out=out)
         else:
-            return self.sum(axis)
-    integrate1D.__doc__ %= ONE_AXIS_PARAMETER
+            return self.sum(axis=axis, out=out)
+    integrate1D.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
 
-    def indexmax(self, axis):
+    def indexmax(self, axis, out=None):
         """Returns a signal with the index of the maximum along an axis.
 
         Parameters
         ----------
         axis %s
+        %s
 
         Returns
         -------
@@ -4245,15 +4309,17 @@ class Signal(FancySlicing,
         (64,64)
 
         """
-        return self._apply_function_on_data_and_remove_axis(np.argmax, axis)
-    indexmax.__doc__ %= ONE_AXIS_PARAMETER
+        return self._apply_function_on_data_and_remove_axis(np.argmax, axis,
+                                                            out=out)
+    indexmax.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
 
-    def valuemax(self, axis):
+    def valuemax(self, axis, out=None):
         """Returns a signal with the value of coordinates of the maximum along an axis.
 
         Parameters
         ----------
         axis %s
+        %s
 
         Returns
         -------
@@ -4273,12 +4339,18 @@ class Signal(FancySlicing,
         (64,64)
 
         """
-        s = self.indexmax(axis)
-        s.data = self.axes_manager[axis].index2value(s.data)
-        return s
-    valuemax.__doc__ %= ONE_AXIS_PARAMETER
+        idx = self.indexmax(axis)
+        s = out or idx
+        data = self.axes_manager[axis].index2value(idx.data)
+        if out is None:
+            idx.data = data
+            return idx
+        else:
+            out.data[:] = data
+    valuemax.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
 
-    def get_histogram(self, bins='freedman', range_bins=None, **kwargs):
+    def get_histogram(self, bins='freedman', range_bins=None, out=None,
+                      **kwargs):
         """Return a histogram of the signal data.
 
         More sophisticated algorithms for determining bins can be used.
@@ -4296,6 +4368,7 @@ class Signal(FancySlicing,
         range_bins : tuple or None, optional
             the minimum and maximum range for the histogram. If not specified,
             it will be (x.min(), x.max())
+        %s
         **kwargs
             other keyword arguments (weight and density) are described in
             np.histogram().
@@ -4330,7 +4403,14 @@ class Signal(FancySlicing,
                                     bins=bins,
                                     range=range_bins,
                                     **kwargs)
-        hist_spec = signals.Spectrum(hist)
+        if out is None:
+            hist_spec = signals.Spectrum(hist)
+        else:
+            hist_spec = out
+            if hist_spec.data.shape == hist.shape:
+                hist_spec.data[:] = hist
+            else:
+                hist_spec.data = hist
         if bins == 'blocks':
             hist_spec.axes_manager.signal_axes[0].axis = bin_edges[:-1]
             warnings.warn(
@@ -4340,12 +4420,14 @@ class Signal(FancySlicing,
         else:
             hist_spec.axes_manager[0].scale = bin_edges[1] - bin_edges[0]
             hist_spec.axes_manager[0].offset = bin_edges[0]
-
+            hist_spec.axes_manager[0].size = hist.shape[-1]
         hist_spec.axes_manager[0].name = 'value'
         hist_spec.metadata.General.title = (self.metadata.General.title +
                                             " histogram")
         hist_spec.metadata.Signal.binned = True
-        return hist_spec
+        if out is None:
+            return hist_spec
+    get_histogram.__doc__ %= OUT_ARG
 
     def map(self, function,
             show_progressbar=None, **kwargs):
@@ -4794,7 +4876,7 @@ class Signal(FancySlicing,
         nitem = nitem if nitem > 0 else 1
         return nitem
 
-    def as_spectrum(self, spectral_axis):
+    def as_spectrum(self, spectral_axis, out=None):
         """Return the Signal as a spectrum.
 
         The chosen spectral axis is moved to the last index in the
@@ -4805,6 +4887,7 @@ class Signal(FancySlicing,
         Parameters
         ----------
         spectral_axis %s
+        %s
 
         Examples
         --------
@@ -4821,10 +4904,13 @@ class Signal(FancySlicing,
         sp = self.rollaxis(spectral_axis, -1 + 3j)
         sp.metadata.Signal.record_by = "spectrum"
         sp._assign_subclass()
-        return sp
-    as_spectrum.__doc__ %= ONE_AXIS_PARAMETER
+        if out is None:
+            return sp
+        else:
+            out.data[:] = sp.data
+    as_spectrum.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
 
-    def as_image(self, image_axes):
+    def as_image(self, image_axes, out=None):
         """Convert signal to image.
 
         The chosen image axes are moved to the last indices in the
@@ -4833,9 +4919,10 @@ class Signal(FancySlicing,
 
         Parameters
         ----------
-        image_axes : tuple of {int, complex, str}
+        image_axes : tuple of {int | str | axis}
             Select the image axes. Note that the order of the axes matters
             and it is given in the "natural" i.e. X, Y, Z... order.
+        %s
 
         Examples
         --------
@@ -4863,7 +4950,11 @@ class Signal(FancySlicing,
             iaxes[1] - np.argmax(iaxes) + 3j, -2 + 3j)
         im.metadata.Signal.record_by = "image"
         im._assign_subclass()
-        return im
+        if out is None:
+            return im
+        else:
+            out.data[:] = im.data
+    as_image.__doc__ %= OUT_ARG
 
     def _assign_subclass(self):
         mp = self.metadata
