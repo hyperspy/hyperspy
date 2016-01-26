@@ -390,7 +390,6 @@ class TestTriggerArgResolution(EventsBase):
         self.events.a.connect(f)
         nt.assert_not_in(f, copy.deepcopy(self.events.a).connected)
 
-
     def test_all_kwargs_resolution(self):
         self.events.a.connect(lambda A, B:
                               nt.assert_equal((A, B), ('vA', 'vB')), )
