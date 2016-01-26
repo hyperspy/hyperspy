@@ -702,9 +702,6 @@ class CircleROI(BaseInteractiveROI):
     def _get_widget_type(self, axes, signal):
         return widgets.CircleWidget
 
-    def navigate(self, signal):
-        raise NotImplementedError("CircleROI does not support navigation.")
-
     def __call__(self, signal, out=None, axes=None):
         """Slice the signal according to the ROI, and return it.
 
