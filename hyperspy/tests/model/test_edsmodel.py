@@ -18,7 +18,7 @@ class TestlineFit:
                                                     'scale': 0.01,
                                                     'name': 'E',
                                                     'offset': 5.})
-        s = s+0.002
+        s = s + 0.002
         self.s = s
 
     def test_fit(self):
@@ -27,7 +27,7 @@ class TestlineFit:
         m.fit()
         nt.assert_true(np.allclose([i.data for i in
                                    m.get_lines_intensity()],
-                                   [[0.5], [0.2], [0.3]], atol=10-4))
+                                   [[0.5], [0.2], [0.3]], atol=10 - 4))
 
     def test_calibrate_energy_resolution(self):
         s = self.s
@@ -83,7 +83,7 @@ class TestlineFit:
             energy_axis={'units': 'keV', 'size': 400,
                          'scale': 0.01, 'name': 'E',
                          'offset': 4.9})
-        s = (s+s1/50)
+        s = (s + s1 / 50)
         m = s.create_model()
         m.fit()
         with assert_warns(message='The X-ray line expected to be in the model '

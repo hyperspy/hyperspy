@@ -68,14 +68,14 @@ class RangeWidget(ResizableDraggableWidgetBase):
         self.span.snap_position = self.snap_position
         self.span.snap_size = self.snap_size
         self.span.can_switch = True
-        self.span.events.changed.connect(self._span_changed, 1)
+        self.span.events.changed.connect(self._span_changed)
         self.span.step_ax = self.axes[0]
         self.span.tolerance = 5
         self.patch = [self.span.rect]
 
-    def _span_changed(self, span):
+    def _span_changed(self, widget):
         r = self._get_range()
-        pr = span.range
+        pr = widget.range
         if r != pr:
             dx = self.axes[0].scale
             x = pr[0] + 0.5 * dx
@@ -273,9 +273,9 @@ class ModifiableSpanSelector(matplotlib.widgets.SpanSelector):
         self.update()
 
     def contains(self, mouseevent):
-        # Assert y is correct first
         x, y = self.rect.get_transform().inverted().transform_point(
             (mouseevent.x, mouseevent.y))
+        # Assert y is correct first
         if not (0.0 <= y <= 1.0):
             return False, {}
         invtrans = self.ax.transData.inverted()

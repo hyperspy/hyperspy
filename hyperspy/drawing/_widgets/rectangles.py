@@ -239,16 +239,17 @@ class RectangleWidget(SquareWidget, ResizersMixin):
         self._set_a_size(1, new_s)
 
     def on_key_press(self, event):
-        if event.key == "x":
-            self._increase_xsize()
-        elif event.key == "c":
-            self._decrease_xsize()
-        elif event.key == "y":
-            self._increase_ysize()
-        elif event.key == "u":
-            self._decrease_ysize()
-        else:
-            super(RectangleWidget, self).on_key_press(event)
+        if self.selected:
+            if event.key == "x":
+                self._increase_xsize()
+            elif event.key == "c":
+                self._decrease_xsize()
+            elif event.key == "y":
+                self._increase_ysize()
+            elif event.key == "u":
+                self._decrease_ysize()
+            else:
+                super(RectangleWidget, self).on_key_press(event)
 
     # --- End internals that trigger events ---
 

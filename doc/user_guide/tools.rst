@@ -916,3 +916,38 @@ for example:
       ├── record_by = spectrum
       ├── signal_origin = simulation
       └── signal_type =
+
+
+Speeding up operations
+----------------------
+
+
+Reusing a Signal for output
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Many signal methods create and return a new signal. For fast operations, the
+new signal creation time is non-negligible. Also, when the operation is
+repeated many times, for example in a loop, the cumulaive creation time can
+become significant. Therefore, many operations on `Signal` accept an optional
+argument `out`. If an existing signal is passed to `out`, the function output
+will be placed into that signal, instead of being returned in a new signal.
+The following example shows how to use this feature to slice a `Signal`. It is
+important to know that the `Signal` instance passed in the `out` argument must
+be well-suited for the purpose. Often this means that it must have the same
+axes and data shape as the `Signal` that would normally be returned by the
+operation.
+
+.. code-block:: python
+
+    >>> s = signals.Spectrum(np.arange(10))
+    >>> s_sum = s.sum(0)
+    >>> s_sum.data
+    array(45)
+    >>> s.inav[:5].sum(0, out=s_sum)
+    >>> s_sum.data
+    10
+    >>> s_roi = s.inav[:3]
+    >>> s_roi
+    <Spectrum, title: , dimensions: (|3)>
+    >>> s.inav.__getitem__(slice(None, 5), out=s_roi)
+    >>> s_roi
+    <Spectrum, title: , dimensions: (|5)>

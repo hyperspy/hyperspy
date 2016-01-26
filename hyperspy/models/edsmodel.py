@@ -93,6 +93,7 @@ def _get_scale(E1, E_ref1, fact):
 
 
 class EDSModel(Model1D):
+
     """Build and fit a model of an EDS Spectrum.
 
     Parameters
@@ -441,7 +442,7 @@ class EDSModel(Model1D):
                 fact = float(ax.value2index(E)) / ax.value2index(E_ref)
                 component.centre.twin_function = _get_scale(E, E_ref, fact)
                 component.centre.twin_inverse_function = _get_scale(
-                    E_ref, E, 1./fact)
+                    E_ref, E, 1. / fact)
                 component.centre.twin = component_ref.centre
                 ref.append(E)
         return ref
