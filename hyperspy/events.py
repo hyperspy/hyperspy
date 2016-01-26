@@ -117,7 +117,7 @@ class Events(object):
 
     def __iter__(self):
         """
-        Allows iteraction of all events in the container
+        Allows iteration of all events in the container
         """
         return self._events.itervalues()
 
@@ -308,10 +308,9 @@ class Event(object):
         if function in self.connected:
             raise ValueError("Function %s already connected to this event." %
                              function)
-            return
         if kwargs == 'auto':
             spec = inspect.getargspec(function)
-            if spec.varargs:
+            if spec.varargs and not spec.keywords:
                 raise NotImplementedError("Connecting to variable argument "
                                           "functions is not supported in auto "
                                           "connection mode.")
@@ -355,11 +354,9 @@ class Event(object):
             self._connected_all.remove(function)
             kwargs = "all"
         elif function in self._connected_some:
-            kwargs = self._connected_some[function]
-            del self._connected_some[function]
+            kwargs = self._connected_some.pop(function)
         elif function in self._connected_map:
-            kwargs = self._connected_map[function]
-            del self._connected_map[function]
+            kwargs = self._connected_some.pop(function)
         else:
             raise ValueError("The %s function is not connected." % function)
         if return_connection_kwargs:

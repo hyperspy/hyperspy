@@ -287,13 +287,14 @@ class Parameter(t.HasTraits):
         self.trait_property_changed('free', old_value, self.__free)
 
     def _on_twin_update(self, value, twin=None):
-        if (twin is None or not hasattr(twin, 'events') or
-                not hasattr(twin.events, 'value_changed')):
-            self.events.value_changed.trigger(value=value, parameter=self)
-        else:
+        if (twin is not None
+                and hasattr(twin, 'events')
+                and hasattr(twin.events, 'value_changed')):
             with twin.events.value_changed.suppress_callback(
                     self._on_twin_update):
                 self.events.value_changed.trigger(value=value, parameter=self)
+        else:
+            self.events.value_changed.trigger(value=value, parameter=self)
 
     def _set_twin(self, arg):
         if arg is None:
