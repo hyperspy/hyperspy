@@ -290,13 +290,14 @@ class Event(object):
         ----------
         function : callable
             The function to call when the event triggers.
-        nargs : int, 'all' (default), or 'auto'
-            The number of arguments to supply to the function. If 'all', it
-            will be called with all arguments passed to trigger(). If 'auto'
-            inspect.getargspec() will be used to determine the number of
-            arguments the function accepts (arguments with default values will
-            be included in the count). If the function accepts *args or
-            **kwargs, all arguments will be passed.
+        kwargs : {tuple or list, dictionary, 'all', 'auto'}, default "all"
+            If "all", all the trigger keyword arguments are passed to the
+            function. If a list or tuple of strings, only those keyword
+            arguments that are in the tuple or list are passed. If empty,
+            no keyword argument is passed. If dictionary, the keyword arguments
+            of trigger are mapped as indicated in the dictionary. For example,
+            {"a" : "b"} maps the trigger argument "a" to the function argument
+            "b".
 
         See also
         --------
@@ -305,12 +306,16 @@ class Event(object):
         if not callable(function):
             raise TypeError("Only callables can be registered")
         if function in self.connected:
-            warnings.warn("Function %s already connected to this event." %
-                          function)
+            raise ValueError("Function %s already connected to this event." %
+                             function)
             return
         if kwargs == 'auto':
             spec = inspect.getargspec(function)
-            if spec.varargs or spec.keywords:
+            if spec.varargs:
+                raise NotImplementedError("Connecting to variable argument "
+                                          "functions is not supported in auto "
+                                          "connection mode.")
+            elif spec.keywords:
                 kwargs = 'all'
             elif spec.args is None:
                 kwargs = []
