@@ -69,7 +69,7 @@ class GaussianHF(Expression):
             centre=centre,
             position="centre",
             autodoc=False,
-            )
+        )
 
         # Boundaries
         self.height.bmin = None

@@ -84,3 +84,9 @@ class TestDataAxis:
         nose.tools.assert_equal(
             self.axis._slice_me(slice(np.float32(10.2), 10.4, 2)),
             slice(2, 4, 2))
+
+    def test_update_from(self):
+        ax2 = DataAxis(size=2, units="nm", scale=0.5)
+        self.axis.update_from(ax2, attributes=("units", "scale"))
+        nose.tools.assert_equal((ax2.units, ax2.scale),
+                                (self.axis.units, self.axis.scale))

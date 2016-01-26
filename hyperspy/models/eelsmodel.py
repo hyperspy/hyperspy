@@ -76,7 +76,8 @@ class EELSModel(Model1D):
         self.convolved = False
         self.low_loss = ll
         self.GOS = GOS
-        self.edges = list()
+        self.edges = []
+        self._background_components = []
         if dictionary is not None:
             auto_background = False
             auto_add_edges = False
@@ -104,29 +105,42 @@ class EELSModel(Model1D):
                 "but an object of type %s was provided" %
                 str(type(value)))
 
-    def _touch(self):
-        """Run model setup tasks
+    def append(self, component):
+        super(EELSModel, self).append(component)
+        if isinstance(component, EELSCLEdge):
+            tem = self.spectrum.metadata.Acquisition_instrument.TEM
+            component.set_microscope_parameters(
+                E0=tem.beam_energy,
+                alpha=tem.convergence_angle,
+                beta=tem.Detector.EELS.collection_angle,
+                energy_scale=self.axis.scale)
+            component.energy_scale = self.axis.scale
+            component._set_fine_structure_coeff()
+        self._classify_components()
 
-        This function must be called everytime that we add or remove components
-        from the model.
-        It creates the bookmarks self.edges and self._background_components and
-        configures the edges by setting the energy_scale attribute and setting
-        the fine structure.
+    append.__doc__ = Model1D.append.__doc__
+
+    def remove(self, component):
+        super(EELSModel, self).append(component)
+        self._classify_components()
+    remove.__doc__ = Model1D.remove.__doc__
+
+    def _classify_components(self):
+        """Classify components between background and ionization edge
+        components.
+
+        This method should be called everytime that components are added and
+        removed. An ionization edge becomes background when its onset falls to
+        the left of the first non-masked energy channel. The ionization edges
+        are stored in a list in the `edges` attribute. They are sorted by
+        increasing `onset_energy`. The background components are stored in
+        `_background_components`.
 
         """
-        self._BaseModel__touch()
         self.edges = []
         self._background_components = []
         for component in self:
             if isinstance(component, EELSCLEdge):
-                tem = self.spectrum.metadata.Acquisition_instrument.TEM
-                component.set_microscope_parameters(
-                    E0=tem.beam_energy,
-                    alpha=tem.convergence_angle,
-                    beta=tem.Detector.EELS.collection_angle,
-                    energy_scale=self.axis.scale)
-                component.energy_scale = self.axis.scale
-                component._set_fine_structure_coeff()
                 if component.onset_energy.value < \
                         self.axis.axis[self.channel_switches][0]:
                     component.isbackground = True
@@ -135,8 +149,6 @@ class EELSModel(Model1D):
                 else:
                     component.fine_structure_active = False
                     component.fine_structure_coeff.free = False
-                    component.backgroundtype = "edge"
-                    self._background_components.append(component)
             elif (isinstance(component, PowerLaw) or
                   component.isbackground is True):
                 self._background_components.append(component)
@@ -149,9 +161,10 @@ class EELSModel(Model1D):
         elif len(self._background_components) == 1:
             self._backgroundtype = \
                 self._background_components[0].__repr__()
-            if self._firstimetouch and self.edges:
+            bg = self._background_components[0]
+            if isinstance(bg, PowerLaw) and self.edges and not \
+                    bg.A.map["is_set"].any():
                 self.two_area_background_estimation()
-                self._firstimetouch = False
 
     @property
     def _active_edges(self):
@@ -522,7 +535,7 @@ class EELSModel(Model1D):
             self.fit(**kwargs)
             edge.onset_energy.free = False
             print "onset_energy = ", edge.onset_energy.value
-            self._touch()
+            self._classify_components()
         elif edge.intensity.free is True:
             self.enable_fine_structure(to_activate_fs)
             self.remove_fine_structure_data(to_activate_fs)
