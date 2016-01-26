@@ -273,9 +273,9 @@ class ModifiableSpanSelector(matplotlib.widgets.SpanSelector):
         self.update()
 
     def contains(self, mouseevent):
-        # Assert y is correct first
         x, y = self.rect.get_transform().inverted().transform_point(
             (mouseevent.x, mouseevent.y))
+        # Assert y is correct first
         if not (0.0 <= y <= 1.0):
             return False, {}
         invtrans = self.ax.transData.inverted()
