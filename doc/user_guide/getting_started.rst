@@ -47,16 +47,27 @@ can be started as follows:
 
     $ hyperspy notebook
 
-
-
-.. versionadded:: 0.8.1
+.. versionchanged:: 0.8.3
 
 Once a new Jupyter notebook is started in a browser window, HyperSpy needs to
-be imported using the :ref:`hyperspy magic <magic-label>`.
+be loaded and started using the :ref:`hyperspy magic <magic-label>`.
 
 .. code-block:: python
 
+    >>> %load_ext hyperspy
     >>> %hyperspy
+
+.. note::
+
+    As per `IPython extension documentation
+    <https://ipython.readthedocs.org/en/stable/config/extensions/index.html#using-extensions>`_,
+    the first line, loading HyperSpy extension, can be avoided typing every time by adding it to your default extensions:
+
+    .. code-block:: python
+
+        >>> c.InteractiveShellApp.extensions = [ #some other default extensions
+                'hyperspy',
+                ]
 
 
 Alternatively, hyperspy can be run in two console modes: the terminal you run
@@ -160,7 +171,7 @@ menu.
 HyperSpy IPython magic
 ^^^^^^^^^^^^^^^^^^^^^^
 
-.. versionadded:: 0.8.1
+.. versionchanged:: 0.8.3
 
 HyperSpy provides an IPython magic in order to ease the task of setting up the
 typical interactive data analysis environment. The magic imports the HyperSpy API,
@@ -170,10 +181,12 @@ automatically.  However, starting with IPython version 3.0, auto-importing and
 auto-configuring is discouraged (for very good reasons). In order to comply
 with the new recommendations without loosing convenience we supply the
 ``hyperspy`` IPython magic that performs the same operations in a more explicit
-and transparent way.
+and transparent way. As of IPython version 4.0 and HyperSpy 0.8.3, HyperSpy has
+to be loaded before the magic becomes available:
 
 .. code-block:: python
 
+    >>> %load_ext hyperspy
     >>> %hyperspy [-r] [toolkit]
 
     HyperSpy imported!
@@ -202,11 +215,7 @@ without any magic commands (e.g. included in a script).
 
 .. note::
 
-        The magic is only available when using HyperSpy's IPython profile. The :ref:`starting script <starting_hyperspy_label>` automatically starts IPython using the HyperSpy profile. If you prefer you can do it manually as follows:
-
-   .. code-block:: bash
-
-      $ ipython --profile=hyperspy
+        The magic is available when either using HyperSpy's IPython profile (:ref:`starting script <starting_hyperspy_label>` automatically starts IPython using the HyperSpy profile, however is deprecated starting IPython 4.0) or having loaded the HyperSpy as an IPython extension
 
 
 Getting help

@@ -22,7 +22,7 @@ def _fill_function_args(fn):
 class Expression(Component):
 
     def __init__(self, expression, name, position=None, module="numpy",
-                 **kwargs):
+                 autodoc=True, **kwargs):
         """Create a component from a string expression.
 
         It automatically generates the partial derivatives and the
@@ -89,8 +89,9 @@ class Expression(Component):
             for kwarg, value in kwargs.iteritems():
                 setattr(getattr(self, kwarg), 'value', value)
 
-        self.__doc__ = _CLASS_DOC % (name,
-                                     sympy.latex(sympy.sympify(expression)))
+        if autodoc:
+            self.__doc__ = _CLASS_DOC % (
+                name, sympy.latex(sympy.sympify(expression)))
 
     def function(self, x):
         return self._f(x, *[p.value for p in self.parameters])

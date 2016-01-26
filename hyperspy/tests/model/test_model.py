@@ -9,7 +9,7 @@ from hyperspy.misc.utils import slugify
 class TestModelJacobians:
 
     def setUp(self):
-        s = hs.signals.Spectrum(np.empty(1))
+        s = hs.signals.Spectrum(np.zeros(1))
         m = s.create_model()
         self.low_loss = 7.
         self.weights = 0.3
@@ -221,7 +221,7 @@ class TestModelSettingPZero:
                          ])
 
 
-class TestModel:
+class TestModel1D:
 
     def setUp(self):
         s = hs.signals.Spectrum(np.empty(1))
@@ -477,6 +477,39 @@ class TestModel:
         getattr(m.components, slugify(invalid_name))
 
 
+class TestModel2D:
+
+    def setUp(self):
+        g = hs.model.components.Gaussian2D(
+            centre_x=-5.,
+            centre_y=-5.,
+            sigma_x=1.,
+            sigma_y=2.)
+        x = np.arange(-10, 10, 0.01)
+        y = np.arange(-10, 10, 0.01)
+        X, Y = np.meshgrid(x, y)
+        im = hs.signals.Image(g.function(X, Y))
+        im.axes_manager[0].scale = 0.01
+        im.axes_manager[0].offset = -10
+        im.axes_manager[1].scale = 0.01
+        im.axes_manager[1].offset = -10
+        self.im = im
+
+    def test_fitting(self):
+        im = self.im
+        m = im.create_model()
+        gt = hs.model.components.Gaussian2D(centre_x=-4.5,
+                                            centre_y=-4.5,
+                                            sigma_x=0.5,
+                                            sigma_y=1.5)
+        m.append(gt)
+        m.fit()
+        nt.assert_almost_equal(gt.centre_x.value, -5.)
+        nt.assert_almost_equal(gt.centre_y.value, -5.)
+        nt.assert_almost_equal(gt.sigma_x.value, 1.)
+        nt.assert_almost_equal(gt.sigma_y.value, 2.)
+
+
 class TestModelFitBinned:
 
     def setUp(self):
@@ -728,7 +761,7 @@ class TestModelSignalVariance:
 class TestMultifit:
 
     def setUp(self):
-        s = hs.signals.Spectrum(np.empty((2, 200)))
+        s = hs.signals.Spectrum(np.zeros((2, 200)))
         s.axes_manager[-1].offset = 1
         s.data[:] = 2 * s.axes_manager[-1].axis ** (-3)
         m = s.create_model()
@@ -836,8 +869,8 @@ class TestAsSignal:
 
         self.m[0]._active_array[0] = False
         s = self.m.as_signal(show_progressbar=None)
-        nt.assert_true(
-            np.all(s.data == np.array([np.ones(5) * 2, np.ones(5) * 4])))
+        np.testing.assert_array_equal(
+            s.data, np.array([np.ones(5) * 2, np.ones(5) * 4]))
         nt.assert_true(self.m[0].active_is_multidimensional)
 
     def test_one_component_multidim(self):
@@ -849,7 +882,7 @@ class TestAsSignal:
         nt.assert_false(self.m[1].active_is_multidimensional)
 
         s = self.m.as_signal(component_list=[1], show_progressbar=None)
-        nt.assert_true(np.all(s.data == 2.))
+        np.testing.assert_equal(s.data, 2.)
         nt.assert_true(self.m[0].active_is_multidimensional)
 
         self.m[0]._active_array[0] = False
@@ -865,8 +898,12 @@ class TestCreateModel:
 
     def setUp(self):
         self.s = hs.signals.Spectrum(np.asarray([0, ]))
+        self.im = hs.signals.Image(np.ones([1, 1, ]))
 
     def test_create_model(self):
-        from hyperspy.model import Model
+        from hyperspy.models.model1D import Model1D
+        from hyperspy.models.model2D import Model2D
         nt.assert_is_instance(
-            self.s.create_model(), Model)
+            self.s.create_model(), Model1D)
+        nt.assert_is_instance(
+            self.im.create_model(), Model2D)

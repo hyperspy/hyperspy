@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2015 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -39,7 +39,6 @@ from hyperspy.decorators import do_not_replot
 from scipy import linalg
 from hyperspy.misc.machine_learning.orthomax import orthomax
 from hyperspy.misc.utils import stack
-from hyperspy.misc.hspy_warnings import VisibleDeprecationWarning
 
 
 def centering_and_whitening(X):
@@ -459,9 +458,7 @@ class MVA():
         factors : Signal or numpy array.
             Factors to decompose. If None, the BSS is performed on the
             factors of a previous decomposition. If a Signal instance the
-            navigation dimension must be 1 and the size greater than 1. If a
-            numpy array (deprecated) the factors are stored in a 2d array
-            stacked over the last axis.
+            navigation dimension must be 1 and the size greater than 1.
         comp_list : boolen numpy array
             choose the components to use by the boolean list. It permits
              to choose non contiguous components.
@@ -479,7 +476,6 @@ class MVA():
 
         """
         from hyperspy.signal import Signal
-        from hyperspy._signals.spectrum import Spectrum
 
         lr = self.learning_results
 
@@ -497,26 +493,10 @@ class MVA():
 
         # Check factors
         if not isinstance(factors, Signal):
-            if isinstance(factors, np.ndarray):
-                warnings.warn(
-                    "factors as numpy arrays will raise an error in "
-                    "HyperSpy 0.9 and newer. From them on only passing "
-                    "factors as HyperSpy Signal instances will be "
-                    "supported.",
-                    VisibleDeprecationWarning)
-                # We proceed supposing that the factors are spectra stacked
-                # over the last dimension to reproduce the deprecated
-                # behaviour.
-                # TODO: Don't forget to change `factors` docstring when
-                # removing this.
-                factors = Spectrum(factors.T)
-            else:
-                # Change next error message when removing the
-                # DeprecationWarning
-                raise ValueError(
-                    "`factors` must be either a Signal instance or a "
-                    "numpy array but an object of type %s was provided." %
-                    type(factors))
+            raise ValueError(
+                "`factors` must be a Signal instance, but an object of type "
+                "%s was provided." %
+                type(factors))
 
         # Check factor dimensions
         if factors.axes_manager.navigation_dimension != 1:
@@ -535,23 +515,7 @@ class MVA():
         if mask is not None:
             ref_shape, space = (factors.axes_manager.signal_shape,
                                 "navigation" if on_loadings else "signal")
-            if isinstance(mask, np.ndarray):
-                warnings.warn(
-                    "Bare numpy array masks are deprecated and will be removed"
-                    " in next HyperSpy 0.9.",
-                    VisibleDeprecationWarning)
-                ref_shape = ref_shape[::-1]
-                if mask.shape != ref_shape:
-                    raise ValueError(
-                        "The `mask` shape is not equal to the %s shape."
-                        "Mask shape: %s\tSignal shape in array: %s" %
-                        (space, str(mask.shape), str(ref_shape)))
-                else:
-                    if on_loadings:
-                        mask = self._get_navigation_signal(data=mask)
-                    else:
-                        mask = self._get_signal_signal(data=mask)
-            elif isinstance(mask, Signal):
+            if isinstance(mask, Signal):
                 if mask.axes_manager.signal_shape != ref_shape:
                     raise ValueError(
                         "The `mask` signal shape is not equal to the %s shape."
@@ -666,50 +630,6 @@ class MVA():
         self._unmix_components()
         self._auto_reverse_bss_component(lr)
         lr.bss_algorithm = algorithm
-
-    def normalize_factors(self, which='bss', by='area', sort=True):
-        """Normalises the factors and modifies the loadings
-        accordingly.
-
-        Parameters
-        ----------
-        which : 'bss' | 'decomposition'
-        by : 'max' | 'area'
-        sort : bool
-
-        """
-        warnings.warn(
-            "This function is deprecated an will be removed in HyperSpy 0.9. "
-            "Use `normalize_decomposition_components` or "
-            "`normalize_bss_components` instead.", VisibleDeprecationWarning)
-
-        if which == 'bss':
-            factors = self.learning_results.bss_factors
-            loadings = self.learning_results.bss_loadings
-            if factors is None:
-                raise UserWarning("This method can only be used after "
-                                  "a blind source separation operation")
-        elif which == 'decomposition':
-            factors = self.learning_results.factors
-            loadings = self.learning_results.loadings
-            if factors is None:
-                raise UserWarning("This method can only be used after"
-                                  "a decomposition operation")
-        else:
-            raise ValueError("what must be bss or decomposition")
-
-        if by == 'max':
-            by = np.max
-        elif by == 'area':
-            by = np.sum
-        else:
-            raise ValueError("by must be max or mean")
-
-        _normalize_components(factors, loadings, by)
-        sorting_indices = np.argsort(loadings.max(0))
-        factors[:] = factors[:, sorting_indices]
-        loadings[:] = loadings[:, sorting_indices]
-        loadings[:] = loadings[:, sorting_indices]
 
     def normalize_decomposition_components(self, target='factors',
                                            function=np.sum):
@@ -1170,7 +1090,7 @@ class LearningResults(object):
         if hasattr(self, 'ica_factors'):
             self.bss_factors = self.ica_factors
             del self.ica_factors
-        #######################################################
+        #
         # Output_dimension is an array after loading, convert it to int
         if hasattr(self, 'output_dimension') and self.output_dimension \
                 is not None:
