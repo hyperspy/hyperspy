@@ -24,4 +24,11 @@ left, right syntax.
 
 * :py:meth:`~.signal.Signal2DTools.crop_image`
 
+Peak finding
+^^^^^^^^^^^^
+
+.. versionadded:: 0.9
+
+The :py:meth:`~.signal.Signal2DTools.find_peaks2D` method provides access to
+various methods to find peaks in images. 
 
