@@ -811,7 +811,7 @@ class EDSModel(Model1D):
             if xray_lines == 'from_metadata':
                 xray_lines = self.spectrum.metadata.Sample.xray_lines
             xray_lines = filter(lambda x: x in [a.name for a in
-                                self], xray_lines)
+                                                self], xray_lines)
         if not xray_lines:
             raise ValueError("These X-ray lines are not part of the model.")
         for xray_line in xray_lines:

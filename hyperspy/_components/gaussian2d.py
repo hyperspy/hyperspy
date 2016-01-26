@@ -77,16 +77,16 @@ class Gaussian2D(Component):
 
     @property
     def fwhm_x(self):
-        return self.sigma_x.value*sigma2fwhm
+        return self.sigma_x.value * sigma2fwhm
 
     @fwhm_x.setter
     def fwhm_x(self, value):
-        self.sigma_x.value = value/sigma2fwhm
+        self.sigma_x.value = value / sigma2fwhm
 
     @property
     def fwhm_y(self):
-        return self.sigma_y.value*sigma2fwhm
+        return self.sigma_y.value * sigma2fwhm
 
     @fwhm_y.setter
     def fwhm_y(self, value):
-        self.sigma_y.value = value/sigma2fwhm
+        self.sigma_y.value = value / sigma2fwhm

@@ -791,7 +791,7 @@ class AxesManager(t.HasTraits):
         self.signal_size = (np.cumprod(self.signal_shape)[-1]
                             if self.signal_shape else 0)
         self._update_max_index()
-    
+
     def set_signal_dimension(self, value):
         """Set the dimension of the signal.
 
