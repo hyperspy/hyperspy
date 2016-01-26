@@ -230,10 +230,14 @@ class WidgetBase(object):
     def draw_patch(self, *args):
         """Update the patch drawing.
         """
-        if hasattr(self.ax, 'hspy_fig'):
-            self.ax.hspy_fig._draw_animated()
-        elif self.ax.figure is not None:
-            self.ax.figure.canvas.draw_idle()
+        try:
+            if hasattr(self.ax, 'hspy_fig'):
+                self.ax.hspy_fig._draw_animated()
+            elif self.ax.figure is not None:
+                self.ax.figure.canvas.draw_idle()
+        except AttributeError:
+            print "whut"
+            pass  # When figure is None, typically when closing
 
     def _v2i(self, axis, v):
         """Wrapped version of DataAxis.value2index, which bounds the index
