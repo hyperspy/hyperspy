@@ -149,6 +149,7 @@ class MPL_HyperSpectrum_Explorer(MPL_HyperExplorer):
                 self.signal_plot.right_axes_manager)
             self.right_pointer.size = self.pointer.size
             self.right_pointer.color = 'blue'
+            self.right_pointer.connect_navigate()
             self.right_pointer.set_mpl_ax(self.navigator_plot.ax)
 
         if self.right_pointer is not None:
