@@ -159,6 +159,7 @@ class Event(object):
         self._connected_some = {}
         self._connected_map = {}
         self._suppress = False
+        self._suppressed_callbacks = set()
 
         if arguments:
             self._trigger_maker(arguments)
@@ -263,15 +264,14 @@ class Event(object):
         suppress
         Events.suppress
         """
-        if function in self.connected:
-            connection_kwargs = self.disconnect(
-                function=function, return_connection_kwargs=True)
-            try:
-                yield
-            finally:
-                self.connect(function=function, kwargs=connection_kwargs)
-        else:
-            yield   # Do nothing
+        was_suppressed = function in self._suppressed_callbacks
+        if not was_suppressed:
+            self._suppressed_callbacks.add(function)
+        try:
+            yield
+        finally:
+            if not was_suppressed:
+                self._suppressed_callbacks.discard(function)
 
     @property
     def connected(self):
@@ -377,12 +377,15 @@ class Event(object):
         if self._suppress:
             return
         # Loop on copy to deal with callbacks which change connections
-        for function in self._connected_all:
+        for function in self._connected_all.difference(
+                self._suppressed_callbacks):
             function(**kwargs)
         for function, kwsl in self._connected_some.iteritems():
-            function(**{kw: kwargs.get(kw, None) for kw in kwsl})
+            if function not in self._suppressed_callbacks:
+                function(**{kw: kwargs.get(kw, None) for kw in kwsl})
         for function, kwsd in self._connected_map.iteritems():
-            function(**{kwf: kwargs[kwt] for kwt, kwf in kwsd.iteritems()})
+            if function not in self._suppressed_callbacks:
+                function(**{kwf: kwargs[kwt] for kwt, kwf in kwsd.iteritems()})
 
     def __deepcopy__(self, memo):
         dc = type(self)()
