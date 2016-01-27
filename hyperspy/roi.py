@@ -1005,12 +1005,12 @@ class Line2DROI(BaseInteractiveROI):
             axes = self.signal_map[signal][1]
         else:
             axes = self._parse_axes(axes, signal.axes_manager)
-        print axes
+        linewidth = self.linewidth / np.min([ax.scale for ax in axes])
         profile = Line2DROI.profile_line(signal.data,
                                          (self.x1, self.y1),
                                          (self.x2, self.y2),
                                          axes=axes,
-                                         linewidth=self.linewidth,
+                                         linewidth=linewidth,
                                          order=order)
         length = np.linalg.norm(np.diff(
                 np.array(((self.x1, self.y1), (self.x2, self.y2))), axis=0),
