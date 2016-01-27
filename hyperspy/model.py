@@ -1335,8 +1335,8 @@ class BaseModel(list):
 
         Returns
         -------
-        dictionary : a complete dictionary of the model, which includes at least
-        the following fields:
+        dictionary : a complete dictionary of the model, which includes at
+        least the following fields:
             components : list
                 a list of dictionaries of components, one per
             _whitelist : dictionary
@@ -1466,13 +1466,15 @@ class ModelSpecialSlicers(object):
         else:
             _model = _signal.create_model()
 
-        dims = self.model.axes_manager.navigation_dimension, self.model.axes_manager.signal_dimension
+        dims = (self.model.axes_manager.navigation_dimension,
+                self.model.axes_manager.signal_dimension)
         if self.isNavigation:
             _model.channel_switches[:] = self.model.channel_switches
         else:
             _model.channel_switches[:] = \
                 np.atleast_1d(
-                    self.model.channel_switches[tuple(array_slices[-dims[1]:])])
+                    self.model.channel_switches[
+                        tuple(array_slices[-dims[1]:])])
 
         twin_dict = {}
         for comp in self.model:
