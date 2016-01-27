@@ -77,10 +77,10 @@ from hyperspy.external.astroML.histtools import histogram
 from hyperspy.drawing.utils import animate_legend
 from hyperspy.misc.slicing import SpecialSlicers, FancySlicing
 from hyperspy.misc.utils import slugify
-from hyperspy.events import Events, Event
-from hyperspy.interactive import interactive
 from hyperspy.docstrings.signal import (
     ONE_AXIS_PARAMETER, MANY_AXIS_PARAMETER, OUT_ARG)
+from hyperspy.events import Events, Event
+from hyperspy.interactive import interactive
 
 
 class ModelManager(object):
@@ -3946,6 +3946,7 @@ class Signal(FancySlicing,
         else:
             s.data = function(self.data, axis=ar_axes)
             s._remove_axis([ax.index_in_axes_manager for ax in axes])
+            s.events.data_changed.trigger(self)
             return s
 
     def sum(self, axis=None, out=None):

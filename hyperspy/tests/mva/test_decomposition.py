@@ -77,10 +77,10 @@ class TestGetExplainedVarinaceRatio:
         self.s = s
 
     def test_data(self):
-        self.s.learning_results.explained_variance_ratio = np.asarray([2,4])
+        self.s.learning_results.explained_variance_ratio = np.asarray([2, 4])
         np.testing.assert_array_equal(
             self.s.get_explained_variance_ratio().data,
-            np.asarray([2,4]))
+            np.asarray([2, 4]))
 
     @raises(AttributeError)
     def test_no_evr(self):

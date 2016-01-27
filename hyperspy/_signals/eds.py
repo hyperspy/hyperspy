@@ -823,10 +823,10 @@ class EDSSpectrum(Spectrum):
                                                            FWHM_MnKa='auto')
             tmp = [
                 line_energy - line_FWHM *
-                    line_width[0] - line_FWHM * windows_width,
-                   line_energy - line_FWHM * line_width[0],
-                   line_energy + line_FWHM * line_width[1],
-                   line_energy + line_FWHM * line_width[1] + line_FWHM * windows_width]
+                line_width[0] - line_FWHM * windows_width,
+                line_energy - line_FWHM * line_width[0],
+                line_energy + line_FWHM * line_width[1],
+                line_energy + line_FWHM * line_width[1] + line_FWHM * windows_width]
             windows_position.append(tmp)
         windows_position = np.array(windows_position)
         # merge ovelapping windows
@@ -1007,7 +1007,7 @@ class EDSSpectrum(Spectrum):
                 rotation=90)
             self.add_marker(text)
             line.events.closed.connect(partial(self._remove_xray_lines_markers,
-                                               xray_lines[i]))
+                                               xray_lines[i]), [])
             self._xray_markers[xray_lines[i]] = (line, text)
 
     def _remove_xray_lines_markers(self, xray_lines):

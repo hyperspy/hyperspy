@@ -1,4 +1,5 @@
 class Interactive:
+
     def __init__(self, f, event,
                  recompute_out_event=None,
                  *args, **kwargs):

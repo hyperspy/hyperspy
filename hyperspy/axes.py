@@ -854,7 +854,7 @@ class AxesManager(t.HasTraits):
             "be removed in HyperSpy 0.10. Please use "
             "`AxesManager.events.indices_changed.connect()` instead.",
             VisibleDeprecationWarning)
-        self.events.indices_changed.connect(f, 0)
+        self.events.indices_changed.connect(f, [])
 
     def disconnect(self, f):
         warnings.warn(
