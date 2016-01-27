@@ -329,7 +329,7 @@ class Event(object):
         else:
             raise ValueError("Invalid value passed to kwargs.")
 
-    def disconnect(self, function, return_connection_kwargs=False):
+    def disconnect(self, function):
         """
         Disconnects a function from the event. The passed function will be
         disconnected irregardless of which 'nargs' argument was passed to
@@ -352,15 +352,12 @@ class Event(object):
         """
         if function in self._connected_all:
             self._connected_all.remove(function)
-            kwargs = "all"
         elif function in self._connected_some:
-            kwargs = self._connected_some.pop(function)
+            self._connected_some.pop(function)
         elif function in self._connected_map:
-            kwargs = self._connected_some.pop(function)
+            self._connected_some.pop(function)
         else:
             raise ValueError("The %s function is not connected." % function)
-        if return_connection_kwargs:
-            return kwargs
 
     def trigger(self, **kwargs):
         """
