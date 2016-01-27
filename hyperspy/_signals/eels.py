@@ -334,35 +334,23 @@ class EELSSpectrum(Spectrum):
 
         if isinstance(threshold, numbers.Number):
             I0 = self.isig[:threshold].integrate1D(-1)
-            I0.axes_manager.set_signal_dimension(
-                min(2, self.axes_manager.navigation_dimension))
-
         else:
-            bk_threshold_navigate = (
-                threshold.axes_manager._get_axis_attribute_values('navigate'))
-            threshold.axes_manager.set_signal_dimension(0)
             I0 = self._get_navigation_signal()
-            bk_I0_navigate = (
-                I0.axes_manager._get_axis_attribute_values('navigate'))
             I0.axes_manager.set_signal_dimension(0)
             pbar = hyperspy.external.progressbar.progressbar(
                 maxval=self.axes_manager.navigation_size,
             )
-            for i, s in enumerate(self):
-                threshold_ = threshold[self.axes_manager.indices].data[0]
+            for i, s in enumerate(I0):
+                threshold_ = threshold.isig[I0.axes_manager.indices].data[0]
                 if np.isnan(threshold_):
-                    I0[self.axes_manager.indices] = np.nan
+                    s.data[:] = np.nan
                 else:
-                    I0[self.axes_manager.indices].data[:] = (
-                        s[:threshold_].integrate1D(-1).data)
+                    s.data[:] = (self.inav[I0.axes_manager.indices].isig[
+                                 :threshold_].integrate1D(-1).data)
                 pbar.update(i)
             pbar.finish()
-            threshold.axes_manager._set_axis_attribute_values(
-                'navigate',
-                bk_threshold_navigate)
-            I0.axes_manager._set_axis_attribute_values(
-                'navigate',
-                bk_I0_navigate)
+        I0.axes_manager.set_signal_dimension(
+            self.axes_manager.navigation_dimension)
         I0.metadata.General.title = (
             self.metadata.General.title + ' elastic intensity')
         if self.tmp_parameters.has_item('filename'):
