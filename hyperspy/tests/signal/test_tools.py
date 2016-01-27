@@ -1,3 +1,5 @@
+import mock
+
 import numpy as np
 from numpy.testing import assert_array_equal
 import nose.tools as nt
@@ -431,10 +433,13 @@ class TestOutArg:
         self.s = s
 
     def _run_single(self, f, s, kwargs):
+        m = mock.Mock()
         s1 = f(**kwargs)
+        s1.events.data_changed.connect(m.data_changed)
         s.data = s.data + 2
         s2 = f(**kwargs)
         r = f(out=s1, **kwargs)
+        m.data_changed.assert_called_with(signal=s1)
         nt.assert_is_none(r)
         assert_array_equal(s1.data, s2.data)
 

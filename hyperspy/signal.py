@@ -3556,6 +3556,8 @@ class Signal(FancySlicing,
                     new_shape)
         if out is None:
             return s
+        else:
+            out.events.data_changed.trigger(signal=out)
     rebin.__doc__ %= OUT_ARG
 
     def split(self,
@@ -3922,6 +3924,7 @@ class Signal(FancySlicing,
 
         if out:
             function(data, axis=ar_axes[0], out=out.data)
+            out.events.data_changed.trigger(signal=out)
         else:
             s.data = function(data, axis=ar_axes[0])
             s._remove_axis([ax.index_in_axes_manager for ax in axes])
@@ -3942,6 +3945,7 @@ class Signal(FancySlicing,
             return self._ma_workaround(s, function, axes, ar_axes, out)
         if out:
             function(self.data, axis=ar_axes, out=out.data)
+            out.events.data_changed.trigger(signal=out)
         else:
             s.data = function(self.data, axis=ar_axes)
             s._remove_axis([ax.index_in_axes_manager for ax in axes])
@@ -4182,6 +4186,8 @@ class Signal(FancySlicing,
         s.get_dimensions_from_data()
         if out is None:
             return s
+        else:
+            out.events.data_changed.trigger(signal=out)
     diff.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
 
     def derivative(self, axis, order=1, out=None):
@@ -4217,6 +4223,8 @@ class Signal(FancySlicing,
         der.data /= axis.scale ** order
         if out is None:
             return der
+        else:
+            out.events.data_changed.trigger(signal=out)
     derivative.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
 
     def integrate_simpson(self, axis, out=None):
@@ -4252,6 +4260,7 @@ class Signal(FancySlicing,
                                   axis=axis.index_in_array)
         if out is not None:
             out.data[:] = data
+            out.events.data_changed.trigger(signal=out)
         else:
             s.data = data
             s._remove_axis(axis.index_in_axes_manager)
@@ -4359,6 +4368,7 @@ class Signal(FancySlicing,
             return idx
         else:
             out.data[:] = data
+            out.events.data_changed.trigger(signal=out)
     valuemax.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
 
     def get_histogram(self, bins='freedman', range_bins=None, out=None,
@@ -4439,6 +4449,8 @@ class Signal(FancySlicing,
         hist_spec.metadata.Signal.binned = True
         if out is None:
             return hist_spec
+        else:
+            out.events.data_changed.trigger(signal=out)
     get_histogram.__doc__ %= OUT_ARG
 
     def map(self, function,
@@ -4920,6 +4932,7 @@ class Signal(FancySlicing,
             return sp
         else:
             out.data[:] = sp.data
+            out.events.data_changed.trigger(signal=out)
     as_spectrum.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
 
     def as_image(self, image_axes, out=None):
@@ -4966,6 +4979,7 @@ class Signal(FancySlicing,
             return im
         else:
             out.data[:] = im.data
+            out.events.data_changed.trigger(signal=out)
     as_image.__doc__ %= OUT_ARG
 
     def _assign_subclass(self):
