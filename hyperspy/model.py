@@ -42,7 +42,8 @@ from hyperspy.misc.export_dictionary import (export_to_dictionary,
                                              load_from_dictionary,
                                              parse_flag_string,
                                              reconstruct_object)
-from hyperspy.misc.utils import slugify, shorten_name, stash_active_state, dummy_context_manager
+from hyperspy.misc.utils import (slugify, shorten_name, stash_active_state,
+                                 dummy_context_manager)
 from hyperspy.misc.slicing import copy_slice_from_whitelist
 
 
