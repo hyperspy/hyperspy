@@ -29,8 +29,8 @@ class TestInteractive():
         e2 = Event()
 
         ss = hs.interactive(s.sum, e1, axis=0)
-        ss.events.data_changed.connect(e2.trigger, 0)
-        ss.events.data_changed.connect(lambda: print("Triggered!"), 0)
+        ss.events.data_changed.connect(e2.trigger, [])
+        ss.events.data_changed.connect(lambda: print("Triggered!"), [])
 
         sss = hs.interactive(ss.sum, e2, axis=0)
 
@@ -49,7 +49,7 @@ class TestInteractive():
         e2 = Event()
         ss = hs.interactive(s.sum, e1, recompute_out_event=e2, axis=0)
         self._triggered = False
-        ss.axes_manager.events.transformed.connect(self._set_flag, 0)
+        ss.axes_manager.events.transformed.connect(self._set_flag, [])
         # Check eveything as normal first
         np.testing.assert_allclose(ss.data, np.sum(s.data, axis=1))
         # Modify axes and data in-place
@@ -57,14 +57,14 @@ class TestInteractive():
         # Check that data is no longer comparable
         nt.assert_false(np.allclose(ss.data.shape,
                                     np.sum(s.data, axis=1).shape))
-        # Check that normal event doesn't fix problem
-        e1.trigger()
-        nt.assert_false(np.allclose(ss.data.shape,
-                                    np.sum(s.data, axis=0).shape))
+        # Check that normal event raises an error
+        nt.assert_raises(ValueError, e1.trigger)
         # Check that recompute event fixes issue
         nt.assert_false(self._triggered)
         e2.trigger()
         nt.assert_true(self._triggered)
         np.testing.assert_allclose(ss.data, np.sum(s.data, axis=1))
-        # Finally, check that axes are updated as they should
+        # Check that axes are updated as they should
         nt.assert_equal(ss.axes_manager.navigation_axes[0].offset, 1)
+        # Check that e1 now can trigger without error
+        e1.trigger()
