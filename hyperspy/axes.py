@@ -109,6 +109,8 @@ class DataAxis(t.HasTraits):
             value : The new value
             axis : The DataAxis that the event belongs to.
             """, arguments=['value', 'axis'])
+        self._suppress_value_changed_trigger = False
+        self._suppress_update_value = False
         self.name = name
         self.units = units
         self.scale = scale
@@ -122,13 +124,43 @@ class DataAxis(t.HasTraits):
         self.axes_manager = None
         self.on_trait_change(self.update_axis,
                              ['scale', 'offset', 'size'])
-        self.on_trait_change(self.update_value, 'index')
-        self.on_trait_change(self.set_index_from_value, 'value')
         self.on_trait_change(self._update_slice, 'navigate')
         self.on_trait_change(self.update_index_bounds, 'size')
         # The slice must be updated even if the default value did not
         # change to correctly set its value.
         self._update_slice(self.navigate)
+
+    def _index_changed(self, name, old, new):
+        self.events.index_changed.trigger(self.index, self.name)
+        if not self._suppress_update_value:
+            new_value = self.axis[self.index]
+            if new_value != self.value:
+                self.value = new_value
+
+    def _value_changed(self, name, old, new):
+        old_index = self.index
+        new_index = self.value2index(new)
+        if self.continuous_value is False:  # Only values in the grid alowed
+            if old_index != new_index:
+                self.index = new_index
+                if new == self.axis[self.index]:
+                    self.events.value_changed.trigger(new, self.name)
+            elif old_index == new_index:
+                new_value = self.index2value(new_index)
+                if new_value == old:
+                    self._suppress_value_changed_trigger = True
+                    self.value = new_value
+                elif new_value == new:
+                    if self._suppress_value_changed_trigger:
+                        self._suppress_value_changed_trigger = False
+                    else:
+                        self.events.value_changed.trigger(new, self.name)
+        else:  # Intergrid values are alowed. This feature is deprecated
+            self.events.value_changed.trigger(new, self.name)
+            if old_index != new_index:
+                self._suppress_update_value = True
+                self.index = new_index
+                self._suppress_update_value = False
 
     @property
     def index_in_array(self):
@@ -300,19 +332,6 @@ class DataAxis(t.HasTraits):
         cp = self.copy()
         return cp
 
-    def update_value(self):
-        # To prevent firing events before value checks, suppress events,
-        # and only fire if final result is different
-        old_val = self.value
-        old_idx = self.index
-        with self.events.index_changed.suppress(), \
-                self.events.value_changed.suppress():
-            self.value = self.axis[self.index]
-        if old_val != self.value:
-            self.events.value_changed.trigger(value=self.index, axis=self)
-        if old_idx != self.index:
-            self.events.index_changed.trigger(index=self.index, axis=self)
-
     def value2index(self, value, rounding=round):
         """Return the closest index to the given value if between the limit.
 
@@ -361,19 +380,6 @@ class DataAxis(t.HasTraits):
         else:
             return self.axis[index]
 
-    def set_index_from_value(self, value):
-        old_idx = self.index
-        old_val = self.value
-        with self.events.index_changed.suppress(), \
-                self.events.value_changed.suppress():
-            self.index = self.value2index(value)
-            # If the value is above the limits we must correct the value
-            if self.continuous_value is False:
-                self.value = self.index2value(self.index)
-        if old_idx != self.index:
-            self.events.index_changed.trigger(index=self.index, axis=self)
-        if old_val != self.value:
-            self.events.value_changed.trigger(value=self.value, axis=self)
 
     def calibrate(self, value_tuple, index_tuple, modify_calibration=True):
         scale = (value_tuple[1] - value_tuple[0]) /\
