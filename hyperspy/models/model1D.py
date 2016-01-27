@@ -311,10 +311,18 @@ class Model1D(BaseModel):
 
         es = EventSupressor()
         es.add(self.axes_manager.events.indices_changed)
+        if self._model_line:
+            f = self._model_line.update
+            for c in self:
+                es.add(c.events, f)
+                for p in c.parameters:
+                    es.add(p.events, f)
         for c in self:
-            es.add(c.events, self.update_plot)
-            for p in c.parameters:
-                es.add(p.events, self.update_plot)
+            if hasattr(c, '_model_plot_line'):
+                f = c._model_plot_line.update
+                es.add(c.events, f)
+                for p in c.parameters:
+                    es.add(p.events, f)
 
         old = self._suspend_update
         self._suspend_update = True
