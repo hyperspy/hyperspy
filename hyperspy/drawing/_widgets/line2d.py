@@ -85,6 +85,7 @@ class Line2DWidget(ResizableDraggableWidgetBase):
     FUNC_MOVE = 1       # Move the widget
     FUNC_RESIZE = 2     # Move a vertex
     FUNC_ROTATE = 4     # Rotate
+    FUNC_SIZERS = 8     # Change linewidth by indicators
     FUNC_A = 32         # Resize/rotate by first vertex
     FUNC_B = 64         # Resize/rotate by second vertex
 
@@ -92,10 +93,10 @@ class Line2DWidget(ResizableDraggableWidgetBase):
         super(Line2DWidget, self).__init__(axes_manager)
         self.linewidth = 1
         self.radius_move = self.radius_resize = 5
-        self.radius_rotate = 10
+        self.radius_rotate = 15
         self._mfunc = self.FUNC_NONE    # Mouse interaction function
         self._prev_pos = None
-        self._rotate_orig = None
+        self._orig_pos = None
         self._width_indicators = []
         self._indicators_on = False
         self.snap_all = False
@@ -112,7 +113,7 @@ class Line2DWidget(ResizableDraggableWidgetBase):
 
     def _set_axes(self, axes):
         super(Line2DWidget, self)._set_axes(axes)
-        self._pos = np.tile(self._pos, (2, 1)).T
+        self._pos = np.tile(self._pos, (2, 1))
         self._size = np.array([np.min(self._size)])
 
     def connect_navigate(self):
@@ -127,24 +128,24 @@ class Line2DWidget(ResizableDraggableWidgetBase):
         ndim = np.shape(pos)[1]
         if ndim != len(self.axes):
             raise ValueError()
-        pos = np.maximum(pos, [(ax.low_value, ax.low_value)
-                               for ax in self.axes])
-        pos = np.minimum(pos, [(ax.high_value, ax.high_value)
-                               for ax in self.axes])
+        pos = np.maximum(pos, [ax.low_value for ax in self.axes])
+        pos = np.minimum(pos, [ax.high_value for ax in self.axes])
         if self.snap_position:
             pos = self._do_snap_position(pos)
         return pos
 
-    def _do_snap_position(self, value):
-        ret1 = super(Line2DWidget, self)._do_snap_position(value[:, 0])
-        ret2 = super(Line2DWidget, self)._do_snap_position(value[:, 1])
+    def _do_snap_position(self, value=None):
+        value = np.array(value) if value is not None else self._pos
 
-        print ret1, ret2
+        ret1 = super(Line2DWidget, self)._do_snap_position(value[0, :])
+        ret2 = super(Line2DWidget, self)._do_snap_position(value[1, :])
+
+        return np.array([ret1, ret2])
 
     def _get_line_normal(self):
         v = np.diff(self.position, axis=0)   # Line vector
-        x = -v[:, 1] * self.axes[0].scale / self.axes[1].scale
-        y = v[:, 0] * self.axes[1].scale / self.axes[0].scale
+        x = -v[:, 1]
+        y = v[:, 0]
         n = np.array([x, y]).T                    # Normal vector
         return n / np.linalg.norm(n)            # Normalized
 
@@ -161,9 +162,14 @@ class Line2DWidget(ResizableDraggableWidgetBase):
         return np.mean(self._pos, axis=0)
 
     def _get_width_indicator_coords(self):
-        s = self.size * np.array([ax.scale for ax in self.axes])
-        n = self._get_line_normal()
-        n *= np.linalg.norm(n * s) / 2
+        """
+        Get coordinates of width indicators.
+
+        The returned format is:
+            [[[x0A, y0A], [x1A, y1A]], [[x0B, y0B], [x1B, y1B]]]
+            Where A and B refer to the two lines
+        """
+        n = self.size[0] * self._get_line_normal() / 2.
         c = np.array(self.position)
         return c + n, c - n
 
@@ -209,8 +215,10 @@ class Line2DWidget(ResizableDraggableWidgetBase):
                 linestyle=':',
                 animated=self.blit,
                 lw=self.linewidth,
-                c=self.color)
+                c=self.color,
+                picker=self.radius_move)
             self._width_indicators.append(wi)
+        self.patch.extend(self._width_indicators)
 
     def _set_width_indicators(self, value, ax):
         """Turns the width indicators on/off, in much the same way that
@@ -297,6 +305,20 @@ class Line2DWidget(ResizableDraggableWidgetBase):
             # A + (t/bas)*(B-A) is closest point on line
             if np.linalg.norm(A + (t / bas) * (B - A) - c) < radius:
                 return self.FUNC_MOVE
+
+        # Check for line width resize: Click within radius_move from width
+        # indicator lines
+        radius = self.radius_move
+        wc = self._get_width_indicator_coords()
+        for i in xrange(2):
+            A = np.array(trans.transform(wc[i][0]))
+            B = np.array(trans.transform(wc[i][1]))
+            t = np.dot(c - A, B - A)
+            bas = np.linalg.norm(B - A)**2
+            if 0 < t < bas:
+                # A + (t/bas)*(B-A) is closest point on line
+                if np.linalg.norm(A + (t / bas) * (B - A) - c) < radius:
+                    return self.FUNC_SIZERS
         return self.FUNC_NONE
 
     def onpick(self, event):
@@ -309,9 +331,7 @@ class Line2DWidget(ResizableDraggableWidgetBase):
         if self.picked:
             me = event.mouseevent
             self.func = self._get_func_from_pos(me.x, me.y)
-            self._prev_pos = [me.xdata, me.ydata]
-            if self.func & self.FUNC_ROTATE:
-                self._rotate_orig = np.array(self.position)
+            self._drag_start = [me.xdata, me.ydata]
 
     def _onmousemove(self, event):
         """Delegate to _move(), _resize() or _rotate().
@@ -323,6 +343,8 @@ class Line2DWidget(ResizableDraggableWidgetBase):
                 self._resize(event)
             elif self.func & self.FUNC_ROTATE:
                 self._rotate(event)
+            elif self.func & self.FUNC_SIZERS and event.inaxes:
+                self._width_resize(event)
 
     def _get_diff(self, event):
         """Get difference in position in event and what is stored in _prev_pos,
@@ -331,20 +353,19 @@ class Line2DWidget(ResizableDraggableWidgetBase):
         if event.xdata is None:
             dx = 0
         else:
-            dx = event.xdata - self._prev_pos[0]
+            dx = event.xdata - self._drag_start[0]
         if event.ydata is None:
             dy = 0
         else:
-            dy = event.ydata - self._prev_pos[1]
+            dy = event.ydata - self._drag_start[1]
         return np.array((dx, dy))
 
     def _move(self, event):
-        """Move line by difference from pick / last mouse move. Update
-        '_prev_pos'.
+        """Move line by drag start position + difference in mouse post from
+        when dragging started (picked).
         """
         dx = self._get_diff(event)
-        self.position += dx
-        self._prev_pos += dx
+        self.position = self._drag_store[0] + dx
 
     def _resize(self, event):
         """Move vertex by difference from pick / last mouse move. Update
@@ -353,9 +374,8 @@ class Line2DWidget(ResizableDraggableWidgetBase):
         ip = self._get_vertex(event)
         dx = self._get_diff(event)
         p = np.array(self.position)
-        p[ip, 0:2] += dx
+        p[ip, 0:2] = self._drag_store[0][ip] + dx
         self.position = p
-        self._prev_pos += dx
 
     def _rotate(self, event):
         """Rotate original points by the angle between mouse position and
@@ -363,7 +383,7 @@ class Line2DWidget(ResizableDraggableWidgetBase):
         """
         if None in (event.xdata, event.ydata):
             return
-        # Rotate does not update last pos, to avoid inaccuracies by deltas
+        # Get difference in mouse pos since drag start (picked)
         dx = self._get_diff(event)
 
         # Rotation should happen in screen position, as anything else will
@@ -373,7 +393,7 @@ class Line2DWidget(ResizableDraggableWidgetBase):
         dx = np.array(trans.transform(dx)) - scr_zero
 
         # Get center point = center of original line
-        c = trans.transform(np.mean(self._rotate_orig, axis=0))
+        c = trans.transform(np.mean(self._drag_store[0], axis=0))
 
         # Figure out theta
         v1 = (event.x, event.y) - c     # Center to mouse
@@ -385,8 +405,20 @@ class Line2DWidget(ResizableDraggableWidgetBase):
             theta = base * round(float(theta) / base)
 
         # vector from points to center
-        w1 = c - trans.transform(self._rotate_orig)
+        w1 = c - trans.transform(self._drag_store[0])
         # rotate into w2 for next point
         w2 = np.array((w1[:, 0] * np.cos(theta) - w1[:, 1] * np.sin(theta),
                        w1[:, 1] * np.cos(theta) + w1[:, 0] * np.sin(theta)))
         self.position = trans.inverted().transform(c + np.rot90(w2))
+
+    def _width_resize(self, event):
+        if None in (event.xdata, event.ydata):
+            return
+        # Get difference in mouse pos since drag start (picked)
+        dx = self._get_diff(event)
+        # Project onto normal axis (dot product onto normal)
+        n = self._get_line_normal()
+        dn = 2 * np.dot(n, dx)
+        if self._selected_artist is self._width_indicators[1]:
+            dn *= -1
+        self.size = np.abs(self._drag_store[1] + dn)
