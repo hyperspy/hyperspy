@@ -503,6 +503,8 @@ class ResizableDraggableWidgetBase(DraggableWidgetBase):
                 widget:
                     The widget that was resized.
             """, arguments=['widget'])
+        self.no_events_while_dragging = False
+        self._drag_start = None
 
     def _set_axes(self, axes):
         super(ResizableDraggableWidgetBase, self)._set_axes(axes)
@@ -634,6 +636,12 @@ class ResizableDraggableWidgetBase(DraggableWidgetBase):
         self.cids.append(canvas.mpl_connect('key_press_event',
                                             self.on_key_press))
 
+    def onpick(self, event):
+        if hasattr(super(ResizableDraggableWidgetBase, self), 'onpick'):
+            super(ResizableDraggableWidgetBase, self).onpick(event)
+        if self.picked:
+            self._drag_start = (self.position, self.size)
+
     def _apply_changes(self, old_size, old_position):
         """Evalutes whether the widget has been moved/resized, and triggers
         the correct events and updates the patch geometry. This function has
@@ -657,11 +665,22 @@ class ResizableDraggableWidgetBase(DraggableWidgetBase):
             else:
                 self._update_patch_size()
             # Then fire events
-            if moved:
-                self.events.moved.trigger(self)
-            if resized:
-                self.events.resized.trigger(self)
-            self.events.changed.trigger(self)
+            if not self.no_events_while_dragging or not self.picked:
+                if moved:
+                    self.events.moved.trigger(self)
+                if resized:
+                    self.events.resized.trigger(self)
+                self.events.changed.trigger(self)
+
+    def button_release(self, event):
+        """whenever a mouse button is released"""
+        picked = self.picked
+        super(ResizableDraggableWidgetBase, self).button_release(event)
+        if event.button != 1:
+            return
+        if picked and self.picked is False:
+            if self.no_events_while_dragging and self._drag_start:
+                self._apply_changes(*self._drag_start)
 
 
 class Widget2DBase(ResizableDraggableWidgetBase):
