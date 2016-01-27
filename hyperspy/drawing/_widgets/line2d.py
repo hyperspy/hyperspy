@@ -18,10 +18,8 @@
 
 
 import numpy as np
-import matplotlib.pyplot as plt
 
-from hyperspy.drawing.widgets import ResizableDraggablePatchBase, \
-    Widget2DBase, ResizersMixin
+from hyperspy.drawing.widgets import ResizableDraggableWidgetBase
 
 
 def unit_vector(vector):
@@ -51,7 +49,7 @@ def angle_between(v1, v2):
     return angle
 
 
-class Line2DWidget(ResizableDraggablePatchBase):
+class Line2DWidget(ResizableDraggableWidgetBase):
 
     """A free-form line on a 2D plot. Enables dragging and moving the end
     points, but also allows rotation of the widget by moving the mouse beyond
@@ -75,7 +73,8 @@ class Line2DWidget(ResizableDraggablePatchBase):
     accessible (putting it lower is an easy way to disable the functionality).
 
 
-    NOTE: This widget's internal coordinates does not lock to axes points.
+    NOTE: This widget's internal position does not lock to axes points by
+          default.
     NOTE: The 'position' is now a 2D tuple: tuple(tuple(x1, x2), tuple(y1, y2))
     NOTE: The 'size' property corresponds to line width, so it has a len() of
     only one.
@@ -91,8 +90,6 @@ class Line2DWidget(ResizableDraggablePatchBase):
 
     def __init__(self, axes_manager):
         super(Line2DWidget, self).__init__(axes_manager)
-        self._pos = np.array([[0, 0], [0, 0]])
-        self._size = np.array([1])
         self.linewidth = 1
         self.radius_move = self.radius_resize = 5
         self.radius_rotate = 10
@@ -100,6 +97,8 @@ class Line2DWidget(ResizableDraggablePatchBase):
         self._prev_pos = None
         self._rotate_orig = None
         self._width_indicators = []
+        self._indicators_on = False
+        self.snap_all = False
 
         # Set default axes
         if self.axes_manager is not None:
@@ -107,9 +106,17 @@ class Line2DWidget(ResizableDraggablePatchBase):
                 self.axes = self.axes_manager.navigation_axes[0:2]
             else:
                 self.axes = self.axes_manager.signal_axes[0:2]
+        else:
+            self._pos = np.array([[0, 0], [0, 0]])
+            self._size = np.array([1])
+
+    def _set_axes(self, axes):
+        super(Line2DWidget, self)._set_axes(axes)
+        self._pos = np.tile(self._pos, (2, 1)).T
+        self._size = np.array([np.min(self._size)])
 
     def connect_navigate(self):
-        raise NotImplementedError("2D lines cannot be used to navigate yet")
+        raise NotImplementedError("2D lines cannot be used to navigate (yet?)")
 
     def _validate_pos(self, pos):
         """Make sure all vertices are within axis bounds.
@@ -120,29 +127,32 @@ class Line2DWidget(ResizableDraggablePatchBase):
         ndim = np.shape(pos)[1]
         if ndim != len(self.axes):
             raise ValueError()
-        pos = np.maximum(pos, [ax.low_value for ax in self.axes])
-        pos = np.minimum(pos, [ax.high_value for ax in self.axes])
+        pos = np.maximum(pos, [(ax.low_value, ax.low_value)
+                               for ax in self.axes])
+        pos = np.minimum(pos, [(ax.high_value, ax.high_value)
+                               for ax in self.axes])
         if self.snap_position:
             pos = self._do_snap_position(pos)
         return pos
-        for i in xrange(ndim):
-            if not np.all((self.axes[i].low_index <= pos[:, i]) &
-                          (pos[:, i] <= self.axes[i].high_index)):
-                raise ValueError()
-        return pos
+
+    def _do_snap_position(self, value):
+        ret1 = super(Line2DWidget, self)._do_snap_position(value[:, 0])
+        ret2 = super(Line2DWidget, self)._do_snap_position(value[:, 1])
+
+        print ret1, ret2
 
     def _get_line_normal(self):
-        v = np.diff(self.coordinates, axis=0)   # Line vector
+        v = np.diff(self.position, axis=0)   # Line vector
         x = -v[:, 1] * self.axes[0].scale / self.axes[1].scale
         y = v[:, 0] * self.axes[1].scale / self.axes[0].scale
         n = np.array([x, y]).T                    # Normal vector
         return n / np.linalg.norm(n)            # Normalized
 
-    def get_size_in_axes(self):
+    def get_line_length(self):
         """Returns line length in axes coordinates. Requires units on all axes
         to be the same to make any physical sense.
         """
-        return np.linalg.norm(np.diff(self.coordinates, axis=0), axis=1)
+        return np.linalg.norm(np.diff(self.position, axis=0), axis=1)
 
     def get_centre(self):
         """Get the line center, which is simply the mean position of its
@@ -154,7 +164,7 @@ class Line2DWidget(ResizableDraggablePatchBase):
         s = self.size * np.array([ax.scale for ax in self.axes])
         n = self._get_line_normal()
         n *= np.linalg.norm(n * s) / 2
-        c = np.array(self.coordinates)
+        c = np.array(self.position)
         return c + n, c - n
 
     def _update_patch_position(self):
@@ -167,21 +177,21 @@ class Line2DWidget(ResizableDraggablePatchBase):
         """Set line position, and set width indicator's if appropriate
         """
         if self.is_on() and self.patch:
-            self.patch[0].set_data(np.array(self.coordinates).T)
-            self.draw_patch()
+            self.patch[0].set_data(np.array(self.position).T)
             wc = self._get_width_indicator_coords()
             for i in xrange(2):
                 self._width_indicators[i].set_data(wc[i].T)
+            self.draw_patch()
 
     def _set_patch(self):
         """Creates the line, and also creates the width indicators if
         appropriate.
         """
         self.ax.autoscale(False)   # Prevent plotting from rescaling
-        xy = np.array(self.coordinates)
+        xy = np.array(self.position)
         max_r = max(self.radius_move, self.radius_resize,
                     self.radius_rotate)
-        self.patch[0], = self.ax.plot(
+        self.patch = self.ax.plot(
             xy[:, 0], xy[:, 1],
             linestyle='-',
             animated=self.blit,
@@ -191,7 +201,7 @@ class Line2DWidget(ResizableDraggablePatchBase):
             markersize=self.radius_resize,
             mew=0.1,
             mfc='lime',
-            picker=max_r,)
+            picker=max_r,)[0:1]
         wc = self._get_width_indicator_coords()
         for i in xrange(2):
             wi, = self.ax.plot(
@@ -220,6 +230,7 @@ class Line2DWidget(ResizableDraggablePatchBase):
                     for r in self._width_indicators:
                         if r in container:
                             container.remove(r)
+            self._indicators_on = value
             self.draw_patch()
 
     def set_on(self, value):
@@ -253,7 +264,7 @@ class Line2DWidget(ResizableDraggablePatchBase):
             return self.FUNC_NONE
 
         trans = self.ax.transData
-        p = np.array(trans.transform(self.coordinates))
+        p = np.array(trans.transform(self.position))
 
         # Calculate the distances to the vertecies, and find nearest one
         r2 = np.sum(np.power(p - np.array((cx, cy)), 2), axis=1)
@@ -300,7 +311,7 @@ class Line2DWidget(ResizableDraggablePatchBase):
             self.func = self._get_func_from_pos(me.x, me.y)
             self._prev_pos = [me.xdata, me.ydata]
             if self.func & self.FUNC_ROTATE:
-                self._rotate_orig = np.array(self.coordinates)
+                self._rotate_orig = np.array(self.position)
 
     def _onmousemove(self, event):
         """Delegate to _move(), _resize() or _rotate().
@@ -332,7 +343,7 @@ class Line2DWidget(ResizableDraggablePatchBase):
         '_prev_pos'.
         """
         dx = self._get_diff(event)
-        self.coordinates += dx
+        self.position += dx
         self._prev_pos += dx
 
     def _resize(self, event):
@@ -341,9 +352,9 @@ class Line2DWidget(ResizableDraggablePatchBase):
         """
         ip = self._get_vertex(event)
         dx = self._get_diff(event)
-        p = np.array(self.coordinates)
+        p = np.array(self.position)
         p[ip, 0:2] += dx
-        self.coordinates = p
+        self.position = p
         self._prev_pos += dx
 
     def _rotate(self, event):
@@ -355,7 +366,7 @@ class Line2DWidget(ResizableDraggablePatchBase):
         # Rotate does not update last pos, to avoid inaccuracies by deltas
         dx = self._get_diff(event)
 
-        # Rotation should happen in screen coordinates, as anything else will
+        # Rotation should happen in screen position, as anything else will
         # mix units
         trans = self.ax.transData
         scr_zero = np.array(trans.transform((0, 0)))
@@ -378,4 +389,4 @@ class Line2DWidget(ResizableDraggablePatchBase):
         # rotate into w2 for next point
         w2 = np.array((w1[:, 0] * np.cos(theta) - w1[:, 1] * np.sin(theta),
                        w1[:, 1] * np.cos(theta) + w1[:, 0] * np.sin(theta)))
-        self.coordinates = trans.inverted().transform(c + np.rot90(w2))
+        self.position = trans.inverted().transform(c + np.rot90(w2))

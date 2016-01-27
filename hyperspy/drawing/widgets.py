@@ -16,3 +16,4 @@ from hyperspy.drawing._widgets.scalebar import ScaleBar
 from hyperspy.drawing._widgets.circle import CircleWidget
 from hyperspy.drawing._widgets.rectangles import RectangleWidget, SquareWidget
 from hyperspy.drawing._widgets.range import ModifiableSpanSelector, RangeWidget
+from hyperspy.drawing._widgets.line2d import Line2DWidget
