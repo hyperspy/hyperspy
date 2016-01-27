@@ -519,6 +519,9 @@ class Signal2DTools(object):
             return_shifts = True
         else:
             return_shifts = False
+        if not np.any(shifts):
+            # The shift array if filled with zeros, nothing to do.
+            return
 
         if expand:
             # Expand to fit all valid data
@@ -573,6 +576,7 @@ class Signal2DTools(object):
             self.crop_image(top, bottom, left, right)
             shifts = -shifts
 
+        self.events.data_changed.trigger(signal=self)
         if return_shifts:
             return shifts
 
@@ -639,6 +643,9 @@ class Signal1DTools(object):
         SignalDimensionError if the signal dimension is not 1.
 
         """
+        if not np.any(shift_array):
+            # Nothing to do, the shift array if filled with zeros
+            return
         if show_progressbar is None:
             show_progressbar = preferences.General.show_progressbar
         self._check_signal_dimension_equals_one()
@@ -695,6 +702,8 @@ class Signal1DTools(object):
                       ilow,
                       ihigh)
 
+        self.events.data_changed.trigger(signal=self)
+
     def interpolate_in_between(self, start, end, delta=3,
                                show_progressbar=None, **kwargs):
         """Replace the data in a given range by interpolation.
@@ -743,6 +752,7 @@ class Signal1DTools(object):
                 **kwargs)
             dat[i1:i2] = dat_int(range(i1, i2))
             pbar.update(i + 1)
+        self.events.data_changed.trigger(signal=self)
 
     def _check_navigation_mask(self, mask):
         if mask is not None:
@@ -1083,7 +1093,7 @@ class Signal1DTools(object):
                 deriv=differential_order,
                 delta=axis.scale,
                 axis=axis.index_in_array)
-
+            self.events.data_changed.trigger(signal=self)
         else:
             # Interactive mode
             smoother = SmoothingSavitzkyGolay(self)
@@ -1335,6 +1345,7 @@ class Signal1DTools(object):
             self.data,
             axis=axis.index_in_array,
             sigma=FWHM / 2.35482)
+        self.events.data_changed.trigger(signal=self)
 
     @auto_replot
     def hanning_taper(self, side='both', channels=None, offset=0):
@@ -1377,6 +1388,7 @@ class Signal1DTools(object):
                 np.hanning(2 * channels)[-channels:])
             if offset != 0:
                 dc[..., -offset:] *= 0.
+        self.events.data_changed.trigger(signal=self)
         return channels
 
     def find_peaks1D_ohaver(self, xdim=None, slope_thresh=0, amp_thresh=None,
@@ -3300,7 +3312,7 @@ class Signal(FancySlicing,
                     " \"slider\", None, a Signal instance")
 
         self._plot.plot(**kwargs)
-        self.events.data_changed.connect(self.update_plot)
+        self.events.data_changed.connect(self.update_plot, [])
 
     def save(self, filename=None, overwrite=None, extension=None,
              **kwds):
@@ -3412,6 +3424,7 @@ class Signal(FancySlicing,
 
         if i1 is not None:
             axis.offset = new_offset
+        self.events.data_changed.trigger(signal=self)
         self.get_dimensions_from_data()
         self.squeeze()
 
@@ -4548,6 +4561,7 @@ class Signal(FancySlicing,
                 data[0][:] = function(data[0], **kwargs)
                 pbar.next()
             pbar.finish()
+        self.events.data_changed.trigger(self)
 
     def copy(self):
         try:
