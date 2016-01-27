@@ -41,9 +41,12 @@ class Test2D:
         _verify_test_sum_x_E(self, s)
 
     def test_axis_by_str(self):
+        m = mock.Mock()
         s1 = self.signal.deepcopy()
+        s1.events.data_changed.connect(m.data_changed)
         s2 = self.signal.deepcopy()
         s1.crop(0, 2, 4)
+        nt.assert_true(m.data_changed.called)
         s2.crop("x", 2, 4)
         nt.assert_true((s1.data == s2.data).all())
 
