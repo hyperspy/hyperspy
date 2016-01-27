@@ -334,6 +334,7 @@ class TestSmoothing:
 
 
 class TestSpikesRemoval:
+
     def setUp(self):
         self.s = hs.signals.Spectrum(np.zeros((5, 100)))
         self.s.data[..., 50] = 1

@@ -36,7 +36,6 @@ class Simulation(Signal):
             original_type)
         self.events.data_changed.trigger(self)
 
-
     @auto_replot
     def add_gaussian_noise(self, std):
         """Add Gaussian noise to the data
