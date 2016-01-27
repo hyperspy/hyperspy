@@ -3945,9 +3945,8 @@ class Signal(FancySlicing,
         else:
             s.data = function(self.data, axis=ar_axes)
             s._remove_axis([ax.index_in_axes_manager for ax in axes])
-            return s
-        else:
             s.events.data_changed.trigger(self)
+            return s
 
     def sum(self, axis=None, out=None):
         """Sum the data over the given axes.

@@ -1,4 +1,5 @@
 class Interactive:
+
     def __init__(self, f, event,
                  recompute_out_event=None,
                  *args, **kwargs):
@@ -11,9 +12,9 @@ class Interactive:
         else:
             self.out = self.f(*args, **kwargs)
         if recompute_out_event:
-            recompute_out_event.connect(self._recompute_out, 0)
+            recompute_out_event.connect(self._recompute_out, [])
         if event:
-            event.connect(self.update, 0)
+            event.connect(self.update, [])
 
     def _recompute_out(self):
         out = self.f(*self.args, **self.kwargs)
