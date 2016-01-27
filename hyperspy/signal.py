@@ -78,7 +78,6 @@ from hyperspy.drawing.utils import animate_legend
 from hyperspy.misc.slicing import SpecialSlicers, FancySlicing
 from hyperspy.misc.utils import slugify
 from hyperspy.events import Events, Event
-from datetime import datetime
 from hyperspy.docstrings.signal import (
     ONE_AXIS_PARAMETER, MANY_AXIS_PARAMETER, OUT_ARG)
 
@@ -2834,6 +2833,7 @@ class Signal(FancySlicing,
             Arguments:
                 signal: The signal that owns the data.
             """, arguments=['signal'])
+        self.events.data_changed.connect(self.update_plot, [])
 
     def _create_metadata(self):
         self.metadata = DictionaryTreeBrowser()
@@ -3300,7 +3300,6 @@ class Signal(FancySlicing,
                     " \"slider\", None, a Signal instance")
 
         self._plot.plot(**kwargs)
-        self.events.data_changed.connect(self.update_plot)
 
     def save(self, filename=None, overwrite=None, extension=None,
              **kwds):
