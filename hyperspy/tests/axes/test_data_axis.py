@@ -116,3 +116,12 @@ class TestDataAxis:
         nt.assert_false(m.trigger_me_index.called)
         ax.value = ax.value + ax.scale
         nt.assert_true(m.trigger_me_index.called)
+
+    def test_index_changed_event(self):
+        ax = self.axis
+        m = mock.Mock()
+        ax.events.index_changed.connect(m.trigger_me)
+        ax.index = ax.index
+        nt.assert_false(m.trigger_me.called)
+        ax.index += 1
+        nt.assert_true(m.trigger_me.called)
