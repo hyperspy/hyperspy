@@ -18,8 +18,10 @@
 
 import numpy as np
 import scipy as sp
+import copy
 from scipy.fftpack import fftn, ifftn
 import scipy.ndimage as ndi
+from hyperspy.misc.spectrum_tools import find_peaks_ohaver
 import matplotlib.pyplot as plt
 
 
@@ -237,10 +239,10 @@ MPL_DIVERGING_COLORMAPS = [
 MPL_DIVERGING_COLORMAPS += [cmap + "_r" for cmap in MPL_DIVERGING_COLORMAPS]
 
 
-def find_image_peaks(z, separation, threshold, interpolation_order=3):
+def find_peaks_minmax(z, separation, threshold, interpolation_order=3):
     """
-    Method to locate the positive peaks in an image using a simple thresholding
-    based approach.
+    Method to locate the positive peaks in an image by comparing maximum
+    and minimum filtered images.
 
     Parameters
     ----------
@@ -263,17 +265,172 @@ def find_image_peaks(z, separation, threshold, interpolation_order=3):
     diff = ((data_max - data_min) > threshold)
     maxima[diff == 0] = 0
     labeled, num_objects = ndi.label(maxima)
-    slices = ndi.find_objects(labeled)
-    x, y = [], []
-    for dy, dx in slices:
-        x_center = (dx.start + dx.stop - 1) / 2
-        x.append(x_center)
-        y_center = (dy.start + dy.stop - 1) / 2
-        y.append(y_center)
-    p = np.asarray([x, y])
-    peaks = p.T
+    peaks = np.array(ndi.center_of_mass(z, labeled, range(1, num_objects+1)))
 
     return peaks
+
+
+def find_peaks_max(z, alpha=3, size=10):
+    """
+    Method to locate positive peaks in an image by simple local maximum
+    searching.
+    """
+    # preallocate lots of peak storage
+    k_arr = np.zeros((10000, 2))
+    # copy image
+    image_temp = copy.deepcopy(z)
+    peak_ct = 0
+    # calculate standard deviation of image for thresholding
+    sigma = np.std(z)
+    while True:
+        k = np.argmax(image_temp)
+        j, i = np.unravel_index(k, image_temp.shape)
+        if(image_temp[j, i] >= alpha * sigma):
+            k_arr[peak_ct] = [j, i]
+            # masks peaks already identified.
+            x = np.arange(i-size, i+size)
+            y = np.arange(j-size, j+size)
+            xv, yv = np.meshgrid(x, y)
+            # clip to handle peaks near image edge
+            image_temp[yv.clip(0, image_temp.shape[0]-1),
+                       xv.clip(0, image_temp.shape[1]-1)] = 0
+            peak_ct += 1
+        else:
+            break
+    # trim array to have shape (number of peaks, 2)
+    peaks = k_arr[:peak_ct]
+
+    return peaks
+
+
+def find_peaks_zaefferer(z, grad_threshold=10, separation):
+    """
+    Method to locate positive peaks in an image based on gradient thresholding
+    and subsequent refinement within masked regions.
+
+    Parameters
+    ----------
+
+    grad_threshold : int
+
+    separation : int
+
+    Returns
+    -------
+
+    peaks : array
+
+    Notes
+    -----
+    Implemented as described in Zaefferer "New developments of computer-aided
+    crystallographic analysis in transmission electron microscopy" J. Ap. Cryst.
+    """
+
+
+def find_peaks_stat(z):
+    """
+    Method to locate positive peaks in an image based on statistical refinement
+    and difference with respect to mean intensity.
+
+    Parameters
+    ----------
+
+    Returns
+    -------
+
+    Notes
+    -----
+    Implemented as described in the PhD thesis of Thomas White (2009) the
+    algorithm was developed by Gordon Ball during a summer project in Cambridge.
+    """
+
+
+def find_peaks_masiel(z, subpixel=False, peak_width=10, medfilt_radius=5,
+                      maxpeakn=10000):
+    """
+    Method to locate peaks in an image by finding peaks in the  x-direction and
+    y-direction separately and then determining common position.
+
+    Parameters
+    ----------
+    arr : array
+    2D input array, i.e. an image
+
+    medfilt_radius : int (optional)
+                     median filter window to apply to smooth the data
+                     (see scipy.signal.medfilter). If 0, no filter applied.
+                     Default value is 5.
+
+    peak_width : int (optional)
+                 expected peak width. Affects subpixel precision fitting window,
+                 which takes the center of gravity of a box that has sides equal
+                 to this parameter. If the value is too big other peaks will be
+                 included.
+                 Default value is 10.
+
+    subpixel : bool (optional)
+               Default is False.
+
+    Returns
+    -------
+    peaks : array of shape (npeaks, 3)
+            contains position and height of each peak
+
+    Notes
+    -----
+    Based on matlab function from Dan Masiel and originally coded in python by
+    Michael Sarahan (2011).
+    Developed in to this version by Duncan Johnstone (2016)
+    """
+    mapX = np.zeros_like(z)
+    mapY = np.zeros_like(z)
+    peak_array = np.zeros((maxpeakn, 3))
+
+    if medfilt_radius > 0:
+        z = ndi.filters.median_filter(z, medfilt_radius)
+    xc = [find_peaks_ohaver(z[i], medfilt_radius=None,
+                            peakgroup=peak_width,
+                            subchannel=False,
+                            peak_array=peak_array).copy()[:, 0] for i in xrange(z.shape[0])]
+    for row in xrange(len(xc)):
+        for col in xrange(xc[row].shape[0]):
+            mapX[row, int(xc[row][col])] = 1
+    yc = [find_peaks_ohaver(z[:, i], medfilt_radius=None,
+                            peakgroup=peak_width,
+                            subchannel=False,
+                            peak_array=peak_array).copy()[:, 0] for i in xrange(z.shape[1])]
+    for col in xrange(len(yc)):
+        for row in xrange(yc[col].shape[0]):
+            mapY[int(yc[col][row]), col] = 1
+
+    Fmap = mapX*mapY
+    nonzeros = np.nonzero(Fmap)
+    peaks = np.vstack((nonzeros[1], nonzeros[0])).T
+    if subpixel:
+        peaks = subpix_locate(z, peaks, peak_width)
+    peaks = np.ma.fix_invalid(peaks, fill_value=-1)
+    peaks = np.ma.masked_outside(peaks, peak_width / 2 + 1,
+                                 z.shape[0] - peak_width / 2 - 1)
+    peaks = np.ma.masked_less(peaks, 0)
+    peaks = np.ma.compress_rows(peaks)
+    # add the heights
+    # heights = np.array([z[peaks[i, 1], peaks[i, 0]] for i in xrange(peaks.shape[0])]).reshape((-1, 1))
+    # peaks = np.hstack((peaks, heights))
+    return peaks
+
+
+def subpix_locate(z, peaks, peak_width, scale=None):
+    top = left = peak_width / 2 + 1
+    centers = np.array(peaks, dtype=np.float32)
+    for i in xrange(peaks.shape[0]):
+        pk = peaks[i]
+        center = np.array(ndi.measurements.center_of_mass(z[(pk[0] - left):(pk[0] + left),
+                                                            (pk[1] - top):(pk[1] + top)]))
+        center = center[0] - peak_width / 2, center[1] - peak_width / 2
+        centers[i] = np.array([pk[0] + center[0], pk[1]+center[1]])
+    if scale:
+        centers = centers * scale
+    return centers
 
 
 def centre_colormap_values(vmin, vmax):

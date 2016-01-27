@@ -66,7 +66,9 @@ from hyperspy.decorators import interactive_range_selector
 from scipy.ndimage.filters import gaussian_filter1d
 from hyperspy.misc.spectrum_tools import find_peaks_ohaver
 from hyperspy.misc.image_tools import (shift_image, estimate_image_shift,
-                                       find_image_peaks)
+                                       find_peaks_max, find_peaks_minmax,
+                                       find_peaks_zaefferer, find_peaks_stat,
+                                       find_peaks_massiel)
 from hyperspy.misc.math_tools import symmetrize, antisymmetrize
 from hyperspy.exceptions import SignalDimensionError, DataDimensionError
 from hyperspy.misc import array_tools
@@ -598,8 +600,8 @@ class Signal2DTools(object):
                   left,
                   right)
 
-    def find_peaks2D(self, method='skimage', separation=10, threshold=10,
-                     *args, **kwargs):
+
+    def find_peaks2D(self, method='skimage', *args, **kwargs):
         """Find peaks in a 2D signal/image.
 
         Function to locate the positive peaks in an image using various, user
@@ -608,7 +610,21 @@ class Signal2DTools(object):
 
         Parameters
         ---------
-        method: keyword
+        method : str
+                 Select peak finding algorithm to implement. Available methods
+                 are:
+                     'max' - simple local maximum search
+                     'skimage' - call the peak finder implemented in
+                                 scikit-image which uses a maximum filter
+                     'minmax' - finds peaks by comparing maximum filter results
+                                with minimum filter, calculates centers of mass
+                     'zaefferer' - based on gradient thresholding and refinement
+                                   by local region of interest optimisation
+                     'stat' - statistical approach requiring no free params.
+                     'massiel' - finds peaks in each direction and compares the
+                                 positions where these coincide.
+
+        keywords : associated with above methods.
 
         Returns
         -------
@@ -623,11 +639,18 @@ class Signal2DTools(object):
         for z, indices in zip(self._iterate_signal(),
                               self.axes_manager._array_indices_generator()):
             if method == 'skimage':
-                peaks[indices] = peak_local_max(z, min_distance=separation)
-            if method == 'threshold':
-                peaks[indices] = find_image_peaks(z,
-                                                  separation=separation,
-                                                  threshold=threshold)
+                peaks[indices] = peak_local_max(z, *args, **kwargs)
+            if method == 'max':
+                peaks[indices] = find_peaks_max(z, *args, **kwargs)
+            if method == 'minmax':
+                peaks[indices] = find_peaks_minmax(z, *args, **kwargs)
+            if method == 'zaefferer':
+                peaks[indices] = find_peaks_zaefferer(z, *args, **kwargs)
+            if method == 'stat':
+                peaks[indices] = find_peaks_stat(z, *args, **kwargs)
+            if method == 'massiel':
+                peaks[indices] = find_peaks_massiel(z, *args, **kwargs)
+
         return peaks
 
 
