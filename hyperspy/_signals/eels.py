@@ -121,10 +121,9 @@ class EELSSpectrum(Spectrum):
             for shell in elements_db[element][
                     'Atomic_properties']['Binding_energies']:
                 if shell[-1] != 'a':
-                    if start_energy <= \
-                            elements_db[element]['Atomic_properties']['Binding_energies'][shell][
-                                'onset_energy (eV)'] \
-                            <= end_energy:
+                    energy = (elements_db[element]['Atomic_properties']
+                              ['Binding_energies'][shell]['onset_energy (eV)'])
+                    if start_energy <= energy <= end_energy:
                         subshell = '%s_%s' % (element, shell)
                         if subshell not in self.subshells:
                             self.subshells.add(
@@ -294,20 +293,17 @@ class EELSSpectrum(Spectrum):
             substract_from_offset(without_nans(zlpc.data).mean(),
                                   also_align + [self])
 
-    def estimate_elastic_scattering_intensity(self,
-                                              threshold,
-                                              show_progressbar=None,
-                                              ):
+    def estimate_elastic_scattering_intensity(
+            self, threshold, show_progressbar=None):
         """Rough estimation of the elastic scattering intensity by
         truncation of a EELS low-loss spectrum.
 
         Parameters
         ----------
         threshold : {Signal, float, int}
-            Truncation energy to estimate the intensity of the
-            elastic scattering. The
-            threshold can be provided as a signal of the same dimension
-            as the input spectrum navigation space containing the
+            Truncation energy to estimate the intensity of the elastic
+            scattering. The threshold can be provided as a signal of the same
+            dimension as the input spectrum navigation space containing the
             threshold value in the energy units. Alternatively a constant
             threshold can be specified in energy/index units by passing
             float/int.
@@ -490,17 +486,15 @@ class EELSSpectrum(Spectrum):
         ----------
         threshold : {Signal, float, int}
             Truncation energy to estimate the intensity of the
-            elastic scattering. The
-            threshold can be provided as a signal of the same dimension
-            as the input spectrum navigation space containing the
-            threshold value in the energy units. Alternatively a constant
-            threshold can be specified in energy/index units by passing
-            float/int.
+            elastic scattering. The threshold can be provided as a signal of
+            the same dimension as the input spectrum navigation space
+            containing the threshold value in the energy units. Alternatively a
+            constant threshold can be specified in energy/index units by
+            passing float/int.
         zlp : {None, EELSSpectrum}
-            If not None the zero-loss
-            peak intensity is calculated from the ZLP spectrum
-            supplied by integration using Simpson's rule. If None estimates
-            the zero-loss peak intensity using
+            If not None the zero-loss peak intensity is calculated from the ZLP
+            spectrum supplied by integration using Simpson's rule. If None
+            estimates the zero-loss peak intensity using
             `estimate_elastic_scattering_intensity` by truncation.
 
         Returns
@@ -842,18 +836,24 @@ class EELSSpectrum(Spectrum):
     def _set_microscope_parameters(self):
         tem_par = TEMParametersUI()
         mapping = {
-            'Acquisition_instrument.TEM.convergence_angle': 'tem_par.convergence_angle',
-            'Acquisition_instrument.TEM.beam_energy': 'tem_par.beam_energy',
-            'Acquisition_instrument.TEM.Detector.EELS.collection_angle': 'tem_par.collection_angle',
+            'Acquisition_instrument.TEM.convergence_angle':
+                'tem_par.convergence_angle',
+            'Acquisition_instrument.TEM.beam_energy':
+                'tem_par.beam_energy',
+            'Acquisition_instrument.TEM.Detector.EELS.collection_angle':
+                'tem_par.collection_angle',
         }
         for key, value in mapping.iteritems():
             if self.metadata.has_item(key):
                 exec('%s = self.metadata.%s' % (value, key))
         tem_par.edit_traits()
         mapping = {
-            'Acquisition_instrument.TEM.convergence_angle': tem_par.convergence_angle,
-            'Acquisition_instrument.TEM.beam_energy': tem_par.beam_energy,
-            'Acquisition_instrument.TEM.Detector.EELS.collection_angle': tem_par.collection_angle,
+            'Acquisition_instrument.TEM.convergence_angle':
+                tem_par.convergence_angle,
+            'Acquisition_instrument.TEM.beam_energy':
+                tem_par.beam_energy,
+            'Acquisition_instrument.TEM.Detector.EELS.collection_angle':
+                tem_par.collection_angle,
         }
         for key, value in mapping.iteritems():
             if value != t.Undefined:
@@ -1051,7 +1051,8 @@ class EELSSpectrum(Spectrum):
                                  "You can do this e.g. by using the "
                                  "set_microscope_parameters method")
         try:
-            beta = s.metadata.Acquisition_instrument.TEM.Detector.EELS.collection_angle
+            beta = s.metadata.Acquisition_instrument.TEM.Detector.\
+                EELS.collection_angle
         except:
             raise AttributeError("Please define the collection angle."
                                  "You can do this e.g. by using the "
@@ -1234,8 +1235,8 @@ class EELSSpectrum(Spectrum):
             core-loss EELS edges. If None the Hartree-Slater GOS are used if
             available, otherwise it uses the hydrogenic GOS.
         dictionary : {None | dict}, optional
-            A dictionary to be used to recreate a model. Usually generated using
-            :meth:`hyperspy.model.as_dictionary`
+            A dictionary to be used to recreate a model. Usually generated
+            using :meth:`hyperspy.model.as_dictionary`
 
         Returns
         -------
