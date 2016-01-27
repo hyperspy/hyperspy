@@ -7,6 +7,7 @@ from hyperspy.events import Event
 
 
 class TestInteractive():
+
     def setUp(self):
         d = np.linspace(3, 10.5)
         d = np.tile(d, (3, 3, 1))
@@ -46,10 +47,10 @@ class TestInteractive():
         # Check eveything as normal first
         np.testing.assert_equal(ss.data, np.sum(s.data, axis=1))
         # Modify axes and data in-place
-        s.crop(1, 1) # data shape (2, 3, 50)
+        s.crop(1, 1)  # data shape (2, 3, 50)
         # Check that data is no longer comparable
         nt.assert_not_equal(ss.data.shape, np.sum(s.data, axis=1).shape)
-        # Check that normal event raises an exception due to the invalid shape 
+        # Check that normal event raises an exception due to the invalid shape
         nt.assert_raises(ValueError, e1.trigger)
         # Check that recompute event fixes issue
         e2.trigger()
