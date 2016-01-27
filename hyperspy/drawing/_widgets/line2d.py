@@ -345,7 +345,6 @@ class Line2DWidget(ResizableDraggableWidgetBase):
                 self._rotate(event)
             elif self.func & self.FUNC_SIZERS and event.inaxes:
                 self._width_resize(event)
-            print self.size[0]
 
     def _get_diff(self, event):
         """Get difference in position in event and what is stored in _prev_pos,
