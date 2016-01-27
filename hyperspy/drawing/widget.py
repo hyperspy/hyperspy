@@ -236,7 +236,6 @@ class WidgetBase(object):
             elif self.ax.figure is not None:
                 self.ax.figure.canvas.draw_idle()
         except AttributeError:
-            print "whut"
             pass  # When figure is None, typically when closing
 
     def _v2i(self, axis, v):
