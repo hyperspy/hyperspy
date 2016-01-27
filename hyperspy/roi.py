@@ -843,7 +843,7 @@ class Line2DROI(BaseInteractiveROI):
         widget.size = np.array([self.linewidth])
 
     def _get_widget_type(self, axes, signal):
-        raise NotImplementedError()
+        return widgets.Line2DWidget
 
     @staticmethod
     def _line_profile_coordinates(src, dst, linewidth=1):

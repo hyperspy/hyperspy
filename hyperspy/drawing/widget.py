@@ -394,8 +394,9 @@ class DraggableWidgetBase(WidgetBase):
                         lambda s, v: s._set_position(v))
 
     def _do_snap_position(self, value=None):
-        """Snaps position to axes grid. Returns True if postion was adjusted,
-        otherwise False.
+        """Snaps position to axes grid. Returns snapped value. If value is
+        passed as an argument, the internal state is left untouched, if not
+        the position attribute is updated to the snapped value.
         """
         value = np.array(value) if value is not None else self._pos
         for i, ax in enumerate(self.axes):
@@ -504,7 +505,7 @@ class ResizableDraggableWidgetBase(DraggableWidgetBase):
                     The widget that was resized.
             """, arguments=['widget'])
         self.no_events_while_dragging = False
-        self._drag_start = None
+        self._drag_store = None
 
     def _set_axes(self, axes):
         super(ResizableDraggableWidgetBase, self)._set_axes(axes)
@@ -640,7 +641,7 @@ class ResizableDraggableWidgetBase(DraggableWidgetBase):
         if hasattr(super(ResizableDraggableWidgetBase, self), 'onpick'):
             super(ResizableDraggableWidgetBase, self).onpick(event)
         if self.picked:
-            self._drag_start = (self.position, self.size)
+            self._drag_store = (self.position, self.size)
 
     def _apply_changes(self, old_size, old_position):
         """Evalutes whether the widget has been moved/resized, and triggers
@@ -679,8 +680,8 @@ class ResizableDraggableWidgetBase(DraggableWidgetBase):
         if event.button != 1:
             return
         if picked and self.picked is False:
-            if self.no_events_while_dragging and self._drag_start:
-                self._apply_changes(*self._drag_start)
+            if self.no_events_while_dragging and self._drag_store:
+                self._apply_changes(*self._drag_store)
 
 
 class Widget2DBase(ResizableDraggableWidgetBase):
