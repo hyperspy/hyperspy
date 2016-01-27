@@ -380,7 +380,6 @@ class DataAxis(t.HasTraits):
         else:
             return self.axis[index]
 
-
     def calibrate(self, value_tuple, index_tuple, modify_calibration=True):
         scale = (value_tuple[1] - value_tuple[0]) /\
             (index_tuple[1] - index_tuple[0])
