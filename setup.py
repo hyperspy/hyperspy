@@ -145,6 +145,7 @@ with update_version_when_dev() as version:
                   'hyperspy.docstrings',
                   'hyperspy.drawing',
                   'hyperspy.drawing._markers',
+                  'hyperspy.drawing._widgets',
                   'hyperspy.learn',
                   'hyperspy._signals',
                   'hyperspy.gui',
