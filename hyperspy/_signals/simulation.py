@@ -34,7 +34,7 @@ class Simulation(Signal):
         original_type = self.data.dtype
         self.data = np.random.poisson(self.data, **kwargs).astype(
             original_type)
-        self.events.data_changed.trigger(self)
+        self.events.data_changed.trigger(obj=self)
 
     @auto_replot
     def add_gaussian_noise(self, std):
@@ -52,4 +52,4 @@ class Simulation(Signal):
             self.data.astype(
                 noise.dtype) +
             noise).astype(original_dtype)
-        self.events.data_changed.trigger(self)
+        self.events.data_changed.trigger(obj=self)

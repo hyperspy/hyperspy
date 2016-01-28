@@ -234,6 +234,6 @@ class FancySlicing(object):
         if out is None:
             return _obj
         else:
-            out.events.data_changed.trigger(signal=out)
+            out.events.data_changed.trigger(obj=out)
 
 # vim: textwidth=80
