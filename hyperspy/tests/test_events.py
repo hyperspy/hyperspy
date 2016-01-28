@@ -295,12 +295,17 @@ class TestEventsSignatures(EventsBase):
         nt.assert_raises(TypeError, self.events.a.trigger, three=None)
         nt.assert_raises(TypeError, self.events.a.trigger, one=2)
 
-    def test_connected(self):
+    def test_connected_and_disconnect(self):
         self.events.a.connect(f_a)
         self.events.a.connect(f_b, ["A", "B"])
         self.events.a.connect(f_c, {"a": "A", "b": "B"})
         self.events.a.connect(f_d, 'auto')
         nt.assert_equal(self.events.a.connected, set([f_a, f_b, f_c, f_d]))
+        self.events.a.disconnect(f_a)
+        self.events.a.disconnect(f_b)
+        self.events.a.disconnect(f_c)
+        self.events.a.disconnect(f_d)
+        nt.assert_equal(self.events.a.connected, set([]))
 
     @nt.raises(TypeError)
     def test_type(self):

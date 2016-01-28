@@ -356,7 +356,7 @@ class Event(object):
         elif function in self._connected_some:
             kwargs = self._connected_some.pop(function)
         elif function in self._connected_map:
-            kwargs = self._connected_some.pop(function)
+            kwargs = self._connected_map.pop(function)
         else:
             raise ValueError("The %s function is not connected." % function)
         if return_connection_kwargs:
