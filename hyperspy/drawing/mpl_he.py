@@ -87,6 +87,10 @@ class MPL_HyperExplorer(object):
                     title=self.signal_title + " navigation sliders")
                 for axis in self.axes_manager.navigation_axes[:-2]:
                     axis.events.index_changed.connect(sf.update, [])
+                    self.signal_plot.events.closed.connect(
+                        lambda:
+                            axis.events.index_changed.disconnect(sf.update),
+                            [])
             self.navigator_plot = sf
         elif len(self.navigator_data_function().shape) >= 2:
             imf = image.ImagePlot()
@@ -104,6 +108,9 @@ class MPL_HyperExplorer(object):
                         title=self.signal_title + " navigation sliders")
                     for axis in self.axes_manager.navigation_axes[2:]:
                         axis.events.index_changed.connect(imf.update, [])
+                        self.signal_plot.events.closed.connect(
+                            lambda: axis.events.index_changed.disconnect(
+                                imf.update), [])
 
             imf.title = self.signal_title + ' Navigator'
             imf.plot()
@@ -111,20 +118,19 @@ class MPL_HyperExplorer(object):
             self.navigator_plot = imf
 
     def close_navigator_plot(self):
-        self._disconnect()
         self.navigator_plot.close()
 
     def is_active(self):
         return True if self.signal_plot.figure else False
 
     def plot(self, **kwargs):
+        self.plot_signal(**kwargs)
         if self.pointer is None:
             pointer = self.assign_pointer()
             if pointer is not None:
                 self.pointer = pointer(self.axes_manager)
                 self.pointer.color = 'red'
             self.plot_navigator()
-        self.plot_signal(**kwargs)
 
     def assign_pointer(self):
         if self.navigator_data_function is None:
@@ -146,16 +152,6 @@ class MPL_HyperExplorer(object):
         self._pointer_nav_dim = nav_dim
         return Pointer
 
-    def _disconnect(self):
-        if (self.axes_manager.navigation_dimension > 2 and
-                self.navigator_plot is not None):
-            for axis in self.axes_manager.navigation_axes:
-                axis.events.index_changed.disconnect(
-                    self.navigator_plot.update)
-        if self.pointer is not None:
-            self.pointer.disconnect(self.navigator_plot.ax)
-
     def close(self):
-        self._disconnect()
         self.signal_plot.close()
         self.navigator_plot.close()

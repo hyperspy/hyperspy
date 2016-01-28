@@ -763,8 +763,9 @@ class Model1D(BaseModel):
         # Create widget -> parameter connection
         am._axes[0].continuous_value = True
         am._axes[0].events.value_changed.connect(set_value, ["value"])
+        axis = am._axes[0]
         component._position.events.value_changed.connect(
-            am._axes[0].set_index_from_value, ["value"])
+            lambda value: axis.value, ["value"])
 
     def disable_adjust_position(self):
         """Disables the interactive adjust position feature
@@ -780,8 +781,7 @@ class Model1D(BaseModel):
             if hasattr(pw, 'component'):
                 pw.component._position.twin = None
                 del pw.component
-            pw.close()
-            del pw
+                pw.close()
 
     def fit_component(
             self,
