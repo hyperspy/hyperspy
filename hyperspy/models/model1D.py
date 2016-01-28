@@ -781,8 +781,7 @@ class Model1D(BaseModel):
             if hasattr(pw, 'component'):
                 pw.component._position.twin = None
                 del pw.component
-            pw.close()
-            del pw
+                pw.close()
 
     def fit_component(
             self,

@@ -26,6 +26,7 @@ import traits
 
 from utils import on_figure_window_close
 from hyperspy.misc.math_tools import closest_nice_number
+from hyperspy.events import Event, Events
 
 
 class DraggablePatch(object):
@@ -37,6 +38,14 @@ class DraggablePatch(object):
         """
         Add a cursor to ax.
         """
+        self.events = Events()
+        self.events.closed = Event("""
+            Event that triggers when the widget is closed.
+
+            Arguments:
+                obj:  widget instance
+                    The instance that triggered the event.
+            """, arguments=["obj"])
         self.axes_manager = axes_manager
         self.ax = None
         self.picked = False
@@ -64,7 +73,7 @@ class DraggablePatch(object):
                         self.ax.texts]:
                     if self.patch in container:
                         container.remove(self.patch)
-                self.disconnect(self.ax)
+                self.disconnect()
             self.__is_on = value
             try:
                 self.ax.figure.canvas.draw()
@@ -99,19 +108,23 @@ class DraggablePatch(object):
             'button_release_event', self.button_release))
         self.axes_manager.events.indices_changed.connect(
             self._update_patch_position, [])
+        self.events.closed.connect(
+            lambda: self.axes_manager.events.indices_changed.disconnect(
+                self._update_patch_position), [])
         on_figure_window_close(ax.figure, self.close)
 
-    def disconnect(self, ax):
+    def disconnect(self):
         for cid in self.cids:
             try:
                 ax.figure.canvas.mpl_disconnect(cid)
             except:
                 pass
-        self.axes_manager.events.indices_changed.disconnect(
-            self._update_patch_position)
 
     def close(self, window=None):
         self.set_on(False)
+        self.events.closed.trigger(self)
+        for f in self.events.closed.connected:
+            self.events.closed.disconnect(f)
 
     def onpick(self, event):
         self.picked = (event.artist is self.patch)

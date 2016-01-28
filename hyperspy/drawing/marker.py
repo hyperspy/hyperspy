@@ -137,6 +137,8 @@ class MarkerBase(object):
         try:
             self.marker.remove()
             self.events.closed.trigger(marker=self)
+            for f in self.events.closed.connected:
+                self.events.closed.disconnect(f)
             # m.ax.figure.canvas.draw()
             self.ax.hspy_fig._draw_animated()
         except:
