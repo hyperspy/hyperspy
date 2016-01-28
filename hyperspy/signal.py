@@ -3872,7 +3872,7 @@ class Signal(FancySlicing,
                 name="Scalar",
                 navigate=False,)
 
-    def _ma_workaround(self, s, function, axes, ar_axes, out):
+    def _ma_workaround(self, s, function, axes, ar_axes, out, np_out):
         # TODO: Remove if and when numpy.ma accepts tuple `axis`
 
         # Basically perform unfolding, but only on data. We don't care about
@@ -3885,9 +3885,12 @@ class Signal(FancySlicing,
         data = self.data.reshape(new_shape).squeeze()
 
         if out:
-            function(data, axis=ar_axes[0], out=out.data)
+            if np_out:
+                function(data, axis=ar_axes[0], out=out.data,)
+            else:
+                out.data[:] = function(data, axis=ar_axes[0],)
         else:
-            s.data = function(data, axis=ar_axes[0])
+            s.data = function(data, axis=ar_axes[0],)
             s._remove_axis([ax.index_in_axes_manager for ax in axes])
             return s
 
@@ -3896,6 +3899,7 @@ class Signal(FancySlicing,
         axes = self.axes_manager[axes]
         if not np.iterable(axes):
             axes = (axes,)
+        np_out = not len(self.axes_manager._axes) == len(axes)
         ar_axes = tuple(ax.index_in_array for ax in axes)
         if len(ar_axes) == 1:
             ar_axes = ar_axes[0]
@@ -3903,11 +3907,16 @@ class Signal(FancySlicing,
         s = out or self._deepcopy_with_new_data(None)
 
         if np.ma.is_masked(self.data):
-            return self._ma_workaround(s, function, axes, ar_axes, out)
+            return self._ma_workaround(s=s, function=function, axes=axes,
+                                       ar_axes=ar_axes, out=out, np_out=np_out)
         if out:
-            function(self.data, axis=ar_axes, out=out.data)
+            if np_out:
+                function(self.data, axis=ar_axes, out=out.data,)
+            else:
+                out.data[:] = function(self.data, axis=ar_axes,)
         else:
-            s.data = function(self.data, axis=ar_axes)
+            s.data = np.atleast_1d(
+                function(self.data, axis=ar_axes,))
             s._remove_axis([ax.index_in_axes_manager for ax in axes])
             return s
 

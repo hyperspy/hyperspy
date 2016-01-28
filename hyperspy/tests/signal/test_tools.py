@@ -443,6 +443,8 @@ class TestOutArg:
 
     def test_sum(self):
         self._run_single(self.s.sum, self.s, dict(axis=('x', 'z')))
+        self._run_single(self.s.sum, self.s.get_current_signal(),
+                         dict(axis=0))
 
     def test_mean(self):
         self._run_single(self.s.mean, self.s, dict(axis=('x', 'z')))
