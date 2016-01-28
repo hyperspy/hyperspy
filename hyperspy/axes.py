@@ -149,11 +149,13 @@ class DataAxis(t.HasTraits):
                 new_value = self.index2value(new_index)
                 if new_value == old:
                     self._suppress_value_changed_trigger = True
-                    self.value = new_value
-                elif new_value == new:
-                    if self._suppress_value_changed_trigger:
+                    try:
+                        self.value = new_value
+                    finally:
                         self._suppress_value_changed_trigger = False
-                    else:
+
+                elif new_value == new and not\
+                                        self._suppress_value_changed_trigger:
                         self.events.value_changed.trigger(obj=self, value=new)
         else:  # Intergrid values are alowed. This feature is deprecated
             self.events.value_changed.trigger(obj=self, value=new)
@@ -296,6 +298,22 @@ class DataAxis(t.HasTraits):
     def __str__(self):
         return self._get_name() + " axis"
 
+    def connect(self, f):
+        warnings.warn(
+            "The method `DataAxis.connect()` has been deprecated and will "
+            "be removed in HyperSpy 0.10. Please use "
+            "`DataAxis.events.value_changed.connect()` instead.",
+            VisibleDeprecationWarning)
+        self.events.value_changed.connect(f, [])
+
+    def disconnect(self, f):
+        warnings.warn(
+            "The method `DataAxis.disconnect()` has been deprecated and "
+            "will be removed in HyperSpy 0.10. Please use "
+            "`DataAxis.events.indices_changed.disconnect()` instead.",
+            VisibleDeprecationWarning)
+        self.events.value_changed.disconnect(f)
+
     def update_index_bounds(self):
         self.high_index = self.size - 1
 
@@ -373,6 +391,14 @@ class DataAxis(t.HasTraits):
                 return index
             else:
                 raise ValueError("The value is out of the axis limits")
+
+    def set_index_from_value(self, value):
+        warnings.warn(
+            "The method `DataAxis.set_index_from_value()` has been deprecated "
+            "and will be removed in HyperSpy 0.10. Please set the value using " 
+            "the `value` attribute and the index will update automatically.",
+            VisibleDeprecationWarning)
+        self.value = value
 
     def index2value(self, index):
         if isinstance(index, np.ndarray):

@@ -773,7 +773,7 @@ class Model1D(BaseModel):
         am._axes[0].events.value_changed.connect(set_value, ["value"])
         axis = am._axes[0]
         component._position.events.value_changed.connect(
-            lambda value: axis.value, ["value"])
+            axis.set_index_from_value, ["value"])
 
     def disable_adjust_position(self):
         """Disables the interactive adjust position feature
