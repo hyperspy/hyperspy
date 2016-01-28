@@ -155,8 +155,8 @@ class DataAxis(t.HasTraits):
                         self._suppress_value_changed_trigger = False
 
                 elif new_value == new and not\
-                                        self._suppress_value_changed_trigger:
-                        self.events.value_changed.trigger(obj=self, value=new)
+                        self._suppress_value_changed_trigger:
+                    self.events.value_changed.trigger(obj=self, value=new)
         else:  # Intergrid values are alowed. This feature is deprecated
             self.events.value_changed.trigger(obj=self, value=new)
             if old_index != new_index:
@@ -395,7 +395,7 @@ class DataAxis(t.HasTraits):
     def set_index_from_value(self, value):
         warnings.warn(
             "The method `DataAxis.set_index_from_value()` has been deprecated "
-            "and will be removed in HyperSpy 0.10. Please set the value using " 
+            "and will be removed in HyperSpy 0.10. Please set the value using "
             "the `value` attribute and the index will update automatically.",
             VisibleDeprecationWarning)
         self.value = value
