@@ -109,7 +109,7 @@ class BaseROI(t.HasTraits):
                         ihigh = 1 + ax.value2index(
                             ranges[i][1], rounding=lambda x: round(x - 1))
                     except ValueError:
-                        if ranges[i][0] < ax.high_value:
+                        if ranges[i][1] > ax.high_value:
                             ihigh = ax.high_index + 1
                         else:
                             raise
