@@ -41,7 +41,6 @@ class EDSSpectrum(Spectrum):
                   'set_signal_type(\'EDS_TEM\')  '
                   'or set_signal_type(\'EDS_SEM\')')
         self.metadata.Signal.binned = True
-        self._xray_markers = {}
 
     def _get_line_energy(self, Xray_line, FWHM_MnKa=None):
         """
@@ -916,7 +915,6 @@ class EDSSpectrum(Spectrum):
         get_lines_intensity, estimate_background_windows
         """
         super(EDSSpectrum, self).plot(**kwargs)
-        self._xray_markers.clear()
         self._plot_xray_lines(xray_lines, only_lines, only_one,
                               background_windows, integration_windows)
 
@@ -1006,24 +1004,6 @@ class EDSSpectrum(Spectrum):
                 x=line_energy[i], y=intensity[i] * 1.1, text=xray_lines[i],
                 rotation=90)
             self.add_marker(text)
-            line.events.closed.connect(partial(self._remove_xray_lines_markers,
-                                               xray_lines[i]), [])
-            self._xray_markers[xray_lines[i]] = (line, text)
-
-    def _remove_xray_lines_markers(self, xray_lines):
-        """
-        Remove marker previosuly added on a spec.plot() with the name of the
-        selected X-ray lines
-
-        Parameters
-        ----------
-        xray_lines: list of string
-            A valid list of X-ray lines to remove
-        """
-        for xray_line in xray_lines:
-            if xray_line in self._xray_markers:
-                for m in self._xray_markers.pop(xray_line):
-                    m.close()
 
     def _add_background_windows_markers(self,
                                         windows_position):
