@@ -371,6 +371,31 @@ class DataAxis(t.HasTraits):
             i2 = self.size - 1
         return i1, i2
 
+    def update_from(self, axis, attributes=["scale", "offset", "units"]):
+        """Copy values of specified axes fields from the passed AxesManager.
+        Parameters
+        ----------
+        axis : DataAxis
+            The DataAxis instance to use as a source for values.
+        fields : iterable container of strings.
+            The name of the attribute to update. If the attribute does not
+            exist in either of the AxesManagers, an AttributeError will be
+            raised.
+        Returns
+        -------
+        A boolean indicating whether any changes were made.
+
+        """
+        any_changes = False
+        changed = {}
+        for f in attributes:
+            if getattr(self, f) != getattr(axis, f):
+                changed[f] = getattr(axis, f)
+        if len(changed) > 0:
+            self.trait_set(**changed)
+            any_changes = True
+        return any_changes
+
 
 class AxesManager(t.HasTraits):
 
