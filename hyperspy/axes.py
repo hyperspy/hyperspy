@@ -95,9 +95,9 @@ class DataAxis(t.HasTraits):
 
             Arguments:
             ---------
+            obj : The DataAxis that the event belongs to.
             index : The new index
-            axis : The DataAxis that the event belongs to.
-            """, arguments=['index', 'axis'])
+            """, arguments=["obj", 'index'])
         self.events.value_changed = Event("""
             Event that triggers when the value of the `DataAxis` changes
 
@@ -106,9 +106,9 @@ class DataAxis(t.HasTraits):
 
             Arguments:
             ---------
+            obj : The DataAxis that the event belongs to.
             value : The new value
-            axis : The DataAxis that the event belongs to.
-            """, arguments=['value', 'axis'])
+            """, arguments=["obj", 'value'])
         self._suppress_value_changed_trigger = False
         self._suppress_update_value = False
         self.name = name
@@ -131,7 +131,7 @@ class DataAxis(t.HasTraits):
         self._update_slice(self.navigate)
 
     def _index_changed(self, name, old, new):
-        self.events.index_changed.trigger(self.index, self.name)
+        self.events.index_changed.trigger(obj=self, index=self.index)
         if not self._suppress_update_value:
             new_value = self.axis[self.index]
             if new_value != self.value:
@@ -144,7 +144,7 @@ class DataAxis(t.HasTraits):
             if old_index != new_index:
                 self.index = new_index
                 if new == self.axis[self.index]:
-                    self.events.value_changed.trigger(new, self.name)
+                    self.events.value_changed.trigger(obj=self, value=new)
             elif old_index == new_index:
                 new_value = self.index2value(new_index)
                 if new_value == old:
@@ -154,9 +154,9 @@ class DataAxis(t.HasTraits):
                     if self._suppress_value_changed_trigger:
                         self._suppress_value_changed_trigger = False
                     else:
-                        self.events.value_changed.trigger(new, self.name)
+                        self.events.value_changed.trigger(obj=self, value=new)
         else:  # Intergrid values are alowed. This feature is deprecated
-            self.events.value_changed.trigger(new, self.name)
+            self.events.value_changed.trigger(obj=self, value=new)
             if old_index != new_index:
                 self._suppress_update_value = True
                 self.index = new_index
@@ -546,9 +546,9 @@ class AxesManager(t.HasTraits):
             updated.
 
             Arguments:
-            ----------
-            axes_manager : The AxesManager that the event belongs to.
-            """, arguments=['axes_manager'])
+            ---------
+            obj : The AxesManager that the event belongs to.
+            """, arguments=['obj'])
         self.events.transformed = Event("""
             Event that trigger when the space defined by the axes transforms.
 
@@ -769,7 +769,7 @@ class AxesManager(t.HasTraits):
 
     def _on_index_changed(self):
         self._update_attributes()
-        self.events.indices_changed.trigger(axes_manager=self)
+        self.events.indices_changed.trigger(obj=self)
 
     def _on_slice_changed(self):
         self._update_attributes()

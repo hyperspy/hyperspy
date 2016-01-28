@@ -442,7 +442,7 @@ class TestOutArg:
         s.data = s.data + 2
         s2 = f(**kwargs)
         r = f(out=s1, **kwargs)
-        m.data_changed.assert_called_with(signal=s1)
+        m.data_changed.assert_called_with(obj=s1)
         nt.assert_is_none(r)
         assert_array_equal(s1.data, s2.data)
 

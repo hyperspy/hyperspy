@@ -122,7 +122,7 @@ class DraggablePatch(object):
 
     def close(self, window=None):
         self.set_on(False)
-        self.events.closed.trigger(self)
+        self.events.closed.trigger(obj=self)
         for f in self.events.closed.connected:
             self.events.closed.disconnect(f)
 
