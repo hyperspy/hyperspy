@@ -22,8 +22,8 @@ class Events(object):
     def suppress(self):
         """
         Use this function with a 'with' statement to temporarily suppress
-        all events in the container. When the 'with' lock completes, the old
-        suppression values will be restored.
+        all callbacks of all events in the container. When the 'with' lock
+        completes, the old suppression values will be restored.
 
         Example usage
         -------------
@@ -149,8 +149,8 @@ class Event(object):
             'This event has a docstring!'
             >>> e1 = Event()
             >>> e2 = Event(arguments=('arg1', ('arg2', None)))
-            >>> e1.trigger(12, 43, 'str', 4.3)  # Can trigger with whatever
-            >>> e2.trigger(11, 22, 3.4)
+            >>> e1.trigger(arg1=12, arg2=43, arg3='str', arg4=4.3)  # Can trigger with whatever
+            >>> e2.trigger(arg1=11, arg2=22, arg3=3.4)
             TypeError: trigger() takes at most 3 arguments (4 given)
         """
         self.__doc__ = doc
@@ -302,6 +302,7 @@ class Event(object):
         See also
         --------
         disconnect
+
         """
         if not callable(function):
             raise TypeError("Only callables can be registered")
@@ -355,7 +356,7 @@ class Event(object):
         elif function in self._connected_some:
             self._connected_some.pop(function)
         elif function in self._connected_map:
-            self._connected_some.pop(function)
+            self._connected_map.pop(function)
         else:
             raise ValueError("The %s function is not connected." % function)
 

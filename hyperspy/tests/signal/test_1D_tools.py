@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
+import mock
 
 import numpy as np
 import nose.tools as nt
@@ -54,10 +55,13 @@ class TestAlignTools:
 
     def test_shift1D(self):
         s = self.spectrum
+        m = mock.Mock()
+        s.events.data_changed.connect(m.data_changed)
         s.shift1D(-
                   1 *
                   self.ishifts[:, np.newaxis] *
                   self.scale, show_progressbar=None)
+        nt.assert_true(m.data_changed.called)
         i_zlp = s.axes_manager.signal_axes[0].value2index(0)
         nt.assert_true(np.allclose(s.data[:, i_zlp], 12))
         # Check that at the edges of the spectrum the value == to the
@@ -195,8 +199,11 @@ class TestInterpolateInBetween:
 
     def test_single_spectrum(self):
         s = self.s.inav[0]
+        m = mock.Mock()
+        s.events.data_changed.connect(m.data_changed)
         s.interpolate_in_between(8, 12, show_progressbar=None)
         nt.assert_true((s.data == np.arange(20)).all())
+        nt.assert_true(m.data_changed.called)
 
     def test_single_spectrum_in_units(self):
         s = self.s.inav[0]
@@ -324,3 +331,22 @@ class TestSmoothing:
             polynomial_order=polyorder,
             differential_order=deriv,)
         nt.assert_true(np.allclose(data, self.s.data))
+
+
+class TestSpikesRemoval:
+
+    def setUp(self):
+        self.s = hs.signals.Spectrum(np.zeros((5, 100)))
+        self.s.data[..., 50] = 1
+
+    def test_spikes_removal(self):
+        from hyperspy.gui.egerton_quantification import SpikesRemoval
+        m = mock.Mock()
+        s = self.s
+        s.events.data_changed.connect(m.data_changed)
+        sr = SpikesRemoval(s)
+        sr.threshold = 0.5
+        sr.find()
+        sr.apply()
+        nt.assert_equal(s.data[0, 50], 0)
+        nt.assert_true(m.data_changed.called)

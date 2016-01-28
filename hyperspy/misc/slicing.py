@@ -233,5 +233,7 @@ class FancySlicing(object):
         _obj.get_dimensions_from_data()
         if out is None:
             return _obj
+        else:
+            out.events.data_changed.trigger(obj=out)
 
 # vim: textwidth=80
