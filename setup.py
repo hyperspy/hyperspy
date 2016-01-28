@@ -17,7 +17,7 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from distutils.core import setup
+from setuptools import setup
 
 import distutils.dir_util
 
