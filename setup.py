@@ -38,7 +38,9 @@ install_req = ['scipy',
                'numpy',
                'traits',
                'traitsui',
-               'sympy']
+               'sympy',
+               'setuptools',
+               ]
 
 
 def are_we_building4windows():
@@ -170,6 +172,9 @@ with update_version_when_dev() as version:
                   'hyperspy.external.astroML',
                   ],
         requires=install_req,
+        setup_requires=[
+            'setuptools'
+        ],
         scripts=scripts,
         package_data={
             'hyperspy':
