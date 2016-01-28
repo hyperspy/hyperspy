@@ -295,7 +295,6 @@ class TestEventsSignatures(EventsBase):
         nt.assert_raises(TypeError, self.events.a.trigger, three=None)
         nt.assert_raises(TypeError, self.events.a.trigger, one=2)
 
-
     def test_connected_and_disconnect(self):
         self.events.a.connect(f_a)
         self.events.a.connect(f_b, ["A", "B"])
