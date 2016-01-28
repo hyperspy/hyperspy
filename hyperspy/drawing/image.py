@@ -368,6 +368,7 @@ class ImagePlot(BlittedFigure):
             self.events.closed.connect(
                 lambda: self.axes_manager.events.indices_changed.disconnect(
                     self.update), [])
+
     def on_key_press(self, event):
         if event.key == 'h':
             self.adjust_contrast()

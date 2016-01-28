@@ -14,7 +14,7 @@ class BlittedFigure(object):
                 obj:  SpectrumFigure instances
                     The instance that triggered the event.
             """, arguments=["obj"])
-            
+
     def _on_draw(self, *args):
         canvas = self.figure.canvas
         self._background = canvas.copy_from_bbox(self.figure.bbox)
