@@ -752,10 +752,6 @@ class Model1D(BaseModel):
             self._position_widgets.extend((
                 DraggableVerticalLine(am),
                 DraggableLabel(am),))
-            # Store the component for bookkeeping, and to reset
-            # its twin when disabling adjust position
-            self._position_widgets[-2].component = component
-            self._position_widgets[-1].component = component
             w = self._position_widgets[-1]
             w.string = component._get_short_description().replace(
                 ' component', '')
@@ -765,9 +761,6 @@ class Model1D(BaseModel):
         else:
             self._position_widgets.extend((
                 DraggableVerticalLine(am),))
-            # Store the component for bookkeeping, and to reset
-            # its twin when disabling adjust position
-            self._position_widgets[-1].component = component
             self._position_widgets[-1].set_mpl_ax(
                 self._plot.signal_plot.ax)
         # Create widget -> parameter connection
@@ -791,10 +784,7 @@ class Model1D(BaseModel):
         self._adjust_position_all = False
         while self._position_widgets:
             pw = self._position_widgets.pop()
-            if hasattr(pw, 'component'):
-                pw.component._position.twin = None
-                del pw.component
-                pw.close()
+            pw.close()
 
     def fit_component(
             self,
