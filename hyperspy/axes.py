@@ -575,7 +575,7 @@ class AxesManager(t.HasTraits):
             ---------
             obj : The AxesManager that the event belongs to.
             """, arguments=['obj'])
-        self.events.transformed = Event("""
+        self.events.any_axis_changed = Event("""
             Event that trigger when the space defined by the axes transforms.
 
             Specifically, it triggers when one or more of the folloing
@@ -802,13 +802,41 @@ class AxesManager(t.HasTraits):
 
     def _on_size_changed(self):
         self._update_attributes()
-        self.events.transformed.trigger(obj=self)
+        self.events.any_axis_changed.trigger(obj=self)
 
     def _on_scale_changed(self):
-        self.events.transformed.trigger(obj=self)
+        self.events.any_axis_changed.trigger(obj=self)
 
     def _on_offset_changed(self):
-        self.events.transformed.trigger(obj=self)
+        self.events.any_axis_changed.trigger(obj=self)
+
+    def update_axes_attributes_from(self, axes,
+                                    attributes=["scale", "offset", "units"]):
+        """Update the axes attributes to match those given.
+
+        The axes are matched by their index in the array. The purpose of this
+        method is to update multiple axes triggering `any_axis_changed` only
+        once.
+
+        Parameters
+        ----------
+        axes: iterable of `DataAxis` instances.
+            The axes to copy the attributes from.
+        attributes: iterable of strings.
+            The attributes to copy.
+
+        """
+
+        # To only trigger once even with several changes, we suppress here
+        # and trigger manually below if there were any changes.
+        changes = False
+        with self.events.any_axis_changed.suppress():
+            for axis in axes:
+                changed = self._axes[axis.index_in_array].update_from(
+                    axis=axis, attributes=attributes)
+                changes = changes or changed
+        if changes:
+            self.events.any_axis_changed.trigger(obj=self)
 
     def _update_attributes(self):
         getitem_tuple = ()

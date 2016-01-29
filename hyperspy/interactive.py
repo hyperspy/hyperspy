@@ -19,16 +19,8 @@ class Interactive:
     def _recompute_out(self):
         out = self.f(*self.args, **self.kwargs)
         self.out.data = out.data
-        # To only trigger once even with several changes, we suppress here
-        # and trigger manually below if there were any changes.
-        changes = False
-        with self.out.axes_manager.events.suppress():
-            for ax_src, ax_dst in zip(out.axes_manager._axes,
-                                      self.out.axes_manager._axes):
-                c = ax_dst.update_from(ax_src, ('offset', 'scale', 'size'))
-                changes = changes or c
-        if changes:
-            self.out.axes_manager.events.transformed.trigger(self.out)
+        self.out.axes_manager.update_axes_attributes_from(
+            out.axes_manager._axes)
 
     def update(self):
         self.f(*self.args, out=self.out, **self.kwargs)
