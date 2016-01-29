@@ -371,6 +371,31 @@ class DataAxis(t.HasTraits):
             i2 = self.size - 1
         return i1, i2
 
+    def update_from(self, axis, attributes=["scale", "offset", "units"]):
+        """Copy values of specified axes fields from the passed AxesManager.
+        Parameters
+        ----------
+        axis : DataAxis
+            The DataAxis instance to use as a source for values.
+        fields : iterable container of strings.
+            The name of the attribute to update. If the attribute does not
+            exist in either of the AxesManagers, an AttributeError will be
+            raised.
+        Returns
+        -------
+        A boolean indicating whether any changes were made.
+
+        """
+        any_changes = False
+        changed = {}
+        for f in attributes:
+            if getattr(self, f) != getattr(axis, f):
+                changed[f] = getattr(axis, f)
+        if len(changed) > 0:
+            self.trait_set(**changed)
+            any_changes = True
+        return any_changes
+
 
 class AxesManager(t.HasTraits):
 
@@ -504,6 +529,16 @@ class AxesManager(t.HasTraits):
         """x.__getitem__(y) <==> x[y]
 
         """
+        if isinstance(y, basestring) or not np.iterable(y):
+            return self[(y,)][0]
+        axes = [self._axes_getter(ax) for ax in y]
+        _, indices = np.unique(axes, return_index=True)
+        ans = tuple(axes[i] for i in sorted(indices))
+        return ans
+
+    def _axes_getter(self, y):
+        if y in self._axes:
+            return y
         if isinstance(y, basestring):
             axes = list(self._get_axes_in_natural_order())
             while axes:
@@ -556,7 +591,16 @@ class AxesManager(t.HasTraits):
                      else tuple())
         return nav_shape + sig_shape
 
-    def remove(self, axis):
+    def remove(self, axes):
+        """Remove one or more axes
+        """
+        axes = self[axes]
+        if not np.iterable(axes):
+            axes = (axes,)
+        for ax in axes:
+            self._remove_one_axis(ax)
+
+    def _remove_one_axis(self, axis):
         """Remove the given Axis.
 
         Raises
@@ -564,7 +608,7 @@ class AxesManager(t.HasTraits):
         ValueError if the Axis is not present.
 
         """
-        axis = self[axis]
+        axis = self._axes_getter(axis)
         axis.axes_manager = None
         self._axes.remove(axis)
 

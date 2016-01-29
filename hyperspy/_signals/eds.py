@@ -153,7 +153,7 @@ class EDSSpectrum(Spectrum):
                 xray_lines_not_in_range.append(xray_line)
         return xray_lines_in_range, xray_lines_not_in_range
 
-    def sum(self, axis):
+    def sum(self, axis=None, out=None):
         """Sum the data over the given axis.
 
         Parameters
@@ -177,16 +177,22 @@ class EDSSpectrum(Spectrum):
         array(1000279)
 
         """
+        if axis is None:
+            axis = self.axes_manager.navigation_axes
         # modify time spend per spectrum
-        s = super(EDSSpectrum, self).sum(axis)
+        s = super(EDSSpectrum, self).sum(axis=axis, out=out)
+        s = out or s
         if "Acquisition_instrument.SEM" in s.metadata:
             mp = s.metadata.Acquisition_instrument.SEM
+            mp_old = self.metadata.Acquisition_instrument.SEM
         else:
             mp = s.metadata.Acquisition_instrument.TEM
+            mp_old = self.metadata.Acquisition_instrument.TEM
         if mp.has_item('Detector.EDS.live_time'):
-            mp.Detector.EDS.live_time = mp.Detector.EDS.live_time * \
-                self.axes_manager[axis].size
-        return s
+            mp.Detector.EDS.live_time = mp_old.Detector.EDS.live_time * \
+                self.data.size / s.data.size
+        if out is None:
+            return s
 
     def rebin(self, new_shape):
         """Rebins the data to the new shape

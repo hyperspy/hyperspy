@@ -1,8 +1,16 @@
 import numpy as np
+from numpy.testing import assert_array_equal
 import nose.tools as nt
 
 from hyperspy.signal import Signal
 from hyperspy import signals
+
+
+def _verify_test_sum_x_E(self, s):
+    np.testing.assert_array_equal(self.signal.data.sum(), s.data)
+    nt.assert_equal(s.data.ndim, 1)
+    # Check that there is still one signal axis.
+    nt.assert_equal(s.axes_manager.signal_dimension, 1)
 
 
 class Test2D:
@@ -21,11 +29,14 @@ class Test2D:
         nt.assert_equal(s.axes_manager.navigation_dimension, 0)
 
     def test_sum_x_E(self):
+        s = self.signal.sum(("x", "E"))
+        _verify_test_sum_x_E(self, s)
+        s = self.signal.sum((0, "E"))
+        _verify_test_sum_x_E(self, s)
+        s = self.signal.sum((self.signal.axes_manager[0], "E"))
+        _verify_test_sum_x_E(self, s)
         s = self.signal.sum("x").sum("E")
-        np.testing.assert_array_equal(self.signal.data.sum(), s.data)
-        nt.assert_equal(s.data.ndim, 1)
-        # Check that there is still one signal axis.
-        nt.assert_equal(s.axes_manager.signal_dimension, 1)
+        _verify_test_sum_x_E(self, s)
 
     def test_axis_by_str(self):
         s1 = self.signal.deepcopy()
@@ -108,6 +119,15 @@ class Test2D:
         nt.assert_true(s.unfold())
 
 
+def _test_default_navigation_signal_operations_over_many_axes(self, op):
+    s = getattr(self.signal, op)()
+    ar = getattr(self.data, op)(axis=(0, 1))
+    np.testing.assert_array_equal(ar, s.data)
+    nt.assert_equal(s.data.ndim, 1)
+    nt.assert_equal(s.axes_manager.signal_dimension, 1)
+    nt.assert_equal(s.axes_manager.navigation_dimension, 0)
+
+
 class Test3D:
 
     def setUp(self):
@@ -117,6 +137,40 @@ class Test3D:
         self.signal.axes_manager[2].name = "E"
         self.signal.axes_manager[0].scale = 0.5
         self.data = self.signal.data.copy()
+
+    def test_indexmax(self):
+        s = self.signal.indexmax('E')
+        ar = self.data.argmax(2)
+        np.testing.assert_array_equal(ar, s.data)
+        nt.assert_equal(s.data.ndim, 2)
+        nt.assert_equal(s.axes_manager.signal_dimension, 0)
+        nt.assert_equal(s.axes_manager.navigation_dimension, 2)
+
+    def test_valuemax(self):
+        s = self.signal.valuemax('x')
+        ar = self.signal.axes_manager['x'].index2value(self.data.argmax(1))
+        np.testing.assert_array_equal(ar, s.data)
+        nt.assert_equal(s.data.ndim, 2)
+        nt.assert_equal(s.axes_manager.signal_dimension, 1)
+        nt.assert_equal(s.axes_manager.navigation_dimension, 1)
+
+    def test_default_navigation_sum(self):
+        _test_default_navigation_signal_operations_over_many_axes(self, 'sum')
+
+    def test_default_navigation_max(self):
+        _test_default_navigation_signal_operations_over_many_axes(self, 'max')
+
+    def test_default_navigation_min(self):
+        _test_default_navigation_signal_operations_over_many_axes(self, 'min')
+
+    def test_default_navigation_mean(self):
+        _test_default_navigation_signal_operations_over_many_axes(self, 'mean')
+
+    def test_default_navigation_std(self):
+        _test_default_navigation_signal_operations_over_many_axes(self, 'std')
+
+    def test_default_navigation_var(self):
+        _test_default_navigation_signal_operations_over_many_axes(self, 'var')
 
     def test_rebin(self):
         self.signal.estimate_poissonian_noise_variance()
@@ -362,3 +416,149 @@ class TestDerivative:
         nt.assert_true(np.allclose(der.data,
                                    np.sin(der.axes_manager[0].axis),
                                    atol=1e-2),)
+
+
+class TestOutArg:
+
+    def setup(self):
+        # Some test require consistent random data for reference to be correct
+        np.random.seed(0)
+        s = signals.Spectrum(np.random.rand(5, 4, 3, 6))
+        for axis, name in zip(
+                s.axes_manager._get_axes_in_natural_order(),
+                ['x', 'y', 'z', 'E']):
+            axis.name = name
+        self.s = s
+
+    def _run_single(self, f, s, kwargs):
+        s1 = f(**kwargs)
+        s.data = s.data + 2
+        s2 = f(**kwargs)
+        r = f(out=s1, **kwargs)
+        nt.assert_is_none(r)
+        assert_array_equal(s1.data, s2.data)
+
+    def test_get_histogram(self):
+        self._run_single(self.s.get_histogram, self.s, {})
+
+    def test_sum(self):
+        self._run_single(self.s.sum, self.s, dict(axis=('x', 'z')))
+
+    def test_mean(self):
+        self._run_single(self.s.mean, self.s, dict(axis=('x', 'z')))
+
+    def test_max(self):
+        self._run_single(self.s.max, self.s, dict(axis=('x', 'z')))
+
+    def test_min(self):
+        self._run_single(self.s.min, self.s, dict(axis=('x', 'z')))
+
+    def test_std(self):
+        self._run_single(self.s.std, self.s, dict(axis=('x', 'z')))
+
+    def test_var(self):
+        self._run_single(self.s.var, self.s, dict(axis=('x', 'z')))
+
+    def test_diff(self):
+        self._run_single(self.s.diff, self.s, dict(axis=0))
+
+    def test_derivative(self):
+        self._run_single(self.s.derivative, self.s, dict(axis=0))
+
+    def test_integrate_simpson(self):
+        self._run_single(self.s.integrate_simpson, self.s, dict(axis=0))
+
+    def test_integrate1D(self):
+        self._run_single(self.s.integrate1D, self.s, dict(axis=0))
+
+    def test_indexmax(self):
+        self._run_single(self.s.indexmax, self.s, dict(axis=0))
+
+    def test_valuemax(self):
+        self._run_single(self.s.valuemax, self.s, dict(axis=0))
+
+    def test_rebin(self):
+        s = self.s
+        new_shape = (3, 2, 1, 3)
+        self._run_single(s.rebin, s, dict(new_shape=new_shape))
+
+    def test_as_spectrum(self):
+        s = self.s
+        self._run_single(s.as_spectrum, s, dict(spectral_axis=1))
+
+    def test_as_image(self):
+        s = self.s
+        self._run_single(s.as_image, s, dict(image_axes=(
+            s.axes_manager.navigation_axes[0:2])))
+
+    def test_inav(self):
+        s = self.s
+        self._run_single(s.inav.__getitem__, s, {
+            "slices": (slice(2, 4, None), slice(None), slice(0, 2, None))})
+
+    def test_isig(self):
+        s = self.s
+        self._run_single(s.isig.__getitem__, s, {
+            "slices": (slice(2, 4, None),)})
+
+    def test_inav_variance(self):
+        s = self.s
+        s.metadata.set_item("Signal.Noise_properties.variance",
+                            s.deepcopy())
+        s1 = s.inav[2:4, 0:2]
+        s2 = s.inav[2:4, 1:3]
+        s.inav.__getitem__(slices=(slice(2, 4, None), slice(1, 3, None),
+                                   slice(None)), out=s1)
+        assert_array_equal(s1.metadata.Signal.Noise_properties.variance.data,
+                           s2.metadata.Signal.Noise_properties.variance.data,)
+
+    def test_isig_variance(self):
+        s = self.s
+        s.metadata.set_item("Signal.Noise_properties.variance",
+                            s.deepcopy())
+        s1 = s.isig[2:4]
+        s2 = s.isig[1:5]
+        s.isig.__getitem__(slices=(slice(1, 5, None)), out=s1)
+        assert_array_equal(s1.metadata.Signal.Noise_properties.variance.data,
+                           s2.metadata.Signal.Noise_properties.variance.data,)
+
+    def test_histogram_axis_changes(self):
+        s = self.s
+        h1 = s.get_histogram(bins=4)
+        h2 = s.get_histogram(bins=5)
+        s.get_histogram(bins=5, out=h1)
+        assert_array_equal(h1.data, h2.data)
+        nt.assert_equal(h1.axes_manager[-1].size,
+                        h2.axes_manager[-1].size,)
+
+    def test_masked_array_mean(self):
+        s = self.s
+        mask = (s.data > 0.5)
+        s.data = np.arange(s.data.size).reshape(s.data.shape)
+        s.data = np.ma.masked_array(s.data, mask=mask)
+        sr = s.mean(axis=('x', 'z',))
+        np.testing.assert_array_equal(
+            sr.data.shape, [ax.size for ax in s.axes_manager[('y', 'E')]])
+        print sr.data.tolist()
+        ref = [[202.28571428571428, 203.28571428571428, 182.0,
+                197.66666666666666, 187.0, 177.8],
+               [134.0, 190.0, 191.27272727272728, 170.14285714285714, 172.0,
+                209.85714285714286],
+               [168.0, 161.8, 162.8, 185.4, 197.71428571428572,
+                178.14285714285714],
+               [240.0, 184.33333333333334, 260.0, 229.0, 173.2, 167.0]]
+        np.testing.assert_array_equal(sr.data, ref)
+
+    def test_masked_array_sum(self):
+        s = self.s
+        mask = (s.data > 0.5)
+        s.data = np.ma.masked_array(np.ones_like(s.data), mask=mask)
+        sr = s.sum(axis=('x', 'z',))
+        np.testing.assert_array_equal(sr.data.sum(), (~mask).sum())
+
+    def test_masked_arrays_out(self):
+        s = self.s
+        mask = (s.data > 0.5)
+        s.data = np.ones_like(s.data)
+        s.data = np.ma.masked_array(s.data, mask=mask)
+        self._run_single(s.sum, s, dict(axis=('x', 'z')))

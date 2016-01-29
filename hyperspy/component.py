@@ -31,6 +31,10 @@ from hyperspy.misc.io.tools import (incremental_filename,
 from hyperspy.exceptions import NavigationDimensionError
 from hyperspy.misc.export_dictionary import export_to_dictionary, load_from_dictionary
 
+import logging
+
+_logger = logging.getLogger(__name__)
+
 
 class NoneFloat(t.CFloat):   # Lazy solution, but usable
     default_value = None
@@ -609,9 +613,8 @@ class Component(t.HasTraits):
             raise ValueError('Only boolean values are permitted')
 
         if value == self.active_is_multidimensional:
-            warnings.warn(
-                '`active_is_multidimensional` already %s for %s' %
-                (str(value), self.name), RuntimeWarning)
+            _logger.warn('`active_is_multidimensional` already %s for %s' %
+                         (str(value), self.name))
             return
 
         if value:  # Turn on
@@ -668,32 +671,6 @@ class Component(t.HasTraits):
     def disconnect(self, f):
         if f in self.connected_functions:
             self.connected_functions.remove(f)
-
-    def _toggle_connect_active_array(self, if_on):
-        # nothing to do (was never multidimensional)
-        if self._active_array is None:
-            return
-        # as it should be (both True)
-        if self.active_is_multidimensional and if_on:
-            return
-        # as it should be (both False)
-        if not self.active_is_multidimensional and not if_on:
-            return
-        # active_is_multidimensional = True, want to set to False
-        if not if_on:
-            self._active_is_multidimensional = False
-            self.active = self._active
-            return
-        if if_on:  # a_i_m = False, want to set to False
-            # check that dimensions are correct
-            shape = self._axes_manager._navigation_shape_in_array
-            if self._active_array.shape != shape:
-                warnings.warn(
-                    '`_active_array` of wrong shape, skipping',
-                    RuntimeWarning)
-                return
-            self._active_is_multidimensional = True
-            self.active = self.active
 
     def _get_active(self):
         if self.active_is_multidimensional is True:

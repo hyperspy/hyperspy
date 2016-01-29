@@ -20,7 +20,7 @@ import numpy as np
 import nose.tools as nt
 from scipy.misc import lena
 
-import hyperspy.hspy as hs
+import hyperspy.api as hs
 
 
 class TestAlignTools:
@@ -53,8 +53,8 @@ class TestAlignTools:
         smax = self.ishifts.max(0)
         offsets = self.lena_offset + self.offsets / self.scales - smin
         size = np.array((100, 100)) - (smax - smin)
-        self.aligned = im[offsets[0]:offsets[0] + size[0],
-                          offsets[1]:offsets[1] + size[1]]
+        self.aligned = im[int(offsets[0]):int(offsets[0] + size[0]),
+                          int(offsets[1]):int(offsets[1] + size[1])]
 
     def test_estimate_shift(self):
         s = self.spectrum
@@ -77,7 +77,7 @@ class TestAlignTools:
         # Check the numbers of NaNs to make sure expansion happened properly
         ds = self.ishifts.max(0) - self.ishifts.min(0)
         Nnan = np.sum(ds) * 100 + np.prod(ds)
-        Nnan_data = np.sum(1*np.isnan(s.data), axis=(1, 2))
+        Nnan_data = np.sum(1 * np.isnan(s.data), axis=(1, 2))
         # Due to interpolation, the number of NaNs in the data might
         # be 2 higher (left and right side) than expected
         nt.assert_true(np.all(Nnan_data - Nnan <= 2))

@@ -69,7 +69,7 @@ class GaussianHF(Expression):
             centre=centre,
             position="centre",
             autodoc=False,
-            )
+        )
 
         # Boundaries
         self.height.bmin = None
@@ -108,14 +108,11 @@ class GaussianHF(Expression):
         Examples
         --------
 
-        >>> import numpy as np
-        >>> from hyperspy.hspy import *
-        >>> from hyperspy.signals import Spectrum
-        >>> g = components.GaussianHF()
+        >>> g = hs.model.components.GaussianHF()
         >>> x = np.arange(-10, 10, 0.01)
         >>> data = np.zeros((32, 32, 2000))
         >>> data[:] = g.function(x).reshape((1, 1, 2000))
-        >>> s = Spectrum(data)
+        >>> s = hs.signals.Spectrum(data)
         >>> s.axes_manager._axes[-1].offset = -10
         >>> s.axes_manager._axes[-1].scale = 0.01
         >>> g.estimate_parameters(s, -10, 10, False)
