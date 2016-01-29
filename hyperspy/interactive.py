@@ -18,6 +18,7 @@
 
 import inspect
 
+
 class Interactive:
     """Chainable operations on Signals that update on events.
 
