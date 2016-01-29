@@ -9,8 +9,8 @@ meaning that there is not a central events dispatcher. Instead, each object
 that can emit events has an :py:attr:`events`
 attribute that is an instance of :py:class:`~.events.Events` and that contains
 instances of  :py:class:`~.events.Event` as attributes. When triggered the first
-keyword argument, `obj` constains the object that the events belongs to.
-Different events may be trigger with other keyword arguments too.
+keyword argument, `obj` contains the object that the events belongs to.
+Different events may be triggered by other keyword arguments too.
 
 Connecting to events
 --------------------
@@ -69,24 +69,6 @@ passed to `on_index_changed2` and none to `on_index_changed3`:
           print("on_index_changed2_called")
           print("Index: ", index)
     ...
-    >>> nav_axis.events.index_changed.connect(on_index_changed2, ["index"])
-    >>> s.axes_manager.indices = (0,)
-    on_index_changed_called
-    ('Axis name: ', 'x')
-    ('Index: ', 0)
-    on_index_changed2_called
-    ('Index: ', 0)
-    >>> def on_index_changed3():
-          print("on_index_changed3_called")
-    ...
-    >>> nav_axis.events.index_changed.connect(on_index_changed3, [])
-    >>> s.axes_manager.indices = (1,)
-    on_index_changed_called
-    ('Axis name: ', 'x')
-    ('Index: ', 1)
-    on_index_changed2_called
-    ('Index: ', 1)
-    on_index_changed3_called
 
 It is also possible to map trigger keyword arguments to connected function
 keyword arguments as follows:

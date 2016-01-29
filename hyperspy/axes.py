@@ -164,6 +164,12 @@ class DataAxis(t.HasTraits):
                 self.index = new_index
                 self._suppress_update_value = False
 
+    def _set_value(self, value):
+        # This method is a hack to fix an issue with enable_adjust_position.
+        # Once the enable_adjust_position is refurbished this method will be
+        # removed
+        self.value = value
+
     @property
     def index_in_array(self):
         if self.axes_manager is not None:

@@ -17,6 +17,8 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import copy
+from functools import partial
+
 import numpy as np
 from traits.trait_errors import TraitError
 from contextlib import contextmanager
@@ -750,10 +752,6 @@ class Model1D(BaseModel):
             self._position_widgets.extend((
                 DraggableVerticalLine(am),
                 DraggableLabel(am),))
-            # Store the component for bookkeeping, and to reset
-            # its twin when disabling adjust position
-            self._position_widgets[-2].component = component
-            self._position_widgets[-1].component = component
             w = self._position_widgets[-1]
             w.string = component._get_short_description().replace(
                 ' component', '')
@@ -763,9 +761,6 @@ class Model1D(BaseModel):
         else:
             self._position_widgets.extend((
                 DraggableVerticalLine(am),))
-            # Store the component for bookkeeping, and to reset
-            # its twin when disabling adjust position
-            self._position_widgets[-1].component = component
             self._position_widgets[-1].set_mpl_ax(
                 self._plot.signal_plot.ax)
         # Create widget -> parameter connection
@@ -773,7 +768,10 @@ class Model1D(BaseModel):
         am._axes[0].events.value_changed.connect(set_value, ["value"])
         axis = am._axes[0]
         component._position.events.value_changed.connect(
-            axis.set_index_from_value, ["value"])
+            axis._set_value, ["value"])
+        self._position_widgets[-1].events.closed.connect(
+            partial(component._position.events.value_changed.disconnect,
+                    axis._set_value), [])
 
     def disable_adjust_position(self):
         """Disables the interactive adjust position feature
@@ -786,10 +784,7 @@ class Model1D(BaseModel):
         self._adjust_position_all = False
         while self._position_widgets:
             pw = self._position_widgets.pop()
-            if hasattr(pw, 'component'):
-                pw.component._position.twin = None
-                del pw.component
-                pw.close()
+            pw.close()
 
     def fit_component(
             self,
