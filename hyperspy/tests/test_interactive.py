@@ -59,7 +59,7 @@ class TestInteractive():
         nt.assert_false(np.allclose(ss.data, np.sum(s.data, axis=(1))))
         e1.trigger()
         np.testing.assert_allclose(ss.data, np.sum(s.data, axis=(1)))
-        nt.assert_false(np.allclose(ss.data, np.sum(s.data, axis=(0, 1))))
+        nt.assert_false(np.allclose(sss.data, np.sum(s.data, axis=(0, 1))))
         e2.trigger()
         np.testing.assert_allclose(sss.data, np.sum(s.data, axis=(0, 1)))
 
