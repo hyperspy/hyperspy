@@ -17,6 +17,8 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import copy
+from functools import partial
+
 import numpy as np
 from traits.trait_errors import TraitError
 from contextlib import contextmanager
@@ -774,6 +776,9 @@ class Model1D(BaseModel):
         axis = am._axes[0]
         component._position.events.value_changed.connect(
             axis.set_index_from_value, ["value"])
+        self._position_widgets[-1].events.closed.connect(
+            partial(component._position.events.value_changed.disconnect,
+                    axis.set_index_from_value), [])
 
     def disable_adjust_position(self):
         """Disables the interactive adjust position feature
