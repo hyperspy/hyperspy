@@ -180,12 +180,12 @@ class Model1D(BaseModel):
         self.chisq = spectrum._get_navigation_signal()
         self.chisq.change_dtype("float")
         self.chisq.data.fill(np.nan)
-        self.chisq.metadata.General.title = self.signal.metadata.General.title + \
-            ' chi-squared'
+        self.chisq.metadata.General.title = (
+            self.signal.metadata.General.title + ' chi-squared')
         self.dof = self.chisq._deepcopy_with_new_data(
             np.zeros_like(self.chisq.data, dtype='int'))
-        self.dof.metadata.General.title = self.signal.metadata.General.title + \
-            ' degrees of freedom'
+        self.dof.metadata.General.title = (
+            self.signal.metadata.General.title + ' degrees of freedom')
         self.free_parameters_boundaries = None
         self._low_loss = None
         self.convolved = False
