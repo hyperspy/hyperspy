@@ -52,7 +52,7 @@ class RangeWidget(ResizableDraggableWidgetBase):
                 self._add_patch_to(self.ax)
                 self.connect(self.ax)
             elif value is False:
-                self.disconnect(self.ax)
+                self.disconnect()
             try:
                 self.ax.figure.canvas.draw()
             except:  # figure does not exist
@@ -165,9 +165,9 @@ class RangeWidget(ResizableDraggableWidgetBase):
         if self.is_on() and self.span is not None:
             self.span.range = self._get_range()
 
-    def disconnect(self, ax):
-        super(RangeWidget, self).disconnect(ax)
-        if self.span and self.ax == ax:
+    def disconnect(self):
+        super(RangeWidget, self).disconnect()
+        if self.span:
             self.span.turn_off()
             self.span = None
 

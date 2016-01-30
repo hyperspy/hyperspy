@@ -122,7 +122,7 @@ class WidgetBase(object):
                     for p in self.patch:
                         if p in container:
                             container.remove(p)
-                self.disconnect(self.ax)
+                self.disconnect()
         if hasattr(super(WidgetBase, self), 'set_on'):
             super(WidgetBase, self).set_on(value)
         if did_something:
@@ -157,7 +157,7 @@ class WidgetBase(object):
             return  # Do nothing
         # Disconnect from previous axes if set
         if self.ax is not None and self.is_on():
-            self.disconnect(self.ax)
+            self.disconnect()
         self.ax = ax
         canvas = ax.figure.canvas
         if self.is_on() is True:
@@ -209,12 +209,12 @@ class WidgetBase(object):
         """
         pass    # Implement in subclass!
 
-    def disconnect(self, ax):
+    def disconnect(self):
         """Disconnect from all events (both matplotlib and navigation).
         """
         for cid in self.cids:
             try:
-                ax.figure.canvas.mpl_disconnect(cid)
+                self.ax.figure.canvas.mpl_disconnect(cid)
             except:
                 pass
         if self._navigating:
