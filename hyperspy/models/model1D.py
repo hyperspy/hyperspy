@@ -253,6 +253,14 @@ class Model1D(BaseModel):
         self.convolution_axis = generate_axis(self.axis.offset, step,
                                               dimension, knot_position)
 
+    def append(self, thing):
+        super(Model1D, self).append(thing)
+        if self._plot_components:
+            self._plot_component(thing)
+        if self._adjust_position_all:
+            self._make_position_adjuster(thing, self._adjust_position_all[0],
+                                         self._adjust_position_all[1])
+
     def remove(self, thing):
         super(Model1D, self).remove(thing)
         self._disconnect_parameters2update_plot([thing])

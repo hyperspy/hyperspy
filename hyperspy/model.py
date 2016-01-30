@@ -320,11 +320,6 @@ class BaseModel(list):
                                          valid_variable_name=True), thing)
         if self._plot_active is True:
             self._connect_parameters2update_plot(components=[thing])
-        if self._plot_components:
-            self._plot_component(thing)
-        if self._adjust_position_all is not None:
-            self._make_position_adjuster(thing, self._adjust_position_all[0],
-                                         self._adjust_position_all[1])
 
     def extend(self, iterable):
         for object in iterable:
