@@ -319,9 +319,8 @@ class DraggableWidgetBase(WidgetBase):
         """Returns a tuple with the position (indices).
         """
         idx = []
-        pos = self.position
         for i in xrange(len(self.axes)):
-            idx.append(self.axes[i].value2index(pos[i]))
+            idx.append(self.axes[i].value2index(self._pos[i]))
         return tuple(idx)
 
     def _set_indices(self, value):
@@ -351,7 +350,7 @@ class DraggableWidgetBase(WidgetBase):
             with self.axes_manager.events.indices_changed.suppress_callback(
                     self._on_navigate):
                 for i in xrange(len(self.axes)):
-                    self.axes[i].value = self.position[i]
+                    self.axes[i].value = self._pos[i]
         self.events.moved.trigger(self)
         self.events.changed.trigger(self)
         self._update_patch_position()
@@ -425,7 +424,7 @@ class DraggableWidgetBase(WidgetBase):
     def _on_navigate(self, obj):
         axes_manager = obj
         if axes_manager is self.axes_manager:
-            p = list(self.position)
+            p = self._pos.tolist()
             for i, a in enumerate(self.axes):
                 p[i] = a.value
             self.position = p    # Use property to trigger events
@@ -721,7 +720,7 @@ class Widget2DBase(ResizableDraggableWidgetBase):
         """Returns the xy position of the widget. In this default
         implementation, the widget is centered on the position.
         """
-        return np.array(self.position) - np.array(self.size) / 2.
+        return self._pos - self._size / 2.
 
     def _get_patch_bounds(self):
         """Returns the bounds of the patch in the form of a tuple in the order
@@ -922,8 +921,7 @@ class ResizersMixin(object):
                 self._set_resizers(True, self.ax)
             x = event.mouseevent.xdata
             y = event.mouseevent.ydata
-            p = self.position
-            self.pick_offset = (x - p[0], y - p[1])
+            self.pick_offset = (x - self._pos[0], y - self._pos[1])
             self.resizer_picked = False
         else:
             self._set_resizers(False, self.ax)

@@ -87,8 +87,8 @@ class RangeWidget(ResizableDraggableWidgetBase):
             self._apply_changes(old_size=old_size, old_position=old_position)
 
     def _get_range(self):
-        p = self.position[0]
-        w = self.size[0]
+        p = self._pos[0]
+        w = self._size[0]
         offset = self.axes[0].scale
         p -= 0.5 * offset
         return (p, p + w)

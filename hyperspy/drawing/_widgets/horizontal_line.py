@@ -28,13 +28,13 @@ class HorizontalLineWidget(DraggableWidgetBase):
 
     def _update_patch_position(self):
         if self.is_on() and self.patch:
-            self.patch[0].set_ydata(self.position[0])
+            self.patch[0].set_ydata(self._pos[0])
             self.draw_patch()
 
     def _set_patch(self):
         ax = self.ax
         self.patch = [ax.axhline(
-            self.position[0],
+            self._pos[0],
             color=self.color,
             picker=5)]
 

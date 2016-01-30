@@ -28,12 +28,12 @@ class VerticalLineWidget(DraggableWidgetBase):
 
     def _update_patch_position(self):
         if self.is_on() and self.patch:
-            self.patch[0].set_xdata(self.position[0])
+            self.patch[0].set_xdata(self._pos[0])
             self.draw_patch()
 
     def _set_patch(self):
         ax = self.ax
-        self.patch = [ax.axvline(self.position[0],
+        self.patch = [ax.axvline(self._pos[0],
                                  color=self.color,
                                  picker=5)]
 

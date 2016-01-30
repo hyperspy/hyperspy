@@ -143,7 +143,7 @@ class Line2DWidget(ResizableDraggableWidgetBase):
         return np.array([ret1, ret2])
 
     def _get_line_normal(self):
-        v = np.diff(self.position, axis=0)   # Line vector
+        v = np.diff(self._pos, axis=0)   # Line vector
         x = -v[:, 1]
         y = v[:, 0]
         n = np.array([x, y]).T                    # Normal vector
@@ -153,7 +153,7 @@ class Line2DWidget(ResizableDraggableWidgetBase):
         """Returns line length in axes coordinates. Requires units on all axes
         to be the same to make any physical sense.
         """
-        return np.linalg.norm(np.diff(self.position, axis=0), axis=1)
+        return np.linalg.norm(np.diff(self._pos, axis=0), axis=1)
 
     def get_centre(self):
         """Get the line center, which is simply the mean position of its
@@ -170,7 +170,7 @@ class Line2DWidget(ResizableDraggableWidgetBase):
             Where A and B refer to the two lines
         """
         n = self.size[0] * self._get_line_normal() / 2.
-        c = np.array(self.position)
+        c = np.array(self._pos)
         return c + n, c - n
 
     def _update_patch_position(self):
@@ -183,7 +183,7 @@ class Line2DWidget(ResizableDraggableWidgetBase):
         """Set line position, and set width indicator's if appropriate
         """
         if self.is_on() and self.patch:
-            self.patch[0].set_data(np.array(self.position).T)
+            self.patch[0].set_data(np.array(self._pos).T)
             wc = self._get_width_indicator_coords()
             for i in xrange(2):
                 self._width_indicators[i].set_data(wc[i].T)
@@ -194,7 +194,7 @@ class Line2DWidget(ResizableDraggableWidgetBase):
         appropriate.
         """
         self.ax.autoscale(False)   # Prevent plotting from rescaling
-        xy = np.array(self.position)
+        xy = np.array(self._pos)
         max_r = max(self.radius_move, self.radius_resize,
                     self.radius_rotate)
         self.patch = self.ax.plot(
@@ -272,7 +272,7 @@ class Line2DWidget(ResizableDraggableWidgetBase):
             return self.FUNC_NONE
 
         trans = self.ax.transData
-        p = np.array(trans.transform(self.position))
+        p = np.array(trans.transform(self._pos))
 
         # Calculate the distances to the vertecies, and find nearest one
         r2 = np.sum(np.power(p - np.array((cx, cy)), 2), axis=1)
@@ -373,7 +373,7 @@ class Line2DWidget(ResizableDraggableWidgetBase):
         """
         ip = self._get_vertex(event)
         dx = self._get_diff(event)
-        p = np.array(self.position)
+        p = np.array(self._pos)     # Copy
         p[ip, 0:2] = self._drag_store[0][ip] + dx
         self.position = p
 

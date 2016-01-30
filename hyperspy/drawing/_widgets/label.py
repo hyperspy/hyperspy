@@ -59,8 +59,8 @@ class LabelWidget(DraggableWidgetBase):
 
     def _update_patch_position(self):
         if self.is_on() and self.patch:
-            self.patch[0].set_x(self.position[0])
-            self.patch[0].set_y(self.position[1])
+            self.patch[0].set_x(self._pos[0])
+            self.patch[0].set_y(self._pos[1])
             self.draw_patch()
 
     def _set_patch(self):
@@ -68,8 +68,8 @@ class LabelWidget(DraggableWidgetBase):
         trans = transforms.blended_transform_factory(
             ax.transData, ax.transAxes)
         self.patch = [ax.text(
-            self.position[0],
-            self.position[1],
+            self._pos[0],
+            self._pos[1],
             self.string,
             color=self.text_color,
             picker=5,
