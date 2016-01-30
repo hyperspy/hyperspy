@@ -182,7 +182,8 @@ class Model2D(BaseModel):
         raise NotImplementedError
 
     def update_plot(self, *args, **kwargs):
-        raise NotImplementedError
+        if self._plot_active is True:
+            raise NotImplementedError
 
     def suspend_update(self):
         raise NotImplementedError
