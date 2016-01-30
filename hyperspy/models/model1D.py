@@ -620,6 +620,11 @@ class Model1D(BaseModel):
         self._connect_parameters2update_plot(self)
         if plot_components is True:
             self.enable_plot_components()
+        else:
+            # If we were plotted before, make sure we reset state here
+            self.disable_plot_components()
+        # If we were plotted before, make sure we reset state here
+        self.disable_adjust_position()
 
     @staticmethod
     def _connect_component_line(component):
