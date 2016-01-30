@@ -54,7 +54,7 @@ class MarkerBase(object):
             ---------
             marker : Marker
                 The marker that was closed.
-            """, arguments=['marker'])
+            """, arguments=['obj'])
         self._closing = False
 
     @property
@@ -136,7 +136,9 @@ class MarkerBase(object):
         self._closing = True
         try:
             self.marker.remove()
-            self.events.closed.trigger(marker=self)
+            self.events.closed.trigger(obj=self)
+            for f in self.events.closed.connected:
+                self.events.closed.disconnect(f)
             # m.ax.figure.canvas.draw()
             self.ax.hspy_fig._draw_animated()
         except:

@@ -17,6 +17,8 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import copy
+from functools import partial
+
 import numpy as np
 from traits.trait_errors import TraitError
 from contextlib import contextmanager
@@ -310,10 +312,18 @@ class Model1D(BaseModel):
 
         es = EventSupressor()
         es.add(self.axes_manager.events.indices_changed)
+        if self._model_line:
+            f = self._model_line.update
+            for c in self:
+                es.add(c.events, f)
+                for p in c.parameters:
+                    es.add(p.events, f)
         for c in self:
-            es.add(c.events, self.update_plot)
-            for p in c.parameters:
-                es.add(p.events, self.update_plot)
+            if hasattr(c, '_model_plot_line'):
+                f = c._model_plot_line.update
+                es.add(c.events, f)
+                for p in c.parameters:
+                    es.add(p.events, f)
 
         old = self._suspend_update
         self._suspend_update = True
@@ -741,10 +751,6 @@ class Model1D(BaseModel):
             self._position_widgets.extend((
                 VerticalLineWidget(am),
                 LabelWidget(am),))
-            # Store the component for bookkeeping, and to reset
-            # its twin when disabling adjust position
-            self._position_widgets[-2].component = component
-            self._position_widgets[-1].component = component
             w = self._position_widgets[-1]
             w.string = component._get_short_description().replace(
                 ' component', '')
@@ -752,21 +758,25 @@ class Model1D(BaseModel):
             self._position_widgets[-2].set_mpl_ax(
                 self._plot.signal_plot.ax)
             w.connect_navigate()
+			w.snap_position = False
             self._position_widgets[-2].connect_navigate()
+            self._position_widgets[-2].snap_position = False
         else:
             self._position_widgets.extend((
                 VerticalLineWidget(am),))
-            # Store the component for bookkeeping, and to reset
-            # its twin when disabling adjust position
-            self._position_widgets[-1].component = component
             self._position_widgets[-1].set_mpl_ax(
                 self._plot.signal_plot.ax)
             self._position_widgets[-1].connect_navigate()
+            self._position_widgets[-1].snap_position = False
         # Create widget -> parameter connection
         am._axes[0].continuous_value = True
         am._axes[0].events.value_changed.connect(set_value, ["value"])
+        axis = am._axes[0]
         component._position.events.value_changed.connect(
-            am._axes[0].set_index_from_value, ["value"])
+            axis._set_value, ["value"])
+        self._position_widgets[-1].events.closed.connect(
+            partial(component._position.events.value_changed.disconnect,
+                    axis._set_value), [])
 
     def disable_adjust_position(self):
         """Disables the interactive adjust position feature
@@ -779,11 +789,7 @@ class Model1D(BaseModel):
         self._adjust_position_all = False
         while self._position_widgets:
             pw = self._position_widgets.pop()
-            if hasattr(pw, 'component'):
-                pw.component._position.twin = None
-                del pw.component
             pw.close()
-            del pw
 
     def fit_component(
             self,

@@ -56,7 +56,7 @@ class MPL_HyperSpectrum_Explorer(MPL_HyperExplorer):
             if value is True:
                 self.pointer.set_mpl_ax(self.navigator_plot.ax)
             else:
-                self.pointer.disconnect(self.navigator_plot.ax)
+                self.pointer.disconnect()
 
     @property
     def right_pointer_on(self):
@@ -118,8 +118,6 @@ class MPL_HyperSpectrum_Explorer(MPL_HyperExplorer):
         self.signal_plot = sf
         sf.plot()
         if self.navigator_plot is not None and sf.figure is not None:
-            utils.on_figure_window_close(self.navigator_plot.figure,
-                                         self._disconnect)
             utils.on_figure_window_close(sf.figure,
                                          self.close_navigator_plot)
             self._key_nav_cid = \

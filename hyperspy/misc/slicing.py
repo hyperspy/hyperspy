@@ -184,7 +184,7 @@ class FancySlicing(object):
                 if isinstance(slice_, float):
                     slice_ = axis.value2index(slice_)
                 array_slices.append(slice_)
-        return array_slices
+        return tuple(array_slices)
 
     def _slicer(self, slices, isNavigation=None, out=None):
         array_slices = self._get_array_slices(slices, isNavigation)
@@ -233,5 +233,7 @@ class FancySlicing(object):
         _obj.get_dimensions_from_data()
         if out is None:
             return _obj
+        else:
+            out.events.data_changed.trigger(obj=out)
 
 # vim: textwidth=80
