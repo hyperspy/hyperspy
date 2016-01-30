@@ -767,12 +767,13 @@ class Model1D(BaseModel):
             w.position = (component._position.value,)
             w.set_mpl_ax(self._plot.signal_plot.ax)
             # Create widget -> parameter connection
-            w.events.moved.connect(self._on_widget_moved, ['obj'])
+            w.events.moved.connect(self._on_widget_moved, {'obj': 'widget'})
             # Create parameter -> widget connection
             component._position.events.value_changed.connect(
                 w._set_position, dict(value='position'))
             # Map relation for close event
-            w.events.closed.connect(self._on_position_widget_close)
+            w.events.closed.connect(self._on_position_widget_close,
+                                    {'obj': 'widget'})
 
     def _reverse_lookup_position_widget(self, widget):
         for parameter, widgets in self._position_widgets.iteritems():
@@ -780,8 +781,7 @@ class Model1D(BaseModel):
                 return parameter
         raise KeyError()
 
-    def _on_widget_moved(self, obj):
-        widget = obj
+    def _on_widget_moved(self, widget):
         parameter = self._reverse_lookup_position_widget(widget)
         es = EventSupressor()
         for w in self._position_widgets[parameter]:
@@ -789,8 +789,7 @@ class Model1D(BaseModel):
         with es.suppress():
             parameter.value = widget.position[0]
 
-    def _on_position_widget_close(self, obj):
-        widget = obj
+    def _on_position_widget_close(self, widget):
         widget.events.closed.disconnect(self._on_position_widget_close)
         parameter = self._reverse_lookup_position_widget(widget)
         self._position_widgets[parameter].remove(widget)

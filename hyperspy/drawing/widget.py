@@ -194,7 +194,8 @@ class WidgetBase(object):
         """
         if self._navigating:
             self.disconnect_navigate()
-        self.axes_manager.events.indices_changed.connect(self._on_navigate)
+        self.axes_manager.events.indices_changed.connect(
+            self._on_navigate, {'obj': 'axes_manager'})
         self._on_navigate(self.axes_manager)    # Update our position
         self._navigating = True
 
@@ -204,7 +205,7 @@ class WidgetBase(object):
         self.axes_manager.events.indices_changed.disconnect(self._on_navigate)
         self._navigating = False
 
-    def _on_navigate(self, obj):
+    def _on_navigate(self, axes_manager):
         """Callback for axes_manager's change notification.
         """
         pass    # Implement in subclass!
@@ -421,8 +422,7 @@ class DraggableWidgetBase(WidgetBase):
         self.cids.append(canvas.mpl_connect(
             'button_release_event', self.button_release))
 
-    def _on_navigate(self, obj):
-        axes_manager = obj
+    def _on_navigate(self, axes_manager):
         if axes_manager is self.axes_manager:
             p = self._pos.tolist()
             for i, a in enumerate(self.axes):
