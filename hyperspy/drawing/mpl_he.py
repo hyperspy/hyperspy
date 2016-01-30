@@ -15,6 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
+from functools import partial
+
 from traits.api import Undefined
 
 from hyperspy.drawing import widgets, spectrum, image
@@ -87,6 +89,9 @@ class MPL_HyperExplorer(object):
                     title=self.signal_title + " navigation sliders")
                 for axis in self.axes_manager.navigation_axes[:-2]:
                     axis.events.index_changed.connect(sf.update, [])
+                    sf.events.closed.connect(
+                        partial(axis.events.index_changed.disconnect,
+                                sf.update), [])
             self.navigator_plot = sf
         elif len(self.navigator_data_function().shape) >= 2:
             imf = image.ImagePlot()
@@ -104,6 +109,9 @@ class MPL_HyperExplorer(object):
                         title=self.signal_title + " navigation sliders")
                     for axis in self.axes_manager.navigation_axes[2:]:
                         axis.events.index_changed.connect(imf.update, [])
+                        imf.events.closed.connect(
+                            partial(axis.events.index_changed.disconnect,
+                                    imf.update), [])
 
             imf.title = self.signal_title + ' Navigator'
             imf.plot()
@@ -111,7 +119,6 @@ class MPL_HyperExplorer(object):
             self.navigator_plot = imf
 
     def close_navigator_plot(self):
-        self._disconnect()
         self.navigator_plot.close()
 
     def is_active(self):
@@ -147,16 +154,6 @@ class MPL_HyperExplorer(object):
         self._pointer_nav_dim = nav_dim
         return Pointer
 
-    def _disconnect(self):
-        if (self.axes_manager.navigation_dimension > 2 and
-                self.navigator_plot is not None):
-            for axis in self.axes_manager.navigation_axes:
-                axis.events.index_changed.disconnect(
-                    self.navigator_plot.update)
-        if self.pointer is not None:
-            self.pointer.disconnect(self.navigator_plot.ax)
-
     def close(self):
-        self._disconnect()
         self.signal_plot.close()
         self.navigator_plot.close()

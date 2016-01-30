@@ -150,6 +150,14 @@ hyperspy.misc.spectrum_tools module
     :undoc-members:
     :show-inheritance:
 
+hyperspy.misc.test_utils module
+-------------------------------
+
+.. automodule:: hyperspy.misc.test_utils
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 hyperspy.misc.tv_denoise module
 -------------------------------
 

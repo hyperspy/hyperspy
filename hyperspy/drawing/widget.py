@@ -70,7 +70,7 @@ class WidgetBase(object):
             ----------
                 widget:
                     The widget that changed
-            """, arguments=['widget'])
+            """, arguments=['obj'])
         self.events.closed = Event(doc="""
             Event that triggers when the widget closed.
 
@@ -80,7 +80,7 @@ class WidgetBase(object):
             ----------
                 widget:
                     The widget that closed
-            """, arguments=['widget'])
+            """, arguments=['obj'])
         self._navigating = False
         super(WidgetBase, self).__init__(**kwargs)
 
@@ -122,7 +122,7 @@ class WidgetBase(object):
                     for p in self.patch:
                         if p in container:
                             container.remove(p)
-                self.disconnect(self.ax)
+                self.disconnect()
         if hasattr(super(WidgetBase, self), 'set_on'):
             super(WidgetBase, self).set_on(value)
         if did_something:
@@ -157,7 +157,7 @@ class WidgetBase(object):
             return  # Do nothing
         # Disconnect from previous axes if set
         if self.ax is not None and self.is_on():
-            self.disconnect(self.ax)
+            self.disconnect()
         self.ax = ax
         canvas = ax.figure.canvas
         if self.is_on() is True:
@@ -204,17 +204,17 @@ class WidgetBase(object):
         self.axes_manager.events.indices_changed.disconnect(self._on_navigate)
         self._navigating = False
 
-    def _on_navigate(self, axes_manager):
+    def _on_navigate(self, obj):
         """Callback for axes_manager's change notification.
         """
         pass    # Implement in subclass!
 
-    def disconnect(self, ax):
+    def disconnect(self):
         """Disconnect from all events (both matplotlib and navigation).
         """
         for cid in self.cids:
             try:
-                ax.figure.canvas.mpl_disconnect(cid)
+                self.ax.figure.canvas.mpl_disconnect(cid)
             except:
                 pass
         if self._navigating:
@@ -225,7 +225,7 @@ class WidgetBase(object):
         events.closed.
         """
         self.set_on(False)
-        self.events.closed.trigger(self)
+        self.events.closed.trigger(obj=self)
 
     def draw_patch(self, *args):
         """Update the patch drawing.
@@ -296,10 +296,9 @@ class DraggableWidgetBase(WidgetBase):
 
             Arguments:
             ----------
-                position:
-                widget:
+                obj:
                     The widget that was moved.
-            """, arguments=['widget'])
+            """, arguments=['obj'])
         self._snap_position = True
 
         # Set default axes
@@ -320,9 +319,8 @@ class DraggableWidgetBase(WidgetBase):
         """Returns a tuple with the position (indices).
         """
         idx = []
-        pos = self.position
         for i in xrange(len(self.axes)):
-            idx.append(self.axes[i].value2index(pos[i]))
+            idx.append(self.axes[i].value2index(self._pos[i]))
         return tuple(idx)
 
     def _set_indices(self, value):
@@ -352,7 +350,7 @@ class DraggableWidgetBase(WidgetBase):
             with self.axes_manager.events.indices_changed.suppress_callback(
                     self._on_navigate):
                 for i in xrange(len(self.axes)):
-                    self.axes[i].value = self.position[i]
+                    self.axes[i].value = self._pos[i]
         self.events.moved.trigger(self)
         self.events.changed.trigger(self)
         self._update_patch_position()
@@ -423,9 +421,10 @@ class DraggableWidgetBase(WidgetBase):
         self.cids.append(canvas.mpl_connect(
             'button_release_event', self.button_release))
 
-    def _on_navigate(self, axes_manager):
+    def _on_navigate(self, obj):
+        axes_manager = obj
         if axes_manager is self.axes_manager:
-            p = list(self.position)
+            p = self._pos.tolist()
             for i, a in enumerate(self.axes):
                 p[i] = a.value
             self.position = p    # Use property to trigger events
@@ -465,6 +464,34 @@ class DraggableWidgetBase(WidgetBase):
             self.picked = False
 
 
+class Widget1DBase(DraggableWidgetBase):
+
+    """A base class for 1D widgets.
+
+    It sets the right dimensions for size and
+    position, adds the 'border_thickness' attribute and initalizes the 'axes'
+    attribute to the first two navigation axes if possible, if not, the two
+    first signal_axes are used. Other than that it mainly supplies common
+    utility functions for inheritors, and implements required functions for
+    ResizableDraggableWidgetBase.
+
+    The implementation for ResizableDraggableWidgetBase methods all assume that
+    a Rectangle patch will be used, centered on position. If not, the
+    inheriting class will have to override those as applicable.
+    """
+    def _set_position(self, position):
+        try:
+            len(position)
+        except TypeError:
+            position = (position,)
+        super(Widget1DBase, self)._set_position(position)
+
+    def _validate_pos(self, pos):
+        pos = np.maximum(pos, self.axes[0].low_value)
+        pos = np.minimum(pos, self.axes[0].high_value)
+        return super(Widget1DBase, self)._validate_pos(pos)
+
+
 class ResizableDraggableWidgetBase(DraggableWidgetBase):
 
     """Adds the `size` property and get_size_in_axes method, and adds a
@@ -501,9 +528,9 @@ class ResizableDraggableWidgetBase(DraggableWidgetBase):
 
             Arguments:
             ----------
-                widget:
+                obj:
                     The widget that was resized.
-            """, arguments=['widget'])
+            """, arguments=['obj'])
         self.no_events_while_dragging = False
         self._drag_store = None
 
@@ -721,7 +748,7 @@ class Widget2DBase(ResizableDraggableWidgetBase):
         """Returns the xy position of the widget. In this default
         implementation, the widget is centered on the position.
         """
-        return np.array(self.position) - np.array(self.size) / 2.
+        return self._pos - self._size / 2.
 
     def _get_patch_bounds(self):
         """Returns the bounds of the patch in the form of a tuple in the order
@@ -922,8 +949,7 @@ class ResizersMixin(object):
                 self._set_resizers(True, self.ax)
             x = event.mouseevent.xdata
             y = event.mouseevent.ydata
-            p = self.position
-            self.pick_offset = (x - p[0], y - p[1])
+            self.pick_offset = (x - self._pos[0], y - self._pos[1])
             self.resizer_picked = False
         else:
             self._set_resizers(False, self.ax)

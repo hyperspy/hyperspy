@@ -212,7 +212,7 @@ class RectangleWidget(SquareWidget, ResizersMixin):
         if self._size[idx] == value or value <= 0:
             return
         # If we are pushed "past" an edge, size towards it
-        if self._navigating and self.axes[idx].value > self.position[idx]:
+        if self._navigating and self.axes[idx].value > self._pos[idx]:
             if value < self._size[idx]:
                 self._pos[idx] += self._size[idx] - value
 
@@ -259,9 +259,8 @@ class RectangleWidget(SquareWidget, ResizersMixin):
         center value of the pixel. Here, xy corresponds to the top left of
         the pixel.
         """
-        pos = np.array(self.position)
         offset = [a.scale for a in self.axes]
-        return pos - 0.5 * np.array(offset)
+        return self._pos - 0.5 * np.array(offset)
 
     def _update_patch_position(self):
         # Override to include resizer positioning
@@ -296,14 +295,14 @@ class RectangleWidget(SquareWidget, ResizersMixin):
 
         # Make sure x1/y1 is within bounds
         if x1 is None:
-            x1 = self.position[0]  # Get it if not supplied
+            x1 = self._pos[0]  # Get it if not supplied
         elif x1 < xaxis.low_value:
             x1 = xaxis.low_value
         elif x1 > xaxis.high_value:
             x1 = xaxis.high_value
 
         if y1 is None:
-            y1 = self.position[1]
+            y1 = self._pos[1]
         elif y1 < yaxis.low_value:
             y1 = yaxis.low_value
         elif y1 > yaxis.high_value:

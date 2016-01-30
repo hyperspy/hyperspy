@@ -12,10 +12,10 @@ env:
 matrix:
   allow_failures:
     - env: export FAIL_ON_EXTERNAL_DEPRECATION='True'
-    
+
 
 install:
-  - DEPS="nose numpy scipy matplotlib traits traitsui ipython h5py sympy scikit-learn dill mock"
+  - DEPS="nose numpy scipy matplotlib traits traitsui ipython h5py sympy scikit-learn dill mock setuptools"
   - conda create -n testenv --yes python=$TRAVIS_PYTHON_VERSION
   - source activate testenv
   - conda install --yes $DEPS

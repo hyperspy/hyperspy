@@ -16,32 +16,25 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-import numpy as np
-
-from hyperspy.drawing.widgets import DraggableWidgetBase
+from hyperspy.drawing.widgets import Widget1DBase
 
 
-class HorizontalLineWidget(DraggableWidgetBase):
+class HorizontalLineWidget(Widget1DBase):
 
     """A draggable, horizontal line widget.
     """
 
     def _update_patch_position(self):
         if self.is_on() and self.patch:
-            self.patch[0].set_ydata(self.position[0])
+            self.patch[0].set_ydata(self._pos[0])
             self.draw_patch()
 
     def _set_patch(self):
         ax = self.ax
         self.patch = [ax.axhline(
-            self.position[0],
+            self._pos[0],
             color=self.color,
             picker=5)]
-
-    def _validate_pos(self, pos):
-        pos = np.maximum(pos, self.axes[0].low_value)
-        pos = np.minimum(pos, self.axes[0].high_value)
-        return super(HorizontalLineWidget, self)._validate_pos(pos)
 
     def _onmousemove(self, event):
         """on mouse motion draw the cursor if picked"""

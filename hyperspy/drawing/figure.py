@@ -1,7 +1,19 @@
 import textwrap
 
+from hyperspy.events import Event, Events
+
 
 class BlittedFigure(object):
+
+    def __init__(self):
+        self.events = Events()
+        self.events.closed = Event("""
+            Event that triggers when the figure window is closed.
+
+            Arguments:
+                obj:  SpectrumFigure instances
+                    The instance that triggered the event.
+            """, arguments=["obj"])
 
     def _on_draw(self, *args):
         if self.figure:
