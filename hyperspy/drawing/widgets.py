@@ -8,7 +8,7 @@ Example
 
 from hyperspy.drawing.widget import (
     WidgetBase, DraggableWidgetBase, ResizableDraggableWidgetBase,
-    Widget2DBase, ResizersMixin)
+    Widget2DBase, Widget1DBase, ResizersMixin)
 from hyperspy.drawing._widgets.horizontal_line import HorizontalLineWidget
 from hyperspy.drawing._widgets.vertical_line import VerticalLineWidget
 from hyperspy.drawing._widgets.label import LabelWidget

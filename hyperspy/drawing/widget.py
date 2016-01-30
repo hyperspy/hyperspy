@@ -464,6 +464,34 @@ class DraggableWidgetBase(WidgetBase):
             self.picked = False
 
 
+class Widget1DBase(DraggableWidgetBase):
+
+    """A base class for 1D widgets.
+
+    It sets the right dimensions for size and
+    position, adds the 'border_thickness' attribute and initalizes the 'axes'
+    attribute to the first two navigation axes if possible, if not, the two
+    first signal_axes are used. Other than that it mainly supplies common
+    utility functions for inheritors, and implements required functions for
+    ResizableDraggableWidgetBase.
+
+    The implementation for ResizableDraggableWidgetBase methods all assume that
+    a Rectangle patch will be used, centered on position. If not, the
+    inheriting class will have to override those as applicable.
+    """
+    def _set_position(self, position):
+        try:
+            len(position)
+        except TypeError:
+            position = (position,)
+        super(Widget1DBase, self)._set_position(position)
+
+    def _validate_pos(self, pos):
+        pos = np.maximum(pos, self.axes[0].low_value)
+        pos = np.minimum(pos, self.axes[0].high_value)
+        return super(Widget1DBase, self)._validate_pos(pos)
+
+
 class ResizableDraggableWidgetBase(DraggableWidgetBase):
 
     """Adds the `size` property and get_size_in_axes method, and adds a

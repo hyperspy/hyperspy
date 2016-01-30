@@ -19,10 +19,10 @@
 import numpy as np
 import matplotlib.transforms as transforms
 
-from hyperspy.drawing.widgets import DraggableWidgetBase
+from hyperspy.drawing.widgets import Widget1DBase
 
 
-class LabelWidget(DraggableWidgetBase):
+class LabelWidget(Widget1DBase):
 
     """A draggable text widget. Adds the attributes 'string', 'text_color' and
     'bbox'. These are all arguments for matplotlib's Text artist. The default
@@ -37,6 +37,16 @@ class LabelWidget(DraggableWidgetBase):
             self._pos = np.array((0, 0.9))
         self.text_color = 'black'
         self.bbox = None
+
+    def _set_position(self, position):
+        try:
+            size = len(position)
+        except TypeError:
+            position = (position, self._pos[1])
+        else:
+            if size < 2:
+                position = np.concatenate((position, self._pos[1:]))
+        super(LabelWidget, self)._set_position(position)
 
     def _set_axes(self, axes):
         super(LabelWidget, self)._set_axes(axes)
