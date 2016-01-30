@@ -73,7 +73,8 @@ class RangeWidget(ResizableDraggableWidgetBase):
         self.span.tolerance = 5
         self.patch = [self.span.rect]
 
-    def _span_changed(self, widget):
+    def _span_changed(self, obj):
+        widget = obj
         r = self._get_range()
         pr = widget.range
         if r != pr:
@@ -201,25 +202,25 @@ class ModifiableSpanSelector(matplotlib.widgets.SpanSelector):
 
             Arguments:
             ----------
-                widget:
+                obj:
                     The widget that changed
-            """, arguments=['widget'])
+            """, arguments=['obj'])
         self.events.moved = Event(doc="""
             Event that triggers when the widget was moved.
 
             Arguments:
             ----------
-                widget:
+                obj:
                     The widget that changed
-            """, arguments=['widget'])
+            """, arguments=['obj'])
         self.events.resized = Event(doc="""
             Event that triggers when the widget was resized.
 
             Arguments:
             ----------
-                widget:
+                obj:
                     The widget that changed
-            """, arguments=['widget'])
+            """, arguments=['obj'])
         self.can_switch = False
 
     def dummy(self, *args, **kwargs):

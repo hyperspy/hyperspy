@@ -70,7 +70,7 @@ class WidgetBase(object):
             ----------
                 widget:
                     The widget that changed
-            """, arguments=['widget'])
+            """, arguments=['obj'])
         self.events.closed = Event(doc="""
             Event that triggers when the widget closed.
 
@@ -80,7 +80,7 @@ class WidgetBase(object):
             ----------
                 widget:
                     The widget that closed
-            """, arguments=['widget'])
+            """, arguments=['obj'])
         self._navigating = False
         super(WidgetBase, self).__init__(**kwargs)
 
@@ -204,7 +204,7 @@ class WidgetBase(object):
         self.axes_manager.events.indices_changed.disconnect(self._on_navigate)
         self._navigating = False
 
-    def _on_navigate(self, axes_manager):
+    def _on_navigate(self, obj):
         """Callback for axes_manager's change notification.
         """
         pass    # Implement in subclass!
@@ -225,7 +225,7 @@ class WidgetBase(object):
         events.closed.
         """
         self.set_on(False)
-        self.events.closed.trigger(self)
+        self.events.closed.trigger(obj=self)
 
     def draw_patch(self, *args):
         """Update the patch drawing.
@@ -296,10 +296,9 @@ class DraggableWidgetBase(WidgetBase):
 
             Arguments:
             ----------
-                position:
-                widget:
+                obj:
                     The widget that was moved.
-            """, arguments=['widget'])
+            """, arguments=['obj'])
         self._snap_position = True
 
         # Set default axes
@@ -423,7 +422,8 @@ class DraggableWidgetBase(WidgetBase):
         self.cids.append(canvas.mpl_connect(
             'button_release_event', self.button_release))
 
-    def _on_navigate(self, axes_manager):
+    def _on_navigate(self, obj):
+        axes_manager = obj
         if axes_manager is self.axes_manager:
             p = list(self.position)
             for i, a in enumerate(self.axes):
@@ -501,9 +501,9 @@ class ResizableDraggableWidgetBase(DraggableWidgetBase):
 
             Arguments:
             ----------
-                widget:
+                obj:
                     The widget that was resized.
-            """, arguments=['widget'])
+            """, arguments=['obj'])
         self.no_events_while_dragging = False
         self._drag_store = None
 
