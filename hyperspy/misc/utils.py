@@ -110,6 +110,11 @@ def stash_active_state(model):
             component._active_array[:] = active_s
 
 
+@contextmanager
+def dummy_context_manager(*args, **kwargs):
+    yield
+
+
 def str2num(string, **kargs):
     """Transform a a table in string form into a numpy array
 

@@ -48,11 +48,13 @@ def _get_iweight(element, line, weight_line=None):
 
 
 def _get_sigma(E, E_ref, units_factor):
-    """Calculates an approximate sigma value, accounting for peak broadening due
+    """
+    Calculates an approximate sigma value, accounting for peak broadening due
     to the detector, for a peak at energy E given a known width at a reference
     energy.
 
-    The factor 2.5 is a constant derived by Fiori & Newbury as references below.
+    The factor 2.5 is a constant derived by Fiori & Newbury as references
+    below.
 
     Parameters
     ----------
@@ -91,6 +93,7 @@ def _get_scale(E1, E_ref1, fact):
 
 
 class EDSModel(Model1D):
+
     """Build and fit a model of an EDS Spectrum.
 
     Parameters
@@ -439,7 +442,7 @@ class EDSModel(Model1D):
                 fact = float(ax.value2index(E)) / ax.value2index(E_ref)
                 component.centre.twin_function = _get_scale(E, E_ref, fact)
                 component.centre.twin_inverse_function = _get_scale(
-                    E_ref, E, 1./fact)
+                    E_ref, E, 1. / fact)
                 component.centre.twin = component_ref.centre
                 ref.append(E)
         return ref
@@ -535,7 +538,8 @@ class EDSModel(Model1D):
         calibrate: 'resolution' or 'scale' or 'offset'
             If 'resolution', fits the width of Gaussians place at all x-ray
             lines. The width is given by a model of the detector resolution,
-            obtained by extrapolation the `energy_resolution_MnKa` in `metadata`
+            obtained by extrapolation the `energy_resolution_MnKa` in
+            `metadata`.
             This method will update the value of `energy_resolution_MnKa`.
             If 'scale', calibrate the scale of the energy axis
             If 'offset', calibrate the offset of the energy axis

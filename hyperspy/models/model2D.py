@@ -99,7 +99,8 @@ class Model2D(BaseModel):
         self.xaxis, self.yaxis = np.meshgrid(
             self.axes_manager.signal_axes[0].axis,
             self.axes_manager.signal_axes[1].axis)
-        self.axes_manager.connect(self.fetch_stored_values)
+        self.axes_manager.events.indices_changed.connect(
+            self.fetch_stored_values, [])
         self.channel_switches = np.ones(self.xaxis.shape, dtype=bool)
         self.chisq = image._get_navigation_signal()
         self.chisq.change_dtype("float")
