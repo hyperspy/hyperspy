@@ -95,9 +95,9 @@ class DataAxis(t.HasTraits):
 
             Arguments:
             ---------
+            obj : The DataAxis that the event belongs to.
             index : The new index
-            axis : The DataAxis that the event belongs to.
-            """, arguments=['index', 'axis'])
+            """, arguments=["obj", 'index'])
         self.events.value_changed = Event("""
             Event that triggers when the value of the `DataAxis` changes
 
@@ -106,9 +106,11 @@ class DataAxis(t.HasTraits):
 
             Arguments:
             ---------
+            obj : The DataAxis that the event belongs to.
             value : The new value
-            axis : The DataAxis that the event belongs to.
-            """, arguments=['value', 'axis'])
+            """, arguments=["obj", 'value'])
+        self._suppress_value_changed_trigger = False
+        self._suppress_update_value = False
         self.name = name
         self.units = units
         self.scale = scale
@@ -122,13 +124,45 @@ class DataAxis(t.HasTraits):
         self.axes_manager = None
         self.on_trait_change(self.update_axis,
                              ['scale', 'offset', 'size'])
-        self.on_trait_change(self.update_value, 'index')
-        self.on_trait_change(self.set_index_from_value, 'value')
         self.on_trait_change(self._update_slice, 'navigate')
         self.on_trait_change(self.update_index_bounds, 'size')
         # The slice must be updated even if the default value did not
         # change to correctly set its value.
         self._update_slice(self.navigate)
+
+    def _index_changed(self, name, old, new):
+        self.events.index_changed.trigger(obj=self, index=self.index)
+        if not self._suppress_update_value:
+            new_value = self.axis[self.index]
+            if new_value != self.value:
+                self.value = new_value
+
+    def _value_changed(self, name, old, new):
+        old_index = self.index
+        new_index = self.value2index(new)
+        if self.continuous_value is False:  # Only values in the grid alowed
+            if old_index != new_index:
+                self.index = new_index
+                if new == self.axis[self.index]:
+                    self.events.value_changed.trigger(obj=self, value=new)
+            elif old_index == new_index:
+                new_value = self.index2value(new_index)
+                if new_value == old:
+                    self._suppress_value_changed_trigger = True
+                    try:
+                        self.value = new_value
+                    finally:
+                        self._suppress_value_changed_trigger = False
+
+                elif new_value == new and not\
+                        self._suppress_value_changed_trigger:
+                    self.events.value_changed.trigger(obj=self, value=new)
+        else:  # Intergrid values are alowed. This feature is deprecated
+            self.events.value_changed.trigger(obj=self, value=new)
+            if old_index != new_index:
+                self._suppress_update_value = True
+                self.index = new_index
+                self._suppress_update_value = False
 
     @property
     def index_in_array(self):
@@ -264,6 +298,22 @@ class DataAxis(t.HasTraits):
     def __str__(self):
         return self._get_name() + " axis"
 
+    def connect(self, f):
+        warnings.warn(
+            "The method `DataAxis.connect()` has been deprecated and will "
+            "be removed in HyperSpy 0.10. Please use "
+            "`DataAxis.events.value_changed.connect()` instead.",
+            VisibleDeprecationWarning)
+        self.events.value_changed.connect(f, [])
+
+    def disconnect(self, f):
+        warnings.warn(
+            "The method `DataAxis.disconnect()` has been deprecated and "
+            "will be removed in HyperSpy 0.10. Please use "
+            "`DataAxis.events.indices_changed.disconnect()` instead.",
+            VisibleDeprecationWarning)
+        self.events.value_changed.disconnect(f)
+
     def update_index_bounds(self):
         self.high_index = self.size - 1
 
@@ -299,19 +349,6 @@ class DataAxis(t.HasTraits):
     def __deepcopy__(self, memo):
         cp = self.copy()
         return cp
-
-    def update_value(self):
-        # To prevent firing events before value checks, suppress events,
-        # and only fire if final result is different
-        old_val = self.value
-        old_idx = self.index
-        with self.events.index_changed.suppress(), \
-                self.events.value_changed.suppress():
-            self.value = self.axis[self.index]
-        if old_val != self.value:
-            self.events.value_changed.trigger(value=self.index, axis=self)
-        if old_idx != self.index:
-            self.events.index_changed.trigger(index=self.index, axis=self)
 
     def value2index(self, value, rounding=round):
         """Return the closest index to the given value if between the limit.
@@ -355,25 +392,19 @@ class DataAxis(t.HasTraits):
             else:
                 raise ValueError("The value is out of the axis limits")
 
+    def set_index_from_value(self, value):
+        warnings.warn(
+            "The method `DataAxis.set_index_from_value()` has been deprecated "
+            "and will be removed in HyperSpy 0.10. Please set the value using "
+            "the `value` attribute and the index will update automatically.",
+            VisibleDeprecationWarning)
+        self.value = value
+
     def index2value(self, index):
         if isinstance(index, np.ndarray):
             return self.axis[index.ravel()].reshape(index.shape)
         else:
             return self.axis[index]
-
-    def set_index_from_value(self, value):
-        old_idx = self.index
-        old_val = self.value
-        with self.events.index_changed.suppress(), \
-                self.events.value_changed.suppress():
-            self.index = self.value2index(value)
-            # If the value is above the limits we must correct the value
-            if self.continuous_value is False:
-                self.value = self.index2value(self.index)
-        if old_idx != self.index:
-            self.events.index_changed.trigger(index=self.index, axis=self)
-        if old_val != self.value:
-            self.events.value_changed.trigger(value=self.value, axis=self)
 
     def calibrate(self, value_tuple, index_tuple, modify_calibration=True):
         scale = (value_tuple[1] - value_tuple[0]) /\
@@ -542,8 +573,8 @@ class AxesManager(t.HasTraits):
 
             Arguments:
             ---------
-            axes_manager : The AxesManager that the event belongs to.
-            """, arguments=['axes_manager'])
+            obj : The AxesManager that the event belongs to.
+            """, arguments=['obj'])
         self.create_axes(axes_list)
         # set_signal_dimension is called only if there is no current
         # view. It defaults to spectrum
@@ -751,7 +782,7 @@ class AxesManager(t.HasTraits):
 
     def _on_index_changed(self):
         self._update_attributes()
-        self.events.indices_changed.trigger(axes_manager=self)
+        self.events.indices_changed.trigger(obj=self)
 
     def _update_attributes(self):
         getitem_tuple = ()
@@ -828,7 +859,7 @@ class AxesManager(t.HasTraits):
             "be removed in HyperSpy 0.10. Please use "
             "`AxesManager.events.indices_changed.connect()` instead.",
             VisibleDeprecationWarning)
-        self.events.indices_changed.connect(f, 0)
+        self.events.indices_changed.connect(f, [])
 
     def disconnect(self, f):
         warnings.warn(

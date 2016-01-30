@@ -157,7 +157,7 @@ class CircleWidget(Widget2DBase, ResizersMixin):
                 y -= self.pick_offset[1]
                 self.position = (x, y)
             else:
-                rad_vect = np.array((x, y)) - self.position
+                rad_vect = np.array((x, y)) - self._pos
                 radius = np.sqrt(np.sum(rad_vect**2))
                 s = list(self.size)
                 s[0] = radius

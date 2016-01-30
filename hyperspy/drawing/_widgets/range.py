@@ -52,7 +52,7 @@ class RangeWidget(ResizableDraggableWidgetBase):
                 self._add_patch_to(self.ax)
                 self.connect(self.ax)
             elif value is False:
-                self.disconnect(self.ax)
+                self.disconnect()
             try:
                 self.ax.figure.canvas.draw()
             except:  # figure does not exist
@@ -73,7 +73,8 @@ class RangeWidget(ResizableDraggableWidgetBase):
         self.span.tolerance = 5
         self.patch = [self.span.rect]
 
-    def _span_changed(self, widget):
+    def _span_changed(self, obj):
+        widget = obj
         r = self._get_range()
         pr = widget.range
         if r != pr:
@@ -86,8 +87,8 @@ class RangeWidget(ResizableDraggableWidgetBase):
             self._apply_changes(old_size=old_size, old_position=old_position)
 
     def _get_range(self):
-        p = self.position[0]
-        w = self.size[0]
+        p = self._pos[0]
+        w = self._size[0]
         offset = self.axes[0].scale
         p -= 0.5 * offset
         return (p, p + w)
@@ -164,9 +165,9 @@ class RangeWidget(ResizableDraggableWidgetBase):
         if self.is_on() and self.span is not None:
             self.span.range = self._get_range()
 
-    def disconnect(self, ax):
-        super(RangeWidget, self).disconnect(ax)
-        if self.span and self.ax == ax:
+    def disconnect(self):
+        super(RangeWidget, self).disconnect()
+        if self.span:
             self.span.turn_off()
             self.span = None
 
@@ -201,25 +202,25 @@ class ModifiableSpanSelector(matplotlib.widgets.SpanSelector):
 
             Arguments:
             ----------
-                widget:
+                obj:
                     The widget that changed
-            """, arguments=['widget'])
+            """, arguments=['obj'])
         self.events.moved = Event(doc="""
             Event that triggers when the widget was moved.
 
             Arguments:
             ----------
-                widget:
+                obj:
                     The widget that changed
-            """, arguments=['widget'])
+            """, arguments=['obj'])
         self.events.resized = Event(doc="""
             Event that triggers when the widget was resized.
 
             Arguments:
             ----------
-                widget:
+                obj:
                     The widget that changed
-            """, arguments=['widget'])
+            """, arguments=['obj'])
         self.can_switch = False
 
     def dummy(self, *args, **kwargs):

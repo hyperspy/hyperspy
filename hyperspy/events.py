@@ -22,8 +22,8 @@ class Events(object):
     def suppress(self):
         """
         Use this function with a 'with' statement to temporarily suppress
-        all events in the container. When the 'with' lock completes, the old
-        suppression values will be restored.
+        all callbacks of all events in the container. When the 'with' lock
+        completes, the old suppression values will be restored.
 
         Example usage
         -------------
@@ -117,7 +117,7 @@ class Events(object):
 
     def __iter__(self):
         """
-        Allows iteraction of all events in the container
+        Allows iteration of all events in the container
         """
         return self._events.itervalues()
 
@@ -149,8 +149,8 @@ class Event(object):
             'This event has a docstring!'
             >>> e1 = Event()
             >>> e2 = Event(arguments=('arg1', ('arg2', None)))
-            >>> e1.trigger(12, 43, 'str', 4.3)  # Can trigger with whatever
-            >>> e2.trigger(11, 22, 3.4)
+            >>> e1.trigger(arg1=12, arg2=43, arg3='str', arg4=4.3)  # Can trigger with whatever
+            >>> e2.trigger(arg1=11, arg2=22, arg3=3.4)
             TypeError: trigger() takes at most 3 arguments (4 given)
         """
         self.__doc__ = doc
@@ -159,6 +159,7 @@ class Event(object):
         self._connected_some = {}
         self._connected_map = {}
         self._suppress = False
+        self._suppressed_callbacks = set()
 
         if arguments:
             self._trigger_maker(arguments)
@@ -263,15 +264,14 @@ class Event(object):
         suppress
         Events.suppress
         """
-        if function in self.connected:
-            connection_kwargs = self.disconnect(
-                function=function, return_connection_kwargs=True)
-            try:
-                yield
-            finally:
-                self.connect(function=function, kwargs=connection_kwargs)
-        else:
-            yield   # Do nothing
+        was_suppressed = function in self._suppressed_callbacks
+        if not was_suppressed:
+            self._suppressed_callbacks.add(function)
+        try:
+            yield
+        finally:
+            if not was_suppressed:
+                self._suppressed_callbacks.discard(function)
 
     @property
     def connected(self):
@@ -302,16 +302,16 @@ class Event(object):
         See also
         --------
         disconnect
+
         """
         if not callable(function):
             raise TypeError("Only callables can be registered")
         if function in self.connected:
-            raise ValueError("Function %s already connected to this event." %
-                             function)
-            return
+            raise ValueError("Function %s already connected to %s." %
+                             (function, self))
         if kwargs == 'auto':
             spec = inspect.getargspec(function)
-            if spec.varargs:
+            if spec.varargs and not spec.keywords:
                 raise NotImplementedError("Connecting to variable argument "
                                           "functions is not supported in auto "
                                           "connection mode.")
@@ -330,7 +330,7 @@ class Event(object):
         else:
             raise ValueError("Invalid value passed to kwargs.")
 
-    def disconnect(self, function, return_connection_kwargs=False):
+    def disconnect(self, function):
         """
         Disconnects a function from the event. The passed function will be
         disconnected irregardless of which 'nargs' argument was passed to
@@ -353,17 +353,13 @@ class Event(object):
         """
         if function in self._connected_all:
             self._connected_all.remove(function)
-            kwargs = "all"
         elif function in self._connected_some:
-            kwargs = self._connected_some[function]
-            del self._connected_some[function]
+            self._connected_some.pop(function)
         elif function in self._connected_map:
-            kwargs = self._connected_map[function]
-            del self._connected_map[function]
+            self._connected_map.pop(function)
         else:
-            raise ValueError("The %s function is not connected." % function)
-        if return_connection_kwargs:
-            return kwargs
+            raise ValueError("The %s function is not connected to %s." %
+                             (function, self))
 
     def trigger(self, **kwargs):
         """
@@ -380,17 +376,31 @@ class Event(object):
         if self._suppress:
             return
         # Loop on copy to deal with callbacks which change connections
-        for function in self._connected_all:
+        for function in self._connected_all.difference(
+                self._suppressed_callbacks):
             function(**kwargs)
         for function, kwsl in self._connected_some.iteritems():
-            function(**{kw: kwargs.get(kw, None) for kw in kwsl})
+            if function not in self._suppressed_callbacks:
+                function(**{kw: kwargs.get(kw, None) for kw in kwsl})
         for function, kwsd in self._connected_map.iteritems():
-            function(**{kwf: kwargs[kwt] for kwt, kwf in kwsd.iteritems()})
+            if function not in self._suppressed_callbacks:
+                function(**{kwf: kwargs[kwt] for kwt, kwf in kwsd.iteritems()})
 
     def __deepcopy__(self, memo):
         dc = type(self)()
         memo[id(self)] = dc
         return dc
+
+    def __str__(self):
+        if self.__doc__:
+            edoc = inspect.getdoc(self) or ''
+            doclines = edoc.splitlines()
+            e_short = doclines[0] if len(doclines) > 0 else edoc
+            text = ("<hyperspy.events.Event: " + e_short + ": " +
+                    str(self.connected) + ">")
+        else:
+            text = self.__repr__()
+        return text.encode('utf8')
 
     def __repr__(self):
         text = "<hyperspy.events.Event: " + repr(self.connected) + ">"
