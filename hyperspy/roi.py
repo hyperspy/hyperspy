@@ -290,12 +290,11 @@ class BaseInteractiveROI(BaseROI):
         """
         raise NotImplementedError()
 
-    def _on_widget_change(self, obj):
+    def _on_widget_change(self, widget):
         """Callback for widgets' 'changed' event. Updates the internal state
         from the widget, and triggers events (excluding connections to the
         source widget).
         """
-        widget = obj
         with self.events.suppress():
             self._bounds_check = False
             self._applying_widget_change = True
@@ -358,15 +357,15 @@ class BaseInteractiveROI(BaseROI):
             widget.set_mpl_ax(ax)
 
         # Connect widget changes to on_widget_change
-        widget.events.changed.connect(self._on_widget_change)
+        widget.events.changed.connect(self._on_widget_change,
+                                      {'obj': 'widget'})
         # When widget closes, remove from internal list
-        widget.events.closed.connect(self._remove_widget)
+        widget.events.closed.connect(self._remove_widget, {'obj': 'widget'})
         self.widgets.add(widget)
         self.signal_map[signal] = (widget, axes)
         return widget
 
-    def _remove_widget(self, obj):
-        widget = obj
+    def _remove_widget(self, widget):
         widget.events.closed.disconnect(self._remove_widget)
         widget.events.changed.disconnect(self._on_widget_change)
         widget.close()
