@@ -1012,8 +1012,10 @@ class EDSSpectrum(Signal1D):
             line = markers.vertical_line_segment(
                 x=line_energy[i], y1=None, y2=intensity[i] * 0.8)
             self.add_marker(line)
+            string = ('$\mathrm{%s}_{\mathrm{%s}}$' %
+                      utils_eds._get_element_and_line(xray_lines[i]))
             text = markers.text(
-                x=line_energy[i], y=intensity[i] * 1.1, text=xray_lines[i],
+                x=line_energy[i], y=intensity[i] * 1.1, text=string,
                 rotation=90)
             self.add_marker(text)
             self._xray_markers[xray_lines[i]] = [line, text]
