@@ -262,6 +262,14 @@ class Model1D(BaseModel):
                                          self._adjust_position_all[1])
 
     def remove(self, thing):
+        thing = self._get_component(thing)
+        parameter = thing._position
+        if parameter in self._position_widgets:
+            for pw in reversed(self._position_widgets[parameter]):
+                pw.close()
+        if hasattr(thing, '_model_plot_line'):
+            line = thing._model_plot_line
+            line.close()
         super(Model1D, self).remove(thing)
         self._disconnect_parameters2update_plot([thing])
 
@@ -749,16 +757,13 @@ class Model1D(BaseModel):
         # Create an AxesManager for the widget
         axis = self.axes_manager.signal_axes[0]
         # Create the vertical line and labels
-        widgets = []
+        widgets = [VerticalLineWidget(self.axes_manager)]
         if show_label:
-            widgets.extend((
-                VerticalLineWidget(self.axes_manager),
-                LabelWidget(self.axes_manager)))
-            widgets[1].string = component._get_short_description().replace(
+            label = LabelWidget(self.axes_manager)
+            label.string = component._get_short_description().replace(
                 ' component', '')
-        else:
-            widgets.append(
-                VerticalLineWidget(self.axes_manager))
+            widgets.append(label)
+
         self._position_widgets[component._position] = widgets
         for w in widgets:
             # Setup widget
