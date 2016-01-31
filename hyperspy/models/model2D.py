@@ -90,7 +90,7 @@ class Model2D(BaseModel):
         self.signal = self.image
         self.axes_manager = self.signal.axes_manager
         self._plot = None
-        self._position_widgets = []
+        self._position_widgets = {}
         self._adjust_position_all = None
         self._plot_components = False
         self._suspend_update = False

@@ -262,6 +262,14 @@ class Model1D(BaseModel):
                                          self._adjust_position_all[1])
 
     def remove(self, thing):
+        thing = self._get_component(thing)
+        parameter = thing._position
+        if parameter in self._position_widgets:
+            for pw in reversed(self._position_widgets[parameter]):
+                pw.close()
+        if hasattr(thing, '_model_plot_line'):
+            line = thing._model_plot_line
+            line.close()
         super(Model1D, self).remove(thing)
         self._disconnect_parameters2update_plot([thing])
 

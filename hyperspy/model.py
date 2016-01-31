@@ -355,19 +355,6 @@ class BaseModel(list):
 
         """
         thing = self._get_component(thing)
-        for pw in self._position_widgets:
-            if hasattr(pw, 'component') and pw.component is thing:
-                pw.component._position.twin = None
-                del pw.component
-                pw.close()
-                del pw
-        if hasattr(thing, '_model_plot_line'):
-            line = thing._model_plot_line
-            line.close()
-            del line
-            idx = self.index(thing)
-            self.signal._plot.signal_plot.ax_lines.remove(
-                self.signal._plot.signal_plot.ax_lines[2 + idx])
         list.remove(self, thing)
         thing.model = None
         if self._plot_active:
