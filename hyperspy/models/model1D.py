@@ -757,16 +757,13 @@ class Model1D(BaseModel):
         # Create an AxesManager for the widget
         axis = self.axes_manager.signal_axes[0]
         # Create the vertical line and labels
-        widgets = []
+        widgets = [VerticalLineWidget(self.axes_manager)]
         if show_label:
-            widgets.extend((
-                VerticalLineWidget(self.axes_manager),
-                LabelWidget(self.axes_manager)))
-            widgets[1].string = component._get_short_description().replace(
+            label = LabelWidget(self.axes_manager)
+            label.string = component._get_short_description().replace(
                 ' component', '')
-        else:
-            widgets.append(
-                VerticalLineWidget(self.axes_manager))
+            widgets.append(label)
+
         self._position_widgets[component._position] = widgets
         for w in widgets:
             # Setup widget
