@@ -31,12 +31,24 @@ class LabelWidget(Widget1DBase):
 
     def __init__(self, axes_manager):
         super(LabelWidget, self).__init__(axes_manager)
-        self.string = ''
+        self._string = ''
         self._snap_position = False
         if not self.axes:
             self._pos = np.array((0, 0.9))
         self.text_color = 'black'
         self.bbox = None
+
+    def _get_string(self):
+        return self._string
+
+    def _set_string(self, value):
+        if self._string == value:
+            return
+        self._string = value
+        self._update_patch_string()
+
+    string = property(lambda s: s._get_string(),
+                      lambda s, v: s._set_string(v))
 
     def _set_position(self, position):
         try:
@@ -71,6 +83,11 @@ class LabelWidget(Widget1DBase):
         if self.is_on() and self.patch:
             self.patch[0].set_x(self._pos[0])
             self.patch[0].set_y(self._pos[1])
+            self.draw_patch()
+
+    def _update_patch_string(self):
+        if self.is_on() and self.patch:
+            self.patch[0].set_text(self.string)
             self.draw_patch()
 
     def _set_patch(self):
