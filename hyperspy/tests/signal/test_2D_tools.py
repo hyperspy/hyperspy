@@ -27,7 +27,7 @@ import hyperspy.api as hs
 class TestAlignTools:
 
     def setUp(self):
-        im = face()
+        im = face(gray=True)
         self.lena_offset = np.array((256, 256))
         s = hs.signals.Image(np.zeros((10, 100, 100)))
         self.scales = np.array((0.1, 0.3))

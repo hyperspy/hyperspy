@@ -148,7 +148,7 @@ def _tv_denoise_2d(im, weight=50, eps=2.e-4, keep_type=False, n_iter_max=200):
     Examples
     ---------
     >>> import scipy
-    >>> lena = scipy.face().astype(np.float)
+    >>> lena = scipy.ascent().astype(np.float)
     >>> lena += 0.5 * lena.std()*np.random.randn(*lena.shape)
     >>> denoised_lena = tv_denoise(lena, weight=60.0)
     """
@@ -244,7 +244,7 @@ def _tv_denoise_1d(im, weight=50, eps=2.e-4, keep_type=False, n_iter_max=200):
     Examples
     ---------
     >>> import scipy
-    >>> lena = scipy.face().astype(np.float)
+    >>> lena = scipy.ascent().astype(np.float)
     >>> lena += 0.5 * lena.std()*np.random.randn(*lena.shape)
     >>> denoised_lena = tv_denoise(lena, weight=60.0)
     """
@@ -344,7 +344,7 @@ def tv_denoise(im, weight=50, eps=2.e-4, keep_type=False, n_iter_max=200):
     ---------
     >>> # 2D example using lena
     >>> import scipy
-    >>> lena = scipy.face().astype(np.float)
+    >>> lena = scipy.ascent().astype(np.float)
     >>> lena += 0.5 * lena.std()*np.random.randn(*lena.shape)
     >>> denoised_lena = tv_denoise(lena, weight=60)
     >>> # 3D example on synthetic data
