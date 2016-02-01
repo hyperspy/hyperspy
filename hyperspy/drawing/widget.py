@@ -22,7 +22,7 @@ import matplotlib.pyplot as plt
 from matplotlib.backend_bases import MouseEvent
 import numpy as np
 
-from utils import on_figure_window_close
+from hyperspy.drawing.utils import on_figure_window_close
 from hyperspy.events import Events, Event
 
 
@@ -610,7 +610,7 @@ class ResizableDraggableWidgetBase(DraggableWidgetBase):
         """
         s = list()
         for i in xrange(len(self.axes)):
-            s.append(int(self._size[i] / self.axes[i].scale))
+            s.append(int(round(self._size[i] / self.axes[i].scale)))
         return np.array(s)
 
     def set_size_in_indices(self, value):
@@ -619,7 +619,7 @@ class ResizableDraggableWidgetBase(DraggableWidgetBase):
         """
         s = list()
         for i in xrange(len(self.axes)):
-            s.append(int(value[i] * self.axes[i].scale))
+            s.append(int(round(value[i] * self.axes[i].scale)))
         self.size = s   # Use property to get full processing
 
     def get_centre(self):
