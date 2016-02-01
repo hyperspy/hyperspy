@@ -1,8 +1,7 @@
 import inspect
-import warnings
 import collections
 from contextlib import contextmanager
-from functools import wraps
+from functools import wraps   # Used in exec statement
 import re
 
 
@@ -375,14 +374,21 @@ class Event(object):
         """
         if self._suppress:
             return
-        # Loop on copy to deal with callbacks which change connections
-        for function in self._connected_all.difference(
-                self._suppressed_callbacks):
+        # Work on copies of collections of connected functions.
+        # Take copies initially, to ensure that all functions connected when
+        # event triggered are called.
+        connected_all = self._connected_all.difference(
+            self._suppressed_callbacks)
+        connected_some = self._connected_some.items()
+        connected_map = self._connected_map.items()
+
+        # Loop over all collections
+        for function in connected_all:
             function(**kwargs)
-        for function, kwsl in self._connected_some.iteritems():
+        for function, kwsl in connected_some:
             if function not in self._suppressed_callbacks:
                 function(**{kw: kwargs.get(kw, None) for kw in kwsl})
-        for function, kwsd in self._connected_map.iteritems():
+        for function, kwsd in connected_map:
             if function not in self._suppressed_callbacks:
                 function(**{kwf: kwargs[kwt] for kwt, kwf in kwsd.iteritems()})
 
