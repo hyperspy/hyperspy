@@ -121,7 +121,7 @@ class EELSModel(Model1D):
     append.__doc__ = Model1D.append.__doc__
 
     def remove(self, component):
-        super(EELSModel, self).append(component)
+        super(EELSModel, self).remove(component)
         self._classify_components()
     remove.__doc__ = Model1D.remove.__doc__
 
