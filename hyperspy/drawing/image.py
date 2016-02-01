@@ -71,6 +71,7 @@ class ImagePlot(BlittedFigure):
     """
 
     def __init__(self):
+        super(ImagePlot, self).__init__()
         self.data_function = None
         self.pixel_units = None
         self.plot_ticks = False
@@ -353,11 +354,6 @@ class ImagePlot(BlittedFigure):
                            **new_args)
             self.figure.canvas.draw()
 
-    def _update(self):
-        # This "wrapper" because on_trait_change fiddles with the
-        # method arguments and auto_contrast does not work then
-        self.update()
-
     def adjust_contrast(self):
         ceditor = ImageContrastEditor(self)
         ceditor.edit_traits()
@@ -368,7 +364,10 @@ class ImagePlot(BlittedFigure):
                                        self.on_key_press)
         self.figure.canvas.draw()
         if self.axes_manager:
-            self.axes_manager.connect(self._update)
+            self.axes_manager.events.indices_changed.connect(self.update, [])
+            self.events.closed.connect(
+                lambda: self.axes_manager.events.indices_changed.disconnect(
+                    self.update), [])
 
     def on_key_press(self, event):
         if event.key == 'h':
@@ -411,16 +410,14 @@ class ImagePlot(BlittedFigure):
             optimize_for_oom(step_oom - i)
             i += 1
 
-    def disconnect(self):
-        if self.axes_manager:
-            self.axes_manager.disconnect(self._update)
-
     def close(self):
         for marker in self.ax_markers:
             marker.close()
-        self.disconnect()
         try:
             plt.close(self.figure)
+            self.events.closed.trigger(obj=self)
+            for f in self.events.closed.connected:
+                self.events.closed.disconnect(f)
         except:
             pass
         self.figure = None

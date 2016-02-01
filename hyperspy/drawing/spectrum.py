@@ -24,6 +24,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 from hyperspy import messages
 from hyperspy.drawing.figure import BlittedFigure
 from hyperspy.drawing import utils
+from hyperspy.events import Event, Events
 
 
 class SpectrumFigure(BlittedFigure):
@@ -32,6 +33,7 @@ class SpectrumFigure(BlittedFigure):
     """
 
     def __init__(self, title=""):
+        super(SpectrumFigure, self).__init__()
         self.figure = None
         self.ax = None
         self.right_ax = None
@@ -119,7 +121,10 @@ class SpectrumFigure(BlittedFigure):
             marker.plot()
         plt.xlim(np.min(x_axis_lower_lims), np.max(x_axis_upper_lims))
         # To be discussed
-        self.axes_manager.connect(self.update)
+        self.axes_manager.events.indices_changed.connect(self.update, [])
+        self.events.closed.connect(
+            lambda: self.axes_manager.events.indices_changed.disconnect(
+                self.update), [])
         if hasattr(self.figure, 'tight_layout'):
             try:
                 self.figure.tight_layout()
@@ -135,6 +140,9 @@ class SpectrumFigure(BlittedFigure):
             line.close()
         try:
             plt.close(self.figure)
+            self.events.closed.trigger(obj=self)
+            for f in self.events.closed.connected:
+                self.events.closed.disconnect(f)
         except:
             pass
         self.figure = None
@@ -177,6 +185,14 @@ class SpectrumLine(object):
     """
 
     def __init__(self):
+        self.events = Events()
+        self.events.closed = Event("""
+            Event that triggers when the line is closed.
+
+            Arguments:
+                obj:  SpectrumLine instance
+                    The instance that triggered the event.
+            """, arguments=["obj"])
         self.sf_lines = None
         self.ax = None
         # Data attributes
@@ -290,7 +306,10 @@ class SpectrumLine(object):
         self.line, = self.ax.plot(self.axis, data,
                                   **self.line_properties)
         self.line.set_animated(True)
-        self.axes_manager.connect(self.update)
+        self.axes_manager.events.indices_changed.connect(self.update, [])
+        self.events.closed.connect(
+            lambda: self.axes_manager.events.indices_changed.disconnect(
+                self.update), [])
         if not self.axes_manager or self.axes_manager.navigation_size == 0:
             self.plot_indices = False
         if self.plot_indices is True:
@@ -341,9 +360,11 @@ class SpectrumLine(object):
             self.ax.lines.remove(self.line)
         if self.text and self.text in self.ax.texts:
             self.ax.texts.remove(self.text)
-        self.axes_manager.disconnect(self.update)
         if self.sf_lines and self in self.sf_lines:
             self.sf_lines.remove(self)
+        self.events.closed.trigger(obj=self)
+        for f in self.events.closed.connected:
+            self.events.closed.disconnect(f)
         try:
             self.ax.figure.canvas.draw()
         except:

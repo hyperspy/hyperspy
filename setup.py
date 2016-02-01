@@ -17,7 +17,7 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from distutils.core import setup
+from setuptools import setup
 
 import distutils.dir_util
 
@@ -38,7 +38,9 @@ install_req = ['scipy',
                'numpy',
                'traits',
                'traitsui',
-               'sympy']
+               'sympy',
+               'setuptools',
+               ]
 
 
 def are_we_building4windows():
@@ -170,6 +172,9 @@ with update_version_when_dev() as version:
                   'hyperspy.external.astroML',
                   ],
         requires=install_req,
+        setup_requires=[
+            'setuptools'
+        ],
         scripts=scripts,
         package_data={
             'hyperspy':
