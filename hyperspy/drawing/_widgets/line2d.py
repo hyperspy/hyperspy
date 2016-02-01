@@ -97,8 +97,6 @@ class Line2DWidget(ResizableDraggableWidgetBase):
         self._mfunc = self.FUNC_NONE    # Mouse interaction function
         self._prev_pos = None
         self._orig_pos = None
-        self._width_indicators = []
-        self._indicators_on = False
         self.snap_all = False
 
         # Set default axes
@@ -186,7 +184,7 @@ class Line2DWidget(ResizableDraggableWidgetBase):
             self.patch[0].set_data(np.array(self._pos).T)
             wc = self._get_width_indicator_coords()
             for i in xrange(2):
-                self._width_indicators[i].set_data(wc[i].T)
+                self.patch[1 + i].set_data(wc[i].T)
             self.draw_patch()
 
     def _set_patch(self):
@@ -217,43 +215,7 @@ class Line2DWidget(ResizableDraggableWidgetBase):
                 lw=self.linewidth,
                 c=self.color,
                 picker=self.radius_move)
-            self._width_indicators.append(wi)
-        self.patch.extend(self._width_indicators)
-
-    def _set_width_indicators(self, value, ax):
-        """Turns the width indicators on/off, in much the same way that
-        _set_patch works.
-        """
-        if ax is not None:
-            if value:
-                for r in self._width_indicators:
-                    ax.add_artist(r)
-                    r.set_animated(hasattr(ax, 'hspy_fig'))
-            else:
-                for container in [
-                        ax.patches,
-                        ax.lines,
-                        ax.artists,
-                        ax.texts]:
-                    for r in self._width_indicators:
-                        if r in container:
-                            container.remove(r)
-            self._indicators_on = value
-            self.draw_patch()
-
-    def set_on(self, value):
-        """Same as ancestor, but also turns on/off width indicators.
-        """
-        if value is not self.is_on():
-            self._set_width_indicators(value, self.ax)
-        super(Line2DWidget, self).set_on(value)
-
-    def _add_patch_to(self, ax):
-        """Same as ancestor, but also adds width indicators if 'size' property
-        is greater than 4.
-        """
-        super(Line2DWidget, self)._add_patch_to(ax)
-        self._set_width_indicators(True, ax)
+            self.patch.append(wi)
 
     def _get_vertex(self, event):
         """Check bitfield on self.func, and return vertex index.
@@ -419,6 +381,6 @@ class Line2DWidget(ResizableDraggableWidgetBase):
         # Project onto normal axis (dot product onto normal)
         n = self._get_line_normal()
         dn = 2 * np.dot(n, dx)
-        if self._selected_artist is self._width_indicators[1]:
+        if self._selected_artist is self.patch[2]:
             dn *= -1
         self.size = np.abs(self._drag_store[1] + dn)
