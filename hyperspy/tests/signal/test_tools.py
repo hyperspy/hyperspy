@@ -573,13 +573,13 @@ class TestOutArg:
 
     @nt.raises(ValueError)
     def test_wrong_out_shape(self):
-        s= self.s
-        ss = s.sum() # Sum over navigation, data shape (6,)
+        s = self.s
+        ss = s.sum()  # Sum over navigation, data shape (6,)
         s.sum(axis=s.axes_manager._axes, out=ss)
 
     @nt.raises(ValueError)
     def test_wrong_out_shape_masked(self):
-        s= self.s
+        s = self.s
         s.data = np.ma.array(s.data)
-        ss = s.sum() # Sum over navigation, data shape (6,)
+        ss = s.sum()  # Sum over navigation, data shape (6,)
         s.sum(axis=s.axes_manager._axes, out=ss)
