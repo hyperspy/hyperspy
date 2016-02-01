@@ -82,9 +82,7 @@ class TestModelIndexing:
         for ic, c in enumerate(m):
             np.testing.assert_equal(
                 c._active_array,
-                self.model[ic]._active_array[
-                    :,
-                    0::2])
+                self.model[ic]._active_array[:, 0::2])
             for p_new, p_old in zip(c.parameters, self.model[ic].parameters):
                 assert_true((p_old.map[:, 0::2] == p_new.map).all())
 
