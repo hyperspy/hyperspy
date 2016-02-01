@@ -193,6 +193,7 @@ class ModifiableSpanSelector(matplotlib.widgets.SpanSelector):
         self._range = None
         self.step_ax = None
         self.bounds_check = False
+        self.buttonDown = False
         self.snap_size = False
         self.snap_position = False
         self.events = Events()
