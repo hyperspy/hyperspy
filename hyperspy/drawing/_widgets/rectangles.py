@@ -255,9 +255,8 @@ class RectangleWidget(SquareWidget, ResizersMixin):
 
     def _get_patch_xy(self):
         """Get xy value for Rectangle with position being top left. This value
-        deviates from the 'coordinates', as 'coordinates' correspond to the
-        center value of the pixel. Here, xy corresponds to the top left of
-        the pixel.
+        deviates from the 'position', as 'position' correspond to the center
+        value of the pixel. Here, xy corresponds to the top left of the pixel.
         """
         offset = [a.scale for a in self.axes]
         return self._pos - 0.5 * np.array(offset)
