@@ -446,6 +446,12 @@ class TestOutArg:
         self._run_single(self.s.sum, self.s.get_current_signal(),
                          dict(axis=0))
 
+    def test_sum_return_1d_signal(self):
+        self._run_single(self.s.sum, self.s, dict(
+            axis=self.s.axes_manager._axes))
+        self._run_single(self.s.sum, self.s.get_current_signal(),
+                         dict(axis=0))
+
     def test_mean(self):
         self._run_single(self.s.mean, self.s, dict(axis=('x', 'z')))
 
@@ -564,3 +570,16 @@ class TestOutArg:
         s.data = np.ones_like(s.data)
         s.data = np.ma.masked_array(s.data, mask=mask)
         self._run_single(s.sum, s, dict(axis=('x', 'z')))
+
+    @nt.raises(ValueError)
+    def test_wrong_out_shape(self):
+        s= self.s
+        ss = s.sum() # Sum over navigation, data shape (6,)
+        s.sum(axis=s.axes_manager._axes, out=ss)
+
+    @nt.raises(ValueError)
+    def test_wrong_out_shape_masked(self):
+        s= self.s
+        s.data = np.ma.array(s.data)
+        ss = s.sum() # Sum over navigation, data shape (6,)
+        s.sum(axis=s.axes_manager._axes, out=ss)

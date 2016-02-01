@@ -3872,7 +3872,7 @@ class Signal(FancySlicing,
                 name="Scalar",
                 navigate=False,)
 
-    def _ma_workaround(self, s, function, axes, ar_axes, out, np_out):
+    def _ma_workaround(self, s, function, axes, ar_axes, out):
         # TODO: Remove if and when numpy.ma accepts tuple `axis`
 
         # Basically perform unfolding, but only on data. We don't care about
@@ -3885,10 +3885,14 @@ class Signal(FancySlicing,
         data = self.data.reshape(new_shape).squeeze()
 
         if out:
-            if np_out:
-                function(data, axis=ar_axes[0], out=out.data,)
+            data = np.atleast_1d(function(data, axis=ar_axes[0],))
+            if data.shape == out.data.shape:
+                out.data[:] = data
             else:
-                out.data[:] = function(data, axis=ar_axes[0],)
+                raise ValueError(
+                    "The output shape %s does not match  the shape of "
+                    "`out` %s" % (data.shape, out.data.shape))
+
         else:
             s.data = function(data, axis=ar_axes[0],)
             s._remove_axis([ax.index_in_axes_manager for ax in axes])
@@ -3899,6 +3903,8 @@ class Signal(FancySlicing,
         axes = self.axes_manager[axes]
         if not np.iterable(axes):
             axes = (axes,)
+        # Use out argument in numpy function when available for operations that
+        # do not return scalars in numpy.
         np_out = not len(self.axes_manager._axes) == len(axes)
         ar_axes = tuple(ax.index_in_array for ax in axes)
         if len(ar_axes) == 1:
@@ -3908,12 +3914,18 @@ class Signal(FancySlicing,
 
         if np.ma.is_masked(self.data):
             return self._ma_workaround(s=s, function=function, axes=axes,
-                                       ar_axes=ar_axes, out=out, np_out=np_out)
+                                       ar_axes=ar_axes, out=out)
         if out:
             if np_out:
                 function(self.data, axis=ar_axes, out=out.data,)
             else:
-                out.data[:] = function(self.data, axis=ar_axes,)
+                data = np.atleast_1d(function(self.data, axis=ar_axes,))
+                if data.shape == out.data.shape:
+                    out.data[:] = data
+                else:
+                    raise ValueError(
+                        "The output shape %s does not match  the shape of "
+                        "`out` %s" % (data.shape, out.data.shape))
         else:
             s.data = np.atleast_1d(
                 function(self.data, axis=ar_axes,))
