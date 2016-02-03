@@ -962,7 +962,7 @@ Interactive operations
 
 The function :py:func:`~.interactive.interactive` ease the task of defining
 operations that are automatically updated when an event is triggered. By
-default is recomputes the operation when data or the axes of the original
+default it recomputes the operation when data or the axes of the original
 signal changes.
 
 .. code-block:: python
