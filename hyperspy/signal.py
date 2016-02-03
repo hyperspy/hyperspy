@@ -77,10 +77,10 @@ from hyperspy.external.astroML.histtools import histogram
 from hyperspy.drawing.utils import animate_legend
 from hyperspy.misc.slicing import SpecialSlicers, FancySlicing
 from hyperspy.misc.utils import slugify
-from hyperspy.events import Events, Event
-from hyperspy.interactive import interactive
 from hyperspy.docstrings.signal import (
     ONE_AXIS_PARAMETER, MANY_AXIS_PARAMETER, OUT_ARG)
+from hyperspy.events import Events, Event
+from hyperspy.interactive import interactive
 
 
 class ModelManager(object):
@@ -3270,18 +3270,18 @@ class Signal(FancySlicing,
                     navigator = interactive(
                         self.sum,
                         self.events.data_changed,
-                        self.axes_manager.events.transformed,
+                        self.axes_manager.events.any_axis_changed,
                         self.axes_manager.signal_axes)
                 if navigator.axes_manager.navigation_dimension == 1:
                     navigator = interactive(
                         navigator.as_spectrum,
                         navigator.events.data_changed,
-                        navigator.axes_manager.events.transformed, 0)
+                        navigator.axes_manager.events.any_axis_changed, 0)
                 else:
                     navigator = interactive(
                         navigator.as_image,
                         navigator.events.data_changed,
-                        navigator.axes_manager.events.transformed,
+                        navigator.axes_manager.events.any_axis_changed,
                         (0, 1))
             else:
                 navigator = None

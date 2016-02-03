@@ -921,6 +921,7 @@ for example:
 Speeding up operations
 ----------------------
 
+.. versionadded:: 0.9
 
 Reusing a Signal for output
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -951,3 +952,48 @@ operation.
     >>> s.inav.__getitem__(slice(None, 5), out=s_roi)
     >>> s_roi
     <Spectrum, title: , dimensions: (|5)>
+
+
+Interactive operations
+----------------------
+
+.. versionadded:: 0.9
+
+
+The function :py:func:`~.interactive.interactive` ease the task of defining
+operations that are automatically updated when an event is triggered. By
+default it recomputes the operation when data or the axes of the original
+signal changes.
+
+.. code-block:: python
+
+    >>> s = hs.signals.Spectrum(np.arange(10.))
+    >>> ssum = hs.interactive(s.sum, axis=0)
+    >>> ssum.data
+    array(45.0)
+    >>> s.data /= 10
+    >>> s.events.data_changed.trigger()
+    >>> ssum.data
+    4.5
+
+The interactive opearations can be chained.
+
+.. code-block:: python
+
+    >>> s = hs.signals.Spectrum(np.arange(2 * 3 * 4).reshape((2, 3, 4)))
+    >>> ssum = hs.interactive(s.sum, axis=0)
+    >>> ssum_mean = hs.interactive(ssum.mean, axis=0)
+    >>> ssum_mean.data
+    array([ 30.,  33.,  36.,  39.])
+    >>> s.data
+    array([[[ 0,  1,  2,  3],
+            [ 4,  5,  6,  7],
+            [ 8,  9, 10, 11]],
+
+           [[12, 13, 14, 15],
+            [16, 17, 18, 19],
+            [20, 21, 22, 23]]])
+    >>> s.data *= 10
+    >>> s.events.data_changed.trigger(obj=s)
+    >>> ssum_mean.data
+    array([ 300.,  330.,  360.,  390.])
