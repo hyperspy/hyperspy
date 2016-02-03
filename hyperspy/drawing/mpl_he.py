@@ -119,7 +119,8 @@ class MPL_HyperExplorer(object):
             self.navigator_plot = imf
 
     def close_navigator_plot(self):
-        self.navigator_plot.close()
+        if self.navigator_plot:
+            self.navigator_plot.close()
 
     def is_active(self):
         return True if self.signal_plot.figure else False
