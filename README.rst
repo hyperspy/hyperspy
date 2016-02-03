@@ -5,7 +5,7 @@
 .. |Travis| image:: https://api.travis-ci.org/hyperspy/hyperspy.png?branch=0.8.x
 .. _Travis: https://travis-ci.org/hyperspy/hyperspy
 
-.. |AppVeyor| image:: https://ci.appveyor.com/api/projects/status/github/hyperspy/hyperspy?svg=true
+.. |AppVeyor| image:: https://ci.appveyor.com/api/projects/status/github/hyperspy/hyperspy/branch/0.8.x?svg=true
 .. _AppVeyor: https://ci.appveyor.com/project/hyperspy/hyperspy
 
 .. |Coveralls| image:: https://coveralls.io/repos/hyperspy/hyperspy/badge.svg
@@ -32,7 +32,7 @@ of the dataset.
 
 Its modular structure makes it easy to add features to analyze different kinds
 of signals. Currently there are specialized tools to analyze electron
-energy-loss spectroscopy (EELS) and energy dispersive X-rays (EDX) data. 
+energy-loss spectroscopy (EELS) and energy dispersive X-rays (EDX) data.
 
 HyperSpy is released under the GPL v3 license.
 
