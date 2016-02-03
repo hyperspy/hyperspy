@@ -59,8 +59,7 @@ matrix:
     - PYTHON_VERSION: "3.5.x"
 
 cache:
-  - '%PYTHON%\pkgs'
-  - '%PYTHON%\envs'
+  - '%PYTHON%\pkgs\*.tar.bz2'
 
 init:
   - "ECHO %PYTHON% %PYTHON_VERSION% %PYTHON_ARCH%"
