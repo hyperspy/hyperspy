@@ -42,7 +42,8 @@ from hyperspy.misc.export_dictionary import (export_to_dictionary,
                                              load_from_dictionary,
                                              parse_flag_string,
                                              reconstruct_object)
-from hyperspy.misc.utils import slugify, shorten_name, stash_active_state, dummy_context_manager
+from hyperspy.misc.utils import (slugify, shorten_name, stash_active_state,
+                                 dummy_context_manager)
 from hyperspy.misc.slicing import copy_slice_from_whitelist
 
 
@@ -319,11 +320,7 @@ class BaseModel(list):
                                          valid_variable_name=True), thing)
         if self._plot_active is True:
             self._connect_parameters2update_plot(components=[thing])
-        if self._plot_components:
-            self._plot_component(thing)
-        if self._adjust_position_all is not None:
-            self._make_position_adjuster(thing, self._adjust_position_all[0],
-                                         self._adjust_position_all[1])
+        self.update_plot()
 
     def extend(self, iterable):
         for object in iterable:
@@ -358,19 +355,6 @@ class BaseModel(list):
 
         """
         thing = self._get_component(thing)
-        for pw in self._position_widgets:
-            if hasattr(pw, 'component') and pw.component is thing:
-                pw.component._position.twin = None
-                del pw.component
-                pw.close()
-                del pw
-        if hasattr(thing, '_model_plot_line'):
-            line = thing._model_plot_line
-            line.close()
-            del line
-            idx = self.index(thing)
-            self.signal._plot.signal_plot.ax_lines.remove(
-                self.signal._plot.signal_plot.ax_lines[2 + idx])
         list.remove(self, thing)
         thing.model = None
         if self._plot_active:

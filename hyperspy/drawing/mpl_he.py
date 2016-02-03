@@ -130,6 +130,7 @@ class MPL_HyperExplorer(object):
             if pointer is not None:
                 self.pointer = pointer(self.axes_manager)
                 self.pointer.color = 'red'
+                self.pointer.connect_navigate()
             self.plot_navigator()
         self.plot_signal(**kwargs)
 
@@ -143,11 +144,11 @@ class MPL_HyperExplorer(object):
 
         if nav_dim == 2:  # It is an image
             if self.axes_manager.navigation_dimension > 1:
-                Pointer = widgets.DraggableSquare
+                Pointer = widgets.SquareWidget
             else:  # It is the image of a "spectrum stack"
-                Pointer = widgets.DraggableHorizontalLine
+                Pointer = widgets.HorizontalLineWidget
         elif nav_dim == 1:  # It is a spectrum
-            Pointer = widgets.DraggableVerticalLine
+            Pointer = widgets.VerticalLineWidget
         else:
             Pointer = None
         self._pointer_nav_dim = nav_dim

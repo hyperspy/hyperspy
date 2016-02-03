@@ -31,10 +31,9 @@ from hyperspy.axes import generate_axis
 from hyperspy.exceptions import WrongObjectError
 from hyperspy.decorators import interactive_range_selector
 from hyperspy.axes import AxesManager
-from hyperspy.drawing.widgets import (DraggableVerticalLine,
-                                      DraggableLabel)
+from hyperspy.drawing.widgets import VerticalLineWidget, LabelWidget
 from hyperspy.gui.tools import ComponentFit
-from hyperspy.events import Events, EventSupressor
+from hyperspy.events import EventSupressor
 
 
 class Model1D(BaseModel):
@@ -168,7 +167,7 @@ class Model1D(BaseModel):
         self.signal = self.spectrum
         self.axes_manager = self.signal.axes_manager
         self._plot = None
-        self._position_widgets = []
+        self._position_widgets = {}
         self._adjust_position_all = None
         self._plot_components = False
         self._suspend_update = False
@@ -181,12 +180,12 @@ class Model1D(BaseModel):
         self.chisq = spectrum._get_navigation_signal()
         self.chisq.change_dtype("float")
         self.chisq.data.fill(np.nan)
-        self.chisq.metadata.General.title = self.signal.metadata.General.title + \
-            ' chi-squared'
+        self.chisq.metadata.General.title = (
+            self.signal.metadata.General.title + ' chi-squared')
         self.dof = self.chisq._deepcopy_with_new_data(
             np.zeros_like(self.chisq.data, dtype='int'))
-        self.dof.metadata.General.title = self.signal.metadata.General.title + \
-            ' degrees of freedom'
+        self.dof.metadata.General.title = (
+            self.signal.metadata.General.title + ' degrees of freedom')
         self.free_parameters_boundaries = None
         self._low_loss = None
         self.convolved = False
@@ -254,7 +253,23 @@ class Model1D(BaseModel):
         self.convolution_axis = generate_axis(self.axis.offset, step,
                                               dimension, knot_position)
 
+    def append(self, thing):
+        super(Model1D, self).append(thing)
+        if self._plot_components:
+            self._plot_component(thing)
+        if self._adjust_position_all:
+            self._make_position_adjuster(thing, self._adjust_position_all[0],
+                                         self._adjust_position_all[1])
+
     def remove(self, thing):
+        thing = self._get_component(thing)
+        parameter = thing._position
+        if parameter in self._position_widgets:
+            for pw in reversed(self._position_widgets[parameter]):
+                pw.close()
+        if hasattr(thing, '_model_plot_line'):
+            line = thing._model_plot_line
+            line.close()
         super(Model1D, self).remove(thing)
         self._disconnect_parameters2update_plot([thing])
 
@@ -613,6 +628,11 @@ class Model1D(BaseModel):
         self._connect_parameters2update_plot(self)
         if plot_components is True:
             self.enable_plot_components()
+        else:
+            # If we were plotted before, make sure we reset state here
+            self.disable_plot_components()
+        # If we were plotted before, make sure we reset state here
+        self.disable_adjust_position()
 
     @staticmethod
     def _connect_component_line(component):
@@ -732,46 +752,56 @@ class Model1D(BaseModel):
             self._make_position_adjuster(component, fix_them, show_label)
 
     def _make_position_adjuster(self, component, fix_it, show_label):
-        if (component._position is not None and
-                not component._position.twin):
-            set_value = component._position._set_value
-            get_value = component._position._get_value
-        else:
+        if (component._position is None or component._position.twin):
             return
         # Create an AxesManager for the widget
-        axis_dict = self.axes_manager.signal_axes[0].get_axis_dictionary()
-        am = AxesManager([axis_dict, ])
-        am._axes[0].navigate = True
-        try:
-            am._axes[0].value = get_value()
-        except TraitError:
-            # The value is outside of the axis range
-            return
+        axis = self.axes_manager.signal_axes[0]
         # Create the vertical line and labels
+        widgets = [VerticalLineWidget(self.axes_manager)]
         if show_label:
-            self._position_widgets.extend((
-                DraggableVerticalLine(am),
-                DraggableLabel(am),))
-            w = self._position_widgets[-1]
-            w.string = component._get_short_description().replace(
+            label = LabelWidget(self.axes_manager)
+            label.string = component._get_short_description().replace(
                 ' component', '')
+            widgets.append(label)
+
+        self._position_widgets[component._position] = widgets
+        for w in widgets:
+            # Setup widget
+            w.axes = (axis,)
+            w.snap_position = False
+            w.position = (component._position.value,)
             w.set_mpl_ax(self._plot.signal_plot.ax)
-            self._position_widgets[-2].set_mpl_ax(
-                self._plot.signal_plot.ax)
-        else:
-            self._position_widgets.extend((
-                DraggableVerticalLine(am),))
-            self._position_widgets[-1].set_mpl_ax(
-                self._plot.signal_plot.ax)
-        # Create widget -> parameter connection
-        am._axes[0].continuous_value = True
-        am._axes[0].events.value_changed.connect(set_value, ["value"])
-        axis = am._axes[0]
-        component._position.events.value_changed.connect(
-            axis._set_value, ["value"])
-        self._position_widgets[-1].events.closed.connect(
-            partial(component._position.events.value_changed.disconnect,
-                    axis._set_value), [])
+            # Create widget -> parameter connection
+            w.events.moved.connect(self._on_widget_moved, {'obj': 'widget'})
+            # Create parameter -> widget connection
+            component._position.events.value_changed.connect(
+                w._set_position, dict(value='position'))
+            # Map relation for close event
+            w.events.closed.connect(self._on_position_widget_close,
+                                    {'obj': 'widget'})
+
+    def _reverse_lookup_position_widget(self, widget):
+        for parameter, widgets in self._position_widgets.iteritems():
+            if widget in widgets:
+                return parameter
+        raise KeyError()
+
+    def _on_widget_moved(self, widget):
+        parameter = self._reverse_lookup_position_widget(widget)
+        es = EventSupressor()
+        for w in self._position_widgets[parameter]:
+            es.add((w.events.moved, w._set_position))
+        with es.suppress():
+            parameter.value = widget.position[0]
+
+    def _on_position_widget_close(self, widget):
+        widget.events.closed.disconnect(self._on_position_widget_close)
+        parameter = self._reverse_lookup_position_widget(widget)
+        self._position_widgets[parameter].remove(widget)
+        if len(self._position_widgets[parameter]) == 0:
+            self._position_widgets.pop(parameter)
+        parameter.events.value_changed.disconnect(widget._set_position)
+        widget.events.moved.disconnect(self._on_widget_moved)
 
     def disable_adjust_position(self):
         """Disables the interactive adjust position feature
@@ -782,9 +812,11 @@ class Model1D(BaseModel):
 
         """
         self._adjust_position_all = False
-        while self._position_widgets:
-            pw = self._position_widgets.pop()
-            pw.close()
+        for pws in self._position_widgets.values():
+            # Iteration works on a copied collection, so changes during
+            # iteration should be ok
+            for pw in reversed(pws):    # pws is reference, so work in reverse
+                pw.close()
 
     def fit_component(
             self,

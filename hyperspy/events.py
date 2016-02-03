@@ -306,8 +306,8 @@ class Event(object):
         if not callable(function):
             raise TypeError("Only callables can be registered")
         if function in self.connected:
-            raise ValueError("Function %s already connected to this event." %
-                             function)
+            raise ValueError("Function %s already connected to %s." %
+                             (function, self))
         if kwargs == 'auto':
             spec = inspect.getargspec(function)
             if spec.varargs and not spec.keywords:
@@ -357,7 +357,8 @@ class Event(object):
         elif function in self._connected_map:
             self._connected_map.pop(function)
         else:
-            raise ValueError("The %s function is not connected." % function)
+            raise ValueError("The %s function is not connected to %s." %
+                             (function, self))
 
     def trigger(self, **kwargs):
         """
@@ -395,6 +396,17 @@ class Event(object):
         dc = type(self)()
         memo[id(self)] = dc
         return dc
+
+    def __str__(self):
+        if self.__doc__:
+            edoc = inspect.getdoc(self) or ''
+            doclines = edoc.splitlines()
+            e_short = doclines[0] if len(doclines) > 0 else edoc
+            text = ("<hyperspy.events.Event: " + e_short + ": " +
+                    str(self.connected) + ">")
+        else:
+            text = self.__repr__()
+        return text.encode('utf8')
 
     def __repr__(self):
         text = "<hyperspy.events.Event: " + repr(self.connected) + ">"
