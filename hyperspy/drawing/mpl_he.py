@@ -154,6 +154,9 @@ class MPL_HyperExplorer(object):
         self._pointer_nav_dim = nav_dim
         return Pointer
 
+    def _on_navigator_plot_closing(self):
+        self.navigator_plot = None
+
     def close(self):
         self.signal_plot.close()
         self.navigator_plot.close()

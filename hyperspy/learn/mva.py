@@ -799,7 +799,7 @@ class MVA():
         try:
             sc = self.deepcopy()
             sc.data = a.T.reshape(self.data.shape)
-            sc.metadata.General.title += signal_name
+            sc.metadata.General.title += ' ' + signal_name
             if target.mean is not None:
                 sc.data += target.mean
         finally:
