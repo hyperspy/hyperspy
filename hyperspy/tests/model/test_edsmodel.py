@@ -26,7 +26,7 @@ class TestlineFit:
         m = s.create_model()
         m.fit()
         nt.assert_true(np.allclose([i.data for i in
-                                   m.get_lines_intensity()],
+                                    m.get_lines_intensity()],
                                    [[0.5], [0.2], [0.3]], atol=10 - 4))
 
     def test_calibrate_energy_resolution(self):
@@ -92,7 +92,7 @@ class TestlineFit:
                                    xray_lines=['Fe_Ka'], bound=100)
 
         nt.assert_true(np.allclose(0.0347, m['Fe_Kb'].A.value,
-                       atol=1e-3))
+                                   atol=1e-3))
 
     def test_calibrate_xray_width(self):
         s = self.s
