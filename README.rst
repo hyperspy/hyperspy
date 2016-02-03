@@ -5,8 +5,8 @@
 .. |Travis| image:: https://api.travis-ci.org/hyperspy/hyperspy.png?branch=0.8.x
 .. _Travis: https://travis-ci.org/hyperspy/hyperspy
 
-.. |AppVeyor| image:: https://ci.appveyor.com/api/projects/status/github/hyperspy/hyperspy/branch/0.8.x?svg=true
-.. _AppVeyor: https://ci.appveyor.com/project/hyperspy/hyperspy
+.. |AppVeyor| image:: https://ci.appveyor.com/api/projects/status/github/hyperspy/hyperspy?svg=true&branch=0.8.x
+.. _AppVeyor: https://ci.appveyor.com/project/hyperspy/hyperspy/branch/0.8.x
 
 .. |Coveralls| image:: https://coveralls.io/repos/hyperspy/hyperspy/badge.svg
 .. _Coveralls: https://coveralls.io/r/hyperspy/hyperspy
