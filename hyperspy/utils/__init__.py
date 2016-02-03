@@ -24,3 +24,4 @@ import hyperspy.utils.plot
 import hyperspy.datasets.example_signals
 import hyperspy.utils.model
 from hyperspy.misc.utils import stack
+from hyperspy.interactive import interactive

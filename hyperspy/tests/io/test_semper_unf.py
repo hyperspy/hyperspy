@@ -21,10 +21,12 @@ my_path = os.path.dirname(__file__)
 data_signal = np.arange(27, dtype=np.float32).reshape((3, 3, 3)) / 2.
 data_image = np.arange(16, dtype=np.float32).reshape((4, 4)) / 2.
 data_spectrum = np.arange(10, dtype=np.float32) / 2.
-data_image_byte = np.arange(25, dtype=np.byte).reshape((5, 5))  # Odd dim. tests strange read/write
+data_image_byte = np.arange(
+    25, dtype=np.byte).reshape(
+        (5, 5))  # Odd dim. tests strange read/write
 data_image_int16 = np.arange(16, dtype=np.int16).reshape((4, 4))
 data_image_int32 = np.arange(16, dtype=np.int32).reshape((4, 4))
-data_image_complex = (data_image_int32 + 1j*data_image).astype(np.complex64)
+data_image_complex = (data_image_int32 + 1j * data_image).astype(np.complex64)
 test_title = 'This is a test!'
 
 

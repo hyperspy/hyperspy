@@ -110,8 +110,8 @@ def get_default_header(endianess='<'):
     header['UNKNOWN1'][0] = 131141          # Very typical value (always?)
     header['Acquisition_time'][0] = _to_serial_date(
         datetime.fromtimestamp(86400, tz.tzutc()))
-        # Default to UNIX epoch + 1 day
-        # Have to add 1 day, as dateutil's timezones dont work before epoch
+    # Default to UNIX epoch + 1 day
+    # Have to add 1 day, as dateutil's timezones dont work before epoch
     return header
 
 
@@ -276,7 +276,7 @@ def file_writer(filename, signal, **kwds):
         # Write full data stack:
         # We need to pad each image with magic 'AA55', then a u32 serial
         dp_head = np.zeros((1,), dtype=[('MAGIC', endianess + 'u2'),
-                           ('ID', endianess + 'u4')])
+                                        ('ID', endianess + 'u4')])
         dp_head['MAGIC'] = 0x55AA
         # Write by loop:
         for img in signal._iterate_signal():
