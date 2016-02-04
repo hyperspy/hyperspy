@@ -3932,6 +3932,8 @@ class Signal(FancySlicing,
 
         # Basically perform unfolding, but only on data. We don't care about
         # the axes since the function will consume it/them.
+        if not np.iterable(ar_axes):
+            ar_axes = (ar_axes,)
         ar_axes = sorted(ar_axes)
         new_shape = list(self.data.shape)
         for index in ar_axes[1:]:
