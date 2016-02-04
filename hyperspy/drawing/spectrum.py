@@ -60,7 +60,7 @@ class SpectrumFigure(BlittedFigure):
         self.figure = utils.create_figure(
             window_title="Figure " + self.title if self.title
             else None)
-        utils.on_figure_window_close(self.figure, self.close)
+        utils.on_figure_window_close(self.figure, self._on_close)
         self.figure.canvas.mpl_connect('draw_event', self._on_draw)
 
     def create_axis(self):
@@ -133,19 +133,18 @@ class SpectrumFigure(BlittedFigure):
                 # complains
                 pass
 
-    def close(self):
+    def _on_close(self):
         for marker in self.ax_markers:
             marker.close()
         for line in self.ax_lines + self.right_ax_lines:
             line.close()
-        try:
-            plt.close(self.figure)
-            self.events.closed.trigger(obj=self)
-            for f in self.events.closed.connected:
-                self.events.closed.disconnect(f)
-        except:
-            pass
+        self.events.closed.trigger(obj=self)
+        for f in self.events.closed.connected:
+            self.events.closed.disconnect(f)
         self.figure = None
+
+    def close(self):
+        plt.close(self.figure)
 
     def update(self):
         for marker in self.ax_markers:
@@ -253,12 +252,10 @@ class SpectrumLine(object):
         elif value == 'line':
             lp['linestyle'] = '-'
             lp['marker'] = "None"
-            lp['markersize'] = None
             lp['drawstyle'] = "default"
         elif value == 'step':
             lp['drawstyle'] = 'steps-mid'
             lp['marker'] = "None"
-            lp['markersize'] = None
         else:
             raise ValueError(
                 "`type` must be one of "

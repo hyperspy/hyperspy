@@ -168,8 +168,8 @@ class BaseROI(t.HasTraits):
         return roi
 
     def _parse_axes(self, axes, axes_manager):
-        """Utility function to parse the 'axes' argument to a tuple of
-        DataAxis, and find the matplotlib Axes that contains it.
+        """Utility function to parse the 'axes' argument to a list of
+        DataAxis.
 
         Arguments
         ---------
@@ -189,7 +189,7 @@ class BaseROI(t.HasTraits):
 
         Returns
         -------
-        (tuple(<DataAxis>), matplotlib Axes)
+        [<DataAxis>]
         """
         nd = self.ndim
         axes_out = []
@@ -264,7 +264,7 @@ class BaseInteractiveROI(BaseROI):
                 self._update_widgets()
             self.events.changed.trigger(self)
 
-    def _update_widgets(self, exclude=set()):
+    def _update_widgets(self, exclude=None):
         """Internal function for updating the associated widgets to the
         geometry contained in the ROI.
 
@@ -276,6 +276,8 @@ class BaseInteractiveROI(BaseROI):
             excluding the one that was the source for the change, should be
             updated.
         """
+        if exclude is None:
+            exclude = set()
         if not isinstance(exclude, set):
             exclude = set(exclude)
         for w in self.widgets - exclude:
@@ -392,9 +394,8 @@ class BaseInteractiveROI(BaseROI):
                 self.signal_map[signal][1] == axes:
             self.remove_widget(signal)
 
-        if axes is not None:
-            # Set DataAxes
-            widget.axes = axes
+        # Set DataAxes
+        widget.axes = axes
         with widget.events.changed.suppress_callback(self._on_widget_change):
             self._apply_roi2widget(widget)
         if widget.ax is None:
@@ -415,7 +416,7 @@ class BaseInteractiveROI(BaseROI):
         widget.events.changed.disconnect(self._on_widget_change)
         widget.close()
         for signal, w in self.signal_map.iteritems():
-            if w == widget:
+            if w[0] == widget:
                 self.signal_map.pop(signal)
                 break
 
@@ -484,7 +485,7 @@ class Point1DROI(BasePointROI):
             raise ValueError("Could not find valid widget type")
 
     def __repr__(self):
-        return "%s(value=%f)" % (
+        return "%s(value=%g)" % (
             self.__class__.__name__,
             self.value)
 
@@ -521,10 +522,10 @@ class Point2DROI(BasePointROI):
         widget.position = (self.x, self.y)
 
     def _get_widget_type(self, axes, signal):
-        return widgets.DraggableSquare
+        return widgets.SquareWidget
 
     def __repr__(self):
-        return "%s(x=%f, y=%f)" % (
+        return "%s(x=%g, y=%g)" % (
             self.__class__.__name__,
             self.x, self.y)
 
@@ -575,7 +576,7 @@ class SpanROI(BaseInteractiveROI):
         return widgets.RangeWidget
 
     def __repr__(self):
-        return "%s(left=%f, right=%f)" % (
+        return "%s(left=%g, right=%g)" % (
             self.__class__.__name__,
             self.left,
             self.right)
@@ -644,7 +645,7 @@ class RectangularROI(BaseInteractiveROI):
         return widgets.RectangleWidget
 
     def __repr__(self):
-        return "%s(left=%f, top=%f, right=%f, bottom=%f)" % (
+        return "%s(left=%g, top=%g, right=%g, bottom=%g)" % (
             self.__class__.__name__,
             self.left,
             self.top,
@@ -788,13 +789,13 @@ class CircleROI(BaseInteractiveROI):
 
     def __repr__(self):
         if self.r_inner == t.Undefined:
-            return "%s(cx=%f, cy=%f, r=%f)" % (
+            return "%s(cx=%g, cy=%g, r=%g" % (
                 self.__class__.__name__,
                 self.cx,
                 self.cy,
                 self.r)
         else:
-            return "%s(cx=%f, cy=%f, r=%f, r_inner=%f)" % (
+            return "%s(cx=%g, cy=%g, r=%g, r_inner=%g)" % (
                 self.__class__.__name__,
                 self.cx,
                 self.cy,
@@ -1014,8 +1015,8 @@ class Line2DROI(BaseInteractiveROI):
                                          linewidth=linewidth,
                                          order=order)
         length = np.linalg.norm(np.diff(
-                np.array(((self.x1, self.y1), (self.x2, self.y2))), axis=0),
-                axis=1)[0]
+            np.array(((self.x1, self.y1), (self.x2, self.y2))), axis=0),
+            axis=1)[0]
         if out is None:
             axm = signal.axes_manager.deepcopy()
             idx = []
@@ -1024,7 +1025,7 @@ class Line2DROI(BaseInteractiveROI):
             for i in reversed(sorted(idx)):  # Remove in reversed order
                 axm.remove(i)
             axis = DataAxis(len(profile),
-                            scale=length/len(profile),
+                            scale=length / len(profile),
                             units=axes[0].units,
                             navigate=axes[0].navigate)
             axis.axes_manager = axm
@@ -1049,7 +1050,7 @@ class Line2DROI(BaseInteractiveROI):
             out.events.data_changed.trigger(out)
 
     def __repr__(self):
-        return "%s(x1=%f, y1=%f, x2=%f, y2=%f, linewidth=%f)" % (
+        return "%s(x1=%g, y1=%g, x2=%g, y2=%g, linewidth=%g)" % (
             self.__class__.__name__,
             self.x1,
             self.y1,
