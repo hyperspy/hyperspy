@@ -393,8 +393,7 @@ def get_axes_from_position(header, data):
             })
             array_shape.append(axes[-1]["size"])
         else:
-            raise(IOError, "Unsupported FEI file. Please report this error"
-                  "to the HyperSpy developers.")
+            raise IOError
     else:
         array_shape = [header["ValidNumberElements"]]
         axes.append({
