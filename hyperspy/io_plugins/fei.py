@@ -166,7 +166,7 @@ def get_data_tag_dtype_list(data_type_id):
             ("PositionX", "<f8"),
             ("PositionY", "<f8"),
         ]
-    else:  # elif data_type_id == ?????
+    else:  # elif data_type_id == ?????, 16722?
         header = [
             ("TagTypeID", ("<u2")),
             # Not in Boothroyd description. = 0. Not tested.
@@ -316,6 +316,98 @@ def get_xml_info_from_emi(emi_file):
     return objects[:-1]
 
 
+def get_calibration_from_position(position):
+    offset = position[0]
+    for i, x in enumerate(position):
+        if x != position[0]:
+            break
+    if i == len(position) - 1:
+        # No scanning over this axis
+        scale = 0
+        size = 0
+    else:
+        scale = x - position[0]
+        if i == 1:  # Rastering over this dimension first
+            for j, x in enumerate(position[1:]):
+                if x == position[0]:
+                    break
+            size = j + 1
+        else:  # Second rastering dimension
+            size = len(position) / i
+    return {"size": size, "scale": scale, "offset": offset}
+
+
+def get_axes_from_position(header, data):
+    array_shape = []
+    axes = []
+    array_size = int(header["ValidNumberElements"])
+    if data["TagTypeID"][0] == 16706:
+        xcal = get_calibration_from_position(data["PositionX"])
+        ycal = get_calibration_from_position(data["PositionY"])
+        if xcal["size"] == 0 and ycal["size"] != 0:
+            # Vertical line scan
+            axes.append({
+                'name': "x",
+                'units': "meters",
+                'index_in_array': 0,
+            })
+            axes[-1].update(xcal)
+            array_shape.append(axes[-1]["size"])
+
+        elif xcal["size"] != 0 and ycal["size"] == 0:
+            # Horizontal line scan
+            axes.append({
+                'name': "y",
+                'units': "meters",
+                'index_in_array': 0,
+            })
+            axes[-1].update(ycal)
+            array_shape.append(axes[-1]["size"])
+
+        elif xcal["size"] * ycal["size"] == array_size:
+            # Image
+            axes.append({
+                'name': "y",
+                'units': "meters",
+                'index_in_array': 0,
+            })
+            axes[-1].update(ycal)
+            array_shape.append(axes[-1]["size"])
+            axes.append({
+                'name': "x",
+                'units': "meters",
+                'index_in_array': 1,
+            })
+            axes[-1].update(xcal)
+            array_shape.append(axes[-1]["size"])
+        elif xcal["size"] == ycal["size"] == array_size:
+            # Oblique line scan
+            scale = np.sqrt(xcal["scale"] ** 2 + ycal["scale"] ** 2)
+            axes.append({
+                'name': "x",
+                'units': "meters",
+                'index_in_array': 0,
+                "offset": 0,
+                "scale": scale,
+                "size": xcal["size"]
+            })
+            array_shape.append(axes[-1]["size"])
+        else:
+            raise(IOError, "Unsupported FEI file. Please report this error"
+                  "to the HyperSpy developers.")
+    else:
+        array_shape = [header["ValidNumberElements"]]
+        axes.append({
+            'name': "Unknown dimension",
+            'offset': 0,
+            'scale': 1,
+            'units': "",
+            'size': header["ValidNumberElements"],
+            'index_in_array': 0
+        })
+    return array_shape, axes
+
+
 def ser_reader(filename, objects=None, verbose=False, *args, **kwds):
     """Reads the information from the file and returns it in the HyperSpy
     required format.
@@ -324,23 +416,16 @@ def ser_reader(filename, objects=None, verbose=False, *args, **kwds):
 
     header, data = load_ser_file(filename, verbose=verbose)
     record_by = guess_record_by(header['DataTypeID'])
-    axes = []
     ndim = int(header['NumberDimensions'])
     if record_by == 'spectrum':
-        array_shape = [None, ] * int(ndim)
         if ndim == 0 and header["ValidNumberElements"] != 0:
-            # Line spectrum. The coordinates are stored in PositionX/Y
-            array_shape = [header["ValidNumberElements"]]
-            axes.append({
-                'name': "Position",
-                'offset': 0,
-                'scale': 1,
-                'units': "",
-                'size': header["ValidNumberElements"],
-                'index_in_array': 0
-            })
-
+            # The calibration of the axes are not stored in the header.
+            # We try to guess from the position coordinates.
+            array_shape, axes = get_axes_from_position(header=header,
+                                                       data=data)
         else:
+            axes = []
+            array_shape = [None, ] * int(ndim)
             if len(data['PositionY']) > 1 and \
                     (data['PositionY'][0] == data['PositionY'][1]):
                 # The spatial dimensions are stored in F order i.e. X, Y, ...
@@ -367,12 +452,6 @@ def ser_reader(filename, objects=None, verbose=False, *args, **kwds):
                 })
                 array_shape[i] = \
                     header['Dim-%i_DimensionSize' % idim][0]
-        # FEI seems to use the international system of units (SI) for the
-        # spatial scale. However, we prefer to work in nm
-        for axis in axes:
-            if axis['units'] == 'meters':
-                axis['units'] = 'nm'
-                axis['scale'] *= 10 ** 9
 
         # Spectral dimension
         axes.append({
@@ -390,25 +469,22 @@ def ser_reader(filename, objects=None, verbose=False, *args, **kwds):
         array_shape.append(data['ArrayLength'][0])
 
     elif record_by == 'image':
-        array_shape = []
         # Extra dimensions
         if ndim == 0 and header["ValidNumberElements"] != 0:
-            # Line scan. The coordinates are stored in PositionX/Y
-            array_shape = [header["ValidNumberElements"]]
-            axes.append({
-                'name': "Position",
-                'offset': 0,
-                'scale': 1,
-                'units': "",
-                'size': header["ValidNumberElements"],
-                'index_in_array': 0
-            })
+            # The calibration of the axes are not stored in the header.
+            # We try to guess from the position coordinates.
+            array_shape, axes = get_axes_from_position(header=header,
+                                                       data=data)
         else:
+            axes = []
+            array_shape = []
             for i in xrange(ndim):
                 if header['Dim-%i_DimensionSize' % (i + 1)][0] != 1:
                     axes.append({
-                        'offset': header['Dim-%i_CalibrationOffset' % (i + 1)][0],
-                        'scale': header['Dim-%i_CalibrationDelta' % (i + 1)][0],
+                        'offset': header[
+                            'Dim-%i_CalibrationOffset' % (i + 1)][0],
+                        'scale': header[
+                            'Dim-%i_CalibrationDelta' % (i + 1)][0],
                         'units': header['Dim-%i_Units' % (i + 1)][0],
                         'size': header['Dim-%i_DimensionSize' % (i + 1)][0],
                     })
@@ -419,7 +495,7 @@ def ser_reader(filename, objects=None, verbose=False, *args, **kwds):
             'offset': data['CalibrationOffsetY'][0] -
             data['CalibrationElementY'][0] * data['CalibrationDeltaY'][0],
             'scale': data['CalibrationDeltaY'][0],
-            'units': 'Unknown',
+            'units': 'meters',
             'size': data['ArraySizeY'][0],
         })
         array_shape.append(data['ArraySizeY'][0])
@@ -431,8 +507,15 @@ def ser_reader(filename, objects=None, verbose=False, *args, **kwds):
             data['CalibrationElementX'][0] * data['CalibrationDeltaX'][0],
             'scale': data['CalibrationDeltaX'][0],
             'size': data['ArraySizeX'][0],
+            'units': 'meters',
         })
         array_shape.append(data['ArraySizeX'][0])
+    # FEI seems to use the international system of units (SI) for the
+    # spatial scale. However, we prefer to work in nm
+    for axis in axes:
+        if axis['units'] == 'meters':
+            axis['units'] = 'nm'
+            axis['scale'] *= 10 ** 9
 
     # If the acquisition stops before finishing the job, the stored file will
     # report the requested size even though no values are recorded. Therefore if
