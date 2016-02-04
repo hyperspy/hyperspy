@@ -1,0 +1,150 @@
+
+shallow_clone: true
+
+environment:
+
+  global:
+    TEST_DEPS: "nose wheel pip"
+    NSIS_DIR: "%PROGRAMFILES(x86)%/NSIS"
+
+
+  matrix:
+
+    # Pre-installed Python versions, which Appveyor may upgrade to
+    # a later point release.
+
+    - PYTHON: "C:\\Miniconda"
+      PYTHON_VERSION: "2.7.x"
+      PYTHON_MAJOR: 2
+      PYTHON_ARCH: "32"
+      CONDA_PY: "27"
+      CONDA_NPY: "19"
+      WP_URL: 'http://heanet.dl.sourceforge.net/project/winpython/WinPython_2.7/2.7.10.3/WinPython-32bit-2.7.10.3.exe'
+      WP_CRC: '99E825BCDE4FFA57E612A0D31DF1487861C96D1903E4D20C5843FA2651C9E33B'
+      DEPS: "numpy scipy matplotlib traits traitsui ipython h5py sympy scikit-learn dill mock"
+
+    - PYTHON: "C:\\Miniconda-x64"
+      PYTHON_VERSION: "2.7.x"
+      PYTHON_MAJOR: 2
+      PYTHON_ARCH: "64"
+      CONDA_PY: "27"
+      CONDA_NPY: "19"
+      WP_URL: 'http://heanet.dl.sourceforge.net/project/winpython/WinPython_2.7/2.7.10.3/WinPython-64bit-2.7.10.3.exe'
+      WP_CRC: '35d13e00e4ffdccde150fd526acf3923a62c4b329ab85987dfeea4c2496eaae2'
+      DEPS: "numpy scipy matplotlib traits traitsui ipython h5py sympy scikit-learn dill mock"
+
+    - PYTHON: "C:\\Miniconda3"
+      PYTHON_VERSION: "3.4.x"
+      PYTHON_MAJOR: 3
+      PYTHON_ARCH: "32"
+      CONDA_PY: "34"
+      CONDA_NPY: "19"
+      WP_URL: 'http://heanet.dl.sourceforge.net/project/winpython/WinPython_3.4/3.4.3.7/WinPython-32bit-3.4.3.7.exe'
+      WP_CRC: '8b3b111b911b9f0c2c3ec22f1f23ae07919ec59db63f87e1f12de132da073b4d'
+      DEPS: "numpy scipy matplotlib ipython h5py sympy scikit-learn dill mock"
+
+    - PYTHON: "C:\\Miniconda35-x64"
+      PYTHON_VERSION: "3.5.x"
+      PYTHON_MAJOR: 3
+      PYTHON_ARCH: "64"
+      CONDA_PY: "35"
+      CONDA_NPY: "19"
+      WP_URL: 'http://heanet.dl.sourceforge.net/project/winpython/WinPython_3.5/3.5.1.1/WinPython-64bit-3.5.1.1.exe'
+      WP_CRC: '82057650e7950e6562affc73fd711e9fae1e6b8829cd6d65527f5a79429241ac'
+      DEPS: "numpy scipy matplotlib ipython h5py sympy scikit-learn dill mock"
+
+matrix:
+  allow_failures:
+    - PYTHON_VERSION: "3.4.x"
+    - PYTHON_VERSION: "3.5.x"
+
+cache:
+  - '%PYTHON%\pkgs'
+  - '%PYTHON%\envs'
+
+init:
+  - "ECHO %PYTHON% %PYTHON_VERSION% %PYTHON_ARCH%"
+  - "ECHO %APPVEYOR_BUILD_FOLDER%"
+  - "ECHO %CMD_IN_ENV%"
+
+install:
+  - ps: Add-AppveyorMessage "Starting install..."
+  # Prepend Python to the PATH
+  - "SET ORIGPATH=%PATH%"
+  - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
+
+  # Check that we have the expected version and architecture for Python
+  - "python --version"
+  - "python -c \"import struct; print(struct.calcsize('P') * 8)\""
+
+  # Install the dependencies of the project.
+  - ps: Add-AppveyorMessage "Installing conda packages..."
+  - "%CMD_IN_ENV% conda install -yq %TEST_DEPS%"
+  - "%CMD_IN_ENV% conda install -yq %DEPS%"
+  - "%CMD_IN_ENV% conda install pip"
+  # TODO: Remove once anaconda taitsui package is at v5:
+  - "IF \"%PYTHON_MAJOR%\" EQU \"3\" pip install --upgrade traitsui"
+  - ps: Add-AppveyorMessage "Installing hyperspy..."
+  - "python setup.py install"
+
+build: false  # Not a C# project, build stuff at the test step instead.
+
+test_script:
+  # Run the project tests
+  - ps: Add-AppveyorMessage "Running tests..."
+  - "python continuous_integration/nosetest.py hyperspy"
+  - ps: Add-AppveyorMessage "Testing completed."
+
+# Auto-deployment of bundle installer for tags:
+before_deploy:
+  - ps: Add-AppveyorMessage "Running deployment step..."
+  - "pip install winpython"
+  - "pip install https://github.com/hyperspy/hyperspy-bundle/archive/master.zip"
+  # Download WinPython installer if not cached
+  - ps: Add-AppveyorMessage "Installing WinPython..."
+  - "SET WP_INSTDIR=%APPDATA%\\wpdir\\WinPython-%PYTHON_ARCH%bit\\"
+  - "SET WP_EXE=%APPDATA%/wpdir/WinPython%PYTHON_MAJOR%-%PYTHON_ARCH%bit.exe"
+  - "mkdir %APPDATA%\\wpdir"
+  - ps: appveyor DownloadFile $Env:WP_URL -FileName $Env:WP_EXE
+  - ps: Write-Output (Get-FileHash $Env:WP_EXE)
+  - ps: if ((Get-FileHash $Env:WP_EXE).Hash -ne $Env:WP_CRC) { exit(1) }
+  - ps: (& $Env:WP_EXE /S /D=$Env:WP_INSTDIR | Out-Null )
+  - "ls %APPDATA%/wpdir"
+  - "ls %WP_INSTDIR%"
+
+  # Patch NSIS to allow longer strings
+  - ps: Add-AppveyorMessage "Setting up WinPython environment..."
+  - ps: Start-FileDownload ('http://freefr.dl.sourceforge.net/project/nsis/NSIS%202/2.46/nsis-2.46-strlen_8192.zip') ../nsis_patch.zip
+  - ps: if ((Get-FileHash '../nsis_patch.zip').Hash -ne '3BA22DDC0F14DBD75A9487EB6C9BD85F535E7038927D251103B97E0AAD94EEAD') { exit(1) }
+  - "7z x ../nsis_patch.zip -o%NSIS_DIR -aoa"
+  - ps: Start-FileDownload ('http://nsis.sourceforge.net/mediawiki/images/e/eb/Textreplace.zip') ../Textreplace.zip
+  - ps: if ((Get-FileHash '../Textreplace.zip').Hash -ne '6462C0C22E87E7C81DD9076D40ACC74C515243A56F10F4F8FE720F7099DB3BA2') { exit(1) }
+  - "7z x ../Textreplace.zip -o%NSIS_DIR% -aoa"
+  - ps: Start-FileDownload ('http://nsis.sourceforge.net/mediawiki/images/8/8f/UAC.zip') ../UAC.zip
+  - ps: if ((Get-FileHash '../UAC.zip').Hash -ne '20E3192AF5598568887C16D88DE59A52C2CE4A26E42C5FB8BEE8105DCBBD1760') { exit(1) }
+  - "7z x ../UAC.zip -o%NSIS_DIR% -aoa"
+  # Install current hyperspy in WinPython
+  - "SET PATH=%ORIGPATH%"
+  - "%CMD_IN_ENV% %WP_INSTDIR%/scripts/env.bat"
+  - "%CMD_IN_ENV% python.exe setup.py install"
+  - "%CMD_IN_ENV% easy_install --upgrade pip"
+  - "%CMD_IN_ENV% pip install --upgrade configobj traitsui"
+  # Custom installer step
+  # TODO: Re-run tests in WinPython environment
+  - ps: Add-AppveyorMessage "Creating installer..."
+  - "%PYTHON%/python.exe -m hspy_bundle.configure_installer %APPDATA%/wpdir %PYTHON_ARCH% %APPVEYOR_REPO_TAG_NAME%"
+  - "\"%NSIS_DIR%/makensis.exe\" /V3 NSIS_installer_script-%PYTHON_ARCH%bit.nsi"
+  - ps: Add-AppveyorMessage "Installer created! Pushing to GitHub..."
+  - "appveyor PushArtifact HyperSpy-%APPVEYOR_REPO_TAG_NAME%-Bundle-Windows-%PYTHON_ARCH%bit.exe"
+
+deploy:
+  release: $(APPVEYOR_REPO_TAG_NAME)
+  description: 'Release: $(APPVEYOR_REPO_COMMIT_MESSAGE)'
+  provider: GitHub
+  auth_token:
+    secure: KwAfARhGEqOnZHltPB6kKu8xmnoiGSk7NMYJBIEbWvFCuVnepoPV7ZcIjUN3pUpK
+  artifact: /.*\.exe/              # upload all exe installers to release assets
+  draft: true
+  prerelease: false
+  on:
+    appveyor_repo_tag: true        # deploy on tag push only
