@@ -308,8 +308,37 @@ class TestInteractive:
         d = s.data.sum()
         sr.data += 2
         nt.assert_equal(d + sr.data.size * 2, s.data.sum())
+        r.left += 2
+        r.right += 2
         sr2 = r(s)
         r(s, out=sr)
+        np.testing.assert_array_equal(sr2.data, sr.data)
+
+    def test_out_special_case(self):
+        s = self.s.inav[0]
+        r = CircleROI(3, 5, 2)
+        sr = r(s)
+        np.testing.assert_array_equal(np.where(sr.data.mask.flatten())[0],
+                                      [0, 3, 12, 15])
+        r.r_inner = 1
+        r.cy = 16
+        sr2 = r(s)
+        r(s, out=sr)
+        np.testing.assert_array_equal(np.where(sr.data.mask.flatten())[0],
+                                      [0, 3, 5, 6, 9, 10, 12, 15])
+        np.testing.assert_array_equal(sr2.data, sr.data)
+
+    def test_interactive_special_case(self):
+        s = self.s.inav[0]
+        r = CircleROI(3, 5, 2)
+        sr = r.interactive(s, None)
+        np.testing.assert_array_equal(np.where(sr.data.mask.flatten())[0],
+                                      [0, 3, 12, 15])
+        r.r_inner = 1
+        r.cy = 16
+        sr2 = r(s)
+        np.testing.assert_array_equal(np.where(sr.data.mask.flatten())[0],
+                                      [0, 3, 5, 6, 9, 10, 12, 15])
         np.testing.assert_array_equal(sr2.data, sr.data)
 
     def test_interactive(self):
