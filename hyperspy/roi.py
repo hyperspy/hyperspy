@@ -154,15 +154,11 @@ class BaseROI(t.HasTraits):
             if len(axes) == 2 and axes[1].navigate:
                 # Special case, since we can no longer slice axes in different
                 # spaces together.
-                if out is None:
-                    return signal.inav[slices[0]].isig[slices[1]]
-                else:
-                    intermediate = signal.inav[slices[0]]
-                    intermediate.isig.__getitem__(slices[1], out=out)
-                    out.events.data_changed.trigger(out)
-                    return
-            slicer = signal.isig.__getitem__
-            slices = slices[signal.axes_manager.navigation_dimension:]
+                slicer = signal.inav[slices[0]].isig.__getitem__
+                slices = slices[1:]
+            else:
+                slicer = signal.isig.__getitem__
+                slices = slices[signal.axes_manager.navigation_dimension:]
         roi = slicer(slices, out=out)
         if out is not None:
             out.events.data_changed.trigger(out)
@@ -611,6 +607,56 @@ class RectangularROI(BaseInteractiveROI):
         else:
             self.update()
 
+    @property
+    def width(self):
+        return self.right - self.left
+
+    @width.setter
+    def width(self, value):
+        if value == self.width:
+            return
+        self.right -= self.width - value
+
+    @property
+    def height(self):
+        return self.bottom - self.top
+
+    @height.setter
+    def height(self, value):
+        if value == self.height:
+            return
+        self.bottom -= self.height - value
+
+    @property
+    def x(self):
+        return self.left
+
+    @x.setter
+    def x(self, value):
+        if value != self.x:
+            diff = value - self.x
+            self._applying_widget_change = True
+            with self.events.changed.suppress():
+                self.right += diff
+                self.left += diff
+            self._applying_widget_change = False
+            self.update()
+
+    @property
+    def y(self):
+        return self.top
+
+    @y.setter
+    def y(self, value):
+        if value != self.y:
+            diff = value - self.y
+            self._applying_widget_change = True
+            with self.events.changed.suppress():
+                self.top += diff
+                self.bottom += diff
+            self._applying_widget_change = False
+            self.update()
+
     def _bottom_changed(self, old, new):
         if self._bounds_check and \
                 self.top is not t.Undefined and new <= self.top:
@@ -773,21 +819,11 @@ class CircleROI(BaseInteractiveROI):
             if len(axes) == 2 and axes[1].navigate:
                 # Special case, since we can no longer slice axes in different
                 # spaces together.
-                if out is None:
-                    roi = signal.inav[slices[0]].isig[slices[1]]
-                else:
-                    intermediate = signal.inav[slices[0]]
-                    intermediate.isig.__getitem__(slices[1], out=out)
-                    roi = out
-                roi.data = np.ma.masked_array(roi.data, mask, hard_mask=True)
-                if out is None:
-                    return roi
-                else:
-                    out.events.data_changed.trigger(out)
-                    return
-
-            slicer = signal.isig.__getitem__
-            slices = slices[signal.axes_manager.navigation_dimension:]
+                slicer = signal.inav[slices[0]].isig.__getitem__
+                slices = slices[1:]
+            else:
+                slicer = signal.isig.__getitem__
+                slices = slices[signal.axes_manager.navigation_dimension:]
         roi = slicer(slices, out=out)
         roi = out or roi
         roi.data = np.ma.masked_array(roi.data, mask, hard_mask=True)

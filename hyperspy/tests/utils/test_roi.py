@@ -308,8 +308,7 @@ class TestInteractive:
         d = s.data.sum()
         sr.data += 2
         nt.assert_equal(d + sr.data.size * 2, s.data.sum())
-        r.left += 2
-        r.right += 2
+        r.x += 2
         sr2 = r(s)
         r(s, out=sr)
         np.testing.assert_array_equal(sr2.data, sr.data)
@@ -345,7 +344,6 @@ class TestInteractive:
         s = self.s
         r = RectangularROI(left=3, right=7, top=2, bottom=5)
         sr = r.interactive(s, None)
-        r.right += 5
-        r.left += 5
+        r.x += 5
         sr2 = r(s)
         np.testing.assert_array_equal(sr.data, sr2.data)
