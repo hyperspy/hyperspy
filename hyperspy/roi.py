@@ -586,6 +586,8 @@ class RectangularROI(BaseInteractiveROI):
 
     """Selects a range in a 2D space. The coordinates of the range in
     the 2D space are stored in the traits 'left', 'right', 'top' and 'bottom'.
+    Convenience properties 'x', 'y', 'width' and 'height' are also available,
+    but cannot be used for initialization.
     """
     top, bottom, left, right = (t.CFloat(t.Undefined),) * 4
     _ndim = 2
@@ -609,6 +611,7 @@ class RectangularROI(BaseInteractiveROI):
 
     @property
     def width(self):
+        """Returns / sets the width of the ROI"""
         return self.right - self.left
 
     @width.setter
@@ -619,6 +622,7 @@ class RectangularROI(BaseInteractiveROI):
 
     @property
     def height(self):
+        """Returns / sets the height of the ROI"""
         return self.bottom - self.top
 
     @height.setter
@@ -629,33 +633,45 @@ class RectangularROI(BaseInteractiveROI):
 
     @property
     def x(self):
+        """Returns / sets the x coordinate of the ROI without changing its
+        width"""
         return self.left
 
     @x.setter
     def x(self, value):
         if value != self.x:
             diff = value - self.x
-            self._applying_widget_change = True
-            with self.events.changed.suppress():
-                self.right += diff
-                self.left += diff
-            self._applying_widget_change = False
-            self.update()
+            try:
+                self._applying_widget_change = True
+                self._bounds_check = False
+                with self.events.changed.suppress():
+                    self.right += diff
+                    self.left += diff
+            finally:
+                self._applying_widget_change = False
+                self._bounds_check = True
+                self.update()
 
     @property
     def y(self):
+        """Returns / sets the y coordinate of the ROI without changing its
+        height"""
         return self.top
 
     @y.setter
     def y(self, value):
         if value != self.y:
             diff = value - self.y
-            self._applying_widget_change = True
-            with self.events.changed.suppress():
-                self.top += diff
-                self.bottom += diff
-            self._applying_widget_change = False
-            self.update()
+            try:
+                self._applying_widget_change = True
+                self._bounds_check = False
+                with self.events.changed.suppress():
+                    self.top += diff
+                    self.bottom += diff
+            finally:
+                self._applying_widget_change = False
+                self._bounds_check = True
+                self.update()
 
     def _bottom_changed(self, old, new):
         if self._bounds_check and \
