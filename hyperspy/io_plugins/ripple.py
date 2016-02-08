@@ -316,7 +316,7 @@ def file_reader(filename, rpl_info=None, encoding="latin-1",
       height-name      str           # Name of the magnitude stored as height
       signal            str        # Name of the signal stored, e.g. HAADF
       convergence-angle float   # TEM convergence angle in mrad
-      collection-angle  float   # EELS spectrometer collection angle in mrad
+      collection-angle  float   # EELS spectrometer collection semi-angle in mrad
       beam-energy       float   # TEM beam energy in keV
       elevation-angle   float   # Elevation angle of the EDS detector
       azimuth-angle     float   # Elevation angle of the EDS detector
