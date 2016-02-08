@@ -453,7 +453,7 @@ def in_interval(number, interval):
 
 class ModifiableSpanSelector(matplotlib.widgets.SpanSelector):
 
-    def __init__(self, ax, **kwargs):
+    def __init__(self, ax, left=None, right=None, **kwargs):
         onsel = kwargs.pop('onselect', self.dummy)
         matplotlib.widgets.SpanSelector.__init__(
             self, ax, onsel, direction='horizontal', useblit=False, **kwargs)
@@ -461,6 +461,8 @@ class ModifiableSpanSelector(matplotlib.widgets.SpanSelector):
         self.tolerance = 1
         self.on_move_cid = None
         self.range = None
+        self.left = left
+        self.right = right
 
     def dummy(self, *args, **kwargs):
         pass
@@ -525,10 +527,13 @@ class ModifiableSpanSelector(matplotlib.widgets.SpanSelector):
                       self.rect.get_x() + self.rect.get_width())
 
     def move_left(self, event):
-        if self.buttonDown is False or self.ignore(event):
+        if self.buttonDown is False or self.ignore(event) or\
+                event.xdata is None:
             return
         # Do not move the left edge beyond the right one.
         if event.xdata >= self.range[1]:
+            return
+        if self.left and event.xdata < self.left:
             return
         width_increment = self.range[0] - event.xdata
         self.rect.set_x(event.xdata)
@@ -539,10 +544,13 @@ class ModifiableSpanSelector(matplotlib.widgets.SpanSelector):
         self.update()
 
     def move_right(self, event):
-        if self.buttonDown is False or self.ignore(event):
+        if self.buttonDown is False or self.ignore(event) or\
+                event.xdata is None:
             return
         # Do not move the right edge beyond the left one.
         if event.xdata <= self.range[0]:
+            return
+        if self.right and event.xdata > self.right:
             return
         width_increment = \
             event.xdata - self.range[1]
@@ -553,10 +561,17 @@ class ModifiableSpanSelector(matplotlib.widgets.SpanSelector):
         self.update()
 
     def move_rect(self, event):
-        if self.buttonDown is False or self.ignore(event):
+        if self.buttonDown is False or self.ignore(event) or\
+                event.xdata is None:
             return
         x_increment = event.xdata - self.pressv
-        self.rect.set_x(self.rect.get_x() + x_increment)
+        new_left_x = self.rect.get_x() + x_increment
+        new_right_x = new_left_x + self.rect.get_width()
+        if self.left and new_left_x < self.left:
+            return
+        if self.right and new_right_x > self.right:
+            return
+        self.rect.set_x(new_left_x)
         self.update_range()
         self.pressv = event.xdata
         if self.onmove_callback is not None:
