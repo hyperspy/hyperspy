@@ -322,11 +322,13 @@ class BaseInteractiveROI(BaseROI):
             If not None, it will use 'out' as the output instead of returning
             a new Signal.
         """
-        if navigation_signal == "same":
+        if isinstance(navigation_signal, basestring) and navigation_signal == "same":
             navigation_signal = signal
         if navigation_signal is not None:
             if navigation_signal not in self.signal_map:
                 self.add_widget(navigation_signal)
+        if self.update not in signal.events.data_changed.connected:
+            signal.events.data_changed.connect(self.update, [])
         if out is None:
             return hsi.interactive(self.__call__,
                                    event=self.events.changed,
