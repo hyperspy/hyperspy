@@ -174,7 +174,7 @@ class TestSavingMetadataContainers:
         nt.assert_is_instance(l.metadata.test[2], unicode)
         nt.assert_equal(l.metadata.test[2], u'\u6f22\u5b57')
 
-    @nt.timed(0.1)
+    @nt.timed(1.0)
     def test_save_long_list(self):
         s = self.s
         s.metadata.set_item('long_list', range(10000))
