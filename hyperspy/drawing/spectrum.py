@@ -338,9 +338,9 @@ class SpectrumLine(object):
                 np.any(np.not_equal(new_axis, self.axis))):
             self.axis = new_axis
             self.ax.set_xlim(self.axis[0], self.axis[-1])
-        self.line._xorig = self.axis
-        self.line._yorig = ydata
-        self.line.recache(True)
+            self.line.set_data(self.axis, ydata)
+        else:
+            self.line.set_ydata(ydata)
 
         if self.autoscale is True:
             self.ax.relim()
