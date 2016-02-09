@@ -793,7 +793,6 @@ type in place, e.g.:
       RGB data type example.
 
 
-
 Basic statistical analysis
 --------------------------
 .. versionadded:: 0.7
@@ -954,6 +953,8 @@ operation.
     <Spectrum, title: , dimensions: (|5)>
 
 
+.. _interactive:
+
 Interactive operations
 ----------------------
 
@@ -997,3 +998,47 @@ The interactive opearations can be chained.
     >>> s.events.data_changed.trigger(obj=s)
     >>> ssum_mean.data
     array([ 300.,  330.,  360.,  390.])
+
+Region Of Interest (ROI)
+------------------------
+
+.. versionadded:: 0.9
+
+A number of different ROIs are available:
+
+* :py:class:`~.utils.roi.Point1DROI`
+* :py:class:`~.utils.roi.Point2DROI`
+* :py:class:`~.utils.roi.SpanROI`
+* :py:class:`~.utils.roi.RectangularROI`
+* :py:class:`~.utils.roi.CircleROI`
+* :py:class:`~.utils.roi.Line2DROI`
+
+Once created, a ROI can be used to return a part of any compatible signal:
+
+.. code-block:: python
+
+    >>> s = hs.signals.Spectrum(np.arange(2000).reshape((20,10,10)))
+    >>> im = hs.signals.Image(np.arange(100).reshape((10,10)))
+    >>> roi = hs.roi.RectangularROI(left=3, right=7, top=2, bottom=5)
+    >>> sr = roi(s)
+    >>> sr
+    <Spectrum, title: , dimensions: (4, 3|10)>
+    >>> imr = roi(im)
+    >>> imr
+    <Image, title: , dimensions: (|4, 3)>
+
+ROIs can also be used :ref:`interactively <Interactive>` with widgets. Notably,
+since ROIs are independent from the signals they sub-select, the widget can be
+plotted on a different signal altogether.
+
+.. code-block:: python
+
+    >>> import scipy.misc
+    >>> im = hs.signals.Image(scipy.misc.ascent())
+    >>> s = hs.signals.Spectrum(np.random.rand(512, 512, 512))
+    >>> roi = hs.roi.RectangularROI(left=30, right=77, top=20, bottom=50)
+    >>> s.plot() # plot signal to have where to display the widget
+    >>> imr = roi.interactive(im, navigation_signal=s)
+
+ROIs are implemented in terms of physical coordinates and not pixels, so with
+proper calibration will always point to the same region.

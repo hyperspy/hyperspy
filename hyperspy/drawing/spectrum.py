@@ -331,7 +331,16 @@ class SpectrumLine(object):
             ydata = self.data_function(axes_manager=self.axes_manager).real
         else:
             ydata = self.data_function(axes_manager=self.axes_manager).imag
-        self.line.set_ydata(ydata)
+
+        new_axis = self.axes_manager.signal_axes[0].axis
+        if len(new_axis) != len(self.axis) or \
+           (len(new_axis) == len(self.axis) and
+                np.any(np.not_equal(new_axis, self.axis))):
+            self.axis = new_axis
+            self.ax.set_xlim(self.axis[0], self.axis[-1])
+            self.line.set_data(self.axis, ydata)
+        else:
+            self.line.set_ydata(ydata)
 
         if self.autoscale is True:
             self.ax.relim()
