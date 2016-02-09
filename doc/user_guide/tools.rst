@@ -1040,21 +1040,5 @@ plotted on a different signal altogether.
     >>> s.plot() # plot signal to have where to display the widget
     >>> imr = roi.interactive(im, navigation_signal=s)
 
-Since the returned ROIs are just normal signals, they can be chained. 
-
-.. NOTE::
-    Since ROIs are implemented in terms of physical coordinates and not pixels,
-    even with changing data they will point to the same physical coordinates.
-
-.. code-block:: python
-
-    >>> import scipy.misc
-    >>> im = hs.signals.Image(scipy.misc.ascent())
-    >>> roi = hs.roi.RectangularROI(left=275, right=360, top=300, bottom=380)
-    >>> roi2 = hs.roi.Line2DROI(300, 345, 324, 353)
-    >>> im.plot()
-    >>> imr = roi.interactive(im)
-    >>> imr.plot()
-    >>> imr2 = roi2.interactive(imr)
-    >>> imr2.plot()
-
+ROIs are implemented in terms of physical coordinates and not pixels, so with
+proper calibration will always point to the same region.
