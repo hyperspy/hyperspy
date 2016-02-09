@@ -147,18 +147,20 @@ class BaseROI(t.HasTraits):
 
         natax = signal.axes_manager._get_axes_in_natural_order()
         slices = self._make_slices(natax, axes)
-        if axes[0].navigate:
-            slicer = signal.inav.__getitem__
-            slices = slices[0:signal.axes_manager.navigation_dimension]
-        else:
-            if len(axes) == 2 and axes[1].navigate:
-                # Special case, since we can no longer slice axes in different
-                # spaces together.
-                slicer = signal.inav[slices[0]].isig.__getitem__
-                slices = slices[1:]
+        nav_axes = [ax.navigate for ax in axes]
+        nav_dim = signal.axes_manager.navigation_dimension
+        if True in nav_axes:
+            if False in nav_axes:
+
+                slicer = signal.inav[slices[:nav_dim]].isig.__getitem__
+                slices = slices[nav_dim:]
             else:
-                slicer = signal.isig.__getitem__
-                slices = slices[signal.axes_manager.navigation_dimension:]
+                slicer = signal.inav.__getitem__
+                slices = slices[0:nav_dim]
+        else:
+            slicer = signal.isig.__getitem__
+            slices = slices[nav_dim:]
+
         roi = slicer(slices, out=out)
         if out is not None:
             out.events.data_changed.trigger(out)
@@ -830,18 +832,21 @@ class CircleROI(BaseInteractiveROI):
                 shape.append(1)
         mask = mask.reshape(shape)
         mask = np.tile(mask, tiles)
-        if axes[0].navigate:
-            slicer = signal.inav.__getitem__
-            slices = slices[0:signal.axes_manager.navigation_dimension]
-        else:
-            if len(axes) == 2 and axes[1].navigate:
-                # Special case, since we can no longer slice axes in different
-                # spaces together.
-                slicer = signal.inav[slices[0]].isig.__getitem__
-                slices = slices[1:]
+
+        nav_axes = [ax.navigate for ax in axes]
+        nav_dim = signal.axes_manager.navigation_dimension
+        if True in nav_axes:
+            if False in nav_axes:
+
+                slicer = signal.inav[slices[:nav_dim]].isig.__getitem__
+                slices = slices[nav_dim:]
             else:
-                slicer = signal.isig.__getitem__
-                slices = slices[signal.axes_manager.navigation_dimension:]
+                slicer = signal.inav.__getitem__
+                slices = slices[0:nav_dim]
+        else:
+            slicer = signal.isig.__getitem__
+            slices = slices[nav_dim:]
+
         roi = slicer(slices, out=out)
         roi = out or roi
         roi.data = np.ma.masked_array(roi.data, mask, hard_mask=True)
@@ -1099,6 +1104,7 @@ class Line2DROI(BaseInteractiveROI):
                          metadata=signal.metadata.deepcopy().as_dictionary(),
                          original_metadata=signal.original_metadata.
                          deepcopy().as_dictionary())
+            roi.metadata.Signal.record_by = 'spectrum'
             return roi
         else:
             out.data = profile
