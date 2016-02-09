@@ -2754,7 +2754,7 @@ class Signal(MVA,
             else:
                 exec("result = self.data.%s(other)" % op_name)
                 return self._deepcopy_with_new_data(
-                        getattr(self.data, op_name)(other))
+                    getattr(self.data, op_name)(other))
 
     def _unary_operator_ruler(self, op_name):
         return self._deepcopy_with_new_data(getattr(self.data, op_name)())
@@ -4825,7 +4825,7 @@ INPLACE_OPERATORS = (
     "__iand__",
     "__ixor__",
     "__ior__",
-    )
+)
 COMPARISON_OPERATORS = (
     "__lt__",
     "__le__",
@@ -4839,7 +4839,7 @@ UNARY_OPERATORS = (
     "__pos__",
     "__abs__",
     "__invert__",
-    )
+)
 for name in ARITHMETIC_OPERATORS + INPLACE_OPERATORS + COMPARISON_OPERATORS:
     exec(
         ("def %s(self, other):\n" % name) +
