@@ -2741,19 +2741,23 @@ class Signal(MVA,
                 odata = other.data
                 new_axes = [axis.copy()
                             for axis in self.axes_manager._axes]
-            exec("result = sdata.%s(odata)" % op_name)
-            new_signal = self._deepcopy_with_new_data(result)
+            new_signal = self._deepcopy_with_new_data(
+                getattr(sdata, op_name)(odata))
             new_signal.axes_manager._axes = new_axes
             new_signal.axes_manager.set_signal_dimension(
                 self.axes_manager.signal_dimension)
             return new_signal
         else:
-            exec("result = self.data.%s(other)" % op_name)
-            return self._deepcopy_with_new_data(result)
+            if op_name in INPLACE_OPERATORS:
+                getattr(self.data, op_name)(other)
+                return self
+            else:
+                exec("result = self.data.%s(other)" % op_name)
+                return self._deepcopy_with_new_data(
+                        getattr(self.data, op_name)(other))
 
     def _unary_operator_ruler(self, op_name):
-        exec("result = self.data.%s()" % op_name)
-        return self._deepcopy_with_new_data(result)
+        return self._deepcopy_with_new_data(getattr(self.data, op_name)())
 
     def _check_signal_dimension_equals_one(self):
         if self.axes_manager.signal_dimension != 1:
@@ -4792,9 +4796,7 @@ class Signal(MVA,
         return Model(self)
 
 
-# Implement binary operators
-for name in (
-    # Arithmetic operators
+ARITHMETIC_OPERATORS = (
     "__add__",
     "__sub__",
     "__mul__",
@@ -4809,19 +4811,41 @@ for name in (
     "__or__",
     "__div__",
     "__truediv__",
-    # Comparison operators
+)
+INPLACE_OPERATORS = (
+    "__iadd__",
+    "__isub__",
+    "__imul__",
+    "__itruediv__",
+    "__ifloordiv__",
+    "__imod__",
+    "__ipow__",
+    "__ilshift__",
+    "__irshift__",
+    "__iand__",
+    "__ixor__",
+    "__ior__",
+    )
+COMPARISON_OPERATORS = (
     "__lt__",
     "__le__",
     "__eq__",
     "__ne__",
     "__ge__",
     "__gt__",
-):
+)
+UNARY_OPERATORS = (
+    "__neg__",
+    "__pos__",
+    "__abs__",
+    "__invert__",
+    )
+for name in ARITHMETIC_OPERATORS + INPLACE_OPERATORS + COMPARISON_OPERATORS:
     exec(
         ("def %s(self, other):\n" % name) +
         ("   return self._binary_operator_ruler(other, \'%s\')\n" %
          name))
-    exec("%s.__doc__ = int.%s.__doc__" % (name, name))
+    exec("%s.__doc__ = np.ndarray.%s.__doc__" % (name, name))
     exec("setattr(Signal, \'%s\', %s)" % (name, name))
     # The following commented line enables the operators with swapped
     # operands. They should be defined only for commutative operators
@@ -4831,11 +4855,7 @@ for name in (
     # name))
 
 # Implement unary arithmetic operations
-for name in (
-        "__neg__",
-        "__pos__",
-        "__abs__",
-        "__invert__",):
+for name in UNARY_OPERATORS:
     exec(
         ("def %s(self):" % name) +
         ("   return self._unary_operator_ruler(\'%s\')" % name))

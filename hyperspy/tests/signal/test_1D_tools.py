@@ -244,7 +244,7 @@ class TestEstimatePeakWidth:
     def test_two_peaks(self):
         s = self.s.deepcopy()
         s.shift1D(np.array([0.5]), show_progressbar=None)
-        self.s += s
+        self.s = self.s + s
         width, left, right = self.s.estimate_peak_width(
             window=None,
             return_interval=True,
