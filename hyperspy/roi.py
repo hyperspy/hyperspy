@@ -1029,8 +1029,13 @@ class Line2DROI(BaseInteractiveROI):
         perp_lines = Line2DROI._line_profile_coordinates(p0, p1,
                                                          linewidth=linewidth)
         if img.ndim > 2:
-            img = np.rollaxis(img, axes[0].index_in_array, 0)
-            img = np.rollaxis(img, axes[1].index_in_array, 1)
+            idx = [ax.index_in_array for ax in axes]
+            if idx[0] < idx[1]:
+                img = np.rollaxis(img, idx[0], 0)
+                img = np.rollaxis(img, idx[1], 1)
+            else:
+                img = np.rollaxis(img, idx[1], 0)
+                img = np.rollaxis(img, idx[0], 0)
             orig_shape = img.shape
             img = np.reshape(img, orig_shape[0:2] +
                              (np.product(orig_shape[2:]),))
@@ -1043,7 +1048,7 @@ class Line2DROI(BaseInteractiveROI):
             intensities = np.rollaxis(
                 np.reshape(intensities,
                            intensities.shape[0:1] + orig_shape[2:]),
-                0, i0)
+                0, i0+1)
         else:
             pixels = nd.map_coordinates(img, perp_lines,
                                         order=order, mode=mode, cval=cval)
@@ -1072,6 +1077,9 @@ class Line2DROI(BaseInteractiveROI):
                 * For any other value, it will check whether the navigation
                   space can fit the right number of axis, and use that if it
                   fits. If not, it will try the signal space.
+        order : The spline interpolation order to use when extracting the line
+            profile. 0 means nearest-neighbor interpolation, and is both the
+            default and the fastest.
         """
         if axes is None and signal in self.signal_map:
             axes = self.signal_map[signal][1]
@@ -1089,17 +1097,13 @@ class Line2DROI(BaseInteractiveROI):
             axis=1)[0]
         if out is None:
             axm = signal.axes_manager.deepcopy()
-            idx = []
-            for ax in axes:
-                idx.append(ax.index_in_axes_manager)
-            for i in reversed(sorted(idx)):  # Remove in reversed order
-                axm.remove(i)
-            axis = DataAxis(len(profile),
-                            scale=length / len(profile),
+            i0 = min(axes[0].index_in_array, axes[1].index_in_array)
+            axm.remove([ax.index_in_array+3j for ax in axes])
+            axis = DataAxis(profile.shape[i0],
+                            scale=length / profile.shape[i0],
                             units=axes[0].units,
                             navigate=axes[0].navigate)
             axis.axes_manager = axm
-            i0 = min(axes[0].index_in_array, axes[1].index_in_array)
             axm._axes.insert(i0, axis)
             from hyperspy.signals import Signal
             roi = Signal(profile, axes=axm._get_axes_dicts(),
@@ -1107,7 +1111,7 @@ class Line2DROI(BaseInteractiveROI):
                          original_metadata=signal.original_metadata.
                          deepcopy().as_dictionary())
             if any([not a.navigate for a in axes]):
-                # We modified signal space, so we need to change signal class
+                # We modified signal space, so we need to change metadata
                 if (roi.axes_manager.signal_dimension != 1):
                     raise ValueError("Uknown signal type encountered, please "
                                      "updated Line2DROI to support it!")
