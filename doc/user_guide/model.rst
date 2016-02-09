@@ -48,7 +48,7 @@ The syntax for creating both one-dimensional and two-dimensional models is thus
 identical for the user in practice. When a model is created  you may be prompted
 to provide important information not already included in the datafile, e.g.if s
 is EELS data, you may be asked for the accelerating voltage, convergence and
-collection angles etc.
+collection semi-angles etc.
 
 Adding components to the model
 ------------------------------

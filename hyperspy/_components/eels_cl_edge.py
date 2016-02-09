@@ -70,7 +70,7 @@ class EELSCLEdge(Component):
         Fix this parameter to fix the fine structure. It is a
         component.Parameter instance.
     effective_angle : Parameter
-        The effective collection angle. It is automatically
+        The effective collection semi-angle. It is automatically
         calculated by set_microscope_parameters. It is a
         component.Parameter instance. It is fixed by default.
     fine_structure_smoothing : float between 0 and 1
@@ -183,7 +183,7 @@ class EELSCLEdge(Component):
         self._calculate_effective_angle()
     E0 = property(_get_E0, _set_E0)
 
-    # Collection angles
+    # Collection semi-angle
     def _get_collection_angle(self):
         return self.__collection_angle
 
@@ -192,7 +192,7 @@ class EELSCLEdge(Component):
         self._calculate_effective_angle()
     collection_angle = property(_get_collection_angle,
                                 _set_collection_angle)
-    # Convergence angle
+    # Convergence semi-angle
 
     def _get_convergence_angle(self):
         return self.__convergence_angle
@@ -257,9 +257,9 @@ class EELSCLEdge(Component):
         E0 : float
             Electron beam energy in keV.
         alpha: float
-            Convergence angle in mrad.
+            Convergence semi-angle in mrad.
         beta: float
-            Collection angle in mrad.
+            Collection semi-angle in mrad.
         energy_scale : float
             The energy step in eV.
         """
