@@ -329,8 +329,10 @@ class BaseInteractiveROI(BaseROI):
         if navigation_signal is not None:
             if navigation_signal not in self.signal_map:
                 self.add_widget(navigation_signal)
-        if self.update not in signal.events.data_changed.connected:
-            signal.events.data_changed.connect(self.update, [])
+        if self.update not in signal.axes_manager.events.any_axis_changed.connected:
+            signal.axes_manager.events.any_axis_changed.connect(
+                self.update,
+                [])
         if out is None:
             return hsi.interactive(self.__call__,
                                    event=self.events.changed,
