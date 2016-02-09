@@ -56,7 +56,7 @@ class CircleWidget(Widget2DBase, ResizersMixin):
         change, if the value has changed.
         """
         # Override so that r_inner can be 0
-        value = np.minimum(value, [ax.size for ax in self.axes])
+        value = np.minimum(value, [0.5 * ax.size * ax.scale for ax in self.axes])
         # Changed from base:
         min_sizes = np.array((0.5 * self.axes[0].scale, 0))
         value = np.maximum(value, min_sizes)
