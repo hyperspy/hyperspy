@@ -1106,7 +1106,12 @@ class Line2DROI(BaseInteractiveROI):
                          metadata=signal.metadata.deepcopy().as_dictionary(),
                          original_metadata=signal.original_metadata.
                          deepcopy().as_dictionary())
-            roi.metadata.Signal.record_by = 'spectrum'
+            if any([not a.navigate for a in axes]):
+                # We modified signal space, so we need to change signal class
+                if (roi.axes_manager.signal_dimension != 1):
+                    raise ValueError("Uknown signal type encountered, please "
+                                     "updated Line2DROI to support it!")
+                roi.metadata.Signal.record_by = 'spectrum'
             return roi
         else:
             out.data = profile
