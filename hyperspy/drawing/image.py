@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 from __future__ import division
 
@@ -199,7 +199,7 @@ class ImagePlot(BlittedFigure):
                           else None),
             figsize=figsize.clip(min_size, max_size))
         self.figure.canvas.mpl_connect('draw_event', self._on_draw)
-        utils.on_figure_window_close(self.figure, self.close)
+        utils.on_figure_window_close(self.figure, self._on_close)
 
     def create_axis(self):
         self.ax = self.figure.add_subplot(111)
@@ -410,14 +410,13 @@ class ImagePlot(BlittedFigure):
             optimize_for_oom(step_oom - i)
             i += 1
 
-    def close(self):
+    def _on_close(self):
         for marker in self.ax_markers:
             marker.close()
-        try:
-            plt.close(self.figure)
-            self.events.closed.trigger(obj=self)
-            for f in self.events.closed.connected:
-                self.events.closed.disconnect(f)
-        except:
-            pass
+        self.events.closed.trigger(obj=self)
+        for f in self.events.closed.connected:
+            self.events.closed.disconnect(f)
         self.figure = None
+
+    def close(self):
+        plt.close(self.figure)  # This will trigger self._on_close()

@@ -831,9 +831,9 @@ class EELSSpectrum(Spectrum):
         beam_energy: float
             The energy of the electron beam in keV
         convengence_angle : float
-            In mrad.
+            The microscope convergence semi-angle in mrad.
         collection_angle : float
-            In mrad.
+            The collection semi-angle in mrad.
         """
 
         mp = self.metadata
@@ -1020,7 +1020,7 @@ class EELSSpectrum(Spectrum):
         ValuerError
             If both `n` and `t` are undefined (None).
         AttribureError
-            If the beam_energy or the collection angle are not defined in
+            If the beam_energy or the collection semi-angle are not defined in
             metadata.
 
         Notes
@@ -1065,7 +1065,7 @@ class EELSSpectrum(Spectrum):
         try:
             beta = s.metadata.Acquisition_instrument.TEM.Detector.EELS.collection_angle
         except:
-            raise AttributeError("Please define the collection angle."
+            raise AttributeError("Please define the collection semi-angle. "
                                  "You can do this e.g. by using the "
                                  "set_microscope_parameters method")
 

@@ -4,7 +4,7 @@
 Metadata structure
 ******************
 
-The :class:`~.signal.Signal` class stores metadata in the 
+The :class:`~.signal.Signal` class stores metadata in the
 :attr:`~.signal.Signal.metadata` attribute that has a tree structure. By
 convention, the nodes labels are capitalized and the leaves are not
 capitalized.
@@ -74,30 +74,30 @@ in the following sections of this chapter.
         ├── signal_type
         └── signal_origin
 
-General 
+General
 =======
 
 title
     type: Str
-    
+
     A title for the signal, e.g. "Sample overview"
 
 original_filename
     type: Str
-    
-    If the signal was loaded from a file this key stores the name of the 
+
+    If the signal was loaded from a file this key stores the name of the
     original file.
-    
+
 time
     type: datetime.time
-    
+
     The acquistion or creation time.
-    
+
 date
     type: datetime.time
-    
+
     The acquistion or creation date.
-        
+
 
 Acquisition_instrument
 ======================
@@ -109,42 +109,42 @@ Contain information relevant to transmission electron microscope signals.
 
 microscope
     type: Str
-    
+
     The microscope model, e.g. VG 501
-    
+
 acquisition_mode
     type: Str
-    
+
     Either 'TEM' or 'STEM'
 
 convergence_angle
     type: Float
-    
-    The beam convergence angle in mrad.
-    
+
+    The beam convergence semi-angle in mrad.
+
 beam_energy
     type: Float
-    
+
     The energy of the electron beam in keV
-    
+
 beam_current
     type: Float
-    
+
     The beam current in nA.
-    
+
 dwell_time
     type: Float
-    
+
     The dwell time in seconds. This is relevant for STEM acquisition
-    
+
 exposure
     type: Float
-    
+
     The exposure time in seconds. This is relevant for TEM acquistion.
-    
+
 tilt_stage
     type: Float
-    
+
     The tilt of the stage in degree.
 
 SEM
@@ -154,30 +154,30 @@ Contain information relevant to scanning electron microscope signals.
 
 microscope
     type: Str
-    
+
     The microscope model, e.g. VG 501
-    
+
 convergence_angle
     type: Float
-    
-    The beam convergence angle in mrad.
-    
+
+    The beam convergence semi-angle in mrad.
+
 beam_energy
     type: Float
-    
+
     The energy of the electron beam in keV
-    
+
 beam_current
     type: Float
-    
+
     The beam current in nA.
-    
-    
+
+
 tilt_stage
     type: Float
-    
+
     The tilt of the stage in degree.
-    
+
 Detector
 --------
 
@@ -193,25 +193,25 @@ signals.
 
 spectrometer
     type: Str
-    
+
     The spectrometer model, e.g. Gatan 666
-    
+
 collection_angle
     type: Float
-    
-    The collection angle in mrad.
+
+    The collection semi-angle in mrad.
 
 dwell_time
     type: Float
-    
+
     The dwell time in seconds. This is relevant for STEM acquisition
 
 exposure
     type: Float
-    
+
     The exposure time in seconds. This is relevant for TEM acquistion.
-    
-    
+
+
 EDS
 ^^^
 
@@ -221,82 +221,82 @@ spectroscopy data.
 
 azimuth_angle
     type: Float
-    
+
     The azimuth angle of the detector in degree. If the azimuth is zero,
     the detector is perpendicular to the tilt axis.
-    
+
 elevation_angle
     type: Float
-    
+
     The elevation angle of the detector in degree. The detector is perpendicular
     to the surface with an angle of 90.
-    
+
 energy_resolution_MnKa
     type: Float
-    
-    The full width at half maximum (FWHM) of the manganese K alpha 
+
+    The full width at half maximum (FWHM) of the manganese K alpha
     (Mn Ka) peak in eV. This value is used as a first approximation
     of the energy resolution of the detector.
 
 real_time
     type: Float
-    
+
     The time spent to record the spectrum in second.
-    
+
 live_time
     type: Float
-    
+
     The time spent to record the spectrum in second, compensated for the
     dead time of the detector.
-   
+
 Sample
 ======
 
 description
     type: Str
-    
+
     A brief description of the sample
-    
+
 elements
     type: list
-    
-    A list of the symbols of the elements composing the sample, e.g. ['B', 'N'] 
+
+    A list of the symbols of the elements composing the sample, e.g. ['B', 'N']
     for a sample composed of Boron and Nitrogen.
-    
+
 xray_lines
     type: list
-    
-    A list of the symbols of the X-ray lines to be used for processing, 
-    e.g. ['Al_Ka', 'Ni_Lb'] for the K alpha line of Aluminum 
+
+    A list of the symbols of the X-ray lines to be used for processing,
+    e.g. ['Al_Ka', 'Ni_Lb'] for the K alpha line of Aluminum
     and the L beta line of Nickel.
-    
+
 thickness
     type: Float
-    
-    The thickness of the sample in m.   
-    
+
+    The thickness of the sample in m.
+
 
 Signal
 ======
 
 signal_type
     type: Str
-    
-    A term that describes the signal type, e.g. EDS, PES... This information 
-    can be used by HyperSpy to load the file as a specific signal class and 
-    therefore the naming should be standarised. Currently HyperSpy provides 
-    special signal class for photoemission spectroscopy, electron energy 
-    loss spectroscopy and energy dispersive spectroscopy. The signal_type in these cases should be respectively 
+
+    A term that describes the signal type, e.g. EDS, PES... This information
+    can be used by HyperSpy to load the file as a specific signal class and
+    therefore the naming should be standarised. Currently HyperSpy provides
+    special signal class for photoemission spectroscopy, electron energy
+    loss spectroscopy and energy dispersive spectroscopy. The signal_type in these cases should be respectively
     PES, EELS and EDS_TEM (EDS_SEM).
 
 signal_origin
     type: Str
-    
+
     Either 'simulation' or 'experiment'.
-    
+
 record_by
     type: Str
-    
+
     One of 'spectrum' or 'image'. It describes how the data is stored in memory.
     If 'spectrum' the spectral data is stored in the faster index.
 
@@ -327,7 +327,7 @@ correlation_factor
 
 parameters_estimation_method
     type: Str
-    
+
 _Internal_parameters
 ====================
 
@@ -338,7 +338,7 @@ should be accompanied by an "energy_units" leaf.
 Stacking_history
 ----------------
 
-Generated when using :py:meth:`~.utils.stack`. Used by 
+Generated when using :py:meth:`~.utils.stack`. Used by
 :py:meth:`~.signal.Signal.split`, to retrieve the former list of signal.
 
 step_sizes
@@ -348,13 +348,10 @@ step_sizes
 
 axis
     type: int
-    
+
    The axis index in axes manager on which the dataset were stacked.
 
 Folding
 -------
 
 Constains parameters that related to the folding/unfolding of signals.
-
-
-
