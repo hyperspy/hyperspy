@@ -25,7 +25,7 @@ sigma2fwhm = 2 * math.sqrt(2 * math.log(2))
 
 
 class Gaussian2D(Component):
-    """Normalized 2D eliptical gaussian function component
+    """Normalized 2D elliptical gaussian function component
 
     .. math::
         f(x,y) = \\frac{A}{2\pi s_x s_y}}}e^{-\\frac{\left(x-x0\\right)
