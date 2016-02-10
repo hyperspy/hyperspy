@@ -334,8 +334,7 @@ class SpectrumLine(object):
 
         old_xaxis = self.line.get_xdata()
         if len(old_xaxis) != self.axis.size or \
-           (len(old_xaxis) == self.axis.size and
-                np.any(np.not_equal(old_xaxis, self.axis.axis))):
+                np.any(np.not_equal(old_xaxis, self.axis.axis)):
             self.ax.set_xlim(self.axis.axis[0], self.axis.axis[-1])
             self.line.set_data(self.axis.axis, ydata)
         else:
