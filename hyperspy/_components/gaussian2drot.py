@@ -90,11 +90,6 @@ class Gaussian2Drot(Component):
                                                   2*b*(x - x0) * (y - y0) + 
                                                   c*(y - y0) ** 2))
 
-        return A * (1 / (sx * sy * pi2)) * np.exp(-((x - x0) ** 2
-                                                    / (2 * sx ** 2)
-                                                    + (y - y0) ** 2
-                                                    / (2 * sy ** 2)))
-
     @property
     def ellipticity(self):
         return self.sigma_x.value/self.sigma_y.value
