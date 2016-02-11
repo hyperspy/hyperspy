@@ -112,6 +112,15 @@ class CircleWidget(Widget2DBase, ResizersMixin):
             lw=self.border_thickness,
             ec=self.color,
             picker=True,)]
+        if ri > 0:
+            self.patch.append(
+                plt.Circle(
+                    xy, radius=ro,
+                    animated=self.blit,
+                    fill=False,
+                    lw=self.border_thickness,
+                    ec=self.color,
+                    picker=True,))
 
     def _validate_pos(self, value):
         """Constrict the position within bounds.
@@ -132,6 +141,8 @@ class CircleWidget(Widget2DBase, ResizersMixin):
     def _update_patch_position(self):
         if self.is_on() and self.patch:
             self.patch[0].center = self._get_patch_xy()
+            if self.size[1] > 0:
+                self.patch[1].center = self.patch[0].center
             self._update_resizers()
             self.draw_patch()
 
@@ -139,6 +150,8 @@ class CircleWidget(Widget2DBase, ResizersMixin):
         if self.is_on() and self.patch:
             ro, ri = self.size
             self.patch[0].radius = ro
+            if ri > 0:
+                self.patch[1].radius = ri
             self._update_resizers()
             self.draw_patch()
 
@@ -147,6 +160,9 @@ class CircleWidget(Widget2DBase, ResizersMixin):
             ro, ri = self.size
             self.patch[0].center = self._get_patch_xy()
             self.patch[0].radius = ro
+            if ri > 0:
+                self.patch[1].center = self.patch[0].center
+                self.patch[1].radius = ri
             self._update_resizers()
             self.draw_patch()
 
@@ -163,21 +179,25 @@ class CircleWidget(Widget2DBase, ResizersMixin):
                 rad_vect = np.array((x, y)) - self._pos
                 radius = np.sqrt(np.sum(rad_vect**2))
                 s = list(self.size)
-                s[0] = radius
+                if self.resizer_picked < 4:
+                    s[0] = radius
+                else:
+                    s[1] = radius
                 self.size = s
 
     def _get_resizer_pos(self):
-        r = self._size[0]
-        rsize = self._get_resizer_size() / 2
-
         positions = []
-        rp = np.array(self._get_patch_xy())
-        p = rp - (r, 0) - rsize             # Left
-        positions.append(p)
-        p = rp - (0, r) - rsize             # Top
-        positions.append(p)
-        p = rp + (r, 0) - rsize             # Right
-        positions.append(p)
-        p = rp + (0, r) - rsize             # Bottom
-        positions.append(p)
+        indices = (0, 1) if self.size[1] > 0 else (0, )
+        for i in indices:
+            r = self._size[i]
+            rsize = self._get_resizer_size() / 2
+            rp = np.array(self._get_patch_xy())
+            p = rp - (r, 0) - rsize             # Left
+            positions.append(p)
+            p = rp - (0, r) - rsize             # Top
+            positions.append(p)
+            p = rp + (r, 0) - rsize             # Right
+            positions.append(p)
+            p = rp + (0, r) - rsize             # Bottom
+            positions.append(p)
         return positions

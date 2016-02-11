@@ -861,7 +861,7 @@ class ResizersMixin(object):
         """
         invtrans = self.ax.transData.inverted()
         if self.resize_pixel_size is None:
-            rsize = self._size / self.get_size_in_indices()
+            rsize = [ax.scale for ax in self.axes]
         else:
             rsize = np.abs(invtrans.transform(self.resize_pixel_size) -
                            invtrans.transform((0, 0)))
@@ -914,7 +914,7 @@ class ResizersMixin(object):
         self._resizer_handles = []
         rsize = self._get_resizer_size()
         pos = self._get_resizer_pos()
-        for i in xrange(4):
+        for i in xrange(len(pos)):
             r = plt.Rectangle(pos[i], rsize[0], rsize[1], animated=self.blit,
                               fill=True, lw=0, fc=self.resize_color,
                               picker=True,)
