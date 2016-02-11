@@ -24,6 +24,7 @@ from hyperspy.signal import Signal
 
 
 class TestBinaryOperators:
+
     def setUp(self):
         self.s1 = Signal(np.ones((2, 3)))
         self.s2 = Signal(np.ones((2, 3)))
