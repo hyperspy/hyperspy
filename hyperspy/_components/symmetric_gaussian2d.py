@@ -24,12 +24,12 @@ pi2 = 2 * math.pi
 sigma2fwhm = 2 * math.sqrt(2 * math.log(2))
 
 
-class Gaussian2D(Component):
-    """Normalized 2D eliptical gaussian function component
+class SymmetricGaussian2D(Component):
+    """Normalized symmetric 2D elliptical gaussian function component
 
     .. math::
-        f(x,y) = \\frac{A}{2\pi s_x s_y}}}e^{-\\frac{\left(x-x0\\right)
-        ^{2}}{2s_{x}^{2}}\\frac{\left(y-y0\\right)^{2}}{2s_{y}^{2}}}
+        f(x,y) = \\frac{A}{2\pi s^{2}}}}e^{-\\frac{\left(x-x0\\right)
+        ^{2}}{2s^{2}}\\frac{\left(y-y0\\right)^{2}}{2s^{2}}}
     +------------+-----------+
     | Parameter  | Attribute |
     +------------+-----------+
@@ -38,26 +38,23 @@ class Gaussian2D(Component):
     +------------+-----------+
     |    x0,y0   |  centre   |
     +------------+-----------+
-    |   s_x,s_y  |   sigma   |
+    |      s     |   sigma   |
     +------------+-----------+
     """
 
     def __init__(self,
                  A=1.,
-                 sigma_x=1.,
-                 sigma_y=1.,
+                 sigma=1.,
                  centre_x=0.,
                  centre_y=0.,
                  ):
         Component.__init__(self, ['A',
-                                  'sigma_x',
-                                  'sigma_y',
+                                  'sigma',
                                   'centre_x',
                                   'centre_y',
                                   ])
         self.A.value = A
-        self.sigma_x.value = sigma_x
-        self.sigma_y.value = sigma_y
+        self.sigma.value = sigma
         self.centre_x.value = centre_x
         self.centre_y.value = centre_y
 
@@ -65,28 +62,19 @@ class Gaussian2D(Component):
 
     def function(self, x, y):
         A = self.A.value
-        sx = self.sigma_x.value
-        sy = self.sigma_y.value
+        s = self.sigma.value
         x0 = self.centre_x.value
         y0 = self.centre_y.value
 
-        return A * (1 / (sx * sy * pi2)) * np.exp(-((x - x0) ** 2
-                                                    / (2 * sx ** 2)
+        return A * (1 / (pi2 * s**2)) * np.exp(-((x - x0) ** 2
+                                                    / (2 * s ** 2)
                                                     + (y - y0) ** 2
-                                                    / (2 * sy ** 2)))
+                                                    / (2 * s ** 2)))
 
     @property
-    def fwhm_x(self):
-        return self.sigma_x.value * sigma2fwhm
+    def fwhm(self):
+        return self.sigma.value * sigma2fwhm
 
-    @fwhm_x.setter
-    def fwhm_x(self, value):
-        self.sigma_x.value = value / sigma2fwhm
-
-    @property
-    def fwhm_y(self):
-        return self.sigma_y.value * sigma2fwhm
-
-    @fwhm_y.setter
-    def fwhm_y(self, value):
-        self.sigma_y.value = value / sigma2fwhm
+    @fwhm.setter
+    def fwhm(self, value):
+        self.sigma.value = value / sigma2fwhm
