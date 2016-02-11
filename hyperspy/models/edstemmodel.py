@@ -43,4 +43,5 @@ class EDSTEMModel(EDSModel):
                  auto_background=True,
                  auto_add_lines=True,
                  *args, **kwargs):
-        EDSModel.__init__(self, spectrum, auto_add_lines, *args, **kwargs)
+        EDSModel.__init__(self, spectrum, auto_background, auto_add_lines,
+                          *args, **kwargs)
