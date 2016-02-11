@@ -66,10 +66,10 @@ class SymmetricGaussian2D(Component):
         x0 = self.centre_x.value
         y0 = self.centre_y.value
 
-        return A * (1 / (pi2 * s**2)) * np.exp(-((x - x0) ** 2
-                                                    / (2 * s ** 2)
-                                                    + (y - y0) ** 2
-                                                    / (2 * s ** 2)))
+        s2 = s**2
+
+        return A * (1 / (pi2 * s2)) * np.exp(
+                -((x - x0) ** 2 / (2 * s2) + (y - y0) ** 2 / (2 * s2)))
 
     @property
     def fwhm(self):

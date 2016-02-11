@@ -28,7 +28,6 @@ sigma2fwhm = 2 * np.sqrt(2 * np.log(2))
 
 class TestSymmetricGaussian2D:
 
-
     def setUp(self):
         g = SymmetricGaussian2D()
         g.centre_x.value = 50
@@ -36,14 +35,14 @@ class TestSymmetricGaussian2D:
         g.sigma.value = 20
         g.A.value = 40
         self.g = g
-        self.s = Image(g.function(*np.mgrid[0:150,0:150]))
+        self.s = Image(g.function(*np.mgrid[0:150, 0:150]))
 
     def test_fitting(self):
         m = self.s.create_model()
         g = SymmetricGaussian2D()
         # Need to set some sensible initial values
         g.centre_x.value = 40
-        g.centre_y.value = 120 
+        g.centre_y.value = 120
         g.A.value = 20
         g.sigma.value = 10
         m.append(g)
@@ -51,8 +50,8 @@ class TestSymmetricGaussian2D:
         model_data = m.as_signal().data
         nt.assert_true((self.s.data == model_data).all)
 
-class TestGaussian2D:
 
+class TestGaussian2D:
 
     def setUp(self):
         g = Gaussian2D()
@@ -63,14 +62,14 @@ class TestGaussian2D:
         g.rotation.value = np.pi/4
         g.A.value = 40
         self.g = g
-        self.s = Image(g.function(*np.mgrid[0:150,0:150]))
+        self.s = Image(g.function(*np.mgrid[0:150, 0:150]))
 
     def test_fitting(self):
         m = self.s.create_model()
         g = Gaussian2D()
         # Need to set some sensible initial values
         g.centre_x.value = 40
-        g.centre_y.value = 120 
+        g.centre_y.value = 120
         g.A.value = 20
         g.sigma_x.value = 10
         g.sigma_y.value = 10

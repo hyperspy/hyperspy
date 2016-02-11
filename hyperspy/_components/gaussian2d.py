@@ -87,7 +87,7 @@ class Gaussian2D(Component):
         c = sin2_theta/(2*sx2) + cos2_theta/(2*sy2)
 
         return A * (1 / (sx * sy * pi2)) * np.exp(-(a*(x - x0) ** 2 +
-                                                  2*b*(x - x0) * (y - y0) + 
+                                                  2*b*(x - x0) * (y - y0) +
                                                   c*(y - y0) ** 2))
 
     @property
