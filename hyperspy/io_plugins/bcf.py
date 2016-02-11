@@ -51,6 +51,9 @@ from struct import unpack as strct_unp
 import json
 from skimage.measure import block_reduce
 
+import sys
+byte_order = sys.byteorder
+
 # temporary statically assigned value, should be tied to debug if present...:
 verbose = True
 
@@ -206,7 +209,7 @@ but compression signature is missing in the header. Aborting....""")
             from bzip2 import decompress as unzip_block  # lint:ok
         offset = 0x80  # the 1st compression block header
         for dymmy1 in range(self.no_of_compr_blk):
-            cpr_size, uncpr_size, _unknwn, _dummy_size = strct_unp('<IIII',
+            cpr_size, _uncpr_size, _unknwn, _dummy_size = strct_unp('<IIII',
                                                   self.read_piece(offset, 16))
             #_unknwn is probably some kind of checksum but non
             # known (crc16, crc32, adler32) algorithm could match.
@@ -537,6 +540,7 @@ class HyperHeader(object):
 st = {1: 'B', 2: 'B', 4: 'H', 8: 'I', 16: 'Q'}
 
 
+
 def bin_to_numpy(data, pointers, max_channels, depth):
     """unpack the delphi/bruker binary hypermap and returns
     nupy array.
@@ -561,6 +565,11 @@ def bin_to_numpy(data, pointers, max_channels, depth):
     total_channels = total_pixels * max_channels
     #hyper map as very flat array:
     vfa = np.zeros(total_channels, dtype=depth)
+    # some tricks for decoding 12bit data:
+    if byte_order == 'little':
+        trick_dtype = '>u2'  # it is not error, it is intended to be oposite
+    else:
+        trick_dtype = '<u2'
     for pix in range(0, total_pixels, 1):
         if pointers[pix] > 0:
             data.seek(pointers[pix])
@@ -570,27 +579,22 @@ def bin_to_numpy(data, pointers, max_channels, depth):
                                         strct_unp('<HHIHHHHH', data.read(18))
             if flag == 1:  # and (chan1 != chan2)
                 #Unpack packed 12-bit data to 16-bit uints:
-                #TODO: the stuff for 12-bit unpacking works
-                #just on little endian
                 data1 = data.read(data_size2)
-                switched_i2 = np.fromstring(data1,
-                                            dtype=np.uint16
-                                            ).byteswap(True)
+                switched_i2 = np.fromstring(data1, dtype=trick_dtype)
                 data2 = np.fromstring(switched_i2.tostring(),
-                                        dtype=np.uint8
-                                        ).repeat(2)
+                                      dtype=np.uint8
+                                     ).repeat(2)
                 mask = np.ones_like(data2, dtype=bool)
                 mask[0::6] = mask[5::6] = False
                 # Reinterpret expanded as 16-bit
+                # as the string, array will have always big-endian represent'n
                 exp16 = np.fromstring(data2[mask].tostring(),
-                                        np.uint16,
-                                        count=n_of_pulses
-                                        ).byteswap(True)
+                                      dtype='>u2', count=n_of_pulses)
                 exp16[0::2] >>= 4             # Shift every second short by 4
                 exp16 &= np.uint16(0x0FFF)    # Mask upper 4-bits on all shorts
                 pixel = np.bincount(exp16, minlength=chan1 - 1)
             else:
-                #part for instructively packed to pixel:
+                #Unpack instructively packed data to pixel channels:
                 offset = 0
                 pixel = []
                 while offset < data_size2 - 4:
