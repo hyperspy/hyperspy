@@ -51,7 +51,8 @@ from struct import unpack as strct_unp
 import json
 from skimage.measure import block_reduce
 
-verbose = True  # temporary statically assigned value, should be tied to debug if present...
+# temporary statically assigned value, should be tied to debug if present...:
+verbose = True
 
 try:
     import unbcf_fast
@@ -61,7 +62,8 @@ try:
 except ImportError:
     fast_unbcf = False
     if verbose:
-        print("No fast bcf library present... Falling back to python only backend")
+        print("No fast bcf library present... ",
+              "Falling back to python only backend")
 
 
 class Container(object):
@@ -88,6 +90,7 @@ class SFSTreeItem(object):
         return n_chunks
 
     def _filetime_to_unix(self, time):
+        """return recalculated windows filetime to unix time"""
         return datetime(1601, 1, 1) + timedelta(microseconds=time / 10)
 
     def __repr__(self):
@@ -121,8 +124,8 @@ class SFSTreeItem(object):
 
     def read_piece(self, offset, length):
         """reads and returns raw byte string of the file. It do not do
-        any decompression if stream is compressed and have to be done with
-        other functions.
+        any decompression if stream is compressed and have to be done
+        with other functions.
 
         requires two arguments:
         offset -- seek value
@@ -131,7 +134,6 @@ class SFSTreeItem(object):
         It may have some significant overhead compared to method
         (get_as_BytesIO_string) of loading whole file.
         """
-
         data = io.BytesIO()
         #first block index:
         fb_idx = offset // self.sfs.usable_chunk
@@ -154,11 +156,12 @@ class SFSTreeItem(object):
             else:
                 fn.seek(self.pointers[fb_idx] + fbo)
                 data.write(fn.read(length))
-        return data
+        data.seek(0)
+        return data.read()
 
-    def read_chunks_iter(self, first=0, chunks=False):
-        """Generate iterator reading and returning chunks of file.
-        By default it creates iterator for all chunks, however
+    def iter_read_chunks(self, first=0, chunks=False):
+        """Generate and return iterator reading and returning chunks
+        of file. By default it creates iterator for all chunks, however
         with kwargs 'first' and 'chunks' the range of chunks
         for iterator can be set
         """
@@ -181,7 +184,8 @@ class SFSTreeItem(object):
                 yield fn.read(self.sfs.usable_chunk)
 
     def setup_compression_metadata(self):
-        """setup the number of chunks and uncompressed size as class atribs"""
+        """setup the number of chunks and uncompressed size as class
+        atributes"""
         with open(self.sfs.filename, 'rb') as fn:
             fn.seek(self.pointers[0])
             #AACS signature, uncompressed size, undef var, number of blocks
@@ -193,58 +197,41 @@ class SFSTreeItem(object):
             raise ValueError("""The file is marked to be compressed,
 but compression signature is missing in the header. Aborting....""")
 
+    def iter_read_compr_chunks(self):
+        """generate and return iterative reader for compressed file with
+        zlib or bzip2 compression, where iterator returns uncompressed
+        data in chunks as iterator.
+        """
+        if self.sfs.compression == 'zlib':
+            from zlib import decompress as unzip_block
+        else:
+            from bzip2 import decompress as unzip_block  # lint:ok
+        offset = 0x80  # the 1st compression block header
+        for i in range(self.no_of_compr_blk):
+            cpr_size, uncpr_size, _unknwn, _dummy_size = strct_unp('<IIII',
+                                                  self.read_piece(offset, 16))
+            #_unknwn is probably some kind of checksum but non
+            # known (crc16, crc32, adler32) algorithm could match.
+            # _dummy_size == cpr_size + 0x10 which have no use...
+            offset += 16
+            raw_string = self.read_piece(offset, cpr_size)
+            offset += cpr_size
+            yield unzip_block(raw_string)
+
     def get_as_BytesIO_string(self):
         if self.sfs.compression == 'None':
             data = io.BytesIO()
-            data.write(b''.join(self.read_chunks_iter()))
+            data.write(b''.join(self.iter_read_chunks()))
             return data
         elif self.sfs.compression in ('zlib', 'bzip2'):
-            # import required library just once:
-            if self.sfs.compression == 'zlib':
-                from zlib import decompress as unzip_block
-            else:
-                from bzip2 import decompress as unzip_block  # lint:ok
             data = io.BytesIO()
-            block = []
-            number_of_blocks = self.no_of_compr_blk
-            with open(self.sfs.filename, 'rb') as fn:
-                fn.seek(self.pointers[0] + 0x80)  # the 1st compression block header
-                block_remainder = strct_unp('<I', fn.read(4))[0]
-                fn.seek(12, 1)  # go to compressed data begining
-                if len(self.pointers) > 1:
-                    chunk_remainder = self.sfs.usable_chunk - 0x90
-                    chunk_point_iter = iter(self.pointers[1:])
-                else:
-                    chunk_remainder = self.size % self.sfs.usable_chunk - 0x90
-                for j in range(0, number_of_blocks, 1):
-                    #read the chunks, until block is filled
-                    # then read next block header, decompress the block
-                    # append the result to main data output, reset block to empty
-                    while block_remainder > chunk_remainder:
-                        block.append(fn.read(chunk_remainder))
-                        block_remainder -= chunk_remainder
-                        chunk_remainder = self.sfs.usable_chunk
-                        fn.seek(next(chunk_point_iter))
-                    else:
-                        block.append(fn.read(block_remainder))
-                        if j != number_of_blocks:
-                            chunk_remainder = chunk_remainder - block_remainder - 0x10
-                            # setting the new block_remainder from header:
-                            block_remainder = strct_unp('<I', fn.read(4))[0]
-
-                            if chunk_remainder > 0:
-                                fn.seek(12, 1)  # jump to next block
-                            else:
-                                fn.seek(next(chunk_point_iter) - chunk_remainder)
-                                chunk_remainder = self.sfs.usable_chunk + chunk_remainder
-
-                    data.write(unzip_block(b''.join(block)))
-                    block = []
-
+            data.write(b''.join(self.iter_read_compr_chunks()))
             return data
         else:
-            raise RuntimeError('file', str(self.sfs.filename),
-                               ' is compressed by not known and not implemented algorithm.',
+            raise RuntimeError('file',
+                               str(self.sfs.filename),
+                               ' is compressed by not known and not',
+                               'implemented algorithm.',
                                'Aborting...')
 
 
@@ -255,9 +242,11 @@ class SFS_reader(object):
         with open(filename, 'rb') as fn:
             a = fn.read(8)
             if a != b'AAMVHFSS':
-                raise TypeError("file '{0}' is not SFS container".format(filename))
-            fn.seek(0x124)  # this looks to be version, as float value is always nicely rounded
-            # and at older bcf versions (<1.9) it was 2.40, at new (v2) - 2.60
+                raise TypeError(
+                    "file '{0}' is not SFS container".format(filename))
+            fn.seek(0x124)  # this looks to be version, as float value is always
+            # nicely rounded and at older bcf versions (<1.9) it was 2.40,
+            # at new (v2) - 2.60
             version, self.chunksize = strct_unp('<fI', fn.read(8))
             self.sfs_version = '{0:4.2f}'.format(version)
             self.usable_chunk = self.chunksize - 32
@@ -266,11 +255,12 @@ class SFS_reader(object):
             #the sfs tree and number of the items / files + directories in it,
             #and the number in chunks of whole sfs:
             tree_address, n_file_tree_items, self.sfs_n_of_chunks = strct_unp(
-                                                                '<III', fn.read(12))
+                                                           '<III', fn.read(12))
+            #check if file tree do not exceed one chunk:
             n_file_tree_chunks = -((-n_file_tree_items * 0x200) //
                                              (self.chunksize - 512))
             if n_file_tree_chunks is 1:
-                fn.seek(self.chunksize * tree_address + 0x138)  # skip with header
+                fn.seek(self.chunksize * tree_address + 0x138)
                 raw_tree = fn.read(0x200 * n_file_tree_items)
             else:
                 temp_str = io.BytesIO()
@@ -285,8 +275,8 @@ class SFS_reader(object):
                 raw_tree = temp_str.read(n_file_tree_items * 0x200)
                 temp_str.close()
             # setting up virtual file system in python dictionary
-            temp_item_list = [SFSTreeItem(raw_tree[i * 0x200:(i + 1) * 0x200], self)
-                              for i in range(n_file_tree_items)]
+            temp_item_list = [SFSTreeItem(raw_tree[i * 0x200:(i + 1) * 0x200],
+                                       self) for i in range(n_file_tree_items)]
             paths = [[h.parent] for h in temp_item_list]
             #Find if there is compression:
             for c in temp_item_list:
@@ -418,8 +408,8 @@ class HyperHeader(object):
     image index.
     """
     def __init__(self, xml_str):
-        # Due to Delphi(TM) xml implementation literaly shits into xml
-        # and on xml spec,  we need lxml parser to be more forgiving (recover=True):
+        # Due to Delphi(TM) xml implementation literaly shits into xml,
+        # we need lxml parser to be more forgiving (recover=True):
         oparser = objectify.makeparser(recover=True)
         root = objectify.fromstring(xml_str, parser=oparser).ClassInstance
         try:
@@ -443,7 +433,8 @@ class HyperHeader(object):
         self.image.x_res = float(semData.DX)
         self.image.y_res = float(semData.DY)
         semStageData = root.xpath("ClassInstance[@Type='TRTSEMStageData']")[0]
-        # stage position data in um cast to m (that data anyway is not used by hyperspy):
+        # stage position data in um cast to m (that data anyway is not used
+        # by hyperspy):
         try:
             self.stage.x = float(semStageData.X) / 1.0e6
             self.stage.y = float(semStageData.Y) / 1.0e6
@@ -475,27 +466,31 @@ class HyperHeader(object):
                                                 self.image.width))
                 temp_img.detector_name = str(img.Description.text)
                 self.image.images.append(temp_img)
-        self.selection = []
+        self.elements = []
         try:
-            selection = root.xpath("ClassInstance[@Type='TRTContainerClass']/" +
-              "ChildClassInstances/ClassInstance[@Type='TRTElementInformationList']/" +
-              "ClassInstance[@Type='TRTSpectrumRegionList']/ChildClassInstances")[0]
-            for j in selection.xpath("ClassInstance[@Type='TRTSpectrumRegion']"):
-                self.selection.append(int(j.Element))
+            elements = root.xpath(
+               "ClassInstance[@Type='TRTContainerClass']/ChildClassInstances" +
+               "/ClassInstance[@Type='TRTElementInformationList']" +
+               "/ClassInstance[@Type='TRTSpectrumRegionList']" +
+               "/ChildClassInstances")[0]
+            for j in elements.xpath("ClassInstance[@Type='TRTSpectrumRegion']"):
+                self.elements.append(int(j.Element))
         except IndexError:
             if verbose:
                 print('no element selection present..')
             else:
                 pass
-        self.line_counter = np.fromstring(str(root.LineCounter), dtype=np.uint16, sep=',')
+        self.line_counter = np.fromstring(str(root.LineCounter),
+                                          dtype=np.uint16, sep=',')
         self.channel_count = int(root.ChCount)
         self.mapping_count = int(root.DetectorCount)
         self.channel_factors = {}
         self.spectra_data = {}
         for i in range(self.mapping_count):
-            self.channel_factors[i] = int(root.xpath("ChannelFactor" + str(i))[0])
+            self.channel_factors[i] = int(root.xpath("ChannelFactor" +
+                                                                    str(i))[0])
             self.spectra_data[i] = EDXSpectrum(root.xpath("SpectrumData" +
-                                                                str(i))[0].ClassInstance)
+                                                       str(i))[0].ClassInstance)
 
     def estimate_map_channels(self, index=0):
         """estimate minimal size of array that any pixel of spectra would
@@ -509,22 +504,24 @@ class HyperHeader(object):
         """
 
         sum_eds = self.spectra_data[index].data
-        return sum_eds.nonzero()[0][-1] + 1  # +1 to get the number not the index
+        return sum_eds.nonzero()[0][-1] + 1  # +1: the number not the index
 
     def estimate_map_depth(self, index=0):
-        """estimate minimal dtype of array that any spectra of all pixels would be
-        not truncated.
+        """estimate minimal dtype of array from the cumulative spectra
+        of the all pixels so that none would be truncated.
         args:
-        index -- index of the map channels if multiply hypermaps are present
-        in the same bcf.
+        index -- index of the map channels if multiply hypermaps are
+        present in the same bcf.
         returns:
         numpy dtype large enought to use in final hypermap numpy array.
 
-        The method estimates the value from sum eds spectra, dividing the maximal
-        value from raster width and hight and to be on the safe side multiplying by 2.
+        The method estimates the value from sum eds spectra, dividing
+        the maximum value from raster width and hight and to be on the
+        safe side multiplying by 2.
         """
         sum_eds = self.spectra_data[index].data
-        roof = np.max(sum_eds) // self.image.width // self.image.height * 2  # this is allways 0kV peak
+        #the most intensive peak is Bruker reference peak at 0kV:
+        roof = np.max(sum_eds) // self.image.width // self.image.height * 2
         if roof > 0xFF:
             if roof > 0xFFFF:
                 depth = np.uint32
@@ -535,6 +532,7 @@ class HyperHeader(object):
         return depth
 
     def get_spectra_metadata(self, index=0):
+        """return objectified xml with spectra metadata"""
         return self.spectra_data[index]
 
 
@@ -565,15 +563,18 @@ def bin_to_numpy(data, pointers, max_channels, depth):
     total_channels = total_pixels * max_channels
     #hyper map as very flat array:
     vfa = np.zeros(total_channels, dtype=depth)
-    for pix in range(0,total_pixels,1):
+    for pix in range(0, total_pixels, 1):
         if pointers[pix] > 0:
             data.seek(pointers[pix])
-            #d_ dummy - throwaway
-            chan1, chan2, d_, flag, data_size1, n_of_pulses, data_size2, d_ =\
-                                            strct_unp('<HHIHHHHH', data.read(18)) # pointer +18
+            #_d dummy - throwaway
+            #_data_size1 - sometimes is equal to data_size2, sometimes 0
+            chan1, chan2, _d, flag, _data_size1, n_of_pulses, data_size2, _d =\
+                                        strct_unp('<HHIHHHHH', data.read(18))
             if flag == 1:  # and (chan1 != chan2)
-                data1 = data.read(data_size2)  # pointer + data_size2
-                #Unpack packed 12-bit data to 16-bit uints
+                #Unpack packed 12-bit data to 16-bit uints:
+                #TODO: the stuff for 12-bit unpacking works
+                #just on little endian
+                data1 = data.read(data_size2)
                 switched_i2 = np.fromstring(data1,
                                             dtype=np.uint16
                                             ).byteswap(True)
@@ -589,62 +590,64 @@ def bin_to_numpy(data, pointers, max_channels, depth):
                                         ).byteswap(True)
                 exp16[0::2] >>= 4             # Shift every second short by 4
                 exp16 &= np.uint16(0x0FFF)    # Mask upper 4-bits on all shorts
-                pixel = np.bincount(exp16, minlength=chan1-1)
+                pixel = np.bincount(exp16, minlength=chan1 - 1)
             else:
-                #######function instructed to pixel##########################
+                #part for instructively packed to pixel:
                 offset = 0
                 pixel = []
-                while offset < data_size2-4:
-                    #size, channels = data.read(2) #this would work on py3
-                    size, channels = strct_unp('<BB',data.read(2)) # this is needed on py2
+                while offset < data_size2 - 4:
+                    #this would work on py3
+                    #size, channels = data.read(2)
+                    # this is needed on py2:
+                    size, channels = strct_unp('<BB', data.read(2))
                     if size == 0:
-                        #pixel += [0 for l in range(channels)]
                         pixel += channels * [0]
                         offset += 2
                     else:
-                        addition = strct_unp('<'+st[size*2],
-                                                data.read(size)
-                                                )[0]
+                        addition = strct_unp('<' + st[size * 2],
+                                             data.read(size))[0]
                         if size == 1:
                             # special case with nibble switching
                             lenght = -(-channels // 2)
                             #a = list(data.read(lenght))  # valid py3 code
-                            a = strct_unp('<'+'B'*lenght, data.read(lenght)) #this have to be used on py2
+                            #this have to be used on py2
+                            a = strct_unp('<' + 'B' * lenght, data.read(lenght))
                             g = []
                             for i in a:
-                                g += (i & 0x0F) + addition, (i >> 4) + addition #
+                                g += (i & 0x0F) + addition, (i >> 4) + addition
                             pixel += g[:channels]
                         else:
                             lenght = int(channels * size / 2)
-                            temp = strct_unp('<' + channels*st[size],
-                                            data.read(lenght))
+                            temp = strct_unp('<' + channels * st[size],
+                                             data.read(lenght))
                             pixel += [l + addition for l in temp]
                         offset += 2 + size + lenght
                 if chan2 < chan1:
-                    rest =  chan1 - chan2
+                    rest = chan1 - chan2
                     #pixel += [0 for i in range(0,rest,1)]
                     pixel += rest * [0]
                 # additional data size:
                 if n_of_pulses > 0:
                     add_s = strct_unp('<I', data.read(4))[0]
                     # the additional pulses:
-                    thingy = strct_unp('<'+'H'*n_of_pulses, data.read(add_s))
+                    thingy = strct_unp('<' + 'H' * n_of_pulses,
+                                       data.read(add_s))
                     for i in thingy:
                         pixel[i] += 1
-            vfa[0+max_channels*pix : chan1+max_channels*pix] = pixel
+            vfa[0 + max_channels * pix:chan1 + max_channels * pix] = pixel
     vfa.resize((height, width, max_channels))
-    return vfa.swapaxes(2,0)
+    return vfa.swapaxes(2, 0)
 
 
 def spect_pos_from_file(sp_data):
-    """(intended to BCF v2) Reads and returns
-    the offset/pointer table of the pixels as numpy
-    array (identical to function bin_to_spect_pos).
+    """read and return the pointer table of the pixels
+    as iterable. (intended to BCF v2!!!)
+    args:
+        BytesIO object of the pixel pointer table file
+         in the bcf.
     The function is supposed to be applied upon
     version2 bcf, where such table of pixels is
-    already precalculated; however in version1
-    there is no table, and instead
-    the function bin_to_spect_pos() should be used.
+    already precalculated.
     """
     sp_data.seek(0)
     height, width = strct_unp('<ii', sp_data.read(8))
@@ -655,7 +658,7 @@ def spect_pos_from_file(sp_data):
 
 
 def bin_to_spect_pos(data):
-    """parses whole data stream and creates numpy array
+    """parses whole data stream and creates iterable
     with pixel offsets/pointers pointing to SpectrumData
     file inside bruker bcf container. (intended BCF v1)
     Such table is presented in bcf version 2, but is not
@@ -663,7 +666,7 @@ def bin_to_spect_pos(data):
 
     Arguments:
     data -- io.BytesIO string with data of SpectrumData*
-    Returns flat numpy array.
+    Returns iterable
     """
     data.seek(0)
     height, width = strct_unp('<ii', data.read(8))
@@ -684,13 +687,13 @@ def bin_to_spect_pos(data):
             data.seek(8, 1)
             flag, data_size1, n_of_pulses, data_size2 = strct_unp(
                                                  '<HHHH', data.read(8))
-            data.seek(2, 1) # always 0x0000
+            data.seek(2, 1)  # always 0x0000
             # depending to packing type (flag) do:
             if flag == 1:  # and (chan1 != chan2)
-                data.seek(data_size2, 1) #skip to next pixel/line
+                data.seek(data_size2, 1)  # skip to next pixel/line
             else:
                 if n_of_pulses > 0:
-                    data.seek(data_size2-4, 1) #skip to pulses size
+                    data.seek(data_size2 - 4, 1)  # skip to pulses size
                     #additional pulses for data with flag 2 and 3:
                     add_s = strct_unp('<i', data.read(4))[0]
                     data.seek(add_s, 1)
@@ -702,10 +705,12 @@ def bin_to_spect_pos(data):
 class BCF_reader(SFS_reader):
     def __init__(self, filename):
         SFS_reader.__init__(self, filename)
-        self.header = HyperHeader(self.get_file('EDSDatabase/HeaderData').get_as_BytesIO_string().getvalue())
+        header_file = self.get_file('EDSDatabase/HeaderData')
+        header_byte_str = header_file.get_as_BytesIO_string().getvalue()
+        self.header = HyperHeader(header_byte_str)
 
     def parse_hyper_map(self, index=0):
-        """ returns the numpy array from given bcf file for given slice
+        """ return the numpy array from given bcf file for given slice
 
         Arguments:
         filename -- bcf file name/path
@@ -719,27 +724,32 @@ class BCF_reader(SFS_reader):
         returns numpy array
         """
         ind = index
-        data = self.get_file('EDSDatabase/SpectrumData' + str(ind)).get_as_BytesIO_string()
+        data = self.get_file('EDSDatabase/SpectrumData' +
+                                              str(ind)).get_as_BytesIO_string()
         max_channels = self.header.estimate_map_channels(index=ind)
         depth = self.header.estimate_map_depth(index=ind)
         if self.header.version == 1:
             pointers = bin_to_spect_pos(data)
         else:
-            sp_data = self.get_file('EDSDatabase/SpectrumPositions' + str(ind)).get_as_BytesIO_string()
+            sp_data = self.get_file('EDSDatabase/SpectrumPositions' +
+                                              str(ind)).get_as_BytesIO_string()
             pointers = spect_pos_from_file(sp_data)
 
         return bin_to_numpy(data, pointers, max_channels, depth)
 
     def _parse_line_positions(self, index=0):
         ind = index
-        data = self.get_file('EDSDatabase/SpectrumData' + str(ind)).get_as_BytesIO_string()
+        data = self.get_file('EDSDatabase/SpectrumData' +
+                                              str(ind)).get_as_BytesIO_string()
         pointers = bin_to_spect_pos(data)
         return pointers
 
     def persistent_parse_hypermap(self, index=0, downsample=None):
+        """parse and assign the hypermap to the Hypermap python object"""
         ind = index
         dwn = downsample
-        self.hypermap[ind] = HyperMap(self.parse_hyper_map(index=ind), self, downsample=dwn, index=ind)
+        self.hypermap[ind] = HyperMap(self.parse_hyper_map(index=ind),
+                                      self, downsample=dwn, index=ind)
 
 
 class HyperMap(object):
