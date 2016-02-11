@@ -58,7 +58,7 @@ try:
     fast_unbcf = True
     if verbose:
         print("The fast cython based bcf unpacking library were found")
-except:
+except ImportError:
     fast_unbcf = False
     if verbose:
         print("No fast bcf library present... Falling back to python only backend")
@@ -113,14 +113,13 @@ class SFSTreeItem(object):
                 temp_string.close()
             else:
                 fn.seek(self.sfs.chunksize *
-                        self._pointer_to_pointer_table
-                        + 0x138)
+                        self._pointer_to_pointer_table + 0x138)
                 temp_table = fn.read(self.sfs.usable_chunk)
             self.pointers = np.fromstring(temp_table[:self.size_in_chunks * 4],
                                           dtype='uint32').astype(np.int64) *\
                                                    self.sfs.chunksize + 0x138
 
-    def _read_piece(self, offset, length):
+    def read_piece(self, offset, length):
         """reads and returns raw byte string of the file. It do not do
         any decompression if stream is compressed and have to be done with
         other functions.
@@ -157,7 +156,7 @@ class SFSTreeItem(object):
                 data.write(fn.read(length))
         return data
 
-    def _read_chunks_iter(self, first=0, chunks=False):
+    def read_chunks_iter(self, first=0, chunks=False):
         """Generate iterator reading and returning chunks of file.
         By default it creates iterator for all chunks, however
         with kwargs 'first' and 'chunks' the range of chunks
@@ -181,7 +180,7 @@ class SFSTreeItem(object):
             else:
                 yield fn.read(self.sfs.usable_chunk)
 
-    def _setup_compression_metadata(self):
+    def setup_compression_metadata(self):
         """setup the number of chunks and uncompressed size as class atribs"""
         with open(self.sfs.filename, 'rb') as fn:
             fn.seek(self.pointers[0])
@@ -197,7 +196,7 @@ but compression signature is missing in the header. Aborting....""")
     def get_as_BytesIO_string(self):
         if self.sfs.compression == 'None':
             data = io.BytesIO()
-            data.write(b''.join(self._read_chunks_iter()))
+            data.write(b''.join(self.read_chunks_iter()))
             return data
         elif self.sfs.compression in ('zlib', 'bzip2'):
             # import required library just once:
@@ -310,7 +309,7 @@ class SFS_reader(object):
             if self.compression in ('zlib', 'bzip2'):
                 for c in temp_item_list:
                     if not c.is_dir:
-                        c._setup_compression_metadata()
+                        c.setup_compression_metadata()
 
             while not all(g[-1] == -1 for g in paths):
                 for f in range(len(paths)):
@@ -425,7 +424,7 @@ class HyperHeader(object):
         root = objectify.fromstring(xml_str, parser=oparser).ClassInstance
         try:
             self.name = str(root.attrib['Name'])
-        except:
+        except AttributeError:
             self.name = 'Undefinded'
         self.datetime = datetime.strptime(' '.join([str(root.Header.Date),
                                                     str(root.Header.Time)]),
@@ -448,15 +447,15 @@ class HyperHeader(object):
         try:
             self.stage.x = float(semStageData.X) / 1.0e6
             self.stage.y = float(semStageData.Y) / 1.0e6
-        except:
+        except AttributeError:
             self.stage.x = self.stage.y = None
         try:
             self.stage.z = float(semStageData.Z) / 1.0e6
-        except:
+        except AttributeError:
             self.stage.z = None
         try:
             self.stage.rotation = float(semStageData.Rotation)  # in degrees
-        except:
+        except AttributeError:
             self.stage.rotation = None
         DSPConf = root.xpath("ClassInstance[@Type='TRTDSPConfiguration']")[0]
         self.stage.tilt_angle = float(DSPConf.TiltAngle)
@@ -568,14 +567,13 @@ def bin_to_numpy(data, pointers, max_channels, depth):
     vfa = np.zeros(total_channels, dtype=depth)
     for pix in range(0,total_pixels,1):
         if pointers[pix] > 0:
-            ##############func###########################################
             data.seek(pointers[pix])
             #d_ dummy - throwaway
             chan1, chan2, d_, flag, data_size1, n_of_pulses, data_size2, d_ =\
                                             strct_unp('<HHIHHHHH', data.read(18)) # pointer +18
             if flag == 1:  # and (chan1 != chan2)
-                data1 = data.read(data_size2)                    # pointer + data_size2
-                """Unpack packed 12-bit data to 16-bit uints"""
+                data1 = data.read(data_size2)  # pointer + data_size2
+                #Unpack packed 12-bit data to 16-bit uints
                 switched_i2 = np.fromstring(data1,
                                             dtype=np.uint16
                                             ).byteswap(True)
