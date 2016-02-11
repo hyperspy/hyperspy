@@ -2725,14 +2725,12 @@ class Signal(MVA,
                                 odata = np.expand_dims(
                                     odata, oam.navigation_dimension)
                                 sdim_diff -= 1
-                            record_by = False
                         else:
                             # Pad sdata
                             while sdim_diff:
                                 sdata = np.expand_dims(
                                     sdata, sam.navigation_dimension)
                                 sdim_diff -= 1
-                            record_by = other.metadata.Signal.record_by
                     if op_name in INPLACE_OPERATORS:
                         # This should raise a ValueError if the operation
                         # changes the shape of the object on the left.
