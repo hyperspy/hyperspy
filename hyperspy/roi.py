@@ -191,13 +191,8 @@ class BaseROI(t.HasTraits):
         [<DataAxis>]
         """
         nd = self.ndim
-        axes_out = []
         if isinstance(axes, (tuple, list)):
-            for i in xrange(nd):
-                if isinstance(axes[i], DataAxis):
-                    axes_out.append(axes[i])
-                else:
-                    axes_out.append(axes_manager[axes[i]])
+            axes_out = axes_manager[axes[:nd]]
         else:
             if axes_manager.navigation_dimension >= nd:
                 axes_out = axes_manager.navigation_axes[:nd]
