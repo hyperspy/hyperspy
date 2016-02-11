@@ -105,9 +105,7 @@ class SFSTreeItem(object):
                 next_chunk = self._pointer_to_pointer_table
                 temp_string = io.BytesIO()
                 for j in range(0, n_of_chunks, 1):
-                    fn.seek(self.sfs.chunksize *
-                            next_chunk +
-                            0x118)
+                    fn.seek(self.sfs.chunksize * next_chunk + 0x118)
                     next_chunk = strct_unp('<I', fn.read(4))[0]
                     fn.seek(28, 1)
                     temp_string.write(fn.read(self.sfs.usable_chunk))
@@ -207,7 +205,7 @@ but compression signature is missing in the header. Aborting....""")
         else:
             from bzip2 import decompress as unzip_block  # lint:ok
         offset = 0x80  # the 1st compression block header
-        for i in range(self.no_of_compr_blk):
+        for dymmy1 in range(self.no_of_compr_blk):
             cpr_size, uncpr_size, _unknwn, _dummy_size = strct_unp('<IIII',
                                                   self.read_piece(offset, 16))
             #_unknwn is probably some kind of checksum but non
@@ -566,9 +564,9 @@ def bin_to_numpy(data, pointers, max_channels, depth):
     for pix in range(0, total_pixels, 1):
         if pointers[pix] > 0:
             data.seek(pointers[pix])
-            #_d dummy - throwaway
+            #_1 and _2 dummy - throwaway
             #_data_size1 - sometimes is equal to data_size2, sometimes 0
-            chan1, chan2, _d, flag, _data_size1, n_of_pulses, data_size2, _d =\
+            chan1, chan2, _1, flag, _data_size1, n_of_pulses, data_size2, _2 =\
                                         strct_unp('<HHIHHHHH', data.read(18))
             if flag == 1:  # and (chan1 != chan2)
                 #Unpack packed 12-bit data to 16-bit uints:
@@ -673,19 +671,19 @@ def bin_to_spect_pos(data):
     n_of_pix = height * width
     data.seek(0x1A0)
     # create the list with all values -1
-    mapping_pointers = [-1 for h in range(0, n_of_pix, 1)]
+    mapping_pointers = [-1] * n_of_pix
     #mapping_pointers = np.full(n_of_pix, -1, dtype=np.int64)
-    for line_cnt in range(0, height, 1):
+    for line_cnt in range(height):
         #line_head contains number of non-empty pixels in line
         line_head = strct_unp('<i', data.read(4))[0]
-        for pix_cnt in range(0, line_head, 1):
+        for dummy1 in range(line_head):
             #x_index of the pixel:
             x_pix = strct_unp('<i', data.read(4))[0] + width * line_cnt
             offset = data.tell()
             mapping_pointers[x_pix] = offset
             # skip channel number and some placeholder:
             data.seek(8, 1)
-            flag, data_size1, n_of_pulses, data_size2 = strct_unp(
+            flag, _data_size1, n_of_pulses, data_size2 = strct_unp(
                                                  '<HHHH', data.read(8))
             data.seek(2, 1)  # always 0x0000
             # depending to packing type (flag) do:
