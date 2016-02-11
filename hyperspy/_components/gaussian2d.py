@@ -24,7 +24,7 @@ pi2 = 2 * math.pi
 sigma2fwhm = 2 * math.sqrt(2 * math.log(2))
 
 
-class Gaussian2Drot(Component):
+class Gaussian2D(Component):
     """Normalized 2D elliptical gaussian function component
 
     .. math::
@@ -113,6 +113,7 @@ class Gaussian2Drot(Component):
     # Rotation compared to "x"-axis
     @property
     def rotation_degrees(self):
+        """ Finds the rotation compared to the "x-axis" """
         if self.sigma_x.value > self.sigma_y.value:
             return math.degrees(self.rotation.value)
         else:
