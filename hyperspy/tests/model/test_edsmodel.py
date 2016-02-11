@@ -139,7 +139,7 @@ class TestlineFit:
                                    xray_lines=['Fe_Ka'], bound=100)
 
         np.testing.assert_allclose(0.0347, m['Fe_Kb'].A.value,
-                       atol=1e-3))
+                                   atol=1e-3)
 
     def test_calibrate_xray_width(self):
         s = self.s
