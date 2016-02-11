@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2015 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -21,7 +21,7 @@ from __future__ import division
 import warnings
 import numpy as np
 import math
-from contextlib import contextmanager
+from hyperspy.misc.utils import stash_active_state
 
 from hyperspy.models.model1D import Model1D
 from hyperspy._signals.eds import EDSSpectrum
@@ -92,26 +92,8 @@ def _get_scale(E1, E_ref1, fact):
     return lambda E: E1 + fact * (E - E_ref1)
 
 
-@contextmanager
-def stash_active_state(model):
-    active_state = []
-    for component in model:
-        if component.active_is_multidimensional:
-            active_state.append(component._active_array)
-        else:
-            active_state.append(component.active)
-    yield
-    for component in model:
-        active_s = active_state.pop(0)
-        if isinstance(active_s, bool):
-            component.active = active_s
-        else:
-            if not component.active_is_multidimensional:
-                component.active_is_multidimensional = True
-            component._active_array[:] = active_s
-
-
 class EDSModel(Model1D):
+
     """Build and fit a model of an EDS Spectrum.
 
     Parameters
@@ -477,7 +459,7 @@ class EDSModel(Model1D):
                 fact = float(ax.value2index(E)) / ax.value2index(E_ref)
                 component.centre.twin_function = _get_scale(E, E_ref, fact)
                 component.centre.twin_inverse_function = _get_scale(
-                    E_ref, E, 1./fact)
+                    E_ref, E, 1. / fact)
                 component.centre.twin = component_ref.centre
                 ref.append(E)
         return ref
@@ -573,7 +555,7 @@ class EDSModel(Model1D):
         calibrate: 'resolution' or 'scale' or 'offset'
             If 'resolution', fits the width of Gaussians place at all x-ray
             lines. The width is given by a model of the detector resolution,
-            obtained by extrapolating the `energy_resolution_MnKa` in
+            obtained by extrapolating the `energy_resolution_MnKa` in `metadata`
             `metadata`.
             This method will update the value of `energy_resolution_MnKa`.
             If 'scale', calibrate the scale of the energy axis
@@ -846,7 +828,7 @@ class EDSModel(Model1D):
             if xray_lines == 'from_metadata':
                 xray_lines = self.spectrum.metadata.Sample.xray_lines
             xray_lines = filter(lambda x: x in [a.name for a in
-                                self], xray_lines)
+                                                self], xray_lines)
         if not xray_lines:
             raise ValueError("These X-ray lines are not part of the model.")
         for xray_line in xray_lines:

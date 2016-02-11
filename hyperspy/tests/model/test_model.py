@@ -869,8 +869,8 @@ class TestAsSignal:
 
         self.m[0]._active_array[0] = False
         s = self.m.as_signal(show_progressbar=None)
-        nt.assert_true(
-            np.all(s.data == np.array([np.ones(5) * 2, np.ones(5) * 4])))
+        np.testing.assert_array_equal(
+            s.data, np.array([np.ones(5) * 2, np.ones(5) * 4]))
         nt.assert_true(self.m[0].active_is_multidimensional)
 
     def test_one_component_multidim(self):
@@ -882,7 +882,7 @@ class TestAsSignal:
         nt.assert_false(self.m[1].active_is_multidimensional)
 
         s = self.m.as_signal(component_list=[1], show_progressbar=None)
-        nt.assert_true(np.all(s.data == 2.))
+        np.testing.assert_equal(s.data, 2.)
         nt.assert_true(self.m[0].active_is_multidimensional)
 
         self.m[0]._active_array[0] = False
@@ -907,3 +907,47 @@ class TestCreateModel:
             self.s.create_model(), Model1D)
         nt.assert_is_instance(
             self.im.create_model(), Model2D)
+
+
+class TestAdjustPosition:
+
+    def setUp(self):
+        self.s = hs.signals.Spectrum(np.random.rand(10, 10, 20))
+        self.m = self.s.create_model()
+
+    def test_enable_adjust_position(self):
+        self.m.append(hs.model.components.Gaussian())
+        self.m.enable_adjust_position()
+        nt.assert_equal(len(self.m._position_widgets), 1)
+        # Check that both line and label was added
+        nt.assert_equal(len(self.m._position_widgets.values()[0]), 2)
+
+    def test_disable_adjust_position(self):
+        self.m.append(hs.model.components.Gaussian())
+        self.m.enable_adjust_position()
+        self.m.disable_adjust_position()
+        nt.assert_equal(len(self.m._position_widgets), 0)
+
+    def test_enable_all(self):
+        self.m.append(hs.model.components.Gaussian())
+        self.m.enable_adjust_position()
+        self.m.append(hs.model.components.Gaussian())
+        nt.assert_equal(len(self.m._position_widgets), 2)
+
+    def test_enable_all_zero_start(self):
+        self.m.enable_adjust_position()
+        self.m.append(hs.model.components.Gaussian())
+        nt.assert_equal(len(self.m._position_widgets), 1)
+
+    def test_manual_close(self):
+        self.m.append(hs.model.components.Gaussian())
+        self.m.append(hs.model.components.Gaussian())
+        self.m.enable_adjust_position()
+        self.m._position_widgets.values()[0][0].close()
+        nt.assert_equal(len(self.m._position_widgets), 2)
+        nt.assert_equal(len(self.m._position_widgets.values()[0]), 1)
+        self.m._position_widgets.values()[0][0].close()
+        nt.assert_equal(len(self.m._position_widgets), 1)
+        nt.assert_equal(len(self.m._position_widgets.values()[0]), 2)
+        self.m.disable_adjust_position()
+        nt.assert_equal(len(self.m._position_widgets), 0)

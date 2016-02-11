@@ -3,6 +3,7 @@ import nose.tools as nt
 
 import hyperspy.api as hs
 from hyperspy.models.model1D import Model1D
+from hyperspy.misc.test_utils import ignore_warning
 
 
 class TestPowerLaw:
@@ -260,7 +261,9 @@ class TestScalableFixedPattern:
         m = s.create_model()
         fp = hs.model.components.ScalableFixedPattern(s1)
         m.append(fp)
-        m.fit()
+        with ignore_warning(message="invalid value encountered in sqrt",
+                            category=RuntimeWarning):
+            m.fit()
         nt.assert_almost_equal(fp.yscale.value, 100, delta=0.1)
 
     def test_both_binned(self):
@@ -271,7 +274,9 @@ class TestScalableFixedPattern:
         m = s.create_model()
         fp = hs.model.components.ScalableFixedPattern(s1)
         m.append(fp)
-        m.fit()
+        with ignore_warning(message="invalid value encountered in sqrt",
+                            category=RuntimeWarning):
+            m.fit()
         nt.assert_almost_equal(fp.yscale.value, 100, delta=0.1)
 
     def test_pattern_unbinned_signal_binned(self):
@@ -282,7 +287,9 @@ class TestScalableFixedPattern:
         m = s.create_model()
         fp = hs.model.components.ScalableFixedPattern(s1)
         m.append(fp)
-        m.fit()
+        with ignore_warning(message="invalid value encountered in sqrt",
+                            category=RuntimeWarning):
+            m.fit()
         nt.assert_almost_equal(fp.yscale.value, 1000, delta=1)
 
     def test_pattern_binned_signal_unbinned(self):
@@ -293,5 +300,7 @@ class TestScalableFixedPattern:
         m = s.create_model()
         fp = hs.model.components.ScalableFixedPattern(s1)
         m.append(fp)
-        m.fit()
+        with ignore_warning(message="invalid value encountered in sqrt",
+                            category=RuntimeWarning):
+            m.fit()
         nt.assert_almost_equal(fp.yscale.value, 10, delta=.1)

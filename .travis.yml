@@ -6,18 +6,21 @@ python:
   - 2.7
 
 env:
-  - DEPS="nose numpy scipy matplotlib traits traitsui ipython h5py sympy scikit-learn dill mock"
+  - export FAIL_ON_EXTERNAL_DEPRECATION='False'
+  - export FAIL_ON_EXTERNAL_DEPRECATION='True'
+
+matrix:
+  allow_failures:
+    - env: export FAIL_ON_EXTERNAL_DEPRECATION='True'
+
 
 install:
+  - DEPS="nose numpy scipy matplotlib traits traitsui ipython h5py sympy scikit-learn dill mock setuptools"
   - conda create -n testenv --yes python=$TRAVIS_PYTHON_VERSION
   - source activate testenv
   - conda install --yes $DEPS
   - conda install pip
   - pip install coverage coveralls
-  # The following two lines set hyperspy to run headless. This is a temporary
-  # workaround until we fix hyperspy so that this is not required.
-  - mkdir ~/.hyperspy
-  - printf "[General]\ndefault_toolkit = None" > ~/.hyperspy/hyperspyrc
   - python setup.py install
 
 before_install:

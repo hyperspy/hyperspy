@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2015 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -47,8 +47,8 @@ def _from_serial_date(serial):
     # Excel date&time format
     origin = datetime(1899, 12, 30, tzinfo=tz.tzutc())
     secs = (serial % 1.0) * 86400.0
-    dt = timedelta(int(serial), secs, secs/1000)
-    utc = origin+dt
+    dt = timedelta(int(serial), secs, secs / 1000)
+    utc = origin + dt
     return utc.astimezone(tz.tzlocal())
 
 
@@ -110,8 +110,8 @@ def get_default_header(endianess='<'):
     header['UNKNOWN1'][0] = 131141          # Very typical value (always?)
     header['Acquisition_time'][0] = _to_serial_date(
         datetime.fromtimestamp(86400, tz.tzutc()))
-        # Default to UNIX epoch + 1 day
-        # Have to add 1 day, as dateutil's timezones dont work before epoch
+    # Default to UNIX epoch + 1 day
+    # Have to add 1 day, as dateutil's timezones dont work before epoch
     return header
 
 
@@ -123,7 +123,7 @@ def get_header_from_signal(signal, endianess='<'):
         note = signal.original_metadata['blockfile_header']['Note']
     else:
         note = ''
-    if signal.axes_manager.navigation_dimension == 2: 
+    if signal.axes_manager.navigation_dimension == 2:
         NX, NY = signal.axes_manager.navigation_shape
         SX = signal.axes_manager.navigation_axes[0].scale
         SY = signal.axes_manager.navigation_axes[0].scale
@@ -134,14 +134,14 @@ def get_header_from_signal(signal, endianess='<'):
         SY = SX
     elif signal.axes_manager.navigation_dimension == 0:
         NX = NY = SX = SY = 1
-            
+
     DP_SZ = signal.axes_manager.signal_shape
     if DP_SZ[0] != DP_SZ[1]:
         raise ValueError('Blockfiles require signal shape to be square!')
     DP_SZ = DP_SZ[0]
     SDP = 100. / signal.axes_manager.signal_axes[0].scale
 
-    offset2 = NX*NY + header['Data_offset_1']
+    offset2 = NX * NY + header['Data_offset_1']
     # Based on inspected files, the DPs are stored at 16-bit boundary...
     # Normally, you'd expect word alignment (32-bits) ¯\_(°_o)_/¯
     offset2 += offset2 % 16
@@ -152,7 +152,7 @@ def get_header_from_signal(signal, endianess='<'):
         'SX': SX, 'SY': SY,
         'SDP': SDP,
         'Data_offset_2': offset2,
-        }, sarray=header)
+    }, sarray=header)
     return header, note
 
 
@@ -167,7 +167,7 @@ def file_reader(filename, endianess='<', load_to_memory=True, mmap_mode='c',
     else:
         f = open(filename, 'rb')
     _logger.debug("File opened")
-    
+
     # Get header
     header = np.fromfile(f, dtype=get_header_dtype_list(endianess), count=1)
     if header['MAGIC'][0] not in magics:
@@ -185,7 +185,7 @@ def file_reader(filename, endianess='<', load_to_memory=True, mmap_mode='c',
     else:
         SDP = Undefined
     original_metadata = {'blockfile_header': header}
-    
+
     # Get data:
 
     # A Virtual BF/DF is stored first
@@ -198,21 +198,20 @@ def file_reader(filename, endianess='<', load_to_memory=True, mmap_mode='c',
     offset2 = header['Data_offset_2']
     if load_to_memory:
         f.seek(offset2)
-        data = np.fromfile(f, dtype=endianess+'u1')
+        data = np.fromfile(f, dtype=endianess + 'u1')
     else:
         data = np.memmap(f, mode=mmap_mode, offset=offset2,
-                         dtype=endianess+'u1')
-    try:        
-        data = data.reshape((NY, NX, DP_SZ*DP_SZ + 6))
+                         dtype=endianess + 'u1')
+    try:
+        data = data.reshape((NY, NX, DP_SZ * DP_SZ + 6))
     except ValueError:
         warnings.warn(
             'Blockfile header dimensions larger than file size! '
             'Will attempt to load by zero padding incomplete frames.')
         # Data is stored DP by DP:
-        pw = [(0, NX*NY*(DP_SZ*DP_SZ + 6) - data.size)]
+        pw = [(0, NX * NY * (DP_SZ * DP_SZ + 6) - data.size)]
         data = np.pad(data, pw, mode='constant')
-        data = data.reshape((NY, NX, DP_SZ*DP_SZ + 6))
-        
+        data = data.reshape((NY, NX, DP_SZ * DP_SZ + 6))
 
     # Every frame is preceeded by a 6 byte sequence (AA 55, and then a 4 byte
     # integer specifying frame number)
@@ -261,7 +260,11 @@ def file_writer(filename, signal, **kwds):
         zero_pad = int(header['Data_offset_1']) - f.tell()
         np.zeros((zero_pad,), np.byte).tofile(f)
         # Write virtual bright field
-        vbf = signal.mean(2j).mean(2j).data.astype(endianess+'u1')
+        vbf = signal.mean(
+            signal.axes_manager.signal_axes[
+                :2]).data.astype(
+            endianess +
+            'u1')
         vbf.tofile(f)
         # Zero pad until next data block
         if f.tell() > int(header['Data_offset_2']):
@@ -272,11 +275,11 @@ def file_writer(filename, signal, **kwds):
 
         # Write full data stack:
         # We need to pad each image with magic 'AA55', then a u32 serial
-        dp_head = np.zeros((1,), dtype=[('MAGIC', endianess+'u2'),
-                           ('ID', endianess+'u4')])
+        dp_head = np.zeros((1,), dtype=[('MAGIC', endianess + 'u2'),
+                                        ('ID', endianess + 'u4')])
         dp_head['MAGIC'] = 0x55AA
         # Write by loop:
         for img in signal._iterate_signal():
             dp_head.tofile(f)
-            img.astype(endianess+'u1').tofile(f)
+            img.astype(endianess + 'u1').tofile(f)
             dp_head['ID'] += 1

@@ -1,5 +1,6 @@
 import nose.tools as nt
 import numpy as np
+from hyperspy.misc.test_utils import assert_warns
 
 from hyperspy.misc.eds import utils as utils_eds
 from hyperspy.misc.elements import elements as elements_db
@@ -17,7 +18,7 @@ class TestlineFit:
                                                     'scale': 0.01,
                                                     'name': 'E',
                                                     'offset': 5.})
-        s = s+0.002
+        s = s + 0.002
         self.s = s
 
     def test_fit(self):
@@ -25,7 +26,7 @@ class TestlineFit:
         m = s.create_model()
         m.fit()
         np.testing.assert_allclose([i.data for i in
-                                   m.get_lines_intensity()],
+                                    m.get_lines_intensity()],
                                    [[0.5], [0.2], [0.3]], atol=10-4)
 
     def _check_model_creation(self):
@@ -83,7 +84,9 @@ class TestlineFit:
         reso = s.metadata.Acquisition_instrument.TEM.Detector.EDS.\
             energy_resolution_MnKa,
         s.set_microscope_parameters(energy_resolution_MnKa=150)
-        m.calibrate_energy_axis(calibrate='resolution')
+        with assert_warns(message=r"Energy resolution \(FWHM at Mn Ka\) "
+                          "changed from"):
+            m.calibrate_energy_axis(calibrate='resolution')
         np.testing.assert_allclose(
             s.metadata.Acquisition_instrument.TEM.Detector.EDS.
             energy_resolution_MnKa, reso, atol=1)
@@ -127,13 +130,16 @@ class TestlineFit:
             energy_axis={'units': 'keV', 'size': 400,
                          'scale': 0.01, 'name': 'E',
                          'offset': 4.9})
-        s = (s+s1/50)
+        s = (s + s1 / 50)
         m = s.create_model()
         m.fit()
-        m.calibrate_xray_lines(calibrate='sub_weight',
-                               xray_lines=['Fe_Ka'], bound=100)
+        with assert_warns(message='The X-ray line expected to be in the model '
+                          'was not found'):
+            m.calibrate_xray_lines(calibrate='sub_weight',
+                                   xray_lines=['Fe_Ka'], bound=100)
+
         np.testing.assert_allclose(0.0347, m['Fe_Kb'].A.value,
-                                   atol=1e-3)
+                       atol=1e-3))
 
     def test_calibrate_xray_width(self):
         s = self.s

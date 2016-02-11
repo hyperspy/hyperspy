@@ -240,13 +240,48 @@ The methods of this section are available to all the signals. In other chapters
 methods that are only available in specialized
 subclasses.
 
+Simple mathematical operations
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. versionchanged:: 0.9
+
+A number of simple operations are supported by :py:class:`~.signal.Signal`. Most
+of them are just wrapped numpy functions, as an example:
+
+.. code-block:: python
+
+    >>> s = hs.signals.Signal(np.random.random((2,4,6)))
+    >>> s.axes_manager[0].name = 'E'
+    >>> s
+    <Signal, title: , dimensions: (4, 2|6)>
+    >>> # by default perform operation over all navigation axes
+    >>> s.sum()
+    <Signal, title: , dimensions: (|6)>
+    >>> # can also pass axes individually
+    >>> s.sum('E')
+    <Signal, title: , dimensions: (2|6)>
+    >>> # or a tuple of axes to operate on, with duplicates, by index or directly
+    >>> ans = s.sum((-1, s.axes_manager[1], 'E', 0))
+    >>> ans
+    <Signal, title: , dimensions: (|1)>
+    >>> ans.axes_manager[0]
+    <Scalar axis, size: 1>
+
+Other functions that support similar behavior: :py:func:`~.signal.sum`,
+:py:func:`~.signal.max`, :py:func:`~.signal.min`, :py:func:`~.signal.mean`,
+:py:func:`~.signal.std`, :py:func:`~.signal.var`. Similar functions that can
+only be performed on one axis at a time: :py:func:`~.signal.diff`,
+:py:func:`~.signal.derivative`, :py:func:`~.signal.integrate_simpson`,
+:py:func:`~.signal.integrate1D`, :py:func:`~.signal.valuemax`,
+:py:func:`~.signal.indexmax`.
+
 .. _signal.indexing:
 
 Indexing
 ^^^^^^^^
 .. versionadded:: 0.6
 
-Indexing the :py:class:`~.signal.Signal`  provides a powerful, convenient and
+Indexing the :py:class:`~.signal.Signal` provides a powerful, convenient and
 Pythonic way to access and modify its data.  It is a concept that might take
 some time to grasp but, once mastered, it can greatly simplify many common
 signal processing tasks.
@@ -688,19 +723,6 @@ to reverse the :py:func:`~.utils.stack` function:
   Splitting example.
 
 
-Simple operations over one axis
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-* :py:meth:`~.signal.Signal.sum`
-* :py:meth:`~.signal.Signal.mean`
-* :py:meth:`~.signal.Signal.max`
-* :py:meth:`~.signal.Signal.min`
-* :py:meth:`~.signal.Signal.std`
-* :py:meth:`~.signal.Signal.var`
-* :py:meth:`~.signal.Signal.diff`
-* :py:meth:`~.signal.Signal.derivative`
-* :py:meth:`~.signal.Signal.integrate_simpson`
-
 .. _signal.change_dtype:
 
 Changing the data type
@@ -894,3 +916,84 @@ for example:
       ├── record_by = spectrum
       ├── signal_origin = simulation
       └── signal_type =
+
+
+Speeding up operations
+----------------------
+
+.. versionadded:: 0.9
+
+Reusing a Signal for output
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Many signal methods create and return a new signal. For fast operations, the
+new signal creation time is non-negligible. Also, when the operation is
+repeated many times, for example in a loop, the cumulaive creation time can
+become significant. Therefore, many operations on `Signal` accept an optional
+argument `out`. If an existing signal is passed to `out`, the function output
+will be placed into that signal, instead of being returned in a new signal.
+The following example shows how to use this feature to slice a `Signal`. It is
+important to know that the `Signal` instance passed in the `out` argument must
+be well-suited for the purpose. Often this means that it must have the same
+axes and data shape as the `Signal` that would normally be returned by the
+operation.
+
+.. code-block:: python
+
+    >>> s = signals.Spectrum(np.arange(10))
+    >>> s_sum = s.sum(0)
+    >>> s_sum.data
+    array(45)
+    >>> s.inav[:5].sum(0, out=s_sum)
+    >>> s_sum.data
+    10
+    >>> s_roi = s.inav[:3]
+    >>> s_roi
+    <Spectrum, title: , dimensions: (|3)>
+    >>> s.inav.__getitem__(slice(None, 5), out=s_roi)
+    >>> s_roi
+    <Spectrum, title: , dimensions: (|5)>
+
+
+Interactive operations
+----------------------
+
+.. versionadded:: 0.9
+
+
+The function :py:func:`~.interactive.interactive` ease the task of defining
+operations that are automatically updated when an event is triggered. By
+default it recomputes the operation when data or the axes of the original
+signal changes.
+
+.. code-block:: python
+
+    >>> s = hs.signals.Spectrum(np.arange(10.))
+    >>> ssum = hs.interactive(s.sum, axis=0)
+    >>> ssum.data
+    array(45.0)
+    >>> s.data /= 10
+    >>> s.events.data_changed.trigger()
+    >>> ssum.data
+    4.5
+
+The interactive opearations can be chained.
+
+.. code-block:: python
+
+    >>> s = hs.signals.Spectrum(np.arange(2 * 3 * 4).reshape((2, 3, 4)))
+    >>> ssum = hs.interactive(s.sum, axis=0)
+    >>> ssum_mean = hs.interactive(ssum.mean, axis=0)
+    >>> ssum_mean.data
+    array([ 30.,  33.,  36.,  39.])
+    >>> s.data
+    array([[[ 0,  1,  2,  3],
+            [ 4,  5,  6,  7],
+            [ 8,  9, 10, 11]],
+
+           [[12, 13, 14, 15],
+            [16, 17, 18, 19],
+            [20, 21, 22, 23]]])
+    >>> s.data *= 10
+    >>> s.events.data_changed.trigger(obj=s)
+    >>> ssum_mean.data
+    array([ 300.,  330.,  360.,  390.])

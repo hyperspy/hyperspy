@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2015 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -21,6 +21,7 @@ import itertools
 import numpy as np
 import warnings
 from matplotlib import pyplot as plt
+from functools import partial
 
 from hyperspy import utils
 from hyperspy._signals.spectrum import Spectrum
@@ -40,7 +41,6 @@ class EDSSpectrum(Spectrum):
                   'set_signal_type(\'EDS_TEM\')  '
                   'or set_signal_type(\'EDS_SEM\')')
         self.metadata.Signal.binned = True
-        self._xray_markers = {}
 
     def _get_line_energy(self, Xray_line, FWHM_MnKa=None):
         """
@@ -153,7 +153,7 @@ class EDSSpectrum(Spectrum):
                 xray_lines_not_in_range.append(xray_line)
         return xray_lines_in_range, xray_lines_not_in_range
 
-    def sum(self, axis):
+    def sum(self, axis=None, out=None):
         """Sum the data over the given axis.
 
         Parameters
@@ -177,16 +177,22 @@ class EDSSpectrum(Spectrum):
         array(1000279)
 
         """
+        if axis is None:
+            axis = self.axes_manager.navigation_axes
         # modify time spend per spectrum
-        s = super(EDSSpectrum, self).sum(axis)
+        s = super(EDSSpectrum, self).sum(axis=axis, out=out)
+        s = out or s
         if "Acquisition_instrument.SEM" in s.metadata:
             mp = s.metadata.Acquisition_instrument.SEM
+            mp_old = self.metadata.Acquisition_instrument.SEM
         else:
             mp = s.metadata.Acquisition_instrument.TEM
+            mp_old = self.metadata.Acquisition_instrument.TEM
         if mp.has_item('Detector.EDS.live_time'):
-            mp.Detector.EDS.live_time = mp.Detector.EDS.live_time * \
-                self.axes_manager[axis].size
-        return s
+            mp.Detector.EDS.live_time = mp_old.Detector.EDS.live_time * \
+                self.data.size / s.data.size
+        if out is None:
+            return s
 
     def rebin(self, new_shape):
         """Rebins the data to the new shape
@@ -814,10 +820,14 @@ class EDSSpectrum(Spectrum):
         for xray_line in xray_lines:
             line_energy, line_FWHM = self._get_line_energy(xray_line,
                                                            FWHM_MnKa='auto')
-            tmp = [line_energy - line_FWHM * line_width[0] - line_FWHM * windows_width,
-                   line_energy - line_FWHM * line_width[0],
-                   line_energy + line_FWHM * line_width[1],
-                   line_energy + line_FWHM * line_width[1] + line_FWHM * windows_width]
+            tmp = [
+                line_energy - line_FWHM * line_width[0] -
+                line_FWHM * windows_width,
+                line_energy - line_FWHM * line_width[0],
+                line_energy + line_FWHM * line_width[1],
+                line_energy + line_FWHM * line_width[1] +
+                line_FWHM * windows_width
+                ]
             windows_position.append(tmp)
         windows_position = np.array(windows_position)
         # merge ovelapping windows
@@ -907,6 +917,12 @@ class EDSSpectrum(Spectrum):
         get_lines_intensity, estimate_background_windows
         """
         super(EDSSpectrum, self).plot(**kwargs)
+        self._plot_xray_lines(xray_lines, only_lines, only_one,
+                              background_windows, integration_windows)
+
+    def _plot_xray_lines(self, xray_lines=False, only_lines=("a", "b"),
+                         only_one=False, background_windows=None,
+                         integration_windows=None):
         if xray_lines is not False or\
                 background_windows is not None or\
                 integration_windows is not None:
@@ -990,22 +1006,6 @@ class EDSSpectrum(Spectrum):
                 x=line_energy[i], y=intensity[i] * 1.1, text=xray_lines[i],
                 rotation=90)
             self.add_marker(text)
-            self._xray_markers[xray_lines[i]] = (line, text)
-
-    def _remove_xray_lines_markers(self, xray_lines):
-        """
-        Remove marker previosuly added on a spec.plot() with the name of the
-        selected X-ray lines
-
-        Parameters
-        ----------
-        xray_lines: list of string
-            A valid list of X-ray lines to remove
-        """
-        for xray_line in xray_lines:
-            if xray_line in self._xray_markers:
-                for m in self._xray_markers[xray_line]:
-                    m.close()
 
     def _add_background_windows_markers(self,
                                         windows_position):

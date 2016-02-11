@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2015 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -52,8 +52,10 @@ def _cnv_time(timestr):
         r = float(timestr)
     return r
 
+
 def _bad_file(filename):
     raise AssertionError("Cannot interpret as DENS heater log: %s" % filename)
+
 
 def file_reader(filename, *args, **kwds):
     with open(filename, 'rt') as f:
@@ -77,22 +79,22 @@ def file_reader(filename, *args, **kwds):
             _bad_file(filename)
         original_metadata = dict(R0=R0, a=a, b=b, c=c, date=date,
                                  version=version)
-        
+
         if header_line.strip() != (
                 'sample\ttime\tTset[C]\tTmeas[C]\tRheat[ohm]\tVheat[V]\t'
                 'Iheat[mA]\tPheat [mW]\tc'):
             _bad_file(filename)
         try:
             rawdata = np.loadtxt(f, converters={1: _cnv_time}, usecols=(1, 3),
-                             unpack=True)
+                                 unpack=True)
         except ValueError:
             _bad_file(filename)
 
     times = rawdata[0]
     # Add a day worth of seconds to any values after a detected rollover
     # Hopefully unlikely that there is more than one, but we can handle it
-    for rollover in 1+np.where(np.diff(times) < 0)[0]:
-        times[rollover:] += 60*60*24
+    for rollover in 1 + np.where(np.diff(times) < 0)[0]:
+        times[rollover:] += 60 * 60 * 24
     # Raw data is not necessarily grid aligned. Interpolate onto grid.
     dt = np.diff(times).mean()
     temp = rawdata[1]
@@ -101,24 +103,23 @@ def file_reader(filename, *args, **kwds):
     interp_axis = times[0] + dt * np.array(range(len(times)))
     temp_interp = interp(interp_axis)
 
-
     metadata = {'General': {'original_filename': os.path.split(filename)[1]},
-                "Signal": {'signal_type': "temperature",},}
+                "Signal": {'signal_type': "temperature", }, }
 
-    axes = [ {
-            'size': len(temp_interp),
+    axes = [{
+        'size': len(temp_interp),
             'index_in_array': 0,
             'name': 'Time',
             'scale': dt,
             'offset': times[0],
             'units': 's',
             'navigate': False,
-        } ]
+            }]
 
     dictionary = {'data': temp_interp,
                   'axes': axes,
                   'metadata': metadata,
-                  'original_metadata': {'DENS_header': original_metadata }, 
+                  'original_metadata': {'DENS_header': original_metadata},
                   'mapping': mapping,
                   }
 

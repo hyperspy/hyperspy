@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2015 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -23,8 +23,12 @@ import numpy as np
 import traits.api as t
 from traits.trait_errors import TraitError
 
+from hyperspy.events import Events, Event
 from hyperspy.misc.utils import isiterable, ordinal
 from hyperspy.misc.math_tools import isfloat
+
+import warnings
+from hyperspy.misc.hspy_warnings import VisibleDeprecationWarning
 
 
 class ndindex_nat(np.ndindex):
@@ -82,6 +86,31 @@ class DataAxis(t.HasTraits):
                  units=t.Undefined,
                  navigate=t.Undefined):
         super(DataAxis, self).__init__()
+        self.events = Events()
+        self.events.index_changed = Event("""
+            Event that triggers when the index of the `DataAxis` changes
+
+            Triggers after the internal state of the `DataAxis` has been
+            updated.
+
+            Arguments:
+            ---------
+            obj : The DataAxis that the event belongs to.
+            index : The new index
+            """, arguments=["obj", 'index'])
+        self.events.value_changed = Event("""
+            Event that triggers when the value of the `DataAxis` changes
+
+            Triggers after the internal state of the `DataAxis` has been
+            updated.
+
+            Arguments:
+            ---------
+            obj : The DataAxis that the event belongs to.
+            value : The new value
+            """, arguments=["obj", 'value'])
+        self._suppress_value_changed_trigger = False
+        self._suppress_update_value = False
         self.name = name
         self.units = units
         self.scale = scale
@@ -95,13 +124,45 @@ class DataAxis(t.HasTraits):
         self.axes_manager = None
         self.on_trait_change(self.update_axis,
                              ['scale', 'offset', 'size'])
-        self.on_trait_change(self.update_value, 'index')
-        self.on_trait_change(self.set_index_from_value, 'value')
         self.on_trait_change(self._update_slice, 'navigate')
         self.on_trait_change(self.update_index_bounds, 'size')
         # The slice must be updated even if the default value did not
         # change to correctly set its value.
         self._update_slice(self.navigate)
+
+    def _index_changed(self, name, old, new):
+        self.events.index_changed.trigger(obj=self, index=self.index)
+        if not self._suppress_update_value:
+            new_value = self.axis[self.index]
+            if new_value != self.value:
+                self.value = new_value
+
+    def _value_changed(self, name, old, new):
+        old_index = self.index
+        new_index = self.value2index(new)
+        if self.continuous_value is False:  # Only values in the grid alowed
+            if old_index != new_index:
+                self.index = new_index
+                if new == self.axis[self.index]:
+                    self.events.value_changed.trigger(obj=self, value=new)
+            elif old_index == new_index:
+                new_value = self.index2value(new_index)
+                if new_value == old:
+                    self._suppress_value_changed_trigger = True
+                    try:
+                        self.value = new_value
+                    finally:
+                        self._suppress_value_changed_trigger = False
+
+                elif new_value == new and not\
+                        self._suppress_value_changed_trigger:
+                    self.events.value_changed.trigger(obj=self, value=new)
+        else:  # Intergrid values are alowed. This feature is deprecated
+            self.events.value_changed.trigger(obj=self, value=new)
+            if old_index != new_index:
+                self._suppress_update_value = True
+                self.index = new_index
+                self._suppress_update_value = False
 
     @property
     def index_in_array(self):
@@ -237,11 +298,21 @@ class DataAxis(t.HasTraits):
     def __str__(self):
         return self._get_name() + " axis"
 
-    def connect(self, f, trait='value'):
-        self.on_trait_change(f, trait)
+    def connect(self, f):
+        warnings.warn(
+            "The method `DataAxis.connect()` has been deprecated and will "
+            "be removed in HyperSpy 0.10. Please use "
+            "`DataAxis.events.value_changed.connect()` instead.",
+            VisibleDeprecationWarning)
+        self.events.value_changed.connect(f, [])
 
-    def disconnect(self, f, trait='value'):
-        self.on_trait_change(f, trait, remove=True)
+    def disconnect(self, f):
+        warnings.warn(
+            "The method `DataAxis.disconnect()` has been deprecated and "
+            "will be removed in HyperSpy 0.10. Please use "
+            "`DataAxis.events.indices_changed.disconnect()` instead.",
+            VisibleDeprecationWarning)
+        self.events.value_changed.disconnect(f)
 
     def update_index_bounds(self):
         self.high_index = self.size - 1
@@ -278,9 +349,6 @@ class DataAxis(t.HasTraits):
     def __deepcopy__(self, memo):
         cp = self.copy()
         return cp
-
-    def update_value(self):
-        self.value = self.axis[self.index]
 
     def value2index(self, value, rounding=round):
         """Return the closest index to the given value if between the limit.
@@ -324,17 +392,19 @@ class DataAxis(t.HasTraits):
             else:
                 raise ValueError("The value is out of the axis limits")
 
+    def set_index_from_value(self, value):
+        warnings.warn(
+            "The method `DataAxis.set_index_from_value()` has been deprecated "
+            "and will be removed in HyperSpy 0.10. Please set the value using "
+            "the `value` attribute and the index will update automatically.",
+            VisibleDeprecationWarning)
+        self.value = value
+
     def index2value(self, index):
         if isinstance(index, np.ndarray):
             return self.axis[index.ravel()].reshape(index.shape)
         else:
             return self.axis[index]
-
-    def set_index_from_value(self, value):
-        self.index = self.value2index(value)
-        # If the value is above the limits we must correct the value
-        if self.continuous_value is False:
-            self.value = self.index2value(self.index)
 
     def calibrate(self, value_tuple, index_tuple, modify_calibration=True):
         scale = (value_tuple[1] - value_tuple[0]) /\
@@ -370,6 +440,31 @@ class DataAxis(t.HasTraits):
         else:
             i2 = self.size - 1
         return i1, i2
+
+    def update_from(self, axis, attributes=["scale", "offset", "units"]):
+        """Copy values of specified axes fields from the passed AxesManager.
+        Parameters
+        ----------
+        axis : DataAxis
+            The DataAxis instance to use as a source for values.
+        fields : iterable container of strings.
+            The name of the attribute to update. If the attribute does not
+            exist in either of the AxesManagers, an AttributeError will be
+            raised.
+        Returns
+        -------
+        A boolean indicating whether any changes were made.
+
+        """
+        any_changes = False
+        changed = {}
+        for f in attributes:
+            if getattr(self, f) != getattr(axis, f):
+                changed[f] = getattr(axis, f)
+        if len(changed) > 0:
+            self.trait_set(**changed)
+            any_changes = True
+        return any_changes
 
 
 class AxesManager(t.HasTraits):
@@ -469,6 +564,28 @@ class AxesManager(t.HasTraits):
 
     def __init__(self, axes_list):
         super(AxesManager, self).__init__()
+        self.events = Events()
+        self.events.indices_changed = Event("""
+            Event that triggers when the indices of the `AxesManager` changes
+
+            Triggers after the internal state of the `AxesManager` has been
+            updated.
+
+            Arguments:
+            ---------
+            obj : The AxesManager that the event belongs to.
+            """, arguments=['obj'])
+        self.events.any_axis_changed = Event("""
+            Event that trigger when the space defined by the axes transforms.
+
+            Specifically, it triggers when one or more of the folloing
+            attributes changes on one or more of the axes:
+                `offset`, `size`, `scale`
+
+            Arguments:
+            ----------
+            axes_manager : The AxesManager that the event belongs to.
+            """, arguments=["obj"])
         self.create_axes(axes_list)
         # set_signal_dimension is called only if there is no current
         # view. It defaults to spectrum
@@ -478,9 +595,11 @@ class AxesManager(t.HasTraits):
             self.set_signal_dimension(1)
 
         self._update_attributes()
-        self.on_trait_change(self._update_attributes, '_axes.slice')
-        self.on_trait_change(self._update_attributes, '_axes.index')
-        self.on_trait_change(self._update_attributes, '_axes.size')
+        self.on_trait_change(self._on_index_changed, '_axes.index')
+        self.on_trait_change(self._on_slice_changed, '_axes.slice')
+        self.on_trait_change(self._on_size_changed, '_axes.size')
+        self.on_trait_change(self._on_scale_changed, '_axes.scale')
+        self.on_trait_change(self._on_offset_changed, '_axes.offset')
         self._index = None  # index for the iterator
 
     def _get_positive_index(self, axis):
@@ -504,6 +623,16 @@ class AxesManager(t.HasTraits):
         """x.__getitem__(y) <==> x[y]
 
         """
+        if isinstance(y, basestring) or not np.iterable(y):
+            return self[(y,)][0]
+        axes = [self._axes_getter(ax) for ax in y]
+        _, indices = np.unique(axes, return_index=True)
+        ans = tuple(axes[i] for i in sorted(indices))
+        return ans
+
+    def _axes_getter(self, y):
+        if y in self._axes:
+            return y
         if isinstance(y, basestring):
             axes = list(self._get_axes_in_natural_order())
             while axes:
@@ -556,7 +685,16 @@ class AxesManager(t.HasTraits):
                      else tuple())
         return nav_shape + sig_shape
 
-    def remove(self, axis):
+    def remove(self, axes):
+        """Remove one or more axes
+        """
+        axes = self[axes]
+        if not np.iterable(axes):
+            axes = (axes,)
+        for ax in axes:
+            self._remove_one_axis(ax)
+
+    def _remove_one_axis(self, axis):
         """Remove the given Axis.
 
         Raises
@@ -564,7 +702,7 @@ class AxesManager(t.HasTraits):
         ValueError if the Axis is not present.
 
         """
-        axis = self[axis]
+        axis = self._axes_getter(axis)
         axis.axes_manager = None
         self._axes.remove(axis)
 
@@ -655,6 +793,51 @@ class AxesManager(t.HasTraits):
         axis.axes_manager = self
         self._axes.append(axis)
 
+    def _on_index_changed(self):
+        self._update_attributes()
+        self.events.indices_changed.trigger(obj=self)
+
+    def _on_slice_changed(self):
+        self._update_attributes()
+
+    def _on_size_changed(self):
+        self._update_attributes()
+        self.events.any_axis_changed.trigger(obj=self)
+
+    def _on_scale_changed(self):
+        self.events.any_axis_changed.trigger(obj=self)
+
+    def _on_offset_changed(self):
+        self.events.any_axis_changed.trigger(obj=self)
+
+    def update_axes_attributes_from(self, axes,
+                                    attributes=["scale", "offset", "units"]):
+        """Update the axes attributes to match those given.
+
+        The axes are matched by their index in the array. The purpose of this
+        method is to update multiple axes triggering `any_axis_changed` only
+        once.
+
+        Parameters
+        ----------
+        axes: iterable of `DataAxis` instances.
+            The axes to copy the attributes from.
+        attributes: iterable of strings.
+            The attributes to copy.
+
+        """
+
+        # To only trigger once even with several changes, we suppress here
+        # and trigger manually below if there were any changes.
+        changes = False
+        with self.events.any_axis_changed.suppress():
+            for axis in axes:
+                changed = self._axes[axis.index_in_array].update_from(
+                    axis=axis, attributes=attributes)
+                changes = changes or changed
+        if changes:
+            self.events.any_axis_changed.trigger(obj=self)
+
     def _update_attributes(self):
         getitem_tuple = ()
         values = []
@@ -725,14 +908,20 @@ class AxesManager(t.HasTraits):
             axis.navigate = tl.pop(0)
 
     def connect(self, f):
-        for axis in self._axes:
-            if axis.slice is None:
-                axis.on_trait_change(f, 'index')
+        warnings.warn(
+            "The method `AxesManager.connect()` has been deprecated and will "
+            "be removed in HyperSpy 0.10. Please use "
+            "`AxesManager.events.indices_changed.connect()` instead.",
+            VisibleDeprecationWarning)
+        self.events.indices_changed.connect(f, [])
 
     def disconnect(self, f):
-        for axis in self._axes:
-            if axis.slice is None:
-                axis.on_trait_change(f, 'index', remove=True)
+        warnings.warn(
+            "The method `AxesManager.disconnect()` has been deprecated and "
+            "will be removed in HyperSpy 0.10. Please use "
+            "`AxesManager.events.indices_changed.disconnect()` instead.",
+            VisibleDeprecationWarning)
+        self.events.indices_changed.disconnect(f)
 
     def key_navigator(self, event):
         if len(self.navigation_axes) not in (1, 2):

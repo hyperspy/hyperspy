@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2015 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -42,7 +42,8 @@ from hyperspy.misc.export_dictionary import (export_to_dictionary,
                                              load_from_dictionary,
                                              parse_flag_string,
                                              reconstruct_object)
-from hyperspy.misc.utils import slugify, shorten_name
+from hyperspy.misc.utils import (slugify, shorten_name, stash_active_state,
+                                 dummy_context_manager)
 from hyperspy.misc.slicing import copy_slice_from_whitelist
 
 
@@ -184,8 +185,6 @@ class BaseModel(list):
 
     """
 
-    _firstimetouch = True
-
     def __hash__(self):
         # This is needed to simulate a hashable object so that PySide does not
         # raise an exception when using windows.connect
@@ -204,7 +203,7 @@ class BaseModel(list):
         s = self.signal
         s.models.store(self, name)
 
-    def save(self, file_name, name=None):
+    def save(self, file_name, name=None, **kwargs):
         """Saves signal and its model to a file
 
         Parameters
@@ -213,12 +212,14 @@ class BaseModel(list):
                 Name of the file
             name : {None, str}
                 Stored model name. Auto-generated if left empty
+            **kwargs :
+                Other keyword arguments are passed onto `Signal.save()`
         """
         if self.signal is None:
             raise ValueError("Currently cannot store models with no signal")
         else:
             self.store(name)
-            self.signal.save(file_name)
+            self.signal.save(file_name, **kwargs)
 
     def _load_dictionary(self, dic):
         """Load data from dictionary.
@@ -284,6 +285,15 @@ class BaseModel(list):
         raise NotImplementedError
 
     def append(self, thing):
+        """Add component to Model.
+
+        Parameters
+        ----------
+        thing: `Component` instance.
+        """
+        if not isinstance(thing, Component):
+            raise ValueError(
+                "Only `Component` instances can be added to a model")
         # Check if any of the other components in the model has the same name
         if thing in self:
             raise ValueError("Component already in model")
@@ -308,12 +318,9 @@ class BaseModel(list):
         thing.model = self
         setattr(self.components, slugify(name_string,
                                          valid_variable_name=True), thing)
-        self._touch()
-        if self._plot_components:
-            self._plot_component(thing)
-        if self._adjust_position_all is not None:
-            self._make_position_adjuster(thing, self._adjust_position_all[0],
-                                         self._adjust_position_all[1])
+        if self._plot_active is True:
+            self._connect_parameters2update_plot(components=[thing])
+        self.update_plot()
 
     def extend(self, iterable):
         for object in iterable:
@@ -323,7 +330,7 @@ class BaseModel(list):
         thing = self.__getitem__(thing)
         self.remove(thing)
 
-    def remove(self, thing, touch=True):
+    def remove(self, thing):
         """Remove component from model.
 
         Examples
@@ -348,37 +355,10 @@ class BaseModel(list):
 
         """
         thing = self._get_component(thing)
-        for pw in self._position_widgets:
-            if hasattr(pw, 'component') and pw.component is thing:
-                pw.component._position.twin = None
-                del pw.component
-                pw.close()
-                del pw
-        if hasattr(thing, '_model_plot_line'):
-            line = thing._model_plot_line
-            line.close()
-            del line
-            idx = self.index(thing)
-            self.signal._plot.signal_plot.ax_lines.remove(
-                self.signal._plot.signal_plot.ax_lines[2 + idx])
         list.remove(self, thing)
         thing.model = None
-        if touch is True:
-            self._touch()
         if self._plot_active:
             self.update_plot()
-
-    def _touch(self):
-        """Run model setup tasks
-
-        This function is called everytime that we add or remove components
-        from the model.
-
-        """
-        if self._plot_active is True:
-            self._connect_parameters2update_plot()
-
-    __touch = _touch
 
     def as_signal(self, component_list=None, out_of_range_to_nan=True,
                   show_progressbar=None):
@@ -413,64 +393,46 @@ class BaseModel(list):
         >>> s2 = m.as_signal(component_list=[l1])
 
         """
-        # change actual values to whatever except bool
-        _multi_on_ = '_multi_on_'
-        _multi_off_ = '_multi_off_'
         if show_progressbar is None:
             show_progressbar = preferences.General.show_progressbar
 
-        if component_list:
-            component_list = [self._get_component(x) for x in component_list]
-            active_state = []
-            for component_ in self:
-                if component_.active_is_multidimensional:
-                    if component_ not in component_list:
-                        active_state.append(_multi_off_)
-                        component_._toggle_connect_active_array(False)
-                        component_.active = False
-                    else:
-                        active_state.append(_multi_on_)
-                else:
-                    active_state.append(component_.active)
-                    if component_ in component_list:
-                        component_.active = True
-                    else:
-                        component_.active = False
-        data = np.empty(self.signal.data.shape, dtype='float')
-        data.fill(np.nan)
-        if out_of_range_to_nan is True:
-            channel_switches_backup = copy.copy(self.channel_switches)
-            self.channel_switches[:] = True
-        maxval = self.axes_manager.navigation_size
-        pbar = progressbar.progressbar(maxval=maxval,
-                                       disabled=not show_progressbar)
-        i = 0
-        for index in self.axes_manager:
-            self.fetch_stored_values(only_fixed=False)
-            data[self.axes_manager._getitem_tuple][
-                self.channel_switches] = self.__call__(
-                non_convolved=not self.convolved, onlyactive=True).ravel()
-            i += 1
-            if maxval > 0:
-                pbar.update(i)
-        pbar.finish()
-        if out_of_range_to_nan is True:
-            self.channel_switches[:] = channel_switches_backup
-        signal = self.signal.__class__(
-            data,
-            axes=self.signal.axes_manager._get_axes_dicts())
-        signal.metadata.General.title = (
-            self.signal.metadata.General.title + " from fitted model")
-        signal.metadata.Signal.binned = self.signal.metadata.Signal.binned
-
-        if component_list:
-            for component_ in self:
-                active_s = active_state.pop(0)
-                if isinstance(active_s, bool):
-                    component_.active = active_s
-                else:
-                    if active_s == _multi_off_:
-                        component_._toggle_connect_active_array(True)
+        with stash_active_state(self if component_list else []):
+            if component_list:
+                component_list = [self._get_component(x)
+                                  for x in component_list]
+                for component_ in self:
+                    active = component_ in component_list
+                    if component_.active_is_multidimensional:
+                        if active:
+                            continue    # Keep active_map
+                        component_.active_is_multidimensional = False
+                    component_.active = active
+            data = np.empty(self.signal.data.shape, dtype='float')
+            data.fill(np.nan)
+            if out_of_range_to_nan is True:
+                channel_switches_backup = copy.copy(self.channel_switches)
+                self.channel_switches[:] = True
+            maxval = self.axes_manager.navigation_size
+            pbar = progressbar.progressbar(maxval=maxval,
+                                           disabled=not show_progressbar)
+            i = 0
+            for index in self.axes_manager:
+                self.fetch_stored_values(only_fixed=False)
+                data[self.axes_manager._getitem_tuple][
+                    np.where(self.channel_switches)] = self.__call__(
+                    non_convolved=not self.convolved, onlyactive=True).ravel()
+                i += 1
+                if maxval > 0:
+                    pbar.update(i)
+            pbar.finish()
+            if out_of_range_to_nan is True:
+                self.channel_switches[:] = channel_switches_backup
+            signal = self.signal.__class__(
+                data,
+                axes=self.signal.axes_manager._get_axes_dicts())
+            signal.metadata.General.title = (
+                self.signal.metadata.General.title + " from fitted model")
+            signal.metadata.Signal.binned = self.signal.metadata.Signal.binned
         return signal
 
     @property
@@ -551,14 +513,11 @@ class BaseModel(list):
         store_current_values
 
         """
-        switch_aap = self._plot_active is not False
-        if switch_aap is True:
-            self._disconnect_parameters2update_plot()
-        for component in self:
-            component.fetch_stored_values(only_fixed=only_fixed)
-        if switch_aap is True:
-            self._connect_parameters2update_plot()
-            self.update_plot()
+        cm = (self.suspend_update if self._plot_active
+              else dummy_context_manager)
+        with cm(update_on_resume=True):
+            for component in self:
+                component.fetch_stored_values(only_fixed=only_fixed)
 
     def _fetch_values_from_p0(self, p_std=None):
         """Fetch the parameter values from the output of the optimzer `self.p0`
@@ -596,7 +555,7 @@ class BaseModel(list):
         if out_of_range2nans is True:
             ns = np.empty(self.axis.axis.shape)
             ns.fill(np.nan)
-            ns[self.channel_switches] = s
+            ns[np.where(self.channel_switches)] = s
             s = ns
         return s
 
@@ -627,10 +586,12 @@ class BaseModel(list):
             variance = self.signal.metadata.Signal.Noise_properties.variance
             if isinstance(variance, Signal):
                 variance = variance.data.__getitem__(
-                    self.axes_manager._getitem_tuple)[self.channel_switches]
+                    self.axes_manager._getitem_tuple)[np.where(
+                                                      self.channel_switches)]
         else:
             variance = 1.0
-        d = self(onlyactive=True).ravel() - self.signal()[self.channel_switches]
+        d = self(onlyactive=True).ravel() - self.signal()[np.where(
+            self.channel_switches)]
         d *= d / (1. * variance)  # d = difference^2 / variance.
         self.chisq.data[self.signal.axes_manager.indices[::-1]] = d.sum()
 
@@ -716,198 +677,202 @@ class BaseModel(list):
             fitter = preferences.Model.default_fitter
         switch_aap = (update_plot != self._plot_active)
         if switch_aap is True and update_plot is False:
-            self._disconnect_parameters2update_plot()
-
-        self.p_std = None
-        self._set_p0()
-        if ext_bounding:
-            self._enable_ext_bounding()
-        if grad is False:
-            approx_grad = True
-            jacobian = None
-            odr_jacobian = None
-            grad_ml = None
-            grad_ls = None
+            cm = self.suspend_update
         else:
-            approx_grad = False
-            jacobian = self._jacobian
-            odr_jacobian = self._jacobian4odr
-            grad_ml = self._gradient_ml
-            grad_ls = self._gradient_ls
+            cm = dummy_context_manager
 
-        if bounded is True and fitter not in ("mpfit", "tnc", "l_bfgs_b"):
-            raise NotImplementedError("Bounded optimization is only available "
-                                      "for the mpfit optimizer.")
-        if method == 'ml':
-            weights = None
-            if fitter != "fmin":
-                raise NotImplementedError("Maximum likelihood estimation "
-                                          'is only implemented for the "fmin" '
-                                          'optimizer')
-        elif method == "ls":
-            if "Signal.Noise_properties.variance" not in self.signal.metadata:
-                variance = 1
+        with cm(update_on_resume=True):
+            self.p_std = None
+            self._set_p0()
+            if ext_bounding:
+                self._enable_ext_bounding()
+            if grad is False:
+                approx_grad = True
+                jacobian = None
+                odr_jacobian = None
+                grad_ml = None
+                grad_ls = None
             else:
-                variance = self.signal.metadata.Signal.Noise_properties.variance
-                if isinstance(variance, Signal):
-                    if (variance.axes_manager.navigation_shape ==
-                            self.signal.axes_manager.navigation_shape):
-                        variance = variance.data.__getitem__(
-                            self.axes_manager._getitem_tuple)[
-                            self.channel_switches]
-                    else:
-                        raise AttributeError(
-                            "The `navigation_shape` of the variance signals "
-                            "is not equal to the variance shape of the "
-                            "signal")
-                elif not isinstance(variance, numbers.Number):
-                    raise AttributeError(
-                        "Variance must be a number or a `Signal` instance but "
-                        "currently it is a %s" % type(variance))
+                approx_grad = False
+                jacobian = self._jacobian
+                odr_jacobian = self._jacobian4odr
+                grad_ml = self._gradient_ml
+                grad_ls = self._gradient_ls
 
-            weights = 1. / np.sqrt(variance)
-        else:
-            raise ValueError(
-                'method must be "ls" or "ml" but %s given' %
-                method)
-        args = (self.signal()[self.channel_switches],
-                weights)
-
-        # Least squares "dedicated" fitters
-        if fitter == "leastsq":
-            output = \
-                leastsq(self._errfunc, self.p0[:], Dfun=jacobian,
-                        col_deriv=1, args=args, full_output=True, **kwargs)
-
-            self.p0, pcov = output[0:2]
-            signal_len = sum([axis.size
-                              for axis in self.axes_manager.signal_axes])
-            if (signal_len > len(self.p0)) and pcov is not None:
-                pcov *= ((self._errfunc(self.p0, *args) ** 2).sum() /
-                         (len(args[0]) - len(self.p0)))
-                self.p_std = np.sqrt(np.diag(pcov))
-            self.fit_output = output
-
-        elif fitter == "odr":
-            modelo = odr.Model(fcn=self._function4odr,
-                               fjacb=odr_jacobian)
-            mydata = odr.RealData(self.axis.axis[self.channel_switches],
-                                  self.signal()[self.channel_switches],
-                                  sx=None,
-                                  sy=(1 / weights if weights is not None else None))
-            myodr = odr.ODR(mydata, modelo, beta0=self.p0[:])
-            myoutput = myodr.run()
-            result = myoutput.beta
-            self.p_std = myoutput.sd_beta
-            self.p0 = result
-            self.fit_output = myoutput
-
-        elif fitter == 'mpfit':
-            autoderivative = 1
-            if grad is True:
-                autoderivative = 0
-            if bounded is True:
-                self.set_mpfit_parameters_info()
-            elif bounded is False:
-                self.mpfit_parinfo = None
-            m = mpfit(self._errfunc4mpfit, self.p0[:],
-                      parinfo=self.mpfit_parinfo, functkw={
-                          'y': self.signal()[self.channel_switches],
-                          'weights': weights}, autoderivative=autoderivative,
-                      quiet=1)
-            self.p0 = m.params
-            if (self.axis.size > len(self.p0)) and m.perror is not None:
-                self.p_std = m.perror * np.sqrt(
-                    (self._errfunc(self.p0, *args) ** 2).sum() /
-                    (len(args[0]) - len(self.p0)))
-            self.fit_output = m
-        else:
-            # General optimizers (incluiding constrained ones(tnc,l_bfgs_b)
-            # Least squares or maximum likelihood
+            if bounded is True and fitter not in ("mpfit", "tnc", "l_bfgs_b"):
+                raise NotImplementedError(
+                    "Bounded optimization is only available for the mpfit "
+                    "optimizer.")
             if method == 'ml':
-                tominimize = self._poisson_likelihood_function
-                fprime = grad_ml
-            elif method in ['ls', "wls"]:
-                tominimize = self._errfunc2
-                fprime = grad_ls
+                weights = None
+                if fitter != "fmin":
+                    raise NotImplementedError(
+                        "Maximum likelihood estimation  is only implemented "
+                        'for the "fmin" optimizer')
+            elif method == "ls":
+                metadata = self.signal.metadata
+                if "Signal.Noise_properties.variance" not in metadata:
+                    variance = 1
+                else:
+                    variance = metadata.Signal.Noise_properties.variance
+                    if isinstance(variance, Signal):
+                        if (variance.axes_manager.navigation_shape ==
+                                self.signal.axes_manager.navigation_shape):
+                            variance = variance.data.__getitem__(
+                                self.axes_manager._getitem_tuple)[
+                                np.where(self.channel_switches)]
+                        else:
+                            raise AttributeError(
+                                "The `navigation_shape` of the variance "
+                                "signals is not equal to the variance shape "
+                                "of the signal")
+                    elif not isinstance(variance, numbers.Number):
+                        raise AttributeError(
+                            "Variance must be a number or a `Signal` instance "
+                            "but currently it is a %s" % type(variance))
 
-            # OPTIMIZERS
-
-            # Simple (don't use gradient)
-            if fitter == "fmin":
-                self.p0 = fmin(
-                    tominimize, self.p0, args=args, **kwargs)
-            elif fitter == "powell":
-                self.p0 = fmin_powell(tominimize, self.p0, args=args,
-                                      **kwargs)
-
-            # Make use of the gradient
-            elif fitter == "cg":
-                self.p0 = fmin_cg(tominimize, self.p0, fprime=fprime,
-                                  args=args, **kwargs)
-            elif fitter == "ncg":
-                self.p0 = fmin_ncg(tominimize, self.p0, fprime=fprime,
-                                   args=args, **kwargs)
-            elif fitter == "bfgs":
-                self.p0 = fmin_bfgs(
-                    tominimize, self.p0, fprime=fprime,
-                    args=args, **kwargs)
-
-            # Constrainded optimizers
-
-            # Use gradient
-            elif fitter == "tnc":
-                if bounded is True:
-                    self.set_boundaries()
-                elif bounded is False:
-                    self.self.free_parameters_boundaries = None
-                self.p0 = fmin_tnc(
-                    tominimize,
-                    self.p0,
-                    fprime=fprime,
-                    args=args,
-                    bounds=self.free_parameters_boundaries,
-                    approx_grad=approx_grad,
-                    **kwargs)[0]
-            elif fitter == "l_bfgs_b":
-                if bounded is True:
-                    self.set_boundaries()
-                elif bounded is False:
-                    self.self.free_parameters_boundaries = None
-                self.p0 = fmin_l_bfgs_b(tominimize, self.p0,
-                                        fprime=fprime, args=args,
-                                        bounds=self.free_parameters_boundaries,
-                                        approx_grad=approx_grad, **kwargs)[0]
+                weights = 1. / np.sqrt(variance)
             else:
-                print \
-                    """
-                The %s optimizer is not available.
+                raise ValueError(
+                    'method must be "ls" or "ml" but %s given' %
+                    method)
+            args = (self.signal()[np.where(self.channel_switches)],
+                    weights)
 
-                Available optimizers:
-                Unconstrained:
-                --------------
-                Only least Squares: leastsq and odr
-                General: fmin, powell, cg, ncg, bfgs
+            # Least squares "dedicated" fitters
+            if fitter == "leastsq":
+                output = \
+                    leastsq(self._errfunc, self.p0[:], Dfun=jacobian,
+                            col_deriv=1, args=args, full_output=True, **kwargs)
 
-                Cosntrained:
-                ------------
-                tnc and l_bfgs_b
-                """ % fitter
-        if np.iterable(self.p0) == 0:
-            self.p0 = (self.p0,)
-        self._fetch_values_from_p0(p_std=self.p_std)
-        self.store_current_values()
-        self._calculate_chisq()
-        self._set_current_degrees_of_freedom()
-        if ext_bounding is True:
-            self._disable_ext_bounding()
-        if switch_aap is True and update_plot is False:
-            self._connect_parameters2update_plot()
-            self.update_plot()
+                self.p0, pcov = output[0:2]
+                signal_len = sum([axis.size
+                                  for axis in self.axes_manager.signal_axes])
+                if (signal_len > len(self.p0)) and pcov is not None:
+                    pcov *= ((self._errfunc(self.p0, *args) ** 2).sum() /
+                             (len(args[0]) - len(self.p0)))
+                    self.p_std = np.sqrt(np.diag(pcov))
+                self.fit_output = output
+
+            elif fitter == "odr":
+                modelo = odr.Model(fcn=self._function4odr,
+                                   fjacb=odr_jacobian)
+                mydata = odr.RealData(self.axis.axis[np.where(
+                    self.channel_switches)],
+                    self.signal()[np.where(self.channel_switches)],
+                    sx=None,
+                    sy=(1 / weights if weights is not None else None))
+                myodr = odr.ODR(mydata, modelo, beta0=self.p0[:])
+                myoutput = myodr.run()
+                result = myoutput.beta
+                self.p_std = myoutput.sd_beta
+                self.p0 = result
+                self.fit_output = myoutput
+
+            elif fitter == 'mpfit':
+                autoderivative = 1
+                if grad is True:
+                    autoderivative = 0
+                if bounded is True:
+                    self.set_mpfit_parameters_info()
+                elif bounded is False:
+                    self.mpfit_parinfo = None
+                m = mpfit(self._errfunc4mpfit, self.p0[:],
+                          parinfo=self.mpfit_parinfo, functkw={
+                              'y': self.signal()[self.channel_switches],
+                              'weights': weights},
+                          autoderivative=autoderivative,
+                          quiet=1)
+                self.p0 = m.params
+                if (self.axis.size > len(self.p0)) and m.perror is not None:
+                    self.p_std = m.perror * np.sqrt(
+                        (self._errfunc(self.p0, *args) ** 2).sum() /
+                        (len(args[0]) - len(self.p0)))
+                self.fit_output = m
+            else:
+                # General optimizers (incluiding constrained ones(tnc,l_bfgs_b)
+                # Least squares or maximum likelihood
+                if method == 'ml':
+                    tominimize = self._poisson_likelihood_function
+                    fprime = grad_ml
+                elif method in ['ls', "wls"]:
+                    tominimize = self._errfunc2
+                    fprime = grad_ls
+
+                # OPTIMIZERS
+
+                # Simple (don't use gradient)
+                if fitter == "fmin":
+                    self.p0 = fmin(
+                        tominimize, self.p0, args=args, **kwargs)
+                elif fitter == "powell":
+                    self.p0 = fmin_powell(tominimize, self.p0, args=args,
+                                          **kwargs)
+
+                # Make use of the gradient
+                elif fitter == "cg":
+                    self.p0 = fmin_cg(tominimize, self.p0, fprime=fprime,
+                                      args=args, **kwargs)
+                elif fitter == "ncg":
+                    self.p0 = fmin_ncg(tominimize, self.p0, fprime=fprime,
+                                       args=args, **kwargs)
+                elif fitter == "bfgs":
+                    self.p0 = fmin_bfgs(
+                        tominimize, self.p0, fprime=fprime,
+                        args=args, **kwargs)
+
+                # Constrainded optimizers
+
+                # Use gradient
+                elif fitter == "tnc":
+                    if bounded is True:
+                        self.set_boundaries()
+                    elif bounded is False:
+                        self.self.free_parameters_boundaries = None
+                    self.p0 = fmin_tnc(
+                        tominimize,
+                        self.p0,
+                        fprime=fprime,
+                        args=args,
+                        bounds=self.free_parameters_boundaries,
+                        approx_grad=approx_grad,
+                        **kwargs)[0]
+                elif fitter == "l_bfgs_b":
+                    if bounded is True:
+                        self.set_boundaries()
+                    elif bounded is False:
+                        self.self.free_parameters_boundaries = None
+                    self.p0 = fmin_l_bfgs_b(
+                        tominimize, self.p0, fprime=fprime, args=args,
+                        bounds=self.free_parameters_boundaries,
+                        approx_grad=approx_grad, **kwargs)[0]
+                else:
+                    print \
+                        """
+                    The %s optimizer is not available.
+
+                    Available optimizers:
+                    Unconstrained:
+                    --------------
+                    Only least Squares: leastsq and odr
+                    General: fmin, powell, cg, ncg, bfgs
+
+                    Cosntrained:
+                    ------------
+                    tnc and l_bfgs_b
+                    """ % fitter
+            if np.iterable(self.p0) == 0:
+                self.p0 = (self.p0,)
+            self._fetch_values_from_p0(p_std=self.p_std)
+            self.store_current_values()
+            self._calculate_chisq()
+            self._set_current_degrees_of_freedom()
+            if ext_bounding is True:
+                self._disable_ext_bounding()
 
     def multifit(self, mask=None, fetch_only_fixed=False,
                  autosave=False, autosave_every=10, show_progressbar=None,
-                 **kwargs):
+                 interactive_plot=False, **kwargs):
         """Fit the data to the model at all the positions of the
         navigation dimensions.
 
@@ -930,6 +895,10 @@ class BaseModel(list):
         show_progressbar : None or bool
             If True, display a progress bar. If None the default is set in
             `preferences`.
+        interactive_plot : bool
+            If True, update the plot for every position as they are processed.
+            Note that this slows down the fitting by a lot, but it allows for
+            interactive monitoring of the fitting (if in interactive mode).
 
         **kwargs : key word arguments
             Any extra key word argument will be passed to
@@ -981,19 +950,28 @@ class BaseModel(list):
                     "following fitters instead: mpfit, tnc, l_bfgs_b")
                 kwargs['bounded'] = False
         i = 0
-        self.axes_manager.disconnect(self.fetch_stored_values)
-        for index in self.axes_manager:
-            if mask is None or not mask[index[::-1]]:
-                self.fetch_stored_values(only_fixed=fetch_only_fixed)
-                self.fit(**kwargs)
-                i += 1
+        with self.axes_manager.events.indices_changed.suppress_callback(
+                self.fetch_stored_values):
+            if interactive_plot:
+                outer = dummy_context_manager
+                inner = self.suspend_update
+            else:
+                outer = self.suspend_update
+                inner = dummy_context_manager
+            with outer(update_on_resume=True):
+                for index in self.axes_manager:
+                    with inner(update_on_resume=True):
+                        if mask is None or not mask[index[::-1]]:
+                            self.fetch_stored_values(
+                                only_fixed=fetch_only_fixed)
+                            self.fit(**kwargs)
+                            i += 1
+                            if maxval > 0:
+                                pbar.update(i)
+                        if autosave is True and i % autosave_every == 0:
+                            self.save_parameters2file(autosave_fn)
                 if maxval > 0:
-                    pbar.update(i)
-            if autosave is True and i % autosave_every == 0:
-                self.save_parameters2file(autosave_fn)
-        if maxval > 0:
-            pbar.finish()
-        self.axes_manager.connect(self.fetch_stored_values)
+                    pbar.finish()
         if autosave is True:
             messages.information(
                 'Deleting the temporary file %s pixels' % (
@@ -1340,8 +1318,8 @@ class BaseModel(list):
 
         Returns
         -------
-        dictionary : a complete dictionary of the model, which includes at least
-        the following fields:
+        dictionary : a complete dictionary of the model, which includes at
+        least the following fields:
             components : list
                 a list of dictionaries of components, one per
             _whitelist : dictionary
@@ -1424,9 +1402,7 @@ class BaseModel(list):
             if _component.active_is_multidimensional:
                 if only_current:
                     _component._active_array[
-                        self.axes_manager.indices[
-                            ::-
-                            1]] = value
+                        self.axes_manager.indices[::-1]] = value
                 else:
                     _component._active_array.fill(value)
 
@@ -1473,13 +1449,15 @@ class ModelSpecialSlicers(object):
         else:
             _model = _signal.create_model()
 
-        dims = self.model.axes_manager.navigation_dimension, self.model.axes_manager.signal_dimension
+        dims = (self.model.axes_manager.navigation_dimension,
+                self.model.axes_manager.signal_dimension)
         if self.isNavigation:
             _model.channel_switches[:] = self.model.channel_switches
         else:
             _model.channel_switches[:] = \
                 np.atleast_1d(
-                    self.model.channel_switches[tuple(array_slices[-dims[1]:])])
+                    self.model.channel_switches[
+                        tuple(array_slices[-dims[1]:])])
 
         twin_dict = {}
         for comp in self.model:

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2015 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -90,7 +90,7 @@ class Model2D(BaseModel):
         self.signal = self.image
         self.axes_manager = self.signal.axes_manager
         self._plot = None
-        self._position_widgets = []
+        self._position_widgets = {}
         self._adjust_position_all = None
         self._plot_components = False
         self._suspend_update = False
@@ -99,7 +99,8 @@ class Model2D(BaseModel):
         self.xaxis, self.yaxis = np.meshgrid(
             self.axes_manager.signal_axes[0].axis,
             self.axes_manager.signal_axes[1].axis)
-        self.axes_manager.connect(self.fetch_stored_values)
+        self.axes_manager.events.indices_changed.connect(
+            self.fetch_stored_values, [])
         self.channel_switches = np.ones(self.xaxis.shape, dtype=bool)
         self.chisq = image._get_navigation_signal()
         self.chisq.change_dtype("float")
@@ -181,7 +182,8 @@ class Model2D(BaseModel):
         raise NotImplementedError
 
     def update_plot(self, *args, **kwargs):
-        raise NotImplementedError
+        if self._plot_active is True:
+            raise NotImplementedError
 
     def suspend_update(self):
         raise NotImplementedError

@@ -1,4 +1,4 @@
-# Copyright 2007-2015 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
+import mock
 
 import numpy as np
 import nose.tools as nt
@@ -54,10 +55,13 @@ class TestAlignTools:
 
     def test_shift1D(self):
         s = self.spectrum
+        m = mock.Mock()
+        s.events.data_changed.connect(m.data_changed)
         s.shift1D(-
                   1 *
                   self.ishifts[:, np.newaxis] *
                   self.scale, show_progressbar=None)
+        nt.assert_true(m.data_changed.called)
         i_zlp = s.axes_manager.signal_axes[0].value2index(0)
         nt.assert_true(np.allclose(s.data[:, i_zlp], 12))
         # Check that at the edges of the spectrum the value == to the
@@ -154,7 +158,7 @@ class TestFindPeaks1D:
         self.spectrum = s
 
     def test_single_spectrum(self):
-        peaks = self.spectrum[0].find_peaks1D_ohaver()
+        peaks = self.spectrum.inav[0].find_peaks1D_ohaver()
         nt.assert_true(np.allclose(
             peaks[0]['position'], self.peak_positions0, rtol=1e-5, atol=1e-4))
 
@@ -190,16 +194,19 @@ class TestInterpolateInBetween:
     def setUp(self):
         s = hs.signals.Spectrum(np.arange(40).reshape((2, 20)))
         s.axes_manager.signal_axes[0].scale = 0.1
-        s[:, 8:12] = 0
+        s.isig[8:12] = 0
         self.s = s
 
     def test_single_spectrum(self):
-        s = self.s[0]
+        s = self.s.inav[0]
+        m = mock.Mock()
+        s.events.data_changed.connect(m.data_changed)
         s.interpolate_in_between(8, 12, show_progressbar=None)
         nt.assert_true((s.data == np.arange(20)).all())
+        nt.assert_true(m.data_changed.called)
 
     def test_single_spectrum_in_units(self):
-        s = self.s[0]
+        s = self.s.inav[0]
         s.interpolate_in_between(0.8, 1.2, show_progressbar=None)
         nt.assert_true((s.data == np.arange(20)).all())
 
@@ -209,7 +216,7 @@ class TestInterpolateInBetween:
         nt.assert_true((s.data == np.arange(40).reshape(2, 20)).all())
 
     def test_delta_int(self):
-        s = self.s[0]
+        s = self.s.inav[0]
         s.change_dtype('float')
         s.data[12] *= 10
         s.interpolate_in_between(8, 12, delta=2, kind='cubic')
@@ -218,7 +225,7 @@ class TestInterpolateInBetween:
             s.data[8:12], np.array([44., 95.4, 139.6, 155.]))
 
     def test_delta_float(self):
-        s = self.s[0]
+        s = self.s.inav[0]
         s.change_dtype('float')
         s.data[12] *= 10.
         s.interpolate_in_between(8, 12, delta=0.31, kind='cubic')
@@ -324,3 +331,22 @@ class TestSmoothing:
             polynomial_order=polyorder,
             differential_order=deriv,)
         nt.assert_true(np.allclose(data, self.s.data))
+
+
+class TestSpikesRemoval:
+
+    def setUp(self):
+        self.s = hs.signals.Spectrum(np.zeros((5, 100)))
+        self.s.data[..., 50] = 1
+
+    def test_spikes_removal(self):
+        from hyperspy.gui.egerton_quantification import SpikesRemoval
+        m = mock.Mock()
+        s = self.s
+        s.events.data_changed.connect(m.data_changed)
+        sr = SpikesRemoval(s)
+        sr.threshold = 0.5
+        sr.find()
+        sr.apply()
+        nt.assert_equal(s.data[0, 50], 0)
+        nt.assert_true(m.data_changed.called)
