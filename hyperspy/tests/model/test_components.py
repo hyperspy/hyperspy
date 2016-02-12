@@ -64,6 +64,15 @@ class TestPowerLaw:
                               only_current=False)
         nt.assert_almost_equal(g.A.value, 10.064378823244837)
         nt.assert_almost_equal(g.r.value, 4.0017522876514304)
+        # Test that it all works when calling it with a different signal
+        s2 = hs.stack((s, s))
+        g.estimate_parameters(s2,
+                              None,
+                              None,
+                              only_current=False)
+        nt.assert_almost_equal(g.A.map["values"][1], 10.064378823244837)
+        nt.assert_almost_equal(g.r.map["values"][0], 4.0017522876514304)
+
 
 
 class TestOffset:
