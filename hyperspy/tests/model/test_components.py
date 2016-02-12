@@ -74,7 +74,6 @@ class TestPowerLaw:
         nt.assert_almost_equal(g.r.map["values"][0], 4.0017522876514304)
 
 
-
 class TestOffset:
 
     def setUp(self):
