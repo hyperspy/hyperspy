@@ -86,7 +86,7 @@ Creating Conda environment for HyperSpy
 
 `Anaconda <https://www.continuum.io/downloads>`_ Python distribution can be
 easily set up using environment files. The two required steps are:
- 1. Download `HyperSpy environment file <https://raw.githubusercontent.com/hyperspy/hyperspy/master/anaconda_hyperspy_environment.yml>`_.
+ 1. Download `HyperSpy environment file <https://raw.githubusercontent.com/hyperspy/hyperspy/0.8.x/anaconda_hyperspy_environment.yml>`_.
  2. Create and activate HyperSpy environment according to instructions `here <http://conda.pydata.org/docs/using/envs.html#use-environment-from-file>`_. For Unix, the following should work:
 
 .. code-block:: bash
