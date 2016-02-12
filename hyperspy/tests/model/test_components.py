@@ -46,7 +46,6 @@ class TestPowerLaw:
         s = self.m.as_signal(show_progressbar=None)
         s.metadata.Signal.binned = True
         g = hs.model.components.PowerLaw()
-        g._axes_manager = self.m.spectrum.axes_manager
         g.estimate_parameters(s,
                               None,
                               None,
@@ -59,7 +58,6 @@ class TestPowerLaw:
         s = self.m.as_signal(show_progressbar=None)
         s.metadata.Signal.binned = False
         g = hs.model.components.PowerLaw()
-        g._axes_manager = self.m.spectrum.axes_manager
         g.estimate_parameters(s,
                               None,
                               None,

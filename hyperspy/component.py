@@ -912,3 +912,7 @@ class Component(t.HasTraits):
 
         for _parameter in parameter_list:
             _parameter.free = False
+
+    def _estimate_parameters(self, signal):
+        if self._axes_manager is None:
+            self._axes_manager = signal.axes_manager
