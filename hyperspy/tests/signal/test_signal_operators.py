@@ -76,11 +76,11 @@ class TestBinaryOperators:
 
     def test_broadcast_missing_sig_and_nav(self):
         s1 = self.s1
-        s2 = self.s2.as_image((0, 1))  # (|3, 2)
+        s2 = self.s2.as_image((1, 0))  # (|3, 2)
         s1.axes_manager.set_signal_dimension(0)  # (3, 2|)
         s = s1 + s2
         assert_array_equal(s.data, 3 * np.ones((2, 3, 2, 3)))
-        assert_equal(s.metadata.Signal.record_by, "image")
+        nt.assert_equal(s.metadata.Signal.record_by, "image")
 
     def test_broadcast_missing_sig(self):
         s1 = self.s1
