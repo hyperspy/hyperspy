@@ -74,6 +74,7 @@ class Container(object):
 
 
 class SFSTreeItem(object):
+
     def __init__(self, item_raw_string, parent):
         self.sfs = parent
         self._pointer_to_pointer_table, self.size, create_time, \
@@ -107,7 +108,7 @@ class SFSTreeItem(object):
             if n_of_chunks > 1:
                 next_chunk = self._pointer_to_pointer_table
                 temp_string = io.BytesIO()
-                for j in range(0, n_of_chunks, 1):
+                for dummy1 in range(n_of_chunks):
                     fn.seek(self.sfs.chunksize * next_chunk + 0x118)
                     next_chunk = strct_unp('<I', fn.read(4))[0]
                     fn.seek(28, 1)
@@ -208,12 +209,13 @@ but compression signature is missing in the header. Aborting....""")
         else:
             from bzip2 import decompress as unzip_block  # lint:ok
         offset = 0x80  # the 1st compression block header
-        for dymmy1 in range(self.no_of_compr_blk):
-            cpr_size, _uncpr_size, _unknwn, _dummy_size = strct_unp('<IIII',
+        for dummy1 in range(self.no_of_compr_blk):
+            cpr_size, dummy_size, dummy_unkn, dummy_size2 = strct_unp('<IIII',
                                                   self.read_piece(offset, 16))
-            #_unknwn is probably some kind of checksum but non
+            # _unknwn is probably some kind of checksum but non
             # known (crc16, crc32, adler32) algorithm could match.
-            # _dummy_size == cpr_size + 0x10 which have no use...
+            # dummy_size2 == cpr_size + 0x10 which have no use...
+            # dummy_size, which is decompressed size, also have no use...
             offset += 16
             raw_string = self.read_piece(offset, cpr_size)
             offset += cpr_size
@@ -237,6 +239,7 @@ but compression signature is missing in the header. Aborting....""")
 
 
 class SFS_reader(object):
+
     def __init__(self, filename):
         self.filename = filename
         self.hypermap = {}
@@ -400,13 +403,14 @@ class EDXSpectrum(object):
 
 class HyperHeader(object):
     """Wrap Bruker HyperMaping xml header into python object.
-    For instantionion have to be provided with extracted Header xml from bcf.
+    For instantionion have to be provided with extracted Header xml
+    from bcf.
     If Bcf is version 2, the bcf can contain stacks
     of hypermaps - thus header part contains sum eds spectras and it's
     metadata per hypermap slice.
     Bcf can record number of imagery from different
-    imagining detectors (BSE, SEI, ARGUS, etc...): access to imagery is throught
-    image index.
+    imagining detectors (BSE, SEI, ARGUS, etc...): access to imagery
+    is throught image index.
     """
     def __init__(self, xml_str):
         # Due to Delphi(TM) xml implementation literaly shits into xml,
@@ -421,11 +425,25 @@ class HyperHeader(object):
                                                     str(root.Header.Time)]),
                                           "%d.%m.%Y %H:%M:%S")
         self.version = int(root.Header.FileVersion)
-        semData = root.xpath("ClassInstance[@Type='TRTSEMData']")[0]
         #create containers:
         self.sem = Container()
         self.stage = Container()
         self.image = Container()
+        #fill the sem and stage attributes:
+        self._set_sem(root)
+        self._set_image(root)
+        self.elements = []
+        self._set_elements(root)
+        self.line_counter = np.fromstring(str(root.LineCounter),
+                                          dtype=np.uint16, sep=',')
+        self.channel_count = int(root.ChCount)
+        self.mapping_count = int(root.DetectorCount)
+        self.channel_factors = {}
+        self.spectra_data = {}
+        self._set_sum_edx(root)
+
+    def _set_sem(self, root):
+        semData = root.xpath("ClassInstance[@Type='TRTSEMData']")[0]
         # sem acceleration voltage, working distance, magnification:
         self.sem.hv = float(semData.HV)  # in kV
         self.sem.wd = float(semData.WD)  # in mm
@@ -451,6 +469,8 @@ class HyperHeader(object):
             self.stage.rotation = None
         DSPConf = root.xpath("ClassInstance[@Type='TRTDSPConfiguration']")[0]
         self.stage.tilt_angle = float(DSPConf.TiltAngle)
+
+    def _set_image(self, root):
         imageData = root.xpath("ClassInstance[@Type='TRTImageData']")[0]
         self.image.width = int(imageData.Width)  # in pixels
         self.image.height = int(imageData.Height)  # # in pixels
@@ -467,7 +487,8 @@ class HyperHeader(object):
                                                 self.image.width))
                 temp_img.detector_name = str(img.Description.text)
                 self.image.images.append(temp_img)
-        self.elements = []
+
+    def _set_elements(self, root):
         try:
             elements = root.xpath(
                "ClassInstance[@Type='TRTContainerClass']/ChildClassInstances" +
@@ -481,12 +502,8 @@ class HyperHeader(object):
                 print('no element selection present..')
             else:
                 pass
-        self.line_counter = np.fromstring(str(root.LineCounter),
-                                          dtype=np.uint16, sep=',')
-        self.channel_count = int(root.ChCount)
-        self.mapping_count = int(root.DetectorCount)
-        self.channel_factors = {}
-        self.spectra_data = {}
+
+    def _set_sum_edx(self, root):
         for i in range(self.mapping_count):
             self.channel_factors[i] = int(root.xpath("ChannelFactor" +
                                                                     str(i))[0])
@@ -540,7 +557,6 @@ class HyperHeader(object):
 st = {1: 'B', 2: 'B', 4: 'H', 8: 'I', 16: 'Q'}
 
 
-
 def bin_to_numpy(data, pointers, max_channels, depth):
     """unpack the delphi/bruker binary hypermap and returns
     nupy array.
@@ -566,21 +582,17 @@ def bin_to_numpy(data, pointers, max_channels, depth):
     #hyper map as very flat array:
     vfa = np.zeros(total_channels, dtype=depth)
     # some tricks for decoding 12bit data:
-    if byte_order == 'little':
-        trick_dtype = '>u2'  # it is not error, it is intended to be oposite
-    else:
-        trick_dtype = '<u2'
     for pix in range(0, total_pixels, 1):
         if pointers[pix] > 0:
             data.seek(pointers[pix])
             #_1 and _2 dummy - throwaway
             #_data_size1 - sometimes is equal to data_size2, sometimes 0
-            chan1, chan2, _1, flag, _data_size1, n_of_pulses, data_size2, _2 =\
-                                        strct_unp('<HHIHHHHH', data.read(18))
+            chan1, chan2, dummy1, flag, _data_size1, n_of_pulses, data_size2,\
+                                 dummy2 = strct_unp('<HHIHHHHH', data.read(18))
             if flag == 1:  # and (chan1 != chan2)
                 #Unpack packed 12-bit data to 16-bit uints:
                 data1 = data.read(data_size2)
-                switched_i2 = np.fromstring(data1, dtype=trick_dtype)
+                switched_i2 = np.fromstring(data1, dtype='<u2').byteswap(True)
                 data2 = np.fromstring(switched_i2.tostring(),
                                       dtype=np.uint8
                                      ).repeat(2)
