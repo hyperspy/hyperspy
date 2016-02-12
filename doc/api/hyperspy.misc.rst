@@ -126,6 +126,14 @@ hyperspy.misc.rgb_tools module
     :undoc-members:
     :show-inheritance:
 
+hyperspy.misc.signal_tools module
+---------------------------------
+
+.. automodule:: hyperspy.misc.signal_tools
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 hyperspy.misc.spectrum_tools module
 -----------------------------------
 

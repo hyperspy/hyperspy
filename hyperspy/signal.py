@@ -74,6 +74,7 @@ from hyperspy.misc.utils import underline
 from hyperspy.external.astroML.histtools import histogram
 from hyperspy.drawing.utils import animate_legend
 from hyperspy.misc.hspy_warnings import VisibleDeprecationWarning
+from hyperspy.misc.signal_tools import are_signals_aligned
 
 
 class Signal2DTools(object):
@@ -2659,101 +2660,106 @@ class Signal(MVA,
         exception_message = (
             "Invalid dimensions for this operation")
         if isinstance(other, Signal):
-            if other.data.shape != self.data.shape:
-                # Are they aligned?
-                are_aligned = array_tools.are_aligned(self.data.shape,
-                                                      other.data.shape)
-                if are_aligned is True:
-                    sdata, odata = array_tools.homogenize_ndim(self.data,
-                                                               other.data)
+            # Both objects are signals
+            oam = other.axes_manager
+            sam = self.axes_manager
+            if sam.navigation_shape == oam.navigation_shape and \
+                    sam.signal_shape == oam.signal_shape:
+                # They have the same signal shape.
+                # The signal axes are aligned but there is
+                # no guarantee that data axes area aligned so we make sure that
+                # they are aligned for the operation.
+                sdata = self._data_aligned_with_axes
+                odata = other._data_aligned_with_axes
+                if op_name in INPLACE_OPERATORS:
+                    self.data = getattr(sdata, op_name)(odata)
+                    self.axes_manager._sort_axes()
+                    return self
                 else:
-                    # Let's align them if possible
-                    sig_and_nav = [s for s in [self, other] if
-                                   s.axes_manager.signal_size > 1 and
-                                   s.axes_manager.navigation_size > 1]
-
-                    sig = [s for s in [self, other] if
-                           s.axes_manager.signal_size > 1 and
-                           s.axes_manager.navigation_size == 0]
-
-                    if sig_and_nav and sig:
-                        self = sig_and_nav[0]
-                        other = sig[0]
-                        if (self.axes_manager.signal_shape ==
-                                other.axes_manager.signal_shape):
-                            sdata = self.data
-                            other_new_shape = [
-                                axis.size if axis.navigate is False
-                                else 1
-                                for axis in self.axes_manager._axes]
-                            odata = other.data.reshape(
-                                other_new_shape)
-                        elif (self.axes_manager.navigation_shape ==
-                                other.axes_manager.signal_shape):
-                            sdata = self.data
-                            other_new_shape = [
-                                axis.size if axis.navigate is True
-                                else 1
-                                for axis in self.axes_manager._axes]
-                            odata = other.data.reshape(
-                                other_new_shape)
-                        else:
-                            raise ValueError(exception_message)
-                    elif len(sig) == 2:
-                        sdata = self.data.reshape(
-                            (1,) * other.axes_manager.signal_dimension +
-                            self.data.shape)
-                        odata = other.data.reshape(
-                            other.data.shape +
-                            (1,) * self.axes_manager.signal_dimension)
-                    else:
-                        raise ValueError(exception_message)
-
-                # The data are now aligned but the shapes are not the
-                # same and therefore we have to calculate the resulting
-                # axes
-                ref_axes = self if (
-                    len(self.axes_manager._axes) >
-                    len(other.axes_manager._axes)) else other
-
-                new_axes = []
-                for i, (ssize, osize) in enumerate(
-                        zip(sdata.shape, odata.shape)):
-                    if ssize > osize:
-                        if are_aligned or len(sig) != 2:
-                            new_axes.append(
-                                self.axes_manager._axes[i].copy())
-                        else:
-                            new_axes.append(self.axes_manager._axes[
-                                i - other.axes_manager.signal_dimension
-                            ].copy())
-
-                    elif ssize < osize:
-                        new_axes.append(
-                            other.axes_manager._axes[i].copy())
-
-                    else:
-                        new_axes.append(
-                            ref_axes.axes_manager._axes[i].copy())
-
+                    ns = self._deepcopy_with_new_data(
+                        getattr(sdata, op_name)(odata))
+                    ns.axes_manager._sort_axes()
+                    return ns
             else:
-                sdata = self.data
-                odata = other.data
-                new_axes = [axis.copy()
-                            for axis in self.axes_manager._axes]
-            exec("result = sdata.%s(odata)" % op_name)
-            new_signal = self._deepcopy_with_new_data(result)
-            new_signal.axes_manager._axes = new_axes
-            new_signal.axes_manager.set_signal_dimension(
-                self.axes_manager.signal_dimension)
-            return new_signal
+                # Different navigation and/or signal shapes
+                if not are_signals_aligned(self, other):
+                    raise ValueError(exception_message)
+                else:
+                    # They are broadcastable but have different number of axes
+                    new_nav_axes = []
+                    for saxis, oaxis in zip(
+                            sam.navigation_axes, oam.navigation_axes):
+                        new_nav_axes.append(saxis if saxis.size > 1 or
+                                            oaxis.size == 1 else
+                                            oaxis)
+                    if sam.navigation_dimension != oam.navigation_dimension:
+                        bigger_am = (sam
+                                     if sam.navigation_dimension >
+                                     oam.navigation_dimension
+                                     else oam)
+                        new_nav_axes.extend(
+                            bigger_am.navigation_axes[len(new_nav_axes):])
+                    # Because they are broadcastable and navigation axes come
+                    # first in the data array, we don't need to pad the data
+                    # array.
+                    new_sig_axes = []
+                    for saxis, oaxis in zip(
+                            sam.signal_axes, oam.signal_axes):
+                        new_sig_axes.append(saxis if saxis.size > 1 or
+                                            oaxis.size == 1 else
+                                            oaxis)
+                    if sam.signal_dimension != oam.signal_dimension:
+                        bigger_am = (
+                            sam if sam.signal_dimension > oam.signal_dimension
+                            else oam)
+                        new_sig_axes.extend(
+                            bigger_am.signal_axes[len(new_sig_axes):])
+                    sdim_diff = abs(sam.signal_dimension -
+                                    oam.signal_dimension)
+                    sdata = self._data_aligned_with_axes
+                    odata = other._data_aligned_with_axes
+                    if len(new_nav_axes) and sdim_diff:
+                        if bigger_am is sam:
+                            # Pad odata
+                            while sdim_diff:
+                                odata = np.expand_dims(
+                                    odata, oam.navigation_dimension)
+                                sdim_diff -= 1
+                        else:
+                            # Pad sdata
+                            while sdim_diff:
+                                sdata = np.expand_dims(
+                                    sdata, sam.navigation_dimension)
+                                sdim_diff -= 1
+                    if op_name in INPLACE_OPERATORS:
+                        # This should raise a ValueError if the operation
+                        # changes the shape of the object on the left.
+                        self.data = getattr(sdata, op_name)(odata)
+                        self.axes_manager._sort_axes()
+                        return self
+                    else:
+                        ns = self._deepcopy_with_new_data(
+                            getattr(sdata, op_name)(odata))
+                        new_axes = new_nav_axes[::-1] + new_sig_axes[::-1]
+                        ns.axes_manager._axes = [axis.copy()
+                                                 for axis in new_axes]
+                        if bigger_am is oam:
+                            ns.metadata.Signal.record_by = \
+                                other.metadata.Signal.record_by
+                            ns._assign_subclass()
+                        return ns
+
         else:
-            exec("result = self.data.%s(other)" % op_name)
-            return self._deepcopy_with_new_data(result)
+            # Second object is not a Signal
+            if op_name in INPLACE_OPERATORS:
+                getattr(self.data, op_name)(other)
+                return self
+            else:
+                return self._deepcopy_with_new_data(
+                    getattr(self.data, op_name)(other))
 
     def _unary_operator_ruler(self, op_name):
-        exec("result = self.data.%s()" % op_name)
-        return self._deepcopy_with_new_data(result)
+        return self._deepcopy_with_new_data(getattr(self.data, op_name)())
 
     def _check_signal_dimension_equals_one(self):
         if self.axes_manager.signal_dimension != 1:
@@ -3249,6 +3255,22 @@ class Signal(MVA,
         s.axes_manager._update_attributes()
         s._make_sure_data_is_contiguous()
         return s
+
+    @property
+    def _data_aligned_with_axes(self):
+        """Returns a view of `data` with is axes aligned with the Signal axes.
+
+        """
+        if self.axes_manager.axes_are_aligned_with_data:
+            return self.data
+        else:
+            am = self.axes_manager
+            nav_iia_r = am.navigation_indices_in_array[::-1]
+            sig_iia_r = am.signal_indices_in_array[::-1]
+            # nav_sort = np.argsort(nav_iia_r)
+            # sig_sort = np.argsort(sig_iia_r) + len(nav_sort)
+            data = self.data.transpose(nav_iia_r + sig_iia_r)
+            return data
 
     def rebin(self, new_shape):
         """Returns the object with the data rebinned.
@@ -4792,9 +4814,7 @@ class Signal(MVA,
         return Model(self)
 
 
-# Implement binary operators
-for name in (
-    # Arithmetic operators
+ARITHMETIC_OPERATORS = (
     "__add__",
     "__sub__",
     "__mul__",
@@ -4809,19 +4829,41 @@ for name in (
     "__or__",
     "__div__",
     "__truediv__",
-    # Comparison operators
+)
+INPLACE_OPERATORS = (
+    "__iadd__",
+    "__isub__",
+    "__imul__",
+    "__itruediv__",
+    "__ifloordiv__",
+    "__imod__",
+    "__ipow__",
+    "__ilshift__",
+    "__irshift__",
+    "__iand__",
+    "__ixor__",
+    "__ior__",
+)
+COMPARISON_OPERATORS = (
     "__lt__",
     "__le__",
     "__eq__",
     "__ne__",
     "__ge__",
     "__gt__",
-):
+)
+UNARY_OPERATORS = (
+    "__neg__",
+    "__pos__",
+    "__abs__",
+    "__invert__",
+)
+for name in ARITHMETIC_OPERATORS + INPLACE_OPERATORS + COMPARISON_OPERATORS:
     exec(
         ("def %s(self, other):\n" % name) +
         ("   return self._binary_operator_ruler(other, \'%s\')\n" %
          name))
-    exec("%s.__doc__ = int.%s.__doc__" % (name, name))
+    exec("%s.__doc__ = np.ndarray.%s.__doc__" % (name, name))
     exec("setattr(Signal, \'%s\', %s)" % (name, name))
     # The following commented line enables the operators with swapped
     # operands. They should be defined only for commutative operators
@@ -4831,11 +4873,7 @@ for name in (
     # name))
 
 # Implement unary arithmetic operations
-for name in (
-        "__neg__",
-        "__pos__",
-        "__abs__",
-        "__invert__",):
+for name in UNARY_OPERATORS:
     exec(
         ("def %s(self):" % name) +
         ("   return self._unary_operator_ruler(\'%s\')" % name))
