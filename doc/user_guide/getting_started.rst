@@ -41,14 +41,17 @@ two lines in the IPython terminal:
 
 .. code-block:: python
 
-   In [1]: import hyperspy.api as hs
-   In [2]: %matplotlib
+   In [1]: %matplotlib qt
+   In [2]: import hyperspy.api as hs
+
+
+We also fully support the wx backend. Other backends are supported for plotting
+but some features such as navigation sliders may be missing.
 
 .. warning::
-        When using the qt4 backend it is important to import hyperspy
-        before executing the ``%matplotlib`` magic as above to ensure that
-        matplotlib uses version 2 of the PyQt API. This is necessary to avoid
-        conflicts with other libraries.
+        When using the qt4 backend in Python 2 the matplotlib magic must be
+        executed after importing hyperspy and qt must be the default hyperspy
+        backend.
 
 
 This documentation assumes that numpy and matplotlib are also imported as
