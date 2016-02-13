@@ -62,15 +62,16 @@ follows:
 
 .. warning::
     Starting HyperSpy using the ``hyperspy`` starting script and the
-    ``%hyperspy`` IPython magic are now deprecated all will be removed in
-    HyperSpy 0.9.
+    ``%hyperspy`` IPython magic is now deprecated and will be removed in
+    HyperSpy 0.9. The IPython magic does not work with IPython 4 and
+    above.
 
 .. _starting_hyperspy-label:
 
 Getting help
 ------------
 
-The documentation (docstring in Python jargon) can be accessed by adding a
+When using IPython, the documentation (docstring in Python jargon) can be accessed by adding a
 question mark to the name of a function. e.g.:
 
 
