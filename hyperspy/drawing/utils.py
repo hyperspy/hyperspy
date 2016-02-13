@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -27,10 +27,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 
-from hyperspy.misc.utils import unfold_if_multidim
-from hyperspy.misc.image_tools import contrast_stretching
+from hyperspy.misc.image_tools import (contrast_stretching,
+                                       MPL_DIVERGING_COLORMAPS,
+                                       centre_colormap_values)
 from hyperspy.defaults_parser import preferences
-import hyperspy.messages as messages
 
 
 def create_figure(window_title=None,
@@ -171,10 +171,10 @@ def subplot_parameters(fig):
     right = fig.subplotpars.right
     top = fig.subplotpars.top
     bottom = fig.subplotpars.bottom
-    return (left, bottom, right, top, wspace, hspace)
+    return left, bottom, right, top, wspace, hspace
 
 
-class ColorCycle():
+class ColorCycle:
     _color_cycle = [mpl.colors.colorConverter.to_rgba(color) for color
                     in ('b', 'g', 'r', 'c', 'm', 'y', 'k')]
 
@@ -188,7 +188,7 @@ class ColorCycle():
 
 
 def plot_signals(signal_list, sync=True, navigator="auto",
-                 navigator_list=None):
+                 navigator_list=None, **kwargs):
     """Plot several signals at the same time.
 
     Parameters
@@ -207,27 +207,29 @@ def plot_signals(signal_list, sync=True, navigator="auto",
         navigator arguments: "auto", None, "spectrum", "slider", or a
         hyperspy Signal. The list must have the same size as signal_list.
         If None, the argument specified in navigator will be used.
+    **kwargs
+        Any extra keyword arguments are passed to each signal `plot` method.
 
     Example
     -------
 
-    >>> s_cl = load("coreloss.dm3")
-    >>> s_ll = load("lowloss.dm3")
-    >>> utils.plot.plot_signals([s_cl, s_ll])
+    >>> s_cl = hs.load("coreloss.dm3")
+    >>> s_ll = hs.load("lowloss.dm3")
+    >>> hs.plot.plot_signals([s_cl, s_ll])
 
     Specifying the navigator:
 
-    >>> s_cl = load("coreloss.dm3")
-    >>> s_ll = load("lowloss.dm3")
-    >>> utils.plot_signals([s_cl, s_ll], navigator="slider")
+    >>> s_cl = hs.load("coreloss.dm3")
+    >>> s_ll = hs.load("lowloss.dm3")
+    >>> hs.plot.plot_signals([s_cl, s_ll], navigator="slider")
 
     Specifying the navigator for each signal:
 
-    >>> s_cl = load("coreloss.dm3")
-    >>> s_ll = load("lowloss.dm3")
-    >>> s_edx = load("edx.dm3")
-    >>> s_adf = load("adf.dm3")
-    >>> utils.plot.plot_signals(
+    >>> s_cl = hs.load("coreloss.dm3")
+    >>> s_ll = hs.load("lowloss.dm3")
+    >>> s_edx = hs.load("edx.dm3")
+    >>> s_adf = hs.load("adf.dm3")
+    >>> hs.plot.plot_signals(
             [s_cl, s_ll, s_edx], navigator_list=["slider",None,s_adf])
 
     """
@@ -281,7 +283,9 @@ def plot_signals(signal_list, sync=True, navigator="auto",
         for signal, navigator, axes_manager in zip(signal_list,
                                                    navigator_list,
                                                    axes_manager_list):
-            signal.plot(axes_manager=axes_manager, navigator=navigator)
+            signal.plot(axes_manager=axes_manager,
+                        navigator=navigator,
+                        **kwargs)
 
     # If sync is False
     else:
@@ -289,7 +293,8 @@ def plot_signals(signal_list, sync=True, navigator="auto",
             navigator_list = []
             navigator_list.extend([navigator] * len(signal_list))
         for signal, navigator in zip(signal_list, navigator_list):
-            signal.plot(navigator=navigator)
+            signal.plot(navigator=navigator,
+                        **kwargs)
 
 
 def _make_heatmap_subplot(spectra):
@@ -358,7 +363,8 @@ def plot_images(images,
                 suptitle=None,
                 suptitle_fontsize=18,
                 colorbar='multi',
-                saturated_pixels=0.2,
+                centre_colormap="auto",
+                saturated_pixels=0,
                 scalebar=None,
                 scalebar_color='white',
                 axes_decor='all',
@@ -416,6 +422,10 @@ def plot_images(images,
             (non-RGB) image
             If 'single', all (non-RGB) images are plotted on the same scale,
             and one colorbar is shown for all
+        centre_colormap : {"auto", True, False}
+            If True the centre of the color scheme is set to zero. This is
+            specially useful when using diverging color schemes. If "auto"
+            (default), diverging color schemes are automatically centred.
         saturated_pixels: scalar
             The percentage of pixels that are left out of the bounds.  For example,
             the low and high bounds of a value of 1 are the 0.5% and 99.5%
@@ -487,7 +497,7 @@ def plot_images(images,
         or try adjusting `label`, `labelwrap`, or `per_row`
 
     """
-    from hyperspy.drawing.widgets import Scale_Bar
+    from hyperspy.drawing.widgets import ScaleBar
     from hyperspy.misc import rgb_tools
     from hyperspy.signal import Signal
 
@@ -502,7 +512,14 @@ def plot_images(images,
 
     # Get default colormap from pyplot:
     if cmap is None:
-        cmap = plt.get_cmap()
+        cmap = plt.get_cmap().name
+    elif isinstance(cmap, mpl.colors.Colormap):
+        cmap = cmap.name
+    if centre_colormap == "auto":
+        if cmap in MPL_DIVERGING_COLORMAPS:
+            centre_colormap = True
+        else:
+            centre_colormap = False
 
     # If input is >= 1D signal (e.g. for multi-dimensional plotting),
     # copy it and put it in a list so labeling works out as (x,y) when plotting
@@ -651,9 +668,10 @@ def plot_images(images,
     # Find global min and max values of all the non-rgb images for use with
     # 'single' scalebar
     if colorbar is 'single':
-        global_max = max([i.data.max() for i in non_rgb])
-        global_min = min([i.data.min() for i in non_rgb])
-        g_vmin, g_vmax = contrast_stretching(i.data, saturated_pixels)
+        g_vmin, g_vmax = contrast_stretching(np.concatenate(
+            [i.data.flatten() for i in non_rgb]), saturated_pixels)
+        if centre_colormap:
+            g_vmin, g_vmax = centre_colormap_values(g_vmin, g_vmax)
 
     # Check if we need to add a scalebar for some of the images
     if isinstance(scalebar, list) and all(isinstance(x, int)
@@ -684,6 +702,8 @@ def plot_images(images,
                 data = im.data
                 # Find min and max for contrast
                 l_vmin, l_vmax = contrast_stretching(data, saturated_pixels)
+                if centre_colormap:
+                    l_vmin, l_vmax = centre_colormap_values(l_vmin, l_vmax)
 
             # Remove NaNs (if requested)
             if no_nans:
@@ -805,7 +825,7 @@ def plot_images(images,
 
             # Add scalebars as necessary
             if (scalelist and i in scalebar) or scalebar is 'all':
-                ax.scalebar = Scale_Bar(
+                ax.scalebar = ScaleBar(
                     ax=ax,
                     units=axes[0].units,
                     color=scalebar_color,
@@ -920,12 +940,12 @@ def plot_spectra(
 
     Example
     -------
-    >>> s = load("some_spectra")
-    >>> utils.plot.plot_spectra(s, style='cascade', color='red', padding=0.5)
+    >>> s = hs.load("some_spectra")
+    >>> hs.plot.plot_spectra(s, style='cascade', color='red', padding=0.5)
 
     To save the plot as a png-file
 
-    >>> utils.plot.plot_spectra(s).figure.savefig("test.png")
+    >>> hs.plot.plot_spectra(s).figure.savefig("test.png")
 
     Returns
     -------
@@ -1017,11 +1037,9 @@ def plot_spectra(
         if not isinstance(spectra, hyperspy.signal.Signal):
             import hyperspy.utils
             spectra = hyperspy.utils.stack(spectra)
-        refold = unfold_if_multidim(spectra)
-        ax = _make_heatmap_subplot(spectra)
-        ax.set_ylabel('Spectra')
-        if refold is True:
-            spectra.fold()
+        with spectra.unfolded():
+            ax = _make_heatmap_subplot(spectra)
+            ax.set_ylabel('Spectra')
     ax = ax if style != "mosaic" else subplots
 
     return ax
@@ -1127,9 +1145,9 @@ def plot_histograms(signal_list,
     Example
     -------
     Histograms of two random chi-square distributions
-    >>> img = signals.Image(np.random.chisquare(1,[10,10,100]))
-    >>> img2 = signals.Image(np.random.chisquare(2,[10,10,100]))
-    >>> utils.plot.plot_histograms([img,img2],legend=['hist1','hist2'])
+    >>> img = hs.signals.Image(np.random.chisquare(1,[10,10,100]))
+    >>> img2 = hs.signals.Image(np.random.chisquare(2,[10,10,100]))
+    >>> hs.plot.plot_histograms([img,img2],legend=['hist1','hist2'])
 
     Returns
     -------

@@ -1,23 +1,24 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The Hyperspy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
-# This file is part of  Hyperspy.
+# This file is part of  HyperSpy.
 #
-#  Hyperspy is free software: you can redistribute it and/or modify
+#  HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-#  Hyperspy is distributed in the hope that it will be useful,
+#  HyperSpy is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
 import matplotlib.pyplot as plt
+from hyperspy.events import Event, Events
 
 
 class MarkerBase(object):
@@ -43,6 +44,18 @@ class MarkerBase(object):
         # Properties
         self.marker = None
         self._marker_properties = {}
+
+        # Events
+        self.events = Events()
+        self.events.closed = Event("""
+            Event triggered when a marker is closed.
+
+            Arguments
+            ---------
+            marker : Marker
+                The marker that was closed.
+            """, arguments=['obj'])
+        self._closing = False
 
     @property
     def marker_properties(self):
@@ -118,8 +131,14 @@ class MarkerBase(object):
             return data[ind].item()[()]
 
     def close(self):
+        if self._closing:
+            return
+        self._closing = True
         try:
             self.marker.remove()
+            self.events.closed.trigger(obj=self)
+            for f in self.events.closed.connected:
+                self.events.closed.disconnect(f)
             # m.ax.figure.canvas.draw()
             self.ax.hspy_fig._draw_animated()
         except:

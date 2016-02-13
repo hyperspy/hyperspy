@@ -25,7 +25,7 @@ def orthomax(A, gamma=1, reltol=1.4901e-07, maxit=256):
                 T = np.dot(L, M)
                 D = np.sum(np.diag(D))
                 B = np.dot(A, T)
-                if (np.abs(D - Dold) / D < reltol):
+                if np.abs(D - Dold) / D < reltol:
                     converged = True
                     break
     else:
@@ -52,7 +52,7 @@ def orthomax(A, gamma=1, reltol=1.4901e-07, maxit=256):
                                     [np.sin(theta), np.cos(theta)]])
                     B[:, [i, j]] = np.dot(B[:, [i, j]], Tij)
                     T[:, [i, j]] = np.dot(T[:, [i, j]], Tij)
-            if (maxTheta < reltol):
+            if maxTheta < reltol:
                 converged = True
                 break
     return B, T

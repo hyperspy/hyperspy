@@ -1,4 +1,4 @@
-# Copyright 2007-2012 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -65,7 +65,7 @@ class TestSetParameterInModel:
         g2 = self.g2
         g3 = self.g3
         m.set_parameters_value('A', 20, component_list=[g1], only_current=True)
-        g1.A.map['values'][0][0] = g1.A.map['values'][0][0] - 20
+        g1.A.map['values'][0][0] -= 20
         assert_true(np.all(g1.A.map['values'] == 0))
         assert_true(np.all(g2.A.map['values'] == 0))
         assert_true(np.all(g3.A.map['values'] == 0))

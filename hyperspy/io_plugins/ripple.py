@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -235,7 +235,7 @@ def read_raw(rpl_info, fp, mmap_mode='c'):
     else:
         endian = '='
 
-    data_type = data_type + str(int(data_length) * 8)
+    data_type += str(int(data_length) * 8)
     data_type = np.dtype(data_type)
     data_type = data_type.newbyteorder(endian)
 
@@ -316,7 +316,7 @@ def file_reader(filename, rpl_info=None, encoding="latin-1",
       height-name      str           # Name of the magnitude stored as height
       signal            str        # Name of the signal stored, e.g. HAADF
       convergence-angle float   # TEM convergence angle in mrad
-      collection-angle  float   # EELS spectrometer collection angle in mrad
+      collection-angle  float   # EELS spectrometer collection semi-angle in mrad
       beam-energy       float   # TEM beam energy in keV
       elevation-angle   float   # Elevation angle of the EDS detector
       azimuth-angle     float   # Elevation angle of the EDS detector

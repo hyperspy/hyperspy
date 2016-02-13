@@ -6,13 +6,10 @@ Subpackages
 
 .. toctree::
 
-    hyperspy.misc.borrowed
     hyperspy.misc.eds
     hyperspy.misc.eels
     hyperspy.misc.io
     hyperspy.misc.machine_learning
-    hyperspy.misc.mpfit
-    hyperspy.misc.tests
 
 Submodules
 ----------
@@ -45,6 +42,30 @@ hyperspy.misc.example_signals_loading module
 --------------------------------------------
 
 .. automodule:: hyperspy.misc.example_signals_loading
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+hyperspy.misc.export_dictionary module
+--------------------------------------
+
+.. automodule:: hyperspy.misc.export_dictionary
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+hyperspy.misc.hspy_warnings module
+----------------------------------
+
+.. automodule:: hyperspy.misc.hspy_warnings
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+hyperspy.misc.hyperspy_magics module
+------------------------------------
+
+.. automodule:: hyperspy.misc.hyperspy_magics
     :members:
     :undoc-members:
     :show-inheritance:
@@ -105,14 +126,6 @@ hyperspy.misc.physics_tools module
     :undoc-members:
     :show-inheritance:
 
-hyperspy.misc.progressbar module
---------------------------------
-
-.. automodule:: hyperspy.misc.progressbar
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 hyperspy.misc.rgb_tools module
 ------------------------------
 
@@ -121,10 +134,26 @@ hyperspy.misc.rgb_tools module
     :undoc-members:
     :show-inheritance:
 
+hyperspy.misc.slicing module
+----------------------------
+
+.. automodule:: hyperspy.misc.slicing
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 hyperspy.misc.spectrum_tools module
 -----------------------------------
 
 .. automodule:: hyperspy.misc.spectrum_tools
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+hyperspy.misc.test_utils module
+-------------------------------
+
+.. automodule:: hyperspy.misc.test_utils
     :members:
     :undoc-members:
     :show-inheritance:

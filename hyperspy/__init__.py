@@ -1,42 +1,46 @@
-"""
+# -*- coding: utf-8 -*-
+try:
+    import sip
+    sip.setapi('QVariant', 2)
+    sip.setapi('QDate', 2)
+    sip.setapi('QDateTime', 2)
+    sip.setapi('QTextStream', 2)
+    sip.setapi('QTime', 2)
+    sip.setapi('QUrl', 2)
+    del sip
+except ImportError:
+    pass
+
+from hyperspy import docstrings
+
+__doc__ = """
 HyperSpy: a multi-dimensional data analysis package for Python
 ==============================================================
 
 Documentation is available in the docstrings and online at
 http://hyperspy.org/hyperspy-doc/current/index.html.
 
-All public packages, functions and classes are in :mod:`~hyperspy.hspy`. All
-other packages are for internal consumption.
+All public packages, functions and classes are in :mod:`~hyperspy.api`. All
+other packages and modules are for internal consumption and should not be
+needed for data analysis.
 
-When starting HyperSpy using the starting script e.g. by typing ``hyperspy`` in
-a console, using the context menu entries or using the links in the
-``Start Menu``, the :mod:`~hyperspy.hspy` package is imported in the user
-namespace. When using HyperSpy as a library, it is reccommended to import
-the :mod:`~hyperspy.hspy` package as follows:
+%s
 
-    from hyperspy import hspy as hs
+More details in the :mod:`~hyperspy.api` docstring.
 
-The :mod:`~hyperspy.hspy` package contains the following subpackages:
-
-    :mod:`~hyperspy.hspy.signals`
-        Specialized Signal instances.
-
-    :mod:`~hyperspy.hspy.utils`
-        Functions that operate of Signal instances and other goodies.
-
-    :mod:`~hyperspy.hspy.components`
-        Components that can be used to create a model for curve fitting.
-
-More details in the :mod:`~hyperspy.hspy` docstring.
-
-"""
-# -*- coding: utf-8 -*-
+""" % docstrings.START_HSPY
 
 import os
 
 os.environ['QT_API'] = "pyqt"
 
 
-import Release
+from . import Release
 
+__all__ = ["api"]
 __version__ = Release.version
+
+
+def load_ipython_extension(ip):
+    from hyperspy.misc.hyperspy_magics import HyperspyMagics
+    ip.register_magics(HyperspyMagics)

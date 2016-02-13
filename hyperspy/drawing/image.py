@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
-# This file is part of  HyperSpy.
+# This file is part of HyperSpy.
 #
 #  HyperSpy is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 from __future__ import division
 
@@ -30,7 +30,9 @@ from hyperspy.drawing import utils
 from hyperspy.gui.tools import ImageContrastEditor
 from hyperspy.misc import math_tools
 from hyperspy.misc import rgb_tools
-from hyperspy.misc.image_tools import contrast_stretching
+from hyperspy.misc.image_tools import (contrast_stretching,
+                                       MPL_DIVERGING_COLORMAPS,
+                                       centre_colormap_values)
 from hyperspy.drawing.figure import BlittedFigure
 
 
@@ -61,10 +63,15 @@ class ImagePlot(BlittedFigure):
         The percentage of pixels that are left out of the bounds.  For example,
         the low and high bounds of a value of 1 are the 0.5% and 99.5%
         percentiles. It must be in the [0, 100] range.
+    centre_colormap : {"auto", True, False}
+        If True the centre of the color scheme is set to zero. This is
+        specially useful when using diverging color schemes. If "auto"
+        (default), diverging color schemes are automatically centred.
 
     """
 
     def __init__(self):
+        super(ImagePlot, self).__init__()
         self.data_function = None
         self.pixel_units = None
         self.plot_ticks = False
@@ -95,6 +102,7 @@ class ImagePlot(BlittedFigure):
         self._user_axes_ticks = None
         self._auto_axes_ticks = True
         self.no_nans = False
+        self.centre_colormap = "auto"
 
     @property
     def axes_ticks(self):
@@ -191,7 +199,7 @@ class ImagePlot(BlittedFigure):
                           else None),
             figsize=figsize.clip(min_size, max_size))
         self.figure.canvas.mpl_connect('draw_event', self._on_draw)
-        utils.on_figure_window_close(self.figure, self.close)
+        utils.on_figure_window_close(self.figure, self._on_close)
 
     def create_axis(self):
         self.ax = self.figure.add_subplot(111)
@@ -236,7 +244,7 @@ class ImagePlot(BlittedFigure):
         self.update(**kwargs)
         if self.scalebar is True:
             if self.pixel_units is not None:
-                self.ax.scalebar = widgets.Scale_Bar(
+                self.ax.scalebar = widgets.ScaleBar(
                     ax=self.ax,
                     units=self.pixel_units,
                     animated=True,
@@ -266,6 +274,18 @@ class ImagePlot(BlittedFigure):
 
     def update(self, auto_contrast=None, **kwargs):
         ims = self.ax.images
+        # Turn on centre_colormap if a diverging colormap is used.
+        if self.centre_colormap == "auto":
+            if "cmap" in kwargs:
+                cmap = kwargs["cmap"]
+            elif ims:
+                cmap = ims[0].get_cmap().name
+            else:
+                cmap = plt.cm.get_cmap().name
+            if cmap in MPL_DIVERGING_COLORMAPS:
+                self.centre_colormap = True
+            else:
+                self.centre_colormap = False
         redraw_colorbar = False
         data = rgb_tools.rgbx2regular_array(
             self.data_function(axes_manager=self.axes_manager),
@@ -285,9 +305,9 @@ class ImagePlot(BlittedFigure):
                     row = -1
                 if col >= 0 and row >= 0:
                     z = data[row, col]
-                    return 'x=%1.4f, y=%1.4f, intensity=%1.4f' % (x, y, z)
+                    return 'x=%1.4g, y=%1.4g, intensity=%1.4g' % (x, y, z)
                 else:
-                    return 'x=%1.4f, y=%1.4f' % (x, y)
+                    return 'x=%1.4g, y=%1.4g' % (x, y)
             self.ax.format_coord = format_coord
         if (auto_contrast is True or
                 auto_contrast is None and self.auto_contrast is True):
@@ -300,12 +320,16 @@ class ImagePlot(BlittedFigure):
         if 'complex' in data.dtype.name:
             data = np.log(np.abs(data))
         if self.plot_indices is True:
-            self._text.set_text((self.axes_manager.indices))
+            self._text.set_text(self.axes_manager.indices)
         if self.no_nans:
             data = np.nan_to_num(data)
+        if self.centre_colormap:
+            vmin, vmax = centre_colormap_values(self.vmin, self.vmax)
+        else:
+            vmin, vmax = self.vmin, self.vmax
         if ims:
             ims[0].set_data(data)
-            ims[0].norm.vmax, ims[0].norm.vmin = self.vmax, self.vmin
+            ims[0].norm.vmax, ims[0].norm.vmin = vmax, vmin
             if redraw_colorbar is True:
                 ims[0].autoscale()
                 self._colorbar.draw_all()
@@ -319,22 +343,16 @@ class ImagePlot(BlittedFigure):
             if np.isnan(data).any():
                 self.figure.canvas.draw()
         else:
-            new_args = {}
-            new_args['interpolation'] = 'nearest'
-            new_args['vmin'] = self.vmin
-            new_args['vmax'] = self.vmax
-            new_args['extent'] = self._extent
-            new_args['aspect'] = self._aspect
-            new_args['animated'] = True
+            new_args = {'interpolation': 'nearest',
+                        'vmin': vmin,
+                        'vmax': vmax,
+                        'extent': self._extent,
+                        'aspect': self._aspect,
+                        'animated': True}
             new_args.update(kwargs)
             self.ax.imshow(data,
                            **new_args)
             self.figure.canvas.draw()
-
-    def _update(self):
-        # This "wrapper" because on_trait_change fiddles with the
-        # method arguments and auto_contrast does not work then
-        self.update()
 
     def adjust_contrast(self):
         ceditor = ImageContrastEditor(self)
@@ -346,7 +364,10 @@ class ImagePlot(BlittedFigure):
                                        self.on_key_press)
         self.figure.canvas.draw()
         if self.axes_manager:
-            self.axes_manager.connect(self._update)
+            self.axes_manager.events.indices_changed.connect(self.update, [])
+            self.events.closed.connect(
+                lambda: self.axes_manager.events.indices_changed.disconnect(
+                    self.update), [])
 
     def on_key_press(self, event):
         if event.key == 'h':
@@ -389,16 +410,13 @@ class ImagePlot(BlittedFigure):
             optimize_for_oom(step_oom - i)
             i += 1
 
-    def disconnect(self):
-        if self.axes_manager:
-            self.axes_manager.disconnect(self._update)
-
-    def close(self):
+    def _on_close(self):
         for marker in self.ax_markers:
             marker.close()
-        self.disconnect()
-        try:
-            plt.close(self.figure)
-        except:
-            pass
+        self.events.closed.trigger(obj=self)
+        for f in self.events.closed.connected:
+            self.events.closed.disconnect(f)
         self.figure = None
+
+    def close(self):
+        plt.close(self.figure)  # This will trigger self._on_close()

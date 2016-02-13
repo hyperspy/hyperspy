@@ -39,7 +39,7 @@ example we create an Image instance from a 2D numpy array:
 
 .. code-block:: python
 
-    >>> im = signals.Image(np.random.random((64,64)))
+    >>> im = hs.signals.Image(np.random.random((64,64)))
 
 
 The different signals store other objects in what are called attributes. For
@@ -124,7 +124,7 @@ The following example shows how to transform between different subclasses.
 
    .. code-block:: python
 
-       >>> s = signals.Spectrum(np.random.random((10,20,100)))
+       >>> s = hs.signals.Spectrum(np.random.random((10,20,100)))
        >>> s
        <Spectrum, title: , dimensions: (20, 10|100)>
        >>> s.metadata
@@ -240,13 +240,48 @@ The methods of this section are available to all the signals. In other chapters
 methods that are only available in specialized
 subclasses.
 
+Simple mathematical operations
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. versionchanged:: 0.9
+
+A number of simple operations are supported by :py:class:`~.signal.Signal`. Most
+of them are just wrapped numpy functions, as an example:
+
+.. code-block:: python
+
+    >>> s = hs.signals.Signal(np.random.random((2,4,6)))
+    >>> s.axes_manager[0].name = 'E'
+    >>> s
+    <Signal, title: , dimensions: (4, 2|6)>
+    >>> # by default perform operation over all navigation axes
+    >>> s.sum()
+    <Signal, title: , dimensions: (|6)>
+    >>> # can also pass axes individually
+    >>> s.sum('E')
+    <Signal, title: , dimensions: (2|6)>
+    >>> # or a tuple of axes to operate on, with duplicates, by index or directly
+    >>> ans = s.sum((-1, s.axes_manager[1], 'E', 0))
+    >>> ans
+    <Signal, title: , dimensions: (|1)>
+    >>> ans.axes_manager[0]
+    <Scalar axis, size: 1>
+
+Other functions that support similar behavior: :py:func:`~.signal.sum`,
+:py:func:`~.signal.max`, :py:func:`~.signal.min`, :py:func:`~.signal.mean`,
+:py:func:`~.signal.std`, :py:func:`~.signal.var`. Similar functions that can
+only be performed on one axis at a time: :py:func:`~.signal.diff`,
+:py:func:`~.signal.derivative`, :py:func:`~.signal.integrate_simpson`,
+:py:func:`~.signal.integrate1D`, :py:func:`~.signal.valuemax`,
+:py:func:`~.signal.indexmax`.
+
 .. _signal.indexing:
 
 Indexing
 ^^^^^^^^
 .. versionadded:: 0.6
 
-Indexing the :py:class:`~.signal.Signal`  provides a powerful, convenient and
+Indexing the :py:class:`~.signal.Signal` provides a powerful, convenient and
 Pythonic way to access and modify its data.  It is a concept that might take
 some time to grasp but, once mastered, it can greatly simplify many common
 signal processing tasks.
@@ -279,7 +314,7 @@ Lets start by indexing a single spectrum:
 
 .. code-block:: python
 
-    >>> s = signals.Spectrum(np.arange(10))
+    >>> s = hs.signals.Spectrum(np.arange(10))
     >>> s
     <Spectrum, title: , dimensions: (|10)>
     >>> s.data
@@ -311,7 +346,7 @@ HyperSpy indexes using the axis scales instead of the indices.
 
 .. code-block:: python
 
-    >>> s = signals.Spectrum(np.arange(10))
+    >>> s = hs.signals.Spectrum(np.arange(10))
     >>> s
     <Spectrum, title: , dimensions: (|10)>
     >>> s.data
@@ -333,7 +368,7 @@ modifies the same value in the other.
 
 .. code-block:: python
 
-    >>> s = signals.Spectrum(np.arange(10))
+    >>> s = hs.signals.Spectrum(np.arange(10))
     >>> s
     <Spectrum, title: , dimensions: (10,)>
     >>> s.data
@@ -357,7 +392,7 @@ order.
 
 .. code-block:: python
 
-    >>> s = signals.Spectrum(np.arange(2*3*4).reshape((2,3,4)))
+    >>> s = hs.signals.Spectrum(np.arange(2*3*4).reshape((2,3,4)))
     >>> s
     <Spectrum, title: , dimensions: (10, 10, 10)>
     >>> s.data
@@ -394,7 +429,7 @@ dimensions independently:
 
 .. code-block:: python
 
-    >>> s = signals.Spectrum(np.arange(2*3*4).reshape((2,3,4)))
+    >>> s = hs.signals.Spectrum(np.arange(2*3*4).reshape((2,3,4)))
     >>> s
     <Spectrum, title: , dimensions: (10, 10, 10)>
     >>> s.data
@@ -429,7 +464,7 @@ The same syntax can be used to set the data values:
 
 .. code-block:: python
 
-    >>> s = signals.Spectrum(np.arange(2*3*4).reshape((2,3,4)))
+    >>> s = hs.signals.Spectrum(np.arange(2*3*4).reshape((2,3,4)))
     >>> s
     <Spectrum, title: , dimensions: (10, 10, 10)>
     >>> s.data
@@ -468,43 +503,55 @@ are not equal `numpy broadcasting rules apply
 <http://docs.scipy.org/doc/numpy/user/basics.broadcasting.html>`_ *first*. In
 addition HyperSpy extend numpy's broadcasting rules to the following cases:
 
-+------------+----------------------+------------------+
-| **Signal** | **NavigationShape**  | **SignalShape**  |
-+============+======================+==================+
-|   s1       |        a             |      b           |
-+------------+----------------------+------------------+
-|   s2       |       (0,)           |      a           |
-+------------+----------------------+------------------+
-|   s1 + s2  |       a              |      b           |
-+------------+----------------------+------------------+
-|   s2 + s1  |       a              |      b           |
-+------------+----------------------+------------------+
+
+.. deprecated:: 0.8.1
+
+    This broadcasting rules will change in HyperSpy 0.9.
+
+    .. table:: Signal broadcasting rules (i).
+
+        +------------+----------------------+------------------+
+        | **Signal** | **NavigationShape**  | **SignalShape**  |
+        +============+======================+==================+
+        |   s1       |        a             |      b           |
+        +------------+----------------------+------------------+
+        |   s2       |       (0,)           |      a           |
+        +------------+----------------------+------------------+
+        |   s1 + s2  |       a              |      b           |
+        +------------+----------------------+------------------+
+        |   s2 + s1  |       a              |      b           |
+        +------------+----------------------+------------------+
 
 
-+------------+----------------------+------------------+
-| **Signal** | **NavigationShape**  | **SignalShape**  |
-+============+======================+==================+
-|   s1       |        a             |      b           |
-+------------+----------------------+------------------+
-|   s2       |       (0,)           |      b           |
-+------------+----------------------+------------------+
-|   s1 + s2  |       a              |      b           |
-+------------+----------------------+------------------+
-|   s2 + s1  |       a              |      b           |
-+------------+----------------------+------------------+
+    .. table:: Signal broadcasting rules (ii).
+
+        +------------+----------------------+------------------+
+        | **Signal** | **NavigationShape**  | **SignalShape**  |
+        +============+======================+==================+
+        |   s1       |        a             |      b           |
+        +------------+----------------------+------------------+
+        |   s2       |       (0,)           |      b           |
+        +------------+----------------------+------------------+
+        |   s1 + s2  |       a              |      b           |
+        +------------+----------------------+------------------+
+        |   s2 + s1  |       a              |      b           |
+        +------------+----------------------+------------------+
 
 
-+------------+----------------------+------------------+
-| **Signal** | **NavigationShape**  | **SignalShape**  |
-+============+======================+==================+
-|   s1       |       (0,)           |      a           |
-+------------+----------------------+------------------+
-|   s2       |       (0,)           |      b           |
-+------------+----------------------+------------------+
-|   s1 + s2  |       b              |      a           |
-+------------+----------------------+------------------+
-|   s2 + s1  |       a              |      b           |
-+------------+----------------------+------------------+
+    .. table:: Signal broadcasting rules (iii).
+
+        +------------+----------------------+------------------+
+        | **Signal** | **NavigationShape**  | **SignalShape**  |
+        +============+======================+==================+
+        |   s1       |       (0,)           |      a           |
+        +------------+----------------------+------------------+
+        |   s2       |       (0,)           |      b           |
+        +------------+----------------------+------------------+
+        |   s1 + s2  |       b              |      a           |
+        +------------+----------------------+------------------+
+        |   s2 + s1  |       a              |      b           |
+        +------------+----------------------+------------------+
+
 
 .. _signal.iterator:
 
@@ -517,7 +564,7 @@ files by iterating over the signal instance:
 
 .. code-block:: python
 
-    >>> image_stack = signals.Image(np.random.random((2, 5, 64,64)))
+    >>> image_stack = hs.signals.Image(np.random.random((2, 5, 64,64)))
     >>> for single_image in image_stack:
     ...    single_image.save("image %s.png" % str(image_stack.axes_manager.indices))
     The "image (0, 0).png" file was created.
@@ -542,18 +589,20 @@ to make a horizontal "collage" of the image stack:
 .. code-block:: python
 
     >>> import scipy.ndimage
-    >>> image_stack = signals.Image(np.array([scipy.misc.lena()]*5))
+    >>> image_stack = hs.signals.Image(np.array([scipy.misc.lena()]*5))
     >>> image_stack.axes_manager[1].name = "x"
     >>> image_stack.axes_manager[2].name = "y"
     >>> for image, angle in zip(image_stack, (0, 45, 90, 135, 180)):
     ...    image.data[:] = scipy.ndimage.rotate(image.data, angle=angle,
     ...    reshape=False)
-    >>> collage = utils.stack([image for image in image_stack], axis=0)
+    >>> collage = hs.stack([image for image in image_stack], axis=0)
     >>> collage.plot()
 
 .. figure::  images/rotate_lena.png
   :align:   center
   :width:   500
+
+  Rotation of images by iteration.
 
 .. versionadded:: 0.7
 
@@ -565,18 +614,20 @@ external function can be more easily accomplished using the
 .. code-block:: python
 
     >>> import scipy.ndimage
-    >>> image_stack = signals.Image(np.array([scipy.misc.lena()]*4))
+    >>> image_stack = hs.signals.Image(np.array([scipy.misc.lena()]*4))
     >>> image_stack.axes_manager[1].name = "x"
     >>> image_stack.axes_manager[2].name = "y"
     >>> image_stack.map(scipy.ndimage.rotate,
     ...                            angle=45,
     ...                            reshape=False)
-    >>> collage = utils.stack([image for image in image_stack], axis=0)
+    >>> collage = hs.stack([image for image in image_stack], axis=0)
     >>> collage.plot()
 
 .. figure::  images/rotate_lena_apply_simple.png
   :align:   center
   :width:   500
+
+  Rotation of images by the same amount using :py:meth:`~.signal.Signal.map`.
 
 The :py:meth:`~.signal.Signal.map` method can also take variable
 arguments as in the following example.
@@ -584,12 +635,12 @@ arguments as in the following example.
 .. code-block:: python
 
     >>> import scipy.ndimage
-    >>> image_stack = signals.Image(np.array([scipy.misc.lena()]*4))
+    >>> image_stack = hs.signals.Image(np.array([scipy.misc.lena()]*4))
     >>> image_stack.axes_manager[1].name = "x"
     >>> image_stack.axes_manager[2].name = "y"
-    >>> angles = signals.Signal(np.array([0, 45, 90, 135]))
+    >>> angles = hs.signals.Signal(np.array([0, 45, 90, 135]))
     >>> angles.axes_manager.set_signal_dimension(0)
-    >>> modes = signals.Signal(np.array(['constant', 'nearest', 'reflect', 'wrap']))
+    >>> modes = hs.signals.Signal(np.array(['constant', 'nearest', 'reflect', 'wrap']))
     >>> modes.axes_manager.set_signal_dimension(0)
     >>> image_stack.map(scipy.ndimage.rotate,
     ...                            angle=angles,
@@ -600,6 +651,9 @@ arguments as in the following example.
 .. figure::  images/rotate_lena_apply_ndkwargs.png
   :align:   center
   :width:   500
+
+  Rotation of images using :py:meth:`~.signal.Signal.map` with different
+  arguments for each image in the stack.
 
 Cropping
 ^^^^^^^^
@@ -643,13 +697,15 @@ with same dimension.
 
 .. code-block:: python
 
-    >>> image = signals.Image(scipy.misc.lena())
-    >>> image = utils.stack([utils.stack([image]*3,axis=0)]*3,axis=1)
+    >>> image = hs.signals.Image(scipy.misc.lena())
+    >>> image = hs.stack([hs.stack([image]*3,axis=0)]*3,axis=1)
     >>> image.plot()
 
 .. figure::  images/stack_lena_3_3.png
   :align:   center
   :width:   500
+
+  Stacking example.
 
 An object can be splitted into several objects
 with the :py:meth:`~.signal.Signal.split` method. This function can be used
@@ -664,19 +720,8 @@ to reverse the :py:func:`~.utils.stack` function:
   :align:   center
   :width:   400
 
+  Splitting example.
 
-Simple operations over one axis
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-* :py:meth:`~.signal.Signal.sum`
-* :py:meth:`~.signal.Signal.mean`
-* :py:meth:`~.signal.Signal.max`
-* :py:meth:`~.signal.Signal.min`
-* :py:meth:`~.signal.Signal.std`
-* :py:meth:`~.signal.Signal.var`
-* :py:meth:`~.signal.Signal.diff`
-* :py:meth:`~.signal.Signal.derivative`
-* :py:meth:`~.signal.Signal.integrate_simpson`
 
 .. _signal.change_dtype:
 
@@ -691,7 +736,7 @@ type in place, e.g.:
 
 .. code-block:: python
 
-    >>> s = load('EELS Spectrum Image (high-loss).dm3')
+    >>> s = hs.load('EELS Spectrum Image (high-loss).dm3')
         Title: EELS Spectrum Image (high-loss).dm3
         Signal type: EELS
         Data dimensions: (21, 42, 2048)
@@ -731,7 +776,7 @@ type in place, e.g.:
         >>> rgb_test[:,:,1] = (X - lx / 2 + lx*offset_factor) ** 2 + (Y - ly / 2 - ly*offset_factor) ** 2 < lx * ly / size_factor **2
         >>> rgb_test[:,:,2] = (X - lx / 2) ** 2 + (Y - ly / 2 + ly*offset_factor) ** 2 < lx * ly / size_factor **2
         >>> rgb_test *= 2**16 - 1
-        >>> s = signals.Spectrum(rgb_test)
+        >>> s = hs.signals.Spectrum(rgb_test)
         >>> s.change_dtype("uint16")
         >>> s
         <Spectrum, title: , dimensions: (1024, 1024|3)>
@@ -763,7 +808,7 @@ These two methods can be combined with
 print the summary stastics of the signal at the current coordinates, e.g:
 .. code-block:: python
 
-    >>> s = signals.EELSSpectrum(np.random.normal(size=(10,100)))
+    >>> s = hs.signals.EELSSpectrum(np.random.normal(size=(10,100)))
     >>> s.print_summary_statistics()
     Summary statistics
     ------------------
@@ -794,14 +839,14 @@ with histograms of several random chi-square distributions:
 
 .. code-block:: python
 
-    >>> img = signals.Image([np.random.chisquare(i+1,[100,100]) for i in range(5)])
-    >>> utils.plot.plot_histograms(img,legend='auto')
+    >>> img = hs.signals.Image([np.random.chisquare(i+1,[100,100]) for i in range(5)])
+    >>> hs.plot.plot_histograms(img,legend='auto')
 
 .. figure::  images/plot_histograms_chisquare.png
    :align:   center
    :width:   500
 
-   Comparing histograms
+   Comparing histograms.
 
 
 .. _signal.noise_properties:
@@ -845,7 +890,7 @@ for example:
 
 .. code-block:: python
 
-  >>> s = signals.SpectrumSimulation(np.ones(100))
+  >>> s = hs.signals.SpectrumSimulation(np.ones(100))
   >>> s.add_poissonian_noise()
   >>> s.metadata
   ├── General
@@ -871,3 +916,84 @@ for example:
       ├── record_by = spectrum
       ├── signal_origin = simulation
       └── signal_type =
+
+
+Speeding up operations
+----------------------
+
+.. versionadded:: 0.9
+
+Reusing a Signal for output
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Many signal methods create and return a new signal. For fast operations, the
+new signal creation time is non-negligible. Also, when the operation is
+repeated many times, for example in a loop, the cumulaive creation time can
+become significant. Therefore, many operations on `Signal` accept an optional
+argument `out`. If an existing signal is passed to `out`, the function output
+will be placed into that signal, instead of being returned in a new signal.
+The following example shows how to use this feature to slice a `Signal`. It is
+important to know that the `Signal` instance passed in the `out` argument must
+be well-suited for the purpose. Often this means that it must have the same
+axes and data shape as the `Signal` that would normally be returned by the
+operation.
+
+.. code-block:: python
+
+    >>> s = signals.Spectrum(np.arange(10))
+    >>> s_sum = s.sum(0)
+    >>> s_sum.data
+    array(45)
+    >>> s.inav[:5].sum(0, out=s_sum)
+    >>> s_sum.data
+    10
+    >>> s_roi = s.inav[:3]
+    >>> s_roi
+    <Spectrum, title: , dimensions: (|3)>
+    >>> s.inav.__getitem__(slice(None, 5), out=s_roi)
+    >>> s_roi
+    <Spectrum, title: , dimensions: (|5)>
+
+
+Interactive operations
+----------------------
+
+.. versionadded:: 0.9
+
+
+The function :py:func:`~.interactive.interactive` ease the task of defining
+operations that are automatically updated when an event is triggered. By
+default it recomputes the operation when data or the axes of the original
+signal changes.
+
+.. code-block:: python
+
+    >>> s = hs.signals.Spectrum(np.arange(10.))
+    >>> ssum = hs.interactive(s.sum, axis=0)
+    >>> ssum.data
+    array(45.0)
+    >>> s.data /= 10
+    >>> s.events.data_changed.trigger()
+    >>> ssum.data
+    4.5
+
+The interactive opearations can be chained.
+
+.. code-block:: python
+
+    >>> s = hs.signals.Spectrum(np.arange(2 * 3 * 4).reshape((2, 3, 4)))
+    >>> ssum = hs.interactive(s.sum, axis=0)
+    >>> ssum_mean = hs.interactive(ssum.mean, axis=0)
+    >>> ssum_mean.data
+    array([ 30.,  33.,  36.,  39.])
+    >>> s.data
+    array([[[ 0,  1,  2,  3],
+            [ 4,  5,  6,  7],
+            [ 8,  9, 10, 11]],
+
+           [[12, 13, 14, 15],
+            [16, 17, 18, 19],
+            [20, 21, 22, 23]]])
+    >>> s.data *= 10
+    >>> s.events.data_changed.trigger(obj=s)
+    >>> ssum_mean.data
+    array([ 300.,  330.,  360.,  390.])

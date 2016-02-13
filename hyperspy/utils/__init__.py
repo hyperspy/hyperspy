@@ -21,6 +21,8 @@ Subpackages:
 import hyperspy.utils.material
 import hyperspy.utils.eds
 import hyperspy.utils.plot
-import hyperspy.utils.example_signals
-
+import hyperspy.datasets.example_signals
+import hyperspy.utils.model
 from hyperspy.misc.utils import stack
+from hyperspy.interactive import interactive
+from hyperspy import roi

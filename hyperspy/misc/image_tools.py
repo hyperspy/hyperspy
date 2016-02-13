@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -44,7 +44,7 @@ def triu_indices_minus_diag(n):
     """
     ti = np.triu_indices(n)
     isnotdiag = ti[0] != ti[1]
-    return (ti[0][isnotdiag], ti[1][isnotdiag])
+    return ti[0][isnotdiag], ti[1][isnotdiag]
 
 
 def hanning2d(M, N):
@@ -55,8 +55,8 @@ def hanning2d(M, N):
 
 
 def sobel_filter(im):
-    sx = sp.ndimage.sobel(im, axis=0, mode='constant')
-    sy = sp.ndimage.sobel(im, axis=1, mode='constant')
+    sx = sp.ndimage.sobel(im, axis=0)
+    sy = sp.ndimage.sobel(im, axis=1)
     sob = np.hypot(sx, sy)
     return sob
 
@@ -148,12 +148,12 @@ def estimate_image_shift(ref, image, roi=None, sobel=True,
 
     # Apply filters
     for im in (ref, image):
-        if hanning is True:
-            im *= hanning2d(*im.shape)
         if medfilter is True:
             im[:] = sp.signal.medfilt(im)
         if sobel is True:
             im[:] = sobel_filter(im)
+        if hanning is True:
+            im *= hanning2d(*im.shape)
 
     phase_correlation = fft_correlation(ref, image,
                                         normalize=normalize_corr)
@@ -218,3 +218,38 @@ def contrast_stretching(data, saturated_pixels):
     vmin = np.percentile(data, saturated_pixels / 2.)
     vmax = np.percentile(data, 100 - saturated_pixels / 2.)
     return vmin, vmax
+
+MPL_DIVERGING_COLORMAPS = [
+    "BrBG",
+    "bwr",
+    "coolwarm",
+    "PiYG",
+    "PRGn",
+    "PuOr",
+    "RdBu",
+    "RdGy",
+    "RdYIBu",
+    "RdYIGn",
+    "seismic",
+    "Spectral", ]
+# Add reversed colormaps
+MPL_DIVERGING_COLORMAPS += [cmap + "_r" for cmap in MPL_DIVERGING_COLORMAPS]
+
+
+def centre_colormap_values(vmin, vmax):
+    """Calculate vmin and vmax to set the colormap midpoint to zero.
+
+    Parameters
+    ----------
+    vmin, vmax : scalar
+        The range of data to display.
+
+    Returns
+    -------
+    cvmin, cvmax : scalar
+        The values to obtain a centre colormap.
+
+    """
+
+    absmax = max(abs(vmin), abs(vmax))
+    return -absmax, absmax

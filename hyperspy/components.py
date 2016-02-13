@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -17,7 +17,7 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 
-'''
+"""
 
 Components that can be used to define a model for e.g. curve fitting.
 
@@ -29,7 +29,7 @@ look to the other components.
 
 For more details see each component docstring.
 
-'''
+"""
 
 from hyperspy._components.arctan import Arctan
 from hyperspy._components.bleasdale import Bleasdale
@@ -39,6 +39,7 @@ from hyperspy._components.eels_cl_edge import EELSCLEdge
 from hyperspy._components.error_function import Erf
 from hyperspy._components.exponential import Exponential
 from hyperspy._components.gaussian import Gaussian
+from hyperspy._components.gaussianhf import GaussianHF
 from hyperspy._components.logistic import Logistic
 from hyperspy._components.lorentzian import Lorentzian
 from hyperspy._components.offset import Offset
@@ -52,3 +53,5 @@ from hyperspy._components.scalable_fixed_pattern import ScalableFixedPattern
 from hyperspy._components.polynomial import Polynomial
 from hyperspy._components.pes_core_line_shape import PESCoreLineShape
 from hyperspy._components.volume_plasmon_drude import VolumePlasmonDrude
+from hyperspy._components.expression import Expression
+from hyperspy._components.gaussian2d import Gaussian2D

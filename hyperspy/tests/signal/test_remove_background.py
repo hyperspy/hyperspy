@@ -21,7 +21,8 @@ class TestRemoveBackground1DGaussian:
     def test_background_remove_gaussian(self):
         s1 = self.signal.remove_background(
             signal_range=(None, None),
-            background_type='Gaussian')
+            background_type='Gaussian',
+            show_progressbar=None)
         assert_true(np.allclose(s1.data, np.zeros(len(s1.data))))
 
     def test_background_remove_gaussian_full_fit(self):
@@ -30,6 +31,7 @@ class TestRemoveBackground1DGaussian:
             background_type='Gaussian',
             estimate_background=False)
         assert_true(np.allclose(s1.data, np.zeros(len(s1.data))))
+
 
 class TestRemoveBackground1DPowerLaw:
 
@@ -45,12 +47,14 @@ class TestRemoveBackground1DPowerLaw:
     def test_background_remove_pl(self):
         s1 = self.signal.remove_background(
             signal_range=(None, None),
-            background_type='PowerLaw')
+            background_type='PowerLaw',
+            show_progressbar=None)
         assert_true(np.allclose(s1.data, np.zeros(len(s1.data)), atol=60))
 
     def test_background_remove_pl_int(self):
         self.signal.change_dtype("int")
         s1 = self.signal.remove_background(
             signal_range=(None, None),
-            background_type='PowerLaw')
+            background_type='PowerLaw',
+            show_progressbar=None)
         assert_true(np.allclose(s1.data, np.zeros(len(s1.data)), atol=60))

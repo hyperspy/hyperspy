@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -34,9 +34,10 @@ class Simulation(Signal):
         original_type = self.data.dtype
         self.data = np.random.poisson(self.data, **kwargs).astype(
             original_type)
+        self.events.data_changed.trigger(obj=self)
 
     @auto_replot
-    def add_gaussian_noise(self, std, **kwargs):
+    def add_gaussian_noise(self, std):
         """Add Gaussian noise to the data
         Parameters
         ----------
@@ -45,10 +46,10 @@ class Simulation(Signal):
         """
         noise = np.random.normal(0,
                                  std,
-                                 self.data.shape,
-                                 **kwargs)
+                                 self.data.shape)
         original_dtype = self.data.dtype
         self.data = (
             self.data.astype(
                 noise.dtype) +
             noise).astype(original_dtype)
+        self.events.data_changed.trigger(obj=self)
