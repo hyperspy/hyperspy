@@ -20,4 +20,4 @@ class TestFindPeaks1DOhaver():
     def test_find_peaks1D_ohaver_zero_value_bug(self):
         spectrum = self.spectrum
         peak_list = spectrum.find_peaks1D_ohaver()[0]
-        assert_not_equal(len(peak_list), 0)
+        assert_equal(len(peak_list), 48)
