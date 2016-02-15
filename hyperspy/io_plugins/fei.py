@@ -80,9 +80,9 @@ def dimension_array_dtype(n, DescriptionLength, UnitsLength):
         ("Dim-%s_CalibrationDelta" % n, "<f8"),
         ("Dim-%s_CalibrationElement" % n, "<u4"),
         ("Dim-%s_DescriptionLength" % n, "<u4"),
-        ("Dim-%s_Description" % n, (str, DescriptionLength)),
+        ("Dim-%s_Description" % n, (bytes, DescriptionLength)),
         ("Dim-%s_UnitsLength" % n, "<u4"),
-        ("Dim-%s_Units" % n, (str, UnitsLength)),
+        ("Dim-%s_Units" % n, (bytes, UnitsLength)),
     ]
     return dt_list
 
@@ -195,10 +195,10 @@ def guess_record_by(record_by_id):
 def parse_ExperimentalDescription(et, dictree):
     dictree.add_node(et.tag)
     dictree = dictree[et.tag]
-    for data in et.find("Root").findall("Data"):
-        label = data.find("Label").text
-        value = data.find("Value").text
-        units = data.find("Unit").text
+    for data in et.find(b"Root").findall(b"Data"):
+        label = data.find(b"Label").text
+        value = data.find(b"Value").text
+        units = data.find(b"Unit").text
         item = label if not units else label + "_%s" % units
         value = float(value) if units else value
         dictree[item] = value
@@ -208,15 +208,15 @@ def parse_TrueImageHeaderInfo(et, dictree):
     dictree.add_node(et.tag)
     dictree = dictree[et.tag]
     et = ET.fromstring(et.text)
-    for data in et.findall("Data"):
-        dictree[data.find("Index").text] = float(data.find("Value").text)
+    for data in et.findall(b"Data"):
+        dictree[data.find(b"Index").text] = float(data.find(b"Value").text)
 
 
 def emixml2dtb(et, dictree):
-    if et.tag == "ExperimentalDescription":
+    if et.tag == b"ExperimentalDescription":
         parse_ExperimentalDescription(et, dictree)
         return
-    elif et.tag == "TrueImageHeaderInfo":
+    elif et.tag == b"TrueImageHeaderInfo":
         parse_TrueImageHeaderInfo(et, dictree)
         return
     if et.text:
@@ -310,9 +310,9 @@ def get_xml_info_from_emi(emi_file):
     i_start = 0
     while i_start != -1:
         i_start += 1
-        i_start = tx.find('<ObjectInfo>', i_start)
-        i_end = tx.find('</ObjectInfo>', i_start)
-        objects.append(tx[i_start:i_end + 13])
+        i_start = tx.find(b'<ObjectInfo>', i_start)
+        i_end = tx.find(b'</ObjectInfo>', i_start)
+        objects.append(tx[i_start:i_end + 13].decode('utf-8'))
     return objects[:-1]
 
 
@@ -348,7 +348,7 @@ def ser_reader(filename, objects=None, verbose=False, *args, **kwds):
                 'name': name,
                 'offset': header['Dim-%i_CalibrationOffset' % idim][0],
                 'scale': header['Dim-%i_CalibrationDelta' % idim][0],
-                'units': header['Dim-%i_Units' % idim][0],
+                'units': header['Dim-%i_Units' % idim][0].decode('utf-8'),
                 'size': header['Dim-%i_DimensionSize' % idim][0],
                 'index_in_array': i
             })
@@ -384,7 +384,8 @@ def ser_reader(filename, objects=None, verbose=False, *args, **kwds):
                 axes.append({
                     'offset': header['Dim-%i_CalibrationOffset' % (i + 1)][0],
                     'scale': header['Dim-%i_CalibrationDelta' % (i + 1)][0],
-                    'units': header['Dim-%i_Units' % (i + 1)][0],
+                    'units': header['Dim-%i_Units' % (i + 1)][0].decode(
+                        'utf-8'),
                     'size': header['Dim-%i_DimensionSize' % (i + 1)][0],
                 })
             array_shape.append(header['Dim-%i_DimensionSize' % (i + 1)][0])
@@ -412,8 +413,8 @@ def ser_reader(filename, objects=None, verbose=False, *args, **kwds):
     # If the acquisition stops before finishing the job, the stored file will
     # report the requested size even though no values are recorded. Therefore if
     # the shapes of the retrieved array does not match that of the data
-    # dimensions we must fill the rest with zeros or (better) nans if the
-    # dtype is float
+    # dimensions we must fill the rest with zeros or (better) nans if the dtype
+    # is float
     if np.cumprod(array_shape)[-1] != np.cumprod(data['Array'].shape)[-1]:
         dc = np.zeros(np.cumprod(array_shape)[-1],
                       dtype=data['Array'].dtype)
