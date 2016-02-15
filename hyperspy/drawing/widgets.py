@@ -542,9 +542,11 @@ class ModifiableSpanSelector(matplotlib.widgets.SpanSelector):
         if event.xdata >= self.range[1]:
             return
         if self.left_limit is not None and event.xdata < self.left_limit:
-            return
-        width_increment = self.range[0] - event.xdata
-        self.rect.set_x(event.xdata)
+            x = self.left_limit
+        else:
+            x = event.xdata
+        width_increment = self.range[0] - x
+        self.rect.set_x(x)
         self.rect.set_width(self.rect.get_width() + width_increment)
         self.update_range()
         if self.onmove_callback is not None:
@@ -559,9 +561,11 @@ class ModifiableSpanSelector(matplotlib.widgets.SpanSelector):
         if event.xdata <= self.range[0]:
             return
         if self.right_limit is not None and event.xdata > self.right_limit:
-            return
+            x = self.right_limit
+        else:
+            x = event.xdata
         width_increment = \
-            event.xdata - self.range[1]
+            x - self.range[1]
         self.rect.set_width(self.rect.get_width() + width_increment)
         self.update_range()
         if self.onmove_callback is not None:
