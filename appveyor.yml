@@ -125,8 +125,8 @@ before_deploy:
   # Install current hyperspy in WinPython
   - "SET PATH=%ORIGPATH%"
   - "%CMD_IN_ENV% %WP_INSTDIR%/scripts/env.bat"
-  - "%CMD_IN_ENV% python.exe setup.py install"
   - "%CMD_IN_ENV% easy_install --upgrade pip"
+  - "%CMD_IN_ENV% pip install ./"
   - "%CMD_IN_ENV% pip install --upgrade configobj traitsui"
   # Custom installer step
   # TODO: Re-run tests in WinPython environment
