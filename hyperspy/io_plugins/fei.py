@@ -317,6 +317,23 @@ def get_xml_info_from_emi(emi_file):
 
 
 def get_calibration_from_position(position):
+    """Compute the size, scale and offset of a linear axis from coordinates.
+
+    This function assumes rastering on a regular grid for the full size of
+    each dimension before rastering over another one. Fox example: a11, a12,
+    a13, a21, a22, a23 for a 2x3 grid.
+
+    Parameters
+    ----------
+    position: numpy array.
+        Position coordinates of the axis. Normally as in PositionX/Y of the
+        ser file.
+
+    Returns
+    -------
+    axis_attr: dictionary with `size`, `scale`, `offeset` keys.
+
+    """
     offset = position[0]
     for i, x in enumerate(position):
         if x != position[0]:
@@ -334,7 +351,8 @@ def get_calibration_from_position(position):
             size = j + 1
         else:  # Second rastering dimension
             size = len(position) / i
-    return {"size": size, "scale": scale, "offset": offset}
+    axis_attr = {"size": size, "scale": scale, "offset": offset}
+    return axis_attr
 
 
 def get_axes_from_position(header, data):
