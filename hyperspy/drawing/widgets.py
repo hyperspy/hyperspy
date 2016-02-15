@@ -460,7 +460,7 @@ class ModifiableSpanSelector(matplotlib.widgets.SpanSelector):
         left_limit, right_limit: None or float
             If not None, the left/right side of the span selector cannot move
             beyond `left_limit`/`right_limit`.
-        
+
         """
         onsel = kwargs.pop('onselect', self.dummy)
         matplotlib.widgets.SpanSelector.__init__(
