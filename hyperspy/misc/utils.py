@@ -16,12 +16,12 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-from __future__ import division
+
 from operator import attrgetter
 import inspect
 import copy
 import types
-from StringIO import StringIO
+from io import StringIO
 import codecs
 import collections
 import tempfile
@@ -142,19 +142,19 @@ def slugify(value, valid_variable_name=False):
     Adapted from Django's "django/template/defaultfilters.py".
 
     """
-    if not isinstance(value, unicode):
+    if not isinstance(value, str):
         try:
             # Convert to unicode using the default encoding
-            value = unicode(value)
+            value = str(value)
         except:
             # Try latin1. If this does not work an exception is raised.
-            value = unicode(value, "latin1")
+            value = str(value, "latin1")
     value = unicodedata.normalize('NFKD', value).encode('ascii', 'ignore')
-    value = unicode(value.translate(None, _slugify_strip_re_data).strip())
+    value = str(value.translate(None, _slugify_strip_re_data).strip())
     value = value.replace(' ', '_')
     if valid_variable_name is True:
         if value[:1].isdigit():
-            value = u'Number_' + value
+            value = 'Number_' + value
     return value
 
 
@@ -224,7 +224,7 @@ class DictionaryTreeBrowser(object):
         """Add new items from dictionary.
 
         """
-        for key, value in dictionary.iteritems():
+        for key, value in dictionary.items():
             self.__setattr__(key, value)
 
     def export(self, filename, encoding='utf8'):
@@ -249,7 +249,7 @@ class DictionaryTreeBrowser(object):
         string = ''
         eoi = len(self)
         j = 0
-        for key_, value in iter(sorted(self.__dict__.iteritems())):
+        for key_, value in iter(sorted(self.__dict__.items())):
             if key_.startswith("_"):
                 continue
             if not isinstance(key_, types.MethodType):
@@ -257,14 +257,14 @@ class DictionaryTreeBrowser(object):
                 value = value['_dtb_value_']
                 if isinstance(value, DictionaryTreeBrowser):
                     if j == eoi - 1:
-                        symbol = u'└── '
+                        symbol = '└── '
                     else:
-                        symbol = u'├── '
-                    string += u'%s%s%s\n' % (padding, symbol, key)
+                        symbol = '├── '
+                    string += '%s%s%s\n' % (padding, symbol, key)
                     if j == eoi - 1:
-                        extra_padding = u'    '
+                        extra_padding = '    '
                     else:
-                        extra_padding = u'│   '
+                        extra_padding = '│   '
                     string += value._get_print_items(
                         padding + extra_padding)
                 else:
@@ -272,17 +272,17 @@ class DictionaryTreeBrowser(object):
                         value = repr(value)
                     value = ensure_unicode(value)
                     if j == eoi - 1:
-                        symbol = u'└── '
+                        symbol = '└── '
                     else:
-                        symbol = u'├── '
-                    strvalue = unicode(value)
+                        symbol = '├── '
+                    strvalue = str(value)
                     if max_len is not None and \
                             len(strvalue) > 2 * max_len:
                         right_limit = min(max_len,
                                           len(strvalue) - max_len)
-                        strvalue = u'%s ... %s' % (strvalue[:max_len],
+                        strvalue = '%s ... %s' % (strvalue[:max_len],
                                                    strvalue[-right_limit:])
-                    string += u"%s%s%s = %s\n" % (
+                    string += "%s%s%s = %s\n" % (
                         padding, symbol, key, strvalue)
             j += 1
         return string
@@ -322,13 +322,13 @@ class DictionaryTreeBrowser(object):
 
     def __len__(self):
         return len(
-            [key for key in self.__dict__.keys() if not key.startswith("_")])
+            [key for key in list(self.__dict__.keys()) if not key.startswith("_")])
 
     def keys(self):
         """Returns a list of non-private keys.
 
         """
-        return sorted([key for key in self.__dict__.keys()
+        return sorted([key for key in list(self.__dict__.keys())
                        if not key.startswith("_")])
 
     def as_dictionary(self):
@@ -337,7 +337,7 @@ class DictionaryTreeBrowser(object):
         """
         from hyperspy.signal import Signal
         par_dict = {}
-        for key_, item_ in self.__dict__.iteritems():
+        for key_, item_ in self.__dict__.items():
             if not isinstance(item_, types.MethodType):
                 key = item_['key']
                 if key == "_db_index":
@@ -376,7 +376,7 @@ class DictionaryTreeBrowser(object):
         False
 
         """
-        if isinstance(item_path, basestring):
+        if isinstance(item_path, str):
             item_path = item_path.split('.')
         else:
             item_path = copy.copy(item_path)
@@ -417,7 +417,7 @@ class DictionaryTreeBrowser(object):
         False
 
         """
-        if isinstance(item_path, basestring):
+        if isinstance(item_path, str):
             item_path = item_path.split('.')
         else:
             item_path = copy.copy(item_path)
@@ -466,7 +466,7 @@ class DictionaryTreeBrowser(object):
         """
         if not self.has_item(item_path):
             self.add_node(item_path)
-        if isinstance(item_path, basestring):
+        if isinstance(item_path, str):
             item_path = item_path.split('.')
         if len(item_path) > 1:
             self.__getattribute__(item_path.pop(0)).set_item(
@@ -500,7 +500,7 @@ class DictionaryTreeBrowser(object):
                 dtb[key] = DictionaryTreeBrowser()
             dtb = dtb[key]
 
-    def next(self):
+    def __next__(self):
         """
         Standard iterator method, updates the index and returns the
         current coordiantes
@@ -521,7 +521,7 @@ class DictionaryTreeBrowser(object):
             raise StopIteration
         else:
             self._db_index += 1
-        key = self.keys()[self._db_index]
+        key = list(self.keys())[self._db_index]
         return key, getattr(self, key)
 
     def __iter__(self):
@@ -682,15 +682,15 @@ def ordinal(value):
 
     if value % 100 // 10 != 1:
         if value % 10 == 1:
-            ordval = u"%d%s" % (value, "st")
+            ordval = "%d%s" % (value, "st")
         elif value % 10 == 2:
-            ordval = u"%d%s" % (value, "nd")
+            ordval = "%d%s" % (value, "nd")
         elif value % 10 == 3:
-            ordval = u"%d%s" % (value, "rd")
+            ordval = "%d%s" % (value, "rd")
         else:
-            ordval = u"%d%s" % (value, "th")
+            ordval = "%d%s" % (value, "th")
     else:
-        ordval = u"%d%s" % (value, "th")
+        ordval = "%d%s" % (value, "th")
 
     return ordval
 
@@ -844,6 +844,6 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
 
 def shorten_name(name, req_l):
     if len(name) > req_l:
-        return name[:req_l - 2] + u'..'
+        return name[:req_l - 2] + '..'
     else:
         return name

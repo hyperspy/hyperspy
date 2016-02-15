@@ -35,7 +35,7 @@ class NoneFloat(t.CFloat):   # Lazy solution, but usable
     default_value = None
 
     def validate(self, object, name, value):
-        if value == "None" or value == u"None":
+        if value == "None" or value == "None":
             value = None
         if value is None:
             super(NoneFloat, self).validate(object, name, 0)
@@ -801,10 +801,10 @@ class Component(t.HasTraits):
                 is not None else 0
             if parameter.twin is None:
                 if dim <= 1:
-                    print '%s = %s ± %s %s' % (parameter.name,
+                    print('%s = %s ± %s %s' % (parameter.name,
                                                parameter.value,
                                                parameter.std,
-                                               parameter.units)
+                                               parameter.units))
 
     def __tempcall__(self, p, x, onlyfree=True):
         self.fetch_values_from_array(p, onlyfree=onlyfree)

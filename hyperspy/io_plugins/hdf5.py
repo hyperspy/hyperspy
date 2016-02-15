@@ -143,11 +143,11 @@ def hdfgroup2signaldict(group):
 
     exp = {'data': group['data'][:]}
     axes = []
-    for i in xrange(len(exp['data'].shape)):
+    for i in range(len(exp['data'].shape)):
         try:
             axes.append(dict(group['axis-%i' % i].attrs))
             axis = axes[-1]
-            for key, item in axis.iteritems():
+            for key, item in axis.items():
                 axis[key] = ensure_unicode(item)
         except KeyError:
             break
@@ -155,7 +155,7 @@ def hdfgroup2signaldict(group):
         try:
             axes = [i for k, i in sorted(iter(hdfgroup2dict(
                 group['_list_' + str(len(exp['data'].shape)) + '_axes'],
-                {}).iteritems()))]
+                {}).items()))]
         except KeyError:
             raise IOError(not_valid_format)
     exp['metadata'] = hdfgroup2dict(
@@ -164,10 +164,10 @@ def hdfgroup2signaldict(group):
         group[original_metadata], {})
     exp['axes'] = axes
     exp['attributes'] = {}
-    if 'learning_results' in group.keys():
+    if 'learning_results' in list(group.keys()):
         exp['attributes']['learning_results'] = \
             hdfgroup2dict(group['learning_results'], {})
-    if 'peak_learning_results' in group.keys():
+    if 'peak_learning_results' in list(group.keys()):
         exp['attributes']['peak_learning_results'] = \
             hdfgroup2dict(group['peak_learning_results'], {})
 
@@ -181,10 +181,10 @@ def hdfgroup2signaldict(group):
     if current_file_version < StrictVersion("1.1"):
         # Load the decomposition results written with the old name,
         # mva_results
-        if 'mva_results' in group.keys():
+        if 'mva_results' in list(group.keys()):
             exp['attributes']['learning_results'] = hdfgroup2dict(
                 group['mva_results'], {})
-        if 'peak_mva_results' in group.keys():
+        if 'peak_mva_results' in list(group.keys()):
             exp['attributes']['peak_learning_results'] = hdfgroup2dict(
                 group['peak_mva_results'], {})
         # Replace the old signal and name keys with their current names
@@ -307,14 +307,14 @@ def dict2hdfgroup(dictionary, group, compression=None):
         except ValueError:
             tmp = np.array([[0]])
         if tmp.dtype is np.dtype('O') or tmp.ndim is not 1:
-            dict2hdfgroup(dict(zip(
-                [unicode(i) for i in xrange(len(value))], value)),
+            dict2hdfgroup(dict(list(zip(
+                [str(i) for i in range(len(value))], value))),
                 group.create_group(_type + str(len(value)) + '_' + key),
                 compression=compression)
         elif tmp.dtype.type is np.unicode_:
             group.create_dataset(_type + key,
                                  tmp.shape,
-                                 dtype=h5py.special_dtype(vlen=unicode),
+                                 dtype=h5py.special_dtype(vlen=str),
                                  compression=compression)
             group[_type + key][:] = tmp[:]
         else:
@@ -323,7 +323,7 @@ def dict2hdfgroup(dictionary, group, compression=None):
                 data=tmp,
                 compression=compression)
 
-    for key, value in dictionary.iteritems():
+    for key, value in dictionary.items():
         if isinstance(value, dict):
             dict2hdfgroup(value, group.create_group(key),
                           compression=compression)
@@ -354,7 +354,7 @@ def dict2hdfgroup(dictionary, group, compression=None):
             except ValueError:
                 try:
                     # Store strings as unicode using the default encoding
-                    group.attrs[key] = unicode(value)
+                    group.attrs[key] = str(value)
                 except UnicodeEncodeError:
                     pass
                 except UnicodeDecodeError:
@@ -384,13 +384,13 @@ def dict2hdfgroup(dictionary, group, compression=None):
             except:
                 print("The hdf5 writer could not write the following "
                       "information in the file")
-                print('%s : %s' % (key, value))
+                print(('%s : %s' % (key, value)))
 
 
 def hdfgroup2dict(group, dictionary=None):
     if dictionary is None:
         dictionary = {}
-    for key, value in group.attrs.iteritems():
+    for key, value in group.attrs.items():
         if isinstance(value, (np.string_, str)):
             if value == '_None_':
                 value = None
@@ -414,7 +414,7 @@ def hdfgroup2dict(group, dictionary=None):
         else:
             dictionary[key] = value
     if not isinstance(group, h5py.Dataset):
-        for key in group.keys():
+        for key in list(group.keys()):
             if key.startswith('_sig_'):
                 from hyperspy.io import dict2signal
                 dictionary[key[len('_sig_'):]] = (
@@ -433,15 +433,15 @@ def hdfgroup2dict(group, dictionary=None):
                 dictionary[key[len('_hspy_AxesManager_'):]] = \
                     AxesManager([i
                                  for k, i in sorted(iter(
-                                     hdfgroup2dict(group[key]).iteritems()))])
+                                     hdfgroup2dict(group[key]).items()))])
             elif key.startswith('_list_'):
                 dictionary[key[7 + key[6:].find('_'):]] = \
                     [i for k, i in sorted(iter(
-                        hdfgroup2dict(group[key], {}).iteritems()))]
+                        hdfgroup2dict(group[key], {}).items()))]
             elif key.startswith('_tuple_'):
                 dictionary[key[8 + key[7:].find('_'):]] = tuple(
                     [i for k, i in sorted(iter(
-                        hdfgroup2dict(group[key], {}).iteritems()))])
+                        hdfgroup2dict(group[key], {}).items()))])
             else:
                 dictionary[key] = {}
                 hdfgroup2dict(group[key], dictionary[key])

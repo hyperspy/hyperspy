@@ -16,7 +16,7 @@ def try_int(s):
 def natsort_key(s):
     """Used internally to get a tuple by which s is sorted."""
     import re
-    return map(try_int, re.findall(r'(\d+|\D+)', s))
+    return list(map(try_int, re.findall(r'(\d+|\D+)', s)))
 
 
 def natcmp(a, b):

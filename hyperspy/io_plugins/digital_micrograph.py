@@ -20,8 +20,8 @@
 
 # Plugin to read the Gatan Digital Micrograph(TM) file format
 
-from __future__ import with_statement  # for Python versions < 2.6
-from __future__ import division
+  # for Python versions < 2.6
+
 
 import os
 
@@ -80,7 +80,7 @@ class DigitalMicrographReader(object):
         self.tags_dict = {"root": {}}
         number_of_root_tags = self.parse_tag_group()[2]
         if self.verbose is True:
-            print('Total tags in root group:', number_of_root_tags)
+            print(('Total tags in root group:', number_of_root_tags))
         self.parse_tags(
             number_of_root_tags,
             group_name="root",
@@ -89,7 +89,7 @@ class DigitalMicrographReader(object):
     def parse_header(self):
         self.dm_version = read_long(self.f, "big")
         if self.dm_version not in (3, 4):
-            print('File address:', dm_version[1])
+            print(('File address:', dm_version[1]))
             raise NotImplementedError(
                 "Currently we only support reading DM versions 3 and 4 but "
                 "this file "
@@ -100,9 +100,9 @@ class DigitalMicrographReader(object):
 
         if self.verbose is True:
             # filesizeMB = filesizeB[3] / 2.**20
-            print('DM version: %i' % self.dm_version)
-            print('size %i B' % filesizeB)
-            print('Is file Little endian? %s' % bool(is_little_endian))
+            print(('DM version: %i' % self.dm_version))
+            print(('size %i B' % filesizeB))
+            print(('Is file Little endian? %s' % bool(is_little_endian)))
         if bool(is_little_endian):
             self.endian = 'little'
         else:
@@ -114,17 +114,17 @@ class DigitalMicrographReader(object):
         """
         unnammed_data_tags = 0
         unnammed_group_tags = 0
-        for tag in xrange(ntags):
+        for tag in range(ntags):
             if self.verbose is True:
-                print('Reading tag name at address:', self.f.tell())
+                print(('Reading tag name at address:', self.f.tell()))
             tag_header = self.parse_tag_header()
             tag_name = tag_header['tag_name']
 
             skip = True if (group_name == "ImageData" and
                             tag_name == "Data") else False
             if self.verbose is True:
-                print('Tag name:', tag_name[:20])
-                print('Tag ID:', tag_header['tag_id'])
+                print(('Tag name:', tag_name[:20]))
+                print(('Tag ID:', tag_header['tag_id']))
 
             if tag_header['tag_id'] == 21:  # it's a TagType (DATA)
                 if not tag_name:
@@ -132,7 +132,7 @@ class DigitalMicrographReader(object):
                     unnammed_data_tags += 1
 
                 if self.verbose is True:
-                    print('Reading data tag at address:', self.f.tell())
+                    print(('Reading data tag at address:', self.f.tell()))
 
                 # Start reading the data
                 # Raises IOError if it is wrong
@@ -140,7 +140,7 @@ class DigitalMicrographReader(object):
                 self.skipif4()
                 infoarray_size = read_long(self.f, 'big')
                 if self.verbose:
-                    print("Infoarray size ", infoarray_size)
+                    print(("Infoarray size ", infoarray_size))
                 self.skipif4()
                 if infoarray_size == 1:  # Simple type
                     if self.verbose:
@@ -171,7 +171,7 @@ class DigitalMicrographReader(object):
                             print("Reading struct")
                         definition = self.parse_struct_definition()
                         if self.verbose:
-                            print("Struct definition ", definition)
+                            print(("Struct definition ", definition))
                         data = self.read_struct(definition, skip=skip)
                     elif enctype == 20:  # It is an array of complex type
                         # Read complex array info
@@ -187,8 +187,8 @@ class DigitalMicrographReader(object):
                             self.skipif4()  # Padding?
                             size = read_long(self.f, "big")
                             if self.verbose:
-                                print("Struct definition: ", definition)
-                                print("Array size: ", size)
+                                print(("Struct definition: ", definition))
+                                print(("Array size: ", size))
                             data = self.read_array(
                                 size=size,
                                 enc_eltype=enc_eltype,
@@ -221,7 +221,7 @@ class DigitalMicrographReader(object):
                     raise IOError("Invalided infoarray size ", infoarray_size)
 
                 if self.verbose:
-                    print("Data: %s" % str(data)[:70])
+                    print(("Data: %s" % str(data)[:70]))
                 group_dict[tag_name] = data
 
             elif tag_header['tag_id'] == 20:  # it's a TagGroup (GROUP)
@@ -229,7 +229,7 @@ class DigitalMicrographReader(object):
                     tag_name = 'TagGroup%i' % unnammed_group_tags
                     unnammed_group_tags += 1
                 if self.verbose is True:
-                    print('Reading Tag group at address:', self.f.tell())
+                    print(('Reading Tag group at address:', self.f.tell()))
                 ntags = self.parse_tag_group(skip4=3)[2]
                 group_dict[tag_name] = {}
                 self.parse_tags(
@@ -237,7 +237,7 @@ class DigitalMicrographReader(object):
                     group_name=tag_name,
                     group_dict=group_dict[tag_name])
             else:
-                print('File address:', self.f.tell())
+                print(('File address:', self.f.tell()))
                 raise DM3TagIDError(tag_header['tag_id'])
 
     def get_data_reader(self, enc_dtype):
@@ -302,7 +302,7 @@ class DigitalMicrographReader(object):
         self.skipif4(2)
         nfields = read_long(self.f, "big")
         definition = ()
-        for ifield in xrange(nfields):
+        for ifield in range(nfields):
             self.f.seek(4, 1)
             self.skipif4(2)
             definition += (read_long(self.f, "big"),)
@@ -343,7 +343,7 @@ class DigitalMicrographReader(object):
             s = L_char
         elif self.endian == 'big':
             s = B_char
-        for char in xrange(length):
+        for char in range(length):
             data += s.unpack(self.f.read(1))[0]
         try:
             data = data.decode('utf8')
@@ -406,12 +406,12 @@ class DigitalMicrographReader(object):
         else:
             if enc_eltype in self.simple_type:  # simple type
                 data = [eltype(self.f, self.endian)
-                        for element in xrange(size)]
+                        for element in range(size)]
                 if enc_eltype == 4 and data:  # it's actually a string
-                    data = "".join([unichr(i) for i in data])
+                    data = "".join([chr(i) for i in data])
             elif enc_eltype in self._complex_type:
                 data = [eltype(**extra)
-                        for element in xrange(size)]
+                        for element in range(size)]
         return data
 
     def parse_tag_group(self, skip4=1):
@@ -434,7 +434,7 @@ class DigitalMicrographReader(object):
         self.f.seek(location)
         tag_header = self.parse_tag_header()
         if tag_id == 20:
-            print("Tag header length", tag_header['tag_name_length'])
+            print(("Tag header length", tag_header['tag_name_length']))
             if not 20 > tag_header['tag_name_length'] > 0:
                 print("Skipping id 20")
                 self.f.seek(location + 1)
@@ -492,11 +492,11 @@ class DigitalMicrographReader(object):
             return None
         if "Thumbnails" in self.tags_dict:
             thumbnail_idx = [tag['ImageIndex'] for key, tag in
-                             self.tags_dict['Thumbnails'].iteritems()]
+                             self.tags_dict['Thumbnails'].items()]
         else:
             thumbnail_idx = []
         images = [image for key, image in
-                  self.tags_dict['ImageList'].iteritems()
+                  self.tags_dict['ImageList'].items()
                   if not int(key.replace("TagGroup", "")) in
                   thumbnail_idx]
         return images
@@ -550,7 +550,7 @@ class ImageObject(object):
     @property
     def names(self):
         names = [t.Undefined] * len(self.shape)
-        indices = range(len(self.shape))
+        indices = list(range(len(self.shape)))
         if self.signal_type == "EELS":
             if "eV" in self.units:
                 names[indices.pop(self.units.index("eV"))] = "Energy loss"
@@ -692,7 +692,7 @@ class ImageObject(object):
         if shape[0] != shape[1] or len(shape) > 2:
             msg = "Packed complex format works only for a 2Nx2N image"
             msg += " -> width == height"
-            print msg
+            print(msg)
             raise IOError(
                 'Unable to read this DM file in packed complex format. '
                 'Pleare report the issue to the HyperSpy developers providing'
@@ -709,7 +709,7 @@ class ImageObject(object):
 
         # fill in the non-redundant complex values:
         # top right quarter, except 1st column
-        for i in xrange(N):  # this could be optimized
+        for i in range(N):  # this could be optimized
             start = 2 * i * N + 2
             stop = start + 2 * (N - 1) - 1
             step = 2
@@ -770,7 +770,7 @@ class ImageObject(object):
                  'index_in_array': i,
                  'scale': scale,
                  'offset': offset,
-                 'units': unicode(units), }
+                 'units': str(units), }
                 for i, (name, size, scale, offset, units) in enumerate(
                     zip(self.names, self.shape, self.scales, self.offsets,
                         self.units))]

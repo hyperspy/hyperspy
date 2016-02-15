@@ -29,7 +29,7 @@ from hyperspy.misc.math_tools import isfloat
 
 class ndindex_nat(np.ndindex):
 
-    def next(self):
+    def __next__(self):
         return super(ndindex_nat, self).next()[::-1]
 
 
@@ -504,7 +504,7 @@ class AxesManager(t.HasTraits):
         """x.__getitem__(y) <==> x[y]
 
         """
-        if isinstance(y, basestring):
+        if isinstance(y, str):
             axes = list(self._get_axes_in_natural_order())
             while axes:
                 axis = axes.pop()
@@ -617,7 +617,7 @@ class AxesManager(t.HasTraits):
         if self._max_index != 0:
             self._max_index -= 1
 
-    def next(self):
+    def __next__(self):
         """
         Standard iterator method, updates the index and returns the
         current coordiantes

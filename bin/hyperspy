@@ -23,7 +23,7 @@
 import sys
 
 # Deprecate this script
-carryon = raw_input("\nStarting HyperSpy using this script is deprecated "
+carryon = input("\nStarting HyperSpy using this script is deprecated "
       "and will be removed in HyperSpy 0.9. "
       "Read the HyperSpy online documentation for details.\n"
       "Continue yes/No?")

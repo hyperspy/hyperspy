@@ -20,7 +20,7 @@
 import os
 
 import numpy as np
-from generate_dm_testing_files import dm3_data_types
+from .generate_dm_testing_files import dm3_data_types
 
 from nose.tools import assert_true
 from hyperspy.io import load
@@ -36,10 +36,10 @@ data_dict = {'dm3_1D_data': {},
 
 
 def test_loading():
-    dims = range(1, 4)
+    dims = list(range(1, 4))
     for dim in dims:
         subfolder = 'dm3_%iD_data' % dim
-        for key in dm3_data_types.iterkeys():
+        for key in dm3_data_types.keys():
             fname = "test-%s.dm3" % key
             filename = os.path.join(my_path, subfolder, fname)
             yield check_load, filename, subfolder, key
@@ -47,7 +47,7 @@ def test_loading():
 
 def test_dtypes():
     subfolder = 'dm3_1D_data'
-    for key, data in data_dict[subfolder].iteritems():
+    for key, data in data_dict[subfolder].items():
         yield check_dtype, data.dtype, np.dtype(dm3_data_types[key]), key
 
 # TODO: the RGB data generated is not correct
@@ -56,7 +56,7 @@ def test_dtypes():
 # noinspection PyArgumentList
 def test_content():
     for subfolder in data_dict:
-        for key, data in data_dict[subfolder].iteritems():
+        for key, data in data_dict[subfolder].items():
             if subfolder == 'dm3_1D_data':
                 dat = np.arange(1, 3)
             elif subfolder == 'dm3_2D_data':

@@ -15,7 +15,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
-from __future__ import division
+
 import itertools
 
 import numpy as np
@@ -274,7 +274,7 @@ class EDSSpectrum(Spectrum):
         set_elements, add_lines, set_lines
 
         """
-        if not isiterable(elements) or isinstance(elements, basestring):
+        if not isiterable(elements) or isinstance(elements, str):
             raise ValueError(
                 "Input must be in the form of a list. For example, "
                 "if `s` is the variable containing this EDS spectrum:\n "
@@ -298,9 +298,9 @@ class EDSSpectrum(Spectrum):
 
     def _parse_only_lines(self, only_lines):
         if hasattr(only_lines, '__iter__'):
-            if isinstance(only_lines[0], basestring) is False:
+            if isinstance(only_lines[0], str) is False:
                 return only_lines
-        elif isinstance(only_lines, basestring) is False:
+        elif isinstance(only_lines, str) is False:
             return only_lines
         only_lines = list(only_lines)
         for only_line in only_lines:
@@ -452,9 +452,9 @@ class EDSSpectrum(Spectrum):
                     lines_len = len(xray_lines)
                     xray_lines.add(line)
                     if lines_len != len(xray_lines):
-                        print("%s line added," % line)
+                        print(("%s line added," % line))
                     else:
-                        print("%s line already in." % line)
+                        print(("%s line already in." % line))
                 else:
                     raise ValueError(
                         "%s is not a valid line of %s." % (line, element))
@@ -512,8 +512,8 @@ class EDSSpectrum(Spectrum):
         for element in elements:
             # Possible line (existing and excited by electron)
             element_lines = []
-            for subshell in elements_db[element]['Atomic_properties'
-                                                 ]['Xray_lines'].keys():
+            for subshell in list(elements_db[element]['Atomic_properties'
+                                                 ]['Xray_lines'].keys()):
                 if only_lines and subshell not in only_lines:
                     continue
                 element_lines.append(element + "_" + subshell)
@@ -530,8 +530,8 @@ class EDSSpectrum(Spectrum):
                 element_lines = [element_lines[select_this], ]
 
             if not element_lines:
-                print(("There is not X-ray line for element %s " % element) +
-                      "in the data spectral range")
+                print((("There is not X-ray line for element %s " % element) +
+                      "in the data spectral range"))
             else:
                 lines.extend(element_lines)
         lines.sort()
@@ -675,11 +675,11 @@ class EDSSpectrum(Spectrum):
             elif img.axes_manager.navigation_dimension == 1:
                 img.axes_manager.set_signal_dimension(1)
             if plot_result and img.axes_manager.signal_dimension == 0:
-                print("%s at %s %s : Intensity = %.2f"
+                print(("%s at %s %s : Intensity = %.2f"
                       % (Xray_line,
                          line_energy,
                          ax.units,
-                         img.data))
+                         img.data)))
             img.metadata.set_item("Sample.elements", ([element]))
             img.metadata.set_item("Sample.xray_lines", ([Xray_line]))
             intensities.append(img)
@@ -942,7 +942,7 @@ class EDSSpectrum(Spectrum):
             xray_lines, xray_not_here = self._get_xray_lines_in_spectral_range(
                 xray_lines)
             for xray in xray_not_here:
-                print("Warning: %s is not in the data energy range." % xray)
+                print(("Warning: %s is not in the data energy range." % xray))
             xray_lines = np.unique(xray_lines)
             self._add_xray_lines_markers(xray_lines)
             if background_windows is not None:

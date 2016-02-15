@@ -51,7 +51,7 @@ class MarkerBase(object):
     @marker_properties.setter
     def marker_properties(self, kwargs):
 
-        for key, item in kwargs.iteritems():
+        for key, item in kwargs.items():
             if item is None and key in self._marker_properties:
                 del self._marker_properties[key]
             else:
@@ -95,7 +95,7 @@ class MarkerBase(object):
         if self.data is None:
             self.set_data(**kwargs)
         else:
-            for key in kwargs.keys():
+            for key in list(kwargs.keys()):
                 self.data[key][()] = np.array(kwargs[key])
         self._is_marker_static()
 

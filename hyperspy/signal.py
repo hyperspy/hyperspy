@@ -253,8 +253,8 @@ class Signal2DTools(object):
                 if correlation_threshold == 'auto':
                     correlation_threshold = \
                         (pcarray['max_value'].min(0)).max()
-                    print("Correlation threshold = %1.2f" %
-                          correlation_threshold)
+                    print(("Correlation threshold = %1.2f" %
+                          correlation_threshold))
                 shifts[pcarray['max_value'] <
                        correlation_threshold] = ma.masked
                 shifts.mask[ref_index, :] = False
@@ -446,7 +446,7 @@ class Signal1DTools(object):
                 iminimum = 1 + axis.value2index(
                     axis.high_value + minimum,
                     rounding=math.floor)
-                print iminimum
+                print(iminimum)
                 self.crop(axis.index_in_axes_manager,
                           None,
                           iminimum)
@@ -499,10 +499,10 @@ class Signal1DTools(object):
             disabled=not show_progressbar)
         for i, dat in enumerate(self._iterate_signal()):
             dat_int = sp.interpolate.interp1d(
-                range(i0, i1) + range(i2, i3),
+                list(range(i0, i1)) + list(range(i2, i3)),
                 dat[i0:i1].tolist() + dat[i2:i3].tolist(),
                 **kwargs)
-            dat[i1:i2] = dat_int(range(i1, i2))
+            dat[i1:i2] = dat_int(list(range(i1, i2)))
             pbar.update(i + 1)
 
     def _check_navigation_mask(self, mask):
@@ -1375,10 +1375,10 @@ class MVATools(object):
         if same_window is None:
             same_window = preferences.MachineLearning.same_window
         if comp_ids is None:
-            comp_ids = xrange(factors.shape[1])
+            comp_ids = range(factors.shape[1])
 
         elif not hasattr(comp_ids, '__iter__'):
-            comp_ids = xrange(comp_ids)
+            comp_ids = range(comp_ids)
 
         n = len(comp_ids)
         if same_window:
@@ -1393,7 +1393,7 @@ class MVATools(object):
             f = plt.figure(figsize=(4 * per_row, 3 * rows))
         else:
             f = plt.figure()
-        for i in xrange(len(comp_ids)):
+        for i in range(len(comp_ids)):
             if self.axes_manager.signal_dimension == 1:
                 if same_window:
                     ax = plt.gca()
@@ -1442,10 +1442,10 @@ class MVATools(object):
         if same_window is None:
             same_window = preferences.MachineLearning.same_window
         if comp_ids is None:
-            comp_ids = xrange(loadings.shape[0])
+            comp_ids = range(loadings.shape[0])
 
         elif not hasattr(comp_ids, '__iter__'):
-            comp_ids = xrange(comp_ids)
+            comp_ids = range(comp_ids)
 
         n = len(comp_ids)
         if same_window:
@@ -1461,7 +1461,7 @@ class MVATools(object):
         else:
             f = plt.figure()
 
-        for i in xrange(n):
+        for i in range(n):
             if self.axes_manager.navigation_dimension == 1:
                 if same_window:
                     ax = plt.gca()
@@ -1540,9 +1540,9 @@ class MVATools(object):
 
         # Select the desired factors
         if comp_ids is None:
-            comp_ids = xrange(factors.shape[1])
+            comp_ids = range(factors.shape[1])
         elif not hasattr(comp_ids, '__iter__'):
-            comp_ids = range(comp_ids)
+            comp_ids = list(range(comp_ids))
         mask = np.zeros(factors.shape[1], dtype=np.bool)
         for idx in comp_ids:
             mask[idx] = 1
@@ -1561,7 +1561,7 @@ class MVATools(object):
                                                      per_row=per_row,
                                                      quiver_color=quiver_color,
                                                      vector_scale=vector_scale)
-            for idx in xrange(len(comp_ids)):
+            for idx in range(len(comp_ids)):
                 filename = '%s_%02i.%s' % (factor_prefix, comp_ids[idx],
                                            save_figures_format)
                 if folder is not None:
@@ -1620,7 +1620,7 @@ class MVATools(object):
                 axis_dict = self.axes_manager.signal_axes[0].\
                     get_axis_dictionary()
                 axis_dict['index_in_array'] = 0
-                for dim, index in zip(comp_ids, range(len(comp_ids))):
+                for dim, index in zip(comp_ids, list(range(len(comp_ids)))):
                     s = Spectrum(factors[:, index],
                                  axes=[axis_dict, ],
                                  metadata={
@@ -1645,7 +1645,7 @@ class MVATools(object):
                 factor_data = factors.reshape(
                     self.axes_manager._signal_shape_in_array + [-1, ])
 
-                for dim, index in zip(comp_ids, range(len(comp_ids))):
+                for dim, index in zip(comp_ids, list(range(len(comp_ids)))):
                     im = Image(factor_data[..., index],
                                axes=axes_dicts,
                                metadata={
@@ -1687,9 +1687,9 @@ class MVATools(object):
                 export_loadings_default_file_format
 
         if comp_ids is None:
-            comp_ids = range(loadings.shape[0])
+            comp_ids = list(range(loadings.shape[0]))
         elif not hasattr(comp_ids, '__iter__'):
-            comp_ids = range(comp_ids)
+            comp_ids = list(range(comp_ids))
         mask = np.zeros(loadings.shape[0], dtype=np.bool)
         for idx in comp_ids:
             mask[idx] = 1
@@ -1703,7 +1703,7 @@ class MVATools(object):
                                            comp_label=comp_label,
                                            cmap=cmap, no_nans=no_nans,
                                            per_row=per_row)
-            for idx in xrange(len(comp_ids)):
+            for idx in range(len(comp_ids)):
                 filename = '%s_%02i.%s' % (loading_prefix, comp_ids[idx],
                                            save_figures_format)
                 if folder is not None:
@@ -1763,7 +1763,7 @@ class MVATools(object):
                 axis_dict = self.axes_manager.navigation_axes[0].\
                     get_axis_dictionary()
                 axis_dict['index_in_array'] = 0
-                for dim, index in zip(comp_ids, range(len(comp_ids))):
+                for dim, index in zip(comp_ids, list(range(len(comp_ids)))):
                     s = Spectrum(loadings[index],
                                  axes=[axis_dict, ])
                     filename = '%s-%i.%s' % (loading_prefix,
@@ -1781,7 +1781,7 @@ class MVATools(object):
                 axes_dicts[0]['index_in_array'] = 0
                 axes_dicts.append(axes[1].get_axis_dictionary())
                 axes_dicts[1]['index_in_array'] = 1
-                for dim, index in zip(comp_ids, range(len(comp_ids))):
+                for dim, index in zip(comp_ids, list(range(len(comp_ids)))):
                     s = Image(loading_data[index, ...],
                               axes=axes_dicts,
                               metadata={
@@ -2809,7 +2809,7 @@ class Signal(MVA,
             string += self.metadata.Signal.record_by
             string += "\n\tData type: "
             string += str(self.data.dtype)
-        print string
+        print(string)
 
     def _load_dictionary(self, file_data_dict):
         """Load data from dictionary.
@@ -2849,10 +2849,10 @@ class Signal(MVA,
         if 'original_metadata' not in file_data_dict:
             file_data_dict['original_metadata'] = {}
         if 'attributes' in file_data_dict:
-            for key, value in file_data_dict['attributes'].iteritems():
+            for key, value in file_data_dict['attributes'].items():
                 if hasattr(self, key):
                     if isinstance(value, dict):
-                        for k, v in value.iteritems():
+                        for k, v in value.items():
                             eval('self.%s.__setattr__(k,v)' % key)
                     else:
                         self.__setattr__(key, value)
@@ -2911,7 +2911,7 @@ class Signal(MVA,
 
     def _get_undefined_axes_list(self):
         axes = []
-        for i in xrange(len(self.data.shape)):
+        for i in range(len(self.data.shape)):
             axes.append({'size': int(self.data.shape[i]), })
         return axes
 
@@ -3419,7 +3419,7 @@ class Signal(MVA,
         cut_index = np.array([0] + step_sizes).cumsum()
 
         axes_dict = signal_dict['axes']
-        for i in xrange(len(cut_index) - 1):
+        for i in range(len(cut_index) - 1):
             axes_dict[axis]['offset'] = \
                 self.axes_manager._axes[axis].index2value(cut_index[i])
             axes_dict[axis]['size'] = cut_index[i + 1] - cut_index[i]
@@ -3461,7 +3461,7 @@ class Signal(MVA,
             "HyperSpy 0.9. Please use `unfold` instead.",
             VisibleDeprecationWarning)
         if len(self.axes_manager._axes) > 2:
-            print "Automatically unfolding the data"
+            print("Automatically unfolding the data")
             self.unfold()
             return True
         else:
@@ -3511,12 +3511,12 @@ class Signal(MVA,
         to_remove = []
         for axis, dim in zip(self.axes_manager._axes, new_shape):
             if dim == 1:
-                uname += ',' + unicode(axis)
-                uunits = ',' + unicode(axis.units)
+                uname += ',' + str(axis)
+                uunits = ',' + str(axis.units)
                 to_remove.append(axis)
         ua = self.axes_manager._axes[unfolded_axis]
-        ua.name = unicode(ua) + uname
-        ua.units = unicode(ua.units) + uunits
+        ua.name = str(ua) + uname
+        ua.units = str(ua.units) + uunits
         ua.size = self.data.shape[unfolded_axis]
         for axis in to_remove:
             self.axes_manager.remove(axis.index_in_axes_manager)
@@ -3655,7 +3655,7 @@ class Signal(MVA,
         new_shape[unfolded_axis] = -1
         # Warning! if the data is not contigous it will make a copy!!
         data = self.data.reshape(new_shape)
-        for i in xrange(data.shape[unfolded_axis]):
+        for i in range(data.shape[unfolded_axis]):
             getitem = [0] * len(data.shape)
             for axis in axes:
                 getitem[axis] = slice(None)
@@ -4197,7 +4197,7 @@ class Signal(MVA,
             show_progressbar = preferences.General.show_progressbar
         # Sepate ndkwargs
         ndkwargs = ()
-        for key, value in kwargs.iteritems():
+        for key, value in kwargs.items():
             if isinstance(value, Signal):
                 ndkwargs += ((key, value),)
 
@@ -4247,7 +4247,7 @@ class Signal(MVA,
                 for (key, value), datum in zip(ndkwargs, data[1:]):
                     kwargs[key] = datum[0]
                 data[0][:] = function(data[0], **kwargs)
-                pbar.next()
+                next(pbar)
             pbar.finish()
 
     def copy(self):
@@ -4573,8 +4573,8 @@ class Signal(MVA,
         self.axes_manager.__iter__()
         return self
 
-    def next(self):
-        self.axes_manager.next()
+    def __next__(self):
+        next(self.axes_manager)
         return self.get_current_signal()
 
     def __len__(self):
@@ -4744,17 +4744,17 @@ class Signal(MVA,
         data = self.data
         # To make it work with nans
         data = data[~np.isnan(data)]
-        print(underline("Summary statistics"))
-        print("mean:\t" + formatter % data.mean())
-        print("std:\t" + formatter % data.std())
-        print
-        print("min:\t" + formatter % data.min())
-        print("Q1:\t" + formatter % np.percentile(data,
-                                                  25))
-        print("median:\t" + formatter % np.median(data))
-        print("Q3:\t" + formatter % np.percentile(data,
-                                                  75))
-        print("max:\t" + formatter % data.max())
+        print((underline("Summary statistics")))
+        print(("mean:\t" + formatter % data.mean()))
+        print(("std:\t" + formatter % data.std()))
+        print()
+        print(("min:\t" + formatter % data.min()))
+        print(("Q1:\t" + formatter % np.percentile(data,
+                                                  25)))
+        print(("median:\t" + formatter % np.median(data)))
+        print(("Q3:\t" + formatter % np.percentile(data,
+                                                  75)))
+        print(("max:\t" + formatter % data.max()))
 
     @property
     def is_rgba(self):

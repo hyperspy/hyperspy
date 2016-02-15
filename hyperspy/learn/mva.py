@@ -17,7 +17,7 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from __future__ import division
+
 import types
 import warnings
 
@@ -292,7 +292,7 @@ class MVA():
                 factors = sk.components_.T
 
             elif algorithm == 'mlpca' or algorithm == 'fast_mlpca':
-                print "Performing the MLPCA training"
+                print("Performing the MLPCA training")
                 if output_dimension is None:
                     raise ValueError(
                         "For MLPCA it is mandatory to define the "
@@ -576,13 +576,13 @@ class MVA():
                              for index in diff_axes]
         # Select components to separate
         if number_of_components is not None:
-            comp_list = range(number_of_components)
+            comp_list = list(range(number_of_components))
         elif comp_list is not None:
             number_of_components = len(comp_list)
         else:
             if lr.output_dimension is not None:
                 number_of_components = lr.output_dimension
-                comp_list = range(number_of_components)
+                comp_list = list(range(number_of_components))
             else:
                 raise ValueError(
                     "No `number_of_components` or `comp_list` provided.")
@@ -822,12 +822,12 @@ class MVA():
 
     def _auto_reverse_bss_component(self, target):
         n_components = target.bss_factors.shape[1]
-        for i in xrange(n_components):
+        for i in range(n_components):
             minimum = np.nanmin(target.bss_loadings[:, i])
             maximum = np.nanmax(target.bss_loadings[:, i])
             if minimum < 0 and -minimum > maximum:
                 self.reverse_bss_component(i)
-                print("IC %i reversed" % i)
+                print(("IC %i reversed" % i))
 
     @do_not_replot
     def _calculate_recmatrix(self, components=None, mva_type=None,):
@@ -863,7 +863,7 @@ class MVA():
         elif hasattr(components, '__iter__'):
             tfactors = np.zeros((factors.shape[0], len(components)))
             tloadings = np.zeros((len(components), loadings.shape[1]))
-            for i in xrange(len(components)):
+            for i in range(len(components)):
                 tfactors[:, i] = factors[:, components[i]]
                 tloadings[i, :] = loadings[components[i], :]
             a = np.dot(tfactors, tloadings)
@@ -1011,7 +1011,7 @@ class MVA():
             target.explained_variance)
         fig = plt.figure()
         ax = fig.add_subplot(111)
-        ax.scatter(range(n), cumu[:n])
+        ax.scatter(list(range(n)), cumu[:n])
         ax.set_xlabel('Principal component')
         ax.set_ylabel('Cumulative explained variance ratio')
         plt.draw()
@@ -1071,7 +1071,7 @@ class MVA():
 
     def undo_treatments(self):
         """Undo normalize_poissonian_noise"""
-        print "Undoing data pre-treatments"
+        print("Undoing data pre-treatments")
         self.data = self._data_before_treatments
         del self._data_before_treatments
 
@@ -1131,11 +1131,11 @@ class LearningResults(object):
         filename : string
         """
         decomposition = np.load(filename)
-        for key, value in decomposition.iteritems():
+        for key, value in decomposition.items():
             if value.dtype == np.dtype('object'):
                 value = None
             setattr(self, key, value)
-        print "\n%s loaded correctly" % filename
+        print("\n%s loaded correctly" % filename)
         # For compatibility with old version ##################
         if hasattr(self, 'algorithm'):
             self.decomposition_algorithm = self.algorithm
@@ -1182,27 +1182,27 @@ class LearningResults(object):
         """Prints a summary of the decomposition and demixing parameters
          to the stdout
         """
-        print
-        print "Decomposition parameters:"
-        print "-------------------------"
-        print "Decomposition algorithm : ", self.decomposition_algorithm
-        print "Poissonian noise normalization : %s" % \
-            self.poissonian_noise_normalized
-        print "Output dimension : %s" % self.output_dimension
-        print "Centre : %s" % self.centre
+        print()
+        print("Decomposition parameters:")
+        print("-------------------------")
+        print("Decomposition algorithm : ", self.decomposition_algorithm)
+        print("Poissonian noise normalization : %s" % \
+            self.poissonian_noise_normalized)
+        print("Output dimension : %s" % self.output_dimension)
+        print("Centre : %s" % self.centre)
         if self.bss_algorithm is not None:
-            print
-            print "Demixing parameters:"
-            print "---------------------"
-            print "BSS algorithm : %s" % self.bss_algorithm
-            print "Number of components : %i" % len(self.unmixing_matrix)
+            print()
+            print("Demixing parameters:")
+            print("---------------------")
+            print("BSS algorithm : %s" % self.bss_algorithm)
+            print("Number of components : %i" % len(self.unmixing_matrix))
 
     def crop_decomposition_dimension(self, n):
         """
         Crop the score matrix up to the given number.
         It is mainly useful to save memory and reduce the storage size
         """
-        print "trimming to %i dimensions" % n
+        print("trimming to %i dimensions" % n)
         self.loadings = self.loadings[:, :n]
         if self.explained_variance is not None:
             self.explained_variance = self.explained_variance[:n]

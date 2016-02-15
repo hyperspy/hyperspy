@@ -131,7 +131,7 @@ Examples
 
 """
 
-from __future__ import division, print_function
+
 
 import sys
 import os
@@ -694,14 +694,14 @@ def imread(files, **kwargs):
         kwargs_seq['pattern'] = kwargs['pattern']
         del kwargs['pattern']
 
-    if isinstance(files, basestring) and any(i in files for i in '?*'):
+    if isinstance(files, str) and any(i in files for i in '?*'):
         files = glob.glob(files)
     if not files:
         raise ValueError('no files found')
     if len(files) == 1:
         files = files[0]
 
-    if isinstance(files, basestring):
+    if isinstance(files, str):
         with TiffFile(files, **kwargs_file) as tif:
             return tif.asarray(**kwargs)
     else:
@@ -804,7 +804,7 @@ class TiffFile(object):
 
     def close(self):
         """Close open file handle(s)."""
-        for tif in self._files.values():
+        for tif in list(self._files.values()):
             tif._fh.close()
         self._files = {}
 
@@ -1131,10 +1131,10 @@ class TiffFile(object):
                                 newaxis = along.attrib.get('Type', 'other')
                                 newaxis = AXES_LABELS[newaxis]
                                 if 'Start' in along.attrib:
-                                    labels = range(
+                                    labels = list(range(
                                         int(along.attrib['Start']),
                                         int(along.attrib['End']) + 1,
-                                        int(along.attrib.get('Step', 1)))
+                                        int(along.attrib.get('Step', 1))))
                                 else:
                                     labels = [label.text for label in along
                                               if label.tag.endswith('Label')]
@@ -1206,7 +1206,7 @@ class TiffFile(object):
                                      dtype=numpy.dtype(dtype)))
 
         for record in result:
-            for axis, (newaxis, labels) in modulo.items():
+            for axis, (newaxis, labels) in list(modulo.items()):
                 i = record.axes.index(axis)
                 size = len(labels)
                 if record.shape[i] == size:
@@ -1431,7 +1431,7 @@ class TiffPage(object):
 
         if self.is_lsm:
             # read LSM info subrecords
-            for name, reader in CZ_LSM_INFO_READERS.items():
+            for name, reader in list(CZ_LSM_INFO_READERS.items()):
                 try:
                     offset = self.cz_lsm_info['offset_' + name]
                 except KeyError:
@@ -1461,7 +1461,7 @@ class TiffPage(object):
 
         """
         tags = self.tags
-        for code, (name, default, dtype, count, validate) in TIFF_TAGS.items():
+        for code, (name, default, dtype, count, validate) in list(TIFF_TAGS.items()):
             if not (name in tags or default is None):
                 tags[name] = TiffTag(code, dtype=dtype, count=count,
                                      value=default, name=name)
@@ -2269,7 +2269,7 @@ class TiffSequence(object):
             By default this matches Olympus OIF and Leica TIFF series.
 
         """
-        if isinstance(files, basestring):
+        if isinstance(files, str):
             files = natural_sorted(glob.glob(files))
         files = list(files)
         if not files:
@@ -2440,7 +2440,7 @@ class TiffTags(Record):
     def __str__(self):
         """Return string with information about all tags."""
         s = []
-        for tag in sorted(self.values(), key=lambda x: x.code):
+        for tag in sorted(list(self.values()), key=lambda x: x.code):
             typecode = "%i%s" % (tag.count * int(tag.dtype[0]), tag.dtype[1])
             line = "* %i %s (%s) %s" % (
                 tag.code, tag.name, typecode, tag.as_str())
@@ -2512,7 +2512,7 @@ class FileHandle(object):
         if self._fh:
             return  # file is open
 
-        if isinstance(self._arg, basestring):
+        if isinstance(self._arg, str):
             # file name
             self._arg = os.path.abspath(self._arg)
             self._dir, self._name = os.path.split(self._arg)
@@ -2679,7 +2679,7 @@ def read_json(fh, byteorder, dtype, count):
     """Read JSON tag data from file and return as object."""
     data = fh.read(count)
     try:
-        return json.loads(unicode(stripnull(data), 'utf-8'))
+        return json.loads(str(stripnull(data), 'utf-8'))
     except ValueError:
         warnings.warn("invalid JSON `%s`" % data)
 
@@ -3044,7 +3044,7 @@ def imagej_metadata(data, bytecounts, byteorder):
         b'roi ': ('roi', read_bytes),
         b'over': ('overlays', read_bytes)}
     metadata_types.update(  # little endian
-        dict((k[::-1], v) for k, v in metadata_types.items()))
+        dict((k[::-1], v) for k, v in list(metadata_types.items())))
 
     if not bytecounts:
         raise ValueError("no ImageJ metadata")
@@ -3405,8 +3405,8 @@ def squeeze_axes(shape, axes, skip='XY'):
     """
     if len(shape) != len(axes):
         raise ValueError("dimensions of axes and shape don't match")
-    shape, axes = zip(*(i for i in zip(shape, axes)
-                        if i[0] > 1 or i[1] in skip))
+    shape, axes = list(zip(*(i for i in zip(shape, axes)
+                        if i[0] > 1 or i[1] in skip)))
     return shape, ''.join(axes)
 
 
@@ -3825,7 +3825,7 @@ AXES_LABELS = {
     # 'M': 'mosaic',  # LSM 6
 }
 
-AXES_LABELS.update(dict((v, k) for k, v in AXES_LABELS.items()))
+AXES_LABELS.update(dict((v, k) for k, v in list(AXES_LABELS.items())))
 
 # Map OME pixel types to numpy dtype
 OME_PIXEL_TYPES = {
@@ -4583,7 +4583,7 @@ def imshow(data, title=None, vmin=0, vmax=None, cmap=None,
 
     if title:
         try:
-            title = unicode(title, 'Windows-1252')
+            title = str(title, 'Windows-1252')
         except TypeError:
             pass
         pyplot.title(title, size=11)
@@ -4851,8 +4851,8 @@ def main(argv=None):
 TIFFfile = TiffFile  # backwards compatibility
 
 if sys.version_info[0] > 2:
-    basestring = str, bytes
-    unicode = str
+    str = str, bytes
+    str = str
 
 if __name__ == "__main__":
     sys.exit(main())

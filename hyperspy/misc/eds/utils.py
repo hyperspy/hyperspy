@@ -1,4 +1,4 @@
-from __future__ import division
+
 
 import numpy as np
 import math
@@ -279,7 +279,7 @@ def _quantification_cliff_lorimer(intensities,
     composition = np.ones_like(intensities, dtype='float')
     # ab = Ia/Ib / kab
 
-    other_index = range(len(kfactors))
+    other_index = list(range(len(kfactors)))
     other_index.pop(ref_index)
     for i in other_index:
         ab[i] = intensities[ref_index] * kfactors[ref_index]  \

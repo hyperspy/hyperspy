@@ -113,7 +113,7 @@ def get_header_dtype_list(file):
                          count=1)
     # Go to the beginning of the dimension array section
     file.seek(30)
-    for n in xrange(1, header["NumberDimensions"] + 1):
+    for n in range(1, header["NumberDimensions"] + 1):
         description_length, unit_length = get_lengths(file)
         header_list += dimension_array_dtype(
             n, description_length, unit_length)
@@ -180,9 +180,9 @@ def print_struct_array_values(struct_array):
     for key in struct_array.dtype.names:
         if not isinstance(struct_array[key], np.ndarray) or \
                 np.array(struct_array[key].shape).sum() == 1:
-            print "%s : %s" % (key, struct_array[key])
+            print("%s : %s" % (key, struct_array[key]))
         else:
-            print "%s : Array" % key
+            print("%s : Array" % key)
 
 
 def guess_record_by(record_by_id):
@@ -242,7 +242,7 @@ def emi_reader(filename, dump_xml=False, verbose=False, **kwds):
     sers = []
     for f in ser_files:
         if verbose is True:
-            print "Opening ", f
+            print("Opening ", f)
         try:
             sers.append(ser_reader(f, objects))
         except IOError:  # Probably a single spectrum that we don't support
@@ -265,16 +265,16 @@ def file_reader(filename, *args, **kwds):
 
 def load_ser_file(filename, verbose=False):
     if verbose:
-        print "Opening the file: ", filename
+        print("Opening the file: ", filename)
     with open(filename, 'rb') as f:
         header = np.fromfile(f,
                              dtype=np.dtype(get_header_dtype_list(f)),
                              count=1)
         if verbose is True:
-            print "Extracting the information"
-            print "\n"
-            print "Header info:"
-            print "------------"
+            print("Extracting the information")
+            print("\n")
+            print("Header info:")
+            print("------------")
             print_struct_array_values(header[0])
 
         if header['ValidNumberElements'] == 0:
@@ -296,9 +296,9 @@ def load_ser_file(filename, verbose=False):
                            dtype=np.dtype(data_dtype_list + tag_dtype_list),
                            count=header["TotalNumberElements"])
         if verbose is True:
-            print "\n"
-            print "Data info:"
-            print "----------"
+            print("\n")
+            print("Data info:")
+            print("----------")
             print_struct_array_values(data[0])
     return header, data
 
@@ -336,7 +336,7 @@ def ser_reader(filename, objects=None, verbose=False, *args, **kwds):
             # The spatial dimensions are stored in C order i.e. ..., Y, X
             order = "C"
         # Extra dimensions
-        for i in xrange(ndim):
+        for i in range(ndim):
             if i == ndim - 1:
                 name = 'x'
             elif i == ndim - 2:
@@ -379,7 +379,7 @@ def ser_reader(filename, objects=None, verbose=False, *args, **kwds):
     elif record_by == 'image':
         array_shape = []
         # Extra dimensions
-        for i in xrange(ndim):
+        for i in range(ndim):
             if header['Dim-%i_DimensionSize' % (i + 1)][0] != 1:
                 axes.append({
                     'offset': header['Dim-%i_CalibrationOffset' % (i + 1)][0],
