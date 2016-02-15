@@ -954,10 +954,10 @@ def plot_spectra(
         style = preferences.Plot.default_style_to_compare_spectra
 
     if color is not None:
-        if hasattr(color, "__iter__"):
-            color = itertools.cycle(color)
-        elif isinstance(color, str):
+        if isinstance(color, str):
             color = itertools.cycle([color])
+        elif hasattr(color, "__iter__"):
+            color = itertools.cycle(color)
         else:
             raise ValueError("Color must be None, a valid matplotlib color "
                              "string or a list of valid matplotlib colors.")
@@ -965,10 +965,10 @@ def plot_spectra(
         color = itertools.cycle(plt.rcParams['axes.color_cycle'])
 
     if line_style is not None:
-        if hasattr(line_style, "__iter__"):
-            line_style = itertools.cycle(line_style)
-        elif isinstance(line_style, str):
+        if isinstance(line_style, str):
             line_style = itertools.cycle([line_style])
+        elif hasattr(line_style, "__iter__"):
+            line_style = itertools.cycle(line_style)
         else:
             raise ValueError("line_style must be None, a valid matplotlib"
                              " line_style string or a list of valid matplotlib"
@@ -977,12 +977,15 @@ def plot_spectra(
         line_style = ['-'] * len(spectra)
 
     if legend is not None:
-        if hasattr(legend, "__iter__"):
+        if isinstance(legend, str):
+            if legend == 'auto':
+                legend = [spec.metadata.General.title for spec in spectra]
+            else:
+                raise ValueError("legend must be None, 'auto' or a list of"
+                                 " string")
+
+        elif hasattr(legend, "__iter__"):
             legend = itertools.cycle(legend)
-        elif legend == 'auto':
-            legend = [spec.metadata.General.title for spec in spectra]
-        else:
-            raise ValueError("legend must be None, 'auto' or a list of string")
 
     if style == 'overlap':
         if fig is None:
