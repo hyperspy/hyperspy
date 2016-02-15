@@ -454,6 +454,14 @@ def in_interval(number, interval):
 class ModifiableSpanSelector(matplotlib.widgets.SpanSelector):
 
     def __init__(self, ax, left_limit=None, right_limit=None, **kwargs):
+        """
+        Parameters
+        ----------
+        left_limit, right_limit: None or float
+            If not None, the left/right side of the span selector cannot move
+            beyond `left_limit`/`right_limit`.
+        
+        """
         onsel = kwargs.pop('onselect', self.dummy)
         matplotlib.widgets.SpanSelector.__init__(
             self, ax, onsel, direction='horizontal', useblit=False, **kwargs)
