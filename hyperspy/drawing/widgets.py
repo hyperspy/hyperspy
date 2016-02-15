@@ -579,9 +579,9 @@ class ModifiableSpanSelector(matplotlib.widgets.SpanSelector):
         x_increment = event.xdata - self.pressv
         new_left_x = self.rect.get_x() + x_increment
         new_right_x = new_left_x + self.rect.get_width()
-        if self.left_limit and new_left_x < self.left_limit:
+        if self.left_limit is not None and new_left_x < self.left_limit:
             return
-        if self.right_limit and new_right_x > self.right_limit:
+        if self.right_limit is not None and new_right_x > self.right_limit:
             return
         self.rect.set_x(new_left_x)
         self.update_range()
