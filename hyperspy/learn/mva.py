@@ -419,12 +419,11 @@ class MVA():
                     loadings[~navigation_mask, :] = np.nan
                     target.loadings = loadings
         finally:
-            # undo any pre-treatments
-            self.undo_treatments()
-
             if self._unfolded4decomposition is True:
                 self.fold()
                 self._unfolded4decomposition is False
+            # undo any pre-treatments
+            self.undo_treatments()
 
     def blind_source_separation(self,
                                 number_of_components=None,
@@ -1072,8 +1071,7 @@ class MVA():
     def undo_treatments(self):
         """Undo normalize_poissonian_noise"""
         print "Undoing data pre-treatments"
-        self.data = self._data_before_treatments
-        del self._data_before_treatments
+        self.data[:] = self._data_before_treatments
 
 
 class LearningResults(object):
