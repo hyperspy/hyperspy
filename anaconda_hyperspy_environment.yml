@@ -1,6 +1,6 @@
 name: hyperspy
 dependencies:
-- python=2.7
+- python=3.5
 - dill
 - h5py
 - ipython
@@ -16,8 +16,9 @@ dependencies:
 - setuptools
 - statsmodels
 - sympy
-- traits
-- traitsui
+- natsort
 - pip:
   - dask
   - hyperspy
+  - traits
+  - traitsui

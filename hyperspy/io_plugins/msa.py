@@ -189,8 +189,8 @@ def file_reader(filename, encoding='latin-1', **kwds):
                     parameters[parameter] = keywords[clean_par]['dtype'](
                         value.replace(' ', ''))
                 except:
-                    print(("The %s keyword value, %s " % (parameter, value) +
-                          "could not be converted to the right type"))
+                    print("The %s keyword value, %s " % (parameter, value) +
+                          "could not be converted to the right type")
 
             if keywords[clean_par]['mapped_to'] is not None:
                 mapped.set_item(keywords[clean_par]['mapped_to'],
@@ -360,7 +360,7 @@ def file_writer(filename, signal, format=None, separator=', ',
         f.write(
             '#%-12s: %s\u000D\u000A' %
             ('VERSION', loc_kwds.pop('VERSION')))
-        for keyword, value in list(loc_kwds.items()):
+        for keyword, value in loc_kwds.items():
             f.write('#%-12s: %s\u000D\u000A' % (keyword, value))
 
         f.write('#%-12s: Spectral Data Starts Here\u000D\u000A' % 'SPECTRUM')

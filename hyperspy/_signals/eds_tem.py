@@ -340,9 +340,9 @@ class EDSTEMSpectrum(EDSSpectrum):
                 "Sample.xray_lines", ([xray_line]))
             if plot_result and \
                     composition[i].axes_manager.signal_dimension == 0:
-                print(("%s (%s): Composition = %.2f %s percent"
+                print("%s (%s): Composition = %.2f %s percent"
                       % (element, xray_line, composition[i].data,
-                         composition_units)))
+                         composition_units))
         if plot_result and composition[i].axes_manager.signal_dimension != 0:
             utils.plot.plot_signals(composition, **kwargs)
         return composition

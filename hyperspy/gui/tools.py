@@ -497,8 +497,8 @@ class SmoothingSavitzkyGolay(Smoothing):
     def _polynomial_order_changed(self, old, new):
         if self.window_length <= new:
             self.window_length = new + 2 if new % 2 else new + 1
-            print(("Polynomial order must be < window length. "
-                  "Window length set to %i." % self.window_length))
+            print("Polynomial order must be < window length. "
+                  "Window length set to %i." % self.window_length)
         self.update_lines()
 
     def _window_length_changed(self, old, new):
@@ -507,8 +507,8 @@ class SmoothingSavitzkyGolay(Smoothing):
     def _differential_order_changed(self, old, new):
         if new > self.polynomial_order:
             self.polynomial_order += 1
-            print(("Differential order must be <= polynomial order. "
-                  "Polynomial order set to %i." % self.polynomial_order))
+            print("Differential order must be <= polynomial order. "
+                  "Polynomial order set to %i." % self.polynomial_order)
         super(
             SmoothingSavitzkyGolay,
             self)._differential_order_changed(

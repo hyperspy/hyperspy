@@ -277,12 +277,12 @@ class EELSModel(Model):
                     else:
                         new_fine_structure_width = (
                             distance_between_edges - preedge_safe_window_width)
-                        print((
+                        print(
                             "Automatically changing the fine structure "
                             "width of edge", i1 + 1, "from",
                             self._active_edges[i1].fine_structure_width,
                             "eV to", new_fine_structure_width,
-                            "eV to avoid conflicts with edge number", i2 + 1))
+                            "eV to avoid conflicts with edge number", i2 + 1)
                         self._active_edges[i1].fine_structure_width = \
                             new_fine_structure_width
                         self.resolve_fine_structure(i1=i2)

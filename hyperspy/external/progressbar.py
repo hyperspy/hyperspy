@@ -218,7 +218,7 @@ class Bar(ProgressBarWidgetHFill):
         cwidth = width - len(self.left) - len(self.right)
         marked_width = int(percent * cwidth / 100)
         m = self._format_marker(pbar)
-        bar = (self.left + (m * marked_width).ljust(cwidth) + self.right)
+        bar = (self.left + (m * marked_width).ljust(int(cwidth)) + self.right)
         return bar
 
 
@@ -231,7 +231,7 @@ class ReverseBar(Bar):
         cwidth = width - len(self.left) - len(self.right)
         marked_width = int(percent * cwidth / 100)
         m = self._format_marker(pbar)
-        bar = (self.left + (m * marked_width).rjust(cwidth) + self.right)
+        bar = (self.left + (m * marked_width).rjust(int(cwidth)) + self.right)
         return bar
 
 default_widgets = [Percentage(), ' ', Bar()]
@@ -267,7 +267,7 @@ class ProgressBar(object):
 
     The simple use is like this:
     >>> pbar = ProgressBar().start()
-    >>> for i in xrange(100):
+    >>> for i in range(100):
     ...    # do something
     ...    pbar.update(i+1)
     ...
@@ -351,7 +351,7 @@ class ProgressBar(object):
         return r
 
     def _format_line(self):
-        return ''.join(self._format_widgets()).ljust(self.term_width)
+        return ''.join(self._format_widgets()).ljust(int(self.term_width))
 
     def _need_update(self):
         return int(self.percentage()) != int(self.prev_percentage)
@@ -392,7 +392,7 @@ class ProgressBar(object):
 
         It returns self so you can use it like this:
         >>> pbar = ProgressBar().start()
-        >>> for i in xrange(100):
+        >>> for i in range(100):
         ...    # do something
         ...    pbar.update(i+1)
         ...
@@ -431,7 +431,7 @@ def progressbar(text="calculating", maxval=100, disabled=False):
     --------
 
     >>> pbar=progressbar(maxval=10000)
-    >>> for i in xrange(10000):
+    >>> for i in range(10000):
             pbar.update(i)
             #do some heavy calculation in each step
     >>> pbar.finish()

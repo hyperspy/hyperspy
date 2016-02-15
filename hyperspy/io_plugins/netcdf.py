@@ -122,7 +122,7 @@ def nc_hyperspy_reader_0dot1(ncfile, filename, *args, **kwds):
     data = dc[:]
     if 'history' in calibration_dict:
         calibration_dict['history'] = eval(ncfile.history)
-    for attrib in list(attrib2netcdf.items()):
+    for attrib in attrib2netcdf.items():
         if hasattr(dc, attrib[1]):
             value = eval('dc.' + attrib[1])
             if isinstance(value, np.ndarray):
@@ -132,7 +132,7 @@ def nc_hyperspy_reader_0dot1(ncfile, filename, *args, **kwds):
         else:
             print("Warning: the \'%s\' attribute is not defined in the file\
             " % attrib[0])
-    for attrib in list(acquisition2netcdf.items()):
+    for attrib in acquisition2netcdf.items():
         if hasattr(dc, attrib[1]):
             value = eval('dc.' + attrib[1])
             if isinstance(value, np.ndarray):
@@ -142,7 +142,7 @@ def nc_hyperspy_reader_0dot1(ncfile, filename, *args, **kwds):
         else:
             print("Warning: the \'%s\' attribute is not defined in the file\
             " % attrib[0])
-    for attrib in list(treatments2netcdf.items()):
+    for attrib in treatments2netcdf.items():
         if hasattr(dc, attrib[1]):
             treatments_dict[attrib[0]] = eval('dc.' + attrib[1])
         else:

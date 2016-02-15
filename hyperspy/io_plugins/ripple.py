@@ -514,7 +514,7 @@ def file_writer(filename, signal, encoding='latin-1', *args, **kwds):
     # Check if the dtype is supported
     dc = signal.data
     dtype_name = signal.data.dtype.name
-    if dtype_name not in list(dtype2keys.keys()):
+    if dtype_name not in dtype2keys.keys():
         err = 'The ripple format does not support writting data of %s type' % (
             dtype_name)
         raise IOError(err)

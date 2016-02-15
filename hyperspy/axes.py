@@ -206,7 +206,7 @@ class DataAxis(t.HasTraits):
         start, stop, step = my_slice.start, my_slice.stop, my_slice.step
 
         if start is None:
-            if step > 0 or step is None:
+            if step is None or step > 0:
                 start = 0
             else:
                 start = self.size - 1
@@ -232,7 +232,7 @@ class DataAxis(t.HasTraits):
         if self.navigate is True:
             text += ", index: %i" % self.index
         text += ">"
-        return text.encode('utf8')
+        return text
 
     def __str__(self):
         return self._get_name() + " axis"
@@ -358,7 +358,7 @@ class DataAxis(t.HasTraits):
             greater than v1.
 
         """
-        if v1 > v2:
+        if v1 is not None and v2 is not None and v1 > v2:
             raise ValueError("v2 must be greater than v1.")
 
         if v1 is not None and self.low_value < v1 <= self.high_value:

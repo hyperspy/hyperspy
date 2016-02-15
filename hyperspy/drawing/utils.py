@@ -739,7 +739,7 @@ def plot_images(images,
                 asp = 1
             elif isinstance(aspect, (int, float)):
                 asp = aspect
-            if ('interpolation' in list(kwargs.keys())) is False:
+            if 'interpolation' not in kwargs.keys():
                 kwargs['interpolation'] = 'nearest'
 
             # Plot image data, using vmin and vmax to set bounds,

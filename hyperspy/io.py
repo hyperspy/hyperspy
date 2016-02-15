@@ -26,7 +26,7 @@ import hyperspy.utils
 import hyperspy.misc.utils
 from hyperspy.misc.io.tools import ensure_directory
 from hyperspy.misc.utils import strlist2enumeration
-from hyperspy.misc.natsort import natsorted
+from natsort import natsorted
 import hyperspy.misc.io.tools
 from hyperspy.io_plugins import io_plugins, default_write_ext
 
@@ -411,7 +411,7 @@ def save(filename, signal, overwrite=None, **kwds):
             overwrite = hyperspy.misc.io.tools.overwrite(filename)
         if overwrite is True:
             writer.file_writer(filename, signal, **kwds)
-            print(('The %s file was created' % filename))
+            print('The %s file was created' % filename)
             folder, filename = os.path.split(os.path.abspath(filename))
             signal.tmp_parameters.set_item('folder', folder)
             signal.tmp_parameters.set_item('filename',

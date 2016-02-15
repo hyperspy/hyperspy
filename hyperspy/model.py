@@ -86,7 +86,6 @@ class ModelComponents(object):
                                     variable_name,
                                     name_string,
                                     component_type)
-        ans = ans.encode('utf8')
         return ans
 
 
@@ -256,10 +255,9 @@ class Model(list):
         class_name = str(self.__class__).split("'")[1].split('.')[-1]
 
         if len(title):
-            return "<%s, title: %s>".encode(
-                'utf8') % (class_name, self.spectrum.metadata.General.title)
+            return "<%s, title: %s>" % (class_name, self.spectrum.metadata.General.title)
         else:
-            return "<%s>".encode('utf8') % class_name
+            return "<%s>" % class_name
 
     def _get_component(self, thing):
         if isinstance(thing, int) or isinstance(thing, str):
@@ -346,11 +344,12 @@ class Model(list):
         for object in iterable:
             self.append(object)
 
-    def __delitem__(self, thing):
-        thing = self.__getitem__(thing)
-        thing.model = None
-        list.__delitem__(self, self.index(thing))
-        self._touch()
+    def __delitem__(self, things):
+        things = self.__getitem__(things)
+        if not isinstance(things, list):
+            things = [things,]
+        for thing in things:
+            self.remove(thing)
 
     def remove(self, thing, touch=True):
         """Remove component from model.
@@ -1718,15 +1717,15 @@ class Model(list):
         for component in self:
             if component.active:
                 if component.name:
-                    print((component.name))
+                    print(component.name)
                 else:
-                    print((component._id_name))
+                    print(component._id_name)
                 parameters = component.free_parameters if only_free \
                     else component.parameters
                 for parameter in parameters:
                     if not hasattr(parameter.value, '__iter__'):
-                        print(("\t\t%s\t%g" % (
-                            parameter.name, parameter.value)))
+                        print("\t\t%s\t%g" % (
+                            parameter.name, parameter.value))
 
     def enable_adjust_position(
             self, components=None, fix_them=True, show_label=True):

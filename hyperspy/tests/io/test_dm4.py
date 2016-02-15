@@ -36,7 +36,7 @@ data_dict = {'dm4_1D_data': {},
 
 
 def test_loading():
-    dims = list(range(1, 4))
+    dims = range(1, 4)
     for dim in dims:
         subfolder = 'dm4_%iD_data' % dim
         for key in dm4_data_types.keys():

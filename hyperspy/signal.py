@@ -194,10 +194,10 @@ class Signal2DTools(object):
                 dtype=dtype)
             np.fill_diagonal(pcarray['max_value'], max_value)
             pbar = progressbar(maxval=nrows * images_number,
-                               disabled=not show_progressbar).start()
+                               disabled=not show_progressbar)
         else:
             pbar = progressbar(maxval=images_number,
-                               disabled=not show_progressbar).start()
+                               disabled=not show_progressbar)
 
         # Main iteration loop. Fills the rows of pcarray when reference
         # is stat
@@ -253,8 +253,8 @@ class Signal2DTools(object):
                 if correlation_threshold == 'auto':
                     correlation_threshold = \
                         (pcarray['max_value'].min(0)).max()
-                    print(("Correlation threshold = %1.2f" %
-                          correlation_threshold))
+                    print("Correlation threshold = %1.2f" %
+                          correlation_threshold)
                 shifts[pcarray['max_value'] <
                        correlation_threshold] = ma.masked
                 shifts.mask[ref_index, :] = False
@@ -770,7 +770,7 @@ class Signal1DTools(object):
     def _integrate_in_range_commandline(self, signal_range):
         e1 = signal_range[0]
         e2 = signal_range[1]
-        integrated_spectrum = self[..., e1:e2].integrate1D(-1)
+        integrated_spectrum = self.isig[..., e1:e2].integrate1D(-1)
         return integrated_spectrum
 
     @only_interactive
@@ -1258,7 +1258,7 @@ class Signal1DTools(object):
         for i, spectrum in enumerate(self):
             if window is not None:
                 vmax = axis.index2value(spectrum.data.argmax())
-                spectrum = spectrum[vmax - window / 2.:vmax + window / 2.]
+                spectrum = spectrum.isig[vmax - window / 2.:vmax + window / 2.]
                 x = spectrum.axes_manager[0].axis
             spline = scipy.interpolate.UnivariateSpline(
                 x,
@@ -1266,11 +1266,11 @@ class Signal1DTools(object):
                 s=0)
             roots = spline.roots()
             if len(roots) == 2:
-                left[self.axes_manager.indices] = roots[0]
-                right[self.axes_manager.indices] = roots[1]
+                left.isig[self.axes_manager.indices] = roots[0]
+                right.isig[self.axes_manager.indices] = roots[1]
             else:
-                left[self.axes_manager.indices] = np.nan
-                right[self.axes_manager.indices] = np.nan
+                left.isig[self.axes_manager.indices] = np.nan
+                right.isig[self.axes_manager.indices] = np.nan
             if maxval > 0:
                 pbar.update(i)
         if maxval > 0:
@@ -1542,7 +1542,7 @@ class MVATools(object):
         if comp_ids is None:
             comp_ids = range(factors.shape[1])
         elif not hasattr(comp_ids, '__iter__'):
-            comp_ids = list(range(comp_ids))
+            comp_ids = range(comp_ids)
         mask = np.zeros(factors.shape[1], dtype=np.bool)
         for idx in comp_ids:
             mask[idx] = 1
@@ -1620,7 +1620,7 @@ class MVATools(object):
                 axis_dict = self.axes_manager.signal_axes[0].\
                     get_axis_dictionary()
                 axis_dict['index_in_array'] = 0
-                for dim, index in zip(comp_ids, list(range(len(comp_ids)))):
+                for dim, index in zip(comp_ids, range(len(comp_ids))):
                     s = Spectrum(factors[:, index],
                                  axes=[axis_dict, ],
                                  metadata={
@@ -1645,7 +1645,7 @@ class MVATools(object):
                 factor_data = factors.reshape(
                     self.axes_manager._signal_shape_in_array + [-1, ])
 
-                for dim, index in zip(comp_ids, list(range(len(comp_ids)))):
+                for dim, index in zip(comp_ids, range(len(comp_ids))):
                     im = Image(factor_data[..., index],
                                axes=axes_dicts,
                                metadata={
@@ -1687,9 +1687,9 @@ class MVATools(object):
                 export_loadings_default_file_format
 
         if comp_ids is None:
-            comp_ids = list(range(loadings.shape[0]))
+            comp_ids = range(loadings.shape[0])
         elif not hasattr(comp_ids, '__iter__'):
-            comp_ids = list(range(comp_ids))
+            comp_ids = range(comp_ids)
         mask = np.zeros(loadings.shape[0], dtype=np.bool)
         for idx in comp_ids:
             mask[idx] = 1
@@ -1763,7 +1763,7 @@ class MVATools(object):
                 axis_dict = self.axes_manager.navigation_axes[0].\
                     get_axis_dictionary()
                 axis_dict['index_in_array'] = 0
-                for dim, index in zip(comp_ids, list(range(len(comp_ids)))):
+                for dim, index in zip(comp_ids, range(len(comp_ids))):
                     s = Spectrum(loadings[index],
                                  axes=[axis_dict, ])
                     filename = '%s-%i.%s' % (loading_prefix,
@@ -1781,7 +1781,7 @@ class MVATools(object):
                 axes_dicts[0]['index_in_array'] = 0
                 axes_dicts.append(axes[1].get_axis_dictionary())
                 axes_dicts[1]['index_in_array'] = 1
-                for dim, index in zip(comp_ids, list(range(len(comp_ids)))):
+                for dim, index in zip(comp_ids, range(len(comp_ids))):
                     s = Image(loading_data[index, ...],
                               axes=axes_dicts,
                               metadata={
@@ -2571,7 +2571,7 @@ class Signal(MVA,
 
         string += '>'
 
-        return string.encode('utf8')
+        return string
 
     def __getitem__(self, slices, isNavigation=None):
         try:
@@ -2628,16 +2628,19 @@ class Signal(MVA,
             0, len(idx) - len(_orig_slices))
 
         array_slices = []
+        to_remove = []
         for slice_, axis in zip(slices, _signal.axes_manager._axes):
             if (isinstance(slice_, slice) or
-                    len(_signal.axes_manager._axes) < 2):
+                    (len(_signal.data.shape) - len(to_remove)) < 2):
                 array_slices.append(axis._slice_me(slice_))
             else:
                 if isinstance(slice_, float):
                     slice_ = axis.value2index(slice_)
                 array_slices.append(slice_)
-                _signal._remove_axis(axis.index_in_axes_manager)
-
+                to_remove.append(axis.index_in_axes_manager)
+        for _idx in reversed(sorted(to_remove)):
+            _signal._remove_axis(_idx)
+        array_slices = tuple(array_slices)
         _signal.data = _signal.data[array_slices]
         if self.metadata.has_item('Signal.Noise_properties.variance'):
             variance = self.metadata.Signal.Noise_properties.variance
@@ -4744,17 +4747,17 @@ class Signal(MVA,
         data = self.data
         # To make it work with nans
         data = data[~np.isnan(data)]
-        print((underline("Summary statistics")))
-        print(("mean:\t" + formatter % data.mean()))
-        print(("std:\t" + formatter % data.std()))
+        print(underline("Summary statistics"))
+        print("mean:\t" + formatter % data.mean())
+        print("std:\t" + formatter % data.std())
         print()
-        print(("min:\t" + formatter % data.min()))
-        print(("Q1:\t" + formatter % np.percentile(data,
-                                                  25)))
-        print(("median:\t" + formatter % np.median(data)))
-        print(("Q3:\t" + formatter % np.percentile(data,
-                                                  75)))
-        print(("max:\t" + formatter % data.max()))
+        print("min:\t" + formatter % data.min())
+        print("Q1:\t" + formatter % np.percentile(data,
+                                                  25))
+        print("median:\t" + formatter % np.median(data))
+        print("Q3:\t" + formatter % np.percentile(data,
+                                                  75))
+        print("max:\t" + formatter % data.max())
 
     @property
     def is_rgba(self):
@@ -4827,7 +4830,7 @@ ARITHMETIC_OPERATORS = (
     "__and__",
     "__xor__",
     "__or__",
-    "__div__",
+    "__mod__",
     "__truediv__",
 )
 INPLACE_OPERATORS = (

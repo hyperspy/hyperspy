@@ -148,12 +148,8 @@ class TestLoadingNewSavedMetadata:
                 137, (123, 44)])
 
     def test_binary_string(self):
-        import marshal
-        import types
-        f = types.FunctionType(
-            marshal.loads(
-                self.s.metadata.test.binary_string),
-            globals())
+        import dill
+        f = dill.loads(self.s.metadata.test.binary_string)
         nt.assert_equal(f(3.5), 4.5)
 
 

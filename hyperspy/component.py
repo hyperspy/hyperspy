@@ -35,7 +35,7 @@ class NoneFloat(t.CFloat):   # Lazy solution, but usable
     default_value = None
 
     def validate(self, object, name, value):
-        if value == "None" or value == "None":
+        if value == "None" or value == b"None":
             value = None
         if value is None:
             super(NoneFloat, self).validate(object, name, 0)
@@ -128,7 +128,7 @@ class Parameter(t.HasTraits):
         if self.component is not None:
             text += ' of %s' % self.component._get_short_description()
         text = '<' + text + '>'
-        return text.encode('utf8')
+        return text
 
     def __len__(self):
         return self._number_of_elements

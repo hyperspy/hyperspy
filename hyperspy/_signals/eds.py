@@ -452,9 +452,9 @@ class EDSSpectrum(Spectrum):
                     lines_len = len(xray_lines)
                     xray_lines.add(line)
                     if lines_len != len(xray_lines):
-                        print(("%s line added," % line))
+                        print("%s line added," % line)
                     else:
-                        print(("%s line already in." % line))
+                        print("%s line already in." % line)
                 else:
                     raise ValueError(
                         "%s is not a valid line of %s." % (line, element))
@@ -509,6 +509,7 @@ class EDSSpectrum(Spectrum):
         only_lines = self._parse_only_lines(only_lines)
         beam_energy = self._get_beam_energy()
         lines = []
+        elements = [el if isinstance(el, str) else el.decode() for el in elements]
         for element in elements:
             # Possible line (existing and excited by electron)
             element_lines = []
@@ -530,8 +531,8 @@ class EDSSpectrum(Spectrum):
                 element_lines = [element_lines[select_this], ]
 
             if not element_lines:
-                print((("There is not X-ray line for element %s " % element) +
-                      "in the data spectral range"))
+                print("There is not X-ray line for element %s " % element +
+                      "in the data spectral range")
             else:
                 lines.extend(element_lines)
         lines.sort()
@@ -675,11 +676,11 @@ class EDSSpectrum(Spectrum):
             elif img.axes_manager.navigation_dimension == 1:
                 img.axes_manager.set_signal_dimension(1)
             if plot_result and img.axes_manager.signal_dimension == 0:
-                print(("%s at %s %s : Intensity = %.2f"
+                print("%s at %s %s : Intensity = %.2f"
                       % (Xray_line,
                          line_energy,
                          ax.units,
-                         img.data)))
+                         img.data))
             img.metadata.set_item("Sample.elements", ([element]))
             img.metadata.set_item("Sample.xray_lines", ([Xray_line]))
             intensities.append(img)
@@ -942,7 +943,7 @@ class EDSSpectrum(Spectrum):
             xray_lines, xray_not_here = self._get_xray_lines_in_spectral_range(
                 xray_lines)
             for xray in xray_not_here:
-                print(("Warning: %s is not in the data energy range." % xray))
+                print("Warning: %s is not in the data energy range." % xray)
             xray_lines = np.unique(xray_lines)
             self._add_xray_lines_markers(xray_lines)
             if background_windows is not None:

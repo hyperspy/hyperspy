@@ -131,7 +131,7 @@ _slugify_strip_re_data = ''.join(
     c for c in map(
         chr, np.delete(
             np.arange(256), [
-                95, 32])) if not c.isalnum())
+                95, 32])) if not c.isalnum()).encode()
 
 
 def slugify(value, valid_variable_name=False):
@@ -150,7 +150,7 @@ def slugify(value, valid_variable_name=False):
             # Try latin1. If this does not work an exception is raised.
             value = str(value, "latin1")
     value = unicodedata.normalize('NFKD', value).encode('ascii', 'ignore')
-    value = str(value.translate(None, _slugify_strip_re_data).strip())
+    value = value.translate(None, _slugify_strip_re_data).decode().strip()
     value = value.replace(' ', '_')
     if valid_variable_name is True:
         if value[:1].isdigit():
@@ -288,7 +288,7 @@ class DictionaryTreeBrowser(object):
         return string
 
     def __repr__(self):
-        return self._get_print_items().encode('utf8', errors='ignore')
+        return self._get_print_items()
 
     def __getitem__(self, key):
         return self.__getattribute__(key)
@@ -297,6 +297,8 @@ class DictionaryTreeBrowser(object):
         self.__setattr__(key, value)
 
     def __getattribute__(self, name):
+        if isinstance(name, bytes):
+            name = name.decode()
         name = slugify(name, valid_variable_name=True)
         item = super(DictionaryTreeBrowser, self).__getattribute__(name)
         if isinstance(item, dict) and '_dtb_value_' in item and "key" in item:
@@ -322,13 +324,13 @@ class DictionaryTreeBrowser(object):
 
     def __len__(self):
         return len(
-            [key for key in list(self.__dict__.keys()) if not key.startswith("_")])
+            [key for key in self.__dict__.keys() if not key.startswith("_")])
 
     def keys(self):
         """Returns a list of non-private keys.
 
         """
-        return sorted([key for key in list(self.__dict__.keys())
+        return sorted([key for key in self.__dict__.keys()
                        if not key.startswith("_")])
 
     def as_dictionary(self):
@@ -541,7 +543,7 @@ def strlist2enumeration(lst):
 
 
 def ensure_unicode(stuff, encoding='utf8', encoding2='latin-1'):
-    if not isinstance(stuff, (str, np.string_)):
+    if not isinstance(stuff, (bytes, np.string_)):
         return stuff
     else:
         string = stuff

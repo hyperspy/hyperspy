@@ -576,13 +576,13 @@ class MVA():
                              for index in diff_axes]
         # Select components to separate
         if number_of_components is not None:
-            comp_list = list(range(number_of_components))
+            comp_list = range(number_of_components)
         elif comp_list is not None:
             number_of_components = len(comp_list)
         else:
             if lr.output_dimension is not None:
                 number_of_components = lr.output_dimension
-                comp_list = list(range(number_of_components))
+                comp_list = range(number_of_components)
             else:
                 raise ValueError(
                     "No `number_of_components` or `comp_list` provided.")
@@ -827,7 +827,7 @@ class MVA():
             maximum = np.nanmax(target.bss_loadings[:, i])
             if minimum < 0 and -minimum > maximum:
                 self.reverse_bss_component(i)
-                print(("IC %i reversed" % i))
+                print("IC %i reversed" % i)
 
     @do_not_replot
     def _calculate_recmatrix(self, components=None, mva_type=None,):
@@ -1011,7 +1011,7 @@ class MVA():
             target.explained_variance)
         fig = plt.figure()
         ax = fig.add_subplot(111)
-        ax.scatter(list(range(n)), cumu[:n])
+        ax.scatter(range(n), cumu[:n])
         ax.set_xlabel('Principal component')
         ax.set_ylabel('Cumulative explained variance ratio')
         plt.draw()

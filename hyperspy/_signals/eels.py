@@ -231,7 +231,7 @@ class EELSSpectrum(Spectrum):
         mean_ = without_nans(zlpc.data).mean()
         if print_stats is True:
             print()
-            print((underline("Initial ZLP position statistics")))
+            print(underline("Initial ZLP position statistics"))
             zlpc.print_summary_statistics()
 
         for signal in also_align + [self]:
@@ -661,7 +661,7 @@ class EELSSpectrum(Spectrum):
         axis = ll.axes_manager.signal_axes[0]
         if fwhm is None:
             fwhm = float(ll.get_current_signal().estimate_peak_width()())
-            print(("FWHM = %1.2f" % fwhm))
+            print("FWHM = %1.2f" % fwhm)
 
         I0 = ll.estimate_elastic_scattering_intensity(threshold=threshold)
         I0 = I0.data
