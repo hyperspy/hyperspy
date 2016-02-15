@@ -425,7 +425,6 @@ class MVA():
             # undo any pre-treatments
             self.undo_treatments()
 
-
     def blind_source_separation(self,
                                 number_of_components=None,
                                 algorithm='sklearn_fastica',
