@@ -62,6 +62,7 @@ data_types = {
 
 XY_TAG_ID = 16706  # header contains XY calibration
 
+
 def readLELong(file):
     """Read 4 bytes as *little endian* integer in file"""
     read_bytes = file.read(4)
