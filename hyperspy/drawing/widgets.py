@@ -453,7 +453,7 @@ def in_interval(number, interval):
 
 class ModifiableSpanSelector(matplotlib.widgets.SpanSelector):
 
-    def __init__(self, ax, left=None, right=None, **kwargs):
+    def __init__(self, ax, left_limit=None, right_limit=None, **kwargs):
         onsel = kwargs.pop('onselect', self.dummy)
         matplotlib.widgets.SpanSelector.__init__(
             self, ax, onsel, direction='horizontal', useblit=False, **kwargs)
@@ -461,8 +461,8 @@ class ModifiableSpanSelector(matplotlib.widgets.SpanSelector):
         self.tolerance = 1
         self.on_move_cid = None
         self.range = None
-        self.left = left
-        self.right = right
+        self.left_limit = left_limit
+        self.right_limit = right_limit
 
     def dummy(self, *args, **kwargs):
         pass
@@ -533,7 +533,7 @@ class ModifiableSpanSelector(matplotlib.widgets.SpanSelector):
         # Do not move the left edge beyond the right one.
         if event.xdata >= self.range[1]:
             return
-        if self.left and event.xdata < self.left:
+        if self.left_limit and event.xdata < self.left_limit:
             return
         width_increment = self.range[0] - event.xdata
         self.rect.set_x(event.xdata)
@@ -550,7 +550,7 @@ class ModifiableSpanSelector(matplotlib.widgets.SpanSelector):
         # Do not move the right edge beyond the left one.
         if event.xdata <= self.range[0]:
             return
-        if self.right and event.xdata > self.right:
+        if self.right_limit and event.xdata > self.right_limit:
             return
         width_increment = \
             event.xdata - self.range[1]
@@ -567,9 +567,9 @@ class ModifiableSpanSelector(matplotlib.widgets.SpanSelector):
         x_increment = event.xdata - self.pressv
         new_left_x = self.rect.get_x() + x_increment
         new_right_x = new_left_x + self.rect.get_width()
-        if self.left and new_left_x < self.left:
+        if self.left_limit and new_left_x < self.left_limit:
             return
-        if self.right and new_right_x > self.right:
+        if self.right_limit and new_right_x > self.right_limit:
             return
         self.rect.set_x(new_left_x)
         self.update_range()

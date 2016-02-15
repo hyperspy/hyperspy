@@ -168,7 +168,8 @@ class SpanSelectorInSpectrum(t.HasTraits):
                     self.signal._plot.signal_plot.ax,
                     onselect=self.update_span_selector_traits,
                     onmove_callback=self.update_span_selector_traits,
-                    left=self.axis.low_value, right=self.axis.high_value)
+                    left_limit=self.axis.low_value,
+                    right_limit=self.axis.high_value)
 
         elif self.span_selector is not None:
             self.on_disabling_span_selector()
