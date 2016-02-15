@@ -60,6 +60,7 @@ data_types = {
     '10': '<c16',
 }
 
+XY_TAG_ID = 16706  # header contains XY calibration
 
 def readLELong(file):
     """Read 4 bytes as *little endian* integer in file"""
@@ -157,8 +158,7 @@ def get_data_dtype_list(file, offset, record_by):
 
 
 def get_data_tag_dtype_list(data_type_id):
-    # "TagTypeID" = 16706
-    if data_type_id == 16706:
+    if data_type_id == XY_TAG_ID:
         header = [
             ("TagTypeID", ("<u2")),
             ("Unknown", ("<u2")),  # Not in Boothroyd description. = 0
@@ -359,7 +359,7 @@ def get_axes_from_position(header, data):
     array_shape = []
     axes = []
     array_size = int(header["ValidNumberElements"])
-    if data["TagTypeID"][0] == 16706:
+    if data["TagTypeID"][0] == XY_TAG_ID:
         xcal = get_calibration_from_position(data["PositionX"])
         ycal = get_calibration_from_position(data["PositionY"])
         if xcal["size"] == 0 and ycal["size"] != 0:
