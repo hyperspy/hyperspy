@@ -25,7 +25,7 @@ import matplotlib.pyplot as plt
 def shift_image(im, shift, fill_value=np.nan):
     fractional, integral = np.modf(shift)
     if fractional.any():
-        order = 3
+        order = 1
     else:
         # Disable interpolation
         order = 0
