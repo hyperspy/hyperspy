@@ -17,7 +17,7 @@
 
 
 import numpy as np
-from scipy.misc import face
+from scipy.misc import ascent
 from scipy.ndimage import fourier_shift
 
 import hyperspy.api as hs
@@ -26,7 +26,7 @@ import hyperspy.api as hs
 class TestSubPixelAlign:
 
     def setUp(self):
-        ref_image = face()
+        ref_image = ascent()
         center = np.array((256, 256))
         shifts = np.array([(0.0, 0.0), (4.3, 2.13), (1.65, 3.58),
                            (-2.3, 2.9), (5.2, -2.1), (2.7, 2.9),
