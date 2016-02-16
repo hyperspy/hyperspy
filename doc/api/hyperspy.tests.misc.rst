@@ -36,6 +36,14 @@ hyperspy.tests.misc.test_rgbtools module
     :undoc-members:
     :show-inheritance:
 
+hyperspy.tests.misc.test_test_utils module
+------------------------------------------
+
+.. automodule:: hyperspy.tests.misc.test_test_utils
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 
 Module contents
 ---------------

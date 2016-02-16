@@ -17,7 +17,7 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from distutils.core import setup
+from setuptools import setup
 
 import distutils.dir_util
 
@@ -38,7 +38,9 @@ install_req = ['scipy',
                'numpy',
                'traits',
                'traitsui',
-               'sympy']
+               'sympy',
+               'setuptools',
+               ]
 
 
 def are_we_building4windows():
@@ -145,6 +147,7 @@ with update_version_when_dev() as version:
                   'hyperspy.docstrings',
                   'hyperspy.drawing',
                   'hyperspy.drawing._markers',
+                  'hyperspy.drawing._widgets',
                   'hyperspy.learn',
                   'hyperspy._signals',
                   'hyperspy.gui',
@@ -170,6 +173,9 @@ with update_version_when_dev() as version:
                   'hyperspy.external.astroML',
                   ],
         requires=install_req,
+        setup_requires=[
+            'setuptools'
+        ],
         scripts=scripts,
         package_data={
             'hyperspy':
@@ -177,8 +183,8 @@ with update_version_when_dev() as version:
              'ipython_profile/*',
              'data/*.ico',
              'misc/eds/example_signals/*.hdf5',
-             'tests/io/blockfile_data/*.blockfile'
-             'tests/io/dens_data/*.dens'
+             'tests/io/blockfile_data/*.blo',
+             'tests/io/dens_data/*.dens',
              'tests/io/dm_stackbuilder_plugin/test_stackbuilder_imagestack.dm3',
              'tests/io/dm3_1D_data/*.dm3',
              'tests/io/dm3_2D_data/*.dm3',
@@ -190,7 +196,7 @@ with update_version_when_dev() as version:
              'tests/io/hdf5_files/*.hdf5',
              'tests/io/tiff_files/*.tif',
              'tests/io/npy_files/*.npy',
-             'tests/io/unf_files/*.unf'
+             'tests/io/unf_files/*.unf',
              'tests/drawing/*.ipynb',
              ],
         },

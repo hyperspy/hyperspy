@@ -15,10 +15,11 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
+import mock
 
 import numpy as np
 import nose.tools as nt
-from scipy.misc import lena
+from scipy.misc import face
 
 import hyperspy.api as hs
 
@@ -26,7 +27,7 @@ import hyperspy.api as hs
 class TestAlignTools:
 
     def setUp(self):
-        im = lena()
+        im = face(gray=True)
         self.lena_offset = np.array((256, 256))
         s = hs.signals.Image(np.zeros((10, 100, 100)))
         self.scales = np.array((0.1, 0.3))
@@ -65,10 +66,13 @@ class TestAlignTools:
 
     def test_align(self):
         # Align signal
+        m = mock.Mock()
         s = self.spectrum
+        s.events.data_changed.connect(m.data_changed)
         s.align2D()
         # Compare by broadcasting
         nt.assert_true(np.all(s.data == self.aligned))
+        nt.assert_true(m.data_changed.called)
 
     def test_align_expand(self):
         s = self.spectrum

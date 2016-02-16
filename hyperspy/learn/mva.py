@@ -799,7 +799,7 @@ class MVA():
         try:
             sc = self.deepcopy()
             sc.data = a.T.reshape(self.data.shape)
-            sc.metadata.General.title += signal_name
+            sc.metadata.General.title += ' ' + signal_name
             if target.mean is not None:
                 sc.data += target.mean
         finally:
@@ -1090,7 +1090,7 @@ class LearningResults(object):
         if hasattr(self, 'ica_factors'):
             self.bss_factors = self.ica_factors
             del self.ica_factors
-        #######################################################
+        #
         # Output_dimension is an array after loading, convert it to int
         if hasattr(self, 'output_dimension') and self.output_dimension \
                 is not None:
