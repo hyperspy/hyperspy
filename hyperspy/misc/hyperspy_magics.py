@@ -3,6 +3,7 @@ from IPython.core.magic_arguments import magic_arguments, argument, parse_argstr
 import warnings
 
 from hyperspy.defaults_parser import preferences
+from hyperspy.misc.hspy_warnings import VisibleDeprecationWarning
 
 
 @magics_class
@@ -43,6 +44,13 @@ class HyperspyMagics(Magics):
         >>> import matplotlib.pyplot as plt
 
         """
+        warnings.warn(
+            "This magic is deprecated and will be removed in HyperSpy 0.9."
+            "The reccomended way to start HyperSpy is:\n\n"
+            ">>> import hyperspy.api as hs\n"
+            ">>> %matplotlib\n\n"
+            "See the online documentation for more details.",
+            VisibleDeprecationWarning)
         sh = self.shell
 
         gui = False

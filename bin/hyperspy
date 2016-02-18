@@ -20,8 +20,16 @@
 # along with Hyperspy; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301
 # USA
-
 import sys
+
+# Deprecate this script
+carryon = raw_input("\nStarting HyperSpy using this script is deprecated "
+      "and will be removed in HyperSpy 0.9. "
+      "Read the HyperSpy online documentation for details.\n"
+      "Continue yes/No?")
+if carryon not in ["yes", "Yes", "YES"]:
+    sys.exit()
+    
 import os
 import shutil
 from distutils.version import LooseVersion
@@ -127,4 +135,3 @@ if args.environment != 'terminal':
     sys.argv.insert(1, args.environment)
 sys.argv.append('--profile=hyperspy')
 sys.exit(launch_new_instance())
-
