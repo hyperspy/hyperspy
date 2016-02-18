@@ -535,16 +535,21 @@ class ModifiableSpanSelector(matplotlib.widgets.SpanSelector):
                       self.rect.get_x() + self.rect.get_width())
 
     def move_left(self, event):
-        if self.buttonDown is False or self.ignore(event) or\
-                (event.xdata is None and self.left_limit is None):
+        if self.buttonDown is False or self.ignore(event) or (
+                event.xdata is None and self.left_limit is None):
             return
-        # Do not move the left edge beyond the right one.
-        if event.xdata is not None and event.xdata >= self.range[1]:
+
+        if event.xdata is None:
+            # Mouse is outside axes, snap to limit
+            x = self.left_limit
+        elif event.xdata >= self.range[1]:
+            # Do not move the left edge beyond the right one.
             return
-        if self.left_limit is not None and (event.xdata is None or
-                                            event.xdata < self.left_limit):
+        elif self.left_limit is not None and event.xdata < self.left_limit:
+            # Bound by left_limit
             x = self.left_limit
         else:
+            # Valid mouse position
             x = event.xdata
         width_increment = self.range[0] - x
         self.rect.set_x(x)
@@ -558,13 +563,17 @@ class ModifiableSpanSelector(matplotlib.widgets.SpanSelector):
         if self.buttonDown is False or self.ignore(event) or\
                 (event.xdata is None and self.right_limit is None):
             return
-        # Do not move the right edge beyond the left one.
-        if event.xdata is not None and event.xdata <= self.range[0]:
+        if event.xdata is None:
+            # Mouse is outside axes, snap to limit
+            x = self.right_limit
+        elif event.xdata <= self.range[0]:
+            # Do not move the right edge beyond the left one.
             return
-        if self.right_limit is not None and (event.xdata is None or
-                                             event.xdata > self.right_limit):
+        elif self.right_limit is not None and event.xdata > self.right_limit:
+            # Bound by right_limit
             x = self.right_limit
         else:
+            # Valid mouse position
             x = event.xdata
         width_increment = \
             x - self.range[1]
@@ -575,8 +584,8 @@ class ModifiableSpanSelector(matplotlib.widgets.SpanSelector):
         self.update()
 
     def move_rect(self, event):
-        if self.buttonDown is False or self.ignore(event) or\
-                event.xdata is None:
+        if (self.buttonDown is False or self.ignore(event) or
+                event.xdata is None):
             return
         x_increment = event.xdata - self.pressv
         new_left_x = self.rect.get_x() + x_increment
