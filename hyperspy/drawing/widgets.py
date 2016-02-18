@@ -536,12 +536,13 @@ class ModifiableSpanSelector(matplotlib.widgets.SpanSelector):
 
     def move_left(self, event):
         if self.buttonDown is False or self.ignore(event) or\
-                event.xdata is None:
+                (event.xdata is None and self.left_limit is None):
             return
         # Do not move the left edge beyond the right one.
-        if event.xdata >= self.range[1]:
+        if event.xdata is not None and event.xdata >= self.range[1]:
             return
-        if self.left_limit is not None and event.xdata < self.left_limit:
+        if self.left_limit is not None and (event.xdata is None or
+                                            event.xdata < self.left_limit):
             x = self.left_limit
         else:
             x = event.xdata
@@ -555,12 +556,13 @@ class ModifiableSpanSelector(matplotlib.widgets.SpanSelector):
 
     def move_right(self, event):
         if self.buttonDown is False or self.ignore(event) or\
-                event.xdata is None:
+                (event.xdata is None and self.right_limit is None):
             return
         # Do not move the right edge beyond the left one.
-        if event.xdata <= self.range[0]:
+        if event.xdata is not None and event.xdata <= self.range[0]:
             return
-        if self.right_limit is not None and event.xdata > self.right_limit:
+        if self.right_limit is not None and (event.xdata is None or
+                                             event.xdata > self.right_limit):
             x = self.right_limit
         else:
             x = event.xdata
