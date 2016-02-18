@@ -133,7 +133,7 @@ def find_peaks_ohaver(y, x=None, slope_thresh=0., amp_thresh=None,
                         # centering and scaling
                         yynz = yy != 0
                         coef = np.polyfit(
-                                xxf[yynz], np.log10(np.abs(yy[yynz])), 2)
+                            xxf[yynz], np.log10(np.abs(yy[yynz])), 2)
                         c1 = coef[2]
                         c2 = coef[1]
                         c3 = coef[0]
