@@ -28,9 +28,9 @@ from hyperspy.misc.utils import slugify
 from hyperspy._samfire_utils.strategy import (diffusion_strategy,
                                               segmenter_strategy)
 from hyperspy._samfire_utils._strategies.diffusion.red_chisq import \
-        reduced_chi_squared_strategy
+    reduced_chi_squared_strategy
 from hyperspy._samfire_utils._strategies.segmenter.histogram import \
-        histogram_strategy
+    histogram_strategy
 from hyperspy.events import EventSupressor
 
 
@@ -293,7 +293,8 @@ class Samfire(object):
     def _run_active_strategy_multi(self):
         count = 0
         last_time = time.time()
-        while np.any(self.metadata.marker > 0.) or len(self._running_pixels) > 0:
+        while np.any(self.metadata.marker > 0.) or len(
+                self._running_pixels) > 0:
             if self._result_q.empty():
                 if len(self._running_pixels) < self.workers:
                     self._add_jobs()
@@ -396,11 +397,13 @@ class Samfire(object):
         current = self.active_strategy
         new = self.strategies[new_strat]
 
-        if isinstance(current, diffusion_strategy) and isinstance(new, diffusion_strategy):
+        if isinstance(current, diffusion_strategy) and isinstance(
+                new, diffusion_strategy):
             # forget ignore/done levels, keep just calculated or not
             new.refresh(True)
         else:
-            if isinstance(current, diffusion_strategy) and isinstance(new, segmenter_strategy):
+            if isinstance(current, diffusion_strategy) and isinstance(
+                    new, segmenter_strategy):
                 # if diffusion->segmenter, set previous -1 to -2 (ignored for
                 # the next diffusion)
                 self.metadata.marker[
@@ -525,14 +528,14 @@ class Samfire(object):
 
         def connect_other_navigation1(axes_manager):
             with mark.axes_manager.events.indices_changed.suppress_callback(
-                connect_other_navigation2):
+                    connect_other_navigation2):
                 for ax1, ax2 in zip(mark.axes_manager.navigation_axes,
                                     axes_manager.navigation_axes[2:]):
                     ax1.value = ax2.value
 
         def connect_other_navigation2(axes_manager):
             with self.model.axes_manager.events.indices_changed.suppress_callback(
-                connect_other_navigation1):
+                    connect_other_navigation1):
                 for ax1, ax2 in zip(self.model.axes_manager.navigation_axes[2:],
                                     axes_manager.navigation_axes):
                     ax1.value = ax2.value
@@ -547,7 +550,6 @@ class Samfire(object):
         self.model._plot.signal_plot.events.closed.connect(
             lambda: self.model.axes_manager.events.indices_changed.disconnect(
                 connect_other_navigation1), [])
-
 
     def _plot(self, count):
         if count % self.plot_every == 0:
