@@ -492,6 +492,8 @@ Signal operations
 ^^^^^^^^^^^^^^^^^
 .. versionadded:: 0.6
 
+.. versionadded:: 0.8.3
+
 :py:class:`~.signal.Signal` supports all the Python binary arithmetic
 opearations (+, -, \*, //, %, divmod(), pow(), \*\*, <<, >>, &, ^, \|),
 augmented binary assignments (+=, -=, \*=, /=, //=, %=, \*\*=, <<=, >>=, &=,
@@ -500,57 +502,74 @@ augmented binary assignments (+=, -=, \*=, /=, //=, %=, \*\*=, <<=, >>=, &=,
 
 These operations are performed element-wise. When the dimensions of the signals
 are not equal `numpy broadcasting rules apply
-<http://docs.scipy.org/doc/numpy/user/basics.broadcasting.html>`_ *first*. In
-addition HyperSpy extend numpy's broadcasting rules to the following cases:
+<http://docs.scipy.org/doc/numpy/user/basics.broadcasting.html>`_ independently
+for the navigation and signal axes.
 
+In the following example `s2` has only one navigation axis while `s` has two.
+However, because the size of their first navigation axis is the same, their
+dimensions are compatible and `s2` is
+broacasted to match `s`'s dimensions.
 
-.. deprecated:: 0.8.1
+.. code-block:: python
 
-    This broadcasting rules will change in HyperSpy 0.9.
+    >>> s = hs.signals.Image(np.ones((3,2,5,4)))
+    >>> s2 = hs.signals.Image(np.ones((2,5,4)))
+    >>> s
+    <Image, title: , dimensions: (2, 3|4, 5)>
+    >>> s2
+    <Image, title: , dimensions: (2|4, 5)>
+    >>> s + s2
+    <Image, title: , dimensions: (2, 3|4, 5)>
 
-    .. table:: Signal broadcasting rules (i).
+In the following example the dimensions are not compatible and an exception
+is raised.
 
-        +------------+----------------------+------------------+
-        | **Signal** | **NavigationShape**  | **SignalShape**  |
-        +============+======================+==================+
-        |   s1       |        a             |      b           |
-        +------------+----------------------+------------------+
-        |   s2       |       (0,)           |      a           |
-        +------------+----------------------+------------------+
-        |   s1 + s2  |       a              |      b           |
-        +------------+----------------------+------------------+
-        |   s2 + s1  |       a              |      b           |
-        +------------+----------------------+------------------+
+.. code-block:: python
 
+    >>> s = hs.signals.Image(np.ones((3,2,5,4)))
+    >>> s2 = hs.signals.Image(np.ones((3,5,4)))
+    >>> s
+    <Image, title: , dimensions: (2, 3|4, 5)>
+    >>> s2
+    <Image, title: , dimensions: (3|4, 5)>
+    >>> s + s2
+    Traceback (most recent call last):
+      File "<ipython-input-55-044bb11a0bd9>", line 1, in <module>
+        s + s2
+      File "<string>", line 2, in __add__
+      File "/home/fjd29/Python/hyperspy/hyperspy/signal.py", line 2686, in _binary_operator_ruler
+        raise ValueError(exception_message)
+    ValueError: Invalid dimensions for this operation
 
-    .. table:: Signal broadcasting rules (ii).
+Broacasting operates exactly in the same way for the signal axes:
 
-        +------------+----------------------+------------------+
-        | **Signal** | **NavigationShape**  | **SignalShape**  |
-        +============+======================+==================+
-        |   s1       |        a             |      b           |
-        +------------+----------------------+------------------+
-        |   s2       |       (0,)           |      b           |
-        +------------+----------------------+------------------+
-        |   s1 + s2  |       a              |      b           |
-        +------------+----------------------+------------------+
-        |   s2 + s1  |       a              |      b           |
-        +------------+----------------------+------------------+
+.. code-block:: python
 
+    >>> s = hs.signals.Image(np.ones((3,2,5,4)))
+    >>> s2 = hs.signals.Spectrum(np.ones((3, 2, 4)))
+    >>> s
+    <Image, title: , dimensions: (2, 3|4, 5)>
+    >>> s2
+    <Spectrum, title: , dimensions: (2, 3|4)>
+    >>> s + s2
+    <Image, title: , dimensions: (2, 3|4, 5)>
 
-    .. table:: Signal broadcasting rules (iii).
+In-place operators also support broadcasting, but only when broadcasting would
+not change the left most signal dimensions:
 
-        +------------+----------------------+------------------+
-        | **Signal** | **NavigationShape**  | **SignalShape**  |
-        +============+======================+==================+
-        |   s1       |       (0,)           |      a           |
-        +------------+----------------------+------------------+
-        |   s2       |       (0,)           |      b           |
-        +------------+----------------------+------------------+
-        |   s1 + s2  |       b              |      a           |
-        +------------+----------------------+------------------+
-        |   s2 + s1  |       a              |      b           |
-        +------------+----------------------+------------------+
+.. code-block:: python
+
+    >>> s += s2
+    >>> s
+    <Image, title: , dimensions: (2, 3|4, 5)>
+    >>> s2 += s
+    Traceback (most recent call last):
+      File "<ipython-input-64-fdb9d3a69771>", line 1, in <module>
+        s2 += s
+      File "<string>", line 2, in __iadd__
+      File "/home/fjd29/Python/hyperspy/hyperspy/signal.py", line 2737, in _binary_operator_ruler
+        self.data = getattr(sdata, op_name)(odata)
+    ValueError: non-broadcastable output operand with shape (3,2,1,4) doesn't match the broadcast shape (3,2,5,4)
 
 
 .. _signal.iterator:

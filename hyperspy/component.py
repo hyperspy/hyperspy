@@ -1084,4 +1084,7 @@ class Component(t.HasTraits):
             raise ValueError( "_id_name of component and dictionary do not match, \ncomponent._id_name = %s\
                     \ndictionary['_id_name'] = %s" % (self._id_name, dic['_id_name']))
 
-# vim: textwidth=80
+    def _estimate_parameters(self, signal):
+        if self._axes_manager != signal.axes_manager:
+            self._axes_manager = signal.axes_manager
+            self._create_arrays()

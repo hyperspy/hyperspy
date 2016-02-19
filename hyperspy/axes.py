@@ -1106,3 +1106,41 @@ class AxesManager(t.HasTraits):
                              "of items are axes are in this AxesManager")
         for axis, value in zip(self._axes, values):
             setattr(axis, attr, value)
+
+    @property
+    def navigation_indices_in_array(self):
+        return tuple([axis.index_in_array for axis in self.navigation_axes])
+
+    @property
+    def signal_indices_in_array(self):
+        return tuple([axis.index_in_array for axis in self.signal_axes])
+
+    @property
+    def axes_are_aligned_with_data(self):
+        """Verify if the data axes are aligned with the signal axes.
+
+        When the data are aligned with the axes the axes order in `self._axes`
+        is [nav_n, nav_n-1, ..., nav_0, sig_m, sig_m-1 ..., sig_0].
+
+        Returns
+        -------
+        aligned : bool
+
+        """
+        nav_iia_r = self.navigation_indices_in_array[::-1]
+        sig_iia_r = self.signal_indices_in_array[::-1]
+        iia_r = nav_iia_r + sig_iia_r
+        aligned = iia_r == tuple(range(len(iia_r)))
+        return aligned
+
+    def _sort_axes(self):
+        """Sort _axes to align them.
+
+        When the data are aligned with the axes the axes order in `self._axes`
+        is [nav_n, nav_n-1, ..., nav_0, sig_m, sig_m-1 ..., sig_0]. This method
+        sort the axes in this way. Warning: this doesn't sort the `data` axes.
+
+        """
+        am = self
+        new_axes = am.navigation_axes[::-1] + am.signal_axes[::-1]
+        self._axes = list(new_axes)
