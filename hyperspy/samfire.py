@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-from multiprocessing import cpu_count, Pool, Manager
+from multiprocessing import (cpu_count, Pool, Manager)
 from itertools import product
 
 import numpy as np
@@ -25,23 +25,27 @@ import time
 
 from hyperspy.misc.utils import DictionaryTreeBrowser
 from hyperspy.misc.utils import slugify
-from hyperspy._samfire_utils.strategy import diffusion_strategy, segmenter_strategy
-from hyperspy._samfire_utils._strategies.diffusion.red_chisq import reduced_chi_squared_strategy
-from hyperspy._samfire_utils._strategies.segmenter.histogram import histogram_strategy
+from hyperspy._samfire_utils.strategy import (diffusion_strategy,
+                                              segmenter_strategy)
+from hyperspy._samfire_utils._strategies.diffusion.red_chisq import \
+        reduced_chi_squared_strategy
+from hyperspy._samfire_utils._strategies.segmenter.histogram import \
+        histogram_strategy
+from hyperspy.events import EventSupressor
 
 
 class Samfire(object):
 
     """Smart Adaptive Multidimensional Fitting (SAMFire) object
 
-    SAMFire is a more robust way of fitting multidimensional datasets.
-    By extracting starting values for each pixel from already fitted pixels,
+    SAMFire is a more robust way of fitting multidimensional datasets. By
+    extracting starting values for each pixel from already fitted pixels,
     SAMFire stops the fitting algorithm from getting lost in the parameter space
     by always starting close to the optimal solution.
 
-    SAMFire only picks starting parameters and the order the pixels
-    (in the navigation space) are fitted, and does not provide any new
-    minimisation algorithms.
+    SAMFire only picks starting parameters and the order the pixels (in the
+    navigation space) are fitted, and does not provide any new minimisation
+    algorithms.
 
     Attributes
     ----------
@@ -49,28 +53,34 @@ class Samfire(object):
     model : Model instance
         The complete model
     optional_components : list
-        A list of components that can be switched off at some pixels if it returns a better
-        Akaike's Information Criterion with correction (AICc)
+        A list of components that can be switched off at some pixels if it
+        returns a better Akaike's Information Criterion with correction (AICc)
     workers : int
         A number of processes that will perform the fitting parallely
     strategies : strategy list
-        A list of strategies that will be used to select pixel fitting order and calculate required starting
-        parameters. Strategies come in two "flavours" - diffusion and segmenter. Diffusion spreads the starting
-        values to the nearest pixels and forces certain pixel fitting order. Segmenter looks for clusters in
-        parameter values, and suggests most frequent values. Segmenter strategy does not depend on pixel
-        fitting order, hence it is randomised.
+        A list of strategies that will be used to select pixel fitting order and
+        calculate required starting parameters. Strategies come in two
+        "flavours" - diffusion and segmenter. Diffusion spreads the starting
+        values to the nearest pixels and forces certain pixel fitting order.
+        Segmenter looks for clusters in parameter values, and suggests most
+        frequent values. Segmenter strategy does not depend on pixel fitting
+        order, hence it is randomised.
     metadata : dictionary
         A dictionary for important samfire parameters
     active_strategy : strategy
         The currently active strategy from the strategies list
     update_every : int
-        If segmenter strategy is running, updates the historams every time update_every good fits are found.
+        If segmenter strategy is running, updates the historams every time
+        update_every good fits are found.
     plot_every : int
-        When running, samfire plots results every time plot_every good fits are found.
+        When running, samfire plots results every time plot_every good fits are
+        found.
     save_every : int
-        When running, samfire saves results every time save_every good fits are found.
+        When running, samfire saves results every time save_every good fits are
+        found.
     kernel : function
-        The function that performs fitting and model selection in parallely-run cores when running.
+        The function that performs fitting and model selection in parallely-run
+        cores when running.
 
     Methods
     -------
@@ -82,7 +92,8 @@ class Samfire(object):
     plot
         force plot of currently selected active strategy
     refresh_database
-        refresh current active strategy database. No previous structure is preserved
+        refresh current active strategy database. No previous structure is
+        preserved
     change_strategy
         changes strategy to a new one. Certain rules apply
     append
@@ -155,6 +166,7 @@ class Samfire(object):
             marker = np.empty(
                 self.model.axes_manager.navigation_shape[::-1])
             marker.fill(self._scale)
+
         self.metadata.marker = marker
         self.strategies = Samfire._strategy_list(self)
         self.strategies.append(reduced_chi_squared_strategy())
@@ -186,6 +198,7 @@ class Samfire(object):
 
     def _setup(self):
 
+        self._figure = None
         self._gt_dump = dill.dumps(self.metadata.goodness_test)
         self._enable_optional_components()
 
@@ -232,7 +245,7 @@ class Samfire(object):
 
         Parameters
         ----------
-            strategy : strategy instance
+        strategy : strategy instance
         """
         self.strategies.append(strategy)
 
@@ -241,7 +254,7 @@ class Samfire(object):
 
         Parameters
         ----------
-            iterable : an iterable of strategy instances
+        iterable : an iterable of strategy instances
         """
         self.strategies.extend(iterable)
 
@@ -250,8 +263,8 @@ class Samfire(object):
 
         Parameters
         ----------
-            thing : int or strategy instance
-                Strategy that is in current strategies list or its index.
+        thing : int or strategy instance
+            Strategy that is in current strategies list or its index.
         """
         self.strategies.remove(thing)
 
@@ -354,13 +367,13 @@ class Samfire(object):
         """Changes current strategy to a new one. Certain rules apply:
         diffusion -> diffusion : resets all "ignored" pixels
         diffusion -> segmenter : saves already calculated pixels to be ignored
-                                 when(if) subsequently diffusion strategy is run
+            when(if) subsequently diffusion strategy is run
 
         Parameters
         ----------
-            new_strat : {int | strategy}
-                index of the new strategy from the strategies list or the
-                strategy object itself
+        new_strat : {int | strategy}
+            index of the new strategy from the strategies list or the
+            strategy object itself
         """
         from numbers import Number
         if not isinstance(new_strat, Number):
@@ -439,9 +452,7 @@ class Samfire(object):
                     self.optional_components,
                     self._args,
                     self._result_q,
-                    self._gt_dump
-                    )
-        # self.multi_kernel(*run_args)
+                    self._gt_dump)
         self.pool.apply_async(self.multi_kernel,
                               args=run_args)
 
@@ -457,7 +468,8 @@ class Samfire(object):
             if self.model[num].active_is_multidimensional:
                 self.model[num]._active_array[m_ind] = comp['active']
             self.model[num].active = comp['active']
-            for (p_d, p_m) in product(comp['parameters'], self.model[num].parameters):
+            for (p_d, p_m) in product(comp['parameters'],
+                                      self.model[num].parameters):
                 if p_d['_id_name'] == p_m._id_name:
                     p_m.map[m_ind], p_d['map'][d_ind] = p_d[
                         'map'][d_ind].copy(), p_m.map[m_ind].copy()
@@ -476,7 +488,8 @@ class Samfire(object):
                 comp = self.model._get_component(c)
                 if not comp.active_is_multidimensional:
                     comp.active_is_multidimensional = True
-            if not np.all([isinstance(a, int) for a in self.optional_components]):
+            if not np.all([isinstance(a, int) for a in
+                           self.optional_components]):
                 new_list = []
                 for op in self.optional_components:
                     for ic, c in enumerate(self.model):
@@ -484,18 +497,57 @@ class Samfire(object):
                             new_list.append(ic)
                 self.optional_components = new_list
 
-# TODO: request_user_input:
-# requires instances to call back when the figure is closed, ... wait
-# until implemented in hyperspy
+    def _request_user_input(self):
+        from hyperspy.signals import Image
+        from hyperspy.drawing.widgets import SquareWidget
+        mark = Image(self.metadata.marker,
+                     axes=self.model.axes_manager._get_navigation_axes_dicts())
+        mark.metadata.General.title = 'SAMFire marker'
 
-#     def _request_user_input(self):
-#         from hyperspy.signal import Signal
-#         from hyperspy.drawing.utils import plot_signals
-#         mark = Signal(self.metadata.marker)
-#         for ax in mark.axes_manager._axes:
-#             ax.navigate = True
-#         mark.metadata.General.title = 'SAMFire marker'
-#         plot_signals([self.model, mark])
+        def update_when_triggered():
+            ind = self.model.axes_manager.indices[::-1]
+            isgood = self.metadata.goodness_test.test(self.model, ind)
+            self.active_strategy.update(ind, isgood, 0)
+            mark.events.data_changed.trigger(mark)
+
+        self.model.plot()
+        self.model.events.fitted.connect(update_when_triggered, [])
+        self.model._plot.signal_plot.events.closed.connect(
+            lambda: self.model.events.fitted.disconnect(update_when_triggered),
+            [])
+
+        mark.plot(navigator='slider')
+
+        w = SquareWidget(self.model.axes_manager)
+        w.color = 'yellow'
+        w.set_mpl_ax(mark._plot.signal_plot.ax)
+        w.connect_navigate()
+
+        def connect_other_navigation1(axes_manager):
+            with mark.axes_manager.events.indices_changed.suppress_callback(
+                connect_other_navigation2):
+                for ax1, ax2 in zip(mark.axes_manager.navigation_axes,
+                                    axes_manager.navigation_axes[2:]):
+                    ax1.value = ax2.value
+
+        def connect_other_navigation2(axes_manager):
+            with self.model.axes_manager.events.indices_changed.suppress_callback(
+                connect_other_navigation1):
+                for ax1, ax2 in zip(self.model.axes_manager.navigation_axes[2:],
+                                    axes_manager.navigation_axes):
+                    ax1.value = ax2.value
+
+        mark.axes_manager.events.indices_changed.connect(
+            connect_other_navigation2, {'obj': 'axes_manager'})
+        self.model.axes_manager.events.indices_changed.connect(
+            connect_other_navigation1, {'obj': 'axes_manager'})
+
+        self.model._plot.signal_plot.events.closed.connect(
+            lambda: mark._plot.close, [])
+        self.model._plot.signal_plot.events.closed.connect(
+            lambda: self.model.axes_manager.events.indices_changed.disconnect(
+                connect_other_navigation1), [])
+
 
     def _plot(self, count):
         if count % self.plot_every == 0:

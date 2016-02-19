@@ -163,6 +163,7 @@ class Model1D(BaseModel):
     """
 
     def __init__(self, spectrum, dictionary=None):
+        super(Model1D, self).__init__()
         self.spectrum = spectrum
         self.signal = self.spectrum
         self.axes_manager = self.signal.axes_manager

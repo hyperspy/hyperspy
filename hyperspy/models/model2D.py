@@ -86,6 +86,7 @@ class Model2D(BaseModel):
     """
 
     def __init__(self, image, dictionary=None):
+        super(Model2D, self).__init__()
         self.image = image
         self.signal = self.image
         self.axes_manager = self.signal.axes_manager
