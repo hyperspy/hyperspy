@@ -20,7 +20,7 @@ import numpy as np
 import nose.tools as nt
 import dill
 import copy
-import hyperspy.hspy as hs
+import hyperspy.api as hs
 from hyperspy._samfire_utils.samfire_kernel import multi_kernel
 from hyperspy.misc.utils import DictionaryTreeBrowser
 
@@ -36,7 +36,7 @@ class Mock_queue(object):
 
 def generate_test_model():
 
-    import hyperspy.hspy as hs
+    import hyperspy.api as hs
     import numpy as np
     from scipy.ndimage import gaussian_filter
     total = None
@@ -55,7 +55,7 @@ def generate_test_model():
         cent = tuple([int(0.5 * i) for i in s.data.shape[:-1]])
         m0 = s.create_model()
 
-        gs01 = hs.components.Lorentzian()
+        gs01 = hs.model.components.Lorentzian()
         m0.append(gs01)
         gs01.gamma.map['values'][:] = 40
         gs01.gamma.map['is_set'][:] = True
@@ -71,7 +71,7 @@ def generate_test_model():
         gs01.A.map['values'] = gaussian_filter(gs01.A.map['values'], blur)
         gs01.A.map['is_set'][:] = True
 
-        gs02 = hs.components.Gaussian()
+        gs02 = hs.model.components.Gaussian()
         m0.append(gs02)
         gs02.sigma.map['values'][:] = 30
         gs02.sigma.map['is_set'][:] = True
@@ -84,7 +84,7 @@ def generate_test_model():
         gs02.A.map['values'][:] = 50000
         gs02.A.map['is_set'][:] = True
 
-        gs03 = hs.components.Lorentzian()
+        gs03 = hs.model.components.Lorentzian()
         m0.append(gs03)
         gs03.gamma.map['values'][:] = 20
         gs03.gamma.map['is_set'][:] = True
@@ -111,9 +111,9 @@ def generate_test_model():
     s.estimate_poissonian_noise_variance()
 
     m = s.inav[:, :7].create_model()
-    g = hs.components.Gaussian()
-    l1 = hs.components.Lorentzian()
-    l2 = hs.components.Lorentzian()
+    g = hs.model.components.Gaussian()
+    l1 = hs.model.components.Lorentzian()
+    l2 = hs.model.components.Lorentzian()
     g.sigma.value = 30
     g.centre.value = 400
     g.A.value = 50000
@@ -140,9 +140,9 @@ class TestSamfireEmpty:
         s = hs.signals.SpectrumSimulation(np.empty(self.shape + (1024,)))
         s.estimate_poissonian_noise_variance()
         m = s.create_model()
-        m.append(hs.components.Gaussian())
-        m.append(hs.components.Lorentzian())
-        m.append(hs.components.Lorentzian())
+        m.append(hs.model.components.Gaussian())
+        m.append(hs.model.components.Lorentzian())
+        m.append(hs.model.components.Lorentzian())
         self.model = m
 
     def test_setup(self):
@@ -226,7 +226,7 @@ class TestSamfireEmpty:
         nt.assert_true(m[0].active_is_multidimensional)
         nt.assert_true(m[1].active_is_multidimensional)
         nt.assert_true(np.all([isinstance(a, int)
-                       for a in samf.optional_components]))
+                               for a in samf.optional_components]))
         nt.assert_true(np.allclose(samf.optional_components, [0, 1]))
 
     def test_swap_dict_and_model(self):
@@ -368,15 +368,15 @@ class TestSamfireFitKernel:
         self.centres = [50, 105, 180]
         self.areas = [5000, 10000, 20000]
 
-        g = hs.components.Gaussian()
+        g = hs.model.components.Gaussian()
         g.sigma.value = self.widths[0]
         g.A.value = self.areas[0]
 
-        l = hs.components.Lorentzian()
+        l = hs.model.components.Lorentzian()
         l.gamma.value = self.widths[1]
         l.A.value = self.areas[1]
 
-        l1 = hs.components.Lorentzian()
+        l1 = hs.model.components.Lorentzian()
         l1.gamma.value = self.widths[2]
         l1.A.value = self.areas[2]
 
@@ -391,17 +391,17 @@ class TestSamfireFitKernel:
                 s.data))
 
         m = s.create_model()
-        m.append(hs.components.Gaussian())
+        m.append(hs.model.components.Gaussian())
         m[-1].name = 'g1'
-        m.append(hs.components.Lorentzian())
+        m.append(hs.model.components.Lorentzian())
         m[-1].name = 'l1'
-        m.append(hs.components.Lorentzian())
+        m.append(hs.model.components.Lorentzian())
         m[-1].name = 'l2'
-        m.append(hs.components.Gaussian())
+        m.append(hs.model.components.Gaussian())
         m[-1].name = 'g2'
-        m.append(hs.components.Gaussian())
+        m.append(hs.model.components.Gaussian())
         m[-1].name = 'g3'
-        m.append(hs.components.Lorentzian())
+        m.append(hs.model.components.Lorentzian())
         m[-1].name = 'l3'
 
         for c in m:
