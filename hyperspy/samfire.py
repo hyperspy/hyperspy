@@ -561,6 +561,7 @@ class Samfire(object):
         selection.
         Segmenter strategies plot a collection of histograms, one per parameter
         """
+        self._figure = None
         if self.strategies:
             self._figure = self.active_strategy.plot(self._figure)
 
