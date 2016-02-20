@@ -425,9 +425,9 @@ def dict2hdfgroup(dictionary, group, compression=None):
             try:
                 group.attrs[key] = value
             except:
-                print("The hdf5 writer could not write the following "
-                      "information in the file")
-                print('%s : %s' % (key, value))
+                warnings.warn(
+                    "The hdf5 writer could not write the following "
+                    "information in the file: %s : %s" % (key, value))
 
 
 def hdfgroup2dict(group, dictionary=None, load_to_memory=True):

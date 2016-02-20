@@ -19,6 +19,7 @@
 import struct
 from glob import glob
 import os
+import logging
 import xml.etree.ElementTree as ET
 try:
     from collections import OrderedDict
@@ -31,6 +32,8 @@ import traits.api as t
 
 from hyperspy.misc.array_tools import sarray2dict
 from hyperspy.misc.utils import DictionaryTreeBrowser
+
+_logger = logging.getLogger(__name__)
 
 ser_extensions = ('ser', 'SER')
 emi_extensions = ('emi', 'EMI')
@@ -177,13 +180,13 @@ def get_data_tag_dtype_list(data_type_id):
     return header
 
 
-def print_struct_array_values(struct_array):
+def log_struct_array_values(struct_array):
     for key in struct_array.dtype.names:
         if not isinstance(struct_array[key], np.ndarray) or \
                 np.array(struct_array[key].shape).sum() == 1:
-            print "%s : %s" % (key, struct_array[key])
+            _logger.info("%s : %s", key, struct_array[key])
         else:
-            print "%s : Array" % key
+            _logger.info("%s : Array", key)
 
 
 def guess_record_by(record_by_id):
@@ -229,7 +232,7 @@ def emixml2dtb(et, dictree):
             emixml2dtb(child, dictree[et.tag])
 
 
-def emi_reader(filename, dump_xml=False, verbose=False, **kwds):
+def emi_reader(filename, dump_xml=False, **kwds):
     # TODO: recover the tags from the emi file. It is easy: just look for
     # <ObjectInfo> and </ObjectInfo>. It is standard xml :)
     objects = get_xml_info_from_emi(filename)
@@ -242,8 +245,7 @@ def emi_reader(filename, dump_xml=False, verbose=False, **kwds):
     ser_files = glob(filename + '_[0-9].ser')
     sers = []
     for f in ser_files:
-        if verbose is True:
-            print "Opening ", f
+        _logger.info("Opening %s", f)
         try:
             sers.append(ser_reader(f, objects))
         except IOError:  # Probably a single spectrum that we don't support
@@ -264,19 +266,14 @@ def file_reader(filename, *args, **kwds):
         return emi_reader(filename, *args, **kwds)
 
 
-def load_ser_file(filename, verbose=False):
-    if verbose:
-        print "Opening the file: ", filename
+def load_ser_file(filename):
+    _logger.info("Opening the file: %s", filename)
     with open(filename, 'rb') as f:
         header = np.fromfile(f,
                              dtype=np.dtype(get_header_dtype_list(f)),
                              count=1)
-        if verbose is True:
-            print "Extracting the information"
-            print "\n"
-            print "Header info:"
-            print "------------"
-            print_struct_array_values(header[0])
+        _logger.info("Header info:")
+        log_struct_array_values(header[0])
 
         if header['ValidNumberElements'] == 0:
             raise IOError(
@@ -297,11 +294,8 @@ def load_ser_file(filename, verbose=False):
         data = np.fromfile(f,
                            dtype=np.dtype(data_dtype_list + tag_dtype_list),
                            count=header["TotalNumberElements"])
-        if verbose is True:
-            print "\n"
-            print "Data info:"
-            print "----------"
-            print_struct_array_values(data[0])
+        _logger.info("Data info:")
+        log_struct_array_values(data[0])
     return header, data
 
 

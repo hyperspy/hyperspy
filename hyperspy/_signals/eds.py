@@ -17,11 +17,11 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 from __future__ import division
 import itertools
+import logging
 
 import numpy as np
 import warnings
 from matplotlib import pyplot as plt
-from functools import partial
 
 from hyperspy import utils
 from hyperspy._signals.spectrum import Spectrum
@@ -30,6 +30,8 @@ from hyperspy.misc.eds import utils as utils_eds
 from hyperspy.misc.utils import isiterable
 from hyperspy.utils import markers
 
+_logger = logging.getLogger(__name__)
+
 
 class EDSSpectrum(Spectrum):
     _signal_type = "EDS"
@@ -37,9 +39,9 @@ class EDSSpectrum(Spectrum):
     def __init__(self, *args, **kwards):
         Spectrum.__init__(self, *args, **kwards)
         if self.metadata.Signal.signal_type == 'EDS':
-            print('The microscope type is not set. Use '
-                  'set_signal_type(\'EDS_TEM\')  '
-                  'or set_signal_type(\'EDS_SEM\')')
+            warnings.warn('The microscope type is not set. Use '
+                          'set_signal_type(\'EDS_TEM\')  '
+                          'or set_signal_type(\'EDS_SEM\')')
         self.metadata.Signal.binned = True
 
     def _get_line_energy(self, Xray_line, FWHM_MnKa=None):
@@ -444,9 +446,9 @@ class EDSSpectrum(Spectrum):
                     lines_len = len(xray_lines)
                     xray_lines.add(line)
                     if lines_len != len(xray_lines):
-                        print("%s line added," % line)
+                        _logger.info("%s line added," % line)
                     else:
-                        print("%s line already in." % line)
+                        _logger.info("%s line already in." % line)
                 else:
                     raise ValueError(
                         "%s is not a valid line of %s." % (line, element))
@@ -522,8 +524,9 @@ class EDSSpectrum(Spectrum):
                 element_lines = [element_lines[select_this], ]
 
             if not element_lines:
-                print(("There is not X-ray line for element %s " % element) +
-                      "in the data spectral range")
+                _logger.info(
+                    ("There is no X-ray line for element %s " % element) +
+                    "in the data spectral range")
             else:
                 lines.extend(element_lines)
         lines.sort()
@@ -944,7 +947,7 @@ class EDSSpectrum(Spectrum):
             xray_lines, xray_not_here = self._get_xray_lines_in_spectral_range(
                 xray_lines)
             for xray in xray_not_here:
-                print("Warning: %s is not in the data energy range." % xray)
+                _logger.warn("%s is not in the data energy range." % xray)
             xray_lines = np.unique(xray_lines)
             self._add_xray_lines_markers(xray_lines)
             if background_windows is not None:

@@ -430,7 +430,7 @@ def save(filename, signal, overwrite=None, **kwds):
             overwrite = hyperspy.misc.io.tools.overwrite(filename)
         if overwrite is True:
             writer.file_writer(filename, signal, **kwds)
-            print('The %s file was created' % filename)
+            _logger.info('The %s file was created' % filename)
             folder, filename = os.path.split(os.path.abspath(filename))
             signal.tmp_parameters.set_item('folder', folder)
             signal.tmp_parameters.set_item('filename',

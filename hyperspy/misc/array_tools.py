@@ -5,6 +5,8 @@ except ImportError:
     # happens with Python < 2.7
     ordict = False
 
+import warnings
+
 import numpy as np
 
 
@@ -116,10 +118,8 @@ def sarray2dict(sarray, dictionary=None):
         if ordict:
             dictionary = OrderedDict()
         else:
-            print("\nWARNING:")
-            print("sarray2dict")
-            print(
-                "OrderedDict is not available, using a standard dictionary.\n")
+            warnings.warn(
+                "OrderedDict is not available, using a standard dictionary.")
             dictionary = {}
     for name in sarray.dtype.names:
         dictionary[name] = sarray[name][0] if len(sarray[name]) == 1 \

@@ -24,6 +24,7 @@ import math
 import inspect
 from contextlib import contextmanager
 from datetime import datetime
+import logging
 
 import numpy as np
 import numpy.ma as ma
@@ -83,6 +84,8 @@ from hyperspy.events import Events, Event
 from hyperspy.interactive import interactive
 from hyperspy.misc.hspy_warnings import VisibleDeprecationWarning
 from hyperspy.misc.signal_tools import are_signals_aligned
+
+_logger = logging.getLogger(__name__)
 
 
 class ModelManager(object):
@@ -439,7 +442,7 @@ class Signal2DTools(object):
                 if correlation_threshold == 'auto':
                     correlation_threshold = \
                         (pcarray['max_value'].min(0)).max()
-                    print("Correlation threshold = %1.2f" %
+                    _logger.info("Correlation threshold = %1.2f",
                           correlation_threshold)
                 shifts[pcarray['max_value'] <
                        correlation_threshold] = ma.masked

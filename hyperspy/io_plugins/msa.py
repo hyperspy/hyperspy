@@ -22,12 +22,15 @@ import datetime
 import codecs
 import warnings
 import os
+import logging
 
 import numpy as np
 
 from hyperspy.misc.config_dir import os_name
 from hyperspy import Release
 from hyperspy.misc.utils import DictionaryTreeBrowser
+
+_logger = logging.getLogger(__name__)
 
 # Plugin characteristics
 # ----------------------
@@ -189,8 +192,9 @@ def file_reader(filename, encoding='latin-1', **kwds):
                     parameters[parameter] = keywords[clean_par]['dtype'](
                         value.replace(' ', ''))
                 except:
-                    print("The %s keyword value, %s " % (parameter, value) +
-                          "could not be converted to the right type")
+                    warnings.warn(
+                        "The %s keyword value, %s " % (parameter, value) +
+                        "could not be converted to the right type")
 
             if keywords[clean_par]['mapped_to'] is not None:
                 mapped.set_item(keywords[clean_par]['mapped_to'],
@@ -215,13 +219,13 @@ def file_reader(filename, encoding='latin-1', **kwds):
             mapped.set_item('General.time', datetime.time(H, M))
         except:
             if 'TIME' in parameters and parameters['TIME']:
-                print('The time information could not be retrieved')
+                _logger.warn('The time information could not be retrieved')
         try:
             Y, M, D = time.strptime(parameters['DATE'], "%d-%b-%Y")[0:3]
             mapped.set_item('General.date', datetime.date(Y, M, D))
         except:
             if 'DATE' in parameters and parameters['DATE']:
-                print('The date information could not be retrieved')
+                _logger.warn('The date information could not be retrieved')
     except:
         warnings.warn("I couldn't write the date information due to"
                       "an unexpected error. Please report this error to "

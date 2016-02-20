@@ -293,7 +293,7 @@ class MVA():
                 factors = sk.components_.T
 
             elif algorithm == 'mlpca' or algorithm == 'fast_mlpca':
-                print "Performing the MLPCA training"
+                _logger.info("Performing the MLPCA training")
                 if output_dimension is None:
                     raise ValueError(
                         "For MLPCA it is mandatory to define the "
@@ -748,7 +748,7 @@ class MVA():
             maximum = np.nanmax(target.bss_loadings[:, i])
             if minimum < 0 and -minimum > maximum:
                 self.reverse_bss_component(i)
-                print("IC %i reversed" % i)
+                _logger.info("IC %i reversed" % i)
 
     @do_not_replot
     def _calculate_recmatrix(self, components=None, mva_type=None,):
@@ -991,7 +991,7 @@ class MVA():
 
     def undo_treatments(self):
         """Undo normalize_poissonian_noise"""
-        print "Undoing data pre-treatments"
+        _logger.info("Undoing data pre-treatments")
         self.data[:] = self._data_before_treatments
         del self._data_before_treatments
 
@@ -1055,7 +1055,7 @@ class LearningResults(object):
             if value.dtype == np.dtype('object'):
                 value = None
             setattr(self, key, value)
-        print "\n%s loaded correctly" % filename
+        _logger.info("\n%s loaded correctly" % filename)
         # For compatibility with old version ##################
         if hasattr(self, 'algorithm'):
             self.decomposition_algorithm = self.algorithm

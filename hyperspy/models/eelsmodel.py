@@ -258,9 +258,10 @@ class EELSModel(Model1D):
                         min_distance_between_edges_for_fine_structure
                     if (distance_between_edges -
                             preedge_safe_window_width) <= min_d:
-                        print " Automatically desactivating the fine \
-                        structure of edge number", i2 + 1, "to avoid conflicts\
-                         with edge number", i1 + 1
+                        warnings.warn((
+                            "Automatically deactivating the fine structure "
+                            "of edge number %d to avoid conflicts with edge "
+                            "number %d") % (i2 + 1, i1 + 1))
                         self._active_edges[i2].fine_structure_active = False
                         self._active_edges[
                             i2].fine_structure_coeff.free = False
@@ -268,12 +269,14 @@ class EELSModel(Model1D):
                     else:
                         new_fine_structure_width = (
                             distance_between_edges - preedge_safe_window_width)
-                        print (
+                        warnings.warn((
                             "Automatically changing the fine structure "
-                            "width of edge", i1 + 1, "from",
-                            self._active_edges[i1].fine_structure_width,
-                            "eV to", new_fine_structure_width,
-                            "eV to avoid conflicts with edge number", i2 + 1)
+                            "width of edge %d from %s eV to %s eV to avoid "
+                            "conflicts with edge number %d") % (
+                                i1 + 1,
+                                self._active_edges[i1].fine_structure_width,
+                                new_fine_structure_width,
+                                i2 + 1))
                         self._active_edges[i1].fine_structure_width = \
                             new_fine_structure_width
                         self.resolve_fine_structure(i1=i2)
@@ -537,7 +540,7 @@ class EELSModel(Model1D):
             edge.onset_energy.free = True
             self.fit(**kwargs)
             edge.onset_energy.free = False
-            print "onset_energy = ", edge.onset_energy.value
+            _logger.info("onset_energy = %s", edge.onset_energy.value)
             self._classify_components()
         elif edge.intensity.free is True:
             self.enable_fine_structure(to_activate_fs)

@@ -16,6 +16,8 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
+
 import numpy as np
 import scipy as sp
 import matplotlib.pyplot as plt
@@ -28,6 +30,8 @@ from hyperspy.exceptions import SignalDimensionError
 from hyperspy.gui import messages
 from hyperspy.axes import AxesManager
 from hyperspy.drawing.widgets import VerticalLineWidget
+
+_logger = logging.getLogger(__name__)
 
 
 OurOKButton = tu.Action(name="OK",
@@ -492,14 +496,15 @@ class SmoothingSavitzkyGolay(Smoothing):
         if nwl > self.polynomial_order:
             self.window_length = nwl
         else:
-            print(
-                "The window length must be greated than the polynomial order")
+            _logger.warn(
+                "The window length must be greater than the polynomial order")
 
     def _polynomial_order_changed(self, old, new):
         if self.window_length <= new:
             self.window_length = new + 2 if new % 2 else new + 1
-            print("Polynomial order must be < window length. "
-                  "Window length set to %i." % self.window_length)
+            _logger.warn(
+                "Polynomial order must be < window length. "
+                "Window length set to %i.", self.window_length)
         self.update_lines()
 
     def _window_length_changed(self, old, new):
@@ -508,8 +513,9 @@ class SmoothingSavitzkyGolay(Smoothing):
     def _differential_order_changed(self, old, new):
         if new > self.polynomial_order:
             self.polynomial_order += 1
-            print("Differential order must be <= polynomial order. "
-                  "Polynomial order set to %i." % self.polynomial_order)
+            _logger.warn(
+                "Differential order must be <= polynomial order. "
+                "Polynomial order set to %i.", self.polynomial_order)
         super(
             SmoothingSavitzkyGolay,
             self)._differential_order_changed(

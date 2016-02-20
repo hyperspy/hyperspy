@@ -206,7 +206,7 @@ class DictionaryTreeBrowser(object):
         ├── caterpillar = True
         └── color = brown
     >>> for label, leaf in tree.Branch:
-            print("%s is %s" % (label, leaf.color))
+    ...     print("%s is %s" % (label, leaf.color))
     Leaf1 is green
     Leaf2 is brown
     >>> tree.Branch.Leaf2.caterpillar

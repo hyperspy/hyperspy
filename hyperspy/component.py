@@ -902,10 +902,10 @@ class Component(t.HasTraits):
                 is not None else 0
             if parameter.twin is None:
                 if dim <= 1:
-                    print '%s = %s ± %s %s' % (parameter.name,
-                                               parameter.value,
-                                               parameter.std,
-                                               parameter.units)
+                    return ('%s = %s ± %s %s' % (parameter.name,
+                                                 parameter.value,
+                                                 parameter.std,
+                                                 parameter.units))
 
     def __call__(self):
         """Returns the corresponding model for the current coordinates

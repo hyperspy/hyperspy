@@ -74,7 +74,6 @@ def overwrite(fname):
             if answer.lower() == 'y':
                 return True
             elif answer.lower() == 'n':
-                # print('Operation canceled.')
                 return False
         except:
             # We are running in the IPython notebook that does not

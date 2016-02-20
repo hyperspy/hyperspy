@@ -16,10 +16,15 @@
 # dataou should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
+
 import numpy as np
 import scipy.linalg
 
-from hyperspy.misc.machine_learning.import_sklearn import *
+from hyperspy.misc.machine_learning.import_sklearn import (
+    fast_svd, sklearn_installed)
+
+_logger = logging.getLogger(__name__)
 
 
 def svd_pca(data, fast=False, output_dimension=None, centre=None,
@@ -64,7 +69,7 @@ def svd_pca(data, fast=False, output_dimension=None, centre=None,
         mean = None
     if auto_transpose is True:
         if N < M:
-            print("Auto transposing the data")
+            _logger.info("Auto transposing the data")
             data = data.T
         else:
             auto_transpose = False

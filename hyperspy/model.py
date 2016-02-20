@@ -851,8 +851,7 @@ class BaseModel(list):
                         bounds=self.free_parameters_boundaries,
                         approx_grad=approx_grad, **kwargs)[0]
                 else:
-                    print \
-                        """
+                    raise ValueError("""
                     The %s optimizer is not available.
 
                     Available optimizers:
@@ -864,7 +863,7 @@ class BaseModel(list):
                     Cosntrained:
                     ------------
                     tnc and l_bfgs_b
-                    """ % fitter
+                    """ % fitter)
             if np.iterable(self.p0) == 0:
                 self.p0 = (self.p0,)
             self._fetch_values_from_p0(p_std=self.p_std)
