@@ -19,7 +19,7 @@
 
 from __future__ import division
 import types
-import warnings
+import logging
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -34,11 +34,13 @@ from hyperspy.misc.machine_learning import import_sklearn
 import hyperspy.misc.io.tools as io_tools
 from hyperspy.learn.svd_pca import svd_pca
 from hyperspy.learn.mlpca import mlpca
-from hyperspy import messages
 from hyperspy.decorators import do_not_replot
 from scipy import linalg
 from hyperspy.misc.machine_learning.orthomax import orthomax
 from hyperspy.misc.utils import stack
+
+
+_logger = logging.getLogger(__name__)
 
 
 def centering_and_whitening(X):
@@ -163,7 +165,7 @@ class MVA():
         """
         # Check if it is the wrong data type
         if self.data.dtype.char not in ['e', 'f', 'd']:  # If not float
-            messages.warning(
+            _logger.warning(
                 'To perform a decomposition the data must be of the float '
                 'type. You can change the type using the change_dtype method'
                 ' e.g. s.change_dtype(\'float64\')\n'
@@ -178,7 +180,7 @@ class MVA():
 
         if algorithm == 'mlpca':
             if normalize_poissonian_noise is True:
-                messages.warning(
+                _logger.warning(
                     "It makes no sense to do normalize_poissonian_noise with "
                     "the MLPCA algorithm. Therefore, "
                     "normalize_poissonian_noise is set to False")
@@ -204,7 +206,7 @@ class MVA():
                 self.normalize_poissonian_noise(
                     navigation_mask=navigation_mask,
                     signal_mask=signal_mask,)
-            messages.information('Performing decomposition analysis')
+            _logger.info('Performing decomposition analysis')
             # The rest of the code assumes that the first data axis
             # is the navigation axis. We transpose the data if that is not the
             # case.
@@ -297,8 +299,8 @@ class MVA():
                         "For MLPCA it is mandatory to define the "
                         "output_dimension")
                 if var_array is None and var_func is None:
-                    messages.information('No variance array provided.'
-                                         'Supposing poissonian data')
+                    _logger.info('No variance array provided.'
+                                 'Assuming poissonian data')
                     var_array = dc[:, signal_mask][navigation_mask, :]
 
                 if var_array is not None and var_func is not None:
@@ -385,8 +387,8 @@ class MVA():
                                      dc[navigation_mask, :] - mean).T
                     target.factors = factors
                 else:
-                    messages.information("Reprojecting the signal is not yet "
-                                         "supported for this algorithm")
+                    _logger.info("Reprojecting the signal is not yet "
+                                 "supported for this algorithm")
                     if reproject == 'both':
                         reproject = 'signal'
                     else:
@@ -947,7 +949,7 @@ class MVA():
         navigation_mask : boolen numpy array
         signal_mask  : boolen numpy array
         """
-        messages.information(
+        _logger.info(
             "Scaling the data to normalize the (presumably)"
             " Poissonian noise")
         with self.unfolded():
@@ -1100,27 +1102,29 @@ class LearningResults(object):
         """Prints a summary of the decomposition and demixing parameters
          to the stdout
         """
-        print
-        print "Decomposition parameters:"
-        print "-------------------------"
-        print "Decomposition algorithm : ", self.decomposition_algorithm
-        print "Poissonian noise normalization : %s" % \
-            self.poissonian_noise_normalized
-        print "Output dimension : %s" % self.output_dimension
-        print "Centre : %s" % self.centre
+        summary_str = (
+            "Decomposition parameters:\n"
+            "-------------------------\n\n" +
+            ("Decomposition algorithm : \t%s\n" %
+                self.decomposition_algorithm) +
+            ("Poissonian noise normalization : %s\n" %
+                self.poissonian_noise_normalized) +
+            ("Output dimension : %s\n" % self.output_dimension) +
+            ("Centre : %s" % self.centre))
         if self.bss_algorithm is not None:
-            print
-            print "Demixing parameters:"
-            print "---------------------"
-            print "BSS algorithm : %s" % self.bss_algorithm
-            print "Number of components : %i" % len(self.unmixing_matrix)
+            summary_str += (
+                "\n\nDemixing parameters:\n"
+                "------------------------\n" +
+                ("BSS algorithm : %s" % self.bss_algorithm) +
+                ("Number of components : %i" % len(self.unmixing_matrix)))
+        _logger.info(summary_str)
 
     def crop_decomposition_dimension(self, n):
         """
         Crop the score matrix up to the given number.
         It is mainly useful to save memory and reduce the storage size
         """
-        print "trimming to %i dimensions" % n
+        _logger.info("trimming to %i dimensions" % n)
         self.loadings = self.loadings[:, :n]
         if self.explained_variance is not None:
             self.explained_variance = self.explained_variance[:n]

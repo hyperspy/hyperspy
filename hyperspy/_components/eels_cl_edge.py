@@ -18,16 +18,19 @@
 
 from __future__ import division
 import math
+import logging
 
 import numpy as np
 from scipy.interpolate import splev
 
 from hyperspy.defaults_parser import preferences
 from hyperspy.component import Component
-from hyperspy import messages
 from hyperspy.misc.eels.hartree_slater_gos import HartreeSlaterGOS
 from hyperspy.misc.eels.hydrogenic_gos import HydrogenicGOS
 from hyperspy.misc.eels.effective_angle import effective_angle
+
+
+_logger = logging.getLogger(__name__)
 
 
 class EELSCLEdge(Component):
@@ -111,7 +114,7 @@ class EELSCLEdge(Component):
                 GOS = 'Hartree-Slater'
             except IOError:
                 GOS = 'hydrogenic'
-                messages.information(
+                _logger.info(
                     'Hartree-Slater GOS not available. '
                     'Using hydrogenic GOS')
         if self.GOS is None:
@@ -334,7 +337,7 @@ class EELSCLEdge(Component):
         if len(fs) == len(self.__knots):
             self.fine_structure_coeff.value = fs
         else:
-            messages.warning_exit(
+            raise ValueError(
                 "The provided fine structure file "
                 "doesn't match the size of the current fine structure")
 

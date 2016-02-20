@@ -18,14 +18,16 @@
 
 import copy
 import warnings
+import logging
 
 from hyperspy.models.model1D import Model1D
 from hyperspy.components import EELSCLEdge
 from hyperspy.components import PowerLaw
 from hyperspy.defaults_parser import preferences
-import hyperspy.messages as messages
 from hyperspy import components
 from hyperspy._signals.eels import EELSSpectrum
+
+_logger = logging.getLogger(__name__)
 
 
 def _give_me_delta(master, slave):
@@ -453,7 +455,7 @@ class EELSModel(Model1D):
                     if powerlaw is None:
                         powerlaw = component
                     else:
-                        messages.warning(
+                        _logger.warning(
                             'There are more than two power law '
                             'background components defined in this model, '
                             'please use the powerlaw keyword to specify one'
@@ -474,7 +476,7 @@ class EELSModel(Model1D):
 
         if not powerlaw.estimate_parameters(
                 self.spectrum, E1, E2, only_current=False):
-            messages.warning(
+            _logger.warning(
                 "The power law background parameters could not "
                 "be estimated.\n"
                 "Try choosing a different energy range for the estimation")

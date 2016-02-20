@@ -20,8 +20,6 @@ import os
 
 import numpy as np
 
-from hyperspy import messages
-
 no_netcdf = False
 try:
     from netCDF4 import Dataset
@@ -111,7 +109,7 @@ def file_reader(filename, *args, **kwds):
                 **kwds)
     else:
         ncfile.close()
-        messages.warning_exit('Unsupported netCDF file')
+        raise IOError('Unsupported netCDF file')
 
     return dictionary,
 

@@ -18,8 +18,8 @@
 
 import os
 import glob
+import logging
 
-from hyperspy import messages
 import hyperspy.defaults_parser
 
 import hyperspy.utils
@@ -29,6 +29,8 @@ from hyperspy.misc.utils import strlist2enumeration
 from hyperspy.misc.natsort import natsorted
 import hyperspy.misc.io.tools
 from hyperspy.io_plugins import io_plugins, default_write_ext
+
+_logger = logging.getLogger(__name__)
 
 
 def load(filenames=None,
@@ -187,7 +189,7 @@ def load(filenames=None,
         raise ValueError('No file provided to reader.')
     else:
         if len(filenames) > 1:
-            messages.information('Loading individual files')
+            _logger.info('Loading individual files')
         if stack is True:
             signal = []
             for i, filename in enumerate(filenames):
@@ -204,7 +206,7 @@ def load(filenames=None,
                         os.path.abspath(filenames[0])
                     )[0]
                 )[1]
-            messages.information('Individual files loaded correctly')
+            _logger.info('Individual files loaded correctly')
             signal._print_summary()
             objects = [signal, ]
         else:
