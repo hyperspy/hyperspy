@@ -32,7 +32,7 @@ from hyperspy.exceptions import NavigationDimensionError
 from hyperspy.misc.export_dictionary import export_to_dictionary, \
     load_from_dictionary
 from hyperspy.events import Events, Event
-from hyperspy.misc.hspy_warnings import VisibleDeprecationWarning
+from hyperspy.exceptions import VisibleDeprecationWarning
 
 import logging
 
