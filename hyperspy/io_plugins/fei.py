@@ -282,7 +282,8 @@ def load_ser_file(filename, verbose=False):
             raise IOError(
                 "The file does not contains valid data. "
                 "If it is a single spectrum, the data is contained in the  "
-                ".emi file but HyperSpy cannot currently extract this information.")
+                ".emi file but HyperSpy cannot currently extract this "
+                "information.")
 
         # Read the first element of data offsets
         f.seek(header["OffsetArrayOffset"][0])

@@ -219,7 +219,8 @@ class EELSModel(Model1D):
 
     def resolve_fine_structure(
             self,
-            preedge_safe_window_width=preferences.EELS.preedge_safe_window_width,
+            preedge_safe_window_width=preferences.EELS.
+            preedge_safe_window_width,
             i1=0):
         """Adjust the fine structure of all edges to avoid overlapping
 
