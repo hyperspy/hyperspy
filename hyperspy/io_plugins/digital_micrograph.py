@@ -119,7 +119,7 @@ class DigitalMicrographReader(object):
 
             skip = True if (group_name == "ImageData" and
                             tag_name == "Data") else False
-            _logger.info('Tag name: %s', tag_name[:20])
+            _logger.debug('Tag name: %s', tag_name[:20])
             _logger.debug('Tag ID: %s', tag_header['tag_id'])
 
             if tag_header['tag_id'] == 21:  # it's a TagType (DATA)
