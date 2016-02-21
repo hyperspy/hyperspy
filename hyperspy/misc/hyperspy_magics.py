@@ -1,9 +1,10 @@
 from IPython.core.magic import Magics, magics_class, line_magic
-from IPython.core.magic_arguments import magic_arguments, argument, parse_argstring
+from IPython.core.magic_arguments import (
+    magic_arguments, argument, parse_argstring)
 import warnings
 
 from hyperspy.defaults_parser import preferences
-from hyperspy.misc.hspy_warnings import VisibleDeprecationWarning
+from hyperspy.exceptions import VisibleDeprecationWarning
 
 
 @magics_class

@@ -258,7 +258,7 @@ class EELSModel(Model1D):
                         min_distance_between_edges_for_fine_structure
                     if (distance_between_edges -
                             preedge_safe_window_width) <= min_d:
-                        warnings.warn((
+                        _logger.info((
                             "Automatically deactivating the fine structure "
                             "of edge number %d to avoid conflicts with edge "
                             "number %d") % (i2 + 1, i1 + 1))
@@ -269,7 +269,7 @@ class EELSModel(Model1D):
                     else:
                         new_fine_structure_width = (
                             distance_between_edges - preedge_safe_window_width)
-                        warnings.warn((
+                        _logger.info((
                             "Automatically changing the fine structure "
                             "width of edge %d from %s eV to %s eV to avoid "
                             "conflicts with edge number %d") % (

@@ -205,7 +205,6 @@ class DigitalMicrographReader(object):
                 else:  # Infoarray_size < 1
                     raise IOError("Invalided infoarray size ", infoarray_size)
 
-                _logger.debug("Data: %s" % str(data)[:70])
                 group_dict[tag_name] = data
 
             elif tag_header['tag_id'] == 20:  # it's a TagGroup (GROUP)

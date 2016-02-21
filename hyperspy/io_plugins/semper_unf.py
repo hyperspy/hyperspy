@@ -82,6 +82,7 @@ from time import strftime
 import struct
 from functools import partial
 import logging
+import warnings
 
 import numpy as np
 from traits.api import Undefined
@@ -309,8 +310,8 @@ class SemperFormat(object):
         label['IWP'] = self.metadata.get('IWP', 0)  # seems standard
         date = self.metadata.get('DATE', strftime('%Y-%m-%d %H:%M:%S'))
         year, time = date.split(' ')
-        date_ints = (list(map(int, year.split('-'))) +
-                     list(map(int, time.split(':'))))
+        date_ints = (map(int, year.split('-')) +
+                     map(int, time.split(':')))
         date_ints[0] -= 1900  # Modify year integer!
         label['DATE'] = date_ints
         range_string = '{:.4g},{:.4g}'.format(self.data.min(), self.data.max())
@@ -420,7 +421,7 @@ class SemperFormat(object):
                     warning = ('Could not read label, trying to proceed '
                                'without it!')
                     warning += ' (Error message: {})'.format(str(e))
-                    _logger.warning(warning)
+                    warnings.warn(warning)
             # Read picture data:
             nlay, nrow, ncol = metadata['NLAY'], metadata[
                 'NROW'], metadata['NCOL']
@@ -660,8 +661,7 @@ def unpack_from_intbytes(fmt, byte_list):
     """Read in a list of bytes (as int with range 0-255) and unpack them with
     format `fmt`.
     """
-    return struct.unpack(fmt, b''.join(
-        map(bytes, [[byte] for byte in byte_list])))[0]
+    return struct.unpack(fmt, ''.join(map(chr, byte_list)))[0]
 
 
 def pack_to_intbytes(fmt, value):
