@@ -403,7 +403,3 @@ class ImagePlot(BlittedFigure):
         while check_tolerance() and i <= step_prec_max:
             optimize_for_oom(step_oom - i)
             i += 1
-
-    def close(self):
-        self._on_close()   # Needs to trigger serially for a well defined state
-        plt.close(self.figure)

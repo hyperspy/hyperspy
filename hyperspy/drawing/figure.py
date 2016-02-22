@@ -45,7 +45,7 @@ class BlittedFigure(object):
         if marker.axes_manager is None:
             marker.axes_manager = self.axes_manager
         self.ax_markers.append(marker)
-        marker.events.closed.connect(lambda m: self.ax_markers.remove(m))
+        marker.events.closed.connect(lambda obj: self.ax_markers.remove(obj))
 
     def _on_close(self):
         if self.figure is None:
@@ -58,8 +58,9 @@ class BlittedFigure(object):
         self.figure = None
 
     def close(self):
-        self._on_close()   # Needs to trigger serially for a well defined state
-        plt.close(self.figure)
+        figure = self.figure
+        #self._on_close()   # Needs to trigger serially for a well defined state
+        plt.close(figure)
 
     @property
     def title(self):

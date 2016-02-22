@@ -17,20 +17,16 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import copy
-from functools import partial
 
 import numpy as np
-from traits.trait_errors import TraitError
 from contextlib import contextmanager
 
 from hyperspy.model import BaseModel, ModelComponents, ModelSpecialSlicers
 import hyperspy.drawing.spectrum
-from hyperspy.drawing.utils import on_figure_window_close
 from hyperspy._signals.eels import Spectrum
 from hyperspy.axes import generate_axis
 from hyperspy.exceptions import WrongObjectError
 from hyperspy.decorators import interactive_range_selector
-from hyperspy.axes import AxesManager
 from hyperspy.drawing.widgets import VerticalLineWidget, LabelWidget
 from hyperspy.gui.tools import ComponentFit
 from hyperspy.events import EventSupressor
