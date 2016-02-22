@@ -34,3 +34,6 @@ before_install:
 script: python continuous_integration/nosetest.py --with-coverage hyperspy
 after_success:
     coveralls
+
+notifications:
+    email: false

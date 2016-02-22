@@ -193,7 +193,8 @@ class diffusion_strategy(strategy):
     def _get_distance_array(self, shape, ind):
         radii = make_sure_ind(self.radii, len(ind))
         # This should be unnecessary.......................
-        if self._untruncated is not None and self._untruncated.ndim != len(ind):
+        if self._untruncated is not None and self._untruncated.ndim != len(
+                ind):
             self._untruncated = None
             self._mask_all = None
         if self._radii_changed or self._untruncated is None or self._mask_all is None:
@@ -212,7 +213,7 @@ class diffusion_strategy(strategy):
 
         slices_temp = ()
         for r, c, s in zip(np.ceil(radii), centre, slices_return):
-            slices_temp += (slice(r - c, s.stop - s.start + r - c),)
+            slices_temp += (slice(int(r - c), int(s.stop - s.start + r - c)),)
         ans = self._untruncated[slices_temp].copy()
         mask = self._mask_all[slices_temp].copy()
 
