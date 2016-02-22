@@ -62,6 +62,10 @@ data_types = {
 
 XY_TAG_ID = 16706  # header contains XY calibration
 
+def readLELongLong(file):
+    """Read 8 bytes as *little endian* integer in file"""
+    read_bytes = file.read(8)
+    return struct.unpack('<Q', read_bytes)[0]
 
 def readLELong(file):
     """Read 4 bytes as *little endian* integer in file"""
@@ -99,23 +103,39 @@ def get_lengths(file):
 
 
 def get_header_dtype_list(file):
-    header_list = [
-        ("ByteOrder", ("<u2")),
+    # Read the first part of the header
+    header_list1 = [
+        ("ByteOrder", "<u2"),
         ("SeriesID", "<u2"),
         ("SeriesVersion", "<u2"),
         ("DataTypeID", "<u4"),
         ("TagTypeID", "<u4"),
         ("TotalNumberElements", "<u4"),
-        ("ValidNumberElements", "<u4"),
-        ("OffsetArrayOffset", "<u4"),
-        ("NumberDimensions", "<u4"),
-    ]
-    header = np.fromfile(file,
-                         dtype=np.dtype(header_list),
-                         count=1)
+        ("ValidNumberElements", "<u4")]
+    header1 = np.fromfile(file,
+                          dtype=np.dtype(header_list1),
+                          count=1)
+    # Depending on the SeriesVersion, the OffsetArrayOffset is 4 or 8 bytes
+    if header1["SeriesVersion"] <= 528:
+        OffsetArrayOffset_dtype = "<u4"
+        beginning_dimension_array_section = 30
+    else:
+        OffsetArrayOffset_dtype = "<u8"
+        beginning_dimension_array_section = 34
+
+    # Once we know the type of the OffsetArrayOffset, we can continue reading
+    # the 2nd part of the header
+    file.seek(22)
+    header_list2 = [("OffsetArrayOffset", OffsetArrayOffset_dtype),
+                    ("NumberDimensions", "<u4")]
+    header2 = np.fromfile(file,
+                          dtype=np.dtype(header_list2),
+                          count=1)
+
+    header_list = header_list1 + header_list2
     # Go to the beginning of the dimension array section
-    file.seek(30)
-    for n in xrange(1, header["NumberDimensions"] + 1):
+    file.seek(beginning_dimension_array_section)
+    for n in xrange(1, header2["NumberDimensions"] + 1):
         description_length, unit_length = get_lengths(file)
         header_list += dimension_array_dtype(
             n, description_length, unit_length)
@@ -286,7 +306,15 @@ def load_ser_file(filename, verbose=False):
 
         # Read the first element of data offsets
         f.seek(header["OffsetArrayOffset"][0])
-        data_offsets = readLELong(f)
+        # OffsetArrayOffset can contain 4 or 8 bytes integer depending if it's
+        # a 32 or 64 bits file.
+        SeriesVersion = header['SeriesVersion']
+        if SeriesVersion <= 528:
+            data_offsets = readLELong(f)
+        elif SeriesVersion >= 544:
+            data_offsets = readLELongLong(f)   
+        else:
+            raise ValueError('FEI file not supported, SeriesVersion: %i'%SeriesVersion)
         data_dtype_list = get_data_dtype_list(
             f,
             data_offsets,
