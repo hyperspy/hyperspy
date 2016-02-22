@@ -731,7 +731,6 @@ class Model1D(BaseModel):
             self.plot()
         if self._position_widgets:
             self.disable_adjust_position()
-        _plot.signal_plot.events.closed.connect(self._close_plot, [])
         if components:
             components = [self._get_component(x) for x in components]
         else:
