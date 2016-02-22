@@ -1,4 +1,5 @@
 import textwrap
+import matplotlib.pyplot as plt
 
 from hyperspy.events import Event, Events
 
@@ -38,6 +39,27 @@ class BlittedFigure(object):
                  a.get_animated() is True]
             if self.figure:
                 canvas.blit(self.figure.bbox)
+
+    def add_marker(self, marker):
+        marker.ax = self.ax
+        if marker.axes_manager is None:
+            marker.axes_manager = self.axes_manager
+        self.ax_markers.append(marker)
+        marker.events.closed.connect(lambda m: self.ax_markers.remove(m))
+
+    def _on_close(self):
+        if self.figure is None:
+            return  # Already closed
+        for marker in self.ax_markers:
+            marker.close()
+        self.events.closed.trigger(obj=self)
+        for f in self.events.closed.connected:
+            self.events.closed.disconnect(f)
+        self.figure = None
+
+    def close(self):
+        self._on_close()   # Needs to trigger serially for a well defined state
+        plt.close(self.figure)
 
     @property
     def title(self):

@@ -620,8 +620,7 @@ class Model1D(BaseModel):
         # Add the line to the figure
         _plot.signal_plot.add_line(l2)
         l2.plot()
-        on_figure_window_close(_plot.signal_plot.figure,
-                               self._close_plot)
+        _plot.signal_plot.events.closed.connect(self._close_plot, [])
 
         self._model_line = l2
         self._plot = self.spectrum._plot
@@ -684,6 +683,7 @@ class Model1D(BaseModel):
     def _close_plot(self):
         if self._plot_components is True:
             self.disable_plot_components()
+        self.disable_adjust_position()
         self._disconnect_parameters2update_plot(components=self)
         self._model_line = None
 
@@ -735,8 +735,7 @@ class Model1D(BaseModel):
             self.plot()
         if self._position_widgets:
             self.disable_adjust_position()
-        on_figure_window_close(self._plot.signal_plot.figure,
-                               self.disable_adjust_position)
+        _plot.signal_plot.events.closed.connect(self._close_plot, [])
         if components:
             components = [self._get_component(x) for x in components]
         else:
