@@ -59,7 +59,7 @@ class BlittedFigure(object):
 
     def close(self):
         figure = self.figure
-        #self._on_close()   # Needs to trigger serially for a well defined state
+        self._on_close()   # Needs to trigger serially for a well defined state
         plt.close(figure)
 
     @property
