@@ -123,8 +123,8 @@ def get_FWHM_at_Energy(energy_resolution_MnKa, E):
     This method implements the equation derived by Fiori and Newbury as is
     documented in the following:
 
-        Fiorie, C. E., and Newbury, D. E. (1978). In SEM/1978/I, SEM, Inc.,
-        AFM O'Hare, Illinois, p. 401.
+        Fiori, C. E., and Newbury, D. E. (1978). In SEM/1978/I, SEM, Inc.,
+        AMF O'Hare, Illinois, p. 401.
 
         Goldstein et al. (2003). "Scanning Electron Microscopy & X-ray
         Microanalysis", Plenum, third edition, p 315.

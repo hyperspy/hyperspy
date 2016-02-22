@@ -1506,6 +1506,7 @@ class BaseSignal(FancySlicing,
             Arguments:
                 obj: The signal that owns the data.
             """, arguments=['obj'])
+        self.events.data_changed.connect(self.update_plot, [])
 
     def _create_metadata(self):
         self.metadata = DictionaryTreeBrowser()
@@ -2029,11 +2030,6 @@ class BaseSignal(FancySlicing,
                     " \"slider\", None, a Signal instance")
 
         self._plot.plot(**kwargs)
-        self.events.data_changed.connect(self.update_plot, [])
-        if self._plot.signal_plot:
-            self._plot.signal_plot.events.closed.connect(
-                lambda: self.events.data_changed.disconnect(self.update_plot),
-                [])
 
     def save(self, filename=None, overwrite=None, extension=None,
              **kwds):
