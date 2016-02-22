@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2015 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -497,7 +497,7 @@ def plot_images(images,
         or try adjusting `label`, `labelwrap`, or `per_row`
 
     """
-    from hyperspy.drawing.widgets import Scale_Bar
+    from hyperspy.drawing.widgets import ScaleBar
     from hyperspy.misc import rgb_tools
     from hyperspy.signal import Signal
 
@@ -668,9 +668,8 @@ def plot_images(images,
     # Find global min and max values of all the non-rgb images for use with
     # 'single' scalebar
     if colorbar is 'single':
-        global_max = max([i.data.max() for i in non_rgb])
-        global_min = min([i.data.min() for i in non_rgb])
-        g_vmin, g_vmax = contrast_stretching(i.data, saturated_pixels)
+        g_vmin, g_vmax = contrast_stretching(np.concatenate(
+            [i.data.flatten() for i in non_rgb]), saturated_pixels)
         if centre_colormap:
             g_vmin, g_vmax = centre_colormap_values(g_vmin, g_vmax)
 
@@ -826,7 +825,7 @@ def plot_images(images,
 
             # Add scalebars as necessary
             if (scalelist and i in scalebar) or scalebar is 'all':
-                ax.scalebar = Scale_Bar(
+                ax.scalebar = ScaleBar(
                     ax=ax,
                     units=axes[0].units,
                     color=scalebar_color,

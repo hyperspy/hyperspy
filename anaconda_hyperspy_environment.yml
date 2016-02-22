@@ -1,0 +1,23 @@
+name: hyperspy
+dependencies:
+- python=2.7
+- dill
+- h5py
+- ipython
+- jupyter
+- matplotlib
+- mock
+- nose
+- numpy
+- qt
+- scikit-image
+- scikit-learn
+- scipy
+- setuptools
+- statsmodels
+- sympy
+- traits
+- traitsui
+- pip:
+  - dask
+  - hyperspy

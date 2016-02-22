@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2015 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -47,7 +47,7 @@ class Point(MarkerBase):
     #Markers on local maxima
     >>> from skimage.feature import peak_local_max
     >>> import scipy.misc
-    >>> im = hs.signals.Image(scipy.misc.face()).as_image([2,0])
+    >>> im = hs.signals.Image(scipy.misc.ascent()).as_image([2,0])
     >>> index = array([peak_local_max(i.data, min_distance=100, num_peaks=4)
     >>>                for i in im])
     >>> for i in range(4):
