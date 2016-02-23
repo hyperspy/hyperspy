@@ -12,6 +12,14 @@ hyperspy.io_plugins.blockfile module
     :undoc-members:
     :show-inheritance:
 
+hyperspy.io_plugins.dens module
+-------------------------------
+
+.. automodule:: hyperspy.io_plugins.dens
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 hyperspy.io_plugins.digital_micrograph module
 ---------------------------------------------
 
@@ -88,14 +96,6 @@ hyperspy.io_plugins.tiff module
 -------------------------------
 
 .. automodule:: hyperspy.io_plugins.tiff
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-hyperspy.io_plugins.dens module
--------------------------------
-
-.. automodule:: hyperspy.io_plugins.dens
     :members:
     :undoc-members:
     :show-inheritance:

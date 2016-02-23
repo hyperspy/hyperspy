@@ -23,6 +23,7 @@ from hyperspy.signals import EDSTEMSpectrum, Simulation
 from hyperspy.defaults_parser import preferences
 from hyperspy.components import Gaussian
 from hyperspy.misc.eds import utils as utils_eds
+from hyperspy.misc.test_utils import ignore_warning
 
 
 class Test_metadata:
@@ -61,6 +62,18 @@ class Test_metadata:
         assert_dict_equal(old_metadata.as_dictionary(),
                           s.metadata.as_dictionary(),
                           "Source metadata changed")
+
+    def test_sum_live_time_out_arg(self):
+        s = self.signal
+        sSum = s.sum(0)
+        s.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time = 4.2
+        s_resum = s.sum(0)
+        r = s.sum(0, out=sSum)
+        assert_equal(r, None)
+        assert_equal(
+            s_resum.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time,
+            sSum.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time)
+        np.testing.assert_allclose(s_resum.data, sSum.data)
 
     def test_rebin_live_time(self):
         s = self.signal
@@ -165,9 +178,12 @@ class Test_quantification:
                            [0.5, 0.0, 0.5],
                            [0.5, 0.5, 0.0],
                            [0.5, 0.0, 0.0]]).T
+        with ignore_warning(message="divide by zero encountered",
+                            category=RuntimeWarning):
+            quant = utils_eds.quantification_cliff_lorimer(
+                intens, [1, 1, 3]).T
         assert_true(np.allclose(
-            utils_eds.quantification_cliff_lorimer(
-                intens, [1, 1, 3]).T,
+            quant,
             np.array([[0.2, 0.2, 0.6],
                       [0., 0.25, 0.75],
                       [0.25, 0., 0.75],
