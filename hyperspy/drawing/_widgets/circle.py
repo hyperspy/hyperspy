@@ -47,8 +47,8 @@ class CircleWidget(Widget2DBase, ResizersMixin):
         snap_offset = self.size_snap_offset * self.axes[0].scale
         snap_spacing = self.axes[0].scale * self.size_step
         for i in xrange(2):
-            value[i] = (round((value[i] - snap_offset) / snap_spacing) *
-                        snap_spacing + snap_offset)
+            value[i] = max(0, (round((value[i] - snap_offset) / snap_spacing) *
+                        snap_spacing + snap_offset))
         return value
 
     def _set_size(self, value):
@@ -56,7 +56,8 @@ class CircleWidget(Widget2DBase, ResizersMixin):
         change, if the value has changed.
         """
         # Override so that r_inner can be 0
-        value = np.minimum(value, [0.5 * ax.size * ax.scale for ax in self.axes])
+        value = np.minimum(value,
+                           [0.5 * ax.size * ax.scale for ax in self.axes])
         # Changed from base:
         min_sizes = np.array((0.5 * self.axes[0].scale, 0))
         value = np.maximum(value, min_sizes)
