@@ -12,27 +12,6 @@ environment:
 
     # Pre-installed Python versions, which Appveyor may upgrade to
     # a later point release.
-
-    - PYTHON: "C:\\Miniconda"
-      PYTHON_VERSION: "2.7.x"
-      PYTHON_MAJOR: 2
-      PYTHON_ARCH: "32"
-      CONDA_PY: "27"
-      CONDA_NPY: "19"
-      WP_URL: 'http://heanet.dl.sourceforge.net/project/winpython/WinPython_2.7/2.7.10.3/WinPython-32bit-2.7.10.3.exe'
-      WP_CRC: '99E825BCDE4FFA57E612A0D31DF1487861C96D1903E4D20C5843FA2651C9E33B'
-      DEPS: "numpy scipy matplotlib traits traitsui ipython h5py sympy scikit-learn dill mock"
-
-    - PYTHON: "C:\\Miniconda-x64"
-      PYTHON_VERSION: "2.7.x"
-      PYTHON_MAJOR: 2
-      PYTHON_ARCH: "64"
-      CONDA_PY: "27"
-      CONDA_NPY: "19"
-      WP_URL: 'http://heanet.dl.sourceforge.net/project/winpython/WinPython_2.7/2.7.10.3/WinPython-64bit-2.7.10.3.exe'
-      WP_CRC: '35d13e00e4ffdccde150fd526acf3923a62c4b329ab85987dfeea4c2496eaae2'
-      DEPS: "numpy scipy matplotlib traits traitsui ipython h5py sympy scikit-learn dill mock"
-
     - PYTHON: "C:\\Miniconda3"
       PYTHON_VERSION: "3.4.x"
       PYTHON_MAJOR: 3
@@ -41,7 +20,7 @@ environment:
       CONDA_NPY: "19"
       WP_URL: 'http://heanet.dl.sourceforge.net/project/winpython/WinPython_3.4/3.4.3.7/WinPython-32bit-3.4.3.7.exe'
       WP_CRC: '8b3b111b911b9f0c2c3ec22f1f23ae07919ec59db63f87e1f12de132da073b4d'
-      DEPS: "numpy scipy matplotlib ipython h5py sympy scikit-learn dill mock"
+      DEPS: "numpy scipy matplotlib ipython h5py sympy scikit-learn dill mock natsort"
 
     - PYTHON: "C:\\Miniconda35-x64"
       PYTHON_VERSION: "3.5.x"
@@ -51,15 +30,32 @@ environment:
       CONDA_NPY: "19"
       WP_URL: 'http://heanet.dl.sourceforge.net/project/winpython/WinPython_3.5/3.5.1.1/WinPython-64bit-3.5.1.1.exe'
       WP_CRC: '82057650e7950e6562affc73fd711e9fae1e6b8829cd6d65527f5a79429241ac'
-      DEPS: "numpy scipy matplotlib ipython h5py sympy scikit-learn dill mock"
+      DEPS: "numpy scipy matplotlib ipython h5py sympy scikit-learn dill mock natsort"
+
+    - PYTHON: "C:\\Miniconda"
+      PYTHON_VERSION: "2.7.x"
+      PYTHON_MAJOR: 2
+      PYTHON_ARCH: "32"
+      CONDA_PY: "27"
+      CONDA_NPY: "19"
+      WP_URL: 'http://heanet.dl.sourceforge.net/project/winpython/WinPython_2.7/2.7.10.3/WinPython-32bit-2.7.10.3.exe'
+      WP_CRC: '99E825BCDE4FFA57E612A0D31DF1487861C96D1903E4D20C5843FA2651C9E33B'
+      DEPS: "numpy scipy matplotlib traits traitsui ipython h5py sympy scikit-learn dill mock natsort"
+
+    - PYTHON: "C:\\Miniconda-x64"
+      PYTHON_VERSION: "2.7.x"
+      PYTHON_MAJOR: 2
+      PYTHON_ARCH: "64"
+      CONDA_PY: "27"
+      CONDA_NPY: "19"
+      WP_URL: 'http://heanet.dl.sourceforge.net/project/winpython/WinPython_2.7/2.7.10.3/WinPython-64bit-2.7.10.3.exe'
+      WP_CRC: '35d13e00e4ffdccde150fd526acf3923a62c4b329ab85987dfeea4c2496eaae2'
+      DEPS: "numpy scipy matplotlib traits traitsui ipython h5py sympy scikit-learn dill mock natsort"
+
 
 matrix:
   allow_failures:
-    - PYTHON_VERSION: "3.4.x"
-    - PYTHON_VERSION: "3.5.x"
-
-cache:
-  - '%PYTHON%\pkgs\*.tar.bz2'
+    - PYTHON_VERSION: "2.7.x"
 
 init:
   - "ECHO %PYTHON% %PYTHON_VERSION% %PYTHON_ARCH%"
@@ -80,6 +76,8 @@ install:
   - ps: Add-AppveyorMessage "Installing conda packages..."
   - "%CMD_IN_ENV% conda install -yq %TEST_DEPS%"
   - "%CMD_IN_ENV% conda install -yq %DEPS%"
+    # Having 'sip' folder on path confuses import of `sip`.
+  - "%CMD_IN_ENV% move %PYTHON%\\sip %PYTHON%\\Lib\\site-packages\\PyQt4\\sip"
   - "%CMD_IN_ENV% conda install pip"
   # TODO: Remove once anaconda taitsui package is at v5:
   - "IF \"%PYTHON_MAJOR%\" EQU \"3\" pip install --upgrade traitsui"
@@ -126,7 +124,7 @@ before_deploy:
   - "SET PATH=%ORIGPATH%"
   - "%CMD_IN_ENV% %WP_INSTDIR%/scripts/env.bat"
   - "%CMD_IN_ENV% python.exe setup.py install"
-  - "%CMD_IN_ENV% pip install --upgrade configobj traitsui start_jupyter_cm"
+  - "%CMD_IN_ENV% pip install --upgrade configobj traitsui natsort start_jupyter_cm"
   # Custom installer step
   # TODO: Re-run tests in WinPython environment
   - ps: Add-AppveyorMessage "Creating installer..."
