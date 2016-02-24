@@ -373,7 +373,7 @@ A mass absorption coefficient database (Chantler2005 see http://physics.nist.gov
 
 .. code-block:: python
 
-        >>> hs.material.mass_absorption_coefficient_of_mixture_of_pure_elements(
+    >>> hs.material.mass_absorption_mixture(
     >>>     elements=['Al','Zn'], weight_percent=[50,50], energies='Al_Ka')
     2587.4161643905127
 
