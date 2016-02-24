@@ -127,8 +127,6 @@ before_deploy:
   - "%CMD_IN_ENV% %WP_INSTDIR%/scripts/env.bat"
   - "%CMD_IN_ENV% python.exe setup.py install"
   - "%CMD_IN_ENV% pip install --upgrade configobj traitsui start_jupyter_cm"
-  - "%CMD_IN_ENV% %WP_INSTDIR%/scripts/make_winpython_movable.bat"
-  - "%CMD_IN_ENV% "%WINPYDIR%\python.exe" -c "from winpython import wppm;dist=wppm.Distribution(r'%WINPYDIR%');dist.patch_standard_packages('pip');dist.patch_all_shebang(to_movable=True)"
   # Custom installer step
   # TODO: Re-run tests in WinPython environment
   - ps: Add-AppveyorMessage "Creating installer..."
