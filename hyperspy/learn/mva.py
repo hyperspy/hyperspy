@@ -1071,6 +1071,7 @@ class MVA():
         """Undo normalize_poissonian_noise"""
         print("Undoing data pre-treatments")
         self.data[:] = self._data_before_treatments
+        del self._data_before_treatments
 
 
 class LearningResults(object):
