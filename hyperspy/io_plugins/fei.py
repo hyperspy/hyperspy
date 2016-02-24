@@ -269,6 +269,8 @@ def emi_reader(filename, dump_xml=False, verbose=False, **kwds):
         except IOError:  # Probably a single spectrum that we don't support
             continue
 
+        # TODO: check if the xml data are correctly parsed, particularly
+        # detector information
         index = int(os.path.splitext(f)[0].split("_")[-1]) - 1
         op = DictionaryTreeBrowser(sers[-1]['original_metadata'])
         emixml2dtb(ET.fromstring(objects[index]), op)
@@ -306,8 +308,8 @@ def load_ser_file(filename, verbose=False):
 
         # Read the first element of data offsets
         f.seek(header["OffsetArrayOffset"][0])
-        # OffsetArrayOffset can contain 4 or 8 bytes integer depending if it's
-        # a 32 or 64 bits file.
+        # OffsetArrayOffset can contain 4 or 8 bytes integer depending if the
+        # data have been acquired using a 32 or 64 bits platform.
         SeriesVersion = header['SeriesVersion']
         if SeriesVersion <= 528:
             data_offsets = readLELong(f)
@@ -453,6 +455,10 @@ def get_axes_from_position(header, data):
         })
     return array_shape, axes
 
+def convert_xml_to_dict(xml_object):
+    op = DictionaryTreeBrowser()
+    emixml2dtb(ET.fromstring(xml_object), op)
+    return op
 
 def ser_reader(filename, objects=None, verbose=False, *args, **kwds):
     """Reads the information from the file and returns it in the HyperSpy
@@ -531,17 +537,21 @@ def ser_reader(filename, objects=None, verbose=False, *args, **kwds):
                             'Dim-%i_CalibrationOffset' % (i + 1)][0],
                         'scale': header[
                             'Dim-%i_CalibrationDelta' % (i + 1)][0],
-                        'units': header['Dim-%i_Units' % (i + 1)][0],
+                        'units': header['Dim-%i_Units' % (i + 1)][0] if header['Dim-%i_UnitsLength'%(i+1)]>0 else 'a.u.',
                         'size': header['Dim-%i_DimensionSize' % (i + 1)][0],
                     })
                 array_shape.append(header['Dim-%i_DimensionSize' % (i + 1)][0])
+        units = "Unknown"
+        if objects is not None:
+            objects_dict = convert_xml_to_dict(objects[0])
+            units = guess_units_from_mode(objects_dict, header)
         # Y axis
         axes.append({
             'name': 'y',
             'offset': data['CalibrationOffsetY'][0] -
             data['CalibrationElementY'][0] * data['CalibrationDeltaY'][0],
             'scale': data['CalibrationDeltaY'][0],
-            'units': 'meters',
+            'units': units,
             'size': data['ArraySizeY'][0],
         })
         array_shape.append(data['ArraySizeY'][0])
@@ -553,7 +563,7 @@ def ser_reader(filename, objects=None, verbose=False, *args, **kwds):
             data['CalibrationElementX'][0] * data['CalibrationDeltaX'][0],
             'scale': data['CalibrationDeltaX'][0],
             'size': data['ArraySizeX'][0],
-            'units': 'meters',
+            'units': units,
         })
         array_shape.append(data['ArraySizeX'][0])
     # FEI seems to use the international system of units (SI) for the
@@ -562,7 +572,11 @@ def ser_reader(filename, objects=None, verbose=False, *args, **kwds):
         if axis['units'] == 'meters':
             axis['units'] = 'nm'
             axis['scale'] *= 10 ** 9
-
+        elif axis['units'] == '1/meters':
+            axis['units'] = '1/nm'
+            axis['scale'] /= 10 ** 9
+        else:
+            pass
     # If the acquisition stops before finishing the job, the stored file will
     # report the requested size even though no values are recorded. Therefore if
     # the shapes of the retrieved array does not match that of the data
@@ -608,13 +622,48 @@ def ser_reader(filename, objects=None, verbose=False, *args, **kwds):
         'mapping': mapping}
     return dictionary
 
-
-def get_mode(mode):
-    if "STEM" in mode:
-        return "STEM"
+def guess_units_from_mode(objects_dict, header, verbose=True):
+    isImageStack = (header['Dim-1_UnitsLength'][0] == 0)
+    mode = objects_dict.ObjectInfo.ExperimentalDescription.Mode
+    isCamera = ("CameraNamePath" in objects_dict.ObjectInfo.AcquireInfo.keys())
+    isDiffractionScan = (header['Dim-1_DimensionSize'][0] > 1 and not isImageStack)
+    if verbose:
+        print "------------"
+        print objects_dict.ObjectInfo.AcquireInfo
+        print "mode", mode
+        print "isCamera:", isCamera
+        print "isImageStack:", isImageStack
+        print "isImageStack:", isDiffractionScan
+        print "------------"
+    if 'STEM' in mode:
+        # data recorded in STEM with a camera, so we assume, it's a diffraction
+        if isCamera:
+            return "1/meters"
+        # however: for some reason, the xml data from the emi file is not read
+        # properly (the xml from others ser file is parsed)
+        # FIXME: Parse properly the xml data from the emi file and read the
+        # information about the detector
+        elif isDiffractionScan:
+            return "1/meters"
+        else:
+            return "meters"
+    elif 'Diffraction' in mode:
+        return "1/meters"
+    elif 'Image' in mode:
+        return "meters"
     else:
-        return "TEM"
-
+        return 'Unknown'
+        
+def get_simplified_mode(mode):
+    def get_diffraction_or_image_mode(mode):
+        if "Diffraction" in mode:
+            return "Diffraction"
+        else:
+            return "Image"        
+    if "STEM" in mode:
+        return "STEM "+get_diffraction_or_image_mode(mode)
+    else:
+        return "TEM "+get_diffraction_or_image_mode(mode)
 
 def get_degree(value):
     return np.degrees(float(value))
@@ -629,7 +678,7 @@ mapping = {
         None),
     "ObjectInfo.ExperimentalDescription.Mode": (
         "Acquisition_instrument.TEM.acquisition_mode",
-        get_mode),
+        get_simplified_mode),
     "ObjectInfo.ExperimentalConditions.MicroscopeConditions.Tilt1": (
         "Acquisition_instrument.TEM.tilt_stage",
         get_degree),
