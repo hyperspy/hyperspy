@@ -50,19 +50,16 @@ def test_density_of_mixture():
     volumes = wt * densities
     density = volumes.sum() / 100.
     nt.assert_almost_equal(
-        density, hs.material.density_of_mixture_of_pure_elements(
-            wt, elements, mean='weighted'))
+        density, hs.material.density_of_mixture(wt, elements, mean='weighted'))
 
     volumes = wt / densities
     density = 100. / volumes.sum()
     nt.assert_almost_equal(
-        density, hs.material.density_of_mixture_of_pure_elements(
-            wt, elements))
+        density, hs.material.density_of_mixture(wt, elements))
 
     wt = np.array([[[88] * 2] * 3, [[12] * 2] * 3])
     nt.assert_almost_equal(
-        density, hs.material.density_of_mixture_of_pure_elements(
-            wt, elements)[0, 0])
+        density, hs.material.density_of_mixture(wt, elements)[0, 0])
 
 
 def test_mac():
@@ -81,18 +78,16 @@ def test_mac():
 
 
 def test_mixture_mac():
-    nt.assert_almost_equal(
-        hs.material.
-        mass_absorption_coefficient_of_mixture_of_pure_elements(
-            [50, 50], ['Al', 'Zn'], 'Al_Ka'), 2587.4161643905127)
+    nt.assert_almost_equal(hs.material.mass_absorption_mixture([50, 50],
+                                                               ['Al', 'Zn'],
+                                                               'Al_Ka'),
+                           2587.4161643905127)
     elements = ("Cu", "Sn")
     lines = [0.5, 'Al_Ka']
     wt = np.array([[[88.]*2]*3, [[12.]*2]*3])
     np.testing.assert_array_almost_equal(
-        hs.material.mass_absorption_coefficient_of_mixture_of_pure_elements(
-            wt, elements, lines)[:, 0, 0],
+        hs.material.mass_absorption_mixture(wt, elements, lines)[:, 0, 0],
         np.array([8003.05391481,  4213.4235561]))
     wt = hs.signals.Image(wt).split()
-    mac = hs.material.mass_absorption_coefficient_of_mixture_of_pure_elements(
-            wt, elements, lines)
+    mac = hs.material.mass_absorption_mixture(wt, elements, lines)
     np.testing.assert_array_almost_equal(mac[0].data[0, 0], 8003.053914)

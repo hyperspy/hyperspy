@@ -1,6 +1,5 @@
 import numpy as np
 import numbers
-import warnings
 import copy
 
 from hyperspy.misc.elements import elements as elements_db
@@ -155,9 +154,9 @@ def atomic_to_weight(atomic_percent, elements='auto'):
         return _atomic_to_weight(atomic_percent, elements)
 
 
-def _density_of_mixture_of_pure_elements(weight_percent,
-                                         elements,
-                                         mean='harmonic'):
+def _density_of_mixture(weight_percent,
+                        elements,
+                        mean='harmonic'):
     """Calculate the density a mixture of elements.
 
     The density of the elements is retrieved from an internal database. The
@@ -210,9 +209,9 @@ def _density_of_mixture_of_pure_elements(weight_percent,
         return np.where(sum_weight == 0.0, 0.0, density)
 
 
-def density_of_mixture_of_pure_elements(weight_percent,
-                                        elements='auto',
-                                        mean='harmonic'):
+def density_of_mixture(weight_percent,
+                       elements='auto',
+                       mean='harmonic'):
     """Calculate the density of a mixture of elements.
 
     The density of the elements is retrieved from an internal database. The
@@ -248,12 +247,11 @@ def density_of_mixture_of_pure_elements(weight_percent,
     elements = _elements_auto(weight_percent, elements)
     if isinstance(weight_percent[0], Signal):
         density = weight_percent[0]._deepcopy_with_new_data(
-            _density_of_mixture_of_pure_elements(
-                stack(weight_percent).data, elements, mean=mean))
+            _density_of_mixture(stack(weight_percent).data,
+                                elements, mean=mean))
         return density
     else:
-        return _density_of_mixture_of_pure_elements(weight_percent,
-                                                    elements, mean=mean)
+        return _density_of_mixture(weight_percent, elements, mean=mean)
 
 
 def mass_absorption_coefficient(element, energies):
@@ -310,9 +308,9 @@ def mass_absorption_coefficient(element, energies):
     return np.nan_to_num(mac_res)
 
 
-def _mass_absorption_coefficient_of_mixture_of_pure_elements(weight_percent,
-                                                             elements,
-                                                             energies):
+def _mass_absorption_mixture(weight_percent,
+                             elements,
+                             energies):
     """Calculate the mass absorption coefficient for X-ray absorbed in a
     mixture of elements.
 
@@ -370,9 +368,9 @@ def _mass_absorption_coefficient_of_mixture_of_pure_elements(weight_percent,
         return mac_res
 
 
-def mass_absorption_coefficient_of_mixture_of_pure_elements(weight_percent,
-                                                            elements='auto',
-                                                            energies='auto'):
+def mass_absorption_mixture(weight_percent,
+                            elements='auto',
+                            energies='auto'):
     """Calculate the mass absorption coefficient for X-ray absorbed in a
     mixture of elements.
 
@@ -423,8 +421,7 @@ def mass_absorption_coefficient_of_mixture_of_pure_elements(weight_percent,
         weight_per = np.array([wt.data for wt in weight_percent])
         mac_res = stack([weight_percent[0].deepcopy()]*len(energies))
         mac_res.data = \
-            _mass_absorption_coefficient_of_mixture_of_pure_elements(
-                weight_per, elements, energies)
+            _mass_absorption_mixture(weight_per, elements, energies)
         mac_res = mac_res.split()
         for i, energy in enumerate(energies):
             mac_res[i].metadata.set_item("Sample.xray_lines", ([energy]))
@@ -435,8 +432,7 @@ def mass_absorption_coefficient_of_mixture_of_pure_elements(weight_percent,
                 del mac_res[i].metadata.Sample.elements
         return mac_res
     else:
-        return _mass_absorption_coefficient_of_mixture_of_pure_elements(
-            weight_percent, elements, energies)
+        return _mass_absorption_mixture(weight_percent, elements, energies)
 
 
 def _lines_auto(composition, xray_lines):
