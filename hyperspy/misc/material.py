@@ -181,8 +181,7 @@ def _density_of_mixture(weight_percent,
     Examples
     --------
     Calculate the density of modern bronze given its weight percent:
-    >>> hs.material.density_of_mixture_of_pure_elements(
-            (88, 12),("Cu", "Sn"))
+    >>> hs.material.density_of_mixture((88, 12),("Cu", "Sn"))
     8.6903187973131466
 
     """
@@ -238,8 +237,7 @@ def density_of_mixture(weight_percent,
     Examples
     --------
     Calculate the density of modern bronze given its weight percent:
-    >>> hs.material.density_of_mixture_of_pure_elements(
-            (88, 12),("Cu", "Sn"))
+    >>> hs.material.density_of_mixture((88, 12),("Cu", "Sn"))
     8.6903187973131466
 
     """
@@ -281,7 +279,7 @@ def mass_absorption_coefficient(element, energies):
 
     See also
     --------
-    hs.material.mass_absorption_coefficient_of_mixture_of_pure_elements
+    hs.material.mass_absorption_mixture
 
     Note
     ----
@@ -330,7 +328,7 @@ def _mass_absorption_mixture(weight_percent,
 
     Examples
     --------
-    >>> hs.material.mass_absorption_coefficient_of_mixture_of_pure_elements(
+    >>> hs.material.mass_absorption_mixture(
     >>>     elements=['Al','Zn'], weight_percent=[50,50], energies='Al_Ka')
     2587.4161643905127
 
@@ -341,7 +339,7 @@ def _mass_absorption_mixture(weight_percent,
 
     See also
     --------
-    hs.material.mass_absorption_coefficient
+    hs.material.mass_absorption
 
     Note
     ----
@@ -393,7 +391,7 @@ def mass_absorption_mixture(weight_percent,
 
     Examples
     --------
-    >>> hs.material.mass_absorption_coefficient_of_mixture_of_pure_elements(
+    >>> hs.material.mass_absorption_mixture(
     >>>     elements=['Al','Zn'], weight_percent=[50,50], energies='Al_Ka')
     2587.41616439
 
