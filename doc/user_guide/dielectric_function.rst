@@ -42,5 +42,5 @@ thickness using:
     a_{0}m_{0}v^{2}}\ln\left[1+\left(\frac{\beta}{\theta(E)}\right)^{2}\right]\Im\left[\frac{-1}{\epsilon\left(E\right)}\right]
 
 where :math:`I_0` is the zero-loss peak integral, :math:`t` the sample
-thickness, :math:`\beta` the collection angle and :math:`\theta(E)` the
+thickness, :math:`\beta` the collection semi-angle and :math:`\theta(E)` the
 characteristic scattering angle.

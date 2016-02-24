@@ -126,6 +126,11 @@ core-loss file
 
     >>> s.set_microscope_parameters(beam_energy=100, convergence_angle=0.2, collection_angle=2.55)
 
+.. warning::
+    
+    `convergence_angle` and `collection_angle` are actually semi-angles and are
+    given in mrad. `beam_energy` is in keV.
+
 
 Define the chemical composition of the sample
 

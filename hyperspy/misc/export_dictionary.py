@@ -29,7 +29,7 @@ except ImportError:
 
 
 def check_that_flags_make_sense(flags):
-# one of: fn, id, sig
+    # one of: fn, id, sig
     def do_error(f1, f2):
         raise ValueError(
             'The flags "%s" and "%s" are not compatible' %

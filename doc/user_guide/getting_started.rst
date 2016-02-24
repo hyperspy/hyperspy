@@ -7,221 +7,71 @@ Getting started
 Starting HyperSpy
 -----------------
 
-HyperSpy is a `Python <http://python.org>`_ library for multi-dimensional data analysis.  HyperSpy's
-API can be imported as any other Python library as follows:
+HyperSpy is a `Python <http://python.org>`_ library for multi-dimensional data
+analysis.  HyperSpy's API can be imported as any other Python library as
+follows:
 
 .. code-block:: python
 
    >>> import hyperspy.api as hs
 
-The most common way of using HyperSpy is interactively using the wonderful
-interactive computing package `IPython <http://ipython.org>`_. For interactive
-data analysis, typically, a number of other modules must be imported and
-configured. Indeed all the documentation assumes that HyperSpy, numpy and matplotlib has
-been imported as follows:
+The most common way of using HyperSpy is interactively using  interactive
+computing package `IPython <http://ipython.org>`_. In all operating systems (OS)
+you can start IPython by opening a system terminal and executing ``ipython``,
+optionally followed by the frontend. In most cases, **the most agreeable way**
+to work with HyperSpy interactively is using the `Jupyter Notebook
+<http://jupyter.org>`_ (previously known as the IPython Notebook), which can be
+started as follows:
+
+.. code-block:: bash
+
+    $ jupyter notebook
+
+Some may find it more convenient to start Jupyter/IPython from the `file manager
+context menu <https://github.com/hyperspy/start_jupyter_cm>`_ or by
+`double-clicking a notebook file <https://github.com/takluyver/nbopen>`_.
+
+Typically you will need to `set up IPython for interactive plotting with
+matplotlib
+<http://ipython.readthedocs.org/en/stable/interactive/plotting.html>`_ using the
+``%matplotlib`` magic *before executing any plotting command*. So, typically,
+after starting IPython, you can import
+HyperSpy and set up interactive matplotlib plotting by executing the following
+two lines in the IPython terminal:
 
 .. code-block:: python
 
-   >>> import hyperspy.api as hs
+   In [1]: %matplotlib qt
+   In [2]: import hyperspy.api as hs
+
+
+We also fully support the wx backend. Other backends are supported for plotting
+but some features such as navigation sliders may be missing.
+
+.. warning::
+        When using the qt4 backend in Python 2 the matplotlib magic must be
+        executed after importing hyperspy and qt must be the default hyperspy
+        backend.
+
+
+This documentation assumes that numpy and matplotlib are also imported as
+follows:
+
    >>> import numpy as np
    >>> import matplotlib.pyplot as plt
 
-
-To ease the task of importing the modules and setting up the toolkit HyperSpy
-provides a :ref:`starting script <starting_hyperspy-label>` and an
-:ref:`IPython magic <magic-label>`.  This section describes how to use them.
+.. warning::
+    Starting HyperSpy using the ``hyperspy`` starting script and the
+    ``%hyperspy`` IPython magic is now deprecated and will be removed in
+    HyperSpy 0.9. The IPython magic does not work with IPython 4 and
+    above.
 
 .. _starting_hyperspy-label:
-
-Starting HyperSpy from the terminal
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-In all operating systems (OS) you can start HyperSpy by opening a system
-terminal and executing ``hyperspy``, optionally followed by the frontend. In most
-cases, **the most agreeable way** to work with HyperSpy interactively is
-`Jupyter Notebook
-<http://jupyter.org>`_ (previously known as the IPython Notebook), which
-can be started as follows:
-
-.. code-block:: bash
-
-    $ hyperspy notebook
-
-.. versionchanged:: 0.8.3
-
-Once a new Jupyter notebook is started in a browser window, HyperSpy needs to
-be loaded and started using the :ref:`hyperspy magic <magic-label>`.
-
-.. code-block:: python
-
-    >>> %load_ext hyperspy
-    >>> %hyperspy
-
-.. note::
-
-    As per `IPython extension documentation
-    <https://ipython.readthedocs.org/en/stable/config/extensions/index.html#using-extensions>`_,
-    the first line, loading HyperSpy extension, can be avoided typing every time by adding it to your default extensions:
-
-    .. code-block:: python
-
-        >>> c.InteractiveShellApp.extensions = [ #some other default extensions
-                'hyperspy',
-                ]
-
-
-Alternatively, hyperspy can be run in two console modes: the terminal you run
-the command in (default, no additional arguments required), or the ipython
-"qtconsole".
-
-.. code-block:: bash
-
-    $ hyperspy qtconsole
-
-
-The main difference between notebook and terminal frontends is that ipython
-notebook allows for much better reproducibility by re-running any commands and
-automatically saving the history in an easy to share format. There are multiple
-options available when starting from the terminal. To print these options add
-the `-h` flag:
-
-.. code-block:: bash
-
-    $ hyperspy -h
-    usage: ana-hyperspy [-h] [-v] [--overwrite_profile]
-                        [--ipython_args [IPYTHON_ARGS [IPYTHON_ARGS ...]]]
-                        [{terminal,console,qtconsole,notebook}]
-
-    Multidimensional data analysis toolbox
-
-    positional arguments:
-      {terminal,console,qtconsole,notebook}
-                            Selects the IPython environment in which to start
-                            HyperSpy. The default is terminal
-
-    optional arguments:
-      -h, --help            show this help message and exit
-      -v, --version         show program's version number and exit
-      --overwrite_profile   Overwrite the Ipython profile with the default one.
-      --ipython_args [IPYTHON_ARGS [IPYTHON_ARGS ...]]
-                            Arguments to be passed to IPython. This option must be
-                            the last one.Look at the IPython documentation for
-                            available options.
-
-
-
-.. versionchanged:: 0.8.1
-    .. warning::
-
-            The ``toolkit`` and ``pylab_inline`` optional arguments are no
-            longer supported. In order to configure the toolkit use the
-            :ref:`hyperspy magic <magic-label>` after starting an Jupyter
-            notebook.
-
-
-Starting HyperSpy from the context menu
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-This option is only available for Windows and in Linux when using Gnome.
-
-Windows
-"""""""
-
-In Windows it is possible to start HyperSpy from :menuselection:`Start Menu -->
-Programs --> HyperSpy`.
-
-Alternatively, one can start HyperSpy in any folder by pressing the :kbd:`right
-mouse button` or on a yellow folder icon or (in some cases) on the empty area
-of a folder, and choosing :menuselection:`HyperSpy qtconsole here` or
-:menuselection:`HyperSpy notebook here` from the context menu.
-
-
-.. figure::  images/windows_hyperspy_here.png
-   :align:   center
-   :width:   500
-
-   Starting hyperspy using the Windows context menu.
-
-
-Linux
-"""""
-
-If you are using GNOME in Linux, you can open a terminal in a folder by
-choosing :menuselection:`open terminal` in the file menu if
-:program:`nautilus-open-terminal` is installed in your system.
-
-Alternatively (and more conveniently), if you are using GNOME place `this
-<https://github.com/downloads/hyperspy/hyperspy/HyperSpy%20QtConsole%20here.sh>`_
-and `this
-<https://github.com/downloads/hyperspy/hyperspy/HyperSpy%20Notebook%20here.sh>`_
-in the :file:`~/.local/share/nautilus/scripts/` folder in your home directory
-(create it if it does not exists) and make them executable to get the
-:menuselection:`Scripts --> HyperSpy QtConsole Here` and
-:menuselection:`Scripts --> HyperSpy Notebook Here` entries in the context
-menu.
-
-
-.. figure::  images/hyperspy_here_gnome.png
-   :align:   center
-   :width:   500
-
-   Starting hyperspy using the Gnome nautilus context menu.
-
-.. _magic-label:
-
-HyperSpy IPython magic
-^^^^^^^^^^^^^^^^^^^^^^
-
-.. versionchanged:: 0.8.3
-
-HyperSpy provides an IPython magic in order to ease the task of setting up the
-typical interactive data analysis environment. The magic imports the HyperSpy API,
-`numpy <http://www.numpy.org/>`_, `matplotlib <http://matplotlib.org/>`_ and
-sets up the right toolkit. Before HyperSpy 0.8.1, all this was done
-automatically.  However, starting with IPython version 3.0, auto-importing and
-auto-configuring is discouraged (for very good reasons). In order to comply
-with the new recommendations without loosing convenience we supply the
-``hyperspy`` IPython magic that performs the same operations in a more explicit
-and transparent way. As of IPython version 4.0 and HyperSpy 0.8.3, HyperSpy has
-to be loaded before the magic becomes available:
-
-.. code-block:: python
-
-    >>> %load_ext hyperspy
-    >>> %hyperspy [-r] [toolkit]
-
-    HyperSpy imported!
-    The following commands were just executed:
-    ---------------
-    [optional 2 code lines if toolkit is "None" or "qt4"]
-    %matplotlib [toolkit]
-    import numpy as np
-    import hyperspy.api as hs
-    import matplotlib.pyplot as plt
-
-The magic imports HyperSpy's API as ``hs``, numpy as ``np``, matplotlib's API
-as ``plt`` and initialises the chosen toolkit. By default the magic looks for
-the toolkit to use in the default settings, however a different one can be
-given when running. Once executed, the magic prints which packages were
-imported, and HyperSpy is ready to be used.
-
-If the flag ``-r`` is passed as well, the magic overwrites the current input
-cell with actual code that can be executed to achieve the same result
-without any magic commands (e.g. included in a script).
-
-.. WARNING::
-    If "-r" flag is passed, all code in the same cell will be lost. To revert
-    the process, use "undo" functionality
-
-
-.. note::
-
-        The magic is available when either using HyperSpy's IPython profile (:ref:`starting script <starting_hyperspy_label>` automatically starts IPython using the HyperSpy profile, however is deprecated starting IPython 4.0) or having loaded the HyperSpy as an IPython extension
-
 
 Getting help
 ------------
 
-The documentation (docstring in Python jargon) can be accessed by adding a
+When using IPython, the documentation (docstring in Python jargon) can be accessed by adding a
 question mark to the name of a function. e.g.:
 
 
