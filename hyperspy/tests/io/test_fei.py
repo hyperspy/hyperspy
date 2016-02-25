@@ -67,29 +67,28 @@ class test_fei_reader():
     def test_load_diffraction_line_scan(self, verbose=True):
         fname0 = os.path.join(self.dirpathnew, '16x16-line_profile_horizontal_5x128x128_EDS.emi')
         s0 = load(fname0, verbose=verbose)
-        #s0[0] contains diffraction patterns
-        nt.assert_equal(s0[0].data.shape, (5, 128, 128))
-        nt.assert_equal(s0[0].metadata.Signal.record_by, 'image')
-        nt.assert_equal(s0[0].metadata.Acquisition_instrument.TEM.acquisition_mode, 'STEM Diffraction')
+        #s0[1] contains EDS
+        nt.assert_equal(s0[0].data.shape, (5, 4000))
+        nt.assert_equal(s0[0].metadata.Signal.record_by, 'spectrum')
+        nt.assert_equal(s0[0].metadata.Acquisition_instrument.TEM.acquisition_mode, 'STEM Diffraction')       
         nt.assert_almost_equal(s0[0].axes_manager[0].scale, 3.68864, places=5)
         nt.assert_equal(s0[0].axes_manager[0].units, 'nm')
-#        # FIXME: get the diffraction calibration right
-        nt.assert_equal(s0[0].axes_manager[1].units, '1/nm')
-        nt.assert_almost_equal(s0[0].axes_manager[1].scale, 0.17435, places=5)
-        nt.assert_almost_equal(s0[0].axes_manager[2].scale, 0.17435, places=5)
-        nt.assert_equal(s0[0].axes_manager[2].units, '1/nm')
-        #s0[1] contains EDS
-        nt.assert_equal(s0[1].data.shape, (5, 4000))
-        nt.assert_equal(s0[1].metadata.Signal.record_by, 'spectrum')
-        nt.assert_equal(s0[1].metadata.Acquisition_instrument.TEM.acquisition_mode, 'STEM Diffraction')       
+        nt.assert_almost_equal(s0[0].axes_manager[1].scale, 5.0, places=5)
+        nt.assert_equal(s0[0].axes_manager[1].units, 'eV')
+        #s0[0] contains diffraction patterns
+        nt.assert_equal(s0[1].data.shape, (5, 128, 128))
+        nt.assert_equal(s0[1].metadata.Signal.record_by, 'image')
+        nt.assert_equal(s0[1].metadata.Acquisition_instrument.TEM.acquisition_mode, 'STEM Diffraction')
         nt.assert_almost_equal(s0[1].axes_manager[0].scale, 3.68864, places=5)
         nt.assert_equal(s0[1].axes_manager[0].units, 'nm')
-        nt.assert_almost_equal(s0[1].axes_manager[1].scale, 5.0, places=5)
-        nt.assert_equal(s0[1].axes_manager[1].units, 'eV')
-        
+        nt.assert_equal(s0[1].axes_manager[1].units, '1/nm')
+        nt.assert_almost_equal(s0[1].axes_manager[1].scale, 0.17435, places=5)
+        nt.assert_almost_equal(s0[1].axes_manager[2].scale, 0.17435, places=5)
+        nt.assert_equal(s0[1].axes_manager[2].units, '1/nm')
+
     def test_load_diffraction_area_scan(self, verbose=True):
         fname0 = os.path.join(self.dirpathnew, '16x16-diffraction_imagel_5x5x256x256_EDS.emi')
-        s0 = load(fname0, verbose=verbose, dump_xml=True)
+        s0 = load(fname0, verbose=verbose)
         #s0[0] contains EDS
         nt.assert_equal(s0[0].data.shape, (5, 5, 4000))
         nt.assert_equal(s0[0].metadata.Signal.record_by, 'spectrum')
@@ -108,7 +107,6 @@ class test_fei_reader():
         # FIXME: negative scale
 #        nt.assert_almost_equal(s0[1].axes_manager[0].scale, 1.87390, places=5)
 #        nt.assert_equal(s0[1].axes_manager[0].units, 'nm')
-        # FIXME: scale and units in diffraction
         nt.assert_almost_equal(s0[1].axes_manager[2].scale, 0.17435, places=5)
         nt.assert_equal(s0[1].axes_manager[2].units, '1/nm')  
     
@@ -259,7 +257,7 @@ class test_fei_reader():
     def test_read_STEM_TEM_mode(self, verbose=True):
         # TEM image
         fname0 = os.path.join(self.dirpathold, '64x64_TEM_images_acquire.emi')
-        s0 = load(fname0, verbose=verbose, dump_xml=True)
+        s0 = load(fname0, verbose=verbose)
         nt.assert_equal(s0.metadata.Acquisition_instrument.TEM.acquisition_mode, "TEM Image")        
         # TEM diffraction
         fname1 = os.path.join(self.dirpathold, '64x64_diffraction_acquire.emi')
