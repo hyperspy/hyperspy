@@ -269,8 +269,6 @@ def emi_reader(filename, dump_xml=False, verbose=False, **kwds):
         except IOError:  # Probably a single spectrum that we don't support
             continue
 
-        # TODO: check if the xml data are correctly parsed, particularly
-        # detector information
         index = int(os.path.splitext(f)[0].split("_")[-1]) - 1
         op = DictionaryTreeBrowser(sers[-1]['original_metadata'])
         emixml2dtb(ET.fromstring(objects[index]), op)
@@ -310,13 +308,10 @@ def load_ser_file(filename, verbose=False):
         f.seek(header["OffsetArrayOffset"][0])
         # OffsetArrayOffset can contain 4 or 8 bytes integer depending if the
         # data have been acquired using a 32 or 64 bits platform.
-        SeriesVersion = header['SeriesVersion']
-        if SeriesVersion <= 528:
+        if header['SeriesVersion'] <= 528:
             data_offsets = readLELong(f)
-        elif SeriesVersion >= 544:
-            data_offsets = readLELongLong(f)   
         else:
-            raise ValueError('FEI file not supported, SeriesVersion: %i'%SeriesVersion)
+            data_offsets = readLELongLong(f)
         data_dtype_list = get_data_dtype_list(
             f,
             data_offsets,
@@ -623,9 +618,13 @@ def ser_reader(filename, objects=None, verbose=False, *args, **kwds):
     return dictionary
 
 def guess_units_from_mode(objects_dict, header, verbose=False):
+    # assuming that for an image stack, the UnitsLength of the "3rd" dimension
+    # is 0
     isImageStack = (header['Dim-1_UnitsLength'][0] == 0)
     mode = objects_dict.ObjectInfo.ExperimentalDescription.Mode
     isCamera = ("CameraNamePath" in objects_dict.ObjectInfo.AcquireInfo.keys())
+    # Workaround: if this is not an image stack and not a STEM image, then we 
+    # assume that it should be a diffraction
     isDiffractionScan = (header['Dim-1_DimensionSize'][0] > 1 and not isImageStack)
     if verbose:
         print "------------"
@@ -639,10 +638,7 @@ def guess_units_from_mode(objects_dict, header, verbose=False):
         # data recorded in STEM with a camera, so we assume, it's a diffraction
         if isCamera:
             return "1/meters"
-        # however: for some reason, the xml data from the emi file is not read
-        # properly (the xml from others ser file is parsed)
-        # FIXME: Parse properly the xml data from the emi file and read the
-        # information about the detector
+        # in case we can't make use the detector is a camera, use a workaround
         elif isDiffractionScan:
             return "1/meters"
         else:
