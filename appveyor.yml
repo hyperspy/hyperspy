@@ -114,7 +114,10 @@ deploy:
   description: 'Release: $(APPVEYOR_REPO_COMMIT_MESSAGE)'
   provider: GitHub
   auth_token:
-    secure: KwAfARhGEqOnZHltPB6kKu8xmnoiGSk7NMYJBIEbWvFCuVnepoPV7ZcIjUN3pUpK
+    #   to266:
+    secure: ptV5Dkz3pSVdjD0qRDpxJgjVlddFtleZ+B+c2X1Fg67P8OX3bHWVktRmlj6hfLhM
+    #   vidartf:
+    #secure: KwAfARhGEqOnZHltPB6kKu8xmnoiGSk7NMYJBIEbWvFCuVnepoPV7ZcIjUN3pUpK
   artifact: /.*\.exe/              # upload all exe installers to release assets
   draft: true
   prerelease: false
