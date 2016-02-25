@@ -622,7 +622,7 @@ def ser_reader(filename, objects=None, verbose=False, *args, **kwds):
         'mapping': mapping}
     return dictionary
 
-def guess_units_from_mode(objects_dict, header, verbose=True):
+def guess_units_from_mode(objects_dict, header, verbose=False):
     isImageStack = (header['Dim-1_UnitsLength'][0] == 0)
     mode = objects_dict.ObjectInfo.ExperimentalDescription.Mode
     isCamera = ("CameraNamePath" in objects_dict.ObjectInfo.AcquireInfo.keys())
