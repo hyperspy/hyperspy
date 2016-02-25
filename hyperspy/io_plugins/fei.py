@@ -532,6 +532,7 @@ def ser_reader(filename, objects=None, verbose=False, *args, **kwds):
                             'Dim-%i_CalibrationOffset' % (i + 1)][0],
                         'scale': header[
                             'Dim-%i_CalibrationDelta' % (i + 1)][0],
+                        # for image stack, the UnitsLength is 0 (no units)
                         'units': header['Dim-%i_Units' % (i + 1)][0] if header['Dim-%i_UnitsLength'%(i+1)]>0 else 'a.u.',
                         'size': header['Dim-%i_DimensionSize' % (i + 1)][0],
                     })
@@ -570,8 +571,6 @@ def ser_reader(filename, objects=None, verbose=False, *args, **kwds):
         elif axis['units'] == '1/meters':
             axis['units'] = '1/nm'
             axis['scale'] /= 10 ** 9
-        else:
-            pass
     # If the acquisition stops before finishing the job, the stored file will
     # report the requested size even though no values are recorded. Therefore if
     # the shapes of the retrieved array does not match that of the data
