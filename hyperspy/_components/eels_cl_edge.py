@@ -70,7 +70,7 @@ class EELSCLEdge(Component):
         Fix this parameter to fix the fine structure. It is a
         component.Parameter instance.
     effective_angle : Parameter
-        The effective collection angle. It is automatically
+        The effective collection semi-angle. It is automatically
         calculated by set_microscope_parameters. It is a
         component.Parameter instance. It is fixed by default.
     fine_structure_smoothing : float between 0 and 1
@@ -142,6 +142,11 @@ class EELSCLEdge(Component):
         self._whitelist['fine_structure_active'] = None
         self._whitelist['fine_structure_width'] = None
         self._whitelist['fine_structure_smoothing'] = None
+        self.effective_angle.events.value_changed.connect(
+            self._integrate_GOS, [])
+        self.onset_energy.events.value_changed.connect(self._integrate_GOS, [])
+        self.onset_energy.events.value_changed.connect(
+            self._calculate_knots, [])
 
     # Automatically fix the fine structure when the fine structure is
     # disable.
@@ -178,7 +183,7 @@ class EELSCLEdge(Component):
         self._calculate_effective_angle()
     E0 = property(_get_E0, _set_E0)
 
-    # Collection angles
+    # Collection semi-angle
     def _get_collection_angle(self):
         return self.__collection_angle
 
@@ -187,7 +192,7 @@ class EELSCLEdge(Component):
         self._calculate_effective_angle()
     collection_angle = property(_get_collection_angle,
                                 _set_collection_angle)
-    # Convergence angle
+    # Convergence semi-angle
 
     def _get_convergence_angle(self):
         return self.__convergence_angle
@@ -252,19 +257,22 @@ class EELSCLEdge(Component):
         E0 : float
             Electron beam energy in keV.
         alpha: float
-            Convergence angle in mrad.
+            Convergence semi-angle in mrad.
         beta: float
-            Collection angle in mrad.
+            Collection semi-angle in mrad.
         energy_scale : float
             The energy step in eV.
         """
         # Relativistic correction factors
-
-        self.convergence_angle = alpha
-        self.collection_angle = beta
-        self.energy_scale = energy_scale
-        self.E0 = E0
-        self._integrate_GOS()
+        old = self.effective_angle.value
+        with self.effective_angle.events.value_changed.suppress_callback(
+                self._integrate_GOS):
+            self.convergence_angle = alpha
+            self.collection_angle = beta
+            self.energy_scale = energy_scale
+            self.E0 = E0
+        if self.effective_angle.value != old:
+            self._integrate_GOS()
 
     def _integrate_GOS(self):
         # Integration over q using splines
@@ -278,12 +286,6 @@ class EELSCLEdge(Component):
         y2 = self.GOS.qint[-1]  # in m**2/bin */
         self.r = math.log(y2 / y1) / math.log(E1 / E2)
         self.A = y1 / E1 ** -self.r
-
-        # Connect them at this point where it is certain that all the
-        # parameters are well defined
-        self.effective_angle.connect(self._integrate_GOS)
-        self.onset_energy.connect(self._integrate_GOS)
-        self.onset_energy.connect(self._calculate_knots)
 
     def _calculate_knots(self):
         start = self.onset_energy.value

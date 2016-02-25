@@ -20,6 +20,14 @@ hyperspy.tests.io.test_blockfile module
     :undoc-members:
     :show-inheritance:
 
+hyperspy.tests.io.test_dens module
+----------------------------------
+
+.. automodule:: hyperspy.tests.io.test_dens
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 hyperspy.tests.io.test_dm3 module
 ---------------------------------
 

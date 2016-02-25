@@ -1,13 +1,6 @@
 hyperspy.external.mpfit package
 ===============================
 
-Subpackages
------------
-
-.. toctree::
-
-    hyperspy.external.mpfit.tests
-
 Submodules
 ----------
 

@@ -497,7 +497,7 @@ def plot_images(images,
         or try adjusting `label`, `labelwrap`, or `per_row`
 
     """
-    from hyperspy.drawing.widgets import Scale_Bar
+    from hyperspy.drawing.widgets import ScaleBar
     from hyperspy.misc import rgb_tools
     from hyperspy.signal import Signal
 
@@ -825,7 +825,7 @@ def plot_images(images,
 
             # Add scalebars as necessary
             if (scalelist and i in scalebar) or scalebar is 'all':
-                ax.scalebar = Scale_Bar(
+                ax.scalebar = ScaleBar(
                     ax=ax,
                     units=axes[0].units,
                     color=scalebar_color,

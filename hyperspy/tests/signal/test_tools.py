@@ -1,3 +1,5 @@
+import mock
+
 import numpy as np
 from numpy.testing import assert_array_equal
 import nose.tools as nt
@@ -39,9 +41,12 @@ class Test2D:
         _verify_test_sum_x_E(self, s)
 
     def test_axis_by_str(self):
+        m = mock.Mock()
         s1 = self.signal.deepcopy()
+        s1.events.data_changed.connect(m.data_changed)
         s2 = self.signal.deepcopy()
         s1.crop(0, 2, 4)
+        nt.assert_true(m.data_changed.called)
         s2.crop("x", 2, 4)
         nt.assert_true((s1.data == s2.data).all())
 
@@ -431,10 +436,13 @@ class TestOutArg:
         self.s = s
 
     def _run_single(self, f, s, kwargs):
+        m = mock.Mock()
         s1 = f(**kwargs)
+        s1.events.data_changed.connect(m.data_changed)
         s.data = s.data + 2
         s2 = f(**kwargs)
         r = f(out=s1, **kwargs)
+        m.data_changed.assert_called_with(obj=s1)
         nt.assert_is_none(r)
         assert_array_equal(s1.data, s2.data)
 
@@ -443,6 +451,14 @@ class TestOutArg:
 
     def test_sum(self):
         self._run_single(self.s.sum, self.s, dict(axis=('x', 'z')))
+        self._run_single(self.s.sum, self.s.get_current_signal(),
+                         dict(axis=0))
+
+    def test_sum_return_1d_signal(self):
+        self._run_single(self.s.sum, self.s, dict(
+            axis=self.s.axes_manager._axes))
+        self._run_single(self.s.sum, self.s.get_current_signal(),
+                         dict(axis=0))
 
     def test_mean(self):
         self._run_single(self.s.mean, self.s, dict(axis=('x', 'z')))
@@ -562,3 +578,16 @@ class TestOutArg:
         s.data = np.ones_like(s.data)
         s.data = np.ma.masked_array(s.data, mask=mask)
         self._run_single(s.sum, s, dict(axis=('x', 'z')))
+
+    @nt.raises(ValueError)
+    def test_wrong_out_shape(self):
+        s = self.s
+        ss = s.sum()  # Sum over navigation, data shape (6,)
+        s.sum(axis=s.axes_manager._axes, out=ss)
+
+    @nt.raises(ValueError)
+    def test_wrong_out_shape_masked(self):
+        s = self.s
+        s.data = np.ma.array(s.data)
+        ss = s.sum()  # Sum over navigation, data shape (6,)
+        s.sum(axis=s.axes_manager._axes, out=ss)

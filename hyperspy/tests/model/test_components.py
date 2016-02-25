@@ -47,7 +47,6 @@ class TestPowerLaw:
         s = self.m.as_signal(show_progressbar=None)
         s.metadata.Signal.binned = True
         g = hs.model.components.PowerLaw()
-        g._axes_manager = self.m.spectrum.axes_manager
         g.estimate_parameters(s,
                               None,
                               None,
@@ -60,13 +59,20 @@ class TestPowerLaw:
         s = self.m.as_signal(show_progressbar=None)
         s.metadata.Signal.binned = False
         g = hs.model.components.PowerLaw()
-        g._axes_manager = self.m.spectrum.axes_manager
         g.estimate_parameters(s,
                               None,
                               None,
                               only_current=False)
         nt.assert_almost_equal(g.A.value, 10.064378823244837)
         nt.assert_almost_equal(g.r.value, 4.0017522876514304)
+        # Test that it all works when calling it with a different signal
+        s2 = hs.stack((s, s))
+        g.estimate_parameters(s2,
+                              None,
+                              None,
+                              only_current=False)
+        nt.assert_almost_equal(g.A.map["values"][1], 10.064378823244837)
+        nt.assert_almost_equal(g.r.map["values"][0], 4.0017522876514304)
 
 
 class TestOffset:
@@ -274,7 +280,9 @@ class TestScalableFixedPattern:
         m = s.create_model()
         fp = hs.model.components.ScalableFixedPattern(s1)
         m.append(fp)
-        m.fit()
+        with ignore_warning(message="invalid value encountered in sqrt",
+                            category=RuntimeWarning):
+            m.fit()
         nt.assert_almost_equal(fp.yscale.value, 100, delta=0.1)
 
     def test_pattern_unbinned_signal_binned(self):
@@ -285,7 +293,9 @@ class TestScalableFixedPattern:
         m = s.create_model()
         fp = hs.model.components.ScalableFixedPattern(s1)
         m.append(fp)
-        m.fit()
+        with ignore_warning(message="invalid value encountered in sqrt",
+                            category=RuntimeWarning):
+            m.fit()
         nt.assert_almost_equal(fp.yscale.value, 1000, delta=1)
 
     def test_pattern_binned_signal_unbinned(self):
@@ -296,5 +306,7 @@ class TestScalableFixedPattern:
         m = s.create_model()
         fp = hs.model.components.ScalableFixedPattern(s1)
         m.append(fp)
-        m.fit()
+        with ignore_warning(message="invalid value encountered in sqrt",
+                            category=RuntimeWarning):
+            m.fit()
         nt.assert_almost_equal(fp.yscale.value, 10, delta=.1)

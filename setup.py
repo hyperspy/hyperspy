@@ -50,38 +50,6 @@ def are_we_building4windows():
 
 scripts = ['bin/hyperspy', ]
 
-if are_we_building4windows() or os.name in ['nt', 'dos']:
-    # In the Windows command prompt we can't execute Python scripts
-    # without a .py extension. A solution is to create batch files
-    # that runs the different scripts.
-    # (code adapted from scitools)
-    scripts.extend(('bin/win_post_installation.py',
-                    'bin/install_hyperspy_here.py',
-                    'bin/uninstall_hyperspy_here.py'))
-    batch_files = []
-    for script in scripts:
-        batch_file = os.path.splitext(script)[0] + '.bat'
-        f = open(batch_file, "w")
-        f.write('set path=%~dp0;%~dp0\..\;%PATH%\n')
-        f.write('python "%%~dp0\%s" %%*\n' % os.path.split(script)[1])
-        f.close()
-        batch_files.append(batch_file)
-        if script in ('bin/hyperspy'):
-            for env in ('qtconsole', 'notebook'):
-                batch_file = os.path.splitext(script)[0] + '_%s' % env + '.bat'
-                f = open(batch_file, "w")
-                f.write('set path=%~dp0;%~dp0\..\;%PATH%\n')
-                f.write('cd %1\n')
-                if env == "qtconsole":
-                    f.write('start pythonw "%%~dp0\%s " %s \n' % (
-                        os.path.split(script)[1], env))
-                else:
-                    f.write('python "%%~dp0\%s" %s \n' %
-                            (os.path.split(script)[1], env))
-
-                batch_files.append(batch_file)
-    scripts.extend(batch_files)
-
 
 class update_version_when_dev:
 
@@ -147,6 +115,7 @@ with update_version_when_dev() as version:
                   'hyperspy.docstrings',
                   'hyperspy.drawing',
                   'hyperspy.drawing._markers',
+                  'hyperspy.drawing._widgets',
                   'hyperspy.learn',
                   'hyperspy._signals',
                   'hyperspy.gui',
@@ -178,12 +147,10 @@ with update_version_when_dev() as version:
         scripts=scripts,
         package_data={
             'hyperspy':
-            ['bin/*.py',
-             'ipython_profile/*',
-             'data/*.ico',
+            ['ipython_profile/*',
              'misc/eds/example_signals/*.hdf5',
-             'tests/io/blockfile_data/*.blockfile'
-             'tests/io/dens_data/*.dens'
+             'tests/io/blockfile_data/*.blo',
+             'tests/io/dens_data/*.dens',
              'tests/io/dm_stackbuilder_plugin/test_stackbuilder_imagestack.dm3',
              'tests/io/dm3_1D_data/*.dm3',
              'tests/io/dm3_2D_data/*.dm3',
@@ -195,7 +162,7 @@ with update_version_when_dev() as version:
              'tests/io/hdf5_files/*.hdf5',
              'tests/io/tiff_files/*.tif',
              'tests/io/npy_files/*.npy',
-             'tests/io/unf_files/*.unf'
+             'tests/io/unf_files/*.unf',
              'tests/drawing/*.ipynb',
              ],
         },
@@ -208,7 +175,6 @@ with update_version_when_dev() as version:
         license=Release.license,
         platforms=Release.platforms,
         url=Release.url,
-        #~ test_suite = 'nose.collector',
         keywords=Release.keywords,
         classifiers=[
             "Programming Language :: Python :: 2.7",
