@@ -12,7 +12,7 @@ environment:
 
     # Pre-installed Python versions, which Appveyor may upgrade to
     # a later point release.
-    - PYTHON: "C:\\Miniconda3"
+    - PYTHON: "C:\\Miniconda35"
       PYTHON_VERSION: "3.5.x"
       PYTHON_MAJOR: 3
       PYTHON_ARCH: "32"
