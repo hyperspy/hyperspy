@@ -18,6 +18,7 @@
 
 import os
 import nose.tools as nt
+import numpy as np
 
 from hyperspy.io import load
 from hyperspy.io_plugins.fei import load_ser_file
@@ -42,6 +43,13 @@ class test_fei_reader():
         # TIA new format 4Go file
 #        fname2= os.path.join('/mnt/data/test/64bits', '11.22.31 CCD Preview-250-bean_damaged-bin2-0.2s.emi')
 #        load(fname2, verbose=verbose)
+
+    def test_load_image_content(self, verbose=True):
+        # TEM image of the beam stop
+        fname0 = os.path.join(self.dirpathold, '64x64_TEM_images_acquire.emi')
+        s0 = load(fname0, verbose=verbose)
+        data = np.load(fname0.replace('emi', 'npy'))
+        nt.assert_true((s0.data == data).all())        
         
     def test_load_ser_reader_old_new_format(self, verbose=True):
         # test TIA old format
