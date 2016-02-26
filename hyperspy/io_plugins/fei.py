@@ -252,6 +252,9 @@ def emixml2dtb(et, dictree):
 def emi_reader(filename, dump_xml=False, verbose=False, **kwds):
     # TODO: recover the tags from the emi file. It is easy: just look for
     # <ObjectInfo> and </ObjectInfo>. It is standard xml :)
+    # xml chunks are identified using UUID, if we can find how these UUID are
+    # generated then, it will possible to match to the corresponding ser file
+    # and add the detector information in the metadata
     objects = get_xml_info_from_emi(filename)
     filename = os.path.splitext(filename)[0]
     if dump_xml is True:
@@ -620,7 +623,11 @@ def guess_units_from_mode(objects_dict, header, verbose=False):
     # assuming that for an image stack, the UnitsLength of the "3rd" dimension
     # is 0
     isImageStack = (header['Dim-1_UnitsLength'][0] == 0)
-    mode = objects_dict.ObjectInfo.ExperimentalDescription.Mode
+    # in case the xml file doesn't contains the "Mode" return "Unknow" unit
+    try:
+        mode = objects_dict.ObjectInfo.ExperimentalDescription.Mode
+    except AttributeError: # in case the xml chunk doesn't contain the Mode
+        return 'Unknown'
     isCamera = ("CameraNamePath" in objects_dict.ObjectInfo.AcquireInfo.keys())
     # Workaround: if this is not an image stack and not a STEM image, then we 
     # assume that it should be a diffraction
