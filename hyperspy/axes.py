@@ -443,11 +443,12 @@ class DataAxis(t.HasTraits):
 
     def update_from(self, axis, attributes=["scale", "offset", "units"]):
         """Copy values of specified axes fields from the passed AxesManager.
+
         Parameters
         ----------
         axis : DataAxis
             The DataAxis instance to use as a source for values.
-        fields : iterable container of strings.
+        attributes : iterable container of strings.
             The name of the attribute to update. If the attribute does not
             exist in either of the AxesManagers, an AttributeError will be
             raised.
@@ -465,7 +466,6 @@ class DataAxis(t.HasTraits):
             self.trait_set(**changed)
             any_changes = True
         return any_changes
-
 
 class AxesManager(t.HasTraits):
 
@@ -572,7 +572,7 @@ class AxesManager(t.HasTraits):
             updated.
 
             Arguments:
-            ---------
+            ----------
             obj : The AxesManager that the event belongs to.
             """, arguments=['obj'])
         self.events.any_axis_changed = Event("""
@@ -584,8 +584,8 @@ class AxesManager(t.HasTraits):
 
             Arguments:
             ----------
-            axes_manager : The AxesManager that the event belongs to.
-            """, arguments=["obj"])
+            obj : The AxesManager that the event belongs to.
+            """, arguments=['obj'])
         self.create_axes(axes_list)
         # set_signal_dimension is called only if there is no current
         # view. It defaults to spectrum
