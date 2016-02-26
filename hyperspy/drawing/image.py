@@ -155,6 +155,11 @@ class ImagePlot(BlittedFigure):
                         xaxis.axis[-1] + xaxis.scale / 2.,
                         yaxis.axis[-1] + yaxis.scale / 2.,
                         yaxis.axis[0] - yaxis.scale / 2.)
+        self._calculate_aspect()
+
+    def _calculate_aspect(self):
+        xaxis = self.xaxis
+        yaxis = self.yaxis
         # Apply aspect ratio constraint
         if self.min_aspect:
             min_asp = self.min_aspect
@@ -274,6 +279,12 @@ class ImagePlot(BlittedFigure):
 
     def update(self, auto_contrast=None, **kwargs):
         ims = self.ax.images
+        # update extent:
+        self._extent = (self.xaxis.axis[0] - self.xaxis.scale / 2.,
+                        self.xaxis.axis[-1] + self.xaxis.scale / 2.,
+                        self.yaxis.axis[-1] + self.yaxis.scale / 2.,
+                        self.yaxis.axis[0] - self.yaxis.scale / 2.)
+
         # Turn on centre_colormap if a diverging colormap is used.
         if self.centre_colormap == "auto":
             if "cmap" in kwargs:
@@ -329,6 +340,11 @@ class ImagePlot(BlittedFigure):
             vmin, vmax = self.vmin, self.vmax
         if ims:
             ims[0].set_data(data)
+            self.ax.set_xlim(self._extent[:2])
+            self.ax.set_ylim(self._extent[2:])
+            ims[0].set_extent(self._extent)
+            self._calculate_aspect()
+            self.ax.set_aspect(self._aspect)
             ims[0].norm.vmax, ims[0].norm.vmin = vmax, vmin
             if redraw_colorbar is True:
                 ims[0].autoscale()
