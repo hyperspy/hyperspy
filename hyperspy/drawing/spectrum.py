@@ -115,8 +115,8 @@ class SpectrumFigure(BlittedFigure):
         x_axis_lower_lims = []
         for line in self.ax_lines:
             line.plot()
-            x_axis_lower_lims.append(line.axis[0])
-            x_axis_upper_lims.append(line.axis[-1])
+            x_axis_lower_lims.append(line.axis.axis[0])
+            x_axis_upper_lims.append(line.axis.axis[-1])
         for marker in self.ax_markers:
             marker.plot()
         plt.xlim(np.min(x_axis_lower_lims), np.max(x_axis_upper_lims))
@@ -300,7 +300,7 @@ class SpectrumLine(object):
             data = f(axes_manager=self.axes_manager).imag
         if self.line is not None:
             self.line.remove()
-        self.line, = self.ax.plot(self.axis, data,
+        self.line, = self.ax.plot(self.axis.axis, data,
                                   **self.line_properties)
         self.line.set_animated(True)
         self.axes_manager.events.indices_changed.connect(self.update, [])
@@ -331,11 +331,18 @@ class SpectrumLine(object):
             ydata = self.data_function(axes_manager=self.axes_manager).real
         else:
             ydata = self.data_function(axes_manager=self.axes_manager).imag
-        self.line.set_ydata(ydata)
+
+        old_xaxis = self.line.get_xdata()
+        if len(old_xaxis) != self.axis.size or \
+                np.any(np.not_equal(old_xaxis, self.axis.axis)):
+            self.ax.set_xlim(self.axis.axis[0], self.axis.axis[-1])
+            self.line.set_data(self.axis.axis, ydata)
+        else:
+            self.line.set_ydata(ydata)
 
         if self.autoscale is True:
             self.ax.relim()
-            y1, y2 = np.searchsorted(self.axis,
+            y1, y2 = np.searchsorted(self.axis.axis,
                                      self.ax.get_xbound())
             y2 += 2
             y1, y2 = np.clip((y1, y2), 0, len(ydata - 1))

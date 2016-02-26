@@ -4011,7 +4011,6 @@ class Signal(FancySlicing,
             s.data = np.atleast_1d(
                 function(self.data, axis=ar_axes,))
             s._remove_axis([ax.index_in_axes_manager for ax in axes])
-            s.events.data_changed.trigger(self)
             return s
 
     def sum(self, axis=None, out=None):
@@ -4220,7 +4219,7 @@ class Signal(FancySlicing,
         axis %s
         order : int
             the order of the derivative
-                %s
+        %s
 
         See also
         --------
