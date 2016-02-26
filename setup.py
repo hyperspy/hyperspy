@@ -36,8 +36,9 @@ install_req = ['scipy',
                'ipython (>= 2.0)',
                'matplotlib (>= 1.2)',
                'numpy',
-               'traits',
-               'traitsui',
+               'traits (>=4.5.0)',
+               'traitsui (>=4.5.0)',
+               'natsort',
                'sympy']
 
 

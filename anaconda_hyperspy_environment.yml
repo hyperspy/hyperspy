@@ -17,6 +17,7 @@ dependencies:
 - statsmodels
 - sympy
 - natsort
+- ncurses
 - pip:
   - dask
   - hyperspy
