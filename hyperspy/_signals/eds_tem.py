@@ -19,7 +19,6 @@ from __future__ import division
 
 import traits.api as t
 import numpy as np
-from scipy import ndimage
 from scipy import constants
 from hyperspy import utils
 from hyperspy._signals.eds import EDSSpectrum
@@ -356,8 +355,16 @@ class EDSTEMSpectrum(EDSSpectrum):
                          composition_units))
         if plot_result and composition[i].axes_manager.signal_dimension != 0:
             utils.plot.plot_signals(composition, **kwargs)
-        return composition
-        
+        if store_in_mp:
+            for i, compo in enumerate(composition):
+                self._set_result(xray_line=xray_lines[i],
+                results='quant', data_res=compo.data, plot_result=False,
+                store_in_mp=store_in_mp)
+            if method=='zetha':
+                self.metadata.set_item("Sample.mass_thickness", mass_thickness)
+            else:
+                return composition
+
 
     def vacuum_mask(self, threshold=1.0, closing=True):
         """
@@ -495,25 +502,6 @@ class EDSTEMSpectrum(EDSSpectrum):
                             auto_add_lines=auto_add_lines,
                             *args, **kwargs)
         return model
-
-    def zfactors_from_kfactors(self, kfactors='auto'):
-        """
-        Provide Zetha factors from the k-factors
-
-        Parameters
-        ----------
-        zfactors: list of float
-            The list of kfactor in same order as intensities. Note that
-            intensities provided by hyperspy are sorted by the aplhabetical
-            order of the X-ray lines. eg. kfactors =[0.982, 1.32, 1.60] for
-            ['Al_Ka','Cr_Ka', 'Ni_Ka'].
-        """
-        print "Not working"
-        if kfactors == 'auto':
-            kfactors = self.metadata.Sample.kfactors
-        self.metadata.Sample.set_item(
-            'zfactors',
-            np.array(self.metadata.Sample.kfactors) / constants.N_A)
 
     def get_dose(self, beam_current='auto', real_time='auto'):
         """
