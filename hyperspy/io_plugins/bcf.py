@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2015 Petras Jokubauskas
-# Copyright 2015 The HyperSpy developers
+# Copyright 2016 Petras Jokubauskas
+# Copyright 2016 The HyperSpy developers
 #
 # This library is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,8 +17,11 @@
 # along with any project and source this library is coupled.
 # If not, see <http://www.gnu.org/licenses/>.
 #
-# This python library also provides basic reading capabilities of
-# proprietary AidAim Software(tm) SFS (Single File System).
+# This python library subset provides read functionality of
+#  Bruker bcf files.
+# The basic reading capabilities of proprietary AidAim Software(tm)
+#  SFS (Single File System) (used in bcf technology) is present in
+#  the same library.
 
 
 # Plugin characteristics
@@ -191,7 +194,7 @@ class SFSTreeItem(object):
             fn.seek(self.pointers[0])
             #AACS signature, uncompressed size, undef var, number of blocks
             aacs, uc_size, _, n_of_blocks = strct_unp('<IIII', fn.read(16))
-        if aacs == 0x53434141: #AACS as string
+        if aacs == 0x53434141:  # AACS as string
             self.uncompressed_blk_size = uc_size
             self.no_of_compr_blk = n_of_blocks
         else:
@@ -525,18 +528,18 @@ class HyperHeader(object):
         self.sem.wd = float(semData.WD)  # in mm
         self.sem.mag = float(semData.Mag)  # in times
         # image/hypermap resolution in um/pixel:
-        self.image.x_res = float(semData.DX)
-        self.image.y_res = float(semData.DY)
+        self.image.x_res = float(semData.DX) / 1.0e6  # in meters
+        self.image.y_res = float(semData.DY) / 1.0e6  # in meters
         semStageData = root.xpath("ClassInstance[@Type='TRTSEMStageData']")[0]
         # stage position data in um cast to m (that data anyway is not used
         # by hyperspy):
         try:
-            self.stage.x = float(semStageData.X) / 1.0e6
-            self.stage.y = float(semStageData.Y) / 1.0e6
+            self.stage.x = float(semStageData.X) / 1.0e6  # in meters
+            self.stage.y = float(semStageData.Y) / 1.0e6  # in meters
         except AttributeError:
             self.stage.x = self.stage.y = None
         try:
-            self.stage.z = float(semStageData.Z) / 1.0e6
+            self.stage.z = float(semStageData.Z) / 1.0e6  # in meters
         except AttributeError:
             self.stage.z = None
         try:
@@ -684,11 +687,11 @@ class BCF_reader(SFS_reader):
                                         self,
                                         index=index,
                                         downsample=dwn)
-    
+
     def parse_hypermap(self, index=0, downsample=1, cutoff_at_kV=None):
         """Unpack the Delphi/Bruker binary spectral map and return
         numpy array in memory efficient way.
-        Pure python/numpy implimentation -- slow, or 
+        Pure python/numpy implimentation -- slow, or
         cython/memoryview/numpy implimentaion if complied (fast)
         is used.
 
@@ -707,37 +710,38 @@ class BCF_reader(SFS_reader):
         numpy array of hypermap, where spectral channels are on
             the first axis.
         """
-        
+
         if type(cutoff_at_kV) in (int, float):
             eds = self.header.get_spectra_metadata()
             cutoff_chan = eds.energy_to_channel(cutoff_at_kV)
         else:
             cutoff_chan = None
-            
+
         if fast_unbcf:
-            spectrum_file = self.get_file('EDSDatabase/SpectrumData' + str(index))
+            spectrum_file = self.get_file('EDSDatabase/SpectrumData' +
+                                                                    str(index))
             return unbcf_fast.parse_to_numpy(spectrum_file,
                                              downsample=downsample,
                                              cutoff=cutoff_chan)
         else:
             if verbose:
                 print('this is going to take a while... please wait')
-            return py_parse_hypermap(index=0,
+            return self.py_parse_hypermap(index=0,
                                      downsample=downsample,
                                      cutoff_at_channel=cutoff_chan)
-            
-    
+
     def py_parse_hypermap(self, index=0, downsample=1, cutoff_at_channel=None):
-        
+
         st = {1: 'B', 2: 'B', 4: 'H', 8: 'I', 16: 'Q'}
         spectrum_file = self.get_file('EDSDatabase/SpectrumData' + str(index))
         iter_data, size_chnk, chunks = spectrum_file.get_iter_and_properties()
         if type(cutoff_at_channel) == int:
-            max_chan = eds.energy_to_channel(cutoff_at_channel)
+            max_chan = cutoff_at_channel
         else:
             max_chan = self.header.estimate_map_channels(index=index)
         depth = self.header.estimate_map_depth(index=index,
-                                               downsample=downsample, for_numpy=True)
+                                               downsample=downsample,
+                                               for_numpy=True)
         buffer1 = next(iter_data)
         height, width = strct_unp('<ii', buffer1[:8])
         dwn_factor = downsample
@@ -747,7 +751,7 @@ class BCF_reader(SFS_reader):
         vfa = np.zeros(total_channels, dtype=depth)
         offset = 0x1A0
         size = size_chnk
-        for line_cnt in tqdm(range(height)):
+        for line_cnt in range(height):
             if (offset + 4) >= size:
                 size = size_chnk + size - offset
                 buffer1 = buffer1[offset:] + next(iter_data)
@@ -764,12 +768,12 @@ class BCF_reader(SFS_reader):
                 # number of channels for whole mapping,
                 # number of channels for pixel,
                 # some dummy placehollder (same value in every known bcf),
-                # flag distingvishing 12bit packing (1) or instructed packing,
+                # flag distinguishing 12bit packing (1) or instructed packing,
                 # value which sometimes shows the size of packed data,
                 # number of pulses if data is 12bit packed, or contains 16bit
-                #    packed additional to instructed data,
+                #   packed additional to instructed data,
                 # packed data size - next header is after that size,
-                # dummy, empty 2bytes
+                # dummy -- empty 2bytes
                 x_pix, chan1, chan2, dummy1, flag, dummy_size1, n_of_pulses,\
                      data_size2, dummy2 = strct_unp('<IHHIHHHHH',
                                                     buffer1[offset:offset + 22])
@@ -873,13 +877,70 @@ class BCF_reader(SFS_reader):
 
 
 class HyperMap(object):
-    def __init__(self, nparray, parent, index=0, downsample=None):
+    def __init__(self, nparray, parent, index=0, downsample=1):
         sp_meta = parent.header.get_spectra_metadata(index=index)
         self.calib_abs = sp_meta.calibAbs
         self.calib_lin = sp_meta.calibLin
-        self.xcalib = parent.header.image.x_res
-        self.ycalib = parent.header.image.y_res
-        if downsample:
-            self.xcalib *= downsample
-            self.ycalib *= downsample
+        self.xcalib = parent.header.image.x_res * downsample
+        self.ycalib = parent.header.image.y_res * downsample
         self.hypermap = nparray
+
+
+#wrapper functions for hyperspy:
+def file_reader(filename,
+                record_by=None,
+                index=0,
+                downsample=1,
+                cutoff_at_kV=None,
+                **kwds):
+    #objectified bcf file:
+    obj_bcf = BCF_reader(filename)
+    if record_by == 'image':
+        return bcf_imagery(obj_bcf)
+    elif record_by == 'spectrum':
+        pass  # return bcf_hyperspectra(obj_bcf)
+    else:
+        return bcf_imagery(obj_bcf)  # + bcf_hyperspectra(obj_bcf)
+
+
+def bcf_imagery(obj_bcf):
+    """
+    return hyperspy required list of dict with sem
+    imagery and metadata
+    """
+    imagery_list = []
+    for img in obj_bcf.header.image.images:
+        imagery_list.append(
+          {'data': img.data,
+           'axes': [{'index_in_array': 1,
+                     'name': 'width',
+                     'size': obj_bcf.header.image.width,
+                     'offset': 0,
+                     'scale': obj_bcf.header.image.y_res,
+                     'units': 'm'
+                    },
+                    {'index_in_array': 0,
+                     'name': 'height',
+                     'size': obj_bcf.header.image.height,
+                     'offset': 0,
+                     'scale': obj_bcf.header.image.x_res,
+                     'units': 'm'}],
+           'metadata':
+             # where is no way to determine what kind of instrument was used:
+             # TEM or SEM
+             {'Acquisition_instrument': {
+                          'SEM': {
+                             'beam_current': 0.0,  # I have no technical
+                             #possibilities to get such parameter by bruker
+                             'beam_energy': obj_bcf.header.sem.hv,
+                             'tilt_stage': obj_bcf.header.stage.tilt_angle,
+                             'stage_x': obj_bcf.header.stage.x,
+                             'stage_y': obj_bcf.header.stage.y
+                                 }
+                                        },
+              'General': {'original_filename': obj_bcf.filename.split('/')[-1]},
+              'Signal': {'signal_type': img.detector_name,
+                           'record_by': 'image', },
+             }
+           })
+    return imagery_list
