@@ -53,20 +53,16 @@ import json
 # temporary statically assigned value, should be tied to debug if present...:
 verbose = True
 
-#try:
-#    import unbcf_fast
-#    fast_unbcf = True
-#    if verbose:
-#        print("The fast cython based bcf unpacking library were found")
-#except ImportError:
-#    fast_unbcf = False
-#    if verbose:
-#        print("No fast bcf library present... ",
-#              "Falling back to python only backend")
-
-# dictionary for BCF parser with lenght in nibbles and integer types
-# after unpacking:
-st = {1: 'B', 2: 'B', 4: 'H', 8: 'I', 16: 'Q'}
+try:
+    from . import unbcf_fast
+    fast_unbcf = True
+    if verbose:
+        print("The fast cython based bcf unpacking library were found")
+except ImportError:
+    fast_unbcf = False
+    if verbose:
+        print("No fast bcf library present... ",
+              "Falling back to python only backend")
 
 
 class Container(object):
@@ -74,7 +70,6 @@ class Container(object):
 
 
 class SFSTreeItem(object):
-
     def __init__(self, item_raw_string, parent):
         self.sfs = parent
         self._pointer_to_pointer_table, self.size, create_time, \
@@ -101,7 +96,7 @@ class SFSTreeItem(object):
         return '<SFS internal file {0:.2f} MB>'.format(self.size / 1048576)
 
     def _fill_pointer_table(self):
-        #table size in number of chunks
+        #table size in number of chunks:
         n_of_chunks = -(-self.size_in_chunks //
                        (self.sfs.usable_chunk // 4))
         with open(self.sfs.filename, 'rb') as fn:
@@ -188,18 +183,39 @@ class SFSTreeItem(object):
                 yield fn.read(self.sfs.usable_chunk)
 
     def setup_compression_metadata(self):
-        """Setup the number of chunks and uncompressed size as class
-        atributes."""
+        """
+        Setup the number of chunks and uncompressed size as class
+        atributes.
+        """
         with open(self.sfs.filename, 'rb') as fn:
             fn.seek(self.pointers[0])
             #AACS signature, uncompressed size, undef var, number of blocks
             aacs, uc_size, _, n_of_blocks = strct_unp('<IIII', fn.read(16))
-        if aacs == 0x53434141:
+        if aacs == 0x53434141: #AACS as string
             self.uncompressed_blk_size = uc_size
             self.no_of_compr_blk = n_of_blocks
         else:
             raise ValueError("""The file is marked to be compressed,
 but compression signature is missing in the header. Aborting....""")
+
+    def _iter_read_larger_chunks(self, chunk_size=524288):
+        """
+        Generate and return iterator for reading
+        the raw data in sensible sized chunks.
+        default chunk size = 524288 bytes (0.5MB)
+        """
+        chunks = -(-self.size // chunk_size)
+        last_chunk = self.size % chunk_size
+        offset = 0
+        for dummy1 in range(chunks - 1):
+            raw_string = self.read_piece(offset, chunk_size)
+            offset += chunk_size
+            yield raw_string
+        if last_chunk != 0:
+            raw_string = self.read_piece(offset, last_chunk)
+        else:
+            raw_string = self.read_piece(offset, chunk_size)
+        yield raw_string
 
     def _iter_read_compr_chunks(self):
         """Generate and return iterator for compressed file with
@@ -224,7 +240,7 @@ but compression signature is missing in the header. Aborting....""")
             offset += cpr_size
             yield unzip_block(raw_string)
 
-    def get_iter_and_properties(self):
+    def get_iter_and_properties(self, larger_chunks=False):
         """Get the the iterator and properties of its chunked size and
         number of chunks for compressed or not compressed data
         accordingly.
@@ -233,8 +249,12 @@ but compression signature is missing in the header. Aborting....""")
             (iterator, chunk_size, number_of_chunks)
         """
         if self.sfs.compression == 'None':
-            return self._iter_read_chunks(), self.sfs.usable_chunk,\
+            if not larger_chunks:
+                return self._iter_read_chunks(), self.sfs.usable_chunk,\
                    self.size_in_chunks
+            else:
+                return self._iter_read_larger_chunks(chunk_size=larger_chunks),\
+                    larger_chunks, -(-self.size // larger_chunks)
         elif self.sfs.compression in ('zlib', 'bzip2'):
             return self._iter_read_compr_chunks(), self.uncompressed_blk_size,\
                    self.no_of_compr_blk
@@ -584,7 +604,7 @@ class HyperHeader(object):
                 'The spectrum of mapping with selected index have no counts!!!')
             return len(sum_eds)
 
-    def estimate_map_depth(self, index=0, downsampling=False):
+    def estimate_map_depth(self, index=0, downsample=1, for_numpy=False):
         """estimate minimal dtype of array from the cumulative spectra
         of the all pixels so that none would be truncated.
         args:
@@ -599,21 +619,33 @@ class HyperHeader(object):
         """
         sum_eds = self.spectra_data[index].data
         #the most intensive peak is Bruker reference peak at 0kV:
-        roof = np.max(sum_eds) // self.image.width // self.image.height * 2
+        roof = np.max(sum_eds) // self.image.width // self.image.height * 2 *\
+                                          downsample * downsample
+        #this complicated nonsence bellow is due to numpy regression in adding
+        # integer inplace to unsigned integer array. (python integers is signed)
         if roof > 0xFF:
             if roof > 0xFFFF:
-                if downsampling:
-                    depth = np.int64
+                if for_numpy and (downsample > 1):
+                    if roof > 0xEFFFFFFF:
+                        depth = np.int64
+                    else:
+                        depth = np.int32
                 else:
                     depth = np.uint32
             else:
-                if downsampling:
-                    depth = np.int32
+                if for_numpy and (downsample > 1):
+                    if roof > 0xEFFF:
+                        depth = np.int32
+                    else:
+                        depth = np.int16
                 else:
                     depth = np.uint16
         else:
-            if downsampling:
-                depth = np.int16
+            if for_numpy and (downsample > 1):
+                if roof > 0xEF:
+                    depth = np.int16
+                else:
+                    depth = np.int8
             else:
                 depth = np.uint8
         return depth
@@ -641,59 +673,81 @@ class BCF_reader(SFS_reader):
             'channels recorded, coresponding to {0:.2f}kV'.format(
             ed.channel_to_energy(ed.chnlCnt)))
 
-    def persistent_parse_hypermap(self, index=0,
-                                  downsample=None, cutoff_at_kV=None):
+    def persistent_parse_hypermap(self, index=0, downsample=None,
+                                  cutoff_at_kV=None):
         """parse and assign the hypermap to the Hypermap python object"""
-        self.hypermap[index] = HyperMap(
-                       self.parse_hypermap(index=index,
-                                           downsample=downsample,
-                                           cutoff_at_kV=cutoff_at_kV),
-                       self, index=index, downsample=downsample)
-
-    def parse_hypermap(self, index=0, downsample=None, cutoff_at_kV=None):
+        dwn = downsample
+        hypermap = self.parse_hypermap(index=index,
+                                       downsample=dwn,
+                                       cutoff_at_kV=cutoff_at_kV)
+        self.hypermap[index] = HyperMap(hypermap,
+                                        self,
+                                        index=index,
+                                        downsample=dwn)
+    
+    def parse_hypermap(self, index=0, downsample=1, cutoff_at_kV=None):
         """Unpack the Delphi/Bruker binary spectral map and return
         numpy array in memory efficient way.
-        Pure python/numpy implimentation -- slow.
-        This method is ment to be used if fast, cython based
-        method is unavailabe!
+        Pure python/numpy implimentation -- slow, or 
+        cython/memoryview/numpy implimentaion if complied (fast)
+        is used.
 
         Arguments:
         ---------
-        index: the index of hypermap in bcf if there is more than one.
+        index: the index of hypermap in bcf if there is more than one
+            hyper map in file.
         downsample: downsampling factor (integer). Diferently than
             block_reduce from skimage.measure, the parser populates
             reduced array by suming results of pixels, thus saving memory.
             Downsampled (differently than not) hypermaps are returned
-            wiht signed integer dtypes (non downsampled: uint8 ->
-            downsampled: int16; uint16 -> int32; uint32 -> int64)
+            wiht signed integer dtypes larger if required.
 
         Returns:
         ---------
-        numpy array of hypermap, where spectral channels are on first
-            axis
+        numpy array of hypermap, where spectral channels are on
+            the first axis.
         """
-        spectrum_file = self.get_file('EDSDatabase/SpectrumData' + str(index))
-        iter_data, size_chnk, chunks = spectrum_file.get_iter_and_properties()
+        
         if type(cutoff_at_kV) in (int, float):
             eds = self.header.get_spectra_metadata()
-            max_chan = eds.energy_to_channel(cutoff_at_kV)
+            cutoff_chan = eds.energy_to_channel(cutoff_at_kV)
+        else:
+            cutoff_chan = None
+            
+        if fast_unbcf:
+            spectrum_file = self.get_file('EDSDatabase/SpectrumData' + str(index))
+            return unbcf_fast.parse_to_numpy(spectrum_file,
+                                             downsample=downsample,
+                                             cutoff=cutoff_chan)
+        else:
+            if verbose:
+                print('this is going to take a while... please wait')
+            return py_parse_hypermap(index=0,
+                                     downsample=downsample,
+                                     cutoff_at_channel=cutoff_chan)
+            
+    
+    def py_parse_hypermap(self, index=0, downsample=1, cutoff_at_channel=None):
+        
+        st = {1: 'B', 2: 'B', 4: 'H', 8: 'I', 16: 'Q'}
+        spectrum_file = self.get_file('EDSDatabase/SpectrumData' + str(index))
+        iter_data, size_chnk, chunks = spectrum_file.get_iter_and_properties()
+        if type(cutoff_at_channel) == int:
+            max_chan = eds.energy_to_channel(cutoff_at_channel)
         else:
             max_chan = self.header.estimate_map_channels(index=index)
         depth = self.header.estimate_map_depth(index=index,
-                                               downsampling=downsample)
+                                               downsample=downsample, for_numpy=True)
         buffer1 = next(iter_data)
-        height, width = strct_unp('<ii', buffer1[:8])  # +8
-        if type(downsample) == int:
-            dwn_factor = downsample
-        else:
-            dwn_factor = 1
+        height, width = strct_unp('<ii', buffer1[:8])
+        dwn_factor = downsample
         total_pixels = -(-height // dwn_factor) * -(-width // dwn_factor)
         total_channels = total_pixels * max_chan
         #hyper map as very flat array:
         vfa = np.zeros(total_channels, dtype=depth)
         offset = 0x1A0
         size = size_chnk
-        for line_cnt in range(height):
+        for line_cnt in tqdm(range(height)):
             if (offset + 4) >= size:
                 size = size_chnk + size - offset
                 buffer1 = buffer1[offset:] + next(iter_data)
@@ -723,12 +777,9 @@ class BCF_reader(SFS_reader):
                                                       (line_cnt // dwn_factor))
                 offset += 22
                 if (offset + data_size2) >= size:
-                    try:
-                        buffer1 = buffer1[offset:] + next(iter_data)
-                        size = size_chnk + size - offset
-                        offset = 0
-                    except StopIteration:
-                        print('hit the end data_size2')
+                    buffer1 = buffer1[offset:] + next(iter_data)
+                    size = size_chnk + size - offset
+                    offset = 0
                 if flag == 1:  # and (chan1 != chan2)
                     #Unpack packed 12-bit data to 16-bit uints:
                     data1 = buffer1[offset:offset + data_size2]
