@@ -38,9 +38,9 @@ install_req = ['scipy',
                'numpy',
                'traits',
                'traitsui',
-               'sympy',
+               'requests',
                'setuptools',
-               ]
+               'sympy']
 
 
 def are_we_building4windows():
@@ -109,6 +109,7 @@ with update_version_when_dev() as version:
         package_dir={'hyperspy': 'hyperspy'},
         version=version,
         packages=['hyperspy',
+                  'hyperspy.datasets',
                   'hyperspy._components',
                   'hyperspy.datasets',
                   'hyperspy.io_plugins',
@@ -123,6 +124,7 @@ with update_version_when_dev() as version:
                   'hyperspy.tests',
                   'hyperspy.tests.axes',
                   'hyperspy.tests.component',
+                  'hyperspy.tests.datasets',
                   'hyperspy.tests.drawing',
                   'hyperspy.tests.io',
                   'hyperspy.tests.model',
