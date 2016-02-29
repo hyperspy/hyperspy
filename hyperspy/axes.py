@@ -467,6 +467,7 @@ class DataAxis(t.HasTraits):
             any_changes = True
         return any_changes
 
+
 class AxesManager(t.HasTraits):
 
     """Contains and manages the data axes.

@@ -28,7 +28,7 @@ class TestModelIndexing:
     def setUp(self):
         np.random.seed(1)
         axes = np.array([[100 * np.random.random() + np.arange(0., 600, 1)
-                        for i in range(3)] for j in range(4)])
+                          for i in range(3)] for j in range(4)])
         g = Gaussian()
         g.A.value = 30000.
         g.centre.value = 300.

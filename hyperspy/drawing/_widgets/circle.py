@@ -48,7 +48,7 @@ class CircleWidget(Widget2DBase, ResizersMixin):
         snap_spacing = self.axes[0].scale * self.size_step
         for i in xrange(2):
             value[i] = max(0, (round((value[i] - snap_offset) / snap_spacing) *
-                        snap_spacing + snap_offset))
+                               snap_spacing + snap_offset))
         return value
 
     def _set_size(self, value):
