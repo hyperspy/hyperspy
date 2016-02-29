@@ -620,18 +620,24 @@ def ser_reader(filename, objects=None, verbose=False, *args, **kwds):
     return dictionary
 
 def guess_units_from_mode(objects_dict, header, verbose=False):
-    # assuming that for an image stack, the UnitsLength of the "3rd" dimension
-    # is 0
-    isImageStack = (header['Dim-1_UnitsLength'][0] == 0)
-    # in case the xml file doesn't contains the "Mode" return "Unknow" unit
+    # in case the xml file doesn't contains the "Mode" return "Unknow" unit or
+    # the header doesn't contains 'Dim-1_UnitsLength'
     try:
+
         mode = objects_dict.ObjectInfo.ExperimentalDescription.Mode
+        isCamera = ("CameraNamePath" in objects_dict.ObjectInfo.AcquireInfo.keys())
     except AttributeError: # in case the xml chunk doesn't contain the Mode
-        return 'Unknown'
-    isCamera = ("CameraNamePath" in objects_dict.ObjectInfo.AcquireInfo.keys())
-    # Workaround: if this is not an image stack and not a STEM image, then we 
-    # assume that it should be a diffraction
-    isDiffractionScan = (header['Dim-1_DimensionSize'][0] > 1 and not isImageStack)
+        return 'meters' # Most of the time, the unit will be meters!
+    try:
+        # assuming that for an image stack, the UnitsLength of the "3rd"
+        # dimension is 0
+        isImageStack = (header['Dim-1_UnitsLength'][0] == 0)        
+        # Workaround: if this is not an image stack and not a STEM image, then
+        # we assume that it should be a diffraction
+        isDiffractionScan = (header['Dim-1_DimensionSize'][0] > 1 and not isImageStack)
+    except ValueError: # in case the header doesn't contain the information
+        return 'meters' # Most of the time, the unit will be meters!
+
     if verbose:
         print "------------"
         print objects_dict.ObjectInfo.AcquireInfo
@@ -642,19 +648,15 @@ def guess_units_from_mode(objects_dict, header, verbose=False):
         print "------------"
     if 'STEM' in mode:
         # data recorded in STEM with a camera, so we assume, it's a diffraction
-        if isCamera:
-            return "1/meters"
         # in case we can't make use the detector is a camera, use a workaround
-        elif isDiffractionScan:
+        if isCamera or isDiffractionScan:
             return "1/meters"
         else:
             return "meters"
     elif 'Diffraction' in mode:
         return "1/meters"
-    elif 'Image' in mode:
-        return "meters"
     else:
-        return 'Unknown'
+        return 'meters'
         
 def get_simplified_mode(mode):
     def get_diffraction_or_image_mode(mode):
