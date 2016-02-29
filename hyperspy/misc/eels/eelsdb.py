@@ -169,7 +169,7 @@ def eelsdb(spectrum_type=None, title=None, author=None, element=None, formula=No
             raise ValueError("`%s` must be \"lt\", \"eq\" or \"gt\"." %
                              label)
     if monochromated is not None:
-        monochromated = "Yes" if monochromated else "No"
+        monochromated = 1 if monochromated else 0
     params = {
         "type": spectrum_type,
         "title": title,
