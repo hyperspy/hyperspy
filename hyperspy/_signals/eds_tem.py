@@ -262,7 +262,6 @@ class EDSTEMSpectrum(EDSSpectrum):
     def quantification(self,
                        intensities='auto',
                        method='CL',
-                       kfactors='auto',
                        composition_units='weight',
                        navigation_mask=1.0,
                        closing=True,
@@ -270,19 +269,15 @@ class EDSTEMSpectrum(EDSSpectrum):
                        store_in_mp=True,
                        **kwargs):
         """
-        Quantification using Cliff-Lorimer or zetha factor method
+        Quantification using Cliff-Lorimer or zeta factor method
 
         Parameters
         ----------
         intensities: list of signal
             the intensitiy for each X-ray lines.
-        kfactors: list of float
-            The list of kfactor (or zfactor) in same order as intensities.
-            Note that intensities provided by hyperspy are sorted by the
-            aplhabetical order of the X-ray lines.
-            eg. kfactors =[0.982, 1.32, 1.60] for ['Al_Ka','Cr_Ka', 'Ni_Ka'].
-        method: 'CL' or 'zetha'
-            Set the quantification method: Cliff-Lorimer or zetha factor
+        method: 'CL' or 'zeta' or 'cross_section'
+            Set the quantification method: Cliff-Lorimer, zeta factor, or
+            ionization cross sections
         composition_units: 'weight' or 'atomic'
             Quantification returns weight percent. By choosing 'atomic', the
             return composition is in atomic percent.
@@ -297,6 +292,13 @@ class EDSTEMSpectrum(EDSSpectrum):
         plot_result : bool
             If True, plot the calculated composition. If the current
             object is a single spectrum it prints the result instead.
+        kfactors: list of float
+            The list of kfactors (or zfactor) in same order as intensities.
+            Note that intensities provided by hyperspy are sorted by the
+            aplhabetical order of the X-ray lines.
+            eg. kfactors =[0.982, 1.32, 1.60] for ['Al_Ka','Cr_Ka', 'Ni_Ka'].
+        zfactors:
+        cross_sections:
         kwargs
             The extra keyword arguments are passed to plot.
 
@@ -332,12 +334,18 @@ class EDSTEMSpectrum(EDSSpectrum):
             composition.data = utils_eds.quantification_cliff_lorimer(
                 composition.data, kfactors=kfactors,
                 mask=navigation_mask) * 100.
-        elif method == 'zetha':
-            results = utils_eds.quantification_zetha_factor(
-                composition.data, zfactors=kfactors, dose=self.get_dose())
+        elif method == 'zeta':
+            results = utils_eds.quantification_zeta_factor(
+                composition.data, zfactors, dose=self.get_dose())
             composition.data = results[0] * 100.
             mass_thickness = intensities[0]
             mass_thickness.data = results[1]
+        elif method == 'cross_section':
+            results = utils_eds.quantification_cross_section(composition.data,
+                           cross_sections)
+            composition.data = results[0] * 100
+            number_of_atoms = intensities[0]
+            number_of_atoms.data = results[1]
         composition = composition.split()
         if composition_units == 'atomic':
             composition = utils.material.weight_to_atomic(composition)
@@ -360,7 +368,7 @@ class EDSTEMSpectrum(EDSSpectrum):
                 self._set_result(xray_line=xray_lines[i],
                 results='quant', data_res=compo.data, plot_result=False,
                 store_in_mp=store_in_mp)
-            if method=='zetha':
+            if method=='zeta':
                 self.metadata.set_item("Sample.mass_thickness", mass_thickness)
             else:
                 return composition
@@ -398,10 +406,10 @@ class EDSTEMSpectrum(EDSSpectrum):
         """
         from scipy.ndimage.morphology import binary_dilation, binary_erosion
         mask = (self.max(-1) <= threshold)
-        if closing:
+        if closing == True:
             mask.data = binary_dilation(mask.data, border_value=0)
             mask.data = binary_erosion(mask.data, border_value=1)
-        if opening:
+        if closing == False:
             mask.data = binary_erosion(mask.data, border_value=1)
             mask.data = binary_dilation(mask.data, border_value=0)
         return mask

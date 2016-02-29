@@ -452,11 +452,11 @@ def _quantification_cliff_lorimer(intensities,
     return composition
 
 
-def quantification_zetha_factor(intensities,
+def quantification_zeta_factor(intensities,
                                 zfactors,
                                 dose):
     """
-    Quantification using Cliff-Lorimer
+    Quantification using zeta factors.
 
     Parameters
     ----------
@@ -484,3 +484,39 @@ def quantification_zetha_factor(intensities,
         composition[i] = intensity * zfactor / sumzi
     mass_thickness = sumzi / dose
     return composition, mass_thickness
+
+def quantification_cross_section(intensities,
+                                cross_sections):
+    """
+    Quantification using EDX cross sections
+    Calculate the atomic compostion and the number of atoms per pixel
+    from the raw X-ray intensity
+    Parameters
+    ----------
+    intensity : numpy.array
+        The integrated intensity for each X-ray line, where the first axis
+        is the element axis.
+    cross_sections : list of floats
+        List of X-ray scattering cross-sections in the same order as the
+        intensities.
+    Returns
+    -------
+    numpy.array containing the atomic fraction of each element, with
+    the same shape as the intensity input.
+    numpy.array of the number of atoms counts for each element, with the same
+    shape as the intensity input.
+    """
+
+    e = 1.6e-19
+    area = s.axes_manager[0].scale * s.axes_manager[1].scale
+    curr = s.metadata.Acquisition_instrument.TEM.probe_current
+    dwell = s.metadata.Acquisition_instrument.TEM.Detector.EDS.real_time
+
+    sumzi = np.zeros_like(intensities[0], dtype='float')
+    composition = np.zeros_like(intensities, dtype='float')
+    for intensity, cross_section in zip(intensities, cross_sections):
+        sumzi = sumzi + (e * intensity * area) / (curr * dwell * cross_section)
+    for i, (intensity, cross_section) in enumerate(zip(intensities, cross_sections)):
+        number_of_atoms = (e * intensity * area) / (curr * dwell * cross_section)
+        composition[i] = number_of_atoms / sumzi
+    return composition, number_of_atoms
