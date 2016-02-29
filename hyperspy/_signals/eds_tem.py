@@ -260,6 +260,7 @@ class EDSTEMSpectrum(EDSSpectrum):
 
 
     def quantification(self,
+                       factors,
                        intensities='auto',
                        method='CL',
                        composition_units='weight',
@@ -332,17 +333,19 @@ class EDSTEMSpectrum(EDSSpectrum):
         composition = utils.stack(intensities)
         if method == 'CL':
             composition.data = utils_eds.quantification_cliff_lorimer(
-                composition.data, kfactors=kfactors,
+                composition.data, kfactors=factors,
                 mask=navigation_mask) * 100.
         elif method == 'zeta':
             results = utils_eds.quantification_zeta_factor(
-                composition.data, zfactors, dose=self.get_dose())
+                composition.data, zfactors=factors,
+                dose=self._get_zfactor_dose())
             composition.data = results[0] * 100.
             mass_thickness = intensities[0]
             mass_thickness.data = results[1]
         elif method == 'cross_section':
             results = utils_eds.quantification_cross_section(composition.data,
-                           cross_sections)
+                    cross_sections=factors,
+                    dose=self._get_cross_section_dose())
             composition.data = results[0] * 100
             number_of_atoms = intensities[0]
             number_of_atoms.data = results[1]
@@ -511,7 +514,7 @@ class EDSTEMSpectrum(EDSSpectrum):
                             *args, **kwargs)
         return model
 
-    def get_dose(self, beam_current='auto', real_time='auto'):
+    def _get_zfactor_dose(self, beam_current='auto', real_time='auto'):
         """
         Return the total electron dose.  given by i*t*N, i the current, t the
         acquisition time, and N the number of electron by unit electric charge.
@@ -527,3 +530,12 @@ class EDSTEMSpectrum(EDSSpectrum):
         if real_time == 'auto':
             real_time = parameters.Detector.EDS.real_time
         return real_time * beam_current * 1e-9 / constants.e
+
+    def _get_cross_section_dose(self, zfactor_dose='auto', area='auto'):
+        """
+        Return the pixel area of a spectrum image, by extracting the pixel
+        width from the metadata.
+        """
+        zfactor_dose = self._get_zfactor_dose()
+        area = self.axes_manager[0].scale * self.axes_manager[1].scale
+        return zfactor_dose / area

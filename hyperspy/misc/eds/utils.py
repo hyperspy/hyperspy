@@ -486,7 +486,8 @@ def quantification_zeta_factor(intensities,
     return composition, mass_thickness
 
 def quantification_cross_section(intensities,
-                                cross_sections):
+                                cross_sections,
+                                dose):
     """
     Quantification using EDX cross sections
     Calculate the atomic compostion and the number of atoms per pixel
@@ -499,6 +500,10 @@ def quantification_cross_section(intensities,
     cross_sections : list of floats
         List of X-ray scattering cross-sections in the same order as the
         intensities.
+    dose: float
+        the dose per unit area given by i*t*N/A, i the current, t the acquisition time, and N
+        the number of electron by unit electric charge.
+
     Returns
     -------
     numpy.array containing the atomic fraction of each element, with
@@ -507,16 +512,11 @@ def quantification_cross_section(intensities,
     shape as the intensity input.
     """
 
-    e = 1.6e-19
-    area = s.axes_manager[0].scale * s.axes_manager[1].scale
-    curr = s.metadata.Acquisition_instrument.TEM.probe_current
-    dwell = s.metadata.Acquisition_instrument.TEM.Detector.EDS.real_time
-
     sumzi = np.zeros_like(intensities[0], dtype='float')
     composition = np.zeros_like(intensities, dtype='float')
     for intensity, cross_section in zip(intensities, cross_sections):
-        sumzi = sumzi + (e * intensity * area) / (curr * dwell * cross_section)
+        sumzi = sumzi + (intensity) / (dose * cross_section)
     for i, (intensity, cross_section) in enumerate(zip(intensities, cross_sections)):
-        number_of_atoms = (e * intensity * area) / (curr * dwell * cross_section)
+        number_of_atoms = (intensity) / (dose * cross_section)
         composition[i] = number_of_atoms / sumzi
     return composition, number_of_atoms
