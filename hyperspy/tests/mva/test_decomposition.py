@@ -55,6 +55,7 @@ class TestNdAxes:
 
     def test_consistensy_poissonian(self):
         s1 = self.s1
+        s1n000 = self.s1.inav[0, 0, 0]
         s2 = self.s2
         s12 = self.s12
         s1.decomposition(normalize_poissonian_noise=True)
@@ -68,28 +69,31 @@ class TestNdAxes:
                                              s2.learning_results.factors)
         np.testing.assert_array_almost_equal(s1.learning_results.factors,
                                              s2.learning_results.loadings)
+        # Check that views of the data don't change. See #871
+        np.testing.assert_array_equal(s1.inav[0, 0, 0].data, s1n000.data)
 
 
-class TestGetExplainedVarinaceRation:
+class TestGetExplainedVarinaceRatio:
 
     def setUp(self):
         s = signals.Signal(np.empty(1))
-        s.learning_results.explained_variance_ratio = np.empty(10)
         self.s = s
 
     def test_data(self):
-        assert_true((self.s.get_explained_variance_ratio().data ==
-                     self.s.learning_results.explained_variance_ratio).all())
+        self.s.learning_results.explained_variance_ratio = np.asarray([2, 4])
+        np.testing.assert_array_equal(
+            self.s.get_explained_variance_ratio().data,
+            np.asarray([2, 4]))
 
     @raises(AttributeError)
     def test_no_evr(self):
-        self.s.get_explained_variance_ration()
+        self.s.get_explained_variance_ratio()
 
 
 class TestReverseDecompositionComponent:
 
     def setUp(self):
-        s = signals.Signal(np.empty(1))
+        s = signals.Signal(np.zeros(1))
         self.factors = np.ones([2, 3])
         self.loadings = np.ones([2, 3])
         s.learning_results.factors = self.factors.copy()
@@ -140,7 +144,7 @@ class TestReverseDecompositionComponent:
 class TestNormalizeComponents():
 
     def setUp(self):
-        s = signals.Signal(np.empty(1))
+        s = signals.Signal(np.zeros(1))
         self.factors = np.ones([2, 3])
         self.loadings = np.ones([2, 3])
         s.learning_results.factors = self.factors.copy()

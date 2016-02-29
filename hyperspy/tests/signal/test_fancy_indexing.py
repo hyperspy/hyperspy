@@ -1,4 +1,4 @@
-# Copyright 2007-2015 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -33,7 +33,7 @@ class Test1D:
         self.data = self.signal.data.copy()
 
     def test_slice_None(self):
-        s = self.signal[:]
+        s = self.signal.isig[:]
         d = self.data
         assert_true((s.data == d).all())
         assert_equal(s.axes_manager._axes[0].offset,
@@ -41,48 +41,22 @@ class Test1D:
         assert_equal(s.axes_manager._axes[0].scale,
                      self.signal.axes_manager._axes[0].scale)
 
-    def test_std_slice(self):
-        s = self.signal[1:-1]
-        d = self.data[1:-1]
-        assert_true((s.data == d).all())
-        assert_equal(s.axes_manager._axes[0].offset, 1)
-        assert_equal(s.axes_manager._axes[0].scale,
-                     self.signal.axes_manager._axes[0].scale)
-
-    def test_reverse_slice(self):
-        s = self.signal[-1:1:-1]
-        d = self.data[-1:1:-1]
-        assert_true((s.data == d).all())
-        assert_equal(s.axes_manager._axes[0].offset, 9)
-        assert_equal(s.axes_manager._axes[0].scale,
-                     self.signal.axes_manager._axes[0].scale * -1)
-
-    def test_step2_slice(self):
-        s = self.signal[1:-1:2]
-        d = self.data[1:-1:2]
-        assert_true((s.data == d).all())
-        assert_equal(s.axes_manager._axes[0].offset, 1)
-        assert_equal(np.sign(s.axes_manager._axes[0].scale),
-                     np.sign(self.signal.axes_manager._axes[0].scale))
-        assert_equal(s.axes_manager._axes[0].scale,
-                     self.signal.axes_manager._axes[0].scale * 2.)
-
     def test_slice_out_of_axis(self):
-        assert_true((self.signal[-1.:].data == self.signal.data).all())
-        assert_true((self.signal[:11.].data == self.signal.data).all())
+        assert_true((self.signal.isig[-1.:].data == self.signal.data).all())
+        assert_true((self.signal.isig[:11.].data == self.signal.data).all())
 
     @raises(ValueError)
     def test_step0_slice(self):
-        self.signal[::0]
+        self.signal.isig[::0]
 
     def test_index(self):
-        s = self.signal[3]
+        s = self.signal.isig[3]
         assert_equal(s.data, 3)
         assert_equal(len(s.axes_manager._axes), 1)
         assert_equal(s.data.shape, (1,))
 
     def test_float_index(self):
-        s = self.signal[3.4]
+        s = self.signal.isig[3.4]
         assert_equal(s.data, 3)
         assert_equal(len(s.axes_manager._axes), 1)
         assert_equal(s.data.shape, (1,))
@@ -122,8 +96,28 @@ class Test1D:
         self.signal.inav[3]
 
     def test_minus_one_index(self):
-        s = self.signal[-1]
+        s = self.signal.isig[-1]
         assert_equal(s.data, self.data[-1])
+
+
+class Test2D:
+
+    def setUp(self):
+        self.signal = Signal(np.arange(24).reshape(6, 4))
+        self.signal.axes_manager.set_signal_dimension(2)
+        self.data = self.signal.data.copy()
+
+    def test_index(self):
+        s = self.signal.isig[3, 2]
+        assert_equal(s.data[0], 11)
+        assert_equal(len(s.axes_manager._axes), 1)
+        assert_equal(s.data.shape, (1,))
+
+    def test_partial(self):
+        s = self.signal.isig[3, 2:5]
+        np.testing.assert_array_equal(s.data, [11, 15, 19])
+        assert_equal(len(s.axes_manager._axes), 1)
+        assert_equal(s.data.shape, (3,))
 
 
 class Test3D_SignalDim0:
@@ -132,10 +126,6 @@ class Test3D_SignalDim0:
         self.signal = Signal(np.arange(24).reshape((2, 3, 4)))
         self.data = self.signal.data.copy()
         self.signal.axes_manager._axes[2].navigate = True
-
-    def test_signal_dim0(self):
-        s = self.signal
-        assert((s[:].data == s.data).all())
 
     @raises(IndexError)
     def test_signal_indexer_signal_dim0_idx_error1(self):
@@ -165,15 +155,6 @@ class Test3D_Navigate_0_and_1:
         self.signal.axes_manager._axes[0].navigate = True
         self.signal.axes_manager._axes[1].navigate = True
         self.signal.axes_manager._axes[2].navigate = False
-
-    def test_1px_slice(self):
-        s = self.signal[1:2]
-        d = self.data[:, 1:2]
-        assert_true((s.data == d).all())
-        assert_equal(s.axes_manager._axes[1].offset, 1)
-        assert_equal(s.axes_manager._axes[1].size, 1)
-        assert_equal(s.axes_manager._axes[1].scale,
-                     self.signal.axes_manager._axes[1].scale)
 
     def test_1px_navigation_indexer_slice(self):
         s = self.signal.inav[1:2]
@@ -226,11 +207,11 @@ class Test3D_Navigate_0_and_1:
             s1_1.metadata.Signal.Noise_properties.variance)
 
     def test_dimension_when_indexing(self):
-        s = self.signal[0]
+        s = self.signal.inav[0]
         assert_equal(s.data.shape, self.data[:, 0, :].shape)
 
     def test_dimension_when_slicing(self):
-        s = self.signal[0:1]
+        s = self.signal.inav[0:1]
         assert_equal(s.data.shape, self.data[:, 0:1, :].shape)
 
 
@@ -242,15 +223,6 @@ class Test3D_Navigate_1:
         self.signal.axes_manager._axes[0].navigate = False
         self.signal.axes_manager._axes[1].navigate = True
         self.signal.axes_manager._axes[2].navigate = False
-
-    def test_1px_slice(self):
-        s = self.signal[1:2]
-        d = self.data[:, 1:2]
-        assert_true((s.data == d).all())
-        assert_equal(s.axes_manager._axes[1].offset, 1)
-        assert_equal(s.axes_manager._axes[1].size, 1)
-        assert_equal(s.axes_manager._axes[1].scale,
-                     self.signal.axes_manager._axes[1].scale)
 
     def test_1px_navigation_indexer_slice(self):
         s = self.signal.inav[1:2]
@@ -284,7 +256,7 @@ class TestFloatArguments:
         self.data = self.signal.data.copy()
 
     def test_float_start(self):
-        s = self.signal[0.75:-1]
+        s = self.signal.isig[0.75:-1]
         d = self.data[1:-1]
         assert_true((s.data == d).all())
         assert_equal(s.axes_manager._axes[0].offset, 0.75)
@@ -292,7 +264,7 @@ class TestFloatArguments:
                      self.signal.axes_manager._axes[0].scale)
 
     def test_float_end(self):
-        s = self.signal[1:4.75]
+        s = self.signal.isig[1:4.75]
         d = self.data[1:-1]
         assert_true((s.data == d).all())
         assert_equal(s.axes_manager._axes[0].offset, 0.75)
@@ -300,7 +272,7 @@ class TestFloatArguments:
                      self.signal.axes_manager._axes[0].scale)
 
     def test_float_both(self):
-        s = self.signal[0.75:4.75]
+        s = self.signal.isig[0.75:4.75]
         d = self.data[1:-1]
         assert_true((s.data == d).all())
         assert_equal(s.axes_manager._axes[0].offset, 0.75)
@@ -308,7 +280,7 @@ class TestFloatArguments:
                      self.signal.axes_manager._axes[0].scale)
 
     def test_float_step(self):
-        s = self.signal[::1.1]
+        s = self.signal.isig[::1.1]
         d = self.data[::2]
         assert_true((s.data == d).all())
         assert_equal(s.axes_manager._axes[0].offset, 0.25)
@@ -316,7 +288,7 @@ class TestFloatArguments:
                      self.signal.axes_manager._axes[0].scale * 2)
 
     def test_negative_float_step(self):
-        s = self.signal[::-1.1]
+        s = self.signal.isig[::-1.1]
         d = self.data[::-2]
         assert_true((s.data == d).all())
         assert_equal(s.axes_manager._axes[0].offset, 4.75)
@@ -327,17 +299,13 @@ class TestFloatArguments:
 class TestEllipsis:
 
     def setUp(self):
-        self.signal = Signal(np.arange(2 ** 4).reshape(
-            (2, 2, 2, 2)))
+        self.signal = Signal(np.arange(2 ** 5).reshape(
+            (2, 2, 2, 2, 2)))
         self.data = self.signal.data.copy()
 
-    def test_ellipsis_beginning(self):
-        s = self.signal[..., 0, 0]
-        assert_true((s.data == self.data[0, ..., 0]).all())
-
     def test_in_between(self):
-        s = self.signal[0, ..., 0]
-        assert_true((s.data == self.data[..., 0, 0]).all())
+        s = self.signal.inav[0, ..., 0]
+        assert_true((s.data == self.data[0, ..., 0, :]).all())
 
     def test_ellipsis_navigation(self):
         s = self.signal.inav[..., 0]
@@ -347,4 +315,4 @@ class TestEllipsis:
         self.signal.axes_manager._axes[-2].navigate = False
         self.signal.axes_manager._axes[-3].navigate = False
         s = self.signal.isig[..., 0]
-        assert_true((s.data == self.data[:, 0, ...]).all())
+        assert_true((s.data == self.data[:, :, 0, ...]).all())

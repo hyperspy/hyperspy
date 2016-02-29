@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2015 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -28,7 +28,7 @@ class RC(Component):
 
     def __init__(self, V=1, V0=0, tau=1.):
         Component.__init__(self, ('Vmax', 'V0', 'tau'))
-        self.Vmax.value, self.V0.value, self.tau.value = Vmax, V0, tau
+        self.Vmax.value, self.V0.value, self.tau.value = V, V0, tau
 
     def function(self, x):
         """

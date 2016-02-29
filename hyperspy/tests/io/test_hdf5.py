@@ -2,6 +2,7 @@ import os.path
 from os import remove
 import datetime
 import h5py
+import gc
 
 import nose.tools as nt
 import numpy as np
@@ -173,7 +174,7 @@ class TestSavingMetadataContainers:
         nt.assert_is_instance(l.metadata.test[2], unicode)
         nt.assert_equal(l.metadata.test[2], u'\u6f22\u5b57')
 
-    @nt.timed(0.1)
+    @nt.timed(1.0)
     def test_save_long_list(self):
         s = self.s
         s.metadata.set_item('long_list', range(10000))
@@ -209,6 +210,7 @@ class TestSavingMetadataContainers:
         nt.assert_is_instance(l.metadata.test[2], unicode)
 
     def tearDown(self):
+        gc.collect()        # Make sure any memmaps are closed first!
         remove('tmp.hdf5')
 
 
@@ -236,7 +238,7 @@ class TestLoadingOOMReadOnly:
 
     def setUp(self):
         s = Signal(np.empty((5, 5, 5)))
-        s.save('tmp.hdf5')
+        s.save('tmp.hdf5', overwrite=True)
         self.shape = (10000, 10000, 100)
         del s
         f = h5py.File('tmp.hdf5', model='r+')
@@ -249,7 +251,7 @@ class TestLoadingOOMReadOnly:
             chunks=True)
         f.close()
 
-    @nt.raises(MemoryError)
+    @nt.raises(MemoryError, ValueError)
     def test_in_memory_loading(self):
         s = load('tmp.hdf5')
 
@@ -259,4 +261,9 @@ class TestLoadingOOMReadOnly:
         nt.assert_is_instance(s.data, h5py.Dataset)
 
     def tearDown(self):
-        remove('tmp.hdf5')
+        gc.collect()        # Make sure any memmaps are closed first!
+        try:
+            remove('tmp.hdf5')
+        except:
+            # Don't fail tests if we cannot remove
+            pass

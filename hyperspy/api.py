@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
 
+# Set the PyQt API to 2 to avoid incompatibilities between matplotlib
+# traitsui
+
 from hyperspy import docstrings
 
 __doc__ = """
@@ -55,14 +58,17 @@ For more details see their doctrings.
 # Remove the module to avoid polluting the namespace
 del docstrings
 
+
 from hyperspy.Release import version as __version__
 from hyperspy import signals
 from hyperspy.io import load
 from hyperspy.defaults_parser import preferences
 from hyperspy.utils import *
-from hyperspy.hspy import (
-    get_configuration_directory_path,
-    create_model)
 from hyperspy import datasets
+
+
+def get_configuration_directory_path():
+    import hyperspy.misc.config_dir
+    return hyperspy.misc.config_dir.config_path
 
 del markers

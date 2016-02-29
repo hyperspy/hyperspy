@@ -3,6 +3,7 @@ from IPython.core.magic_arguments import magic_arguments, argument, parse_argstr
 import warnings
 
 from hyperspy.defaults_parser import preferences
+from hyperspy.misc.hspy_warnings import VisibleDeprecationWarning
 
 
 @magics_class
@@ -43,6 +44,13 @@ class HyperspyMagics(Magics):
         >>> import matplotlib.pyplot as plt
 
         """
+        warnings.warn(
+            "This magic is deprecated and will be removed in HyperSpy 0.9."
+            "The reccomended way to start HyperSpy is:\n\n"
+            ">>> import hyperspy.api as hs\n"
+            ">>> %matplotlib\n\n"
+            "See the online documentation for more details.",
+            VisibleDeprecationWarning)
         sh = self.shell
 
         gui = False
@@ -60,31 +68,16 @@ class HyperspyMagics(Magics):
         if toolkit == "None":
             mpl_code = ("import matplotlib\n"
                         "matplotlib.use('Agg')\n")
-        elif toolkit == 'qt4':
-            gui = True
-            mpl_code = ("import os\n"
-                        "os.environ['QT_API'] = 'pyqt'\n")
         else:
             gui = True
 
         exec(mpl_code, sh.user_ns)
         if gui:
             sh.enable_matplotlib(toolkit)
-        first_import_part = ("import numpy as np\n"
-                             "import hyperspy.api as hs\n"
-                             "import matplotlib.pyplot as plt\n")
-        exec(first_import_part, sh.user_ns)
-
-        if preferences.General.import_hspy:
-            second_import_part = "from hyperspy.hspy import *\n"
-            warnings.warn(
-                "Importing everything from ``hyperspy.hspy`` will be removed in "
-                "HyperSpy 0.9. Please use the new API imported as ``hs`` "
-                "instead. See the "
-                "`Getting started` section of the User Guide for details.",
-                UserWarning)
-            exec(second_import_part, sh.user_ns)
-            first_import_part += second_import_part
+        to_import = ("import numpy as np\n"
+                     "import hyperspy.api as hs\n"
+                     "import matplotlib.pyplot as plt\n")
+        exec(to_import, sh.user_ns)
 
         header = "\nHyperSpy imported!\nThe following commands were just executed:\n"
         header += "---------------\n"
@@ -92,7 +85,7 @@ class HyperspyMagics(Magics):
         if gui:
             ans += "%matplotlib " + toolkit + "\n"
 
-        ans += first_import_part
+        ans += to_import
         print header + ans
         if overwrite:
             sh.set_next_input(

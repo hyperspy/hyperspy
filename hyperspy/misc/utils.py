@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2015 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -26,21 +26,22 @@ import codecs
 import collections
 import tempfile
 import unicodedata
+from contextlib import contextmanager
 
 import numpy as np
 
-from hyperspy.misc.hspy_warnings import VisibleDeprecationWarning
-
 
 def attrsetter(target, attrs, value):
-    """ Sets attribute of the target to specified value, supports nested attributes.
-        Only creates a new attribute if the object supports such behaviour (e.g. DictionaryTreeBrowser does)
+    """ Sets attribute of the target to specified value, supports nested
+        attributes. Only creates a new attribute if the object supports such
+        behaviour (e.g. DictionaryTreeBrowser does)
 
         Parameters
         ----------
             target : object
             attrs : string
-                attributes, separated by periods (e.g. 'metadata.Signal.Noise_parameters.variance' )
+                attributes, separated by periods (e.g.
+                'metadata.Signal.Noise_parameters.variance' )
             value : object
 
         Example
@@ -90,25 +91,28 @@ def generate_axis(origin, step, N, index=0):
         origin - index * step, origin + step * (N - 1 - index), N)
 
 
-# TODO: Remove in 0.9
-def unfold_if_multidim(signal):
-    """Unfold the SI if it is 2D
+@contextmanager
+def stash_active_state(model):
+    active_state = []
+    for component in model:
+        if component.active_is_multidimensional:
+            active_state.append(component._active_array)
+        else:
+            active_state.append(component.active)
+    yield
+    for component in model:
+        active_s = active_state.pop(0)
+        if isinstance(active_s, bool):
+            component.active = active_s
+        else:
+            if not component.active_is_multidimensional:
+                component.active_is_multidimensional = True
+            component._active_array[:] = active_s
 
-    Parameters
-    ----------
-    signal : Signal instance
 
-    Returns
-    -------
-
-    Boolean. True if the SI was unfolded by the function.
-
-    """
-    import warnings
-    warnings.warn("unfold_if_multidim is deprecated and will be removed in "
-                  "0.9 please use Signal.unfold instead",
-                  VisibleDeprecationWarning)
-    return None
+@contextmanager
+def dummy_context_manager(*args, **kwargs):
+    yield
 
 
 def str2num(string, **kargs):
@@ -172,7 +176,8 @@ class DictionaryTreeBrowser(object):
 
     Methods
     -------
-    export : saves the dictionary in pretty tree printing format in a text file.
+    export : saves the dictionary in pretty tree printing format in a text
+        file.
     keys : returns a list of non-private keys.
     as_dictionary : returns a dictionary representation of the object.
     set_item : easily set items, creating any necessary node on the way.
@@ -214,17 +219,20 @@ class DictionaryTreeBrowser(object):
 
     """
 
-    def __init__(self, dictionary=None):
+    def __init__(self, dictionary=None, double_lines=False):
+        self._double_lines = double_lines
         if not dictionary:
             dictionary = {}
         super(DictionaryTreeBrowser, self).__init__()
-        self.add_dictionary(dictionary)
+        self.add_dictionary(dictionary, double_lines=double_lines)
 
-    def add_dictionary(self, dictionary):
+    def add_dictionary(self, dictionary, double_lines=False):
         """Add new items from dictionary.
 
         """
         for key, value in dictionary.iteritems():
+            if key == '_double_lines':
+                value = double_lines
             self.__setattr__(key, value)
 
     def export(self, filename, encoding='utf8'):
@@ -246,42 +254,68 @@ class DictionaryTreeBrowser(object):
         """Prints only the attributes that are not methods
 
         """
+        from hyperspy.defaults_parser import preferences
+
+        def check_long_string(value, max_len):
+            if not isinstance(value, (basestring, np.string_)):
+                value = repr(value)
+            value = ensure_unicode(value)
+            strvalue = unicode(value)
+            _long = False
+            if max_len is not None and len(strvalue) > 2 * max_len:
+                right_limit = min(max_len, len(strvalue) - max_len)
+                strvalue = u'%s ... %s' % (
+                    strvalue[:max_len], strvalue[-right_limit:])
+                _long = True
+            return _long, strvalue
+
         string = ''
         eoi = len(self)
         j = 0
+        if preferences.General.dtb_expand_structures and self._double_lines:
+            s_end = u'╚══ '
+            s_middle = u'╠══ '
+            pad_middle = u'║   '
+        else:
+            s_end = u'└── '
+            s_middle = u'├── '
+            pad_middle = u'│   '
         for key_, value in iter(sorted(self.__dict__.iteritems())):
             if key_.startswith("_"):
                 continue
             if not isinstance(key_, types.MethodType):
                 key = ensure_unicode(value['key'])
                 value = value['_dtb_value_']
+                if j == eoi - 1:
+                    symbol = s_end
+                else:
+                    symbol = s_middle
+                if preferences.General.dtb_expand_structures:
+                    if isinstance(value, list) or isinstance(value, tuple):
+                        iflong, strvalue = check_long_string(value, max_len)
+                        if iflong:
+                            key += (u" <list>"
+                                    if isinstance(value, list)
+                                    else u" <tuple>")
+                            value = DictionaryTreeBrowser(
+                                {u'[%d]' % i: v for i, v in enumerate(value)},
+                                double_lines=True)
+                        else:
+                            string += u"%s%s%s = %s\n" % (
+                                padding, symbol, key, strvalue)
+                            j += 1
+                            continue
+
                 if isinstance(value, DictionaryTreeBrowser):
-                    if j == eoi - 1:
-                        symbol = u'└── '
-                    else:
-                        symbol = u'├── '
                     string += u'%s%s%s\n' % (padding, symbol, key)
                     if j == eoi - 1:
                         extra_padding = u'    '
                     else:
-                        extra_padding = u'│   '
+                        extra_padding = pad_middle
                     string += value._get_print_items(
                         padding + extra_padding)
                 else:
-                    if not isinstance(value, (str, np.string_)):
-                        value = repr(value)
-                    value = ensure_unicode(value)
-                    if j == eoi - 1:
-                        symbol = u'└── '
-                    else:
-                        symbol = u'├── '
-                    strvalue = unicode(value)
-                    if max_len is not None and \
-                            len(strvalue) > 2 * max_len:
-                        right_limit = min(max_len,
-                                          len(strvalue) - max_len)
-                        strvalue = u'%s ... %s' % (strvalue[:max_len],
-                                                   strvalue[-right_limit:])
+                    _, strvalue = check_long_string(value, max_len)
                     string += u"%s%s%s = %s\n" % (
                         padding, symbol, key, strvalue)
             j += 1
@@ -312,10 +346,14 @@ class DictionaryTreeBrowser(object):
         slugified_key = str(slugify(key, valid_variable_name=True))
         if isinstance(value, dict):
             if self.has_item(slugified_key):
-                self.get_item(slugified_key).add_dictionary(value)
+                self.get_item(slugified_key).add_dictionary(
+                    value,
+                    double_lines=self._double_lines)
                 return
             else:
-                value = DictionaryTreeBrowser(value)
+                value = DictionaryTreeBrowser(
+                    value,
+                    double_lines=self._double_lines)
         super(DictionaryTreeBrowser, self).__setattr__(
             slugified_key,
             {'key': key, '_dtb_value_': value})
@@ -340,7 +378,7 @@ class DictionaryTreeBrowser(object):
         for key_, item_ in self.__dict__.iteritems():
             if not isinstance(item_, types.MethodType):
                 key = item_['key']
-                if key == "_db_index":
+                if key in ["_db_index", "_double_lines"]:
                     continue
                 if isinstance(item_['_dtb_value_'], DictionaryTreeBrowser):
                     item = item_['_dtb_value_'].as_dictionary()
@@ -751,7 +789,8 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
     Examples
     --------
     >>> data = np.arange(20)
-    >>> s = hs.stack([hs.signals.Spectrum(data[:10]), hs.signals.Spectrum(data[10:])])
+    >>> s = hs.stack([hs.signals.Spectrum(data[:10]),
+    ...               hs.signals.Spectrum(data[10:])])
     >>> s
     <Spectrum, title: Stack of , dimensions: (2, 10)>
     >>> s.data
