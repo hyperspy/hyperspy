@@ -18,6 +18,7 @@
 from __future__ import division
 
 import traits.api as t
+import traitsui.api as tui
 import numpy as np
 from scipy import constants
 from hyperspy import utils
@@ -342,21 +343,21 @@ class EDSTEMSpectrum(EDSSpectrum):
             mass_thickness = intensities[0]
             mass_thickness.data = results[1]
         elif method == 'cross_section':
+            number_of_atoms = utils.stack(intensities)
             results = utils_eds.quantification_cross_section(composition.data,
                     cross_sections=factors,
                     dose=self._get_cross_section_dose())
             composition.data = results[0] * 100
-            number_of_atoms = intensities[0]
             number_of_atoms.data = results[1]
         composition = composition.split()
         if composition_units == 'atomic':
-            if method == 'cross_section'
+            if method == 'cross_section':
                 composition == composition
             else:
                 composition = utils.material.weight_to_atomic(composition)
         else:
             if method == 'cross_section':
-                compostion = util.material.atomic_to_weight(composition)
+                composition = util.material.atomic_to_weight(composition)
         for i, xray_line in enumerate(xray_lines):
             element, line = utils_eds._get_element_and_line(xray_line)
             composition[i].metadata.General.title = composition_units + \
@@ -372,17 +373,25 @@ class EDSTEMSpectrum(EDSSpectrum):
         if plot_result and composition[i].axes_manager.signal_dimension != 0:
             utils.plot.plot_signals(composition, **kwargs)
         if store_in_mp:
-            for i, compo in enumerate(composition):
-                self._set_result(xray_line=xray_lines[i],
-                results='quant', data_res=compo.data, plot_result=False,
-                store_in_mp=store_in_mp)
+            #for i, compo in enumerate(composition):
+                #self._set_result(xray_line=xray_lines[i],
+                #results='quant', data_res=compo.data, plot_result=False,
+                #store_in_mp=store_in_mp)
             if method=='zeta':
                 self.metadata.set_item("Sample.mass_thickness", mass_thickness)
-            else:
+        #if method=='cross_section':
+            #for i, xray_line in enumerate(xray_lines):
+            #    element, line = utils_eds._get_element_and_line(xray_line)
+            #    number_of_atoms[i].metadata.General.title = \
+            #        ' atom counts of ' + element
+            #    number_of_atoms[i].metadata.set_item("Sample.elements",
+            #        ([element]))
+            #    number_of_atoms[i].metadata.set_item(
+            #        "Sample.xray_lines", ([xray_line]))
         if method == 'zeta':
- +          return composition, mass_thickness
+            return composition, mass_thickness
         elif method == 'cross_section':
-            return compostion, number_of_atoms
+            return composition, number_of_atoms
         else:
             return composition
 
@@ -443,7 +452,7 @@ class EDSTEMSpectrum(EDSSpectrum):
             If True, scale the SI to normalize Poissonian noise
         navigation_mask : None or float or boolean numpy array
             The navigation locations marked as True are not used in the
-            decompostion. If float is given the vacuum_mask method is used to
+            decomposition. If float is given the vacuum_mask method is used to
             generate a mask with the float value as threshold.
         closing: bool
             If true, applied a morphologic closing to the maks obtained by
@@ -523,7 +532,8 @@ class EDSTEMSpectrum(EDSSpectrum):
                             *args, **kwargs)
         return model
 
-    def _get_zfactor_dose(self, beam_current='auto', real_time='auto'):
+    def _get_zfactor_dose(self, beam_current='auto', real_time='auto',
+                            area='auto'):
         """
         Return the total electron dose.  given by i*t*N, i the current, t the
         acquisition time, and N the number of electron by unit electric charge.
@@ -535,16 +545,33 @@ class EDSTEMSpectrum(EDSSpectrum):
         """
         parameters = self.metadata.Acquisition_instrument.TEM
         if beam_current == 'auto':
-            beam_current = parameters.beam_current
+            if beam_current in parameters:
+                beam_current = parameters.beam_current
+            else:
+                beam_current = float(raw_input("Please provide a beam current (nA): "))
         if real_time == 'auto':
             real_time = parameters.Detector.EDS.real_time
+            if real_time == 0.5:
+                real_time = float(raw_input("Please provide a dwell time (s): "))
         return real_time * beam_current * 1e-9 / constants.e
 
-    def _get_cross_section_dose(self, zfactor_dose='auto', area='auto'):
+    def _get_cross_section_dose(self, area='auto'):
         """
-        Return the pixel area of a spectrum image, by extracting the pixel
-        width from the metadata.
+        Return the dose per nm^2 by determining the dose
+        (using _get_zfactor_dose) and then extracting the pixel
+        width from the metadata. If pixel width is still the defaul value of one
+        the user is prompted to provide another one.
         """
         zfactor_dose = self._get_zfactor_dose()
-        area = self.axes_manager[0].scale * self.axes_manager[1].scale
+        if area == 'auto':
+            pixel1 = self.axes_manager[0].scale
+            pixel2 = self.axes_manager[1].scale
+        if pixel1 == pixel2:
+            if self.axes_manager[0].scale == 1:
+                pixel1 = float(raw_input("Please provide pixel width (nm): "))
+                area = pixel1 * pixel1
+            else:
+                pixel1 = float(raw_input("Please provide pixel width x (nm): "))
+                pixel2 = float(raw_input("Please provide pixel width y (nm): "))
+                area = pixel1 * pixel2
         return zfactor_dose / area
