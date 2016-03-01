@@ -75,7 +75,7 @@ class test_fei_reader():
     def test_load_diffraction_line_scan(self, verbose=True):
         fname0 = os.path.join(self.dirpathnew, '16x16-line_profile_horizontal_5x128x128_EDS.emi')
         s0 = load(fname0, verbose=verbose)
-        #s0[1] contains EDS
+        #s0[0] contains EDS
         nt.assert_equal(s0[0].data.shape, (5, 4000))
         nt.assert_equal(s0[0].metadata.Signal.record_by, 'spectrum')
         nt.assert_equal(s0[0].metadata.Acquisition_instrument.TEM.acquisition_mode, 'STEM Diffraction')       
@@ -83,7 +83,7 @@ class test_fei_reader():
         nt.assert_equal(s0[0].axes_manager[0].units, 'nm')
         nt.assert_almost_equal(s0[0].axes_manager[1].scale, 5.0, places=5)
         nt.assert_equal(s0[0].axes_manager[1].units, 'eV')
-        #s0[0] contains diffraction patterns
+        #s0[1] contains diffraction patterns
         nt.assert_equal(s0[1].data.shape, (5, 128, 128))
         nt.assert_equal(s0[1].metadata.Signal.record_by, 'image')
         nt.assert_equal(s0[1].metadata.Acquisition_instrument.TEM.acquisition_mode, 'STEM Diffraction')
@@ -103,18 +103,16 @@ class test_fei_reader():
         nt.assert_equal(s0[0].metadata.Acquisition_instrument.TEM.acquisition_mode, 'STEM Diffraction')
         nt.assert_almost_equal(s0[0].axes_manager[0].scale, 1.87390, places=5)
         nt.assert_equal(s0[0].axes_manager[0].units, 'nm')          
-        # FIXME: negative scale
-#        nt.assert_almost_equal(s0[0].axes_manager[1].scale, 1.87390, places=5)
-#        nt.assert_equal(s0[0].axes_manager[1].units, 'nm')  
+        nt.assert_almost_equal(s0[0].axes_manager[1].scale, -1.87390, places=5)
+        nt.assert_equal(s0[0].axes_manager[1].units, 'nm')  
         nt.assert_almost_equal(s0[0].axes_manager[2].scale, 5.0, places=5)
         nt.assert_equal(s0[0].axes_manager[2].units, 'eV')
         #s0[1] contains diffraction patterns
         nt.assert_equal(s0[1].data.shape, (5, 5, 256, 256))
         nt.assert_equal(s0[1].metadata.Signal.record_by, 'image')
         nt.assert_equal(s0[1].metadata.Acquisition_instrument.TEM.acquisition_mode, 'STEM Diffraction')
-        # FIXME: negative scale
-#        nt.assert_almost_equal(s0[1].axes_manager[0].scale, 1.87390, places=5)
-#        nt.assert_equal(s0[1].axes_manager[0].units, 'nm')
+        nt.assert_almost_equal(s0[1].axes_manager[0].scale, -1.87390, places=5)
+        nt.assert_equal(s0[1].axes_manager[0].units, 'nm')
         nt.assert_almost_equal(s0[1].axes_manager[2].scale, 0.17435, places=5)
         nt.assert_equal(s0[1].axes_manager[2].units, '1/nm')  
     
@@ -169,8 +167,7 @@ class test_fei_reader():
         nt.assert_equal(s0.metadata.Acquisition_instrument.TEM.acquisition_mode, 'STEM Diffraction')
         nt.assert_almost_equal(s0.axes_manager[0].scale, 0.120539, places=5)
         nt.assert_equal(s0.axes_manager[0].units, 'nm')
-        # FIXME: negative scale
-#        nt.assert_almost_equal(s0.axes_manager[1].scale, 0.120539, places=5)
+        nt.assert_almost_equal(s0.axes_manager[1].scale, -0.120539, places=5)
         nt.assert_equal(s0.axes_manager[1].units, 'nm')
         nt.assert_almost_equal(s0.axes_manager[2].scale, 0.2, places=5)
         nt.assert_equal(s0.axes_manager[2].units, 'eV')
@@ -183,9 +180,8 @@ class test_fei_reader():
         nt.assert_equal(s0.metadata.Acquisition_instrument.TEM.acquisition_mode, 'STEM Diffraction')
         nt.assert_almost_equal(s0.axes_manager[0].scale, 1.98591, places=5)
         nt.assert_equal(s0.axes_manager[0].units, 'nm')
-        # FIXME: negative scale
-#        nt.assert_almost_equal(s0.axes_manager[1].scale, -4.25819, places=5)
-#        nt.assert_equal(s0.axes_manager[1].units, 'nm')
+        nt.assert_almost_equal(s0.axes_manager[1].scale, -4.25819, places=5)
+        nt.assert_equal(s0.axes_manager[1].units, 'nm')
         nt.assert_almost_equal(s0.axes_manager[2].scale, 5.0, places=5)
         nt.assert_equal(s0.axes_manager[2].units, 'eV')
    
@@ -293,3 +289,27 @@ class test_fei_reader():
         s2 = load(fname2, verbose=verbose)
         nt.assert_equal(s2[0].axes_manager[0].units, 'nm')
         nt.assert_almost_equal(s2[0].axes_manager[0].scale, 21.5100, places=4)
+        
+    def test_guess_units_from_mode(self, verbose=True):
+        from hyperspy.io_plugins.fei import guess_units_from_mode, \
+                                    convert_xml_to_dict, get_xml_info_from_emi
+        fname0_emi = os.path.join(self.dirpathold, '64x64_TEM_images_acquire.emi')
+        fname0_ser = os.path.join(self.dirpathold, '64x64_TEM_images_acquire_1.ser')
+        objects = get_xml_info_from_emi(fname0_emi)
+        header0, data0 = load_ser_file(fname0_ser, verbose=verbose)
+        objects_dict = convert_xml_to_dict(objects[0])
+
+        unit = guess_units_from_mode(objects_dict, header0)
+        nt.assert_equal(unit, 'meters')
+
+        # objects is empty dictionary
+        unit = guess_units_from_mode({}, header0)
+        nt.assert_equal(unit, 'meters')
+
+        # objects and header is empty dictionary
+        unit = guess_units_from_mode({}, {})
+        nt.assert_equal(unit, 'meters')
+
+        # header is empty dictionary
+        unit = guess_units_from_mode(objects_dict, {})
+        nt.assert_equal(unit, 'meters')
