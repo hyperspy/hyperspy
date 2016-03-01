@@ -620,13 +620,15 @@ def ser_reader(filename, objects=None, verbose=False, *args, **kwds):
     return dictionary
 
 def guess_units_from_mode(objects_dict, header, verbose=False):
-    # in case the xml file doesn't contains the "Mode" return "Unknow" unit or
-    # the header doesn't contains 'Dim-1_UnitsLength'
+    # in case the xml file doesn't contain the "Mode" or the header doesn't
+    # contain 'Dim-1_UnitsLength', return "meters" as default, which will be
+    # OK most of the time
+    units_loading_warning = "Loading of signal units not supported, setting units to 'nm'."
     try:
-
         mode = objects_dict.ObjectInfo.ExperimentalDescription.Mode
         isCamera = ("CameraNamePath" in objects_dict.ObjectInfo.AcquireInfo.keys())
     except AttributeError: # in case the xml chunk doesn't contain the Mode
+        print units_loading_warning
         return 'meters' # Most of the time, the unit will be meters!
     try:
         # assuming that for an image stack, the UnitsLength of the "3rd"
@@ -635,7 +637,8 @@ def guess_units_from_mode(objects_dict, header, verbose=False):
         # Workaround: if this is not an image stack and not a STEM image, then
         # we assume that it should be a diffraction
         isDiffractionScan = (header['Dim-1_DimensionSize'][0] > 1 and not isImageStack)
-    except ValueError: # in case the header doesn't contain the information
+    except KeyError: # in case the header doesn't contain the information
+        print units_loading_warning
         return 'meters' # Most of the time, the unit will be meters!
 
     if verbose:
