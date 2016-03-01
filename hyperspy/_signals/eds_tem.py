@@ -338,7 +338,7 @@ class EDSTEMSpectrum(EDSSpectrum):
         elif method == 'zeta':
             results = utils_eds.quantification_zeta_factor(
                 composition.data, zfactors=factors,
-                dose=self._get_zfactor_dose())
+                dose=self._get_dose(method))
             composition.data = results[0] * 100.
             mass_thickness = intensities[0]
             mass_thickness.data = results[1]
@@ -346,7 +346,7 @@ class EDSTEMSpectrum(EDSSpectrum):
             number_of_atoms = utils.stack(intensities)
             results = utils_eds.quantification_cross_section(composition.data,
                     cross_sections=factors,
-                    dose=self._get_cross_section_dose())
+                    dose=self._get_dose(method))
             composition.data = results[0] * 100
             number_of_atoms.data = results[1]
         composition = composition.split()
@@ -532,17 +532,37 @@ class EDSTEMSpectrum(EDSSpectrum):
                             *args, **kwargs)
         return model
 
-    def _get_zfactor_dose(self, beam_current='auto', real_time='auto',
+    def _get_dose(self, method, beam_current='auto', real_time='auto',
                             area='auto'):
         """
-        Return the total electron dose.  given by i*t*N, i the current, t the
+        Calculates the total electron dose for the zeta factor or cross section
+        methods of quantification.
+
+        Inputgiven by i*t*N, i the current, t the
         acquisition time, and N the number of electron by unit electric charge.
 
         Parameters
         ----------
-        beam_current:
-        real_time:
+        method : Defined as either 'zfactor' or 'cross_section'
+        If 'zfactor', the dose is given by i*t*N,
+        i is the current
+        t is the dwell time
+        N is the number of electrons by unit charge or 1/e.
+        If 'cross_section', the dose per unit is area is returned by i*t*N/A
+        A is the beam area or pixel area in nm^2
+        beam_current: Defined in nA with the symbol i above.
+        real_time: Defined in s with the symbol t above.
+        area: Defined in nm^2 with the symbol A above, is the illumination area
+        of the electron beam. If none is given it is extracted from the scale
+        axes_manager. Therefore we assume the probe is oversampling such that
+        the illumination area can be approximated to the pixel area of the
+        pectrum image.
+
+        Returns
+        --------
+        Dose in electrons (zfactor) or electrons per nm^2 (cross_section).
         """
+
         parameters = self.metadata.Acquisition_instrument.TEM
         if beam_current == 'auto':
             if beam_current in parameters:
@@ -553,16 +573,6 @@ class EDSTEMSpectrum(EDSSpectrum):
             real_time = parameters.Detector.EDS.real_time
             if real_time == 0.5:
                 real_time = float(raw_input("Please provide a dwell time (s): "))
-        return real_time * beam_current * 1e-9 / constants.e
-
-    def _get_cross_section_dose(self, area='auto'):
-        """
-        Return the dose per nm^2 by determining the dose
-        (using _get_zfactor_dose) and then extracting the pixel
-        width from the metadata. If pixel width is still the defaul value of one
-        the user is prompted to provide another one.
-        """
-        zfactor_dose = self._get_zfactor_dose()
         if area == 'auto':
             pixel1 = self.axes_manager[0].scale
             pixel2 = self.axes_manager[1].scale
@@ -574,4 +584,9 @@ class EDSTEMSpectrum(EDSSpectrum):
                 pixel1 = float(raw_input("Please provide pixel width x (nm): "))
                 pixel2 = float(raw_input("Please provide pixel width y (nm): "))
                 area = pixel1 * pixel2
-        return zfactor_dose / area
+        if method == 'cross_section':
+            return (real_time * beam_current * 1e-9) /(constants.e * area)
+        elif method == 'zfactor':
+            return real_time * beam_current * 1e-9 / constants.e
+        else:
+            raise Error('no method provided')
