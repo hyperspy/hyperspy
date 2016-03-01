@@ -260,17 +260,18 @@ class EDSTEMSpectrum(EDSSpectrum):
 
 
     def quantification(self,
-                       factors,
                        intensities='auto',
                        method='CL',
-                       composition_units='weight',
+                       factors='auto',
+                       composition_units='atomic',
                        navigation_mask=1.0,
                        closing=True,
                        plot_result=False,
                        store_in_mp=True,
                        **kwargs):
         """
-        Quantification using Cliff-Lorimer or zeta factor method
+        Quantification using Cliff-Lorimer, the zeta factor method, ionization
+        cross_sections.
 
         Parameters
         ----------
@@ -279,6 +280,11 @@ class EDSTEMSpectrum(EDSSpectrum):
         method: 'CL' or 'zeta' or 'cross_section'
             Set the quantification method: Cliff-Lorimer, zeta factor, or
             ionization cross sections
+        factors: list of float
+            The list of kfactors, zfactors or cross sections in same order as
+            intensities. Note that intensities provided by Hyperspy are sorted
+            by the aplhabetical order of the X-ray lines.
+            eg. kfactors =[0.982, 1.32, 1.60] for ['Al_Ka','Cr_Ka', 'Ni_Ka'].
         composition_units: 'weight' or 'atomic'
             Quantification returns weight percent. By choosing 'atomic', the
             return composition is in atomic percent.
@@ -293,13 +299,6 @@ class EDSTEMSpectrum(EDSSpectrum):
         plot_result : bool
             If True, plot the calculated composition. If the current
             object is a single spectrum it prints the result instead.
-        kfactors: list of float
-            The list of kfactors (or zfactor) in same order as intensities.
-            Note that intensities provided by hyperspy are sorted by the
-            aplhabetical order of the X-ray lines.
-            eg. kfactors =[0.982, 1.32, 1.60] for ['Al_Ka','Cr_Ka', 'Ni_Ka'].
-        zfactors:
-        cross_sections:
         kwargs
             The extra keyword arguments are passed to plot.
 
@@ -351,7 +350,13 @@ class EDSTEMSpectrum(EDSSpectrum):
             number_of_atoms.data = results[1]
         composition = composition.split()
         if composition_units == 'atomic':
-            composition = utils.material.weight_to_atomic(composition)
+            if method == 'cross_section'
+                composition == composition
+            else:
+                composition = utils.material.weight_to_atomic(composition)
+        else:
+            if method == 'cross_section':
+                compostion = util.material.atomic_to_weight(composition)
         for i, xray_line in enumerate(xray_lines):
             element, line = utils_eds._get_element_and_line(xray_line)
             composition[i].metadata.General.title = composition_units + \
@@ -374,8 +379,12 @@ class EDSTEMSpectrum(EDSSpectrum):
             if method=='zeta':
                 self.metadata.set_item("Sample.mass_thickness", mass_thickness)
             else:
-                return composition
-
+        if method == 'zeta':
+ +          return composition, mass_thickness
+        elif method == 'cross_section':
+            return compostion, number_of_atoms
+        else:
+            return composition
 
     def vacuum_mask(self, threshold=1.0, closing=True):
         """
