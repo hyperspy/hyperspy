@@ -22,7 +22,7 @@ environment:
       CONDA_NPY: "19"
       WP_URL: 'http://heanet.dl.sourceforge.net/project/winpython/WinPython_2.7/2.7.10.3/WinPython-32bit-2.7.10.3.exe'
       WP_CRC: '99E825BCDE4FFA57E612A0D31DF1487861C96D1903E4D20C5843FA2651C9E33B'
-      DEPS: "numpy scipy matplotlib traits traitsui ipython h5py sympy scikit-learn dill mock setuptools"
+      DEPS: "numpy scipy matplotlib traits traitsui ipython h5py sympy scikit-learn dill mock setuptools dask"
 
     - PYTHON: "C:\\Miniconda-x64"
       PYTHON_VERSION: "2.7.x"
@@ -32,7 +32,7 @@ environment:
       CONDA_NPY: "19"
       WP_URL: 'http://heanet.dl.sourceforge.net/project/winpython/WinPython_2.7/2.7.10.3/WinPython-64bit-2.7.10.3.exe'
       WP_CRC: '35d13e00e4ffdccde150fd526acf3923a62c4b329ab85987dfeea4c2496eaae2'
-      DEPS: "numpy scipy matplotlib traits traitsui ipython h5py sympy scikit-learn dill mock setuptools"
+      DEPS: "numpy scipy matplotlib traits traitsui ipython h5py sympy scikit-learn dill mock setuptools dask"
 
     - PYTHON: "C:\\Miniconda3"
       PYTHON_VERSION: "3.4.x"
@@ -42,7 +42,7 @@ environment:
       CONDA_NPY: "19"
       WP_URL: 'http://heanet.dl.sourceforge.net/project/winpython/WinPython_3.4/3.4.3.7/WinPython-32bit-3.4.3.7.exe'
       WP_CRC: '8b3b111b911b9f0c2c3ec22f1f23ae07919ec59db63f87e1f12de132da073b4d'
-      DEPS: "numpy scipy matplotlib ipython h5py sympy scikit-learn dill mock setuptools"
+      DEPS: "numpy scipy matplotlib ipython h5py sympy scikit-learn dill mock setuptools dask"
 
     - PYTHON: "C:\\Miniconda35-x64"
       PYTHON_VERSION: "3.5.x"
@@ -52,7 +52,7 @@ environment:
       CONDA_NPY: "19"
       WP_URL: 'http://heanet.dl.sourceforge.net/project/winpython/WinPython_3.5/3.5.1.1/WinPython-64bit-3.5.1.1.exe'
       WP_CRC: '82057650e7950e6562affc73fd711e9fae1e6b8829cd6d65527f5a79429241ac'
-      DEPS: "numpy scipy matplotlib ipython h5py sympy scikit-learn dill mock setuptools"
+      DEPS: "numpy scipy matplotlib ipython h5py sympy scikit-learn dill mock setuptools dask"
 
 matrix:
   allow_failures:
