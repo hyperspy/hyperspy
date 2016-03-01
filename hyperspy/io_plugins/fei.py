@@ -633,7 +633,7 @@ def guess_units_from_mode(objects_dict, header, verbose=False):
     try:
         # assuming that for an image stack, the UnitsLength of the "3rd"
         # dimension is 0
-        isImageStack = (header['Dim-1_UnitsLength'][0] == 0)        
+        isImageStack = (header['Dim-1_UnitsLength'][0] == 0)
         # Workaround: if this is not an image stack and not a STEM image, then
         # we assume that it should be a diffraction
         isDiffractionScan = (header['Dim-1_DimensionSize'][0] > 1 and not isImageStack)
@@ -660,17 +660,12 @@ def guess_units_from_mode(objects_dict, header, verbose=False):
         return "1/meters"
     else:
         return 'meters'
-        
+
 def get_simplified_mode(mode):
-    def get_diffraction_or_image_mode(mode):
-        if "Diffraction" in mode:
-            return "Diffraction"
-        else:
-            return "Image"        
     if "STEM" in mode:
-        return "STEM "+get_diffraction_or_image_mode(mode)
+        return "STEM"
     else:
-        return "TEM "+get_diffraction_or_image_mode(mode)
+        return "TEM"
 
 def get_degree(value):
     return np.degrees(float(value))

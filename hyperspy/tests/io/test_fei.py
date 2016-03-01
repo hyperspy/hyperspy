@@ -29,7 +29,7 @@ class test_fei_reader():
     def setUp(self):
         self.dirpathold = os.path.join(my_path, 'FEI_old')
         self.dirpathnew = os.path.join(my_path, 'FEI_new')
-        
+
     def test_load_emi_old_new_format(self, verbose=True):
         # TIA old format
         fname0 = os.path.join(self.dirpathold, '64x64_TEM_images_acquire.emi')
@@ -49,13 +49,13 @@ class test_fei_reader():
         fname0 = os.path.join(self.dirpathold, '64x64_TEM_images_acquire.emi')
         s0 = load(fname0, verbose=verbose)
         data = np.load(fname0.replace('emi', 'npy'))
-        nt.assert_true((s0.data == data).all())        
-        
+        nt.assert_true((s0.data == data).all())
+
     def test_load_ser_reader_old_new_format(self, verbose=True):
         # test TIA old format
         fname0 = os.path.join(self.dirpathold, '64x64_TEM_images_acquire_1.ser')
         header0, data0 = load_ser_file(fname0, verbose=verbose)
-        nt.assert_equal(header0['SeriesVersion'], 528)    
+        nt.assert_equal(header0['SeriesVersion'], 528)
         # test TIA new format
         fname1 = os.path.join(self.dirpathnew, '128x128_TEM_acquire-sum1_1.ser')
         header1, data1 = load_ser_file(fname1, verbose=verbose)
@@ -66,19 +66,19 @@ class test_fei_reader():
         s0 = load(fname0, verbose=verbose)
         nt.assert_equal(s0.data.shape, (64, 64))
         nt.assert_equal(s0.metadata.Signal.record_by, 'image')
-        nt.assert_equal(s0.metadata.Acquisition_instrument.TEM.acquisition_mode, 'TEM Diffraction')
+        nt.assert_equal(s0.metadata.Acquisition_instrument.TEM.acquisition_mode, 'TEM')
         nt.assert_almost_equal(s0.axes_manager[0].scale, 0.10157, places=5)
         nt.assert_equal(s0.axes_manager[0].units, '1/nm')
         nt.assert_almost_equal(s0.axes_manager[1].scale, 0.10157, places=5)
         nt.assert_equal(s0.axes_manager[1].units, '1/nm')
-        
+
     def test_load_diffraction_line_scan(self, verbose=True):
         fname0 = os.path.join(self.dirpathnew, '16x16-line_profile_horizontal_5x128x128_EDS.emi')
         s0 = load(fname0, verbose=verbose)
         #s0[0] contains EDS
         nt.assert_equal(s0[0].data.shape, (5, 4000))
         nt.assert_equal(s0[0].metadata.Signal.record_by, 'spectrum')
-        nt.assert_equal(s0[0].metadata.Acquisition_instrument.TEM.acquisition_mode, 'STEM Diffraction')       
+        nt.assert_equal(s0[0].metadata.Acquisition_instrument.TEM.acquisition_mode, 'STEM')
         nt.assert_almost_equal(s0[0].axes_manager[0].scale, 3.68864, places=5)
         nt.assert_equal(s0[0].axes_manager[0].units, 'nm')
         nt.assert_almost_equal(s0[0].axes_manager[1].scale, 5.0, places=5)
@@ -86,7 +86,7 @@ class test_fei_reader():
         #s0[1] contains diffraction patterns
         nt.assert_equal(s0[1].data.shape, (5, 128, 128))
         nt.assert_equal(s0[1].metadata.Signal.record_by, 'image')
-        nt.assert_equal(s0[1].metadata.Acquisition_instrument.TEM.acquisition_mode, 'STEM Diffraction')
+        nt.assert_equal(s0[1].metadata.Acquisition_instrument.TEM.acquisition_mode, 'STEM')
         nt.assert_almost_equal(s0[1].axes_manager[0].scale, 3.68864, places=5)
         nt.assert_equal(s0[1].axes_manager[0].units, 'nm')
         nt.assert_equal(s0[1].axes_manager[1].units, '1/nm')
@@ -100,28 +100,28 @@ class test_fei_reader():
         #s0[0] contains EDS
         nt.assert_equal(s0[0].data.shape, (5, 5, 4000))
         nt.assert_equal(s0[0].metadata.Signal.record_by, 'spectrum')
-        nt.assert_equal(s0[0].metadata.Acquisition_instrument.TEM.acquisition_mode, 'STEM Diffraction')
+        nt.assert_equal(s0[0].metadata.Acquisition_instrument.TEM.acquisition_mode, 'STEM')
         nt.assert_almost_equal(s0[0].axes_manager[0].scale, 1.87390, places=5)
-        nt.assert_equal(s0[0].axes_manager[0].units, 'nm')          
+        nt.assert_equal(s0[0].axes_manager[0].units, 'nm')
         nt.assert_almost_equal(s0[0].axes_manager[1].scale, -1.87390, places=5)
-        nt.assert_equal(s0[0].axes_manager[1].units, 'nm')  
+        nt.assert_equal(s0[0].axes_manager[1].units, 'nm')
         nt.assert_almost_equal(s0[0].axes_manager[2].scale, 5.0, places=5)
         nt.assert_equal(s0[0].axes_manager[2].units, 'eV')
         #s0[1] contains diffraction patterns
         nt.assert_equal(s0[1].data.shape, (5, 5, 256, 256))
         nt.assert_equal(s0[1].metadata.Signal.record_by, 'image')
-        nt.assert_equal(s0[1].metadata.Acquisition_instrument.TEM.acquisition_mode, 'STEM Diffraction')
+        nt.assert_equal(s0[1].metadata.Acquisition_instrument.TEM.acquisition_mode, 'STEM')
         nt.assert_almost_equal(s0[1].axes_manager[0].scale, -1.87390, places=5)
         nt.assert_equal(s0[1].axes_manager[0].units, 'nm')
         nt.assert_almost_equal(s0[1].axes_manager[2].scale, 0.17435, places=5)
-        nt.assert_equal(s0[1].axes_manager[2].units, '1/nm')  
-    
+        nt.assert_equal(s0[1].axes_manager[2].units, '1/nm')
+
     def test_load_spectrum_point(self, verbose=True):
         fname0 = os.path.join(self.dirpathold, '16x16-point_spectrum-1x1024.emi')
         s0 = load(fname0, verbose=verbose)
         nt.assert_equal(s0.data.shape, (1, 1024))
         nt.assert_equal(s0.metadata.Signal.record_by, 'spectrum')
-        nt.assert_equal(s0.metadata.Acquisition_instrument.TEM.acquisition_mode, 'STEM Diffraction')
+        nt.assert_equal(s0.metadata.Acquisition_instrument.TEM.acquisition_mode, 'STEM')
         # single spectrum should be imported as 1D data, not 2D
         nt.assert_almost_equal(s0.axes_manager[0].scale, 1000000000.0, places=5)
         nt.assert_equal(s0.axes_manager[0].units, 'nm')
@@ -132,7 +132,7 @@ class test_fei_reader():
         s1 = load(fname1, verbose=verbose)
         nt.assert_equal(s1.data.shape, (2, 1024))
         nt.assert_equal(s1.metadata.Signal.record_by, 'spectrum')
-        nt.assert_equal(s1.metadata.Acquisition_instrument.TEM.acquisition_mode, 'STEM Diffraction')
+        nt.assert_equal(s1.metadata.Acquisition_instrument.TEM.acquisition_mode, 'STEM')
         nt.assert_almost_equal(s0.axes_manager[0].scale, 1000000000.0, places=5)
         nt.assert_equal(s0.axes_manager[0].units, 'nm')
         nt.assert_almost_equal(s0.axes_manager[1].scale, 0.2, places=5)
@@ -143,7 +143,7 @@ class test_fei_reader():
         s0 = load(fname0, verbose=verbose)
         nt.assert_equal(s0.data.shape, (10, 1024))
         nt.assert_equal(s0.metadata.Signal.record_by, 'spectrum')
-        nt.assert_equal(s0.metadata.Acquisition_instrument.TEM.acquisition_mode, 'STEM Diffraction')
+        nt.assert_equal(s0.metadata.Acquisition_instrument.TEM.acquisition_mode, 'STEM')
         nt.assert_almost_equal(s0.axes_manager[0].scale, 0.12303, places=5)
         nt.assert_equal(s0.axes_manager[0].units, 'nm')
         nt.assert_almost_equal(s0.axes_manager[1].scale, 0.2, places=5)
@@ -153,7 +153,7 @@ class test_fei_reader():
         s1 = load(fname1, verbose=verbose)
         nt.assert_equal(s1.data.shape, (10, 1024))
         nt.assert_equal(s1.metadata.Signal.record_by, 'spectrum')
-        nt.assert_equal(s1.metadata.Acquisition_instrument.TEM.acquisition_mode, 'STEM Diffraction')
+        nt.assert_equal(s1.metadata.Acquisition_instrument.TEM.acquisition_mode, 'STEM')
         nt.assert_almost_equal(s1.axes_manager[0].scale, 0.166318, places=5)
         nt.assert_equal(s1.axes_manager[0].units, 'nm')
         nt.assert_almost_equal(s1.axes_manager[1].scale, 0.2, places=5)
@@ -164,7 +164,7 @@ class test_fei_reader():
         s0 = load(fname0, verbose=verbose)
         nt.assert_equal(s0.data.shape, (5, 5, 1024))
         nt.assert_equal(s0.metadata.Signal.record_by, 'spectrum')
-        nt.assert_equal(s0.metadata.Acquisition_instrument.TEM.acquisition_mode, 'STEM Diffraction')
+        nt.assert_equal(s0.metadata.Acquisition_instrument.TEM.acquisition_mode, 'STEM')
         nt.assert_almost_equal(s0.axes_manager[0].scale, 0.120539, places=5)
         nt.assert_equal(s0.axes_manager[0].units, 'nm')
         nt.assert_almost_equal(s0.axes_manager[1].scale, -0.120539, places=5)
@@ -177,14 +177,14 @@ class test_fei_reader():
         s0 = load(fname0, verbose=verbose)
         nt.assert_equal(s0.data.shape, (5, 5, 4000))
         nt.assert_equal(s0.metadata.Signal.record_by, 'spectrum')
-        nt.assert_equal(s0.metadata.Acquisition_instrument.TEM.acquisition_mode, 'STEM Diffraction')
+        nt.assert_equal(s0.metadata.Acquisition_instrument.TEM.acquisition_mode, 'STEM')
         nt.assert_almost_equal(s0.axes_manager[0].scale, 1.98591, places=5)
         nt.assert_equal(s0.axes_manager[0].units, 'nm')
         nt.assert_almost_equal(s0.axes_manager[1].scale, -4.25819, places=5)
         nt.assert_equal(s0.axes_manager[1].units, 'nm')
         nt.assert_almost_equal(s0.axes_manager[2].scale, 5.0, places=5)
         nt.assert_equal(s0.axes_manager[2].units, 'eV')
-   
+
     def test_load_search(self, verbose=True):
         fname0 = os.path.join(self.dirpathnew, '128x128-TEM_search.emi')
         s0 = load(fname0, verbose=verbose)
@@ -193,34 +193,34 @@ class test_fei_reader():
         nt.assert_equal(s0.axes_manager[0].units, 'nm')
         nt.assert_almost_equal(s0.axes_manager[1].scale, 5.26121, places=5)
         nt.assert_equal(s0.axes_manager[1].units, 'nm')
-        
+
         fname1 = os.path.join(self.dirpathold, '16x16_STEM_BF_DF_search.emi')
         s1 = load(fname1, verbose=verbose)
         nt.assert_equal(len(s1), 2)
-        for s in s1:            
-            nt.assert_equal(s.data.shape, (16, 16))       
-            nt.assert_equal(s.metadata.Acquisition_instrument.TEM.acquisition_mode, 'STEM Diffraction')
+        for s in s1:
+            nt.assert_equal(s.data.shape, (16, 16))
+            nt.assert_equal(s.metadata.Acquisition_instrument.TEM.acquisition_mode, 'STEM')
             nt.assert_almost_equal(s.axes_manager[0].scale, 22.026285, places=5)
             nt.assert_equal(s.axes_manager[0].units, 'nm')
             nt.assert_almost_equal(s.axes_manager[1].scale, 22.026285, places=5)
             nt.assert_equal(s.axes_manager[1].units, 'nm')
-            
+
     def test_load_stack_image_preview(self, verbose=True):
         fname0 = os.path.join(self.dirpathold, '64x64x5_TEM_preview.emi')
         s0 = load(fname0, verbose=verbose)
-        nt.assert_equal(s0.data.shape, (5, 64, 64))        
+        nt.assert_equal(s0.data.shape, (5, 64, 64))
         nt.assert_equal(s0.metadata.Signal.record_by, 'image')
-        nt.assert_equal(s0.metadata.Acquisition_instrument.TEM.acquisition_mode, 'TEM Image')
+        nt.assert_equal(s0.metadata.Acquisition_instrument.TEM.acquisition_mode, 'TEM')
         nt.assert_almost_equal(s0.axes_manager[0].scale, 1.0, places=5)
         nt.assert_equal(s0.axes_manager[0].units, 'a.u.')
         nt.assert_almost_equal(s0.axes_manager[1].scale, 6.281833, places=5)
         nt.assert_equal(s0.axes_manager[1].units, 'nm')
         nt.assert_almost_equal(s0.axes_manager[2].scale, 6.281833, places=5)
         nt.assert_equal(s0.axes_manager[2].units, 'nm')
-        
+
         fname2 = os.path.join(self.dirpathnew, '128x128x5-diffraction_preview.emi')
         s2 = load(fname2, verbose=verbose)
-        nt.assert_equal(s2.data.shape, (5, 128, 128))    
+        nt.assert_equal(s2.data.shape, (5, 128, 128))
         nt.assert_almost_equal(s2.axes_manager[1].scale, 0.042464, places=5)
         nt.assert_equal(s0.axes_manager[0].units, 'a.u.')
         nt.assert_equal(s2.axes_manager[1].units, '1/nm')
@@ -231,8 +231,8 @@ class test_fei_reader():
         s1 = load(fname1, verbose=verbose)
         nt.assert_equal(len(s1), 2)
         for s in s1:
-            nt.assert_equal(s.data.shape, (5, 16, 16))      
-            nt.assert_equal(s.metadata.Acquisition_instrument.TEM.acquisition_mode, 'STEM Diffraction')
+            nt.assert_equal(s.data.shape, (5, 16, 16))
+            nt.assert_equal(s.metadata.Acquisition_instrument.TEM.acquisition_mode, 'STEM')
             nt.assert_almost_equal(s.axes_manager[0].scale, 1.0, places=5)
             nt.assert_equal(s.axes_manager[1].units, 'nm')
             nt.assert_almost_equal(s.axes_manager[1].scale, 21.510044, places=5)
@@ -241,7 +241,7 @@ class test_fei_reader():
         fname0 = os.path.join(self.dirpathold, '64x64_TEM_images_acquire.emi')
         s0 = load(fname0, verbose=verbose)
         nt.assert_equal(s0.metadata.Signal.record_by, 'image')
-        nt.assert_equal(s0.metadata.Acquisition_instrument.TEM.acquisition_mode, 'TEM Image')
+        nt.assert_equal(s0.metadata.Acquisition_instrument.TEM.acquisition_mode, 'TEM')
         nt.assert_almost_equal(s0.axes_manager[0].scale, 6.281833, places=5)
         nt.assert_equal(s0.axes_manager[0].units, 'nm')
         nt.assert_almost_equal(s0.axes_manager[1].scale, 6.281833, places=5)
@@ -250,28 +250,28 @@ class test_fei_reader():
         fname1 = os.path.join(self.dirpathold, '16x16_STEM_BF_DF_acquire.emi')
         s1 = load(fname1, verbose=verbose)
         nt.assert_equal(len(s1), 2)
-        for s in s1:            
-            nt.assert_equal(s.data.shape, (16, 16))       
-            nt.assert_equal(s.metadata.Acquisition_instrument.TEM.acquisition_mode, 'STEM Diffraction')
+        for s in s1:
+            nt.assert_equal(s.data.shape, (16, 16))
+            nt.assert_equal(s.metadata.Acquisition_instrument.TEM.acquisition_mode, 'STEM')
             nt.assert_almost_equal(s.axes_manager[0].scale, 21.510044, places=5)
             nt.assert_equal(s.axes_manager[0].units, 'nm')
             nt.assert_almost_equal(s.axes_manager[1].scale, 21.510044, places=5)
             nt.assert_equal(s.axes_manager[1].units, 'nm')
-       
+
     def test_read_STEM_TEM_mode(self, verbose=True):
         # TEM image
         fname0 = os.path.join(self.dirpathold, '64x64_TEM_images_acquire.emi')
         s0 = load(fname0, verbose=verbose)
-        nt.assert_equal(s0.metadata.Acquisition_instrument.TEM.acquisition_mode, "TEM Image")        
+        nt.assert_equal(s0.metadata.Acquisition_instrument.TEM.acquisition_mode, "TEM")
         # TEM diffraction
         fname1 = os.path.join(self.dirpathold, '64x64_diffraction_acquire.emi')
         s1 = load(fname1, verbose=verbose)
-        nt.assert_equal(s1.metadata.Acquisition_instrument.TEM.acquisition_mode, "TEM Diffraction")
+        nt.assert_equal(s1.metadata.Acquisition_instrument.TEM.acquisition_mode, "TEM")
         fname2 = os.path.join(self.dirpathold, '16x16_STEM_BF_DF_acquire.emi')
         # STEM diffraction
         s2 = load(fname2, verbose=verbose)
-        nt.assert_equal(s2[0].metadata.Acquisition_instrument.TEM.acquisition_mode, "STEM Diffraction")
-        nt.assert_equal(s2[1].metadata.Acquisition_instrument.TEM.acquisition_mode, "STEM Diffraction")
+        nt.assert_equal(s2[0].metadata.Acquisition_instrument.TEM.acquisition_mode, "STEM")
+        nt.assert_equal(s2[1].metadata.Acquisition_instrument.TEM.acquisition_mode, "STEM")
 
     def test_load_units_scale(self, verbose=True):
         # TEM image
@@ -285,11 +285,11 @@ class test_fei_reader():
         nt.assert_almost_equal(s1.axes_manager[0].scale, 0.10157, places=4)
         nt.assert_equal(s1.axes_manager[0].units, '1/nm')
         # STEM diffraction
-        fname2 = os.path.join(self.dirpathold, '16x16_STEM_BF_DF_acquire.emi')        
+        fname2 = os.path.join(self.dirpathold, '16x16_STEM_BF_DF_acquire.emi')
         s2 = load(fname2, verbose=verbose)
         nt.assert_equal(s2[0].axes_manager[0].units, 'nm')
         nt.assert_almost_equal(s2[0].axes_manager[0].scale, 21.5100, places=4)
-        
+
     def test_guess_units_from_mode(self, verbose=True):
         from hyperspy.io_plugins.fei import guess_units_from_mode, \
                                     convert_xml_to_dict, get_xml_info_from_emi
@@ -306,10 +306,6 @@ class test_fei_reader():
         unit = guess_units_from_mode({}, header0)
         nt.assert_equal(unit, 'meters')
 
-        # objects and header is empty dictionary
-        unit = guess_units_from_mode({}, {})
-        nt.assert_equal(unit, 'meters')
-
-        # header is empty dictionary
-        unit = guess_units_from_mode(objects_dict, {})
+        # objects is empty dictionary
+        unit = guess_units_from_mode({}, header0)
         nt.assert_equal(unit, 'meters')
