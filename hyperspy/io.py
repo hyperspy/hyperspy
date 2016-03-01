@@ -23,7 +23,7 @@ from psutil import virtual_memory
 from hyperspy import messages
 import hyperspy.defaults_parser
 
-import hyperspy.utils
+from hyperspy.misc.utils import stack
 import hyperspy.misc.utils
 from hyperspy.misc.io.tools import ensure_directory
 from hyperspy.misc.utils import strlist2enumeration
@@ -129,7 +129,7 @@ def load(filenames=None,
     load_to_memory: bool, None
         for HDF5 files and blockfiles, if True (default) loads all data to
         memory. If False, enables only loading the data upon request.
-	    If stack=True as well, the result will be written to a new temporary HDF5 file.
+            If stack=True as well, the result will be written to a new temporary HDF5 file.
         If None the default is set in `preferences`.
     mmap_mode: {'r', 'r+', 'c'}
         Used when loading blockfiles to determine which mode to use for when
@@ -204,11 +204,11 @@ def load(filenames=None,
                     load_single_file(
                         filename,
                         **kwds) for filename in filenames]
-            signal = hyperspy.utils.stack(signal,
-                                          axis=stack_axis,
-                                          new_axis_name=new_axis_name,
-                                          mmap=mmap, mmap_dir=mmap_dir,
-                                          load_to_memory=load_to_memory)
+            signal = stack(signal,
+                           axis=stack_axis,
+                           new_axis_name=new_axis_name,
+                           mmap=mmap, mmap_dir=mmap_dir,
+                           load_to_memory=load_to_memory)
             signal.metadata.General.title = \
                 os.path.split(
                     os.path.split(
@@ -274,8 +274,8 @@ def load_single_file(filename,
                           ' please report this error')
     else:
         reader = io_plugins[i]
-        if not (reader.__name__.endswith('hdf5') or 
-		reader.__name__.endswith('blockfile')):
+        if not (reader.__name__.endswith('hdf5') or
+                reader.__name__.endswith('blockfile')):
             del kwds['load_to_memory']
         return load_with_reader(filename=filename,
                                 reader=reader,

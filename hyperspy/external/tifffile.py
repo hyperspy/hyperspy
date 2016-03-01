@@ -201,7 +201,7 @@ def imsave(filename, data, **kwargs):
     if 'writeshape' not in kwargs:
         kwargs['writeshape'] = True
     if 'bigtiff' not in tifargs and data.size * \
-            data.dtype.itemsize > 2000 * 2**20:
+            data.dtype.itemsize > 2000 * 2 ** 20:
         tifargs['bigtiff'] = True
 
     with TiffWriter(filename, **tifargs) as tif:
@@ -567,7 +567,7 @@ class TiffWriter(object):
         tags = sorted(tags, key=lambda x: x[0])
 
         if not self._bigtiff and (fh.tell() + data.size * data.dtype.itemsize
-                                  > 2**31 - 1):
+                                  > 2 ** 31 - 1):
             raise ValueError("data too large for non-bigtiff file")
 
         for pageindex in range(shape[0]):
@@ -852,7 +852,7 @@ class TiffFile(object):
                 strip_offsets = []
                 for current_offset in page.strip_offsets:
                     if current_offset < previous_offset:
-                        wrap += 2**32
+                        wrap += 2 ** 32
                     strip_offsets.append(current_offset + wrap)
                     previous_offset = current_offset
                 page.strip_offsets = tuple(strip_offsets)
@@ -1587,7 +1587,7 @@ class TiffPage(object):
             else:
                 self._shape = (1, samples, image_depth, image_length,
                                image_width, 1)
-            if self.color_map.shape[1] >= 2**self.bits_per_sample:
+            if self.color_map.shape[1] >= 2 ** self.bits_per_sample:
                 if image_depth == 1:
                     self.shape = (3, image_length, image_width)
                     self.axes = 'CYX'
@@ -1812,7 +1812,7 @@ class TiffPage(object):
                 numpy.cumsum(result, axis=-2, dtype=dtype, out=result)
 
         if colormapped and self.is_palette:
-            if self.color_map.shape[1] >= 2**bits_per_sample:
+            if self.color_map.shape[1] >= 2 ** bits_per_sample:
                 # FluoView and LSM might fail here
                 result = numpy.take(self.color_map,
                                     result[:, 0, :, :, :, 0], axis=1)
@@ -2797,7 +2797,7 @@ def read_uic_tag(fh, tagid, plane_count, offset):
     elif dtype is str:
         # pascal string
         size = read_int()
-        if 0 <= size < 2**10:
+        if 0 <= size < 2 ** 10:
             value = struct.unpack('%is' % size, fh.read(size))[0][:-1]
             value = stripnull(value)
         elif offset:
@@ -2810,7 +2810,7 @@ def read_uic_tag(fh, tagid, plane_count, offset):
         value = []
         for i in range(plane_count):
             size = read_int()
-            if 0 <= size < 2**10:
+            if 0 <= size < 2 ** 10:
                 string = struct.unpack('%is' % size, fh.read(size))[0][:-1]
                 string = stripnull(string)
                 value.append(string)
@@ -3357,8 +3357,8 @@ def unpackrgb(data, dtype='<B', bitspersample=(5, 6, 5), rescale=True):
             o = ((dtype.itemsize * 8) // bps + 1) * bps
             if o > data.dtype.itemsize * 8:
                 t = t.astype('I')
-            t *= (2**o - 1) // (2**bps - 1)
-            t //= 2**(o - (dtype.itemsize * 8))
+            t *= (2 ** o - 1) // (2 ** bps - 1)
+            t //= 2 ** (o - (dtype.itemsize * 8))
         result[:, i] = t
     return result.reshape(-1)
 
@@ -4374,7 +4374,7 @@ TIFF_TAGS = {
     273: ('strip_offsets', None, 4, None, None),
     274: ('orientation', 1, 3, 1, TIFF_ORIENTATIONS),
     277: ('samples_per_pixel', 1, 3, 1, None),
-    278: ('rows_per_strip', 2**32 - 1, 4, 1, None),
+    278: ('rows_per_strip', 2 ** 32 - 1, 4, 1, None),
     279: ('strip_byte_counts', None, 4, None, None),
     280: ('min_sample_value', None, 3, None, None),
     281: ('max_sample_value', None, 3, None, None),  # 2**bits_per_sample
@@ -4532,7 +4532,7 @@ def imshow(data, title=None, vmin=0, vmax=None, cmap=None,
         elif not isinstance(bitspersample, int):
             # bitspersample can be tuple, e.g. (5, 6, 5)
             bitspersample = data.dtype.itemsize * 8
-        datamax = 2**bitspersample
+        datamax = 2 ** bitspersample
         if isrgb:
             if bitspersample < 8:
                 data <<= 8 - bitspersample

@@ -21,8 +21,10 @@ class TestUtilsStack:
         s = self.signal
         s1 = s.deepcopy() + 1
         s2 = s.deepcopy() * 4
+        test_axis = s.axes_manager[0].index_in_array
         result_signal = utils.stack([s, s1, s2])
         result_list = result_signal.split()
+        nt.assert_true(test_axis == s.axes_manager[0].index_in_array)
         nt.assert_true(len(result_list) == 3)
         nt.assert_true(
             (result_list[0].data == result_signal.data[0, ...]).all())
@@ -47,9 +49,13 @@ class TestUtilsStack:
         result_signal = utils.stack([s, s1, s2], axis=1)
         result_list = result_signal.split()
         nt.assert_true(len(result_list) == 3)
-        np.testing.assert_array_equal(result_list[0].data, result_signal.data[:3, :,:])
+        np.testing.assert_array_equal(
+            result_list[0].data, result_signal.data[
+                :3, :, :])
         result_signal = utils.stack([s, s1, s2], axis='y')
-        np.testing.assert_array_equal(result_list[0].data, result_signal.data[:3, :,:])
+        np.testing.assert_array_equal(
+            result_list[0].data, result_signal.data[
+                :3, :, :])
 
     def test_stack_bigger_than_ten(self):
         s = self.signal
@@ -80,5 +86,6 @@ class TestUtilsStack:
         nt.assert_is_instance(result_signal.data, h5py.Dataset)
         nt.assert_true(hasattr(result_signal, '_tempfile'))
         nt.assert_equal(result_signal.data.shape, (9, 2, 5))
-        for res_d, _s in zip(np.split(result_signal.data.value, 3), [s, s1, s2]):
+        for res_d, _s in zip(
+                np.split(result_signal.data.value, 3), [s, s1, s2]):
             np.testing.assert_array_equal(res_d, _s.data)
