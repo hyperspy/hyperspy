@@ -541,14 +541,17 @@ def ser_reader(filename, objects=None, verbose=False, *args, **kwds):
                         'scale': header[
                             'Dim-%i_CalibrationDelta' % (i + 1)][0],
                         # for image stack, the UnitsLength is 0 (no units)
-                        'units': header['Dim-%i_Units' % (i + 1)][0] if header['Dim-%i_UnitsLength' % (i + 1)] > 0 else 'a.u.',
+                        'units': header['Dim-%i_Units' % (i + 1)][0]
+                        if header['Dim-%i_UnitsLength' % (i + 1)] > 0
+                        else 'Unknown',
                         'size': header['Dim-%i_DimensionSize' % (i + 1)][0],
                     })
                 array_shape.append(header['Dim-%i_DimensionSize' % (i + 1)][0])
-        units = "Unknown"
         if objects is not None:
             objects_dict = convert_xml_to_dict(objects[0])
             units = guess_units_from_mode(objects_dict, header)
+        else:
+            units = "meters"
         # Y axis
         axes.append({
             'name': 'y',

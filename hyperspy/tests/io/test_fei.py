@@ -242,7 +242,7 @@ class TestFEIReader():
         nt.assert_equal(
             s0.metadata.Acquisition_instrument.TEM.acquisition_mode, 'TEM')
         nt.assert_almost_equal(s0.axes_manager[0].scale, 1.0, places=5)
-        nt.assert_equal(s0.axes_manager[0].units, 'a.u.')
+        nt.assert_equal(s0.axes_manager[0].units, 'Unknown')
         nt.assert_almost_equal(s0.axes_manager[1].scale, 6.281833, places=5)
         nt.assert_equal(s0.axes_manager[1].units, 'nm')
         nt.assert_almost_equal(s0.axes_manager[2].scale, 6.281833, places=5)
@@ -253,7 +253,7 @@ class TestFEIReader():
         s2 = load(fname2, verbose=verbose)
         nt.assert_equal(s2.data.shape, (5, 128, 128))
         nt.assert_almost_equal(s2.axes_manager[1].scale, 0.042464, places=5)
-        nt.assert_equal(s0.axes_manager[0].units, 'a.u.')
+        nt.assert_equal(s0.axes_manager[0].units, 'Unknown')
         nt.assert_equal(s2.axes_manager[1].units, '1/nm')
         nt.assert_almost_equal(s2.axes_manager[2].scale, 0.042464, places=5)
         nt.assert_equal(s2.axes_manager[2].units, '1/nm')
