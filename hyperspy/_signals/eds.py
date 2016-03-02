@@ -827,7 +827,7 @@ class EDSSpectrum(Spectrum):
                 line_energy + line_FWHM * line_width[1],
                 line_energy + line_FWHM * line_width[1] +
                 line_FWHM * windows_width
-            ]
+                ]
             windows_position.append(tmp)
         windows_position = np.array(windows_position)
         # merge ovelapping windows
