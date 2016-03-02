@@ -62,6 +62,10 @@ data_types = {
 
 XY_TAG_ID = 16706  # header contains XY calibration
 
+def readLELongLong(file):
+    """Read 8 bytes as *little endian* integer in file"""
+    read_bytes = file.read(8)
+    return struct.unpack('<Q', read_bytes)[0]
 
 def readLELong(file):
     """Read 4 bytes as *little endian* integer in file"""
@@ -99,23 +103,39 @@ def get_lengths(file):
 
 
 def get_header_dtype_list(file):
-    header_list = [
-        ("ByteOrder", ("<u2")),
+    # Read the first part of the header
+    header_list1 = [
+        ("ByteOrder", "<u2"),
         ("SeriesID", "<u2"),
         ("SeriesVersion", "<u2"),
         ("DataTypeID", "<u4"),
         ("TagTypeID", "<u4"),
         ("TotalNumberElements", "<u4"),
-        ("ValidNumberElements", "<u4"),
-        ("OffsetArrayOffset", "<u4"),
-        ("NumberDimensions", "<u4"),
-    ]
-    header = np.fromfile(file,
-                         dtype=np.dtype(header_list),
-                         count=1)
+        ("ValidNumberElements", "<u4")]
+    header1 = np.fromfile(file,
+                          dtype=np.dtype(header_list1),
+                          count=1)
+    # Depending on the SeriesVersion, the OffsetArrayOffset is 4 or 8 bytes
+    if header1["SeriesVersion"] <= 528:
+        OffsetArrayOffset_dtype = "<u4"
+        beginning_dimension_array_section = 30
+    else:
+        OffsetArrayOffset_dtype = "<u8"
+        beginning_dimension_array_section = 34
+
+    # Once we know the type of the OffsetArrayOffset, we can continue reading
+    # the 2nd part of the header
+    file.seek(22)
+    header_list2 = [("OffsetArrayOffset", OffsetArrayOffset_dtype),
+                    ("NumberDimensions", "<u4")]
+    header2 = np.fromfile(file,
+                          dtype=np.dtype(header_list2),
+                          count=1)
+
+    header_list = header_list1 + header_list2
     # Go to the beginning of the dimension array section
-    file.seek(30)
-    for n in xrange(1, header["NumberDimensions"] + 1):
+    file.seek(beginning_dimension_array_section)
+    for n in xrange(1, header2["NumberDimensions"] + 1):
         description_length, unit_length = get_lengths(file)
         header_list += dimension_array_dtype(
             n, description_length, unit_length)
@@ -232,6 +252,9 @@ def emixml2dtb(et, dictree):
 def emi_reader(filename, dump_xml=False, verbose=False, **kwds):
     # TODO: recover the tags from the emi file. It is easy: just look for
     # <ObjectInfo> and </ObjectInfo>. It is standard xml :)
+    # xml chunks are identified using UUID, if we can find how these UUID are
+    # generated then, it will possible to match to the corresponding ser file
+    # and add the detector information in the metadata
     objects = get_xml_info_from_emi(filename)
     filename = os.path.splitext(filename)[0]
     if dump_xml is True:
@@ -286,7 +309,12 @@ def load_ser_file(filename, verbose=False):
 
         # Read the first element of data offsets
         f.seek(header["OffsetArrayOffset"][0])
-        data_offsets = readLELong(f)
+        # OffsetArrayOffset can contain 4 or 8 bytes integer depending if the
+        # data have been acquired using a 32 or 64 bits platform.
+        if header['SeriesVersion'] <= 528:
+            data_offsets = readLELong(f)
+        else:
+            data_offsets = readLELongLong(f)
         data_dtype_list = get_data_dtype_list(
             f,
             data_offsets,
@@ -425,6 +453,10 @@ def get_axes_from_position(header, data):
         })
     return array_shape, axes
 
+def convert_xml_to_dict(xml_object):
+    op = DictionaryTreeBrowser()
+    emixml2dtb(ET.fromstring(xml_object), op)
+    return op
 
 def ser_reader(filename, objects=None, verbose=False, *args, **kwds):
     """Reads the information from the file and returns it in the HyperSpy
@@ -503,17 +535,22 @@ def ser_reader(filename, objects=None, verbose=False, *args, **kwds):
                             'Dim-%i_CalibrationOffset' % (i + 1)][0],
                         'scale': header[
                             'Dim-%i_CalibrationDelta' % (i + 1)][0],
-                        'units': header['Dim-%i_Units' % (i + 1)][0],
+                        # for image stack, the UnitsLength is 0 (no units)
+                        'units': header['Dim-%i_Units' % (i + 1)][0] if header['Dim-%i_UnitsLength'%(i+1)]>0 else 'a.u.',
                         'size': header['Dim-%i_DimensionSize' % (i + 1)][0],
                     })
                 array_shape.append(header['Dim-%i_DimensionSize' % (i + 1)][0])
+        units = "Unknown"
+        if objects is not None:
+            objects_dict = convert_xml_to_dict(objects[0])
+            units = guess_units_from_mode(objects_dict, header)
         # Y axis
         axes.append({
             'name': 'y',
             'offset': data['CalibrationOffsetY'][0] -
             data['CalibrationElementY'][0] * data['CalibrationDeltaY'][0],
             'scale': data['CalibrationDeltaY'][0],
-            'units': 'meters',
+            'units': units,
             'size': data['ArraySizeY'][0],
         })
         array_shape.append(data['ArraySizeY'][0])
@@ -525,7 +562,7 @@ def ser_reader(filename, objects=None, verbose=False, *args, **kwds):
             data['CalibrationElementX'][0] * data['CalibrationDeltaX'][0],
             'scale': data['CalibrationDeltaX'][0],
             'size': data['ArraySizeX'][0],
-            'units': 'meters',
+            'units': units,
         })
         array_shape.append(data['ArraySizeX'][0])
     # FEI seems to use the international system of units (SI) for the
@@ -534,7 +571,9 @@ def ser_reader(filename, objects=None, verbose=False, *args, **kwds):
         if axis['units'] == 'meters':
             axis['units'] = 'nm'
             axis['scale'] *= 10 ** 9
-
+        elif axis['units'] == '1/meters':
+            axis['units'] = '1/nm'
+            axis['scale'] /= 10 ** 9
     # If the acquisition stops before finishing the job, the stored file will
     # report the requested size even though no values are recorded. Therefore if
     # the shapes of the retrieved array does not match that of the data
@@ -580,13 +619,58 @@ def ser_reader(filename, objects=None, verbose=False, *args, **kwds):
         'mapping': mapping}
     return dictionary
 
+def guess_units_from_mode(objects_dict, header, verbose=False):
+    # in case the xml file doesn't contain the "Mode" or the header doesn't
+    # contain 'Dim-1_UnitsLength', return "meters" as default, which will be
+    # OK most of the time
+    units_loading_warning = "Loading of signal units not supported, setting units to 'nm'."
+    try:
+        mode = objects_dict.ObjectInfo.ExperimentalDescription.Mode
+        isCamera = ("CameraNamePath" in objects_dict.ObjectInfo.AcquireInfo.keys())
+    except AttributeError: # in case the xml chunk doesn't contain the Mode
+        print units_loading_warning
+        return 'meters' # Most of the time, the unit will be meters!
+    try:
+        # assuming that for an image stack, the UnitsLength of the "3rd"
+        # dimension is 0
+        isImageStack = (header['Dim-1_UnitsLength'][0] == 0)        
+        # Workaround: if this is not an image stack and not a STEM image, then
+        # we assume that it should be a diffraction
+        isDiffractionScan = (header['Dim-1_DimensionSize'][0] > 1 and not isImageStack)
+    except KeyError: # in case the header doesn't contain the information
+        print units_loading_warning
+        return 'meters' # Most of the time, the unit will be meters!
 
-def get_mode(mode):
-    if "STEM" in mode:
-        return "STEM"
+    if verbose:
+        print "------------"
+        print objects_dict.ObjectInfo.AcquireInfo
+        print "mode", mode
+        print "isCamera:", isCamera
+        print "isImageStack:", isImageStack
+        print "isImageStack:", isDiffractionScan
+        print "------------"
+    if 'STEM' in mode:
+        # data recorded in STEM with a camera, so we assume, it's a diffraction
+        # in case we can't make use the detector is a camera, use a workaround
+        if isCamera or isDiffractionScan:
+            return "1/meters"
+        else:
+            return "meters"
+    elif 'Diffraction' in mode:
+        return "1/meters"
     else:
-        return "TEM"
-
+        return 'meters'
+        
+def get_simplified_mode(mode):
+    def get_diffraction_or_image_mode(mode):
+        if "Diffraction" in mode:
+            return "Diffraction"
+        else:
+            return "Image"        
+    if "STEM" in mode:
+        return "STEM "+get_diffraction_or_image_mode(mode)
+    else:
+        return "TEM "+get_diffraction_or_image_mode(mode)
 
 def get_degree(value):
     return np.degrees(float(value))
@@ -601,7 +685,7 @@ mapping = {
         None),
     "ObjectInfo.ExperimentalDescription.Mode": (
         "Acquisition_instrument.TEM.acquisition_mode",
-        get_mode),
+        get_simplified_mode),
     "ObjectInfo.ExperimentalConditions.MicroscopeConditions.Tilt1": (
         "Acquisition_instrument.TEM.tilt_stage",
         get_degree),
