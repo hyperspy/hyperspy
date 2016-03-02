@@ -43,13 +43,6 @@ install_req = ['scipy',
                'sympy']
 
 
-def are_we_building4windows():
-    for arg in sys.argv:
-        if 'wininst' in arg:
-            return True
-
-scripts = ['bin/hyperspy', ]
-
 
 class update_version_when_dev:
 
@@ -146,10 +139,9 @@ with update_version_when_dev() as version:
         setup_requires=[
             'setuptools'
         ],
-        scripts=scripts,
         package_data={
             'hyperspy':
-            ['ipython_profile/*',
+            [
              'misc/eds/example_signals/*.hdf5',
              'tests/io/blockfile_data/*.blo',
              'tests/io/dens_data/*.dens',
