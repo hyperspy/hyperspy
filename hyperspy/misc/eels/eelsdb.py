@@ -1,9 +1,11 @@
 """This module provides tools to interact with The EELS Database."""
 import requests
+import logging
 
 from hyperspy.io_plugins.msa import parse_msa_string
 from hyperspy.io import dict2signal
-from hyperspy import messages
+
+_logger = logging.getLogger(__name__)
 
 
 def eelsdb(spectrum_type=None, title=None, author=None, element=None, formula=None,
@@ -215,16 +217,13 @@ def eelsdb(spectrum_type=None, title=None, author=None, element=None, formula=No
         except:
             # parse_msa_string or dict2signal may fail if the EMSA file is not
             # a valid one.
-            # We use hyperspy.message.warning instead of warnings.warn because
-            # the latter doesn't support unicode and the titles often contain
-            # non-ASCII characters.
-            messages.warning(
+            _logger.exception(
                 "Failed to load the spectrum.\n"
                 "Title: %s id: %s.\n"
                 "Please report this error to http://eelsdb.eu/about \n" %
                 (json_spectrum["title"], json_spectrum["id"]))
     if not spectra:
-        messages.information(
+        _logger.information(
             "The EELS database does not contain any spectra matching your query"
             ". If you have some, why not submitting them "
             "https://eelsdb.eu/submit-data/ ?\n")
@@ -242,7 +241,7 @@ def eelsdb(spectrum_type=None, title=None, author=None, element=None, formula=No
                     try:
                         s.add_elements(json_md.elements)
                     except ValueError:
-                        messages.warning(
+                        _logger.exception(
                             "The following spectrum contains invalid chemical "
                             "element information:\n"
                             "Title: %s id: %s. Elements: %s.\n"
