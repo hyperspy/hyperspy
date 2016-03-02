@@ -17,6 +17,7 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import struct
+import warnings
 from glob import glob
 import os
 import xml.etree.ElementTree as ET
@@ -623,22 +624,25 @@ def guess_units_from_mode(objects_dict, header, verbose=False):
     # in case the xml file doesn't contain the "Mode" or the header doesn't
     # contain 'Dim-1_UnitsLength', return "meters" as default, which will be
     # OK most of the time
-    units_loading_warning = "Loading of signal units not supported, setting units to 'nm'."
+    warn_str = "The navigation axes units could not be determined. " \
+               "Setting them to `nm`, but this may be wrong."
     try:
         mode = objects_dict.ObjectInfo.ExperimentalDescription.Mode
-        isCamera = ("CameraNamePath" in objects_dict.ObjectInfo.AcquireInfo.keys())
+        isCamera = (
+            "CameraNamePath" in objects_dict.ObjectInfo.AcquireInfo.keys())
     except AttributeError: # in case the xml chunk doesn't contain the Mode
-        print units_loading_warning
+        warnings.warn(warn_str)
         return 'meters' # Most of the time, the unit will be meters!
-    try:
+    if 'Dim-1_UnitsLength' in header.dtype.fields:
         # assuming that for an image stack, the UnitsLength of the "3rd"
         # dimension is 0
         isImageStack = (header['Dim-1_UnitsLength'][0] == 0)
         # Workaround: if this is not an image stack and not a STEM image, then
         # we assume that it should be a diffraction
-        isDiffractionScan = (header['Dim-1_DimensionSize'][0] > 1 and not isImageStack)
-    except KeyError: # in case the header doesn't contain the information
-        print units_loading_warning
+        isDiffractionScan = (header['Dim-1_DimensionSize'][0] > 1 and not
+                             isImageStack)
+    else:
+        warnings.warn(warn_str)
         return 'meters' # Most of the time, the unit will be meters!
 
     if verbose:
