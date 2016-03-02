@@ -15,11 +15,13 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
+
 import mock
 
 import numpy as np
 import nose.tools as nt
-from scipy.misc import face
+from scipy.misc import face, ascent
+from scipy.ndimage import fourier_shift
 
 import hyperspy.api as hs
 
@@ -89,3 +91,32 @@ class TestAlignTools:
         # Check alignment is correct
         d_al = s.data[:, ds[0]:-ds[0], ds[1]:-ds[1]]
         nt.assert_true(np.all(d_al == self.aligned))
+class TestSubPixelAlign:
+
+    def setUp(self):
+        ref_image = ascent()
+        center = np.array((256, 256))
+        shifts = np.array([(0.0, 0.0), (4.3, 2.13), (1.65, 3.58),
+                           (-2.3, 2.9), (5.2, -2.1), (2.7, 2.9),
+                           (5.0, 6.8), (-9.1, -9.5), (-9.0, -9.9),
+                           (-6.3, -9.2)])
+        s = hs.signals.Image(np.zeros((10, 100, 100)))
+        for i in xrange(10):
+            # Apply each sup-pixel shift using FFT and InverseFFT
+            offset_image = fourier_shift(np.fft.fftn(ref_image), shifts[i])
+            offset_image = np.fft.ifftn(offset_image).real
+
+            # Crop central regions of shifted images to avoid wrap around
+            s.data[i, ...] = offset_image[center[0]:center[0] + 100,
+                                          center[1]:center[1] + 100]
+
+            self.spectrum = s
+            self.shifts = shifts
+
+    def test_align_subpix(self):
+        # Align signal
+        s = self.spectrum
+        shifts = self.shifts
+        s.align2D(shifts=shifts)
+        # Compare by broadcasting
+        np.testing.assert_allclose(s.data[4], s.data[0], rtol=1)
