@@ -139,7 +139,6 @@ with update_version_when_dev() as version:
         setup_requires=[
             'setuptools'
         ],
-        scripts=scripts,
         package_data={
             'hyperspy':
             [
