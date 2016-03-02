@@ -63,10 +63,12 @@ data_types = {
 
 XY_TAG_ID = 16706  # header contains XY calibration
 
+
 def readLELongLong(file):
     """Read 8 bytes as *little endian* integer in file"""
     read_bytes = file.read(8)
     return struct.unpack('<Q', read_bytes)[0]
+
 
 def readLELong(file):
     """Read 4 bytes as *little endian* integer in file"""
@@ -454,10 +456,12 @@ def get_axes_from_position(header, data):
         })
     return array_shape, axes
 
+
 def convert_xml_to_dict(xml_object):
     op = DictionaryTreeBrowser()
     emixml2dtb(ET.fromstring(xml_object), op)
     return op
+
 
 def ser_reader(filename, objects=None, verbose=False, *args, **kwds):
     """Reads the information from the file and returns it in the HyperSpy
@@ -537,7 +541,7 @@ def ser_reader(filename, objects=None, verbose=False, *args, **kwds):
                         'scale': header[
                             'Dim-%i_CalibrationDelta' % (i + 1)][0],
                         # for image stack, the UnitsLength is 0 (no units)
-                        'units': header['Dim-%i_Units' % (i + 1)][0] if header['Dim-%i_UnitsLength'%(i+1)]>0 else 'a.u.',
+                        'units': header['Dim-%i_Units' % (i + 1)][0] if header['Dim-%i_UnitsLength' % (i + 1)] > 0 else 'a.u.',
                         'size': header['Dim-%i_DimensionSize' % (i + 1)][0],
                     })
                 array_shape.append(header['Dim-%i_DimensionSize' % (i + 1)][0])
@@ -620,6 +624,7 @@ def ser_reader(filename, objects=None, verbose=False, *args, **kwds):
         'mapping': mapping}
     return dictionary
 
+
 def guess_units_from_mode(objects_dict, header, verbose=False):
     # in case the xml file doesn't contain the "Mode" or the header doesn't
     # contain 'Dim-1_UnitsLength', return "meters" as default, which will be
@@ -630,9 +635,9 @@ def guess_units_from_mode(objects_dict, header, verbose=False):
         mode = objects_dict.ObjectInfo.ExperimentalDescription.Mode
         isCamera = (
             "CameraNamePath" in objects_dict.ObjectInfo.AcquireInfo.keys())
-    except AttributeError: # in case the xml chunk doesn't contain the Mode
+    except AttributeError:  # in case the xml chunk doesn't contain the Mode
         warnings.warn(warn_str)
-        return 'meters' # Most of the time, the unit will be meters!
+        return 'meters'  # Most of the time, the unit will be meters!
     if 'Dim-1_UnitsLength' in header.dtype.fields:
         # assuming that for an image stack, the UnitsLength of the "3rd"
         # dimension is 0
@@ -643,7 +648,7 @@ def guess_units_from_mode(objects_dict, header, verbose=False):
                              isImageStack)
     else:
         warnings.warn(warn_str)
-        return 'meters' # Most of the time, the unit will be meters!
+        return 'meters'  # Most of the time, the unit will be meters!
 
     if verbose:
         print "------------"
@@ -665,11 +670,13 @@ def guess_units_from_mode(objects_dict, header, verbose=False):
     else:
         return 'meters'
 
+
 def get_simplified_mode(mode):
     if "STEM" in mode:
         return "STEM"
     else:
         return "TEM"
+
 
 def get_degree(value):
     return np.degrees(float(value))
