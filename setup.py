@@ -48,8 +48,6 @@ def are_we_building4windows():
         if 'wininst' in arg:
             return True
 
-scripts = ['bin/hyperspy', ]
-
 
 class update_version_when_dev:
 
@@ -146,7 +144,6 @@ with update_version_when_dev() as version:
         setup_requires=[
             'setuptools'
         ],
-        scripts=scripts,
         package_data={
             'hyperspy':
             ['ipython_profile/*',
