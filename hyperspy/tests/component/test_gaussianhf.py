@@ -34,6 +34,7 @@ def test_function():
     nt.assert_equal(g.function(2), 1.5)
     nt.assert_equal(g.function(1), 3)
 
+
 def test_integral_as_signal():
     s = Spectrum(np.zeros((2, 3, 100)))
     g1 = GaussianHF(fwhm=3.33, centre=20.)
@@ -51,6 +52,7 @@ def test_integral_as_signal():
     np.testing.assert_almost_equal(
         s_out.data, ref)
 
+
 def test_estimate_parameters_binned():
     s = Spectrum(np.empty((100,)))
     axis = s.axes_manager.signal_axes[0]
@@ -62,25 +64,29 @@ def test_estimate_parameters_binned():
     g2 = GaussianHF()
     g2.estimate_parameters(s, axis.low_value, axis.high_value, True)
     nt.assert_almost_equal(
-        g1.height.value /axis.scale,
+        g1.height.value / axis.scale,
         g2.height.value)
     nt.assert_almost_equal(g2.centre.value, g1.centre.value, delta=1e-3)
     nt.assert_almost_equal(g2.fwhm.value, g1.fwhm.value, delta=0.1)
+
 
 def test_util_sigma_set():
     g1 = GaussianHF()
     g1.sigma = 1.0
     nt.assert_almost_equal(g1.fwhm.value, 1.0 * sigma2fwhm)
 
+
 def test_util_sigma_get():
     g1 = GaussianHF()
     g1.fwhm.value = 1.0
     nt.assert_almost_equal(g1.sigma, 1.0 / sigma2fwhm)
 
+
 def test_util_sigma_getset():
     g1 = GaussianHF()
     g1.sigma = 1.0
     nt.assert_almost_equal(g1.sigma, 1.0)
+
 
 def test_util_fwhm_set():
     g1 = GaussianHF(fwhm=0.33)
@@ -88,10 +94,12 @@ def test_util_fwhm_set():
     nt.assert_almost_equal(g1.height.value, 1.0 * sigma2fwhm / (
         0.33 * sqrt2pi))
 
+
 def test_util_fwhm_get():
     g1 = GaussianHF(fwhm=0.33)
     g1.height.value = 1.0
     nt.assert_almost_equal(g1.A, 1.0 * sqrt2pi * 0.33 / sigma2fwhm)
+
 
 def test_util_fwhm_getset():
     g1 = GaussianHF(fwhm=0.33)

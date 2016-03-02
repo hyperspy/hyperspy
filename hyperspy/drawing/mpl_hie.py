@@ -88,7 +88,7 @@ class MPL_HyperImage_Explorer(MPL_HyperExplorer):
 
         if self.navigator_plot is not None and imf.figure is not None:
             utils.on_figure_window_close(self.navigator_plot.figure,
-                                         self.close_navigator_plot)
+                                         self._on_navigator_plot_closing)
             utils.on_figure_window_close(
                 imf.figure, self.close_navigator_plot)
             self._key_nav_cid = \

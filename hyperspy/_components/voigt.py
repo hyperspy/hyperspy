@@ -181,6 +181,7 @@ class Voigt(Component):
         >>> g.estimate_parameters(s, -10,10, False)
 
         """
+        super(Voigt, self)._estimate_parameters(signal)
         axis = signal.axes_manager.signal_axes[0]
 
         energy2index = axis._get_index

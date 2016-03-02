@@ -41,8 +41,18 @@ two lines in the IPython terminal:
 
 .. code-block:: python
 
-   In [1]: import hyperspy.api as hs
-   In [2]: %matplotlib
+   In [1]: %matplotlib qt
+   In [2]: import hyperspy.api as hs
+
+
+We also fully support the wx backend. Other backends are supported for plotting
+but some features such as navigation sliders may be missing.
+
+.. warning::
+        When using the qt4 backend in Python 2 the matplotlib magic must be
+        executed after importing hyperspy and qt must be the default hyperspy
+        backend.
+
 
 .. warning::
         When using the qt4 backend it is important to import hyperspy
@@ -60,7 +70,7 @@ follows:
 Getting help
 ------------
 
-The documentation (docstring in Python jargon) can be accessed by adding a
+When using IPython, the documentation (docstring in Python jargon) can be accessed by adding a
 question mark to the name of a function. e.g.:
 
 
@@ -108,7 +118,7 @@ Once hyperspy is running, to load from a supported file format (see
 
    The load function returns an object that contains data read from the file.
    We assign this object to the variable ``s`` but you can choose any (valid)
-   variable name you like. for the filename, don't forget to include the
+   variable name you like. for the filename, don\'t forget to include the
    quotation marks and the file extension.
 
 If no argument is passed to the load function, a window will be raised that
@@ -142,6 +152,34 @@ to the constructor e.g.
 
 The numpy array is stored in the :py:attr:`~.signal.Signal.data` attribute
 of the signal class.
+
+.. _example-data-label:
+
+Loading example data and data from online databases
+----------------------------------------------------
+
+HyperSpy is distributed with some example data that can be found in
+`hs.datasets.example_signals`. The following example plots one of the example
+signals:
+
+.. code-block:: python
+
+    >>> hs.datasets.example_signals.EDS_TEM_Spectrum().plot()
+
+.. versionadded:: 0.9
+    :py:func:`~.misc.eels.eelsdb.eelsdb` function.
+
+
+The :py:func:`~.misc.eels.eelsdb.eelsdb` function in `hs.datasets` can
+directly load spectra from `The EELS Database <http://eelsdb.eu>`_. For
+example, the following loads all the boron trioxide spectra currently
+available in the database:
+
+.. code-block:: python
+
+    >>> hs.datasets.eelsdb(formula="B2O3")
+    [<EELSSpectrum, title: Boron oxide, dimensions: (|520)>, <EELSSpectrum, title: Boron oxide, dimensions: (|520)>]
+
 
 The navigation and signal dimensions
 ------------------------------------
