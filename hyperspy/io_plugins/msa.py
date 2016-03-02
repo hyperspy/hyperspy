@@ -130,43 +130,56 @@ keywords = {
 }
 
 
-def file_reader(filename, encoding='latin-1', **kwds):
+def parse_msa_string(string, filename=None):
+    """Parse an EMSA/MSA file content.
+
+    Parameters
+    ----------
+    string: string or file object
+        It must complain with the EMSA/MSA standard.
+    filename: string or None
+        The filename.
+
+    Returns:
+    --------
+    file_data_list: list
+        The list containts a dictionary that contains the parsed
+        information. It can be used to create a `:class:Signal`
+        using `:func:hyperspy.io.dict2signal`.
+
+    """
+    if not hasattr(string, "readlines"):
+        string = string.splitlines()
     parameters = {}
     mapped = DictionaryTreeBrowser({})
-    with codecs.open(
-            filename,
-            encoding=encoding,
-            errors='replace') as spectrum_file:
-        y = []
-        # Read the keywords
-        data_section = False
-        for line in spectrum_file.readlines():
-            if data_section is False:
-                if line[0] == "#":
-                    try:
-                        key, value = line.split(': ')
-                        value = value.strip()
-                    except ValueError:
-                        key = line
-                        value = None
-                    key = key.strip('#').strip()
+    y = []
+    # Read the keywords
+    data_section = False
+    for line in string:
+        if data_section is False:
+            if line[0] == "#":
+                try:
+                    key, value = line.split(': ')
+                    value = value.strip()
+                except ValueError:
+                    key = line
+                    value = None
+                key = key.strip('#').strip()
 
-                    if key != 'SPECTRUM':
-                        parameters[key] = value
-                    else:
-                        data_section = True
-            else:
-                # Read the data
-                if line[0] != "#" and line.strip():
-                    if parameters['DATATYPE'] == 'XY':
-                        xy = line.replace(',', ' ').strip().split()
-                        y.append(float(xy[1]))
-                    elif parameters['DATATYPE'] == 'Y':
-                        data = [
-                            float(i) for i in line.replace(
-                                ',',
-                                ' ').strip().split()]
-                        y.extend(data)
+                if key != 'SPECTRUM':
+                    parameters[key] = value
+                else:
+                    data_section = True
+        else:
+            # Read the data
+            if line[0] != "#" and line.strip():
+                if parameters['DATATYPE'] == 'XY':
+                    xy = line.replace(',', ' ').strip().split()
+                    y.append(float(xy[1]))
+                elif parameters['DATATYPE'] == 'Y':
+                    data = [
+                        float(i) for i in line.replace(',', ' ').strip().split()]
+                    y.extend(data)
     # We rewrite the format value to be sure that it complies with the
     # standard, because it will be used by the writer routine
     parameters['FORMAT'] = "EMSA/MAS Spectral Data File"
@@ -240,8 +253,9 @@ def file_reader(filename, encoding='latin-1', **kwds):
         'offset': parameters['OFFSET'] if 'OFFSET' in parameters else 0,
         'units': parameters['XUNITS'] if 'XUNITS' in parameters else '',
     }]
-
-    mapped.set_item('General.original_filename', os.path.split(filename)[1])
+    if filename is not None:
+        mapped.set_item('General.original_filename',
+                        os.path.split(filename)[1])
     mapped.set_item('Signal.record_by', 'spectrum')
     if mapped.has_item('Signal.signal_type'):
         if mapped.Signal.signal_type == 'ELS':
@@ -256,7 +270,17 @@ def file_reader(filename, encoding='latin-1', **kwds):
         'metadata': mapped.as_dictionary(),
         'original_metadata': parameters
     }
-    return [dictionary, ]
+    file_data_list = [dictionary, ]
+    return file_data_list
+
+
+def file_reader(filename, encoding='latin-1', **kwds):
+    with codecs.open(
+            filename,
+            encoding=encoding,
+            errors='replace') as spectrum_file:
+        return parse_msa_string(string=spectrum_file,
+                                filename=filename)
 
 
 def file_writer(filename, signal, format=None, separator=', ',

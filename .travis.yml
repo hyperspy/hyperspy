@@ -20,7 +20,7 @@ install:
   - source activate testenv
   - conda install --yes $DEPS
   - conda install pip
-  - pip install coverage coveralls
+  - pip install coverage coveralls request
   - python setup.py install
 
 before_install:

@@ -22,7 +22,7 @@ import logging
 
 import hyperspy.defaults_parser
 
-import hyperspy.utils
+from hyperspy.misc.utils import stack
 import hyperspy.misc.utils
 from hyperspy.misc.io.tools import ensure_directory
 from hyperspy.misc.utils import strlist2enumeration
@@ -196,10 +196,10 @@ def load(filenames=None,
                 obj = load_single_file(filename,
                                        **kwds)
                 signal.append(obj)
-            signal = hyperspy.utils.stack(signal,
-                                          axis=stack_axis,
-                                          new_axis_name=new_axis_name,
-                                          mmap=mmap, mmap_dir=mmap_dir)
+            signal = stack(signal,
+                           axis=stack_axis,
+                           new_axis_name=new_axis_name,
+                           mmap=mmap, mmap_dir=mmap_dir)
             signal.metadata.General.title = \
                 os.path.split(
                     os.path.split(

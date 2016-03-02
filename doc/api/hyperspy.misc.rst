@@ -54,14 +54,6 @@ hyperspy.misc.export_dictionary module
     :undoc-members:
     :show-inheritance:
 
-hyperspy.misc.hyperspy_magics module
-------------------------------------
-
-.. automodule:: hyperspy.misc.hyperspy_magics
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 hyperspy.misc.image_tools module
 --------------------------------
 
