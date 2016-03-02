@@ -54,6 +54,13 @@ but some features such as navigation sliders may be missing.
         backend.
 
 
+.. warning::
+        When using the qt4 backend it is important to import hyperspy
+        before executing the ``%matplotlib`` magic as above to ensure that
+        matplotlib uses version 2 of the PyQt API. This is necessary to avoid
+        conflicts with other libraries.
+
+
 This documentation assumes that numpy and matplotlib are also imported as
 follows:
 
@@ -61,8 +68,6 @@ follows:
    >>> import matplotlib.pyplot as plt
 
 
-
-.. _starting_hyperspy-label:
 
 Getting help
 ------------
