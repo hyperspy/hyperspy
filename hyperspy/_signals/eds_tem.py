@@ -565,25 +565,29 @@ class EDSTEMSpectrum(EDSSpectrum):
 
         parameters = self.metadata.Acquisition_instrument.TEM
         if beam_current == 'auto':
-            if beam_current in parameters:
-                beam_current = parameters.beam_current
+            if 'beam_current' in self.metadata.Acquisition_instrument.TEM == False:
+                raise Exception ('It is not possible to carry out EDX \
+quantification_cross_section without a beam_current please set one using \
+self.metadata.Acquisition_instrument.TEM.beam_current and run quantification \
+again.')
             else:
-                beam_current = float(raw_input("Please provide a beam current (nA): "))
+                beam_current = parameters.beam_current
         if real_time == 'auto':
             real_time = parameters.Detector.EDS.real_time
             if real_time == 0.5:
-                real_time = float(raw_input("Please provide a dwell time (s): "))
+                raise Exception('Please note that your real time is set to\
+the default value of 0.5s. The function will still run. However, if this is \
+incorrect you should consider changing it using \
+self.metadata.Acquisition_instrument.TEM.Detector.EDS.real_time .')
         if area == 'auto':
             pixel1 = self.axes_manager[0].scale
             pixel2 = self.axes_manager[1].scale
-        if pixel1 == pixel2:
-            if self.axes_manager[0].scale == 1:
-                pixel1 = float(raw_input("Please provide pixel width (nm): "))
-                area = pixel1 * pixel1
-            else:
-                pixel1 = float(raw_input("Please provide pixel width x (nm): "))
-                pixel2 = float(raw_input("Please provide pixel width y (nm): "))
-                area = pixel1 * pixel2
+        if self.axes_manager[0].scale == 1 or self.axes_manager[1].scale == 1:
+                raise Exception('Please note your pixel width is set to the \
+default value of 1nm. The function will still run. However, if this is \
+incorrect you should consider changing using the axes_manager.gui() or \
+axes_manger[0].scale functions. ')
+        area = pixel1 * pixel2
         if method == 'cross_section':
             return (real_time * beam_current * 1e-9) /(constants.e * area)
         elif method == 'zfactor':
