@@ -50,6 +50,14 @@ Quick instructions to install HyperSpy using Anaconda (Linux, MacOs, Windows)
 
        $ conda install traitsui mkl
 
+.. NOTE::
+    As of March 2016, traitsui is not yet available for Python 3 in Anaconda
+    and the above fails. You can install it using pip instead
+
+   .. code-block:: bash
+
+       $ pip install --upgrade traitsui
+
 #. Install HyperSpy:
 
    .. code-block:: bash

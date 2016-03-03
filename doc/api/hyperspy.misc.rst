@@ -94,14 +94,6 @@ hyperspy.misc.math_tools module
     :undoc-members:
     :show-inheritance:
 
-hyperspy.misc.natsort module
-----------------------------
-
-.. automodule:: hyperspy.misc.natsort
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 hyperspy.misc.physical_constants module
 ---------------------------------------
 
