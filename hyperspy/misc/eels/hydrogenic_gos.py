@@ -1,4 +1,4 @@
-from __future__ import division
+
 import math
 
 import numpy as np
@@ -95,10 +95,10 @@ class HydrogenicGOS(GOSBase):
                 'compute K or L shells. Try using Hartree-Slater GOS')
 
         self.energy_axis = self.rel_energy_axis + self.onset_energy
-        print "\nHydrogenic GOS"
-        print "\tElement: ", self.element
-        print "\tSubshell: ", self.subshell[1:]
-        print "\tOnset energy: ", self.onset_energy
+        print("\nHydrogenic GOS")
+        print("\tElement: ", self.element)
+        print("\tSubshell: ", self.subshell[1:])
+        print("\tOnset energy: ", self.onset_energy)
 
     def integrateq(self, onset_energy, angle, E0):
         energy_shift = onset_energy - self.onset_energy

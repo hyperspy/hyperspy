@@ -26,7 +26,7 @@ import hyperspy.utils
 import hyperspy.misc.utils
 from hyperspy.misc.io.tools import ensure_directory
 from hyperspy.misc.utils import strlist2enumeration
-from hyperspy.misc.natsort import natsorted
+from natsort import natsorted
 import hyperspy.misc.io.tools
 from hyperspy.io_plugins import io_plugins, default_write_ext
 
@@ -163,7 +163,7 @@ def load(filenames=None,
         if filenames is None:
             raise ValueError("No file provided to reader")
 
-    if isinstance(filenames, basestring):
+    if isinstance(filenames, str):
         filenames = natsorted([f for f in glob.glob(filenames)
                                if os.path.isfile(f)])
         if not filenames:
@@ -319,7 +319,7 @@ def assign_signal_subclass(record_by="",
         signal_origin = ""
 
     preselection = [s for s in
-                    [s for s in signals.itervalues()
+                    [s for s in signals.values()
                      if record_by == s._record_by]
                     if signal_origin == s._signal_origin]
     perfect_match = [s for s in preselection
@@ -363,7 +363,7 @@ def dict2signal(signal_dict):
         for f in signal_dict['post_process']:
             signal = f(signal)
     if "mapping" in signal_dict:
-        for opattr, (mpattr, function) in signal_dict["mapping"].iteritems():
+        for opattr, (mpattr, function) in signal_dict["mapping"].items():
             if opattr in signal.original_metadata:
                 value = signal.original_metadata.get_item(opattr)
                 if function is not None:

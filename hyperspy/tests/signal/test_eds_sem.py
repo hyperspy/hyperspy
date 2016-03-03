@@ -49,7 +49,7 @@ class Test_metadata:
             3.1 *
             2)
         # Check that metadata is unchanged
-        print old_metadata, s.metadata      # Capture for comparison on error
+        print(old_metadata, s.metadata)      # Capture for comparison on error
         nose.tools.assert_dict_equal(old_metadata.as_dictionary(),
                                      s.metadata.as_dictionary(),
                                      "Source metadata changed")
@@ -65,7 +65,7 @@ class Test_metadata:
             2 *
             2)
         # Check that metadata is unchanged
-        print old_metadata, self.signal.metadata    # Captured on error
+        print(old_metadata, self.signal.metadata)    # Captured on error
         nose.tools.assert_dict_equal(old_metadata.as_dictionary(),
                                      self.signal.metadata.as_dictionary(),
                                      "Source metadata changed")
@@ -132,7 +132,7 @@ class Test_metadata:
             preferences.EDS.eds_mn_ka)
 
     def test_SEM_to_TEM(self):
-        s = self.signal[0, 0]
+        s = self.signal.inav[0, 0]
         signal_type = 'EDS_TEM'
         mp = s.metadata
         mp.Acquisition_instrument.SEM.Detector.EDS.energy_resolution_MnKa = \
@@ -187,16 +187,16 @@ class Test_get_lines_intentisity:
                                     integration_windows=5)[0]
         nose.tools.assert_true(
             np.allclose(24.99516, sAl.data[0, 0, 0], atol=1e-3))
-        sAl = s[0].get_lines_intensity(["Al_Ka"],
+        sAl = s.inav[0].get_lines_intensity(["Al_Ka"],
                                        plot_result=False,
                                        integration_windows=5)[0]
         nose.tools.assert_true(
             np.allclose(24.99516, sAl.data[0, 0], atol=1e-3))
-        sAl = s[0, 0].get_lines_intensity(["Al_Ka"],
+        sAl = s.inav[0, 0].get_lines_intensity(["Al_Ka"],
                                           plot_result=False,
                                           integration_windows=5)[0]
         nose.tools.assert_true(np.allclose(24.99516, sAl.data[0], atol=1e-3))
-        sAl = s[0, 0, 0].get_lines_intensity(["Al_Ka"],
+        sAl = s.inav[0, 0, 0].get_lines_intensity(["Al_Ka"],
                                              plot_result=False,
                                              integration_windows=5)[0]
         nose.tools.assert_true(np.allclose(24.99516, sAl.data, atol=1e-3))

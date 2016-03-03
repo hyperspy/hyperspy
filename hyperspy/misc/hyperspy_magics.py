@@ -97,7 +97,7 @@ class HyperspyMagics(Magics):
             ans += "%matplotlib " + toolkit + "\n"
 
         ans += first_import_part
-        print header + ans
+        print(header + ans)
         if overwrite:
             sh.set_next_input(
                 "# %hyperspy -r " +

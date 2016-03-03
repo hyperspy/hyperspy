@@ -18,7 +18,7 @@
 
 
 import os.path
-import ConfigParser
+import configparser
 
 import traits.api as t
 
@@ -245,14 +245,14 @@ template['General'].default_export_format = 'rpl'
 
 
 def template2config(template, config):
-    for section, traited_class in template.iteritems():
+    for section, traited_class in template.items():
         config.add_section(section)
-        for key, item in traited_class.get().iteritems():
+        for key, item in traited_class.get().items():
             config.set(section, key, str(item))
 
 
 def config2template(template, config):
-    for section, traited_class in template.iteritems():
+    for section, traited_class in template.items():
         config_dict = {}
         for name, value in config.items(section):
             if value == 'True':
@@ -267,11 +267,11 @@ def config2template(template, config):
 
 def dictionary_from_template(template):
     dictionary = {}
-    for section, traited_class in template.iteritems():
+    for section, traited_class in template.items():
         dictionary[section] = traited_class.get()
     return dictionary
 
-config = ConfigParser.SafeConfigParser(allow_no_value=True)
+config = configparser.SafeConfigParser(allow_no_value=True)
 template2config(template, config)
 rewrite = False
 if defaults_file_exists:
@@ -279,7 +279,7 @@ if defaults_file_exists:
     # already defined. If the file contains any option that was not already
     # define the config file is rewritten because it is obsolate
 
-    config2 = ConfigParser.SafeConfigParser(allow_no_value=True)
+    config2 = configparser.SafeConfigParser(allow_no_value=True)
     config2.read(defaults_file)
     for section in config2.sections():
         if config.has_section(section):
@@ -315,7 +315,7 @@ class Preferences(t.HasTraits):
         self.edit_traits(view=hyperspy.gui.preferences.preferences_view)
 
     def save(self):
-        config = ConfigParser.SafeConfigParser(allow_no_value=True)
+        config = configparser.SafeConfigParser(allow_no_value=True)
         template2config(template, config)
         config.write(open(defaults_file, 'w'))
 

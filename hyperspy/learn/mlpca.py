@@ -66,9 +66,9 @@ def mlpca(X, varX, p, convlim=1E-10, maxiter=50000, fast=False):
     XX = X
 #    varX = stdX**2
     n = XX.shape[1]
-    print "\nPerforming maximum likelihood principal components analysis"
+    print("\nPerforming maximum likelihood principal components analysis")
     # Generate initial estimates
-    print "Generating initial estimates"
+    print("Generating initial estimates")
 #    CV = np.zeros((X.shape[0], X.shape[0]))
 #    for i in xrange(X.shape[0]):
 #        for j in xrange(X.shape[0]):
@@ -80,7 +80,7 @@ def mlpca(X, varX, p, convlim=1E-10, maxiter=50000, fast=False):
     U0 = U
 
     # Loop for alternating least squares
-    print "Optimization iteration loop"
+    print("Optimization iteration loop")
     count = 0
     Sold = 0
     ErrFlag = -1
@@ -88,7 +88,7 @@ def mlpca(X, varX, p, convlim=1E-10, maxiter=50000, fast=False):
         count += 1
         Sobj = 0
         MLX = np.zeros(XX.shape)
-        for i in xrange(n):
+        for i in range(n):
             #            Q = sp.sparse.lil_matrix((varX.shape[0] ,varX.shape[0]))
             #            Q.setdiag((1/(varX[:,i])).squeeze())
             #            Q.tocsc()
@@ -104,10 +104,10 @@ def mlpca(X, varX, p, convlim=1E-10, maxiter=50000, fast=False):
             dx = np.matrix((XX[:, i] - MLX[:, i]).squeeze())
             Sobj += float(dx * Q * dx.T)
         if (count % 2) == 1:
-            print "Iteration : %s" % (count / 2)
+            print("Iteration : %s" % (count / 2))
             if (abs(Sold - Sobj) / Sobj) < convlim:
                 ErrFlag = 1
-            print "(abs(Sold - Sobj) / Sobj) = %s" % (abs(Sold - Sobj) / Sobj)
+            print("(abs(Sold - Sobj) / Sobj) = %s" % (abs(Sold - Sobj) / Sobj))
             if count > maxiter:
                 ErrFlag = 1
 

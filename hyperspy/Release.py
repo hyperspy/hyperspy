@@ -74,7 +74,7 @@ keywords = ['EDX',
             'spectroscopy',
             'spectrum image']
 
-info = u"""
+info = """
     H y p e r S p y
     Version %s
 

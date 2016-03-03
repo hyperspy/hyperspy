@@ -27,7 +27,7 @@ class Test_markers:
 
     def test_get_data(self):
         s = Image(np.zeros([3, 2, 2]))
-        m = markers.line_segment(x1=range(3), x2=range(3), y1=1.3, y2=1.5)
+        m = markers.line_segment(x1=list(range(3)), x2=list(range(3)), y1=1.3, y2=1.5)
         m.axes_manager = s.axes_manager
         nose.tools.assert_true(m.get_data_position('x1') == 0)
         nose.tools.assert_true(m.get_data_position('y1') == 1.3)

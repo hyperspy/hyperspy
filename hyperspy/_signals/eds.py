@@ -15,7 +15,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
-from __future__ import division
+
 import itertools
 
 import numpy as np
@@ -274,7 +274,7 @@ class EDSSpectrum(Spectrum):
         set_elements, add_lines, set_lines
 
         """
-        if not isiterable(elements) or isinstance(elements, basestring):
+        if not isiterable(elements) or isinstance(elements, str):
             raise ValueError(
                 "Input must be in the form of a list. For example, "
                 "if `s` is the variable containing this EDS spectrum:\n "
@@ -298,9 +298,9 @@ class EDSSpectrum(Spectrum):
 
     def _parse_only_lines(self, only_lines):
         if hasattr(only_lines, '__iter__'):
-            if isinstance(only_lines[0], basestring) is False:
+            if isinstance(only_lines[0], str) is False:
                 return only_lines
-        elif isinstance(only_lines, basestring) is False:
+        elif isinstance(only_lines, str) is False:
             return only_lines
         only_lines = list(only_lines)
         for only_line in only_lines:
@@ -509,11 +509,12 @@ class EDSSpectrum(Spectrum):
         only_lines = self._parse_only_lines(only_lines)
         beam_energy = self._get_beam_energy()
         lines = []
+        elements = [el if isinstance(el, str) else el.decode() for el in elements]
         for element in elements:
             # Possible line (existing and excited by electron)
             element_lines = []
-            for subshell in elements_db[element]['Atomic_properties'
-                                                 ]['Xray_lines'].keys():
+            for subshell in list(elements_db[element]['Atomic_properties'
+                                                 ]['Xray_lines'].keys()):
                 if only_lines and subshell not in only_lines:
                     continue
                 element_lines.append(element + "_" + subshell)
@@ -530,7 +531,7 @@ class EDSSpectrum(Spectrum):
                 element_lines = [element_lines[select_this], ]
 
             if not element_lines:
-                print(("There is not X-ray line for element %s " % element) +
+                print("There is not X-ray line for element %s " % element +
                       "in the data spectral range")
             else:
                 lines.extend(element_lines)

@@ -194,10 +194,10 @@ class Signal2DTools(object):
                 dtype=dtype)
             np.fill_diagonal(pcarray['max_value'], max_value)
             pbar = progressbar(maxval=nrows * images_number,
-                               disabled=not show_progressbar).start()
+                               disabled=not show_progressbar)
         else:
             pbar = progressbar(maxval=images_number,
-                               disabled=not show_progressbar).start()
+                               disabled=not show_progressbar)
 
         # Main iteration loop. Fills the rows of pcarray when reference
         # is stat
@@ -451,7 +451,7 @@ class Signal1DTools(object):
                 iminimum = 1 + axis.value2index(
                     axis.high_value + minimum,
                     rounding=math.floor)
-                print iminimum
+                print(iminimum)
                 self.crop(axis.index_in_axes_manager,
                           None,
                           iminimum)
@@ -504,10 +504,10 @@ class Signal1DTools(object):
             disabled=not show_progressbar)
         for i, dat in enumerate(self._iterate_signal()):
             dat_int = sp.interpolate.interp1d(
-                range(i0, i1) + range(i2, i3),
+                list(range(i0, i1)) + list(range(i2, i3)),
                 dat[i0:i1].tolist() + dat[i2:i3].tolist(),
                 **kwargs)
-            dat[i1:i2] = dat_int(range(i1, i2))
+            dat[i1:i2] = dat_int(list(range(i1, i2)))
             pbar.update(i + 1)
 
     def _check_navigation_mask(self, mask):
@@ -775,7 +775,7 @@ class Signal1DTools(object):
     def _integrate_in_range_commandline(self, signal_range):
         e1 = signal_range[0]
         e2 = signal_range[1]
-        integrated_spectrum = self[..., e1:e2].integrate1D(-1)
+        integrated_spectrum = self.isig[..., e1:e2].integrate1D(-1)
         return integrated_spectrum
 
     @only_interactive
@@ -1263,7 +1263,7 @@ class Signal1DTools(object):
         for i, spectrum in enumerate(self):
             if window is not None:
                 vmax = axis.index2value(spectrum.data.argmax())
-                spectrum = spectrum[vmax - window / 2.:vmax + window / 2.]
+                spectrum = spectrum.isig[vmax - window / 2.:vmax + window / 2.]
                 x = spectrum.axes_manager[0].axis
             spline = scipy.interpolate.UnivariateSpline(
                 x,
@@ -1271,11 +1271,11 @@ class Signal1DTools(object):
                 s=0)
             roots = spline.roots()
             if len(roots) == 2:
-                left[self.axes_manager.indices] = roots[0]
-                right[self.axes_manager.indices] = roots[1]
+                left.isig[self.axes_manager.indices] = roots[0]
+                right.isig[self.axes_manager.indices] = roots[1]
             else:
-                left[self.axes_manager.indices] = np.nan
-                right[self.axes_manager.indices] = np.nan
+                left.isig[self.axes_manager.indices] = np.nan
+                right.isig[self.axes_manager.indices] = np.nan
             if maxval > 0:
                 pbar.update(i)
         if maxval > 0:
@@ -1380,10 +1380,10 @@ class MVATools(object):
         if same_window is None:
             same_window = preferences.MachineLearning.same_window
         if comp_ids is None:
-            comp_ids = xrange(factors.shape[1])
+            comp_ids = range(factors.shape[1])
 
         elif not hasattr(comp_ids, '__iter__'):
-            comp_ids = xrange(comp_ids)
+            comp_ids = range(comp_ids)
 
         n = len(comp_ids)
         if same_window:
@@ -1398,7 +1398,7 @@ class MVATools(object):
             f = plt.figure(figsize=(4 * per_row, 3 * rows))
         else:
             f = plt.figure()
-        for i in xrange(len(comp_ids)):
+        for i in range(len(comp_ids)):
             if self.axes_manager.signal_dimension == 1:
                 if same_window:
                     ax = plt.gca()
@@ -1447,10 +1447,10 @@ class MVATools(object):
         if same_window is None:
             same_window = preferences.MachineLearning.same_window
         if comp_ids is None:
-            comp_ids = xrange(loadings.shape[0])
+            comp_ids = range(loadings.shape[0])
 
         elif not hasattr(comp_ids, '__iter__'):
-            comp_ids = xrange(comp_ids)
+            comp_ids = range(comp_ids)
 
         n = len(comp_ids)
         if same_window:
@@ -1466,7 +1466,7 @@ class MVATools(object):
         else:
             f = plt.figure()
 
-        for i in xrange(n):
+        for i in range(n):
             if self.axes_manager.navigation_dimension == 1:
                 if same_window:
                     ax = plt.gca()
@@ -1545,7 +1545,7 @@ class MVATools(object):
 
         # Select the desired factors
         if comp_ids is None:
-            comp_ids = xrange(factors.shape[1])
+            comp_ids = range(factors.shape[1])
         elif not hasattr(comp_ids, '__iter__'):
             comp_ids = range(comp_ids)
         mask = np.zeros(factors.shape[1], dtype=np.bool)
@@ -1566,7 +1566,7 @@ class MVATools(object):
                                                      per_row=per_row,
                                                      quiver_color=quiver_color,
                                                      vector_scale=vector_scale)
-            for idx in xrange(len(comp_ids)):
+            for idx in range(len(comp_ids)):
                 filename = '%s_%02i.%s' % (factor_prefix, comp_ids[idx],
                                            save_figures_format)
                 if folder is not None:
@@ -1708,7 +1708,7 @@ class MVATools(object):
                                            comp_label=comp_label,
                                            cmap=cmap, no_nans=no_nans,
                                            per_row=per_row)
-            for idx in xrange(len(comp_ids)):
+            for idx in range(len(comp_ids)):
                 filename = '%s_%02i.%s' % (loading_prefix, comp_ids[idx],
                                            save_figures_format)
                 if folder is not None:
@@ -2576,7 +2576,7 @@ class Signal(MVA,
 
         string += '>'
 
-        return string.encode('utf8')
+        return string
 
     def __getitem__(self, slices, isNavigation=None):
         try:
@@ -2633,16 +2633,19 @@ class Signal(MVA,
             0, len(idx) - len(_orig_slices))
 
         array_slices = []
+        to_remove = []
         for slice_, axis in zip(slices, _signal.axes_manager._axes):
             if (isinstance(slice_, slice) or
-                    len(_signal.axes_manager._axes) < 2):
+                    (len(_signal.data.shape) - len(to_remove)) < 2):
                 array_slices.append(axis._slice_me(slice_))
             else:
                 if isinstance(slice_, float):
                     slice_ = axis.value2index(slice_)
                 array_slices.append(slice_)
-                _signal._remove_axis(axis.index_in_axes_manager)
-
+                to_remove.append(axis.index_in_axes_manager)
+        for _idx in reversed(sorted(to_remove)):
+            _signal._remove_axis(_idx)
+        array_slices = tuple(array_slices)
         _signal.data = _signal.data[array_slices]
         if self.metadata.has_item('Signal.Noise_properties.variance'):
             variance = self.metadata.Signal.Noise_properties.variance
@@ -2814,7 +2817,7 @@ class Signal(MVA,
             string += self.metadata.Signal.record_by
             string += "\n\tData type: "
             string += str(self.data.dtype)
-        print string
+        print(string)
 
     def _load_dictionary(self, file_data_dict):
         """Load data from dictionary.
@@ -2854,10 +2857,10 @@ class Signal(MVA,
         if 'original_metadata' not in file_data_dict:
             file_data_dict['original_metadata'] = {}
         if 'attributes' in file_data_dict:
-            for key, value in file_data_dict['attributes'].iteritems():
+            for key, value in file_data_dict['attributes'].items():
                 if hasattr(self, key):
                     if isinstance(value, dict):
-                        for k, v in value.iteritems():
+                        for k, v in value.items():
                             eval('self.%s.__setattr__(k,v)' % key)
                     else:
                         self.__setattr__(key, value)
@@ -2916,7 +2919,7 @@ class Signal(MVA,
 
     def _get_undefined_axes_list(self):
         axes = []
-        for i in xrange(len(self.data.shape)):
+        for i in range(len(self.data.shape)):
             axes.append({'size': int(self.data.shape[i]), })
         return axes
 
@@ -3424,7 +3427,7 @@ class Signal(MVA,
         cut_index = np.array([0] + step_sizes).cumsum()
 
         axes_dict = signal_dict['axes']
-        for i in xrange(len(cut_index) - 1):
+        for i in range(len(cut_index) - 1):
             axes_dict[axis]['offset'] = \
                 self.axes_manager._axes[axis].index2value(cut_index[i])
             axes_dict[axis]['size'] = cut_index[i + 1] - cut_index[i]
@@ -3466,7 +3469,7 @@ class Signal(MVA,
             "HyperSpy 0.9. Please use `unfold` instead.",
             VisibleDeprecationWarning)
         if len(self.axes_manager._axes) > 2:
-            print "Automatically unfolding the data"
+            print("Automatically unfolding the data")
             self.unfold()
             return True
         else:
@@ -3516,12 +3519,12 @@ class Signal(MVA,
         to_remove = []
         for axis, dim in zip(self.axes_manager._axes, new_shape):
             if dim == 1:
-                uname += ',' + unicode(axis)
-                uunits = ',' + unicode(axis.units)
+                uname += ',' + str(axis)
+                uunits = ',' + str(axis.units)
                 to_remove.append(axis)
         ua = self.axes_manager._axes[unfolded_axis]
-        ua.name = unicode(ua) + uname
-        ua.units = unicode(ua.units) + uunits
+        ua.name = str(ua) + uname
+        ua.units = str(ua.units) + uunits
         ua.size = self.data.shape[unfolded_axis]
         for axis in to_remove:
             self.axes_manager.remove(axis.index_in_axes_manager)
@@ -3660,7 +3663,7 @@ class Signal(MVA,
         new_shape[unfolded_axis] = -1
         # Warning! if the data is not contigous it will make a copy!!
         data = self.data.reshape(new_shape)
-        for i in xrange(data.shape[unfolded_axis]):
+        for i in range(data.shape[unfolded_axis]):
             getitem = [0] * len(data.shape)
             for axis in axes:
                 getitem[axis] = slice(None)
@@ -4202,7 +4205,7 @@ class Signal(MVA,
             show_progressbar = preferences.General.show_progressbar
         # Sepate ndkwargs
         ndkwargs = ()
-        for key, value in kwargs.iteritems():
+        for key, value in kwargs.items():
             if isinstance(value, Signal):
                 ndkwargs += ((key, value),)
 
@@ -4252,7 +4255,7 @@ class Signal(MVA,
                 for (key, value), datum in zip(ndkwargs, data[1:]):
                     kwargs[key] = datum[0]
                 data[0][:] = function(data[0], **kwargs)
-                pbar.next()
+                next(pbar)
             pbar.finish()
 
     def copy(self):
@@ -4578,8 +4581,8 @@ class Signal(MVA,
         self.axes_manager.__iter__()
         return self
 
-    def next(self):
-        self.axes_manager.next()
+    def __next__(self):
+        next(self.axes_manager)
         return self.get_current_signal()
 
     def __len__(self):
@@ -4752,7 +4755,7 @@ class Signal(MVA,
         print(underline("Summary statistics"))
         print("mean:\t" + formatter % data.mean())
         print("std:\t" + formatter % data.std())
-        print
+        print()
         print("min:\t" + formatter % data.min())
         print("Q1:\t" + formatter % np.percentile(data,
                                                   25))
@@ -4832,7 +4835,7 @@ ARITHMETIC_OPERATORS = (
     "__and__",
     "__xor__",
     "__or__",
-    "__div__",
+    "__mod__",
     "__truediv__",
 )
 INPLACE_OPERATORS = (

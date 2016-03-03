@@ -64,16 +64,16 @@ class ModelComponents(object):
         self._model = model
 
     def __repr__(self):
-        signature = u"%4s | %25s | %25s | %25s"
+        signature = "%4s | %25s | %25s | %25s"
         ans = signature % ('#',
                            'Attribute Name',
                            'Component Name',
                            'Component Type')
-        ans += u"\n"
+        ans += "\n"
         ans += signature % ('-' * 4, '-' * 25, '-' * 25, '-' * 25)
         if self._model:
             for i, c in enumerate(self._model):
-                ans += u"\n"
+                ans += "\n"
                 name_string = c.name
                 variable_name = slugify(name_string, valid_variable_name=True)
                 component_type = c._id_name
@@ -86,7 +86,6 @@ class ModelComponents(object):
                                     variable_name,
                                     name_string,
                                     component_type)
-        ans = ans.encode('utf8')
         return ans
 
 
@@ -256,13 +255,12 @@ class Model(list):
         class_name = str(self.__class__).split("'")[1].split('.')[-1]
 
         if len(title):
-            return u"<%s, title: %s>".encode(
-                'utf8') % (class_name, self.spectrum.metadata.General.title)
+            return "<%s, title: %s>" % (class_name, self.spectrum.metadata.General.title)
         else:
-            return u"<%s>".encode('utf8') % class_name
+            return "<%s>" % class_name
 
     def _get_component(self, thing):
-        if isinstance(thing, int) or isinstance(thing, basestring):
+        if isinstance(thing, int) or isinstance(thing, str):
             thing = self[thing]
         elif not isinstance(thing, Component):
             raise ValueError("Not a component or component id.")
@@ -346,11 +344,12 @@ class Model(list):
         for object in iterable:
             self.append(object)
 
-    def __delitem__(self, thing):
-        thing = self.__getitem__(thing)
-        thing.model = None
-        list.__delitem__(self, self.index(thing))
-        self._touch()
+    def __delitem__(self, things):
+        things = self.__getitem__(things)
+        if not isinstance(things, list):
+            things = [things,]
+        for thing in things:
+            self.remove(thing)
 
     def remove(self, thing, touch=True):
         """Remove component from model.
@@ -1321,8 +1320,7 @@ class Model(list):
                                         bounds=self.free_parameters_boundaries,
                                         approx_grad=approx_grad, **kwargs)[0]
             else:
-                print \
-                    """
+                print("""
                 The %s optimizer is not available.
 
                 Available optimizers:
@@ -1334,7 +1332,7 @@ class Model(list):
                 Cosntrained:
                 ------------
                 tnc and l_bfgs_b
-                """ % fitter
+                """ % fitter)
         if np.iterable(self.p0) == 0:
             self.p0 = (self.p0,)
         self._fetch_values_from_p0(p_std=self.p_std)
@@ -1715,7 +1713,7 @@ class Model(list):
              be printed.
 
         """
-        print "Components\tParameter\tValue"
+        print("Components\tParameter\tValue")
         for component in self:
             if component.active:
                 if component.name:
@@ -2086,7 +2084,7 @@ class Model(list):
 
     def __getitem__(self, value):
         """x.__getitem__(y) <==> x[y]"""
-        if isinstance(value, basestring):
+        if isinstance(value, str):
             component_list = []
             for component in self:
                 if component.name:

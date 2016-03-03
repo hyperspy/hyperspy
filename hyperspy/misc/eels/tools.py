@@ -151,7 +151,7 @@ def estimate_variance_parameters(
             is_ok = messagesui.information(
                 message + "Would you like to store the results?")
         else:
-            print message
+            print(message)
         if is_ok:
             noisy_signal.metadata.set_item(
                 "Signal.Noise_properties.Variance_linear_model.gain_factor",
@@ -193,11 +193,11 @@ def ratio(edge_A, edge_B):
     std_b = edge_B.intensity.std
     ratio = a / b
     ratio_std = ratio * rel_std_of_fraction(a, std_a, b, std_b)
-    print "Ratio %s/%s %1.3f +- %1.3f " % (
+    print("Ratio %s/%s %1.3f +- %1.3f " % (
         edge_A.name,
         edge_B.name,
         a / b,
-        1.96 * ratio_std)
+        1.96 * ratio_std))
     return ratio, ratio_std
 
 
