@@ -26,7 +26,7 @@ entry
                       Michael Walls and
                       Ilya Iyengar and
                       },
-      title        = {hyperspy: HyperSpy 0.8.3},
+      title        = {hyperspy: HyperSpy 0.8.4},
       month        = aug,
       year         = 2015,
       doi          = {10.5281/zenodo.46897},
