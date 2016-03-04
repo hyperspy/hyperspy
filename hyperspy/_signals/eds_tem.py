@@ -28,6 +28,7 @@ from hyperspy.gui.eds import TEMParametersUI
 from hyperspy.defaults_parser import preferences
 import hyperspy.gui.messages as messagesui
 from hyperspy.misc.eds import utils as utils_eds
+import warnings
 
 
 class EDSTEMSpectrum(EDSSpectrum):
@@ -575,7 +576,7 @@ again.')
         if real_time == 'auto':
             real_time = parameters.Detector.EDS.real_time
             if real_time == 0.5:
-                raise Exception('Please note that your real time is set to\
+                warnings.warn('Please note that your real time is set to\
 the default value of 0.5s. The function will still run. However, if this is \
 incorrect you should consider changing it using \
 self.metadata.Acquisition_instrument.TEM.Detector.EDS.real_time .')
@@ -583,10 +584,10 @@ self.metadata.Acquisition_instrument.TEM.Detector.EDS.real_time .')
             pixel1 = self.axes_manager[0].scale
             pixel2 = self.axes_manager[1].scale
         if self.axes_manager[0].scale == 1 or self.axes_manager[1].scale == 1:
-                raise Exception('Please note your pixel width is set to the \
+                warnings.warn('Please note your pixel width is set to the \
 default value of 1nm. The function will still run. However, if this is \
-incorrect you should consider changing using the axes_manager.gui() or \
-axes_manger[0].scale functions. ')
+incorrect you should consider changing this using the axes_manager.gui() or \
+axes_manger[0].scale functions.')
         area = pixel1 * pixel2
         if method == 'cross_section':
             return (real_time * beam_current * 1e-9) /(constants.e * area)
