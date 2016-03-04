@@ -8,12 +8,13 @@ For quick instructions on how to install HyperSpy in Linux, MacOs or Windows
 using the `Anaconda Python distribution <http://docs.continuum.io/anaconda/>`_
 see  :ref:`quick-anaconda-install`.
 
-The easiest way to install HyperSpy in Debian or derivaties (e.g. Ubuntu) is by
-downloading and installing the deb file from the `Download section
-<http://hyperspy.org/download.html>`_.
-
 Those experienced with Python may like to
 :ref:`install-with-python-installers` or :ref:`install-source`.
+
+.. warning::
+
+    Since version 0.8.4 HyperSpy only supports Python 3. If you need to install
+    HyperSpy in Python 2.7 install HyperSpy 0.8.3.
 
 .. _hyperspy-bundle:
 
@@ -64,6 +65,14 @@ Quick instructions to install HyperSpy using Anaconda (Linux, MacOs, Windows)
 
        $ pip install hyperspy
 
+.. warning::
+    Since version 0.8.4 HyperSpy only supports Python 3. If you need to
+    install HyperSpy in Python 2.7 install version 0.8.3:
+
+    .. code-block:: bash
+
+        $ pip install --upgrade hyperspy==0.8.3
+
 For convenience you may also consider installing `start_jupyter_cm
 <https://github.com/hyperspy/start_jupyter_cm>`_.
 
@@ -86,6 +95,15 @@ Install using `pip`:
 .. code-block:: bash
 
     $ pip install hyperspy
+
+.. warning::
+    Since version 0.8.4 HyperSpy only supports Python 3. If you need to
+    install HyperSpy in Python 2.7 install version 0.8.3:
+
+    .. code-block:: bash
+
+        $ pip install --upgrade hyperspy==0.8.3
+
 
 You must all install all the dependencies, see :ref:`install-dependencies`.
 
