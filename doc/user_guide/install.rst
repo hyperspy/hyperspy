@@ -56,7 +56,7 @@ Quick instructions to install HyperSpy using Anaconda (Linux, MacOs, Windows)
 
     .. code-block:: bash
 
-        $ pip install --upgrade hyperspy==0.8.3
+        $ pip install --upgrade hyperspy==0.8.3-1
 
 For convenience you may also consider installing `start_jupyter_cm
 <https://github.com/hyperspy/start_jupyter_cm>`_.
@@ -87,7 +87,7 @@ Install using `pip`:
 
     .. code-block:: bash
 
-        $ pip install --upgrade hyperspy==0.8.3
+        $ pip install --upgrade hyperspy==0.8.3-1
 
 
 pip installs automatically the stricly required libraries. However, for full
