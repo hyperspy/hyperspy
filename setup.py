@@ -16,14 +16,22 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import print_function
+
+import sys
+
+v = sys.version_info
+if v[0] != 3:
+    error = "ERROR: From version 0.8.4 HyperSpy requires Python 3. " \
+            "For Python 2.7 install Hyperspy 0.8.3 e.g. " \
+            "$ pip install --upgrade hyperspy==0.8.3"
+    print(error, file=sys.stderr)
+    sys.exit(1)
 
 from distutils.core import setup
-
 import distutils.dir_util
-
 import os
 import subprocess
-import sys
 import fileinput
 
 import hyperspy.Release as Release
