@@ -70,7 +70,7 @@ class MPL_HyperExplorer(object):
             if axis.units is not Undefined:
                 sf.xlabel += ' (%s)' % axis.units
             sf.ylabel = r'$\Sigma\mathrm{data\,over\,all\,other\,axes}$'
-            sf.axis = axis.axis
+            sf.axis = axis
             sf.axes_manager = self.axes_manager
             self.navigator_plot = sf
             # Create a line to the left axis with the default

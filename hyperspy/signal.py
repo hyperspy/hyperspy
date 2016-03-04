@@ -81,7 +81,6 @@ from hyperspy.docstrings.signal import (
     ONE_AXIS_PARAMETER, MANY_AXIS_PARAMETER, OUT_ARG)
 from hyperspy.events import Events, Event
 from hyperspy.interactive import interactive
-from hyperspy.misc.hspy_warnings import VisibleDeprecationWarning
 from hyperspy.misc.signal_tools import are_signals_aligned
 
 
@@ -461,7 +460,8 @@ class Signal2DTools(object):
                 reference='current',
                 dtype='float',
                 correlation_threshold=None,
-                chunk_size=30):
+                chunk_size=30,
+                interpolation_order=1):
         """Align the images in place using user provided shifts or by
         estimating the shifts.
 
@@ -483,6 +483,9 @@ class Signal2DTools(object):
         expand : bool
             If True, the data will be expanded to fit all data after alignment.
             Overrides `crop`.
+        interpolation_order: int, default 1.
+            The order of the spline interpolation. Default is 1, linear
+            interpolation.
 
         Returns
         -------
@@ -561,7 +564,8 @@ class Signal2DTools(object):
                              shifts):
             if np.any(shift):
                 shift_image(im, -shift,
-                            fill_value=fill_value)
+                            fill_value=fill_value,
+                            interpolation_order=interpolation_order)
                 del im
 
         if crop and not expand:
@@ -4011,7 +4015,6 @@ class Signal(FancySlicing,
             s.data = np.atleast_1d(
                 function(self.data, axis=ar_axes,))
             s._remove_axis([ax.index_in_axes_manager for ax in axes])
-            s.events.data_changed.trigger(self)
             return s
 
     def sum(self, axis=None, out=None):
@@ -4220,7 +4223,7 @@ class Signal(FancySlicing,
         axis %s
         order : int
             the order of the derivative
-                %s
+        %s
 
         See also
         --------

@@ -231,7 +231,10 @@ class FancySlicing(object):
 
                 except AttributeError:
                     pass
-        _obj.get_dimensions_from_data()
+        # _obj.get_dimensions_from_data() # replots, so we do it manually:
+        dc = _obj.data
+        for axis in _obj.axes_manager._axes:
+            axis.size = int(dc.shape[axis.index_in_array])
         if out is None:
             return _obj
         else:
