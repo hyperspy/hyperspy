@@ -479,6 +479,7 @@ class Widget1DBase(DraggableWidgetBase):
     a Rectangle patch will be used, centered on position. If not, the
     inheriting class will have to override those as applicable.
     """
+
     def _set_position(self, position):
         try:
             len(position)
@@ -877,7 +878,7 @@ class ResizersMixin(object):
         dl = np.abs(invtrans.transform((border, border)) -
                     invtrans.transform((0, 0))) / 2
         rsize = self._get_resizer_size()
-        return rsize/2 + dl
+        return rsize / 2 + dl
 
     def _get_resizer_pos(self):
         """Get the positions of the resizer handles.
