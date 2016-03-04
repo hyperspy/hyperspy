@@ -5,6 +5,31 @@ We only cover here the main highlights, for a detailed list of all the changes
 see `the github commits changelog
 <https://github.com/hyperspy/hyperspy/commits/master>`_.
 
+v0.8.3
+======
+
+This is a maintenance release that includes fixes for multiple bugs, some
+enhancements, new features, API changes and adds support for
+Python 3. The next major release (HyperSpy 0.9) will not support Python 2.
+
+Importantly, the way to start HyperSpy changes (again) in this release. Please
+read carefully :ref:`importing_hyperspy-label` for details.
+
+The broadcasting rules have also changed. See :ref:`signal.operations`
+for details.
+
+Follow the following links for details on all the `bugs fixed
+<https://github.com/hyperspy/hyperspy/issues?page=1&q=is%3Aclosed+milestone%3A0.8.3+label%3Abug&utf8=%E2%9C%93>`_,
+`documentation enhancements
+<https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3A0.8.3+label%3Adocumentation>`_,
+`enhancements
+<https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3A0.8.3+label%3Aenhancement>`_,
+`new features
+<https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3A0.8.3+label%3ANew>`_
+`and API changes
+<https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3A0.8.3+label%3A"Api+change">`_
+
+
 .. _changes_0.8.2:
 
 v0.8.2
