@@ -45,21 +45,6 @@ Quick instructions to install HyperSpy using Anaconda (Linux, MacOs, Windows)
    Anaconda is recommended for the best performance (it is compiled
    using Intel MKL libraries) and the easiest intallation (all the required
    libraries are included). The academic license is free.
-#. Open a terminal and install traitsui and mkl:
-
-   .. code-block:: bash
-
-       $ conda install traitsui mkl
-
-.. NOTE::
-    As of March 2016, traitsui is not yet available for Python 3 in Anaconda
-    and the above fails. You can install it using pip instead
-
-   .. code-block:: bash
-
-       $ pip install --upgrade traitsui
-
-#. Install HyperSpy:
 
    .. code-block:: bash
 
@@ -105,7 +90,9 @@ Install using `pip`:
         $ pip install --upgrade hyperspy==0.8.3
 
 
-You must all install all the dependencies, see :ref:`install-dependencies`.
+pip installs automatically the stricly required libraries. However, for full
+functionality you may need to install some other dependencies,
+see :ref:`install-dependencies`.
 
 Creating Conda environment for HyperSpy
 ---------------------------------------
@@ -181,7 +168,8 @@ development mode:
     $ cd hyperspy
     $ pip install -e ./
 
-In any case, you must be sure to have all the dependencies installed, see
+All required dependencies are automatically installed by pip. However, for extra
+functonality you may need to install some extra dependencies, see
 :ref:`install-dependencies`. Note the pip installer requires root to install,
 so for Ubuntu:
 
@@ -220,11 +208,11 @@ Installing the required libraries
 
 When installing HyperSpy using Python installers or from source the Python
 programming language and the following libraries must be installed in the
-system: numpy, scipy, matplotlib (>= 1.2), ipython, traits and traitsui. For
-full functionality it is recommended to also install h5py and scikit-learn.
-In addition, since version 0.7.2 the lowess filter requires statsmodels. In
-Windows HyperSpy uses the Ipython's QtConsole and therefore Qt and PyQt or
-PySide are also required.
+system: numpy, scipy, matplotlib (>= 1.2), ipython, natsort, traits and
+traitsui. For full functionality it is recommended to also install h5py and
+scikit-learn. In addition, since version 0.7.2 the lowess filter requires
+statsmodels. In Windows HyperSpy uses the Ipython's QtConsole and therefore Qt
+and PyQt or PySide are also required.
 
 
 In Debian/Ubuntu you can install the libraries as follows:
