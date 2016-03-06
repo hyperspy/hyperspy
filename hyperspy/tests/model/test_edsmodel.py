@@ -27,7 +27,7 @@ class TestlineFit:
         m.fit()
         np.testing.assert_allclose([i.data for i in
                                     m.get_lines_intensity()],
-                                   [[0.5], [0.2], [0.3]], atol=10-4)
+                                   [[0.5], [0.2], [0.3]], atol=10 - 4)
 
     def _check_model_creation(self):
         s = self.s
@@ -176,11 +176,11 @@ class TestMaps:
         s = s1._deepcopy_with_new_data(mix_data)
         a = s.axes_manager._axes.pop(0).get_axis_dictionary()
         s.axes_manager.create_axes([{'size': mix.shape[0],
-                                     'navigate': True}]*2 + [a])
+                                     'navigate': True}] * 2 + [a])
         s.add_elements(s2.metadata.Sample.elements)
 
         for d, m in zip(s._iterate_signal(), mix.flatten()):
-            d[:] = d*m + (1-m)*s2.data
+            d[:] = d * m + (1 - m) * s2.data
         self.mix = mix
         self.s = s
 

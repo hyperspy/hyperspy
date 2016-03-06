@@ -8,6 +8,7 @@ Subpackages
 
     hyperspy.tests.axes
     hyperspy.tests.component
+    hyperspy.tests.datasets
     hyperspy.tests.drawing
     hyperspy.tests.io
     hyperspy.tests.misc

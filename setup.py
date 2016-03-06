@@ -38,17 +38,10 @@ install_req = ['scipy',
                'numpy',
                'traits',
                'traitsui',
-               'sympy',
+               'requests',
                'setuptools',
-               ]
+               'sympy']
 
-
-def are_we_building4windows():
-    for arg in sys.argv:
-        if 'wininst' in arg:
-            return True
-
-scripts = ['bin/hyperspy', ]
 
 
 class update_version_when_dev:
@@ -109,6 +102,7 @@ with update_version_when_dev() as version:
         package_dir={'hyperspy': 'hyperspy'},
         version=version,
         packages=['hyperspy',
+                  'hyperspy.datasets',
                   'hyperspy._components',
                   'hyperspy.datasets',
                   'hyperspy.io_plugins',
@@ -123,6 +117,7 @@ with update_version_when_dev() as version:
                   'hyperspy.tests',
                   'hyperspy.tests.axes',
                   'hyperspy.tests.component',
+                  'hyperspy.tests.datasets',
                   'hyperspy.tests.drawing',
                   'hyperspy.tests.io',
                   'hyperspy.tests.model',
@@ -144,10 +139,9 @@ with update_version_when_dev() as version:
         setup_requires=[
             'setuptools'
         ],
-        scripts=scripts,
         package_data={
             'hyperspy':
-            ['ipython_profile/*',
+            [
              'misc/eds/example_signals/*.hdf5',
              'tests/io/blockfile_data/*.blo',
              'tests/io/dens_data/*.dens',
@@ -158,12 +152,19 @@ with update_version_when_dev() as version:
              'tests/io/dm4_1D_data/*.dm4',
              'tests/io/dm4_2D_data/*.dm4',
              'tests/io/dm4_3D_data/*.dm4',
+             'tests/io/FEI_new/*.emi',
+             'tests/io/FEI_new/*.ser',
+             'tests/io/FEI_new/*.npy',
+             'tests/io/FEI_old/*.emi',
+             'tests/io/FEI_old/*.ser',
+             'tests/io/FEI_old/*.npy',
              'tests/io/msa_files/*.msa',
              'tests/io/hdf5_files/*.hdf5',
              'tests/io/tiff_files/*.tif',
              'tests/io/npy_files/*.npy',
              'tests/io/unf_files/*.unf',
              'tests/drawing/*.ipynb',
+             'tests/signal/test_find_peaks1D_ohaver/test_find_peaks1D_ohaver.hdf5',
              ],
         },
         author=Release.authors['all'][0],
@@ -178,6 +179,7 @@ with update_version_when_dev() as version:
         keywords=Release.keywords,
         classifiers=[
             "Programming Language :: Python :: 2.7",
+            "Programming Language :: Python :: 3",
             "Development Status :: 4 - Beta",
             "Environment :: Console",
             "Intended Audience :: Science/Research",
