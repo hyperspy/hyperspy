@@ -81,19 +81,6 @@ class GeneralConfig(t.HasTraits):
         ' available. However, when using this toolkit the '
         'user interface elements are not available. '
         'to export data to other software that do not support hdf5')
-    default_toolkit = t.Enum(
-        "qt4",
-        "gtk",
-        "wx",
-        "tk",
-        "None",
-        desc="Default toolkit for matplotlib and the user interface "
-        "elements. "
-        "When using gtk and tk the user interface elements are not"
-        " available."
-        "user interface elements are not available. "
-        "None is suitable to run headless. "
-        "HyperSpy must be restarted for changes to take effect")
     default_export_format = t.Enum(
         *default_write_ext,
         desc='Using the hdf5 format is highly reccomended because is the '
@@ -300,7 +287,6 @@ config2template(template, config)
 
 
 class Preferences(t.HasTraits):
-    global current_toolkit
     EELS = t.Instance(EELSConfig)
     EDS = t.Instance(EDSConfig)
     Model = t.Instance(ModelConfig)
@@ -330,7 +316,6 @@ preferences = Preferences(
 if preferences.General.logger_on:
     turn_logging_on(verbose=0)
 
-current_toolkit = preferences.General.default_toolkit
 
 
 def file_version(fname):
