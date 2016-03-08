@@ -269,11 +269,10 @@ class EDSTEMSpectrum(EDSSpectrum):
                        navigation_mask=1.0,
                        closing=True,
                        plot_result=False,
-                       store_in_mp=True,
                        **kwargs):
         """
-        Quantification using Cliff-Lorimer, the zeta factor method, ionization
-        cross_sections.
+        Quantification using Cliff-Lorimer, the zeta factor method, or
+        ionization cross_sections.
 
         Parameters
         ----------
@@ -344,12 +343,13 @@ class EDSTEMSpectrum(EDSSpectrum):
             mass_thickness = intensities[0]
             mass_thickness.data = results[1]
         elif method == 'cross_section':
-            number_of_atoms = utils.stack(intensities)
             results = utils_eds.quantification_cross_section(composition.data,
                     cross_sections=factors,
                     dose=self._get_dose(method))
             composition.data = results[0] * 100
+            number_of_atoms = utils.stack(intensities)
             number_of_atoms.data = results[1]
+            number_of_atoms = number_of_atoms.split()
         composition = composition.split()
         if composition_units == 'atomic':
             if method == 'cross_section':
@@ -371,24 +371,19 @@ class EDSTEMSpectrum(EDSSpectrum):
                 print("%s (%s): Composition = %.2f %s percent"
                       % (element, xray_line, composition[i].data,
                          composition_units))
+        if method=='cross_section':
+            for i, xray_line in enumerate(xray_lines):
+                element, line = utils_eds._get_element_and_line(xray_line)
+                number_of_atoms[i].metadata.General.title = 'atom counts of ' +\
+                    element
+                number_of_atoms[i].metadata.set_item("Sample.elements",
+                    ([element]))
+                number_of_atoms[i].metadata.set_item(
+                    "Sample.xray_lines", ([xray_line]))
         if plot_result and composition[i].axes_manager.signal_dimension != 0:
             utils.plot.plot_signals(composition, **kwargs)
-        if store_in_mp:
-            #for i, compo in enumerate(composition):
-                #self._set_result(xray_line=xray_lines[i],
-                #results='quant', data_res=compo.data, plot_result=False,
-                #store_in_mp=store_in_mp)
-            if method=='zeta':
-                self.metadata.set_item("Sample.mass_thickness", mass_thickness)
-        #if method=='cross_section':
-            #for i, xray_line in enumerate(xray_lines):
-            #    element, line = utils_eds._get_element_and_line(xray_line)
-            #    number_of_atoms[i].metadata.General.title = \
-            #        ' atom counts of ' + element
-            #    number_of_atoms[i].metadata.set_item("Sample.elements",
-            #        ([element]))
-            #    number_of_atoms[i].metadata.set_item(
-            #        "Sample.xray_lines", ([xray_line]))
+        if method=='zeta':
+            self.metadata.set_item("Sample.mass_thickness", mass_thickness)
         if method == 'zeta':
             return composition, mass_thickness
         elif method == 'cross_section':
