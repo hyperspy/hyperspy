@@ -16,14 +16,22 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import print_function
+
+import sys
+
+v = sys.version_info
+if v[0] != 3:
+    error = "ERROR: From version 0.8.4 HyperSpy requires Python 3. " \
+            "For Python 2.7 install Hyperspy 0.8.3 e.g. " \
+            "$ pip install --upgrade hyperspy==0.8.3"
+    print(error, file=sys.stderr)
+    sys.exit(1)
 
 from distutils.core import setup
-
 import distutils.dir_util
-
 import os
 import subprocess
-import sys
 import fileinput
 
 import hyperspy.Release as Release
@@ -33,11 +41,12 @@ if os.path.exists('build'):
     distutils.dir_util.remove_tree('build')
 
 install_req = ['scipy',
-               'ipython (>= 2.0)',
-               'matplotlib (>= 1.2)',
+               'ipython>=2.0',
+               'matplotlib>=1.2',
                'numpy',
-               'traits',
-               'traitsui',
+               'traits>=4.5.0',
+               'traitsui>=5.0',
+               'natsort',
                'sympy']
 
 
@@ -47,38 +56,6 @@ def are_we_building4windows():
             return True
 
 scripts = ['bin/hyperspy', ]
-
-if are_we_building4windows() or os.name in ['nt', 'dos']:
-    # In the Windows command prompt we can't execute Python scripts
-    # without a .py extension. A solution is to create batch files
-    # that runs the different scripts.
-    # (code adapted from scitools)
-    scripts.extend(('bin/win_post_installation.py',
-                    'bin/install_hyperspy_here.py',
-                    'bin/uninstall_hyperspy_here.py'))
-    batch_files = []
-    for script in scripts:
-        batch_file = os.path.splitext(script)[0] + '.bat'
-        f = open(batch_file, "w")
-        f.write('set path=%~dp0;%~dp0\..\;%PATH%\n')
-        f.write('python "%%~dp0\%s" %%*\n' % os.path.split(script)[1])
-        f.close()
-        batch_files.append(batch_file)
-        if script in ('bin/hyperspy'):
-            for env in ('qtconsole', 'notebook'):
-                batch_file = os.path.splitext(script)[0] + '_%s' % env + '.bat'
-                f = open(batch_file, "w")
-                f.write('set path=%~dp0;%~dp0\..\;%PATH%\n')
-                f.write('cd %1\n')
-                if env == "qtconsole":
-                    f.write('start pythonw "%%~dp0\%s " %s \n' % (
-                        os.path.split(script)[1], env))
-                else:
-                    f.write('python "%%~dp0\%s" %s \n' %
-                            (os.path.split(script)[1], env))
-
-                batch_files.append(batch_file)
-    scripts.extend(batch_files)
 
 
 class update_version_when_dev:
@@ -167,16 +144,13 @@ with update_version_when_dev() as version:
                   'hyperspy.misc.machine_learning',
                   'hyperspy.external',
                   'hyperspy.external.mpfit',
-                  'hyperspy.external.mpfit.tests',
                   'hyperspy.external.astroML',
                   ],
-        requires=install_req,
+        install_requires=install_req,
         scripts=scripts,
         package_data={
             'hyperspy':
-            ['bin/*.py',
-             'ipython_profile/*',
-             'data/*.ico',
+            ['ipython_profile/*',
              'misc/eds/example_signals/*.hdf5',
              'tests/io/blockfile_data/*.blockfile'
              'tests/io/dens_data/*.dens'
@@ -187,12 +161,19 @@ with update_version_when_dev() as version:
              'tests/io/dm4_1D_data/*.dm4',
              'tests/io/dm4_2D_data/*.dm4',
              'tests/io/dm4_3D_data/*.dm4',
+             'tests/io/FEI_new/*.emi',
+             'tests/io/FEI_new/*.ser',
+             'tests/io/FEI_new/*.npy',
+             'tests/io/FEI_old/*.emi',
+             'tests/io/FEI_old/*.ser',
+             'tests/io/FEI_old/*.npy',
              'tests/io/msa_files/*.msa',
              'tests/io/hdf5_files/*.hdf5',
              'tests/io/tiff_files/*.tif',
              'tests/io/npy_files/*.npy',
              'tests/io/unf_files/*.unf'
              'tests/drawing/*.ipynb',
+             'tests/signal/test_find_peaks1D_ohaver/test_find_peaks1D_ohaver.hdf5',
              ],
         },
         author=Release.authors['all'][0],
@@ -204,10 +185,9 @@ with update_version_when_dev() as version:
         license=Release.license,
         platforms=Release.platforms,
         url=Release.url,
-        #~ test_suite = 'nose.collector',
         keywords=Release.keywords,
         classifiers=[
-            "Programming Language :: Python :: 2.7",
+            "Programming Language :: Python :: 3",
             "Development Status :: 4 - Beta",
             "Environment :: Console",
             "Intended Audience :: Science/Research",

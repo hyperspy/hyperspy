@@ -151,7 +151,8 @@ class TestLoadingNewSavedMetadata:
 
     def test_binary_string(self):
         import dill
-        # apparently pickle is not "full" and marshal is not backwards-compatible
+        # apparently pickle is not "full" and marshal is not
+        # backwards-compatible
         f = dill.loads(self.s.metadata.test.binary_string)
         nt.assert_equal(f(3.5), 4.5)
 
@@ -171,7 +172,7 @@ class TestSavingMetadataContainers:
         nt.assert_is_instance(l.metadata.test[2], str)
         nt.assert_equal(l.metadata.test[2], '\u6f22\u5b57')
 
-    @nt.timed(0.1)
+    @nt.timed(1.0)
     def test_save_long_list(self):
         s = self.s
         s.metadata.set_item('long_list', list(range(10000)))

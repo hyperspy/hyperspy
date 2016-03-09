@@ -76,6 +76,7 @@ class Offset(Component):
         bool
 
         """
+        super(Offset, self)._estimate_parameters(signal)
         axis = signal.axes_manager.signal_axes[0]
         binned = signal.metadata.Signal.binned
         i1, i2 = axis.value_range_to_indices(x1, x2)

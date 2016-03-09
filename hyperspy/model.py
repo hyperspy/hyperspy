@@ -58,16 +58,16 @@ class ModelComponents(object):
         self._model = model
 
     def __repr__(self):
-        signature = u"%4s | %25s | %25s | %25s"
+        signature = "%4s | %25s | %25s | %25s"
         ans = signature % ('#',
                            'Attribute Name',
                            'Component Name',
                            'Component Type')
-        ans += u"\n"
+        ans += "\n"
         ans += signature % ('-' * 4, '-' * 25, '-' * 25, '-' * 25)
         if self._model:
             for i, c in enumerate(self._model):
-                ans += u"\n"
+                ans += "\n"
                 name_string = c.name
                 variable_name = slugify(name_string, valid_variable_name=True)
                 component_type = c._id_name
@@ -266,7 +266,8 @@ class BaseModel(list):
         class_name = str(self.__class__).split("'")[1].split('.')[-1]
 
         if len(title):
-            return "<%s, title: %s>" % (class_name, self.signal.metadata.General.title)
+            return "<%s, title: %s>" % (
+                class_name, self.signal.metadata.General.title)
         else:
             return "<%s>" % class_name
 
@@ -319,10 +320,10 @@ class BaseModel(list):
         for object in iterable:
             self.append(object)
 
-    def __delitem__(self, thing):
-        things = self.__getitem__(thing)
+    def __delitem__(self, things):
+        things = self.__getitem__(things)
         if not isinstance(things, list):
-            things = [things,]
+            things = [things, ]
         for thing in things:
             self.remove(thing)
 
@@ -586,6 +587,7 @@ class BaseModel(list):
                     comp_p_std, onlyfree=True)
                 counter += component._nfree_param
 
+    # Defines the functions for the fitting process -------------------------
     def _model2plot(self, axes_manager, out_of_range2nans=True):
         old_axes_manager = None
         if axes_manager is not self.axes_manager:
@@ -633,7 +635,8 @@ class BaseModel(list):
                     self.axes_manager._getitem_tuple)[self.channel_switches]
         else:
             variance = 1.0
-        d = self(onlyactive=True).ravel() - self.signal()[self.channel_switches]
+        d = self(onlyactive=True).ravel() - \
+            self.signal()[self.channel_switches]
         d *= d / (1. * variance)  # d = difference^2 / variance.
         self.chisq.data[self.signal.axes_manager.indices[::-1]] = d.sum()
 

@@ -15,7 +15,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
-
 import itertools
 
 import numpy as np
@@ -495,12 +494,13 @@ class EDSSpectrum(Spectrum):
         only_lines = utils_eds._parse_only_lines(only_lines)
         beam_energy = self._get_beam_energy()
         lines = []
-        elements = [el if isinstance(el, str) else el.decode() for el in elements]
+        elements = [el if isinstance(el, str) else el.decode()
+                    for el in elements]
         for element in elements:
             # Possible line (existing and excited by electron)
             element_lines = []
             for subshell in list(elements_db[element]['Atomic_properties'
-                                                 ]['Xray_lines'].keys()):
+                                                      ]['Xray_lines'].keys()):
                 if only_lines and subshell not in only_lines:
                     continue
                 element_lines.append(element + "_" + subshell)
@@ -517,7 +517,7 @@ class EDSSpectrum(Spectrum):
                 element_lines = [element_lines[select_this], ]
 
             if not element_lines:
-                print(("There is not X-ray line for element %s " % element) +
+                print("There is not X-ray line for element %s " % element +
                       "in the data spectral range")
             else:
                 lines.extend(element_lines)

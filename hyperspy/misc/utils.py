@@ -16,7 +16,6 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-
 from operator import attrgetter
 import inspect
 import copy
@@ -290,7 +289,7 @@ class DictionaryTreeBrowser(object):
                         iflong, strvalue = check_long_string(value, max_len)
                         if iflong:
                             key += " <list>" if isinstance(value,
-                                                            list) else " <tuple>"
+                                                           list) else " <tuple>"
                             value = DictionaryTreeBrowser(
                                 {'[%d]' % i: v for i, v in enumerate(value)}, double_lines=True)
                         else:

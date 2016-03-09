@@ -100,9 +100,11 @@ class MarkerBase(object):
         self._is_marker_static()
 
     def _is_marker_static(self):
-        isiterable = lambda obj: not isinstance(obj, (str, bytes)) and hasattr(obj, '__iter__')
+        isiterable = lambda obj: not isinstance(
+            obj, (str, bytes)) and hasattr(
+            obj, '__iter__')
         test = [isiterable(self.data[key].item()[()]) is False
-                       for key in self.data.dtype.names]
+                for key in self.data.dtype.names]
         if np.alltrue(test):
             self.auto_update = False
         else:

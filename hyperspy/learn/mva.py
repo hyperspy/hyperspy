@@ -17,7 +17,6 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 
-
 import types
 import warnings
 
@@ -419,12 +418,11 @@ class MVA():
                     loadings[~navigation_mask, :] = np.nan
                     target.loadings = loadings
         finally:
-            # undo any pre-treatments
-            self.undo_treatments()
-
             if self._unfolded4decomposition is True:
                 self.fold()
                 self._unfolded4decomposition is False
+            # undo any pre-treatments
+            self.undo_treatments()
 
     def blind_source_separation(self,
                                 number_of_components=None,
@@ -879,7 +877,7 @@ class MVA():
         try:
             sc = self.deepcopy()
             sc.data = a.T.reshape(self.data.shape)
-            sc.metadata.General.title += signal_name
+            sc.metadata.General.title += ' ' + signal_name
             if target.mean is not None:
                 sc.data += target.mean
         finally:
@@ -921,8 +919,7 @@ class MVA():
 
         Returns
         -------
-        rec : Signal instance
-
+        Signal instance
         """
         rec = self._calculate_recmatrix(components=components, mva_type='bss',)
         return rec
@@ -1071,7 +1068,7 @@ class MVA():
     def undo_treatments(self):
         """Undo normalize_poissonian_noise"""
         print("Undoing data pre-treatments")
-        self.data = self._data_before_treatments
+        self.data[:] = self._data_before_treatments
         del self._data_before_treatments
 
 
@@ -1185,8 +1182,8 @@ class LearningResults(object):
         print("Decomposition parameters:")
         print("-------------------------")
         print("Decomposition algorithm : ", self.decomposition_algorithm)
-        print("Poissonian noise normalization : %s" % \
-            self.poissonian_noise_normalized)
+        print("Poissonian noise normalization : %s" %
+              self.poissonian_noise_normalized)
         print("Output dimension : %s" % self.output_dimension)
         print("Centre : %s" % self.centre)
         if self.bss_algorithm is not None:

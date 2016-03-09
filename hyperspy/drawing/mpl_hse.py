@@ -119,7 +119,7 @@ class MPL_HyperSpectrum_Explorer(MPL_HyperExplorer):
         sf.plot()
         if self.navigator_plot is not None and sf.figure is not None:
             utils.on_figure_window_close(self.navigator_plot.figure,
-                                         self._disconnect)
+                                         self._on_navigator_plot_closing)
             utils.on_figure_window_close(sf.figure,
                                          self.close_navigator_plot)
             self._key_nav_cid = \

@@ -29,7 +29,7 @@ from subprocess import Popen, PIPE, CalledProcessError, check_call
 pages_dir = 'gh-pages'
 html_dir = '_build/html'
 pdf_dir = '_build/latex'
-pages_repo = 'git@github.com:hyperspy/hyperspy-doc.git'
+pages_repo = 'https://github.com/hyperspy/hyperspy-doc.git'
 
 #-----------------------------------------------------------------------------
 # Functions
