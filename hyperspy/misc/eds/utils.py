@@ -41,10 +41,12 @@ def _get_xray_lines_family(xray_line):
 
 
 def _parse_only_lines(only_lines):
-    if hasattr(only_lines, '__iter__'):
+    if isinstance(only_lines, str):
+        pass
+    elif hasattr(only_lines, '__iter__'):
         if any(isinstance(line, str) is False for line in only_lines):
             return only_lines
-    elif isinstance(only_lines, str) is False:
+    else:
         return only_lines
     only_lines = list(only_lines)
     for only_line in only_lines:

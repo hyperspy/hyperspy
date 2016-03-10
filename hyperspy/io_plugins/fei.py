@@ -307,7 +307,8 @@ def load_ser_file(filename, verbose=False):
             raise IOError(
                 "The file does not contains valid data. "
                 "If it is a single spectrum, the data is contained in the  "
-                ".emi file but HyperSpy cannot currently extract this information.")
+                ".emi file but HyperSpy cannot currently extract this "
+                "information.")
 
         # Read the first element of data offsets
         f.seek(header["OffsetArrayOffset"][0])
@@ -539,8 +540,8 @@ def ser_reader(filename, objects=None, verbose=False, *args, **kwds):
                         'scale': header[
                             'Dim-%i_CalibrationDelta' % (i + 1)][0],
                         # for image stack, the UnitsLength is 0 (no units)
-                        'units': header['Dim-%i_Units' % (i +
-                                                          1)][0].decode('utf-8')
+                        'units': header['Dim-%i_Units' % (i + 1)][0].decode(
+                            'utf-8')
                         if header['Dim-%i_UnitsLength' % (i + 1)] > 0
                         else 'Unknown',
                         'size': header['Dim-%i_DimensionSize' % (i + 1)][0],
@@ -582,8 +583,8 @@ def ser_reader(filename, objects=None, verbose=False, *args, **kwds):
             axis['units'] = '1/nm'
             axis['scale'] /= 10 ** 9
     # If the acquisition stops before finishing the job, the stored file will
-    # report the requested size even though no values are recorded. Therefore if
-    # the shapes of the retrieved array does not match that of the data
+    # report the requested size even though no values are recorded. Therefore
+    # if the shapes of the retrieved array does not match that of the data
     # dimensions we must fill the rest with zeros or (better) nans if the
     # dtype is float
     if np.cumprod(array_shape)[-1] != np.cumprod(data['Array'].shape)[-1]:

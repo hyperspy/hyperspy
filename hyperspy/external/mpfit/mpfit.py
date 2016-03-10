@@ -285,9 +285,9 @@ Perform Levenberg-Marquardt least-squares minimization, based on MINPACK-1.
 		 p[4]*log(x))
    fa = {'x':x, 'y':y, 'err':err}
    m = mpfit('myfunct', p0, functkw=fa)
-   print 'status = ', m.status
-   if (m.status <= 0): print 'error message = ', m.errmsg
-   print 'parameters = ', m.params
+   print('status = ', m.status)
+   if (m.status <= 0): print('error message = ', m.errmsg)
+   print('parameters = ', m.params)
 
    Minimizes sum of squares of MYFUNCT.  MYFUNCT is called with the X,
    Y, and ERR keyword parameters that are given by FUNCTKW.  The

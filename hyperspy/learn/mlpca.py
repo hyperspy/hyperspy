@@ -26,7 +26,9 @@
 
 import numpy as np
 import scipy.linalg
-from hyperspy.misc.machine_learning.import_sklearn import *
+
+from hyperspy.misc.machine_learning.import_sklearn import (
+    fast_svd, sklearn_installed)
 
 
 def mlpca(X, varX, p, convlim=1E-10, maxiter=50000, fast=False):
@@ -69,12 +71,6 @@ def mlpca(X, varX, p, convlim=1E-10, maxiter=50000, fast=False):
     print("\nPerforming maximum likelihood principal components analysis")
     # Generate initial estimates
     print("Generating initial estimates")
-#    CV = np.zeros((X.shape[0], X.shape[0]))
-#    for i in xrange(X.shape[0]):
-#        for j in xrange(X.shape[0]):
-#            denom = np.min((len(np.where(X[i,:] != 0)),
-#            len(np.where(X[j,:] != 0))))
-#            CV[i,j] = np.dot(X[i,:], (X[j,:]).T) / denom
     CV = np.cov(X)
     U, S, Vh = svd(CV)
     U0 = U
@@ -89,17 +85,11 @@ def mlpca(X, varX, p, convlim=1E-10, maxiter=50000, fast=False):
         Sobj = 0
         MLX = np.zeros(XX.shape)
         for i in range(n):
-            #            Q = sp.sparse.lil_matrix((varX.shape[0] ,varX.shape[0]))
-            #            Q.setdiag((1/(varX[:,i])).squeeze())
-            #            Q.tocsc()
 
             Q = np.diag((1 / (varX[:, i])).squeeze())
             U0m = np.matrix(U0)
             F = np.linalg.inv((U0m.T * Q * U0m))
-            MLX[:, i] = np.array(U0m *
-                                 F *
-                                 U0m.T *
-                                 Q *
+            MLX[:, i] = np.array(U0m * F * U0m.T * Q *
                                  (np.matrix(XX[:, i])).T).squeeze()
             dx = np.matrix((XX[:, i] - MLX[:, i]).squeeze())
             Sobj += float(dx * Q * dx.T)
@@ -123,5 +113,4 @@ def mlpca(X, varX, p, convlim=1E-10, maxiter=50000, fast=False):
 
     U, S, Vh = svd(MLX)
     V = Vh.T
-#    S = S[:p]
     return U, S, V, Sobj, ErrFlag
