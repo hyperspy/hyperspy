@@ -693,8 +693,8 @@ class ImageObject(object):
             print(msg)
             raise IOError(
                 'Unable to read this DM file in packed complex format. '
-                'Pleare report the issue to the HyperSpy developers providing'
-                ' the file if possible')
+                'Please report the issue to the HyperSpy developers providing '
+                'the file if possible')
         N = int(self.shape[0] / 2)      # think about a 2Nx2N matrix
         # create an empty 2Nx2N ndarray of complex
         data = np.zeros(shape, dtype="complex64")
