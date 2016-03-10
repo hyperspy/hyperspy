@@ -653,8 +653,8 @@ class Component(t.HasTraits):
             raise ValueError('Only boolean values are permitted')
 
         if value == self.active_is_multidimensional:
-            _logger.warn('`active_is_multidimensional` already %s for %s' %
-                         (str(value), self.name))
+            _logger.warning('`active_is_multidimensional` already %s for %s' %
+                            (str(value), self.name))
             return
 
         if value:  # Turn on
