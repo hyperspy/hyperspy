@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2015 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -30,11 +30,11 @@ class General(t.HasTraits):
 
 class TEMParametersUI(t.HasTraits):
     convergence_angle = t.Float(t.Undefined,
-                                label='Convergence angle (mrad)')
+                                label='Convergence semi-angle (mrad)')
     beam_energy = t.Float(t.Undefined,
                           label='Beam energy (keV)')
     collection_angle = t.Float(t.Undefined,
-                               label='Collection angle (mrad)')
+                               label='Collection semi-angle (mrad)')
 
     traits_view = tu.View(
         tu.Group('beam_energy',

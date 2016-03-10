@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2015 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -29,7 +29,7 @@ except ImportError:
 
 
 def check_that_flags_make_sense(flags):
-# one of: fn, id, sig
+    # one of: fn, id, sig
     def do_error(f1, f2):
         raise ValueError(
             'The flags "%s" and "%s" are not compatible' %

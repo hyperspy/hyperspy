@@ -1,4 +1,4 @@
-# Copyright 2007-2015 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -16,17 +16,20 @@
 # along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 
+import mock
+
 import numpy as np
 import nose.tools as nt
-from scipy.misc import lena
+from scipy.misc import face, ascent
+from scipy.ndimage import fourier_shift
 
-import hyperspy.hspy as hs
+import hyperspy.api as hs
 
 
 class TestAlignTools:
 
     def setUp(self):
-        im = lena()
+        im = face(gray=True)
         self.lena_offset = np.array((256, 256))
         s = hs.signals.Image(np.zeros((10, 100, 100)))
         self.scales = np.array((0.1, 0.3))
@@ -53,8 +56,8 @@ class TestAlignTools:
         smax = self.ishifts.max(0)
         offsets = self.lena_offset + self.offsets / self.scales - smin
         size = np.array((100, 100)) - (smax - smin)
-        self.aligned = im[offsets[0]:offsets[0] + size[0],
-                          offsets[1]:offsets[1] + size[1]]
+        self.aligned = im[int(offsets[0]):int(offsets[0] + size[0]),
+                          int(offsets[1]):int(offsets[1] + size[1])]
 
     def test_estimate_shift(self):
         s = self.spectrum
@@ -65,10 +68,13 @@ class TestAlignTools:
 
     def test_align(self):
         # Align signal
+        m = mock.Mock()
         s = self.spectrum
+        s.events.data_changed.connect(m.data_changed)
         s.align2D()
         # Compare by broadcasting
         nt.assert_true(np.all(s.data == self.aligned))
+        nt.assert_true(m.data_changed.called)
 
     def test_align_expand(self):
         s = self.spectrum
@@ -77,7 +83,7 @@ class TestAlignTools:
         # Check the numbers of NaNs to make sure expansion happened properly
         ds = self.ishifts.max(0) - self.ishifts.min(0)
         Nnan = np.sum(ds) * 100 + np.prod(ds)
-        Nnan_data = np.sum(1*np.isnan(s.data), axis=(1, 2))
+        Nnan_data = np.sum(1 * np.isnan(s.data), axis=(1, 2))
         # Due to interpolation, the number of NaNs in the data might
         # be 2 higher (left and right side) than expected
         nt.assert_true(np.all(Nnan_data - Nnan <= 2))
@@ -85,3 +91,32 @@ class TestAlignTools:
         # Check alignment is correct
         d_al = s.data[:, ds[0]:-ds[0], ds[1]:-ds[1]]
         nt.assert_true(np.all(d_al == self.aligned))
+class TestSubPixelAlign:
+
+    def setUp(self):
+        ref_image = ascent()
+        center = np.array((256, 256))
+        shifts = np.array([(0.0, 0.0), (4.3, 2.13), (1.65, 3.58),
+                           (-2.3, 2.9), (5.2, -2.1), (2.7, 2.9),
+                           (5.0, 6.8), (-9.1, -9.5), (-9.0, -9.9),
+                           (-6.3, -9.2)])
+        s = hs.signals.Image(np.zeros((10, 100, 100)))
+        for i in xrange(10):
+            # Apply each sup-pixel shift using FFT and InverseFFT
+            offset_image = fourier_shift(np.fft.fftn(ref_image), shifts[i])
+            offset_image = np.fft.ifftn(offset_image).real
+
+            # Crop central regions of shifted images to avoid wrap around
+            s.data[i, ...] = offset_image[center[0]:center[0] + 100,
+                                          center[1]:center[1] + 100]
+
+            self.spectrum = s
+            self.shifts = shifts
+
+    def test_align_subpix(self):
+        # Align signal
+        s = self.spectrum
+        shifts = self.shifts
+        s.align2D(shifts=shifts)
+        # Compare by broadcasting
+        np.testing.assert_allclose(s.data[4], s.data[0], rtol=1)

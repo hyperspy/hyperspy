@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2015 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -22,10 +22,10 @@ from scipy.fftpack import fftn, ifftn
 import matplotlib.pyplot as plt
 
 
-def shift_image(im, shift, fill_value=np.nan):
+def shift_image(im, shift, interpolation_order=1, fill_value=np.nan):
     fractional, integral = np.modf(shift)
     if fractional.any():
-        order = 3
+        order = interpolation_order
     else:
         # Disable interpolation
         order = 0

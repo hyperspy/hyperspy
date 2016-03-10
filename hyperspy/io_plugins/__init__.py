@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2015 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -18,9 +18,10 @@
 
 
 from hyperspy import messages
-from hyperspy.io_plugins import (msa, digital_micrograph, fei, mrc,
-                                 ripple, tiff)
-io_plugins = [msa, digital_micrograph, fei, mrc, ripple, tiff]
+from hyperspy.io_plugins import (msa, digital_micrograph, fei, mrc, ripple,
+                                 tiff, semper_unf, blockfile, dens)
+io_plugins = [msa, digital_micrograph, fei, mrc, ripple, tiff, semper_unf,
+              blockfile, dens]
 try:
     from hyperspy.io_plugins import netcdf
     io_plugins.append(netcdf)

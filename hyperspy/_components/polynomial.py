@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2015 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -92,6 +92,7 @@ class Polynomial(Component):
         bool
 
         """
+        super(Polynomial, self)._estimate_parameters(signal)
         axis = signal.axes_manager.signal_axes[0]
         binned = signal.metadata.Signal.binned
         i1, i2 = axis.value_range_to_indices(x1, x2)

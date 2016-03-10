@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2015 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -26,21 +26,22 @@ import codecs
 import collections
 import tempfile
 import unicodedata
+from contextlib import contextmanager
 
 import numpy as np
 
-from hyperspy.misc.hspy_warnings import VisibleDeprecationWarning
-
 
 def attrsetter(target, attrs, value):
-    """ Sets attribute of the target to specified value, supports nested attributes.
-        Only creates a new attribute if the object supports such behaviour (e.g. DictionaryTreeBrowser does)
+    """ Sets attribute of the target to specified value, supports nested
+        attributes. Only creates a new attribute if the object supports such
+        behaviour (e.g. DictionaryTreeBrowser does)
 
         Parameters
         ----------
             target : object
             attrs : string
-                attributes, separated by periods (e.g. 'metadata.Signal.Noise_parameters.variance' )
+                attributes, separated by periods (e.g.
+                'metadata.Signal.Noise_parameters.variance' )
             value : object
 
         Example
@@ -90,25 +91,28 @@ def generate_axis(origin, step, N, index=0):
         origin - index * step, origin + step * (N - 1 - index), N)
 
 
-# TODO: Remove in 0.9
-def unfold_if_multidim(signal):
-    """Unfold the SI if it is 2D
+@contextmanager
+def stash_active_state(model):
+    active_state = []
+    for component in model:
+        if component.active_is_multidimensional:
+            active_state.append(component._active_array)
+        else:
+            active_state.append(component.active)
+    yield
+    for component in model:
+        active_s = active_state.pop(0)
+        if isinstance(active_s, bool):
+            component.active = active_s
+        else:
+            if not component.active_is_multidimensional:
+                component.active_is_multidimensional = True
+            component._active_array[:] = active_s
 
-    Parameters
-    ----------
-    signal : Signal instance
 
-    Returns
-    -------
-
-    Boolean. True if the SI was unfolded by the function.
-
-    """
-    import warnings
-    warnings.warn("unfold_if_multidim is deprecated and will be removed in "
-                  "0.9 please use Signal.unfold instead",
-                  VisibleDeprecationWarning)
-    return None
+@contextmanager
+def dummy_context_manager(*args, **kwargs):
+    yield
 
 
 def str2num(string, **kargs):
@@ -172,7 +176,8 @@ class DictionaryTreeBrowser(object):
 
     Methods
     -------
-    export : saves the dictionary in pretty tree printing format in a text file.
+    export : saves the dictionary in pretty tree printing format in a text
+        file.
     keys : returns a list of non-private keys.
     as_dictionary : returns a dictionary representation of the object.
     set_item : easily set items, creating any necessary node on the way.
@@ -289,10 +294,12 @@ class DictionaryTreeBrowser(object):
                     if isinstance(value, list) or isinstance(value, tuple):
                         iflong, strvalue = check_long_string(value, max_len)
                         if iflong:
-                            key += u" <list>" if isinstance(value,
-                                                            list) else u" <tuple>"
+                            key += (u" <list>"
+                                    if isinstance(value, list)
+                                    else u" <tuple>")
                             value = DictionaryTreeBrowser(
-                                {u'[%d]' % i: v for i, v in enumerate(value)}, double_lines=True)
+                                {u'[%d]' % i: v for i, v in enumerate(value)},
+                                double_lines=True)
                         else:
                             string += u"%s%s%s = %s\n" % (
                                 padding, symbol, key, strvalue)
@@ -782,7 +789,8 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
     Examples
     --------
     >>> data = np.arange(20)
-    >>> s = hs.stack([hs.signals.Spectrum(data[:10]), hs.signals.Spectrum(data[10:])])
+    >>> s = hs.stack([hs.signals.Spectrum(data[:10]),
+    ...               hs.signals.Spectrum(data[10:])])
     >>> s
     <Spectrum, title: Stack of , dimensions: (2, 10)>
     >>> s.data

@@ -51,7 +51,7 @@ class FitnessFunc(object):
             return 0
         else:
             return np.log(
-                (1 - self.gamma) * self.gamma**N / (1 - self.gamma**(Ntot + 1)))
+                (1 - self.gamma) * self.gamma ** N / (1 - self.gamma ** (Ntot + 1)))
 
     # the fitness_args property will return the list of arguments accepted by
     # the method fitness().  This allows more efficient computation below.

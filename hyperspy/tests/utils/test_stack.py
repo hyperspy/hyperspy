@@ -26,7 +26,7 @@ class TestUtilsStack:
         assert_true(test_axis == s.axes_manager[0].index_in_array)
         assert_true(len(result_list) == 3)
         assert_true(
-            (result_list[0].data == result_signal[::, ::, 0].data).all())
+            (result_list[0].data == result_signal.inav[::, ::, 0].data).all())
 
     def test_stack_of_stack(self):
         s = self.signal
@@ -45,9 +45,11 @@ class TestUtilsStack:
         result_signal = utils.stack([s, s1, s2], axis=1)
         result_list = result_signal.split()
         assert_true(len(result_list) == 3)
-        assert_true((result_list[0].data == result_signal[::, 0].data).all())
+        assert_true((result_list[0].data ==
+                     result_signal.inav[::, 0].data).all())
         result_signal = utils.stack([s, s1, s2], axis='y')
-        assert_true((result_list[0].data == result_signal[::, 0].data).all())
+        assert_true((result_list[0].data ==
+                     result_signal.inav[::, 0].data).all())
 
     def test_stack_bigger_than_ten(self):
         s = self.signal

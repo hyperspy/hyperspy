@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2015 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -156,7 +156,8 @@ class BackgroundRemoval(SpanSelectorInSpectrum):
         return to_return
 
     def span_selector_changed(self):
-        if (self.ss_left_value is np.nan) or (self.ss_right_value is np.nan):
+        if self.ss_left_value is np.nan or self.ss_right_value is np.nan or\
+                self.ss_right_value <= self.ss_left_value:
             return
         if self.background_estimator is None:
             print("No bg estimator")
@@ -559,6 +560,7 @@ class SpikesRemoval(SpanSelectorInSpectrum):
 
     def apply(self):
         self.signal()[:] = self.get_interpolated_spectrum()
+        self.signal.events.data_changed.trigger(obj=self.signal)
         self.update_spectrum_line()
         self.interpolated_line.close()
         self.interpolated_line = None

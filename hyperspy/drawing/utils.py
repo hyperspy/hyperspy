@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2015 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -26,6 +26,7 @@ import warnings
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
+import hyperspy as hs
 
 from hyperspy.misc.image_tools import (contrast_stretching,
                                        MPL_DIVERGING_COLORMAPS,
@@ -314,8 +315,8 @@ def _make_overlap_plot(spectra, ax, color="blue", line_style='-'):
             zip(spectra, color, line_style)):
         x_axis = spectrum.axes_manager.signal_axes[0]
         ax.plot(x_axis.axis, spectrum.data, color=color, ls=line_style)
-    if len(spectra) > 1:
-        _set_spectrum_xlabel(spectra[-1], ax)
+    _set_spectrum_xlabel(spectra if isinstance(spectra, hs.signals.Signal)
+                         else spectra[-1], ax)
     ax.set_ylabel('Intensity')
     ax.autoscale(tight=True)
 
@@ -338,8 +339,8 @@ def _make_cascade_subplot(
         data_to_plot = ((spectrum.data - spectrum.data.min()) /
                         float(max_value) + spectrum_index * padding)
         ax.plot(x_axis.axis, data_to_plot, color=color, ls=line_style)
-    if len(spectra) > 1:
-        _set_spectrum_xlabel(spectra[-1], ax)
+    _set_spectrum_xlabel(spectra if isinstance(spectra, hs.signals.Signal)
+                         else spectra[-1], ax)
     ax.set_yticks([])
     ax.autoscale(tight=True)
 
@@ -497,7 +498,7 @@ def plot_images(images,
         or try adjusting `label`, `labelwrap`, or `per_row`
 
     """
-    from hyperspy.drawing.widgets import Scale_Bar
+    from hyperspy.drawing.widgets import ScaleBar
     from hyperspy.misc import rgb_tools
     from hyperspy.signal import Signal
 
@@ -668,9 +669,8 @@ def plot_images(images,
     # Find global min and max values of all the non-rgb images for use with
     # 'single' scalebar
     if colorbar is 'single':
-        global_max = max([i.data.max() for i in non_rgb])
-        global_min = min([i.data.min() for i in non_rgb])
-        g_vmin, g_vmax = contrast_stretching(i.data, saturated_pixels)
+        g_vmin, g_vmax = contrast_stretching(np.concatenate(
+            [i.data.flatten() for i in non_rgb]), saturated_pixels)
         if centre_colormap:
             g_vmin, g_vmax = centre_colormap_values(g_vmin, g_vmax)
 
@@ -826,7 +826,7 @@ def plot_images(images,
 
             # Add scalebars as necessary
             if (scalelist and i in scalebar) or scalebar is 'all':
-                ax.scalebar = Scale_Bar(
+                ax.scalebar = ScaleBar(
                     ax=ax,
                     units=axes[0].units,
                     color=scalebar_color,
