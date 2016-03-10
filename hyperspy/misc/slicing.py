@@ -197,7 +197,7 @@ class FancySlicing(object):
                     axis._slice_me(slice_)
                 else:
                     _to_remove.append(axis.index_in_axes_manager)
-            for _ind in _to_remove.sort(reverse=True):
+            for _ind in reversed(sorted(_to_remove)):
                 _obj._remove_axis(_ind)
         else:
             out.data = self.data[array_slices]
