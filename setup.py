@@ -179,6 +179,7 @@ with update_version_when_dev() as version:
         keywords=Release.keywords,
         classifiers=[
             "Programming Language :: Python :: 2.7",
+            "Programming Language :: Python :: 3",
             "Development Status :: 4 - Beta",
             "Environment :: Console",
             "Intended Audience :: Science/Research",
