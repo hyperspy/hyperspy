@@ -209,12 +209,8 @@ def load(filenames=None,
                 signal = hyperspy.misc.utils.stack(
                     signal, axis=stack_axis, new_axis_name=new_axis_name,
                     mmap=mmap, mmap_dir=mmap_dir)
-                signal.metadata.General.title = \
-                    os.path.split(
-                        os.path.split(
-                            os.path.abspath(filenames[0])
-                        )[0]
-                    )[1]
+                signal.metadata.General.title = os.path.split(
+                    os.path.split(os.path.abspath(filenames[0]))[0])[1]
                 _logger.info('Individual files loaded correctly')
                 _logger.info(signal._summary())
                 objects.append(signal)
