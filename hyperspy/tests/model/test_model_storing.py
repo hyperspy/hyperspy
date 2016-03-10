@@ -95,7 +95,7 @@ class TestModelStoring:
         m.store()
         m[0].A.map['values'][0] += 13.33
         m1 = m.spectrum.models.a.restore()
-        nt.assert_not_equals(m[0].A.map['values'], m1[0].A.map['values'])
+        nt.assert_not_equal(m[0].A.map['values'], m1[0].A.map['values'])
 
     def test_models_restore_remove(self):
         m = self.m
