@@ -258,7 +258,7 @@ def dictionary_from_template(template):
         dictionary[section] = traited_class.get()
     return dictionary
 
-config = configparser.SafeConfigParser(allow_no_value=True)
+config = configparser.ConfigParser(allow_no_value=True)
 template2config(template, config)
 rewrite = False
 if defaults_file_exists:
@@ -266,7 +266,7 @@ if defaults_file_exists:
     # already defined. If the file contains any option that was not already
     # define the config file is rewritten because it is obsolate
 
-    config2 = configparser.SafeConfigParser(allow_no_value=True)
+    config2 = configparser.ConfigParser(allow_no_value=True)
     config2.read(defaults_file)
     for section in config2.sections():
         if config.has_section(section):
@@ -301,7 +301,7 @@ class Preferences(t.HasTraits):
         self.edit_traits(view=hyperspy.gui.preferences.preferences_view)
 
     def save(self):
-        config = configparser.SafeConfigParser(allow_no_value=True)
+        config = configparser.ConfigParser(allow_no_value=True)
         template2config(template, config)
         config.write(open(defaults_file, 'w'))
 
