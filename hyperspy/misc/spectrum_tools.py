@@ -114,7 +114,7 @@ def find_peaks_ohaver(y, x=None, slope_thresh=0., amp_thresh=None,
                         yy = np.zeros(peakgroup)
                         s = 0
                         for k in range(peakgroup):
-                            groupindex = j + k - n + 1
+                            groupindex = int(j + k - n + 1)
                             if groupindex < 1:
                                 xx = xx[1:]
                                 yy = yy[1:]

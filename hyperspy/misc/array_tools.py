@@ -90,7 +90,9 @@ def rebin(a, new_shape):
     """
     shape = a.shape
     lenShape = len(shape)
-    factor = np.asarray(shape) / np.asarray(new_shape)
+    # ensure the new shape is integers
+    new_shape = tuple(int(ns) for ns in new_shape)
+    factor = np.asarray(shape) // np.asarray(new_shape)
     evList = ['a.reshape('] + \
              ['new_shape[%d],factor[%d],' % (i, i) for i in range(lenShape)] + \
              [')'] + ['.sum(%d)' % (i + 1) for i in range(lenShape)]

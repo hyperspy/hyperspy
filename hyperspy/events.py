@@ -308,17 +308,25 @@ class Event(object):
             raise ValueError("Function %s already connected to %s." %
                              (function, self))
         if kwargs == 'auto':
-            spec = inspect.getargspec(function)
-            if spec.varargs and not spec.keywords:
+            spec = inspect.signature(function)
+            _has_args = False
+            _has_kwargs = False
+            _normal_params = []
+            for name, par in spec.parameters.items():
+                if par.kind == par.VAR_POSITIONAL:
+                    _has_args = True
+                elif par.kind == par.VAR_KEYWORD:
+                    _has_kwargs = True
+                else:
+                    _normal_params.append(name)
+            if _has_args and not _has_kwargs:
                 raise NotImplementedError("Connecting to variable argument "
                                           "functions is not supported in auto "
                                           "connection mode.")
-            elif spec.keywords:
+            elif _has_kwargs:
                 kwargs = 'all'
-            elif spec.args is None:
-                kwargs = []
             else:
-                kwargs = spec.args
+                kwargs = _normal_params
         if kwargs == "all":
             self._connected_all.add(function)
         elif isinstance(kwargs, dict):

@@ -63,7 +63,7 @@ class Interactive:
         else:
             self.out = self.f(*self.args, **self.kwargs)
         try:
-            fargs = inspect.getargspec(self.f).args
+            fargs = list(inspect.signature(self.f).parameters.keys())
         except TypeError:
             # This is probably a Cython function that is not supported by
             # inspect.
