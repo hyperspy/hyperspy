@@ -200,7 +200,7 @@ class EELSSpectrum(Spectrum):
             If `calibrate` is True, the calibration is also applied to
             the spectra in the list.
         print_stats : bool
-            If True, print summary statistics the ZLP maximum before
+            If True, print summary statistics of the ZLP maximum before
             the aligment.
         subpixel : bool
             If True, perform the alignment with subpixel accuracy

@@ -9,7 +9,8 @@ from hyperspy.defaults_parser import preferences
 from hyperspy.misc.physical_constants import R, a0
 from hyperspy.misc.eels.base_gos import GOSBase
 from hyperspy.misc.elements import elements
-from hyperspy.misc.export_dictionary import export_to_dictionary, load_from_dictionary
+from hyperspy.misc.export_dictionary import (
+    export_to_dictionary, load_from_dictionary)
 
 
 class HartreeSlaterGOS(GOSBase):
@@ -107,7 +108,8 @@ class HartreeSlaterGOS(GOSBase):
         subshell = self.subshell
         filename = os.path.join(
             preferences.EELS.eels_gos_files_path,
-            elements[element]['Atomic_properties']['Binding_energies'][subshell]['filename'])
+            (elements[element]['Atomic_properties']['Binding_energies']
+             [subshell]['filename']))
 
         with open(filename) as f:
             GOS_list = f.read().replace('\r', '').split()

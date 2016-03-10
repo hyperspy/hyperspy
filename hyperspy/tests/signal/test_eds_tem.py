@@ -109,7 +109,7 @@ class Test_metadata:
             mp.Acquisition_instrument.TEM.Detector.EDS.energy_resolution_MnKa,
             preferences.EDS.eds_mn_ka)
 
-    def test_SEM_to_TEM(self):
+    def test_TEM_to_SEM(self):
         s = self.signal.inav[0, 0]
         signal_type = 'EDS_SEM'
         mp = s.metadata

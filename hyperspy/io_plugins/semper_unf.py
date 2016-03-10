@@ -106,17 +106,20 @@ class SemperFormat(object):
 
     """Class for importing and exporting SEMPER `.unf`-files.
 
-    The :class:`~.SemperFormat` class represents a SEMPER binary file format with a header, which
-    holds additional information. `.unf`-files can be saved and read from files.
+    The :class:`~.SemperFormat` class represents a SEMPER binary file format
+    with a header, which holds additional information. `.unf`-files can be
+    saved and read from files.
 
     Attributes
     ----------
     data : :class:`~numpy.ndarray` (N=3)
-        The phase map or magnetization information in a 3D array (with one slice).
+        The phase map or magnetization information in a 3D array (with one
+        slice).
     title : string
         Title of the file (not to be confused with the filename).
     offsets : tuple (N=3) of floats
-        Offset shifts (in nm) of the grid origin (does not have to start at 0) in x, y, z.
+        Offset shifts (in nm) of the grid origin (does not have to start at 0)
+        in x, y, z.
     scales : tuple (N=3) of floats
         Grid spacing (nm per pixel) in x, y, z.
     units : tuple (N=3) of strings
@@ -129,8 +132,9 @@ class SemperFormat(object):
     _log = logging.getLogger(__name__)
 
     ICLASS_DICT = {1: 'image', 2: 'macro', 3: 'fourier', 4: 'spectrum',
-                   5: 'correlation', 6: Undefined, 7: 'walsh', 8: 'position list',
-                   9: 'histogram', 10: 'display look-up table'}
+                   5: 'correlation', 6: Undefined, 7: 'walsh',
+                   8: 'position list', 9: 'histogram',
+                   10: 'display look-up table'}
 
     ICLASS_DICT_INV = {v: k for k, v in ICLASS_DICT.items()}
 
@@ -302,8 +306,8 @@ class SemperFormat(object):
         label['IWP'] = self.metadata.get('IWP', 0)  # seems standard
         date = self.metadata.get('DATE', strftime('%Y-%m-%d %H:%M:%S'))
         year, time = date.split(' ')
-        date_ints = list(map(int, year.split('-'))) + \
-            list(map(int, time.split(':')))
+        date_ints = (list(map(int, year.split('-'))) +
+                     list(map(int, time.split(':'))))
         date_ints[0] -= 1900  # Modify year integer!
         label['DATE'] = date_ints
         range_string = '{:.4g},{:.4g}'.format(self.data.min(), self.data.max())
@@ -349,8 +353,8 @@ class SemperFormat(object):
         else:
             supported_formats = [
                 np.dtype(i).name for i in cls.IFORM_DICT.values()]
-            msg = 'The SEMPER file format does not support {} data type. '.format(
-                data.dtype.name)
+            msg = ('The SEMPER file format does not support '
+                   '{} data type. '.format(data.dtype.name))
             msg += 'Supported data types are: ' + ', '.join(supported_formats)
             raise IOError(msg)
         return data, iform
@@ -362,7 +366,8 @@ class SemperFormat(object):
         Parameters
         ----------
         filename : string
-            The name of the unf-file from which to load the data. Standard format is '\*.unf'.
+            The name of the unf-file from which to load the data. Standard
+            format is '\*.unf'.
 
         Returns
         -------
@@ -412,7 +417,8 @@ class SemperFormat(object):
                 try:
                     metadata.update(cls._read_label(f))
                 except Exception as e:
-                    warning = 'Could not read label, trying to proceed without it!'
+                    warning = ('Could not read label, trying to proceed '
+                               'without it!')
                     warning += ' (Error message: {})'.format(str(e))
                     cls._log.warning(warning)
             # Read picture data:
@@ -425,10 +431,10 @@ class SemperFormat(object):
                     # Not always ncol, see below
                     count = rec_length // np.dtype(data_format).itemsize
                     row = np.fromfile(f, dtype=data_format, count=count)
-                    # [:ncol] is used because Semper always writes an even number of bytes which
-                    # is a problem when reading in single bytes (IFORM = 0, np.byte). If ncol is
-                    # odd, an empty byte (0) is added which has to be skipped
-                    # during read in:
+                    # [:ncol] is used because Semper always writes an even
+                    # number of bytes which is a problem when reading in single
+                    # bytes (IFORM = 0, np.byte). If ncol is odd, an empty
+                    # byte (0) is added which has to be skipped during read in:
                     data[k, j, :] = row[:ncol]
                     test = np.fromfile(f, dtype='<i4', count=1)[0]
                     assert test == rec_length
@@ -451,8 +457,8 @@ class SemperFormat(object):
         filename : string, optional
             The name of the unf-file to which the data should be written.
         skip_header : boolean, optional
-            Determines if the header, title and label should be skipped (useful for some other
-            programs). Default is False.
+            Determines if the header, title and label should be skipped (useful
+            for some other programs). Default is False.
 
         Returns
         -------
@@ -526,9 +532,10 @@ class SemperFormat(object):
                             '<i',
                             record_length))  # record length, 4 byte format!
                     f.write(row.tobytes())
-                    # SEMPER always expects an even number of bytes per row, which is only a
-                    # problem for writing single byte data (IFORM = 0, np.byte). If ncol is odd,
-                    # an empty byte (0) is added:
+                    # SEMPER always expects an even number of bytes per row,
+                    # which is only a problem for writing single byte data
+                    # (IFORM = 0, np.byte). If ncol is odd, an empty byte (0)
+                    # is added:
                     if self.data.dtype == np.byte and ncol % 2 != 0:
                         np.zeros(1, dtype=np.byte).tobytes()
                     # record length, 4 byte format!
@@ -536,7 +543,8 @@ class SemperFormat(object):
 
     @classmethod
     def from_signal(cls, signal):
-        """Import a :class:`~.SemperFormat` object from a :class:`~hyperspy.signals.Signal` object.
+        """Import a :class:`~.SemperFormat` object from a
+        :class:`~hyperspy.signals.Signal` object.
 
         Parameters
         ----------
@@ -583,7 +591,8 @@ class SemperFormat(object):
         return cls(data, title, offsets, scales, units, metadata)
 
     def to_signal(self):
-        """Export a :class:`~.SemperFormat` object to a :class:`~hyperspy.signals.Signal` object.
+        """Export a :class:`~.SemperFormat` object to a
+        :class:`~hyperspy.signals.Signal` object.
 
         Parameters
         ----------
@@ -653,13 +662,17 @@ class SemperFormat(object):
 
 
 def unpack_from_intbytes(fmt, byte_list):
-    """Read in a list of bytes (as int with range 0-255) and unpack them with format `fmt`."""
+    """Read in a list of bytes (as int with range 0-255) and unpack them with
+    format `fmt`.
+    """
     return struct.unpack(fmt, b''.join(
         map(bytes, [[byte] for byte in byte_list])))[0]
 
 
 def pack_to_intbytes(fmt, value):
-    """Pack a `value` into a byte list using format `fmt` and represent it as int (range 0-255)."""
+    """Pack a `value` into a byte list using format `fmt` and represent it as
+    int (range 0-255).
+    """
     return [int(c) for c in struct.pack(fmt, value)]
 
 

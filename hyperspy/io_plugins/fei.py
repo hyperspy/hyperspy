@@ -219,10 +219,10 @@ def guess_record_by(record_by_id):
 def parse_ExperimentalDescription(et, dictree):
     dictree.add_node(et.tag)
     dictree = dictree[et.tag]
-    for data in et.find("Root").findall("Data"):
-        label = data.find("Label").text
-        value = data.find("Value").text
-        units = data.find("Unit").text
+    for data in et.find(b"Root").findall(b"Data"):
+        label = data.find(b"Label").text
+        value = data.find(b"Value").text
+        units = data.find(b"Unit").text
         item = label if not units else label + "_%s" % units
         value = float(value) if units else value
         dictree[item] = value
@@ -237,10 +237,10 @@ def parse_TrueImageHeaderInfo(et, dictree):
 
 
 def emixml2dtb(et, dictree):
-    if et.tag == "ExperimentalDescription":
+    if et.tag == b"ExperimentalDescription":
         parse_ExperimentalDescription(et, dictree)
         return
-    elif et.tag == "TrueImageHeaderInfo":
+    elif et.tag == b"TrueImageHeaderInfo":
         parse_TrueImageHeaderInfo(et, dictree)
         return
     if et.text:
@@ -308,7 +308,8 @@ def load_ser_file(filename, verbose=False):
             raise IOError(
                 "The file does not contains valid data. "
                 "If it is a single spectrum, the data is contained in the  "
-                ".emi file but HyperSpy cannot currently extract this information.")
+                ".emi file but HyperSpy cannot currently extract this "
+                "information.")
 
         # Read the first element of data offsets
         f.seek(header["OffsetArrayOffset"][0])
@@ -540,9 +541,9 @@ def ser_reader(filename, objects=None, verbose=False, *args, **kwds):
                         'scale': header[
                             'Dim-%i_CalibrationDelta' % (i + 1)][0],
                         # for image stack, the UnitsLength is 0 (no units)
-                        'units': header['Dim-%i_Units' % (i +
-                                                          1)][0].decode('utf-8')
-                        if header['Dim-%i_UnitsLength' % (i + 1)] > 0
+                        'units': header['Dim-%i_Units' % (i + 1)][0].decode(
+                            'utf-8')
+						if header['Dim-%i_UnitsLength' % (i + 1)] > 0
                         else 'Unknown',
                         'size': header['Dim-%i_DimensionSize' % (i + 1)][0],
                     })
@@ -583,8 +584,8 @@ def ser_reader(filename, objects=None, verbose=False, *args, **kwds):
             axis['units'] = '1/nm'
             axis['scale'] /= 10 ** 9
     # If the acquisition stops before finishing the job, the stored file will
-    # report the requested size even though no values are recorded. Therefore if
-    # the shapes of the retrieved array does not match that of the data
+    # report the requested size even though no values are recorded. Therefore
+    # if the shapes of the retrieved array does not match that of the data
     # dimensions we must fill the rest with zeros or (better) nans if the
     # dtype is float
     if np.cumprod(array_shape)[-1] != np.cumprod(data['Array'].shape)[-1]:
