@@ -74,9 +74,6 @@ def mlpca(X, varX, p, convlim=1E-10, maxiter=50000, fast=False):
     _logger.info("Performing maximum likelihood principal components analysis")
     # Generate initial estimates
     _logger.info("Generating initial estimates")
-
-#    for i in range(X.shape[0]):
-#        for j in range(X.shape[0]):
     CV = np.cov(X)
     U, S, Vh = svd(CV)
     U0 = U
@@ -90,7 +87,7 @@ def mlpca(X, varX, p, convlim=1E-10, maxiter=50000, fast=False):
         count += 1
         Sobj = 0
         MLX = np.zeros(XX.shape)
-        for i in xrange(n):
+        for i in range(n):
             Q = np.diag((1 / (varX[:, i])).squeeze())
             U0m = np.matrix(U0)
             F = np.linalg.inv((U0m.T * Q * U0m))

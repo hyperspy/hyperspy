@@ -21,11 +21,8 @@ import logging
 import matplotlib
 from traits.etsconfig.api import ETSConfig
 
-from hyperspy.defaults_parser import current_toolkit
-from hyperspy.misc.ipython_tools import get_ipython
 
 _logger = logging.getLogger(__name__)
-
 
 def set_ets_toolkit(toolkit):
     try:
@@ -38,20 +35,9 @@ def set_ets_toolkit(toolkit):
 backend = matplotlib.rcParams["backend"]
 _logger.debug('Loading hyperspy.gui')
 _logger.debug('Current MPL backend: %s', backend)
-_logger.debug('Current ETS toolkit: %s', current_toolkit)
-if ("WX" not in backend and
-        "Qt" not in backend):
-    if current_toolkit in ("wx", "qt4"):
-        try:
-            ip = get_ipython()
-            if ip is not None:
-                ip.enable_gui(current_toolkit)
-                set_ets_toolkit(current_toolkit)
-        except:
-            set_ets_toolkit("null")
-    else:
-        set_ets_toolkit("null")
-elif "WX" in backend:
+if "WX" in backend:
     set_ets_toolkit("wx")
 elif "Qt" in backend:
     set_ets_toolkit("qt4")
+else:
+    set_ets_toolkit("null")

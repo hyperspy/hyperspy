@@ -17,7 +17,6 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from __future__ import division
 import types
 import logging
 
@@ -743,7 +742,7 @@ class MVA():
 
     def _auto_reverse_bss_component(self, target):
         n_components = target.bss_factors.shape[1]
-        for i in xrange(n_components):
+        for i in range(n_components):
             minimum = np.nanmin(target.bss_loadings[:, i])
             maximum = np.nanmax(target.bss_loadings[:, i])
             if minimum < 0 and -minimum > maximum:
@@ -784,7 +783,7 @@ class MVA():
         elif hasattr(components, '__iter__'):
             tfactors = np.zeros((factors.shape[0], len(components)))
             tloadings = np.zeros((len(components), loadings.shape[1]))
-            for i in xrange(len(components)):
+            for i in range(len(components)):
                 tfactors[:, i] = factors[:, components[i]]
                 tloadings[i, :] = loadings[components[i], :]
             a = np.dot(tfactors, tloadings)
@@ -842,8 +841,7 @@ class MVA():
 
         Returns
         -------
-        rec : Signal instance
-
+        Signal instance
         """
         rec = self._calculate_recmatrix(components=components, mva_type='bss',)
         return rec
@@ -1051,7 +1049,7 @@ class LearningResults(object):
         filename : string
         """
         decomposition = np.load(filename)
-        for key, value in decomposition.iteritems():
+        for key, value in decomposition.items():
             if value.dtype == np.dtype('object'):
                 value = None
             setattr(self, key, value)

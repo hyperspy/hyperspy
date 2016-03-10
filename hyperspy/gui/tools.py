@@ -96,7 +96,7 @@ class SpanSelectorInSpectrumHandler(tu.Handler):
         obj = info.object
         obj.is_ok = True
         if hasattr(obj, 'next'):
-            obj.next()
+            next(obj)
         return
 
 

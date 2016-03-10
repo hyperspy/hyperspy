@@ -30,10 +30,10 @@ def orthomax(A, gamma=1, reltol=1.4901e-07, maxit=256):
                     break
     else:
         # Use a sequence of bivariate rotations
-        for it in xrange(1, maxit + 1):
+        for iter in range(1, maxit + 1):
             maxTheta = 0
-            for i in xrange(0, m - 1):
-                for j in xrange(i, m):
+            for i in range(0, m - 1):
+                for j in range(i, m):
                     Bi = B[:, i]
                     Bj = B[:, j]
                     u = np.multiply(Bi, Bi) - np.multiply(Bj, Bj)

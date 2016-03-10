@@ -193,7 +193,7 @@ def nc_hyperspy_reader_0dot1(ncfile, filename, *args, **kwds):
             'scale': scales[i],
             'offset': origins[i],
             'units': units[i], }
-        for i in xrange(dim)]
+        for i in range(dim)]
     metadata = {'General': {}, 'Signal': {}}
     metadata['General']['original_filename'] = os.path.split(filename)[1]
     metadata["Signal"]['record_by'] = record_by

@@ -165,7 +165,7 @@ class EELSModel(Model1D):
                 self._background_components[0].__repr__()
             bg = self._background_components[0]
             if isinstance(bg, PowerLaw) and self.edges and not \
-                    bg.A.map["is_set"].any():
+               bg.A.map["is_set"].any():
                 self.two_area_background_estimation()
 
     @property
@@ -375,7 +375,7 @@ class EELSModel(Model1D):
         self.fit_background(start_energy, **kwargs)
 
         # Fit the edges
-        for i in xrange(0, len(self._active_edges)):
+        for i in range(0, len(self._active_edges)):
             self._fit_edge(i, start_energy, **kwargs)
 
     def _get_first_ionization_edge_energy(self, start_energy=None):
@@ -570,18 +570,18 @@ class EELSModel(Model1D):
                 if element not in elements:
                     elements[element] = {}
                 elements[element][subshell] = edge.intensity.value
-        print
-        print "Absolute quantification:"
-        print "Elem.\tIntensity"
+        print()
+        print("Absolute quantification:")
+        print("Elem.\tIntensity")
         for element in elements:
             if len(elements[element]) == 1:
                 for subshell in elements[element]:
-                    print "%s\t%f" % (
-                        element, elements[element][subshell])
+                    print("%s\t%f" % (
+                        element, elements[element][subshell]))
             else:
                 for subshell in elements[element]:
-                    print "%s_%s\t%f" % (element, subshell,
-                                         elements[element][subshell])
+                    print("%s_%s\t%f" % (element, subshell,
+                                         elements[element][subshell]))
 
     def remove_fine_structure_data(self, edges_list=None):
         """Remove the fine structure data from the fitting routine as

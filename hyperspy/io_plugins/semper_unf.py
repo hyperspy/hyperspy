@@ -138,7 +138,7 @@ class SemperFormat(object):
                    8: 'position list', 9: 'histogram',
                    10: 'display look-up table'}
 
-    ICLASS_DICT_INV = {v: k for k, v in ICLASS_DICT.iteritems()}
+    ICLASS_DICT_INV = {v: k for k, v in ICLASS_DICT.items()}
 
     IFORM_DICT = {
         0: np.byte,
@@ -147,7 +147,7 @@ class SemperFormat(object):
         3: np.complex64,
         4: np.int32}
 
-    IFORM_DICT_INV = {v: k for k, v in IFORM_DICT.iteritems()}
+    IFORM_DICT_INV = {v: k for k, v in IFORM_DICT.items()}
 
     HEADER_DTYPES = [('NCOL', '<i2'),
                      ('NROW', '<i2'),
@@ -204,7 +204,7 @@ class SemperFormat(object):
         if metadata is None:
             metadata = {}
         # Make sure data is 3D!
-        data = data[tuple(None for _ in xrange(3 - len(data.shape)))]
+        data = data[tuple(None for _ in range(3 - len(data.shape)))]
         self.data = data
         self.title = title
         self.offsets = offsets
@@ -217,17 +217,17 @@ class SemperFormat(object):
     def _read_label(cls, unf_file):
         unpack = partial(
             unpack_from_intbytes,
-            '<f4')  # Unpacking function for 4 byte floats!
+            '<f')  # Unpacking function for 4 byte floats!
         rec_length = np.fromfile(
             unf_file,
-            dtype='<i4',
+            dtype='<i',
             count=1)[0]  # length of label
         label = sarray2dict(
             np.fromfile(
                 unf_file,
                 dtype=cls.LABEL_DTYPES,
                 count=1))
-        label['SEMPER'] = ''.join([str(unichr(l)) for l in label['SEMPER']])
+        label['SEMPER'] = ''.join([str(chr(l)) for l in label['SEMPER']])
         assert label['SEMPER'] == 'Semper'
         # Process dimensions:
         for key in ['NCOL', 'NROW', 'NLAY', 'ICCOLN', 'ICROWN', 'ICLAYN']:
@@ -245,7 +245,7 @@ class SemperFormat(object):
             range_max = unpack(label['RANGE'][4:8])
             range_string = '{:.6g},{:.6g}'.format(range_min, range_max)
         else:
-            range_string = ''.join([str(unichr(l))
+            range_string = ''.join([str(chr(l))
                                     for l in label['RANGE'][:label['NCRANG']]])
         label['RANGE'] = range_string
         # Process real coords:
@@ -264,7 +264,7 @@ class SemperFormat(object):
         label['DATAV6'] = data_v6
         label['DATAV7'] = data_v7
         # Process title:
-        title = ''.join([str(unichr(l))
+        title = ''.join([str(chr(l))
                          for l in label['TITLE'][:label['NTITLE']]])
         label['TITLE'] = title
         # Process units:
@@ -282,7 +282,7 @@ class SemperFormat(object):
     def _get_label(self):
         pack = partial(
             pack_to_intbytes,
-            '<f4')  # Packing function for 4 byte floats!
+            '<f')  # Packing function for 4 byte floats!
         nlay, nrow, ncol = self.data.shape
         data, iform = self._check_format(self.data)
         title = self.title
@@ -310,8 +310,8 @@ class SemperFormat(object):
         label['IWP'] = self.metadata.get('IWP', 0)  # seems standard
         date = self.metadata.get('DATE', strftime('%Y-%m-%d %H:%M:%S'))
         year, time = date.split(' ')
-        date_ints = (map(int, year.split('-')) +
-                     map(int, time.split(':')))
+        date_ints = (list(map(int, year.split('-'))) +
+                     list(map(int, time.split(':'))))
         date_ints[0] -= 1900  # Modify year integer!
         label['DATE'] = date_ints
         range_string = '{:.4g},{:.4g}'.format(self.data.min(), self.data.max())
@@ -411,7 +411,8 @@ class SemperFormat(object):
                     f,
                     dtype='<i4',
                     count=1)[0] == ntitle  # length of title
-                title = ''.join(np.fromfile(f, dtype='c', count=ntitle))
+                title = b''.join(np.fromfile(f, dtype='c', count=ntitle))
+                title = title.decode()
                 metadata['TITLE'] = title
                 assert np.fromfile(f, dtype='<i4', count=1)[0] == ntitle
             if ilabel:
@@ -430,7 +431,7 @@ class SemperFormat(object):
                 for j in range(nrow):
                     rec_length = np.fromfile(f, dtype='<i4', count=1)[0]
                     # Not always ncol, see below
-                    count = rec_length / np.dtype(data_format).itemsize
+                    count = rec_length // np.dtype(data_format).itemsize
                     row = np.fromfile(f, dtype=data_format, count=count)
                     # [:ncol] is used because Semper always writes an even
                     # number of bytes which is a problem when reading in single
@@ -488,36 +489,36 @@ class SemperFormat(object):
                 # Write header:
                 f.write(
                     struct.pack(
-                        '<i4',
+                        '<i',
                         12))  # record length, 4 byte format!
                 f.write(header.tobytes())
                 f.write(
                     struct.pack(
-                        '<i4',
+                        '<i',
                         12))  # record length, 4 byte format!
                 # Write title:
                 if len(title) > 0:
                     f.write(
                         struct.pack(
-                            '<i4',
+                            '<i',
                             len(title)))  # record length, 4 byte format!
-                    f.write(title)
+                    f.write(title.encode())
                     f.write(
                         struct.pack(
-                            '<i4',
+                            '<i',
                             len(title)))  # record length, 4 byte format!
                 # Create label:
                 label = self._get_label()
                 # Write label:
                 f.write(
                     struct.pack(
-                        '<i4',
+                        '<i',
                         2 *
                         256))  # record length, 4 byte format!
                 f.write(label.tobytes())
                 f.write(
                     struct.pack(
-                        '<i4',
+                        '<i',
                         2 *
                         256))  # record length, 4 byte format!
             # Write picture data:
@@ -529,7 +530,7 @@ class SemperFormat(object):
                         self.IFORM_DICT[iform]).itemsize * ncol
                     f.write(
                         struct.pack(
-                            '<i4',
+                            '<i',
                             record_length))  # record length, 4 byte format!
                     f.write(row.tobytes())
                     # SEMPER always expects an even number of bytes per row,
@@ -539,7 +540,7 @@ class SemperFormat(object):
                     if self.data.dtype == np.byte and ncol % 2 != 0:
                         np.zeros(1, dtype=np.byte).tobytes()
                     # record length, 4 byte format!
-                    f.write(struct.pack('<i4', record_length))
+                    f.write(struct.pack('<i', record_length))
 
     @classmethod
     def from_signal(cls, signal):
@@ -566,7 +567,7 @@ class SemperFormat(object):
             offsets[i] = signal.axes_manager[i].offset
             units[i] = signal.axes_manager[i].units
         # Make sure data is 3D!
-        data = data[tuple(None for _ in xrange(3 - len(data.shape)))]
+        data = data[tuple(None for _ in range(3 - len(data.shape)))]
         iclass = cls.ICLASS_DICT_INV.get(
             signal.metadata.Signal.record_by,
             6)  # 6: undefined
@@ -661,14 +662,15 @@ def unpack_from_intbytes(fmt, byte_list):
     """Read in a list of bytes (as int with range 0-255) and unpack them with
     format `fmt`.
     """
-    return struct.unpack(fmt, ''.join(map(chr, byte_list)))[0]
+    return struct.unpack(fmt, b''.join(
+        map(bytes, [[byte] for byte in byte_list])))[0]
 
 
 def pack_to_intbytes(fmt, value):
     """Pack a `value` into a byte list using format `fmt` and represent it as
     int (range 0-255).
     """
-    return [ord(c) for c in struct.pack(fmt, value)]
+    return [int(c) for c in struct.pack(fmt, value)]
 
 
 def file_reader(filename, **kwds):

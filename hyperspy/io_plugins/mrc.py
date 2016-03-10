@@ -199,7 +199,7 @@ def file_reader(filename, endianess='<', **kwds):
             'scale': scales[i + 3 - dim],
             'offset': offsets[i + 3 - dim],
             'units': units[i + 3 - dim], }
-        for i in xrange(dim)]
+        for i in range(dim)]
 
     dictionary = {'data': data,
                   'axes': axes,

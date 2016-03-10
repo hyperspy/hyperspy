@@ -49,8 +49,8 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'HyperSpy User Guide [Draft]'
-copyright = u'2011-2016, The HyperSpy Developers'
+project = 'HyperSpy User Guide [Draft]'
+copyright = '2011-2016, The HyperSpy Developers'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -192,8 +192,8 @@ latex_elements = {
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-    ('index', 'HyperSpyUserGuide.tex', u'HyperSpy User Guide',
-     u'The HyperSpy Developers', 'manual'),
+    ('index', 'HyperSpyUserGuide.tex', 'HyperSpy User Guide',
+     'The HyperSpy Developers', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -222,8 +222,8 @@ latex_logo = '_static/hyperspy_logo.png'
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'hyperspyuserguide', u'HyperSpy User Guide Documentation',
-     [u'The HyperSpy Developers'], 1)
+    ('index', 'hyperspyuserguide', 'HyperSpy User Guide Documentation',
+     ['The HyperSpy Developers'], 1)
 ]
 
 
@@ -237,8 +237,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    ('index', 'HyperSpyUserGuide', u'HyperSpy User Guide Documentation',
-     u'The HyperSpy Developers', 'HyperSpyUserGuide', 'One line description of project.',
+    ('index', 'HyperSpyUserGuide', 'HyperSpy User Guide Documentation',
+     'The HyperSpy Developers', 'HyperSpyUserGuide', 'One line description of project.',
      'Miscellaneous'),
 ]
 
@@ -255,10 +255,10 @@ texinfo_documents = [
 # -- Options for Epub output ---------------------------------------------
 
 # Bibliographic Dublin Core info.
-epub_title = u'HyperSpy User Guide'
-epub_author = u'The HyperSpy Developers'
-epub_publisher = u'he HyperSpy Developers'
-epub_copyright = u'2011-2013, he HyperSpy Developers'
+epub_title = 'HyperSpy User Guide'
+epub_author = 'The HyperSpy Developers'
+epub_publisher = 'he HyperSpy Developers'
+epub_copyright = '2011-2016, he HyperSpy Developers'
 
 # The language of the text. It defaults to the language option
 # or en if the language is not set.

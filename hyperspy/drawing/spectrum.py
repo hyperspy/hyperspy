@@ -224,7 +224,7 @@ class SpectrumLine(object):
             del kwargs['color']
             self.color = color
 
-        for key, item in kwargs.iteritems():
+        for key, item in kwargs.items():
             if item is None and key in self._line_properties:
                 del self._line_properties[key]
             else:

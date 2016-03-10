@@ -44,7 +44,7 @@ class Test_metadata:
             3.1 *
             2)
         # Check that metadata is unchanged
-        print old_metadata, s.metadata      # Capture for comparison on error
+        print(old_metadata, s.metadata)      # Capture for comparison on error
         assert_dict_equal(old_metadata.as_dictionary(),
                           s.metadata.as_dictionary(),
                           "Source metadata changed")
@@ -58,7 +58,7 @@ class Test_metadata:
             3.1 *
             2 * 4)
         # Check that metadata is unchanged
-        print old_metadata, s.metadata      # Capture for comparison on error
+        print(old_metadata, s.metadata)      # Capture for comparison on error
         assert_dict_equal(old_metadata.as_dictionary(),
                           s.metadata.as_dictionary(),
                           "Source metadata changed")
@@ -86,7 +86,7 @@ class Test_metadata:
             2 *
             2)
         # Check that metadata is unchanged
-        print old_metadata, self.signal.metadata    # Captured on error
+        print(old_metadata, self.signal.metadata)    # Captured on error
         assert_dict_equal(old_metadata.as_dictionary(),
                           self.signal.metadata.as_dictionary(),
                           "Source metadata changed")
@@ -109,7 +109,7 @@ class Test_metadata:
             mp.Acquisition_instrument.TEM.Detector.EDS.energy_resolution_MnKa,
             preferences.EDS.eds_mn_ka)
 
-    def test_SEM_to_TEM(self):
+    def test_TEM_to_SEM(self):
         s = self.signal.inav[0, 0]
         signal_type = 'EDS_SEM'
         mp = s.metadata

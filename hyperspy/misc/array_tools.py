@@ -20,7 +20,7 @@ def get_array_memory_size_in_GiB(shape, dtype):
     dtype : data-type
         The desired data-type for the array.
     """
-    if isinstance(dtype, basestring):
+    if isinstance(dtype, str):
         dtype = np.dtype(dtype)
     return np.array(shape).cumprod()[-1] * dtype.itemsize / 2. ** 30
 
@@ -92,10 +92,12 @@ def rebin(a, new_shape):
     """
     shape = a.shape
     lenShape = len(shape)
-    factor = np.asarray(shape) / np.asarray(new_shape)
+    # ensure the new shape is integers
+    new_shape = tuple(int(ns) for ns in new_shape)
+    factor = np.asarray(shape) // np.asarray(new_shape)
     evList = ['a.reshape('] + \
-             ['new_shape[%d],factor[%d],' % (i, i) for i in xrange(lenShape)] + \
-             [')'] + ['.sum(%d)' % (i + 1) for i in xrange(lenShape)]
+             ['new_shape[%d],factor[%d],' % (i, i) for i in range(lenShape)] + \
+             [')'] + ['.sum(%d)' % (i + 1) for i in range(lenShape)]
     return eval(''.join(evList))
 
 
