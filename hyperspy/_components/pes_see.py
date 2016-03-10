@@ -64,7 +64,7 @@ class SEE(Component):
         self.gaussian.A.value = 1.
 
     def __repr__(self):
-        return u'SEE'
+        return 'SEE'
 
     def function(self, x):
         """

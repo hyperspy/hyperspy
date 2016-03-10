@@ -130,6 +130,10 @@ hyperspy.misc.slicing module
 ----------------------------
 
 .. automodule:: hyperspy.misc.slicing
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 hyperspy.misc.signal_tools module
 ---------------------------------
 

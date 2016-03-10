@@ -130,8 +130,8 @@ def nc_hyperspy_reader_0dot1(ncfile, filename, *args, **kwds):
             else:
                 calibration_dict[attrib[0]] = value
         else:
-            print "Warning: the \'%s\' attribute is not defined in the file\
-            " % attrib[0]
+            print("Warning: the \'%s\' attribute is not defined in the file\
+            " % attrib[0])
     for attrib in acquisition2netcdf.items():
         if hasattr(dc, attrib[1]):
             value = eval('dc.' + attrib[1])
@@ -140,16 +140,14 @@ def nc_hyperspy_reader_0dot1(ncfile, filename, *args, **kwds):
             else:
                 acquisition_dict[attrib[0]] = value
         else:
-            print \
-                "Warning: the \'%s\' attribute is not defined in the file\
-            " % attrib[0]
+            print("Warning: the \'%s\' attribute is not defined in the file\
+            " % attrib[0])
     for attrib in treatments2netcdf.items():
         if hasattr(dc, attrib[1]):
             treatments_dict[attrib[0]] = eval('dc.' + attrib[1])
         else:
-            print \
-                "Warning: the \'%s\' attribute is not defined in the file\
-            " % attrib[0]
+            print("Warning: the \'%s\' attribute is not defined in the file\
+            " % attrib[0])
     original_metadata = {'record_by': ncfile.type,
                          'calibration': calibration_dict,
                          'acquisition': acquisition_dict,
@@ -194,7 +192,7 @@ def nc_hyperspy_reader_0dot1(ncfile, filename, *args, **kwds):
             'scale': scales[i],
             'offset': origins[i],
             'units': units[i], }
-        for i in xrange(dim)]
+        for i in range(dim)]
     metadata = {'General': {}, 'Signal': {}}
     metadata['General']['original_filename'] = os.path.split(filename)[1]
     metadata["Signal"]['record_by'] = record_by

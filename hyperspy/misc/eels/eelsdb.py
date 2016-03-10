@@ -188,7 +188,7 @@ def eelsdb(spectrum_type=None, title=None, author=None, element=None, formula=No
         "order_direction": order_direction,
     }
 
-    if isinstance(element, basestring):
+    if isinstance(element, str):
         params["element"] = element
     else:
         params["element[]"] = element

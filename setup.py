@@ -16,14 +16,24 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import print_function
 
-from setuptools import setup
+import sys
+
+v = sys.version_info
+if v[0] != 3:
+    error = "ERROR: From version 0.8.4 HyperSpy requires Python 3. " \
+            "For Python 2.7 install Hyperspy 0.8.3 e.g. " \
+            "$ pip install --upgrade hyperspy==0.8.3"
+    print(error, file=sys.stderr)
+    sys.exit(1)
+
+from distutils.core import setup
 
 import distutils.dir_util
 
 import os
 import subprocess
-import sys
 import fileinput
 
 import hyperspy.Release as Release
@@ -33,15 +43,15 @@ if os.path.exists('build'):
     distutils.dir_util.remove_tree('build')
 
 install_req = ['scipy',
-               'ipython (>= 2.0)',
-               'matplotlib (>= 1.2)',
+               'ipython>=2.0',
+               'matplotlib>=1.2',
                'numpy',
-               'traits',
-               'traitsui',
+               'traits>=4.5.0',
+               'traitsui>=5.0',
+               'natsort',
                'requests',
                'setuptools',
                'sympy']
-
 
 
 class update_version_when_dev:
@@ -62,7 +72,7 @@ class update_version_when_dev:
                 if p.returncode != 0:
                     raise EnvironmentError
                 else:
-                    version = stdout[1:].strip()
+                    version = stdout[1:].strip().decode()
                     if str(self.release_version[:-4] + '-') in version:
                         version = version.replace(
                             self.release_version[:-4] + '-',
@@ -78,9 +88,9 @@ class update_version_when_dev:
             for line in fileinput.FileInput("hyperspy/Release.py",
                                             inplace=1):
                 if line.startswith('version = '):
-                    print "version = \"%s\"" % self.version
+                    print("version = \"%s\"" % self.version)
                 else:
-                    print line,
+                    print(line, end=' ')
             self.restore_version = True
         else:
             self.version = self.release_version
@@ -91,9 +101,9 @@ class update_version_when_dev:
             for line in fileinput.FileInput("hyperspy/Release.py",
                                             inplace=1):
                 if line.startswith('version = '):
-                    print "version = \"%s\"" % self.release_version
+                    print("version = \"%s\"" % self.release_version)
                 else:
-                    print line,
+                    print(line, end=' ')
 
 
 with update_version_when_dev() as version:
@@ -135,37 +145,37 @@ with update_version_when_dev() as version:
                   'hyperspy.external.mpfit',
                   'hyperspy.external.astroML',
                   ],
-        requires=install_req,
+        install_requires=install_req,
         setup_requires=[
             'setuptools'
         ],
         package_data={
             'hyperspy':
             [
-             'misc/eds/example_signals/*.hdf5',
-             'tests/io/blockfile_data/*.blo',
-             'tests/io/dens_data/*.dens',
-             'tests/io/dm_stackbuilder_plugin/test_stackbuilder_imagestack.dm3',
-             'tests/io/dm3_1D_data/*.dm3',
-             'tests/io/dm3_2D_data/*.dm3',
-             'tests/io/dm3_3D_data/*.dm3',
-             'tests/io/dm4_1D_data/*.dm4',
-             'tests/io/dm4_2D_data/*.dm4',
-             'tests/io/dm4_3D_data/*.dm4',
-             'tests/io/FEI_new/*.emi',
-             'tests/io/FEI_new/*.ser',
-             'tests/io/FEI_new/*.npy',
-             'tests/io/FEI_old/*.emi',
-             'tests/io/FEI_old/*.ser',
-             'tests/io/FEI_old/*.npy',
-             'tests/io/msa_files/*.msa',
-             'tests/io/hdf5_files/*.hdf5',
-             'tests/io/tiff_files/*.tif',
-             'tests/io/npy_files/*.npy',
-             'tests/io/unf_files/*.unf',
-             'tests/drawing/*.ipynb',
-             'tests/signal/test_find_peaks1D_ohaver/test_find_peaks1D_ohaver.hdf5',
-             ],
+                'misc/eds/example_signals/*.hdf5',
+                'tests/io/blockfile_data/*.blo',
+                'tests/io/dens_data/*.dens',
+                'tests/io/dm_stackbuilder_plugin/test_stackbuilder_imagestack.dm3',
+                'tests/io/dm3_1D_data/*.dm3',
+                'tests/io/dm3_2D_data/*.dm3',
+                'tests/io/dm3_3D_data/*.dm3',
+                'tests/io/dm4_1D_data/*.dm4',
+                'tests/io/dm4_2D_data/*.dm4',
+                'tests/io/dm4_3D_data/*.dm4',
+                'tests/io/FEI_new/*.emi',
+                'tests/io/FEI_new/*.ser',
+                'tests/io/FEI_new/*.npy',
+                'tests/io/FEI_old/*.emi',
+                'tests/io/FEI_old/*.ser',
+                'tests/io/FEI_old/*.npy',
+                'tests/io/msa_files/*.msa',
+                'tests/io/hdf5_files/*.hdf5',
+                'tests/io/tiff_files/*.tif',
+                'tests/io/npy_files/*.npy',
+                'tests/io/unf_files/*.unf',
+                'tests/drawing/*.ipynb',
+                'tests/signal/test_find_peaks1D_ohaver/test_find_peaks1D_ohaver.hdf5',
+            ],
         },
         author=Release.authors['all'][0],
         author_email=Release.authors['all'][1],
@@ -178,7 +188,6 @@ with update_version_when_dev() as version:
         url=Release.url,
         keywords=Release.keywords,
         classifiers=[
-            "Programming Language :: Python :: 2.7",
             "Programming Language :: Python :: 3",
             "Development Status :: 4 - Beta",
             "Environment :: Console",

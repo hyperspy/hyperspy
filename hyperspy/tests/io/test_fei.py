@@ -23,6 +23,7 @@ from numpy.testing import assert_array_equal
 
 from hyperspy.io import load
 from hyperspy.io_plugins.fei import load_ser_file
+from hyperspy.misc.test_utils import assert_warns
 
 MY_PATH = os.path.dirname(__file__)
 
@@ -347,9 +348,8 @@ class TestFEIReader():
         nt.assert_equal(unit, 'meters')
 
         # objects is empty dictionary
-        unit = guess_units_from_mode({}, header0)
-        nt.assert_equal(unit, 'meters')
-
-        # objects is empty dictionary
-        unit = guess_units_from_mode({}, header0)
+        with assert_warns(
+                message="The navigation axes units could not be determined.",
+                category=UserWarning):
+            unit = guess_units_from_mode({}, header0)
         nt.assert_equal(unit, 'meters')

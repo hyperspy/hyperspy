@@ -321,7 +321,7 @@ def test_events_container_magic_attributes():
     nt.assert_in("a", events.__dir__())
     nt.assert_equal(repr(events),
                     "<hyperspy.events.Events: "
-                    "{'event': <hyperspy.events.Event: set([])>}>")
+                    "{'event': <hyperspy.events.Event: set()>}>")
     del events.event
     del events.a
     nt.assert_not_in("event", events.__dir__())

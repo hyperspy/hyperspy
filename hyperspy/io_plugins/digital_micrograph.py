@@ -20,8 +20,6 @@
 
 # Plugin to read the Gatan Digital Micrograph(TM) file format
 
-from __future__ import with_statement  # for Python versions < 2.6
-from __future__ import division
 
 import os
 
@@ -114,7 +112,7 @@ class DigitalMicrographReader(object):
         """
         unnammed_data_tags = 0
         unnammed_group_tags = 0
-        for tag in xrange(ntags):
+        for tag in range(ntags):
             if self.verbose is True:
                 print('Reading tag name at address:', self.f.tell())
             tag_header = self.parse_tag_header()
@@ -302,7 +300,7 @@ class DigitalMicrographReader(object):
         self.skipif4(2)
         nfields = read_long(self.f, "big")
         definition = ()
-        for ifield in xrange(nfields):
+        for ifield in range(nfields):
             self.f.seek(4, 1)
             self.skipif4(2)
             definition += (read_long(self.f, "big"),)
@@ -338,12 +336,12 @@ class DigitalMicrographReader(object):
                     'size_bytes': size_bytes,
                     'offset': offset,
                     'endian': self.endian, }
-        data = ''
+        data = b''
         if self.endian == 'little':
             s = L_char
         elif self.endian == 'big':
             s = B_char
-        for char in xrange(length):
+        for char in range(length):
             data += s.unpack(self.f.read(1))[0]
         try:
             data = data.decode('utf8')
@@ -406,12 +404,12 @@ class DigitalMicrographReader(object):
         else:
             if enc_eltype in self.simple_type:  # simple type
                 data = [eltype(self.f, self.endian)
-                        for element in xrange(size)]
+                        for element in range(size)]
                 if enc_eltype == 4 and data:  # it's actually a string
-                    data = "".join([unichr(i) for i in data])
+                    data = "".join([chr(i) for i in data])
             elif enc_eltype in self._complex_type:
                 data = [eltype(**extra)
-                        for element in xrange(size)]
+                        for element in range(size)]
         return data
 
     def parse_tag_group(self, skip4=1):
@@ -492,11 +490,11 @@ class DigitalMicrographReader(object):
             return None
         if "Thumbnails" in self.tags_dict:
             thumbnail_idx = [tag['ImageIndex'] for key, tag in
-                             self.tags_dict['Thumbnails'].iteritems()]
+                             self.tags_dict['Thumbnails'].items()]
         else:
             thumbnail_idx = []
         images = [image for key, image in
-                  self.tags_dict['ImageList'].iteritems()
+                  self.tags_dict['ImageList'].items()
                   if not int(key.replace("TagGroup", "")) in
                   thumbnail_idx]
         return images
@@ -550,7 +548,7 @@ class ImageObject(object):
     @property
     def names(self):
         names = [t.Undefined] * len(self.shape)
-        indices = range(len(self.shape))
+        indices = list(range(len(self.shape)))
         if self.signal_type == "EELS":
             if "eV" in self.units:
                 names[indices.pop(self.units.index("eV"))] = "Energy loss"
@@ -692,11 +690,11 @@ class ImageObject(object):
         if shape[0] != shape[1] or len(shape) > 2:
             msg = "Packed complex format works only for a 2Nx2N image"
             msg += " -> width == height"
-            print msg
+            print(msg)
             raise IOError(
                 'Unable to read this DM file in packed complex format. '
-                'Pleare report the issue to the HyperSpy developers providing'
-                ' the file if possible')
+                'Please report the issue to the HyperSpy developers providing '
+                'the file if possible')
         N = int(self.shape[0] / 2)      # think about a 2Nx2N matrix
         # create an empty 2Nx2N ndarray of complex
         data = np.zeros(shape, dtype="complex64")
@@ -709,7 +707,7 @@ class ImageObject(object):
 
         # fill in the non-redundant complex values:
         # top right quarter, except 1st column
-        for i in xrange(N):  # this could be optimized
+        for i in range(N):  # this could be optimized
             start = 2 * i * N + 2
             stop = start + 2 * (N - 1) - 1
             step = 2
@@ -770,7 +768,7 @@ class ImageObject(object):
                  'index_in_array': i,
                  'scale': scale,
                  'offset': offset,
-                 'units': unicode(units), }
+                 'units': str(units), }
                 for i, (name, size, scale, offset, units) in enumerate(
                     zip(self.names, self.shape, self.scales, self.offsets,
                         self.units))]

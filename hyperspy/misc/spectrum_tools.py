@@ -97,7 +97,7 @@ def find_peaks_ohaver(y, x=None, slope_thresh=0., amp_thresh=None,
                         ('width', np.float)])
     P = np.array([], dtype=peak_dt)
     peak = 0
-    for j in xrange(len(y) - 4):
+    for j in range(len(y) - 4):
         if np.sign(d[j]) > np.sign(d[j + 1]):  # Detects zero-crossing
             if np.sign(d[j + 1]) == 0:
                 continue
@@ -113,8 +113,8 @@ def find_peaks_ohaver(y, x=None, slope_thresh=0., amp_thresh=None,
                         xx = np.zeros(peakgroup)
                         yy = np.zeros(peakgroup)
                         s = 0
-                        for k in xrange(peakgroup):
-                            groupindex = j + k - n + 1
+                        for k in range(peakgroup):
+                            groupindex = int(j + k - n + 1)
                             if groupindex < 1:
                                 xx = xx[1:]
                                 yy = yy[1:]

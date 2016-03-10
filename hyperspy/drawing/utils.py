@@ -137,7 +137,7 @@ def plot_RGB_map(im_list, normalization='single', dont_plot=False):
     if len(im_list) == 3:
         rgb[:, :, 2] = im_list[2].data.squeeze()
     if normalization == 'single':
-        for i in xrange(rgb.shape[2]):
+        for i in range(rgb.shape[2]):
             rgb[:, :, i] /= rgb[:, :, i].max()
     elif normalization == 'global':
         rgb /= rgb.max()
@@ -307,9 +307,9 @@ def _make_heatmap_subplot(spectra):
 
 
 def _make_overlap_plot(spectra, ax, color="blue", line_style='-'):
-    if isinstance(color, basestring):
+    if isinstance(color, str):
         color = [color] * len(spectra)
-    if isinstance(line_style, basestring):
+    if isinstance(line_style, str):
         line_style = [line_style] * len(spectra)
     for spectrum_index, (spectrum, color, line_style) in enumerate(
             zip(spectra, color, line_style)):
@@ -329,9 +329,9 @@ def _make_cascade_subplot(
                            np.nanmin(spectrum.data))
         if spectrum_yrange > max_value:
             max_value = spectrum_yrange
-    if isinstance(color, basestring):
+    if isinstance(color, str):
         color = [color] * len(spectra)
-    if isinstance(line_style, basestring):
+    if isinstance(line_style, str):
         line_style = [line_style] * len(spectra)
     for spectrum_index, (spectrum, color, line_style) in enumerate(
             zip(spectra, color, line_style)):
@@ -428,9 +428,9 @@ def plot_images(images,
             specially useful when using diverging color schemes. If "auto"
             (default), diverging color schemes are automatically centred.
         saturated_pixels: scalar
-            The percentage of pixels that are left out of the bounds.  For example,
-            the low and high bounds of a value of 1 are the 0.5% and 99.5%
-            percentiles. It must be in the [0, 100] range.
+            The percentage of pixels that are left out of the bounds.  For
+            example, the low and high bounds of a value of 1 are the 0.5% and
+            99.5% percentiles. It must be in the [0, 100] range.
         scalebar : {None, 'all', list of ints}, optional
             If None (or False), no scalebars will be added to the images.
             If 'all', scalebars will be added to all images.
@@ -615,12 +615,12 @@ def plot_images(images,
         # Set label_list to each image's pre-defined title
         label_list = [x.metadata.General.title for x in images]
 
-    elif isinstance(label, basestring):
+    elif isinstance(label, str):
         # Set label_list to an indexed list, based off of label
         label_list = [label + " " + repr(num) for num in range(n)]
 
     elif isinstance(label, list) and all(
-            isinstance(x, basestring) for x in label):
+            isinstance(x, str) for x in label):
         label_list = label
         user_labels = True
         # If list of labels is longer than the number of images, just use the
@@ -633,7 +633,7 @@ def plot_images(images,
 
     else:
         # catch all others to revert to default if bad input
-        print "Did not understand input of labels. Defaulting to image titles."
+        print("Did not understand input of labels. Defaulting to image titles.")
         label_list = [x.metadata.General.title for x in images]
 
     # Determine appropriate number of images per row
@@ -664,7 +664,7 @@ def plot_images(images,
     non_rgb = list(itertools.compress(images, [not j for j in isrgb]))
     if len(non_rgb) is 0 and colorbar is not None:
         colorbar = None
-        print "Sorry, colorbar is not implemented for RGB images."
+        print("Sorry, colorbar is not implemented for RGB images.")
 
     # Find global min and max values of all the non-rgb images for use with
     # 'single' scalebar
@@ -725,10 +725,10 @@ def plot_images(images,
                 yaxis.low_value,
             )
 
-            if not isinstance(aspect, (int, long, float)) and aspect not in [
+            if not isinstance(aspect, (int, float)) and aspect not in [
                     'auto', 'square', 'equal']:
-                print 'Did not understand aspect ratio input. ' \
-                      'Using \'auto\' as default.'
+                print('Did not understand aspect ratio input. '
+                      'Using \'auto\' as default.')
                 aspect = 'auto'
 
             if aspect is 'auto':
@@ -743,9 +743,9 @@ def plot_images(images,
                 asp = abs(extent[1] - extent[0]) / abs(extent[3] - extent[2])
             elif aspect is 'equal':
                 asp = 1
-            elif isinstance(aspect, (int, long, float)):
+            elif isinstance(aspect, (int, float)):
                 asp = aspect
-            if ('interpolation' in kwargs.keys()) is False:
+            if 'interpolation' not in kwargs.keys():
                 kwargs['interpolation'] = 'nearest'
 
             # Plot image data, using vmin and vmax to set bounds,
@@ -906,7 +906,8 @@ def plot_spectra(
     color : matplotlib color or a list of them or `None`
         Sets the color of the lines of the plots (no action on 'heatmap').
         If a list, if its length is less than the number of spectra to plot,
-        the colors will be cycled. If `None`, use default matplotlib color cycle.
+        the colors will be cycled. If `None`, use default matplotlib color
+        cycle.
     line_style: matplotlib line style or a list of them or `None`
         Sets the line style of the plots (no action on 'heatmap').
         The main line style are '-','--','steps','-.',':'.
@@ -914,9 +915,9 @@ def plot_spectra(
         spectra to plot, line_style will be cycled. If
         If `None`, use continuous lines, eg: ('-','--','steps','-.',':')
     padding : float, optional, default 0.1
-        Option for "cascade". 1 guarantees that there is not overlapping. However,
-        in many cases a value between 0 and 1 can produce a tighter plot
-        without overlapping. Negative values have the same effect but
+        Option for "cascade". 1 guarantees that there is not overlapping.
+        However, in many cases a value between 0 and 1 can produce a tighter
+        plot without overlapping. Negative values have the same effect but
         reverse the order of the spectra without reversing the order of the
         colors.
     legend: None or list of str or 'auto'
@@ -960,10 +961,10 @@ def plot_spectra(
         style = preferences.Plot.default_style_to_compare_spectra
 
     if color is not None:
-        if hasattr(color, "__iter__"):
-            color = itertools.cycle(color)
-        elif isinstance(color, basestring):
+        if isinstance(color, str):
             color = itertools.cycle([color])
+        elif hasattr(color, "__iter__"):
+            color = itertools.cycle(color)
         else:
             raise ValueError("Color must be None, a valid matplotlib color "
                              "string or a list of valid matplotlib colors.")
@@ -971,10 +972,10 @@ def plot_spectra(
         color = itertools.cycle(plt.rcParams['axes.color_cycle'])
 
     if line_style is not None:
-        if hasattr(line_style, "__iter__"):
-            line_style = itertools.cycle(line_style)
-        elif isinstance(line_style, basestring):
+        if isinstance(line_style, str):
             line_style = itertools.cycle([line_style])
+        elif hasattr(line_style, "__iter__"):
+            line_style = itertools.cycle(line_style)
         else:
             raise ValueError("line_style must be None, a valid matplotlib"
                              " line_style string or a list of valid matplotlib"
@@ -983,12 +984,15 @@ def plot_spectra(
         line_style = ['-'] * len(spectra)
 
     if legend is not None:
-        if hasattr(legend, "__iter__"):
+        if isinstance(legend, str):
+            if legend == 'auto':
+                legend = [spec.metadata.General.title for spec in spectra]
+            else:
+                raise ValueError("legend must be None, 'auto' or a list of"
+                                 " string")
+
+        elif hasattr(legend, "__iter__"):
             legend = itertools.cycle(legend)
-        elif legend == 'auto':
-            legend = [spec.metadata.General.title for spec in spectra]
-        else:
-            raise ValueError("legend must be None, 'auto' or a list of string")
 
     if style == 'overlap':
         if fig is None:

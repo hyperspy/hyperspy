@@ -42,12 +42,12 @@ class Events(object):
         old = {}
 
         try:
-            for e in self._events.itervalues():
+            for e in self._events.values():
                 old[e] = e._suppress
                 e._suppress = True
             yield
         finally:
-            for e, oldval in old.iteritems():
+            for e, oldval in old.items():
                 e._suppress = oldval
 
     def _update_doc(self):
@@ -56,7 +56,7 @@ class Events(object):
         """
         new_doc = self.__class__.__doc__
         new_doc += '\n\tEvents:\n\t-------\n'
-        for name, e in self._events.iteritems():
+        for name, e in self._events.items():
             edoc = inspect.getdoc(e) or ''
             doclines = edoc.splitlines()
             e_short = doclines[0] if len(doclines) > 0 else edoc
@@ -110,19 +110,18 @@ class Events(object):
         Makes sure tab-completion works in IPython etc.
         """
         d = dir(type(self))
-        d.extend(self.__dict__.iterkeys())
-        d.extend(self._events.iterkeys())
+        d.extend(self.__dict__.keys())
+        d.extend(self._events.keys())
         return sorted(set(d))
 
     def __iter__(self):
         """
         Allows iteration of all events in the container
         """
-        return self._events.itervalues()
+        return self._events.values().__iter__()
 
     def __repr__(self):
-        text = "<hyperspy.events.Events: " + repr(self._events) + ">"
-        return text.encode('utf8')
+        return "<hyperspy.events.Events: " + repr(self._events) + ">"
 
 
 class Event(object):
@@ -205,10 +204,10 @@ class Event(object):
         gl.update(locals())
         gl.update({'f': orig_f})    # Make sure it keeps the original!
         exec(wrap_code, gl, locals())
-        new_f = trigger
+        new_f = locals()['trigger']
         # Replace the trigger function with the new one
         if defaults:
-            new_f.func_defaults = tuple(defaults)
+            new_f.__defaults__ = tuple(defaults)
         new_f = new_f.__get__(self, self.__class__)     # Bind method to self
         self.trigger = new_f
 
@@ -309,17 +308,25 @@ class Event(object):
             raise ValueError("Function %s already connected to %s." %
                              (function, self))
         if kwargs == 'auto':
-            spec = inspect.getargspec(function)
-            if spec.varargs and not spec.keywords:
+            spec = inspect.signature(function)
+            _has_args = False
+            _has_kwargs = False
+            _normal_params = []
+            for name, par in spec.parameters.items():
+                if par.kind == par.VAR_POSITIONAL:
+                    _has_args = True
+                elif par.kind == par.VAR_KEYWORD:
+                    _has_kwargs = True
+                else:
+                    _normal_params.append(name)
+            if _has_args and not _has_kwargs:
                 raise NotImplementedError("Connecting to variable argument "
                                           "functions is not supported in auto "
                                           "connection mode.")
-            elif spec.keywords:
+            elif _has_kwargs:
                 kwargs = 'all'
-            elif spec.args is None:
-                kwargs = []
             else:
-                kwargs = spec.args
+                kwargs = _normal_params
         if kwargs == "all":
             self._connected_all.add(function)
         elif isinstance(kwargs, dict):
@@ -379,8 +386,8 @@ class Event(object):
         # event triggered are called.
         connected_all = self._connected_all.difference(
             self._suppressed_callbacks)
-        connected_some = self._connected_some.items()
-        connected_map = self._connected_map.items()
+        connected_some = list(self._connected_some.items())
+        connected_map = list(self._connected_map.items())
 
         # Loop over all collections
         for function in connected_all:
@@ -390,7 +397,7 @@ class Event(object):
                 function(**{kw: kwargs.get(kw, None) for kw in kwsl})
         for function, kwsd in connected_map:
             if function not in self._suppressed_callbacks:
-                function(**{kwf: kwargs[kwt] for kwt, kwf in kwsd.iteritems()})
+                function(**{kwf: kwargs[kwt] for kwt, kwf in kwsd.items()})
 
     def __deepcopy__(self, memo):
         dc = type(self)()
@@ -406,11 +413,10 @@ class Event(object):
                     str(self.connected) + ">")
         else:
             text = self.__repr__()
-        return text.encode('utf8')
+        return text
 
     def __repr__(self):
-        text = "<hyperspy.events.Event: " + repr(self.connected) + ">"
-        return text.encode('utf8')
+        return "<hyperspy.events.Event: " + repr(self.connected) + ">"
 
 
 class EventSupressor(object):

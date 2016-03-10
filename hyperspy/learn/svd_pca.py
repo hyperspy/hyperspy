@@ -19,7 +19,8 @@
 import numpy as np
 import scipy.linalg
 
-from hyperspy.misc.machine_learning.import_sklearn import *
+from hyperspy.misc.machine_learning.import_sklearn import (
+    fast_svd, sklearn_installed)
 from hyperspy import messages
 
 

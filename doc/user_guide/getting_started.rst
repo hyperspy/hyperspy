@@ -53,6 +53,18 @@ but some features such as navigation sliders may be missing.
         executed after importing hyperspy and qt must be the default hyperspy
         backend.
 
+.. NOTE::
+
+    When running in a  headless system it is necessary to set the matplotlib
+    backend appropiately to avoid a `cannot connect to X server` error, for
+    example as follows:
+
+    .. code-block:: python
+
+       In [1]: import matplotlib
+       In [2]: matplotlib.rcParams["backend"] = "Agg"
+       In [3]: import hyperspy.api as hs
+
 
 .. warning::
         When using the qt4 backend it is important to import hyperspy

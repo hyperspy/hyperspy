@@ -89,9 +89,9 @@ def dimension_array_dtype(n, DescriptionLength, UnitsLength):
         ("Dim-%s_CalibrationDelta" % n, "<f8"),
         ("Dim-%s_CalibrationElement" % n, "<u4"),
         ("Dim-%s_DescriptionLength" % n, "<u4"),
-        ("Dim-%s_Description" % n, (str, DescriptionLength)),
+        ("Dim-%s_Description" % n, (bytes, DescriptionLength)),
         ("Dim-%s_UnitsLength" % n, "<u4"),
-        ("Dim-%s_Units" % n, (str, UnitsLength)),
+        ("Dim-%s_Units" % n, (bytes, UnitsLength)),
     ]
     return dt_list
 
@@ -134,11 +134,10 @@ def get_header_dtype_list(file):
     header2 = np.fromfile(file,
                           dtype=np.dtype(header_list2),
                           count=1)
-
     header_list = header_list1 + header_list2
     # Go to the beginning of the dimension array section
     file.seek(beginning_dimension_array_section)
-    for n in xrange(1, header2["NumberDimensions"] + 1):
+    for n in range(1, header2["NumberDimensions"][0] + 1):
         description_length, unit_length = get_lengths(file)
         header_list += dimension_array_dtype(
             n, description_length, unit_length)
@@ -204,9 +203,9 @@ def print_struct_array_values(struct_array):
     for key in struct_array.dtype.names:
         if not isinstance(struct_array[key], np.ndarray) or \
                 np.array(struct_array[key].shape).sum() == 1:
-            print "%s : %s" % (key, struct_array[key])
+            print("%s : %s" % (key, struct_array[key]))
         else:
-            print "%s : Array" % key
+            print("%s : Array" % key)
 
 
 def guess_record_by(record_by_id):
@@ -232,8 +231,8 @@ def parse_TrueImageHeaderInfo(et, dictree):
     dictree.add_node(et.tag)
     dictree = dictree[et.tag]
     et = ET.fromstring(et.text)
-    for data in et.findall("Data"):
-        dictree[data.find("Index").text] = float(data.find("Value").text)
+    for data in et.findall(b"Data"):
+        dictree[data.find(b"Index").text] = float(data.find(b"Value").text)
 
 
 def emixml2dtb(et, dictree):
@@ -265,11 +264,11 @@ def emi_reader(filename, dump_xml=False, verbose=False, **kwds):
             with open(filename + '-object-%s.xml' % i, 'w') as f:
                 f.write(obj)
 
-    ser_files = glob(filename + '_[0-9].ser')
+    ser_files = sorted(glob(filename + '_[0-9].ser'))
     sers = []
     for f in ser_files:
         if verbose is True:
-            print "Opening ", f
+            print("Opening ", f)
         try:
             sers.append(ser_reader(f, objects))
         except IOError:  # Probably a single spectrum that we don't support
@@ -292,23 +291,24 @@ def file_reader(filename, *args, **kwds):
 
 def load_ser_file(filename, verbose=False):
     if verbose:
-        print "Opening the file: ", filename
+        print("Opening the file: ", filename)
     with open(filename, 'rb') as f:
         header = np.fromfile(f,
                              dtype=np.dtype(get_header_dtype_list(f)),
                              count=1)
         if verbose is True:
-            print "Extracting the information"
-            print "\n"
-            print "Header info:"
-            print "------------"
+            print("Extracting the information")
+            print("\n")
+            print("Header info:")
+            print("------------")
             print_struct_array_values(header[0])
 
         if header['ValidNumberElements'] == 0:
             raise IOError(
                 "The file does not contains valid data. "
                 "If it is a single spectrum, the data is contained in the  "
-                ".emi file but HyperSpy cannot currently extract this information.")
+                ".emi file but HyperSpy cannot currently extract this "
+                "information.")
 
         # Read the first element of data offsets
         f.seek(header["OffsetArrayOffset"][0])
@@ -326,11 +326,11 @@ def load_ser_file(filename, verbose=False):
         f.seek(data_offsets)
         data = np.fromfile(f,
                            dtype=np.dtype(data_dtype_list + tag_dtype_list),
-                           count=header["TotalNumberElements"])
+                           count=header["TotalNumberElements"][0])
         if verbose is True:
-            print "\n"
-            print "Data info:"
-            print "----------"
+            print("\n")
+            print("Data info:")
+            print("----------")
             print_struct_array_values(data[0])
     return header, data
 
@@ -342,9 +342,9 @@ def get_xml_info_from_emi(emi_file):
     i_start = 0
     while i_start != -1:
         i_start += 1
-        i_start = tx.find('<ObjectInfo>', i_start)
-        i_end = tx.find('</ObjectInfo>', i_start)
-        objects.append(tx[i_start:i_end + 13])
+        i_start = tx.find(b'<ObjectInfo>', i_start)
+        i_end = tx.find(b'</ObjectInfo>', i_start)
+        objects.append(tx[i_start:i_end + 13].decode('utf-8'))
     return objects[:-1]
 
 
@@ -391,10 +391,10 @@ def get_axes_from_position(header, data):
     array_shape = []
     axes = []
     array_size = int(header["ValidNumberElements"])
-    if data["TagTypeID"][0] == XY_TAG_ID:
-        xcal = get_calibration_from_position(data["PositionX"])
-        ycal = get_calibration_from_position(data["PositionY"])
-        if xcal["size"] == 0 and ycal["size"] != 0:
+    if data[b"TagTypeID"][0] == XY_TAG_ID:
+        xcal = get_calibration_from_position(data[b"PositionX"])
+        ycal = get_calibration_from_position(data[b"PositionY"])
+        if xcal[b"size"] == 0 and ycal[b"size"] != 0:
             # Vertical line scan
             axes.append({
                 'name': "x",
@@ -404,7 +404,7 @@ def get_axes_from_position(header, data):
             axes[-1].update(xcal)
             array_shape.append(axes[-1]["size"])
 
-        elif xcal["size"] != 0 and ycal["size"] == 0:
+        elif xcal[b"size"] != 0 and ycal[b"size"] == 0:
             # Horizontal line scan
             axes.append({
                 'name': "y",
@@ -414,7 +414,7 @@ def get_axes_from_position(header, data):
             axes[-1].update(ycal)
             array_shape.append(axes[-1]["size"])
 
-        elif xcal["size"] * ycal["size"] == array_size:
+        elif xcal[b"size"] * ycal[b"size"] == array_size:
             # Image
             axes.append({
                 'name': "y",
@@ -430,7 +430,7 @@ def get_axes_from_position(header, data):
             })
             axes[-1].update(xcal)
             array_shape.append(axes[-1]["size"])
-        elif xcal["size"] == ycal["size"] == array_size:
+        elif xcal[b"size"] == ycal[b"size"] == array_size:
             # Oblique line scan
             scale = np.sqrt(xcal["scale"] ** 2 + ycal["scale"] ** 2)
             axes.append({
@@ -468,7 +468,6 @@ def ser_reader(filename, objects=None, verbose=False, *args, **kwds):
     required format.
 
     """
-
     header, data = load_ser_file(filename, verbose=verbose)
     record_by = guess_record_by(header['DataTypeID'])
     ndim = int(header['NumberDimensions'])
@@ -489,7 +488,7 @@ def ser_reader(filename, objects=None, verbose=False, *args, **kwds):
                 # The spatial dimensions are stored in C order i.e. ..., Y, X
                 order = "C"
             # Extra dimensions
-            for i in xrange(ndim):
+            for i in range(ndim):
                 if i == ndim - 1:
                     name = 'x'
                 elif i == ndim - 2:
@@ -501,7 +500,7 @@ def ser_reader(filename, objects=None, verbose=False, *args, **kwds):
                     'name': name,
                     'offset': header['Dim-%i_CalibrationOffset' % idim][0],
                     'scale': header['Dim-%i_CalibrationDelta' % idim][0],
-                    'units': header['Dim-%i_Units' % idim][0],
+                    'units': header['Dim-%i_Units' % idim][0].decode('utf-8'),
                     'size': header['Dim-%i_DimensionSize' % idim][0],
                     'index_in_array': i
                 })
@@ -533,7 +532,7 @@ def ser_reader(filename, objects=None, verbose=False, *args, **kwds):
         else:
             axes = []
             array_shape = []
-            for i in xrange(ndim):
+            for i in range(ndim):
                 if header['Dim-%i_DimensionSize' % (i + 1)][0] != 1:
                     axes.append({
                         'offset': header[
@@ -541,7 +540,8 @@ def ser_reader(filename, objects=None, verbose=False, *args, **kwds):
                         'scale': header[
                             'Dim-%i_CalibrationDelta' % (i + 1)][0],
                         # for image stack, the UnitsLength is 0 (no units)
-                        'units': header['Dim-%i_Units' % (i + 1)][0]
+                        'units': header['Dim-%i_Units' % (i + 1)][0].decode(
+                            'utf-8')
                         if header['Dim-%i_UnitsLength' % (i + 1)] > 0
                         else 'Unknown',
                         'size': header['Dim-%i_DimensionSize' % (i + 1)][0],
@@ -583,8 +583,8 @@ def ser_reader(filename, objects=None, verbose=False, *args, **kwds):
             axis['units'] = '1/nm'
             axis['scale'] /= 10 ** 9
     # If the acquisition stops before finishing the job, the stored file will
-    # report the requested size even though no values are recorded. Therefore if
-    # the shapes of the retrieved array does not match that of the data
+    # report the requested size even though no values are recorded. Therefore
+    # if the shapes of the retrieved array does not match that of the data
     # dimensions we must fill the rest with zeros or (better) nans if the
     # dtype is float
     if np.cumprod(array_shape)[-1] != np.cumprod(data['Array'].shape)[-1]:
@@ -628,7 +628,7 @@ def ser_reader(filename, objects=None, verbose=False, *args, **kwds):
     return dictionary
 
 
-def guess_units_from_mode(objects_dict, header, verbose=False):
+def guess_units_from_mode(objects_dict, header, verbose=True):
     # in case the xml file doesn't contain the "Mode" or the header doesn't
     # contain 'Dim-1_UnitsLength', return "meters" as default, which will be
     # OK most of the time
@@ -654,13 +654,13 @@ def guess_units_from_mode(objects_dict, header, verbose=False):
         return 'meters'  # Most of the time, the unit will be meters!
 
     if verbose:
-        print "------------"
-        print objects_dict.ObjectInfo.AcquireInfo
-        print "mode", mode
-        print "isCamera:", isCamera
-        print "isImageStack:", isImageStack
-        print "isImageStack:", isDiffractionScan
-        print "------------"
+        print("------------")
+        print(objects_dict.ObjectInfo.AcquireInfo)
+        print("mode", mode)
+        print("isCamera:", isCamera)
+        print("isImageStack:", isImageStack)
+        print("isImageStack:", isDiffractionScan)
+        print("------------")
     if 'STEM' in mode:
         # data recorded in STEM with a camera, so we assume, it's a diffraction
         # in case we can't make use the detector is a camera, use a workaround
