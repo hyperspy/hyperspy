@@ -52,6 +52,14 @@ hyperspy.tests.io.test_dm_stackbuilder_plugin module
     :undoc-members:
     :show-inheritance:
 
+hyperspy.tests.io.test_fei module
+---------------------------------
+
+.. automodule:: hyperspy.tests.io.test_fei
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 hyperspy.tests.io.test_hdf5 module
 ----------------------------------
 
