@@ -325,7 +325,7 @@ def load_ser_file(filename, verbose=False):
         f.seek(data_offsets)
         data = np.fromfile(f,
                            dtype=np.dtype(data_dtype_list + tag_dtype_list),
-                           count=header["TotalNumberElements"])
+                           count=header["TotalNumberElements"][0])
         if verbose is True:
             print("\n")
             print("Data info:")
