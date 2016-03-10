@@ -178,7 +178,7 @@ def load(filenames=None,
                     else:
                         n = 1
                     # Initialize signal 2D list:
-                    signals = [[] for j in xrange(n)]
+                    signals = [[] for j in range(n)]
                 else:
                     # Check that number of signals per file doesn't change
                     # for other files:
@@ -199,17 +199,16 @@ def load(filenames=None,
                 if n == 1:
                     signals[0].append(obj)
                 elif n > 1:
-                    for j in xrange(n):
+                    for j in range(n):
                         signals[j].append(obj[j])
             # Next, merge the signals in the `stack_axis` direction:
             # When each file had N signals, we create N stacks!
             objects = []
-            for i in xrange(n):
+            for i in range(n):
                 signal = signals[i]   # Sublist, with len = len(filenames)
-                signal = hyperspy.utils.stack(signal,
-                                              axis=stack_axis,
-                                              new_axis_name=new_axis_name,
-                                              mmap=mmap, mmap_dir=mmap_dir)
+                signal = hyperspy.misc.utils.stack(
+                    signal, axis=stack_axis, new_axis_name=new_axis_name,
+                    mmap=mmap, mmap_dir=mmap_dir)
                 signal.metadata.General.title = \
                     os.path.split(
                         os.path.split(
