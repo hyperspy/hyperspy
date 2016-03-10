@@ -205,7 +205,7 @@ class DictionaryTreeBrowser(object):
         ├── caterpillar = True
         └── color = brown
     >>> for label, leaf in tree.Branch:
-            print("%s is %s" % (label, leaf.color))
+    ...     print("%s is %s" % (label, leaf.color))
     Leaf1 is green
     Leaf2 is brown
     >>> tree.Branch.Leaf2.caterpillar
@@ -293,10 +293,12 @@ class DictionaryTreeBrowser(object):
                     if isinstance(value, list) or isinstance(value, tuple):
                         iflong, strvalue = check_long_string(value, max_len)
                         if iflong:
-                            key += " <list>" if isinstance(value,
-                                                           list) else " <tuple>"
+                            key += (" <list>"
+                                    if isinstance(value, list)
+                                    else " <tuple>")
                             value = DictionaryTreeBrowser(
-                                {'[%d]' % i: v for i, v in enumerate(value)}, double_lines=True)
+                                {'[%d]' % i: v for i, v in enumerate(value)},
+                                double_lines=True)
                         else:
                             string += "%s%s%s = %s\n" % (
                                 padding, symbol, key, strvalue)
@@ -596,7 +598,7 @@ def swapelem(obj, i, j):
     E.g.
     >>> L = ['a', 'b', 'c']
     >>> spwapelem(L, 1, 2)
-    >>> print L
+    >>> print(L)
         ['a', 'c', 'b']
 
     """
@@ -685,26 +687,26 @@ def ordinal(value):
     >>> for i in range(1,13):
     ...     ordinal(i)
     ...
-    u'1st'
-    u'2nd'
-    u'3rd'
-    u'4th'
-    u'5th'
-    u'6th'
-    u'7th'
-    u'8th'
-    u'9th'
-    u'10th'
-    u'11th'
-    u'12th'
+    '1st'
+    '2nd'
+    '3rd'
+    '4th'
+    '5th'
+    '6th'
+    '7th'
+    '8th'
+    '9th'
+    '10th'
+    '11th'
+    '12th'
 
     >>> for i in (100, '111', '112',1011):
     ...     ordinal(i)
     ...
-    u'100th'
-    u'111th'
-    u'112th'
-    u'1011th'
+    '100th'
+    '111th'
+    '112th'
+    '1011th'
 
     Notes
     -----

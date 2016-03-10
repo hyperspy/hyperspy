@@ -104,9 +104,10 @@ class GeneralConfig(t.HasTraits):
     dtb_expand_structures = t.CBool(
         True,
         label='Expand structures in DictionaryTreeBrowser',
-        desc='If enabled, when printing DictionaryTreeBrowser (e.g. metadata), '
-             'long lists and tuples will be expanded and any dictionaries in them will be '
-             'printed similar to DictionaryTreeBrowser, but with double lines')
+        desc='If enabled, when printing DictionaryTreeBrowser (e.g. '
+             'metadata), long lists and tuples will be expanded and any '
+             'dictionaries in them will be printed similar to '
+             'DictionaryTreeBrowser, but with double lines')
 
     def _logger_on_changed(self, old, new):
         if new is True:

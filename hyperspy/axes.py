@@ -530,7 +530,7 @@ class AxesManager(t.HasTraits):
     >>> s.axes_manager['y']
     <y axis, size: 3 index: 0>
     >>> for i in s.axes_manager:
-    >>>     print i, s.axes_manager.indices
+    >>>     print(i, s.axes_manager.indices)
     (0, 0, 0) (0, 0, 0)
     (1, 0, 0) (1, 0, 0)
     (2, 0, 0) (2, 0, 0)

@@ -226,9 +226,9 @@ class EDSTEMSpectrum(EDSSpectrum):
         >>> ref = hs.datasets.example_signals.EDS_TEM_Spectrum()
         >>> s = hs.signals.EDSTEMSpectrum(
         >>>     hs.datasets.example_signals.EDS_TEM_Spectrum().data)
-        >>> print s.axes_manager[0].scale
+        >>> print(s.axes_manager[0].scale)
         >>> s.get_calibration_from(ref)
-        >>> print s.axes_manager[0].scale
+        >>> print(s.axes_manager[0].scale)
         1.0
         0.020028
 

@@ -69,14 +69,10 @@ def test_content():
 
 
 def check_load(filename, subfolder, key):
-    try:
-        s = load(filename)
-        ok = True
-        # Store the data for the next tests
-        data_dict[subfolder][key] = s.data
-    except:
-        ok = False
-    assert_true(ok, msg='loading %s\\test-%i' % (subfolder, key))
+    print('loading %s\\test-%i' % (subfolder, key))
+    s = load(filename)
+    # Store the data for the next tests
+    data_dict[subfolder][key] = s.data
 
 
 def check_dtype(d1, d2, i):
