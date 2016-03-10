@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2015 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -17,7 +17,6 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from __future__ import division
 import types
 import warnings
 
@@ -39,7 +38,6 @@ from hyperspy.decorators import do_not_replot
 from scipy import linalg
 from hyperspy.misc.machine_learning.orthomax import orthomax
 from hyperspy.misc.utils import stack
-from hyperspy.misc.hspy_warnings import VisibleDeprecationWarning
 
 
 def centering_and_whitening(X):
@@ -292,7 +290,7 @@ class MVA():
                 factors = sk.components_.T
 
             elif algorithm == 'mlpca' or algorithm == 'fast_mlpca':
-                print "Performing the MLPCA training"
+                print("Performing the MLPCA training")
                 if output_dimension is None:
                     raise ValueError(
                         "For MLPCA it is mandatory to define the "
@@ -419,12 +417,11 @@ class MVA():
                     loadings[~navigation_mask, :] = np.nan
                     target.loadings = loadings
         finally:
-            # undo any pre-treatments
-            self.undo_treatments()
-
             if self._unfolded4decomposition is True:
                 self.fold()
                 self._unfolded4decomposition is False
+            # undo any pre-treatments
+            self.undo_treatments()
 
     def blind_source_separation(self,
                                 number_of_components=None,
@@ -459,9 +456,7 @@ class MVA():
         factors : Signal or numpy array.
             Factors to decompose. If None, the BSS is performed on the
             factors of a previous decomposition. If a Signal instance the
-            navigation dimension must be 1 and the size greater than 1. If a
-            numpy array (deprecated) the factors are stored in a 2d array
-            stacked over the last axis.
+            navigation dimension must be 1 and the size greater than 1.
         comp_list : boolen numpy array
             choose the components to use by the boolean list. It permits
              to choose non contiguous components.
@@ -479,7 +474,6 @@ class MVA():
 
         """
         from hyperspy.signal import Signal
-        from hyperspy._signals.spectrum import Spectrum
 
         lr = self.learning_results
 
@@ -497,26 +491,10 @@ class MVA():
 
         # Check factors
         if not isinstance(factors, Signal):
-            if isinstance(factors, np.ndarray):
-                warnings.warn(
-                    "factors as numpy arrays will raise an error in "
-                    "HyperSpy 0.9 and newer. From them on only passing "
-                    "factors as HyperSpy Signal instances will be "
-                    "supported.",
-                    VisibleDeprecationWarning)
-                # We proceed supposing that the factors are spectra stacked
-                # over the last dimension to reproduce the deprecated
-                # behaviour.
-                # TODO: Don't forget to change `factors` docstring when
-                # removing this.
-                factors = Spectrum(factors.T)
-            else:
-                # Change next error message when removing the
-                # DeprecationWarning
-                raise ValueError(
-                    "`factors` must be either a Signal instance or a "
-                    "numpy array but an object of type %s was provided." %
-                    type(factors))
+            raise ValueError(
+                "`factors` must be a Signal instance, but an object of type "
+                "%s was provided." %
+                type(factors))
 
         # Check factor dimensions
         if factors.axes_manager.navigation_dimension != 1:
@@ -535,23 +513,7 @@ class MVA():
         if mask is not None:
             ref_shape, space = (factors.axes_manager.signal_shape,
                                 "navigation" if on_loadings else "signal")
-            if isinstance(mask, np.ndarray):
-                warnings.warn(
-                    "Bare numpy array masks are deprecated and will be removed"
-                    " in next HyperSpy 0.9.",
-                    VisibleDeprecationWarning)
-                ref_shape = ref_shape[::-1]
-                if mask.shape != ref_shape:
-                    raise ValueError(
-                        "The `mask` shape is not equal to the %s shape."
-                        "Mask shape: %s\tSignal shape in array: %s" %
-                        (space, str(mask.shape), str(ref_shape)))
-                else:
-                    if on_loadings:
-                        mask = self._get_navigation_signal(data=mask)
-                    else:
-                        mask = self._get_signal_signal(data=mask)
-            elif isinstance(mask, Signal):
+            if isinstance(mask, Signal):
                 if mask.axes_manager.signal_shape != ref_shape:
                     raise ValueError(
                         "The `mask` signal shape is not equal to the %s shape."
@@ -667,50 +629,6 @@ class MVA():
         self._auto_reverse_bss_component(lr)
         lr.bss_algorithm = algorithm
 
-    def normalize_factors(self, which='bss', by='area', sort=True):
-        """Normalises the factors and modifies the loadings
-        accordingly.
-
-        Parameters
-        ----------
-        which : 'bss' | 'decomposition'
-        by : 'max' | 'area'
-        sort : bool
-
-        """
-        warnings.warn(
-            "This function is deprecated an will be removed in HyperSpy 0.9. "
-            "Use `normalize_decomposition_components` or "
-            "`normalize_bss_components` instead.", VisibleDeprecationWarning)
-
-        if which == 'bss':
-            factors = self.learning_results.bss_factors
-            loadings = self.learning_results.bss_loadings
-            if factors is None:
-                raise UserWarning("This method can only be used after "
-                                  "a blind source separation operation")
-        elif which == 'decomposition':
-            factors = self.learning_results.factors
-            loadings = self.learning_results.loadings
-            if factors is None:
-                raise UserWarning("This method can only be used after"
-                                  "a decomposition operation")
-        else:
-            raise ValueError("what must be bss or decomposition")
-
-        if by == 'max':
-            by = np.max
-        elif by == 'area':
-            by = np.sum
-        else:
-            raise ValueError("by must be max or mean")
-
-        _normalize_components(factors, loadings, by)
-        sorting_indices = np.argsort(loadings.max(0))
-        factors[:] = factors[:, sorting_indices]
-        loadings[:] = loadings[:, sorting_indices]
-        loadings[:] = loadings[:, sorting_indices]
-
     def normalize_decomposition_components(self, target='factors',
                                            function=np.sum):
         """Normalize decomposition components.
@@ -822,7 +740,7 @@ class MVA():
 
     def _auto_reverse_bss_component(self, target):
         n_components = target.bss_factors.shape[1]
-        for i in xrange(n_components):
+        for i in range(n_components):
             minimum = np.nanmin(target.bss_loadings[:, i])
             maximum = np.nanmax(target.bss_loadings[:, i])
             if minimum < 0 and -minimum > maximum:
@@ -863,7 +781,7 @@ class MVA():
         elif hasattr(components, '__iter__'):
             tfactors = np.zeros((factors.shape[0], len(components)))
             tloadings = np.zeros((len(components), loadings.shape[1]))
-            for i in xrange(len(components)):
+            for i in range(len(components)):
                 tfactors[:, i] = factors[:, components[i]]
                 tloadings[i, :] = loadings[components[i], :]
             a = np.dot(tfactors, tloadings)
@@ -879,7 +797,7 @@ class MVA():
         try:
             sc = self.deepcopy()
             sc.data = a.T.reshape(self.data.shape)
-            sc.metadata.General.title += signal_name
+            sc.metadata.General.title += ' ' + signal_name
             if target.mean is not None:
                 sc.data += target.mean
         finally:
@@ -921,8 +839,7 @@ class MVA():
 
         Returns
         -------
-        rec : Signal instance
-
+        Signal instance
         """
         rec = self._calculate_recmatrix(components=components, mva_type='bss',)
         return rec
@@ -1070,8 +987,8 @@ class MVA():
 
     def undo_treatments(self):
         """Undo normalize_poissonian_noise"""
-        print "Undoing data pre-treatments"
-        self.data = self._data_before_treatments
+        print("Undoing data pre-treatments")
+        self.data[:] = self._data_before_treatments
         del self._data_before_treatments
 
 
@@ -1130,11 +1047,11 @@ class LearningResults(object):
         filename : string
         """
         decomposition = np.load(filename)
-        for key, value in decomposition.iteritems():
+        for key, value in decomposition.items():
             if value.dtype == np.dtype('object'):
                 value = None
             setattr(self, key, value)
-        print "\n%s loaded correctly" % filename
+        print("\n%s loaded correctly" % filename)
         # For compatibility with old version ##################
         if hasattr(self, 'algorithm'):
             self.decomposition_algorithm = self.algorithm
@@ -1170,7 +1087,7 @@ class LearningResults(object):
         if hasattr(self, 'ica_factors'):
             self.bss_factors = self.ica_factors
             del self.ica_factors
-        #######################################################
+        #
         # Output_dimension is an array after loading, convert it to int
         if hasattr(self, 'output_dimension') and self.output_dimension \
                 is not None:
@@ -1181,27 +1098,27 @@ class LearningResults(object):
         """Prints a summary of the decomposition and demixing parameters
          to the stdout
         """
-        print
-        print "Decomposition parameters:"
-        print "-------------------------"
-        print "Decomposition algorithm : ", self.decomposition_algorithm
-        print "Poissonian noise normalization : %s" % \
-            self.poissonian_noise_normalized
-        print "Output dimension : %s" % self.output_dimension
-        print "Centre : %s" % self.centre
+        print()
+        print("Decomposition parameters:")
+        print("-------------------------")
+        print("Decomposition algorithm : ", self.decomposition_algorithm)
+        print("Poissonian noise normalization : %s" %
+              self.poissonian_noise_normalized)
+        print("Output dimension : %s" % self.output_dimension)
+        print("Centre : %s" % self.centre)
         if self.bss_algorithm is not None:
-            print
-            print "Demixing parameters:"
-            print "---------------------"
-            print "BSS algorithm : %s" % self.bss_algorithm
-            print "Number of components : %i" % len(self.unmixing_matrix)
+            print()
+            print("Demixing parameters:")
+            print("---------------------")
+            print("BSS algorithm : %s" % self.bss_algorithm)
+            print("Number of components : %i" % len(self.unmixing_matrix))
 
     def crop_decomposition_dimension(self, n):
         """
         Crop the score matrix up to the given number.
         It is mainly useful to save memory and reduce the storage size
         """
-        print "trimming to %i dimensions" % n
+        print("trimming to %i dimensions" % n)
         self.loadings = self.loadings[:, :n]
         if self.explained_variance is not None:
             self.explained_variance = self.explained_variance[:n]

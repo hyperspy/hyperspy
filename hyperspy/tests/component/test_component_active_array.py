@@ -1,4 +1,4 @@
-# Copyright 2007-2015 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -20,6 +20,7 @@ import nose.tools as nt
 import numpy as np
 from hyperspy.components import Gaussian
 from hyperspy.signal import Signal
+from hyperspy.misc.utils import stash_active_state
 
 
 class TestParametersAsSignals:
@@ -46,21 +47,23 @@ class TestParametersAsSignals:
         nt.assert_true(
             np.isnan(g.A.as_signal('values').data[[0, 2], [0]]).all())
 
-    def test_toggle_array(self):
+    def test_stash_array(self):
         g = self.gaussian
         g.active_is_multidimensional = True
         g._create_arrays()
         g._active_array[2, 0] = False
         g._active_array[0, 0] = False
-        g._toggle_connect_active_array(False)
-        nt.assert_false(g._active_is_multidimensional)
-        nt.assert_true(
-            np.all(
-                g.A.as_signal('values').data == np.zeros(
-                    (3, 3))))
-        nt.assert_true(np.all(
-            g._active_array == np.array([[0, 1, 1], [1, 1, 1], [0, 1, 1]], dtype=bool)))
-        g._toggle_connect_active_array(True)
+        with stash_active_state([g]):
+            g.active_is_multidimensional = False
+            nt.assert_false(g._active_is_multidimensional)
+            nt.assert_true(
+                np.all(
+                    g.A.as_signal('values').data == np.zeros(
+                        (3, 3))))
+            nt.assert_equal(g._active_array, None)
         nt.assert_true(g._active_is_multidimensional)
+        np.testing.assert_almost_equal(
+            g._active_array, np.array([[0, 1, 1], [1, 1, 1], [0, 1, 1]],
+                                      dtype=bool))
         nt.assert_true(
             np.isnan(g.A.as_signal('values').data[[0, 2], [0]]).all())

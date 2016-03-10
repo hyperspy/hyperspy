@@ -1,4 +1,4 @@
-# Copyright 2007-2015 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -95,7 +95,7 @@ class TestModelStoring:
         m.store()
         m[0].A.map['values'][0] += 13.33
         m1 = m.spectrum.models.a.restore()
-        nt.assert_not_equals(m[0].A.map['values'], m1[0].A.map['values'])
+        nt.assert_not_equal(m[0].A.map['values'], m1[0].A.map['values'])
 
     def test_models_restore_remove(self):
         m = self.m
@@ -151,7 +151,7 @@ class TestModelSaving:
 
     def test_save_and_load_model(self):
         m = self.m
-        m.save('tmp.hdf5')
+        m.save('tmp.hdf5', overwrite=True)
         l = load('tmp.hdf5')
         nt.assert_true(hasattr(l.models, 'a'))
         n = l.models.restore('a')

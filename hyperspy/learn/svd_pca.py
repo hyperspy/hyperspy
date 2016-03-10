@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2015 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -19,7 +19,8 @@
 import numpy as np
 import scipy.linalg
 
-from hyperspy.misc.machine_learning.import_sklearn import *
+from hyperspy.misc.machine_learning.import_sklearn import (
+    fast_svd, sklearn_installed)
 from hyperspy import messages
 
 

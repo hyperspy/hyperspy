@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2015 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -25,7 +25,7 @@ sigma2fwhm = 2 * math.sqrt(2 * math.log(2))
 
 
 class Gaussian2D(Component):
-    """Normalized 2D eliptical gaussian function component
+    """Normalized 2D elliptical gaussian function component
 
     .. math::
         f(x,y) = \\frac{A}{2\pi s_x s_y}}}e^{-\\frac{\left(x-x0\\right)
@@ -77,16 +77,16 @@ class Gaussian2D(Component):
 
     @property
     def fwhm_x(self):
-        return self.sigma_x.value*sigma2fwhm
+        return self.sigma_x.value * sigma2fwhm
 
     @fwhm_x.setter
     def fwhm_x(self, value):
-        self.sigma_x.value = value/sigma2fwhm
+        self.sigma_x.value = value / sigma2fwhm
 
     @property
     def fwhm_y(self):
-        return self.sigma_y.value*sigma2fwhm
+        return self.sigma_y.value * sigma2fwhm
 
     @fwhm_y.setter
     def fwhm_y(self, value):
-        self.sigma_y.value = value/sigma2fwhm
+        self.sigma_y.value = value / sigma2fwhm

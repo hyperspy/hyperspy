@@ -67,7 +67,7 @@ def read_short(f, endian):
     endian can be either 'big' or 'little'.
     """
     if (endian != 'little') and (endian != 'big'):
-        print('File address:', f.tell())
+        print(('File address:', f.tell()))
         raise ByteOrderError(endian)
     else:
         data = f.read(2)      # hexadecimal representation
@@ -84,7 +84,7 @@ def read_ushort(f, endian):
     endian can be either 'big' or 'little'.
     """
     if (endian != 'little') and (endian != 'big'):
-        print('File address:', f.tell())
+        print(('File address:', f.tell()))
         raise ByteOrderError(endian)
     else:
         data = f.read(2)
@@ -101,7 +101,7 @@ def read_long(f, endian):
     endian can be either 'big' or 'little'.
     """
     if (endian != 'little') and (endian != 'big'):
-        print('File address:', f.tell())
+        print(('File address:', f.tell()))
         raise ByteOrderError(endian)
     else:
         data = f.read(4)
@@ -118,7 +118,7 @@ def read_ulong(f, endian):
     endian can be either 'big' or 'little'.
     """
     if (endian != 'little') and (endian != 'big'):
-        print('File address:', f.tell())
+        print(('File address:', f.tell()))
         raise ByteOrderError(endian)
     else:
         data = f.read(4)
@@ -135,7 +135,7 @@ def read_float(f, endian):
     endian can be either 'big' or 'little'.
     """
     if (endian != 'little') and (endian != 'big'):
-        print('File address:', f.tell())
+        print(('File address:', f.tell()))
         raise ByteOrderError(endian)
     else:
         data = f.read(4)
@@ -152,7 +152,7 @@ def read_double(f, endian):
     endian can be either 'big' or 'little'.
     """
     if (endian != 'little') and (endian != 'big'):
-        print('File address:', f.tell())
+        print(('File address:', f.tell()))
         raise ByteOrderError(endian)
     else:
         data = f.read(8)
@@ -169,7 +169,7 @@ def read_boolean(f, endian):
     endian can be either 'big' or 'little'.
     """
     if (endian != 'little') and (endian != 'big'):
-        print('File address:', f.tell())
+        print(('File address:', f.tell()))
         raise ByteOrderError(endian)
     else:
         data = f.read(1)
@@ -186,7 +186,7 @@ def read_byte(f, endian):
     endian can be either 'big' or 'little'.
     """
     if (endian != 'little') and (endian != 'big'):
-        print('File address:', f.tell())
+        print(('File address:', f.tell()))
         raise ByteOrderError(endian)
     else:
         data = f.read(1)
@@ -203,7 +203,7 @@ def read_char(f, endian):
     endian can be either 'big' or 'little'.
     """
     if (endian != 'little') and (endian != 'big'):
-        print('File address:', f.tell())
+        print(('File address:', f.tell()))
         raise ByteOrderError(endian)
     else:
         data = f.read(1)

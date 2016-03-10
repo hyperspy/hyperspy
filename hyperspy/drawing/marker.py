@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2015 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -18,6 +18,7 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
+from hyperspy.events import Event, Events
 
 
 class MarkerBase(object):
@@ -44,6 +45,18 @@ class MarkerBase(object):
         self.marker = None
         self._marker_properties = {}
 
+        # Events
+        self.events = Events()
+        self.events.closed = Event("""
+            Event triggered when a marker is closed.
+
+            Arguments
+            ---------
+            marker : Marker
+                The marker that was closed.
+            """, arguments=['obj'])
+        self._closing = False
+
     @property
     def marker_properties(self):
         return self._marker_properties
@@ -51,7 +64,7 @@ class MarkerBase(object):
     @marker_properties.setter
     def marker_properties(self, kwargs):
 
-        for key, item in kwargs.iteritems():
+        for key, item in kwargs.items():
             if item is None and key in self._marker_properties:
                 del self._marker_properties[key]
             else:
@@ -99,9 +112,14 @@ class MarkerBase(object):
                 self.data[key][()] = np.array(kwargs[key])
         self._is_marker_static()
 
+    def isiterable(self, obj):
+        return not isinstance(obj, (str, bytes)) and hasattr(obj, '__iter__')
+
     def _is_marker_static(self):
-        if np.alltrue([hasattr(self.data[key].item()[()], "__iter__") is False
-                       for key in self.data.dtype.names]):
+
+        test = [self.isiterable(self.data[key].item()[()]) is False
+                for key in self.data.dtype.names]
+        if np.alltrue(test):
             self.auto_update = False
         else:
             self.auto_update = True
@@ -110,16 +128,21 @@ class MarkerBase(object):
         data = self.data
         if data[ind].item()[()] is None:
             return None
-        elif hasattr(data[ind].item()[()], "__iter__") and \
-                self.auto_update:
+        elif self.isiterable(data[ind].item()[()]) and self.auto_update:
             indices = self.axes_manager.indices[::-1]
             return data[ind].item()[indices]
         else:
             return data[ind].item()[()]
 
     def close(self):
+        if self._closing:
+            return
+        self._closing = True
         try:
             self.marker.remove()
+            self.events.closed.trigger(obj=self)
+            for f in self.events.closed.connected:
+                self.events.closed.disconnect(f)
             # m.ax.figure.canvas.draw()
             self.ax.hspy_fig._draw_animated()
         except:

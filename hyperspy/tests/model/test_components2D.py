@@ -14,7 +14,7 @@ class TestGaussian2D:
             sigma_y=2.)
         x = np.arange(-10, 10, 0.01)
         y = np.arange(-10, 10, 0.01)
-        X, Y = np.meshgrid(x,y)
+        X, Y = np.meshgrid(x, y)
         gt = g.function(X, Y)
         self.g = g
         self.gt = gt
@@ -27,4 +27,3 @@ class TestGaussian2D:
         nt.assert_almost_equal(gt.max(), 0.0795774715459)
         nt.assert_almost_equal(gt.argmax(axis=0)[0], 500)
         nt.assert_almost_equal(gt.argmax(axis=1)[0], 500)
-

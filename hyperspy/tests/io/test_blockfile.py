@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2015 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -31,6 +31,8 @@ try:
     WindowsError
 except NameError:
     WindowsError = None
+
+
 def _remove_file(filename):
     try:
         if os.path.exists(filename):
@@ -46,36 +48,36 @@ file2 = os.path.join(dirpath, 'blockfile_data', 'test2.blo')
 save_path = os.path.join(dirpath, 'blockfile_data', 'save_temp.blo')
 
 ref_data2 = np.array(
-        [[[[20, 23, 25, 25, 27],
-         [29, 23, 23,  0, 29],
-         [24,  0,  0, 22, 18],
-         [ 0, 14, 19, 17, 26],
-         [19, 21, 22, 27, 20]],
+    [[[[20, 23, 25, 25, 27],
+       [29, 23, 23, 0, 29],
+       [24, 0, 0, 22, 18],
+       [0, 14, 19, 17, 26],
+       [19, 21, 22, 27, 20]],
 
-        [[28, 25, 29, 15, 29],
-         [12, 15, 12, 25, 24],
-         [25, 26, 26, 18, 27],
-         [19, 18, 20, 23, 28],
-         [28, 18, 22, 25,  0]],
+      [[28, 25, 29, 15, 29],
+       [12, 15, 12, 25, 24],
+        [25, 26, 26, 18, 27],
+        [19, 18, 20, 23, 28],
+        [28, 18, 22, 25, 0]],
 
-        [[21, 29, 25, 19, 18],
-         [30, 15, 20, 22, 26],
-         [23, 18, 26, 15, 25],
-         [22, 25, 24, 15, 20],
-         [22, 15, 15, 21, 23]]],
+      [[21, 29, 25, 19, 18],
+       [30, 15, 20, 22, 26],
+        [23, 18, 26, 15, 25],
+        [22, 25, 24, 15, 20],
+        [22, 15, 15, 21, 23]]],
 
 
-       [[[28, 25, 26, 24, 26],
-         [26, 17,  0, 24, 12],
-         [17, 18, 21, 19, 21],
-         [21, 24, 19, 17,  0],
-         [17, 14, 25, 15, 26]],
+     [[[28, 25, 26, 24, 26],
+       [26, 17, 0, 24, 12],
+       [17, 18, 21, 19, 21],
+       [21, 24, 19, 17, 0],
+       [17, 14, 25, 15, 26]],
 
         [[25, 18, 20, 15, 24],
          [19, 13, 23, 18, 11],
-         [ 0, 25,  0,  0, 14],
+         [0, 25, 0, 0, 14],
          [26, 22, 22, 11, 14],
-         [21,  0, 15, 13, 19]],
+         [21, 0, 15, 13, 19]],
 
         [[24, 18, 20, 22, 21],
          [13, 25, 20, 28, 29],
@@ -143,38 +145,44 @@ def test_save_load_cycle():
         gc.collect()
         _remove_file(save_path)
 
+
 def test_default_header():
     # Simply check that no exceptions are raised
     header = get_default_header()
     nt.assert_is_not_none(header)
 
+
 def test_non_square():
-    signal = hs.signals.Image((255*np.random.rand(10, 3, 5, 6)
-        ).astype(np.uint8))
+    signal = hs.signals.Image((255 * np.random.rand(10, 3, 5, 6)
+                               ).astype(np.uint8))
     try:
         with nt.assert_raises(ValueError):
             signal.save(save_path, overwrite=True)
     finally:
         _remove_file(save_path)
 
+
 def test_load_memmap():
     s = hs.load(file2, load_to_memory=False)
     nt.assert_is_instance(s.data, np.memmap)
+
 
 def test_load_to_memory():
     s = hs.load(file2, load_to_memory=True)
     nt.assert_is_instance(s.data, np.ndarray)
     nt.assert_true(not isinstance(s.data, np.memmap))
 
+
 def test_load_readonly():
     s = hs.load(file2, load_to_memory=False, mmap_mode='r')
     with nt.assert_raises(ValueError):
         s.data[:] = 23
 
+
 def test_load_inplace():
     sig_reload = None
-    signal = hs.signals.Image((255*np.random.rand(2, 3, 2, 2)
-        ).astype(np.uint8))
+    signal = hs.signals.Image((255 * np.random.rand(2, 3, 2, 2)
+                               ).astype(np.uint8))
     try:
         signal.save(save_path, overwrite=True)
         del signal
@@ -191,11 +199,11 @@ def test_load_inplace():
         del sig_reload
         gc.collect()
         _remove_file(save_path)
-    
+
 
 def test_write_fresh():
-    signal = hs.signals.Image((255*np.random.rand(10, 3, 5, 5)
-        ).astype(np.uint8))
+    signal = hs.signals.Image((255 * np.random.rand(10, 3, 5, 5)
+                               ).astype(np.uint8))
     try:
         signal.save(save_path, overwrite=True)
         sig_reload = hs.load(save_path)
@@ -206,7 +214,7 @@ def test_write_fresh():
             'DP_SZ': 5,
             'SX': 1, 'SY': 1,
             'SDP': 100,
-            'Data_offset_2': 10*3 + header['Data_offset_1'],
+            'Data_offset_2': 10 * 3 + header['Data_offset_1'],
             'Note': '',
         })
         header['Data_offset_2'] += header['Data_offset_2'] % 16
@@ -218,8 +226,8 @@ def test_write_fresh():
 
 
 def test_write_data_line():
-    signal = hs.signals.Image((255*np.random.rand(3, 5, 5)
-        ).astype(np.uint8))
+    signal = hs.signals.Image((255 * np.random.rand(3, 5, 5)
+                               ).astype(np.uint8))
     try:
         signal.save(save_path, overwrite=True)
         sig_reload = hs.load(save_path)
@@ -229,8 +237,8 @@ def test_write_data_line():
 
 
 def test_write_data_single():
-    signal = hs.signals.Image((255*np.random.rand(5, 5)
-        ).astype(np.uint8))
+    signal = hs.signals.Image((255 * np.random.rand(5, 5)
+                               ).astype(np.uint8))
     try:
         signal.save(save_path, overwrite=True)
         sig_reload = hs.load(save_path)
@@ -240,8 +248,8 @@ def test_write_data_single():
 
 
 def test_write_data_am_mismatch():
-    signal = hs.signals.Image((255*np.random.rand(10, 3, 5, 5)
-        ).astype(np.uint8))
+    signal = hs.signals.Image((255 * np.random.rand(10, 3, 5, 5)
+                               ).astype(np.uint8))
     signal.axes_manager.navigation_axes[1].size = 4
     try:
         with nt.assert_raises(ValueError):
@@ -251,8 +259,8 @@ def test_write_data_am_mismatch():
 
 
 def test_write_cutoff():
-    signal = hs.signals.Image((255*np.random.rand(10, 3, 5, 5)
-        ).astype(np.uint8))
+    signal = hs.signals.Image((255 * np.random.rand(10, 3, 5, 5)
+                               ).astype(np.uint8))
     signal.axes_manager.navigation_axes[0].size = 20
     try:
         signal.save(save_path, overwrite=True)
@@ -263,20 +271,20 @@ def test_write_cutoff():
             assert issubclass(w[-1].category, UserWarning)
             assert "Blockfile header" in str(w[-1].message)
         cut_data = signal.data.flatten()
-        pw = [(0, 17*10*5*5)]
+        pw = [(0, 17 * 10 * 5 * 5)]
         cut_data = np.pad(cut_data, pw, mode='constant')
         cut_data = cut_data.reshape((10, 20, 5, 5))
         np.testing.assert_equal(cut_data, sig_reload.data)
     finally:
         _remove_file(save_path)
-    
+
 
 def test_crop_notes():
     note_len = 0x1000 - 0xF0
     note = 'test123' * 1000     # > note_len
-    signal = hs.signals.Image((255*np.random.rand(2, 3, 2, 2)
-        ).astype(np.uint8))
-    signal.original_metadata.add_node('blockfile_header.Note') 
+    signal = hs.signals.Image((255 * np.random.rand(2, 3, 2, 2)
+                               ).astype(np.uint8))
+    signal.original_metadata.add_node('blockfile_header.Note')
     signal.original_metadata.blockfile_header.Note = note
     try:
         signal.save(save_path, overwrite=True)

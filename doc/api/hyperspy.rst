@@ -79,6 +79,14 @@ hyperspy.defaults_parser module
     :undoc-members:
     :show-inheritance:
 
+hyperspy.events module
+----------------------
+
+.. automodule:: hyperspy.events
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 hyperspy.exceptions module
 --------------------------
 

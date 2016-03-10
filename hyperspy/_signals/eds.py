@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2015 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -15,12 +15,12 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
-from __future__ import division
 import itertools
 
 import numpy as np
 import warnings
 from matplotlib import pyplot as plt
+from functools import partial
 
 from hyperspy import utils
 from hyperspy._signals.spectrum import Spectrum
@@ -40,7 +40,6 @@ class EDSSpectrum(Spectrum):
                   'set_signal_type(\'EDS_TEM\')  '
                   'or set_signal_type(\'EDS_SEM\')')
         self.metadata.Signal.binned = True
-        self._xray_markers = {}
 
     def _get_line_energy(self, Xray_line, FWHM_MnKa=None):
         """
@@ -153,7 +152,7 @@ class EDSSpectrum(Spectrum):
                 xray_lines_not_in_range.append(xray_line)
         return xray_lines_in_range, xray_lines_not_in_range
 
-    def sum(self, axis):
+    def sum(self, axis=None, out=None):
         """Sum the data over the given axis.
 
         Parameters
@@ -177,16 +176,22 @@ class EDSSpectrum(Spectrum):
         array(1000279)
 
         """
+        if axis is None:
+            axis = self.axes_manager.navigation_axes
         # modify time spend per spectrum
-        s = super(EDSSpectrum, self).sum(axis)
+        s = super(EDSSpectrum, self).sum(axis=axis, out=out)
+        s = out or s
         if "Acquisition_instrument.SEM" in s.metadata:
             mp = s.metadata.Acquisition_instrument.SEM
+            mp_old = self.metadata.Acquisition_instrument.SEM
         else:
             mp = s.metadata.Acquisition_instrument.TEM
+            mp_old = self.metadata.Acquisition_instrument.TEM
         if mp.has_item('Detector.EDS.live_time'):
-            mp.Detector.EDS.live_time = mp.Detector.EDS.live_time * \
-                self.axes_manager[axis].size
-        return s
+            mp.Detector.EDS.live_time = mp_old.Detector.EDS.live_time * \
+                self.data.size / s.data.size
+        if out is None:
+            return s
 
     def rebin(self, new_shape):
         """Rebins the data to the new shape
@@ -199,8 +204,8 @@ class EDSSpectrum(Spectrum):
         Examples
         --------
         >>> s = hs.datasets.example_signals.EDS_SEM_Spectrum()
-        >>> print s
-        >>> print s.rebin([512])
+        >>> print(s)
+        >>> print(s.rebin([512]))
         <EDSSEMSpectrum, title: EDS SEM Spectrum, dimensions: (|1024)>
         <EDSSEMSpectrum, title: EDS SEM Spectrum, dimensions: (|512)>
 
@@ -238,9 +243,9 @@ class EDSSpectrum(Spectrum):
         Examples
         --------
         >>> s = hs.datasets.example_signals.EDS_SEM_Spectrum()
-        >>> print s.metadata.Sample.elements
+        >>> print(s.metadata.Sample.elements)
         >>> s.set_elements(['Al'])
-        >>> print s.metadata.Sample.elements
+        >>> print(s.metadata.Sample.elements)
         ['Al' 'C' 'Cu' 'Mn' 'Zr']
         ['Al']
 
@@ -263,9 +268,9 @@ class EDSSpectrum(Spectrum):
         Examples
         --------
         >>> s = hs.datasets.example_signals.EDS_SEM_Spectrum()
-        >>> print s.metadata.Sample.elements
+        >>> print(s.metadata.Sample.elements)
         >>> s.add_elements(['Ar'])
-        >>> print s.metadata.Sample.elements
+        >>> print(s.metadata.Sample.elements)
         ['Al' 'C' 'Cu' 'Mn' 'Zr']
         ['Al', 'Ar', 'C', 'Cu', 'Mn', 'Zr']
 
@@ -274,7 +279,7 @@ class EDSSpectrum(Spectrum):
         set_elements, add_lines, set_lines
 
         """
-        if not isiterable(elements) or isinstance(elements, basestring):
+        if not isiterable(elements) or isinstance(elements, str):
             raise ValueError(
                 "Input must be in the form of a list. For example, "
                 "if `s` is the variable containing this EDS spectrum:\n "
@@ -339,9 +344,9 @@ class EDSSpectrum(Spectrum):
         --------
         >>> s = hs.datasets.example_signals.EDS_SEM_Spectrum()
         >>> s.add_lines()
-        >>> print s.metadata.Sample.xray_lines
+        >>> print(s.metadata.Sample.xray_lines)
         >>> s.set_lines(['Cu_Ka'])
-        >>> print s.metadata.Sample.xray_lines
+        >>> print(s.metadata.Sample.xray_lines)
         ['Al_Ka', 'C_Ka', 'Cu_La', 'Mn_La', 'Zr_La']
         ['Al_Ka', 'C_Ka', 'Cu_Ka', 'Mn_La', 'Zr_La']
 
@@ -392,20 +397,20 @@ class EDSSpectrum(Spectrum):
         --------
         >>> s = hs.datasets.example_signals.EDS_SEM_Spectrum()
         >>> s.add_lines()
-        >>> print s.metadata.Sample.xray_lines
+        >>> print(s.metadata.Sample.xray_lines)
         ['Al_Ka', 'C_Ka', 'Cu_La', 'Mn_La', 'Zr_La']
 
         >>> s = hs.datasets.example_signals.EDS_SEM_Spectrum()
         >>> s.set_microscope_parameters(beam_energy=30)
         >>> s.add_lines()
-        >>> print s.metadata.Sample.xray_lines
+        >>> print(s.metadata.Sample.xray_lines)
         ['Al_Ka', 'C_Ka', 'Cu_Ka', 'Mn_Ka', 'Zr_La']
 
         >>> s = hs.datasets.example_signals.EDS_SEM_Spectrum()
         >>> s.add_lines()
-        >>> print s.metadata.Sample.xray_lines
+        >>> print(s.metadata.Sample.xray_lines)
         >>> s.add_lines(['Cu_Ka'])
-        >>> print s.metadata.Sample.xray_lines
+        >>> print(s.metadata.Sample.xray_lines)
         ['Al_Ka', 'C_Ka', 'Cu_La', 'Mn_La', 'Zr_La']
         ['Al_Ka', 'C_Ka', 'Cu_Ka', 'Cu_La', 'Mn_La', 'Zr_La']
 
@@ -495,11 +500,13 @@ class EDSSpectrum(Spectrum):
         only_lines = utils_eds._parse_only_lines(only_lines)
         beam_energy = self._get_beam_energy()
         lines = []
+        elements = [el if isinstance(el, str) else el.decode()
+                    for el in elements]
         for element in elements:
             # Possible line (existing and excited by electron)
             element_lines = []
-            for subshell in elements_db[element]['Atomic_properties'
-                                                 ]['Xray_lines'].keys():
+            for subshell in list(elements_db[element]['Atomic_properties'
+                                                      ]['Xray_lines'].keys()):
                 if only_lines and subshell not in only_lines:
                     continue
                 element_lines.append(element + "_" + subshell)
@@ -516,7 +523,7 @@ class EDSSpectrum(Spectrum):
                 element_lines = [element_lines[select_this], ]
 
             if not element_lines:
-                print(("There is not X-ray line for element %s " % element) +
+                print("There is not X-ray line for element %s " % element +
                       "in the data spectral range")
             else:
                 lines.extend(element_lines)
@@ -814,10 +821,14 @@ class EDSSpectrum(Spectrum):
         for xray_line in xray_lines:
             line_energy, line_FWHM = self._get_line_energy(xray_line,
                                                            FWHM_MnKa='auto')
-            tmp = [line_energy - line_FWHM * line_width[0] - line_FWHM * windows_width,
-                   line_energy - line_FWHM * line_width[0],
-                   line_energy + line_FWHM * line_width[1],
-                   line_energy + line_FWHM * line_width[1] + line_FWHM * windows_width]
+            tmp = [
+                line_energy - line_FWHM * line_width[0] -
+                line_FWHM * windows_width,
+                line_energy - line_FWHM * line_width[0],
+                line_energy + line_FWHM * line_width[1],
+                line_energy + line_FWHM * line_width[1] +
+                line_FWHM * windows_width
+            ]
             windows_position.append(tmp)
         windows_position = np.array(windows_position)
         # merge ovelapping windows
@@ -907,6 +918,12 @@ class EDSSpectrum(Spectrum):
         get_lines_intensity, estimate_background_windows
         """
         super(EDSSpectrum, self).plot(**kwargs)
+        self._plot_xray_lines(xray_lines, only_lines, only_one,
+                              background_windows, integration_windows)
+
+    def _plot_xray_lines(self, xray_lines=False, only_lines=("a", "b"),
+                         only_one=False, background_windows=None,
+                         integration_windows=None):
         if xray_lines is not False or\
                 background_windows is not None or\
                 integration_windows is not None:
@@ -990,22 +1007,6 @@ class EDSSpectrum(Spectrum):
                 x=line_energy[i], y=intensity[i] * 1.1, text=xray_lines[i],
                 rotation=90)
             self.add_marker(text)
-            self._xray_markers[xray_lines[i]] = (line, text)
-
-    def _remove_xray_lines_markers(self, xray_lines):
-        """
-        Remove marker previosuly added on a spec.plot() with the name of the
-        selected X-ray lines
-
-        Parameters
-        ----------
-        xray_lines: list of string
-            A valid list of X-ray lines to remove
-        """
-        for xray_line in xray_lines:
-            if xray_line in self._xray_markers:
-                for m in self._xray_markers[xray_line]:
-                    m.close()
 
     def _add_background_windows_markers(self,
                                         windows_position):

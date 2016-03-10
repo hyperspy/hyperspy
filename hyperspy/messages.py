@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2015 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -24,15 +24,15 @@ def warning_exit(text):
 
 
 def warning(text):
-    print
-    print "Warning! " + text
+    print()
+    print("Warning! " + text)
 
 
 def information(text):
-    print
-    print text
+    print()
+    print(text)
 
 
 def alert(text):
-    print
-    print "** %s **" % text
+    print()
+    print("** %s **" % text)

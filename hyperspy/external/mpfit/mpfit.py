@@ -285,9 +285,9 @@ Perform Levenberg-Marquardt least-squares minimization, based on MINPACK-1.
 		 p[4]*log(x))
    fa = {'x':x, 'y':y, 'err':err}
    m = mpfit('myfunct', p0, functkw=fa)
-   print 'status = ', m.status
-   if (m.status <= 0): print 'error message = ', m.errmsg
-   print 'parameters = ', m.params
+   print('status = ', m.status)
+   if (m.status <= 0): print('error message = ', m.errmsg)
+   print('parameters = ', m.params)
 
    Minimizes sum of squares of MYFUNCT.  MYFUNCT is called with the X,
    Y, and ERR keyword parameters that are given by FUNCTKW.  The
@@ -877,11 +877,11 @@ Outputs:
 
         # Be sure that PARINFO is of the right type
         if parinfo is not None:
-            if not isinstance(parinfo, types.ListType):
+            if not isinstance(parinfo, list):
                 self.errmsg = 'ERROR: PARINFO must be a list of dictionaries.'
                 return
             else:
-                if not isinstance(parinfo[0], types.DictionaryType):
+                if not isinstance(parinfo[0], dict):
                     self.errmsg = 'ERROR: PARINFO must be a list of dictionaries.'
                     return
             if (xall is not None) and (len(xall) != len(parinfo)):
@@ -1439,7 +1439,7 @@ Outputs:
                 format=None, pformat='%.10g', dof=1):
 
         if self.debug:
-            print 'Entering defiter...'
+            print('Entering defiter...')
         if quiet:
             return
         if fnorm is None:
@@ -1448,7 +1448,7 @@ Outputs:
 
         # Determine which parameters to print
         nprint = len(x)
-        print "Iter ", ('%6i' % iter), "   CHI-SQUARE = ", ('%.10g' % fnorm), " DOF = ", ('%i' % dof)
+        print("Iter ", ('%6i' % iter), "   CHI-SQUARE = ", ('%.10g' % fnorm), " DOF = ", ('%i' % dof))
         for i in range(nprint):
             if (parinfo is not None) and ('parname' in parinfo[i]):
                 p = '   ' + parinfo[i]['parname'] + ' = '
@@ -1459,7 +1459,7 @@ Outputs:
             else:
                 iprint = 1
             if iprint:
-                print p + (pformat % x[i]) + '  '
+                print(p + (pformat % x[i]) + '  ')
         return 0
 
     #  DO_ITERSTOP:
@@ -1482,7 +1482,7 @@ Outputs:
     # dictionaries
     def parinfo(self, parinfo=None, key='a', default=None, n=0):
         if self.debug:
-            print 'Entering parinfo...'
+            print('Entering parinfo...')
         if (n == 0) and (parinfo is not None):
             n = len(parinfo)
         if n == 0:
@@ -1498,11 +1498,11 @@ Outputs:
 
         # Convert to numeric arrays if possible
         test = default
-        if isinstance(default, types.ListType):
+        if isinstance(default, list):
             test = default[0]
-        if isinstance(test, types.IntType):
+        if isinstance(test, int):
             values = numpy.asarray(values, int)
-        elif isinstance(test, types.FloatType):
+        elif isinstance(test, float):
             values = numpy.asarray(values, float)
         return values
 
@@ -1510,7 +1510,7 @@ Outputs:
     # derivatives or not.
     def call(self, fcn, x, functkw, fjac=None):
         if self.debug:
-            print 'Entering call...'
+            print('Entering call...')
         if self.qanytied:
             x = self.tie(x, self.ptied)
         self.nfev += 1
@@ -1546,7 +1546,7 @@ Outputs:
             dstep=None):
 
         if self.debug:
-            print 'Entering fdjac2...'
+            print('Entering fdjac2...')
         machep = self.machar.machep
         if epsfcn is None:
             epsfcn = machep
@@ -1570,9 +1570,9 @@ Outputs:
             [status, fjac] = self.call(fcn, xall, functkw, fjac=fjac)
 
             if fjac.shape != (m, nall):
-                print 'ERROR: Derivative matrix was not computed properly.'
-                print fjac.shape
-                print m, nall
+                print('ERROR: Derivative matrix was not computed properly.')
+                print(fjac.shape)
+                print(m, nall)
                 return None
 
             # This definition is consistent with CURVEFIT
@@ -1778,7 +1778,7 @@ Outputs:
     def qrfac(self, a, pivot=0):
 
         if self.debug:
-            print 'Entering qrfac...'
+            print('Entering qrfac...')
         machep = self.machar.machep
         sz = a.shape
         m = sz[0]
@@ -1934,7 +1934,7 @@ Outputs:
     #
     def qrsolv(self, r, ipvt, diag, qtb, sdiag):
         if self.debug:
-            print 'Entering qrsolv...'
+            print('Entering qrsolv...')
         sz = r.shape
         m = sz[0]
         n = sz[1]
@@ -2103,7 +2103,7 @@ Outputs:
     def lmpar(self, r, ipvt, diag, qtb, delta, x, sdiag, par=None):
 
         if self.debug:
-            print 'Entering lmpar...'
+            print('Entering lmpar...')
         dwarf = self.machar.minnum
         machep = self.machar.machep
         sz = r.shape
@@ -2218,14 +2218,14 @@ Outputs:
     # Procedure to tie one parameter to another.
     def tie(self, p, ptied=None):
         if self.debug:
-            print 'Entering tie...'
+            print('Entering tie...')
         if ptied is None:
             return
         for i in range(len(ptied)):
             if ptied[i] == '':
                 continue
             cmd = 'p[' + str(i) + '] = ' + ptied[i]
-            exec cmd
+            exec(cmd)
         return p
 
     #	 Original FORTRAN documentation
@@ -2297,14 +2297,14 @@ Outputs:
     def calc_covar(self, rr, ipvt=None, tol=1.e-14):
 
         if self.debug:
-            print 'Entering calc_covar...'
+            print('Entering calc_covar...')
         if numpy.ndim(rr) != 2:
-            print 'ERROR: r must be a two-dimensional matrix'
+            print('ERROR: r must be a two-dimensional matrix')
             return -1
         s = rr.shape
         n = s[0]
         if s[0] != s[1]:
-            print 'ERROR: r must be a square matrix'
+            print('ERROR: r must be a square matrix')
             return -1
 
         if ipvt is None:
