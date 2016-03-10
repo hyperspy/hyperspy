@@ -4592,7 +4592,7 @@ class Signal(FancySlicing,
         # we suppose that it can operate on the full array and we don't
         # interate over the coordinates.
         try:
-            fargs = inspect.getargspec(function).args
+            fargs = inspect.signature(function).parameters.keys()
         except TypeError:
             # This is probably a Cython function that is not supported by
             # inspect.

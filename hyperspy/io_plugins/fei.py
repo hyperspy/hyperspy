@@ -134,11 +134,10 @@ def get_header_dtype_list(file):
     header2 = np.fromfile(file,
                           dtype=np.dtype(header_list2),
                           count=1)
-
     header_list = header_list1 + header_list2
     # Go to the beginning of the dimension array section
     file.seek(beginning_dimension_array_section)
-    for n in range(1, header2["NumberDimensions"] + 1):
+    for n in range(1, header2["NumberDimensions"][0] + 1):
         description_length, unit_length = get_lengths(file)
         header_list += dimension_array_dtype(
             n, description_length, unit_length)
