@@ -17,16 +17,16 @@ before_install:
   # Does not matter which miniconda we get, we still create a virtualenv
   - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
   - chmod +x miniconda.sh
-  - ./miniconda.sh -b
-  - export PATH=/home/travis/miniconda/bin:$PATH
+  - bash miniconda.sh -b -p $HOME/miniconda
+  - export PATH="$HOME/miniconda/bin:$PATH"
+  - hash -r
   # miniconda is not always up-to-date with conda.
   - conda update --yes conda
 
 install:
-  - DEPS="nose numpy scipy matplotlib traits traitsui ipython h5py sympy scikit-learn dill natsort mock setuptools"
-  - conda create -n testenv --yes python=$TRAVIS_PYTHON_VERSION
+  - DEPS="nose numpy scipy matplotlib ipython h5py sympy scikit-learn dill natsort mock setuptools"
+  - conda create -n testenv --yes python=$TRAVIS_PYTHON_VERSION $DEPS
   - source activate testenv
-  - conda install --yes $DEPS
   - conda install pip
   - pip install coverage coveralls traits traitsui request
   - python setup.py install
