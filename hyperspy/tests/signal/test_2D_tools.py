@@ -16,9 +16,11 @@
 # along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 
+import mock
+
 import numpy as np
 import nose.tools as nt
-from scipy.misc import ascent, face
+from scipy.misc import face, ascent
 from scipy.ndimage import fourier_shift
 
 import hyperspy.api as hs
@@ -85,8 +87,8 @@ class TestAlignTools:
         smax = self.ishifts.max(0)
         offsets = self.ascent_offset + self.offsets / self.scales - smin
         size = np.array((100, 100)) - (smax - smin)
-        self.aligned = im[offsets[0]:offsets[0] + size[0],
-                          offsets[1]:offsets[1] + size[1]]
+        self.aligned = im[int(offsets[0]):int(offsets[0] + size[0]),
+                          int(offsets[1]):int(offsets[1] + size[1])]
 
     def test_estimate_shift(self):
         s = self.spectrum
@@ -97,10 +99,13 @@ class TestAlignTools:
 
     def test_align(self):
         # Align signal
+        m = mock.Mock()
         s = self.spectrum
+        s.events.data_changed.connect(m.data_changed)
         s.align2D()
         # Compare by broadcasting
         nt.assert_true(np.all(s.data == self.aligned))
+        nt.assert_true(m.data_changed.called)
 
     def test_align_expand(self):
         s = self.spectrum

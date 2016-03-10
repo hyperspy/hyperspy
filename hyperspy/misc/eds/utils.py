@@ -1,5 +1,4 @@
 
-
 import numpy as np
 import math
 
@@ -77,7 +76,7 @@ def get_xray_lines_near_energy(energy, width=0.2, only_lines=None):
     """
     only_lines = _parse_only_lines(only_lines)
     valid_lines = []
-    E_min, E_max = energy - width/2., energy + width/2.
+    E_min, E_max = energy - width / 2., energy + width / 2.
     for element, el_props in elements_db.items():
         # Not all elements in the DB have the keys, so catch KeyErrors
         try:
@@ -327,7 +326,7 @@ def xray_lines_model(elements,
                 line_energy = properties['energy (keV)']
                 ratio_line = properties['weight']
                 if s._get_xray_lines_in_spectral_range(
-                        [element+'_'+line])[1] == []:
+                        [element + '_' + line])[1] == []:
                     g = components.Gaussian()
                     g.centre.value = line_energy
                     g.sigma.value = get_FWHM_at_Energy(

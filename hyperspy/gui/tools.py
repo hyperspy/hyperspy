@@ -27,7 +27,7 @@ from hyperspy import drawing
 from hyperspy.exceptions import SignalDimensionError
 from hyperspy.gui import messages
 from hyperspy.axes import AxesManager
-from hyperspy.drawing.widgets import DraggableVerticalLine
+from hyperspy.drawing.widgets import VerticalLineWidget
 
 
 OurOKButton = tu.Action(name="OK",
@@ -167,9 +167,7 @@ class SpanSelectorInSpectrum(t.HasTraits):
                 drawing.widgets.ModifiableSpanSelector(
                     self.signal._plot.signal_plot.ax,
                     onselect=self.update_span_selector_traits,
-                    onmove_callback=self.update_span_selector_traits,
-                    left_limit=self.axis.low_value,
-                    right_limit=self.axis.high_value)
+                    onmove_callback=self.update_span_selector_traits,)
 
         elif self.span_selector is not None:
             self.on_disabling_span_selector()
@@ -225,7 +223,8 @@ class LineInSpectrum(t.HasTraits):
         # range by default
         am._axes[0].index = int(round(am._axes[0].size / 2))
         self.axes_manager = am
-        self.axes_manager.connect(self.update_position)
+        self.axes_manager.events.indices_changed.connect(
+            self.update_position, [])
         self.on_trait_change(self.switch_on_off, 'on')
 
     def draw(self):
@@ -236,7 +235,7 @@ class LineInSpectrum(t.HasTraits):
             return
 
         if new is True and old is False:
-            self._line = DraggableVerticalLine(self.axes_manager)
+            self._line = VerticalLineWidget(self.axes_manager)
             self._line.set_mpl_ax(self.signal._plot.signal_plot.ax)
             self._line.patch.set_linewidth(2)
             self._color_changed("black", "black")

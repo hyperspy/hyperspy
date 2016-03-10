@@ -57,6 +57,12 @@ class Test1D:
     def test_step0_slice(self):
         self.signal.isig[::0]
 
+    def test_index(self):
+        s = self.signal.isig[3]
+        assert_equal(s.data, 3)
+        assert_equal(len(s.axes_manager._axes), 1)
+        assert_equal(s.data.shape, (1,))
+
     def test_float_index(self):
         s = self.signal.isig[3.4]
         assert_equal(s.data, 3)
@@ -102,6 +108,26 @@ class Test1D:
     def test_minus_one_index(self):
         s = self.signal.isig[-1]
         assert_equal(s.data, self.data[-1])
+
+
+class Test2D:
+
+    def setUp(self):
+        self.signal = Signal(np.arange(24).reshape(6, 4))
+        self.signal.axes_manager.set_signal_dimension(2)
+        self.data = self.signal.data.copy()
+
+    def test_index(self):
+        s = self.signal.isig[3, 2]
+        assert_equal(s.data[0], 11)
+        assert_equal(len(s.axes_manager._axes), 1)
+        assert_equal(s.data.shape, (1,))
+
+    def test_partial(self):
+        s = self.signal.isig[3, 2:5]
+        np.testing.assert_array_equal(s.data, [11, 15, 19])
+        assert_equal(len(s.axes_manager._axes), 1)
+        assert_equal(s.data.shape, (3,))
 
 
 class Test3D_SignalDim0:
@@ -283,9 +309,13 @@ class TestFloatArguments:
 class TestEllipsis:
 
     def setUp(self):
-        self.signal = Signal(np.arange(2 ** 4).reshape(
-            (2, 2, 2, 2)))
+        self.signal = Signal(np.arange(2 ** 5).reshape(
+            (2, 2, 2, 2, 2)))
         self.data = self.signal.data.copy()
+
+    def test_in_between(self):
+        s = self.signal.inav[0, ..., 0]
+        assert_true((s.data == self.data[0, ..., 0, :]).all())
 
     def test_ellipsis_navigation(self):
         s = self.signal.inav[..., 0]
@@ -295,4 +325,4 @@ class TestEllipsis:
         self.signal.axes_manager._axes[-2].navigate = False
         self.signal.axes_manager._axes[-3].navigate = False
         s = self.signal.isig[..., 0]
-        assert_true((s.data == self.data[:, 0, ...]).all())
+        assert_true((s.data == self.data[:, :, 0, ...]).all())

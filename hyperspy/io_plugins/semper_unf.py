@@ -237,7 +237,7 @@ class SemperFormat(object):
             range_string = '{:.6g},{:.6g}'.format(range_min, range_max)
         else:
             range_string = ''.join([str(chr(l))
-                                   for l in label['RANGE'][:label['NCRANG']]])
+                                    for l in label['RANGE'][:label['NCRANG']]])
         label['RANGE'] = range_string
         # Process real coords:
         x0 = unpack(label.pop('X0V0'))
@@ -256,7 +256,7 @@ class SemperFormat(object):
         label['DATAV7'] = data_v7
         # Process title:
         title = ''.join([str(chr(l))
-                        for l in label['TITLE'][:label['NTITLE']]])
+                         for l in label['TITLE'][:label['NTITLE']]])
         label['TITLE'] = title
         # Process units:
         label['XUNIT'] = ''.join(
@@ -302,7 +302,8 @@ class SemperFormat(object):
         label['IWP'] = self.metadata.get('IWP', 0)  # seems standard
         date = self.metadata.get('DATE', strftime('%Y-%m-%d %H:%M:%S'))
         year, time = date.split(' ')
-        date_ints = list(map(int, year.split('-'))) + list(map(int, time.split(':')))
+        date_ints = list(map(int, year.split('-'))) + \
+            list(map(int, time.split(':')))
         date_ints[0] -= 1900  # Modify year integer!
         label['DATE'] = date_ints
         range_string = '{:.4g},{:.4g}'.format(self.data.min(), self.data.max())
@@ -346,8 +347,10 @@ class SemperFormat(object):
         elif data.dtype.name == 'int32':
             iform = 4  # int32
         else:
-            supported_formats = [np.dtype(i).name for i in cls.IFORM_DICT.values()]
-            msg = 'The SEMPER file format does not support {} data type. '.format(data.dtype.name)
+            supported_formats = [
+                np.dtype(i).name for i in cls.IFORM_DICT.values()]
+            msg = 'The SEMPER file format does not support {} data type. '.format(
+                data.dtype.name)
             msg += 'Supported data types are: ' + ', '.join(supported_formats)
             raise IOError(msg)
         return data, iform
@@ -419,7 +422,8 @@ class SemperFormat(object):
             for k in range(nlay):
                 for j in range(nrow):
                     rec_length = np.fromfile(f, dtype='<i4', count=1)[0]
-                    count = rec_length//np.dtype(data_format).itemsize  # Not always ncol, see below
+                    # Not always ncol, see below
+                    count = rec_length // np.dtype(data_format).itemsize
                     row = np.fromfile(f, dtype=data_format, count=count)
                     # [:ncol] is used because Semper always writes an even number of bytes which
                     # is a problem when reading in single bytes (IFORM = 0, np.byte). If ncol is
@@ -527,7 +531,8 @@ class SemperFormat(object):
                     # an empty byte (0) is added:
                     if self.data.dtype == np.byte and ncol % 2 != 0:
                         np.zeros(1, dtype=np.byte).tobytes()
-                    f.write(struct.pack('<i', record_length))  # record length, 4 byte format!
+                    # record length, 4 byte format!
+                    f.write(struct.pack('<i', record_length))
 
     @classmethod
     def from_signal(cls, signal):
@@ -628,9 +633,17 @@ class SemperFormat(object):
         self._log.debug('Calling print_info')
         print ('\n------------------------------------------------------')
         print (self.title)
-        print ('dimensions: x: {}, y: {}, z: {}'.format(*reversed(self.data.shape)))
-        print ('scaling:    x: {:.3g}, y: {:.3g}, z: {:.3g}'.format(*self.scales))
-        print ('offsets:    x: {:.3g}, y: {:.3g}, z: {:.3g}'.format(*self.offsets))
+        print (
+            'dimensions: x: {}, y: {}, z: {}'.format(
+                *
+                reversed(
+                    self.data.shape)))
+        print (
+            'scaling:    x: {:.3g}, y: {:.3g}, z: {:.3g}'.format(
+                *self.scales))
+        print (
+            'offsets:    x: {:.3g}, y: {:.3g}, z: {:.3g}'.format(
+                *self.offsets))
         print ('units:      x: {}, y: {}, z: {}'.format(*self.units))
         print ('data range:', (self.data.min(), self.data.max()), '\n')
         print ('metadata:')
@@ -641,7 +654,8 @@ class SemperFormat(object):
 
 def unpack_from_intbytes(fmt, byte_list):
     """Read in a list of bytes (as int with range 0-255) and unpack them with format `fmt`."""
-    return struct.unpack(fmt, b''.join(map(bytes, [[byte] for byte in byte_list])))[0]
+    return struct.unpack(fmt, b''.join(
+        map(bytes, [[byte] for byte in byte_list])))[0]
 
 
 def pack_to_intbytes(fmt, value):

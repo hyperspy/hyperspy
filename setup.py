@@ -29,7 +29,9 @@ if v[0] != 3:
     sys.exit(1)
 
 from distutils.core import setup
+
 import distutils.dir_util
+
 import os
 import subprocess
 import fileinput
@@ -47,15 +49,9 @@ install_req = ['scipy',
                'traits>=4.5.0',
                'traitsui>=5.0',
                'natsort',
+               'requests',
+               'setuptools',
                'sympy']
-
-
-def are_we_building4windows():
-    for arg in sys.argv:
-        if 'wininst' in arg:
-            return True
-
-scripts = ['bin/hyperspy', ]
 
 
 class update_version_when_dev:
@@ -116,12 +112,14 @@ with update_version_when_dev() as version:
         package_dir={'hyperspy': 'hyperspy'},
         version=version,
         packages=['hyperspy',
+                  'hyperspy.datasets',
                   'hyperspy._components',
                   'hyperspy.datasets',
                   'hyperspy.io_plugins',
                   'hyperspy.docstrings',
                   'hyperspy.drawing',
                   'hyperspy.drawing._markers',
+                  'hyperspy.drawing._widgets',
                   'hyperspy.learn',
                   'hyperspy._signals',
                   'hyperspy.gui',
@@ -129,6 +127,7 @@ with update_version_when_dev() as version:
                   'hyperspy.tests',
                   'hyperspy.tests.axes',
                   'hyperspy.tests.component',
+                  'hyperspy.tests.datasets',
                   'hyperspy.tests.drawing',
                   'hyperspy.tests.io',
                   'hyperspy.tests.model',
@@ -147,34 +146,36 @@ with update_version_when_dev() as version:
                   'hyperspy.external.astroML',
                   ],
         install_requires=install_req,
-        scripts=scripts,
+        setup_requires=[
+            'setuptools'
+        ],
         package_data={
             'hyperspy':
-            ['ipython_profile/*',
-             'misc/eds/example_signals/*.hdf5',
-             'tests/io/blockfile_data/*.blockfile'
-             'tests/io/dens_data/*.dens'
-             'tests/io/dm_stackbuilder_plugin/test_stackbuilder_imagestack.dm3',
-             'tests/io/dm3_1D_data/*.dm3',
-             'tests/io/dm3_2D_data/*.dm3',
-             'tests/io/dm3_3D_data/*.dm3',
-             'tests/io/dm4_1D_data/*.dm4',
-             'tests/io/dm4_2D_data/*.dm4',
-             'tests/io/dm4_3D_data/*.dm4',
-             'tests/io/FEI_new/*.emi',
-             'tests/io/FEI_new/*.ser',
-             'tests/io/FEI_new/*.npy',
-             'tests/io/FEI_old/*.emi',
-             'tests/io/FEI_old/*.ser',
-             'tests/io/FEI_old/*.npy',
-             'tests/io/msa_files/*.msa',
-             'tests/io/hdf5_files/*.hdf5',
-             'tests/io/tiff_files/*.tif',
-             'tests/io/npy_files/*.npy',
-             'tests/io/unf_files/*.unf'
-             'tests/drawing/*.ipynb',
-             'tests/signal/test_find_peaks1D_ohaver/test_find_peaks1D_ohaver.hdf5',
-             ],
+            [
+                'misc/eds/example_signals/*.hdf5',
+                'tests/io/blockfile_data/*.blo',
+                'tests/io/dens_data/*.dens',
+                'tests/io/dm_stackbuilder_plugin/test_stackbuilder_imagestack.dm3',
+                'tests/io/dm3_1D_data/*.dm3',
+                'tests/io/dm3_2D_data/*.dm3',
+                'tests/io/dm3_3D_data/*.dm3',
+                'tests/io/dm4_1D_data/*.dm4',
+                'tests/io/dm4_2D_data/*.dm4',
+                'tests/io/dm4_3D_data/*.dm4',
+                'tests/io/FEI_new/*.emi',
+                'tests/io/FEI_new/*.ser',
+                'tests/io/FEI_new/*.npy',
+                'tests/io/FEI_old/*.emi',
+                'tests/io/FEI_old/*.ser',
+                'tests/io/FEI_old/*.npy',
+                'tests/io/msa_files/*.msa',
+                'tests/io/hdf5_files/*.hdf5',
+                'tests/io/tiff_files/*.tif',
+                'tests/io/npy_files/*.npy',
+                'tests/io/unf_files/*.unf',
+                'tests/drawing/*.ipynb',
+                'tests/signal/test_find_peaks1D_ohaver/test_find_peaks1D_ohaver.hdf5',
+            ],
         },
         author=Release.authors['all'][0],
         author_email=Release.authors['all'][1],

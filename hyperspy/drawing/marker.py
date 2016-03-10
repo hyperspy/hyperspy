@@ -18,6 +18,7 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
+from hyperspy.events import Event, Events
 
 
 class MarkerBase(object):
@@ -43,6 +44,18 @@ class MarkerBase(object):
         # Properties
         self.marker = None
         self._marker_properties = {}
+
+        # Events
+        self.events = Events()
+        self.events.closed = Event("""
+            Event triggered when a marker is closed.
+
+            Arguments
+            ---------
+            marker : Marker
+                The marker that was closed.
+            """, arguments=['obj'])
+        self._closing = False
 
     @property
     def marker_properties(self):
@@ -122,8 +135,14 @@ class MarkerBase(object):
             return data[ind].item()[()]
 
     def close(self):
+        if self._closing:
+            return
+        self._closing = True
         try:
             self.marker.remove()
+            self.events.closed.trigger(obj=self)
+            for f in self.events.closed.connected:
+                self.events.closed.disconnect(f)
             # m.ax.figure.canvas.draw()
             self.ax.hspy_fig._draw_animated()
         except:

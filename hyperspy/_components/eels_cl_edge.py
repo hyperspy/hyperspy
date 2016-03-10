@@ -142,6 +142,11 @@ class EELSCLEdge(Component):
         self._whitelist['fine_structure_active'] = None
         self._whitelist['fine_structure_width'] = None
         self._whitelist['fine_structure_smoothing'] = None
+        self.effective_angle.events.value_changed.connect(
+            self._integrate_GOS, [])
+        self.onset_energy.events.value_changed.connect(self._integrate_GOS, [])
+        self.onset_energy.events.value_changed.connect(
+            self._calculate_knots, [])
 
     # Automatically fix the fine structure when the fine structure is
     # disable.
@@ -259,12 +264,15 @@ class EELSCLEdge(Component):
             The energy step in eV.
         """
         # Relativistic correction factors
-
-        self.convergence_angle = alpha
-        self.collection_angle = beta
-        self.energy_scale = energy_scale
-        self.E0 = E0
-        self._integrate_GOS()
+        old = self.effective_angle.value
+        with self.effective_angle.events.value_changed.suppress_callback(
+                self._integrate_GOS):
+            self.convergence_angle = alpha
+            self.collection_angle = beta
+            self.energy_scale = energy_scale
+            self.E0 = E0
+        if self.effective_angle.value != old:
+            self._integrate_GOS()
 
     def _integrate_GOS(self):
         # Integration over q using splines
@@ -278,12 +286,6 @@ class EELSCLEdge(Component):
         y2 = self.GOS.qint[-1]  # in m**2/bin */
         self.r = math.log(y2 / y1) / math.log(E1 / E2)
         self.A = y1 / E1 ** -self.r
-
-        # Connect them at this point where it is certain that all the
-        # parameters are well defined
-        self.effective_angle.connect(self._integrate_GOS)
-        self.onset_energy.connect(self._integrate_GOS)
-        self.onset_energy.connect(self._calculate_knots)
 
     def _calculate_knots(self):
         start = self.onset_energy.value

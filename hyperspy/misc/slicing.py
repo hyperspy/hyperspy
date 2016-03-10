@@ -111,7 +111,7 @@ def copy_slice_from_whitelist(_from, _to, dims, both_slices, isNav):
             attrsetter(_to, key, result)
             continue
         else:
-# 'fn' in flag or no flags at all
+            # 'fn' in flag or no flags at all
             attrsetter(_to, key, target)
             continue
 
@@ -122,8 +122,8 @@ class SpecialSlicers(object):
         self.isNavigation = isNavigation
         self.obj = obj
 
-    def __getitem__(self, slices):
-        return self.obj._slicer(slices, self.isNavigation)
+    def __getitem__(self, slices, out=None):
+        return self.obj._slicer(slices, self.isNavigation, out=out)
 
 
 class FancySlicing(object):
@@ -184,38 +184,63 @@ class FancySlicing(object):
                 if isinstance(slice_, float):
                     slice_ = axis.value2index(slice_)
                 array_slices.append(slice_)
-        return array_slices
+        return tuple(array_slices)
 
-    def _slicer(self, slices, isNavigation=None):
+    def _slicer(self, slices, isNavigation=None, out=None):
         array_slices = self._get_array_slices(slices, isNavigation)
-        _obj = self._deepcopy_with_new_data(self.data[array_slices])
-        _will_remove = []
-        for slice_, axis in zip(array_slices, _obj.axes_manager._axes):
-            if (isinstance(slice_, slice) or
-                    len(self.axes_manager._axes) < 2):
-                axis._slice_me(slice_)
-            else:
-                _will_remove.append(axis.index_in_axes_manager)
-        if _will_remove:
-            _will_remove.sort(reverse=True)
-            for _i in _will_remove:
-                _obj._remove_axis(_i)
+        if out is None:
+            _obj = self._deepcopy_with_new_data(self.data[array_slices])
+            _to_remove = []
+            for slice_, axis in zip(array_slices, _obj.axes_manager._axes):
+                if (isinstance(slice_, slice) or
+                        len(self.axes_manager._axes) < 2):
+                    axis._slice_me(slice_)
+                else:
+                    _to_remove.append(axis.index_in_axes_manager)
+            for _ind in reversed(sorted(_to_remove)):
+                _obj._remove_axis(_ind)
+        else:
+            out.data = self.data[array_slices]
+            _obj = out
+            i = 0
+            for slice_, axis_src in zip(array_slices, self.axes_manager._axes):
+                axis_src = axis_src.copy()
+                if (isinstance(slice_, slice) or
+                        len(self.axes_manager._axes) < 2):
+                    axis_src._slice_me(slice_)
+                    axis_dst = out.axes_manager._axes[i]
+                    i += 1
+                    axis_dst.update_from(axis_src, attributes=(
+                        "scale", "offset", "size"))
 
         if hasattr(self, "_additional_slicing_targets"):
             for ta in self._additional_slicing_targets:
                 try:
                     t = attrgetter(ta)(self)
-                    if hasattr(t, '_slicer'):
-                        attrsetter(
-                            _obj,
-                            ta,
-                            t._slicer(
-                                slices,
-                                isNavigation))
+                    if out is None:
+                        if hasattr(t, '_slicer'):
+                            attrsetter(
+                                _obj,
+                                ta,
+                                t._slicer(
+                                    slices,
+                                    isNavigation))
+                    else:
+                        target = attrgetter(ta)(_obj)
+                        t._slicer(
+                            slices,
+                            isNavigation,
+                            out=target)
+
                 except AttributeError:
                     pass
-        _obj.get_dimensions_from_data()
-
-        return _obj
+        # _obj.get_dimensions_from_data() # replots, so we do it manually:
+        dc = _obj.data
+        for axis in _obj.axes_manager._axes:
+            axis.size = int(dc.shape[axis.index_in_array])
+        if out is None:
+            return _obj
+        else:
+            out.events.data_changed.trigger(obj=out)
 
 # vim: textwidth=80

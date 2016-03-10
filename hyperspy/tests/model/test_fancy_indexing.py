@@ -28,7 +28,7 @@ class TestModelIndexing:
     def setUp(self):
         np.random.seed(1)
         axes = np.array([[100 * np.random.random() + np.arange(0., 600, 1)
-                        for i in range(3)] for j in range(4)])
+                          for i in range(3)] for j in range(4)])
         g = Gaussian()
         g.A.value = 30000.
         g.centre.value = 300.
@@ -82,9 +82,7 @@ class TestModelIndexing:
         for ic, c in enumerate(m):
             np.testing.assert_equal(
                 c._active_array,
-                self.model[ic]._active_array[
-                    :,
-                    0::2])
+                self.model[ic]._active_array[:, 0::2])
             for p_new, p_old in zip(c.parameters, self.model[ic].parameters):
                 assert_true((p_old.map[:, 0::2] == p_new.map).all())
 

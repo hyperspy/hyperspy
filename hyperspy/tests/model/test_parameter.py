@@ -92,7 +92,7 @@ class TestParameterLen1:
 
     def test_connect_disconnect(self):
         dummy = Dummy()
-        self.par.connect(dummy.add_one)
+        self.par.events.value_changed.connect(dummy.add_one, [])
         self.par.value = 1
         assert_equal(dummy.value, 2)
 
@@ -101,7 +101,7 @@ class TestParameterLen1:
         assert_equal(dummy.value, 2)
 
         # After disconnecting dummy.value should not change
-        self.par.disconnect(dummy.add_one)
+        self.par.events.value_changed.disconnect(dummy.add_one)
         self.par.value = 2
         assert_equal(dummy.value, 2)
 
@@ -182,7 +182,7 @@ class TestParameterLen2:
 
     def test_connect_disconnect(self):
         dummy = Dummy()
-        self.par.connect(dummy.add_one)
+        self.par.events.value_changed.connect(dummy.add_one, [])
         self.par.value = (1, 1)
         assert_equal(dummy.value, 2)
 
@@ -191,7 +191,7 @@ class TestParameterLen2:
         assert_equal(dummy.value, 2)
 
         # After disconnecting dummy.value should not change
-        self.par.disconnect(dummy.add_one)
+        self.par.events.value_changed.disconnect(dummy.add_one)
         self.par.value = (2, 2)
         assert_equal(dummy.value, 2)
 
@@ -274,7 +274,7 @@ class TestParameterTwin:
 
     def test_inherit_connections(self):
         dummy = Dummy()
-        self.p2.connect(dummy.add_one)
+        self.p2.events.value_changed.connect(dummy.add_one, [])
         self.p2.twin = self.p1
         self.p1.value = 2
         assert_equal(dummy.value, 2)
@@ -292,8 +292,9 @@ class TestGeneralMethods:
     def setUp(self):
         self.par = Parameter()
         self.par._axes_manager = mock.MagicMock()
-        self.par.map = np.array([(a, b, c) for a, b, c in zip([1, 3, 5], [2, 4, 6], [0, 0, 0])],
-                                dtype=[('values', 'float'), ('std', 'float'), ('is_set', bool)])
+        self.par.map = np.array(
+            [(a, b, c) for a, b, c in zip([1, 3, 5], [2, 4, 6], [0, 0, 0])],
+            dtype=[('values', 'float'), ('std', 'float'), ('is_set', bool)])
 
     @raises(NavigationDimensionError)
     def test_as_signal_no_navigation(self):
@@ -305,9 +306,11 @@ class TestGeneralMethods:
         par = self.par
 
         # additional setup
-        par._axes_manager._get_navigation_axes_dicts.return_value = [{'name': 'one', 'navigate': True,
-                                                                      'offset': 0.0, 'scale': 1.0, 'size': 3,
-                                                                      'units': 'bar'}, ]
+        par._axes_manager._get_navigation_axes_dicts.return_value = [
+            {'name': 'one', 'navigate': True,
+             'offset': 0.0, 'scale':
+             1.0, 'size': 3,
+             'units': 'bar'}, ]
         par._number_of_elements = 2
         par.component = mock.MagicMock()
         par.component.active_is_multidimensional = True
