@@ -543,7 +543,7 @@ def ser_reader(filename, objects=None, verbose=False, *args, **kwds):
                         # for image stack, the UnitsLength is 0 (no units)
                         'units': header['Dim-%i_Units' % (i + 1)][0].decode(
                             'utf-8')
-						if header['Dim-%i_UnitsLength' % (i + 1)] > 0
+                        if header['Dim-%i_UnitsLength' % (i + 1)] > 0
                         else 'Unknown',
                         'size': header['Dim-%i_DimensionSize' % (i + 1)][0],
                     })
