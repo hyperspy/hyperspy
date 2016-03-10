@@ -263,7 +263,7 @@ class EDSTEMSpectrum(EDSSpectrum):
 
     def quantification(self,
                        intensities='auto',
-                       method='CL',
+                       method='auto',
                        factors='auto',
                        composition_units='atomic',
                        navigation_mask=1.0,
@@ -350,6 +350,9 @@ class EDSTEMSpectrum(EDSSpectrum):
             number_of_atoms = utils.stack(intensities)
             number_of_atoms.data = results[1]
             number_of_atoms = number_of_atoms.split()
+        else:
+            raise Exception ('Please specify method for quantification, as 'CL'\
+            , 'zeta' or 'cross_section')
         composition = composition.split()
         if composition_units == 'atomic':
             if method == 'cross_section':
