@@ -140,7 +140,7 @@ class Test_metadata:
 class Test_quantification:
 
     def setUp(self):
-        s = EDSTEMSpectrum(np.ones([2, 1024]))
+        s = EDSTEMSpectrum(np.ones([2, 2, 1024]))
         energy_axis = s.axes_manager.signal_axes[0]
         energy_axis.scale = 1e-2
         energy_axis.units = 'keV'
@@ -149,6 +149,8 @@ class Test_quantification:
                                     live_time=3.1, tilt_stage=0.0,
                                     azimuth_angle=None, elevation_angle=35,
                                     energy_resolution_MnKa=130)
+        s.metadata.Acquisition_instrument.TEM.Detector.EDS.real_time = 2.5
+        s.metadata.Acquisition_instrument.TEM.beam_current = 0.05
         elements = ['Al', 'Zn']
         xray_lines = ['Al_Ka', 'Zn_Ka']
         intensities = [300, 500]
@@ -162,15 +164,48 @@ class Test_quantification:
 
         s.set_elements(elements)
         s.add_lines(xray_lines)
+        s.axes_manager[0].scale = 0.5
+        s.axes_manager[1].scale = 0.5
         self.signal = s
 
     def test_quant_lorimer(self):
         s = self.signal
+        method = 'CL'
         kfactors = [1, 2.0009344042484134]
+        composition_units = 'weight'
         intensities = s.get_lines_intensity()
-        res = s.quantification(intensities, kfactors)
+        res = s.quantification(intensities, method, kfactors, composition_units)
         assert_true(np.allclose(res[0].data, np.array(
-                    [22.70779, 22.70779]), atol=1e-3))
+                    [22.70779, 22.70779],[22.70779, 22.70779]), atol=1e-3))
+
+    def test_quant_zeta(self):
+        s = self.signal
+        method = 'zeta'
+        compositions_units = 'weight'
+        factors = [20, 50]
+        intensities = s.get_lines_intensity()
+        res = s.quantification(intensities, method, factors, compositions_units)
+        assert_true(np.allclose(res[1].data, array(
+                [[  16.216216216,   16.216216216],
+                [  16.216216216,   16.216216216]]), atol=1e-3))
+        assert_true(np.allclose(res[0][1].data, array(
+                [[  2.37122140e-06,   2.37122140e-06],
+                [  2.37122140e-06,   2.37122140e-06]]), atol=1e-3))
+
+    def test_quant_cross_section(self):
+        s =self.signal
+        method = 'cross_section'
+        factors = [3, 5]
+        intensities = s.get_lines_intensity()
+        res = s.quantification(intensities, method, factors)
+        assert_true(np.allclose(res[1][1].data, np.array(
+            [[ 16.02176621,  16.02176621],
+            [ 16.02176621,  16.02176621]])), atol=1e-3)
+        assert_true(np.allclose(res[1][1].data, np.array(
+           [[ 19.8669901,  19.8669901],
+           [ 19.8669901,  19.8669901]])), atol=1e-3)
+        assert_true(np.allclose(results1[0].data, np.array(
+                    [23.2198, 23.2198]), atol=1e-3))
 
     def test_quant_zeros(self):
         intens = np.array([[0.5, 0.5, 0.5],
@@ -227,3 +262,6 @@ class Test_get_lines_intentisity:
         s = EDS_TEM_Spectrum()
         np.allclose(np.array([res.data for res in s.get_lines_intensity()]),
                     np.array([3710, 15872]))
+
+if __name__ == '__main__':
+   nose.run(argv=[sys.argv[0], sys.modules[__name__].__file__, '-v'])

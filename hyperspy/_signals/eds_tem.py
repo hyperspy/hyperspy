@@ -351,8 +351,7 @@ class EDSTEMSpectrum(EDSSpectrum):
             number_of_atoms.data = results[1]
             number_of_atoms = number_of_atoms.split()
         else:
-            raise Exception ('Please specify method for quantification, as 'CL'\
-            , 'zeta' or 'cross_section')
+            raise Exception ('Please specify method for quantification, as CL, zeta or cross_section')
         composition = composition.split()
         if composition_units == 'atomic':
             if method == 'cross_section':
@@ -573,23 +572,24 @@ again.')
                 beam_current = parameters.beam_current
         if real_time == 'auto':
             real_time = parameters.Detector.EDS.real_time
-            if real_time == 0.5:
-                warnings.warn('Please note that your real time is set to\
+            if 'real_time' in self.metadata.Acquisition_instrument.TEM.Detector.EDS == False:
+                raise Exception ('Please note that your real time is set to\
 the default value of 0.5s. The function will still run. However, if this is \
 incorrect you should consider changing it using \
 self.metadata.Acquisition_instrument.TEM.Detector.EDS.real_time .')
-        if area == 'auto':
-            pixel1 = self.axes_manager[0].scale
-            pixel2 = self.axes_manager[1].scale
-        if self.axes_manager[0].scale == 1 or self.axes_manager[1].scale == 1:
-                warnings.warn('Please note your pixel width is set to the \
+        if method == 'cross_section':
+            if area == 'auto':
+                pixel1 = self.axes_manager[0].scale
+                pixel2 = self.axes_manager[1].scale
+            if self.axes_manager[0].scale == 1 or self.axes_manager[1].scale == 1:
+                    warnings.warn('Please note your pixel width is set to the \
 default value of 1nm. The function will still run. However, if this is \
 incorrect you should consider changing this using the axes_manager.gui() or \
 axes_manger[0].scale functions.')
-        area = pixel1 * pixel2
-        if method == 'cross_section':
+            area = pixel1 * pixel2
             return (real_time * beam_current * 1e-9) /(constants.e * area)
-        elif method == 'zfactor':
+        elif method == 'zeta':
+            print real_time * beam_current * 1e-9 / constants.e
             return real_time * beam_current * 1e-9 / constants.e
         else:
             raise Error('no method provided')
