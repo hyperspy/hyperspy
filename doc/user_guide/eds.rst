@@ -512,11 +512,19 @@ The background can be subtracted from the X-ray intensities with the :py:meth:`~
 Quantification
 --------------
 
-.. versionadded:: 0.8
+Hyperspy now includes three methods for EDS quantification; Cliff-Lorimer, zeta-factors and ionization cross sections.
 
-One TEM quantification method (Cliff-Lorimer) is implemented so far.
+Quantification can be applied to the background subtracted intensities with the :py:meth:`~._signals.eds_tem.EDSTEMSpectrum.quantification` method. These instensities are a stack of images for each element which can be extracted using :py:meth:`~._signals.eds.EDSSpectrum.get_lines_intensity`. The quantification method, needs be specified as either 'CL', 'zeta', or 'cross_section'. If no method is specified the function will raise an exception.
+A list of factors or cross sections should be supplied in the same order of the listed intesities (please not Hyperspy made using :py:meth:`~._signals.eds.EDSSpectrum.get_lines_intensity` will be in alphabetcial order. The required k-factors can be usually found in the EDS manufacturer software. Where as, zeta-factors and cross sections will need to be determined experimentally using standards. The zeta-factor method is described further in the following papers:
 
-Quantification can be applied from the intensities (background subtracted) with the :py:meth:`~._signals.eds_tem.EDSTEMSpectrum.quantification` method. The required k-factors can be usually found in the EDS manufacturer software.
+Watanabe et al. Ultramicroscopy 65 (1996) 187-198
+Watanabe & Williams J. Microsc. 221 (2006) 89-109
+
+Further details on the cross section method can be found in:
+
+MacArthur et al. Microsc. and Microanal. 22 (2016) 71-81
+
+Using the Cliff-Lorimer method as an example, quantification can be carried out as follows:
 
 .. code-block:: python
 
@@ -525,31 +533,49 @@ Quantification can be applied from the intensities (background subtracted) with 
     >>> kfactors = [1.450226, 5.075602] #For Fe Ka and Pt La
     >>> bw = s.estimate_background_windows(line_width=[5.0, 2.0])
     >>> intensities = s.get_lines_intensity(background_windows=bw)
-    >>> weight_percent = s.quantification(intensities, kfactors, plot_result=True)
+    >>> atomic_percent = s.quantification(intensities, method='CL', kfactors)
     Fe (Fe_Ka): Composition = 4.96 weight percent
     Pt (Pt_La): Composition = 95.04 weight percent
 
-The obtained composition is in weight percent. It can be changed transformed into atomic percent either with the option :py:meth:`~._signals.eds_tem.EDSTEMSpectrum.quantification`:
+The obtained composition is in atomic percent, by default. However, it can be transformed into weight percent either with the option :py:meth:`~._signals.eds_tem.EDSTEMSpectrum.quantification`:
 
 .. code-block:: python
 
     >>> # With s, intensities and kfactors from before
-    >>> s.quantification(intensities, kfactors, plot_result=True,
-    >>>                  composition_units='atomic')
+    >>> s.quantification(intensities, method='CL',kfactors,
+    >>>                  composition_units='weight')
     Fe (Fe_Ka): Composition = 15.41 atomic percent
     Pt (Pt_La): Composition = 84.59 atomic percent
 
-either with :py:func:`~.misc.material.weight_to_atomic`. The reverse method is :py:func:`~.misc.material.atomic_to_weight`.
+or with :py:func:`~.misc.material.atomic_to_weight`. The reverse method is :py:func:`~.misc.material.weight_to_atomic`.
 
 .. code-block:: python
 
-    >>> # With weight_percent from before
-    >>> atomic_percent = hs.material.weight_to_atomic(weight_percent)
+    >>> # With atomic_percent from before
+    >>> weight_percent = hs.material.atomic_to_weight(atomic_percent)
+
+The zeta-factor method needs both the beam_current (in nA) and the dwell time (referred to as real_time in seconds) in order to provide an accurate quantification. Both of the these parameters can be set to in the metadata of the spectrum image using:
+
+..code-block:: python
+
+    >>> s.metadata.Acquisition_instrument.TEM.beam_current = 0.5
+    >>> s.metadata.Acquisition_instrument.TEM.Detector.EDS.real_time = 1.5
+
+If these are not set the code will produce an error stating which parameter has been forgotten.
+
+The cross section method needs the beam_current, real_time and pixel width in order to provide an accurate quantification, which can be set using:
+
+..code-block: python
+
+    >>>> s.axes_manager[0].scale = 0.025
+    >>>> s.axes_manager[1].scale = 0.025
+
+If the pixel width is not set, the code will still run with the default value of 1nm with a warning message to remind the user that this is the case.
 
 EDS curve fitting
 -----------------
 
-HyperSpy makes it really easy to extract the intensity of X-ray lines by curve fitting as it is shown in the next example for an EDS-SEM spectrum recorded on a test material EDS-TM001 provided by `BAM <http://www.webshop.bam.de>`_. 
+HyperSpy makes it really easy to extract the intensity of X-ray lines by curve fitting as it is shown in the next example for an EDS-SEM spectrum recorded on a test material EDS-TM001 provided by `BAM <http://www.webshop.bam.de>`_.
 
 Load the spectrum, define the chemical composition of the sample and set the beam energy.
 
