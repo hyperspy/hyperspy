@@ -305,12 +305,13 @@ class Samfire(object):
             else:
                 count += 1
                 (ind, results, isgood) = self._result_q.get()
-                self._running_pixels.remove(ind)
-                self._update(ind, count, results, isgood)
+                if ind in self._running_pixels:
+                    self._running_pixels.remove(ind)
+                    self._update(ind, count, results, isgood)
 
-                self._plot(count)
-                self._save(count)
-                last_time = time.time()
+                    self._plot(count)
+                    self._save(count)
+                    last_time = time.time()
 
     def _run_active_strategy_one(self):
         count = 0
@@ -561,7 +562,6 @@ class Samfire(object):
         selection.
         Segmenter strategies plot a collection of histograms, one per parameter
         """
-        self._figure = None
         if self.strategies:
             self._figure = self.active_strategy.plot(self._figure)
 

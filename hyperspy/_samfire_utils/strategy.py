@@ -291,7 +291,7 @@ class diffusion_strategy(strategy):
             marker = np.atleast_2d(marker)
 
         from hyperspy.signals import Image
-        if not isinstance(fig, Image):
+        if not isinstance(fig, Image) or fig._plot.signal_plot.figure is None:
             fig = Image(marker)
             fig.plot()
             self.close_plot = fig._plot.signal_plot.close
