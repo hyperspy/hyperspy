@@ -63,12 +63,12 @@ class HistogramTilePlot(BlittedFigure):
         ncomps = len(db)
         # get / set axes
         i = -1
-        for c_n, v in db.iteritems():
+        for c_n, v in db.items():
             i += 1
             ncols = len(v)
             istart = ncols * i
             j = 0
-            for p_n, (hist, bin_edges) in v.iteritems():
+            for p_n, (hist, bin_edges) in v.items():
                 j += 1
                 title = c_n + ' ' + p_n
                 ax = self.create_axis(ncomps, ncols, istart + j, title)

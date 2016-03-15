@@ -25,10 +25,10 @@ from hyperspy.external.astroML.histtools import histogram
 
 def compare_two_value_dicts(ans_r, ans):
     test = True
-    for k, v in ans_r.iteritems():
+    for k, v in ans_r.items():
         test = test and k in ans
         if test:
-            for p, pv in v.iteritems():
+            for p, pv in v.items():
                 test = test and p in ans[k]
                 if test:
                     if isinstance(pv, tuple):
@@ -80,8 +80,8 @@ class TestHistogramSegmenter:
         s = self.s
         s.bins = 'blocks'
         s.update(self.test_dict)
-        print 'required:'
-        print self.test_database
-        print '--------------------------------------\n calculated:'
-        print s.database
+        print('required:')
+        print(self.test_database)
+        print('--------------------------------------\n calculated:')
+        print(s.database)
         nt.assert_true(compare_two_value_dicts(s.database, self.test_database))

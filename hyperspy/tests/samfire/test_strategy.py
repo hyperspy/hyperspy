@@ -53,10 +53,10 @@ def create_artificial_samfire(shape):
 
 def compare_two_value_dicts(ans_r, ans):
     test = True
-    for k, v in ans_r.iteritems():
+    for k, v in ans_r.items():
         test = test and k in ans
         if test:
-            for p, pv in v.iteritems():
+            for p, pv in v.items():
                 test = test and p in ans[k]
                 if test:
                     nt.assert_true(
@@ -194,7 +194,7 @@ class TestDiffusionSimple:
         nt.assert_equal(centre, ind)
         nt.assert_equal(slices, (slice(0, 4, None), slice(0, 3, None)))
         tmp = np.array([[0., 1., np.nan],
-                       [1., 1.41421356, np.nan],
+                        [1., 1.41421356, np.nan],
                         [2., np.nan, np.nan]])
         tmp_m = np.array([[False, True, False],
                           [True, True, False],
@@ -344,7 +344,7 @@ class TestDiffusionWithModel:
         self.samf = create_artificial_samfire(self.shape)
 
         m = Spectrum(np.empty(self.shape + (100,))).create_model()
-        m.extend([Gaussian() for _ in xrange(3)])
+        m.extend([Gaussian() for _ in range(3)])
         m.chisq.data.fill(5.)
 
         self.samf.model = m
@@ -408,7 +408,7 @@ class TestSegmenterStrategy:
         self.samf = create_artificial_samfire(self.shape)
 
         m = Spectrum(np.empty(self.shape + (100,))).create_model()
-        m.extend([Gaussian() for _ in xrange(3)])
+        m.extend([Gaussian() for _ in range(3)])
         m.chisq.data.fill(5.)
 
         self.samf.model = m
@@ -503,8 +503,8 @@ class TestSegmenterStrategy:
         s.samf.metadata.marker[0, 0] = -100
 
         ans_r1 = {'Gaussian_0': {'A': np.array([], dtype=float),
-                  'centre': np.array([], dtype=float),
-                  'sigma': np.array([], dtype=float)},
+                                 'centre': np.array([], dtype=float),
+                                 'sigma': np.array([], dtype=float)},
                   'Gaussian_1': {'centre': np.array([0.]), 'sigma': np.array([0.])}}
 
         ans = s._package_values()
@@ -514,8 +514,8 @@ class TestSegmenterStrategy:
         s.samf.metadata.marker[0, 2] = -100
 
         ans_r2 = {'Gaussian_0': {'A': np.array([10.]),
-                  'centre': np.array([3.]),
-                  'sigma': np.array([0.])},
+                                 'centre': np.array([3.]),
+                                 'sigma': np.array([0.])},
                   'Gaussian_1': {'centre': np.array([0., 0.]), 'sigma': np.array([0., 9.])}}
 
         ans2 = s._package_values()

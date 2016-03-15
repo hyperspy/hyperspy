@@ -50,7 +50,7 @@ class AIC_test(object):
     def map(self, model, mask):
         ind_list = np.where(mask)
         ans = mask.copy()
-        for i in xrange(ind_list[0].size):
+        for i in range(ind_list[0].size):
             ind = tuple([lst[i] for lst in ind_list])
             ans[ind] = self.test(model, ind)
         return ans
@@ -73,7 +73,7 @@ class AICc_test(object):
     def map(self, model, mask):
         ind_list = np.where(mask)
         ans = mask.copy()
-        for i in xrange(ind_list[0].size):
+        for i in range(ind_list[0].size):
             ind = tuple([lst[i] for lst in ind_list])
             ans[ind] = self.test(model, ind)
         return ans
@@ -96,7 +96,7 @@ class BIC_test(object):
     def map(self, model, mask):
         ind_list = np.where(mask)
         ans = mask.copy()
-        for i in xrange(ind_list[0].size):
+        for i in range(ind_list[0].size):
             ind = tuple([lst[i] for lst in ind_list])
             ans[ind] = self.test(model, ind)
         return ans

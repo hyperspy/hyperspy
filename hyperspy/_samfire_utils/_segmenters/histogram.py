@@ -33,9 +33,9 @@ class Histogram_segmenter(object):
 
     def most_frequent(self):
         freq = {}
-        for c_n, comp in self.database.iteritems():
+        for c_n, comp in self.database.items():
             c = {}
-            for p_n, (hist, bin_edges) in comp.iteritems():
+            for p_n, (hist, bin_edges) in comp.items():
                 # calculate frequent values
                 maxima_hist_ind = argrelextrema(
                     np.append(
@@ -56,11 +56,11 @@ class Histogram_segmenter(object):
     #     pass
 
     def update(self, value_dict):
-# recalculate with values. All values are passed, not just new
+        # recalculate with values. All values are passed, not just new
         self.database = {}
-        for component_name, component in value_dict.iteritems():
+        for component_name, component in value_dict.items():
             c = {}
-            for par_name, par in component.iteritems():
+            for par_name, par in component.items():
                 if par.size <= self._min_points:
                     c[par_name] = np.histogram(par, max(10, self._min_points))
                 else:

@@ -299,8 +299,6 @@ class Samfire(object):
                 if len(self._running_pixels) < self.workers:
                     self._add_jobs()
                 if time.time() - last_time > self._max_time_in_seconds:
-                    # print self._running_pixels
-                    # print 'broke'
                     break
             else:
                 count += 1

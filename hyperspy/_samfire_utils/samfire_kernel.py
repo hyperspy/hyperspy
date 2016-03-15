@@ -27,9 +27,9 @@ def single_kernel(model, ind, values, optional_components, _args, test):
         name_list = []
         # TODO: put changing _position parameter of each component at the
         # beginning
-        for _comp_n, _comp in vals.iteritems():
+        for _comp_n, _comp in vals.items():
             if _comp_n in turned_on_names:
-                for par_n, par in _comp.iteritems():
+                for par_n, par in _comp.items():
                     if not isinstance(par, list):
                         par = [par]
                     tmp.append(par)
@@ -42,7 +42,7 @@ def single_kernel(model, ind, values, optional_components, _args, test):
     for comp in optional_components:
         model[comp].active = False
 
-    for num in xrange(len(optional_components) + 1):
+    for num in range(len(optional_components) + 1):
         for c in combinations(optional_components, num):
             comb.append(c)
 
@@ -131,9 +131,9 @@ def multi_kernel(
         name_list = []
         # TODO: put changing _position parameter of each component at the
         # beginning
-        for _comp_n, _comp in vals.iteritems():
+        for _comp_n, _comp in vals.items():
             if _comp_n in turned_on_names:
-                for par_n, par in _comp.iteritems():
+                for par_n, par in _comp.items():
                     if not isinstance(par, list):
                         par = [par, ]
                     tmp.append(par)
@@ -160,7 +160,7 @@ def multi_kernel(
     for comp in optional_components:
         comp_dict[comp]['active'] = False
 
-    for num in xrange(len(optional_components) + 1):
+    for num in range(len(optional_components) + 1):
         for comp in combinations(optional_components, num):
             comb.append(comp)
 

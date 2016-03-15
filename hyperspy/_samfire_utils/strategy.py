@@ -164,7 +164,7 @@ class diffusion_strategy(strategy):
         if done_number <= todo_number:
             # most efficient to propagate FROM fitted pixels
             ind_list = np.where(calc_pixels)
-            for ii in xrange(ind_list[0].size):
+            for ii in range(ind_list[0].size):
                 ind = [one_list[ii] for one_list in ind_list]
 
                 distances, slices, centre, mask = self._get_distance_array(
@@ -178,7 +178,7 @@ class diffusion_strategy(strategy):
         else:
             # most efficient to propagate TO unknown pixels
             ind_list = np.where(todo_pixels)
-            for ii in xrange(ind_list[0].size):
+            for ii in range(ind_list[0].size):
                 ind = [one_list[ii] for one_list in ind_list]
 
                 distances, slices, centre, mask = self._get_distance_array(
