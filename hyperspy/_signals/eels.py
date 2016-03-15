@@ -79,7 +79,7 @@ class EELSSpectrum(Spectrum):
         ValueError
 
         """
-        if not isiterable(elements) or isinstance(elements, basestring):
+        if not isiterable(elements) or isinstance(elements, str):
             raise ValueError(
                 "Input must be in the form of a tuple. For example, "
                 "if `s` is the variable containing this EELS spectrum:\n "
@@ -200,7 +200,7 @@ class EELSSpectrum(Spectrum):
             If `calibrate` is True, the calibration is also applied to
             the spectra in the list.
         print_stats : bool
-            If True, print summary statistics the ZLP maximum before
+            If True, print summary statistics of the ZLP maximum before
             the aligment.
         subpixel : bool
             If True, perform the alignment with subpixel accuracy
@@ -255,7 +255,7 @@ class EELSSpectrum(Spectrum):
         zlpc = estimate_zero_loss_peak_centre(self, mask, signal_range)
         mean_ = without_nans(zlpc.data).mean()
         if print_stats is True:
-            print
+            print()
             print(underline("Initial ZLP position statistics"))
             zlpc.print_summary_statistics()
 
@@ -758,7 +758,7 @@ class EELSSpectrum(Spectrum):
             s = ds(axes_manager=self.axes_manager)
             mimax = psf_size - 1 - imax
             O = D.copy()
-            for i in xrange(iterations):
+            for i in range(iterations):
                 first = np.convolve(kernel, O)[imax: imax + psf_size]
                 O = O * (np.convolve(kernel[::-1],
                                      D / first)[mimax: mimax + psf_size])
@@ -843,7 +843,7 @@ class EELSSpectrum(Spectrum):
             'Acquisition_instrument.TEM.Detector.EELS.collection_angle':
                 'tem_par.collection_angle',
         }
-        for key, value in mapping.iteritems():
+        for key, value in mapping.items():
             if self.metadata.has_item(key):
                 exec('%s = self.metadata.%s' % (value, key))
         tem_par.edit_traits()
@@ -855,7 +855,7 @@ class EELSSpectrum(Spectrum):
             'Acquisition_instrument.TEM.Detector.EELS.collection_angle':
                 tem_par.collection_angle,
         }
-        for key, value in mapping.iteritems():
+        for key, value in mapping.items():
             if value != t.Undefined:
                 self.metadata.set_item(key, value)
         self._are_microscope_parameters_missing()
@@ -1177,7 +1177,7 @@ class EELSSpectrum(Spectrum):
                         (beta ** 2 + axis.axis ** 2. / tgt ** 2))
                 Srfint = 2000 * K * adep * Srfelf / rk0 / te * axis.scale
                 s.data = sorig.data - Srfint
-                print 'Iteration number: ', io + 1, '/', iterations
+                print('Iteration number: ', io + 1, '/', iterations)
                 if iterations == io + 1 and full_output is True:
                     sp = sorig._deepcopy_with_new_data(Srfint)
                     sp.metadata.General.title += (

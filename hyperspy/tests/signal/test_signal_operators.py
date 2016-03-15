@@ -108,8 +108,8 @@ class TestBinaryOperators:
         s2 = Signal(np.ones((4, 2, 4, 3)))
         s2c = s2
         s2.axes_manager.set_signal_dimension(2)  # (3, 4| 2, 4)
-        print s2
-        print s1
+        print(s2)
+        print(s1)
         s2 += s1
         assert_array_equal(s2.data, 2 * np.ones((4, 2, 4, 3)))
         nt.assert_is(s2, s2c)

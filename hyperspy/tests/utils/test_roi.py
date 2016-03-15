@@ -120,20 +120,20 @@ class TestROIs():
         nt.assert_equal(sr.axes_manager.navigation_shape, (n, n))
         nt.assert_equal(sr_ann.axes_manager.navigation_shape, (n, n))
         # Check that mask is same for all images:
-        for i in xrange(n):
-            for j in xrange(n):
+        for i in range(n):
+            for j in range(n):
                 nt.assert_true(np.all(sr.data.mask[j, i, :] == True) or
                                np.all(sr.data.mask[j, i, :] == False))
                 nt.assert_true(np.all(sr_ann.data.mask[j, i, :] == True) or
                                np.all(sr_ann.data.mask[j, i, :] == False))
         # Check that the correct elements has been masked out:
         mask = sr.data.mask[:, :, 0]
-        print mask   # To help debugging, this shows the shape of the mask
+        print(mask)   # To help debugging, this shows the shape of the mask
         np.testing.assert_array_equal(
             np.where(mask.flatten())[0],
             [0, 1, 6, 7, 8, 15, 48, 55, 56, 57, 62, 63])
         mask_ann = sr_ann.data.mask[:, :, 0]
-        print mask_ann   # To help debugging, this shows the shape of the mask
+        print(mask_ann)   # To help debugging, this shows the shape of the mask
         np.testing.assert_array_equal(
             np.where(mask_ann.flatten())[0],
             [0, 1, 6, 7, 8, 10, 11, 12, 13, 15, 17, 18, 19, 20, 21, 22, 25,
@@ -294,3 +294,56 @@ class TestROIs():
               [0.56463766, 0.73848284, 0.41183566, 0.37515417],
               [0.48426503, 0.23582684, 0.45947953, 0.49322732]]]
         )))
+
+
+class TestInteractive:
+
+    def setup(self):
+        self.s = Spectrum(np.arange(2000).reshape((20, 10, 10)))
+
+    def test_out(self):
+        s = self.s
+        r = RectangularROI(left=3, right=7, top=2, bottom=5)
+        sr = r(s)
+        d = s.data.sum()
+        sr.data += 2
+        nt.assert_equal(d + sr.data.size * 2, s.data.sum())
+        r.x += 2
+        sr2 = r(s)
+        r(s, out=sr)
+        np.testing.assert_array_equal(sr2.data, sr.data)
+
+    def test_out_special_case(self):
+        s = self.s.inav[0]
+        r = CircleROI(3, 5, 2)
+        sr = r(s)
+        np.testing.assert_array_equal(np.where(sr.data.mask.flatten())[0],
+                                      [0, 3, 12, 15])
+        r.r_inner = 1
+        r.cy = 16
+        sr2 = r(s)
+        r(s, out=sr)
+        np.testing.assert_array_equal(np.where(sr.data.mask.flatten())[0],
+                                      [0, 3, 5, 6, 9, 10, 12, 15])
+        np.testing.assert_array_equal(sr2.data, sr.data)
+
+    def test_interactive_special_case(self):
+        s = self.s.inav[0]
+        r = CircleROI(3, 5, 2)
+        sr = r.interactive(s, None)
+        np.testing.assert_array_equal(np.where(sr.data.mask.flatten())[0],
+                                      [0, 3, 12, 15])
+        r.r_inner = 1
+        r.cy = 16
+        sr2 = r(s)
+        np.testing.assert_array_equal(np.where(sr.data.mask.flatten())[0],
+                                      [0, 3, 5, 6, 9, 10, 12, 15])
+        np.testing.assert_array_equal(sr2.data, sr.data)
+
+    def test_interactive(self):
+        s = self.s
+        r = RectangularROI(left=3, right=7, top=2, bottom=5)
+        sr = r.interactive(s, None)
+        r.x += 5
+        sr2 = r(s)
+        np.testing.assert_array_equal(sr.data, sr2.data)

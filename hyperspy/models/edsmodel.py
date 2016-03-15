@@ -488,7 +488,7 @@ class EDSModel(Model1D):
         for i, xray_line in enumerate(xray_lines):
             component = self[xray_line]
             component.centre.value = ref[i]
-        print "Scale changed from  %lf to %lf" % (scale_old, scale)
+        print ("Scale changed from  %lf to %lf" % (scale_old, scale))
 
     def _twin_xray_lines_offset(self, xray_lines):
         """
@@ -537,7 +537,7 @@ class EDSModel(Model1D):
         offset_old = self.spectrum.axes_manager[-1].offset
         self.spectrum.axes_manager[-1].offset -= diff
         offset = self.spectrum.axes_manager[-1].offset
-        print "Offset changed from  %lf to %lf" % (offset_old, offset)
+        print ("Offset changed from  %lf to %lf" % (offset_old, offset))
         for i, xray_line in enumerate(xray_lines):
             component = self[xray_line]
             component.centre.value = ref[i]

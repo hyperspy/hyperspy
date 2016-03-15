@@ -92,7 +92,7 @@ class SpanSelectorInSpectrumHandler(tu.Handler):
         obj = info.object
         obj.is_ok = True
         if hasattr(obj, 'next'):
-            obj.next()
+            next(obj)
         return
 
 
@@ -167,7 +167,7 @@ class SpanSelectorInSpectrum(t.HasTraits):
                 drawing.widgets.ModifiableSpanSelector(
                     self.signal._plot.signal_plot.ax,
                     onselect=self.update_span_selector_traits,
-                    onmove_callback=self.update_span_selector_traits)
+                    onmove_callback=self.update_span_selector_traits,)
 
         elif self.span_selector is not None:
             self.on_disabling_span_selector()
