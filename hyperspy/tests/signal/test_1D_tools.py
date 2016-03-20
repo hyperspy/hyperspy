@@ -184,7 +184,7 @@ class TestFindPeaks1D:
         nt.assert_equal(len(peaks[1]), 8)
 
     def test_maxpeaksn(self):
-        for n in xrange(1, 10):
+        for n in range(1, 10):
             peaks = self.spectrum.find_peaks1D_ohaver(maxpeakn=n)
             nt.assert_equal(len(peaks[1]), min((8, n)))
 
@@ -220,7 +220,7 @@ class TestInterpolateInBetween:
         s.change_dtype('float')
         s.data[12] *= 10
         s.interpolate_in_between(8, 12, delta=2, kind='cubic')
-        print s.data[8:12]
+        print(s.data[8:12])
         np.testing.assert_allclose(
             s.data[8:12], np.array([44., 95.4, 139.6, 155.]))
 
@@ -229,7 +229,7 @@ class TestInterpolateInBetween:
         s.change_dtype('float')
         s.data[12] *= 10.
         s.interpolate_in_between(8, 12, delta=0.31, kind='cubic')
-        print s.data[8:12]
+        print(s.data[8:12])
         np.testing.assert_allclose(
             s.data[8:12], np.array([45.09388598, 104.16170809,
                                     155.48258721, 170.33564422]))
@@ -267,7 +267,7 @@ class TestEstimatePeakWidth:
     def test_two_peaks(self):
         s = self.s.deepcopy()
         s.shift1D(np.array([0.5]), show_progressbar=None)
-        self.s += s
+        self.s.isig[:-5] += s
         width, left, right = self.s.estimate_peak_width(
             window=None,
             return_interval=True,

@@ -41,6 +41,14 @@ class Test1D:
         assert_equal(s.axes_manager._axes[0].scale,
                      self.signal.axes_manager._axes[0].scale)
 
+    def test_reverse_slice(self):
+        s = self.signal.isig[-1:1:-1]
+        d = self.data[-1:1:-1]
+        assert_true((s.data == d).all())
+        assert_equal(s.axes_manager._axes[0].offset, 9)
+        assert_equal(s.axes_manager._axes[0].scale,
+                     self.signal.axes_manager._axes[0].scale * -1)
+
     def test_slice_out_of_axis(self):
         assert_true((self.signal.isig[-1.:].data == self.signal.data).all())
         assert_true((self.signal.isig[:11.].data == self.signal.data).all())
@@ -90,6 +98,8 @@ class Test1D:
     def test_signal_indexer_index(self):
         s = self.signal.isig[3]
         assert_equal(s.data, 3)
+        assert_equal(len(s.axes_manager._axes), 1)
+        assert_equal(s.data.shape, (1,))
 
     @raises(IndexError)
     def test_navigation_indexer_navdim0(self):

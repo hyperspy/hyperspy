@@ -17,10 +17,8 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import copy
-from functools import partial
 
 import numpy as np
-from traits.trait_errors import TraitError
 from contextlib import contextmanager
 
 from hyperspy.model import BaseModel, ModelComponents, ModelSpecialSlicers
@@ -30,7 +28,6 @@ from hyperspy._signals.eels import Spectrum
 from hyperspy.axes import generate_axis
 from hyperspy.exceptions import WrongObjectError
 from hyperspy.decorators import interactive_range_selector
-from hyperspy.axes import AxesManager
 from hyperspy.drawing.widgets import VerticalLineWidget, LabelWidget
 from hyperspy.gui.tools import ComponentFit
 from hyperspy.events import EventSupressor
@@ -261,17 +258,20 @@ class Model1D(BaseModel):
             self._make_position_adjuster(thing, self._adjust_position_all[0],
                                          self._adjust_position_all[1])
 
-    def remove(self, thing):
-        thing = self._get_component(thing)
-        parameter = thing._position
-        if parameter in self._position_widgets:
-            for pw in reversed(self._position_widgets[parameter]):
-                pw.close()
-        if hasattr(thing, '_model_plot_line'):
-            line = thing._model_plot_line
-            line.close()
-        super(Model1D, self).remove(thing)
-        self._disconnect_parameters2update_plot([thing])
+    def remove(self, things):
+        things = self._get_component(things)
+        if not np.iterable(things):
+            things = [things]
+        for thing in things:
+            parameter = thing._position
+            if parameter in self._position_widgets:
+                for pw in reversed(self._position_widgets[parameter]):
+                    pw.close()
+            if hasattr(thing, '_model_plot_line'):
+                line = thing._model_plot_line
+                line.close()
+        super(Model1D, self).remove(things)
+        self._disconnect_parameters2update_plot(things)
 
     remove.__doc__ = BaseModel.remove.__doc__
 
@@ -754,7 +754,6 @@ class Model1D(BaseModel):
     def _make_position_adjuster(self, component, fix_it, show_label):
         if (component._position is None or component._position.twin):
             return
-        # Create an AxesManager for the widget
         axis = self.axes_manager.signal_axes[0]
         # Create the vertical line and labels
         widgets = [VerticalLineWidget(self.axes_manager)]
@@ -781,7 +780,7 @@ class Model1D(BaseModel):
                                     {'obj': 'widget'})
 
     def _reverse_lookup_position_widget(self, widget):
-        for parameter, widgets in self._position_widgets.iteritems():
+        for parameter, widgets in self._position_widgets.items():
             if widget in widgets:
                 return parameter
         raise KeyError()
@@ -812,7 +811,7 @@ class Model1D(BaseModel):
 
         """
         self._adjust_position_all = False
-        for pws in self._position_widgets.values():
+        for pws in list(self._position_widgets.values()):
             # Iteration works on a copied collection, so changes during
             # iteration should be ok
             for pw in reversed(pws):    # pws is reference, so work in reverse

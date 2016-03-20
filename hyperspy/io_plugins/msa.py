@@ -22,12 +22,15 @@ import datetime
 import codecs
 import warnings
 import os
+import logging
 
 import numpy as np
 
 from hyperspy.misc.config_dir import os_name
 from hyperspy import Release
 from hyperspy.misc.utils import DictionaryTreeBrowser
+
+_logger = logging.getLogger(__name__)
 
 # Plugin characteristics
 # ----------------------
@@ -45,27 +48,27 @@ writes = [(1, 0), ]
 # http://www.amc.anl.gov/ANLSoftwareLibrary/02-MMSLib/XEDS/EMMFF/EMMFF.IBM/Emmff.Total
 keywords = {
     # Required parameters
-    'FORMAT': {'dtype': unicode, 'mapped_to': None},
-    'VERSION': {'dtype': unicode, 'mapped_to': None},
-    'TITLE': {'dtype': unicode, 'mapped_to': 'General.title'},
-    'DATE': {'dtype': unicode, 'mapped_to': None},
-    'TIME': {'dtype': unicode, 'mapped_to': None},
-    'OWNER': {'dtype': unicode, 'mapped_to': None},
+    'FORMAT': {'dtype': str, 'mapped_to': None},
+    'VERSION': {'dtype': str, 'mapped_to': None},
+    'TITLE': {'dtype': str, 'mapped_to': 'General.title'},
+    'DATE': {'dtype': str, 'mapped_to': None},
+    'TIME': {'dtype': str, 'mapped_to': None},
+    'OWNER': {'dtype': str, 'mapped_to': None},
     'NPOINTS': {'dtype': float, 'mapped_to': None},
     'NCOLUMNS': {'dtype': float, 'mapped_to': None},
-    'DATATYPE': {'dtype': unicode, 'mapped_to': None},
+    'DATATYPE': {'dtype': str, 'mapped_to': None},
     'XPERCHAN': {'dtype': float, 'mapped_to': None},
     'OFFSET': {'dtype': float, 'mapped_to': None},
     # Optional parameters
     # Spectrum characteristics
-    'SIGNALTYPE': {'dtype': unicode, 'mapped_to':
+    'SIGNALTYPE': {'dtype': str, 'mapped_to':
                    'Signal.signal_type'},
-    'XLABEL': {'dtype': unicode, 'mapped_to': None},
-    'YLABEL': {'dtype': unicode, 'mapped_to': None},
-    'XUNITS': {'dtype': unicode, 'mapped_to': None},
-    'YUNITS': {'dtype': unicode, 'mapped_to': None},
+    'XLABEL': {'dtype': str, 'mapped_to': None},
+    'YLABEL': {'dtype': str, 'mapped_to': None},
+    'XUNITS': {'dtype': str, 'mapped_to': None},
+    'YUNITS': {'dtype': str, 'mapped_to': None},
     'CHOFFSET': {'dtype': float, 'mapped_to': None},
-    'COMMENT': {'dtype': unicode, 'mapped_to': None},
+    'COMMENT': {'dtype': str, 'mapped_to': None},
     # Microscope
     'BEAMKV': {'dtype': float, 'mapped_to':
                'Acquisition_instrument.TEM.beam_energy'},
@@ -74,7 +77,7 @@ keywords = {
                  'Acquisition_instrument.TEM.beam_current'},
     'BEAMDIAM': {'dtype': float, 'mapped_to': None},
     'MAGCAM': {'dtype': float, 'mapped_to': None},
-    'OPERMODE': {'dtype': unicode, 'mapped_to': None},
+    'OPERMODE': {'dtype': str, 'mapped_to': None},
     'CONVANGLE': {'dtype': float, 'mapped_to':
                   'Acquisition_instrument.TEM.convergence_angle'},
 
@@ -97,7 +100,7 @@ keywords = {
                   'Acquisition_instrument.TEM.Detector.EELS.dwell_time'},
     'COLLANGLE': {'dtype': float, 'mapped_to':
                   'Acquisition_instrument.TEM.Detector.EELS.collection_angle'},
-    'ELSDET': {'dtype': unicode, 'mapped_to': None},
+    'ELSDET': {'dtype': str, 'mapped_to': None},
 
     # EDS
     'ELEVANGLE': {'dtype': float, 'mapped_to':
@@ -122,48 +125,61 @@ keywords = {
     'TBNWIND': {'dtype': float, 'mapped_to': None},
     'TDIWIND': {'dtype': float, 'mapped_to': None},
     'THCWIND': {'dtype': float, 'mapped_to': None},
-    'EDSDET': {'dtype': unicode, 'mapped_to':
+    'EDSDET': {'dtype': str, 'mapped_to':
                'Acquisition_instrument.TEM.Detector.EDS.EDS_det'},
 }
 
 
-def file_reader(filename, encoding='latin-1', **kwds):
+def parse_msa_string(string, filename=None):
+    """Parse an EMSA/MSA file content.
+
+    Parameters
+    ----------
+    string: string or file object
+        It must complain with the EMSA/MSA standard.
+    filename: string or None
+        The filename.
+
+    Returns:
+    --------
+    file_data_list: list
+        The list containts a dictionary that contains the parsed
+        information. It can be used to create a `:class:Signal`
+        using `:func:hyperspy.io.dict2signal`.
+
+    """
+    if not hasattr(string, "readlines"):
+        string = string.splitlines()
     parameters = {}
     mapped = DictionaryTreeBrowser({})
-    with codecs.open(
-            filename,
-            encoding=encoding,
-            errors='replace') as spectrum_file:
-        y = []
-        # Read the keywords
-        data_section = False
-        for line in spectrum_file.readlines():
-            if data_section is False:
-                if line[0] == "#":
-                    try:
-                        key, value = line.split(': ')
-                        value = value.strip()
-                    except ValueError:
-                        key = line
-                        value = None
-                    key = key.strip('#').strip()
+    y = []
+    # Read the keywords
+    data_section = False
+    for line in string:
+        if data_section is False:
+            if line[0] == "#":
+                try:
+                    key, value = line.split(': ')
+                    value = value.strip()
+                except ValueError:
+                    key = line
+                    value = None
+                key = key.strip('#').strip()
 
-                    if key != 'SPECTRUM':
-                        parameters[key] = value
-                    else:
-                        data_section = True
-            else:
-                # Read the data
-                if line[0] != "#" and line.strip():
-                    if parameters['DATATYPE'] == 'XY':
-                        xy = line.replace(',', ' ').strip().split()
-                        y.append(float(xy[1]))
-                    elif parameters['DATATYPE'] == 'Y':
-                        data = [
-                            float(i) for i in line.replace(
-                                ',',
-                                ' ').strip().split()]
-                        y.extend(data)
+                if key != 'SPECTRUM':
+                    parameters[key] = value
+                else:
+                    data_section = True
+        else:
+            # Read the data
+            if line[0] != "#" and line.strip():
+                if parameters['DATATYPE'] == 'XY':
+                    xy = line.replace(',', ' ').strip().split()
+                    y.append(float(xy[1]))
+                elif parameters['DATATYPE'] == 'Y':
+                    data = [
+                        float(i) for i in line.replace(',', ' ').strip().split()]
+                    y.extend(data)
     # We rewrite the format value to be sure that it complies with the
     # standard, because it will be used by the writer routine
     parameters['FORMAT'] = "EMSA/MAS Spectral Data File"
@@ -171,7 +187,7 @@ def file_reader(filename, encoding='latin-1', **kwds):
     # Convert the parameters to the right type and map some
     # TODO: the msa format seems to support specifying the units of some
     # parametes. We should add this feature here
-    for parameter, value in parameters.iteritems():
+    for parameter, value in parameters.items():
         # Some parameters names can contain the units information
         # e.g. #AZIMANGLE-dg: 90.
         if '-' in parameter:
@@ -189,8 +205,9 @@ def file_reader(filename, encoding='latin-1', **kwds):
                     parameters[parameter] = keywords[clean_par]['dtype'](
                         value.replace(' ', ''))
                 except:
-                    print("The %s keyword value, %s " % (parameter, value) +
-                          "could not be converted to the right type")
+                    _logger.exception(
+                        "The %s keyword value, %s could not be converted to "
+                        "the right type", parameter, value)
 
             if keywords[clean_par]['mapped_to'] is not None:
                 mapped.set_item(keywords[clean_par]['mapped_to'],
@@ -215,13 +232,13 @@ def file_reader(filename, encoding='latin-1', **kwds):
             mapped.set_item('General.time', datetime.time(H, M))
         except:
             if 'TIME' in parameters and parameters['TIME']:
-                print('The time information could not be retrieved')
+                _logger.warn('The time information could not be retrieved')
         try:
             Y, M, D = time.strptime(parameters['DATE'], "%d-%b-%Y")[0:3]
             mapped.set_item('General.date', datetime.date(Y, M, D))
         except:
             if 'DATE' in parameters and parameters['DATE']:
-                print('The date information could not be retrieved')
+                _logger.warn('The date information could not be retrieved')
     except:
         warnings.warn("I couldn't write the date information due to"
                       "an unexpected error. Please report this error to "
@@ -236,8 +253,9 @@ def file_reader(filename, encoding='latin-1', **kwds):
         'offset': parameters['OFFSET'] if 'OFFSET' in parameters else 0,
         'units': parameters['XUNITS'] if 'XUNITS' in parameters else '',
     }]
-
-    mapped.set_item('General.original_filename', os.path.split(filename)[1])
+    if filename is not None:
+        mapped.set_item('General.original_filename',
+                        os.path.split(filename)[1])
     mapped.set_item('Signal.record_by', 'spectrum')
     if mapped.has_item('Signal.signal_type'):
         if mapped.Signal.signal_type == 'ELS':
@@ -252,7 +270,17 @@ def file_reader(filename, encoding='latin-1', **kwds):
         'metadata': mapped.as_dictionary(),
         'original_metadata': parameters
     }
-    return [dictionary, ]
+    file_data_list = [dictionary, ]
+    return file_data_list
+
+
+def file_reader(filename, encoding='latin-1', **kwds):
+    with codecs.open(
+            filename,
+            encoding=encoding,
+            errors='replace') as spectrum_file:
+        return parse_msa_string(string=spectrum_file,
+                                filename=filename)
 
 
 def file_writer(filename, signal, format=None, separator=', ',
@@ -332,11 +360,11 @@ def file_writer(filename, signal, format=None, separator=', ',
     }
 
     # Update the loc_kwds with the information retrieved from the signal class
-    for key, value in keys_from_signal.iteritems():
+    for key, value in keys_from_signal.items():
         if key not in loc_kwds or value != '':
             loc_kwds[key] = value
 
-    for key, dic in keywords.iteritems():
+    for key, dic in keywords.items():
 
         if dic['mapped_to'] is not None:
             if 'SEM' in signal.metadata.Signal.signal_type:
@@ -356,24 +384,24 @@ def file_writer(filename, signal, format=None, separator=', ',
             if key in loc_kwds:
                 del(loc_kwds[key])
 
-        f.write(u'#%-12s: %s\u000D\u000A' % ('FORMAT', loc_kwds.pop('FORMAT')))
+        f.write('#%-12s: %s\u000D\u000A' % ('FORMAT', loc_kwds.pop('FORMAT')))
         f.write(
-            u'#%-12s: %s\u000D\u000A' %
+            '#%-12s: %s\u000D\u000A' %
             ('VERSION', loc_kwds.pop('VERSION')))
         for keyword, value in loc_kwds.items():
-            f.write(u'#%-12s: %s\u000D\u000A' % (keyword, value))
+            f.write('#%-12s: %s\u000D\u000A' % (keyword, value))
 
-        f.write(u'#%-12s: Spectral Data Starts Here\u000D\u000A' % 'SPECTRUM')
+        f.write('#%-12s: Spectral Data Starts Here\u000D\u000A' % 'SPECTRUM')
 
         if format == 'XY':
             for x, y in zip(signal.axes_manager._axes[0].axis, signal.data):
                 f.write("%g%s%g" % (x, separator, y))
-                f.write(u'\u000D\u000A')
+                f.write('\u000D\u000A')
         elif format == 'Y':
             for y in signal.data:
                 f.write('%f%s' % (y, separator))
-                f.write(u'\u000D\u000A')
+                f.write('\u000D\u000A')
         else:
             raise ValueError('format must be one of: None, \'XY\' or \'Y\'')
 
-        f.write(u'#%-12s: End Of Data and File' % 'ENDOFDATA')
+        f.write('#%-12s: End Of Data and File' % 'ENDOFDATA')

@@ -21,6 +21,8 @@ from __future__ import division
 import warnings
 import numpy as np
 import math
+import logging
+
 from hyperspy.misc.utils import stash_active_state
 
 from hyperspy.models.model1D import Model1D
@@ -28,6 +30,8 @@ from hyperspy._signals.eds import EDSSpectrum
 from hyperspy.misc.elements import elements as elements_db
 from hyperspy.misc.eds import utils as utils_eds
 import hyperspy.components as create_component
+
+_logger = logging.getLogger(__name__)
 
 eV2keV = 1000.
 sigma2fwhm = 2 * math.sqrt(2 * math.log(2))
@@ -117,8 +121,8 @@ class EDSModel(Model1D):
     >>> m.fit()
     >>> m.fit_background()
     >>> m.calibrate_energy_axis('resolution')
-    >>> m.calibrate_xray_lines('energy',['Au_Ma'])
-    >>> m.calibrate_xray_lines('sub_weight',['Mn_La'],bound=10)
+    >>> m.calibrate_xray_lines('energy', ['Au_Ma'])
+    >>> m.calibrate_xray_lines('sub_weight',['Mn_La'], bound=10)
     """
 
     def __init__(self, spectrum,
@@ -131,10 +135,27 @@ class EDSModel(Model1D):
         self.end_energy = min(end_energy, self.spectrum._get_beam_energy())
         self.start_energy = self.axes_manager.signal_axes[0].low_value
         self.background_components = list()
+        if 'dictionary' in kwargs or len(args) > 1:
+            d = args[1] if len(args) > 1 else kwargs['dictionary']
+            if len(d['xray_lines']) > 0:
+                self.xray_lines.extend(
+                    [self[name] for name in d['xray_lines']])
+                auto_add_lines = False
+            if len(d['background_components']) > 0:
+                self.background_components.extend(
+                    [self[name] for name in d['background_components']])
+                auto_background = False
         if auto_background is True:
             self.add_polynomial_background()
         if auto_add_lines is True:
             self.add_family_lines()
+
+    def as_dictionary(self, fullcopy=True):
+        dic = super(EDSModel, self).as_dictionary(fullcopy)
+        dic['xray_lines'] = [c.name for c in self.xray_lines]
+        dic['background_components'] = [c.name for c in
+                                        self.background_components]
+        return dic
 
     @property
     def units_factor(self):
@@ -471,7 +492,7 @@ class EDSModel(Model1D):
         for i, xray_line in enumerate(xray_lines):
             component = self[xray_line]
             component.centre.value = ref[i]
-        print "Scale changed from  %lf to %lf" % (scale_old, scale)
+        _logger.info("Scale changed from  %lf to %lf", scale_old, scale)
 
     def _twin_xray_lines_offset(self, xray_lines):
         """
@@ -520,7 +541,7 @@ class EDSModel(Model1D):
         offset_old = self.spectrum.axes_manager[-1].offset
         self.spectrum.axes_manager[-1].offset -= diff
         offset = self.spectrum.axes_manager[-1].offset
-        print "Offset changed from  %lf to %lf" % (offset_old, offset)
+        _logger.info("Offset changed from  %lf to %lf", offset_old, offset)
         for i, xray_line in enumerate(xray_lines):
             component = self[xray_line]
             component.centre.value = ref[i]
@@ -538,7 +559,7 @@ class EDSModel(Model1D):
         calibrate: 'resolution' or 'scale' or 'offset'
             If 'resolution', fits the width of Gaussians place at all x-ray
             lines. The width is given by a model of the detector resolution,
-            obtained by extrapolation the `energy_resolution_MnKa` in
+            obtained by extrapolating the `energy_resolution_MnKa` in `metadata`
             `metadata`.
             This method will update the value of `energy_resolution_MnKa`.
             If 'scale', calibrate the scale of the energy axis
@@ -588,7 +609,6 @@ class EDSModel(Model1D):
             component.A.free = True
             if component.A.value - bound * component.A.value <= 0:
                 component.A.bmin = 1e-10
-                # print 'negative twin!'
             else:
                 component.A.bmin = component.A.value - \
                     bound * component.A.value
