@@ -80,7 +80,7 @@ def get_axis_group(n, label=''):
             tui.Item('axis%i.index' % n, style='readonly'),
             tui.Item('axis%i.value' % n, style='readonly'),
             tui.Item('axis%i.units' % n),
-            tui.Item('axis%i.navigate' % n, label='slice'),
+            tui.Item('axis%i.navigate' % n, label='navigate'),
             show_border=True,),
         tui.Group(
             tui.Item('axis%i.scale' % n),

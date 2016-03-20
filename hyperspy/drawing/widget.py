@@ -320,7 +320,7 @@ class DraggableWidgetBase(WidgetBase):
         """Returns a tuple with the position (indices).
         """
         idx = []
-        for i in xrange(len(self.axes)):
+        for i in range(len(self.axes)):
             idx.append(self.axes[i].value2index(self._pos[i]))
         return tuple(idx)
 
@@ -336,7 +336,7 @@ class DraggableWidgetBase(WidgetBase):
             raise ValueError()
         else:
             p = []
-            for i in xrange(len(self.axes)):
+            for i in range(len(self.axes)):
                 p.append(self.axes[i].index2value(value[i]))
             self.position = p
 
@@ -350,7 +350,7 @@ class DraggableWidgetBase(WidgetBase):
         if self._navigating:
             with self.axes_manager.events.indices_changed.suppress_callback(
                     self._on_navigate):
-                for i in xrange(len(self.axes)):
+                for i in range(len(self.axes)):
                     self.axes[i].value = self._pos[i]
         self.events.moved.trigger(self)
         self.events.changed.trigger(self)
@@ -610,7 +610,7 @@ class ResizableDraggableWidgetBase(DraggableWidgetBase):
         attribute).
         """
         s = list()
-        for i in xrange(len(self.axes)):
+        for i in range(len(self.axes)):
             s.append(int(round(self._size[i] / self.axes[i].scale)))
         return np.array(s)
 
@@ -619,7 +619,7 @@ class ResizableDraggableWidgetBase(DraggableWidgetBase):
         attribute).
         """
         s = list()
-        for i in xrange(len(self.axes)):
+        for i in range(len(self.axes)):
             s.append(int(round(value[i] * self.axes[i].scale)))
         self.size = s   # Use property to get full processing
 
@@ -683,7 +683,7 @@ class ResizableDraggableWidgetBase(DraggableWidgetBase):
             if self._navigating:
                 e = self.axes_manager.events.indices_changed
                 with e.suppress_callback(self._on_navigate):
-                    for i in xrange(len(self.axes)):
+                    for i in range(len(self.axes)):
                         self.axes[i].index = self.indices[i]
         if moved or resized:
             # Update patch first
@@ -915,7 +915,7 @@ class ResizersMixin(object):
         self._resizer_handles = []
         rsize = self._get_resizer_size()
         pos = self._get_resizer_pos()
-        for i in xrange(len(pos)):
+        for i in range(len(pos)):
             r = plt.Rectangle(pos[i], rsize[0], rsize[1], animated=self.blit,
                               fill=True, lw=0, fc=self.resize_color,
                               picker=True,)

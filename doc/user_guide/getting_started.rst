@@ -53,6 +53,25 @@ but some features such as navigation sliders may be missing.
         executed after importing hyperspy and qt must be the default hyperspy
         backend.
 
+.. NOTE::
+
+    When running in a  headless system it is necessary to set the matplotlib
+    backend appropiately to avoid a `cannot connect to X server` error, for
+    example as follows:
+
+    .. code-block:: python
+
+       In [1]: import matplotlib
+       In [2]: matplotlib.rcParams["backend"] = "Agg"
+       In [3]: import hyperspy.api as hs
+
+
+.. warning::
+        When using the qt4 backend it is important to import hyperspy
+        before executing the ``%matplotlib`` magic as above to ensure that
+        matplotlib uses version 2 of the PyQt API. This is necessary to avoid
+        conflicts with other libraries.
+
 
 This documentation assumes that numpy and matplotlib are also imported as
 follows:
@@ -60,13 +79,7 @@ follows:
    >>> import numpy as np
    >>> import matplotlib.pyplot as plt
 
-.. warning::
-    Starting HyperSpy using the ``hyperspy`` starting script and the
-    ``%hyperspy`` IPython magic is now deprecated and will be removed in
-    HyperSpy 0.9. The IPython magic does not work with IPython 4 and
-    above.
 
-.. _starting_hyperspy-label:
 
 Getting help
 ------------

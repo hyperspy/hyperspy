@@ -1,4 +1,4 @@
-from __future__ import division
+
 
 import numpy as np
 
@@ -20,7 +20,7 @@ class GOSBase(object):
                 "The given subshell " + subshell +
                 " is not in the database.\n" +
                 "The available subshells are:\n" +
-                str(elements[element]['Atomic_properties']['subshells'].keys()))
+                str(list(elements[element]['Atomic_properties']['subshells'].keys())))
 
         self.onset_energy = \
             elements[
