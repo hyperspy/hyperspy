@@ -1017,7 +1017,8 @@ class EDSSpectrum(Spectrum):
 
     def _xray_marker_closed(self, obj):
         marker = obj
-        for xray_line, line_markers in reversed(self._xray_markers.items()):
+        for xray_line, line_markers in reversed(list(
+                self._xray_markers.items())):
             if marker in line_markers:
                 line_markers.remove(marker)
             if not line_markers:
