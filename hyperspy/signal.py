@@ -3031,7 +3031,7 @@ class Signal(FancySlicing,
             self._plot = old_plot
             self.models._models = old_models
 
-    def _print_summary(self):
+    def _summary(self):
         string = "\n\tTitle: "
         string += self.metadata.General.title.decode('utf8')
         if self.metadata.has_item("Signal.signal_type"):
@@ -3044,7 +3044,10 @@ class Signal(FancySlicing,
             string += self.metadata.Signal.record_by
             string += "\n\tData type: "
             string += str(self.data.dtype)
-        print(string)
+        return string
+
+    def _print_summary(self):
+        print(self._summary())
 
     @property
     def data(self):

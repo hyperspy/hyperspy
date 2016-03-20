@@ -132,11 +132,6 @@ def load(filenames=None,
         Used when loading blockfiles to determine which mode to use for when
         loading as memmap (i.e. when load_to_memory=False)
 
-    print_info: bool
-        For SEMPER unf-files, if True (default is False) header and label
-        information read from the label are printed for a quick overview.
-
-
     Returns
     -------
     Signal instance or list of signal instances
@@ -206,7 +201,7 @@ def load(filenames=None,
                     )[0]
                 )[1]
             _logger.info('Individual files loaded correctly')
-            signal._print_summary()
+            _logger.info(signal._summary())
             objects = [signal, ]
         else:
             objects = [load_single_file(filename,
