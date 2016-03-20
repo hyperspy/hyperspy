@@ -21,7 +21,6 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-from hyperspy import messages
 from hyperspy.drawing.figure import BlittedFigure
 from hyperspy.drawing import utils
 from hyperspy.events import Event, Events
@@ -417,4 +416,4 @@ def _plot_loading(loadings, idx, axes_manager, ax=None,
             x = np.arange(axes_manager._axes[0].size)
         ax.step(x, loadings[idx])
     else:
-        messages.warning_exit('View not supported')
+        raise ValueError('View not supported')

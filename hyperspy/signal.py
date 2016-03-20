@@ -24,6 +24,7 @@ import math
 import inspect
 from contextlib import contextmanager
 from datetime import datetime
+import logging
 
 import numpy as np
 import numpy.ma as ma
@@ -82,6 +83,8 @@ from hyperspy.docstrings.signal import (
 from hyperspy.events import Events, Event
 from hyperspy.interactive import interactive
 from hyperspy.misc.signal_tools import are_signals_aligned
+
+_logger = logging.getLogger(__name__)
 
 
 class ModelManager(object):
@@ -438,7 +441,7 @@ class Signal2DTools(object):
                 if correlation_threshold == 'auto':
                     correlation_threshold = \
                         (pcarray['max_value'].min(0)).max()
-                    print("Correlation threshold = %1.2f" %
+                    _logger.info("Correlation threshold = %1.2f",
                           correlation_threshold)
                 shifts[pcarray['max_value'] <
                        correlation_threshold] = ma.masked
@@ -3028,7 +3031,7 @@ class Signal(FancySlicing,
             self._plot = old_plot
             self.models._models = old_models
 
-    def _print_summary(self):
+    def _summary(self):
         string = "\n\tTitle: "
         string += self.metadata.General.title.decode('utf8')
         if self.metadata.has_item("Signal.signal_type"):
@@ -3041,7 +3044,10 @@ class Signal(FancySlicing,
             string += self.metadata.Signal.record_by
             string += "\n\tData type: "
             string += str(self.data.dtype)
-        print(string)
+        return string
+
+    def _print_summary(self):
+        print(self._summary())
 
     @property
     def data(self):

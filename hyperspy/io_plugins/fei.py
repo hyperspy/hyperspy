@@ -20,6 +20,7 @@ import struct
 import warnings
 from glob import glob
 import os
+import logging
 import xml.etree.ElementTree as ET
 try:
     from collections import OrderedDict
@@ -32,6 +33,8 @@ import traits.api as t
 
 from hyperspy.misc.array_tools import sarray2dict
 from hyperspy.misc.utils import DictionaryTreeBrowser
+
+_logger = logging.getLogger(__name__)
 
 ser_extensions = ('ser', 'SER')
 emi_extensions = ('emi', 'EMI')
@@ -199,13 +202,13 @@ def get_data_tag_dtype_list(data_type_id):
     return header
 
 
-def print_struct_array_values(struct_array):
+def log_struct_array_values(struct_array):
     for key in struct_array.dtype.names:
         if not isinstance(struct_array[key], np.ndarray) or \
                 np.array(struct_array[key].shape).sum() == 1:
-            print("%s : %s" % (key, struct_array[key]))
+            _logger.info("%s : %s", key, struct_array[key])
         else:
-            print("%s : Array" % key)
+            _logger.info("%s : Array", key)
 
 
 def guess_record_by(record_by_id):
@@ -251,7 +254,7 @@ def emixml2dtb(et, dictree):
             emixml2dtb(child, dictree[et.tag])
 
 
-def emi_reader(filename, dump_xml=False, verbose=False, **kwds):
+def emi_reader(filename, dump_xml=False, **kwds):
     # TODO: recover the tags from the emi file. It is easy: just look for
     # <ObjectInfo> and </ObjectInfo>. It is standard xml :)
     # xml chunks are identified using UUID, if we can find how these UUID are
@@ -267,8 +270,7 @@ def emi_reader(filename, dump_xml=False, verbose=False, **kwds):
     ser_files = sorted(glob(filename + '_[0-9].ser'))
     sers = []
     for f in ser_files:
-        if verbose is True:
-            print("Opening ", f)
+        _logger.info("Opening %s", f)
         try:
             sers.append(ser_reader(f, objects))
         except IOError:  # Probably a single spectrum that we don't support
@@ -289,19 +291,14 @@ def file_reader(filename, *args, **kwds):
         return emi_reader(filename, *args, **kwds)
 
 
-def load_ser_file(filename, verbose=False):
-    if verbose:
-        print("Opening the file: ", filename)
+def load_ser_file(filename):
+    _logger.info("Opening the file: %s", filename)
     with open(filename, 'rb') as f:
         header = np.fromfile(f,
                              dtype=np.dtype(get_header_dtype_list(f)),
                              count=1)
-        if verbose is True:
-            print("Extracting the information")
-            print("\n")
-            print("Header info:")
-            print("------------")
-            print_struct_array_values(header[0])
+        _logger.info("Header info:")
+        log_struct_array_values(header[0])
 
         if header['ValidNumberElements'] == 0:
             raise IOError(
@@ -327,11 +324,8 @@ def load_ser_file(filename, verbose=False):
         data = np.fromfile(f,
                            dtype=np.dtype(data_dtype_list + tag_dtype_list),
                            count=header["TotalNumberElements"][0])
-        if verbose is True:
-            print("\n")
-            print("Data info:")
-            print("----------")
-            print_struct_array_values(data[0])
+        _logger.info("Data info:")
+        log_struct_array_values(data[0])
     return header, data
 
 
@@ -463,12 +457,12 @@ def convert_xml_to_dict(xml_object):
     return op
 
 
-def ser_reader(filename, objects=None, verbose=False, *args, **kwds):
+def ser_reader(filename, objects=None, *args, **kwds):
     """Reads the information from the file and returns it in the HyperSpy
     required format.
 
     """
-    header, data = load_ser_file(filename, verbose=verbose)
+    header, data = load_ser_file(filename)
     record_by = guess_record_by(header['DataTypeID'])
     ndim = int(header['NumberDimensions'])
     if record_by == 'spectrum':
@@ -628,7 +622,7 @@ def ser_reader(filename, objects=None, verbose=False, *args, **kwds):
     return dictionary
 
 
-def guess_units_from_mode(objects_dict, header, verbose=True):
+def guess_units_from_mode(objects_dict, header):
     # in case the xml file doesn't contain the "Mode" or the header doesn't
     # contain 'Dim-1_UnitsLength', return "meters" as default, which will be
     # OK most of the time
@@ -653,14 +647,11 @@ def guess_units_from_mode(objects_dict, header, verbose=True):
         warnings.warn(warn_str)
         return 'meters'  # Most of the time, the unit will be meters!
 
-    if verbose:
-        print("------------")
-        print(objects_dict.ObjectInfo.AcquireInfo)
-        print("mode", mode)
-        print("isCamera:", isCamera)
-        print("isImageStack:", isImageStack)
-        print("isImageStack:", isDiffractionScan)
-        print("------------")
+    _logger.info(objects_dict.ObjectInfo.AcquireInfo)
+    _logger.info("mode: %s", mode)
+    _logger.info("isCamera: %s", isCamera)
+    _logger.info("isImageStack: %s", isImageStack)
+    _logger.info("isImageStack: %s", isDiffractionScan)
     if 'STEM' in mode:
         # data recorded in STEM with a camera, so we assume, it's a diffraction
         # in case we can't make use the detector is a camera, use a workaround

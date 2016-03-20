@@ -9,6 +9,7 @@ import numpy as np
 
 from hyperspy.io import load
 from hyperspy.signal import Signal
+from hyperspy.roi import Point2DROI
 
 my_path = os.path.dirname(__file__)
 
@@ -206,6 +207,13 @@ class TestSavingMetadataContainers:
         nt.assert_is_instance(l.metadata.test[0], Signal)
         nt.assert_is_instance(l.metadata.test[1], float)
         nt.assert_is_instance(l.metadata.test[2], str)
+
+    def test_unsupported_type(self):
+        s = self.s
+        s.metadata.set_item('test', Point2DROI(1, 2))
+        s.save('tmp.hdf5', overwrite=True)
+        l = load('tmp.hdf5')
+        nt.assert_not_in('test', l.metadata)
 
     def tearDown(self):
         gc.collect()        # Make sure any memmaps are closed first!

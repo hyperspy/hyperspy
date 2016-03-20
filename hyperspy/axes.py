@@ -28,7 +28,7 @@ from hyperspy.misc.utils import isiterable, ordinal
 from hyperspy.misc.math_tools import isfloat
 
 import warnings
-from hyperspy.misc.hspy_warnings import VisibleDeprecationWarning
+from hyperspy.exceptions import VisibleDeprecationWarning
 
 
 class ndindex_nat(np.ndindex):

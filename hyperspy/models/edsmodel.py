@@ -21,6 +21,8 @@ from __future__ import division
 import warnings
 import numpy as np
 import math
+import logging
+
 from hyperspy.misc.utils import stash_active_state
 
 from hyperspy.models.model1D import Model1D
@@ -28,6 +30,8 @@ from hyperspy._signals.eds import EDSSpectrum
 from hyperspy.misc.elements import elements as elements_db
 from hyperspy.misc.eds import utils as utils_eds
 import hyperspy.components as create_component
+
+_logger = logging.getLogger(__name__)
 
 eV2keV = 1000.
 sigma2fwhm = 2 * math.sqrt(2 * math.log(2))
@@ -488,7 +492,7 @@ class EDSModel(Model1D):
         for i, xray_line in enumerate(xray_lines):
             component = self[xray_line]
             component.centre.value = ref[i]
-        print ("Scale changed from  %lf to %lf" % (scale_old, scale))
+        _logger.info("Scale changed from  %lf to %lf", scale_old, scale)
 
     def _twin_xray_lines_offset(self, xray_lines):
         """
@@ -537,7 +541,7 @@ class EDSModel(Model1D):
         offset_old = self.spectrum.axes_manager[-1].offset
         self.spectrum.axes_manager[-1].offset -= diff
         offset = self.spectrum.axes_manager[-1].offset
-        print ("Offset changed from  %lf to %lf" % (offset_old, offset))
+        _logger.info("Offset changed from  %lf to %lf", offset_old, offset)
         for i, xray_line in enumerate(xray_lines):
             component = self[xray_line]
             component.centre.value = ref[i]
@@ -605,7 +609,6 @@ class EDSModel(Model1D):
             component.A.free = True
             if component.A.value - bound * component.A.value <= 0:
                 component.A.bmin = 1e-10
-                # print 'negative twin!'
             else:
                 component.A.bmin = component.A.value - \
                     bound * component.A.value

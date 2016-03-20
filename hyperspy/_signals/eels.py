@@ -18,6 +18,7 @@
 
 import numbers
 import warnings
+import logging
 
 import numpy as np
 import traits.api as t
@@ -34,6 +35,8 @@ from hyperspy.external.progressbar import progressbar
 from hyperspy.components import PowerLaw
 from hyperspy.misc.utils import isiterable, closest_power_of_two, underline
 from hyperspy.misc.utils import without_nans
+
+_logger = logging.getLogger(__name__)
 
 
 class EELSSpectrum(Spectrum):
@@ -669,7 +672,7 @@ class EELSSpectrum(Spectrum):
         axis = ll.axes_manager.signal_axes[0]
         if fwhm is None:
             fwhm = float(ll.get_current_signal().estimate_peak_width()())
-            print("FWHM = %1.2f" % fwhm)
+            _logger.info("FWHM = %1.2f" % fwhm)
 
         I0 = ll.estimate_elastic_scattering_intensity(threshold=threshold)
         I0 = I0.data
@@ -1177,7 +1180,7 @@ class EELSSpectrum(Spectrum):
                         (beta ** 2 + axis.axis ** 2. / tgt ** 2))
                 Srfint = 2000 * K * adep * Srfelf / rk0 / te * axis.scale
                 s.data = sorig.data - Srfint
-                print('Iteration number: ', io + 1, '/', iterations)
+                _logger.debug('Iteration number: %d / %d', io + 1, iterations)
                 if iterations == io + 1 and full_output is True:
                     sp = sorig._deepcopy_with_new_data(Srfint)
                     sp.metadata.General.title += (
