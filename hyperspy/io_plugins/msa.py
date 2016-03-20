@@ -205,9 +205,9 @@ def parse_msa_string(string, filename=None):
                     parameters[parameter] = keywords[clean_par]['dtype'](
                         value.replace(' ', ''))
                 except:
-                    warnings.warn(
-                        "The %s keyword value, %s " % (parameter, value) +
-                        "could not be converted to the right type")
+                    _logger.exception(
+                        "The %s keyword value, %s could not be converted to "
+                        "the right type", parameter, value)
 
             if keywords[clean_par]['mapped_to'] is not None:
                 mapped.set_item(keywords[clean_par]['mapped_to'],

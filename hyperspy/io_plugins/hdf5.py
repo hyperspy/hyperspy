@@ -19,12 +19,15 @@
 from distutils.version import StrictVersion
 import warnings
 import datetime
+import logging
 
 import h5py
 import numpy as np
 from traits.api import Undefined
 from hyperspy.misc.utils import ensure_unicode
 from hyperspy.axes import AxesManager
+
+_logger = logging.getLogger(__name__)
 
 
 # Plugin characteristics
@@ -422,9 +425,9 @@ def dict2hdfgroup(dictionary, group, compression=None):
             try:
                 group.attrs[key] = value
             except:
-                warnings.warn(
+                _logger.exception(
                     "The hdf5 writer could not write the following "
-                    "information in the file: %s : %s" % (key, value))
+                    "information in the file: %s : %s", key, value)
 
 
 def hdfgroup2dict(group, dictionary=None, load_to_memory=True):
