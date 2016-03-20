@@ -17,6 +17,8 @@ def _get_element_and_line(xray_line):
     By example, if xray_line = 'Mn_Ka' this function returns ('Mn', 'Ka')
     """
     lim = xray_line.find('_')
+    if lim == -1:
+        raise ValueError("Invalid xray-line: %" % xray_line)
     return xray_line[:lim], xray_line[lim + 1:]
 
 
