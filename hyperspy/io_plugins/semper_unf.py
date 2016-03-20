@@ -629,7 +629,7 @@ class SemperFormat(object):
         return signal
 
     def log_info(self):
-        """print important flag information of the :class:`.~SemperFormat`
+        """log important flag information of the :class:`.~SemperFormat`
         object.
 
         Parameters
