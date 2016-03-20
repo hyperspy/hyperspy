@@ -491,7 +491,7 @@ class SemperFormat(object):
                     struct.pack(
                         '<i',
                         12))  # record length, 4 byte format!
-                f.write(header.tobytes())
+                f.write(header.tostring())
                 f.write(
                     struct.pack(
                         '<i',
@@ -515,7 +515,7 @@ class SemperFormat(object):
                         '<i',
                         2 *
                         256))  # record length, 4 byte format!
-                f.write(label.tobytes())
+                f.write(label.tostring())
                 f.write(
                     struct.pack(
                         '<i',
@@ -532,13 +532,13 @@ class SemperFormat(object):
                         struct.pack(
                             '<i',
                             record_length))  # record length, 4 byte format!
-                    f.write(row.tobytes())
+                    f.write(row.tostring())
                     # SEMPER always expects an even number of bytes per row,
                     # which is only a problem for writing single byte data
                     # (IFORM = 0, np.byte). If ncol is odd, an empty byte (0)
                     # is added:
                     if self.data.dtype == np.byte and ncol % 2 != 0:
-                        np.zeros(1, dtype=np.byte).tobytes()
+                        np.zeros(1, dtype=np.byte).tostring()
                     # record length, 4 byte format!
                     f.write(struct.pack('<i', record_length))
 
