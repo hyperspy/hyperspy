@@ -114,6 +114,14 @@ class TestBinaryOperators:
         assert_array_equal(s2.data, 2 * np.ones((4, 2, 4, 3)))
         nt.assert_is(s2, s2c)
 
+    def test_equal_naxes_diff_shape(self):
+        s32 = self.s1  # (3| 2)
+        s31 = Signal(np.ones((1, 3)))
+        s12 = Signal(np.ones((2, 1)))
+        assert_array_equal((s32 + s31).data, s32.data + 1)
+        assert_array_equal((s32 + s12).data, s32.data + 1)
+
+
 
 class TestUnaryOperators:
 
