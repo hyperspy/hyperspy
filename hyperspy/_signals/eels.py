@@ -87,6 +87,8 @@ class EELSSpectrum(Spectrum):
                 "See the docstring for more information.")
 
         for element in elements:
+            if isinstance(element, bytes):
+                element = element.decode()
             if element in elements_db:
                 self.elements.add(element)
             else:
