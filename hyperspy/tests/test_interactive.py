@@ -1,5 +1,5 @@
 from __future__ import print_function
-import mock
+from unittest import mock
 
 import nose.tools as nt
 import numpy as np

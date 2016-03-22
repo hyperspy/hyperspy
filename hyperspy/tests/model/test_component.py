@@ -2,7 +2,7 @@ import numpy as np
 import nose.tools as nt
 from hyperspy.component import Component
 from hyperspy.axes import AxesManager
-import mock
+from unittest import mock
 
 
 class TestMultidimensionalActive:
