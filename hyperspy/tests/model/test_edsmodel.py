@@ -190,9 +190,9 @@ class TestMaps:
         m.multifit()    # m.fit() is just too inaccurate
         ws = np.array([0.5, 0.7, 0.3, 0.5])
         w = np.zeros((4,) + self.mix.shape)
-        for x in xrange(self.mix.shape[0]):
-            for y in xrange(self.mix.shape[1]):
-                for i in xrange(4):
+        for x in range(self.mix.shape[0]):
+            for y in range(self.mix.shape[1]):
+                for i in range(4):
                     mix = self.mix[x, y] if i in (1, 2) else 1 - self.mix[x, y]
                     w[i, x, y] = ws[i] * mix
         xray_lines = s._get_lines_from_elements(

@@ -32,12 +32,12 @@ class CircleWidget(Widget2DBase, ResizersMixin):
     def __init__(self, axes_manager, **kwargs):
         super(CircleWidget, self).__init__(axes_manager, **kwargs)
         self.size_step = 1.0
-        self.size_snap_offset = 0.5
+        self.size_snap_offset = (0.5 + 1e-8)
 
     def _set_axes(self, axes):
         super(CircleWidget, self)._set_axes(axes)
         if self.axes:
-            self._size[0] = 0.5 * self.axes[0].scale
+            self._size[0] = (0.5 + 1e-8) * self.axes[0].scale
             if len(self.axes) > 1:
                 self._size[1] = 0
 
@@ -46,7 +46,7 @@ class CircleWidget(Widget2DBase, ResizersMixin):
         value = np.array(value) if value is not None else self._size
         snap_offset = self.size_snap_offset * self.axes[0].scale
         snap_spacing = self.axes[0].scale * self.size_step
-        for i in xrange(2):
+        for i in range(2):
             value[i] = max(0, (round((value[i] - snap_offset) / snap_spacing) *
                                snap_spacing + snap_offset))
         return value
@@ -59,7 +59,7 @@ class CircleWidget(Widget2DBase, ResizersMixin):
         value = np.minimum(value,
                            [0.5 * ax.size * ax.scale for ax in self.axes])
         # Changed from base:
-        min_sizes = np.array((0.5 * self.axes[0].scale, 0))
+        min_sizes = np.array(((0.5 + 1e-8) * self.axes[0].scale, 0))
         value = np.maximum(value, min_sizes)
         if value[0] < value[1]:
             self._set_size(value[::-1])
@@ -127,13 +127,13 @@ class CircleWidget(Widget2DBase, ResizersMixin):
         """Constrict the position within bounds.
         """
         value = (min(value[0], self.axes[0].high_value - self._size[0] +
-                     0.5 * self.axes[0].scale),
+                     (0.5 + 1e-8) * self.axes[0].scale),
                  min(value[1], self.axes[1].high_value - self._size[0] +
-                     0.5 * self.axes[1].scale))
+                     (0.5 + 1e-8) * self.axes[1].scale))
         value = (max(value[0], self.axes[0].low_value + self._size[0] -
-                     0.5 * self.axes[0].scale),
+                     (0.5 + 1e-8) * self.axes[0].scale),
                  max(value[1], self.axes[1].low_value + self._size[0] -
-                     0.5 * self.axes[1].scale))
+                     (0.5 + 1e-8) * self.axes[1].scale))
         return super(CircleWidget, self)._validate_pos(value)
 
     def get_size_in_indices(self):

@@ -39,10 +39,15 @@ energy-loss spectroscopy (EELS) and energy dispersive X-rays (EDX) data.
 
 HyperSpy is released under the GPL v3 license.
 
+.. warning::
+
+    **Since version 0.8.4 HyperSpy only supports Python 3. If you need to install
+    HyperSpy in Python 2.7 install HyperSpy 0.8.3.**
+
 Cite
 ----
 
 |DOI|_
 
-.. |DOI| image:: https://zenodo.org/badge/doi/10.5281/zenodo.28025.svg
-.. _DOI: http://dx.doi.org/10.5281/zenodo.28025
+.. |DOI| image:: https://zenodo.org/badge/doi/10.5281/zenodo.46897.svg
+.. _DOI: http://dx.doi.org/10.5281/zenodo.46897

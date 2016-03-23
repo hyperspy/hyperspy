@@ -90,7 +90,7 @@ class TestModelIndexing:
 class TestModelIndexingClass:
 
     def setUp(self):
-        s_eels = EELSSpectrum([range(10)] * 3)
+        s_eels = EELSSpectrum([list(range(10))] * 3)
         s_eels.metadata.set_item(
             'Acquisition_instrument.TEM.Detector.EELS.collection_angle',
             3.0)

@@ -92,7 +92,7 @@ def export_to_dictionary(target, whitelist, dic, fullcopy=True):
 
     """
     whitelist_flags = {}
-    for key, value in whitelist.iteritems():
+    for key, value in whitelist.items():
         if value is None:
             # No flags and/or values are given, just save the target
             thing = attrgetter(key)(target)
@@ -130,7 +130,10 @@ def export_to_dictionary(target, whitelist, dic, fullcopy=True):
                 if dill_avail:
                     value = (True, dill.dumps(value))
                 else:
-                    value = (False, marshal.dumps(value.func_code))
+                    # Apparently this fails because Python does not guarantee backwards-compatibility for marshal, and pickle does
+                    # not work for our lambda functions. Hence drop marshal
+                    # support and only work with dill package
+                    value = (False, marshal.dumps(value.__code__))
             else:
                 value = (None, value)
         elif fullcopy:
@@ -174,7 +177,7 @@ def load_from_dictionary(target, dic):
 
     """
     new_whitelist = {}
-    for key, flags_str in dic['_whitelist'].iteritems():
+    for key, flags_str in dic['_whitelist'].items():
         value = dic[key]
         flags = parse_flag_string(flags_str)
         if 'id' not in flags:
@@ -210,9 +213,9 @@ def reconstruct_object(flags, value):
         ifdill, thing = value
         if ifdill is None:
             return thing
-        if ifdill in [False, 'False']:
+        if ifdill in [False, 'False', b'False']:
             return types.FunctionType(marshal.loads(thing), globals())
-        if ifdill in [True, 'True']:
+        if ifdill in [True, 'True', b'True']:
             if not dill_avail:
                 raise ValueError("the dictionary was constructed using "
                                  "\"dill\" package, which is not available on the system")

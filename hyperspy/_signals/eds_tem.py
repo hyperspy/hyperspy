@@ -15,7 +15,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
-from __future__ import division
+
 
 import traits.api as t
 import traitsui.api as tui
@@ -154,7 +154,7 @@ class EDSTEMSpectrum(EDSSpectrum):
             'tem_par.elevation_angle',
             'Acquisition_instrument.TEM.Detector.EDS.energy_resolution_MnKa':
             'tem_par.energy_resolution_MnKa', }
-        for key, value in mapping.iteritems():
+        for key, value in mapping.items():
             if self.metadata.has_item(key):
                 exec('%s = self.metadata.%s' % (value, key))
         tem_par.edit_traits()
@@ -173,7 +173,7 @@ class EDSTEMSpectrum(EDSSpectrum):
             'Acquisition_instrument.TEM.Detector.EDS.energy_resolution_MnKa':
             tem_par.energy_resolution_MnKa, }
 
-        for key, value in mapping.iteritems():
+        for key, value in mapping.items():
             if value != t.Undefined:
                 self.metadata.set_item(key, value)
         self._are_microscope_parameters_missing()
@@ -228,9 +228,9 @@ class EDSTEMSpectrum(EDSSpectrum):
         >>> ref = hs.datasets.example_signals.EDS_TEM_Spectrum()
         >>> s = hs.signals.EDSTEMSpectrum(
         >>>     hs.datasets.example_signals.EDS_TEM_Spectrum().data)
-        >>> print s.axes_manager[0].scale
+        >>> print(s.axes_manager[0].scale)
         >>> s.get_calibration_from(ref)
-        >>> print s.axes_manager[0].scale
+        >>> print(s.axes_manager[0].scale)
         1.0
         0.020028
 
