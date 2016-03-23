@@ -2924,6 +2924,7 @@ class Signal(FancySlicing,
                         new_nav_axes.append(saxis if saxis.size > 1 or
                                             oaxis.size == 1 else
                                             oaxis)
+                    bigger_am = None
                     if sam.navigation_dimension != oam.navigation_dimension:
                         bigger_am = (sam
                                      if sam.navigation_dimension >
