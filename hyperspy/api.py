@@ -65,6 +65,8 @@ from hyperspy.io import load
 from hyperspy.defaults_parser import preferences
 from hyperspy.utils import *
 from hyperspy import datasets
+from hyperspy.logger import set_log_level
+
 
 def get_configuration_directory_path():
     import hyperspy.misc.config_dir

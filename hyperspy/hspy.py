@@ -14,7 +14,7 @@ from hyperspy.defaults_parser import preferences
 from hyperspy import utils
 from hyperspy.datasets import example_signals
 import warnings
-from hyperspy.misc.hspy_warnings import VisibleDeprecationWarning
+from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.api import get_configuration_directory_path
 
 warnings.warn(

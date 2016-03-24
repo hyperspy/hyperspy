@@ -15,6 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
+from functools import partial
+
 from traits.api import Undefined
 
 from hyperspy.drawing import widgets, spectrum, image
@@ -68,7 +70,7 @@ class MPL_HyperExplorer(object):
             if axis.units is not Undefined:
                 sf.xlabel += ' (%s)' % axis.units
             sf.ylabel = r'$\Sigma\mathrm{data\,over\,all\,other\,axes}$'
-            sf.axis = axis.axis
+            sf.axis = axis
             sf.axes_manager = self.axes_manager
             self.navigator_plot = sf
             # Create a line to the left axis with the default
@@ -86,7 +88,10 @@ class MPL_HyperExplorer(object):
                     self.axes_manager.navigation_axes,
                     title=self.signal_title + " navigation sliders")
                 for axis in self.axes_manager.navigation_axes[:-2]:
-                    axis.connect(sf.update)
+                    axis.events.index_changed.connect(sf.update, [])
+                    sf.events.closed.connect(
+                        partial(axis.events.index_changed.disconnect,
+                                sf.update), [])
             self.navigator_plot = sf
         elif len(self.navigator_data_function().shape) >= 2:
             imf = image.ImagePlot()
@@ -103,7 +108,10 @@ class MPL_HyperExplorer(object):
                         self.axes_manager.navigation_axes,
                         title=self.signal_title + " navigation sliders")
                     for axis in self.axes_manager.navigation_axes[2:]:
-                        axis.connect(imf._update)
+                        axis.events.index_changed.connect(imf.update, [])
+                        imf.events.closed.connect(
+                            partial(axis.events.index_changed.disconnect,
+                                    imf.update), [])
 
             imf.title = self.signal_title + ' Navigator'
             imf.plot()
@@ -111,8 +119,8 @@ class MPL_HyperExplorer(object):
             self.navigator_plot = imf
 
     def close_navigator_plot(self):
-        self._disconnect()
-        self.navigator_plot.close()
+        if self.navigator_plot:
+            self.navigator_plot.close()
 
     def is_active(self):
         return True if self.signal_plot.figure else False
@@ -123,6 +131,7 @@ class MPL_HyperExplorer(object):
             if pointer is not None:
                 self.pointer = pointer(self.axes_manager)
                 self.pointer.color = 'red'
+                self.pointer.connect_navigate()
             self.plot_navigator()
         self.plot_signal(**kwargs)
 
@@ -136,25 +145,21 @@ class MPL_HyperExplorer(object):
 
         if nav_dim == 2:  # It is an image
             if self.axes_manager.navigation_dimension > 1:
-                Pointer = widgets.DraggableSquare
+                Pointer = widgets.SquareWidget
             else:  # It is the image of a "spectrum stack"
-                Pointer = widgets.DraggableHorizontalLine
+                Pointer = widgets.HorizontalLineWidget
         elif nav_dim == 1:  # It is a spectrum
-            Pointer = widgets.DraggableVerticalLine
+            Pointer = widgets.VerticalLineWidget
         else:
             Pointer = None
         self._pointer_nav_dim = nav_dim
         return Pointer
 
-    def _disconnect(self):
-        if (self.axes_manager.navigation_dimension > 2 and
-                self.navigator_plot is not None):
-            for axis in self.axes_manager.navigation_axes:
-                axis.disconnect(self.navigator_plot.update)
-        if self.pointer is not None:
-            self.pointer.disconnect(self.navigator_plot.ax)
+    def _on_navigator_plot_closing(self):
+        self.navigator_plot = None
 
     def close(self):
-        self._disconnect()
-        self.signal_plot.close()
-        self.navigator_plot.close()
+        if self.signal_plot:
+            self.signal_plot.close()
+        if self.navigator_plot:
+            self.navigator_plot.close()
