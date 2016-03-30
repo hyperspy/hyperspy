@@ -8,31 +8,7 @@ if sys.byteorder == 'little':
 else:
     byte_order = 1
 
-from libc.stdint cimport uint8_t, uint16_t, uint32_t, uint64_t, int64_t
-from libc.string cimport memcpy, memmove
-
-# structs for headers:
-
-cdef struct Map_Header: #size 8
-    uint32_t height
-    uint32_t width
-
-cdef packed struct Line_Header: #size 4
-    uint32_t pixels
-
-cdef packed struct Additional_pulses: #size 4
-    uint32_t size
-
-cdef packed struct Pixel_Header: #size 22
-    uint32_t pixel_x
-    uint16_t chan1
-    uint16_t chan2
-    uint32_t dummy         # unknown purpoise
-    uint16_t flag
-    uint16_t data_size1
-    uint16_t n_of_pulses
-    uint16_t data_size2
-    uint16_t dummy2        # unknown purpoise
+from libc.stdint cimport uint8_t, uint16_t, uint32_t, uint64_t
 
 # instructivelly packed array structs:
 
@@ -40,347 +16,270 @@ cdef packed struct Bunch_head: #size 2bytes
     uint8_t size
     uint8_t channels
 
-cdef struct Gain8:
-    uint8_t val
+# endianess agnostic reading functions... probably very slow:
 
-cdef struct Gain16:
-    uint16_t val
+@cython.boundscheck(False)
+cdef uint16_t read_16(unsigned char *pointer):
 
-cdef struct Gain32:
-    uint32_t val
+    return ((<uint16_t>pointer[1]<<8) & 65280) | <uint16_t>pointer[0]
 
-cdef struct Gain64:
-    uint64_t val
+@cython.boundscheck(False)
+cdef uint32_t read_32(unsigned char *pointer):
 
-cdef struct Val16:
-    uint16_t val
+    return ((<uint32_t>pointer[3]<<24) & <uint64_t>4278190080) |\
+           ((<uint32_t>pointer[2]<<16) & <uint64_t>16711680) |\
+           ((<uint32_t>pointer[1]<<8) & <uint64_t>65280) |\
+             <uint32_t>pointer[0]
 
-cdef struct Val32:
-    uint32_t val
+@cython.boundscheck(False)
+cdef uint64_t read_64(unsigned char *pointer):
+    # skiping the most high bits, as such a huge values is impossible
+    # for present bruker technology. If it would change - uncomment bellow and recompile.
+    #return ((<uint64_t>pointer[self.offset-1]<<24) & <uint64_t>0xff00000000000000) |\
+    #   ((<uint64_t>self.buffer2[self.offset-2]<<8) & <uint64_t>0xff000000000000) |\
+    #((<uint64_t>self.buffer2[self.offset-3]<<40) & <uint64_t>0xff0000000000) |\
+    return ((<uint64_t>pointer[4]<<32) & <uint64_t>0xff00000000) |\
+           ((<uint64_t>pointer[3]<<24) & <uint64_t>4278190080) |\
+           ((<uint64_t>pointer[2]<<16) & <uint64_t>16711680) |\
+           ((<uint64_t>pointer[1]<<8) & <uint64_t>65280) |\
+             <uint64_t>pointer[0]
 
+
+# datastream class:
+
+@cython.boundscheck(False)
+cdef class DataStream:
+
+    cdef unsigned char *buffer2
+    cdef int size, size_chnk
+    cdef int offset
+    cdef bytes raw_bytes
+    cdef public object blocks  # public - because it is python object
+
+    def __cinit__(self, blocks, int size_chnk):
+        self.size_chnk = size_chnk
+        self.size = size_chnk
+        self.offset = 0
+
+    def __init__(self, blocks, int size_chnk):
+        self.blocks = blocks
+        self.raw_bytes = next(self.blocks)  # python bytes buffer
+        self.buffer2 = <bytes>self.raw_bytes  # C unsigned char buffer
+
+    cdef void seek(self, int value):
+        """move offset to given value.
+        NOTE: it do not check if value is in bounds of buffer!"""
+        self.offset = value
+
+    cdef void skip(self, int length):
+        """increase offset by given value,
+        check if new offset is in bounds of buffer length
+        else load up next block"""
+        if (self.offset + length) > self.size:
+            self.load_next_block()
+        self.offset = self.offset + length
+
+    cdef uint8_t read_8(self):
+        if (self.offset + 1) > self.size:
+            self.load_next_block()
+        self.offset += 1
+        return <uint8_t>self.buffer2[self.offset-1]
+
+    cdef uint16_t read_16(self):
+        if (self.offset + 2) > self.size:
+            self.load_next_block()
+        self.offset += 2
+        # endianess agnostic way... probably very slow:
+        return read_16(&self.buffer2[self.offset-2])
+
+    cdef uint32_t read_32(self):
+        if (self.offset + 4) > self.size:
+            self.load_next_block()
+        self.offset += 4
+        # endianess agnostic way... probably very slow:
+        return read_32(&self.buffer2[self.offset-4])
+
+    cdef uint64_t read_64(self):
+        if (self.offset + 8) > self.size:
+            self.load_next_block()
+        self.offset += 8
+        return read_64(&self.buffer2[self.offset-8])
+
+    cdef unsigned char *ptr_to(self, int length):
+        """get the pointer to the raw buffer,
+        making sure the array have the required length
+        counting from the offset, increase the internal offset
+        by given length"""
+        if (self.offset + length) > self.size:
+            self.load_next_block()
+        self.offset += length
+        return &self.buffer2[self.offset-length]
+
+    cdef void load_next_block(self):
+        """take the reminder of buffer (offset:end) and
+        append new block of raw data, and overwrite old buffer
+        handle with new, set offset to 0"""
+        self.size = self.size_chnk + self.size - self.offset
+        self.buffer2 = b''
+        self.raw_bytes = self.raw_bytes[self.offset:] + next(self.blocks)
+        self.offset = 0
+        self.buffer2 = <bytes>self.raw_bytes
+
+# functions for looping throught the bcf pixels:
 
 @cython.cdivision(True)
 @cython.boundscheck(False)
-def bin_to_8bit_numpy(blocks,
-                      int size_chnk,
-                      int total_blocks,
+cdef bin_to_8bit_numpy(DataStream data_stream,
                       uint8_t[:, :, :] hypermap8,
                       int max_chan,
                       int downsample):
     cdef int dummy1, line_cnt, i, j
-    cdef int size
-    cdef bytes raw_bytes
-    cdef int block_no = 0
-    cdef Map_Header* header
-    cdef char map_header_data[8]
-    cdef Pixel_Header* pixel
-    cdef char pixel_header_data[22]
-    cdef Line_Header* pix_in_line
-    cdef char line_header_data[4]
-    cdef Additional_pulses* add_s
-    cdef char addition_pulses_data[4]
-    cdef unsigned char *buffer1
-    cdef Val16* add_val
-    raw_bytes = next(blocks)
-    buffer1 = <bytes>raw_bytes
-    memcpy(map_header_data, &buffer1[0], 8)
-    header = <Map_Header*>&map_header_data[0]
-    if byte_order == 1:
-        header.height = swap_32(header.height)
-        header.width = swap_32(header.width)
-    cdef int offset
-    offset = 0x1A0 #the begining of the array
-    size = size_chnk
-    for line_cnt in range(header.height):
-        if (offset + 4) > size:
-            size = size_chnk + size - offset
-            buffer1 = b''
-            raw_bytes = raw_bytes[offset:] + next(blocks)
-            offset = 0
-            buffer1 = <bytes>raw_bytes
-        memcpy(line_header_data, &buffer1[offset], 4)
-        pix_in_line = <Line_Header*>&line_header_data[0]
-        if byte_order == 1:
-            pix_in_line.pixels = swap_32(pix_in_line.pixels)
-        offset += 4
-        for dummy1 in range(pix_in_line.pixels):
-            if (offset + 22) > size:
-                size = size_chnk + size - offset
-                buffer1 = b''
-                raw_bytes = raw_bytes[offset:] + next(blocks)
-                buffer1 = <bytes>raw_bytes
-                offset = 0
-            memcpy(pixel_header_data, &buffer1[offset], 22)
-            pixel = <Pixel_Header*>&pixel_header_data[0]
-            if byte_order == 1:
-                pixel.pixel_x = swap_32(pixel.pixel_x)
-                pixel.chan1 = swap_16(pixel.chan1)
-                pixel.chan2 = swap_16(pixel.chan2)
-                pixel.flag = swap_16(pixel.flag)
-                pixel.data_size1 = swap_16(pixel.data_size1)
-                pixel.n_of_pulses = swap_16(pixel.n_of_pulses)
-                pixel.data_size2 = swap_16(pixel.data_size2)
-            offset += 22
-            if (offset + pixel.data_size2) > size:
-                size = size_chnk + size - offset
-                buffer1 = b''
-                raw_bytes = raw_bytes[offset:] + next(blocks)
-                buffer1 = <bytes>raw_bytes
-                offset = 0
-            if pixel.flag == 1:
+    cdef uint32_t height, width, pix_in_line, pixel_x, add_pulse_size
+    cdef uint16_t chan1, chan2, flag, data_size1, n_of_pulses, data_size2
+    cdef uint16_t add_val
+    height = data_stream.read_32()
+    width = data_stream.read_32()
+    data_stream.seek(<int>0x1A0) #the begining of the array
+    for line_cnt in range(height):
+        pix_in_line = data_stream.read_32()
+        for dummy1 in range(pix_in_line):
+            pixel_x = data_stream.read_32()
+            chan1 = data_stream.read_16()
+            chan2 = data_stream.read_16()
+            data_stream.skip(4)  # unknown static value
+            flag = data_stream.read_16()
+            data_size1 = data_stream.read_16()
+            n_of_pulses = data_stream.read_16()
+            data_size2 = data_stream.read_16()
+            data_stream.skip(2)  # skip to data
+            if flag == 1:
                 unpack12_to_8bit(hypermap8,
-                                 pixel.pixel_x // downsample,
+                                 pixel_x // downsample,
                                  line_cnt // downsample,
-                                 &buffer1[offset],
-                                 pixel.n_of_pulses,
+                                 data_stream.ptr_to(data_size2),
+                                 n_of_pulses,
                                  max_chan)
-                offset += pixel.data_size2
             else:
                 instructed_to_8bit(hypermap8,
-                                   pixel.pixel_x // downsample,
+                                   pixel_x // downsample,
                                    line_cnt // downsample,
-                                   &buffer1[offset],
-                                   pixel.data_size2 -4,
+                                   data_stream.ptr_to(data_size2 - 4),
+                                   data_size2 - 4,
                                    max_chan)
-                offset += pixel.data_size2 - 4
-                if pixel.n_of_pulses > 0:
-                    add_s = <Additional_pulses*>&buffer1[offset]
-                    if byte_order == 1:
-                        add_s.size = swap_32(add_s.size)
-                    offset += 4
-                    if (offset + add_s.size) > size:
-                        size = size_chnk + size - offset
-                        buffer1 = b''
-                        raw_bytes = raw_bytes[offset:] + next(blocks)
-                        buffer1 = <bytes>raw_bytes
-                        offset = 0
-                    for j in range(pixel.n_of_pulses):
-                        add_val = <Val16*>&buffer1[offset + j*2]
-                        if byte_order == 1:
-                            add_val.val = swap_16(add_val.val)
-                        if add_val.val < max_chan:
-                            hypermap8[add_val.val,
-                                      pixel.pixel_x // downsample,
+                if n_of_pulses > 0:
+                    add_pulse_size = data_stream.read_32()
+                    for j in range(n_of_pulses):
+                        add_val = data_stream.read_16()
+                        if add_val < max_chan:
+                            hypermap8[add_val,
+                                      pixel_x // downsample,
                                       line_cnt // downsample] += 1
-                    offset += add_s.size
                 else:
-                    offset +=4
+                    data_stream.skip(4)
 
 
 @cython.cdivision(True)
 @cython.boundscheck(False)
-def bin_to_16bit_numpy(blocks,
-                      int size_chnk,
-                      int total_blocks,
+cdef bin_to_16bit_numpy(DataStream data_stream,
                       uint16_t[:, :, :] hypermap16,
                       int max_chan,
                       int downsample):
     cdef int dummy1, line_cnt, i, j
-    cdef int size
-    cdef bytes raw_bytes
-    cdef int block_no = 0
-    cdef Map_Header* header
-    cdef char map_header_data[8]
-    cdef Pixel_Header* pixel
-    cdef char pixel_header_data[22]
-    cdef Line_Header* pix_in_line
-    cdef char line_header_data[4]
-    cdef Additional_pulses* add_s
-    cdef char addition_pulses_data[4]
-    cdef unsigned char *buffer1
-    cdef Val16* add_val
-    raw_bytes = next(blocks)
-    buffer1 = <bytes>raw_bytes
-    memcpy(map_header_data, &buffer1[0], 8)
-    header = <Map_Header*>&map_header_data[0]
-    if byte_order == 1:
-        header.height = swap_32(header.height)
-        header.width = swap_32(header.width)
-    cdef int offset
-    offset = 0x1A0 #initiating block offset
-    size = size_chnk
-    for line_cnt in range(header.height):
-        if (offset + 4) > size:
-            size = size_chnk + size - offset
-            buffer1 = b''
-            raw_bytes = raw_bytes[offset:] + next(blocks)
-            offset = 0
-            buffer1 = <bytes>raw_bytes
-        memcpy(line_header_data, &buffer1[offset], 4)
-        pix_in_line = <Line_Header*>&line_header_data[0]
-        if byte_order == 1:
-            pix_in_line.pixels = swap_32(pix_in_line.pixels)
-        offset += 4
-        for dummy1 in range(pix_in_line.pixels):
-            if (offset + 22) > size:
-                size = size_chnk + size - offset
-                buffer1 = b''
-                raw_bytes = raw_bytes[offset:] + next(blocks)
-                buffer1 = <bytes>raw_bytes
-                offset = 0
-            memcpy(pixel_header_data, &buffer1[offset], 22)
-            pixel = <Pixel_Header*>&pixel_header_data[0]
-            if byte_order == 1:
-                pixel.pixel_x = swap_32(pixel.pixel_x)
-                pixel.chan1 = swap_16(pixel.chan1)
-                pixel.chan2 = swap_16(pixel.chan2)
-                pixel.flag = swap_16(pixel.flag)
-                pixel.data_size1 = swap_16(pixel.data_size1)
-                pixel.n_of_pulses = swap_16(pixel.n_of_pulses)
-                pixel.data_size2 = swap_16(pixel.data_size2)
-            offset += 22
-            if (offset + pixel.data_size2) > size:
-                size = size_chnk + size - offset
-                buffer1 = b''
-                raw_bytes = raw_bytes[offset:] + next(blocks)
-                buffer1 = <bytes>raw_bytes
-                offset = 0
-            if pixel.flag == 1:
+    cdef uint32_t height, width, pix_in_line, pixel_x, add_pulse_size
+    cdef uint16_t chan1, chan2, flag, data_size1, n_of_pulses, data_size2
+    cdef uint16_t add_val
+    height = data_stream.read_32()
+    width = data_stream.read_32()
+    data_stream.seek(<int>0x1A0) #the begining of the array
+    for line_cnt in range(height):
+        pix_in_line = data_stream.read_32()
+        for dummy1 in range(pix_in_line):
+            pixel_x = data_stream.read_32()
+            chan1 = data_stream.read_16()
+            chan2 = data_stream.read_16()
+            data_stream.skip(4)  # unknown static value
+            flag = data_stream.read_16()
+            data_size1 = data_stream.read_16()
+            n_of_pulses = data_stream.read_16()
+            data_size2 = data_stream.read_16()
+            data_stream.skip(2)  # skip to data
+            if flag == 1:
                 unpack12_to_16bit(hypermap16,
-                                 pixel.pixel_x // downsample,
+                                 pixel_x // downsample,
                                  line_cnt // downsample,
-                                 &buffer1[offset],
-                                 pixel.n_of_pulses,
+                                 data_stream.ptr_to(data_size2),
+                                 n_of_pulses,
                                  max_chan)
-                offset += pixel.data_size2
             else:
                 instructed_to_16bit(hypermap16,
-                                   pixel.pixel_x // downsample,
+                                   pixel_x // downsample,
                                    line_cnt // downsample,
-                                   &buffer1[offset],
-                                   pixel.data_size2 -4,
+                                   data_stream.ptr_to(data_size2 - 4),
+                                   data_size2 - 4,
                                    max_chan)
-                offset += pixel.data_size2 - 4
-                if pixel.n_of_pulses > 0:
-                    add_s = <Additional_pulses*>&buffer1[offset]
-                    if byte_order == 1:
-                        add_s.size = swap_32(add_s.size)
-                    offset += 4
-                    if (offset + add_s.size) > size:
-                        size = size_chnk + size - offset
-                        buffer1 = b''
-                        raw_bytes = raw_bytes[offset:] + next(blocks)
-                        buffer1 = <bytes>raw_bytes
-                        offset = 0
-                    for j in range(pixel.n_of_pulses):
-                        add_val = <Val16*>&buffer1[offset + j*2]
-                        if byte_order == 1:
-                            add_val.val = swap_16(add_val.val)
-                        if add_val.val < max_chan:
-                            hypermap16[add_val.val,
-                                      pixel.pixel_x // downsample,
+                if n_of_pulses > 0:
+                    add_pulse_size = data_stream.read_32()
+                    for j in range(n_of_pulses):
+                        add_val = data_stream.read_16()
+                        if add_val < max_chan:
+                            hypermap16[add_val,
+                                      pixel_x // downsample,
                                       line_cnt // downsample] += 1
-                    offset += add_s.size
                 else:
-                    offset +=4
+                    data_stream.skip(4)
 
 @cython.cdivision(True)
 @cython.boundscheck(False)
-def bin_to_32bit_numpy(blocks,
-                      int size_chnk,
-                      int total_blocks,
+cdef bin_to_32bit_numpy(DataStream data_stream,
                       uint32_t[:, :, :] hypermap32,
                       int max_chan,
                       int downsample):
     cdef int dummy1, line_cnt, i, j
-    cdef int size
-    cdef bytes raw_bytes
-    cdef int block_no = 0
-    cdef Map_Header* header
-    cdef char map_header_data[8]
-    cdef Pixel_Header* pixel
-    cdef char pixel_header_data[22]
-    cdef Line_Header* pix_in_line
-    cdef char line_header_data[4]
-    cdef Additional_pulses* add_s
-    cdef char addition_pulses_data[4]
-    cdef unsigned char *buffer1
-    cdef Val16* add_val
-    raw_bytes = next(blocks)
-    buffer1 = <bytes>raw_bytes
-    memcpy(map_header_data, &buffer1[0], 8)
-    header = <Map_Header*>&map_header_data[0]
-    if byte_order == 1:
-        header.height = swap_32(header.height)
-        header.width = swap_32(header.width)
-    cdef int offset
-    offset = 0x1A0 #initiating block offset
-    size = size_chnk
-    for line_cnt in range(header.height):
-        if (offset + 4) > size:
-            size = size_chnk + size - offset
-            buffer1 = b''
-            raw_bytes = raw_bytes[offset:] + next(blocks)
-            offset = 0
-            buffer1 = <bytes>raw_bytes
-        memcpy(line_header_data, &buffer1[offset], 4)
-        pix_in_line = <Line_Header*>&line_header_data[0]
-        if byte_order == 1:
-            pix_in_line.pixels = swap_32(pix_in_line.pixels)
-        offset += 4
-        for dummy1 in range(pix_in_line.pixels):
-            if (offset + 22) > size:
-                size = size_chnk + size - offset
-                buffer1 = b''
-                raw_bytes = raw_bytes[offset:] + next(blocks)
-                buffer1 = <bytes>raw_bytes
-                offset = 0
-            memcpy(pixel_header_data, &buffer1[offset], 22)
-            pixel = <Pixel_Header*>&pixel_header_data[0]
-            if byte_order == 1:
-                pixel.pixel_x = swap_32(pixel.pixel_x)
-                pixel.chan1 = swap_16(pixel.chan1)
-                pixel.chan2 = swap_16(pixel.chan2)
-                pixel.flag = swap_16(pixel.flag)
-                pixel.data_size1 = swap_16(pixel.data_size1)
-                pixel.n_of_pulses = swap_16(pixel.n_of_pulses)
-                pixel.data_size2 = swap_16(pixel.data_size2)
-            offset += 22
-            if (offset + pixel.data_size2) > size:
-                size = size_chnk + size - offset
-                buffer1 = b''
-                raw_bytes = raw_bytes[offset:] + next(blocks)
-                buffer1 = <bytes>raw_bytes
-                offset = 0
-            if pixel.flag == 1:
+    cdef uint32_t height, width, pix_in_line, pixel_x, add_pulse_size
+    cdef uint16_t chan1, chan2, flag, data_size1, n_of_pulses, data_size2
+    cdef uint16_t add_val
+    height = data_stream.read_32()
+    width = data_stream.read_32()
+    data_stream.seek(<int>0x1A0) #the begining of the array
+    for line_cnt in range(height):
+        pix_in_line = data_stream.read_32()
+        for dummy1 in range(pix_in_line):
+            pixel_x = data_stream.read_32()
+            chan1 = data_stream.read_16()
+            chan2 = data_stream.read_16()
+            data_stream.skip(4)  # unknown static value
+            flag = data_stream.read_16()
+            data_size1 = data_stream.read_16()
+            n_of_pulses = data_stream.read_16()
+            data_size2 = data_stream.read_16()
+            data_stream.skip(2)  # skip to data
+            if flag == 1:
                 unpack12_to_32bit(hypermap32,
-                                 pixel.pixel_x // downsample,
+                                 pixel_x // downsample,
                                  line_cnt // downsample,
-                                 &buffer1[offset],
-                                 pixel.n_of_pulses,
+                                 data_stream.ptr_to(data_size2),
+                                 n_of_pulses,
                                  max_chan)
-                offset += pixel.data_size2
             else:
                 instructed_to_32bit(hypermap32,
-                                   pixel.pixel_x // downsample,
+                                   pixel_x // downsample,
                                    line_cnt // downsample,
-                                   &buffer1[offset],
-                                   pixel.data_size2 -4,
+                                   data_stream.ptr_to(data_size2 - 4),
+                                   data_size2 - 4,
                                    max_chan)
-                offset += pixel.data_size2 - 4
-                if pixel.n_of_pulses > 0:
-                    add_s = <Additional_pulses*>&buffer1[offset]
-                    if byte_order == 1:
-                        add_s.size = swap_32(add_s.size)
-                    offset += 4
-                    if (offset + add_s.size) > size:
-                        size = size_chnk + size - offset
-                        buffer1 = b''
-                        raw_bytes = raw_bytes[offset:] + next(blocks)
-                        buffer1 = <bytes>raw_bytes
-                        offset = 0
-                    for j in range(pixel.n_of_pulses):
-                        add_val = <Val16*>&buffer1[offset + j*2]
-                        if byte_order == 1:
-                            add_val.val = swap_16(add_val.val)
-                        if add_val.val < max_chan:
-                            hypermap32[add_val.val,
-                                      pixel.pixel_x // downsample,
+                if n_of_pulses > 0:
+                    add_pulse_size = data_stream.read_32()
+                    for j in range(n_of_pulses):
+                        add_val = data_stream.read_16()
+                        if add_val < max_chan:
+                            hypermap32[add_val,
+                                      pixel_x // downsample,
                                       line_cnt // downsample] += 1
-                    offset += add_s.size
                 else:
-                    offset +=4
+                    data_stream.skip(4)
 
+
+# functions for pixel spectra extraction from instructively packed data:
 
 @cython.cdivision(True)
 @cython.boundscheck(False)
@@ -396,10 +295,6 @@ cdef void instructed_to_8bit(uint8_t[:, :, :] dest, int x, int y,
     cdef int i, j, length
     cdef int gain = 0
     cdef Bunch_head* head
-    cdef Gain8* gain8
-    cdef Gain16* gain16
-    cdef Gain32* gain32
-    cdef Val16* val16
     while (offset < data_size):
         head =<Bunch_head*>&src[offset]
         offset +=2
@@ -407,19 +302,12 @@ cdef void instructed_to_8bit(uint8_t[:, :, :] dest, int x, int y,
             channel += head.channels
         else:
             if head.size == 1:
-                gain8 = <Gain8*>&src[offset]
-                gain = <int>gain8.val
+                gain = <int>(src[offset])
             elif head.size == 2:
-                gain16 = <Gain16*>&src[offset]
-                if byte_order == 1:
-                    gain16.val = swap_16(gain16.val)
-                gain = <int>gain16.val
+                gain = <int>read_16(&src[offset])
             elif head.size == 4:
-                gain32 = <Gain32*>&src[offset]
-                if byte_order == 1:
-                    gain32.val = swap_32(gain32.val)
-                gain = <int>gain32.val
-            # this is theoretically impossible:
+                gain = <int>read_32(&src[offset])
+            # further is theoretically impossible for 8bit arrays:
             else:
                 gain = 0
             offset += head.size
@@ -461,10 +349,7 @@ cdef void instructed_to_16bit(uint16_t[:, :, :] dest, int x, int y,
     cdef int i, j, length
     cdef int gain = 0
     cdef Bunch_head* head
-    cdef Gain8* gain8
-    cdef Gain16* gain16
-    cdef Gain32* gain32
-    cdef Val16* val16
+    cdef uint16_t val16
     while (offset < data_size):
         head =<Bunch_head*>&src[offset]
         offset +=2
@@ -472,18 +357,11 @@ cdef void instructed_to_16bit(uint16_t[:, :, :] dest, int x, int y,
             channel += head.channels
         else:
             if head.size == 1:
-                gain8 = <Gain8*>&src[offset]
-                gain = <int>gain8.val
+                gain = <int>(src[offset])
             elif head.size == 2:
-                gain16 = <Gain16*>&src[offset]
-                if byte_order == 1:
-                    gain16.val = swap_16(gain16.val)
-                gain = <int>gain16.val
+                gain = <int>read_16(&src[offset])
             elif head.size == 4:
-                gain32 = <Gain32*>&src[offset]
-                if byte_order == 1:
-                    gain32.val = swap_32(gain32.val)
-                gain = <int>gain32.val
+                gain = <int>read_32(&src[offset])
             else:
                 #gain from far future:
                 gain = 0
@@ -508,10 +386,8 @@ cdef void instructed_to_16bit(uint16_t[:, :, :] dest, int x, int y,
             else:
                 for i in range(head.channels):
                     if (i+channel) < cutoff:
-                        val16 = <Val16*>&src[offset + i*2]
-                        if byte_order == 1:
-                            val16.val = swap_16(val16.val)
-                        dest[i+channel, x, y] += <uint16_t>(val16.val + gain)
+                        val16 = read_16(&src[offset + i*2])
+                        dest[i+channel, x, y] += <uint16_t>(val16 + gain)
                 length = <int>(head.channels * head.size // 2)
             offset += length
             channel += head.channels
@@ -530,12 +406,8 @@ cdef void instructed_to_32bit(uint32_t[:, :, :] dest, int x, int y,
     cdef int i, j, length
     cdef int gain = 0
     cdef Bunch_head* head
-    cdef Gain8* gain8
-    cdef Gain16* gain16
-    cdef Gain32* gain32
-    cdef Gain64* gain64
-    cdef Val16* val16
-    cdef Val32* val32
+    cdef uint16_t val16
+    cdef uint32_t val32
     while (offset < data_size):
         head =<Bunch_head*>&src[offset]
         offset +=2
@@ -543,23 +415,13 @@ cdef void instructed_to_32bit(uint32_t[:, :, :] dest, int x, int y,
             channel += head.channels
         else:
             if head.size == 1:
-                gain8 = <Gain8*>&src[offset]
-                gain = <int>gain8.val
+                gain = <int>(src[offset])
             elif head.size == 2:
-                gain16 = <Gain16*>&src[offset]
-                if byte_order == 1:
-                    gain16.val = swap_16(gain16.val)
-                gain = <int>gain16.val
+                gain = <int>read_16(&src[offset])
             elif head.size == 4:
-                gain32 = <Gain32*>&src[offset]
-                if byte_order == 1:
-                    gain32.val = swap_32(gain32.val)
-                gain = <int>gain32.val
+                gain = <int>read_32(&src[offset])
             else:
-                gain64 = <Gain64*>&src[offset]
-                if byte_order == 1:
-                    gain64.val = swap_32(<uint32_t>(gain64.val >> 32)) | (<uint64_t>(swap_32(<uint32_t>(gain64.val & <uint64_t>0xFFFFFFFF))) << 32)
-                gain = <int> gain64.val
+                gain = <int>read_64(&src[offset])
             offset += head.size
             if head.size == 1:  # special nibble switching case
                 for i in range(head.channels):
@@ -581,23 +443,20 @@ cdef void instructed_to_32bit(uint32_t[:, :, :] dest, int x, int y,
             elif head.size == 4:
                 for i in range(head.channels):
                     if (i+channel) < cutoff:
-                        val16 = <Val16*>&src[offset + i*2]
-                        if byte_order == 1:
-                            val16.val = swap_16(val16.val)
-                        dest[i+channel, x, y] += <uint32_t>(val16.val + gain)
+                        val16 = read_16(&src[offset + i*2])
+                        dest[i+channel, x, y] += <uint32_t>(val16 + gain)
                 length = <int>(head.channels * head.size // 2)
             else:
                 for i in range(head.channels):
                     if (i+channel) < cutoff:
-                        val32 = <Val32*>&src[offset + i*2]
-                        if byte_order == 1:
-                            val32.val = swap_32(val32.val)
-                        dest[i+channel, x, y] += <uint32_t>(val32.val + gain)
+                        val32 = read_32(&src[offset + i*2])
+                        dest[i+channel, x, y] += <uint32_t>(val32 + gain)
                 length = <int>(head.channels * head.size // 2)
             offset += length
             channel += head.channels
 
 
+#functions to extract 12bit packed pixel spectra:
 
 @cython.cdivision(True)
 @cython.boundscheck(False)
@@ -671,29 +530,15 @@ def parse_to_numpy(bcf, downsample=1, cutoff=None):
                          bcf.sfs.header.image.width // downsample,
                          bcf.sfs.header.image.height // downsample),
                          dtype=dtype)
+    cdef DataStream data_stream = DataStream(blocks, block_size)
     if dtype == np.uint8:
-        bin_to_8bit_numpy(blocks, block_size, total_blocks,
-                          hypermap, map_depth, downsample)
+        bin_to_8bit_numpy(data_stream, hypermap, map_depth, downsample)
         return hypermap
     elif dtype == np.uint16:
-        bin_to_16bit_numpy(blocks, block_size, total_blocks,
-                          hypermap, map_depth, downsample)
+        bin_to_16bit_numpy(data_stream, hypermap, map_depth, downsample)
         return hypermap
     elif dtype == np.uint32:
-        bin_to_32bit_numpy(blocks, block_size, total_blocks,
-                          hypermap, map_depth, downsample)
+        bin_to_32bit_numpy(data_stream, hypermap, map_depth, downsample)
         return hypermap
     else:
         print('64bit array not implemented!')
-
-
-# helper functions for byteswaps for big-endian machines
-
-cdef uint32_t swap_32(uint32_t value):
-    return ((value>>24) & 255) |\
-           ((value<<8) & <uint32_t>0xff0000) |\
-           ((value>>8) & <uint32_t>0xff00) |\
-           ((value<<24) & <uint32_t>0xff000000)
-
-cdef uint16_t swap_16(uint16_t value):
-    return ((value<<8) & 65280) | ((value>>8) & 255)
