@@ -182,6 +182,26 @@ If using Arch Linux, the latest checkout of the master development branch can be
 installed through the AUR by installing the `hyperspy-git package
 <https://aur.archlinux.org/packages/hyperspy-git/>`_
 
+Installing HyperSpy from source in Ubuntu 15.10:
+
+.. code-block:: bash
+    
+    $ sudo apt-get install git python3-pip python3-matplotlib python3-numpy \
+        python3-scipy python3-skimage python3-requests python3-natsort \
+        python3-setuptools python3-h5py python3-pyqt4 ipython3 \
+        python3-mock python3-dill
+    $ sudo apt-get install python3-sumpy --no-install-recommends
+    $ sudo pip3 install sklearn traits traitsui
+    $ git clone https://github.com/hyperspy/hyperspy.git
+    $ cd hyperspy
+    $ sudo pip3 install -e ./
+
+The package `python3-sympy` recommends installing the `TexLive` Latex
+distribution, which requires downloading about 1 GB of extra packages.
+So this is avoided by using the `--no-install-recommends`.
+The `sklearn`, `traits` and `traitsui` packages are not available for 
+Python3 in Ubuntu 15.10, so these must be installed using `pip3`.
+
 .. _create-debian-binary:
 
 Creating Debian/Ubuntu binaries
