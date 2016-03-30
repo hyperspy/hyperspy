@@ -10,6 +10,14 @@ else:
 
 from libc.stdint cimport uint8_t, uint16_t, uint32_t, uint64_t
 
+# fused unsigned integer type for generalised programing:
+
+ctypedef fused channel_t:
+    uint8_t
+    uint16_t
+    uint32_t
+
+
 # instructivelly packed array structs:
 
 cdef packed struct Bunch_head: #size 2bytes
@@ -26,9 +34,9 @@ cdef uint16_t read_16(unsigned char *pointer):
 @cython.boundscheck(False)
 cdef uint32_t read_32(unsigned char *pointer):
 
-    return ((<uint32_t>pointer[3]<<24) & <uint64_t>4278190080) |\
-           ((<uint32_t>pointer[2]<<16) & <uint64_t>16711680) |\
-           ((<uint32_t>pointer[1]<<8) & <uint64_t>65280) |\
+    return ((<uint32_t>pointer[3]<<24) & <uint32_t>4278190080) |\
+           ((<uint32_t>pointer[2]<<16) & <uint32_t>16711680) |\
+           ((<uint32_t>pointer[1]<<8) & <uint32_t>65280) |\
              <uint32_t>pointer[0]
 
 @cython.boundscheck(False)
@@ -125,14 +133,15 @@ cdef class DataStream:
         self.offset = 0
         self.buffer2 = <bytes>self.raw_bytes
 
-# functions for looping throught the bcf pixels:
+
+# function for looping throught the bcf pixels:
 
 @cython.cdivision(True)
 @cython.boundscheck(False)
-cdef bin_to_8bit_numpy(DataStream data_stream,
-                      uint8_t[:, :, :] hypermap8,
-                      int max_chan,
-                      int downsample):
+cdef bin_to_numpy(DataStream data_stream,
+                  channel_t[:, :, :] hypermap,
+                  int max_chan,
+                  int downsample):
     cdef int dummy1, line_cnt, i, j
     cdef uint32_t height, width, pix_in_line, pixel_x, add_pulse_size
     cdef uint16_t chan1, chan2, flag, data_size1, n_of_pulses, data_size2
@@ -153,253 +162,41 @@ cdef bin_to_8bit_numpy(DataStream data_stream,
             data_size2 = data_stream.read_16()
             data_stream.skip(2)  # skip to data
             if flag == 1:
-                unpack12_to_8bit(hypermap8,
-                                 pixel_x // downsample,
-                                 line_cnt // downsample,
-                                 data_stream.ptr_to(data_size2),
-                                 n_of_pulses,
-                                 max_chan)
+                unpack12bit(hypermap,
+                            pixel_x // downsample,
+                            line_cnt // downsample,
+                            data_stream.ptr_to(data_size2),
+                            n_of_pulses,
+                            max_chan)
             else:
-                instructed_to_8bit(hypermap8,
-                                   pixel_x // downsample,
-                                   line_cnt // downsample,
-                                   data_stream.ptr_to(data_size2 - 4),
-                                   data_size2 - 4,
-                                   max_chan)
+                unpack_instructed(hypermap,
+                                  pixel_x // downsample,
+                                  line_cnt // downsample,
+                                  data_stream.ptr_to(data_size2 - 4),
+                                  data_size2 - 4,
+                                  max_chan)
                 if n_of_pulses > 0:
                     add_pulse_size = data_stream.read_32()
                     for j in range(n_of_pulses):
                         add_val = data_stream.read_16()
                         if add_val < max_chan:
-                            hypermap8[add_val,
+                            hypermap[add_val,
                                       pixel_x // downsample,
                                       line_cnt // downsample] += 1
                 else:
                     data_stream.skip(4)
 
 
-@cython.cdivision(True)
-@cython.boundscheck(False)
-cdef bin_to_16bit_numpy(DataStream data_stream,
-                      uint16_t[:, :, :] hypermap16,
-                      int max_chan,
-                      int downsample):
-    cdef int dummy1, line_cnt, i, j
-    cdef uint32_t height, width, pix_in_line, pixel_x, add_pulse_size
-    cdef uint16_t chan1, chan2, flag, data_size1, n_of_pulses, data_size2
-    cdef uint16_t add_val
-    height = data_stream.read_32()
-    width = data_stream.read_32()
-    data_stream.seek(<int>0x1A0) #the begining of the array
-    for line_cnt in range(height):
-        pix_in_line = data_stream.read_32()
-        for dummy1 in range(pix_in_line):
-            pixel_x = data_stream.read_32()
-            chan1 = data_stream.read_16()
-            chan2 = data_stream.read_16()
-            data_stream.skip(4)  # unknown static value
-            flag = data_stream.read_16()
-            data_size1 = data_stream.read_16()
-            n_of_pulses = data_stream.read_16()
-            data_size2 = data_stream.read_16()
-            data_stream.skip(2)  # skip to data
-            if flag == 1:
-                unpack12_to_16bit(hypermap16,
-                                 pixel_x // downsample,
-                                 line_cnt // downsample,
-                                 data_stream.ptr_to(data_size2),
-                                 n_of_pulses,
-                                 max_chan)
-            else:
-                instructed_to_16bit(hypermap16,
-                                   pixel_x // downsample,
-                                   line_cnt // downsample,
-                                   data_stream.ptr_to(data_size2 - 4),
-                                   data_size2 - 4,
-                                   max_chan)
-                if n_of_pulses > 0:
-                    add_pulse_size = data_stream.read_32()
-                    for j in range(n_of_pulses):
-                        add_val = data_stream.read_16()
-                        if add_val < max_chan:
-                            hypermap16[add_val,
-                                      pixel_x // downsample,
-                                      line_cnt // downsample] += 1
-                else:
-                    data_stream.skip(4)
+#functions to extract pixel spectrum:
 
 @cython.cdivision(True)
 @cython.boundscheck(False)
-cdef bin_to_32bit_numpy(DataStream data_stream,
-                      uint32_t[:, :, :] hypermap32,
-                      int max_chan,
-                      int downsample):
-    cdef int dummy1, line_cnt, i, j
-    cdef uint32_t height, width, pix_in_line, pixel_x, add_pulse_size
-    cdef uint16_t chan1, chan2, flag, data_size1, n_of_pulses, data_size2
-    cdef uint16_t add_val
-    height = data_stream.read_32()
-    width = data_stream.read_32()
-    data_stream.seek(<int>0x1A0) #the begining of the array
-    for line_cnt in range(height):
-        pix_in_line = data_stream.read_32()
-        for dummy1 in range(pix_in_line):
-            pixel_x = data_stream.read_32()
-            chan1 = data_stream.read_16()
-            chan2 = data_stream.read_16()
-            data_stream.skip(4)  # unknown static value
-            flag = data_stream.read_16()
-            data_size1 = data_stream.read_16()
-            n_of_pulses = data_stream.read_16()
-            data_size2 = data_stream.read_16()
-            data_stream.skip(2)  # skip to data
-            if flag == 1:
-                unpack12_to_32bit(hypermap32,
-                                 pixel_x // downsample,
-                                 line_cnt // downsample,
-                                 data_stream.ptr_to(data_size2),
-                                 n_of_pulses,
-                                 max_chan)
-            else:
-                instructed_to_32bit(hypermap32,
-                                   pixel_x // downsample,
-                                   line_cnt // downsample,
-                                   data_stream.ptr_to(data_size2 - 4),
-                                   data_size2 - 4,
-                                   max_chan)
-                if n_of_pulses > 0:
-                    add_pulse_size = data_stream.read_32()
-                    for j in range(n_of_pulses):
-                        add_val = data_stream.read_16()
-                        if add_val < max_chan:
-                            hypermap32[add_val,
-                                      pixel_x // downsample,
-                                      line_cnt // downsample] += 1
-                else:
-                    data_stream.skip(4)
-
-
-# functions for pixel spectra extraction from instructively packed data:
-
-@cython.cdivision(True)
-@cython.boundscheck(False)
-cdef void instructed_to_8bit(uint8_t[:, :, :] dest, int x, int y,
-                             unsigned char * src, uint16_t data_size,
-                             int cutoff):
+cdef void unpack_instructed(channel_t[:, :, :] dest, int x, int y,
+                            unsigned char * src, uint16_t data_size,
+                            int cutoff):
     """
     unpack instructivelly packed delphi array into selection
-    of memoryview of 8bit array
-    """
-    cdef int offset = 0
-    cdef int channel = 0
-    cdef int i, j, length
-    cdef int gain = 0
-    cdef Bunch_head* head
-    while (offset < data_size):
-        head =<Bunch_head*>&src[offset]
-        offset +=2
-        if head.size == 0:  # empty channels (zero counts)
-            channel += head.channels
-        else:
-            if head.size == 1:
-                gain = <int>(src[offset])
-            elif head.size == 2:
-                gain = <int>read_16(&src[offset])
-            elif head.size == 4:
-                gain = <int>read_32(&src[offset])
-            # further is theoretically impossible for 8bit arrays:
-            else:
-                gain = 0
-            offset += head.size
-            if head.size == 1:  # special nibble switching case on LE and BE machines
-                for i in range(head.channels):
-                    if (i+channel) < cutoff:
-                        #reverse the nibbles:
-                        if i % 2 == 0:
-                            dest[i+channel, x, y] += <uint8_t>((src[offset +(i//2)] & 0x0F) + gain)
-                        else:
-                            dest[i+channel, x, y] += <uint8_t>((src[offset +(i//2)] >> 4) + gain)
-                if head.channels % 2 == 0:
-                    length = <int>(head.channels // 2)
-                else:
-                    length = <int>((head.channels // 2) +1)
-            elif head.size == 2:
-                for i in range(head.channels):
-                    if (i+channel) < cutoff:
-                        dest[i+channel, x, y] += <uint8_t>(src[offset + i] + gain)
-                length = <int>(head.channels * head.size // 2)
-            # further is not actual for 8 bit arrays:
-            else:
-                length = <int>(head.channels * head.size // 2)
-            offset += length
-            channel += head.channels
-
-
-@cython.cdivision(True)
-@cython.boundscheck(False)
-cdef void instructed_to_16bit(uint16_t[:, :, :] dest, int x, int y,
-                             unsigned char * src, uint16_t data_size,
-                             int cutoff):
-    """
-    unpack instructivelly packed delphi array into selection
-    of memoryview of 16bit array
-    """
-    cdef int offset = 0
-    cdef int channel = 0
-    cdef int i, j, length
-    cdef int gain = 0
-    cdef Bunch_head* head
-    cdef uint16_t val16
-    while (offset < data_size):
-        head =<Bunch_head*>&src[offset]
-        offset +=2
-        if head.size == 0:  # empty channels (zero counts)
-            channel += head.channels
-        else:
-            if head.size == 1:
-                gain = <int>(src[offset])
-            elif head.size == 2:
-                gain = <int>read_16(&src[offset])
-            elif head.size == 4:
-                gain = <int>read_32(&src[offset])
-            else:
-                #gain from far future:
-                gain = 0
-            offset += head.size
-            if head.size == 1:  # special nibble switching case
-                for i in range(head.channels):
-                    if (i+channel) < cutoff:
-                        #reverse the nibbles:
-                        if i % 2 == 0:
-                            dest[i+channel, x, y] += <uint16_t>((src[offset +(i//2)] & 0x0F) + gain)
-                        else:
-                            dest[i+channel, x, y] += <uint16_t>((src[offset +(i//2)] >> 4) + gain)
-                if head.channels % 2 == 0:
-                    length = <int>(head.channels // 2)
-                else:
-                    length = <int>((head.channels // 2) +1)
-            elif head.size == 2:
-                for i in range(head.channels):
-                    if (i+channel) < cutoff:
-                        dest[i+channel, x, y] += <uint16_t>(src[offset + i] + gain)
-                length = <int>(head.channels * head.size // 2)
-            else:
-                for i in range(head.channels):
-                    if (i+channel) < cutoff:
-                        val16 = read_16(&src[offset + i*2])
-                        dest[i+channel, x, y] += <uint16_t>(val16 + gain)
-                length = <int>(head.channels * head.size // 2)
-            offset += length
-            channel += head.channels
-
-@cython.cdivision(True)
-@cython.boundscheck(False)
-cdef void instructed_to_32bit(uint32_t[:, :, :] dest, int x, int y,
-                             unsigned char * src, uint16_t data_size,
-                             int cutoff):
-    """
-    unpack instructivelly packed delphi array into selection
-    of memoryview of 32bit array
+    of memoryview
     """
     cdef int offset = 0
     cdef int channel = 0
@@ -428,9 +225,9 @@ cdef void instructed_to_32bit(uint32_t[:, :, :] dest, int x, int y,
                     if (i+channel) < cutoff:
                         #reverse the nibbles:
                         if i % 2 == 0:
-                            dest[i+channel, x, y] += <uint32_t>((src[offset +(i//2)] & 15) + gain)
+                            dest[i+channel, x, y] += <channel_t>((src[offset +(i//2)] & 15) + gain)
                         else:
-                            dest[i+channel, x, y] += <uint32_t>((src[offset +(i//2)] >> 4) + gain)
+                            dest[i+channel, x, y] += <channel_t>((src[offset +(i//2)] >> 4) + gain)
                 if head.channels % 2 == 0:
                     length = <int>(head.channels // 2)
                 else:
@@ -438,73 +235,31 @@ cdef void instructed_to_32bit(uint32_t[:, :, :] dest, int x, int y,
             elif head.size == 2:
                 for i in range(head.channels):
                     if (i+channel) < cutoff:
-                        dest[i+channel, x, y] += <uint32_t>(src[offset + i] + gain)
+                        dest[i+channel, x, y] += <channel_t>(src[offset + i] + gain)
                 length = <int>(head.channels * head.size // 2)
             elif head.size == 4:
                 for i in range(head.channels):
                     if (i+channel) < cutoff:
                         val16 = read_16(&src[offset + i*2])
-                        dest[i+channel, x, y] += <uint32_t>(val16 + gain)
+                        dest[i+channel, x, y] += <channel_t>(val16 + gain)
                 length = <int>(head.channels * head.size // 2)
             else:
                 for i in range(head.channels):
                     if (i+channel) < cutoff:
                         val32 = read_32(&src[offset + i*2])
-                        dest[i+channel, x, y] += <uint32_t>(val32 + gain)
+                        dest[i+channel, x, y] += <channel_t>(val32 + gain)
                 length = <int>(head.channels * head.size // 2)
             offset += length
             channel += head.channels
 
 
-#functions to extract 12bit packed pixel spectra:
-
 @cython.cdivision(True)
 @cython.boundscheck(False)
-cdef void unpack12_to_8bit(uint8_t[:, :, :] dest, int x, int y,
-                           unsigned char * src,
-                           uint16_t no_of_pulses,
-                           int cutoff):
-    """unpack 12bit packed array into selection of memoryview of 8bit array """
-    cdef int i, channel
-    for i in range(no_of_pulses):
-        if i % 4 == 0:
-            channel = <int>((src[6*(i//4)] >> 4) + (src[6*(i//4)+1] << 4))
-        elif i % 4 == 1:
-            channel = <int>(((src[6*(i//4)] << 8 ) + (src[6*(i//4)+3])) & 4095)  #0xFFF
-        elif i % 4 == 2:
-            channel = <int>((src[6*(i//4)+2] << 4) + (src[6*(i//4)+5] >> 4))
-        else:
-            channel = <int>(((src[6*(i//4)+5] << 8) + src[6*(i//4)+4]) & 4095)
-        if channel < cutoff:
-            dest[channel, x, y] += 1
-
-@cython.cdivision(True)
-@cython.boundscheck(False)
-cdef void unpack12_to_16bit(uint16_t[:, :, :] dest, int x, int y,
-                           unsigned char * src,
-                           uint16_t no_of_pulses,
-                           int cutoff):
-    """unpack 12bit packed array into selection of memoryview of 16bit array """
-    cdef int i, channel
-    for i in range(no_of_pulses):
-        if i % 4 == 0:
-            channel = <int>((src[6*(i//4)] >> 4)+(src[6*(i//4)+1] << 4))
-        elif i % 4 == 1:
-            channel = <int>(((src[6*(i//4)] << 8 ) + (src[6*(i//4)+3])) & 4095)
-        elif i % 4 == 2:
-            channel = <int>((src[6*(i//4)+2] << 4) + (src[6*(i//4)+5] >> 4))
-        else:
-            channel = <int>(((src[6*(i//4)+5] << 8) + src[6*(i//4)+4]) & 4095)
-        if channel < cutoff:
-            dest[channel, x, y] += 1
-
-@cython.cdivision(True)
-@cython.boundscheck(False)
-cdef void unpack12_to_32bit(uint32_t[:, :, :] dest, int x, int y,
-                           unsigned char * src,
-                           uint16_t no_of_pulses,
-                           int cutoff):
-    """unpack 12bit packed array into selection of memoryview of 32bit array """
+cdef void unpack12bit(channel_t[:, :, :] dest, int x, int y,
+                      unsigned char * src,
+                      uint16_t no_of_pulses,
+                      int cutoff):
+    """unpack 12bit packed array into selection of memoryview"""
     cdef int i, channel
     for i in range(no_of_pulses):
         if i % 4 == 0:
@@ -532,13 +287,13 @@ def parse_to_numpy(bcf, downsample=1, cutoff=None):
                          dtype=dtype)
     cdef DataStream data_stream = DataStream(blocks, block_size)
     if dtype == np.uint8:
-        bin_to_8bit_numpy(data_stream, hypermap, map_depth, downsample)
+        bin_to_numpy[uint8_t](data_stream, hypermap, map_depth, downsample)
         return hypermap
     elif dtype == np.uint16:
-        bin_to_16bit_numpy(data_stream, hypermap, map_depth, downsample)
+        bin_to_numpy[uint16_t](data_stream, hypermap, map_depth, downsample)
         return hypermap
     elif dtype == np.uint32:
-        bin_to_32bit_numpy(data_stream, hypermap, map_depth, downsample)
+        bin_to_numpy[uint32_t](data_stream, hypermap, map_depth, downsample)
         return hypermap
     else:
-        print('64bit array not implemented!')
+        raise NotImplementedError('64bit array not implemented!')
