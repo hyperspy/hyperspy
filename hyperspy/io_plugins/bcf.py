@@ -498,7 +498,7 @@ class HyperHeader(object):
         root = objectify.fromstring(xml_str, parser=oparser).ClassInstance
         try:
             self.name = str(root.attrib['Name'])
-        except AttributeError:
+        except KeyError:
             self.name = 'Undefinded'
         self.datetime = datetime.strptime(' '.join([str(root.Header.Date),
                                                     str(root.Header.Time)]),
@@ -898,7 +898,7 @@ def file_reader(filename,
     if record_by == 'image':
         return bcf_imagery(obj_bcf)
     elif record_by == 'spectrum':
-        pass  # return bcf_hyperspectra(obj_bcf)
+        pass
     else:
         return bcf_imagery(obj_bcf)  # + bcf_hyperspectra(obj_bcf)
 
@@ -930,8 +930,9 @@ def bcf_imagery(obj_bcf):
              # TEM or SEM
              {'Acquisition_instrument': {
                           'SEM': {
-                             'beam_current': 0.0,  # I have no technical
-                             #possibilities to get such parameter by bruker
+                             'beam_current': 0.0,  # There is no technical
+                             # possibilities to get such parameter from bruker
+                             # or some SEM's'
                              'beam_energy': obj_bcf.header.sem.hv,
                              'tilt_stage': obj_bcf.header.stage.tilt_angle,
                              'stage_x': obj_bcf.header.stage.x,
