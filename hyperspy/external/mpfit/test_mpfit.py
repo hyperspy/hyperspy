@@ -2,7 +2,7 @@ from numpy.testing import *
 import numpy as N
 import copy
 
-from mpfit import mpfit
+from .mpfit import mpfit
 
 
 def Flin(x, p):
@@ -43,7 +43,7 @@ def test_linfit():
     fa = {'x': x, 'y': y, 'err': ey}
     m = mpfit(myfunctlin, p0, parinfo=parinfo, functkw=fa)
     if m.status <= 0:
-        print 'error message = ', m.errmsg
+        print('error message = ', m.errmsg)
     assert N.allclose(
         m.params, N.array([3.20996572, -1.7709542], dtype='float64'))
     assert N.allclose(
@@ -71,7 +71,7 @@ def test_rosenbrock():
     pactual = N.array([1., 1.])  # actual minimum of the rosenbrock function
     m = mpfit(myfunctrosenbrock, p0)
     if m.status <= 0:
-        print 'error message = ', m.errmsg
+        print('error message = ', m.errmsg)
     assert m.status > 0
     assert N.allclose(m.params, pactual)
     assert N.allclose(m.fnorm, 0)

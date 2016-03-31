@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2015 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -15,7 +15,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
-from __future__ import division
+
 
 import traits.api as t
 import numpy as np
@@ -152,7 +152,7 @@ class EDSTEMSpectrum(EDSSpectrum):
             'tem_par.elevation_angle',
             'Acquisition_instrument.TEM.Detector.EDS.energy_resolution_MnKa':
             'tem_par.energy_resolution_MnKa', }
-        for key, value in mapping.iteritems():
+        for key, value in mapping.items():
             if self.metadata.has_item(key):
                 exec('%s = self.metadata.%s' % (value, key))
         tem_par.edit_traits()
@@ -171,7 +171,7 @@ class EDSTEMSpectrum(EDSSpectrum):
             'Acquisition_instrument.TEM.Detector.EDS.energy_resolution_MnKa':
             tem_par.energy_resolution_MnKa, }
 
-        for key, value in mapping.iteritems():
+        for key, value in mapping.items():
             if value != t.Undefined:
                 self.metadata.set_item(key, value)
         self._are_microscope_parameters_missing()
@@ -226,9 +226,9 @@ class EDSTEMSpectrum(EDSSpectrum):
         >>> ref = hs.datasets.example_signals.EDS_TEM_Spectrum()
         >>> s = hs.signals.EDSTEMSpectrum(
         >>>     hs.datasets.example_signals.EDS_TEM_Spectrum().data)
-        >>> print s.axes_manager[0].scale
+        >>> print(s.axes_manager[0].scale)
         >>> s.get_calibration_from(ref)
-        >>> print s.axes_manager[0].scale
+        >>> print(s.axes_manager[0].scale)
         1.0
         0.020028
 
@@ -365,7 +365,8 @@ class EDSTEMSpectrum(EDSSpectrum):
         --------
         >>> # Simulate a spectrum image with vacuum region
         >>> s = hs.datasets.example_signals.EDS_TEM_Spectrum()
-        >>> s_vac = hs.signals.Simulation(np.ones_like(s.data, dtype=float))*0.005
+        >>> s_vac = hs.signals.Simulation(
+                np.ones_like(s.data, dtype=float))*0.005
         >>> s_vac.add_poissonian_noise()
         >>> si = hs.stack([s]*3 + [s_vac])
         >>> si.vacuum_mask().data
@@ -452,3 +453,33 @@ class EDSTEMSpectrum(EDSSpectrum):
             navigation_mask=navigation_mask, *args, **kwargs)
         self.learning_results.loadings = np.nan_to_num(
             self.learning_results.loadings)
+
+    def create_model(self, auto_background=True, auto_add_lines=True,
+                     *args, **kwargs):
+        """Create a model for the current TEM EDS data.
+
+        Parameters
+        ----------
+        auto_background : boolean, default True
+            If True, adds automatically a polynomial order 6 to the model,
+            using the edsmodel.add_polynomial_background method.
+        auto_add_lines : boolean, default True
+            If True, automatically add Gaussians for all X-rays generated in
+            the energy range by an element using the edsmodel.add_family_lines
+            method.
+        dictionary : {None, dict}, optional
+            A dictionary to be used to recreate a model. Usually generated
+            using :meth:`hyperspy.model.as_dictionary`
+
+        Returns
+        -------
+
+        model : `EDSTEMModel` instance.
+
+        """
+        from hyperspy.models.edstemmodel import EDSTEMModel
+        model = EDSTEMModel(self,
+                            auto_background=auto_background,
+                            auto_add_lines=auto_add_lines,
+                            *args, **kwargs)
+        return model

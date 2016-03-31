@@ -4,6 +4,22 @@ hyperspy.io_plugins package
 Submodules
 ----------
 
+hyperspy.io_plugins.blockfile module
+------------------------------------
+
+.. automodule:: hyperspy.io_plugins.blockfile
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+hyperspy.io_plugins.dens module
+-------------------------------
+
+.. automodule:: hyperspy.io_plugins.dens
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 hyperspy.io_plugins.digital_micrograph module
 ---------------------------------------------
 
@@ -64,6 +80,14 @@ hyperspy.io_plugins.ripple module
 ---------------------------------
 
 .. automodule:: hyperspy.io_plugins.ripple
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+hyperspy.io_plugins.semper_unf module
+-------------------------------------
+
+.. automodule:: hyperspy.io_plugins.semper_unf
     :members:
     :undoc-members:
     :show-inheritance:

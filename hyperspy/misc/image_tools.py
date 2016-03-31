@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2015 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -22,10 +22,10 @@ from scipy.fftpack import fftn, ifftn
 import matplotlib.pyplot as plt
 
 
-def shift_image(im, shift, fill_value=np.nan):
+def shift_image(im, shift, interpolation_order=1, fill_value=np.nan):
     fractional, integral = np.modf(shift)
     if fractional.any():
-        order = 3
+        order = interpolation_order
     else:
         # Disable interpolation
         order = 0
@@ -55,8 +55,8 @@ def hanning2d(M, N):
 
 
 def sobel_filter(im):
-    sx = sp.ndimage.sobel(im, axis=0, mode='constant')
-    sy = sp.ndimage.sobel(im, axis=1, mode='constant')
+    sx = sp.ndimage.sobel(im, axis=0)
+    sy = sp.ndimage.sobel(im, axis=1)
     sob = np.hypot(sx, sy)
     return sob
 
@@ -148,12 +148,12 @@ def estimate_image_shift(ref, image, roi=None, sobel=True,
 
     # Apply filters
     for im in (ref, image):
-        if hanning is True:
-            im *= hanning2d(*im.shape)
         if medfilter is True:
             im[:] = sp.signal.medfilt(im)
         if sobel is True:
             im[:] = sobel_filter(im)
+        if hanning is True:
+            im *= hanning2d(*im.shape)
 
     phase_correlation = fft_correlation(ref, image,
                                         normalize=normalize_corr)

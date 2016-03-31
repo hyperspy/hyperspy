@@ -100,8 +100,8 @@ def freedman_bin_width(data, return_bins=False):
         raise ValueError("data should have more than three entries")
 
     dsorted = np.sort(data)
-    v25 = dsorted[n / 4 - 1]
-    v75 = dsorted[(3 * n) / 4 - 1]
+    v25 = dsorted[n // 4 - 1]
+    v75 = dsorted[(3 * n) // 4 - 1]
 
     dx = 2 * (v75 - v25) * 1. / (n ** (1. / 3))
 
@@ -290,7 +290,7 @@ def histogram(a, bins=10, range=None, **kwargs):
         da, bins = scotts_bin_width(a, True)
     elif bins == 'freedman':
         da, bins = freedman_bin_width(a, True)
-    elif isinstance(bins, basestring):
+    elif isinstance(bins, str):
         raise ValueError("unrecognized bin code: '%s'" % bins)
 
     return np.histogram(a, bins, range, **kwargs)
