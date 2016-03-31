@@ -772,7 +772,7 @@ class BCF_reader(SFS_reader):
                 # flag distinguishing 12bit packing (1) or instructed packing,
                 # value which sometimes shows the size of packed data,
                 # number of pulses if data is 12bit packed, or contains 16bit
-                #   packed additional to instructed data,
+                #  packed additional to instructed data,
                 # packed data size - next header is after that size,
                 # dummy -- empty 2bytes
                 x_pix, chan1, chan2, dummy1, flag, dummy_size1, n_of_pulses,\
@@ -874,7 +874,8 @@ class BCF_reader(SFS_reader):
         vfa.resize((-(-height // dwn_factor),
                     -(-width // dwn_factor),
                     max_chan))
-        return vfa.swapaxes(2, 0)
+        #return vfa.swapaxes(2, 0)  # comented for hyperspy, as it prefers
+        return vfa
 
 
 class HyperMap(object):
@@ -961,22 +962,22 @@ def bcf_hyperspectra(obj_bcf, index=0, downsample=None, cutoff_at_kV=None):
     obj_bcf.persistent_parse_hypermap(index=index, downsample=downsample,
                                       cutoff_at_kV=cutoff_at_kV)
     hyperspectra = [{'data': obj_bcf.hypermap[index].hypermap,
-           'axes': [{'index_in_array': 2,
+           'axes': [{'index_in_array': 1,
                      'name': 'width',
                      'size': obj_bcf.header.image.width,
                      'offset': 0,
                      'scale': obj_bcf.hypermap[index].xcalib,
                      'units': 'm'
                     },
-                    {'index_in_array': 1,
+                    {'index_in_array': 0,
                      'name': 'height',
                      'size': obj_bcf.header.image.height,
                      'offset': 0,
                      'scale': obj_bcf.hypermap[index].ycalib,
                      'units': 'm'},
-                     {'index_in_array': 0,
+                     {'index_in_array': 2,
                      'name': 'Energy',
-                     'size': obj_bcf.hypermap[index].hypermap.shape[0],
+                     'size': obj_bcf.hypermap[index].hypermap.shape[2],
                      'offset': obj_bcf.hypermap[index].calib_abs,
                      'scale': obj_bcf.hypermap[index].calib_lin,
                      'units': 'eV'}],

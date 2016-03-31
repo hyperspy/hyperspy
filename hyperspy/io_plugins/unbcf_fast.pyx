@@ -180,9 +180,9 @@ cdef bin_to_numpy(DataStream data_stream,
                     for j in range(n_of_pulses):
                         add_val = data_stream.read_16()
                         if add_val < max_chan:
-                            hypermap[add_val,
-                                      pixel_x // downsample,
-                                      line_cnt // downsample] += 1
+                            hypermap[line_cnt // downsample,
+                                     pixel_x // downsample,
+                                     add_val] += 1
                 else:
                     data_stream.skip(4)
 
@@ -225,9 +225,9 @@ cdef void unpack_instructed(channel_t[:, :, :] dest, int x, int y,
                     if (i+channel) < cutoff:
                         #reverse the nibbles:
                         if i % 2 == 0:
-                            dest[i+channel, x, y] += <channel_t>((src[offset +(i//2)] & 15) + gain)
+                            dest[y, x, i+channel] += <channel_t>((src[offset +(i//2)] & 15) + gain)
                         else:
-                            dest[i+channel, x, y] += <channel_t>((src[offset +(i//2)] >> 4) + gain)
+                            dest[y, x, i+channel] += <channel_t>((src[offset +(i//2)] >> 4) + gain)
                 if head.channels % 2 == 0:
                     length = <int>(head.channels // 2)
                 else:
@@ -235,19 +235,19 @@ cdef void unpack_instructed(channel_t[:, :, :] dest, int x, int y,
             elif head.size == 2:
                 for i in range(head.channels):
                     if (i+channel) < cutoff:
-                        dest[i+channel, x, y] += <channel_t>(src[offset + i] + gain)
+                        dest[y, x, i+channel] += <channel_t>(src[offset + i] + gain)
                 length = <int>(head.channels * head.size // 2)
             elif head.size == 4:
                 for i in range(head.channels):
                     if (i+channel) < cutoff:
                         val16 = read_16(&src[offset + i*2])
-                        dest[i+channel, x, y] += <channel_t>(val16 + gain)
+                        dest[y, x, i+channel] += <channel_t>(val16 + gain)
                 length = <int>(head.channels * head.size // 2)
             else:
                 for i in range(head.channels):
                     if (i+channel) < cutoff:
                         val32 = read_32(&src[offset + i*2])
-                        dest[i+channel, x, y] += <channel_t>(val32 + gain)
+                        dest[y, x, i+channel] += <channel_t>(val32 + gain)
                 length = <int>(head.channels * head.size // 2)
             offset += length
             channel += head.channels
@@ -271,7 +271,7 @@ cdef void unpack12bit(channel_t[:, :, :] dest, int x, int y,
         else:
             channel = <int>(((src[6*(i//4)+5] << 8) + src[6*(i//4)+4]) & 4095)
         if channel < cutoff:
-            dest[channel, x, y] += 1
+            dest[y, x, channel] += 1
 
 #the main function:
 
@@ -281,10 +281,10 @@ def parse_to_numpy(bcf, downsample=1, cutoff=None):
     if type(cutoff) == int:
         map_depth = cutoff
     dtype = bcf.sfs.header.estimate_map_depth(downsample=downsample)
-    hypermap = np.zeros((map_depth,
+    hypermap = np.zeros((bcf.sfs.header.image.height // downsample,
                          bcf.sfs.header.image.width // downsample,
-                         bcf.sfs.header.image.height // downsample),
-                         dtype=dtype)
+                         map_depth),
+                        dtype=dtype)
     cdef DataStream data_stream = DataStream(blocks, block_size)
     if dtype == np.uint8:
         bin_to_numpy[uint8_t](data_stream, hypermap, map_depth, downsample)

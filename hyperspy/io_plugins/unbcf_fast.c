@@ -234,8 +234,8 @@ static CYTHON_INLINE float __PYX_NAN() {
   #endif
 #endif
 
-#define __PYX_HAVE__unbcf_fast
-#define __PYX_HAVE_API__unbcf_fast
+#define __PYX_HAVE__hyperspy__io_plugins__unbcf_fast
+#define __PYX_HAVE_API__hyperspy__io_plugins__unbcf_fast
 #include "stdint.h"
 #include "pythread.h"
 #include "string.h"
@@ -450,8 +450,8 @@ static const char *__pyx_filename;
 
 
 static const char *__pyx_f[] = {
-  "unbcf_fast.pyx",
-  "stringsource",
+  "hyperspy/io_plugins/unbcf_fast.pyx",
+  "hyperspy/io_plugins/stringsource",
 };
 struct __pyx_memoryview_obj;
 typedef struct {
@@ -553,14 +553,14 @@ typedef volatile __pyx_atomic_int_type __pyx_atomic_int;
 
 
 /*--- Type declarations ---*/
-struct __pyx_obj_10unbcf_fast_DataStream;
+struct __pyx_obj_8hyperspy_10io_plugins_10unbcf_fast_DataStream;
 struct __pyx_array_obj;
 struct __pyx_MemviewEnum_obj;
 struct __pyx_memoryview_obj;
 struct __pyx_memoryviewslice_obj;
-struct __pyx_t_10unbcf_fast_Bunch_head;
+struct __pyx_t_8hyperspy_10io_plugins_10unbcf_fast_Bunch_head;
 
-/* "unbcf_fast.pyx":23
+/* "hyperspy/io_plugins/unbcf_fast.pyx":23
  * # instructivelly packed array structs:
  * 
  * cdef packed struct Bunch_head: #size 2bytes             # <<<<<<<<<<<<<<
@@ -572,7 +572,7 @@ struct __pyx_t_10unbcf_fast_Bunch_head;
 #elif !defined(__GNUC__)
   #pragma pack(push, 1)
 #endif
-struct __Pyx_PACKED __pyx_t_10unbcf_fast_Bunch_head {
+struct __Pyx_PACKED __pyx_t_8hyperspy_10io_plugins_10unbcf_fast_Bunch_head {
   uint8_t size;
   uint8_t channels;
 };
@@ -582,16 +582,16 @@ struct __Pyx_PACKED __pyx_t_10unbcf_fast_Bunch_head {
   #pragma pack(pop)
 #endif
 
-/* "unbcf_fast.pyx":59
+/* "hyperspy/io_plugins/unbcf_fast.pyx":59
  * 
  * @cython.boundscheck(False)
  * cdef class DataStream:             # <<<<<<<<<<<<<<
  * 
  *     cdef unsigned char *buffer2
  */
-struct __pyx_obj_10unbcf_fast_DataStream {
+struct __pyx_obj_8hyperspy_10io_plugins_10unbcf_fast_DataStream {
   PyObject_HEAD
-  struct __pyx_vtabstruct_10unbcf_fast_DataStream *__pyx_vtab;
+  struct __pyx_vtabstruct_8hyperspy_10io_plugins_10unbcf_fast_DataStream *__pyx_vtab;
   unsigned char *buffer2;
   int size;
   int size_chnk;
@@ -678,7 +678,7 @@ struct __pyx_memoryviewslice_obj {
 
 
 
-/* "unbcf_fast.pyx":59
+/* "hyperspy/io_plugins/unbcf_fast.pyx":59
  * 
  * @cython.boundscheck(False)
  * cdef class DataStream:             # <<<<<<<<<<<<<<
@@ -686,17 +686,17 @@ struct __pyx_memoryviewslice_obj {
  *     cdef unsigned char *buffer2
  */
 
-struct __pyx_vtabstruct_10unbcf_fast_DataStream {
-  void (*seek)(struct __pyx_obj_10unbcf_fast_DataStream *, int);
-  void (*skip)(struct __pyx_obj_10unbcf_fast_DataStream *, int);
-  uint8_t (*read_8)(struct __pyx_obj_10unbcf_fast_DataStream *);
-  uint16_t (*read_16)(struct __pyx_obj_10unbcf_fast_DataStream *);
-  uint32_t (*read_32)(struct __pyx_obj_10unbcf_fast_DataStream *);
-  uint64_t (*read_64)(struct __pyx_obj_10unbcf_fast_DataStream *);
-  unsigned char *(*ptr_to)(struct __pyx_obj_10unbcf_fast_DataStream *, int);
-  void (*load_next_block)(struct __pyx_obj_10unbcf_fast_DataStream *);
+struct __pyx_vtabstruct_8hyperspy_10io_plugins_10unbcf_fast_DataStream {
+  void (*seek)(struct __pyx_obj_8hyperspy_10io_plugins_10unbcf_fast_DataStream *, int);
+  void (*skip)(struct __pyx_obj_8hyperspy_10io_plugins_10unbcf_fast_DataStream *, int);
+  uint8_t (*read_8)(struct __pyx_obj_8hyperspy_10io_plugins_10unbcf_fast_DataStream *);
+  uint16_t (*read_16)(struct __pyx_obj_8hyperspy_10io_plugins_10unbcf_fast_DataStream *);
+  uint32_t (*read_32)(struct __pyx_obj_8hyperspy_10io_plugins_10unbcf_fast_DataStream *);
+  uint64_t (*read_64)(struct __pyx_obj_8hyperspy_10io_plugins_10unbcf_fast_DataStream *);
+  unsigned char *(*ptr_to)(struct __pyx_obj_8hyperspy_10io_plugins_10unbcf_fast_DataStream *, int);
+  void (*load_next_block)(struct __pyx_obj_8hyperspy_10io_plugins_10unbcf_fast_DataStream *);
 };
-static struct __pyx_vtabstruct_10unbcf_fast_DataStream *__pyx_vtabptr_10unbcf_fast_DataStream;
+static struct __pyx_vtabstruct_8hyperspy_10io_plugins_10unbcf_fast_DataStream *__pyx_vtabptr_8hyperspy_10io_plugins_10unbcf_fast_DataStream;
 
 
 /* "View.MemoryView":304
@@ -1126,14 +1126,14 @@ static int __Pyx_check_binary_version(void);
 
 static int __Pyx_InitStrings(__Pyx_StringTabEntry *t);
 
-static void __pyx_f_10unbcf_fast_10DataStream_seek(struct __pyx_obj_10unbcf_fast_DataStream *__pyx_v_self, int __pyx_v_value); /* proto*/
-static void __pyx_f_10unbcf_fast_10DataStream_skip(struct __pyx_obj_10unbcf_fast_DataStream *__pyx_v_self, int __pyx_v_length); /* proto*/
-static uint8_t __pyx_f_10unbcf_fast_10DataStream_read_8(struct __pyx_obj_10unbcf_fast_DataStream *__pyx_v_self); /* proto*/
-static uint16_t __pyx_f_10unbcf_fast_10DataStream_read_16(struct __pyx_obj_10unbcf_fast_DataStream *__pyx_v_self); /* proto*/
-static uint32_t __pyx_f_10unbcf_fast_10DataStream_read_32(struct __pyx_obj_10unbcf_fast_DataStream *__pyx_v_self); /* proto*/
-static uint64_t __pyx_f_10unbcf_fast_10DataStream_read_64(struct __pyx_obj_10unbcf_fast_DataStream *__pyx_v_self); /* proto*/
-static unsigned char *__pyx_f_10unbcf_fast_10DataStream_ptr_to(struct __pyx_obj_10unbcf_fast_DataStream *__pyx_v_self, int __pyx_v_length); /* proto*/
-static void __pyx_f_10unbcf_fast_10DataStream_load_next_block(struct __pyx_obj_10unbcf_fast_DataStream *__pyx_v_self); /* proto*/
+static void __pyx_f_8hyperspy_10io_plugins_10unbcf_fast_10DataStream_seek(struct __pyx_obj_8hyperspy_10io_plugins_10unbcf_fast_DataStream *__pyx_v_self, int __pyx_v_value); /* proto*/
+static void __pyx_f_8hyperspy_10io_plugins_10unbcf_fast_10DataStream_skip(struct __pyx_obj_8hyperspy_10io_plugins_10unbcf_fast_DataStream *__pyx_v_self, int __pyx_v_length); /* proto*/
+static uint8_t __pyx_f_8hyperspy_10io_plugins_10unbcf_fast_10DataStream_read_8(struct __pyx_obj_8hyperspy_10io_plugins_10unbcf_fast_DataStream *__pyx_v_self); /* proto*/
+static uint16_t __pyx_f_8hyperspy_10io_plugins_10unbcf_fast_10DataStream_read_16(struct __pyx_obj_8hyperspy_10io_plugins_10unbcf_fast_DataStream *__pyx_v_self); /* proto*/
+static uint32_t __pyx_f_8hyperspy_10io_plugins_10unbcf_fast_10DataStream_read_32(struct __pyx_obj_8hyperspy_10io_plugins_10unbcf_fast_DataStream *__pyx_v_self); /* proto*/
+static uint64_t __pyx_f_8hyperspy_10io_plugins_10unbcf_fast_10DataStream_read_64(struct __pyx_obj_8hyperspy_10io_plugins_10unbcf_fast_DataStream *__pyx_v_self); /* proto*/
+static unsigned char *__pyx_f_8hyperspy_10io_plugins_10unbcf_fast_10DataStream_ptr_to(struct __pyx_obj_8hyperspy_10io_plugins_10unbcf_fast_DataStream *__pyx_v_self, int __pyx_v_length); /* proto*/
+static void __pyx_f_8hyperspy_10io_plugins_10unbcf_fast_10DataStream_load_next_block(struct __pyx_obj_8hyperspy_10io_plugins_10unbcf_fast_DataStream *__pyx_v_self); /* proto*/
 static char *__pyx_memoryview_get_item_pointer(struct __pyx_memoryview_obj *__pyx_v_self, PyObject *__pyx_v_index); /* proto*/
 static PyObject *__pyx_memoryview_is_slice(struct __pyx_memoryview_obj *__pyx_v_self, PyObject *__pyx_v_obj); /* proto*/
 static PyObject *__pyx_memoryview_setitem_slice_assignment(struct __pyx_memoryview_obj *__pyx_v_self, PyObject *__pyx_v_dst, PyObject *__pyx_v_src); /* proto*/
@@ -1150,30 +1150,30 @@ static PyObject *__pyx_memoryviewslice_assign_item_from_object(struct __pyx_memo
 
 /* Module declarations from 'libc.stdint' */
 
-/* Module declarations from 'unbcf_fast' */
-static PyTypeObject *__pyx_ptype_10unbcf_fast_DataStream = 0;
+/* Module declarations from 'hyperspy.io_plugins.unbcf_fast' */
+static PyTypeObject *__pyx_ptype_8hyperspy_10io_plugins_10unbcf_fast_DataStream = 0;
 static PyTypeObject *__pyx_array_type = 0;
 static PyTypeObject *__pyx_MemviewEnum_type = 0;
 static PyTypeObject *__pyx_memoryview_type = 0;
 static PyTypeObject *__pyx_memoryviewslice_type = 0;
-static int __pyx_v_10unbcf_fast_byte_order;
+static int __pyx_v_8hyperspy_10io_plugins_10unbcf_fast_byte_order;
 static PyObject *generic = 0;
 static PyObject *strided = 0;
 static PyObject *indirect = 0;
 static PyObject *contiguous = 0;
 static PyObject *indirect_contiguous = 0;
-static uint16_t __pyx_f_10unbcf_fast_read_16(unsigned char *); /*proto*/
-static uint32_t __pyx_f_10unbcf_fast_read_32(unsigned char *); /*proto*/
-static uint64_t __pyx_f_10unbcf_fast_read_64(unsigned char *); /*proto*/
-static PyObject *__pyx_fuse_0__pyx_f_10unbcf_fast_bin_to_numpy(struct __pyx_obj_10unbcf_fast_DataStream *, __Pyx_memviewslice, int, int); /*proto*/
-static PyObject *__pyx_fuse_1__pyx_f_10unbcf_fast_bin_to_numpy(struct __pyx_obj_10unbcf_fast_DataStream *, __Pyx_memviewslice, int, int); /*proto*/
-static PyObject *__pyx_fuse_2__pyx_f_10unbcf_fast_bin_to_numpy(struct __pyx_obj_10unbcf_fast_DataStream *, __Pyx_memviewslice, int, int); /*proto*/
-static void __pyx_fuse_0__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslice, int, int, unsigned char *, unsigned short, int); /*proto*/
-static void __pyx_fuse_1__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslice, int, int, unsigned char *, unsigned short, int); /*proto*/
-static void __pyx_fuse_2__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslice, int, int, unsigned char *, unsigned short, int); /*proto*/
-static void __pyx_fuse_0__pyx_f_10unbcf_fast_unpack12bit(__Pyx_memviewslice, int, int, unsigned char *, unsigned short, int); /*proto*/
-static void __pyx_fuse_1__pyx_f_10unbcf_fast_unpack12bit(__Pyx_memviewslice, int, int, unsigned char *, unsigned short, int); /*proto*/
-static void __pyx_fuse_2__pyx_f_10unbcf_fast_unpack12bit(__Pyx_memviewslice, int, int, unsigned char *, unsigned short, int); /*proto*/
+static uint16_t __pyx_f_8hyperspy_10io_plugins_10unbcf_fast_read_16(unsigned char *); /*proto*/
+static uint32_t __pyx_f_8hyperspy_10io_plugins_10unbcf_fast_read_32(unsigned char *); /*proto*/
+static uint64_t __pyx_f_8hyperspy_10io_plugins_10unbcf_fast_read_64(unsigned char *); /*proto*/
+static PyObject *__pyx_fuse_0__pyx_f_8hyperspy_10io_plugins_10unbcf_fast_bin_to_numpy(struct __pyx_obj_8hyperspy_10io_plugins_10unbcf_fast_DataStream *, __Pyx_memviewslice, int, int); /*proto*/
+static PyObject *__pyx_fuse_1__pyx_f_8hyperspy_10io_plugins_10unbcf_fast_bin_to_numpy(struct __pyx_obj_8hyperspy_10io_plugins_10unbcf_fast_DataStream *, __Pyx_memviewslice, int, int); /*proto*/
+static PyObject *__pyx_fuse_2__pyx_f_8hyperspy_10io_plugins_10unbcf_fast_bin_to_numpy(struct __pyx_obj_8hyperspy_10io_plugins_10unbcf_fast_DataStream *, __Pyx_memviewslice, int, int); /*proto*/
+static void __pyx_fuse_0__pyx_f_8hyperspy_10io_plugins_10unbcf_fast_unpack_instructed(__Pyx_memviewslice, int, int, unsigned char *, unsigned short, int); /*proto*/
+static void __pyx_fuse_1__pyx_f_8hyperspy_10io_plugins_10unbcf_fast_unpack_instructed(__Pyx_memviewslice, int, int, unsigned char *, unsigned short, int); /*proto*/
+static void __pyx_fuse_2__pyx_f_8hyperspy_10io_plugins_10unbcf_fast_unpack_instructed(__Pyx_memviewslice, int, int, unsigned char *, unsigned short, int); /*proto*/
+static void __pyx_fuse_0__pyx_f_8hyperspy_10io_plugins_10unbcf_fast_unpack12bit(__Pyx_memviewslice, int, int, unsigned char *, unsigned short, int); /*proto*/
+static void __pyx_fuse_1__pyx_f_8hyperspy_10io_plugins_10unbcf_fast_unpack12bit(__Pyx_memviewslice, int, int, unsigned char *, unsigned short, int); /*proto*/
+static void __pyx_fuse_2__pyx_f_8hyperspy_10io_plugins_10unbcf_fast_unpack12bit(__Pyx_memviewslice, int, int, unsigned char *, unsigned short, int); /*proto*/
 static struct __pyx_array_obj *__pyx_array_new(PyObject *, Py_ssize_t, char *, char *, char *); /*proto*/
 static void *__pyx_align_pointer(void *, size_t); /*proto*/
 static PyObject *__pyx_memoryview_new(PyObject *, int, int, __Pyx_TypeInfo *); /*proto*/
@@ -1209,10 +1209,10 @@ static void __pyx_memoryview__slice_assign_scalar(char *, Py_ssize_t *, Py_ssize
 static __Pyx_TypeInfo __Pyx_TypeInfo_nn_uint8_t = { "uint8_t", NULL, sizeof(uint8_t), { 0 }, 0, IS_UNSIGNED(uint8_t) ? 'U' : 'I', IS_UNSIGNED(uint8_t), 0 };
 static __Pyx_TypeInfo __Pyx_TypeInfo_nn_uint16_t = { "uint16_t", NULL, sizeof(uint16_t), { 0 }, 0, IS_UNSIGNED(uint16_t) ? 'U' : 'I', IS_UNSIGNED(uint16_t), 0 };
 static __Pyx_TypeInfo __Pyx_TypeInfo_nn_uint32_t = { "uint32_t", NULL, sizeof(uint32_t), { 0 }, 0, IS_UNSIGNED(uint32_t) ? 'U' : 'I', IS_UNSIGNED(uint32_t), 0 };
-#define __Pyx_MODULE_NAME "unbcf_fast"
-int __pyx_module_is_main_unbcf_fast = 0;
+#define __Pyx_MODULE_NAME "hyperspy.io_plugins.unbcf_fast"
+int __pyx_module_is_main_hyperspy__io_plugins__unbcf_fast = 0;
 
-/* Implementation of 'unbcf_fast' */
+/* Implementation of 'hyperspy.io_plugins.unbcf_fast' */
 static PyObject *__pyx_builtin_range;
 static PyObject *__pyx_builtin_NotImplementedError;
 static PyObject *__pyx_builtin_ValueError;
@@ -1282,7 +1282,6 @@ static char __pyx_k_ValueError[] = "ValueError";
 static char __pyx_k_block_size[] = "block_size";
 static char __pyx_k_downsample[] = "downsample";
 static char __pyx_k_pyx_vtable[] = "__pyx_vtable__";
-static char __pyx_k_unbcf_fast[] = "unbcf_fast";
 static char __pyx_k_MemoryError[] = "MemoryError";
 static char __pyx_k_data_stream[] = "data_stream";
 static char __pyx_k_total_blocks[] = "total_blocks";
@@ -1309,8 +1308,9 @@ static char __pyx_k_64bit_array_not_implemented[] = "64bit array not implemented
 static char __pyx_k_Step_may_not_be_zero_axis_d[] = "Step may not be zero (axis %d)";
 static char __pyx_k_itemsize_0_for_cython_array[] = "itemsize <= 0 for cython.array";
 static char __pyx_k_unable_to_allocate_array_data[] = "unable to allocate array data.";
+static char __pyx_k_hyperspy_io_plugins_unbcf_fast[] = "hyperspy.io_plugins.unbcf_fast";
 static char __pyx_k_strided_and_direct_or_indirect[] = "<strided and direct or indirect>";
-static char __pyx_k_home_petras_local_lib_python3_4[] = "/home/petras/.local/lib/python3.4/site-packages/unbcf/unbcf_fast.pyx";
+static char __pyx_k_mnt_bulk_data_development_git_h[] = "/mnt/bulk-data/development/git/hyperspy/hyperspy/io_plugins/unbcf_fast.pyx";
 static char __pyx_k_All_dimensions_preceding_dimensi[] = "All dimensions preceding dimension %d must be indexed and not sliced";
 static char __pyx_k_Buffer_view_does_not_expose_stri[] = "Buffer view does not expose strides";
 static char __pyx_k_Can_only_create_a_buffer_that_is[] = "Can only create a buffer that is contiguous in memory.";
@@ -1371,8 +1371,8 @@ static PyObject *__pyx_n_s_get_iter_and_properties;
 static PyObject *__pyx_kp_s_got_differing_extents_in_dimensi;
 static PyObject *__pyx_n_s_header;
 static PyObject *__pyx_n_s_height;
-static PyObject *__pyx_kp_s_home_petras_local_lib_python3_4;
 static PyObject *__pyx_n_s_hypermap;
+static PyObject *__pyx_n_s_hyperspy_io_plugins_unbcf_fast;
 static PyObject *__pyx_n_s_id;
 static PyObject *__pyx_n_s_image;
 static PyObject *__pyx_n_s_import;
@@ -1382,6 +1382,7 @@ static PyObject *__pyx_n_s_little;
 static PyObject *__pyx_n_s_main;
 static PyObject *__pyx_n_s_map_depth;
 static PyObject *__pyx_n_s_memview;
+static PyObject *__pyx_kp_s_mnt_bulk_data_development_git_h;
 static PyObject *__pyx_n_s_mode;
 static PyObject *__pyx_n_s_name;
 static PyObject *__pyx_n_s_name_2;
@@ -1413,16 +1414,15 @@ static PyObject *__pyx_n_s_uint32;
 static PyObject *__pyx_n_s_uint8;
 static PyObject *__pyx_kp_s_unable_to_allocate_array_data;
 static PyObject *__pyx_kp_s_unable_to_allocate_shape_and_str;
-static PyObject *__pyx_n_s_unbcf_fast;
 static PyObject *__pyx_n_s_unpack;
 static PyObject *__pyx_n_s_width;
 static PyObject *__pyx_n_s_zeros;
-static int __pyx_pf_10unbcf_fast_10DataStream___cinit__(struct __pyx_obj_10unbcf_fast_DataStream *__pyx_v_self, CYTHON_UNUSED PyObject *__pyx_v_blocks, int __pyx_v_size_chnk); /* proto */
-static int __pyx_pf_10unbcf_fast_10DataStream_2__init__(struct __pyx_obj_10unbcf_fast_DataStream *__pyx_v_self, PyObject *__pyx_v_blocks, CYTHON_UNUSED int __pyx_v_size_chnk); /* proto */
-static PyObject *__pyx_pf_10unbcf_fast_10DataStream_6blocks___get__(struct __pyx_obj_10unbcf_fast_DataStream *__pyx_v_self); /* proto */
-static int __pyx_pf_10unbcf_fast_10DataStream_6blocks_2__set__(struct __pyx_obj_10unbcf_fast_DataStream *__pyx_v_self, PyObject *__pyx_v_value); /* proto */
-static int __pyx_pf_10unbcf_fast_10DataStream_6blocks_4__del__(struct __pyx_obj_10unbcf_fast_DataStream *__pyx_v_self); /* proto */
-static PyObject *__pyx_pf_10unbcf_fast_parse_to_numpy(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_bcf, PyObject *__pyx_v_downsample, PyObject *__pyx_v_cutoff); /* proto */
+static int __pyx_pf_8hyperspy_10io_plugins_10unbcf_fast_10DataStream___cinit__(struct __pyx_obj_8hyperspy_10io_plugins_10unbcf_fast_DataStream *__pyx_v_self, CYTHON_UNUSED PyObject *__pyx_v_blocks, int __pyx_v_size_chnk); /* proto */
+static int __pyx_pf_8hyperspy_10io_plugins_10unbcf_fast_10DataStream_2__init__(struct __pyx_obj_8hyperspy_10io_plugins_10unbcf_fast_DataStream *__pyx_v_self, PyObject *__pyx_v_blocks, CYTHON_UNUSED int __pyx_v_size_chnk); /* proto */
+static PyObject *__pyx_pf_8hyperspy_10io_plugins_10unbcf_fast_10DataStream_6blocks___get__(struct __pyx_obj_8hyperspy_10io_plugins_10unbcf_fast_DataStream *__pyx_v_self); /* proto */
+static int __pyx_pf_8hyperspy_10io_plugins_10unbcf_fast_10DataStream_6blocks_2__set__(struct __pyx_obj_8hyperspy_10io_plugins_10unbcf_fast_DataStream *__pyx_v_self, PyObject *__pyx_v_value); /* proto */
+static int __pyx_pf_8hyperspy_10io_plugins_10unbcf_fast_10DataStream_6blocks_4__del__(struct __pyx_obj_8hyperspy_10io_plugins_10unbcf_fast_DataStream *__pyx_v_self); /* proto */
+static PyObject *__pyx_pf_8hyperspy_10io_plugins_10unbcf_fast_parse_to_numpy(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_bcf, PyObject *__pyx_v_downsample, PyObject *__pyx_v_cutoff); /* proto */
 static int __pyx_array___pyx_pf_15View_dot_MemoryView_5array___cinit__(struct __pyx_array_obj *__pyx_v_self, PyObject *__pyx_v_shape, Py_ssize_t __pyx_v_itemsize, PyObject *__pyx_v_format, PyObject *__pyx_v_mode, int __pyx_v_allocate_buffer); /* proto */
 static int __pyx_array___pyx_pf_15View_dot_MemoryView_5array_2__getbuffer__(struct __pyx_array_obj *__pyx_v_self, Py_buffer *__pyx_v_info, int __pyx_v_flags); /* proto */
 static void __pyx_array___pyx_pf_15View_dot_MemoryView_5array_4__dealloc__(struct __pyx_array_obj *__pyx_v_self); /* proto */
@@ -1455,7 +1455,7 @@ static PyObject *__pyx_memoryview___pyx_pf_15View_dot_MemoryView_10memoryview_20
 static PyObject *__pyx_memoryview___pyx_pf_15View_dot_MemoryView_10memoryview_22copy_fortran(struct __pyx_memoryview_obj *__pyx_v_self); /* proto */
 static void __pyx_memoryviewslice___pyx_pf_15View_dot_MemoryView_16_memoryviewslice___dealloc__(struct __pyx_memoryviewslice_obj *__pyx_v_self); /* proto */
 static PyObject *__pyx_pf_15View_dot_MemoryView_16_memoryviewslice_4base___get__(struct __pyx_memoryviewslice_obj *__pyx_v_self); /* proto */
-static PyObject *__pyx_tp_new_10unbcf_fast_DataStream(PyTypeObject *t, PyObject *a, PyObject *k); /*proto*/
+static PyObject *__pyx_tp_new_8hyperspy_10io_plugins_10unbcf_fast_DataStream(PyTypeObject *t, PyObject *a, PyObject *k); /*proto*/
 static PyObject *__pyx_tp_new_array(PyTypeObject *t, PyObject *a, PyObject *k); /*proto*/
 static PyObject *__pyx_tp_new_Enum(PyTypeObject *t, PyObject *a, PyObject *k); /*proto*/
 static PyObject *__pyx_tp_new_memoryview(PyTypeObject *t, PyObject *a, PyObject *k); /*proto*/
@@ -1485,7 +1485,7 @@ static PyObject *__pyx_tuple__21;
 static PyObject *__pyx_tuple__22;
 static PyObject *__pyx_codeobj__17;
 
-/* "unbcf_fast.pyx":30
+/* "hyperspy/io_plugins/unbcf_fast.pyx":30
  * 
  * @cython.boundscheck(False)
  * cdef uint16_t read_16(unsigned char *pointer):             # <<<<<<<<<<<<<<
@@ -1493,12 +1493,12 @@ static PyObject *__pyx_codeobj__17;
  *     return ((<uint16_t>pointer[1]<<8) & 65280) | <uint16_t>pointer[0]
  */
 
-static uint16_t __pyx_f_10unbcf_fast_read_16(unsigned char *__pyx_v_pointer) {
+static uint16_t __pyx_f_8hyperspy_10io_plugins_10unbcf_fast_read_16(unsigned char *__pyx_v_pointer) {
   uint16_t __pyx_r;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("read_16", 0);
 
-  /* "unbcf_fast.pyx":32
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":32
  * cdef uint16_t read_16(unsigned char *pointer):
  * 
  *     return ((<uint16_t>pointer[1]<<8) & 65280) | <uint16_t>pointer[0]             # <<<<<<<<<<<<<<
@@ -1508,7 +1508,7 @@ static uint16_t __pyx_f_10unbcf_fast_read_16(unsigned char *__pyx_v_pointer) {
   __pyx_r = (((((uint16_t)(__pyx_v_pointer[1])) << 8) & 0xFF00) | ((uint16_t)(__pyx_v_pointer[0])));
   goto __pyx_L0;
 
-  /* "unbcf_fast.pyx":30
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":30
  * 
  * @cython.boundscheck(False)
  * cdef uint16_t read_16(unsigned char *pointer):             # <<<<<<<<<<<<<<
@@ -1522,7 +1522,7 @@ static uint16_t __pyx_f_10unbcf_fast_read_16(unsigned char *__pyx_v_pointer) {
   return __pyx_r;
 }
 
-/* "unbcf_fast.pyx":35
+/* "hyperspy/io_plugins/unbcf_fast.pyx":35
  * 
  * @cython.boundscheck(False)
  * cdef uint32_t read_32(unsigned char *pointer):             # <<<<<<<<<<<<<<
@@ -1530,12 +1530,12 @@ static uint16_t __pyx_f_10unbcf_fast_read_16(unsigned char *__pyx_v_pointer) {
  *     return ((<uint32_t>pointer[3]<<24) & <uint32_t>4278190080) |\
  */
 
-static uint32_t __pyx_f_10unbcf_fast_read_32(unsigned char *__pyx_v_pointer) {
+static uint32_t __pyx_f_8hyperspy_10io_plugins_10unbcf_fast_read_32(unsigned char *__pyx_v_pointer) {
   uint32_t __pyx_r;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("read_32", 0);
 
-  /* "unbcf_fast.pyx":39
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":39
  *     return ((<uint32_t>pointer[3]<<24) & <uint32_t>4278190080) |\
  *            ((<uint32_t>pointer[2]<<16) & <uint32_t>16711680) |\
  *            ((<uint32_t>pointer[1]<<8) & <uint32_t>65280) |\             # <<<<<<<<<<<<<<
@@ -1545,7 +1545,7 @@ static uint32_t __pyx_f_10unbcf_fast_read_32(unsigned char *__pyx_v_pointer) {
   __pyx_r = (((((((uint32_t)(__pyx_v_pointer[3])) << 24) & ((uint32_t)0xFF000000)) | ((((uint32_t)(__pyx_v_pointer[2])) << 16) & ((uint32_t)0xFF0000))) | ((((uint32_t)(__pyx_v_pointer[1])) << 8) & ((uint32_t)0xFF00))) | ((uint32_t)(__pyx_v_pointer[0])));
   goto __pyx_L0;
 
-  /* "unbcf_fast.pyx":35
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":35
  * 
  * @cython.boundscheck(False)
  * cdef uint32_t read_32(unsigned char *pointer):             # <<<<<<<<<<<<<<
@@ -1559,7 +1559,7 @@ static uint32_t __pyx_f_10unbcf_fast_read_32(unsigned char *__pyx_v_pointer) {
   return __pyx_r;
 }
 
-/* "unbcf_fast.pyx":43
+/* "hyperspy/io_plugins/unbcf_fast.pyx":43
  * 
  * @cython.boundscheck(False)
  * cdef uint64_t read_64(unsigned char *pointer):             # <<<<<<<<<<<<<<
@@ -1567,12 +1567,12 @@ static uint32_t __pyx_f_10unbcf_fast_read_32(unsigned char *__pyx_v_pointer) {
  *     # for present bruker technology. If it would change - uncomment bellow and recompile.
  */
 
-static uint64_t __pyx_f_10unbcf_fast_read_64(unsigned char *__pyx_v_pointer) {
+static uint64_t __pyx_f_8hyperspy_10io_plugins_10unbcf_fast_read_64(unsigned char *__pyx_v_pointer) {
   uint64_t __pyx_r;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("read_64", 0);
 
-  /* "unbcf_fast.pyx":52
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":52
  *            ((<uint64_t>pointer[3]<<24) & <uint64_t>4278190080) |\
  *            ((<uint64_t>pointer[2]<<16) & <uint64_t>16711680) |\
  *            ((<uint64_t>pointer[1]<<8) & <uint64_t>65280) |\             # <<<<<<<<<<<<<<
@@ -1582,7 +1582,7 @@ static uint64_t __pyx_f_10unbcf_fast_read_64(unsigned char *__pyx_v_pointer) {
   __pyx_r = ((((((((uint64_t)(__pyx_v_pointer[4])) << 32) & ((uint64_t)0xff00000000)) | ((((uint64_t)(__pyx_v_pointer[3])) << 24) & ((uint64_t)0xFF000000))) | ((((uint64_t)(__pyx_v_pointer[2])) << 16) & ((uint64_t)0xFF0000))) | ((((uint64_t)(__pyx_v_pointer[1])) << 8) & ((uint64_t)0xFF00))) | ((uint64_t)(__pyx_v_pointer[0])));
   goto __pyx_L0;
 
-  /* "unbcf_fast.pyx":43
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":43
  * 
  * @cython.boundscheck(False)
  * cdef uint64_t read_64(unsigned char *pointer):             # <<<<<<<<<<<<<<
@@ -1596,7 +1596,7 @@ static uint64_t __pyx_f_10unbcf_fast_read_64(unsigned char *__pyx_v_pointer) {
   return __pyx_r;
 }
 
-/* "unbcf_fast.pyx":67
+/* "hyperspy/io_plugins/unbcf_fast.pyx":67
  *     cdef public object blocks  # public - because it is python object
  * 
  *     def __cinit__(self, blocks, int size_chnk):             # <<<<<<<<<<<<<<
@@ -1605,8 +1605,8 @@ static uint64_t __pyx_f_10unbcf_fast_read_64(unsigned char *__pyx_v_pointer) {
  */
 
 /* Python wrapper */
-static int __pyx_pw_10unbcf_fast_10DataStream_1__cinit__(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static int __pyx_pw_10unbcf_fast_10DataStream_1__cinit__(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+static int __pyx_pw_8hyperspy_10io_plugins_10unbcf_fast_10DataStream_1__cinit__(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static int __pyx_pw_8hyperspy_10io_plugins_10unbcf_fast_10DataStream_1__cinit__(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
   CYTHON_UNUSED PyObject *__pyx_v_blocks = 0;
   int __pyx_v_size_chnk;
   int __pyx_lineno = 0;
@@ -1654,23 +1654,23 @@ static int __pyx_pw_10unbcf_fast_10DataStream_1__cinit__(PyObject *__pyx_v_self,
   __pyx_L5_argtuple_error:;
   __Pyx_RaiseArgtupleInvalid("__cinit__", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 67; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
   __pyx_L3_error:;
-  __Pyx_AddTraceback("unbcf_fast.DataStream.__cinit__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("hyperspy.io_plugins.unbcf_fast.DataStream.__cinit__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return -1;
   __pyx_L4_argument_unpacking_done:;
-  __pyx_r = __pyx_pf_10unbcf_fast_10DataStream___cinit__(((struct __pyx_obj_10unbcf_fast_DataStream *)__pyx_v_self), __pyx_v_blocks, __pyx_v_size_chnk);
+  __pyx_r = __pyx_pf_8hyperspy_10io_plugins_10unbcf_fast_10DataStream___cinit__(((struct __pyx_obj_8hyperspy_10io_plugins_10unbcf_fast_DataStream *)__pyx_v_self), __pyx_v_blocks, __pyx_v_size_chnk);
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static int __pyx_pf_10unbcf_fast_10DataStream___cinit__(struct __pyx_obj_10unbcf_fast_DataStream *__pyx_v_self, CYTHON_UNUSED PyObject *__pyx_v_blocks, int __pyx_v_size_chnk) {
+static int __pyx_pf_8hyperspy_10io_plugins_10unbcf_fast_10DataStream___cinit__(struct __pyx_obj_8hyperspy_10io_plugins_10unbcf_fast_DataStream *__pyx_v_self, CYTHON_UNUSED PyObject *__pyx_v_blocks, int __pyx_v_size_chnk) {
   int __pyx_r;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__cinit__", 0);
 
-  /* "unbcf_fast.pyx":68
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":68
  * 
  *     def __cinit__(self, blocks, int size_chnk):
  *         self.size_chnk = size_chnk             # <<<<<<<<<<<<<<
@@ -1679,7 +1679,7 @@ static int __pyx_pf_10unbcf_fast_10DataStream___cinit__(struct __pyx_obj_10unbcf
  */
   __pyx_v_self->size_chnk = __pyx_v_size_chnk;
 
-  /* "unbcf_fast.pyx":69
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":69
  *     def __cinit__(self, blocks, int size_chnk):
  *         self.size_chnk = size_chnk
  *         self.size = size_chnk             # <<<<<<<<<<<<<<
@@ -1688,7 +1688,7 @@ static int __pyx_pf_10unbcf_fast_10DataStream___cinit__(struct __pyx_obj_10unbcf
  */
   __pyx_v_self->size = __pyx_v_size_chnk;
 
-  /* "unbcf_fast.pyx":70
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":70
  *         self.size_chnk = size_chnk
  *         self.size = size_chnk
  *         self.offset = 0             # <<<<<<<<<<<<<<
@@ -1697,7 +1697,7 @@ static int __pyx_pf_10unbcf_fast_10DataStream___cinit__(struct __pyx_obj_10unbcf
  */
   __pyx_v_self->offset = 0;
 
-  /* "unbcf_fast.pyx":67
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":67
  *     cdef public object blocks  # public - because it is python object
  * 
  *     def __cinit__(self, blocks, int size_chnk):             # <<<<<<<<<<<<<<
@@ -1711,7 +1711,7 @@ static int __pyx_pf_10unbcf_fast_10DataStream___cinit__(struct __pyx_obj_10unbcf
   return __pyx_r;
 }
 
-/* "unbcf_fast.pyx":72
+/* "hyperspy/io_plugins/unbcf_fast.pyx":72
  *         self.offset = 0
  * 
  *     def __init__(self, blocks, int size_chnk):             # <<<<<<<<<<<<<<
@@ -1720,8 +1720,8 @@ static int __pyx_pf_10unbcf_fast_10DataStream___cinit__(struct __pyx_obj_10unbcf
  */
 
 /* Python wrapper */
-static int __pyx_pw_10unbcf_fast_10DataStream_3__init__(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static int __pyx_pw_10unbcf_fast_10DataStream_3__init__(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+static int __pyx_pw_8hyperspy_10io_plugins_10unbcf_fast_10DataStream_3__init__(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static int __pyx_pw_8hyperspy_10io_plugins_10unbcf_fast_10DataStream_3__init__(PyObject *__pyx_v_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
   PyObject *__pyx_v_blocks = 0;
   CYTHON_UNUSED int __pyx_v_size_chnk;
   int __pyx_lineno = 0;
@@ -1769,18 +1769,18 @@ static int __pyx_pw_10unbcf_fast_10DataStream_3__init__(PyObject *__pyx_v_self, 
   __pyx_L5_argtuple_error:;
   __Pyx_RaiseArgtupleInvalid("__init__", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 72; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
   __pyx_L3_error:;
-  __Pyx_AddTraceback("unbcf_fast.DataStream.__init__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("hyperspy.io_plugins.unbcf_fast.DataStream.__init__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return -1;
   __pyx_L4_argument_unpacking_done:;
-  __pyx_r = __pyx_pf_10unbcf_fast_10DataStream_2__init__(((struct __pyx_obj_10unbcf_fast_DataStream *)__pyx_v_self), __pyx_v_blocks, __pyx_v_size_chnk);
+  __pyx_r = __pyx_pf_8hyperspy_10io_plugins_10unbcf_fast_10DataStream_2__init__(((struct __pyx_obj_8hyperspy_10io_plugins_10unbcf_fast_DataStream *)__pyx_v_self), __pyx_v_blocks, __pyx_v_size_chnk);
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static int __pyx_pf_10unbcf_fast_10DataStream_2__init__(struct __pyx_obj_10unbcf_fast_DataStream *__pyx_v_self, PyObject *__pyx_v_blocks, CYTHON_UNUSED int __pyx_v_size_chnk) {
+static int __pyx_pf_8hyperspy_10io_plugins_10unbcf_fast_10DataStream_2__init__(struct __pyx_obj_8hyperspy_10io_plugins_10unbcf_fast_DataStream *__pyx_v_self, PyObject *__pyx_v_blocks, CYTHON_UNUSED int __pyx_v_size_chnk) {
   int __pyx_r;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -1791,7 +1791,7 @@ static int __pyx_pf_10unbcf_fast_10DataStream_2__init__(struct __pyx_obj_10unbcf
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__init__", 0);
 
-  /* "unbcf_fast.pyx":73
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":73
  * 
  *     def __init__(self, blocks, int size_chnk):
  *         self.blocks = blocks             # <<<<<<<<<<<<<<
@@ -1804,7 +1804,7 @@ static int __pyx_pf_10unbcf_fast_10DataStream_2__init__(struct __pyx_obj_10unbcf
   __Pyx_DECREF(__pyx_v_self->blocks);
   __pyx_v_self->blocks = __pyx_v_blocks;
 
-  /* "unbcf_fast.pyx":74
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":74
  *     def __init__(self, blocks, int size_chnk):
  *         self.blocks = blocks
  *         self.raw_bytes = next(self.blocks)  # python bytes buffer             # <<<<<<<<<<<<<<
@@ -1823,7 +1823,7 @@ static int __pyx_pf_10unbcf_fast_10DataStream_2__init__(struct __pyx_obj_10unbcf
   __pyx_v_self->raw_bytes = ((PyObject*)__pyx_t_2);
   __pyx_t_2 = 0;
 
-  /* "unbcf_fast.pyx":75
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":75
  *         self.blocks = blocks
  *         self.raw_bytes = next(self.blocks)  # python bytes buffer
  *         self.buffer2 = <bytes>self.raw_bytes  # C unsigned char buffer             # <<<<<<<<<<<<<<
@@ -1833,7 +1833,7 @@ static int __pyx_pf_10unbcf_fast_10DataStream_2__init__(struct __pyx_obj_10unbcf
   __pyx_t_3 = __Pyx_PyObject_AsUString(__pyx_v_self->raw_bytes); if (unlikely((!__pyx_t_3) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 75; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_v_self->buffer2 = __pyx_t_3;
 
-  /* "unbcf_fast.pyx":72
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":72
  *         self.offset = 0
  * 
  *     def __init__(self, blocks, int size_chnk):             # <<<<<<<<<<<<<<
@@ -1847,14 +1847,14 @@ static int __pyx_pf_10unbcf_fast_10DataStream_2__init__(struct __pyx_obj_10unbcf
   __pyx_L1_error:;
   __Pyx_XDECREF(__pyx_t_1);
   __Pyx_XDECREF(__pyx_t_2);
-  __Pyx_AddTraceback("unbcf_fast.DataStream.__init__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("hyperspy.io_plugins.unbcf_fast.DataStream.__init__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = -1;
   __pyx_L0:;
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-/* "unbcf_fast.pyx":77
+/* "hyperspy/io_plugins/unbcf_fast.pyx":77
  *         self.buffer2 = <bytes>self.raw_bytes  # C unsigned char buffer
  * 
  *     cdef void seek(self, int value):             # <<<<<<<<<<<<<<
@@ -1862,11 +1862,11 @@ static int __pyx_pf_10unbcf_fast_10DataStream_2__init__(struct __pyx_obj_10unbcf
  *         NOTE: it do not check if value is in bounds of buffer!"""
  */
 
-static void __pyx_f_10unbcf_fast_10DataStream_seek(struct __pyx_obj_10unbcf_fast_DataStream *__pyx_v_self, int __pyx_v_value) {
+static void __pyx_f_8hyperspy_10io_plugins_10unbcf_fast_10DataStream_seek(struct __pyx_obj_8hyperspy_10io_plugins_10unbcf_fast_DataStream *__pyx_v_self, int __pyx_v_value) {
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("seek", 0);
 
-  /* "unbcf_fast.pyx":80
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":80
  *         """move offset to given value.
  *         NOTE: it do not check if value is in bounds of buffer!"""
  *         self.offset = value             # <<<<<<<<<<<<<<
@@ -1875,7 +1875,7 @@ static void __pyx_f_10unbcf_fast_10DataStream_seek(struct __pyx_obj_10unbcf_fast
  */
   __pyx_v_self->offset = __pyx_v_value;
 
-  /* "unbcf_fast.pyx":77
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":77
  *         self.buffer2 = <bytes>self.raw_bytes  # C unsigned char buffer
  * 
  *     cdef void seek(self, int value):             # <<<<<<<<<<<<<<
@@ -1887,7 +1887,7 @@ static void __pyx_f_10unbcf_fast_10DataStream_seek(struct __pyx_obj_10unbcf_fast
   __Pyx_RefNannyFinishContext();
 }
 
-/* "unbcf_fast.pyx":82
+/* "hyperspy/io_plugins/unbcf_fast.pyx":82
  *         self.offset = value
  * 
  *     cdef void skip(self, int length):             # <<<<<<<<<<<<<<
@@ -1895,12 +1895,12 @@ static void __pyx_f_10unbcf_fast_10DataStream_seek(struct __pyx_obj_10unbcf_fast
  *         check if new offset is in bounds of buffer length
  */
 
-static void __pyx_f_10unbcf_fast_10DataStream_skip(struct __pyx_obj_10unbcf_fast_DataStream *__pyx_v_self, int __pyx_v_length) {
+static void __pyx_f_8hyperspy_10io_plugins_10unbcf_fast_10DataStream_skip(struct __pyx_obj_8hyperspy_10io_plugins_10unbcf_fast_DataStream *__pyx_v_self, int __pyx_v_length) {
   __Pyx_RefNannyDeclarations
   int __pyx_t_1;
   __Pyx_RefNannySetupContext("skip", 0);
 
-  /* "unbcf_fast.pyx":86
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":86
  *         check if new offset is in bounds of buffer length
  *         else load up next block"""
  *         if (self.offset + length) > self.size:             # <<<<<<<<<<<<<<
@@ -1910,16 +1910,16 @@ static void __pyx_f_10unbcf_fast_10DataStream_skip(struct __pyx_obj_10unbcf_fast
   __pyx_t_1 = (((__pyx_v_self->offset + __pyx_v_length) > __pyx_v_self->size) != 0);
   if (__pyx_t_1) {
 
-    /* "unbcf_fast.pyx":87
+    /* "hyperspy/io_plugins/unbcf_fast.pyx":87
  *         else load up next block"""
  *         if (self.offset + length) > self.size:
  *             self.load_next_block()             # <<<<<<<<<<<<<<
  *         self.offset = self.offset + length
  * 
  */
-    ((struct __pyx_vtabstruct_10unbcf_fast_DataStream *)__pyx_v_self->__pyx_vtab)->load_next_block(__pyx_v_self);
+    ((struct __pyx_vtabstruct_8hyperspy_10io_plugins_10unbcf_fast_DataStream *)__pyx_v_self->__pyx_vtab)->load_next_block(__pyx_v_self);
 
-    /* "unbcf_fast.pyx":86
+    /* "hyperspy/io_plugins/unbcf_fast.pyx":86
  *         check if new offset is in bounds of buffer length
  *         else load up next block"""
  *         if (self.offset + length) > self.size:             # <<<<<<<<<<<<<<
@@ -1928,7 +1928,7 @@ static void __pyx_f_10unbcf_fast_10DataStream_skip(struct __pyx_obj_10unbcf_fast
  */
   }
 
-  /* "unbcf_fast.pyx":88
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":88
  *         if (self.offset + length) > self.size:
  *             self.load_next_block()
  *         self.offset = self.offset + length             # <<<<<<<<<<<<<<
@@ -1937,7 +1937,7 @@ static void __pyx_f_10unbcf_fast_10DataStream_skip(struct __pyx_obj_10unbcf_fast
  */
   __pyx_v_self->offset = (__pyx_v_self->offset + __pyx_v_length);
 
-  /* "unbcf_fast.pyx":82
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":82
  *         self.offset = value
  * 
  *     cdef void skip(self, int length):             # <<<<<<<<<<<<<<
@@ -1949,7 +1949,7 @@ static void __pyx_f_10unbcf_fast_10DataStream_skip(struct __pyx_obj_10unbcf_fast
   __Pyx_RefNannyFinishContext();
 }
 
-/* "unbcf_fast.pyx":90
+/* "hyperspy/io_plugins/unbcf_fast.pyx":90
  *         self.offset = self.offset + length
  * 
  *     cdef uint8_t read_8(self):             # <<<<<<<<<<<<<<
@@ -1957,13 +1957,13 @@ static void __pyx_f_10unbcf_fast_10DataStream_skip(struct __pyx_obj_10unbcf_fast
  *             self.load_next_block()
  */
 
-static uint8_t __pyx_f_10unbcf_fast_10DataStream_read_8(struct __pyx_obj_10unbcf_fast_DataStream *__pyx_v_self) {
+static uint8_t __pyx_f_8hyperspy_10io_plugins_10unbcf_fast_10DataStream_read_8(struct __pyx_obj_8hyperspy_10io_plugins_10unbcf_fast_DataStream *__pyx_v_self) {
   uint8_t __pyx_r;
   __Pyx_RefNannyDeclarations
   int __pyx_t_1;
   __Pyx_RefNannySetupContext("read_8", 0);
 
-  /* "unbcf_fast.pyx":91
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":91
  * 
  *     cdef uint8_t read_8(self):
  *         if (self.offset + 1) > self.size:             # <<<<<<<<<<<<<<
@@ -1973,16 +1973,16 @@ static uint8_t __pyx_f_10unbcf_fast_10DataStream_read_8(struct __pyx_obj_10unbcf
   __pyx_t_1 = (((__pyx_v_self->offset + 1) > __pyx_v_self->size) != 0);
   if (__pyx_t_1) {
 
-    /* "unbcf_fast.pyx":92
+    /* "hyperspy/io_plugins/unbcf_fast.pyx":92
  *     cdef uint8_t read_8(self):
  *         if (self.offset + 1) > self.size:
  *             self.load_next_block()             # <<<<<<<<<<<<<<
  *         self.offset += 1
  *         return <uint8_t>self.buffer2[self.offset-1]
  */
-    ((struct __pyx_vtabstruct_10unbcf_fast_DataStream *)__pyx_v_self->__pyx_vtab)->load_next_block(__pyx_v_self);
+    ((struct __pyx_vtabstruct_8hyperspy_10io_plugins_10unbcf_fast_DataStream *)__pyx_v_self->__pyx_vtab)->load_next_block(__pyx_v_self);
 
-    /* "unbcf_fast.pyx":91
+    /* "hyperspy/io_plugins/unbcf_fast.pyx":91
  * 
  *     cdef uint8_t read_8(self):
  *         if (self.offset + 1) > self.size:             # <<<<<<<<<<<<<<
@@ -1991,7 +1991,7 @@ static uint8_t __pyx_f_10unbcf_fast_10DataStream_read_8(struct __pyx_obj_10unbcf
  */
   }
 
-  /* "unbcf_fast.pyx":93
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":93
  *         if (self.offset + 1) > self.size:
  *             self.load_next_block()
  *         self.offset += 1             # <<<<<<<<<<<<<<
@@ -2000,7 +2000,7 @@ static uint8_t __pyx_f_10unbcf_fast_10DataStream_read_8(struct __pyx_obj_10unbcf
  */
   __pyx_v_self->offset = (__pyx_v_self->offset + 1);
 
-  /* "unbcf_fast.pyx":94
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":94
  *             self.load_next_block()
  *         self.offset += 1
  *         return <uint8_t>self.buffer2[self.offset-1]             # <<<<<<<<<<<<<<
@@ -2010,7 +2010,7 @@ static uint8_t __pyx_f_10unbcf_fast_10DataStream_read_8(struct __pyx_obj_10unbcf
   __pyx_r = ((uint8_t)(__pyx_v_self->buffer2[(__pyx_v_self->offset - 1)]));
   goto __pyx_L0;
 
-  /* "unbcf_fast.pyx":90
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":90
  *         self.offset = self.offset + length
  * 
  *     cdef uint8_t read_8(self):             # <<<<<<<<<<<<<<
@@ -2024,7 +2024,7 @@ static uint8_t __pyx_f_10unbcf_fast_10DataStream_read_8(struct __pyx_obj_10unbcf
   return __pyx_r;
 }
 
-/* "unbcf_fast.pyx":96
+/* "hyperspy/io_plugins/unbcf_fast.pyx":96
  *         return <uint8_t>self.buffer2[self.offset-1]
  * 
  *     cdef uint16_t read_16(self):             # <<<<<<<<<<<<<<
@@ -2032,13 +2032,13 @@ static uint8_t __pyx_f_10unbcf_fast_10DataStream_read_8(struct __pyx_obj_10unbcf
  *             self.load_next_block()
  */
 
-static uint16_t __pyx_f_10unbcf_fast_10DataStream_read_16(struct __pyx_obj_10unbcf_fast_DataStream *__pyx_v_self) {
+static uint16_t __pyx_f_8hyperspy_10io_plugins_10unbcf_fast_10DataStream_read_16(struct __pyx_obj_8hyperspy_10io_plugins_10unbcf_fast_DataStream *__pyx_v_self) {
   uint16_t __pyx_r;
   __Pyx_RefNannyDeclarations
   int __pyx_t_1;
   __Pyx_RefNannySetupContext("read_16", 0);
 
-  /* "unbcf_fast.pyx":97
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":97
  * 
  *     cdef uint16_t read_16(self):
  *         if (self.offset + 2) > self.size:             # <<<<<<<<<<<<<<
@@ -2048,16 +2048,16 @@ static uint16_t __pyx_f_10unbcf_fast_10DataStream_read_16(struct __pyx_obj_10unb
   __pyx_t_1 = (((__pyx_v_self->offset + 2) > __pyx_v_self->size) != 0);
   if (__pyx_t_1) {
 
-    /* "unbcf_fast.pyx":98
+    /* "hyperspy/io_plugins/unbcf_fast.pyx":98
  *     cdef uint16_t read_16(self):
  *         if (self.offset + 2) > self.size:
  *             self.load_next_block()             # <<<<<<<<<<<<<<
  *         self.offset += 2
  *         # endianess agnostic way... probably very slow:
  */
-    ((struct __pyx_vtabstruct_10unbcf_fast_DataStream *)__pyx_v_self->__pyx_vtab)->load_next_block(__pyx_v_self);
+    ((struct __pyx_vtabstruct_8hyperspy_10io_plugins_10unbcf_fast_DataStream *)__pyx_v_self->__pyx_vtab)->load_next_block(__pyx_v_self);
 
-    /* "unbcf_fast.pyx":97
+    /* "hyperspy/io_plugins/unbcf_fast.pyx":97
  * 
  *     cdef uint16_t read_16(self):
  *         if (self.offset + 2) > self.size:             # <<<<<<<<<<<<<<
@@ -2066,7 +2066,7 @@ static uint16_t __pyx_f_10unbcf_fast_10DataStream_read_16(struct __pyx_obj_10unb
  */
   }
 
-  /* "unbcf_fast.pyx":99
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":99
  *         if (self.offset + 2) > self.size:
  *             self.load_next_block()
  *         self.offset += 2             # <<<<<<<<<<<<<<
@@ -2075,17 +2075,17 @@ static uint16_t __pyx_f_10unbcf_fast_10DataStream_read_16(struct __pyx_obj_10unb
  */
   __pyx_v_self->offset = (__pyx_v_self->offset + 2);
 
-  /* "unbcf_fast.pyx":101
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":101
  *         self.offset += 2
  *         # endianess agnostic way... probably very slow:
  *         return read_16(&self.buffer2[self.offset-2])             # <<<<<<<<<<<<<<
  * 
  *     cdef uint32_t read_32(self):
  */
-  __pyx_r = __pyx_f_10unbcf_fast_read_16((&(__pyx_v_self->buffer2[(__pyx_v_self->offset - 2)])));
+  __pyx_r = __pyx_f_8hyperspy_10io_plugins_10unbcf_fast_read_16((&(__pyx_v_self->buffer2[(__pyx_v_self->offset - 2)])));
   goto __pyx_L0;
 
-  /* "unbcf_fast.pyx":96
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":96
  *         return <uint8_t>self.buffer2[self.offset-1]
  * 
  *     cdef uint16_t read_16(self):             # <<<<<<<<<<<<<<
@@ -2099,7 +2099,7 @@ static uint16_t __pyx_f_10unbcf_fast_10DataStream_read_16(struct __pyx_obj_10unb
   return __pyx_r;
 }
 
-/* "unbcf_fast.pyx":103
+/* "hyperspy/io_plugins/unbcf_fast.pyx":103
  *         return read_16(&self.buffer2[self.offset-2])
  * 
  *     cdef uint32_t read_32(self):             # <<<<<<<<<<<<<<
@@ -2107,13 +2107,13 @@ static uint16_t __pyx_f_10unbcf_fast_10DataStream_read_16(struct __pyx_obj_10unb
  *             self.load_next_block()
  */
 
-static uint32_t __pyx_f_10unbcf_fast_10DataStream_read_32(struct __pyx_obj_10unbcf_fast_DataStream *__pyx_v_self) {
+static uint32_t __pyx_f_8hyperspy_10io_plugins_10unbcf_fast_10DataStream_read_32(struct __pyx_obj_8hyperspy_10io_plugins_10unbcf_fast_DataStream *__pyx_v_self) {
   uint32_t __pyx_r;
   __Pyx_RefNannyDeclarations
   int __pyx_t_1;
   __Pyx_RefNannySetupContext("read_32", 0);
 
-  /* "unbcf_fast.pyx":104
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":104
  * 
  *     cdef uint32_t read_32(self):
  *         if (self.offset + 4) > self.size:             # <<<<<<<<<<<<<<
@@ -2123,16 +2123,16 @@ static uint32_t __pyx_f_10unbcf_fast_10DataStream_read_32(struct __pyx_obj_10unb
   __pyx_t_1 = (((__pyx_v_self->offset + 4) > __pyx_v_self->size) != 0);
   if (__pyx_t_1) {
 
-    /* "unbcf_fast.pyx":105
+    /* "hyperspy/io_plugins/unbcf_fast.pyx":105
  *     cdef uint32_t read_32(self):
  *         if (self.offset + 4) > self.size:
  *             self.load_next_block()             # <<<<<<<<<<<<<<
  *         self.offset += 4
  *         # endianess agnostic way... probably very slow:
  */
-    ((struct __pyx_vtabstruct_10unbcf_fast_DataStream *)__pyx_v_self->__pyx_vtab)->load_next_block(__pyx_v_self);
+    ((struct __pyx_vtabstruct_8hyperspy_10io_plugins_10unbcf_fast_DataStream *)__pyx_v_self->__pyx_vtab)->load_next_block(__pyx_v_self);
 
-    /* "unbcf_fast.pyx":104
+    /* "hyperspy/io_plugins/unbcf_fast.pyx":104
  * 
  *     cdef uint32_t read_32(self):
  *         if (self.offset + 4) > self.size:             # <<<<<<<<<<<<<<
@@ -2141,7 +2141,7 @@ static uint32_t __pyx_f_10unbcf_fast_10DataStream_read_32(struct __pyx_obj_10unb
  */
   }
 
-  /* "unbcf_fast.pyx":106
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":106
  *         if (self.offset + 4) > self.size:
  *             self.load_next_block()
  *         self.offset += 4             # <<<<<<<<<<<<<<
@@ -2150,17 +2150,17 @@ static uint32_t __pyx_f_10unbcf_fast_10DataStream_read_32(struct __pyx_obj_10unb
  */
   __pyx_v_self->offset = (__pyx_v_self->offset + 4);
 
-  /* "unbcf_fast.pyx":108
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":108
  *         self.offset += 4
  *         # endianess agnostic way... probably very slow:
  *         return read_32(&self.buffer2[self.offset-4])             # <<<<<<<<<<<<<<
  * 
  *     cdef uint64_t read_64(self):
  */
-  __pyx_r = __pyx_f_10unbcf_fast_read_32((&(__pyx_v_self->buffer2[(__pyx_v_self->offset - 4)])));
+  __pyx_r = __pyx_f_8hyperspy_10io_plugins_10unbcf_fast_read_32((&(__pyx_v_self->buffer2[(__pyx_v_self->offset - 4)])));
   goto __pyx_L0;
 
-  /* "unbcf_fast.pyx":103
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":103
  *         return read_16(&self.buffer2[self.offset-2])
  * 
  *     cdef uint32_t read_32(self):             # <<<<<<<<<<<<<<
@@ -2174,7 +2174,7 @@ static uint32_t __pyx_f_10unbcf_fast_10DataStream_read_32(struct __pyx_obj_10unb
   return __pyx_r;
 }
 
-/* "unbcf_fast.pyx":110
+/* "hyperspy/io_plugins/unbcf_fast.pyx":110
  *         return read_32(&self.buffer2[self.offset-4])
  * 
  *     cdef uint64_t read_64(self):             # <<<<<<<<<<<<<<
@@ -2182,13 +2182,13 @@ static uint32_t __pyx_f_10unbcf_fast_10DataStream_read_32(struct __pyx_obj_10unb
  *             self.load_next_block()
  */
 
-static uint64_t __pyx_f_10unbcf_fast_10DataStream_read_64(struct __pyx_obj_10unbcf_fast_DataStream *__pyx_v_self) {
+static uint64_t __pyx_f_8hyperspy_10io_plugins_10unbcf_fast_10DataStream_read_64(struct __pyx_obj_8hyperspy_10io_plugins_10unbcf_fast_DataStream *__pyx_v_self) {
   uint64_t __pyx_r;
   __Pyx_RefNannyDeclarations
   int __pyx_t_1;
   __Pyx_RefNannySetupContext("read_64", 0);
 
-  /* "unbcf_fast.pyx":111
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":111
  * 
  *     cdef uint64_t read_64(self):
  *         if (self.offset + 8) > self.size:             # <<<<<<<<<<<<<<
@@ -2198,16 +2198,16 @@ static uint64_t __pyx_f_10unbcf_fast_10DataStream_read_64(struct __pyx_obj_10unb
   __pyx_t_1 = (((__pyx_v_self->offset + 8) > __pyx_v_self->size) != 0);
   if (__pyx_t_1) {
 
-    /* "unbcf_fast.pyx":112
+    /* "hyperspy/io_plugins/unbcf_fast.pyx":112
  *     cdef uint64_t read_64(self):
  *         if (self.offset + 8) > self.size:
  *             self.load_next_block()             # <<<<<<<<<<<<<<
  *         self.offset += 8
  *         return read_64(&self.buffer2[self.offset-8])
  */
-    ((struct __pyx_vtabstruct_10unbcf_fast_DataStream *)__pyx_v_self->__pyx_vtab)->load_next_block(__pyx_v_self);
+    ((struct __pyx_vtabstruct_8hyperspy_10io_plugins_10unbcf_fast_DataStream *)__pyx_v_self->__pyx_vtab)->load_next_block(__pyx_v_self);
 
-    /* "unbcf_fast.pyx":111
+    /* "hyperspy/io_plugins/unbcf_fast.pyx":111
  * 
  *     cdef uint64_t read_64(self):
  *         if (self.offset + 8) > self.size:             # <<<<<<<<<<<<<<
@@ -2216,7 +2216,7 @@ static uint64_t __pyx_f_10unbcf_fast_10DataStream_read_64(struct __pyx_obj_10unb
  */
   }
 
-  /* "unbcf_fast.pyx":113
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":113
  *         if (self.offset + 8) > self.size:
  *             self.load_next_block()
  *         self.offset += 8             # <<<<<<<<<<<<<<
@@ -2225,17 +2225,17 @@ static uint64_t __pyx_f_10unbcf_fast_10DataStream_read_64(struct __pyx_obj_10unb
  */
   __pyx_v_self->offset = (__pyx_v_self->offset + 8);
 
-  /* "unbcf_fast.pyx":114
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":114
  *             self.load_next_block()
  *         self.offset += 8
  *         return read_64(&self.buffer2[self.offset-8])             # <<<<<<<<<<<<<<
  * 
  *     cdef unsigned char *ptr_to(self, int length):
  */
-  __pyx_r = __pyx_f_10unbcf_fast_read_64((&(__pyx_v_self->buffer2[(__pyx_v_self->offset - 8)])));
+  __pyx_r = __pyx_f_8hyperspy_10io_plugins_10unbcf_fast_read_64((&(__pyx_v_self->buffer2[(__pyx_v_self->offset - 8)])));
   goto __pyx_L0;
 
-  /* "unbcf_fast.pyx":110
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":110
  *         return read_32(&self.buffer2[self.offset-4])
  * 
  *     cdef uint64_t read_64(self):             # <<<<<<<<<<<<<<
@@ -2249,7 +2249,7 @@ static uint64_t __pyx_f_10unbcf_fast_10DataStream_read_64(struct __pyx_obj_10unb
   return __pyx_r;
 }
 
-/* "unbcf_fast.pyx":116
+/* "hyperspy/io_plugins/unbcf_fast.pyx":116
  *         return read_64(&self.buffer2[self.offset-8])
  * 
  *     cdef unsigned char *ptr_to(self, int length):             # <<<<<<<<<<<<<<
@@ -2257,13 +2257,13 @@ static uint64_t __pyx_f_10unbcf_fast_10DataStream_read_64(struct __pyx_obj_10unb
  *         making sure the array have the required length
  */
 
-static unsigned char *__pyx_f_10unbcf_fast_10DataStream_ptr_to(struct __pyx_obj_10unbcf_fast_DataStream *__pyx_v_self, int __pyx_v_length) {
+static unsigned char *__pyx_f_8hyperspy_10io_plugins_10unbcf_fast_10DataStream_ptr_to(struct __pyx_obj_8hyperspy_10io_plugins_10unbcf_fast_DataStream *__pyx_v_self, int __pyx_v_length) {
   unsigned char *__pyx_r;
   __Pyx_RefNannyDeclarations
   int __pyx_t_1;
   __Pyx_RefNannySetupContext("ptr_to", 0);
 
-  /* "unbcf_fast.pyx":121
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":121
  *         counting from the offset, increase the internal offset
  *         by given length"""
  *         if (self.offset + length) > self.size:             # <<<<<<<<<<<<<<
@@ -2273,16 +2273,16 @@ static unsigned char *__pyx_f_10unbcf_fast_10DataStream_ptr_to(struct __pyx_obj_
   __pyx_t_1 = (((__pyx_v_self->offset + __pyx_v_length) > __pyx_v_self->size) != 0);
   if (__pyx_t_1) {
 
-    /* "unbcf_fast.pyx":122
+    /* "hyperspy/io_plugins/unbcf_fast.pyx":122
  *         by given length"""
  *         if (self.offset + length) > self.size:
  *             self.load_next_block()             # <<<<<<<<<<<<<<
  *         self.offset += length
  *         return &self.buffer2[self.offset-length]
  */
-    ((struct __pyx_vtabstruct_10unbcf_fast_DataStream *)__pyx_v_self->__pyx_vtab)->load_next_block(__pyx_v_self);
+    ((struct __pyx_vtabstruct_8hyperspy_10io_plugins_10unbcf_fast_DataStream *)__pyx_v_self->__pyx_vtab)->load_next_block(__pyx_v_self);
 
-    /* "unbcf_fast.pyx":121
+    /* "hyperspy/io_plugins/unbcf_fast.pyx":121
  *         counting from the offset, increase the internal offset
  *         by given length"""
  *         if (self.offset + length) > self.size:             # <<<<<<<<<<<<<<
@@ -2291,7 +2291,7 @@ static unsigned char *__pyx_f_10unbcf_fast_10DataStream_ptr_to(struct __pyx_obj_
  */
   }
 
-  /* "unbcf_fast.pyx":123
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":123
  *         if (self.offset + length) > self.size:
  *             self.load_next_block()
  *         self.offset += length             # <<<<<<<<<<<<<<
@@ -2300,7 +2300,7 @@ static unsigned char *__pyx_f_10unbcf_fast_10DataStream_ptr_to(struct __pyx_obj_
  */
   __pyx_v_self->offset = (__pyx_v_self->offset + __pyx_v_length);
 
-  /* "unbcf_fast.pyx":124
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":124
  *             self.load_next_block()
  *         self.offset += length
  *         return &self.buffer2[self.offset-length]             # <<<<<<<<<<<<<<
@@ -2310,7 +2310,7 @@ static unsigned char *__pyx_f_10unbcf_fast_10DataStream_ptr_to(struct __pyx_obj_
   __pyx_r = (&(__pyx_v_self->buffer2[(__pyx_v_self->offset - __pyx_v_length)]));
   goto __pyx_L0;
 
-  /* "unbcf_fast.pyx":116
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":116
  *         return read_64(&self.buffer2[self.offset-8])
  * 
  *     cdef unsigned char *ptr_to(self, int length):             # <<<<<<<<<<<<<<
@@ -2324,7 +2324,7 @@ static unsigned char *__pyx_f_10unbcf_fast_10DataStream_ptr_to(struct __pyx_obj_
   return __pyx_r;
 }
 
-/* "unbcf_fast.pyx":126
+/* "hyperspy/io_plugins/unbcf_fast.pyx":126
  *         return &self.buffer2[self.offset-length]
  * 
  *     cdef void load_next_block(self):             # <<<<<<<<<<<<<<
@@ -2332,7 +2332,7 @@ static unsigned char *__pyx_f_10unbcf_fast_10DataStream_ptr_to(struct __pyx_obj_
  *         append new block of raw data, and overwrite old buffer
  */
 
-static void __pyx_f_10unbcf_fast_10DataStream_load_next_block(struct __pyx_obj_10unbcf_fast_DataStream *__pyx_v_self) {
+static void __pyx_f_8hyperspy_10io_plugins_10unbcf_fast_10DataStream_load_next_block(struct __pyx_obj_8hyperspy_10io_plugins_10unbcf_fast_DataStream *__pyx_v_self) {
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
@@ -2343,7 +2343,7 @@ static void __pyx_f_10unbcf_fast_10DataStream_load_next_block(struct __pyx_obj_1
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("load_next_block", 0);
 
-  /* "unbcf_fast.pyx":130
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":130
  *         append new block of raw data, and overwrite old buffer
  *         handle with new, set offset to 0"""
  *         self.size = self.size_chnk + self.size - self.offset             # <<<<<<<<<<<<<<
@@ -2352,7 +2352,7 @@ static void __pyx_f_10unbcf_fast_10DataStream_load_next_block(struct __pyx_obj_1
  */
   __pyx_v_self->size = ((__pyx_v_self->size_chnk + __pyx_v_self->size) - __pyx_v_self->offset);
 
-  /* "unbcf_fast.pyx":131
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":131
  *         handle with new, set offset to 0"""
  *         self.size = self.size_chnk + self.size - self.offset
  *         self.buffer2 = b''             # <<<<<<<<<<<<<<
@@ -2361,7 +2361,7 @@ static void __pyx_f_10unbcf_fast_10DataStream_load_next_block(struct __pyx_obj_1
  */
   __pyx_v_self->buffer2 = ((unsigned char *)__pyx_k_);
 
-  /* "unbcf_fast.pyx":132
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":132
  *         self.size = self.size_chnk + self.size - self.offset
  *         self.buffer2 = b''
  *         self.raw_bytes = self.raw_bytes[self.offset:] + next(self.blocks)             # <<<<<<<<<<<<<<
@@ -2390,7 +2390,7 @@ static void __pyx_f_10unbcf_fast_10DataStream_load_next_block(struct __pyx_obj_1
   __pyx_v_self->raw_bytes = ((PyObject*)__pyx_t_2);
   __pyx_t_2 = 0;
 
-  /* "unbcf_fast.pyx":133
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":133
  *         self.buffer2 = b''
  *         self.raw_bytes = self.raw_bytes[self.offset:] + next(self.blocks)
  *         self.offset = 0             # <<<<<<<<<<<<<<
@@ -2399,7 +2399,7 @@ static void __pyx_f_10unbcf_fast_10DataStream_load_next_block(struct __pyx_obj_1
  */
   __pyx_v_self->offset = 0;
 
-  /* "unbcf_fast.pyx":134
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":134
  *         self.raw_bytes = self.raw_bytes[self.offset:] + next(self.blocks)
  *         self.offset = 0
  *         self.buffer2 = <bytes>self.raw_bytes             # <<<<<<<<<<<<<<
@@ -2409,7 +2409,7 @@ static void __pyx_f_10unbcf_fast_10DataStream_load_next_block(struct __pyx_obj_1
   __pyx_t_4 = __Pyx_PyObject_AsUString(__pyx_v_self->raw_bytes); if (unlikely((!__pyx_t_4) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 134; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_v_self->buffer2 = __pyx_t_4;
 
-  /* "unbcf_fast.pyx":126
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":126
  *         return &self.buffer2[self.offset-length]
  * 
  *     cdef void load_next_block(self):             # <<<<<<<<<<<<<<
@@ -2423,12 +2423,12 @@ static void __pyx_f_10unbcf_fast_10DataStream_load_next_block(struct __pyx_obj_1
   __Pyx_XDECREF(__pyx_t_1);
   __Pyx_XDECREF(__pyx_t_2);
   __Pyx_XDECREF(__pyx_t_3);
-  __Pyx_WriteUnraisable("unbcf_fast.DataStream.load_next_block", __pyx_clineno, __pyx_lineno, __pyx_filename, 0, 0);
+  __Pyx_WriteUnraisable("hyperspy.io_plugins.unbcf_fast.DataStream.load_next_block", __pyx_clineno, __pyx_lineno, __pyx_filename, 0, 0);
   __pyx_L0:;
   __Pyx_RefNannyFinishContext();
 }
 
-/* "unbcf_fast.pyx":65
+/* "hyperspy/io_plugins/unbcf_fast.pyx":65
  *     cdef int offset
  *     cdef bytes raw_bytes
  *     cdef public object blocks  # public - because it is python object             # <<<<<<<<<<<<<<
@@ -2437,19 +2437,19 @@ static void __pyx_f_10unbcf_fast_10DataStream_load_next_block(struct __pyx_obj_1
  */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_10unbcf_fast_10DataStream_6blocks_1__get__(PyObject *__pyx_v_self); /*proto*/
-static PyObject *__pyx_pw_10unbcf_fast_10DataStream_6blocks_1__get__(PyObject *__pyx_v_self) {
+static PyObject *__pyx_pw_8hyperspy_10io_plugins_10unbcf_fast_10DataStream_6blocks_1__get__(PyObject *__pyx_v_self); /*proto*/
+static PyObject *__pyx_pw_8hyperspy_10io_plugins_10unbcf_fast_10DataStream_6blocks_1__get__(PyObject *__pyx_v_self) {
   PyObject *__pyx_r = 0;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__get__ (wrapper)", 0);
-  __pyx_r = __pyx_pf_10unbcf_fast_10DataStream_6blocks___get__(((struct __pyx_obj_10unbcf_fast_DataStream *)__pyx_v_self));
+  __pyx_r = __pyx_pf_8hyperspy_10io_plugins_10unbcf_fast_10DataStream_6blocks___get__(((struct __pyx_obj_8hyperspy_10io_plugins_10unbcf_fast_DataStream *)__pyx_v_self));
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_10unbcf_fast_10DataStream_6blocks___get__(struct __pyx_obj_10unbcf_fast_DataStream *__pyx_v_self) {
+static PyObject *__pyx_pf_8hyperspy_10io_plugins_10unbcf_fast_10DataStream_6blocks___get__(struct __pyx_obj_8hyperspy_10io_plugins_10unbcf_fast_DataStream *__pyx_v_self) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__get__", 0);
@@ -2466,19 +2466,19 @@ static PyObject *__pyx_pf_10unbcf_fast_10DataStream_6blocks___get__(struct __pyx
 }
 
 /* Python wrapper */
-static int __pyx_pw_10unbcf_fast_10DataStream_6blocks_3__set__(PyObject *__pyx_v_self, PyObject *__pyx_v_value); /*proto*/
-static int __pyx_pw_10unbcf_fast_10DataStream_6blocks_3__set__(PyObject *__pyx_v_self, PyObject *__pyx_v_value) {
+static int __pyx_pw_8hyperspy_10io_plugins_10unbcf_fast_10DataStream_6blocks_3__set__(PyObject *__pyx_v_self, PyObject *__pyx_v_value); /*proto*/
+static int __pyx_pw_8hyperspy_10io_plugins_10unbcf_fast_10DataStream_6blocks_3__set__(PyObject *__pyx_v_self, PyObject *__pyx_v_value) {
   int __pyx_r;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__set__ (wrapper)", 0);
-  __pyx_r = __pyx_pf_10unbcf_fast_10DataStream_6blocks_2__set__(((struct __pyx_obj_10unbcf_fast_DataStream *)__pyx_v_self), ((PyObject *)__pyx_v_value));
+  __pyx_r = __pyx_pf_8hyperspy_10io_plugins_10unbcf_fast_10DataStream_6blocks_2__set__(((struct __pyx_obj_8hyperspy_10io_plugins_10unbcf_fast_DataStream *)__pyx_v_self), ((PyObject *)__pyx_v_value));
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static int __pyx_pf_10unbcf_fast_10DataStream_6blocks_2__set__(struct __pyx_obj_10unbcf_fast_DataStream *__pyx_v_self, PyObject *__pyx_v_value) {
+static int __pyx_pf_8hyperspy_10io_plugins_10unbcf_fast_10DataStream_6blocks_2__set__(struct __pyx_obj_8hyperspy_10io_plugins_10unbcf_fast_DataStream *__pyx_v_self, PyObject *__pyx_v_value) {
   int __pyx_r;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__set__", 0);
@@ -2495,19 +2495,19 @@ static int __pyx_pf_10unbcf_fast_10DataStream_6blocks_2__set__(struct __pyx_obj_
 }
 
 /* Python wrapper */
-static int __pyx_pw_10unbcf_fast_10DataStream_6blocks_5__del__(PyObject *__pyx_v_self); /*proto*/
-static int __pyx_pw_10unbcf_fast_10DataStream_6blocks_5__del__(PyObject *__pyx_v_self) {
+static int __pyx_pw_8hyperspy_10io_plugins_10unbcf_fast_10DataStream_6blocks_5__del__(PyObject *__pyx_v_self); /*proto*/
+static int __pyx_pw_8hyperspy_10io_plugins_10unbcf_fast_10DataStream_6blocks_5__del__(PyObject *__pyx_v_self) {
   int __pyx_r;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__del__ (wrapper)", 0);
-  __pyx_r = __pyx_pf_10unbcf_fast_10DataStream_6blocks_4__del__(((struct __pyx_obj_10unbcf_fast_DataStream *)__pyx_v_self));
+  __pyx_r = __pyx_pf_8hyperspy_10io_plugins_10unbcf_fast_10DataStream_6blocks_4__del__(((struct __pyx_obj_8hyperspy_10io_plugins_10unbcf_fast_DataStream *)__pyx_v_self));
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static int __pyx_pf_10unbcf_fast_10DataStream_6blocks_4__del__(struct __pyx_obj_10unbcf_fast_DataStream *__pyx_v_self) {
+static int __pyx_pf_8hyperspy_10io_plugins_10unbcf_fast_10DataStream_6blocks_4__del__(struct __pyx_obj_8hyperspy_10io_plugins_10unbcf_fast_DataStream *__pyx_v_self) {
   int __pyx_r;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__del__", 0);
@@ -2523,7 +2523,7 @@ static int __pyx_pf_10unbcf_fast_10DataStream_6blocks_4__del__(struct __pyx_obj_
   return __pyx_r;
 }
 
-/* "unbcf_fast.pyx":141
+/* "hyperspy/io_plugins/unbcf_fast.pyx":141
  * @cython.cdivision(True)
  * @cython.boundscheck(False)
  * cdef bin_to_numpy(DataStream data_stream,             # <<<<<<<<<<<<<<
@@ -2531,7 +2531,7 @@ static int __pyx_pf_10unbcf_fast_10DataStream_6blocks_4__del__(struct __pyx_obj_
  *                   int max_chan,
  */
 
-static PyObject *__pyx_fuse_0__pyx_f_10unbcf_fast_bin_to_numpy(struct __pyx_obj_10unbcf_fast_DataStream *__pyx_v_data_stream, __Pyx_memviewslice __pyx_v_hypermap, int __pyx_v_max_chan, int __pyx_v_downsample) {
+static PyObject *__pyx_fuse_0__pyx_f_8hyperspy_10io_plugins_10unbcf_fast_bin_to_numpy(struct __pyx_obj_8hyperspy_10io_plugins_10unbcf_fast_DataStream *__pyx_v_data_stream, __Pyx_memviewslice __pyx_v_hypermap, int __pyx_v_max_chan, int __pyx_v_downsample) {
   CYTHON_UNUSED int __pyx_v_dummy1;
   int __pyx_v_line_cnt;
   CYTHON_UNUSED int __pyx_v_j;
@@ -2556,39 +2556,39 @@ static PyObject *__pyx_fuse_0__pyx_f_10unbcf_fast_bin_to_numpy(struct __pyx_obj_
   int __pyx_t_5;
   uint16_t __pyx_t_6;
   int __pyx_t_7;
-  size_t __pyx_t_8;
+  Py_ssize_t __pyx_t_8;
   size_t __pyx_t_9;
-  Py_ssize_t __pyx_t_10;
+  size_t __pyx_t_10;
   __Pyx_RefNannySetupContext("__pyx_fuse_0bin_to_numpy", 0);
 
-  /* "unbcf_fast.pyx":149
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":149
  *     cdef uint16_t chan1, chan2, flag, data_size1, n_of_pulses, data_size2
  *     cdef uint16_t add_val
  *     height = data_stream.read_32()             # <<<<<<<<<<<<<<
  *     width = data_stream.read_32()
  *     data_stream.seek(<int>0x1A0) #the begining of the array
  */
-  __pyx_v_height = ((struct __pyx_vtabstruct_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->read_32(__pyx_v_data_stream);
+  __pyx_v_height = ((struct __pyx_vtabstruct_8hyperspy_10io_plugins_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->read_32(__pyx_v_data_stream);
 
-  /* "unbcf_fast.pyx":150
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":150
  *     cdef uint16_t add_val
  *     height = data_stream.read_32()
  *     width = data_stream.read_32()             # <<<<<<<<<<<<<<
  *     data_stream.seek(<int>0x1A0) #the begining of the array
  *     for line_cnt in range(height):
  */
-  __pyx_v_width = ((struct __pyx_vtabstruct_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->read_32(__pyx_v_data_stream);
+  __pyx_v_width = ((struct __pyx_vtabstruct_8hyperspy_10io_plugins_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->read_32(__pyx_v_data_stream);
 
-  /* "unbcf_fast.pyx":151
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":151
  *     height = data_stream.read_32()
  *     width = data_stream.read_32()
  *     data_stream.seek(<int>0x1A0) #the begining of the array             # <<<<<<<<<<<<<<
  *     for line_cnt in range(height):
  *         pix_in_line = data_stream.read_32()
  */
-  ((struct __pyx_vtabstruct_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->seek(__pyx_v_data_stream, ((int)0x1A0));
+  ((struct __pyx_vtabstruct_8hyperspy_10io_plugins_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->seek(__pyx_v_data_stream, ((int)0x1A0));
 
-  /* "unbcf_fast.pyx":152
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":152
  *     width = data_stream.read_32()
  *     data_stream.seek(<int>0x1A0) #the begining of the array
  *     for line_cnt in range(height):             # <<<<<<<<<<<<<<
@@ -2599,16 +2599,16 @@ static PyObject *__pyx_fuse_0__pyx_f_10unbcf_fast_bin_to_numpy(struct __pyx_obj_
   for (__pyx_t_2 = 0; __pyx_t_2 < __pyx_t_1; __pyx_t_2+=1) {
     __pyx_v_line_cnt = __pyx_t_2;
 
-    /* "unbcf_fast.pyx":153
+    /* "hyperspy/io_plugins/unbcf_fast.pyx":153
  *     data_stream.seek(<int>0x1A0) #the begining of the array
  *     for line_cnt in range(height):
  *         pix_in_line = data_stream.read_32()             # <<<<<<<<<<<<<<
  *         for dummy1 in range(pix_in_line):
  *             pixel_x = data_stream.read_32()
  */
-    __pyx_v_pix_in_line = ((struct __pyx_vtabstruct_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->read_32(__pyx_v_data_stream);
+    __pyx_v_pix_in_line = ((struct __pyx_vtabstruct_8hyperspy_10io_plugins_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->read_32(__pyx_v_data_stream);
 
-    /* "unbcf_fast.pyx":154
+    /* "hyperspy/io_plugins/unbcf_fast.pyx":154
  *     for line_cnt in range(height):
  *         pix_in_line = data_stream.read_32()
  *         for dummy1 in range(pix_in_line):             # <<<<<<<<<<<<<<
@@ -2619,88 +2619,88 @@ static PyObject *__pyx_fuse_0__pyx_f_10unbcf_fast_bin_to_numpy(struct __pyx_obj_
     for (__pyx_t_4 = 0; __pyx_t_4 < __pyx_t_3; __pyx_t_4+=1) {
       __pyx_v_dummy1 = __pyx_t_4;
 
-      /* "unbcf_fast.pyx":155
+      /* "hyperspy/io_plugins/unbcf_fast.pyx":155
  *         pix_in_line = data_stream.read_32()
  *         for dummy1 in range(pix_in_line):
  *             pixel_x = data_stream.read_32()             # <<<<<<<<<<<<<<
  *             chan1 = data_stream.read_16()
  *             chan2 = data_stream.read_16()
  */
-      __pyx_v_pixel_x = ((struct __pyx_vtabstruct_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->read_32(__pyx_v_data_stream);
+      __pyx_v_pixel_x = ((struct __pyx_vtabstruct_8hyperspy_10io_plugins_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->read_32(__pyx_v_data_stream);
 
-      /* "unbcf_fast.pyx":156
+      /* "hyperspy/io_plugins/unbcf_fast.pyx":156
  *         for dummy1 in range(pix_in_line):
  *             pixel_x = data_stream.read_32()
  *             chan1 = data_stream.read_16()             # <<<<<<<<<<<<<<
  *             chan2 = data_stream.read_16()
  *             data_stream.skip(4)  # unknown static value
  */
-      __pyx_v_chan1 = ((struct __pyx_vtabstruct_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->read_16(__pyx_v_data_stream);
+      __pyx_v_chan1 = ((struct __pyx_vtabstruct_8hyperspy_10io_plugins_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->read_16(__pyx_v_data_stream);
 
-      /* "unbcf_fast.pyx":157
+      /* "hyperspy/io_plugins/unbcf_fast.pyx":157
  *             pixel_x = data_stream.read_32()
  *             chan1 = data_stream.read_16()
  *             chan2 = data_stream.read_16()             # <<<<<<<<<<<<<<
  *             data_stream.skip(4)  # unknown static value
  *             flag = data_stream.read_16()
  */
-      __pyx_v_chan2 = ((struct __pyx_vtabstruct_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->read_16(__pyx_v_data_stream);
+      __pyx_v_chan2 = ((struct __pyx_vtabstruct_8hyperspy_10io_plugins_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->read_16(__pyx_v_data_stream);
 
-      /* "unbcf_fast.pyx":158
+      /* "hyperspy/io_plugins/unbcf_fast.pyx":158
  *             chan1 = data_stream.read_16()
  *             chan2 = data_stream.read_16()
  *             data_stream.skip(4)  # unknown static value             # <<<<<<<<<<<<<<
  *             flag = data_stream.read_16()
  *             data_size1 = data_stream.read_16()
  */
-      ((struct __pyx_vtabstruct_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->skip(__pyx_v_data_stream, 4);
+      ((struct __pyx_vtabstruct_8hyperspy_10io_plugins_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->skip(__pyx_v_data_stream, 4);
 
-      /* "unbcf_fast.pyx":159
+      /* "hyperspy/io_plugins/unbcf_fast.pyx":159
  *             chan2 = data_stream.read_16()
  *             data_stream.skip(4)  # unknown static value
  *             flag = data_stream.read_16()             # <<<<<<<<<<<<<<
  *             data_size1 = data_stream.read_16()
  *             n_of_pulses = data_stream.read_16()
  */
-      __pyx_v_flag = ((struct __pyx_vtabstruct_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->read_16(__pyx_v_data_stream);
+      __pyx_v_flag = ((struct __pyx_vtabstruct_8hyperspy_10io_plugins_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->read_16(__pyx_v_data_stream);
 
-      /* "unbcf_fast.pyx":160
+      /* "hyperspy/io_plugins/unbcf_fast.pyx":160
  *             data_stream.skip(4)  # unknown static value
  *             flag = data_stream.read_16()
  *             data_size1 = data_stream.read_16()             # <<<<<<<<<<<<<<
  *             n_of_pulses = data_stream.read_16()
  *             data_size2 = data_stream.read_16()
  */
-      __pyx_v_data_size1 = ((struct __pyx_vtabstruct_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->read_16(__pyx_v_data_stream);
+      __pyx_v_data_size1 = ((struct __pyx_vtabstruct_8hyperspy_10io_plugins_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->read_16(__pyx_v_data_stream);
 
-      /* "unbcf_fast.pyx":161
+      /* "hyperspy/io_plugins/unbcf_fast.pyx":161
  *             flag = data_stream.read_16()
  *             data_size1 = data_stream.read_16()
  *             n_of_pulses = data_stream.read_16()             # <<<<<<<<<<<<<<
  *             data_size2 = data_stream.read_16()
  *             data_stream.skip(2)  # skip to data
  */
-      __pyx_v_n_of_pulses = ((struct __pyx_vtabstruct_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->read_16(__pyx_v_data_stream);
+      __pyx_v_n_of_pulses = ((struct __pyx_vtabstruct_8hyperspy_10io_plugins_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->read_16(__pyx_v_data_stream);
 
-      /* "unbcf_fast.pyx":162
+      /* "hyperspy/io_plugins/unbcf_fast.pyx":162
  *             data_size1 = data_stream.read_16()
  *             n_of_pulses = data_stream.read_16()
  *             data_size2 = data_stream.read_16()             # <<<<<<<<<<<<<<
  *             data_stream.skip(2)  # skip to data
  *             if flag == 1:
  */
-      __pyx_v_data_size2 = ((struct __pyx_vtabstruct_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->read_16(__pyx_v_data_stream);
+      __pyx_v_data_size2 = ((struct __pyx_vtabstruct_8hyperspy_10io_plugins_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->read_16(__pyx_v_data_stream);
 
-      /* "unbcf_fast.pyx":163
+      /* "hyperspy/io_plugins/unbcf_fast.pyx":163
  *             n_of_pulses = data_stream.read_16()
  *             data_size2 = data_stream.read_16()
  *             data_stream.skip(2)  # skip to data             # <<<<<<<<<<<<<<
  *             if flag == 1:
  *                 unpack12bit(hypermap,
  */
-      ((struct __pyx_vtabstruct_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->skip(__pyx_v_data_stream, 2);
+      ((struct __pyx_vtabstruct_8hyperspy_10io_plugins_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->skip(__pyx_v_data_stream, 2);
 
-      /* "unbcf_fast.pyx":164
+      /* "hyperspy/io_plugins/unbcf_fast.pyx":164
  *             data_size2 = data_stream.read_16()
  *             data_stream.skip(2)  # skip to data
  *             if flag == 1:             # <<<<<<<<<<<<<<
@@ -2710,16 +2710,16 @@ static PyObject *__pyx_fuse_0__pyx_f_10unbcf_fast_bin_to_numpy(struct __pyx_obj_
       __pyx_t_5 = ((__pyx_v_flag == 1) != 0);
       if (__pyx_t_5) {
 
-        /* "unbcf_fast.pyx":165
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":165
  *             data_stream.skip(2)  # skip to data
  *             if flag == 1:
  *                 unpack12bit(hypermap,             # <<<<<<<<<<<<<<
  *                             pixel_x // downsample,
  *                             line_cnt // downsample,
  */
-        __pyx_fuse_0__pyx_f_10unbcf_fast_unpack12bit(__pyx_v_hypermap, (__pyx_v_pixel_x / __pyx_v_downsample), (__pyx_v_line_cnt / __pyx_v_downsample), ((struct __pyx_vtabstruct_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->ptr_to(__pyx_v_data_stream, __pyx_v_data_size2), __pyx_v_n_of_pulses, __pyx_v_max_chan);
+        __pyx_fuse_0__pyx_f_8hyperspy_10io_plugins_10unbcf_fast_unpack12bit(__pyx_v_hypermap, (__pyx_v_pixel_x / __pyx_v_downsample), (__pyx_v_line_cnt / __pyx_v_downsample), ((struct __pyx_vtabstruct_8hyperspy_10io_plugins_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->ptr_to(__pyx_v_data_stream, __pyx_v_data_size2), __pyx_v_n_of_pulses, __pyx_v_max_chan);
 
-        /* "unbcf_fast.pyx":164
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":164
  *             data_size2 = data_stream.read_16()
  *             data_stream.skip(2)  # skip to data
  *             if flag == 1:             # <<<<<<<<<<<<<<
@@ -2729,7 +2729,7 @@ static PyObject *__pyx_fuse_0__pyx_f_10unbcf_fast_bin_to_numpy(struct __pyx_obj_
         goto __pyx_L7;
       }
 
-      /* "unbcf_fast.pyx":172
+      /* "hyperspy/io_plugins/unbcf_fast.pyx":172
  *                             max_chan)
  *             else:
  *                 unpack_instructed(hypermap,             # <<<<<<<<<<<<<<
@@ -2738,16 +2738,16 @@ static PyObject *__pyx_fuse_0__pyx_f_10unbcf_fast_bin_to_numpy(struct __pyx_obj_
  */
       /*else*/ {
 
-        /* "unbcf_fast.pyx":177
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":177
  *                                   data_stream.ptr_to(data_size2 - 4),
  *                                   data_size2 - 4,
  *                                   max_chan)             # <<<<<<<<<<<<<<
  *                 if n_of_pulses > 0:
  *                     add_pulse_size = data_stream.read_32()
  */
-        __pyx_fuse_0__pyx_f_10unbcf_fast_unpack_instructed(__pyx_v_hypermap, (__pyx_v_pixel_x / __pyx_v_downsample), (__pyx_v_line_cnt / __pyx_v_downsample), ((struct __pyx_vtabstruct_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->ptr_to(__pyx_v_data_stream, (__pyx_v_data_size2 - 4)), (__pyx_v_data_size2 - 4), __pyx_v_max_chan);
+        __pyx_fuse_0__pyx_f_8hyperspy_10io_plugins_10unbcf_fast_unpack_instructed(__pyx_v_hypermap, (__pyx_v_pixel_x / __pyx_v_downsample), (__pyx_v_line_cnt / __pyx_v_downsample), ((struct __pyx_vtabstruct_8hyperspy_10io_plugins_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->ptr_to(__pyx_v_data_stream, (__pyx_v_data_size2 - 4)), (__pyx_v_data_size2 - 4), __pyx_v_max_chan);
 
-        /* "unbcf_fast.pyx":178
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":178
  *                                   data_size2 - 4,
  *                                   max_chan)
  *                 if n_of_pulses > 0:             # <<<<<<<<<<<<<<
@@ -2757,16 +2757,16 @@ static PyObject *__pyx_fuse_0__pyx_f_10unbcf_fast_bin_to_numpy(struct __pyx_obj_
         __pyx_t_5 = ((__pyx_v_n_of_pulses > 0) != 0);
         if (__pyx_t_5) {
 
-          /* "unbcf_fast.pyx":179
+          /* "hyperspy/io_plugins/unbcf_fast.pyx":179
  *                                   max_chan)
  *                 if n_of_pulses > 0:
  *                     add_pulse_size = data_stream.read_32()             # <<<<<<<<<<<<<<
  *                     for j in range(n_of_pulses):
  *                         add_val = data_stream.read_16()
  */
-          __pyx_v_add_pulse_size = ((struct __pyx_vtabstruct_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->read_32(__pyx_v_data_stream);
+          __pyx_v_add_pulse_size = ((struct __pyx_vtabstruct_8hyperspy_10io_plugins_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->read_32(__pyx_v_data_stream);
 
-          /* "unbcf_fast.pyx":180
+          /* "hyperspy/io_plugins/unbcf_fast.pyx":180
  *                 if n_of_pulses > 0:
  *                     add_pulse_size = data_stream.read_32()
  *                     for j in range(n_of_pulses):             # <<<<<<<<<<<<<<
@@ -2777,49 +2777,49 @@ static PyObject *__pyx_fuse_0__pyx_f_10unbcf_fast_bin_to_numpy(struct __pyx_obj_
           for (__pyx_t_7 = 0; __pyx_t_7 < __pyx_t_6; __pyx_t_7+=1) {
             __pyx_v_j = __pyx_t_7;
 
-            /* "unbcf_fast.pyx":181
+            /* "hyperspy/io_plugins/unbcf_fast.pyx":181
  *                     add_pulse_size = data_stream.read_32()
  *                     for j in range(n_of_pulses):
  *                         add_val = data_stream.read_16()             # <<<<<<<<<<<<<<
  *                         if add_val < max_chan:
- *                             hypermap[add_val,
+ *                             hypermap[line_cnt // downsample,
  */
-            __pyx_v_add_val = ((struct __pyx_vtabstruct_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->read_16(__pyx_v_data_stream);
+            __pyx_v_add_val = ((struct __pyx_vtabstruct_8hyperspy_10io_plugins_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->read_16(__pyx_v_data_stream);
 
-            /* "unbcf_fast.pyx":182
+            /* "hyperspy/io_plugins/unbcf_fast.pyx":182
  *                     for j in range(n_of_pulses):
  *                         add_val = data_stream.read_16()
  *                         if add_val < max_chan:             # <<<<<<<<<<<<<<
- *                             hypermap[add_val,
- *                                       pixel_x // downsample,
+ *                             hypermap[line_cnt // downsample,
+ *                                      pixel_x // downsample,
  */
             __pyx_t_5 = ((__pyx_v_add_val < __pyx_v_max_chan) != 0);
             if (__pyx_t_5) {
 
-              /* "unbcf_fast.pyx":185
- *                             hypermap[add_val,
- *                                       pixel_x // downsample,
- *                                       line_cnt // downsample] += 1             # <<<<<<<<<<<<<<
+              /* "hyperspy/io_plugins/unbcf_fast.pyx":185
+ *                             hypermap[line_cnt // downsample,
+ *                                      pixel_x // downsample,
+ *                                      add_val] += 1             # <<<<<<<<<<<<<<
  *                 else:
  *                     data_stream.skip(4)
  */
-              __pyx_t_8 = __pyx_v_add_val;
+              __pyx_t_8 = (__pyx_v_line_cnt / __pyx_v_downsample);
               __pyx_t_9 = (__pyx_v_pixel_x / __pyx_v_downsample);
-              __pyx_t_10 = (__pyx_v_line_cnt / __pyx_v_downsample);
-              if (__pyx_t_10 < 0) __pyx_t_10 += __pyx_v_hypermap.shape[2];
+              __pyx_t_10 = __pyx_v_add_val;
+              if (__pyx_t_8 < 0) __pyx_t_8 += __pyx_v_hypermap.shape[0];
               *((uint8_t *) ( /* dim=2 */ (( /* dim=1 */ (( /* dim=0 */ (__pyx_v_hypermap.data + __pyx_t_8 * __pyx_v_hypermap.strides[0]) ) + __pyx_t_9 * __pyx_v_hypermap.strides[1]) ) + __pyx_t_10 * __pyx_v_hypermap.strides[2]) )) += 1;
 
-              /* "unbcf_fast.pyx":182
+              /* "hyperspy/io_plugins/unbcf_fast.pyx":182
  *                     for j in range(n_of_pulses):
  *                         add_val = data_stream.read_16()
  *                         if add_val < max_chan:             # <<<<<<<<<<<<<<
- *                             hypermap[add_val,
- *                                       pixel_x // downsample,
+ *                             hypermap[line_cnt // downsample,
+ *                                      pixel_x // downsample,
  */
             }
           }
 
-          /* "unbcf_fast.pyx":178
+          /* "hyperspy/io_plugins/unbcf_fast.pyx":178
  *                                   data_size2 - 4,
  *                                   max_chan)
  *                 if n_of_pulses > 0:             # <<<<<<<<<<<<<<
@@ -2829,15 +2829,15 @@ static PyObject *__pyx_fuse_0__pyx_f_10unbcf_fast_bin_to_numpy(struct __pyx_obj_
           goto __pyx_L8;
         }
 
-        /* "unbcf_fast.pyx":187
- *                                       line_cnt // downsample] += 1
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":187
+ *                                      add_val] += 1
  *                 else:
  *                     data_stream.skip(4)             # <<<<<<<<<<<<<<
  * 
  * 
  */
         /*else*/ {
-          ((struct __pyx_vtabstruct_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->skip(__pyx_v_data_stream, 4);
+          ((struct __pyx_vtabstruct_8hyperspy_10io_plugins_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->skip(__pyx_v_data_stream, 4);
         }
         __pyx_L8:;
       }
@@ -2845,7 +2845,7 @@ static PyObject *__pyx_fuse_0__pyx_f_10unbcf_fast_bin_to_numpy(struct __pyx_obj_
     }
   }
 
-  /* "unbcf_fast.pyx":141
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":141
  * @cython.cdivision(True)
  * @cython.boundscheck(False)
  * cdef bin_to_numpy(DataStream data_stream,             # <<<<<<<<<<<<<<
@@ -2860,7 +2860,7 @@ static PyObject *__pyx_fuse_0__pyx_f_10unbcf_fast_bin_to_numpy(struct __pyx_obj_
   return __pyx_r;
 }
 
-static PyObject *__pyx_fuse_1__pyx_f_10unbcf_fast_bin_to_numpy(struct __pyx_obj_10unbcf_fast_DataStream *__pyx_v_data_stream, __Pyx_memviewslice __pyx_v_hypermap, int __pyx_v_max_chan, int __pyx_v_downsample) {
+static PyObject *__pyx_fuse_1__pyx_f_8hyperspy_10io_plugins_10unbcf_fast_bin_to_numpy(struct __pyx_obj_8hyperspy_10io_plugins_10unbcf_fast_DataStream *__pyx_v_data_stream, __Pyx_memviewslice __pyx_v_hypermap, int __pyx_v_max_chan, int __pyx_v_downsample) {
   CYTHON_UNUSED int __pyx_v_dummy1;
   int __pyx_v_line_cnt;
   CYTHON_UNUSED int __pyx_v_j;
@@ -2885,39 +2885,39 @@ static PyObject *__pyx_fuse_1__pyx_f_10unbcf_fast_bin_to_numpy(struct __pyx_obj_
   int __pyx_t_5;
   uint16_t __pyx_t_6;
   int __pyx_t_7;
-  size_t __pyx_t_8;
+  Py_ssize_t __pyx_t_8;
   size_t __pyx_t_9;
-  Py_ssize_t __pyx_t_10;
+  size_t __pyx_t_10;
   __Pyx_RefNannySetupContext("__pyx_fuse_1bin_to_numpy", 0);
 
-  /* "unbcf_fast.pyx":149
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":149
  *     cdef uint16_t chan1, chan2, flag, data_size1, n_of_pulses, data_size2
  *     cdef uint16_t add_val
  *     height = data_stream.read_32()             # <<<<<<<<<<<<<<
  *     width = data_stream.read_32()
  *     data_stream.seek(<int>0x1A0) #the begining of the array
  */
-  __pyx_v_height = ((struct __pyx_vtabstruct_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->read_32(__pyx_v_data_stream);
+  __pyx_v_height = ((struct __pyx_vtabstruct_8hyperspy_10io_plugins_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->read_32(__pyx_v_data_stream);
 
-  /* "unbcf_fast.pyx":150
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":150
  *     cdef uint16_t add_val
  *     height = data_stream.read_32()
  *     width = data_stream.read_32()             # <<<<<<<<<<<<<<
  *     data_stream.seek(<int>0x1A0) #the begining of the array
  *     for line_cnt in range(height):
  */
-  __pyx_v_width = ((struct __pyx_vtabstruct_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->read_32(__pyx_v_data_stream);
+  __pyx_v_width = ((struct __pyx_vtabstruct_8hyperspy_10io_plugins_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->read_32(__pyx_v_data_stream);
 
-  /* "unbcf_fast.pyx":151
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":151
  *     height = data_stream.read_32()
  *     width = data_stream.read_32()
  *     data_stream.seek(<int>0x1A0) #the begining of the array             # <<<<<<<<<<<<<<
  *     for line_cnt in range(height):
  *         pix_in_line = data_stream.read_32()
  */
-  ((struct __pyx_vtabstruct_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->seek(__pyx_v_data_stream, ((int)0x1A0));
+  ((struct __pyx_vtabstruct_8hyperspy_10io_plugins_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->seek(__pyx_v_data_stream, ((int)0x1A0));
 
-  /* "unbcf_fast.pyx":152
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":152
  *     width = data_stream.read_32()
  *     data_stream.seek(<int>0x1A0) #the begining of the array
  *     for line_cnt in range(height):             # <<<<<<<<<<<<<<
@@ -2928,16 +2928,16 @@ static PyObject *__pyx_fuse_1__pyx_f_10unbcf_fast_bin_to_numpy(struct __pyx_obj_
   for (__pyx_t_2 = 0; __pyx_t_2 < __pyx_t_1; __pyx_t_2+=1) {
     __pyx_v_line_cnt = __pyx_t_2;
 
-    /* "unbcf_fast.pyx":153
+    /* "hyperspy/io_plugins/unbcf_fast.pyx":153
  *     data_stream.seek(<int>0x1A0) #the begining of the array
  *     for line_cnt in range(height):
  *         pix_in_line = data_stream.read_32()             # <<<<<<<<<<<<<<
  *         for dummy1 in range(pix_in_line):
  *             pixel_x = data_stream.read_32()
  */
-    __pyx_v_pix_in_line = ((struct __pyx_vtabstruct_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->read_32(__pyx_v_data_stream);
+    __pyx_v_pix_in_line = ((struct __pyx_vtabstruct_8hyperspy_10io_plugins_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->read_32(__pyx_v_data_stream);
 
-    /* "unbcf_fast.pyx":154
+    /* "hyperspy/io_plugins/unbcf_fast.pyx":154
  *     for line_cnt in range(height):
  *         pix_in_line = data_stream.read_32()
  *         for dummy1 in range(pix_in_line):             # <<<<<<<<<<<<<<
@@ -2948,88 +2948,88 @@ static PyObject *__pyx_fuse_1__pyx_f_10unbcf_fast_bin_to_numpy(struct __pyx_obj_
     for (__pyx_t_4 = 0; __pyx_t_4 < __pyx_t_3; __pyx_t_4+=1) {
       __pyx_v_dummy1 = __pyx_t_4;
 
-      /* "unbcf_fast.pyx":155
+      /* "hyperspy/io_plugins/unbcf_fast.pyx":155
  *         pix_in_line = data_stream.read_32()
  *         for dummy1 in range(pix_in_line):
  *             pixel_x = data_stream.read_32()             # <<<<<<<<<<<<<<
  *             chan1 = data_stream.read_16()
  *             chan2 = data_stream.read_16()
  */
-      __pyx_v_pixel_x = ((struct __pyx_vtabstruct_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->read_32(__pyx_v_data_stream);
+      __pyx_v_pixel_x = ((struct __pyx_vtabstruct_8hyperspy_10io_plugins_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->read_32(__pyx_v_data_stream);
 
-      /* "unbcf_fast.pyx":156
+      /* "hyperspy/io_plugins/unbcf_fast.pyx":156
  *         for dummy1 in range(pix_in_line):
  *             pixel_x = data_stream.read_32()
  *             chan1 = data_stream.read_16()             # <<<<<<<<<<<<<<
  *             chan2 = data_stream.read_16()
  *             data_stream.skip(4)  # unknown static value
  */
-      __pyx_v_chan1 = ((struct __pyx_vtabstruct_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->read_16(__pyx_v_data_stream);
+      __pyx_v_chan1 = ((struct __pyx_vtabstruct_8hyperspy_10io_plugins_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->read_16(__pyx_v_data_stream);
 
-      /* "unbcf_fast.pyx":157
+      /* "hyperspy/io_plugins/unbcf_fast.pyx":157
  *             pixel_x = data_stream.read_32()
  *             chan1 = data_stream.read_16()
  *             chan2 = data_stream.read_16()             # <<<<<<<<<<<<<<
  *             data_stream.skip(4)  # unknown static value
  *             flag = data_stream.read_16()
  */
-      __pyx_v_chan2 = ((struct __pyx_vtabstruct_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->read_16(__pyx_v_data_stream);
+      __pyx_v_chan2 = ((struct __pyx_vtabstruct_8hyperspy_10io_plugins_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->read_16(__pyx_v_data_stream);
 
-      /* "unbcf_fast.pyx":158
+      /* "hyperspy/io_plugins/unbcf_fast.pyx":158
  *             chan1 = data_stream.read_16()
  *             chan2 = data_stream.read_16()
  *             data_stream.skip(4)  # unknown static value             # <<<<<<<<<<<<<<
  *             flag = data_stream.read_16()
  *             data_size1 = data_stream.read_16()
  */
-      ((struct __pyx_vtabstruct_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->skip(__pyx_v_data_stream, 4);
+      ((struct __pyx_vtabstruct_8hyperspy_10io_plugins_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->skip(__pyx_v_data_stream, 4);
 
-      /* "unbcf_fast.pyx":159
+      /* "hyperspy/io_plugins/unbcf_fast.pyx":159
  *             chan2 = data_stream.read_16()
  *             data_stream.skip(4)  # unknown static value
  *             flag = data_stream.read_16()             # <<<<<<<<<<<<<<
  *             data_size1 = data_stream.read_16()
  *             n_of_pulses = data_stream.read_16()
  */
-      __pyx_v_flag = ((struct __pyx_vtabstruct_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->read_16(__pyx_v_data_stream);
+      __pyx_v_flag = ((struct __pyx_vtabstruct_8hyperspy_10io_plugins_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->read_16(__pyx_v_data_stream);
 
-      /* "unbcf_fast.pyx":160
+      /* "hyperspy/io_plugins/unbcf_fast.pyx":160
  *             data_stream.skip(4)  # unknown static value
  *             flag = data_stream.read_16()
  *             data_size1 = data_stream.read_16()             # <<<<<<<<<<<<<<
  *             n_of_pulses = data_stream.read_16()
  *             data_size2 = data_stream.read_16()
  */
-      __pyx_v_data_size1 = ((struct __pyx_vtabstruct_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->read_16(__pyx_v_data_stream);
+      __pyx_v_data_size1 = ((struct __pyx_vtabstruct_8hyperspy_10io_plugins_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->read_16(__pyx_v_data_stream);
 
-      /* "unbcf_fast.pyx":161
+      /* "hyperspy/io_plugins/unbcf_fast.pyx":161
  *             flag = data_stream.read_16()
  *             data_size1 = data_stream.read_16()
  *             n_of_pulses = data_stream.read_16()             # <<<<<<<<<<<<<<
  *             data_size2 = data_stream.read_16()
  *             data_stream.skip(2)  # skip to data
  */
-      __pyx_v_n_of_pulses = ((struct __pyx_vtabstruct_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->read_16(__pyx_v_data_stream);
+      __pyx_v_n_of_pulses = ((struct __pyx_vtabstruct_8hyperspy_10io_plugins_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->read_16(__pyx_v_data_stream);
 
-      /* "unbcf_fast.pyx":162
+      /* "hyperspy/io_plugins/unbcf_fast.pyx":162
  *             data_size1 = data_stream.read_16()
  *             n_of_pulses = data_stream.read_16()
  *             data_size2 = data_stream.read_16()             # <<<<<<<<<<<<<<
  *             data_stream.skip(2)  # skip to data
  *             if flag == 1:
  */
-      __pyx_v_data_size2 = ((struct __pyx_vtabstruct_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->read_16(__pyx_v_data_stream);
+      __pyx_v_data_size2 = ((struct __pyx_vtabstruct_8hyperspy_10io_plugins_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->read_16(__pyx_v_data_stream);
 
-      /* "unbcf_fast.pyx":163
+      /* "hyperspy/io_plugins/unbcf_fast.pyx":163
  *             n_of_pulses = data_stream.read_16()
  *             data_size2 = data_stream.read_16()
  *             data_stream.skip(2)  # skip to data             # <<<<<<<<<<<<<<
  *             if flag == 1:
  *                 unpack12bit(hypermap,
  */
-      ((struct __pyx_vtabstruct_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->skip(__pyx_v_data_stream, 2);
+      ((struct __pyx_vtabstruct_8hyperspy_10io_plugins_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->skip(__pyx_v_data_stream, 2);
 
-      /* "unbcf_fast.pyx":164
+      /* "hyperspy/io_plugins/unbcf_fast.pyx":164
  *             data_size2 = data_stream.read_16()
  *             data_stream.skip(2)  # skip to data
  *             if flag == 1:             # <<<<<<<<<<<<<<
@@ -3039,16 +3039,16 @@ static PyObject *__pyx_fuse_1__pyx_f_10unbcf_fast_bin_to_numpy(struct __pyx_obj_
       __pyx_t_5 = ((__pyx_v_flag == 1) != 0);
       if (__pyx_t_5) {
 
-        /* "unbcf_fast.pyx":165
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":165
  *             data_stream.skip(2)  # skip to data
  *             if flag == 1:
  *                 unpack12bit(hypermap,             # <<<<<<<<<<<<<<
  *                             pixel_x // downsample,
  *                             line_cnt // downsample,
  */
-        __pyx_fuse_1__pyx_f_10unbcf_fast_unpack12bit(__pyx_v_hypermap, (__pyx_v_pixel_x / __pyx_v_downsample), (__pyx_v_line_cnt / __pyx_v_downsample), ((struct __pyx_vtabstruct_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->ptr_to(__pyx_v_data_stream, __pyx_v_data_size2), __pyx_v_n_of_pulses, __pyx_v_max_chan);
+        __pyx_fuse_1__pyx_f_8hyperspy_10io_plugins_10unbcf_fast_unpack12bit(__pyx_v_hypermap, (__pyx_v_pixel_x / __pyx_v_downsample), (__pyx_v_line_cnt / __pyx_v_downsample), ((struct __pyx_vtabstruct_8hyperspy_10io_plugins_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->ptr_to(__pyx_v_data_stream, __pyx_v_data_size2), __pyx_v_n_of_pulses, __pyx_v_max_chan);
 
-        /* "unbcf_fast.pyx":164
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":164
  *             data_size2 = data_stream.read_16()
  *             data_stream.skip(2)  # skip to data
  *             if flag == 1:             # <<<<<<<<<<<<<<
@@ -3058,7 +3058,7 @@ static PyObject *__pyx_fuse_1__pyx_f_10unbcf_fast_bin_to_numpy(struct __pyx_obj_
         goto __pyx_L7;
       }
 
-      /* "unbcf_fast.pyx":172
+      /* "hyperspy/io_plugins/unbcf_fast.pyx":172
  *                             max_chan)
  *             else:
  *                 unpack_instructed(hypermap,             # <<<<<<<<<<<<<<
@@ -3067,16 +3067,16 @@ static PyObject *__pyx_fuse_1__pyx_f_10unbcf_fast_bin_to_numpy(struct __pyx_obj_
  */
       /*else*/ {
 
-        /* "unbcf_fast.pyx":177
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":177
  *                                   data_stream.ptr_to(data_size2 - 4),
  *                                   data_size2 - 4,
  *                                   max_chan)             # <<<<<<<<<<<<<<
  *                 if n_of_pulses > 0:
  *                     add_pulse_size = data_stream.read_32()
  */
-        __pyx_fuse_1__pyx_f_10unbcf_fast_unpack_instructed(__pyx_v_hypermap, (__pyx_v_pixel_x / __pyx_v_downsample), (__pyx_v_line_cnt / __pyx_v_downsample), ((struct __pyx_vtabstruct_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->ptr_to(__pyx_v_data_stream, (__pyx_v_data_size2 - 4)), (__pyx_v_data_size2 - 4), __pyx_v_max_chan);
+        __pyx_fuse_1__pyx_f_8hyperspy_10io_plugins_10unbcf_fast_unpack_instructed(__pyx_v_hypermap, (__pyx_v_pixel_x / __pyx_v_downsample), (__pyx_v_line_cnt / __pyx_v_downsample), ((struct __pyx_vtabstruct_8hyperspy_10io_plugins_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->ptr_to(__pyx_v_data_stream, (__pyx_v_data_size2 - 4)), (__pyx_v_data_size2 - 4), __pyx_v_max_chan);
 
-        /* "unbcf_fast.pyx":178
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":178
  *                                   data_size2 - 4,
  *                                   max_chan)
  *                 if n_of_pulses > 0:             # <<<<<<<<<<<<<<
@@ -3086,16 +3086,16 @@ static PyObject *__pyx_fuse_1__pyx_f_10unbcf_fast_bin_to_numpy(struct __pyx_obj_
         __pyx_t_5 = ((__pyx_v_n_of_pulses > 0) != 0);
         if (__pyx_t_5) {
 
-          /* "unbcf_fast.pyx":179
+          /* "hyperspy/io_plugins/unbcf_fast.pyx":179
  *                                   max_chan)
  *                 if n_of_pulses > 0:
  *                     add_pulse_size = data_stream.read_32()             # <<<<<<<<<<<<<<
  *                     for j in range(n_of_pulses):
  *                         add_val = data_stream.read_16()
  */
-          __pyx_v_add_pulse_size = ((struct __pyx_vtabstruct_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->read_32(__pyx_v_data_stream);
+          __pyx_v_add_pulse_size = ((struct __pyx_vtabstruct_8hyperspy_10io_plugins_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->read_32(__pyx_v_data_stream);
 
-          /* "unbcf_fast.pyx":180
+          /* "hyperspy/io_plugins/unbcf_fast.pyx":180
  *                 if n_of_pulses > 0:
  *                     add_pulse_size = data_stream.read_32()
  *                     for j in range(n_of_pulses):             # <<<<<<<<<<<<<<
@@ -3106,49 +3106,49 @@ static PyObject *__pyx_fuse_1__pyx_f_10unbcf_fast_bin_to_numpy(struct __pyx_obj_
           for (__pyx_t_7 = 0; __pyx_t_7 < __pyx_t_6; __pyx_t_7+=1) {
             __pyx_v_j = __pyx_t_7;
 
-            /* "unbcf_fast.pyx":181
+            /* "hyperspy/io_plugins/unbcf_fast.pyx":181
  *                     add_pulse_size = data_stream.read_32()
  *                     for j in range(n_of_pulses):
  *                         add_val = data_stream.read_16()             # <<<<<<<<<<<<<<
  *                         if add_val < max_chan:
- *                             hypermap[add_val,
+ *                             hypermap[line_cnt // downsample,
  */
-            __pyx_v_add_val = ((struct __pyx_vtabstruct_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->read_16(__pyx_v_data_stream);
+            __pyx_v_add_val = ((struct __pyx_vtabstruct_8hyperspy_10io_plugins_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->read_16(__pyx_v_data_stream);
 
-            /* "unbcf_fast.pyx":182
+            /* "hyperspy/io_plugins/unbcf_fast.pyx":182
  *                     for j in range(n_of_pulses):
  *                         add_val = data_stream.read_16()
  *                         if add_val < max_chan:             # <<<<<<<<<<<<<<
- *                             hypermap[add_val,
- *                                       pixel_x // downsample,
+ *                             hypermap[line_cnt // downsample,
+ *                                      pixel_x // downsample,
  */
             __pyx_t_5 = ((__pyx_v_add_val < __pyx_v_max_chan) != 0);
             if (__pyx_t_5) {
 
-              /* "unbcf_fast.pyx":185
- *                             hypermap[add_val,
- *                                       pixel_x // downsample,
- *                                       line_cnt // downsample] += 1             # <<<<<<<<<<<<<<
+              /* "hyperspy/io_plugins/unbcf_fast.pyx":185
+ *                             hypermap[line_cnt // downsample,
+ *                                      pixel_x // downsample,
+ *                                      add_val] += 1             # <<<<<<<<<<<<<<
  *                 else:
  *                     data_stream.skip(4)
  */
-              __pyx_t_8 = __pyx_v_add_val;
+              __pyx_t_8 = (__pyx_v_line_cnt / __pyx_v_downsample);
               __pyx_t_9 = (__pyx_v_pixel_x / __pyx_v_downsample);
-              __pyx_t_10 = (__pyx_v_line_cnt / __pyx_v_downsample);
-              if (__pyx_t_10 < 0) __pyx_t_10 += __pyx_v_hypermap.shape[2];
+              __pyx_t_10 = __pyx_v_add_val;
+              if (__pyx_t_8 < 0) __pyx_t_8 += __pyx_v_hypermap.shape[0];
               *((uint16_t *) ( /* dim=2 */ (( /* dim=1 */ (( /* dim=0 */ (__pyx_v_hypermap.data + __pyx_t_8 * __pyx_v_hypermap.strides[0]) ) + __pyx_t_9 * __pyx_v_hypermap.strides[1]) ) + __pyx_t_10 * __pyx_v_hypermap.strides[2]) )) += 1;
 
-              /* "unbcf_fast.pyx":182
+              /* "hyperspy/io_plugins/unbcf_fast.pyx":182
  *                     for j in range(n_of_pulses):
  *                         add_val = data_stream.read_16()
  *                         if add_val < max_chan:             # <<<<<<<<<<<<<<
- *                             hypermap[add_val,
- *                                       pixel_x // downsample,
+ *                             hypermap[line_cnt // downsample,
+ *                                      pixel_x // downsample,
  */
             }
           }
 
-          /* "unbcf_fast.pyx":178
+          /* "hyperspy/io_plugins/unbcf_fast.pyx":178
  *                                   data_size2 - 4,
  *                                   max_chan)
  *                 if n_of_pulses > 0:             # <<<<<<<<<<<<<<
@@ -3158,15 +3158,15 @@ static PyObject *__pyx_fuse_1__pyx_f_10unbcf_fast_bin_to_numpy(struct __pyx_obj_
           goto __pyx_L8;
         }
 
-        /* "unbcf_fast.pyx":187
- *                                       line_cnt // downsample] += 1
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":187
+ *                                      add_val] += 1
  *                 else:
  *                     data_stream.skip(4)             # <<<<<<<<<<<<<<
  * 
  * 
  */
         /*else*/ {
-          ((struct __pyx_vtabstruct_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->skip(__pyx_v_data_stream, 4);
+          ((struct __pyx_vtabstruct_8hyperspy_10io_plugins_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->skip(__pyx_v_data_stream, 4);
         }
         __pyx_L8:;
       }
@@ -3174,7 +3174,7 @@ static PyObject *__pyx_fuse_1__pyx_f_10unbcf_fast_bin_to_numpy(struct __pyx_obj_
     }
   }
 
-  /* "unbcf_fast.pyx":141
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":141
  * @cython.cdivision(True)
  * @cython.boundscheck(False)
  * cdef bin_to_numpy(DataStream data_stream,             # <<<<<<<<<<<<<<
@@ -3189,7 +3189,7 @@ static PyObject *__pyx_fuse_1__pyx_f_10unbcf_fast_bin_to_numpy(struct __pyx_obj_
   return __pyx_r;
 }
 
-static PyObject *__pyx_fuse_2__pyx_f_10unbcf_fast_bin_to_numpy(struct __pyx_obj_10unbcf_fast_DataStream *__pyx_v_data_stream, __Pyx_memviewslice __pyx_v_hypermap, int __pyx_v_max_chan, int __pyx_v_downsample) {
+static PyObject *__pyx_fuse_2__pyx_f_8hyperspy_10io_plugins_10unbcf_fast_bin_to_numpy(struct __pyx_obj_8hyperspy_10io_plugins_10unbcf_fast_DataStream *__pyx_v_data_stream, __Pyx_memviewslice __pyx_v_hypermap, int __pyx_v_max_chan, int __pyx_v_downsample) {
   CYTHON_UNUSED int __pyx_v_dummy1;
   int __pyx_v_line_cnt;
   CYTHON_UNUSED int __pyx_v_j;
@@ -3214,39 +3214,39 @@ static PyObject *__pyx_fuse_2__pyx_f_10unbcf_fast_bin_to_numpy(struct __pyx_obj_
   int __pyx_t_5;
   uint16_t __pyx_t_6;
   int __pyx_t_7;
-  size_t __pyx_t_8;
+  Py_ssize_t __pyx_t_8;
   size_t __pyx_t_9;
-  Py_ssize_t __pyx_t_10;
+  size_t __pyx_t_10;
   __Pyx_RefNannySetupContext("__pyx_fuse_2bin_to_numpy", 0);
 
-  /* "unbcf_fast.pyx":149
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":149
  *     cdef uint16_t chan1, chan2, flag, data_size1, n_of_pulses, data_size2
  *     cdef uint16_t add_val
  *     height = data_stream.read_32()             # <<<<<<<<<<<<<<
  *     width = data_stream.read_32()
  *     data_stream.seek(<int>0x1A0) #the begining of the array
  */
-  __pyx_v_height = ((struct __pyx_vtabstruct_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->read_32(__pyx_v_data_stream);
+  __pyx_v_height = ((struct __pyx_vtabstruct_8hyperspy_10io_plugins_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->read_32(__pyx_v_data_stream);
 
-  /* "unbcf_fast.pyx":150
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":150
  *     cdef uint16_t add_val
  *     height = data_stream.read_32()
  *     width = data_stream.read_32()             # <<<<<<<<<<<<<<
  *     data_stream.seek(<int>0x1A0) #the begining of the array
  *     for line_cnt in range(height):
  */
-  __pyx_v_width = ((struct __pyx_vtabstruct_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->read_32(__pyx_v_data_stream);
+  __pyx_v_width = ((struct __pyx_vtabstruct_8hyperspy_10io_plugins_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->read_32(__pyx_v_data_stream);
 
-  /* "unbcf_fast.pyx":151
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":151
  *     height = data_stream.read_32()
  *     width = data_stream.read_32()
  *     data_stream.seek(<int>0x1A0) #the begining of the array             # <<<<<<<<<<<<<<
  *     for line_cnt in range(height):
  *         pix_in_line = data_stream.read_32()
  */
-  ((struct __pyx_vtabstruct_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->seek(__pyx_v_data_stream, ((int)0x1A0));
+  ((struct __pyx_vtabstruct_8hyperspy_10io_plugins_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->seek(__pyx_v_data_stream, ((int)0x1A0));
 
-  /* "unbcf_fast.pyx":152
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":152
  *     width = data_stream.read_32()
  *     data_stream.seek(<int>0x1A0) #the begining of the array
  *     for line_cnt in range(height):             # <<<<<<<<<<<<<<
@@ -3257,16 +3257,16 @@ static PyObject *__pyx_fuse_2__pyx_f_10unbcf_fast_bin_to_numpy(struct __pyx_obj_
   for (__pyx_t_2 = 0; __pyx_t_2 < __pyx_t_1; __pyx_t_2+=1) {
     __pyx_v_line_cnt = __pyx_t_2;
 
-    /* "unbcf_fast.pyx":153
+    /* "hyperspy/io_plugins/unbcf_fast.pyx":153
  *     data_stream.seek(<int>0x1A0) #the begining of the array
  *     for line_cnt in range(height):
  *         pix_in_line = data_stream.read_32()             # <<<<<<<<<<<<<<
  *         for dummy1 in range(pix_in_line):
  *             pixel_x = data_stream.read_32()
  */
-    __pyx_v_pix_in_line = ((struct __pyx_vtabstruct_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->read_32(__pyx_v_data_stream);
+    __pyx_v_pix_in_line = ((struct __pyx_vtabstruct_8hyperspy_10io_plugins_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->read_32(__pyx_v_data_stream);
 
-    /* "unbcf_fast.pyx":154
+    /* "hyperspy/io_plugins/unbcf_fast.pyx":154
  *     for line_cnt in range(height):
  *         pix_in_line = data_stream.read_32()
  *         for dummy1 in range(pix_in_line):             # <<<<<<<<<<<<<<
@@ -3277,88 +3277,88 @@ static PyObject *__pyx_fuse_2__pyx_f_10unbcf_fast_bin_to_numpy(struct __pyx_obj_
     for (__pyx_t_4 = 0; __pyx_t_4 < __pyx_t_3; __pyx_t_4+=1) {
       __pyx_v_dummy1 = __pyx_t_4;
 
-      /* "unbcf_fast.pyx":155
+      /* "hyperspy/io_plugins/unbcf_fast.pyx":155
  *         pix_in_line = data_stream.read_32()
  *         for dummy1 in range(pix_in_line):
  *             pixel_x = data_stream.read_32()             # <<<<<<<<<<<<<<
  *             chan1 = data_stream.read_16()
  *             chan2 = data_stream.read_16()
  */
-      __pyx_v_pixel_x = ((struct __pyx_vtabstruct_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->read_32(__pyx_v_data_stream);
+      __pyx_v_pixel_x = ((struct __pyx_vtabstruct_8hyperspy_10io_plugins_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->read_32(__pyx_v_data_stream);
 
-      /* "unbcf_fast.pyx":156
+      /* "hyperspy/io_plugins/unbcf_fast.pyx":156
  *         for dummy1 in range(pix_in_line):
  *             pixel_x = data_stream.read_32()
  *             chan1 = data_stream.read_16()             # <<<<<<<<<<<<<<
  *             chan2 = data_stream.read_16()
  *             data_stream.skip(4)  # unknown static value
  */
-      __pyx_v_chan1 = ((struct __pyx_vtabstruct_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->read_16(__pyx_v_data_stream);
+      __pyx_v_chan1 = ((struct __pyx_vtabstruct_8hyperspy_10io_plugins_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->read_16(__pyx_v_data_stream);
 
-      /* "unbcf_fast.pyx":157
+      /* "hyperspy/io_plugins/unbcf_fast.pyx":157
  *             pixel_x = data_stream.read_32()
  *             chan1 = data_stream.read_16()
  *             chan2 = data_stream.read_16()             # <<<<<<<<<<<<<<
  *             data_stream.skip(4)  # unknown static value
  *             flag = data_stream.read_16()
  */
-      __pyx_v_chan2 = ((struct __pyx_vtabstruct_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->read_16(__pyx_v_data_stream);
+      __pyx_v_chan2 = ((struct __pyx_vtabstruct_8hyperspy_10io_plugins_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->read_16(__pyx_v_data_stream);
 
-      /* "unbcf_fast.pyx":158
+      /* "hyperspy/io_plugins/unbcf_fast.pyx":158
  *             chan1 = data_stream.read_16()
  *             chan2 = data_stream.read_16()
  *             data_stream.skip(4)  # unknown static value             # <<<<<<<<<<<<<<
  *             flag = data_stream.read_16()
  *             data_size1 = data_stream.read_16()
  */
-      ((struct __pyx_vtabstruct_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->skip(__pyx_v_data_stream, 4);
+      ((struct __pyx_vtabstruct_8hyperspy_10io_plugins_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->skip(__pyx_v_data_stream, 4);
 
-      /* "unbcf_fast.pyx":159
+      /* "hyperspy/io_plugins/unbcf_fast.pyx":159
  *             chan2 = data_stream.read_16()
  *             data_stream.skip(4)  # unknown static value
  *             flag = data_stream.read_16()             # <<<<<<<<<<<<<<
  *             data_size1 = data_stream.read_16()
  *             n_of_pulses = data_stream.read_16()
  */
-      __pyx_v_flag = ((struct __pyx_vtabstruct_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->read_16(__pyx_v_data_stream);
+      __pyx_v_flag = ((struct __pyx_vtabstruct_8hyperspy_10io_plugins_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->read_16(__pyx_v_data_stream);
 
-      /* "unbcf_fast.pyx":160
+      /* "hyperspy/io_plugins/unbcf_fast.pyx":160
  *             data_stream.skip(4)  # unknown static value
  *             flag = data_stream.read_16()
  *             data_size1 = data_stream.read_16()             # <<<<<<<<<<<<<<
  *             n_of_pulses = data_stream.read_16()
  *             data_size2 = data_stream.read_16()
  */
-      __pyx_v_data_size1 = ((struct __pyx_vtabstruct_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->read_16(__pyx_v_data_stream);
+      __pyx_v_data_size1 = ((struct __pyx_vtabstruct_8hyperspy_10io_plugins_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->read_16(__pyx_v_data_stream);
 
-      /* "unbcf_fast.pyx":161
+      /* "hyperspy/io_plugins/unbcf_fast.pyx":161
  *             flag = data_stream.read_16()
  *             data_size1 = data_stream.read_16()
  *             n_of_pulses = data_stream.read_16()             # <<<<<<<<<<<<<<
  *             data_size2 = data_stream.read_16()
  *             data_stream.skip(2)  # skip to data
  */
-      __pyx_v_n_of_pulses = ((struct __pyx_vtabstruct_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->read_16(__pyx_v_data_stream);
+      __pyx_v_n_of_pulses = ((struct __pyx_vtabstruct_8hyperspy_10io_plugins_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->read_16(__pyx_v_data_stream);
 
-      /* "unbcf_fast.pyx":162
+      /* "hyperspy/io_plugins/unbcf_fast.pyx":162
  *             data_size1 = data_stream.read_16()
  *             n_of_pulses = data_stream.read_16()
  *             data_size2 = data_stream.read_16()             # <<<<<<<<<<<<<<
  *             data_stream.skip(2)  # skip to data
  *             if flag == 1:
  */
-      __pyx_v_data_size2 = ((struct __pyx_vtabstruct_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->read_16(__pyx_v_data_stream);
+      __pyx_v_data_size2 = ((struct __pyx_vtabstruct_8hyperspy_10io_plugins_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->read_16(__pyx_v_data_stream);
 
-      /* "unbcf_fast.pyx":163
+      /* "hyperspy/io_plugins/unbcf_fast.pyx":163
  *             n_of_pulses = data_stream.read_16()
  *             data_size2 = data_stream.read_16()
  *             data_stream.skip(2)  # skip to data             # <<<<<<<<<<<<<<
  *             if flag == 1:
  *                 unpack12bit(hypermap,
  */
-      ((struct __pyx_vtabstruct_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->skip(__pyx_v_data_stream, 2);
+      ((struct __pyx_vtabstruct_8hyperspy_10io_plugins_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->skip(__pyx_v_data_stream, 2);
 
-      /* "unbcf_fast.pyx":164
+      /* "hyperspy/io_plugins/unbcf_fast.pyx":164
  *             data_size2 = data_stream.read_16()
  *             data_stream.skip(2)  # skip to data
  *             if flag == 1:             # <<<<<<<<<<<<<<
@@ -3368,16 +3368,16 @@ static PyObject *__pyx_fuse_2__pyx_f_10unbcf_fast_bin_to_numpy(struct __pyx_obj_
       __pyx_t_5 = ((__pyx_v_flag == 1) != 0);
       if (__pyx_t_5) {
 
-        /* "unbcf_fast.pyx":165
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":165
  *             data_stream.skip(2)  # skip to data
  *             if flag == 1:
  *                 unpack12bit(hypermap,             # <<<<<<<<<<<<<<
  *                             pixel_x // downsample,
  *                             line_cnt // downsample,
  */
-        __pyx_fuse_2__pyx_f_10unbcf_fast_unpack12bit(__pyx_v_hypermap, (__pyx_v_pixel_x / __pyx_v_downsample), (__pyx_v_line_cnt / __pyx_v_downsample), ((struct __pyx_vtabstruct_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->ptr_to(__pyx_v_data_stream, __pyx_v_data_size2), __pyx_v_n_of_pulses, __pyx_v_max_chan);
+        __pyx_fuse_2__pyx_f_8hyperspy_10io_plugins_10unbcf_fast_unpack12bit(__pyx_v_hypermap, (__pyx_v_pixel_x / __pyx_v_downsample), (__pyx_v_line_cnt / __pyx_v_downsample), ((struct __pyx_vtabstruct_8hyperspy_10io_plugins_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->ptr_to(__pyx_v_data_stream, __pyx_v_data_size2), __pyx_v_n_of_pulses, __pyx_v_max_chan);
 
-        /* "unbcf_fast.pyx":164
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":164
  *             data_size2 = data_stream.read_16()
  *             data_stream.skip(2)  # skip to data
  *             if flag == 1:             # <<<<<<<<<<<<<<
@@ -3387,7 +3387,7 @@ static PyObject *__pyx_fuse_2__pyx_f_10unbcf_fast_bin_to_numpy(struct __pyx_obj_
         goto __pyx_L7;
       }
 
-      /* "unbcf_fast.pyx":172
+      /* "hyperspy/io_plugins/unbcf_fast.pyx":172
  *                             max_chan)
  *             else:
  *                 unpack_instructed(hypermap,             # <<<<<<<<<<<<<<
@@ -3396,16 +3396,16 @@ static PyObject *__pyx_fuse_2__pyx_f_10unbcf_fast_bin_to_numpy(struct __pyx_obj_
  */
       /*else*/ {
 
-        /* "unbcf_fast.pyx":177
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":177
  *                                   data_stream.ptr_to(data_size2 - 4),
  *                                   data_size2 - 4,
  *                                   max_chan)             # <<<<<<<<<<<<<<
  *                 if n_of_pulses > 0:
  *                     add_pulse_size = data_stream.read_32()
  */
-        __pyx_fuse_2__pyx_f_10unbcf_fast_unpack_instructed(__pyx_v_hypermap, (__pyx_v_pixel_x / __pyx_v_downsample), (__pyx_v_line_cnt / __pyx_v_downsample), ((struct __pyx_vtabstruct_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->ptr_to(__pyx_v_data_stream, (__pyx_v_data_size2 - 4)), (__pyx_v_data_size2 - 4), __pyx_v_max_chan);
+        __pyx_fuse_2__pyx_f_8hyperspy_10io_plugins_10unbcf_fast_unpack_instructed(__pyx_v_hypermap, (__pyx_v_pixel_x / __pyx_v_downsample), (__pyx_v_line_cnt / __pyx_v_downsample), ((struct __pyx_vtabstruct_8hyperspy_10io_plugins_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->ptr_to(__pyx_v_data_stream, (__pyx_v_data_size2 - 4)), (__pyx_v_data_size2 - 4), __pyx_v_max_chan);
 
-        /* "unbcf_fast.pyx":178
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":178
  *                                   data_size2 - 4,
  *                                   max_chan)
  *                 if n_of_pulses > 0:             # <<<<<<<<<<<<<<
@@ -3415,16 +3415,16 @@ static PyObject *__pyx_fuse_2__pyx_f_10unbcf_fast_bin_to_numpy(struct __pyx_obj_
         __pyx_t_5 = ((__pyx_v_n_of_pulses > 0) != 0);
         if (__pyx_t_5) {
 
-          /* "unbcf_fast.pyx":179
+          /* "hyperspy/io_plugins/unbcf_fast.pyx":179
  *                                   max_chan)
  *                 if n_of_pulses > 0:
  *                     add_pulse_size = data_stream.read_32()             # <<<<<<<<<<<<<<
  *                     for j in range(n_of_pulses):
  *                         add_val = data_stream.read_16()
  */
-          __pyx_v_add_pulse_size = ((struct __pyx_vtabstruct_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->read_32(__pyx_v_data_stream);
+          __pyx_v_add_pulse_size = ((struct __pyx_vtabstruct_8hyperspy_10io_plugins_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->read_32(__pyx_v_data_stream);
 
-          /* "unbcf_fast.pyx":180
+          /* "hyperspy/io_plugins/unbcf_fast.pyx":180
  *                 if n_of_pulses > 0:
  *                     add_pulse_size = data_stream.read_32()
  *                     for j in range(n_of_pulses):             # <<<<<<<<<<<<<<
@@ -3435,49 +3435,49 @@ static PyObject *__pyx_fuse_2__pyx_f_10unbcf_fast_bin_to_numpy(struct __pyx_obj_
           for (__pyx_t_7 = 0; __pyx_t_7 < __pyx_t_6; __pyx_t_7+=1) {
             __pyx_v_j = __pyx_t_7;
 
-            /* "unbcf_fast.pyx":181
+            /* "hyperspy/io_plugins/unbcf_fast.pyx":181
  *                     add_pulse_size = data_stream.read_32()
  *                     for j in range(n_of_pulses):
  *                         add_val = data_stream.read_16()             # <<<<<<<<<<<<<<
  *                         if add_val < max_chan:
- *                             hypermap[add_val,
+ *                             hypermap[line_cnt // downsample,
  */
-            __pyx_v_add_val = ((struct __pyx_vtabstruct_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->read_16(__pyx_v_data_stream);
+            __pyx_v_add_val = ((struct __pyx_vtabstruct_8hyperspy_10io_plugins_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->read_16(__pyx_v_data_stream);
 
-            /* "unbcf_fast.pyx":182
+            /* "hyperspy/io_plugins/unbcf_fast.pyx":182
  *                     for j in range(n_of_pulses):
  *                         add_val = data_stream.read_16()
  *                         if add_val < max_chan:             # <<<<<<<<<<<<<<
- *                             hypermap[add_val,
- *                                       pixel_x // downsample,
+ *                             hypermap[line_cnt // downsample,
+ *                                      pixel_x // downsample,
  */
             __pyx_t_5 = ((__pyx_v_add_val < __pyx_v_max_chan) != 0);
             if (__pyx_t_5) {
 
-              /* "unbcf_fast.pyx":185
- *                             hypermap[add_val,
- *                                       pixel_x // downsample,
- *                                       line_cnt // downsample] += 1             # <<<<<<<<<<<<<<
+              /* "hyperspy/io_plugins/unbcf_fast.pyx":185
+ *                             hypermap[line_cnt // downsample,
+ *                                      pixel_x // downsample,
+ *                                      add_val] += 1             # <<<<<<<<<<<<<<
  *                 else:
  *                     data_stream.skip(4)
  */
-              __pyx_t_8 = __pyx_v_add_val;
+              __pyx_t_8 = (__pyx_v_line_cnt / __pyx_v_downsample);
               __pyx_t_9 = (__pyx_v_pixel_x / __pyx_v_downsample);
-              __pyx_t_10 = (__pyx_v_line_cnt / __pyx_v_downsample);
-              if (__pyx_t_10 < 0) __pyx_t_10 += __pyx_v_hypermap.shape[2];
+              __pyx_t_10 = __pyx_v_add_val;
+              if (__pyx_t_8 < 0) __pyx_t_8 += __pyx_v_hypermap.shape[0];
               *((uint32_t *) ( /* dim=2 */ (( /* dim=1 */ (( /* dim=0 */ (__pyx_v_hypermap.data + __pyx_t_8 * __pyx_v_hypermap.strides[0]) ) + __pyx_t_9 * __pyx_v_hypermap.strides[1]) ) + __pyx_t_10 * __pyx_v_hypermap.strides[2]) )) += 1;
 
-              /* "unbcf_fast.pyx":182
+              /* "hyperspy/io_plugins/unbcf_fast.pyx":182
  *                     for j in range(n_of_pulses):
  *                         add_val = data_stream.read_16()
  *                         if add_val < max_chan:             # <<<<<<<<<<<<<<
- *                             hypermap[add_val,
- *                                       pixel_x // downsample,
+ *                             hypermap[line_cnt // downsample,
+ *                                      pixel_x // downsample,
  */
             }
           }
 
-          /* "unbcf_fast.pyx":178
+          /* "hyperspy/io_plugins/unbcf_fast.pyx":178
  *                                   data_size2 - 4,
  *                                   max_chan)
  *                 if n_of_pulses > 0:             # <<<<<<<<<<<<<<
@@ -3487,15 +3487,15 @@ static PyObject *__pyx_fuse_2__pyx_f_10unbcf_fast_bin_to_numpy(struct __pyx_obj_
           goto __pyx_L8;
         }
 
-        /* "unbcf_fast.pyx":187
- *                                       line_cnt // downsample] += 1
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":187
+ *                                      add_val] += 1
  *                 else:
  *                     data_stream.skip(4)             # <<<<<<<<<<<<<<
  * 
  * 
  */
         /*else*/ {
-          ((struct __pyx_vtabstruct_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->skip(__pyx_v_data_stream, 4);
+          ((struct __pyx_vtabstruct_8hyperspy_10io_plugins_10unbcf_fast_DataStream *)__pyx_v_data_stream->__pyx_vtab)->skip(__pyx_v_data_stream, 4);
         }
         __pyx_L8:;
       }
@@ -3503,7 +3503,7 @@ static PyObject *__pyx_fuse_2__pyx_f_10unbcf_fast_bin_to_numpy(struct __pyx_obj_
     }
   }
 
-  /* "unbcf_fast.pyx":141
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":141
  * @cython.cdivision(True)
  * @cython.boundscheck(False)
  * cdef bin_to_numpy(DataStream data_stream,             # <<<<<<<<<<<<<<
@@ -3518,7 +3518,7 @@ static PyObject *__pyx_fuse_2__pyx_f_10unbcf_fast_bin_to_numpy(struct __pyx_obj_
   return __pyx_r;
 }
 
-/* "unbcf_fast.pyx":194
+/* "hyperspy/io_plugins/unbcf_fast.pyx":194
  * @cython.cdivision(True)
  * @cython.boundscheck(False)
  * cdef void unpack_instructed(channel_t[:, :, :] dest, int x, int y,             # <<<<<<<<<<<<<<
@@ -3526,13 +3526,13 @@ static PyObject *__pyx_fuse_2__pyx_f_10unbcf_fast_bin_to_numpy(struct __pyx_obj_
  *                             int cutoff):
  */
 
-static void __pyx_fuse_0__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslice __pyx_v_dest, int __pyx_v_x, int __pyx_v_y, unsigned char *__pyx_v_src, unsigned short __pyx_v_data_size, int __pyx_v_cutoff) {
+static void __pyx_fuse_0__pyx_f_8hyperspy_10io_plugins_10unbcf_fast_unpack_instructed(__Pyx_memviewslice __pyx_v_dest, int __pyx_v_x, int __pyx_v_y, unsigned char *__pyx_v_src, unsigned short __pyx_v_data_size, int __pyx_v_cutoff) {
   int __pyx_v_offset;
   int __pyx_v_channel;
   int __pyx_v_i;
   int __pyx_v_length;
   int __pyx_v_gain;
-  struct __pyx_t_10unbcf_fast_Bunch_head *__pyx_v_head;
+  struct __pyx_t_8hyperspy_10io_plugins_10unbcf_fast_Bunch_head *__pyx_v_head;
   uint16_t __pyx_v_val16;
   uint32_t __pyx_v_val32;
   __Pyx_RefNannyDeclarations
@@ -3556,7 +3556,7 @@ static void __pyx_fuse_0__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
   Py_ssize_t __pyx_t_18;
   __Pyx_RefNannySetupContext("__pyx_fuse_0unpack_instructed", 0);
 
-  /* "unbcf_fast.pyx":201
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":201
  *     of memoryview
  *     """
  *     cdef int offset = 0             # <<<<<<<<<<<<<<
@@ -3565,7 +3565,7 @@ static void __pyx_fuse_0__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
  */
   __pyx_v_offset = 0;
 
-  /* "unbcf_fast.pyx":202
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":202
  *     """
  *     cdef int offset = 0
  *     cdef int channel = 0             # <<<<<<<<<<<<<<
@@ -3574,7 +3574,7 @@ static void __pyx_fuse_0__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
  */
   __pyx_v_channel = 0;
 
-  /* "unbcf_fast.pyx":204
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":204
  *     cdef int channel = 0
  *     cdef int i, j, length
  *     cdef int gain = 0             # <<<<<<<<<<<<<<
@@ -3583,7 +3583,7 @@ static void __pyx_fuse_0__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
  */
   __pyx_v_gain = 0;
 
-  /* "unbcf_fast.pyx":208
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":208
  *     cdef uint16_t val16
  *     cdef uint32_t val32
  *     while (offset < data_size):             # <<<<<<<<<<<<<<
@@ -3594,16 +3594,16 @@ static void __pyx_fuse_0__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
     __pyx_t_1 = ((__pyx_v_offset < __pyx_v_data_size) != 0);
     if (!__pyx_t_1) break;
 
-    /* "unbcf_fast.pyx":209
+    /* "hyperspy/io_plugins/unbcf_fast.pyx":209
  *     cdef uint32_t val32
  *     while (offset < data_size):
  *         head =<Bunch_head*>&src[offset]             # <<<<<<<<<<<<<<
  *         offset +=2
  *         if head.size == 0:  # empty channels (zero counts)
  */
-    __pyx_v_head = ((struct __pyx_t_10unbcf_fast_Bunch_head *)(&(__pyx_v_src[__pyx_v_offset])));
+    __pyx_v_head = ((struct __pyx_t_8hyperspy_10io_plugins_10unbcf_fast_Bunch_head *)(&(__pyx_v_src[__pyx_v_offset])));
 
-    /* "unbcf_fast.pyx":210
+    /* "hyperspy/io_plugins/unbcf_fast.pyx":210
  *     while (offset < data_size):
  *         head =<Bunch_head*>&src[offset]
  *         offset +=2             # <<<<<<<<<<<<<<
@@ -3612,7 +3612,7 @@ static void __pyx_fuse_0__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
  */
     __pyx_v_offset = (__pyx_v_offset + 2);
 
-    /* "unbcf_fast.pyx":211
+    /* "hyperspy/io_plugins/unbcf_fast.pyx":211
  *         head =<Bunch_head*>&src[offset]
  *         offset +=2
  *         if head.size == 0:  # empty channels (zero counts)             # <<<<<<<<<<<<<<
@@ -3622,7 +3622,7 @@ static void __pyx_fuse_0__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
     __pyx_t_1 = ((__pyx_v_head->size == 0) != 0);
     if (__pyx_t_1) {
 
-      /* "unbcf_fast.pyx":212
+      /* "hyperspy/io_plugins/unbcf_fast.pyx":212
  *         offset +=2
  *         if head.size == 0:  # empty channels (zero counts)
  *             channel += head.channels             # <<<<<<<<<<<<<<
@@ -3631,7 +3631,7 @@ static void __pyx_fuse_0__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
  */
       __pyx_v_channel = (__pyx_v_channel + __pyx_v_head->channels);
 
-      /* "unbcf_fast.pyx":211
+      /* "hyperspy/io_plugins/unbcf_fast.pyx":211
  *         head =<Bunch_head*>&src[offset]
  *         offset +=2
  *         if head.size == 0:  # empty channels (zero counts)             # <<<<<<<<<<<<<<
@@ -3641,7 +3641,7 @@ static void __pyx_fuse_0__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
       goto __pyx_L5;
     }
 
-    /* "unbcf_fast.pyx":214
+    /* "hyperspy/io_plugins/unbcf_fast.pyx":214
  *             channel += head.channels
  *         else:
  *             if head.size == 1:             # <<<<<<<<<<<<<<
@@ -3650,7 +3650,7 @@ static void __pyx_fuse_0__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
  */
     /*else*/ {
 
-      /* "unbcf_fast.pyx":218
+      /* "hyperspy/io_plugins/unbcf_fast.pyx":218
  *             elif head.size == 2:
  *                 gain = <int>read_16(&src[offset])
  *             elif head.size == 4:             # <<<<<<<<<<<<<<
@@ -3659,7 +3659,7 @@ static void __pyx_fuse_0__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
  */
       switch (__pyx_v_head->size) {
 
-        /* "unbcf_fast.pyx":214
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":214
  *             channel += head.channels
  *         else:
  *             if head.size == 1:             # <<<<<<<<<<<<<<
@@ -3668,7 +3668,7 @@ static void __pyx_fuse_0__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
  */
         case 1:
 
-        /* "unbcf_fast.pyx":215
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":215
  *         else:
  *             if head.size == 1:
  *                 gain = <int>(src[offset])             # <<<<<<<<<<<<<<
@@ -3677,7 +3677,7 @@ static void __pyx_fuse_0__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
  */
         __pyx_v_gain = ((int)(__pyx_v_src[__pyx_v_offset]));
 
-        /* "unbcf_fast.pyx":214
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":214
  *             channel += head.channels
  *         else:
  *             if head.size == 1:             # <<<<<<<<<<<<<<
@@ -3686,7 +3686,7 @@ static void __pyx_fuse_0__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
  */
         break;
 
-        /* "unbcf_fast.pyx":216
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":216
  *             if head.size == 1:
  *                 gain = <int>(src[offset])
  *             elif head.size == 2:             # <<<<<<<<<<<<<<
@@ -3695,16 +3695,16 @@ static void __pyx_fuse_0__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
  */
         case 2:
 
-        /* "unbcf_fast.pyx":217
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":217
  *                 gain = <int>(src[offset])
  *             elif head.size == 2:
  *                 gain = <int>read_16(&src[offset])             # <<<<<<<<<<<<<<
  *             elif head.size == 4:
  *                 gain = <int>read_32(&src[offset])
  */
-        __pyx_v_gain = ((int)__pyx_f_10unbcf_fast_read_16((&(__pyx_v_src[__pyx_v_offset]))));
+        __pyx_v_gain = ((int)__pyx_f_8hyperspy_10io_plugins_10unbcf_fast_read_16((&(__pyx_v_src[__pyx_v_offset]))));
 
-        /* "unbcf_fast.pyx":216
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":216
  *             if head.size == 1:
  *                 gain = <int>(src[offset])
  *             elif head.size == 2:             # <<<<<<<<<<<<<<
@@ -3713,7 +3713,7 @@ static void __pyx_fuse_0__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
  */
         break;
 
-        /* "unbcf_fast.pyx":218
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":218
  *             elif head.size == 2:
  *                 gain = <int>read_16(&src[offset])
  *             elif head.size == 4:             # <<<<<<<<<<<<<<
@@ -3722,16 +3722,16 @@ static void __pyx_fuse_0__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
  */
         case 4:
 
-        /* "unbcf_fast.pyx":219
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":219
  *                 gain = <int>read_16(&src[offset])
  *             elif head.size == 4:
  *                 gain = <int>read_32(&src[offset])             # <<<<<<<<<<<<<<
  *             else:
  *                 gain = <int>read_64(&src[offset])
  */
-        __pyx_v_gain = ((int)__pyx_f_10unbcf_fast_read_32((&(__pyx_v_src[__pyx_v_offset]))));
+        __pyx_v_gain = ((int)__pyx_f_8hyperspy_10io_plugins_10unbcf_fast_read_32((&(__pyx_v_src[__pyx_v_offset]))));
 
-        /* "unbcf_fast.pyx":218
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":218
  *             elif head.size == 2:
  *                 gain = <int>read_16(&src[offset])
  *             elif head.size == 4:             # <<<<<<<<<<<<<<
@@ -3741,18 +3741,18 @@ static void __pyx_fuse_0__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
         break;
         default:
 
-        /* "unbcf_fast.pyx":221
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":221
  *                 gain = <int>read_32(&src[offset])
  *             else:
  *                 gain = <int>read_64(&src[offset])             # <<<<<<<<<<<<<<
  *             offset += head.size
  *             if head.size == 1:  # special nibble switching case
  */
-        __pyx_v_gain = ((int)__pyx_f_10unbcf_fast_read_64((&(__pyx_v_src[__pyx_v_offset]))));
+        __pyx_v_gain = ((int)__pyx_f_8hyperspy_10io_plugins_10unbcf_fast_read_64((&(__pyx_v_src[__pyx_v_offset]))));
         break;
       }
 
-      /* "unbcf_fast.pyx":222
+      /* "hyperspy/io_plugins/unbcf_fast.pyx":222
  *             else:
  *                 gain = <int>read_64(&src[offset])
  *             offset += head.size             # <<<<<<<<<<<<<<
@@ -3761,7 +3761,7 @@ static void __pyx_fuse_0__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
  */
       __pyx_v_offset = (__pyx_v_offset + __pyx_v_head->size);
 
-      /* "unbcf_fast.pyx":223
+      /* "hyperspy/io_plugins/unbcf_fast.pyx":223
  *                 gain = <int>read_64(&src[offset])
  *             offset += head.size
  *             if head.size == 1:  # special nibble switching case             # <<<<<<<<<<<<<<
@@ -3771,7 +3771,7 @@ static void __pyx_fuse_0__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
       switch (__pyx_v_head->size) {
         case 1:
 
-        /* "unbcf_fast.pyx":224
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":224
  *             offset += head.size
  *             if head.size == 1:  # special nibble switching case
  *                 for i in range(head.channels):             # <<<<<<<<<<<<<<
@@ -3782,7 +3782,7 @@ static void __pyx_fuse_0__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
         for (__pyx_t_3 = 0; __pyx_t_3 < __pyx_t_2; __pyx_t_3+=1) {
           __pyx_v_i = __pyx_t_3;
 
-          /* "unbcf_fast.pyx":225
+          /* "hyperspy/io_plugins/unbcf_fast.pyx":225
  *             if head.size == 1:  # special nibble switching case
  *                 for i in range(head.channels):
  *                     if (i+channel) < cutoff:             # <<<<<<<<<<<<<<
@@ -3792,52 +3792,52 @@ static void __pyx_fuse_0__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
           __pyx_t_1 = (((__pyx_v_i + __pyx_v_channel) < __pyx_v_cutoff) != 0);
           if (__pyx_t_1) {
 
-            /* "unbcf_fast.pyx":227
+            /* "hyperspy/io_plugins/unbcf_fast.pyx":227
  *                     if (i+channel) < cutoff:
  *                         #reverse the nibbles:
  *                         if i % 2 == 0:             # <<<<<<<<<<<<<<
- *                             dest[i+channel, x, y] += <channel_t>((src[offset +(i//2)] & 15) + gain)
+ *                             dest[y, x, i+channel] += <channel_t>((src[offset +(i//2)] & 15) + gain)
  *                         else:
  */
             __pyx_t_1 = (((__pyx_v_i % 2) == 0) != 0);
             if (__pyx_t_1) {
 
-              /* "unbcf_fast.pyx":228
+              /* "hyperspy/io_plugins/unbcf_fast.pyx":228
  *                         #reverse the nibbles:
  *                         if i % 2 == 0:
- *                             dest[i+channel, x, y] += <channel_t>((src[offset +(i//2)] & 15) + gain)             # <<<<<<<<<<<<<<
+ *                             dest[y, x, i+channel] += <channel_t>((src[offset +(i//2)] & 15) + gain)             # <<<<<<<<<<<<<<
  *                         else:
- *                             dest[i+channel, x, y] += <channel_t>((src[offset +(i//2)] >> 4) + gain)
+ *                             dest[y, x, i+channel] += <channel_t>((src[offset +(i//2)] >> 4) + gain)
  */
-              __pyx_t_4 = (__pyx_v_i + __pyx_v_channel);
+              __pyx_t_4 = __pyx_v_y;
               __pyx_t_5 = __pyx_v_x;
-              __pyx_t_6 = __pyx_v_y;
+              __pyx_t_6 = (__pyx_v_i + __pyx_v_channel);
               if (__pyx_t_4 < 0) __pyx_t_4 += __pyx_v_dest.shape[0];
               if (__pyx_t_5 < 0) __pyx_t_5 += __pyx_v_dest.shape[1];
               if (__pyx_t_6 < 0) __pyx_t_6 += __pyx_v_dest.shape[2];
               *((uint8_t *) ( /* dim=2 */ (( /* dim=1 */ (( /* dim=0 */ (__pyx_v_dest.data + __pyx_t_4 * __pyx_v_dest.strides[0]) ) + __pyx_t_5 * __pyx_v_dest.strides[1]) ) + __pyx_t_6 * __pyx_v_dest.strides[2]) )) += ((uint8_t)(((__pyx_v_src[(__pyx_v_offset + (__pyx_v_i / 2))]) & 15) + __pyx_v_gain));
 
-              /* "unbcf_fast.pyx":227
+              /* "hyperspy/io_plugins/unbcf_fast.pyx":227
  *                     if (i+channel) < cutoff:
  *                         #reverse the nibbles:
  *                         if i % 2 == 0:             # <<<<<<<<<<<<<<
- *                             dest[i+channel, x, y] += <channel_t>((src[offset +(i//2)] & 15) + gain)
+ *                             dest[y, x, i+channel] += <channel_t>((src[offset +(i//2)] & 15) + gain)
  *                         else:
  */
               goto __pyx_L9;
             }
 
-            /* "unbcf_fast.pyx":230
- *                             dest[i+channel, x, y] += <channel_t>((src[offset +(i//2)] & 15) + gain)
+            /* "hyperspy/io_plugins/unbcf_fast.pyx":230
+ *                             dest[y, x, i+channel] += <channel_t>((src[offset +(i//2)] & 15) + gain)
  *                         else:
- *                             dest[i+channel, x, y] += <channel_t>((src[offset +(i//2)] >> 4) + gain)             # <<<<<<<<<<<<<<
+ *                             dest[y, x, i+channel] += <channel_t>((src[offset +(i//2)] >> 4) + gain)             # <<<<<<<<<<<<<<
  *                 if head.channels % 2 == 0:
  *                     length = <int>(head.channels // 2)
  */
             /*else*/ {
-              __pyx_t_7 = (__pyx_v_i + __pyx_v_channel);
+              __pyx_t_7 = __pyx_v_y;
               __pyx_t_8 = __pyx_v_x;
-              __pyx_t_9 = __pyx_v_y;
+              __pyx_t_9 = (__pyx_v_i + __pyx_v_channel);
               if (__pyx_t_7 < 0) __pyx_t_7 += __pyx_v_dest.shape[0];
               if (__pyx_t_8 < 0) __pyx_t_8 += __pyx_v_dest.shape[1];
               if (__pyx_t_9 < 0) __pyx_t_9 += __pyx_v_dest.shape[2];
@@ -3845,7 +3845,7 @@ static void __pyx_fuse_0__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
             }
             __pyx_L9:;
 
-            /* "unbcf_fast.pyx":225
+            /* "hyperspy/io_plugins/unbcf_fast.pyx":225
  *             if head.size == 1:  # special nibble switching case
  *                 for i in range(head.channels):
  *                     if (i+channel) < cutoff:             # <<<<<<<<<<<<<<
@@ -3855,9 +3855,9 @@ static void __pyx_fuse_0__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
           }
         }
 
-        /* "unbcf_fast.pyx":231
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":231
  *                         else:
- *                             dest[i+channel, x, y] += <channel_t>((src[offset +(i//2)] >> 4) + gain)
+ *                             dest[y, x, i+channel] += <channel_t>((src[offset +(i//2)] >> 4) + gain)
  *                 if head.channels % 2 == 0:             # <<<<<<<<<<<<<<
  *                     length = <int>(head.channels // 2)
  *                 else:
@@ -3865,8 +3865,8 @@ static void __pyx_fuse_0__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
         __pyx_t_1 = (((__pyx_v_head->channels % 2) == 0) != 0);
         if (__pyx_t_1) {
 
-          /* "unbcf_fast.pyx":232
- *                             dest[i+channel, x, y] += <channel_t>((src[offset +(i//2)] >> 4) + gain)
+          /* "hyperspy/io_plugins/unbcf_fast.pyx":232
+ *                             dest[y, x, i+channel] += <channel_t>((src[offset +(i//2)] >> 4) + gain)
  *                 if head.channels % 2 == 0:
  *                     length = <int>(head.channels // 2)             # <<<<<<<<<<<<<<
  *                 else:
@@ -3874,9 +3874,9 @@ static void __pyx_fuse_0__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
  */
           __pyx_v_length = ((int)(__pyx_v_head->channels / 2));
 
-          /* "unbcf_fast.pyx":231
+          /* "hyperspy/io_plugins/unbcf_fast.pyx":231
  *                         else:
- *                             dest[i+channel, x, y] += <channel_t>((src[offset +(i//2)] >> 4) + gain)
+ *                             dest[y, x, i+channel] += <channel_t>((src[offset +(i//2)] >> 4) + gain)
  *                 if head.channels % 2 == 0:             # <<<<<<<<<<<<<<
  *                     length = <int>(head.channels // 2)
  *                 else:
@@ -3884,7 +3884,7 @@ static void __pyx_fuse_0__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
           goto __pyx_L10;
         }
 
-        /* "unbcf_fast.pyx":234
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":234
  *                     length = <int>(head.channels // 2)
  *                 else:
  *                     length = <int>((head.channels // 2) +1)             # <<<<<<<<<<<<<<
@@ -3896,7 +3896,7 @@ static void __pyx_fuse_0__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
         }
         __pyx_L10:;
 
-        /* "unbcf_fast.pyx":223
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":223
  *                 gain = <int>read_64(&src[offset])
  *             offset += head.size
  *             if head.size == 1:  # special nibble switching case             # <<<<<<<<<<<<<<
@@ -3905,7 +3905,7 @@ static void __pyx_fuse_0__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
  */
         break;
 
-        /* "unbcf_fast.pyx":235
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":235
  *                 else:
  *                     length = <int>((head.channels // 2) +1)
  *             elif head.size == 2:             # <<<<<<<<<<<<<<
@@ -3914,62 +3914,62 @@ static void __pyx_fuse_0__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
  */
         case 2:
 
-        /* "unbcf_fast.pyx":236
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":236
  *                     length = <int>((head.channels // 2) +1)
  *             elif head.size == 2:
  *                 for i in range(head.channels):             # <<<<<<<<<<<<<<
  *                     if (i+channel) < cutoff:
- *                         dest[i+channel, x, y] += <channel_t>(src[offset + i] + gain)
+ *                         dest[y, x, i+channel] += <channel_t>(src[offset + i] + gain)
  */
         __pyx_t_2 = __pyx_v_head->channels;
         for (__pyx_t_3 = 0; __pyx_t_3 < __pyx_t_2; __pyx_t_3+=1) {
           __pyx_v_i = __pyx_t_3;
 
-          /* "unbcf_fast.pyx":237
+          /* "hyperspy/io_plugins/unbcf_fast.pyx":237
  *             elif head.size == 2:
  *                 for i in range(head.channels):
  *                     if (i+channel) < cutoff:             # <<<<<<<<<<<<<<
- *                         dest[i+channel, x, y] += <channel_t>(src[offset + i] + gain)
+ *                         dest[y, x, i+channel] += <channel_t>(src[offset + i] + gain)
  *                 length = <int>(head.channels * head.size // 2)
  */
           __pyx_t_1 = (((__pyx_v_i + __pyx_v_channel) < __pyx_v_cutoff) != 0);
           if (__pyx_t_1) {
 
-            /* "unbcf_fast.pyx":238
+            /* "hyperspy/io_plugins/unbcf_fast.pyx":238
  *                 for i in range(head.channels):
  *                     if (i+channel) < cutoff:
- *                         dest[i+channel, x, y] += <channel_t>(src[offset + i] + gain)             # <<<<<<<<<<<<<<
+ *                         dest[y, x, i+channel] += <channel_t>(src[offset + i] + gain)             # <<<<<<<<<<<<<<
  *                 length = <int>(head.channels * head.size // 2)
  *             elif head.size == 4:
  */
-            __pyx_t_10 = (__pyx_v_i + __pyx_v_channel);
+            __pyx_t_10 = __pyx_v_y;
             __pyx_t_11 = __pyx_v_x;
-            __pyx_t_12 = __pyx_v_y;
+            __pyx_t_12 = (__pyx_v_i + __pyx_v_channel);
             if (__pyx_t_10 < 0) __pyx_t_10 += __pyx_v_dest.shape[0];
             if (__pyx_t_11 < 0) __pyx_t_11 += __pyx_v_dest.shape[1];
             if (__pyx_t_12 < 0) __pyx_t_12 += __pyx_v_dest.shape[2];
             *((uint8_t *) ( /* dim=2 */ (( /* dim=1 */ (( /* dim=0 */ (__pyx_v_dest.data + __pyx_t_10 * __pyx_v_dest.strides[0]) ) + __pyx_t_11 * __pyx_v_dest.strides[1]) ) + __pyx_t_12 * __pyx_v_dest.strides[2]) )) += ((uint8_t)((__pyx_v_src[(__pyx_v_offset + __pyx_v_i)]) + __pyx_v_gain));
 
-            /* "unbcf_fast.pyx":237
+            /* "hyperspy/io_plugins/unbcf_fast.pyx":237
  *             elif head.size == 2:
  *                 for i in range(head.channels):
  *                     if (i+channel) < cutoff:             # <<<<<<<<<<<<<<
- *                         dest[i+channel, x, y] += <channel_t>(src[offset + i] + gain)
+ *                         dest[y, x, i+channel] += <channel_t>(src[offset + i] + gain)
  *                 length = <int>(head.channels * head.size // 2)
  */
           }
         }
 
-        /* "unbcf_fast.pyx":239
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":239
  *                     if (i+channel) < cutoff:
- *                         dest[i+channel, x, y] += <channel_t>(src[offset + i] + gain)
+ *                         dest[y, x, i+channel] += <channel_t>(src[offset + i] + gain)
  *                 length = <int>(head.channels * head.size // 2)             # <<<<<<<<<<<<<<
  *             elif head.size == 4:
  *                 for i in range(head.channels):
  */
         __pyx_v_length = ((int)((__pyx_v_head->channels * __pyx_v_head->size) / 2));
 
-        /* "unbcf_fast.pyx":235
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":235
  *                 else:
  *                     length = <int>((head.channels // 2) +1)
  *             elif head.size == 2:             # <<<<<<<<<<<<<<
@@ -3978,8 +3978,8 @@ static void __pyx_fuse_0__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
  */
         break;
 
-        /* "unbcf_fast.pyx":240
- *                         dest[i+channel, x, y] += <channel_t>(src[offset + i] + gain)
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":240
+ *                         dest[y, x, i+channel] += <channel_t>(src[offset + i] + gain)
  *                 length = <int>(head.channels * head.size // 2)
  *             elif head.size == 4:             # <<<<<<<<<<<<<<
  *                 for i in range(head.channels):
@@ -3987,7 +3987,7 @@ static void __pyx_fuse_0__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
  */
         case 4:
 
-        /* "unbcf_fast.pyx":241
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":241
  *                 length = <int>(head.channels * head.size // 2)
  *             elif head.size == 4:
  *                 for i in range(head.channels):             # <<<<<<<<<<<<<<
@@ -3998,61 +3998,61 @@ static void __pyx_fuse_0__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
         for (__pyx_t_3 = 0; __pyx_t_3 < __pyx_t_2; __pyx_t_3+=1) {
           __pyx_v_i = __pyx_t_3;
 
-          /* "unbcf_fast.pyx":242
+          /* "hyperspy/io_plugins/unbcf_fast.pyx":242
  *             elif head.size == 4:
  *                 for i in range(head.channels):
  *                     if (i+channel) < cutoff:             # <<<<<<<<<<<<<<
  *                         val16 = read_16(&src[offset + i*2])
- *                         dest[i+channel, x, y] += <channel_t>(val16 + gain)
+ *                         dest[y, x, i+channel] += <channel_t>(val16 + gain)
  */
           __pyx_t_1 = (((__pyx_v_i + __pyx_v_channel) < __pyx_v_cutoff) != 0);
           if (__pyx_t_1) {
 
-            /* "unbcf_fast.pyx":243
+            /* "hyperspy/io_plugins/unbcf_fast.pyx":243
  *                 for i in range(head.channels):
  *                     if (i+channel) < cutoff:
  *                         val16 = read_16(&src[offset + i*2])             # <<<<<<<<<<<<<<
- *                         dest[i+channel, x, y] += <channel_t>(val16 + gain)
+ *                         dest[y, x, i+channel] += <channel_t>(val16 + gain)
  *                 length = <int>(head.channels * head.size // 2)
  */
-            __pyx_v_val16 = __pyx_f_10unbcf_fast_read_16((&(__pyx_v_src[(__pyx_v_offset + (__pyx_v_i * 2))])));
+            __pyx_v_val16 = __pyx_f_8hyperspy_10io_plugins_10unbcf_fast_read_16((&(__pyx_v_src[(__pyx_v_offset + (__pyx_v_i * 2))])));
 
-            /* "unbcf_fast.pyx":244
+            /* "hyperspy/io_plugins/unbcf_fast.pyx":244
  *                     if (i+channel) < cutoff:
  *                         val16 = read_16(&src[offset + i*2])
- *                         dest[i+channel, x, y] += <channel_t>(val16 + gain)             # <<<<<<<<<<<<<<
+ *                         dest[y, x, i+channel] += <channel_t>(val16 + gain)             # <<<<<<<<<<<<<<
  *                 length = <int>(head.channels * head.size // 2)
  *             else:
  */
-            __pyx_t_13 = (__pyx_v_i + __pyx_v_channel);
+            __pyx_t_13 = __pyx_v_y;
             __pyx_t_14 = __pyx_v_x;
-            __pyx_t_15 = __pyx_v_y;
+            __pyx_t_15 = (__pyx_v_i + __pyx_v_channel);
             if (__pyx_t_13 < 0) __pyx_t_13 += __pyx_v_dest.shape[0];
             if (__pyx_t_14 < 0) __pyx_t_14 += __pyx_v_dest.shape[1];
             if (__pyx_t_15 < 0) __pyx_t_15 += __pyx_v_dest.shape[2];
             *((uint8_t *) ( /* dim=2 */ (( /* dim=1 */ (( /* dim=0 */ (__pyx_v_dest.data + __pyx_t_13 * __pyx_v_dest.strides[0]) ) + __pyx_t_14 * __pyx_v_dest.strides[1]) ) + __pyx_t_15 * __pyx_v_dest.strides[2]) )) += ((uint8_t)(__pyx_v_val16 + __pyx_v_gain));
 
-            /* "unbcf_fast.pyx":242
+            /* "hyperspy/io_plugins/unbcf_fast.pyx":242
  *             elif head.size == 4:
  *                 for i in range(head.channels):
  *                     if (i+channel) < cutoff:             # <<<<<<<<<<<<<<
  *                         val16 = read_16(&src[offset + i*2])
- *                         dest[i+channel, x, y] += <channel_t>(val16 + gain)
+ *                         dest[y, x, i+channel] += <channel_t>(val16 + gain)
  */
           }
         }
 
-        /* "unbcf_fast.pyx":245
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":245
  *                         val16 = read_16(&src[offset + i*2])
- *                         dest[i+channel, x, y] += <channel_t>(val16 + gain)
+ *                         dest[y, x, i+channel] += <channel_t>(val16 + gain)
  *                 length = <int>(head.channels * head.size // 2)             # <<<<<<<<<<<<<<
  *             else:
  *                 for i in range(head.channels):
  */
         __pyx_v_length = ((int)((__pyx_v_head->channels * __pyx_v_head->size) / 2));
 
-        /* "unbcf_fast.pyx":240
- *                         dest[i+channel, x, y] += <channel_t>(src[offset + i] + gain)
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":240
+ *                         dest[y, x, i+channel] += <channel_t>(src[offset + i] + gain)
  *                 length = <int>(head.channels * head.size // 2)
  *             elif head.size == 4:             # <<<<<<<<<<<<<<
  *                 for i in range(head.channels):
@@ -4061,7 +4061,7 @@ static void __pyx_fuse_0__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
         break;
         default:
 
-        /* "unbcf_fast.pyx":247
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":247
  *                 length = <int>(head.channels * head.size // 2)
  *             else:
  *                 for i in range(head.channels):             # <<<<<<<<<<<<<<
@@ -4072,53 +4072,53 @@ static void __pyx_fuse_0__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
         for (__pyx_t_3 = 0; __pyx_t_3 < __pyx_t_2; __pyx_t_3+=1) {
           __pyx_v_i = __pyx_t_3;
 
-          /* "unbcf_fast.pyx":248
+          /* "hyperspy/io_plugins/unbcf_fast.pyx":248
  *             else:
  *                 for i in range(head.channels):
  *                     if (i+channel) < cutoff:             # <<<<<<<<<<<<<<
  *                         val32 = read_32(&src[offset + i*2])
- *                         dest[i+channel, x, y] += <channel_t>(val32 + gain)
+ *                         dest[y, x, i+channel] += <channel_t>(val32 + gain)
  */
           __pyx_t_1 = (((__pyx_v_i + __pyx_v_channel) < __pyx_v_cutoff) != 0);
           if (__pyx_t_1) {
 
-            /* "unbcf_fast.pyx":249
+            /* "hyperspy/io_plugins/unbcf_fast.pyx":249
  *                 for i in range(head.channels):
  *                     if (i+channel) < cutoff:
  *                         val32 = read_32(&src[offset + i*2])             # <<<<<<<<<<<<<<
- *                         dest[i+channel, x, y] += <channel_t>(val32 + gain)
+ *                         dest[y, x, i+channel] += <channel_t>(val32 + gain)
  *                 length = <int>(head.channels * head.size // 2)
  */
-            __pyx_v_val32 = __pyx_f_10unbcf_fast_read_32((&(__pyx_v_src[(__pyx_v_offset + (__pyx_v_i * 2))])));
+            __pyx_v_val32 = __pyx_f_8hyperspy_10io_plugins_10unbcf_fast_read_32((&(__pyx_v_src[(__pyx_v_offset + (__pyx_v_i * 2))])));
 
-            /* "unbcf_fast.pyx":250
+            /* "hyperspy/io_plugins/unbcf_fast.pyx":250
  *                     if (i+channel) < cutoff:
  *                         val32 = read_32(&src[offset + i*2])
- *                         dest[i+channel, x, y] += <channel_t>(val32 + gain)             # <<<<<<<<<<<<<<
+ *                         dest[y, x, i+channel] += <channel_t>(val32 + gain)             # <<<<<<<<<<<<<<
  *                 length = <int>(head.channels * head.size // 2)
  *             offset += length
  */
-            __pyx_t_16 = (__pyx_v_i + __pyx_v_channel);
+            __pyx_t_16 = __pyx_v_y;
             __pyx_t_17 = __pyx_v_x;
-            __pyx_t_18 = __pyx_v_y;
+            __pyx_t_18 = (__pyx_v_i + __pyx_v_channel);
             if (__pyx_t_16 < 0) __pyx_t_16 += __pyx_v_dest.shape[0];
             if (__pyx_t_17 < 0) __pyx_t_17 += __pyx_v_dest.shape[1];
             if (__pyx_t_18 < 0) __pyx_t_18 += __pyx_v_dest.shape[2];
             *((uint8_t *) ( /* dim=2 */ (( /* dim=1 */ (( /* dim=0 */ (__pyx_v_dest.data + __pyx_t_16 * __pyx_v_dest.strides[0]) ) + __pyx_t_17 * __pyx_v_dest.strides[1]) ) + __pyx_t_18 * __pyx_v_dest.strides[2]) )) += ((uint8_t)(__pyx_v_val32 + __pyx_v_gain));
 
-            /* "unbcf_fast.pyx":248
+            /* "hyperspy/io_plugins/unbcf_fast.pyx":248
  *             else:
  *                 for i in range(head.channels):
  *                     if (i+channel) < cutoff:             # <<<<<<<<<<<<<<
  *                         val32 = read_32(&src[offset + i*2])
- *                         dest[i+channel, x, y] += <channel_t>(val32 + gain)
+ *                         dest[y, x, i+channel] += <channel_t>(val32 + gain)
  */
           }
         }
 
-        /* "unbcf_fast.pyx":251
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":251
  *                         val32 = read_32(&src[offset + i*2])
- *                         dest[i+channel, x, y] += <channel_t>(val32 + gain)
+ *                         dest[y, x, i+channel] += <channel_t>(val32 + gain)
  *                 length = <int>(head.channels * head.size // 2)             # <<<<<<<<<<<<<<
  *             offset += length
  *             channel += head.channels
@@ -4127,8 +4127,8 @@ static void __pyx_fuse_0__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
         break;
       }
 
-      /* "unbcf_fast.pyx":252
- *                         dest[i+channel, x, y] += <channel_t>(val32 + gain)
+      /* "hyperspy/io_plugins/unbcf_fast.pyx":252
+ *                         dest[y, x, i+channel] += <channel_t>(val32 + gain)
  *                 length = <int>(head.channels * head.size // 2)
  *             offset += length             # <<<<<<<<<<<<<<
  *             channel += head.channels
@@ -4136,7 +4136,7 @@ static void __pyx_fuse_0__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
  */
       __pyx_v_offset = (__pyx_v_offset + __pyx_v_length);
 
-      /* "unbcf_fast.pyx":253
+      /* "hyperspy/io_plugins/unbcf_fast.pyx":253
  *                 length = <int>(head.channels * head.size // 2)
  *             offset += length
  *             channel += head.channels             # <<<<<<<<<<<<<<
@@ -4148,7 +4148,7 @@ static void __pyx_fuse_0__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
     __pyx_L5:;
   }
 
-  /* "unbcf_fast.pyx":194
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":194
  * @cython.cdivision(True)
  * @cython.boundscheck(False)
  * cdef void unpack_instructed(channel_t[:, :, :] dest, int x, int y,             # <<<<<<<<<<<<<<
@@ -4160,13 +4160,13 @@ static void __pyx_fuse_0__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
   __Pyx_RefNannyFinishContext();
 }
 
-static void __pyx_fuse_1__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslice __pyx_v_dest, int __pyx_v_x, int __pyx_v_y, unsigned char *__pyx_v_src, unsigned short __pyx_v_data_size, int __pyx_v_cutoff) {
+static void __pyx_fuse_1__pyx_f_8hyperspy_10io_plugins_10unbcf_fast_unpack_instructed(__Pyx_memviewslice __pyx_v_dest, int __pyx_v_x, int __pyx_v_y, unsigned char *__pyx_v_src, unsigned short __pyx_v_data_size, int __pyx_v_cutoff) {
   int __pyx_v_offset;
   int __pyx_v_channel;
   int __pyx_v_i;
   int __pyx_v_length;
   int __pyx_v_gain;
-  struct __pyx_t_10unbcf_fast_Bunch_head *__pyx_v_head;
+  struct __pyx_t_8hyperspy_10io_plugins_10unbcf_fast_Bunch_head *__pyx_v_head;
   uint16_t __pyx_v_val16;
   uint32_t __pyx_v_val32;
   __Pyx_RefNannyDeclarations
@@ -4190,7 +4190,7 @@ static void __pyx_fuse_1__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
   Py_ssize_t __pyx_t_18;
   __Pyx_RefNannySetupContext("__pyx_fuse_1unpack_instructed", 0);
 
-  /* "unbcf_fast.pyx":201
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":201
  *     of memoryview
  *     """
  *     cdef int offset = 0             # <<<<<<<<<<<<<<
@@ -4199,7 +4199,7 @@ static void __pyx_fuse_1__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
  */
   __pyx_v_offset = 0;
 
-  /* "unbcf_fast.pyx":202
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":202
  *     """
  *     cdef int offset = 0
  *     cdef int channel = 0             # <<<<<<<<<<<<<<
@@ -4208,7 +4208,7 @@ static void __pyx_fuse_1__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
  */
   __pyx_v_channel = 0;
 
-  /* "unbcf_fast.pyx":204
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":204
  *     cdef int channel = 0
  *     cdef int i, j, length
  *     cdef int gain = 0             # <<<<<<<<<<<<<<
@@ -4217,7 +4217,7 @@ static void __pyx_fuse_1__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
  */
   __pyx_v_gain = 0;
 
-  /* "unbcf_fast.pyx":208
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":208
  *     cdef uint16_t val16
  *     cdef uint32_t val32
  *     while (offset < data_size):             # <<<<<<<<<<<<<<
@@ -4228,16 +4228,16 @@ static void __pyx_fuse_1__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
     __pyx_t_1 = ((__pyx_v_offset < __pyx_v_data_size) != 0);
     if (!__pyx_t_1) break;
 
-    /* "unbcf_fast.pyx":209
+    /* "hyperspy/io_plugins/unbcf_fast.pyx":209
  *     cdef uint32_t val32
  *     while (offset < data_size):
  *         head =<Bunch_head*>&src[offset]             # <<<<<<<<<<<<<<
  *         offset +=2
  *         if head.size == 0:  # empty channels (zero counts)
  */
-    __pyx_v_head = ((struct __pyx_t_10unbcf_fast_Bunch_head *)(&(__pyx_v_src[__pyx_v_offset])));
+    __pyx_v_head = ((struct __pyx_t_8hyperspy_10io_plugins_10unbcf_fast_Bunch_head *)(&(__pyx_v_src[__pyx_v_offset])));
 
-    /* "unbcf_fast.pyx":210
+    /* "hyperspy/io_plugins/unbcf_fast.pyx":210
  *     while (offset < data_size):
  *         head =<Bunch_head*>&src[offset]
  *         offset +=2             # <<<<<<<<<<<<<<
@@ -4246,7 +4246,7 @@ static void __pyx_fuse_1__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
  */
     __pyx_v_offset = (__pyx_v_offset + 2);
 
-    /* "unbcf_fast.pyx":211
+    /* "hyperspy/io_plugins/unbcf_fast.pyx":211
  *         head =<Bunch_head*>&src[offset]
  *         offset +=2
  *         if head.size == 0:  # empty channels (zero counts)             # <<<<<<<<<<<<<<
@@ -4256,7 +4256,7 @@ static void __pyx_fuse_1__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
     __pyx_t_1 = ((__pyx_v_head->size == 0) != 0);
     if (__pyx_t_1) {
 
-      /* "unbcf_fast.pyx":212
+      /* "hyperspy/io_plugins/unbcf_fast.pyx":212
  *         offset +=2
  *         if head.size == 0:  # empty channels (zero counts)
  *             channel += head.channels             # <<<<<<<<<<<<<<
@@ -4265,7 +4265,7 @@ static void __pyx_fuse_1__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
  */
       __pyx_v_channel = (__pyx_v_channel + __pyx_v_head->channels);
 
-      /* "unbcf_fast.pyx":211
+      /* "hyperspy/io_plugins/unbcf_fast.pyx":211
  *         head =<Bunch_head*>&src[offset]
  *         offset +=2
  *         if head.size == 0:  # empty channels (zero counts)             # <<<<<<<<<<<<<<
@@ -4275,7 +4275,7 @@ static void __pyx_fuse_1__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
       goto __pyx_L5;
     }
 
-    /* "unbcf_fast.pyx":214
+    /* "hyperspy/io_plugins/unbcf_fast.pyx":214
  *             channel += head.channels
  *         else:
  *             if head.size == 1:             # <<<<<<<<<<<<<<
@@ -4284,7 +4284,7 @@ static void __pyx_fuse_1__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
  */
     /*else*/ {
 
-      /* "unbcf_fast.pyx":218
+      /* "hyperspy/io_plugins/unbcf_fast.pyx":218
  *             elif head.size == 2:
  *                 gain = <int>read_16(&src[offset])
  *             elif head.size == 4:             # <<<<<<<<<<<<<<
@@ -4293,7 +4293,7 @@ static void __pyx_fuse_1__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
  */
       switch (__pyx_v_head->size) {
 
-        /* "unbcf_fast.pyx":214
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":214
  *             channel += head.channels
  *         else:
  *             if head.size == 1:             # <<<<<<<<<<<<<<
@@ -4302,7 +4302,7 @@ static void __pyx_fuse_1__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
  */
         case 1:
 
-        /* "unbcf_fast.pyx":215
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":215
  *         else:
  *             if head.size == 1:
  *                 gain = <int>(src[offset])             # <<<<<<<<<<<<<<
@@ -4311,7 +4311,7 @@ static void __pyx_fuse_1__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
  */
         __pyx_v_gain = ((int)(__pyx_v_src[__pyx_v_offset]));
 
-        /* "unbcf_fast.pyx":214
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":214
  *             channel += head.channels
  *         else:
  *             if head.size == 1:             # <<<<<<<<<<<<<<
@@ -4320,7 +4320,7 @@ static void __pyx_fuse_1__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
  */
         break;
 
-        /* "unbcf_fast.pyx":216
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":216
  *             if head.size == 1:
  *                 gain = <int>(src[offset])
  *             elif head.size == 2:             # <<<<<<<<<<<<<<
@@ -4329,16 +4329,16 @@ static void __pyx_fuse_1__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
  */
         case 2:
 
-        /* "unbcf_fast.pyx":217
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":217
  *                 gain = <int>(src[offset])
  *             elif head.size == 2:
  *                 gain = <int>read_16(&src[offset])             # <<<<<<<<<<<<<<
  *             elif head.size == 4:
  *                 gain = <int>read_32(&src[offset])
  */
-        __pyx_v_gain = ((int)__pyx_f_10unbcf_fast_read_16((&(__pyx_v_src[__pyx_v_offset]))));
+        __pyx_v_gain = ((int)__pyx_f_8hyperspy_10io_plugins_10unbcf_fast_read_16((&(__pyx_v_src[__pyx_v_offset]))));
 
-        /* "unbcf_fast.pyx":216
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":216
  *             if head.size == 1:
  *                 gain = <int>(src[offset])
  *             elif head.size == 2:             # <<<<<<<<<<<<<<
@@ -4347,7 +4347,7 @@ static void __pyx_fuse_1__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
  */
         break;
 
-        /* "unbcf_fast.pyx":218
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":218
  *             elif head.size == 2:
  *                 gain = <int>read_16(&src[offset])
  *             elif head.size == 4:             # <<<<<<<<<<<<<<
@@ -4356,16 +4356,16 @@ static void __pyx_fuse_1__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
  */
         case 4:
 
-        /* "unbcf_fast.pyx":219
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":219
  *                 gain = <int>read_16(&src[offset])
  *             elif head.size == 4:
  *                 gain = <int>read_32(&src[offset])             # <<<<<<<<<<<<<<
  *             else:
  *                 gain = <int>read_64(&src[offset])
  */
-        __pyx_v_gain = ((int)__pyx_f_10unbcf_fast_read_32((&(__pyx_v_src[__pyx_v_offset]))));
+        __pyx_v_gain = ((int)__pyx_f_8hyperspy_10io_plugins_10unbcf_fast_read_32((&(__pyx_v_src[__pyx_v_offset]))));
 
-        /* "unbcf_fast.pyx":218
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":218
  *             elif head.size == 2:
  *                 gain = <int>read_16(&src[offset])
  *             elif head.size == 4:             # <<<<<<<<<<<<<<
@@ -4375,18 +4375,18 @@ static void __pyx_fuse_1__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
         break;
         default:
 
-        /* "unbcf_fast.pyx":221
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":221
  *                 gain = <int>read_32(&src[offset])
  *             else:
  *                 gain = <int>read_64(&src[offset])             # <<<<<<<<<<<<<<
  *             offset += head.size
  *             if head.size == 1:  # special nibble switching case
  */
-        __pyx_v_gain = ((int)__pyx_f_10unbcf_fast_read_64((&(__pyx_v_src[__pyx_v_offset]))));
+        __pyx_v_gain = ((int)__pyx_f_8hyperspy_10io_plugins_10unbcf_fast_read_64((&(__pyx_v_src[__pyx_v_offset]))));
         break;
       }
 
-      /* "unbcf_fast.pyx":222
+      /* "hyperspy/io_plugins/unbcf_fast.pyx":222
  *             else:
  *                 gain = <int>read_64(&src[offset])
  *             offset += head.size             # <<<<<<<<<<<<<<
@@ -4395,7 +4395,7 @@ static void __pyx_fuse_1__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
  */
       __pyx_v_offset = (__pyx_v_offset + __pyx_v_head->size);
 
-      /* "unbcf_fast.pyx":223
+      /* "hyperspy/io_plugins/unbcf_fast.pyx":223
  *                 gain = <int>read_64(&src[offset])
  *             offset += head.size
  *             if head.size == 1:  # special nibble switching case             # <<<<<<<<<<<<<<
@@ -4405,7 +4405,7 @@ static void __pyx_fuse_1__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
       switch (__pyx_v_head->size) {
         case 1:
 
-        /* "unbcf_fast.pyx":224
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":224
  *             offset += head.size
  *             if head.size == 1:  # special nibble switching case
  *                 for i in range(head.channels):             # <<<<<<<<<<<<<<
@@ -4416,7 +4416,7 @@ static void __pyx_fuse_1__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
         for (__pyx_t_3 = 0; __pyx_t_3 < __pyx_t_2; __pyx_t_3+=1) {
           __pyx_v_i = __pyx_t_3;
 
-          /* "unbcf_fast.pyx":225
+          /* "hyperspy/io_plugins/unbcf_fast.pyx":225
  *             if head.size == 1:  # special nibble switching case
  *                 for i in range(head.channels):
  *                     if (i+channel) < cutoff:             # <<<<<<<<<<<<<<
@@ -4426,52 +4426,52 @@ static void __pyx_fuse_1__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
           __pyx_t_1 = (((__pyx_v_i + __pyx_v_channel) < __pyx_v_cutoff) != 0);
           if (__pyx_t_1) {
 
-            /* "unbcf_fast.pyx":227
+            /* "hyperspy/io_plugins/unbcf_fast.pyx":227
  *                     if (i+channel) < cutoff:
  *                         #reverse the nibbles:
  *                         if i % 2 == 0:             # <<<<<<<<<<<<<<
- *                             dest[i+channel, x, y] += <channel_t>((src[offset +(i//2)] & 15) + gain)
+ *                             dest[y, x, i+channel] += <channel_t>((src[offset +(i//2)] & 15) + gain)
  *                         else:
  */
             __pyx_t_1 = (((__pyx_v_i % 2) == 0) != 0);
             if (__pyx_t_1) {
 
-              /* "unbcf_fast.pyx":228
+              /* "hyperspy/io_plugins/unbcf_fast.pyx":228
  *                         #reverse the nibbles:
  *                         if i % 2 == 0:
- *                             dest[i+channel, x, y] += <channel_t>((src[offset +(i//2)] & 15) + gain)             # <<<<<<<<<<<<<<
+ *                             dest[y, x, i+channel] += <channel_t>((src[offset +(i//2)] & 15) + gain)             # <<<<<<<<<<<<<<
  *                         else:
- *                             dest[i+channel, x, y] += <channel_t>((src[offset +(i//2)] >> 4) + gain)
+ *                             dest[y, x, i+channel] += <channel_t>((src[offset +(i//2)] >> 4) + gain)
  */
-              __pyx_t_4 = (__pyx_v_i + __pyx_v_channel);
+              __pyx_t_4 = __pyx_v_y;
               __pyx_t_5 = __pyx_v_x;
-              __pyx_t_6 = __pyx_v_y;
+              __pyx_t_6 = (__pyx_v_i + __pyx_v_channel);
               if (__pyx_t_4 < 0) __pyx_t_4 += __pyx_v_dest.shape[0];
               if (__pyx_t_5 < 0) __pyx_t_5 += __pyx_v_dest.shape[1];
               if (__pyx_t_6 < 0) __pyx_t_6 += __pyx_v_dest.shape[2];
               *((uint16_t *) ( /* dim=2 */ (( /* dim=1 */ (( /* dim=0 */ (__pyx_v_dest.data + __pyx_t_4 * __pyx_v_dest.strides[0]) ) + __pyx_t_5 * __pyx_v_dest.strides[1]) ) + __pyx_t_6 * __pyx_v_dest.strides[2]) )) += ((uint16_t)(((__pyx_v_src[(__pyx_v_offset + (__pyx_v_i / 2))]) & 15) + __pyx_v_gain));
 
-              /* "unbcf_fast.pyx":227
+              /* "hyperspy/io_plugins/unbcf_fast.pyx":227
  *                     if (i+channel) < cutoff:
  *                         #reverse the nibbles:
  *                         if i % 2 == 0:             # <<<<<<<<<<<<<<
- *                             dest[i+channel, x, y] += <channel_t>((src[offset +(i//2)] & 15) + gain)
+ *                             dest[y, x, i+channel] += <channel_t>((src[offset +(i//2)] & 15) + gain)
  *                         else:
  */
               goto __pyx_L9;
             }
 
-            /* "unbcf_fast.pyx":230
- *                             dest[i+channel, x, y] += <channel_t>((src[offset +(i//2)] & 15) + gain)
+            /* "hyperspy/io_plugins/unbcf_fast.pyx":230
+ *                             dest[y, x, i+channel] += <channel_t>((src[offset +(i//2)] & 15) + gain)
  *                         else:
- *                             dest[i+channel, x, y] += <channel_t>((src[offset +(i//2)] >> 4) + gain)             # <<<<<<<<<<<<<<
+ *                             dest[y, x, i+channel] += <channel_t>((src[offset +(i//2)] >> 4) + gain)             # <<<<<<<<<<<<<<
  *                 if head.channels % 2 == 0:
  *                     length = <int>(head.channels // 2)
  */
             /*else*/ {
-              __pyx_t_7 = (__pyx_v_i + __pyx_v_channel);
+              __pyx_t_7 = __pyx_v_y;
               __pyx_t_8 = __pyx_v_x;
-              __pyx_t_9 = __pyx_v_y;
+              __pyx_t_9 = (__pyx_v_i + __pyx_v_channel);
               if (__pyx_t_7 < 0) __pyx_t_7 += __pyx_v_dest.shape[0];
               if (__pyx_t_8 < 0) __pyx_t_8 += __pyx_v_dest.shape[1];
               if (__pyx_t_9 < 0) __pyx_t_9 += __pyx_v_dest.shape[2];
@@ -4479,7 +4479,7 @@ static void __pyx_fuse_1__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
             }
             __pyx_L9:;
 
-            /* "unbcf_fast.pyx":225
+            /* "hyperspy/io_plugins/unbcf_fast.pyx":225
  *             if head.size == 1:  # special nibble switching case
  *                 for i in range(head.channels):
  *                     if (i+channel) < cutoff:             # <<<<<<<<<<<<<<
@@ -4489,9 +4489,9 @@ static void __pyx_fuse_1__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
           }
         }
 
-        /* "unbcf_fast.pyx":231
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":231
  *                         else:
- *                             dest[i+channel, x, y] += <channel_t>((src[offset +(i//2)] >> 4) + gain)
+ *                             dest[y, x, i+channel] += <channel_t>((src[offset +(i//2)] >> 4) + gain)
  *                 if head.channels % 2 == 0:             # <<<<<<<<<<<<<<
  *                     length = <int>(head.channels // 2)
  *                 else:
@@ -4499,8 +4499,8 @@ static void __pyx_fuse_1__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
         __pyx_t_1 = (((__pyx_v_head->channels % 2) == 0) != 0);
         if (__pyx_t_1) {
 
-          /* "unbcf_fast.pyx":232
- *                             dest[i+channel, x, y] += <channel_t>((src[offset +(i//2)] >> 4) + gain)
+          /* "hyperspy/io_plugins/unbcf_fast.pyx":232
+ *                             dest[y, x, i+channel] += <channel_t>((src[offset +(i//2)] >> 4) + gain)
  *                 if head.channels % 2 == 0:
  *                     length = <int>(head.channels // 2)             # <<<<<<<<<<<<<<
  *                 else:
@@ -4508,9 +4508,9 @@ static void __pyx_fuse_1__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
  */
           __pyx_v_length = ((int)(__pyx_v_head->channels / 2));
 
-          /* "unbcf_fast.pyx":231
+          /* "hyperspy/io_plugins/unbcf_fast.pyx":231
  *                         else:
- *                             dest[i+channel, x, y] += <channel_t>((src[offset +(i//2)] >> 4) + gain)
+ *                             dest[y, x, i+channel] += <channel_t>((src[offset +(i//2)] >> 4) + gain)
  *                 if head.channels % 2 == 0:             # <<<<<<<<<<<<<<
  *                     length = <int>(head.channels // 2)
  *                 else:
@@ -4518,7 +4518,7 @@ static void __pyx_fuse_1__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
           goto __pyx_L10;
         }
 
-        /* "unbcf_fast.pyx":234
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":234
  *                     length = <int>(head.channels // 2)
  *                 else:
  *                     length = <int>((head.channels // 2) +1)             # <<<<<<<<<<<<<<
@@ -4530,7 +4530,7 @@ static void __pyx_fuse_1__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
         }
         __pyx_L10:;
 
-        /* "unbcf_fast.pyx":223
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":223
  *                 gain = <int>read_64(&src[offset])
  *             offset += head.size
  *             if head.size == 1:  # special nibble switching case             # <<<<<<<<<<<<<<
@@ -4539,7 +4539,7 @@ static void __pyx_fuse_1__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
  */
         break;
 
-        /* "unbcf_fast.pyx":235
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":235
  *                 else:
  *                     length = <int>((head.channels // 2) +1)
  *             elif head.size == 2:             # <<<<<<<<<<<<<<
@@ -4548,62 +4548,62 @@ static void __pyx_fuse_1__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
  */
         case 2:
 
-        /* "unbcf_fast.pyx":236
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":236
  *                     length = <int>((head.channels // 2) +1)
  *             elif head.size == 2:
  *                 for i in range(head.channels):             # <<<<<<<<<<<<<<
  *                     if (i+channel) < cutoff:
- *                         dest[i+channel, x, y] += <channel_t>(src[offset + i] + gain)
+ *                         dest[y, x, i+channel] += <channel_t>(src[offset + i] + gain)
  */
         __pyx_t_2 = __pyx_v_head->channels;
         for (__pyx_t_3 = 0; __pyx_t_3 < __pyx_t_2; __pyx_t_3+=1) {
           __pyx_v_i = __pyx_t_3;
 
-          /* "unbcf_fast.pyx":237
+          /* "hyperspy/io_plugins/unbcf_fast.pyx":237
  *             elif head.size == 2:
  *                 for i in range(head.channels):
  *                     if (i+channel) < cutoff:             # <<<<<<<<<<<<<<
- *                         dest[i+channel, x, y] += <channel_t>(src[offset + i] + gain)
+ *                         dest[y, x, i+channel] += <channel_t>(src[offset + i] + gain)
  *                 length = <int>(head.channels * head.size // 2)
  */
           __pyx_t_1 = (((__pyx_v_i + __pyx_v_channel) < __pyx_v_cutoff) != 0);
           if (__pyx_t_1) {
 
-            /* "unbcf_fast.pyx":238
+            /* "hyperspy/io_plugins/unbcf_fast.pyx":238
  *                 for i in range(head.channels):
  *                     if (i+channel) < cutoff:
- *                         dest[i+channel, x, y] += <channel_t>(src[offset + i] + gain)             # <<<<<<<<<<<<<<
+ *                         dest[y, x, i+channel] += <channel_t>(src[offset + i] + gain)             # <<<<<<<<<<<<<<
  *                 length = <int>(head.channels * head.size // 2)
  *             elif head.size == 4:
  */
-            __pyx_t_10 = (__pyx_v_i + __pyx_v_channel);
+            __pyx_t_10 = __pyx_v_y;
             __pyx_t_11 = __pyx_v_x;
-            __pyx_t_12 = __pyx_v_y;
+            __pyx_t_12 = (__pyx_v_i + __pyx_v_channel);
             if (__pyx_t_10 < 0) __pyx_t_10 += __pyx_v_dest.shape[0];
             if (__pyx_t_11 < 0) __pyx_t_11 += __pyx_v_dest.shape[1];
             if (__pyx_t_12 < 0) __pyx_t_12 += __pyx_v_dest.shape[2];
             *((uint16_t *) ( /* dim=2 */ (( /* dim=1 */ (( /* dim=0 */ (__pyx_v_dest.data + __pyx_t_10 * __pyx_v_dest.strides[0]) ) + __pyx_t_11 * __pyx_v_dest.strides[1]) ) + __pyx_t_12 * __pyx_v_dest.strides[2]) )) += ((uint16_t)((__pyx_v_src[(__pyx_v_offset + __pyx_v_i)]) + __pyx_v_gain));
 
-            /* "unbcf_fast.pyx":237
+            /* "hyperspy/io_plugins/unbcf_fast.pyx":237
  *             elif head.size == 2:
  *                 for i in range(head.channels):
  *                     if (i+channel) < cutoff:             # <<<<<<<<<<<<<<
- *                         dest[i+channel, x, y] += <channel_t>(src[offset + i] + gain)
+ *                         dest[y, x, i+channel] += <channel_t>(src[offset + i] + gain)
  *                 length = <int>(head.channels * head.size // 2)
  */
           }
         }
 
-        /* "unbcf_fast.pyx":239
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":239
  *                     if (i+channel) < cutoff:
- *                         dest[i+channel, x, y] += <channel_t>(src[offset + i] + gain)
+ *                         dest[y, x, i+channel] += <channel_t>(src[offset + i] + gain)
  *                 length = <int>(head.channels * head.size // 2)             # <<<<<<<<<<<<<<
  *             elif head.size == 4:
  *                 for i in range(head.channels):
  */
         __pyx_v_length = ((int)((__pyx_v_head->channels * __pyx_v_head->size) / 2));
 
-        /* "unbcf_fast.pyx":235
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":235
  *                 else:
  *                     length = <int>((head.channels // 2) +1)
  *             elif head.size == 2:             # <<<<<<<<<<<<<<
@@ -4612,8 +4612,8 @@ static void __pyx_fuse_1__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
  */
         break;
 
-        /* "unbcf_fast.pyx":240
- *                         dest[i+channel, x, y] += <channel_t>(src[offset + i] + gain)
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":240
+ *                         dest[y, x, i+channel] += <channel_t>(src[offset + i] + gain)
  *                 length = <int>(head.channels * head.size // 2)
  *             elif head.size == 4:             # <<<<<<<<<<<<<<
  *                 for i in range(head.channels):
@@ -4621,7 +4621,7 @@ static void __pyx_fuse_1__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
  */
         case 4:
 
-        /* "unbcf_fast.pyx":241
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":241
  *                 length = <int>(head.channels * head.size // 2)
  *             elif head.size == 4:
  *                 for i in range(head.channels):             # <<<<<<<<<<<<<<
@@ -4632,61 +4632,61 @@ static void __pyx_fuse_1__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
         for (__pyx_t_3 = 0; __pyx_t_3 < __pyx_t_2; __pyx_t_3+=1) {
           __pyx_v_i = __pyx_t_3;
 
-          /* "unbcf_fast.pyx":242
+          /* "hyperspy/io_plugins/unbcf_fast.pyx":242
  *             elif head.size == 4:
  *                 for i in range(head.channels):
  *                     if (i+channel) < cutoff:             # <<<<<<<<<<<<<<
  *                         val16 = read_16(&src[offset + i*2])
- *                         dest[i+channel, x, y] += <channel_t>(val16 + gain)
+ *                         dest[y, x, i+channel] += <channel_t>(val16 + gain)
  */
           __pyx_t_1 = (((__pyx_v_i + __pyx_v_channel) < __pyx_v_cutoff) != 0);
           if (__pyx_t_1) {
 
-            /* "unbcf_fast.pyx":243
+            /* "hyperspy/io_plugins/unbcf_fast.pyx":243
  *                 for i in range(head.channels):
  *                     if (i+channel) < cutoff:
  *                         val16 = read_16(&src[offset + i*2])             # <<<<<<<<<<<<<<
- *                         dest[i+channel, x, y] += <channel_t>(val16 + gain)
+ *                         dest[y, x, i+channel] += <channel_t>(val16 + gain)
  *                 length = <int>(head.channels * head.size // 2)
  */
-            __pyx_v_val16 = __pyx_f_10unbcf_fast_read_16((&(__pyx_v_src[(__pyx_v_offset + (__pyx_v_i * 2))])));
+            __pyx_v_val16 = __pyx_f_8hyperspy_10io_plugins_10unbcf_fast_read_16((&(__pyx_v_src[(__pyx_v_offset + (__pyx_v_i * 2))])));
 
-            /* "unbcf_fast.pyx":244
+            /* "hyperspy/io_plugins/unbcf_fast.pyx":244
  *                     if (i+channel) < cutoff:
  *                         val16 = read_16(&src[offset + i*2])
- *                         dest[i+channel, x, y] += <channel_t>(val16 + gain)             # <<<<<<<<<<<<<<
+ *                         dest[y, x, i+channel] += <channel_t>(val16 + gain)             # <<<<<<<<<<<<<<
  *                 length = <int>(head.channels * head.size // 2)
  *             else:
  */
-            __pyx_t_13 = (__pyx_v_i + __pyx_v_channel);
+            __pyx_t_13 = __pyx_v_y;
             __pyx_t_14 = __pyx_v_x;
-            __pyx_t_15 = __pyx_v_y;
+            __pyx_t_15 = (__pyx_v_i + __pyx_v_channel);
             if (__pyx_t_13 < 0) __pyx_t_13 += __pyx_v_dest.shape[0];
             if (__pyx_t_14 < 0) __pyx_t_14 += __pyx_v_dest.shape[1];
             if (__pyx_t_15 < 0) __pyx_t_15 += __pyx_v_dest.shape[2];
             *((uint16_t *) ( /* dim=2 */ (( /* dim=1 */ (( /* dim=0 */ (__pyx_v_dest.data + __pyx_t_13 * __pyx_v_dest.strides[0]) ) + __pyx_t_14 * __pyx_v_dest.strides[1]) ) + __pyx_t_15 * __pyx_v_dest.strides[2]) )) += ((uint16_t)(__pyx_v_val16 + __pyx_v_gain));
 
-            /* "unbcf_fast.pyx":242
+            /* "hyperspy/io_plugins/unbcf_fast.pyx":242
  *             elif head.size == 4:
  *                 for i in range(head.channels):
  *                     if (i+channel) < cutoff:             # <<<<<<<<<<<<<<
  *                         val16 = read_16(&src[offset + i*2])
- *                         dest[i+channel, x, y] += <channel_t>(val16 + gain)
+ *                         dest[y, x, i+channel] += <channel_t>(val16 + gain)
  */
           }
         }
 
-        /* "unbcf_fast.pyx":245
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":245
  *                         val16 = read_16(&src[offset + i*2])
- *                         dest[i+channel, x, y] += <channel_t>(val16 + gain)
+ *                         dest[y, x, i+channel] += <channel_t>(val16 + gain)
  *                 length = <int>(head.channels * head.size // 2)             # <<<<<<<<<<<<<<
  *             else:
  *                 for i in range(head.channels):
  */
         __pyx_v_length = ((int)((__pyx_v_head->channels * __pyx_v_head->size) / 2));
 
-        /* "unbcf_fast.pyx":240
- *                         dest[i+channel, x, y] += <channel_t>(src[offset + i] + gain)
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":240
+ *                         dest[y, x, i+channel] += <channel_t>(src[offset + i] + gain)
  *                 length = <int>(head.channels * head.size // 2)
  *             elif head.size == 4:             # <<<<<<<<<<<<<<
  *                 for i in range(head.channels):
@@ -4695,7 +4695,7 @@ static void __pyx_fuse_1__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
         break;
         default:
 
-        /* "unbcf_fast.pyx":247
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":247
  *                 length = <int>(head.channels * head.size // 2)
  *             else:
  *                 for i in range(head.channels):             # <<<<<<<<<<<<<<
@@ -4706,53 +4706,53 @@ static void __pyx_fuse_1__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
         for (__pyx_t_3 = 0; __pyx_t_3 < __pyx_t_2; __pyx_t_3+=1) {
           __pyx_v_i = __pyx_t_3;
 
-          /* "unbcf_fast.pyx":248
+          /* "hyperspy/io_plugins/unbcf_fast.pyx":248
  *             else:
  *                 for i in range(head.channels):
  *                     if (i+channel) < cutoff:             # <<<<<<<<<<<<<<
  *                         val32 = read_32(&src[offset + i*2])
- *                         dest[i+channel, x, y] += <channel_t>(val32 + gain)
+ *                         dest[y, x, i+channel] += <channel_t>(val32 + gain)
  */
           __pyx_t_1 = (((__pyx_v_i + __pyx_v_channel) < __pyx_v_cutoff) != 0);
           if (__pyx_t_1) {
 
-            /* "unbcf_fast.pyx":249
+            /* "hyperspy/io_plugins/unbcf_fast.pyx":249
  *                 for i in range(head.channels):
  *                     if (i+channel) < cutoff:
  *                         val32 = read_32(&src[offset + i*2])             # <<<<<<<<<<<<<<
- *                         dest[i+channel, x, y] += <channel_t>(val32 + gain)
+ *                         dest[y, x, i+channel] += <channel_t>(val32 + gain)
  *                 length = <int>(head.channels * head.size // 2)
  */
-            __pyx_v_val32 = __pyx_f_10unbcf_fast_read_32((&(__pyx_v_src[(__pyx_v_offset + (__pyx_v_i * 2))])));
+            __pyx_v_val32 = __pyx_f_8hyperspy_10io_plugins_10unbcf_fast_read_32((&(__pyx_v_src[(__pyx_v_offset + (__pyx_v_i * 2))])));
 
-            /* "unbcf_fast.pyx":250
+            /* "hyperspy/io_plugins/unbcf_fast.pyx":250
  *                     if (i+channel) < cutoff:
  *                         val32 = read_32(&src[offset + i*2])
- *                         dest[i+channel, x, y] += <channel_t>(val32 + gain)             # <<<<<<<<<<<<<<
+ *                         dest[y, x, i+channel] += <channel_t>(val32 + gain)             # <<<<<<<<<<<<<<
  *                 length = <int>(head.channels * head.size // 2)
  *             offset += length
  */
-            __pyx_t_16 = (__pyx_v_i + __pyx_v_channel);
+            __pyx_t_16 = __pyx_v_y;
             __pyx_t_17 = __pyx_v_x;
-            __pyx_t_18 = __pyx_v_y;
+            __pyx_t_18 = (__pyx_v_i + __pyx_v_channel);
             if (__pyx_t_16 < 0) __pyx_t_16 += __pyx_v_dest.shape[0];
             if (__pyx_t_17 < 0) __pyx_t_17 += __pyx_v_dest.shape[1];
             if (__pyx_t_18 < 0) __pyx_t_18 += __pyx_v_dest.shape[2];
             *((uint16_t *) ( /* dim=2 */ (( /* dim=1 */ (( /* dim=0 */ (__pyx_v_dest.data + __pyx_t_16 * __pyx_v_dest.strides[0]) ) + __pyx_t_17 * __pyx_v_dest.strides[1]) ) + __pyx_t_18 * __pyx_v_dest.strides[2]) )) += ((uint16_t)(__pyx_v_val32 + __pyx_v_gain));
 
-            /* "unbcf_fast.pyx":248
+            /* "hyperspy/io_plugins/unbcf_fast.pyx":248
  *             else:
  *                 for i in range(head.channels):
  *                     if (i+channel) < cutoff:             # <<<<<<<<<<<<<<
  *                         val32 = read_32(&src[offset + i*2])
- *                         dest[i+channel, x, y] += <channel_t>(val32 + gain)
+ *                         dest[y, x, i+channel] += <channel_t>(val32 + gain)
  */
           }
         }
 
-        /* "unbcf_fast.pyx":251
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":251
  *                         val32 = read_32(&src[offset + i*2])
- *                         dest[i+channel, x, y] += <channel_t>(val32 + gain)
+ *                         dest[y, x, i+channel] += <channel_t>(val32 + gain)
  *                 length = <int>(head.channels * head.size // 2)             # <<<<<<<<<<<<<<
  *             offset += length
  *             channel += head.channels
@@ -4761,8 +4761,8 @@ static void __pyx_fuse_1__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
         break;
       }
 
-      /* "unbcf_fast.pyx":252
- *                         dest[i+channel, x, y] += <channel_t>(val32 + gain)
+      /* "hyperspy/io_plugins/unbcf_fast.pyx":252
+ *                         dest[y, x, i+channel] += <channel_t>(val32 + gain)
  *                 length = <int>(head.channels * head.size // 2)
  *             offset += length             # <<<<<<<<<<<<<<
  *             channel += head.channels
@@ -4770,7 +4770,7 @@ static void __pyx_fuse_1__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
  */
       __pyx_v_offset = (__pyx_v_offset + __pyx_v_length);
 
-      /* "unbcf_fast.pyx":253
+      /* "hyperspy/io_plugins/unbcf_fast.pyx":253
  *                 length = <int>(head.channels * head.size // 2)
  *             offset += length
  *             channel += head.channels             # <<<<<<<<<<<<<<
@@ -4782,7 +4782,7 @@ static void __pyx_fuse_1__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
     __pyx_L5:;
   }
 
-  /* "unbcf_fast.pyx":194
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":194
  * @cython.cdivision(True)
  * @cython.boundscheck(False)
  * cdef void unpack_instructed(channel_t[:, :, :] dest, int x, int y,             # <<<<<<<<<<<<<<
@@ -4794,13 +4794,13 @@ static void __pyx_fuse_1__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
   __Pyx_RefNannyFinishContext();
 }
 
-static void __pyx_fuse_2__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslice __pyx_v_dest, int __pyx_v_x, int __pyx_v_y, unsigned char *__pyx_v_src, unsigned short __pyx_v_data_size, int __pyx_v_cutoff) {
+static void __pyx_fuse_2__pyx_f_8hyperspy_10io_plugins_10unbcf_fast_unpack_instructed(__Pyx_memviewslice __pyx_v_dest, int __pyx_v_x, int __pyx_v_y, unsigned char *__pyx_v_src, unsigned short __pyx_v_data_size, int __pyx_v_cutoff) {
   int __pyx_v_offset;
   int __pyx_v_channel;
   int __pyx_v_i;
   int __pyx_v_length;
   int __pyx_v_gain;
-  struct __pyx_t_10unbcf_fast_Bunch_head *__pyx_v_head;
+  struct __pyx_t_8hyperspy_10io_plugins_10unbcf_fast_Bunch_head *__pyx_v_head;
   uint16_t __pyx_v_val16;
   uint32_t __pyx_v_val32;
   __Pyx_RefNannyDeclarations
@@ -4824,7 +4824,7 @@ static void __pyx_fuse_2__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
   Py_ssize_t __pyx_t_18;
   __Pyx_RefNannySetupContext("__pyx_fuse_2unpack_instructed", 0);
 
-  /* "unbcf_fast.pyx":201
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":201
  *     of memoryview
  *     """
  *     cdef int offset = 0             # <<<<<<<<<<<<<<
@@ -4833,7 +4833,7 @@ static void __pyx_fuse_2__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
  */
   __pyx_v_offset = 0;
 
-  /* "unbcf_fast.pyx":202
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":202
  *     """
  *     cdef int offset = 0
  *     cdef int channel = 0             # <<<<<<<<<<<<<<
@@ -4842,7 +4842,7 @@ static void __pyx_fuse_2__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
  */
   __pyx_v_channel = 0;
 
-  /* "unbcf_fast.pyx":204
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":204
  *     cdef int channel = 0
  *     cdef int i, j, length
  *     cdef int gain = 0             # <<<<<<<<<<<<<<
@@ -4851,7 +4851,7 @@ static void __pyx_fuse_2__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
  */
   __pyx_v_gain = 0;
 
-  /* "unbcf_fast.pyx":208
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":208
  *     cdef uint16_t val16
  *     cdef uint32_t val32
  *     while (offset < data_size):             # <<<<<<<<<<<<<<
@@ -4862,16 +4862,16 @@ static void __pyx_fuse_2__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
     __pyx_t_1 = ((__pyx_v_offset < __pyx_v_data_size) != 0);
     if (!__pyx_t_1) break;
 
-    /* "unbcf_fast.pyx":209
+    /* "hyperspy/io_plugins/unbcf_fast.pyx":209
  *     cdef uint32_t val32
  *     while (offset < data_size):
  *         head =<Bunch_head*>&src[offset]             # <<<<<<<<<<<<<<
  *         offset +=2
  *         if head.size == 0:  # empty channels (zero counts)
  */
-    __pyx_v_head = ((struct __pyx_t_10unbcf_fast_Bunch_head *)(&(__pyx_v_src[__pyx_v_offset])));
+    __pyx_v_head = ((struct __pyx_t_8hyperspy_10io_plugins_10unbcf_fast_Bunch_head *)(&(__pyx_v_src[__pyx_v_offset])));
 
-    /* "unbcf_fast.pyx":210
+    /* "hyperspy/io_plugins/unbcf_fast.pyx":210
  *     while (offset < data_size):
  *         head =<Bunch_head*>&src[offset]
  *         offset +=2             # <<<<<<<<<<<<<<
@@ -4880,7 +4880,7 @@ static void __pyx_fuse_2__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
  */
     __pyx_v_offset = (__pyx_v_offset + 2);
 
-    /* "unbcf_fast.pyx":211
+    /* "hyperspy/io_plugins/unbcf_fast.pyx":211
  *         head =<Bunch_head*>&src[offset]
  *         offset +=2
  *         if head.size == 0:  # empty channels (zero counts)             # <<<<<<<<<<<<<<
@@ -4890,7 +4890,7 @@ static void __pyx_fuse_2__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
     __pyx_t_1 = ((__pyx_v_head->size == 0) != 0);
     if (__pyx_t_1) {
 
-      /* "unbcf_fast.pyx":212
+      /* "hyperspy/io_plugins/unbcf_fast.pyx":212
  *         offset +=2
  *         if head.size == 0:  # empty channels (zero counts)
  *             channel += head.channels             # <<<<<<<<<<<<<<
@@ -4899,7 +4899,7 @@ static void __pyx_fuse_2__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
  */
       __pyx_v_channel = (__pyx_v_channel + __pyx_v_head->channels);
 
-      /* "unbcf_fast.pyx":211
+      /* "hyperspy/io_plugins/unbcf_fast.pyx":211
  *         head =<Bunch_head*>&src[offset]
  *         offset +=2
  *         if head.size == 0:  # empty channels (zero counts)             # <<<<<<<<<<<<<<
@@ -4909,7 +4909,7 @@ static void __pyx_fuse_2__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
       goto __pyx_L5;
     }
 
-    /* "unbcf_fast.pyx":214
+    /* "hyperspy/io_plugins/unbcf_fast.pyx":214
  *             channel += head.channels
  *         else:
  *             if head.size == 1:             # <<<<<<<<<<<<<<
@@ -4918,7 +4918,7 @@ static void __pyx_fuse_2__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
  */
     /*else*/ {
 
-      /* "unbcf_fast.pyx":218
+      /* "hyperspy/io_plugins/unbcf_fast.pyx":218
  *             elif head.size == 2:
  *                 gain = <int>read_16(&src[offset])
  *             elif head.size == 4:             # <<<<<<<<<<<<<<
@@ -4927,7 +4927,7 @@ static void __pyx_fuse_2__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
  */
       switch (__pyx_v_head->size) {
 
-        /* "unbcf_fast.pyx":214
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":214
  *             channel += head.channels
  *         else:
  *             if head.size == 1:             # <<<<<<<<<<<<<<
@@ -4936,7 +4936,7 @@ static void __pyx_fuse_2__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
  */
         case 1:
 
-        /* "unbcf_fast.pyx":215
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":215
  *         else:
  *             if head.size == 1:
  *                 gain = <int>(src[offset])             # <<<<<<<<<<<<<<
@@ -4945,7 +4945,7 @@ static void __pyx_fuse_2__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
  */
         __pyx_v_gain = ((int)(__pyx_v_src[__pyx_v_offset]));
 
-        /* "unbcf_fast.pyx":214
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":214
  *             channel += head.channels
  *         else:
  *             if head.size == 1:             # <<<<<<<<<<<<<<
@@ -4954,7 +4954,7 @@ static void __pyx_fuse_2__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
  */
         break;
 
-        /* "unbcf_fast.pyx":216
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":216
  *             if head.size == 1:
  *                 gain = <int>(src[offset])
  *             elif head.size == 2:             # <<<<<<<<<<<<<<
@@ -4963,16 +4963,16 @@ static void __pyx_fuse_2__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
  */
         case 2:
 
-        /* "unbcf_fast.pyx":217
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":217
  *                 gain = <int>(src[offset])
  *             elif head.size == 2:
  *                 gain = <int>read_16(&src[offset])             # <<<<<<<<<<<<<<
  *             elif head.size == 4:
  *                 gain = <int>read_32(&src[offset])
  */
-        __pyx_v_gain = ((int)__pyx_f_10unbcf_fast_read_16((&(__pyx_v_src[__pyx_v_offset]))));
+        __pyx_v_gain = ((int)__pyx_f_8hyperspy_10io_plugins_10unbcf_fast_read_16((&(__pyx_v_src[__pyx_v_offset]))));
 
-        /* "unbcf_fast.pyx":216
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":216
  *             if head.size == 1:
  *                 gain = <int>(src[offset])
  *             elif head.size == 2:             # <<<<<<<<<<<<<<
@@ -4981,7 +4981,7 @@ static void __pyx_fuse_2__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
  */
         break;
 
-        /* "unbcf_fast.pyx":218
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":218
  *             elif head.size == 2:
  *                 gain = <int>read_16(&src[offset])
  *             elif head.size == 4:             # <<<<<<<<<<<<<<
@@ -4990,16 +4990,16 @@ static void __pyx_fuse_2__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
  */
         case 4:
 
-        /* "unbcf_fast.pyx":219
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":219
  *                 gain = <int>read_16(&src[offset])
  *             elif head.size == 4:
  *                 gain = <int>read_32(&src[offset])             # <<<<<<<<<<<<<<
  *             else:
  *                 gain = <int>read_64(&src[offset])
  */
-        __pyx_v_gain = ((int)__pyx_f_10unbcf_fast_read_32((&(__pyx_v_src[__pyx_v_offset]))));
+        __pyx_v_gain = ((int)__pyx_f_8hyperspy_10io_plugins_10unbcf_fast_read_32((&(__pyx_v_src[__pyx_v_offset]))));
 
-        /* "unbcf_fast.pyx":218
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":218
  *             elif head.size == 2:
  *                 gain = <int>read_16(&src[offset])
  *             elif head.size == 4:             # <<<<<<<<<<<<<<
@@ -5009,18 +5009,18 @@ static void __pyx_fuse_2__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
         break;
         default:
 
-        /* "unbcf_fast.pyx":221
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":221
  *                 gain = <int>read_32(&src[offset])
  *             else:
  *                 gain = <int>read_64(&src[offset])             # <<<<<<<<<<<<<<
  *             offset += head.size
  *             if head.size == 1:  # special nibble switching case
  */
-        __pyx_v_gain = ((int)__pyx_f_10unbcf_fast_read_64((&(__pyx_v_src[__pyx_v_offset]))));
+        __pyx_v_gain = ((int)__pyx_f_8hyperspy_10io_plugins_10unbcf_fast_read_64((&(__pyx_v_src[__pyx_v_offset]))));
         break;
       }
 
-      /* "unbcf_fast.pyx":222
+      /* "hyperspy/io_plugins/unbcf_fast.pyx":222
  *             else:
  *                 gain = <int>read_64(&src[offset])
  *             offset += head.size             # <<<<<<<<<<<<<<
@@ -5029,7 +5029,7 @@ static void __pyx_fuse_2__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
  */
       __pyx_v_offset = (__pyx_v_offset + __pyx_v_head->size);
 
-      /* "unbcf_fast.pyx":223
+      /* "hyperspy/io_plugins/unbcf_fast.pyx":223
  *                 gain = <int>read_64(&src[offset])
  *             offset += head.size
  *             if head.size == 1:  # special nibble switching case             # <<<<<<<<<<<<<<
@@ -5039,7 +5039,7 @@ static void __pyx_fuse_2__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
       switch (__pyx_v_head->size) {
         case 1:
 
-        /* "unbcf_fast.pyx":224
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":224
  *             offset += head.size
  *             if head.size == 1:  # special nibble switching case
  *                 for i in range(head.channels):             # <<<<<<<<<<<<<<
@@ -5050,7 +5050,7 @@ static void __pyx_fuse_2__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
         for (__pyx_t_3 = 0; __pyx_t_3 < __pyx_t_2; __pyx_t_3+=1) {
           __pyx_v_i = __pyx_t_3;
 
-          /* "unbcf_fast.pyx":225
+          /* "hyperspy/io_plugins/unbcf_fast.pyx":225
  *             if head.size == 1:  # special nibble switching case
  *                 for i in range(head.channels):
  *                     if (i+channel) < cutoff:             # <<<<<<<<<<<<<<
@@ -5060,52 +5060,52 @@ static void __pyx_fuse_2__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
           __pyx_t_1 = (((__pyx_v_i + __pyx_v_channel) < __pyx_v_cutoff) != 0);
           if (__pyx_t_1) {
 
-            /* "unbcf_fast.pyx":227
+            /* "hyperspy/io_plugins/unbcf_fast.pyx":227
  *                     if (i+channel) < cutoff:
  *                         #reverse the nibbles:
  *                         if i % 2 == 0:             # <<<<<<<<<<<<<<
- *                             dest[i+channel, x, y] += <channel_t>((src[offset +(i//2)] & 15) + gain)
+ *                             dest[y, x, i+channel] += <channel_t>((src[offset +(i//2)] & 15) + gain)
  *                         else:
  */
             __pyx_t_1 = (((__pyx_v_i % 2) == 0) != 0);
             if (__pyx_t_1) {
 
-              /* "unbcf_fast.pyx":228
+              /* "hyperspy/io_plugins/unbcf_fast.pyx":228
  *                         #reverse the nibbles:
  *                         if i % 2 == 0:
- *                             dest[i+channel, x, y] += <channel_t>((src[offset +(i//2)] & 15) + gain)             # <<<<<<<<<<<<<<
+ *                             dest[y, x, i+channel] += <channel_t>((src[offset +(i//2)] & 15) + gain)             # <<<<<<<<<<<<<<
  *                         else:
- *                             dest[i+channel, x, y] += <channel_t>((src[offset +(i//2)] >> 4) + gain)
+ *                             dest[y, x, i+channel] += <channel_t>((src[offset +(i//2)] >> 4) + gain)
  */
-              __pyx_t_4 = (__pyx_v_i + __pyx_v_channel);
+              __pyx_t_4 = __pyx_v_y;
               __pyx_t_5 = __pyx_v_x;
-              __pyx_t_6 = __pyx_v_y;
+              __pyx_t_6 = (__pyx_v_i + __pyx_v_channel);
               if (__pyx_t_4 < 0) __pyx_t_4 += __pyx_v_dest.shape[0];
               if (__pyx_t_5 < 0) __pyx_t_5 += __pyx_v_dest.shape[1];
               if (__pyx_t_6 < 0) __pyx_t_6 += __pyx_v_dest.shape[2];
               *((uint32_t *) ( /* dim=2 */ (( /* dim=1 */ (( /* dim=0 */ (__pyx_v_dest.data + __pyx_t_4 * __pyx_v_dest.strides[0]) ) + __pyx_t_5 * __pyx_v_dest.strides[1]) ) + __pyx_t_6 * __pyx_v_dest.strides[2]) )) += ((uint32_t)(((__pyx_v_src[(__pyx_v_offset + (__pyx_v_i / 2))]) & 15) + __pyx_v_gain));
 
-              /* "unbcf_fast.pyx":227
+              /* "hyperspy/io_plugins/unbcf_fast.pyx":227
  *                     if (i+channel) < cutoff:
  *                         #reverse the nibbles:
  *                         if i % 2 == 0:             # <<<<<<<<<<<<<<
- *                             dest[i+channel, x, y] += <channel_t>((src[offset +(i//2)] & 15) + gain)
+ *                             dest[y, x, i+channel] += <channel_t>((src[offset +(i//2)] & 15) + gain)
  *                         else:
  */
               goto __pyx_L9;
             }
 
-            /* "unbcf_fast.pyx":230
- *                             dest[i+channel, x, y] += <channel_t>((src[offset +(i//2)] & 15) + gain)
+            /* "hyperspy/io_plugins/unbcf_fast.pyx":230
+ *                             dest[y, x, i+channel] += <channel_t>((src[offset +(i//2)] & 15) + gain)
  *                         else:
- *                             dest[i+channel, x, y] += <channel_t>((src[offset +(i//2)] >> 4) + gain)             # <<<<<<<<<<<<<<
+ *                             dest[y, x, i+channel] += <channel_t>((src[offset +(i//2)] >> 4) + gain)             # <<<<<<<<<<<<<<
  *                 if head.channels % 2 == 0:
  *                     length = <int>(head.channels // 2)
  */
             /*else*/ {
-              __pyx_t_7 = (__pyx_v_i + __pyx_v_channel);
+              __pyx_t_7 = __pyx_v_y;
               __pyx_t_8 = __pyx_v_x;
-              __pyx_t_9 = __pyx_v_y;
+              __pyx_t_9 = (__pyx_v_i + __pyx_v_channel);
               if (__pyx_t_7 < 0) __pyx_t_7 += __pyx_v_dest.shape[0];
               if (__pyx_t_8 < 0) __pyx_t_8 += __pyx_v_dest.shape[1];
               if (__pyx_t_9 < 0) __pyx_t_9 += __pyx_v_dest.shape[2];
@@ -5113,7 +5113,7 @@ static void __pyx_fuse_2__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
             }
             __pyx_L9:;
 
-            /* "unbcf_fast.pyx":225
+            /* "hyperspy/io_plugins/unbcf_fast.pyx":225
  *             if head.size == 1:  # special nibble switching case
  *                 for i in range(head.channels):
  *                     if (i+channel) < cutoff:             # <<<<<<<<<<<<<<
@@ -5123,9 +5123,9 @@ static void __pyx_fuse_2__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
           }
         }
 
-        /* "unbcf_fast.pyx":231
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":231
  *                         else:
- *                             dest[i+channel, x, y] += <channel_t>((src[offset +(i//2)] >> 4) + gain)
+ *                             dest[y, x, i+channel] += <channel_t>((src[offset +(i//2)] >> 4) + gain)
  *                 if head.channels % 2 == 0:             # <<<<<<<<<<<<<<
  *                     length = <int>(head.channels // 2)
  *                 else:
@@ -5133,8 +5133,8 @@ static void __pyx_fuse_2__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
         __pyx_t_1 = (((__pyx_v_head->channels % 2) == 0) != 0);
         if (__pyx_t_1) {
 
-          /* "unbcf_fast.pyx":232
- *                             dest[i+channel, x, y] += <channel_t>((src[offset +(i//2)] >> 4) + gain)
+          /* "hyperspy/io_plugins/unbcf_fast.pyx":232
+ *                             dest[y, x, i+channel] += <channel_t>((src[offset +(i//2)] >> 4) + gain)
  *                 if head.channels % 2 == 0:
  *                     length = <int>(head.channels // 2)             # <<<<<<<<<<<<<<
  *                 else:
@@ -5142,9 +5142,9 @@ static void __pyx_fuse_2__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
  */
           __pyx_v_length = ((int)(__pyx_v_head->channels / 2));
 
-          /* "unbcf_fast.pyx":231
+          /* "hyperspy/io_plugins/unbcf_fast.pyx":231
  *                         else:
- *                             dest[i+channel, x, y] += <channel_t>((src[offset +(i//2)] >> 4) + gain)
+ *                             dest[y, x, i+channel] += <channel_t>((src[offset +(i//2)] >> 4) + gain)
  *                 if head.channels % 2 == 0:             # <<<<<<<<<<<<<<
  *                     length = <int>(head.channels // 2)
  *                 else:
@@ -5152,7 +5152,7 @@ static void __pyx_fuse_2__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
           goto __pyx_L10;
         }
 
-        /* "unbcf_fast.pyx":234
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":234
  *                     length = <int>(head.channels // 2)
  *                 else:
  *                     length = <int>((head.channels // 2) +1)             # <<<<<<<<<<<<<<
@@ -5164,7 +5164,7 @@ static void __pyx_fuse_2__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
         }
         __pyx_L10:;
 
-        /* "unbcf_fast.pyx":223
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":223
  *                 gain = <int>read_64(&src[offset])
  *             offset += head.size
  *             if head.size == 1:  # special nibble switching case             # <<<<<<<<<<<<<<
@@ -5173,7 +5173,7 @@ static void __pyx_fuse_2__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
  */
         break;
 
-        /* "unbcf_fast.pyx":235
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":235
  *                 else:
  *                     length = <int>((head.channels // 2) +1)
  *             elif head.size == 2:             # <<<<<<<<<<<<<<
@@ -5182,62 +5182,62 @@ static void __pyx_fuse_2__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
  */
         case 2:
 
-        /* "unbcf_fast.pyx":236
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":236
  *                     length = <int>((head.channels // 2) +1)
  *             elif head.size == 2:
  *                 for i in range(head.channels):             # <<<<<<<<<<<<<<
  *                     if (i+channel) < cutoff:
- *                         dest[i+channel, x, y] += <channel_t>(src[offset + i] + gain)
+ *                         dest[y, x, i+channel] += <channel_t>(src[offset + i] + gain)
  */
         __pyx_t_2 = __pyx_v_head->channels;
         for (__pyx_t_3 = 0; __pyx_t_3 < __pyx_t_2; __pyx_t_3+=1) {
           __pyx_v_i = __pyx_t_3;
 
-          /* "unbcf_fast.pyx":237
+          /* "hyperspy/io_plugins/unbcf_fast.pyx":237
  *             elif head.size == 2:
  *                 for i in range(head.channels):
  *                     if (i+channel) < cutoff:             # <<<<<<<<<<<<<<
- *                         dest[i+channel, x, y] += <channel_t>(src[offset + i] + gain)
+ *                         dest[y, x, i+channel] += <channel_t>(src[offset + i] + gain)
  *                 length = <int>(head.channels * head.size // 2)
  */
           __pyx_t_1 = (((__pyx_v_i + __pyx_v_channel) < __pyx_v_cutoff) != 0);
           if (__pyx_t_1) {
 
-            /* "unbcf_fast.pyx":238
+            /* "hyperspy/io_plugins/unbcf_fast.pyx":238
  *                 for i in range(head.channels):
  *                     if (i+channel) < cutoff:
- *                         dest[i+channel, x, y] += <channel_t>(src[offset + i] + gain)             # <<<<<<<<<<<<<<
+ *                         dest[y, x, i+channel] += <channel_t>(src[offset + i] + gain)             # <<<<<<<<<<<<<<
  *                 length = <int>(head.channels * head.size // 2)
  *             elif head.size == 4:
  */
-            __pyx_t_10 = (__pyx_v_i + __pyx_v_channel);
+            __pyx_t_10 = __pyx_v_y;
             __pyx_t_11 = __pyx_v_x;
-            __pyx_t_12 = __pyx_v_y;
+            __pyx_t_12 = (__pyx_v_i + __pyx_v_channel);
             if (__pyx_t_10 < 0) __pyx_t_10 += __pyx_v_dest.shape[0];
             if (__pyx_t_11 < 0) __pyx_t_11 += __pyx_v_dest.shape[1];
             if (__pyx_t_12 < 0) __pyx_t_12 += __pyx_v_dest.shape[2];
             *((uint32_t *) ( /* dim=2 */ (( /* dim=1 */ (( /* dim=0 */ (__pyx_v_dest.data + __pyx_t_10 * __pyx_v_dest.strides[0]) ) + __pyx_t_11 * __pyx_v_dest.strides[1]) ) + __pyx_t_12 * __pyx_v_dest.strides[2]) )) += ((uint32_t)((__pyx_v_src[(__pyx_v_offset + __pyx_v_i)]) + __pyx_v_gain));
 
-            /* "unbcf_fast.pyx":237
+            /* "hyperspy/io_plugins/unbcf_fast.pyx":237
  *             elif head.size == 2:
  *                 for i in range(head.channels):
  *                     if (i+channel) < cutoff:             # <<<<<<<<<<<<<<
- *                         dest[i+channel, x, y] += <channel_t>(src[offset + i] + gain)
+ *                         dest[y, x, i+channel] += <channel_t>(src[offset + i] + gain)
  *                 length = <int>(head.channels * head.size // 2)
  */
           }
         }
 
-        /* "unbcf_fast.pyx":239
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":239
  *                     if (i+channel) < cutoff:
- *                         dest[i+channel, x, y] += <channel_t>(src[offset + i] + gain)
+ *                         dest[y, x, i+channel] += <channel_t>(src[offset + i] + gain)
  *                 length = <int>(head.channels * head.size // 2)             # <<<<<<<<<<<<<<
  *             elif head.size == 4:
  *                 for i in range(head.channels):
  */
         __pyx_v_length = ((int)((__pyx_v_head->channels * __pyx_v_head->size) / 2));
 
-        /* "unbcf_fast.pyx":235
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":235
  *                 else:
  *                     length = <int>((head.channels // 2) +1)
  *             elif head.size == 2:             # <<<<<<<<<<<<<<
@@ -5246,8 +5246,8 @@ static void __pyx_fuse_2__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
  */
         break;
 
-        /* "unbcf_fast.pyx":240
- *                         dest[i+channel, x, y] += <channel_t>(src[offset + i] + gain)
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":240
+ *                         dest[y, x, i+channel] += <channel_t>(src[offset + i] + gain)
  *                 length = <int>(head.channels * head.size // 2)
  *             elif head.size == 4:             # <<<<<<<<<<<<<<
  *                 for i in range(head.channels):
@@ -5255,7 +5255,7 @@ static void __pyx_fuse_2__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
  */
         case 4:
 
-        /* "unbcf_fast.pyx":241
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":241
  *                 length = <int>(head.channels * head.size // 2)
  *             elif head.size == 4:
  *                 for i in range(head.channels):             # <<<<<<<<<<<<<<
@@ -5266,61 +5266,61 @@ static void __pyx_fuse_2__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
         for (__pyx_t_3 = 0; __pyx_t_3 < __pyx_t_2; __pyx_t_3+=1) {
           __pyx_v_i = __pyx_t_3;
 
-          /* "unbcf_fast.pyx":242
+          /* "hyperspy/io_plugins/unbcf_fast.pyx":242
  *             elif head.size == 4:
  *                 for i in range(head.channels):
  *                     if (i+channel) < cutoff:             # <<<<<<<<<<<<<<
  *                         val16 = read_16(&src[offset + i*2])
- *                         dest[i+channel, x, y] += <channel_t>(val16 + gain)
+ *                         dest[y, x, i+channel] += <channel_t>(val16 + gain)
  */
           __pyx_t_1 = (((__pyx_v_i + __pyx_v_channel) < __pyx_v_cutoff) != 0);
           if (__pyx_t_1) {
 
-            /* "unbcf_fast.pyx":243
+            /* "hyperspy/io_plugins/unbcf_fast.pyx":243
  *                 for i in range(head.channels):
  *                     if (i+channel) < cutoff:
  *                         val16 = read_16(&src[offset + i*2])             # <<<<<<<<<<<<<<
- *                         dest[i+channel, x, y] += <channel_t>(val16 + gain)
+ *                         dest[y, x, i+channel] += <channel_t>(val16 + gain)
  *                 length = <int>(head.channels * head.size // 2)
  */
-            __pyx_v_val16 = __pyx_f_10unbcf_fast_read_16((&(__pyx_v_src[(__pyx_v_offset + (__pyx_v_i * 2))])));
+            __pyx_v_val16 = __pyx_f_8hyperspy_10io_plugins_10unbcf_fast_read_16((&(__pyx_v_src[(__pyx_v_offset + (__pyx_v_i * 2))])));
 
-            /* "unbcf_fast.pyx":244
+            /* "hyperspy/io_plugins/unbcf_fast.pyx":244
  *                     if (i+channel) < cutoff:
  *                         val16 = read_16(&src[offset + i*2])
- *                         dest[i+channel, x, y] += <channel_t>(val16 + gain)             # <<<<<<<<<<<<<<
+ *                         dest[y, x, i+channel] += <channel_t>(val16 + gain)             # <<<<<<<<<<<<<<
  *                 length = <int>(head.channels * head.size // 2)
  *             else:
  */
-            __pyx_t_13 = (__pyx_v_i + __pyx_v_channel);
+            __pyx_t_13 = __pyx_v_y;
             __pyx_t_14 = __pyx_v_x;
-            __pyx_t_15 = __pyx_v_y;
+            __pyx_t_15 = (__pyx_v_i + __pyx_v_channel);
             if (__pyx_t_13 < 0) __pyx_t_13 += __pyx_v_dest.shape[0];
             if (__pyx_t_14 < 0) __pyx_t_14 += __pyx_v_dest.shape[1];
             if (__pyx_t_15 < 0) __pyx_t_15 += __pyx_v_dest.shape[2];
             *((uint32_t *) ( /* dim=2 */ (( /* dim=1 */ (( /* dim=0 */ (__pyx_v_dest.data + __pyx_t_13 * __pyx_v_dest.strides[0]) ) + __pyx_t_14 * __pyx_v_dest.strides[1]) ) + __pyx_t_15 * __pyx_v_dest.strides[2]) )) += ((uint32_t)(__pyx_v_val16 + __pyx_v_gain));
 
-            /* "unbcf_fast.pyx":242
+            /* "hyperspy/io_plugins/unbcf_fast.pyx":242
  *             elif head.size == 4:
  *                 for i in range(head.channels):
  *                     if (i+channel) < cutoff:             # <<<<<<<<<<<<<<
  *                         val16 = read_16(&src[offset + i*2])
- *                         dest[i+channel, x, y] += <channel_t>(val16 + gain)
+ *                         dest[y, x, i+channel] += <channel_t>(val16 + gain)
  */
           }
         }
 
-        /* "unbcf_fast.pyx":245
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":245
  *                         val16 = read_16(&src[offset + i*2])
- *                         dest[i+channel, x, y] += <channel_t>(val16 + gain)
+ *                         dest[y, x, i+channel] += <channel_t>(val16 + gain)
  *                 length = <int>(head.channels * head.size // 2)             # <<<<<<<<<<<<<<
  *             else:
  *                 for i in range(head.channels):
  */
         __pyx_v_length = ((int)((__pyx_v_head->channels * __pyx_v_head->size) / 2));
 
-        /* "unbcf_fast.pyx":240
- *                         dest[i+channel, x, y] += <channel_t>(src[offset + i] + gain)
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":240
+ *                         dest[y, x, i+channel] += <channel_t>(src[offset + i] + gain)
  *                 length = <int>(head.channels * head.size // 2)
  *             elif head.size == 4:             # <<<<<<<<<<<<<<
  *                 for i in range(head.channels):
@@ -5329,7 +5329,7 @@ static void __pyx_fuse_2__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
         break;
         default:
 
-        /* "unbcf_fast.pyx":247
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":247
  *                 length = <int>(head.channels * head.size // 2)
  *             else:
  *                 for i in range(head.channels):             # <<<<<<<<<<<<<<
@@ -5340,53 +5340,53 @@ static void __pyx_fuse_2__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
         for (__pyx_t_3 = 0; __pyx_t_3 < __pyx_t_2; __pyx_t_3+=1) {
           __pyx_v_i = __pyx_t_3;
 
-          /* "unbcf_fast.pyx":248
+          /* "hyperspy/io_plugins/unbcf_fast.pyx":248
  *             else:
  *                 for i in range(head.channels):
  *                     if (i+channel) < cutoff:             # <<<<<<<<<<<<<<
  *                         val32 = read_32(&src[offset + i*2])
- *                         dest[i+channel, x, y] += <channel_t>(val32 + gain)
+ *                         dest[y, x, i+channel] += <channel_t>(val32 + gain)
  */
           __pyx_t_1 = (((__pyx_v_i + __pyx_v_channel) < __pyx_v_cutoff) != 0);
           if (__pyx_t_1) {
 
-            /* "unbcf_fast.pyx":249
+            /* "hyperspy/io_plugins/unbcf_fast.pyx":249
  *                 for i in range(head.channels):
  *                     if (i+channel) < cutoff:
  *                         val32 = read_32(&src[offset + i*2])             # <<<<<<<<<<<<<<
- *                         dest[i+channel, x, y] += <channel_t>(val32 + gain)
+ *                         dest[y, x, i+channel] += <channel_t>(val32 + gain)
  *                 length = <int>(head.channels * head.size // 2)
  */
-            __pyx_v_val32 = __pyx_f_10unbcf_fast_read_32((&(__pyx_v_src[(__pyx_v_offset + (__pyx_v_i * 2))])));
+            __pyx_v_val32 = __pyx_f_8hyperspy_10io_plugins_10unbcf_fast_read_32((&(__pyx_v_src[(__pyx_v_offset + (__pyx_v_i * 2))])));
 
-            /* "unbcf_fast.pyx":250
+            /* "hyperspy/io_plugins/unbcf_fast.pyx":250
  *                     if (i+channel) < cutoff:
  *                         val32 = read_32(&src[offset + i*2])
- *                         dest[i+channel, x, y] += <channel_t>(val32 + gain)             # <<<<<<<<<<<<<<
+ *                         dest[y, x, i+channel] += <channel_t>(val32 + gain)             # <<<<<<<<<<<<<<
  *                 length = <int>(head.channels * head.size // 2)
  *             offset += length
  */
-            __pyx_t_16 = (__pyx_v_i + __pyx_v_channel);
+            __pyx_t_16 = __pyx_v_y;
             __pyx_t_17 = __pyx_v_x;
-            __pyx_t_18 = __pyx_v_y;
+            __pyx_t_18 = (__pyx_v_i + __pyx_v_channel);
             if (__pyx_t_16 < 0) __pyx_t_16 += __pyx_v_dest.shape[0];
             if (__pyx_t_17 < 0) __pyx_t_17 += __pyx_v_dest.shape[1];
             if (__pyx_t_18 < 0) __pyx_t_18 += __pyx_v_dest.shape[2];
             *((uint32_t *) ( /* dim=2 */ (( /* dim=1 */ (( /* dim=0 */ (__pyx_v_dest.data + __pyx_t_16 * __pyx_v_dest.strides[0]) ) + __pyx_t_17 * __pyx_v_dest.strides[1]) ) + __pyx_t_18 * __pyx_v_dest.strides[2]) )) += ((uint32_t)(__pyx_v_val32 + __pyx_v_gain));
 
-            /* "unbcf_fast.pyx":248
+            /* "hyperspy/io_plugins/unbcf_fast.pyx":248
  *             else:
  *                 for i in range(head.channels):
  *                     if (i+channel) < cutoff:             # <<<<<<<<<<<<<<
  *                         val32 = read_32(&src[offset + i*2])
- *                         dest[i+channel, x, y] += <channel_t>(val32 + gain)
+ *                         dest[y, x, i+channel] += <channel_t>(val32 + gain)
  */
           }
         }
 
-        /* "unbcf_fast.pyx":251
+        /* "hyperspy/io_plugins/unbcf_fast.pyx":251
  *                         val32 = read_32(&src[offset + i*2])
- *                         dest[i+channel, x, y] += <channel_t>(val32 + gain)
+ *                         dest[y, x, i+channel] += <channel_t>(val32 + gain)
  *                 length = <int>(head.channels * head.size // 2)             # <<<<<<<<<<<<<<
  *             offset += length
  *             channel += head.channels
@@ -5395,8 +5395,8 @@ static void __pyx_fuse_2__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
         break;
       }
 
-      /* "unbcf_fast.pyx":252
- *                         dest[i+channel, x, y] += <channel_t>(val32 + gain)
+      /* "hyperspy/io_plugins/unbcf_fast.pyx":252
+ *                         dest[y, x, i+channel] += <channel_t>(val32 + gain)
  *                 length = <int>(head.channels * head.size // 2)
  *             offset += length             # <<<<<<<<<<<<<<
  *             channel += head.channels
@@ -5404,7 +5404,7 @@ static void __pyx_fuse_2__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
  */
       __pyx_v_offset = (__pyx_v_offset + __pyx_v_length);
 
-      /* "unbcf_fast.pyx":253
+      /* "hyperspy/io_plugins/unbcf_fast.pyx":253
  *                 length = <int>(head.channels * head.size // 2)
  *             offset += length
  *             channel += head.channels             # <<<<<<<<<<<<<<
@@ -5416,7 +5416,7 @@ static void __pyx_fuse_2__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
     __pyx_L5:;
   }
 
-  /* "unbcf_fast.pyx":194
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":194
  * @cython.cdivision(True)
  * @cython.boundscheck(False)
  * cdef void unpack_instructed(channel_t[:, :, :] dest, int x, int y,             # <<<<<<<<<<<<<<
@@ -5428,7 +5428,7 @@ static void __pyx_fuse_2__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
   __Pyx_RefNannyFinishContext();
 }
 
-/* "unbcf_fast.pyx":258
+/* "hyperspy/io_plugins/unbcf_fast.pyx":258
  * @cython.cdivision(True)
  * @cython.boundscheck(False)
  * cdef void unpack12bit(channel_t[:, :, :] dest, int x, int y,             # <<<<<<<<<<<<<<
@@ -5436,7 +5436,7 @@ static void __pyx_fuse_2__pyx_f_10unbcf_fast_unpack_instructed(__Pyx_memviewslic
  *                       uint16_t no_of_pulses,
  */
 
-static void __pyx_fuse_0__pyx_f_10unbcf_fast_unpack12bit(__Pyx_memviewslice __pyx_v_dest, int __pyx_v_x, int __pyx_v_y, unsigned char *__pyx_v_src, unsigned short __pyx_v_no_of_pulses, int __pyx_v_cutoff) {
+static void __pyx_fuse_0__pyx_f_8hyperspy_10io_plugins_10unbcf_fast_unpack12bit(__Pyx_memviewslice __pyx_v_dest, int __pyx_v_x, int __pyx_v_y, unsigned char *__pyx_v_src, unsigned short __pyx_v_no_of_pulses, int __pyx_v_cutoff) {
   int __pyx_v_i;
   int __pyx_v_channel;
   __Pyx_RefNannyDeclarations
@@ -5448,7 +5448,7 @@ static void __pyx_fuse_0__pyx_f_10unbcf_fast_unpack12bit(__Pyx_memviewslice __py
   Py_ssize_t __pyx_t_6;
   __Pyx_RefNannySetupContext("__pyx_fuse_0unpack12bit", 0);
 
-  /* "unbcf_fast.pyx":264
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":264
  *     """unpack 12bit packed array into selection of memoryview"""
  *     cdef int i, channel
  *     for i in range(no_of_pulses):             # <<<<<<<<<<<<<<
@@ -5459,7 +5459,7 @@ static void __pyx_fuse_0__pyx_f_10unbcf_fast_unpack12bit(__Pyx_memviewslice __py
   for (__pyx_t_2 = 0; __pyx_t_2 < __pyx_t_1; __pyx_t_2+=1) {
     __pyx_v_i = __pyx_t_2;
 
-    /* "unbcf_fast.pyx":265
+    /* "hyperspy/io_plugins/unbcf_fast.pyx":265
  *     cdef int i, channel
  *     for i in range(no_of_pulses):
  *         if i % 4 == 0:             # <<<<<<<<<<<<<<
@@ -5469,7 +5469,7 @@ static void __pyx_fuse_0__pyx_f_10unbcf_fast_unpack12bit(__Pyx_memviewslice __py
     __pyx_t_3 = (((__pyx_v_i % 4) == 0) != 0);
     if (__pyx_t_3) {
 
-      /* "unbcf_fast.pyx":266
+      /* "hyperspy/io_plugins/unbcf_fast.pyx":266
  *     for i in range(no_of_pulses):
  *         if i % 4 == 0:
  *             channel = <int>((src[6*(i//4)] >> 4)+(src[6*(i//4)+1] << 4))             # <<<<<<<<<<<<<<
@@ -5478,7 +5478,7 @@ static void __pyx_fuse_0__pyx_f_10unbcf_fast_unpack12bit(__Pyx_memviewslice __py
  */
       __pyx_v_channel = ((int)(((__pyx_v_src[(6 * (__pyx_v_i / 4))]) >> 4) + ((__pyx_v_src[((6 * (__pyx_v_i / 4)) + 1)]) << 4)));
 
-      /* "unbcf_fast.pyx":265
+      /* "hyperspy/io_plugins/unbcf_fast.pyx":265
  *     cdef int i, channel
  *     for i in range(no_of_pulses):
  *         if i % 4 == 0:             # <<<<<<<<<<<<<<
@@ -5488,7 +5488,7 @@ static void __pyx_fuse_0__pyx_f_10unbcf_fast_unpack12bit(__Pyx_memviewslice __py
       goto __pyx_L5;
     }
 
-    /* "unbcf_fast.pyx":267
+    /* "hyperspy/io_plugins/unbcf_fast.pyx":267
  *         if i % 4 == 0:
  *             channel = <int>((src[6*(i//4)] >> 4)+(src[6*(i//4)+1] << 4))
  *         elif i % 4 == 1:             # <<<<<<<<<<<<<<
@@ -5498,7 +5498,7 @@ static void __pyx_fuse_0__pyx_f_10unbcf_fast_unpack12bit(__Pyx_memviewslice __py
     __pyx_t_3 = (((__pyx_v_i % 4) == 1) != 0);
     if (__pyx_t_3) {
 
-      /* "unbcf_fast.pyx":268
+      /* "hyperspy/io_plugins/unbcf_fast.pyx":268
  *             channel = <int>((src[6*(i//4)] >> 4)+(src[6*(i//4)+1] << 4))
  *         elif i % 4 == 1:
  *             channel = <int>(((src[6*(i//4)] << 8 ) + (src[6*(i//4)+3])) & 4095)             # <<<<<<<<<<<<<<
@@ -5507,7 +5507,7 @@ static void __pyx_fuse_0__pyx_f_10unbcf_fast_unpack12bit(__Pyx_memviewslice __py
  */
       __pyx_v_channel = ((int)((((__pyx_v_src[(6 * (__pyx_v_i / 4))]) << 8) + (__pyx_v_src[((6 * (__pyx_v_i / 4)) + 3)])) & 0xFFF));
 
-      /* "unbcf_fast.pyx":267
+      /* "hyperspy/io_plugins/unbcf_fast.pyx":267
  *         if i % 4 == 0:
  *             channel = <int>((src[6*(i//4)] >> 4)+(src[6*(i//4)+1] << 4))
  *         elif i % 4 == 1:             # <<<<<<<<<<<<<<
@@ -5517,7 +5517,7 @@ static void __pyx_fuse_0__pyx_f_10unbcf_fast_unpack12bit(__Pyx_memviewslice __py
       goto __pyx_L5;
     }
 
-    /* "unbcf_fast.pyx":269
+    /* "hyperspy/io_plugins/unbcf_fast.pyx":269
  *         elif i % 4 == 1:
  *             channel = <int>(((src[6*(i//4)] << 8 ) + (src[6*(i//4)+3])) & 4095)
  *         elif i % 4 == 2:             # <<<<<<<<<<<<<<
@@ -5527,7 +5527,7 @@ static void __pyx_fuse_0__pyx_f_10unbcf_fast_unpack12bit(__Pyx_memviewslice __py
     __pyx_t_3 = (((__pyx_v_i % 4) == 2) != 0);
     if (__pyx_t_3) {
 
-      /* "unbcf_fast.pyx":270
+      /* "hyperspy/io_plugins/unbcf_fast.pyx":270
  *             channel = <int>(((src[6*(i//4)] << 8 ) + (src[6*(i//4)+3])) & 4095)
  *         elif i % 4 == 2:
  *             channel = <int>((src[6*(i//4)+2] << 4) + (src[6*(i//4)+5] >> 4))             # <<<<<<<<<<<<<<
@@ -5536,7 +5536,7 @@ static void __pyx_fuse_0__pyx_f_10unbcf_fast_unpack12bit(__Pyx_memviewslice __py
  */
       __pyx_v_channel = ((int)(((__pyx_v_src[((6 * (__pyx_v_i / 4)) + 2)]) << 4) + ((__pyx_v_src[((6 * (__pyx_v_i / 4)) + 5)]) >> 4)));
 
-      /* "unbcf_fast.pyx":269
+      /* "hyperspy/io_plugins/unbcf_fast.pyx":269
  *         elif i % 4 == 1:
  *             channel = <int>(((src[6*(i//4)] << 8 ) + (src[6*(i//4)+3])) & 4095)
  *         elif i % 4 == 2:             # <<<<<<<<<<<<<<
@@ -5546,54 +5546,54 @@ static void __pyx_fuse_0__pyx_f_10unbcf_fast_unpack12bit(__Pyx_memviewslice __py
       goto __pyx_L5;
     }
 
-    /* "unbcf_fast.pyx":272
+    /* "hyperspy/io_plugins/unbcf_fast.pyx":272
  *             channel = <int>((src[6*(i//4)+2] << 4) + (src[6*(i//4)+5] >> 4))
  *         else:
  *             channel = <int>(((src[6*(i//4)+5] << 8) + src[6*(i//4)+4]) & 4095)             # <<<<<<<<<<<<<<
  *         if channel < cutoff:
- *             dest[channel, x, y] += 1
+ *             dest[y, x, channel] += 1
  */
     /*else*/ {
       __pyx_v_channel = ((int)((((__pyx_v_src[((6 * (__pyx_v_i / 4)) + 5)]) << 8) + (__pyx_v_src[((6 * (__pyx_v_i / 4)) + 4)])) & 0xFFF));
     }
     __pyx_L5:;
 
-    /* "unbcf_fast.pyx":273
+    /* "hyperspy/io_plugins/unbcf_fast.pyx":273
  *         else:
  *             channel = <int>(((src[6*(i//4)+5] << 8) + src[6*(i//4)+4]) & 4095)
  *         if channel < cutoff:             # <<<<<<<<<<<<<<
- *             dest[channel, x, y] += 1
+ *             dest[y, x, channel] += 1
  * 
  */
     __pyx_t_3 = ((__pyx_v_channel < __pyx_v_cutoff) != 0);
     if (__pyx_t_3) {
 
-      /* "unbcf_fast.pyx":274
+      /* "hyperspy/io_plugins/unbcf_fast.pyx":274
  *             channel = <int>(((src[6*(i//4)+5] << 8) + src[6*(i//4)+4]) & 4095)
  *         if channel < cutoff:
- *             dest[channel, x, y] += 1             # <<<<<<<<<<<<<<
+ *             dest[y, x, channel] += 1             # <<<<<<<<<<<<<<
  * 
  * #the main function:
  */
-      __pyx_t_4 = __pyx_v_channel;
+      __pyx_t_4 = __pyx_v_y;
       __pyx_t_5 = __pyx_v_x;
-      __pyx_t_6 = __pyx_v_y;
+      __pyx_t_6 = __pyx_v_channel;
       if (__pyx_t_4 < 0) __pyx_t_4 += __pyx_v_dest.shape[0];
       if (__pyx_t_5 < 0) __pyx_t_5 += __pyx_v_dest.shape[1];
       if (__pyx_t_6 < 0) __pyx_t_6 += __pyx_v_dest.shape[2];
       *((uint8_t *) ( /* dim=2 */ (( /* dim=1 */ (( /* dim=0 */ (__pyx_v_dest.data + __pyx_t_4 * __pyx_v_dest.strides[0]) ) + __pyx_t_5 * __pyx_v_dest.strides[1]) ) + __pyx_t_6 * __pyx_v_dest.strides[2]) )) += 1;
 
-      /* "unbcf_fast.pyx":273
+      /* "hyperspy/io_plugins/unbcf_fast.pyx":273
  *         else:
  *             channel = <int>(((src[6*(i//4)+5] << 8) + src[6*(i//4)+4]) & 4095)
  *         if channel < cutoff:             # <<<<<<<<<<<<<<
- *             dest[channel, x, y] += 1
+ *             dest[y, x, channel] += 1
  * 
  */
     }
   }
 
-  /* "unbcf_fast.pyx":258
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":258
  * @cython.cdivision(True)
  * @cython.boundscheck(False)
  * cdef void unpack12bit(channel_t[:, :, :] dest, int x, int y,             # <<<<<<<<<<<<<<
@@ -5605,7 +5605,7 @@ static void __pyx_fuse_0__pyx_f_10unbcf_fast_unpack12bit(__Pyx_memviewslice __py
   __Pyx_RefNannyFinishContext();
 }
 
-static void __pyx_fuse_1__pyx_f_10unbcf_fast_unpack12bit(__Pyx_memviewslice __pyx_v_dest, int __pyx_v_x, int __pyx_v_y, unsigned char *__pyx_v_src, unsigned short __pyx_v_no_of_pulses, int __pyx_v_cutoff) {
+static void __pyx_fuse_1__pyx_f_8hyperspy_10io_plugins_10unbcf_fast_unpack12bit(__Pyx_memviewslice __pyx_v_dest, int __pyx_v_x, int __pyx_v_y, unsigned char *__pyx_v_src, unsigned short __pyx_v_no_of_pulses, int __pyx_v_cutoff) {
   int __pyx_v_i;
   int __pyx_v_channel;
   __Pyx_RefNannyDeclarations
@@ -5617,7 +5617,7 @@ static void __pyx_fuse_1__pyx_f_10unbcf_fast_unpack12bit(__Pyx_memviewslice __py
   Py_ssize_t __pyx_t_6;
   __Pyx_RefNannySetupContext("__pyx_fuse_1unpack12bit", 0);
 
-  /* "unbcf_fast.pyx":264
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":264
  *     """unpack 12bit packed array into selection of memoryview"""
  *     cdef int i, channel
  *     for i in range(no_of_pulses):             # <<<<<<<<<<<<<<
@@ -5628,7 +5628,7 @@ static void __pyx_fuse_1__pyx_f_10unbcf_fast_unpack12bit(__Pyx_memviewslice __py
   for (__pyx_t_2 = 0; __pyx_t_2 < __pyx_t_1; __pyx_t_2+=1) {
     __pyx_v_i = __pyx_t_2;
 
-    /* "unbcf_fast.pyx":265
+    /* "hyperspy/io_plugins/unbcf_fast.pyx":265
  *     cdef int i, channel
  *     for i in range(no_of_pulses):
  *         if i % 4 == 0:             # <<<<<<<<<<<<<<
@@ -5638,7 +5638,7 @@ static void __pyx_fuse_1__pyx_f_10unbcf_fast_unpack12bit(__Pyx_memviewslice __py
     __pyx_t_3 = (((__pyx_v_i % 4) == 0) != 0);
     if (__pyx_t_3) {
 
-      /* "unbcf_fast.pyx":266
+      /* "hyperspy/io_plugins/unbcf_fast.pyx":266
  *     for i in range(no_of_pulses):
  *         if i % 4 == 0:
  *             channel = <int>((src[6*(i//4)] >> 4)+(src[6*(i//4)+1] << 4))             # <<<<<<<<<<<<<<
@@ -5647,7 +5647,7 @@ static void __pyx_fuse_1__pyx_f_10unbcf_fast_unpack12bit(__Pyx_memviewslice __py
  */
       __pyx_v_channel = ((int)(((__pyx_v_src[(6 * (__pyx_v_i / 4))]) >> 4) + ((__pyx_v_src[((6 * (__pyx_v_i / 4)) + 1)]) << 4)));
 
-      /* "unbcf_fast.pyx":265
+      /* "hyperspy/io_plugins/unbcf_fast.pyx":265
  *     cdef int i, channel
  *     for i in range(no_of_pulses):
  *         if i % 4 == 0:             # <<<<<<<<<<<<<<
@@ -5657,7 +5657,7 @@ static void __pyx_fuse_1__pyx_f_10unbcf_fast_unpack12bit(__Pyx_memviewslice __py
       goto __pyx_L5;
     }
 
-    /* "unbcf_fast.pyx":267
+    /* "hyperspy/io_plugins/unbcf_fast.pyx":267
  *         if i % 4 == 0:
  *             channel = <int>((src[6*(i//4)] >> 4)+(src[6*(i//4)+1] << 4))
  *         elif i % 4 == 1:             # <<<<<<<<<<<<<<
@@ -5667,7 +5667,7 @@ static void __pyx_fuse_1__pyx_f_10unbcf_fast_unpack12bit(__Pyx_memviewslice __py
     __pyx_t_3 = (((__pyx_v_i % 4) == 1) != 0);
     if (__pyx_t_3) {
 
-      /* "unbcf_fast.pyx":268
+      /* "hyperspy/io_plugins/unbcf_fast.pyx":268
  *             channel = <int>((src[6*(i//4)] >> 4)+(src[6*(i//4)+1] << 4))
  *         elif i % 4 == 1:
  *             channel = <int>(((src[6*(i//4)] << 8 ) + (src[6*(i//4)+3])) & 4095)             # <<<<<<<<<<<<<<
@@ -5676,7 +5676,7 @@ static void __pyx_fuse_1__pyx_f_10unbcf_fast_unpack12bit(__Pyx_memviewslice __py
  */
       __pyx_v_channel = ((int)((((__pyx_v_src[(6 * (__pyx_v_i / 4))]) << 8) + (__pyx_v_src[((6 * (__pyx_v_i / 4)) + 3)])) & 0xFFF));
 
-      /* "unbcf_fast.pyx":267
+      /* "hyperspy/io_plugins/unbcf_fast.pyx":267
  *         if i % 4 == 0:
  *             channel = <int>((src[6*(i//4)] >> 4)+(src[6*(i//4)+1] << 4))
  *         elif i % 4 == 1:             # <<<<<<<<<<<<<<
@@ -5686,7 +5686,7 @@ static void __pyx_fuse_1__pyx_f_10unbcf_fast_unpack12bit(__Pyx_memviewslice __py
       goto __pyx_L5;
     }
 
-    /* "unbcf_fast.pyx":269
+    /* "hyperspy/io_plugins/unbcf_fast.pyx":269
  *         elif i % 4 == 1:
  *             channel = <int>(((src[6*(i//4)] << 8 ) + (src[6*(i//4)+3])) & 4095)
  *         elif i % 4 == 2:             # <<<<<<<<<<<<<<
@@ -5696,7 +5696,7 @@ static void __pyx_fuse_1__pyx_f_10unbcf_fast_unpack12bit(__Pyx_memviewslice __py
     __pyx_t_3 = (((__pyx_v_i % 4) == 2) != 0);
     if (__pyx_t_3) {
 
-      /* "unbcf_fast.pyx":270
+      /* "hyperspy/io_plugins/unbcf_fast.pyx":270
  *             channel = <int>(((src[6*(i//4)] << 8 ) + (src[6*(i//4)+3])) & 4095)
  *         elif i % 4 == 2:
  *             channel = <int>((src[6*(i//4)+2] << 4) + (src[6*(i//4)+5] >> 4))             # <<<<<<<<<<<<<<
@@ -5705,7 +5705,7 @@ static void __pyx_fuse_1__pyx_f_10unbcf_fast_unpack12bit(__Pyx_memviewslice __py
  */
       __pyx_v_channel = ((int)(((__pyx_v_src[((6 * (__pyx_v_i / 4)) + 2)]) << 4) + ((__pyx_v_src[((6 * (__pyx_v_i / 4)) + 5)]) >> 4)));
 
-      /* "unbcf_fast.pyx":269
+      /* "hyperspy/io_plugins/unbcf_fast.pyx":269
  *         elif i % 4 == 1:
  *             channel = <int>(((src[6*(i//4)] << 8 ) + (src[6*(i//4)+3])) & 4095)
  *         elif i % 4 == 2:             # <<<<<<<<<<<<<<
@@ -5715,54 +5715,54 @@ static void __pyx_fuse_1__pyx_f_10unbcf_fast_unpack12bit(__Pyx_memviewslice __py
       goto __pyx_L5;
     }
 
-    /* "unbcf_fast.pyx":272
+    /* "hyperspy/io_plugins/unbcf_fast.pyx":272
  *             channel = <int>((src[6*(i//4)+2] << 4) + (src[6*(i//4)+5] >> 4))
  *         else:
  *             channel = <int>(((src[6*(i//4)+5] << 8) + src[6*(i//4)+4]) & 4095)             # <<<<<<<<<<<<<<
  *         if channel < cutoff:
- *             dest[channel, x, y] += 1
+ *             dest[y, x, channel] += 1
  */
     /*else*/ {
       __pyx_v_channel = ((int)((((__pyx_v_src[((6 * (__pyx_v_i / 4)) + 5)]) << 8) + (__pyx_v_src[((6 * (__pyx_v_i / 4)) + 4)])) & 0xFFF));
     }
     __pyx_L5:;
 
-    /* "unbcf_fast.pyx":273
+    /* "hyperspy/io_plugins/unbcf_fast.pyx":273
  *         else:
  *             channel = <int>(((src[6*(i//4)+5] << 8) + src[6*(i//4)+4]) & 4095)
  *         if channel < cutoff:             # <<<<<<<<<<<<<<
- *             dest[channel, x, y] += 1
+ *             dest[y, x, channel] += 1
  * 
  */
     __pyx_t_3 = ((__pyx_v_channel < __pyx_v_cutoff) != 0);
     if (__pyx_t_3) {
 
-      /* "unbcf_fast.pyx":274
+      /* "hyperspy/io_plugins/unbcf_fast.pyx":274
  *             channel = <int>(((src[6*(i//4)+5] << 8) + src[6*(i//4)+4]) & 4095)
  *         if channel < cutoff:
- *             dest[channel, x, y] += 1             # <<<<<<<<<<<<<<
+ *             dest[y, x, channel] += 1             # <<<<<<<<<<<<<<
  * 
  * #the main function:
  */
-      __pyx_t_4 = __pyx_v_channel;
+      __pyx_t_4 = __pyx_v_y;
       __pyx_t_5 = __pyx_v_x;
-      __pyx_t_6 = __pyx_v_y;
+      __pyx_t_6 = __pyx_v_channel;
       if (__pyx_t_4 < 0) __pyx_t_4 += __pyx_v_dest.shape[0];
       if (__pyx_t_5 < 0) __pyx_t_5 += __pyx_v_dest.shape[1];
       if (__pyx_t_6 < 0) __pyx_t_6 += __pyx_v_dest.shape[2];
       *((uint16_t *) ( /* dim=2 */ (( /* dim=1 */ (( /* dim=0 */ (__pyx_v_dest.data + __pyx_t_4 * __pyx_v_dest.strides[0]) ) + __pyx_t_5 * __pyx_v_dest.strides[1]) ) + __pyx_t_6 * __pyx_v_dest.strides[2]) )) += 1;
 
-      /* "unbcf_fast.pyx":273
+      /* "hyperspy/io_plugins/unbcf_fast.pyx":273
  *         else:
  *             channel = <int>(((src[6*(i//4)+5] << 8) + src[6*(i//4)+4]) & 4095)
  *         if channel < cutoff:             # <<<<<<<<<<<<<<
- *             dest[channel, x, y] += 1
+ *             dest[y, x, channel] += 1
  * 
  */
     }
   }
 
-  /* "unbcf_fast.pyx":258
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":258
  * @cython.cdivision(True)
  * @cython.boundscheck(False)
  * cdef void unpack12bit(channel_t[:, :, :] dest, int x, int y,             # <<<<<<<<<<<<<<
@@ -5774,7 +5774,7 @@ static void __pyx_fuse_1__pyx_f_10unbcf_fast_unpack12bit(__Pyx_memviewslice __py
   __Pyx_RefNannyFinishContext();
 }
 
-static void __pyx_fuse_2__pyx_f_10unbcf_fast_unpack12bit(__Pyx_memviewslice __pyx_v_dest, int __pyx_v_x, int __pyx_v_y, unsigned char *__pyx_v_src, unsigned short __pyx_v_no_of_pulses, int __pyx_v_cutoff) {
+static void __pyx_fuse_2__pyx_f_8hyperspy_10io_plugins_10unbcf_fast_unpack12bit(__Pyx_memviewslice __pyx_v_dest, int __pyx_v_x, int __pyx_v_y, unsigned char *__pyx_v_src, unsigned short __pyx_v_no_of_pulses, int __pyx_v_cutoff) {
   int __pyx_v_i;
   int __pyx_v_channel;
   __Pyx_RefNannyDeclarations
@@ -5786,7 +5786,7 @@ static void __pyx_fuse_2__pyx_f_10unbcf_fast_unpack12bit(__Pyx_memviewslice __py
   Py_ssize_t __pyx_t_6;
   __Pyx_RefNannySetupContext("__pyx_fuse_2unpack12bit", 0);
 
-  /* "unbcf_fast.pyx":264
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":264
  *     """unpack 12bit packed array into selection of memoryview"""
  *     cdef int i, channel
  *     for i in range(no_of_pulses):             # <<<<<<<<<<<<<<
@@ -5797,7 +5797,7 @@ static void __pyx_fuse_2__pyx_f_10unbcf_fast_unpack12bit(__Pyx_memviewslice __py
   for (__pyx_t_2 = 0; __pyx_t_2 < __pyx_t_1; __pyx_t_2+=1) {
     __pyx_v_i = __pyx_t_2;
 
-    /* "unbcf_fast.pyx":265
+    /* "hyperspy/io_plugins/unbcf_fast.pyx":265
  *     cdef int i, channel
  *     for i in range(no_of_pulses):
  *         if i % 4 == 0:             # <<<<<<<<<<<<<<
@@ -5807,7 +5807,7 @@ static void __pyx_fuse_2__pyx_f_10unbcf_fast_unpack12bit(__Pyx_memviewslice __py
     __pyx_t_3 = (((__pyx_v_i % 4) == 0) != 0);
     if (__pyx_t_3) {
 
-      /* "unbcf_fast.pyx":266
+      /* "hyperspy/io_plugins/unbcf_fast.pyx":266
  *     for i in range(no_of_pulses):
  *         if i % 4 == 0:
  *             channel = <int>((src[6*(i//4)] >> 4)+(src[6*(i//4)+1] << 4))             # <<<<<<<<<<<<<<
@@ -5816,7 +5816,7 @@ static void __pyx_fuse_2__pyx_f_10unbcf_fast_unpack12bit(__Pyx_memviewslice __py
  */
       __pyx_v_channel = ((int)(((__pyx_v_src[(6 * (__pyx_v_i / 4))]) >> 4) + ((__pyx_v_src[((6 * (__pyx_v_i / 4)) + 1)]) << 4)));
 
-      /* "unbcf_fast.pyx":265
+      /* "hyperspy/io_plugins/unbcf_fast.pyx":265
  *     cdef int i, channel
  *     for i in range(no_of_pulses):
  *         if i % 4 == 0:             # <<<<<<<<<<<<<<
@@ -5826,7 +5826,7 @@ static void __pyx_fuse_2__pyx_f_10unbcf_fast_unpack12bit(__Pyx_memviewslice __py
       goto __pyx_L5;
     }
 
-    /* "unbcf_fast.pyx":267
+    /* "hyperspy/io_plugins/unbcf_fast.pyx":267
  *         if i % 4 == 0:
  *             channel = <int>((src[6*(i//4)] >> 4)+(src[6*(i//4)+1] << 4))
  *         elif i % 4 == 1:             # <<<<<<<<<<<<<<
@@ -5836,7 +5836,7 @@ static void __pyx_fuse_2__pyx_f_10unbcf_fast_unpack12bit(__Pyx_memviewslice __py
     __pyx_t_3 = (((__pyx_v_i % 4) == 1) != 0);
     if (__pyx_t_3) {
 
-      /* "unbcf_fast.pyx":268
+      /* "hyperspy/io_plugins/unbcf_fast.pyx":268
  *             channel = <int>((src[6*(i//4)] >> 4)+(src[6*(i//4)+1] << 4))
  *         elif i % 4 == 1:
  *             channel = <int>(((src[6*(i//4)] << 8 ) + (src[6*(i//4)+3])) & 4095)             # <<<<<<<<<<<<<<
@@ -5845,7 +5845,7 @@ static void __pyx_fuse_2__pyx_f_10unbcf_fast_unpack12bit(__Pyx_memviewslice __py
  */
       __pyx_v_channel = ((int)((((__pyx_v_src[(6 * (__pyx_v_i / 4))]) << 8) + (__pyx_v_src[((6 * (__pyx_v_i / 4)) + 3)])) & 0xFFF));
 
-      /* "unbcf_fast.pyx":267
+      /* "hyperspy/io_plugins/unbcf_fast.pyx":267
  *         if i % 4 == 0:
  *             channel = <int>((src[6*(i//4)] >> 4)+(src[6*(i//4)+1] << 4))
  *         elif i % 4 == 1:             # <<<<<<<<<<<<<<
@@ -5855,7 +5855,7 @@ static void __pyx_fuse_2__pyx_f_10unbcf_fast_unpack12bit(__Pyx_memviewslice __py
       goto __pyx_L5;
     }
 
-    /* "unbcf_fast.pyx":269
+    /* "hyperspy/io_plugins/unbcf_fast.pyx":269
  *         elif i % 4 == 1:
  *             channel = <int>(((src[6*(i//4)] << 8 ) + (src[6*(i//4)+3])) & 4095)
  *         elif i % 4 == 2:             # <<<<<<<<<<<<<<
@@ -5865,7 +5865,7 @@ static void __pyx_fuse_2__pyx_f_10unbcf_fast_unpack12bit(__Pyx_memviewslice __py
     __pyx_t_3 = (((__pyx_v_i % 4) == 2) != 0);
     if (__pyx_t_3) {
 
-      /* "unbcf_fast.pyx":270
+      /* "hyperspy/io_plugins/unbcf_fast.pyx":270
  *             channel = <int>(((src[6*(i//4)] << 8 ) + (src[6*(i//4)+3])) & 4095)
  *         elif i % 4 == 2:
  *             channel = <int>((src[6*(i//4)+2] << 4) + (src[6*(i//4)+5] >> 4))             # <<<<<<<<<<<<<<
@@ -5874,7 +5874,7 @@ static void __pyx_fuse_2__pyx_f_10unbcf_fast_unpack12bit(__Pyx_memviewslice __py
  */
       __pyx_v_channel = ((int)(((__pyx_v_src[((6 * (__pyx_v_i / 4)) + 2)]) << 4) + ((__pyx_v_src[((6 * (__pyx_v_i / 4)) + 5)]) >> 4)));
 
-      /* "unbcf_fast.pyx":269
+      /* "hyperspy/io_plugins/unbcf_fast.pyx":269
  *         elif i % 4 == 1:
  *             channel = <int>(((src[6*(i//4)] << 8 ) + (src[6*(i//4)+3])) & 4095)
  *         elif i % 4 == 2:             # <<<<<<<<<<<<<<
@@ -5884,54 +5884,54 @@ static void __pyx_fuse_2__pyx_f_10unbcf_fast_unpack12bit(__Pyx_memviewslice __py
       goto __pyx_L5;
     }
 
-    /* "unbcf_fast.pyx":272
+    /* "hyperspy/io_plugins/unbcf_fast.pyx":272
  *             channel = <int>((src[6*(i//4)+2] << 4) + (src[6*(i//4)+5] >> 4))
  *         else:
  *             channel = <int>(((src[6*(i//4)+5] << 8) + src[6*(i//4)+4]) & 4095)             # <<<<<<<<<<<<<<
  *         if channel < cutoff:
- *             dest[channel, x, y] += 1
+ *             dest[y, x, channel] += 1
  */
     /*else*/ {
       __pyx_v_channel = ((int)((((__pyx_v_src[((6 * (__pyx_v_i / 4)) + 5)]) << 8) + (__pyx_v_src[((6 * (__pyx_v_i / 4)) + 4)])) & 0xFFF));
     }
     __pyx_L5:;
 
-    /* "unbcf_fast.pyx":273
+    /* "hyperspy/io_plugins/unbcf_fast.pyx":273
  *         else:
  *             channel = <int>(((src[6*(i//4)+5] << 8) + src[6*(i//4)+4]) & 4095)
  *         if channel < cutoff:             # <<<<<<<<<<<<<<
- *             dest[channel, x, y] += 1
+ *             dest[y, x, channel] += 1
  * 
  */
     __pyx_t_3 = ((__pyx_v_channel < __pyx_v_cutoff) != 0);
     if (__pyx_t_3) {
 
-      /* "unbcf_fast.pyx":274
+      /* "hyperspy/io_plugins/unbcf_fast.pyx":274
  *             channel = <int>(((src[6*(i//4)+5] << 8) + src[6*(i//4)+4]) & 4095)
  *         if channel < cutoff:
- *             dest[channel, x, y] += 1             # <<<<<<<<<<<<<<
+ *             dest[y, x, channel] += 1             # <<<<<<<<<<<<<<
  * 
  * #the main function:
  */
-      __pyx_t_4 = __pyx_v_channel;
+      __pyx_t_4 = __pyx_v_y;
       __pyx_t_5 = __pyx_v_x;
-      __pyx_t_6 = __pyx_v_y;
+      __pyx_t_6 = __pyx_v_channel;
       if (__pyx_t_4 < 0) __pyx_t_4 += __pyx_v_dest.shape[0];
       if (__pyx_t_5 < 0) __pyx_t_5 += __pyx_v_dest.shape[1];
       if (__pyx_t_6 < 0) __pyx_t_6 += __pyx_v_dest.shape[2];
       *((uint32_t *) ( /* dim=2 */ (( /* dim=1 */ (( /* dim=0 */ (__pyx_v_dest.data + __pyx_t_4 * __pyx_v_dest.strides[0]) ) + __pyx_t_5 * __pyx_v_dest.strides[1]) ) + __pyx_t_6 * __pyx_v_dest.strides[2]) )) += 1;
 
-      /* "unbcf_fast.pyx":273
+      /* "hyperspy/io_plugins/unbcf_fast.pyx":273
  *         else:
  *             channel = <int>(((src[6*(i//4)+5] << 8) + src[6*(i//4)+4]) & 4095)
  *         if channel < cutoff:             # <<<<<<<<<<<<<<
- *             dest[channel, x, y] += 1
+ *             dest[y, x, channel] += 1
  * 
  */
     }
   }
 
-  /* "unbcf_fast.pyx":258
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":258
  * @cython.cdivision(True)
  * @cython.boundscheck(False)
  * cdef void unpack12bit(channel_t[:, :, :] dest, int x, int y,             # <<<<<<<<<<<<<<
@@ -5943,7 +5943,7 @@ static void __pyx_fuse_2__pyx_f_10unbcf_fast_unpack12bit(__Pyx_memviewslice __py
   __Pyx_RefNannyFinishContext();
 }
 
-/* "unbcf_fast.pyx":278
+/* "hyperspy/io_plugins/unbcf_fast.pyx":278
  * #the main function:
  * 
  * def parse_to_numpy(bcf, downsample=1, cutoff=None):             # <<<<<<<<<<<<<<
@@ -5952,9 +5952,9 @@ static void __pyx_fuse_2__pyx_f_10unbcf_fast_unpack12bit(__Pyx_memviewslice __py
  */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_10unbcf_fast_1parse_to_numpy(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static PyMethodDef __pyx_mdef_10unbcf_fast_1parse_to_numpy = {"parse_to_numpy", (PyCFunction)__pyx_pw_10unbcf_fast_1parse_to_numpy, METH_VARARGS|METH_KEYWORDS, 0};
-static PyObject *__pyx_pw_10unbcf_fast_1parse_to_numpy(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+static PyObject *__pyx_pw_8hyperspy_10io_plugins_10unbcf_fast_1parse_to_numpy(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static PyMethodDef __pyx_mdef_8hyperspy_10io_plugins_10unbcf_fast_1parse_to_numpy = {"parse_to_numpy", (PyCFunction)__pyx_pw_8hyperspy_10io_plugins_10unbcf_fast_1parse_to_numpy, METH_VARARGS|METH_KEYWORDS, 0};
+static PyObject *__pyx_pw_8hyperspy_10io_plugins_10unbcf_fast_1parse_to_numpy(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
   PyObject *__pyx_v_bcf = 0;
   PyObject *__pyx_v_downsample = 0;
   PyObject *__pyx_v_cutoff = 0;
@@ -6015,25 +6015,25 @@ static PyObject *__pyx_pw_10unbcf_fast_1parse_to_numpy(PyObject *__pyx_self, PyO
   __pyx_L5_argtuple_error:;
   __Pyx_RaiseArgtupleInvalid("parse_to_numpy", 0, 1, 3, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 278; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
   __pyx_L3_error:;
-  __Pyx_AddTraceback("unbcf_fast.parse_to_numpy", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("hyperspy.io_plugins.unbcf_fast.parse_to_numpy", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  __pyx_r = __pyx_pf_10unbcf_fast_parse_to_numpy(__pyx_self, __pyx_v_bcf, __pyx_v_downsample, __pyx_v_cutoff);
+  __pyx_r = __pyx_pf_8hyperspy_10io_plugins_10unbcf_fast_parse_to_numpy(__pyx_self, __pyx_v_bcf, __pyx_v_downsample, __pyx_v_cutoff);
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_10unbcf_fast_parse_to_numpy(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_bcf, PyObject *__pyx_v_downsample, PyObject *__pyx_v_cutoff) {
+static PyObject *__pyx_pf_8hyperspy_10io_plugins_10unbcf_fast_parse_to_numpy(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_bcf, PyObject *__pyx_v_downsample, PyObject *__pyx_v_cutoff) {
   PyObject *__pyx_v_blocks = NULL;
   PyObject *__pyx_v_block_size = NULL;
   CYTHON_UNUSED PyObject *__pyx_v_total_blocks = NULL;
   PyObject *__pyx_v_map_depth = NULL;
   PyObject *__pyx_v_dtype = NULL;
   PyObject *__pyx_v_hypermap = NULL;
-  struct __pyx_obj_10unbcf_fast_DataStream *__pyx_v_data_stream = 0;
+  struct __pyx_obj_8hyperspy_10io_plugins_10unbcf_fast_DataStream *__pyx_v_data_stream = 0;
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -6053,7 +6053,7 @@ static PyObject *__pyx_pf_10unbcf_fast_parse_to_numpy(CYTHON_UNUSED PyObject *__
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("parse_to_numpy", 0);
 
-  /* "unbcf_fast.pyx":279
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":279
  * 
  * def parse_to_numpy(bcf, downsample=1, cutoff=None):
  *     blocks, block_size, total_blocks = bcf.get_iter_and_properties()             # <<<<<<<<<<<<<<
@@ -6144,7 +6144,7 @@ static PyObject *__pyx_pf_10unbcf_fast_parse_to_numpy(CYTHON_UNUSED PyObject *__
   __pyx_v_total_blocks = __pyx_t_4;
   __pyx_t_4 = 0;
 
-  /* "unbcf_fast.pyx":280
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":280
  * def parse_to_numpy(bcf, downsample=1, cutoff=None):
  *     blocks, block_size, total_blocks = bcf.get_iter_and_properties()
  *     map_depth = bcf.sfs.header.estimate_map_channels()             # <<<<<<<<<<<<<<
@@ -6180,7 +6180,7 @@ static PyObject *__pyx_pf_10unbcf_fast_parse_to_numpy(CYTHON_UNUSED PyObject *__
   __pyx_v_map_depth = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "unbcf_fast.pyx":281
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":281
  *     blocks, block_size, total_blocks = bcf.get_iter_and_properties()
  *     map_depth = bcf.sfs.header.estimate_map_channels()
  *     if type(cutoff) == int:             # <<<<<<<<<<<<<<
@@ -6192,17 +6192,17 @@ static PyObject *__pyx_pf_10unbcf_fast_parse_to_numpy(CYTHON_UNUSED PyObject *__
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   if (__pyx_t_7) {
 
-    /* "unbcf_fast.pyx":282
+    /* "hyperspy/io_plugins/unbcf_fast.pyx":282
  *     map_depth = bcf.sfs.header.estimate_map_channels()
  *     if type(cutoff) == int:
  *         map_depth = cutoff             # <<<<<<<<<<<<<<
  *     dtype = bcf.sfs.header.estimate_map_depth(downsample=downsample)
- *     hypermap = np.zeros((map_depth,
+ *     hypermap = np.zeros((bcf.sfs.header.image.height // downsample,
  */
     __Pyx_INCREF(__pyx_v_cutoff);
     __Pyx_DECREF_SET(__pyx_v_map_depth, __pyx_v_cutoff);
 
-    /* "unbcf_fast.pyx":281
+    /* "hyperspy/io_plugins/unbcf_fast.pyx":281
  *     blocks, block_size, total_blocks = bcf.get_iter_and_properties()
  *     map_depth = bcf.sfs.header.estimate_map_channels()
  *     if type(cutoff) == int:             # <<<<<<<<<<<<<<
@@ -6211,11 +6211,11 @@ static PyObject *__pyx_pf_10unbcf_fast_parse_to_numpy(CYTHON_UNUSED PyObject *__
  */
   }
 
-  /* "unbcf_fast.pyx":283
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":283
  *     if type(cutoff) == int:
  *         map_depth = cutoff
  *     dtype = bcf.sfs.header.estimate_map_depth(downsample=downsample)             # <<<<<<<<<<<<<<
- *     hypermap = np.zeros((map_depth,
+ *     hypermap = np.zeros((bcf.sfs.header.image.height // downsample,
  *                          bcf.sfs.header.image.width // downsample,
  */
   __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_bcf, __pyx_n_s_sfs); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 283; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
@@ -6236,79 +6236,71 @@ static PyObject *__pyx_pf_10unbcf_fast_parse_to_numpy(CYTHON_UNUSED PyObject *__
   __pyx_v_dtype = __pyx_t_3;
   __pyx_t_3 = 0;
 
-  /* "unbcf_fast.pyx":284
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":284
  *         map_depth = cutoff
  *     dtype = bcf.sfs.header.estimate_map_depth(downsample=downsample)
- *     hypermap = np.zeros((map_depth,             # <<<<<<<<<<<<<<
+ *     hypermap = np.zeros((bcf.sfs.header.image.height // downsample,             # <<<<<<<<<<<<<<
  *                          bcf.sfs.header.image.width // downsample,
- *                          bcf.sfs.header.image.height // downsample),
+ *                          map_depth),
  */
   __pyx_t_3 = __Pyx_GetModuleGlobalName(__pyx_n_s_np); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 284; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_3);
   __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_zeros); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 284; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_bcf, __pyx_n_s_sfs); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 284; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_3);
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_header); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 284; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_1);
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_image); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 284; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_3);
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_height); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 284; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_1);
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __pyx_t_3 = PyNumber_FloorDivide(__pyx_t_1, __pyx_v_downsample); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 284; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_3);
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "unbcf_fast.pyx":285
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":285
  *     dtype = bcf.sfs.header.estimate_map_depth(downsample=downsample)
- *     hypermap = np.zeros((map_depth,
+ *     hypermap = np.zeros((bcf.sfs.header.image.height // downsample,
  *                          bcf.sfs.header.image.width // downsample,             # <<<<<<<<<<<<<<
- *                          bcf.sfs.header.image.height // downsample),
- *                          dtype=dtype)
+ *                          map_depth),
+ *                         dtype=dtype)
  */
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_bcf, __pyx_n_s_sfs); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 285; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_header); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 285; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_bcf, __pyx_n_s_sfs); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 285; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_image); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 285; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_width); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 285; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __Pyx_GOTREF(__pyx_t_1);
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_3 = PyNumber_FloorDivide(__pyx_t_1, __pyx_v_downsample); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 285; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-
-  /* "unbcf_fast.pyx":286
- *     hypermap = np.zeros((map_depth,
- *                          bcf.sfs.header.image.width // downsample,
- *                          bcf.sfs.header.image.height // downsample),             # <<<<<<<<<<<<<<
- *                          dtype=dtype)
- *     cdef DataStream data_stream = DataStream(blocks, block_size)
- */
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_bcf, __pyx_n_s_sfs); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 286; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_header); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 286; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_header); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 285; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_image); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 286; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_image); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 285; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_height); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 286; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_width); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 285; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = PyNumber_FloorDivide(__pyx_t_2, __pyx_v_downsample); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 286; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = PyNumber_FloorDivide(__pyx_t_2, __pyx_v_downsample); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 285; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "unbcf_fast.pyx":284
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":284
  *         map_depth = cutoff
  *     dtype = bcf.sfs.header.estimate_map_depth(downsample=downsample)
- *     hypermap = np.zeros((map_depth,             # <<<<<<<<<<<<<<
+ *     hypermap = np.zeros((bcf.sfs.header.image.height // downsample,             # <<<<<<<<<<<<<<
  *                          bcf.sfs.header.image.width // downsample,
- *                          bcf.sfs.header.image.height // downsample),
+ *                          map_depth),
  */
   __pyx_t_2 = PyTuple_New(3); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 284; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_2);
+  __Pyx_GIVEREF(__pyx_t_3);
+  PyTuple_SET_ITEM(__pyx_t_2, 0, __pyx_t_3);
+  __Pyx_GIVEREF(__pyx_t_1);
+  PyTuple_SET_ITEM(__pyx_t_2, 1, __pyx_t_1);
   __Pyx_INCREF(__pyx_v_map_depth);
   __Pyx_GIVEREF(__pyx_v_map_depth);
-  PyTuple_SET_ITEM(__pyx_t_2, 0, __pyx_v_map_depth);
-  __Pyx_GIVEREF(__pyx_t_3);
-  PyTuple_SET_ITEM(__pyx_t_2, 1, __pyx_t_3);
-  __Pyx_GIVEREF(__pyx_t_1);
-  PyTuple_SET_ITEM(__pyx_t_2, 2, __pyx_t_1);
+  PyTuple_SET_ITEM(__pyx_t_2, 2, __pyx_v_map_depth);
   __pyx_t_3 = 0;
   __pyx_t_1 = 0;
   __pyx_t_1 = PyTuple_New(1); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 284; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
@@ -6317,10 +6309,10 @@ static PyObject *__pyx_pf_10unbcf_fast_parse_to_numpy(CYTHON_UNUSED PyObject *__
   PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_t_2);
   __pyx_t_2 = 0;
 
-  /* "unbcf_fast.pyx":287
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":287
  *                          bcf.sfs.header.image.width // downsample,
- *                          bcf.sfs.header.image.height // downsample),
- *                          dtype=dtype)             # <<<<<<<<<<<<<<
+ *                          map_depth),
+ *                         dtype=dtype)             # <<<<<<<<<<<<<<
  *     cdef DataStream data_stream = DataStream(blocks, block_size)
  *     if dtype == np.uint8:
  */
@@ -6328,12 +6320,12 @@ static PyObject *__pyx_pf_10unbcf_fast_parse_to_numpy(CYTHON_UNUSED PyObject *__
   __Pyx_GOTREF(__pyx_t_2);
   if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_dtype, __pyx_v_dtype) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 287; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
-  /* "unbcf_fast.pyx":284
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":284
  *         map_depth = cutoff
  *     dtype = bcf.sfs.header.estimate_map_depth(downsample=downsample)
- *     hypermap = np.zeros((map_depth,             # <<<<<<<<<<<<<<
+ *     hypermap = np.zeros((bcf.sfs.header.image.height // downsample,             # <<<<<<<<<<<<<<
  *                          bcf.sfs.header.image.width // downsample,
- *                          bcf.sfs.header.image.height // downsample),
+ *                          map_depth),
  */
   __pyx_t_3 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_t_1, __pyx_t_2); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 284; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_3);
@@ -6343,9 +6335,9 @@ static PyObject *__pyx_pf_10unbcf_fast_parse_to_numpy(CYTHON_UNUSED PyObject *__
   __pyx_v_hypermap = __pyx_t_3;
   __pyx_t_3 = 0;
 
-  /* "unbcf_fast.pyx":288
- *                          bcf.sfs.header.image.height // downsample),
- *                          dtype=dtype)
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":288
+ *                          map_depth),
+ *                         dtype=dtype)
  *     cdef DataStream data_stream = DataStream(blocks, block_size)             # <<<<<<<<<<<<<<
  *     if dtype == np.uint8:
  *         bin_to_numpy[uint8_t](data_stream, hypermap, map_depth, downsample)
@@ -6358,14 +6350,14 @@ static PyObject *__pyx_pf_10unbcf_fast_parse_to_numpy(CYTHON_UNUSED PyObject *__
   __Pyx_INCREF(__pyx_v_block_size);
   __Pyx_GIVEREF(__pyx_v_block_size);
   PyTuple_SET_ITEM(__pyx_t_3, 1, __pyx_v_block_size);
-  __pyx_t_2 = __Pyx_PyObject_Call(((PyObject *)__pyx_ptype_10unbcf_fast_DataStream), __pyx_t_3, NULL); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 288; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_2 = __Pyx_PyObject_Call(((PyObject *)__pyx_ptype_8hyperspy_10io_plugins_10unbcf_fast_DataStream), __pyx_t_3, NULL); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 288; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_v_data_stream = ((struct __pyx_obj_10unbcf_fast_DataStream *)__pyx_t_2);
+  __pyx_v_data_stream = ((struct __pyx_obj_8hyperspy_10io_plugins_10unbcf_fast_DataStream *)__pyx_t_2);
   __pyx_t_2 = 0;
 
-  /* "unbcf_fast.pyx":289
- *                          dtype=dtype)
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":289
+ *                         dtype=dtype)
  *     cdef DataStream data_stream = DataStream(blocks, block_size)
  *     if dtype == np.uint8:             # <<<<<<<<<<<<<<
  *         bin_to_numpy[uint8_t](data_stream, hypermap, map_depth, downsample)
@@ -6382,7 +6374,7 @@ static PyObject *__pyx_pf_10unbcf_fast_parse_to_numpy(CYTHON_UNUSED PyObject *__
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   if (__pyx_t_7) {
 
-    /* "unbcf_fast.pyx":290
+    /* "hyperspy/io_plugins/unbcf_fast.pyx":290
  *     cdef DataStream data_stream = DataStream(blocks, block_size)
  *     if dtype == np.uint8:
  *         bin_to_numpy[uint8_t](data_stream, hypermap, map_depth, downsample)             # <<<<<<<<<<<<<<
@@ -6393,12 +6385,12 @@ static PyObject *__pyx_pf_10unbcf_fast_parse_to_numpy(CYTHON_UNUSED PyObject *__
     if (unlikely(!__pyx_t_8.memview)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 290; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __pyx_t_9 = __Pyx_PyInt_As_int(__pyx_v_map_depth); if (unlikely((__pyx_t_9 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 290; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __pyx_t_10 = __Pyx_PyInt_As_int(__pyx_v_downsample); if (unlikely((__pyx_t_10 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 290; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-    __pyx_t_2 = __pyx_fuse_0__pyx_f_10unbcf_fast_bin_to_numpy(__pyx_v_data_stream, __pyx_t_8, __pyx_t_9, __pyx_t_10); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 290; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_2 = __pyx_fuse_0__pyx_f_8hyperspy_10io_plugins_10unbcf_fast_bin_to_numpy(__pyx_v_data_stream, __pyx_t_8, __pyx_t_9, __pyx_t_10); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 290; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_2);
     __PYX_XDEC_MEMVIEW(&__pyx_t_8, 1);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-    /* "unbcf_fast.pyx":291
+    /* "hyperspy/io_plugins/unbcf_fast.pyx":291
  *     if dtype == np.uint8:
  *         bin_to_numpy[uint8_t](data_stream, hypermap, map_depth, downsample)
  *         return hypermap             # <<<<<<<<<<<<<<
@@ -6410,8 +6402,8 @@ static PyObject *__pyx_pf_10unbcf_fast_parse_to_numpy(CYTHON_UNUSED PyObject *__
     __pyx_r = __pyx_v_hypermap;
     goto __pyx_L0;
 
-    /* "unbcf_fast.pyx":289
- *                          dtype=dtype)
+    /* "hyperspy/io_plugins/unbcf_fast.pyx":289
+ *                         dtype=dtype)
  *     cdef DataStream data_stream = DataStream(blocks, block_size)
  *     if dtype == np.uint8:             # <<<<<<<<<<<<<<
  *         bin_to_numpy[uint8_t](data_stream, hypermap, map_depth, downsample)
@@ -6419,7 +6411,7 @@ static PyObject *__pyx_pf_10unbcf_fast_parse_to_numpy(CYTHON_UNUSED PyObject *__
  */
   }
 
-  /* "unbcf_fast.pyx":292
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":292
  *         bin_to_numpy[uint8_t](data_stream, hypermap, map_depth, downsample)
  *         return hypermap
  *     elif dtype == np.uint16:             # <<<<<<<<<<<<<<
@@ -6437,7 +6429,7 @@ static PyObject *__pyx_pf_10unbcf_fast_parse_to_numpy(CYTHON_UNUSED PyObject *__
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   if (__pyx_t_7) {
 
-    /* "unbcf_fast.pyx":293
+    /* "hyperspy/io_plugins/unbcf_fast.pyx":293
  *         return hypermap
  *     elif dtype == np.uint16:
  *         bin_to_numpy[uint16_t](data_stream, hypermap, map_depth, downsample)             # <<<<<<<<<<<<<<
@@ -6448,12 +6440,12 @@ static PyObject *__pyx_pf_10unbcf_fast_parse_to_numpy(CYTHON_UNUSED PyObject *__
     if (unlikely(!__pyx_t_11.memview)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 293; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __pyx_t_10 = __Pyx_PyInt_As_int(__pyx_v_map_depth); if (unlikely((__pyx_t_10 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 293; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __pyx_t_9 = __Pyx_PyInt_As_int(__pyx_v_downsample); if (unlikely((__pyx_t_9 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 293; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-    __pyx_t_2 = __pyx_fuse_1__pyx_f_10unbcf_fast_bin_to_numpy(__pyx_v_data_stream, __pyx_t_11, __pyx_t_10, __pyx_t_9); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 293; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_2 = __pyx_fuse_1__pyx_f_8hyperspy_10io_plugins_10unbcf_fast_bin_to_numpy(__pyx_v_data_stream, __pyx_t_11, __pyx_t_10, __pyx_t_9); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 293; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_2);
     __PYX_XDEC_MEMVIEW(&__pyx_t_11, 1);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-    /* "unbcf_fast.pyx":294
+    /* "hyperspy/io_plugins/unbcf_fast.pyx":294
  *     elif dtype == np.uint16:
  *         bin_to_numpy[uint16_t](data_stream, hypermap, map_depth, downsample)
  *         return hypermap             # <<<<<<<<<<<<<<
@@ -6465,7 +6457,7 @@ static PyObject *__pyx_pf_10unbcf_fast_parse_to_numpy(CYTHON_UNUSED PyObject *__
     __pyx_r = __pyx_v_hypermap;
     goto __pyx_L0;
 
-    /* "unbcf_fast.pyx":292
+    /* "hyperspy/io_plugins/unbcf_fast.pyx":292
  *         bin_to_numpy[uint8_t](data_stream, hypermap, map_depth, downsample)
  *         return hypermap
  *     elif dtype == np.uint16:             # <<<<<<<<<<<<<<
@@ -6474,7 +6466,7 @@ static PyObject *__pyx_pf_10unbcf_fast_parse_to_numpy(CYTHON_UNUSED PyObject *__
  */
   }
 
-  /* "unbcf_fast.pyx":295
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":295
  *         bin_to_numpy[uint16_t](data_stream, hypermap, map_depth, downsample)
  *         return hypermap
  *     elif dtype == np.uint32:             # <<<<<<<<<<<<<<
@@ -6492,7 +6484,7 @@ static PyObject *__pyx_pf_10unbcf_fast_parse_to_numpy(CYTHON_UNUSED PyObject *__
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   if (__pyx_t_7) {
 
-    /* "unbcf_fast.pyx":296
+    /* "hyperspy/io_plugins/unbcf_fast.pyx":296
  *         return hypermap
  *     elif dtype == np.uint32:
  *         bin_to_numpy[uint32_t](data_stream, hypermap, map_depth, downsample)             # <<<<<<<<<<<<<<
@@ -6503,12 +6495,12 @@ static PyObject *__pyx_pf_10unbcf_fast_parse_to_numpy(CYTHON_UNUSED PyObject *__
     if (unlikely(!__pyx_t_12.memview)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 296; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __pyx_t_9 = __Pyx_PyInt_As_int(__pyx_v_map_depth); if (unlikely((__pyx_t_9 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 296; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __pyx_t_10 = __Pyx_PyInt_As_int(__pyx_v_downsample); if (unlikely((__pyx_t_10 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 296; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-    __pyx_t_2 = __pyx_fuse_2__pyx_f_10unbcf_fast_bin_to_numpy(__pyx_v_data_stream, __pyx_t_12, __pyx_t_9, __pyx_t_10); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 296; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_2 = __pyx_fuse_2__pyx_f_8hyperspy_10io_plugins_10unbcf_fast_bin_to_numpy(__pyx_v_data_stream, __pyx_t_12, __pyx_t_9, __pyx_t_10); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 296; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_2);
     __PYX_XDEC_MEMVIEW(&__pyx_t_12, 1);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-    /* "unbcf_fast.pyx":297
+    /* "hyperspy/io_plugins/unbcf_fast.pyx":297
  *     elif dtype == np.uint32:
  *         bin_to_numpy[uint32_t](data_stream, hypermap, map_depth, downsample)
  *         return hypermap             # <<<<<<<<<<<<<<
@@ -6520,7 +6512,7 @@ static PyObject *__pyx_pf_10unbcf_fast_parse_to_numpy(CYTHON_UNUSED PyObject *__
     __pyx_r = __pyx_v_hypermap;
     goto __pyx_L0;
 
-    /* "unbcf_fast.pyx":295
+    /* "hyperspy/io_plugins/unbcf_fast.pyx":295
  *         bin_to_numpy[uint16_t](data_stream, hypermap, map_depth, downsample)
  *         return hypermap
  *     elif dtype == np.uint32:             # <<<<<<<<<<<<<<
@@ -6529,7 +6521,7 @@ static PyObject *__pyx_pf_10unbcf_fast_parse_to_numpy(CYTHON_UNUSED PyObject *__
  */
   }
 
-  /* "unbcf_fast.pyx":299
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":299
  *         return hypermap
  *     else:
  *         raise NotImplementedError('64bit array not implemented!')             # <<<<<<<<<<<<<<
@@ -6542,7 +6534,7 @@ static PyObject *__pyx_pf_10unbcf_fast_parse_to_numpy(CYTHON_UNUSED PyObject *__
     {__pyx_filename = __pyx_f[0]; __pyx_lineno = 299; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   }
 
-  /* "unbcf_fast.pyx":278
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":278
  * #the main function:
  * 
  * def parse_to_numpy(bcf, downsample=1, cutoff=None):             # <<<<<<<<<<<<<<
@@ -6560,7 +6552,7 @@ static PyObject *__pyx_pf_10unbcf_fast_parse_to_numpy(CYTHON_UNUSED PyObject *__
   __PYX_XDEC_MEMVIEW(&__pyx_t_8, 1);
   __PYX_XDEC_MEMVIEW(&__pyx_t_11, 1);
   __PYX_XDEC_MEMVIEW(&__pyx_t_12, 1);
-  __Pyx_AddTraceback("unbcf_fast.parse_to_numpy", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("hyperspy.io_plugins.unbcf_fast.parse_to_numpy", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XDECREF(__pyx_v_blocks);
@@ -18095,10 +18087,10 @@ static void __pyx_memoryview__slice_assign_scalar(char *__pyx_v_data, Py_ssize_t
 
   /* function exit code */
 }
-static struct __pyx_vtabstruct_10unbcf_fast_DataStream __pyx_vtable_10unbcf_fast_DataStream;
+static struct __pyx_vtabstruct_8hyperspy_10io_plugins_10unbcf_fast_DataStream __pyx_vtable_8hyperspy_10io_plugins_10unbcf_fast_DataStream;
 
-static PyObject *__pyx_tp_new_10unbcf_fast_DataStream(PyTypeObject *t, PyObject *a, PyObject *k) {
-  struct __pyx_obj_10unbcf_fast_DataStream *p;
+static PyObject *__pyx_tp_new_8hyperspy_10io_plugins_10unbcf_fast_DataStream(PyTypeObject *t, PyObject *a, PyObject *k) {
+  struct __pyx_obj_8hyperspy_10io_plugins_10unbcf_fast_DataStream *p;
   PyObject *o;
   if (likely((t->tp_flags & Py_TPFLAGS_IS_ABSTRACT) == 0)) {
     o = (*t->tp_alloc)(t, 0);
@@ -18106,18 +18098,18 @@ static PyObject *__pyx_tp_new_10unbcf_fast_DataStream(PyTypeObject *t, PyObject 
     o = (PyObject *) PyBaseObject_Type.tp_new(t, __pyx_empty_tuple, 0);
   }
   if (unlikely(!o)) return 0;
-  p = ((struct __pyx_obj_10unbcf_fast_DataStream *)o);
-  p->__pyx_vtab = __pyx_vtabptr_10unbcf_fast_DataStream;
+  p = ((struct __pyx_obj_8hyperspy_10io_plugins_10unbcf_fast_DataStream *)o);
+  p->__pyx_vtab = __pyx_vtabptr_8hyperspy_10io_plugins_10unbcf_fast_DataStream;
   p->raw_bytes = ((PyObject*)Py_None); Py_INCREF(Py_None);
   p->blocks = Py_None; Py_INCREF(Py_None);
-  if (unlikely(__pyx_pw_10unbcf_fast_10DataStream_1__cinit__(o, a, k) < 0)) {
+  if (unlikely(__pyx_pw_8hyperspy_10io_plugins_10unbcf_fast_10DataStream_1__cinit__(o, a, k) < 0)) {
     Py_DECREF(o); o = 0;
   }
   return o;
 }
 
-static void __pyx_tp_dealloc_10unbcf_fast_DataStream(PyObject *o) {
-  struct __pyx_obj_10unbcf_fast_DataStream *p = (struct __pyx_obj_10unbcf_fast_DataStream *)o;
+static void __pyx_tp_dealloc_8hyperspy_10io_plugins_10unbcf_fast_DataStream(PyObject *o) {
+  struct __pyx_obj_8hyperspy_10io_plugins_10unbcf_fast_DataStream *p = (struct __pyx_obj_8hyperspy_10io_plugins_10unbcf_fast_DataStream *)o;
   #if PY_VERSION_HEX >= 0x030400a1
   if (unlikely(Py_TYPE(o)->tp_finalize) && !_PyGC_FINALIZED(o)) {
     if (PyObject_CallFinalizerFromDealloc(o)) return;
@@ -18129,52 +18121,52 @@ static void __pyx_tp_dealloc_10unbcf_fast_DataStream(PyObject *o) {
   (*Py_TYPE(o)->tp_free)(o);
 }
 
-static int __pyx_tp_traverse_10unbcf_fast_DataStream(PyObject *o, visitproc v, void *a) {
+static int __pyx_tp_traverse_8hyperspy_10io_plugins_10unbcf_fast_DataStream(PyObject *o, visitproc v, void *a) {
   int e;
-  struct __pyx_obj_10unbcf_fast_DataStream *p = (struct __pyx_obj_10unbcf_fast_DataStream *)o;
+  struct __pyx_obj_8hyperspy_10io_plugins_10unbcf_fast_DataStream *p = (struct __pyx_obj_8hyperspy_10io_plugins_10unbcf_fast_DataStream *)o;
   if (p->blocks) {
     e = (*v)(p->blocks, a); if (e) return e;
   }
   return 0;
 }
 
-static int __pyx_tp_clear_10unbcf_fast_DataStream(PyObject *o) {
+static int __pyx_tp_clear_8hyperspy_10io_plugins_10unbcf_fast_DataStream(PyObject *o) {
   PyObject* tmp;
-  struct __pyx_obj_10unbcf_fast_DataStream *p = (struct __pyx_obj_10unbcf_fast_DataStream *)o;
+  struct __pyx_obj_8hyperspy_10io_plugins_10unbcf_fast_DataStream *p = (struct __pyx_obj_8hyperspy_10io_plugins_10unbcf_fast_DataStream *)o;
   tmp = ((PyObject*)p->blocks);
   p->blocks = Py_None; Py_INCREF(Py_None);
   Py_XDECREF(tmp);
   return 0;
 }
 
-static PyObject *__pyx_getprop_10unbcf_fast_10DataStream_blocks(PyObject *o, CYTHON_UNUSED void *x) {
-  return __pyx_pw_10unbcf_fast_10DataStream_6blocks_1__get__(o);
+static PyObject *__pyx_getprop_8hyperspy_10io_plugins_10unbcf_fast_10DataStream_blocks(PyObject *o, CYTHON_UNUSED void *x) {
+  return __pyx_pw_8hyperspy_10io_plugins_10unbcf_fast_10DataStream_6blocks_1__get__(o);
 }
 
-static int __pyx_setprop_10unbcf_fast_10DataStream_blocks(PyObject *o, PyObject *v, CYTHON_UNUSED void *x) {
+static int __pyx_setprop_8hyperspy_10io_plugins_10unbcf_fast_10DataStream_blocks(PyObject *o, PyObject *v, CYTHON_UNUSED void *x) {
   if (v) {
-    return __pyx_pw_10unbcf_fast_10DataStream_6blocks_3__set__(o, v);
+    return __pyx_pw_8hyperspy_10io_plugins_10unbcf_fast_10DataStream_6blocks_3__set__(o, v);
   }
   else {
-    return __pyx_pw_10unbcf_fast_10DataStream_6blocks_5__del__(o);
+    return __pyx_pw_8hyperspy_10io_plugins_10unbcf_fast_10DataStream_6blocks_5__del__(o);
   }
 }
 
-static PyMethodDef __pyx_methods_10unbcf_fast_DataStream[] = {
+static PyMethodDef __pyx_methods_8hyperspy_10io_plugins_10unbcf_fast_DataStream[] = {
   {0, 0, 0, 0}
 };
 
-static struct PyGetSetDef __pyx_getsets_10unbcf_fast_DataStream[] = {
-  {(char *)"blocks", __pyx_getprop_10unbcf_fast_10DataStream_blocks, __pyx_setprop_10unbcf_fast_10DataStream_blocks, 0, 0},
+static struct PyGetSetDef __pyx_getsets_8hyperspy_10io_plugins_10unbcf_fast_DataStream[] = {
+  {(char *)"blocks", __pyx_getprop_8hyperspy_10io_plugins_10unbcf_fast_10DataStream_blocks, __pyx_setprop_8hyperspy_10io_plugins_10unbcf_fast_10DataStream_blocks, 0, 0},
   {0, 0, 0, 0, 0}
 };
 
-static PyTypeObject __pyx_type_10unbcf_fast_DataStream = {
+static PyTypeObject __pyx_type_8hyperspy_10io_plugins_10unbcf_fast_DataStream = {
   PyVarObject_HEAD_INIT(0, 0)
-  "unbcf_fast.DataStream", /*tp_name*/
-  sizeof(struct __pyx_obj_10unbcf_fast_DataStream), /*tp_basicsize*/
+  "hyperspy.io_plugins.unbcf_fast.DataStream", /*tp_name*/
+  sizeof(struct __pyx_obj_8hyperspy_10io_plugins_10unbcf_fast_DataStream), /*tp_basicsize*/
   0, /*tp_itemsize*/
-  __pyx_tp_dealloc_10unbcf_fast_DataStream, /*tp_dealloc*/
+  __pyx_tp_dealloc_8hyperspy_10io_plugins_10unbcf_fast_DataStream, /*tp_dealloc*/
   0, /*tp_print*/
   0, /*tp_getattr*/
   0, /*tp_setattr*/
@@ -18196,23 +18188,23 @@ static PyTypeObject __pyx_type_10unbcf_fast_DataStream = {
   0, /*tp_as_buffer*/
   Py_TPFLAGS_DEFAULT|Py_TPFLAGS_HAVE_VERSION_TAG|Py_TPFLAGS_CHECKTYPES|Py_TPFLAGS_HAVE_NEWBUFFER|Py_TPFLAGS_BASETYPE|Py_TPFLAGS_HAVE_GC, /*tp_flags*/
   0, /*tp_doc*/
-  __pyx_tp_traverse_10unbcf_fast_DataStream, /*tp_traverse*/
-  __pyx_tp_clear_10unbcf_fast_DataStream, /*tp_clear*/
+  __pyx_tp_traverse_8hyperspy_10io_plugins_10unbcf_fast_DataStream, /*tp_traverse*/
+  __pyx_tp_clear_8hyperspy_10io_plugins_10unbcf_fast_DataStream, /*tp_clear*/
   0, /*tp_richcompare*/
   0, /*tp_weaklistoffset*/
   0, /*tp_iter*/
   0, /*tp_iternext*/
-  __pyx_methods_10unbcf_fast_DataStream, /*tp_methods*/
+  __pyx_methods_8hyperspy_10io_plugins_10unbcf_fast_DataStream, /*tp_methods*/
   0, /*tp_members*/
-  __pyx_getsets_10unbcf_fast_DataStream, /*tp_getset*/
+  __pyx_getsets_8hyperspy_10io_plugins_10unbcf_fast_DataStream, /*tp_getset*/
   0, /*tp_base*/
   0, /*tp_dict*/
   0, /*tp_descr_get*/
   0, /*tp_descr_set*/
   0, /*tp_dictoffset*/
-  __pyx_pw_10unbcf_fast_10DataStream_3__init__, /*tp_init*/
+  __pyx_pw_8hyperspy_10io_plugins_10unbcf_fast_10DataStream_3__init__, /*tp_init*/
   0, /*tp_alloc*/
-  __pyx_tp_new_10unbcf_fast_DataStream, /*tp_new*/
+  __pyx_tp_new_8hyperspy_10io_plugins_10unbcf_fast_DataStream, /*tp_new*/
   0, /*tp_free*/
   0, /*tp_is_gc*/
   0, /*tp_bases*/
@@ -18344,7 +18336,7 @@ static PyBufferProcs __pyx_tp_as_buffer_array = {
 
 static PyTypeObject __pyx_type___pyx_array = {
   PyVarObject_HEAD_INIT(0, 0)
-  "unbcf_fast.array", /*tp_name*/
+  "hyperspy.io_plugins.unbcf_fast.array", /*tp_name*/
   sizeof(struct __pyx_array_obj), /*tp_basicsize*/
   0, /*tp_itemsize*/
   __pyx_tp_dealloc_array, /*tp_dealloc*/
@@ -18450,7 +18442,7 @@ static PyMethodDef __pyx_methods_Enum[] = {
 
 static PyTypeObject __pyx_type___pyx_MemviewEnum = {
   PyVarObject_HEAD_INIT(0, 0)
-  "unbcf_fast.Enum", /*tp_name*/
+  "hyperspy.io_plugins.unbcf_fast.Enum", /*tp_name*/
   sizeof(struct __pyx_MemviewEnum_obj), /*tp_basicsize*/
   0, /*tp_itemsize*/
   __pyx_tp_dealloc_Enum, /*tp_dealloc*/
@@ -18697,7 +18689,7 @@ static PyBufferProcs __pyx_tp_as_buffer_memoryview = {
 
 static PyTypeObject __pyx_type___pyx_memoryview = {
   PyVarObject_HEAD_INIT(0, 0)
-  "unbcf_fast.memoryview", /*tp_name*/
+  "hyperspy.io_plugins.unbcf_fast.memoryview", /*tp_name*/
   sizeof(struct __pyx_memoryview_obj), /*tp_basicsize*/
   0, /*tp_itemsize*/
   __pyx_tp_dealloc_memoryview, /*tp_dealloc*/
@@ -18822,7 +18814,7 @@ static struct PyGetSetDef __pyx_getsets__memoryviewslice[] = {
 
 static PyTypeObject __pyx_type___pyx_memoryviewslice = {
   PyVarObject_HEAD_INIT(0, 0)
-  "unbcf_fast._memoryviewslice", /*tp_name*/
+  "hyperspy.io_plugins.unbcf_fast._memoryviewslice", /*tp_name*/
   sizeof(struct __pyx_memoryviewslice_obj), /*tp_basicsize*/
   0, /*tp_itemsize*/
   __pyx_tp_dealloc__memoryviewslice, /*tp_dealloc*/
@@ -18958,8 +18950,8 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_kp_s_got_differing_extents_in_dimensi, __pyx_k_got_differing_extents_in_dimensi, sizeof(__pyx_k_got_differing_extents_in_dimensi), 0, 0, 1, 0},
   {&__pyx_n_s_header, __pyx_k_header, sizeof(__pyx_k_header), 0, 0, 1, 1},
   {&__pyx_n_s_height, __pyx_k_height, sizeof(__pyx_k_height), 0, 0, 1, 1},
-  {&__pyx_kp_s_home_petras_local_lib_python3_4, __pyx_k_home_petras_local_lib_python3_4, sizeof(__pyx_k_home_petras_local_lib_python3_4), 0, 0, 1, 0},
   {&__pyx_n_s_hypermap, __pyx_k_hypermap, sizeof(__pyx_k_hypermap), 0, 0, 1, 1},
+  {&__pyx_n_s_hyperspy_io_plugins_unbcf_fast, __pyx_k_hyperspy_io_plugins_unbcf_fast, sizeof(__pyx_k_hyperspy_io_plugins_unbcf_fast), 0, 0, 1, 1},
   {&__pyx_n_s_id, __pyx_k_id, sizeof(__pyx_k_id), 0, 0, 1, 1},
   {&__pyx_n_s_image, __pyx_k_image, sizeof(__pyx_k_image), 0, 0, 1, 1},
   {&__pyx_n_s_import, __pyx_k_import, sizeof(__pyx_k_import), 0, 0, 1, 1},
@@ -18969,6 +18961,7 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_main, __pyx_k_main, sizeof(__pyx_k_main), 0, 0, 1, 1},
   {&__pyx_n_s_map_depth, __pyx_k_map_depth, sizeof(__pyx_k_map_depth), 0, 0, 1, 1},
   {&__pyx_n_s_memview, __pyx_k_memview, sizeof(__pyx_k_memview), 0, 0, 1, 1},
+  {&__pyx_kp_s_mnt_bulk_data_development_git_h, __pyx_k_mnt_bulk_data_development_git_h, sizeof(__pyx_k_mnt_bulk_data_development_git_h), 0, 0, 1, 0},
   {&__pyx_n_s_mode, __pyx_k_mode, sizeof(__pyx_k_mode), 0, 0, 1, 1},
   {&__pyx_n_s_name, __pyx_k_name, sizeof(__pyx_k_name), 0, 0, 1, 1},
   {&__pyx_n_s_name_2, __pyx_k_name_2, sizeof(__pyx_k_name_2), 0, 0, 1, 1},
@@ -19000,7 +18993,6 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_uint8, __pyx_k_uint8, sizeof(__pyx_k_uint8), 0, 0, 1, 1},
   {&__pyx_kp_s_unable_to_allocate_array_data, __pyx_k_unable_to_allocate_array_data, sizeof(__pyx_k_unable_to_allocate_array_data), 0, 0, 1, 0},
   {&__pyx_kp_s_unable_to_allocate_shape_and_str, __pyx_k_unable_to_allocate_shape_and_str, sizeof(__pyx_k_unable_to_allocate_shape_and_str), 0, 0, 1, 0},
-  {&__pyx_n_s_unbcf_fast, __pyx_k_unbcf_fast, sizeof(__pyx_k_unbcf_fast), 0, 0, 1, 1},
   {&__pyx_n_s_unpack, __pyx_k_unpack, sizeof(__pyx_k_unpack), 0, 0, 1, 1},
   {&__pyx_n_s_width, __pyx_k_width, sizeof(__pyx_k_width), 0, 0, 1, 1},
   {&__pyx_n_s_zeros, __pyx_k_zeros, sizeof(__pyx_k_zeros), 0, 0, 1, 1},
@@ -19025,7 +19017,7 @@ static int __Pyx_InitCachedConstants(void) {
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__Pyx_InitCachedConstants", 0);
 
-  /* "unbcf_fast.pyx":299
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":299
  *         return hypermap
  *     else:
  *         raise NotImplementedError('64bit array not implemented!')             # <<<<<<<<<<<<<<
@@ -19180,7 +19172,7 @@ static int __Pyx_InitCachedConstants(void) {
   __Pyx_GOTREF(__pyx_tuple__15);
   __Pyx_GIVEREF(__pyx_tuple__15);
 
-  /* "unbcf_fast.pyx":278
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":278
  * #the main function:
  * 
  * def parse_to_numpy(bcf, downsample=1, cutoff=None):             # <<<<<<<<<<<<<<
@@ -19190,7 +19182,7 @@ static int __Pyx_InitCachedConstants(void) {
   __pyx_tuple__16 = PyTuple_Pack(10, __pyx_n_s_bcf, __pyx_n_s_downsample, __pyx_n_s_cutoff, __pyx_n_s_blocks, __pyx_n_s_block_size, __pyx_n_s_total_blocks, __pyx_n_s_map_depth, __pyx_n_s_dtype, __pyx_n_s_hypermap, __pyx_n_s_data_stream); if (unlikely(!__pyx_tuple__16)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 278; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_tuple__16);
   __Pyx_GIVEREF(__pyx_tuple__16);
-  __pyx_codeobj__17 = (PyObject*)__Pyx_PyCode_New(3, 0, 10, 0, 0, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__16, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_home_petras_local_lib_python3_4, __pyx_n_s_parse_to_numpy, 278, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__17)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 278; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_codeobj__17 = (PyObject*)__Pyx_PyCode_New(3, 0, 10, 0, 0, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__16, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_mnt_bulk_data_development_git_h, __pyx_n_s_parse_to_numpy, 278, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__17)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 278; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
   /* "View.MemoryView":278
  *         return self.name
@@ -19332,14 +19324,14 @@ PyMODINIT_FUNC PyInit_unbcf_fast(void)
   #if PY_MAJOR_VERSION < 3 && (__PYX_DEFAULT_STRING_ENCODING_IS_ASCII || __PYX_DEFAULT_STRING_ENCODING_IS_DEFAULT)
   if (__Pyx_init_sys_getdefaultencoding_params() < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   #endif
-  if (__pyx_module_is_main_unbcf_fast) {
+  if (__pyx_module_is_main_hyperspy__io_plugins__unbcf_fast) {
     if (PyObject_SetAttrString(__pyx_m, "__name__", __pyx_n_s_main) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   }
   #if PY_MAJOR_VERSION >= 3
   {
     PyObject *modules = PyImport_GetModuleDict(); if (unlikely(!modules)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-    if (!PyDict_GetItemString(modules, "unbcf_fast")) {
-      if (unlikely(PyDict_SetItemString(modules, "unbcf_fast", __pyx_m) < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    if (!PyDict_GetItemString(modules, "hyperspy.io_plugins.unbcf_fast")) {
+      if (unlikely(PyDict_SetItemString(modules, "hyperspy.io_plugins.unbcf_fast", __pyx_m) < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     }
   }
   #endif
@@ -19356,20 +19348,20 @@ PyMODINIT_FUNC PyInit_unbcf_fast(void)
   /*--- Variable export code ---*/
   /*--- Function export code ---*/
   /*--- Type init code ---*/
-  __pyx_vtabptr_10unbcf_fast_DataStream = &__pyx_vtable_10unbcf_fast_DataStream;
-  __pyx_vtable_10unbcf_fast_DataStream.seek = (void (*)(struct __pyx_obj_10unbcf_fast_DataStream *, int))__pyx_f_10unbcf_fast_10DataStream_seek;
-  __pyx_vtable_10unbcf_fast_DataStream.skip = (void (*)(struct __pyx_obj_10unbcf_fast_DataStream *, int))__pyx_f_10unbcf_fast_10DataStream_skip;
-  __pyx_vtable_10unbcf_fast_DataStream.read_8 = (uint8_t (*)(struct __pyx_obj_10unbcf_fast_DataStream *))__pyx_f_10unbcf_fast_10DataStream_read_8;
-  __pyx_vtable_10unbcf_fast_DataStream.read_16 = (uint16_t (*)(struct __pyx_obj_10unbcf_fast_DataStream *))__pyx_f_10unbcf_fast_10DataStream_read_16;
-  __pyx_vtable_10unbcf_fast_DataStream.read_32 = (uint32_t (*)(struct __pyx_obj_10unbcf_fast_DataStream *))__pyx_f_10unbcf_fast_10DataStream_read_32;
-  __pyx_vtable_10unbcf_fast_DataStream.read_64 = (uint64_t (*)(struct __pyx_obj_10unbcf_fast_DataStream *))__pyx_f_10unbcf_fast_10DataStream_read_64;
-  __pyx_vtable_10unbcf_fast_DataStream.ptr_to = (unsigned char *(*)(struct __pyx_obj_10unbcf_fast_DataStream *, int))__pyx_f_10unbcf_fast_10DataStream_ptr_to;
-  __pyx_vtable_10unbcf_fast_DataStream.load_next_block = (void (*)(struct __pyx_obj_10unbcf_fast_DataStream *))__pyx_f_10unbcf_fast_10DataStream_load_next_block;
-  if (PyType_Ready(&__pyx_type_10unbcf_fast_DataStream) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 59; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __pyx_type_10unbcf_fast_DataStream.tp_print = 0;
-  if (__Pyx_SetVtable(__pyx_type_10unbcf_fast_DataStream.tp_dict, __pyx_vtabptr_10unbcf_fast_DataStream) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 59; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  if (PyObject_SetAttrString(__pyx_m, "DataStream", (PyObject *)&__pyx_type_10unbcf_fast_DataStream) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 59; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __pyx_ptype_10unbcf_fast_DataStream = &__pyx_type_10unbcf_fast_DataStream;
+  __pyx_vtabptr_8hyperspy_10io_plugins_10unbcf_fast_DataStream = &__pyx_vtable_8hyperspy_10io_plugins_10unbcf_fast_DataStream;
+  __pyx_vtable_8hyperspy_10io_plugins_10unbcf_fast_DataStream.seek = (void (*)(struct __pyx_obj_8hyperspy_10io_plugins_10unbcf_fast_DataStream *, int))__pyx_f_8hyperspy_10io_plugins_10unbcf_fast_10DataStream_seek;
+  __pyx_vtable_8hyperspy_10io_plugins_10unbcf_fast_DataStream.skip = (void (*)(struct __pyx_obj_8hyperspy_10io_plugins_10unbcf_fast_DataStream *, int))__pyx_f_8hyperspy_10io_plugins_10unbcf_fast_10DataStream_skip;
+  __pyx_vtable_8hyperspy_10io_plugins_10unbcf_fast_DataStream.read_8 = (uint8_t (*)(struct __pyx_obj_8hyperspy_10io_plugins_10unbcf_fast_DataStream *))__pyx_f_8hyperspy_10io_plugins_10unbcf_fast_10DataStream_read_8;
+  __pyx_vtable_8hyperspy_10io_plugins_10unbcf_fast_DataStream.read_16 = (uint16_t (*)(struct __pyx_obj_8hyperspy_10io_plugins_10unbcf_fast_DataStream *))__pyx_f_8hyperspy_10io_plugins_10unbcf_fast_10DataStream_read_16;
+  __pyx_vtable_8hyperspy_10io_plugins_10unbcf_fast_DataStream.read_32 = (uint32_t (*)(struct __pyx_obj_8hyperspy_10io_plugins_10unbcf_fast_DataStream *))__pyx_f_8hyperspy_10io_plugins_10unbcf_fast_10DataStream_read_32;
+  __pyx_vtable_8hyperspy_10io_plugins_10unbcf_fast_DataStream.read_64 = (uint64_t (*)(struct __pyx_obj_8hyperspy_10io_plugins_10unbcf_fast_DataStream *))__pyx_f_8hyperspy_10io_plugins_10unbcf_fast_10DataStream_read_64;
+  __pyx_vtable_8hyperspy_10io_plugins_10unbcf_fast_DataStream.ptr_to = (unsigned char *(*)(struct __pyx_obj_8hyperspy_10io_plugins_10unbcf_fast_DataStream *, int))__pyx_f_8hyperspy_10io_plugins_10unbcf_fast_10DataStream_ptr_to;
+  __pyx_vtable_8hyperspy_10io_plugins_10unbcf_fast_DataStream.load_next_block = (void (*)(struct __pyx_obj_8hyperspy_10io_plugins_10unbcf_fast_DataStream *))__pyx_f_8hyperspy_10io_plugins_10unbcf_fast_10DataStream_load_next_block;
+  if (PyType_Ready(&__pyx_type_8hyperspy_10io_plugins_10unbcf_fast_DataStream) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 59; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_type_8hyperspy_10io_plugins_10unbcf_fast_DataStream.tp_print = 0;
+  if (__Pyx_SetVtable(__pyx_type_8hyperspy_10io_plugins_10unbcf_fast_DataStream.tp_dict, __pyx_vtabptr_8hyperspy_10io_plugins_10unbcf_fast_DataStream) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 59; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (PyObject_SetAttrString(__pyx_m, "DataStream", (PyObject *)&__pyx_type_8hyperspy_10io_plugins_10unbcf_fast_DataStream) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 59; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_ptype_8hyperspy_10io_plugins_10unbcf_fast_DataStream = &__pyx_type_8hyperspy_10io_plugins_10unbcf_fast_DataStream;
   if (PyType_Ready(&__pyx_type___pyx_array) < 0) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 101; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_type___pyx_array.tp_print = 0;
   __pyx_array_type = &__pyx_type___pyx_array;
@@ -19405,7 +19397,7 @@ PyMODINIT_FUNC PyInit_unbcf_fast(void)
   if (__Pyx_patch_abc() < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   #endif
 
-  /* "unbcf_fast.pyx":2
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":2
  * import cython
  * import numpy as np             # <<<<<<<<<<<<<<
  * import sys
@@ -19416,7 +19408,7 @@ PyMODINIT_FUNC PyInit_unbcf_fast(void)
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_np, __pyx_t_1) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 2; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "unbcf_fast.pyx":3
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":3
  * import cython
  * import numpy as np
  * import sys             # <<<<<<<<<<<<<<
@@ -19428,7 +19420,7 @@ PyMODINIT_FUNC PyInit_unbcf_fast(void)
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_sys, __pyx_t_1) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 3; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "unbcf_fast.pyx":6
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":6
  * 
  * cdef int byte_order
  * if sys.byteorder == 'little':             # <<<<<<<<<<<<<<
@@ -19444,16 +19436,16 @@ PyMODINIT_FUNC PyInit_unbcf_fast(void)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   if (__pyx_t_3) {
 
-    /* "unbcf_fast.pyx":7
+    /* "hyperspy/io_plugins/unbcf_fast.pyx":7
  * cdef int byte_order
  * if sys.byteorder == 'little':
  *     byte_order = 0             # <<<<<<<<<<<<<<
  * else:
  *     byte_order = 1
  */
-    __pyx_v_10unbcf_fast_byte_order = 0;
+    __pyx_v_8hyperspy_10io_plugins_10unbcf_fast_byte_order = 0;
 
-    /* "unbcf_fast.pyx":6
+    /* "hyperspy/io_plugins/unbcf_fast.pyx":6
  * 
  * cdef int byte_order
  * if sys.byteorder == 'little':             # <<<<<<<<<<<<<<
@@ -19463,7 +19455,7 @@ PyMODINIT_FUNC PyInit_unbcf_fast(void)
     goto __pyx_L2;
   }
 
-  /* "unbcf_fast.pyx":9
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":9
  *     byte_order = 0
  * else:
  *     byte_order = 1             # <<<<<<<<<<<<<<
@@ -19471,23 +19463,23 @@ PyMODINIT_FUNC PyInit_unbcf_fast(void)
  * from libc.stdint cimport uint8_t, uint16_t, uint32_t, uint64_t
  */
   /*else*/ {
-    __pyx_v_10unbcf_fast_byte_order = 1;
+    __pyx_v_8hyperspy_10io_plugins_10unbcf_fast_byte_order = 1;
   }
   __pyx_L2:;
 
-  /* "unbcf_fast.pyx":278
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":278
  * #the main function:
  * 
  * def parse_to_numpy(bcf, downsample=1, cutoff=None):             # <<<<<<<<<<<<<<
  *     blocks, block_size, total_blocks = bcf.get_iter_and_properties()
  *     map_depth = bcf.sfs.header.estimate_map_channels()
  */
-  __pyx_t_2 = PyCFunction_NewEx(&__pyx_mdef_10unbcf_fast_1parse_to_numpy, NULL, __pyx_n_s_unbcf_fast); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 278; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_2 = PyCFunction_NewEx(&__pyx_mdef_8hyperspy_10io_plugins_10unbcf_fast_1parse_to_numpy, NULL, __pyx_n_s_hyperspy_io_plugins_unbcf_fast); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 278; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_2);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_parse_to_numpy, __pyx_t_2) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 278; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "unbcf_fast.pyx":1
+  /* "hyperspy/io_plugins/unbcf_fast.pyx":1
  * import cython             # <<<<<<<<<<<<<<
  * import numpy as np
  * import sys
@@ -19622,11 +19614,11 @@ PyMODINIT_FUNC PyInit_unbcf_fast(void)
   __Pyx_XDECREF(__pyx_t_2);
   if (__pyx_m) {
     if (__pyx_d) {
-      __Pyx_AddTraceback("init unbcf_fast", __pyx_clineno, __pyx_lineno, __pyx_filename);
+      __Pyx_AddTraceback("init hyperspy.io_plugins.unbcf_fast", __pyx_clineno, __pyx_lineno, __pyx_filename);
     }
     Py_DECREF(__pyx_m); __pyx_m = 0;
   } else if (!PyErr_Occurred()) {
-    PyErr_SetString(PyExc_ImportError, "init unbcf_fast");
+    PyErr_SetString(PyExc_ImportError, "init hyperspy.io_plugins.unbcf_fast");
   }
   __pyx_L0:;
   __Pyx_RefNannyFinishContext();
