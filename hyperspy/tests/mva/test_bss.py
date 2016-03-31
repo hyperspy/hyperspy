@@ -62,7 +62,7 @@ class TestBSS1D:
         # `blind_source_separation_method`. If the mask is not correctely
         # dilated the nan in the loadings should raise an error.
         mask = self.s._get_signal_signal(dtype="bool")
-        mask[5] = True
+        mask.isig[5] = True
         self.s.learning_results.factors[5, :] = np.nan
         self.s.blind_source_separation(3, diff_order=0, mask=mask)
 
@@ -74,7 +74,7 @@ class TestBSS1D:
         # `blind_source_separation_method`. If the mask is not correctely
         # dilated the nan in the loadings should raise an error.
         mask = self.s._get_signal_signal(dtype="bool")
-        mask[5] = True
+        mask.isig[5] = True
         self.s.learning_results.factors[5, :] = np.nan
         self.s.blind_source_separation(3, diff_order=1, mask=mask)
 
@@ -86,7 +86,7 @@ class TestBSS1D:
         # `blind_source_separation_method`. If the mask is not correctely
         # dilated the nan in the loadings should raise an error.
         mask = self.s._get_navigation_signal(dtype="bool")
-        mask[5] = True
+        mask.isig[5] = True
         self.s.learning_results.loadings[5, :] = np.nan
         self.s.blind_source_separation(3, diff_order=0, mask=mask,
                                        on_loadings=True)
@@ -99,7 +99,7 @@ class TestBSS1D:
         # `blind_source_separation_method`. If the mask is not correctely
         # dilated the nan in the loadings should raise an error.
         mask = self.s._get_navigation_signal(dtype="bool")
-        mask[5] = True
+        mask.isig[5] = True
         self.s.learning_results.loadings[5, :] = np.nan
         self.s.blind_source_separation(3, diff_order=1, mask=mask,
                                        on_loadings=True)
@@ -122,7 +122,7 @@ class TestBSS2D:
             raise SkipTest
         mask = self.s._get_signal_signal(dtype="bool")
         mask.unfold()
-        mask[5] = True
+        mask.isig[5] = True
         mask.fold()
         self.s.learning_results.factors[5, :] = np.nan
         factors = self.s.get_decomposition_factors().inav[:3]
@@ -190,7 +190,7 @@ class TestBSS2D:
         # dilated the nan in the loadings should raise an error.
         mask = self.s._get_signal_signal(dtype="bool")
         mask.unfold()
-        mask[5] = True
+        mask.isig[5] = True
         mask.fold()
         self.s.learning_results.factors[5, :] = np.nan
         self.s.blind_source_separation(3, diff_order=0, mask=mask)
@@ -204,7 +204,7 @@ class TestBSS2D:
         # dilated the nan in the loadings should raise an error.
         mask = self.s._get_signal_signal(dtype="bool")
         mask.unfold()
-        mask[5] = True
+        mask.isig[5] = True
         mask.fold()
         self.s.learning_results.factors[5, :] = np.nan
         self.s.blind_source_separation(3, diff_order=1, mask=mask)
@@ -218,7 +218,7 @@ class TestBSS2D:
         # dilated the nan in the loadings should raise an error.
         mask = self.s._get_signal_signal(dtype="bool")
         mask.unfold()
-        mask[5] = True
+        mask.isig[5] = True
         mask.fold()
         self.s.learning_results.factors[5, :] = np.nan
         self.s.blind_source_separation(3, diff_order=1, mask=mask,
@@ -233,7 +233,7 @@ class TestBSS2D:
         # dilated the nan in the loadings should raise an error.
         mask = self.s._get_navigation_signal(dtype="bool")
         mask.unfold()
-        mask[5] = True
+        mask.isig[5] = True
         mask.fold()
         self.s.learning_results.loadings[5, :] = np.nan
         self.s.blind_source_separation(3, diff_order=0, mask=mask,
@@ -250,7 +250,7 @@ class TestBSS2D:
         s.decomposition()
         mask = s._get_navigation_signal(dtype="bool")
         mask.unfold()
-        mask[5] = True
+        mask.isig[5] = True
         mask.fold()
         s.learning_results.loadings[5, :] = np.nan
         s.blind_source_separation(3, diff_order=1, mask=mask,
@@ -267,7 +267,7 @@ class TestBSS2D:
         s.decomposition()
         mask = s._get_navigation_signal(dtype="bool")
         mask.unfold()
-        mask[5] = True
+        mask.isig[5] = True
         mask.fold()
         s.learning_results.loadings[5, :] = np.nan
         s.blind_source_separation(3, diff_order=1, mask=mask,

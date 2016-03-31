@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2015 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -21,6 +21,7 @@ import os
 import nose
 
 
+@nose.tools.nottest
 def test(args=[], no_path_adjustment=False):
     """Run tests.
 

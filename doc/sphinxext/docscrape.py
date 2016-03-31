@@ -6,8 +6,9 @@ import inspect
 import textwrap
 import re
 import pydoc
-from StringIO import StringIO
+from io import StringIO
 from warnings import warn
+import collections
 
 
 class Reader(object):
@@ -380,7 +381,7 @@ class NumpyDocString(object):
         idx = self['index']
         out = []
         out += ['.. index:: %s' % idx.get('default', '')]
-        for section, references in idx.iteritems():
+        for section, references in idx.items():
             if section == 'default':
                 continue
             out += ['   :%s: %s' % (section, ', '.join(references))]
@@ -464,7 +465,7 @@ class FunctionDoc(NumpyDocString):
 
         if self._role:
             if self._role not in roles:
-                print "Warning: invalid role %s" % self._role
+                print("Warning: invalid role %s" % self._role)
             out += '.. %s:: %s\n    \n\n' % (roles.get(self._role, ''),
                                              func_name)
 
@@ -508,7 +509,7 @@ class ClassDoc(NumpyDocString):
         return [name for name, func in inspect.getmembers(self._cls)
                 if ((not name.startswith('_')
                      or name in self.extra_public_methods)
-                    and callable(func))]
+                    and isinstance(func, collections.Callable))]
 
     @property
     def properties(self):

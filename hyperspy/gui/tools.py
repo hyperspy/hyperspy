@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2015 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -16,6 +16,8 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
+
 import numpy as np
 import scipy as sp
 import matplotlib.pyplot as plt
@@ -27,7 +29,9 @@ from hyperspy import drawing
 from hyperspy.exceptions import SignalDimensionError
 from hyperspy.gui import messages
 from hyperspy.axes import AxesManager
-from hyperspy.drawing.widgets import DraggableVerticalLine
+from hyperspy.drawing.widgets import VerticalLineWidget
+
+_logger = logging.getLogger(__name__)
 
 
 OurOKButton = tu.Action(name="OK",
@@ -92,7 +96,7 @@ class SpanSelectorInSpectrumHandler(tu.Handler):
         obj = info.object
         obj.is_ok = True
         if hasattr(obj, 'next'):
-            obj.next()
+            next(obj)
         return
 
 
@@ -167,7 +171,7 @@ class SpanSelectorInSpectrum(t.HasTraits):
                 drawing.widgets.ModifiableSpanSelector(
                     self.signal._plot.signal_plot.ax,
                     onselect=self.update_span_selector_traits,
-                    onmove_callback=self.update_span_selector_traits)
+                    onmove_callback=self.update_span_selector_traits,)
 
         elif self.span_selector is not None:
             self.on_disabling_span_selector()
@@ -223,7 +227,8 @@ class LineInSpectrum(t.HasTraits):
         # range by default
         am._axes[0].index = int(round(am._axes[0].size / 2))
         self.axes_manager = am
-        self.axes_manager.connect(self.update_position)
+        self.axes_manager.events.indices_changed.connect(
+            self.update_position, [])
         self.on_trait_change(self.switch_on_off, 'on')
 
     def draw(self):
@@ -234,7 +239,7 @@ class LineInSpectrum(t.HasTraits):
             return
 
         if new is True and old is False:
-            self._line = DraggableVerticalLine(self.axes_manager)
+            self._line = VerticalLineWidget(self.axes_manager)
             self._line.set_mpl_ax(self.signal._plot.signal_plot.ax)
             self._line.patch.set_linewidth(2)
             self._color_changed("black", "black")
@@ -491,14 +496,15 @@ class SmoothingSavitzkyGolay(Smoothing):
         if nwl > self.polynomial_order:
             self.window_length = nwl
         else:
-            print(
-                "The window length must be greated than the polynomial order")
+            _logger.warn(
+                "The window length must be greater than the polynomial order")
 
     def _polynomial_order_changed(self, old, new):
         if self.window_length <= new:
             self.window_length = new + 2 if new % 2 else new + 1
-            print("Polynomial order must be < window length. "
-                  "Window length set to %i." % self.window_length)
+            _logger.warn(
+                "Polynomial order must be < window length. "
+                "Window length set to %i.", self.window_length)
         self.update_lines()
 
     def _window_length_changed(self, old, new):
@@ -507,8 +513,9 @@ class SmoothingSavitzkyGolay(Smoothing):
     def _differential_order_changed(self, old, new):
         if new > self.polynomial_order:
             self.polynomial_order += 1
-            print("Differential order must be <= polynomial order. "
-                  "Polynomial order set to %i." % self.polynomial_order)
+            _logger.warn(
+                "Differential order must be <= polynomial order. "
+                "Polynomial order set to %i.", self.polynomial_order)
         super(
             SmoothingSavitzkyGolay,
             self)._differential_order_changed(

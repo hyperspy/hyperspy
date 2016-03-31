@@ -208,7 +208,7 @@ class Bar(ProgressBarWidgetHFill):
         self.right = right
 
     def _format_marker(self, pbar):
-        if isinstance(self.marker, basestring):
+        if isinstance(self.marker, str):
             return self.marker
         else:
             return self.marker.update(pbar)
@@ -218,7 +218,7 @@ class Bar(ProgressBarWidgetHFill):
         cwidth = width - len(self.left) - len(self.right)
         marked_width = int(percent * cwidth / 100)
         m = self._format_marker(pbar)
-        bar = (self.left + (m * marked_width).ljust(cwidth) + self.right)
+        bar = (self.left + (m * marked_width).ljust(int(cwidth)) + self.right)
         return bar
 
 
@@ -231,7 +231,7 @@ class ReverseBar(Bar):
         cwidth = width - len(self.left) - len(self.right)
         marked_width = int(percent * cwidth / 100)
         m = self._format_marker(pbar)
-        bar = (self.left + (m * marked_width).rjust(cwidth) + self.right)
+        bar = (self.left + (m * marked_width).rjust(int(cwidth)) + self.right)
         return bar
 
 default_widgets = [Percentage(), ' ', Bar()]
@@ -250,7 +250,7 @@ class DummyProgressBar:
     def finish():
         return
 
-    def next(self):
+    def __next__(self):
         return
 
     @staticmethod
@@ -267,7 +267,7 @@ class ProgressBar(object):
 
     The simple use is like this:
     >>> pbar = ProgressBar().start()
-    >>> for i in xrange(100):
+    >>> for i in range(100):
     ...    # do something
     ...    pbar.update(i+1)
     ...
@@ -337,7 +337,7 @@ class ProgressBar(object):
                 r.append(w)
                 hfill_inds.append(i)
                 num_hfill += 1
-            elif isinstance(w, basestring):
+            elif isinstance(w, str):
                 r.append(w)
                 currwidth += len(w)
             else:
@@ -351,7 +351,7 @@ class ProgressBar(object):
         return r
 
     def _format_line(self):
-        return ''.join(self._format_widgets()).ljust(self.term_width)
+        return ''.join(self._format_widgets()).ljust(int(self.term_width))
 
     def _need_update(self):
         return int(self.percentage()) != int(self.prev_percentage)
@@ -370,7 +370,7 @@ class ProgressBar(object):
 
     def _print_ipython(self):
         value = self.currval
-        print '\r', self._format_line(),
+        print('\r', self._format_line(), end=' ')
         sys.stdout.flush()
         if value == self.maxval:
             self.finished = True
@@ -384,7 +384,7 @@ class ProgressBar(object):
             self.finished = True
             self.fd.write(self._format_line() + '\n')
 
-    def next(self):
+    def __next__(self):
         self.update(self.currval + 1)
 
     def start(self):
@@ -392,7 +392,7 @@ class ProgressBar(object):
 
         It returns self so you can use it like this:
         >>> pbar = ProgressBar().start()
-        >>> for i in xrange(100):
+        >>> for i in range(100):
         ...    # do something
         ...    pbar.update(i+1)
         ...
@@ -431,7 +431,7 @@ def progressbar(text="calculating", maxval=100, disabled=False):
     --------
 
     >>> pbar=progressbar(maxval=10000)
-    >>> for i in xrange(10000):
+    >>> for i in range(10000):
             pbar.update(i)
             #do some heavy calculation in each step
     >>> pbar.finish()
@@ -451,11 +451,11 @@ if __name__ == '__main__':
                    ' ', ETA(), ' ', FileTransferSpeed()]
         pbar = ProgressBar(widgets=widgets, maxval=10000000).start()
         pbar.clear_output = False
-        for i in xrange(1000000):
+        for i in range(1000000):
             # do something
             pbar.update(10 * i + 1)
         pbar.finish()
-        print
+        print()
 
     def example2():
         class CrazyFileTransferSpeed(FileTransferSpeed):
@@ -479,20 +479,20 @@ if __name__ == '__main__':
         pbar = ProgressBar(widgets=widgets, maxval=10000000)
         # maybe do something
         pbar.start()
-        for i in xrange(2000000):
+        for i in range(2000000):
             # do something
             pbar.update(5 * i + 1)
         pbar.finish()
-        print
+        print()
 
     def example3():
         widgets = [Bar('>'), ' ', ETA(), ' ', ReverseBar('<')]
         pbar = ProgressBar(widgets=widgets, maxval=10000000).start()
-        for i in xrange(1000000):
+        for i in range(1000000):
             # do something
             pbar.update(10 * i + 1)
         pbar.finish()
-        print
+        print()
 
     def example4():
         widgets = ['Test: ', Percentage(), ' ',
@@ -500,11 +500,11 @@ if __name__ == '__main__':
                    ' ', ETA(), ' ', FileTransferSpeed()]
         pbar = ProgressBar(widgets=widgets, maxval=500)
         pbar.start()
-        for i in xrange(100, 500 + 1, 50):
+        for i in range(100, 500 + 1, 50):
             time.sleep(0.2)
             pbar.update(i)
         pbar.finish()
-        print
+        print()
 
     example1()
     example2()

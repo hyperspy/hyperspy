@@ -1,6 +1,7 @@
-from __future__ import division
+
 import os
 import math
+import logging
 
 import numpy as np
 import scipy as sp
@@ -9,6 +10,10 @@ from hyperspy.defaults_parser import preferences
 from hyperspy.misc.physical_constants import R, a0
 from hyperspy.misc.eels.base_gos import GOSBase
 from hyperspy.misc.elements import elements
+from hyperspy.misc.export_dictionary import (
+    export_to_dictionary, load_from_dictionary)
+
+_logger = logging.getLogger(__name__)
 
 
 class HartreeSlaterGOS(GOSBase):
@@ -19,8 +24,10 @@ class HartreeSlaterGOS(GOSBase):
     Parameters
     ----------
 
-    element_subshell : str
-        For example, 'Ti_L3' for the GOS of the titanium L3 subshell
+    element_subshell : {str, dict}
+        Usually a string, for example, 'Ti_L3' for the GOS of the titanium L3
+        subshell. If a dictionary is passed, it is assumed that Hartree Slater
+        GOS was exported using `GOS.as_dictionary`, and will be reconstructed.
 
     Methods
     -------
@@ -32,6 +39,8 @@ class HartreeSlaterGOS(GOSBase):
         given the energy axis index and qmin and qmax values returns
         the qaxis and gos between qmin and qmax using linear
         interpolation to include qmin and qmax in the range.
+    as_dictionary()
+        Export the GOS as a dictionary that can be saved.
 
 
     Attributes
@@ -58,28 +67,54 @@ class HartreeSlaterGOS(GOSBase):
             For example, 'Ti_L3' for the GOS of the titanium L3 subshell
 
         """
-        # Check if the Peter Rez's Hartree Slater GOS distributed by
-        # Gatan are available. Otherwise exit
-        if not os.path.isdir(preferences.EELS.eels_gos_files_path):
-            raise IOError(
-                "The parametrized Hartree-Slater GOS files could not "
-                "found in %s ." % preferences.EELS.eels_gos_files_path +
-                "Please define a valid location for the files "
-                "in the preferences.")
-        self.element, self.subshell = element_subshell.split('_')
-        self.read_elements()
-        self.readgosfile()
+        self._whitelist = {'gos_array': None,
+                           'rel_energy_axis': None,
+                           'qaxis': None,
+                           'element': None,
+                           'subshell': None
+                           }
+        if isinstance(element_subshell, dict):
+            self.element = element_subshell['element']
+            self.subshell = element_subshell['subshell']
+            self.read_elements()
+            self._load_dictionary(element_subshell)
+        else:
+            # Check if the Peter Rez's Hartree Slater GOS distributed by
+            # Gatan are available. Otherwise exit
+            if not os.path.isdir(preferences.EELS.eels_gos_files_path):
+                raise IOError(
+                    "The parametrized Hartree-Slater GOS files could not "
+                    "found in %s ." % preferences.EELS.eels_gos_files_path +
+                    "Please define a valid location for the files "
+                    "in the preferences.")
+            self.element, self.subshell = element_subshell.split('_')
+            self.read_elements()
+            self.readgosfile()
+
+    def _load_dictionary(self, dictionary):
+        load_from_dictionary(self, dictionary)
+        self.energy_axis = self.rel_energy_axis + self.onset_energy
+
+    def as_dictionary(self, fullcopy=True):
+        """Export the GOS as a dictionary
+        """
+        dic = {}
+        export_to_dictionary(self, self._whitelist, dic, fullcopy)
+        return dic
 
     def readgosfile(self):
-        print "\nHartree-Slater GOS"
-        print "\tElement: ", self.element
-        print "\tSubshell: ", self.subshell
-        print "\tOnset Energy = ", self.onset_energy
+        info_str = (
+            "Hartree-Slater GOS\n" +
+            ("\tElement: %s " % self.element) +
+            ("\tSubshell: %s " % self.subshell) +
+            ("\tOnset Energy = %s " % self.onset_energy))
+        _logger.info(info_str)
         element = self.element
         subshell = self.subshell
         filename = os.path.join(
             preferences.EELS.eels_gos_files_path,
-            elements[element]['Atomic_properties']['Binding_energies'][subshell]['filename'])
+            (elements[element]['Atomic_properties']['Binding_energies']
+             [subshell]['filename']))
 
         with open(filename) as f:
             GOS_list = f.read().replace('\r', '').split()
@@ -112,7 +147,7 @@ class HartreeSlaterGOS(GOSBase):
         # tabulated GOS
         gamma = 1 + E0 / 511.06
         T = 511060 * (1 - 1 / gamma ** 2) / 2
-        for i in xrange(0, self.gos_array.shape[0]):
+        for i in range(0, self.gos_array.shape[0]):
             E = self.energy_axis[i] + energy_shift
             # Calculate the limits of the q integral
             qa0sqmin = (E ** 2) / (4 * R * T) + (E ** 3) / (

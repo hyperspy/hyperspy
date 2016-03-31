@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2015 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -18,17 +18,19 @@
 
 
 import os.path
-import ConfigParser
+import configparser
+import logging
 
 import traits.api as t
 
 from hyperspy.misc.config_dir import config_path, os_name, data_path
-from hyperspy import messages
 from hyperspy.misc.ipython_tools import turn_logging_on, turn_logging_off
 from hyperspy.io_plugins import default_write_ext
 
 defaults_file = os.path.join(config_path, 'hyperspyrc')
 eels_gos_files = os.path.join(data_path, 'EELS_GOS.tar.gz')
+
+_logger = logging.getLogger(__name__)
 
 
 def guess_gos_path():
@@ -58,7 +60,7 @@ if os.path.isfile(defaults_file):
     if 'Not really' in f.readline():
         # It is the old config file
         f.close()
-        messages.information('Removing obsoleted config file')
+        _logger.info('Removing obsoleted config file')
         os.remove(defaults_file)
         defaults_file_exists = False
     else:
@@ -81,19 +83,6 @@ class GeneralConfig(t.HasTraits):
         ' available. However, when using this toolkit the '
         'user interface elements are not available. '
         'to export data to other software that do not support hdf5')
-    default_toolkit = t.Enum(
-        "qt4",
-        "gtk",
-        "wx",
-        "tk",
-        "None",
-        desc="Default toolkit for matplotlib and the user interface "
-        "elements. "
-        "When using gtk and tk the user interface elements are not"
-        " available."
-        "user interface elements are not available. "
-        "None is suitable to run headless. "
-        "HyperSpy must be restarted for changes to take effect")
     default_export_format = t.Enum(
         *default_write_ext,
         desc='Using the hdf5 format is highly reccomended because is the '
@@ -101,7 +90,7 @@ class GeneralConfig(t.HasTraits):
         'to export data to other software that do not support hdf5')
     interactive = t.CBool(
         True,
-        desc='If enabled, HyperSpy will prompt the user when optios are '
+        desc='If enabled, HyperSpy will prompt the user when options are '
         'available, otherwise it will use the default values if possible')
     logger_on = t.CBool(
         False,
@@ -114,12 +103,13 @@ class GeneralConfig(t.HasTraits):
         label='Show progress bar',
         desc='If enabled, show a progress bar when available')
 
-    import_hspy = t.CBool(
+    dtb_expand_structures = t.CBool(
         True,
-        label='from hspy import all',
-        desc='If enabled, when starting HyperSpy using the `hyperspy` '
-             'IPython magic of the starting scripts, all the contents of '
-             '``hyperspy.hspy`` are imported in the user namespace. ')
+        label='Expand structures in DictionaryTreeBrowser',
+        desc='If enabled, when printing DictionaryTreeBrowser (e.g. '
+             'metadata), long lists and tuples will be expanded and any '
+             'dictionaries in them will be printed similar to '
+             'DictionaryTreeBrowser, but with double lines')
 
     def _logger_on_changed(self, old, new):
         if new is True:
@@ -245,14 +235,14 @@ template['General'].default_export_format = 'rpl'
 
 
 def template2config(template, config):
-    for section, traited_class in template.iteritems():
+    for section, traited_class in template.items():
         config.add_section(section)
-        for key, item in traited_class.get().iteritems():
+        for key, item in traited_class.get().items():
             config.set(section, key, str(item))
 
 
 def config2template(template, config):
-    for section, traited_class in template.iteritems():
+    for section, traited_class in template.items():
         config_dict = {}
         for name, value in config.items(section):
             if value == 'True':
@@ -267,11 +257,11 @@ def config2template(template, config):
 
 def dictionary_from_template(template):
     dictionary = {}
-    for section, traited_class in template.iteritems():
+    for section, traited_class in template.items():
         dictionary[section] = traited_class.get()
     return dictionary
 
-config = ConfigParser.SafeConfigParser(allow_no_value=True)
+config = configparser.ConfigParser(allow_no_value=True)
 template2config(template, config)
 rewrite = False
 if defaults_file_exists:
@@ -279,7 +269,7 @@ if defaults_file_exists:
     # already defined. If the file contains any option that was not already
     # define the config file is rewritten because it is obsolate
 
-    config2 = ConfigParser.SafeConfigParser(allow_no_value=True)
+    config2 = configparser.ConfigParser(allow_no_value=True)
     config2.read(defaults_file)
     for section in config2.sections():
         if config.has_section(section):
@@ -292,7 +282,7 @@ if defaults_file_exists:
             rewrite = True
 
 if not defaults_file_exists or rewrite is True:
-    messages.information('Writing the config file')
+    _logger.info('Writing the config file')
     config.write(open(defaults_file, 'w'))
 
 # Use the traited classes to cast the content of the ConfigParser
@@ -300,7 +290,6 @@ config2template(template, config)
 
 
 class Preferences(t.HasTraits):
-    global current_toolkit
     EELS = t.Instance(EELSConfig)
     EDS = t.Instance(EDSConfig)
     Model = t.Instance(ModelConfig)
@@ -315,7 +304,7 @@ class Preferences(t.HasTraits):
         self.edit_traits(view=hyperspy.gui.preferences.preferences_view)
 
     def save(self):
-        config = ConfigParser.SafeConfigParser(allow_no_value=True)
+        config = configparser.ConfigParser(allow_no_value=True)
         template2config(template, config)
         config.write(open(defaults_file, 'w'))
 
@@ -329,8 +318,6 @@ preferences = Preferences(
 
 if preferences.General.logger_on:
     turn_logging_on(verbose=0)
-
-current_toolkit = preferences.General.default_toolkit
 
 
 def file_version(fname):

@@ -1,9 +1,12 @@
 .. -*- mode: rst -*-
 
-|Travis|_ |Coveralls|_ |pypi_version|_ |pypi_downloads|_ |rtd|_ 
+|Travis|_ |AppVeyor|_ |Coveralls|_ |pypi_version|_ |pypi_downloads|_ |rtd|_ |gitter|_
 
-.. |Travis| image:: https://api.travis-ci.org/hyperspy/hyperspy.png?branch=0.8.x
+.. |Travis| image:: https://api.travis-ci.org/hyperspy/hyperspy.png?branch=master
 .. _Travis: https://travis-ci.org/hyperspy/hyperspy
+
+.. |AppVeyor| image:: https://ci.appveyor.com/api/projects/status/github/hyperspy/hyperspy?svg=true&branch=master
+.. _AppVeyor: https://ci.appveyor.com/project/hyperspy/hyperspy/branch/master
 
 .. |Coveralls| image:: https://coveralls.io/repos/hyperspy/hyperspy/badge.svg
 .. _Coveralls: https://coveralls.io/r/hyperspy/hyperspy
@@ -17,6 +20,9 @@
 .. |rtd| image:: https://readthedocs.org/projects/hyperspy/badge/?version=latest
 .. _rtd: https://readthedocs.org/projects/hyperspy/?badge=latest
 
+.. |gitter| image:: https://badges.gitter.im/Join%20Chat.svg
+.. _gitter: https://gitter.im/hyperspy/hyperspy?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
+
 HyperSpy is an open source Python library which provides tools to facilitate
 the interactive data analysis of multidimensional datasets that can be
 described as multidimensional arrays of a given signal (e.g. a 2D array of
@@ -29,14 +35,19 @@ of the dataset.
 
 Its modular structure makes it easy to add features to analyze different kinds
 of signals. Currently there are specialized tools to analyze electron
-energy-loss spectroscopy (EELS) and energy dispersive X-rays (EDX) data. 
+energy-loss spectroscopy (EELS) and energy dispersive X-rays (EDX) data.
 
 HyperSpy is released under the GPL v3 license.
+
+.. warning::
+
+    **Since version 0.8.4 HyperSpy only supports Python 3. If you need to install
+    HyperSpy in Python 2.7 install HyperSpy 0.8.3.**
 
 Cite
 ----
 
 |DOI|_
 
-.. |DOI| image:: https://zenodo.org/badge/doi/10.5281/zenodo.28025.svg
-.. _DOI: http://dx.doi.org/10.5281/zenodo.28025
+.. |DOI| image:: https://zenodo.org/badge/doi/10.5281/zenodo.46897.svg
+.. _DOI: http://dx.doi.org/10.5281/zenodo.46897

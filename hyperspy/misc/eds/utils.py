@@ -1,4 +1,3 @@
-from __future__ import division
 
 import numpy as np
 import math
@@ -6,20 +5,105 @@ import math
 from hyperspy.misc.elements import elements as elements_db
 from functools import reduce
 
+eV2keV = 1000.
+sigma2fwhm = 2 * math.sqrt(2 * math.log(2))
 
-def _get_element_and_line(Xray_line):
-    lim = Xray_line.find('_')
-    return Xray_line[:lim], Xray_line[lim + 1:]
+
+def _get_element_and_line(xray_line):
+    """
+    Returns the element name and line character for a particular X-ray line as a
+    tuple.
+
+    By example, if xray_line = 'Mn_Ka' this function returns ('Mn', 'Ka')
+    """
+    lim = xray_line.find('_')
+    if lim == -1:
+        raise ValueError("Invalid xray-line: %" % xray_line)
+    return xray_line[:lim], xray_line[lim + 1:]
 
 
 def _get_energy_xray_line(xray_line):
-    energy, line = _get_element_and_line(xray_line)
-    return elements_db[energy]['Atomic_properties']['Xray_lines'][
+    """
+    Returns the energy (in keV) associated with a given X-ray line.
+
+    By example, if xray_line = 'Mn_Ka' this function returns 5.8987
+    """
+    element, line = _get_element_and_line(xray_line)
+    return elements_db[element]['Atomic_properties']['Xray_lines'][
         line]['energy (keV)']
 
 
+def _get_xray_lines_family(xray_line):
+    """
+    Returns the family to which a particular X-ray line belongs.
+
+    By example, if xray_line = 'Mn_Ka' this function returns 'Mn_K'
+    """
+    return xray_line[:xray_line.find('_') + 2]
+
+
+def _parse_only_lines(only_lines):
+    if isinstance(only_lines, str):
+        pass
+    elif hasattr(only_lines, '__iter__'):
+        if any(isinstance(line, str) is False for line in only_lines):
+            return only_lines
+    else:
+        return only_lines
+    only_lines = list(only_lines)
+    for only_line in only_lines:
+        if only_line == 'a':
+            only_lines.extend(['Ka', 'La', 'Ma'])
+        elif only_line == 'b':
+            only_lines.extend(['Kb', 'Lb1', 'Mb'])
+    return only_lines
+
+
+def get_xray_lines_near_energy(energy, width=0.2, only_lines=None):
+    """Find xray lines near a specific energy, more specifically all xray lines
+    that satisfy only_lines and are within the given energy window width around
+    the passed energy.
+
+    Parameters
+    ----------
+    energy : float
+        Energy to search near in keV
+    width : float
+        Window width in keV around energy in which to find nearby energies,
+        i.e. a value of 0.2 keV (the default) means to search +/- 0.1 keV.
+    only_lines :
+        If not None, only the given lines will be added (eg. ('a','Kb')).
+
+    Returns
+    -------
+    List of xray-lines sorted by energy difference to given energy.
+    """
+    only_lines = _parse_only_lines(only_lines)
+    valid_lines = []
+    E_min, E_max = energy - width / 2., energy + width / 2.
+    for element, el_props in elements_db.items():
+        # Not all elements in the DB have the keys, so catch KeyErrors
+        try:
+            lines = el_props['Atomic_properties']['Xray_lines']
+        except KeyError:
+            continue
+        for line, l_props in lines.items():
+            if only_lines and line not in only_lines:
+                continue
+            line_energy = l_props['energy (keV)']
+            if E_min <= line_energy <= E_max:
+                # Store line in Element_Line format, and energy difference
+                valid_lines.append((element + "_" + line,
+                                    np.abs(line_energy - energy)))
+    # Sort by energy difference, but return only the line names
+    return [line for line, _ in sorted(valid_lines, key=lambda x: x[1])]
+
+
 def get_FWHM_at_Energy(energy_resolution_MnKa, E):
-    """Calculates the FWHM of a peak at energy E.
+    """Calculates an approximate FWHM, accounting for peak broadening due to the
+    detector, for a peak at energy E given a known width at a reference energy.
+
+    The factor 2.5 is a constant derived by Fiori & Newbury as references below.
 
     Parameters
     ----------
@@ -34,22 +118,27 @@ def get_FWHM_at_Energy(energy_resolution_MnKa, E):
 
     Notes
     -----
-    From the textbook of Goldstein et al., Plenum publisher,
-    third edition p 315
+    This method implements the equation derived by Fiori and Newbury as is
+    documented in the following:
+
+        Fiorie, C. E., and Newbury, D. E. (1978). In SEM/1978/I, SEM, Inc.,
+        AFM O'Hare, Illinois, p. 401.
+
+        Goldstein et al. (2003). "Scanning Electron Microscopy & X-ray
+        Microanalysis", Plenum, third edition, p 315.
 
     """
     FWHM_ref = energy_resolution_MnKa
     E_ref = _get_energy_xray_line('Mn_Ka')
 
-    FWHM_e = 2.5 * (E - E_ref) * 1000 + FWHM_ref * FWHM_ref
+    FWHM_e = 2.5 * (E - E_ref) * eV2keV + FWHM_ref * FWHM_ref
 
-    return math.sqrt(FWHM_e) / 1000  # In mrad
+    return math.sqrt(FWHM_e) / 1000.  # In mrad
 
 
 def xray_range(xray_line, beam_energy, density='auto'):
-    """Return the Anderson-Hasler X-ray range.
-
-    Return the maximum range of X-ray generation in a pure bulk material.
+    """Return the maximum range of X-ray generation according to the
+    Anderson-Hasler parameterization.
 
     Parameters
     ----------
@@ -93,15 +182,15 @@ def xray_range(xray_line, beam_energy, density='auto'):
             'Physical_properties'][
             'density (g/cm^3)']
     Xray_energy = _get_energy_xray_line(xray_line)
-
+    # Note: magic numbers here are from Andersen-Hasler parameterization. See
+    # docstring for associated references.
     return 0.064 / density * (np.power(beam_energy, 1.68) -
                               np.power(Xray_energy, 1.68))
 
 
 def electron_range(element, beam_energy, density='auto', tilt=0):
-    """Return the Kanaya-Okayama electron range.
-
-    Return the maximum electron range in a pure bulk material.
+    """Returns the maximum electron range for a pure bulk material according to
+    the Kanaya-Okayama parameterziation.
 
     Parameters
     ----------
@@ -139,7 +228,8 @@ def electron_range(element, beam_energy, density='auto', tilt=0):
             element]['Physical_properties']['density (g/cm^3)']
     Z = elements_db[element]['General_properties']['Z']
     A = elements_db[element]['General_properties']['atomic_weight']
-
+    # Note: magic numbers here are from Kanaya-Okayama parameterization. See
+    # docstring for associated references.
     return (0.0276 * A / np.power(Z, 0.89) / density *
             np.power(beam_energy, 1.67) * math.cos(math.radians(tilt)))
 
@@ -186,6 +276,74 @@ def take_off_angle(tilt_stage,
 
     return math.degrees(np.arcsin(-math.cos(a) * math.cos(b) * math.cos(c)
                                   + math.sin(a) * math.sin(c)))
+
+
+def xray_lines_model(elements,
+                     beam_energy=200,
+                     weight_percents=None,
+                     energy_resolution_MnKa=130,
+                     energy_axis=None):
+    """
+    Generate a model of X-ray lines using a Gaussian distribution for each peak.
+
+    The area under a main peak (alpha) is equal to 1 and weighted by the
+    composition.
+
+    Parameters
+    ----------
+    elements : list of strings
+        A list of chemical element symbols.
+    beam_energy: float
+        The energy of the beam in keV.
+    weight_percents: list of float
+        The composition in weight percent.
+    energy_resolution_MnKa: float
+        The energy resolution of the detector in eV
+    energy_axis: dic
+        The dictionary for the energy axis. It must contains 'size' and the
+        units must be 'eV' of 'keV'.
+
+    Example
+    -------
+    >>> s = utils_eds.simulate_model(['Cu', 'Fe'], beam_energy=30)
+    >>> s.plot()
+    """
+    from hyperspy._signals.eds_tem import EDSTEMSpectrum
+    from hyperspy.model import components
+    if energy_axis is None:
+        energy_axis = {'name': 'E', 'scale': 0.01, 'units': 'keV',
+                       'offset': -0.1, 'size': 1024}
+    s = EDSTEMSpectrum(np.zeros(energy_axis['size']), axes=[energy_axis])
+    s.set_microscope_parameters(
+        beam_energy=beam_energy,
+        energy_resolution_MnKa=energy_resolution_MnKa)
+    s.add_elements(elements)
+    counts_rate = 1.
+    live_time = 1.
+    if weight_percents is None:
+        weight_percents = [100. / len(elements)] * len(elements)
+    m = s.create_model()
+    if len(elements) == len(weight_percents):
+        for (element, weight_percent) in zip(elements, weight_percents):
+            for line, properties in elements_db[
+                    element]['Atomic_properties']['Xray_lines'].items():
+                line_energy = properties['energy (keV)']
+                ratio_line = properties['weight']
+                if s._get_xray_lines_in_spectral_range(
+                        [element + '_' + line])[1] == []:
+                    g = components.Gaussian()
+                    g.centre.value = line_energy
+                    g.sigma.value = get_FWHM_at_Energy(
+                        energy_resolution_MnKa, line_energy) / sigma2fwhm
+                    g.A.value = live_time * counts_rate * \
+                        weight_percent / 100 * ratio_line
+                    m.append(g)
+    else:
+        raise ValueError("The number of elements specified is not the same \
+                         as the number of weight_percents")
+
+    s.data = m.as_signal().data
+    return s
 
 
 def quantification_cliff_lorimer(intensities,
@@ -279,7 +437,7 @@ def _quantification_cliff_lorimer(intensities,
     composition = np.ones_like(intensities, dtype='float')
     # ab = Ia/Ib / kab
 
-    other_index = range(len(kfactors))
+    other_index = list(range(len(kfactors)))
     other_index.pop(ref_index)
     for i in other_index:
         ab[i] = intensities[ref_index] * kfactors[ref_index]  \

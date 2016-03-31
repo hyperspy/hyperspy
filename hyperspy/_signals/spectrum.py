@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2015 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -136,15 +136,19 @@ class Spectrum(Signal):
         sr.configure_traits()
         return sr
 
-    def create_model(self):
-        """Create a model for the current data.
+    def create_model(self, dictionary=None):
+        """Create a model for the current signal
+
+        Parameters
+        __________
+        dictionary : {None, dict}, optional
+            A dictionary to be used to recreate a model. Usually generated using
+            :meth:`hyperspy.model.as_dictionary`
 
         Returns
         -------
-        model : `Model` instance.
+        A Model class
 
         """
-
-        from hyperspy.model import Model
-        model = Model(self)
-        return model
+        from hyperspy.models.model1D import Model1D
+        return Model1D(self, dictionary=dictionary)

@@ -1,4 +1,4 @@
-# Copyright 2007-2015 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -28,12 +28,12 @@ class TestProgressBar:
 
     def test_progressbar_not_shown(self):
         pbar = progressbar.progressbar(maxval=2, disabled=True)
-        for i in xrange(2):
+        for i in range(2):
             pbar.update(i)
         pbar.finish()
 
     def test_progressbar_shown(self):
         pbar = progressbar.progressbar(maxval=2, disabled=False)
-        for i in xrange(2):
+        for i in range(2):
             pbar.update(i)
         pbar.finish()

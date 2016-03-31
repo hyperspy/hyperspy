@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2015 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -18,17 +18,18 @@
 
 import os
 import glob
+import logging
 
-from hyperspy import messages
 import hyperspy.defaults_parser
 
-import hyperspy.utils
 import hyperspy.misc.utils
 from hyperspy.misc.io.tools import ensure_directory
 from hyperspy.misc.utils import strlist2enumeration
-from hyperspy.misc.natsort import natsorted
+from natsort import natsorted
 import hyperspy.misc.io.tools
 from hyperspy.io_plugins import io_plugins, default_write_ext
+
+_logger = logging.getLogger(__name__)
 
 
 def load(filenames=None,
@@ -44,7 +45,7 @@ def load(filenames=None,
     """
     Load potentially multiple supported file into an hyperspy structure
     Supported formats: HDF5, msa, Gatan dm3, Ripple (rpl+raw)
-    FEI ser and emi and hdf5, tif and a number of image formats.
+    FEI ser and emi, hdf5, SEMPER unf, tif and a number of image formats.
 
     Any extra keyword is passed to the corresponsing reader. For
     available options see their individual documentation.
@@ -124,6 +125,13 @@ def load(filenames=None,
         mapped file will be created in the given directory,
         otherwise the default directory is used.
 
+    load_to_memory: bool
+        for HDF5 files and blockfiles, if True (default) loads all data to
+        memory. If False, enables only loading the data upon request
+    mmap_mode: {'r', 'r+', 'c'}
+        Used when loading blockfiles to determine which mode to use for when
+        loading as memmap (i.e. when load_to_memory=False)
+
     Returns
     -------
     Signal instance or list of signal instances
@@ -163,7 +171,7 @@ def load(filenames=None,
         if filenames is None:
             raise ValueError("No file provided to reader")
 
-    if isinstance(filenames, basestring):
+    if isinstance(filenames, str):
         filenames = natsorted([f for f in glob.glob(filenames)
                                if os.path.isfile(f)])
         if not filenames:
@@ -175,25 +183,25 @@ def load(filenames=None,
         raise ValueError('No file provided to reader.')
     else:
         if len(filenames) > 1:
-            messages.information('Loading individual files')
+            _logger.info('Loading individual files')
         if stack is True:
             signal = []
             for i, filename in enumerate(filenames):
                 obj = load_single_file(filename,
                                        **kwds)
                 signal.append(obj)
-            signal = hyperspy.utils.stack(signal,
-                                          axis=stack_axis,
-                                          new_axis_name=new_axis_name,
-                                          mmap=mmap, mmap_dir=mmap_dir)
+            signal = hyperspy.misc.utils.stack(signal,
+                                               axis=stack_axis,
+                                               new_axis_name=new_axis_name,
+                                               mmap=mmap, mmap_dir=mmap_dir)
             signal.metadata.General.title = \
                 os.path.split(
                     os.path.split(
                         os.path.abspath(filenames[0])
                     )[0]
                 )[1]
-            messages.information('Individual files loaded correctly')
-            signal._print_summary()
+            _logger.info('Individual files loaded correctly')
+            _logger.info(signal._summary())
             objects = [signal, ]
         else:
             objects = [load_single_file(filename,
@@ -215,8 +223,8 @@ def load_single_file(filename,
                      **kwds):
     """
     Load any supported file into an HyperSpy structure
-    Supported formats: netCDF, msa, Gatan dm3, Ripple (rpl+raw)
-    FEI ser and emi and hdf5.
+    Supported formats: netCDF, msa, Gatan dm3, Ripple (rpl+raw),
+    FEI ser and emi, hdf5 and SEMPER unf.
 
     Parameters
     ----------
@@ -267,20 +275,25 @@ def load_with_reader(filename,
     objects = []
 
     for signal_dict in file_data_list:
-        if "Signal" not in signal_dict["metadata"]:
-            signal_dict["metadata"]["Signal"] = {}
-        if record_by is not None:
-            signal_dict['metadata']["Signal"]['record_by'] = record_by
-        if signal_type is not None:
-            signal_dict['metadata']["Signal"]['signal_type'] = signal_type
-        if signal_origin is not None:
-            signal_dict['metadata']["Signal"]['signal_origin'] = signal_origin
-        objects.append(dict2signal(signal_dict))
-        folder, filename = os.path.split(os.path.abspath(filename))
-        filename, extension = os.path.splitext(filename)
-        objects[-1].tmp_parameters.folder = folder
-        objects[-1].tmp_parameters.filename = filename
-        objects[-1].tmp_parameters.extension = extension.replace('.', '')
+        if 'metadata' in signal_dict:
+            if "Signal" not in signal_dict["metadata"]:
+                signal_dict["metadata"]["Signal"] = {}
+            if record_by is not None:
+                signal_dict['metadata']["Signal"]['record_by'] = record_by
+            if signal_type is not None:
+                signal_dict['metadata']["Signal"]['signal_type'] = signal_type
+            if signal_origin is not None:
+                signal_dict['metadata']["Signal"][
+                    'signal_origin'] = signal_origin
+            objects.append(dict2signal(signal_dict))
+            folder, filename = os.path.split(os.path.abspath(filename))
+            filename, extension = os.path.splitext(filename)
+            objects[-1].tmp_parameters.folder = folder
+            objects[-1].tmp_parameters.filename = filename
+            objects[-1].tmp_parameters.extension = extension.replace('.', '')
+        else:
+            # it's a standalone model
+            continue
 
     if len(objects) == 1:
         objects = objects[0]
@@ -319,7 +332,7 @@ def assign_signal_subclass(record_by="",
         signal_origin = ""
 
     preselection = [s for s in
-                    [s for s in signals.itervalues()
+                    [s for s in signals.values()
                      if record_by == s._record_by]
                     if signal_origin == s._signal_origin]
     perfect_match = [s for s in preselection
@@ -353,7 +366,7 @@ def dict2signal(signal_dict):
         if "Signal" in mp and "signal_origin" in mp["Signal"]:
             signal_origin = mp["Signal"]['signal_origin']
     if (not record_by and 'data' in signal_dict and
-            signal_dict['data'].ndim < 2):
+            len(signal_dict['data'].shape) < 2):
         record_by = "spectrum"
 
     signal = assign_signal_subclass(record_by=record_by,
@@ -363,7 +376,7 @@ def dict2signal(signal_dict):
         for f in signal_dict['post_process']:
             signal = f(signal)
     if "mapping" in signal_dict:
-        for opattr, (mpattr, function) in signal_dict["mapping"].iteritems():
+        for opattr, (mpattr, function) in signal_dict["mapping"].items():
             if opattr in signal.original_metadata:
                 value = signal.original_metadata.get_item(opattr)
                 if function is not None:
@@ -411,7 +424,7 @@ def save(filename, signal, overwrite=None, **kwds):
             overwrite = hyperspy.misc.io.tools.overwrite(filename)
         if overwrite is True:
             writer.file_writer(filename, signal, **kwds)
-            print('The %s file was created' % filename)
+            _logger.info('The %s file was created' % filename)
             folder, filename = os.path.split(os.path.abspath(filename))
             signal.tmp_parameters.set_item('folder', folder)
             signal.tmp_parameters.set_item('filename',

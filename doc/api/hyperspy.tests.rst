@@ -8,6 +8,7 @@ Subpackages
 
     hyperspy.tests.axes
     hyperspy.tests.component
+    hyperspy.tests.datasets
     hyperspy.tests.drawing
     hyperspy.tests.io
     hyperspy.tests.misc
@@ -23,6 +24,22 @@ hyperspy.tests.test_dictionary_tree_browser module
 --------------------------------------------------
 
 .. automodule:: hyperspy.tests.test_dictionary_tree_browser
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+hyperspy.tests.test_events module
+---------------------------------
+
+.. automodule:: hyperspy.tests.test_events
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+hyperspy.tests.test_travis module
+---------------------------------
+
+.. automodule:: hyperspy.tests.test_travis
     :members:
     :undoc-members:
     :show-inheritance:
