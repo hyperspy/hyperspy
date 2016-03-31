@@ -731,7 +731,7 @@ class BCF_reader(SFS_reader):
                                      cutoff_at_channel=cutoff_chan)
 
     def py_parse_hypermap(self, index=0, downsample=1, cutoff_at_channel=None):
-
+        """pure python based bruker/delphi array unpacking function"""
         st = {1: 'B', 2: 'B', 4: 'H', 8: 'I', 16: 'Q'}
         spectrum_file = self.get_file('EDSDatabase/SpectrumData' + str(index))
         iter_data, size_chnk, chunks = spectrum_file.get_iter_and_properties()
@@ -879,8 +879,8 @@ class BCF_reader(SFS_reader):
 class HyperMap(object):
     def __init__(self, nparray, parent, index=0, downsample=1):
         sp_meta = parent.header.get_spectra_metadata(index=index)
-        self.calib_abs = sp_meta.calibAbs
-        self.calib_lin = sp_meta.calibLin
+        self.calib_abs = sp_meta.calibAbs * 1000    # keV -> eV
+        self.calib_lin = sp_meta.calibLin * 1000
         self.xcalib = parent.header.image.x_res * downsample
         self.ycalib = parent.header.image.y_res * downsample
         self.hypermap = nparray
@@ -898,9 +898,14 @@ def file_reader(filename,
     if record_by == 'image':
         return bcf_imagery(obj_bcf)
     elif record_by == 'spectrum':
-        pass
+        return bcf_hyperspectra(obj_bcf, index=index,
+                                 downsample=downsample,
+                                 cutoff_at_kV=cutoff_at_kV)
     else:
-        return bcf_imagery(obj_bcf)  # + bcf_hyperspectra(obj_bcf)
+        return bcf_imagery(obj_bcf) + bcf_hyperspectra(obj_bcf,
+                                                       index=index,
+                                                       downsample=downsample,
+                                                      cutoff_at_kV=cutoff_at_kV)
 
 
 def bcf_imagery(obj_bcf):
@@ -916,14 +921,14 @@ def bcf_imagery(obj_bcf):
                      'name': 'width',
                      'size': obj_bcf.header.image.width,
                      'offset': 0,
-                     'scale': obj_bcf.header.image.y_res,
+                     'scale': obj_bcf.header.image.x_res,
                      'units': 'm'
                     },
                     {'index_in_array': 0,
                      'name': 'height',
                      'size': obj_bcf.header.image.height,
                      'offset': 0,
-                     'scale': obj_bcf.header.image.x_res,
+                     'scale': obj_bcf.header.image.y_res,
                      'units': 'm'}],
            'metadata':
              # where is no way to determine what kind of instrument was used:
@@ -945,3 +950,52 @@ def bcf_imagery(obj_bcf):
              }
            })
     return imagery_list
+
+
+def bcf_hyperspectra(obj_bcf, index=0, downsample=None, cutoff_at_kV=None):
+    """
+    return hyperspy required list of dict with eds
+    hyperspectra and metadata
+    """
+    obj_bcf.persistent_parse_hypermap(index=index, downsample=downsample,
+                                      cutoff_at_kV=cutoff_at_kV)
+    hyperspectra = [{'data': obj_bcf.hypermap[index].hypermap,
+           'axes': [{'index_in_array': 2,
+                     'name': 'width',
+                     'size': obj_bcf.header.image.width,
+                     'offset': 0,
+                     'scale': obj_bcf.hypermap[index].xcalib,
+                     'units': 'm'
+                    },
+                    {'index_in_array': 1,
+                     'name': 'height',
+                     'size': obj_bcf.header.image.height,
+                     'offset': 0,
+                     'scale': obj_bcf.hypermap[index].ycalib,
+                     'units': 'm'},
+                     {'index_in_array': 0,
+                     'name': 'Energy',
+                     'size': obj_bcf.hypermap[index].hypermap.shape[0],
+                     'offset': obj_bcf.hypermap[index].calib_abs,
+                     'scale': obj_bcf.hypermap[index].calib_lin,
+                     'units': 'eV'}],
+           'metadata':
+             # where is no way to determine what kind of instrument was used:
+             # TEM or SEM
+             {'Acquisition_instrument': {
+                          'SEM': {
+                             'beam_current': 0.0,  # There is no technical
+                             # possibilities to get such parameter from bruker
+                             # or some SEM's'
+                             'beam_energy': obj_bcf.header.sem.hv,
+                             'tilt_stage': obj_bcf.header.stage.tilt_angle,
+                             'stage_x': obj_bcf.header.stage.x,
+                             'stage_y': obj_bcf.header.stage.y
+                                 }
+                                        },
+              'General': {'original_filename': obj_bcf.filename.split('/')[-1]},
+              'Signal': {'signal_type': 'EDS_SEM',
+                           'record_by': 'spectrum', },
+             }
+           }]
+    return hyperspectra
