@@ -43,6 +43,7 @@ reads_spectrum_image = True
 writes_images = False
 writes_spectrum = False
 writes_spectrum_image = False
+writes = False
 
 import io
 
