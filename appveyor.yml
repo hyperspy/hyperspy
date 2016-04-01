@@ -30,7 +30,7 @@ environment:
       CONDA_NPY: "19"
       WP_URL: 'https://github.com/winpython/winpython/releases/download/1.3.20160209/WinPython-64bit-3.5.1.2.exe'
       WP_CRC: '07e854b9aa7a31d8bbf7829d04a45b6d6266603690520e365199af2d98751ab1'
-      DEPS: "numpy scipy matplotlib ipython h5py sympy scikit-learn dill mock setuptools natsort"
+      DEPS: "numpy scipy matplotlib ipython h5py sympy scikit-learn dill mock setuptools natsort lxml"
 
 
 
