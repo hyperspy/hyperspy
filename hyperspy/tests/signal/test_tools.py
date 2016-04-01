@@ -123,6 +123,10 @@ class Test2D:
         s.axes_manager.set_signal_dimension(2)
         nt.assert_true(s.unfold())
 
+    def test_print_summary(self):
+        # Just test if it doesn't raise an exception
+        self.signal._print_summary()
+
 
 def _test_default_navigation_signal_operations_over_many_axes(self, op):
     s = getattr(self.signal, op)()
