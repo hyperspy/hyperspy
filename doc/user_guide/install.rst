@@ -190,7 +190,7 @@ Installing HyperSpy from source in Ubuntu 15.10:
         python3-scipy python3-skimage python3-requests python3-natsort \
         python3-setuptools python3-h5py python3-pyqt4 ipython3 \
         python3-mock python3-dill
-    $ sudo apt-get install python3-sumpy --no-install-recommends
+    $ sudo apt-get install python3-sympy --no-install-recommends
     $ sudo pip3 install sklearn traits traitsui
     $ git clone https://github.com/hyperspy/hyperspy.git
     $ cd hyperspy
