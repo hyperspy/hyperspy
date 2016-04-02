@@ -1102,7 +1102,9 @@ def bcf_imagery(obj_bcf):
                              'stage_y': obj_bcf.header.stage.y
                                  }
                                         },
-              'General': {'original_filename': obj_bcf.filename.split('/')[-1]},
+              'General': {'original_filename': obj_bcf.filename.split('/')[-1],
+                          'title': img.detector_name},
+              'Sample': {'name': obj_bcf.header.name},
               'Signal': {'signal_type': img.detector_name,
                            'record_by': 'image', },
              }
@@ -1116,6 +1118,7 @@ def bcf_hyperspectra(obj_bcf, index=0, downsample=None, cutoff_at_kV=None):
     """
     obj_bcf.persistent_parse_hypermap(index=index, downsample=downsample,
                                       cutoff_at_kV=cutoff_at_kV)
+    eds_metadata = obj_bcf.header.get_spectra_metadata(index=index)
     hyperspectra = [{'data': obj_bcf.hypermap[index].hypermap,
            'axes': [{'name': 'height',
                      'size': obj_bcf.header.image.height,
@@ -1136,17 +1139,27 @@ def bcf_hyperspectra(obj_bcf, index=0, downsample=None, cutoff_at_kV=None):
              # where is no way to determine what kind of instrument was used:
              # TEM or SEM
              {'Acquisition_instrument': {
-                          'SEM': {
-                             'beam_current': 0.0,  # There is no technical
-                             # possibilities to get such parameter from bruker
-                             # or some SEM's'
-                             'beam_energy': obj_bcf.header.sem.hv,
-                             'tilt_stage': obj_bcf.header.stage.tilt_angle,
-                             'stage_x': obj_bcf.header.stage.x,
-                             'stage_y': obj_bcf.header.stage.y
+                  'SEM': {
+                     'beam_current': 0.0,  # There is no technical
+                     # possibilities to get such parameter from bruker
+                     # or some SEM's'
+                     'beam_energy': obj_bcf.header.sem.hv,
+                     'tilt_stage': obj_bcf.header.stage.tilt_angle,
+                     'stage_x': obj_bcf.header.stage.x,
+                     'stage_y': obj_bcf.header.stage.y,
+                     'Detector': {
+                         'EDS':{
+                             'azimuth_angle': eds_metadata.azimutAngle,
+                             'elevation_angle': eds_metadata.elevationAngle,
+                             'detector_type': eds_metadata.detectorType
+                               }
                                  }
-                                        },
-              'General': {'original_filename': obj_bcf.filename.split('/')[-1]},
+                         }
+                                         },
+              'General': {'original_filename': obj_bcf.filename.split('/')[-1],
+                          'title': 'EDS hyperspectra',
+                          'datetime': obj_bcf.header.datetime},
+              'Sample': {'name': obj_bcf.header.name},
               'Signal': {'signal_type': 'EDS_SEM',
                            'record_by': 'spectrum', },
              }
