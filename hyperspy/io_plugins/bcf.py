@@ -1157,7 +1157,7 @@ def bcf_hyperspectra(obj_bcf, index=0, downsample=None, cutoff_at_kV=None):
                          }
                                          },
               'General': {'original_filename': obj_bcf.filename.split('/')[-1],
-                          'title': 'EDS hyperspectra',
+                          'title': 'EDX',
                           'datetime': obj_bcf.header.datetime},
               'Sample': {'name': obj_bcf.header.name},
               'Signal': {'signal_type': 'EDS_SEM',
