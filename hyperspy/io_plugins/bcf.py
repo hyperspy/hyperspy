@@ -654,11 +654,11 @@ class HyperHeader(object):
         self.elements list
         """
         try:
-            elements = root.xpath("".join(
+            elements = root.xpath("".join([
                "ClassInstance[@Type='TRTContainerClass']/ChildClassInstances",
                "/ClassInstance[@Type='TRTElementInformationList']",
                "/ClassInstance[@Type='TRTSpectrumRegionList']",
-               "/ChildClassInstances"))[0]
+               "/ChildClassInstances"]))[0]
             for j in elements.xpath("ClassInstance[@Type='TRTSpectrumRegion']"):
                 self.elements.append(int(j.Element))
         except IndexError:
@@ -793,7 +793,8 @@ class BCF_reader(SFS_reader):
             'channels recorded, coresponding to {0:.2f}kV'.format(
             ed.channel_to_energy(ed.chnlCnt)))
         print('width, height of raster:')
-        print(''.join(str(self.header.image.width),'✕',str(self.header.image.height)))
+        print(''.join([str(self.header.image.width), '✕',
+                       str(self.header.image.height)]))
 
     def persistent_parse_hypermap(self, index=0, downsample=None,
                                   cutoff_at_kV=None):
