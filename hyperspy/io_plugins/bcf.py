@@ -371,7 +371,7 @@ class SFS_reader(object):
                 raw_tree = fn.read(0x200 * self.n_tree_items)
             else:
                 temp_str = io.BytesIO()
-                for i in range(n_file_tree_chunks):
+                for dummy in range(n_file_tree_chunks):
                     # jump to tree/list address:
                     fn.seek(self.chunksize * self.tree_address + 0x118)
                     # next tree/list address:
