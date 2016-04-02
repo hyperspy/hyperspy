@@ -792,7 +792,7 @@ class BCF_reader(SFS_reader):
             'with', ed.chnlCnt,
             'channels recorded, coresponding to {0:.2f}kV'.format(
             ed.channel_to_energy(ed.chnlCnt)))
-        print('dimentions of raster:)
+        print('width, height of raster:')
         print(''.join(str(self.header.image.width),'✕',str(self.header.image.height)))
 
     def persistent_parse_hypermap(self, index=0, downsample=None,
