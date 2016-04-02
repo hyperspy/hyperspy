@@ -74,6 +74,20 @@ class Container(object):
 
 
 class SFSTreeItem(object):
+    """Class to manage one internal sfs file.
+    
+    Reading, reading in chunks, reading and extracting, reading without
+    extracting even if compression is pressent.
+    
+    Attributes:
+    item_raw_string -- the bytes from sfs file table describing the file
+    parent -- the item higher hierarchicaly in the sfs file tree
+    
+    Methods:
+    read_piece, setup_compression_metadata, get_iter_and_properties,
+    get_as_BytesIO_string
+    """
+    
     def __init__(self, item_raw_string, parent):
         self.sfs = parent
         self._pointer_to_pointer_table, self.size, create_time, \
@@ -100,6 +114,18 @@ class SFSTreeItem(object):
         return '<SFS internal file {0:.2f} MB>'.format(self.size / 1048576)
 
     def _fill_pointer_table(self):
+        """Parse the sfs and populate self.pointers table. 
+        
+        self.pointer is the sfs pointer table containing addresses of
+        every chunk of the file.
+        
+        The pointer table if the file is big can extend throught many
+        sfs chunks. Differently than files, the pointer table of file have no
+        table of pointers to the chunks. Instead if pointer table is larger
+        than sfs chunk, the chunk header contains next chunk number (address
+        can be calculated using known chunk size and global offset) with continuation
+        of file pointer table, thus it have to be read and filled consecutive.
+        """
         #table size in number of chunks:
         n_of_chunks = -(-self.size_in_chunks //
                        (self.sfs.usable_chunk // 4))
@@ -124,16 +150,14 @@ class SFSTreeItem(object):
                                                    self.sfs.chunksize + 0x138
 
     def read_piece(self, offset, length):
-        """Read and returns raw byte string of the file without
+        """ Read and returns raw byte string of the file without applying
         any decompression.
 
         Arguments:
-        ----------
         offset: seek value
         length: length of the data counting from the offset
 
         Returns:
-        ----------
         io.ByteIO object
         """
         data = io.BytesIO()
@@ -164,9 +188,14 @@ class SFSTreeItem(object):
     def _iter_read_chunks(self, first=0, chunks=False):
         """Generate and return iterator for reading and returning
         sfs internal file in chunks.
+        
         By default it creates iterator for whole file, however
         with kwargs 'first' and 'chunks' the range of chunks
         for iterator can be set.
+        
+        Keyword arguments:
+        first -- the index of first chunk from which to read. (default 0)
+        chunks -- the number of chunks to read. (default False)
         """
         if not chunks:
             last = self.size_in_chunks
@@ -187,9 +216,13 @@ class SFSTreeItem(object):
                 yield fn.read(self.sfs.usable_chunk)
 
     def setup_compression_metadata(self):
-        """
-        Setup the number of chunks and uncompressed size as class
-        atributes.
+        """ parse and setup the number of compression chunks
+        
+        and uncompressed chunk size as class attributes.
+        
+        Sets up attributes:
+        self.uncompressed_blk_size, self.no_of_compr_blk
+        
         """
         with open(self.sfs.filename, 'rb') as fn:
             fn.seek(self.pointers[0])
@@ -203,10 +236,13 @@ class SFSTreeItem(object):
 but compression signature is missing in the header. Aborting....""")
 
     def _iter_read_larger_chunks(self, chunk_size=524288):
-        """
-        Generate and return iterator for reading
-        the raw data in sensible sized chunks.
-        default chunk size = 524288 bytes (0.5MB)
+        """ Generate and return chunk reader iterator
+        
+        for reading the raw data in sensible sized chunks.
+        
+        Arguments:
+        chunk size -- size of the returned chunk in bytes 
+                      (default 524288 bytes (0.5MB))
         """
         chunks = -(-self.size // chunk_size)
         last_chunk = self.size % chunk_size
@@ -222,9 +258,11 @@ but compression signature is missing in the header. Aborting....""")
         yield raw_string
 
     def _iter_read_compr_chunks(self):
-        """Generate and return iterator for compressed file with
-        zlib or bzip2 compression, where iterator returns uncompressed
-        data in chunks as iterator.
+        """Generate and return reader and decompressor iterator
+        for compressed file with zlib or bzip2 compression.
+        
+        Returns:
+        iterator of decompressed data chunks.
         """
         if self.sfs.compression == 'zlib':
             from zlib import decompress as unzip_block
@@ -234,8 +272,8 @@ but compression signature is missing in the header. Aborting....""")
         for dummy1 in range(self.no_of_compr_blk):
             cpr_size, dummy_size, dummy_unkn, dummy_size2 = strct_unp('<IIII',
                                                   self.read_piece(offset, 16))
-            # dummy_unkn is probably some kind of checksum but non
-            # known (crc16, crc32, adler32) algorithm could match.
+            # dummy_unkn is probably some kind of checksum but
+            # none of known (crc16, crc32, adler32) algorithm could match.
             # dummy_size2 == cpr_size + 0x10 which have no use...
             # dummy_size, which is decompressed size, also have no use...
             # as it is the same in file compression_header
@@ -245,10 +283,12 @@ but compression signature is missing in the header. Aborting....""")
             yield unzip_block(raw_string)
 
     def get_iter_and_properties(self, larger_chunks=False):
-        """Get the the iterator and properties of its chunked size and
-        number of chunks for compressed or not compressed data
-        accordingly.
-        ----------
+        """Generate and return the iterator of data chunks and
+        properties of such chunks such as size and count.
+        
+        Method detects if data is compressed and uses iterator with
+        decompression involved, else uses simple iterator of chunks.
+        
         Returns:
             (iterator, chunk_size, number_of_chunks)
         """
@@ -275,8 +315,28 @@ but compression signature is missing in the header. Aborting....""")
 
 
 class SFS_reader(object):
+    
+    """Class to read sfs file.
+    
+    SFS is AidAim software's(tm) single file system.
+    The class provides basic reading capabilities of such container.
+    It is capable to read compressed data in zlib or bz2, but
+    SFS can contain other compression which is not implemented here.
+    It is also not able to read encrypted sfs containers.
+    
+    This class can be used stand alone or inherited in construction of
+    file readers using sfs technolgy.
+    
+    Attributes:
+    filename
+    
+    Methods:
+    print_file_tree, get_file
+    """
+    
     def __init__(self, filename):
         self.filename = filename
+        # read the file header
         with open(filename, 'rb') as fn:
             a = fn.read(8)
             if a != b'AAMVHFSS':
@@ -296,6 +356,12 @@ class SFS_reader(object):
         self._setup_vfs()
 
     def _setup_vfs(self):
+        """Setup the virtual file system tree represented as python dictionary
+        with values populated with SFSTreeItem instances
+        
+        See also:
+        SFSTreeItem
+        """
         with open(self.filename, 'rb') as fn:
             #check if file tree do not exceed one chunk:
             n_file_tree_chunks = -((-self.n_tree_items * 0x200) //
@@ -355,8 +421,7 @@ class SFS_reader(object):
         self.vfs = root['root']
 
     def _check_the_compresion(self, temp_item_list):
-        """check the compression and set the compression
-        attrib accordingly"""
+        """parse, check and setup the self.compression"""
         with open(self.filename, 'rb') as fn:
             #Find if there is compression:
             for c in temp_item_list:
@@ -389,21 +454,21 @@ class SFS_reader(object):
         sfs container.
 
         Arguments:
-        ---------
-        path: internal file path in sfs file tree. Path accepts only
+        path -- internal file path in sfs file tree. Path accepts only
             standard - forward slash for directories.
 
         Returns:
-        ---------
         object (SFSTreeItem), which can be read into byte stream, in
         chunks or whole using objects methods.
 
-        example:
-        ---------
+        Example:
         to get "file" object 'kitten.png' in folder 'catz' which
         resides in root directory of sfs, you would use:
 
         >>> instance_of_SFSReader.get_file('catz/kitten.png')
+        
+        See also:
+        SFSTreeItem
         """
         item = self.vfs
         try:
@@ -421,6 +486,10 @@ class EDXSpectrum(object):
         """
         Wrap the objectified bruker EDS spectrum xml part
         to the python object, leaving all the xml and bruker clutter behind
+        
+        Arguments:
+        spectrum -- lxml objectified xml where spectrum.attrib['Type'] should
+            be 'TRTSpectrum'
         """
         if str(spectrum.attrib['Type']) != 'TRTSpectrum':
             raise IOError('Not valid objectified xml passed',
@@ -483,11 +552,17 @@ class EDXSpectrum(object):
 
 class HyperHeader(object):
     """Wrap Bruker HyperMaping xml header into python object.
-    For instantionion have to be provided with extracted Header xml
+    
+    Arguments:
+    xml_str -- the uncompressed to be provided with extracted Header xml
     from bcf.
+    
+    Methods:
+    estimate_map_channels, estimate_map_depth
+    
     If Bcf is version 2, the bcf can contain stacks
-    of hypermaps - thus header part contains sum eds spectras and it's
-    metadata per hypermap slice.
+    of hypermaps - thus header part  can contain multiply sum eds spectras
+    and it's metadata per hypermap slice which can be selected using index.
     Bcf can record number of imagery from different
     imagining detectors (BSE, SEI, ARGUS, etc...): access to imagery
     is throught image index.
@@ -523,6 +598,9 @@ class HyperHeader(object):
         self._set_sum_edx(root)
 
     def _set_sem(self, root):
+        """wrap objectified xml part to class attributes for self.sem,
+        self.stage and self.image.*_res
+        """
         semData = root.xpath("ClassInstance[@Type='TRTSEMData']")[0]
         # sem acceleration voltage, working distance, magnification:
         self.sem.hv = float(semData.HV)  # in kV
@@ -551,6 +629,9 @@ class HyperHeader(object):
         self.stage.tilt_angle = float(DSPConf.TiltAngle)
 
     def _set_image(self, root):
+        """Wrap objectified xml part with image to class attributes
+        for self.image.
+        """
         imageData = root.xpath("ClassInstance[@Type='TRTImageData']")[0]
         self.image.width = int(imageData.Width)  # in pixels
         self.image.height = int(imageData.Height)  # # in pixels
@@ -569,12 +650,15 @@ class HyperHeader(object):
                 self.image.images.append(temp_img)
 
     def _set_elements(self, root):
+        """wrap objectified xml part with selection of elements to
+        self.elements list
+        """
         try:
-            elements = root.xpath(
-               "ClassInstance[@Type='TRTContainerClass']/ChildClassInstances" +
-               "/ClassInstance[@Type='TRTElementInformationList']" +
-               "/ClassInstance[@Type='TRTSpectrumRegionList']" +
-               "/ChildClassInstances")[0]
+            elements = root.xpath("".join(
+               "ClassInstance[@Type='TRTContainerClass']/ChildClassInstances",
+               "/ClassInstance[@Type='TRTElementInformationList']",
+               "/ClassInstance[@Type='TRTSpectrumRegionList']",
+               "/ChildClassInstances"))[0]
             for j in elements.xpath("ClassInstance[@Type='TRTSpectrumRegion']"):
                 self.elements.append(int(j.Element))
         except IndexError:
@@ -591,14 +675,15 @@ class HyperHeader(object):
                                                        str(i))[0].ClassInstance)
 
     def estimate_map_channels(self, index=0):
-        """estimate minimal size of array that any pixel of spectra would
+        """estimate minimal size of array so any spectra from any pixel would
         not be truncated.
-        args:
+        
+        Arguments:
         index -- index of the map if multiply hypermaps are present
         in the same bcf.
-        returns:
-        maximum non empty channel +1 what equals to the needed size of
-        final array depth (energy).
+        
+        Returns:
+        maximum non empty channel +1.
         """
         sum_eds = self.spectra_data[index].data
         try:
@@ -609,16 +694,23 @@ class HyperHeader(object):
             return len(sum_eds)
 
     def estimate_map_depth(self, index=0, downsample=1, for_numpy=False):
-        """estimate minimal dtype of array from the cumulative spectra
-        of the all pixels so that none would be truncated.
-        args:
-        index -- index of the map channels if multiply hypermaps are
-        present in the same bcf.
-        returns:
+        """estimate minimal dtype of array using cumulative spectra
+        of the all pixels so that no data would be truncated.
+        
+        Arguments:
+        index -- index of the hypermap if multiply hypermaps are
+        present in the same bcf. (default 0)
+        downsample -- downsample factor (should be integer; default 1)
+        for_numpy -- if estimation will be used in parsing using oure python
+            and numpy inplace integer addition will be used, so the dtype
+            should be signed; if cython implementation will be used (default),
+            then any returned dtypes can be safely unsigned. (default False)
+        
+        Returns:
         numpy dtype large enought to use in final hypermap numpy array.
 
         The method estimates the value from sum eds spectra, dividing
-        the maximum value from raster width and hight and to be on the
+        the maximum  energy pulse value from raster x and y and to be on the
         safe side multiplying by 2.
         """
         sum_eds = self.spectra_data[index].data
@@ -655,11 +747,34 @@ class HyperHeader(object):
         return depth
 
     def get_spectra_metadata(self, index=0):
-        """return objectified xml with spectra metadata"""
+        """return objectified xml with spectra metadata
+        Arguments:
+        index -- index of hypermap/spectra (default 0)
+        """
         return self.spectra_data[index]
 
 
 class BCF_reader(SFS_reader):
+    
+    """Class to read bcf (Bruker hypermapping) file.
+    
+    Inherites SFS_reader and all its attributes and methods.
+    
+    Attributes:
+    filename
+    
+    Methods:
+    print_the_metadata, persistent_parse_hypermap, parse_hypermap,
+    py_parse_hypermap
+    (Inherited from SFS_reader: print_file_tree, get_file)
+    
+    The class instantiates HyperHeader class as self.header attribute
+    where all metadata, sum eds spectras, (SEM) imagery are stored.
+    if persistent_parse_hypermap is called, the hypermap is stored
+    as instance of HyperMap inside the self.hypermap dictionary,
+    where index of the hypermap (default 0) is the key to the instance. 
+    """
+    
     def __init__(self, filename):
         SFS_reader.__init__(self, filename)
         header_file = self.get_file('EDSDatabase/HeaderData')
@@ -668,6 +783,7 @@ class BCF_reader(SFS_reader):
         self.hypermap = {}
 
     def print_the_metadata(self):
+        """print the basic information about the content of bcf"""
         print('selected bcf contains:\n * imagery from detectors:')
         for i in self.header.image.images:
             print("\t*", i.detector_name)
@@ -676,10 +792,24 @@ class BCF_reader(SFS_reader):
             'with', ed.chnlCnt,
             'channels recorded, coresponding to {0:.2f}kV'.format(
             ed.channel_to_energy(ed.chnlCnt)))
+        print('dimentions of raster:)
+        print(''.join(str(self.header.image.width),'✕',str(self.header.image.height)))
 
     def persistent_parse_hypermap(self, index=0, downsample=None,
                                   cutoff_at_kV=None):
-        """parse and assign the hypermap to the Hypermap python object"""
+        """Parse and assign the hypermap to the HyperMap instance.
+        
+        Arguments:
+        index -- index of hypermap in bcf if v2 (default 0)
+        downsample -- downsampling factor of hypermap (default None)
+        cutoff_at_kV -- low pass cutoff value at keV (default None)
+        
+        Method does not return anything, it adds the HyperMap instance to
+        self.hypermap dictionary.
+        
+        See also:
+        HyperMap, parse_hypermap
+        """
         dwn = downsample
         hypermap = self.parse_hypermap(index=index,
                                        downsample=dwn,
@@ -692,24 +822,25 @@ class BCF_reader(SFS_reader):
     def parse_hypermap(self, index=0, downsample=1, cutoff_at_kV=None):
         """Unpack the Delphi/Bruker binary spectral map and return
         numpy array in memory efficient way.
+        
         Pure python/numpy implimentation -- slow, or
-        cython/memoryview/numpy implimentaion if complied (fast)
-        is used.
+        cython/memoryview/numpy implimentation if compilied and present
+        (fast) is used. 
 
         Arguments:
         ---------
-        index: the index of hypermap in bcf if there is more than one
+        index -- the index of hypermap in bcf if there is more than one
             hyper map in file.
-        downsample: downsampling factor (integer). Diferently than
+        downsample -- downsampling factor (integer). Diferently than
             block_reduce from skimage.measure, the parser populates
-            reduced array by suming results of pixels, thus saving memory.
-            Downsampled (differently than not) hypermaps are returned
-            wiht signed integer dtypes larger if required.
-
+            reduced array by suming results of pixels, thus having lower
+            memory requiriments. (default 1)
+        cutoff_at_kV -- value in keV to truncate the array at. Helps reducing
+          size of array. (default None)
+        
         Returns:
         ---------
-        numpy array of hypermap, where spectral channels are on
-            the first axis.
+        numpy array of bruker hypermap, with (y,x,E) shape.  
         """
 
         if type(cutoff_at_kV) in (int, float):
@@ -732,8 +863,36 @@ class BCF_reader(SFS_reader):
                                      cutoff_at_channel=cutoff_chan)
 
     def py_parse_hypermap(self, index=0, downsample=1, cutoff_at_channel=None):
-        """pure python based bruker/delphi array unpacking function"""
-        st = {1: 'B', 2: 'B', 4: 'H', 8: 'I', 16: 'Q'}
+        """Unpack the Delphi/Bruker binary spectral map and return
+        numpy array in memory efficient way using pure python implementation.
+        (Slow!)
+        
+        The function is long and complicated because Delphi/Bruker array
+        packing is complicated. Whole parsing is done in one function/method
+        to reduce overhead from python function calls. For cleaner parsing
+        logic check out fast cython implementation at
+        hyperspy/io_plugins/unbcf_fast.pyx
+        
+        The method is only meant to be used if for some
+        reason c (generated with cython) version of the parser is not compiled.
+        
+        Arguments:
+        ---------
+        index -- the index of hypermap in bcf if there is more than one
+            hyper map in file.
+        downsample -- downsampling factor (integer). Diferently than
+            block_reduce from skimage.measure, the parser populates
+            reduced array by suming results of pixels, thus having lower
+            memory requiriments. (default 1)
+        cutoff_at_kV -- value in keV to truncate the array at. Helps reducing
+          size of array. (default None)
+        
+        Returns:
+        ---------
+        numpy array of bruker hypermap, with (y,x,E) shape.  
+        """
+        # dict of nibbles to struct notation for reading:
+        st = {1: 'B', 2: 'B', 4: 'H', 8: 'I', 16: 'Q'}  
         spectrum_file = self.get_file('EDSDatabase/SpectrumData' + str(index))
         iter_data, size_chnk, chunks = spectrum_file.get_iter_and_properties()
         if type(cutoff_at_channel) == int:
@@ -797,7 +956,7 @@ class BCF_reader(SFS_reader):
                     mask = np.ones_like(data2, dtype=bool)
                     mask[0::6] = mask[5::6] = False
                     # Reinterpret expanded as 16-bit:
-                    # string representation of array after swith will have
+                    # string representation of array after switch will have
                     # always BE independently from endianess of machine
                     exp16 = np.fromstring(data2[mask].tostring(),
                                           dtype='>u2', count=n_of_pulses)
@@ -889,12 +1048,9 @@ class HyperMap(object):
 
 
 #wrapper functions for hyperspy:
-def file_reader(filename,
-                record_by=None,
-                index=0,
-                downsample=1,
-                cutoff_at_kV=None,
-                **kwds):
+def file_reader(filename, record_by=None,
+                index=0, downsample=1,
+                cutoff_at_kV=None, **kwds):
     #objectified bcf file:
     obj_bcf = BCF_reader(filename)
     if record_by == 'image':
@@ -911,9 +1067,8 @@ def file_reader(filename,
 
 
 def bcf_imagery(obj_bcf):
-    """
-    return hyperspy required list of dict with sem
-    imagery and metadata
+    """ return hyperspy required list of dict with sem
+    imagery and metadata.
     """
     imagery_list = []
     for img in obj_bcf.header.image.images:
@@ -952,9 +1107,8 @@ def bcf_imagery(obj_bcf):
 
 
 def bcf_hyperspectra(obj_bcf, index=0, downsample=None, cutoff_at_kV=None):
-    """
-    return hyperspy required list of dict with eds
-    hyperspectra and metadata
+    """ Return hyperspy required list of dict with eds
+    hyperspectra and metadata.
     """
     obj_bcf.persistent_parse_hypermap(index=index, downsample=downsample,
                                       cutoff_at_kV=cutoff_at_kV)
