@@ -392,7 +392,14 @@ class SFS_reader(object):
             for c in temp_item_list:
                 if not c.is_dir:
                     c.setup_compression_metadata()
-        # Shufling items from flat list into dictionary tree:
+        # convert the items to virtual file system tree
+        dict_tree = self._flat_items_to_dict(paths, temp_item_list)
+        #and finaly set the Virtual file system:
+        self.vfs = dict_tree['root']
+        
+    def _flat_items_to_dict(self, paths, temp_item_list):
+        """place items from flat list into dictionary tree
+        of virtual file system"""
         while not all(g[-1] == -1 for g in paths):
             for f in range(len(paths)):
                 if paths[f][-1] != -1:
@@ -417,8 +424,8 @@ class SFS_reader(object):
                 dir_pointer[temp_item_list[i].name] = {}
             else:
                 dir_pointer[temp_item_list[i].name] = temp_item_list[i]
-        # and finaly Virtual file system:
-        self.vfs = root['root']
+        # return dict tree:
+        return root
 
     def _check_the_compresion(self, temp_item_list):
         """parse, check and setup the self.compression"""
@@ -895,7 +902,7 @@ class BCF_reader(SFS_reader):
         # dict of nibbles to struct notation for reading:
         st = {1: 'B', 2: 'B', 4: 'H', 8: 'I', 16: 'Q'}  
         spectrum_file = self.get_file('EDSDatabase/SpectrumData' + str(index))
-        iter_data, size_chnk, chunks = spectrum_file.get_iter_and_properties()
+        iter_data, size_chnk = spectrum_file.get_iter_and_properties()[:2]
         if type(cutoff_at_channel) == int:
             max_chan = cutoff_at_channel
         else:
@@ -1051,7 +1058,7 @@ class HyperMap(object):
 #wrapper functions for hyperspy:
 def file_reader(filename, record_by=None,
                 index=0, downsample=1,
-                cutoff_at_kV=None, **kwds):
+                cutoff_at_kV=None):
     #objectified bcf file:
     obj_bcf = BCF_reader(filename)
     if record_by == 'image':
