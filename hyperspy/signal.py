@@ -3034,7 +3034,7 @@ class Signal(FancySlicing,
 
     def _summary(self):
         string = "\n\tTitle: "
-        string += self.metadata.General.title.decode('utf8')
+        string += self.metadata.General.title
         if self.metadata.has_item("Signal.signal_type"):
             string += "\n\tSignal type: "
             string += self.metadata.Signal.signal_type
