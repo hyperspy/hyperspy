@@ -164,7 +164,7 @@ If any new packages are imported (or old ones removed), the dependency lists mus
 be updated:
 
 * `For Debian/Ubuntu <https://github.com/hyperspy/hyperspy/blob/master/stdeb.cfg>`_
-* `Python installer/Pip <https://github.com/hyperspy/hyperspy/blob/master/setup.py`_
+* `Python installer/Pip <https://github.com/hyperspy/hyperspy/blob/master/setup.py>`_
 * `Documentation <https://github.com/hyperspy/hyperspy/blob/master/doc/user_guide/install.rst>`_
 
 5. Make your contribution
