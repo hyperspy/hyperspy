@@ -166,6 +166,8 @@ HyperSpy.
     +--------------------+-----------+----------+
     | DENS heater log    |    Yes    |    No    |
     +--------------------+-----------+----------+
+    | Bruker's bcf       |    Yes    |    No    |
+    +--------------------+-----------+----------+
 
 .. _hdf5-format:
 
@@ -440,3 +442,62 @@ format stores all the captured data for each timestamp, together with a small
 header in a plain-text format. The reader extracts the measured temperature
 along the time axis, as well as the date and calibration constants stored in
 the header.
+
+
+.. _bcf-format:
+
+Bruker composite file
+----------------
+
+HyperSpy can read "hypermaps" saved with Bruker's Esprit v1.x or v2.x in bcf
+hybrid (virtual file system/container with xml and binary data, optionaly compressed) format.
+Most of relevant data extraction from bcf is implemented. Both: high
+resolution 16-bit SEM imagery and hyperspectral EDX data can be retrieved simultaniously.
+
+Note that Bruker Esprit uses the similar format for EBSD data, but even if technology
+is very similar, curently EBSD containing bcf is not supported by HyperSpy.
+
+Extra loading arguments
+^^^^^^^^^^^^^^^^^^^^^^^
+record_by: One of ('spectrum', 'image'). If specified just selected type of data
+is returned. (default None)
+
+index: index of dataset in bcf v2 files, which can hold few datasets (delaut 0)
+
+downsample: the downsample ratio of hyperspectral array (hight and width only),
+can be integer from 1 to inf, where '1' results in no downsampling (default 1).
+  
+cutoff_at_kV -- if set (can be int of float >= 0) can be used either to
+crop or enlarge energy (or channels) range at max values. (default None)
+
+Example of loading reduced (downsampled, and with energy range cropped) "spectrum only"
+data from bcf (original shape: 80keV EDS range (4096 channels), 100x75 pixels):
+
+.. code-block:: python
+
+    >>> hs.load("sample80kv.bcf", record_by='spectrum', downsample=2, cutoff_at_kV=10)
+    <EDSSEMSpectrum, title: EDX, dimensions: (50, 38|595)>
+
+load the same file without options:
+
+.. code-block:: python
+
+    >>> hs.load("sample80kv.bcf")
+    [<Image, title: BSE, dimensions: (|100, 75)>,
+    <Image, title: SE, dimensions: (|100, 75)>,
+    <EDSSEMSpectrum, title: EDX, dimensions: (100, 75|1394)>]
+
+1394 energy channel range is the result of automatic creation of array min shape
+so no information would be cropped out. However if we would wan't to stack few
+slices this can couse a problem. with using cutoff_at_kV kwarg we can force 
+all loaded arrays to have same energy shape:
+
+.. code-block:: python
+
+>>> hs.load("sample80kv.bcf", cutoff_at_kV=80)
+    [<Image, title: BSE, dimensions: (|100, 75)>,
+    <Image, title: SE, dimensions: (|100, 75)>,
+    <EDSSEMSpectrum, title: EDX, dimensions: (100, 75|4096)>]
+
+Note that downsample option currently can result in some unexpected behaviour
+while plotting spectra with sem imagery as navigator.
