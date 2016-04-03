@@ -11,19 +11,26 @@ test_files = ['P45_instructively_packed_16bit_compressed.bcf',
 
 
 def test_load():
+    # test bcf from hyperspy load function level
+    # some of functions can be not covered
+    # by default this is also using cython parsing implementation
     for thingy in test_files:
         my_path = os.path.dirname(__file__)
         filename = os.path.join(my_path, 'bcf_data', thingy)
-        print('loading bcf test file...')
+        print('testing bcf loading from hyperspy level...')
         s = load(filename, downsample=2, cutoff_at_kV=10)
         bse, sei, hype = s
         assert_true(bse.data.dtype == np.uint16)
         assert_true(sei.data.dtype == np.uint16)
 
 def test_py_parsing():
-    bcf.fast_unbcf = False  #force to ignore cython code
+    # for testing the bcf library fallback functions
+    # based on python, we can do just from lower level
+    # ignoring the io.py
+    bcf.fast_unbcf = False  #force to ignore cython fast library
     for thingy in test_files:
         my_path = os.path.dirname(__file__)
         filename = os.path.join(my_path, 'bcf_data', thingy)
-        print('loading bcf test file...')
-        s = load(filename, downsample=2, cutoff_at_kV=10)
+        print('testing lower level loading and pure python parsing...')
+        s = bcf.BCF_reader(filename, downsample=2, cutoff_at_kV=10)
+        s.parse_hypermap()
