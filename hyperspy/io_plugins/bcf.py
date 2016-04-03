@@ -51,6 +51,8 @@ import numpy as np
 from struct import unpack as strct_unp
 import json
 
+from hyperspy.misc.elements import elements as elem_db
+
 # temporary statically assigned value, should be tied to debug if present...:
 verbose = True
 
@@ -1106,7 +1108,7 @@ def bcf_imagery(obj_bcf):
                           'title': img.detector_name},
               'Sample': {'name': obj_bcf.header.name},
               'Signal': {'signal_type': img.detector_name,
-                           'record_by': 'image', },
+                         'record_by': 'image', },
              }
            })
     return imagery_list
@@ -1159,9 +1161,24 @@ def bcf_hyperspectra(obj_bcf, index=0, downsample=None, cutoff_at_kV=None):
               'General': {'original_filename': obj_bcf.filename.split('/')[-1],
                           'title': 'EDX',
                           'datetime': obj_bcf.header.datetime},
-              'Sample': {'name': obj_bcf.header.name},
+              'Sample': {'name': obj_bcf.header.name,
+                         'elements': z_list_to_elem_list(
+                                            obj_bcf.header.elements)},
               'Signal': {'signal_type': 'EDS_SEM',
                            'record_by': 'spectrum', },
              }
            }]
     return hyperspectra
+
+
+# helper functions to convert atom number list to abbr. list:
+
+def z_to_element(z):
+    """get the element abbrevation from Z"""
+    for i in elem_db:
+        if z == elem_db[i]['General_properties']['Z']:
+            return i
+
+
+def z_list_to_elem_list(the_list):
+    return [z_to_element(i) for i in the_list]
