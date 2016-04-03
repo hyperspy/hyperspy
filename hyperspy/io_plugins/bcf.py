@@ -109,8 +109,8 @@ class SFSTreeItem(object):
         """Return recalculated windows filetime to unix time."""
         return datetime(1601, 1, 1) + timedelta(microseconds=time / 10)
 
-    def __repr__(self):
-        return '<SFS internal file {0:.2f} MB>'.format(self.size / 1048576)
+    #def __repr__(self):
+    #    return '<SFS internal file {0:.2f} MB>'.format(self.size / 1048576)
 
     def _fill_pointer_table(self):
         """Parse the sfs and populate self.pointers table.
@@ -197,23 +197,23 @@ class SFSTreeItem(object):
         first -- the index of first chunk from which to read. (default 0)
         chunks -- the number of chunks to read. (default False)
         """
-        if not chunks:
-            last = self.size_in_chunks
-        else:
-            last = chunks + first
+        #if not chunks:
+        last = self.size_in_chunks
+        #else:
+            #last = chunks + first
         with open(self.sfs.filename, 'rb') as fn:
             for idx in range(first, last - 1):
                 fn.seek(self.pointers[idx])
                 yield fn.read(self.sfs.usable_chunk)
             fn.seek(self.pointers[last - 1])
-            if last == self.size_in_chunks:
-                last_stuff = self.size % self.sfs.usable_chunk
-                if last_stuff != 0:
-                    yield fn.read(last_stuff)
-                else:
-                    yield fn.read(self.sfs.usable_chunk)
+            #if last == self.size_in_chunks:
+            last_stuff = self.size % self.sfs.usable_chunk
+            if last_stuff != 0:
+                yield fn.read(last_stuff)
             else:
                 yield fn.read(self.sfs.usable_chunk)
+            #else:
+            #    yield fn.read(self.sfs.usable_chunk)
 
     def setup_compression_metadata(self):
         """ parse and setup the number of compression chunks
@@ -235,27 +235,27 @@ class SFSTreeItem(object):
             raise ValueError("""The file is marked to be compressed,
 but compression signature is missing in the header. Aborting....""")
 
-    def _iter_read_larger_chunks(self, chunk_size=524288):
-        """ Generate and return chunk reader iterator
+    #def _iter_read_larger_chunks(self, chunk_size=524288):
+        #""" Generate and return chunk reader iterator
 
-        for reading the raw data in sensible sized chunks.
+        #for reading the raw data in sensible sized chunks.
 
-        Arguments:
-        chunk size -- size of the returned chunk in bytes
-                      (default 524288 bytes (0.5MB))
-        """
-        chunks = -(-self.size // chunk_size)
-        last_chunk = self.size % chunk_size
-        offset = 0
-        for dummy1 in range(chunks - 1):
-            raw_string = self.read_piece(offset, chunk_size)
-            offset += chunk_size
-            yield raw_string
-        if last_chunk != 0:
-            raw_string = self.read_piece(offset, last_chunk)
-        else:
-            raw_string = self.read_piece(offset, chunk_size)
-        yield raw_string
+        #Arguments:
+        #chunk size -- size of the returned chunk in bytes
+                      #(default 524288 bytes (0.5MB))
+        #"""
+        #chunks = -(-self.size // chunk_size)
+        #last_chunk = self.size % chunk_size
+        #offset = 0
+        #for dummy1 in range(chunks - 1):
+            #raw_string = self.read_piece(offset, chunk_size)
+            #offset += chunk_size
+            #yield raw_string
+        #if last_chunk != 0:
+            #raw_string = self.read_piece(offset, last_chunk)
+        #else:
+            #raw_string = self.read_piece(offset, chunk_size)
+        #yield raw_string
 
     def _iter_read_compr_chunks(self):
         """Generate and return reader and decompressor iterator
@@ -264,10 +264,10 @@ but compression signature is missing in the header. Aborting....""")
         Returns:
         iterator of decompressed data chunks.
         """
-        if self.sfs.compression == 'zlib':
-            from zlib import decompress as unzip_block
-        else:
-            from bzip2 import decompress as unzip_block  # lint:ok
+        #if self.sfs.compression == 'zlib':
+        from zlib import decompress as unzip_block  # MOVE TO TOP?
+        #else:
+        #    from bzip2 import decompress as unzip_block  # lint:ok
         offset = 0x80  # the 1st compression block header
         for dummy1 in range(self.no_of_compr_blk):
             cpr_size, dummy_size, dummy_unkn, dummy_size2 = strct_unp('<IIII',
@@ -293,12 +293,12 @@ but compression signature is missing in the header. Aborting....""")
             (iterator, chunk_size, number_of_chunks)
         """
         if self.sfs.compression == 'None':
-            if not larger_chunks:
-                return self._iter_read_chunks(), self.sfs.usable_chunk,\
-                   self.size_in_chunks
-            else:
-                return self._iter_read_larger_chunks(chunk_size=larger_chunks),\
-                    larger_chunks, -(-self.size // larger_chunks)
+            #if not larger_chunks:
+            return self._iter_read_chunks(), self.sfs.usable_chunk,\
+               self.size_in_chunks
+            #else:
+                #return self._iter_read_larger_chunks(chunk_size=larger_chunks),\
+                    #larger_chunks, -(-self.size // larger_chunks)
         elif self.sfs.compression in ('zlib', 'bzip2'):
             return self._iter_read_compr_chunks(), self.uncompressed_blk_size,\
                    self.no_of_compr_blk
@@ -364,23 +364,23 @@ class SFS_reader(object):
         """
         with open(self.filename, 'rb') as fn:
             #check if file tree do not exceed one chunk:
-            n_file_tree_chunks = -((-self.n_tree_items * 0x200) //
-                                             (self.chunksize - 512))
-            if n_file_tree_chunks is 1:
-                fn.seek(self.chunksize * self.tree_address + 0x138)
-                raw_tree = fn.read(0x200 * self.n_tree_items)
-            else:
-                temp_str = io.BytesIO()
-                for dummy in range(n_file_tree_chunks):
-                    # jump to tree/list address:
-                    fn.seek(self.chunksize * self.tree_address + 0x118)
-                    # next tree/list address:
-                    self.tree_address = strct_unp('<I', fn.read(4))[0]
-                    fn.seek(28, 1)
-                    temp_str.write(fn.read(self.chunksize - 512))
-                temp_str.seek(0)
-                raw_tree = temp_str.read(self.n_tree_items * 0x200)
-                temp_str.close()
+            #n_file_tree_chunks = -((-self.n_tree_items * 0x200) //
+                                             #(self.chunksize - 512))
+            #if n_file_tree_chunks is 1:
+            fn.seek(self.chunksize * self.tree_address + 0x138)
+            raw_tree = fn.read(0x200 * self.n_tree_items)
+            #else:
+                #temp_str = io.BytesIO()
+                #for dummy in range(n_file_tree_chunks):
+                    ## jump to tree/list address:
+                    #fn.seek(self.chunksize * self.tree_address + 0x118)
+                    ## next tree/list address:
+                    #self.tree_address = strct_unp('<I', fn.read(4))[0]
+                    #fn.seek(28, 1)
+                    #temp_str.write(fn.read(self.chunksize - 512))
+                #temp_str.seek(0)
+                #raw_tree = temp_str.read(self.n_tree_items * 0x200)
+                #temp_str.close()
             # temp flat list of items:
             temp_item_list = [SFSTreeItem(raw_tree[i * 0x200:(i + 1) * 0x200],
                                        self) for i in range(self.n_tree_items)]
@@ -399,7 +399,8 @@ class SFS_reader(object):
 
     def _flat_items_to_dict(self, paths, temp_item_list):
         """place items from flat list into dictionary tree
-        of virtual file system"""
+        of virtual file system
+        """
         while not all(g[-1] == -1 for g in paths):
             for f in range(len(paths)):
                 if paths[f][-1] != -1:
@@ -435,26 +436,26 @@ class SFS_reader(object):
                 if not c.is_dir:
                     fn.seek(c.pointers[0])
                     if fn.read(4) == b'\x41\x41\x43\x53':  # string AACS
-                        fn.seek(0x8C, 1)
-                        compression_head = fn.read(2)
-                        byte_one = strct_unp('BB', compression_head)[0]
-                        if byte_one == 0x78:
-                            self.compression = 'zlib'
-                        elif compression_head == b'\x42\x5A':
-                            self.compression = 'bzip2'
-                        else:
-                            self.compression = 'unknown'
+                        #fn.seek(0x8C, 1)
+                        #compression_head = fn.read(2)
+                        #byte_one = strct_unp('BB', compression_head)[0]
+                        #if byte_one == 0x78:
+                        self.compression = 'zlib'
+                        #elif compression_head == b'\x42\x5A':
+                            #self.compression = 'bzip2'
+                        #else:
+                            #self.compression = 'unknown'
                     else:
                         self.compression = 'None'
                     # compression is global, can't be diferent per file in sfs
                     break
 
-    def print_file_tree(self):
-        """print the internal file/dir tree of sfs container
-        as json string
-        """
-        tree = json.dumps(self.vfs, sort_keys=True, indent=4, default=str)
-        print(tree)
+    #def print_file_tree(self):
+        #"""print the internal file/dir tree of sfs container
+        #as json string
+        #"""
+        #tree = json.dumps(self.vfs, sort_keys=True, indent=4, default=str)
+        #print(tree)
 
     def get_file(self, path):
         """Return the SFSTreeItem (aka internal file) object from
@@ -478,14 +479,14 @@ class SFS_reader(object):
         SFSTreeItem
         """
         item = self.vfs
-        try:
-            for i in path.split('/'):
-                item = item[i]
-            return item
-        except KeyError:
-            print("""Check the requested path!
-There is no such file or folder in this single file system.
-Try printing out the file tree with print_file_tree method""")
+        #try:
+        for i in path.split('/'):
+            item = item[i]
+        return item
+        #except KeyError:
+            #print("""Check the requested path!
+#There is no such file or folder in this single file system.
+#Try printing out the file tree with print_file_tree method""")
 
 
 class EDXSpectrum(object):
@@ -498,9 +499,9 @@ class EDXSpectrum(object):
         spectrum -- lxml objectified xml where spectrum.attrib['Type'] should
             be 'TRTSpectrum'
         """
-        if str(spectrum.attrib['Type']) != 'TRTSpectrum':
-            raise IOError('Not valid objectified xml passed',
-                          ' to Bruker EDXSpectrum class')
+        #if str(spectrum.attrib['Type']) != 'TRTSpectrum':
+            #raise IOError('Not valid objectified xml passed',
+                          #' to Bruker EDXSpectrum class')
         try:
             self.realTime = int(
                             spectrum.TRTHeaderedClass.ClassInstance.RealTime)
@@ -546,15 +547,15 @@ class EDXSpectrum(object):
             en_temp = energy
         return int(round((en_temp - self.calibAbs) / self.calibLin))
 
-    def channel_to_energy(self, channel, kV=True):
-        """convert given channel index to energy,
-        optional kwarg 'kV' (default: True) decides if returned value
-        is in kV or V"""
-        if not kV:
-            kV = 1000
-        else:
-            kV = 1
-        return (channel * self.calibLin + self.calibAbs) * kV
+    #def channel_to_energy(self, channel, kV=True):
+        #"""convert given channel index to energy,
+        #optional kwarg 'kV' (default: True) decides if returned value
+        #is in kV or V"""
+        #if not kV:
+            #kV = 1000
+        #else:
+            #kV = 1
+        #return (channel * self.calibLin + self.calibAbs) * kV
 
 
 class HyperHeader(object):
@@ -789,19 +790,19 @@ class BCF_reader(SFS_reader):
         self.header = HyperHeader(header_byte_str)
         self.hypermap = {}
 
-    def print_the_metadata(self):
-        """print the basic information about the content of bcf"""
-        print('selected bcf contains:\n * imagery from detectors:')
-        for i in self.header.image.images:
-            print("\t*", i.detector_name)
-        ed = self.header.get_spectra_metadata()
-        print(' *', len(self.header.spectra_data), ' spectral cube(s)',
-            'with', ed.chnlCnt,
-            'channels recorded, coresponding to {0:.2f}kV'.format(
-            ed.channel_to_energy(ed.chnlCnt)))
-        print('width, height of raster:')
-        print(''.join([str(self.header.image.width), '✕',
-                       str(self.header.image.height)]))
+    #def print_the_metadata(self):
+        #"""print the basic information about the content of bcf"""
+        #print('selected bcf contains:\n * imagery from detectors:')
+        #for i in self.header.image.images:
+            #print("\t*", i.detector_name)
+        #ed = self.header.get_spectra_metadata()
+        #print(' *', len(self.header.spectra_data), ' spectral cube(s)',
+            #'with', ed.chnlCnt,
+            #'channels recorded, coresponding to {0:.2f}kV'.format(
+            #ed.channel_to_energy(ed.chnlCnt)))
+        #print('width, height of raster:')
+        #print(''.join([str(self.header.image.width), '✕',
+                       #str(self.header.image.height)]))
 
     def persistent_parse_hypermap(self, index=0, downsample=None,
                                   cutoff_at_kV=None):
