@@ -32,5 +32,5 @@ def test_py_parsing():
         my_path = os.path.dirname(__file__)
         filename = os.path.join(my_path, 'bcf_data', thingy)
         print('testing lower level loading and pure python parsing...')
-        s = bcf.BCF_reader(filename, downsample=2, cutoff_at_kV=10)
-        s.parse_hypermap()
+        s = bcf.BCF_reader(filename)
+        s.parse_hypermap(downsample=2, cutoff_at_kV=10)
