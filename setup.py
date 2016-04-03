@@ -177,6 +177,7 @@ with update_version_when_dev() as version:
                 'tests/io/tiff_files/*.tif',
                 'tests/io/npy_files/*.npy',
                 'tests/io/unf_files/*.unf',
+                'tests/io/bcf_data/*.bcf',
                 'tests/drawing/*.ipynb',
                 'tests/signal/test_find_peaks1D_ohaver/test_find_peaks1D_ohaver.hdf5',
             ],

@@ -1070,9 +1070,9 @@ def file_reader(filename, record_by=None, index=0, downsample=1,
       or just hyper spectral mapping data. (default None)
     index -- index of dataset in bcf v2 (delaut 0)
     downsample -- the downsample ratio of hyperspectral array (downsampling
-      hight and width only), can be integer from 1 to inf, where '1'' means
+      hight and width only), can be integer from 1 to inf, where '1' means
       no downsampling will be applied (default 1).
-     cutoff_at_kV -- if set (can be int of float >= 0) can be used either, to
+    cutoff_at_kV -- if set (can be int of float >= 0) can be used either, to
        crop or enlarge energy range at max values. (default None)
     """
     #objectified bcf file:
