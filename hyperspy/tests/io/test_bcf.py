@@ -8,7 +8,7 @@ from hyperspy.io_plugins import bcf
 
 test_files = ['P45_instructively_packed_16bit_compressed.bcf',
               'P45_12bit_packed_8bit.bcf',
-              'P45_the_default_job']  # for not compressed testing
+              'P45_the_default_job.bcf']  # for not compressed testing
 
 
 def test_load():
