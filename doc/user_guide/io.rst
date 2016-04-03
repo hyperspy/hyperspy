@@ -465,7 +465,9 @@ is returned. (default None)
 index: index of dataset in bcf v2 files, which can hold few datasets (delaut 0)
 
 downsample: the downsample ratio of hyperspectral array (hight and width only),
-can be integer from 1 to inf, where '1' results in no downsampling (default 1).
+can be integer >=1, where '1' results in no downsampling (default 1). The underlying
+method of downsampling is unchangable: sum. Differently than block_reduce from skimage.measure
+it is memory efficient (does not creates intermediate arrays, works inplace).
   
 cutoff_at_kV -- if set (can be int of float >= 0) can be used either to
 crop or enlarge energy (or channels) range at max values. (default None)
