@@ -469,7 +469,7 @@ can be integer >=1, where '1' results in no downsampling (default 1). The underl
 method of downsampling is unchangable: sum. Differently than block_reduce from skimage.measure
 it is memory efficient (does not creates intermediate arrays, works inplace).
   
-cutoff_at_kV -- if set (can be int of float >= 0) can be used either to
+cutoff_at_kV: if set (can be int of float >= 0) can be used either to
 crop or enlarge energy (or channels) range at max values. (default None)
 
 Example of loading reduced (downsampled, and with energy range cropped) "spectrum only"
@@ -480,7 +480,7 @@ data from bcf (original shape: 80keV EDS range (4096 channels), 100x75 pixels):
     >>> hs.load("sample80kv.bcf", record_by='spectrum', downsample=2, cutoff_at_kV=10)
     <EDSSEMSpectrum, title: EDX, dimensions: (50, 38|595)>
 
-load the same file without options:
+load the same file without extra arguments:
 
 .. code-block:: python
 
@@ -489,14 +489,15 @@ load the same file without options:
     <Image, title: SE, dimensions: (|100, 75)>,
     <EDSSEMSpectrum, title: EDX, dimensions: (100, 75|1394)>]
 
-1394 energy channel range is the result of automatic creation of array min shape
-so no information would be cropped out. However if we would wan't to stack few
-slices this can couse a problem. with using cutoff_at_kV kwarg we can force 
-all loaded arrays to have same energy shape:
+1394 energy channel range is the result of automatic shape minimalisation
+making lesser memory usage while preserving all data.
+However in conjunction with stacking, this can cause a problem.
+With using cutoff_at_kV kwarg we can force 
+all loaded arrays to have same energy range:
 
 .. code-block:: python
 
->>> hs.load("sample80kv.bcf", cutoff_at_kV=80)
+    >>> hs.load("sample80kv.bcf", cutoff_at_kV=80)
     [<Image, title: BSE, dimensions: (|100, 75)>,
     <Image, title: SE, dimensions: (|100, 75)>,
     <EDSSEMSpectrum, title: EDX, dimensions: (100, 75|4096)>]
