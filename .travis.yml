@@ -29,6 +29,7 @@ install:
   - source activate testenv
   - conda install pip
   - pip install coverage coveralls traits traitsui request
+  - python setup.py build_ext --inplace
   - python setup.py install
 
 script: python continuous_integration/nosetest.py --with-coverage hyperspy
