@@ -765,7 +765,7 @@ class BCF_reader(SFS_reader):
 
     """Class to read bcf (Bruker hypermapping) file.
 
-    Inherites SFS_reader and all its attributes and methods.
+    Inherits SFS_reader and all its attributes and methods.
 
     Attributes:
     filename
@@ -1044,6 +1044,10 @@ class BCF_reader(SFS_reader):
 
 
 class HyperMap(object):
+
+    """Container class to hold the parsed bruker hypermap
+    and its scale calibrations"""
+
     def __init__(self, nparray, parent, index=0, downsample=1):
         sp_meta = parent.header.get_spectra_metadata(index=index)
         self.calib_abs = sp_meta.calibAbs * 1000    # keV -> eV
@@ -1054,9 +1058,23 @@ class HyperMap(object):
 
 
 #wrapper functions for hyperspy:
-def file_reader(filename, record_by=None,
-                index=0, downsample=1,
+def file_reader(filename, record_by=None, index=0, downsample=1,
                 cutoff_at_kV=None):
+    """Reads a bruker bcf file and loads the data into the appropriate class,
+    then wraps it into appropriate hyperspy required list of dictionaries
+    used by hyperspy.api.load() method.
+
+    Keyword arguments:
+    record_by -- One of: spectrum, image. If none specified, then function
+      loads everything, else if specified, loads either just sem imagery,
+      or just hyper spectral mapping data. (default None)
+    index -- index of dataset in bcf v2 (delaut 0)
+    downsample -- the downsample ratio of hyperspectral array (downsampling
+      hight and width only), can be integer from 1 to inf, where '1'' means
+      no downsampling will be applied (default 1).
+     cutoff_at_kV -- if set (can be int of float >= 0) can be used either, to
+       crop or enlarge energy range at max values. (default None)
+    """
     #objectified bcf file:
     obj_bcf = BCF_reader(filename)
     if record_by == 'image':
