@@ -158,6 +158,15 @@ the syntax should be.
 User-guide Documentation -- A description of the functionality of the code and how
 to use it with examples and links to the relevant code.
 
+Adding new dependencies
+^^^^^^^^^^^^^^^^^^^^^^^
+If any new packages are imported (or old ones removed), the dependency lists must
+be updated:
+
+* `For Debian/Ubuntu <https://github.com/hyperspy/hyperspy/blob/master/stdeb.cfg>`_
+* `Python installer/Pip <https://github.com/hyperspy/hyperspy/blob/master/setup.py`_
+* `Documentation <https://github.com/hyperspy/hyperspy/blob/master/doc/user_guide/install.rst>`
+
 5. Make your contribution
 -------------------------
 
