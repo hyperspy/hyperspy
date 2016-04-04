@@ -487,7 +487,7 @@ load the same file without extra arguments:
     >>> hs.load("sample80kv.bcf")
     [<Image, title: BSE, dimensions: (|100, 75)>,
     <Image, title: SE, dimensions: (|100, 75)>,
-    <EDSSEMSpectrum, title: EDX, dimensions: (100, 75|1394)>]
+    <EDSSEMSpectrum, title: EDX, dimensions: (100, 75|1095)>]
 
 The loaded array energy dimention can by forced to be larger than the data recorded
 by setting the 'cutoff_at_kV' kwarg to higher value:
