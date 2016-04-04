@@ -597,23 +597,22 @@ class HyperHeader(object):
                                                        str(i))[0].ClassInstance)
 
     def estimate_map_channels(self, index=0):
-        """estimate minimal size of array so any spectra from any pixel would
-        not be truncated.
+        """estimate minimal size of energy axis so any spectra from any pixel
+        would not be truncated.
 
         Arguments:
         index -- index of the map if multiply hypermaps are present
         in the same bcf.
 
         Returns:
-        maximum non empty channel +1.
+        optimal channel number
         """
-        sum_eds = self.spectra_data[index].data
-        try:
-            return sum_eds.nonzero()[0][-1] + 1  # +1: the number not the index
-        except IndexError:
-            print(
-                'The spectrum of mapping with selected index have no counts!!!')
-            return len(sum_eds)
+        bruker_hv_range = self.spectra_data[index].amplification / 1000
+        if self.sem.hv >= bruker_hv_range:
+            return self.spectra_data[index].data.shape[0]
+        else:
+            return self.spectra_data[index].energy_to_channel(self.sem.hv)
+
 
     def estimate_map_depth(self, index=0, downsample=1, for_numpy=False):
         """estimate minimal dtype of array using cumulative spectra
