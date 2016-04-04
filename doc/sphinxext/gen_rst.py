@@ -162,7 +162,7 @@ HyperSpy Examples
 
     fhindex.close()
 
-    print
+    print()
 
 
 def setup(app):

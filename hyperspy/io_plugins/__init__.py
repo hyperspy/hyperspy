@@ -17,33 +17,35 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from hyperspy import messages
+import logging
+
 from hyperspy.io_plugins import (msa, digital_micrograph, fei, mrc, ripple,
                                  tiff, semper_unf, blockfile, dens)
 io_plugins = [msa, digital_micrograph, fei, mrc, ripple, tiff, semper_unf,
               blockfile, dens]
+
+_logger = logging.getLogger(__name__)
+
 try:
     from hyperspy.io_plugins import netcdf
     io_plugins.append(netcdf)
 except ImportError:
     pass
     # NetCDF is obsolate and is only provided for users who have
-    # old EELSLab files. Therefore, we print no message if it is not
-    # available
-    #~ messages.information('The NetCDF IO features are not available')
+    # old EELSLab files. Therefore, we silenly ignore if missing.
 
 try:
     from hyperspy.io_plugins import hdf5
     io_plugins.append(hdf5)
 except ImportError:
-    messages.warning('The HDF5 IO features are not available. '
-                     'It is highly reccomended to install h5py')
+    _logger.warning('The HDF5 IO features are not available. '
+                    'It is highly reccomended to install h5py')
 
 try:
     from hyperspy.io_plugins import image
     io_plugins.append(image)
 except ImportError:
-    messages.information('The Image (PIL) IO features are not available')
+    _logger.info('The Image (PIL) IO features are not available')
 
 default_write_ext = set()
 for plugin in io_plugins:

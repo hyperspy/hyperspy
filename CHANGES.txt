@@ -5,12 +5,18 @@ We only cover here the main highlights, for a detailed list of all the changes
 see `the github commits changelog
 <https://github.com/hyperspy/hyperspy/commits/master>`_.
 
+v0.8.4
+======
+
+This release adds support for Python 3 and drops support for Python 2. In all
+other respects it is identical to v0.8.3.
+
 v0.8.3
 ======
 
 This is a maintenance release that includes fixes for multiple bugs, some
-enhancements, new features, API changes and adds support for
-Python 3. The next major release (HyperSpy 0.9) will not support Python 2.
+enhancements, new features and API changes. This is set to be the last HyperSpy
+release for Python 2. The release (HyperSpy 0.8.4) will support only Python 3.
 
 Importantly, the way to start HyperSpy changes (again) in this release. Please
 read carefully :ref:`importing_hyperspy-label` for details.

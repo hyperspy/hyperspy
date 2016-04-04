@@ -54,14 +54,6 @@ hyperspy.misc.export_dictionary module
     :undoc-members:
     :show-inheritance:
 
-hyperspy.misc.hspy_warnings module
-----------------------------------
-
-.. automodule:: hyperspy.misc.hspy_warnings
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 hyperspy.misc.image_tools module
 --------------------------------
 
@@ -130,6 +122,10 @@ hyperspy.misc.slicing module
 ----------------------------
 
 .. automodule:: hyperspy.misc.slicing
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 hyperspy.misc.signal_tools module
 ---------------------------------
 

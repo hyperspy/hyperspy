@@ -123,6 +123,10 @@ class Test2D:
         s.axes_manager.set_signal_dimension(2)
         nt.assert_true(s.unfold())
 
+    def test_print_summary(self):
+        # Just test if it doesn't raise an exception
+        self.signal._print_summary()
+
 
 def _test_default_navigation_signal_operations_over_many_axes(self, op):
     s = getattr(self.signal, op)()
@@ -398,7 +402,7 @@ class Test4D:
 
 def test_signal_iterator():
     s = Signal(np.arange(3).reshape((3, 1)))
-    nt.assert_equal(s.next().data[0], 0)
+    nt.assert_equal(next(s).data[0], 0)
     # If the following fails it can be because the iteration index was not
     # restarted
     for i, signal in enumerate(s):
@@ -555,7 +559,7 @@ class TestOutArg:
         sr = s.mean(axis=('x', 'z',))
         np.testing.assert_array_equal(
             sr.data.shape, [ax.size for ax in s.axes_manager[('y', 'E')]])
-        print sr.data.tolist()
+        print(sr.data.tolist())
         ref = [[202.28571428571428, 203.28571428571428, 182.0,
                 197.66666666666666, 187.0, 177.8],
                [134.0, 190.0, 191.27272727272728, 170.14285714285714, 172.0,

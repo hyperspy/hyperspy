@@ -49,7 +49,7 @@ class Test_metadata:
             sSum.metadata.Acquisition_instrument.SEM.Detector.EDS.live_time,
             3.1 * 2)
         # Check that metadata is unchanged
-        print old_metadata, s.metadata      # Capture for comparison on error
+        print(old_metadata, s.metadata)      # Capture for comparison on error
         nt.assert_dict_equal(old_metadata.as_dictionary(),
                              s.metadata.as_dictionary(),
                              "Source metadata changed")
@@ -63,7 +63,7 @@ class Test_metadata:
             3.1 *
             2 * 4)
         # Check that metadata is unchanged
-        print old_metadata, s.metadata      # Capture for comparison on error
+        print(old_metadata, s.metadata)      # Capture for comparison on error
         nt.assert_dict_equal(old_metadata.as_dictionary(),
                              s.metadata.as_dictionary(),
                              "Source metadata changed")
@@ -91,7 +91,7 @@ class Test_metadata:
             2 *
             2)
         # Check that metadata is unchanged
-        print old_metadata, self.signal.metadata    # Captured on error
+        print(old_metadata, self.signal.metadata)    # Captured on error
         nt.assert_dict_equal(old_metadata.as_dictionary(),
                              self.signal.metadata.as_dictionary(),
                              "Source metadata changed")
