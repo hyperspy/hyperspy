@@ -613,7 +613,6 @@ class HyperHeader(object):
         else:
             return self.spectra_data[index].energy_to_channel(self.sem.hv)
 
-
     def estimate_map_depth(self, index=0, downsample=1, for_numpy=False):
         """estimate minimal dtype of array using cumulative spectra
         of the all pixels so that no data would be truncated.
