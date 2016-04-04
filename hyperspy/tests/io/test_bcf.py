@@ -2,6 +2,12 @@ import os
 
 import numpy as np
 
+import hyperspy.api as hs
+try:
+    from hyperspy.io_plugins import unbcf_fast
+except ImportError:
+    print('falling back to slow bcf')
+
 from nose.tools import assert_true
 from hyperspy.io import load
 
