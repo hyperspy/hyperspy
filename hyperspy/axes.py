@@ -28,12 +28,12 @@ from hyperspy.misc.utils import isiterable, ordinal
 from hyperspy.misc.math_tools import isfloat
 
 import warnings
-from hyperspy.misc.hspy_warnings import VisibleDeprecationWarning
+from hyperspy.exceptions import VisibleDeprecationWarning
 
 
 class ndindex_nat(np.ndindex):
 
-    def next(self):
+    def __next__(self):
         return super(ndindex_nat, self).next()[::-1]
 
 
@@ -267,7 +267,7 @@ class DataAxis(t.HasTraits):
         start, stop, step = my_slice.start, my_slice.stop, my_slice.step
 
         if start is None:
-            if step > 0 or step is None:
+            if step is None or step > 0:
                 start = 0
             else:
                 start = self.size - 1
@@ -293,7 +293,7 @@ class DataAxis(t.HasTraits):
         if self.navigate is True:
             text += ", index: %i" % self.index
         text += ">"
-        return text.encode('utf8')
+        return text
 
     def __str__(self):
         return self._get_name() + " axis"
@@ -428,7 +428,7 @@ class DataAxis(t.HasTraits):
             greater than v1.
 
         """
-        if v1 > v2:
+        if v1 is not None and v2 is not None and v1 > v2:
             raise ValueError("v2 must be greater than v1.")
 
         if v1 is not None and self.low_value < v1 <= self.high_value:
@@ -443,11 +443,12 @@ class DataAxis(t.HasTraits):
 
     def update_from(self, axis, attributes=["scale", "offset", "units"]):
         """Copy values of specified axes fields from the passed AxesManager.
+
         Parameters
         ----------
         axis : DataAxis
             The DataAxis instance to use as a source for values.
-        fields : iterable container of strings.
+        attributes : iterable container of strings.
             The name of the attribute to update. If the attribute does not
             exist in either of the AxesManagers, an AttributeError will be
             raised.
@@ -529,7 +530,7 @@ class AxesManager(t.HasTraits):
     >>> s.axes_manager['y']
     <y axis, size: 3 index: 0>
     >>> for i in s.axes_manager:
-    >>>     print i, s.axes_manager.indices
+    >>>     print(i, s.axes_manager.indices)
     (0, 0, 0) (0, 0, 0)
     (1, 0, 0) (1, 0, 0)
     (2, 0, 0) (2, 0, 0)
@@ -572,7 +573,7 @@ class AxesManager(t.HasTraits):
             updated.
 
             Arguments:
-            ---------
+            ----------
             obj : The AxesManager that the event belongs to.
             """, arguments=['obj'])
         self.events.any_axis_changed = Event("""
@@ -584,8 +585,8 @@ class AxesManager(t.HasTraits):
 
             Arguments:
             ----------
-            axes_manager : The AxesManager that the event belongs to.
-            """, arguments=["obj"])
+            obj : The AxesManager that the event belongs to.
+            """, arguments=['obj'])
         self.create_axes(axes_list)
         # set_signal_dimension is called only if there is no current
         # view. It defaults to spectrum
@@ -623,17 +624,18 @@ class AxesManager(t.HasTraits):
         """x.__getitem__(y) <==> x[y]
 
         """
-        if isinstance(y, basestring) or not np.iterable(y):
+        if isinstance(y, str) or not np.iterable(y):
             return self[(y,)][0]
         axes = [self._axes_getter(ax) for ax in y]
-        _, indices = np.unique(axes, return_index=True)
+        _, indices = np.unique(
+            [_id for _id in map(id, axes)], return_index=True)
         ans = tuple(axes[i] for i in sorted(indices))
         return ans
 
     def _axes_getter(self, y):
         if y in self._axes:
             return y
-        if isinstance(y, basestring):
+        if isinstance(y, str):
             axes = list(self._get_axes_in_natural_order())
             while axes:
                 axis = axes.pop()
@@ -755,7 +757,7 @@ class AxesManager(t.HasTraits):
         if self._max_index != 0:
             self._max_index -= 1
 
-    def next(self):
+    def __next__(self):
         """
         Standard iterator method, updates the index and returns the
         current coordiantes

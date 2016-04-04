@@ -1,6 +1,12 @@
 # -*- coding: utf-8 -*-
+
+import logging
+
+_logger = logging.getLogger(__name__)
+
 try:
     import sip
+    _logger.debug('Setting Qt API to v2')
     sip.setapi('QVariant', 2)
     sip.setapi('QDate', 2)
     sip.setapi('QDateTime', 2)
@@ -9,6 +15,7 @@ try:
     sip.setapi('QUrl', 2)
     del sip
 except ImportError:
+    _logger.debug('sip not present, Qt API not set')
     pass
 
 from hyperspy import docstrings
