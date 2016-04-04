@@ -4326,6 +4326,86 @@ class Signal(FancySlicing,
             return s
     integrate_simpson.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
 
+    def fft(self):
+        """Compute the discrete Fourier Transform.
+
+        This function computes the discrete Fourier Transform over the signal
+        axes by means of the Fast Fourier Transform (FFT) as implemented in
+        numpy.
+
+        Return
+        ------
+        signals.Signal
+
+        Examples
+        --------
+        >>> im = hs.signals.Image(scipy.misc.lena())
+        >>> im.fft()
+        <Image, title: FFT of , dimensions: (|512, 512)>
+
+        Notes
+        -----
+        For further information see the documentation of numpy.fft.fftn
+        """
+
+        if self.axes_manager.signal_dimension == 0:
+            raise AttributeError("Signal dimension must be at least one.")
+        ax = self.axes_manager
+        axes = np.arange(ax.signal_dimension) + ax.navigation_dimension
+        im_fft = self._deepcopy_with_new_data(np.fft.fftshift(
+            np.fft.fftn(self.data, axes=axes), axes=axes))
+        shape_fft = self.axes_manager.shape
+        im_fft.metadata.General.title = 'FFT of ' + \
+            im_fft.metadata.General.title
+        for ax, dim in zip(axes, shape_fft):
+            axis = im_fft.axes_manager[ax]
+            axis.scale = 1. / dim / self.axes_manager[ax].scale
+            axis.units = str(self.axes_manager[ax].units) + '$^{-1}$'
+            axis.offset = -axis.high_value / 2.
+        return im_fft
+
+    def ifft(self):
+        """
+        Compute the inverse discrete Fourier Transform.
+
+        This function computes the inverse of the discrete
+        Fourier Transform over the signal axes by
+        means of the Fast Fourier Transform (FFT).
+
+        Return
+        ------
+        signals.Signal
+
+        Examples
+        --------
+        >>> im = hs.signals.Image(scipy.misc.lena())
+        >>> imfft = im.fft()
+        >>> imfft.ifft()
+        <Image, title: iFFT of FFT of , dimensions: (|512, 512)>
+
+        Notes
+        -----
+        For further information see the documentation of numpy.fft.ifftn
+
+        """
+
+        if self.axes_manager.signal_dimension == 0:
+            raise AttributeError("Signal dimension must be at least one.")
+        ax = self.axes_manager
+        axes = np.arange(ax.signal_dimension) + ax.navigation_dimension
+        im_ifft = self._deepcopy_with_new_data(np.fft.ifftn(np.fft.ifftshift(
+            self.data, axes=axes), axes=axes).real)
+        im_ifft.metadata.General.title = 'iFFT of ' + \
+            im_ifft.metadata.General.title
+        for ax, dim in zip(axes, self.axes_manager.shape):
+            axis = im_ifft.axes_manager[ax]
+            axis.scale = 1. / dim / self.axes_manager[ax].scale
+            if str(self.axes_manager[ax].units).endswith('$^{-1}$'):
+                axis.units = str(self.axes_manager[ax].units)[:-7]
+            else:
+                axis.units = str(self.axes_manager[ax].units)
+        return im_ifft
+
     def integrate1D(self, axis, out=None):
         """Integrate the signal over the given axis.
 
@@ -4618,7 +4698,6 @@ class Signal(FancySlicing,
                 data[0][:] = function(data[0], **kwargs)
                 pbar.next()
             pbar.finish()
-        self.events.data_changed.trigger(obj=self)
 
     def copy(self):
         try:
