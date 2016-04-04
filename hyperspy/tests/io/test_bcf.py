@@ -24,6 +24,6 @@ def test_load():
         assert_true(bse.data.dtype == np.uint16)
 
 
-def test_fast_bcf():
-    from hyperspy.io_plugins import unbcf_fast
-    unbcf_fast
+#def test_fast_bcf():
+#    from hyperspy.io_plugins import unbcf_fast
+#    unbcf_fast

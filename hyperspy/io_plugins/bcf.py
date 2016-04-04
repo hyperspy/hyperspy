@@ -53,19 +53,17 @@ from zlib import decompress as unzip_block
 
 from hyperspy.misc.elements import elements as elem_db
 
-# temporary statically assigned value, should be tied to debug if present...:
-verbose = True
+import logging
+_logger = logging.getLogger(__name__)
 
 try:
     from hyperspy.io_plugins import unbcf_fast
     fast_unbcf = True
-    if verbose:
-        print("The fast cython based bcf unpacking library were found")
+    _logger.info("The fast cython based bcf unpacking library were found")
 except ImportError:
     fast_unbcf = False
-    if verbose:
-        print("No fast bcf library present... ",
-              "Falling back to python only backend")
+    _logger.warn("""unbcf_fast library is not present...
+Falling back to slow python only backend.""")
 
 
 class Container(object):
@@ -293,7 +291,7 @@ class SFS_reader(object):
     filename
 
     Methods:
-    print_file_tree, get_file
+    get_file
     """
 
     def __init__(self, filename):
@@ -434,10 +432,7 @@ class EDXSpectrum(object):
             self.deadTime = int(
                             spectrum.TRTHeaderedClass.ClassInstance.DeadTime)
         except AttributeError:
-            if verbose:
-                print('spectrum have no dead time records...')
-            else:
-                pass
+            _logger.warn('spectrum have no dead time records...')
         self.zeroPeakPosition = int(
                       spectrum.TRTHeaderedClass.ClassInstance.ZeroPeakPosition)
         self.amplification = int(
@@ -498,6 +493,7 @@ class HyperHeader(object):
             self.name = str(root.attrib['Name'])
         except KeyError:
             self.name = 'Undefinded'
+            _logger.info("hypermap have no name. Giving it 'Undefined' name")
         self.datetime = datetime.strptime(' '.join([str(root.Header.Date),
                                                     str(root.Header.Time)]),
                                           "%d.%m.%Y %H:%M:%S")
@@ -584,10 +580,7 @@ class HyperHeader(object):
             for j in elements.xpath("ClassInstance[@Type='TRTSpectrumRegion']"):
                 self.elements.append(int(j.Element))
         except IndexError:
-            if verbose:
-                print('no element selection present..')
-            else:
-                pass
+            _logger.info('no element selection present in the spectra..')
 
     def _set_sum_edx(self, root):
         for i in range(self.mapping_count):
@@ -761,8 +754,8 @@ class BCF_reader(SFS_reader):
                                              downsample=downsample,
                                              cutoff=cutoff_chan)
         else:
-            if verbose:
-                print('this is going to take a while... please wait')
+            _logger.warn("""using slow python parser,
+this is going to take a while... please wait""")
             return self.py_parse_hypermap(index=0,
                                      downsample=downsample,
                                      cutoff_at_channel=cutoff_chan)
