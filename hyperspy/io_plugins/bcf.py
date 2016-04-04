@@ -57,7 +57,7 @@ from hyperspy.misc.elements import elements as elem_db
 verbose = True
 
 try:
-    from . import unbcf_fast
+    from hyperspy.io_plugins import unbcf_fast
     fast_unbcf = True
     if verbose:
         print("The fast cython based bcf unpacking library were found")

@@ -24,11 +24,6 @@ def test_load():
         assert_true(bse.data.dtype == np.uint16)
 
 
-# it makes no sense to try this,
-#as Travis without sudo or python3 setup.py install --user
-# does not compile and setup the cython library
-# code:
-
-#def test_fast_bcf():
-    #from hyperspy.io_plugins import unbcf_fast
-    #unbcf_fast
+def test_fast_bcf():
+    from hyperspy.io_plugins import unbcf_fast
+    unbcf_fast
