@@ -450,12 +450,12 @@ Bruker composite file
 ----------------
 
 HyperSpy can read "hypermaps" saved with Bruker's Esprit v1.x or v2.x in bcf
-hybrid (virtual file system/container with xml and binary data, optionaly compressed) format.
-Most of relevant data extraction from bcf is implemented. Both: high
-resolution 16-bit SEM imagery and hyperspectral EDX data can be retrieved simultaniously.
+hybrid (virtual file system/container with xml and binary data, optionally compressed) format.
+Most bcf import functionality is implemented. Both high-resolution 16-bit SEM images
+and hyperspectral EDX data can be retrieved simultaneously.
 
-Note that Bruker Esprit uses the similar format for EBSD data, but even if technology
-is very similar, curently EBSD containing bcf is not supported by HyperSpy.
+Note that Bruker Esprit uses a similar format for EBSD data, but it is not currently
+supported by HyperSpy.
 
 Extra loading arguments
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -489,11 +489,8 @@ load the same file without extra arguments:
     <Image, title: SE, dimensions: (|100, 75)>,
     <EDSSEMSpectrum, title: EDX, dimensions: (100, 75|1394)>]
 
-1394 energy channel range is the result of automatic shape minimalisation
-making lesser memory usage while preserving all data.
-However in conjunction with stacking, this can cause a problem.
-With using cutoff_at_kV kwarg we can force 
-all loaded arrays to have same energy range:
+The loaded array energy dimention can by forced to be larger than the data recorded
+by setting the 'cutoff_at_kV' kwarg to higher value:
 
 .. code-block:: python
 
@@ -502,5 +499,5 @@ all loaded arrays to have same energy range:
     <Image, title: SE, dimensions: (|100, 75)>,
     <EDSSEMSpectrum, title: EDX, dimensions: (100, 75|4096)>]
 
-Note that downsample option currently can result in some unexpected behaviour
-while plotting spectra with sem imagery as navigator.
+Note that setting downsample to >1 currently locks out using sem imagery
+as navigator in the plotting.
