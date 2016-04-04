@@ -34,13 +34,13 @@ class TestImageFFT():
         nt.assert_true(isinstance(im_ifft, Signal))
         assert_allclose(im.data,  im_ifft.data, atol=1e-3)
 
-        im_fft = im[0].fft()
+        im_fft = im.inav[0].fft()
         im_ifft = im_fft.ifft()
-        assert_allclose(im[0].data,  im_ifft.data, atol=1e-3)
+        assert_allclose(im.inav[0].data,  im_ifft.data, atol=1e-3)
 
-        im_fft = im[0, 0].fft()
+        im_fft = im.inav[0, 0].fft()
         im_ifft = im_fft.ifft()
-        assert_allclose(im[0, 0].data,  im_ifft.data, atol=1e-3)
+        assert_allclose(im.inav[0, 0].data,  im_ifft.data, atol=1e-3)
 
 
 class TestSpectrumFFT():
@@ -55,14 +55,14 @@ class TestSpectrumFFT():
         nt.assert_true(isinstance(s_ifft, Signal))
         assert_allclose(s.data,  s_ifft.data, atol=1e-3)
 
-        s_fft = s[0].fft()
+        s_fft = s.inav[0].fft()
         s_ifft = s_fft.ifft()
-        assert_allclose(s[0].data,  s_ifft.data, atol=1e-3)
+        assert_allclose(s.inav[0].data,  s_ifft.data, atol=1e-3)
 
-        s_fft = s[0, 0].fft()
+        s_fft = s.inav[0, 0].fft()
         s_ifft = s_fft.ifft()
-        assert_allclose(s[0, 0].data,  s_ifft.data, atol=1e-3)
+        assert_allclose(s.inav[0, 0].data,  s_ifft.data, atol=1e-3)
 
-        s_fft = s[0, 0, 0].fft()
+        s_fft = s.inav[0, 0, 0].fft()
         s_ifft = s_fft.ifft()
-        assert_allclose(s[0, 0, 0].data,  s_ifft.data, atol=1e-3)
+        assert_allclose(s.inav[0, 0, 0].data,  s_ifft.data, atol=1e-3)
