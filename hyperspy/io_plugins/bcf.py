@@ -62,7 +62,7 @@ try:
     _logger.info("The fast cython based bcf unpacking library were found")
 except ImportError:
     fast_unbcf = False
-    _logger.warn("""unbcf_fast library is not present...
+    _logger.warning("""unbcf_fast library is not present...
 Falling back to slow python only backend.""")
 
 
@@ -432,7 +432,7 @@ class EDXSpectrum(object):
             self.deadTime = int(
                             spectrum.TRTHeaderedClass.ClassInstance.DeadTime)
         except AttributeError:
-            _logger.warn('spectrum have no dead time records...')
+            _logger.warning('spectrum have no dead time records...')
         self.zeroPeakPosition = int(
                       spectrum.TRTHeaderedClass.ClassInstance.ZeroPeakPosition)
         self.amplification = int(
@@ -754,7 +754,7 @@ class BCF_reader(SFS_reader):
                                              downsample=downsample,
                                              cutoff=cutoff_chan)
         else:
-            _logger.warn("""using slow python parser,
+            _logger.warning("""using slow python parser,
 this is going to take a while... please wait""")
             return self.py_parse_hypermap(index=0,
                                      downsample=downsample,
