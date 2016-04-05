@@ -42,7 +42,7 @@ def test_load_16bit_reduced():
     np_filename = os.path.join(my_path, 'bcf_data', np_file[1])
     np.testing.assert_array_equal(hype.data[:2, :2, 222],
                                   np.load(np_filename))
-    assert_true(hype.data.shape == (18, 25, 1047))
+    assert_true(hype.data.shape == (19, 25, 1047))
 
 
 def test_load_8bit():

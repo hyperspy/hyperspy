@@ -835,7 +835,7 @@ this is going to take a while... please wait""")
                 x_pix, chan1, chan2, dummy1, flag, dummy_size1, n_of_pulses,\
                      data_size2, dummy2 = strct_unp('<IHHIHHHHH',
                                                     buffer1[offset:offset + 22])
-                pix_idx = (x_pix // dwn_factor) + ((width // dwn_factor) *
+                pix_idx = (x_pix // dwn_factor) + ((-(-width // dwn_factor)) *
                                                       (line_cnt // dwn_factor))
                 offset += 22
                 if (offset + data_size2) >= size:
@@ -921,8 +921,7 @@ this is going to take a while... please wait""")
                 # use assigment, which is ~4 times faster, than inplace add
                 if max_chan < chan1:  # if pixel have more channels than we need
                     chan1 = max_chan
-                if (dwn_factor == 1) or\
-                          ((line_cnt % dwn_factor) and (x_pix % dwn_factor)):
+                if (dwn_factor == 1): #or ((line_cnt % dwn_factor) or (x_pix % dwn_factor)):
                     vfa[max_chan * pix_idx:chan1 + max_chan * pix_idx] =\
                                                                  pixel[:chan1]
                 else:
@@ -931,7 +930,10 @@ this is going to take a while... please wait""")
         vfa.resize((-(-height // dwn_factor),
                     -(-width // dwn_factor),
                     max_chan))
-        #return vfa.swapaxes(2, 0)  # comented for hyperspy, as it prefers
+        #check if array is signed, and convert to unsigned
+        if str(vfa.dtype)[0] == 'i':
+            new_dtype = ''.join(['u', str(vfa.dtype)])
+            vfa.dtype = new_dtype
         return vfa
 
 
