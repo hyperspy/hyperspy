@@ -6197,7 +6197,7 @@ static PyObject *__pyx_pf_8hyperspy_10io_plugins_10unbcf_fast_parse_to_numpy(CYT
  *     if type(cutoff) == int:
  *         map_depth = cutoff             # <<<<<<<<<<<<<<
  *     dtype = bcf.sfs.header.estimate_map_depth(downsample=downsample)
- *     hypermap = np.zeros((bcf.sfs.header.image.height // downsample,
+ *     hypermap = np.zeros((-(-bcf.sfs.header.image.height // downsample),
  */
     __Pyx_INCREF(__pyx_v_cutoff);
     __Pyx_DECREF_SET(__pyx_v_map_depth, __pyx_v_cutoff);
@@ -6215,8 +6215,8 @@ static PyObject *__pyx_pf_8hyperspy_10io_plugins_10unbcf_fast_parse_to_numpy(CYT
  *     if type(cutoff) == int:
  *         map_depth = cutoff
  *     dtype = bcf.sfs.header.estimate_map_depth(downsample=downsample)             # <<<<<<<<<<<<<<
- *     hypermap = np.zeros((bcf.sfs.header.image.height // downsample,
- *                          bcf.sfs.header.image.width // downsample,
+ *     hypermap = np.zeros((-(-bcf.sfs.header.image.height // downsample),
+ *                          -(-bcf.sfs.header.image.width // downsample),
  */
   __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_bcf, __pyx_n_s_sfs); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 283; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
@@ -6239,8 +6239,8 @@ static PyObject *__pyx_pf_8hyperspy_10io_plugins_10unbcf_fast_parse_to_numpy(CYT
   /* "hyperspy/io_plugins/unbcf_fast.pyx":284
  *         map_depth = cutoff
  *     dtype = bcf.sfs.header.estimate_map_depth(downsample=downsample)
- *     hypermap = np.zeros((bcf.sfs.header.image.height // downsample,             # <<<<<<<<<<<<<<
- *                          bcf.sfs.header.image.width // downsample,
+ *     hypermap = np.zeros((-(-bcf.sfs.header.image.height // downsample),             # <<<<<<<<<<<<<<
+ *                          -(-bcf.sfs.header.image.width // downsample),
  *                          map_depth),
  */
   __pyx_t_3 = __Pyx_GetModuleGlobalName(__pyx_n_s_np); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 284; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
@@ -6259,14 +6259,20 @@ static PyObject *__pyx_pf_8hyperspy_10io_plugins_10unbcf_fast_parse_to_numpy(CYT
   __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_height); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 284; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_3 = PyNumber_FloorDivide(__pyx_t_1, __pyx_v_downsample); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 284; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_3 = PyNumber_Negative(__pyx_t_1); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 284; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_3);
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __pyx_t_1 = PyNumber_FloorDivide(__pyx_t_3, __pyx_v_downsample); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 284; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_1);
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __pyx_t_3 = PyNumber_Negative(__pyx_t_1); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 284; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   /* "hyperspy/io_plugins/unbcf_fast.pyx":285
  *     dtype = bcf.sfs.header.estimate_map_depth(downsample=downsample)
- *     hypermap = np.zeros((bcf.sfs.header.image.height // downsample,
- *                          bcf.sfs.header.image.width // downsample,             # <<<<<<<<<<<<<<
+ *     hypermap = np.zeros((-(-bcf.sfs.header.image.height // downsample),
+ *                          -(-bcf.sfs.header.image.width // downsample),             # <<<<<<<<<<<<<<
  *                          map_depth),
  *                         dtype=dtype)
  */
@@ -6281,15 +6287,21 @@ static PyObject *__pyx_pf_8hyperspy_10io_plugins_10unbcf_fast_parse_to_numpy(CYT
   __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_width); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 285; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = PyNumber_FloorDivide(__pyx_t_2, __pyx_v_downsample); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 285; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = PyNumber_Negative(__pyx_t_2); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 285; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_1);
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_2 = PyNumber_FloorDivide(__pyx_t_1, __pyx_v_downsample); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 285; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_2);
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __pyx_t_1 = PyNumber_Negative(__pyx_t_2); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 285; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
   /* "hyperspy/io_plugins/unbcf_fast.pyx":284
  *         map_depth = cutoff
  *     dtype = bcf.sfs.header.estimate_map_depth(downsample=downsample)
- *     hypermap = np.zeros((bcf.sfs.header.image.height // downsample,             # <<<<<<<<<<<<<<
- *                          bcf.sfs.header.image.width // downsample,
+ *     hypermap = np.zeros((-(-bcf.sfs.header.image.height // downsample),             # <<<<<<<<<<<<<<
+ *                          -(-bcf.sfs.header.image.width // downsample),
  *                          map_depth),
  */
   __pyx_t_2 = PyTuple_New(3); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 284; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
@@ -6310,7 +6322,7 @@ static PyObject *__pyx_pf_8hyperspy_10io_plugins_10unbcf_fast_parse_to_numpy(CYT
   __pyx_t_2 = 0;
 
   /* "hyperspy/io_plugins/unbcf_fast.pyx":287
- *                          bcf.sfs.header.image.width // downsample,
+ *                          -(-bcf.sfs.header.image.width // downsample),
  *                          map_depth),
  *                         dtype=dtype)             # <<<<<<<<<<<<<<
  *     cdef DataStream data_stream = DataStream(blocks, block_size)
@@ -6323,8 +6335,8 @@ static PyObject *__pyx_pf_8hyperspy_10io_plugins_10unbcf_fast_parse_to_numpy(CYT
   /* "hyperspy/io_plugins/unbcf_fast.pyx":284
  *         map_depth = cutoff
  *     dtype = bcf.sfs.header.estimate_map_depth(downsample=downsample)
- *     hypermap = np.zeros((bcf.sfs.header.image.height // downsample,             # <<<<<<<<<<<<<<
- *                          bcf.sfs.header.image.width // downsample,
+ *     hypermap = np.zeros((-(-bcf.sfs.header.image.height // downsample),             # <<<<<<<<<<<<<<
+ *                          -(-bcf.sfs.header.image.width // downsample),
  *                          map_depth),
  */
   __pyx_t_3 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_t_1, __pyx_t_2); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 284; __pyx_clineno = __LINE__; goto __pyx_L1_error;}

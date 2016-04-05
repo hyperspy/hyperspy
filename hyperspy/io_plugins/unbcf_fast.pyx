@@ -281,8 +281,8 @@ def parse_to_numpy(bcf, downsample=1, cutoff=None):
     if type(cutoff) == int:
         map_depth = cutoff
     dtype = bcf.sfs.header.estimate_map_depth(downsample=downsample)
-    hypermap = np.zeros((bcf.sfs.header.image.height // downsample,
-                         bcf.sfs.header.image.width // downsample,
+    hypermap = np.zeros((-(-bcf.sfs.header.image.height // downsample),
+                         -(-bcf.sfs.header.image.width // downsample),
                          map_depth),
                         dtype=dtype)
     cdef DataStream data_stream = DataStream(blocks, block_size)
