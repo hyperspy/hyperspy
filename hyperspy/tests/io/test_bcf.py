@@ -6,7 +6,7 @@ import hyperspy.api as hs
 try:
     from hyperspy.io_plugins import unbcf_fast
 except ImportError:
-    print('falling back to slow bcf')
+    print('falling back to slow bcf implementation')
 
 from nose.tools import assert_true
 from hyperspy.io import load
