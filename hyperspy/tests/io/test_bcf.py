@@ -51,7 +51,7 @@ def test_load_16bit_reduced():
     assert_true(bse.data.dtype == np.uint16)
     assert_true(sei.data.dtype == np.uint16)
     #hypermaps should always return unsigned integers:
-    assert_true(str(hype.data.dtype) == 'u')
+    assert_true(str(hype.data.dtype)[0] == 'u')
 
 
 def test_load_8bit():
@@ -65,7 +65,7 @@ def test_load_8bit():
         assert_true(bse.data.dtype == np.uint16)
         assert_true(sei.data.dtype == np.uint16)
         #hypermaps should always return unsigned integers:
-        assert_true(str(hype.data.dtype) == 'u')
+        assert_true(str(hype.data.dtype)[0] == 'u')
 
 
 def test_hyperspy_wrap():
