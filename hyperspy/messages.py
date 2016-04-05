@@ -18,21 +18,45 @@
 
 import sys
 
+import logging
+import warnings
+from hyperspy.exceptions import VisibleDeprecationWarning
+
+_logger = logging.getLogger(__name__)
+
 
 def warning_exit(text):
-    sys.exit("\nWarning!\n" + text)
+    _logger.critical(text)
+    warnings.warn(
+        "The function `warning_exit()` has been deprecated, and "
+        "will be removed in HyperSpy 0.10. Please raise an appropriate "
+        "`exception instead.",
+        VisibleDeprecationWarning)
+    sys.exit(1)
 
 
 def warning(text):
-    print()
-    print("Warning! " + text)
+    _logger.warning(text)
+    warnings.warn(
+        "The function `warning()` has been deprecated in favour of python "
+        "logging. It will be removed in HyperSpy 0.10. Please use "
+        "`logging.getLogger(__name__).warning()` instead.",
+        VisibleDeprecationWarning)
 
 
 def information(text):
-    print()
-    print(text)
+    _logger.info(text)
+    warnings.warn(
+        "The function `information()` has been deprecated in favour of python "
+        "logging. It will be removed in HyperSpy 0.10. Please use "
+        "`logging.getLogger(__name__).info()` instead.",
+        VisibleDeprecationWarning)
 
 
 def alert(text):
-    print()
-    print("** %s **" % text)
+    _logger.error(text)
+    warnings.warn(
+        "The function `alert()` has been deprecated in favour of python "
+        "logging. It will be removed in HyperSpy 0.10. Please use "
+        "`logging.getLogger(__name__).error()` instead.",
+        VisibleDeprecationWarning)

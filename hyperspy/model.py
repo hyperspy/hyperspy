@@ -20,6 +20,8 @@ import copy
 import os
 import tempfile
 import numbers
+import logging
+
 import numpy as np
 import scipy.odr as odr
 from scipy.optimize import (leastsq,
@@ -31,7 +33,7 @@ from scipy.optimize import (leastsq,
                             fmin_tnc,
                             fmin_powell)
 
-from hyperspy import messages
+
 from hyperspy.external import progressbar
 from hyperspy.defaults_parser import preferences
 from hyperspy.external.mpfit.mpfit import mpfit
@@ -46,6 +48,8 @@ from hyperspy.misc.utils import (slugify, shorten_name, stash_active_state,
                                  dummy_context_manager)
 from hyperspy.misc.slicing import copy_slice_from_whitelist
 from hyperspy.events import Events, Event
+
+_logger = logging.getLogger(__name__)
 
 
 class ModelComponents(object):
@@ -869,7 +873,7 @@ class BaseModel(list):
                         bounds=self.free_parameters_boundaries,
                         approx_grad=approx_grad, **kwargs)[0]
                 else:
-                    print("""
+                    raise ValueError("""
                     The %s optimizer is not available.
 
                     Available optimizers:
@@ -942,15 +946,15 @@ class BaseModel(list):
                 dir='.', suffix='.npz')
             os.close(fd)
             autosave_fn = autosave_fn[:-4]
-            messages.information(
+            _logger.info(
                 "Autosaving each %s pixels to %s.npz" % (autosave_every,
                                                          autosave_fn))
-            messages.information(
+            _logger.info(
                 "When multifit finishes its job the file will be deleted")
         if mask is not None and (
             mask.shape != tuple(
                 self.axes_manager._navigation_shape_in_array)):
-            messages.warning_exit(
+            raise ValueError(
                 "The mask must be a numpy array of boolen type with "
                 " shape: %s" +
                 str(self.axes_manager._navigation_shape_in_array))
@@ -967,7 +971,7 @@ class BaseModel(list):
                 self.set_boundaries()
                 kwargs['bounded'] = None
             else:
-                messages.information(
+                _logger.info(
                     "The chosen fitter does not suppport bounding."
                     "If you require bounding please select one of the "
                     "following fitters instead: mpfit, tnc, l_bfgs_b")
@@ -996,7 +1000,7 @@ class BaseModel(list):
                 if maxval > 0:
                     pbar.finish()
         if autosave is True:
-            messages.information(
+            _logger.info(
                 'Deleting the temporary file %s pixels' % (
                     autosave_fn + 'npz'))
             os.remove(autosave_fn + '.npz')

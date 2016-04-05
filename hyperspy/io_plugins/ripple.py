@@ -24,12 +24,15 @@
 import codecs
 import os.path
 from io import StringIO
+import logging
 
 import numpy as np
 
 from hyperspy.misc.io.utils_readfile import *
 from hyperspy import Release
 from hyperspy.misc.utils import DictionaryTreeBrowser
+
+_logger = logging.getLogger(__name__)
 
 # Plugin characteristics
 # ----------------------
@@ -377,17 +380,17 @@ def file_reader(filename, rpl_info=None, encoding="latin-1",
         data = read_raw(rpl_info, rawfname, mmap_mode=mmap_mode)
 
     if rpl_info['record-by'] == 'vector':
-        print('Loading as spectrum')
+        _logger.info('Loading as spectrum')
         record_by = 'spectrum'
     elif rpl_info['record-by'] == 'image':
-        print('Loading as Image')
+        _logger.info('Loading as Image')
         record_by = 'image'
     else:
         if len(data.shape) == 1:
-            print('Loading as spectrum')
+            _logger.info('Loading as spectrum')
             record_by = 'spectrum'
         else:
-            print('Loading as image')
+            _logger.info('Loading as image')
             record_by = 'image'
 
     if rpl_info['record-by'] == 'vector':
@@ -564,8 +567,7 @@ def file_writer(filename, signal, encoding='latin-1', *args, **kwds):
             record_by = 'dont-care'
             depth, width, height = width_axis.size, 1, 1
     else:
-        print("Only Spectrum and Image objects can be saved")
-        return
+        raise TypeError("Only Spectrum and Image objects can be saved")
 
     # Fill the keys dictionary
     keys_dictionary = {

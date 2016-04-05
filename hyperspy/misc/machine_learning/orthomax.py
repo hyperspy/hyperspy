@@ -31,7 +31,6 @@ def orthomax(A, gamma=1, reltol=1.4901e-07, maxit=256):
     else:
         # Use a sequence of bivariate rotations
         for iter in range(1, maxit + 1):
-            print(iter)
             maxTheta = 0
             for i in range(0, m - 1):
                 for j in range(i, m):

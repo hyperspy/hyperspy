@@ -18,8 +18,8 @@
 
 import os
 import glob
+import logging
 
-from hyperspy import messages
 import hyperspy.defaults_parser
 
 import hyperspy.misc.utils
@@ -28,6 +28,8 @@ from hyperspy.misc.utils import strlist2enumeration
 from natsort import natsorted
 import hyperspy.misc.io.tools
 from hyperspy.io_plugins import io_plugins, default_write_ext
+
+_logger = logging.getLogger(__name__)
 
 
 def load(filenames=None,
@@ -130,11 +132,6 @@ def load(filenames=None,
         Used when loading blockfiles to determine which mode to use for when
         loading as memmap (i.e. when load_to_memory=False)
 
-    print_info: bool
-        For SEMPER unf-files, if True (default is False) header and label
-        information read from the label are printed for a quick overview.
-
-
     Returns
     -------
     Signal instance or list of signal instances
@@ -186,7 +183,7 @@ def load(filenames=None,
         raise ValueError('No file provided to reader.')
     else:
         if len(filenames) > 1:
-            messages.information('Loading individual files')
+            _logger.info('Loading individual files')
         if stack is True:
             signal = []
             for i, filename in enumerate(filenames):
@@ -203,8 +200,8 @@ def load(filenames=None,
                         os.path.abspath(filenames[0])
                     )[0]
                 )[1]
-            messages.information('Individual files loaded correctly')
-            signal._print_summary()
+            _logger.info('Individual files loaded correctly')
+            _logger.info(signal._summary())
             objects = [signal, ]
         else:
             objects = [load_single_file(filename,
@@ -427,7 +424,7 @@ def save(filename, signal, overwrite=None, **kwds):
             overwrite = hyperspy.misc.io.tools.overwrite(filename)
         if overwrite is True:
             writer.file_writer(filename, signal, **kwds)
-            print('The %s file was created' % filename)
+            _logger.info('The %s file was created' % filename)
             folder, filename = os.path.split(os.path.abspath(filename))
             signal.tmp_parameters.set_item('folder', folder)
             signal.tmp_parameters.set_item('filename',

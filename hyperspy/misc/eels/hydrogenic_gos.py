@@ -1,5 +1,6 @@
 
 import math
+import logging
 
 import numpy as np
 import scipy as sp
@@ -7,6 +8,8 @@ import scipy.interpolate
 
 from hyperspy.misc.eels.base_gos import GOSBase
 from hyperspy.misc.physical_constants import R
+
+_logger = logging.getLogger(__name__)
 
 XU = [
     .82, .52, .52, .42, .30, .29, .22, .30, .22, .16, .12, .13, .13, .14, .16,
@@ -95,10 +98,13 @@ class HydrogenicGOS(GOSBase):
                 'compute K or L shells. Try using Hartree-Slater GOS')
 
         self.energy_axis = self.rel_energy_axis + self.onset_energy
-        print("\nHydrogenic GOS")
-        print("\tElement: ", self.element)
-        print("\tSubshell: ", self.subshell[1:])
-        print("\tOnset energy: ", self.onset_energy)
+
+        info_str = (
+            "\nHydrogenic GOS\n" +
+            ("\tElement: %s " % self.element) +
+            ("\tSubshell: %s " % self.subshell) +
+            ("\tOnset Energy = %s " % self.onset_energy))
+        _logger.info(info_str)
 
     def integrateq(self, onset_energy, angle, E0):
         energy_shift = onset_energy - self.onset_energy

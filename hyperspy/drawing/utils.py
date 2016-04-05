@@ -632,9 +632,7 @@ def plot_images(images,
             del label_list[n:]
 
     else:
-        # catch all others to revert to default if bad input
-        print("Did not understand input of labels. Defaulting to image titles.")
-        label_list = [x.metadata.General.title for x in images]
+        raise ValueError("Did not understand input of labels.")
 
     # Determine appropriate number of images per row
     rows = int(np.ceil(n / float(per_row)))
@@ -664,7 +662,7 @@ def plot_images(images,
     non_rgb = list(itertools.compress(images, [not j for j in isrgb]))
     if len(non_rgb) is 0 and colorbar is not None:
         colorbar = None
-        print("Sorry, colorbar is not implemented for RGB images.")
+        warnings.warn("Sorry, colorbar is not implemented for RGB images.")
 
     # Find global min and max values of all the non-rgb images for use with
     # 'single' scalebar
@@ -727,9 +725,7 @@ def plot_images(images,
 
             if not isinstance(aspect, (int, float)) and aspect not in [
                     'auto', 'square', 'equal']:
-                print('Did not understand aspect ratio input. '
-                      'Using \'auto\' as default.')
-                aspect = 'auto'
+                raise ValueError('Did not understand aspect ratio input.')
 
             if aspect is 'auto':
                 if float(yaxis.size) / xaxis.size < min_asp:

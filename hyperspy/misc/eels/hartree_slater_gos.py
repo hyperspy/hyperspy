@@ -1,6 +1,7 @@
 
 import os
 import math
+import logging
 
 import numpy as np
 import scipy as sp
@@ -11,6 +12,8 @@ from hyperspy.misc.eels.base_gos import GOSBase
 from hyperspy.misc.elements import elements
 from hyperspy.misc.export_dictionary import (
     export_to_dictionary, load_from_dictionary)
+
+_logger = logging.getLogger(__name__)
 
 
 class HartreeSlaterGOS(GOSBase):
@@ -100,10 +103,12 @@ class HartreeSlaterGOS(GOSBase):
         return dic
 
     def readgosfile(self):
-        print("\nHartree-Slater GOS")
-        print("\tElement: ", self.element)
-        print("\tSubshell: ", self.subshell)
-        print("\tOnset Energy = ", self.onset_energy)
+        info_str = (
+            "Hartree-Slater GOS\n" +
+            ("\tElement: %s " % self.element) +
+            ("\tSubshell: %s " % self.subshell) +
+            ("\tOnset Energy = %s " % self.onset_energy))
+        _logger.info(info_str)
         element = self.element
         subshell = self.subshell
         filename = os.path.join(

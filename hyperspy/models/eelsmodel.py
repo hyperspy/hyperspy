@@ -18,14 +18,16 @@
 
 import copy
 import warnings
+import logging
 
 from hyperspy.models.model1D import Model1D
 from hyperspy.components import EELSCLEdge
 from hyperspy.components import PowerLaw
 from hyperspy.defaults_parser import preferences
-import hyperspy.messages as messages
 from hyperspy import components
 from hyperspy._signals.eels import EELSSpectrum
+
+_logger = logging.getLogger(__name__)
 
 
 def _give_me_delta(master, slave):
@@ -256,9 +258,10 @@ class EELSModel(Model1D):
                         min_distance_between_edges_for_fine_structure
                     if (distance_between_edges -
                             preedge_safe_window_width) <= min_d:
-                        print(" Automatically desactivating the fine \
-                        structure of edge number", i2 + 1, "to avoid conflicts\
-                         with edge number", i1 + 1)
+                        _logger.info((
+                            "Automatically deactivating the fine structure "
+                            "of edge number %d to avoid conflicts with edge "
+                            "number %d") % (i2 + 1, i1 + 1))
                         self._active_edges[i2].fine_structure_active = False
                         self._active_edges[
                             i2].fine_structure_coeff.free = False
@@ -266,12 +269,14 @@ class EELSModel(Model1D):
                     else:
                         new_fine_structure_width = (
                             distance_between_edges - preedge_safe_window_width)
-                        print(
+                        _logger.info((
                             "Automatically changing the fine structure "
-                            "width of edge", i1 + 1, "from",
-                            self._active_edges[i1].fine_structure_width,
-                            "eV to", new_fine_structure_width,
-                            "eV to avoid conflicts with edge number", i2 + 1)
+                            "width of edge %d from %s eV to %s eV to avoid "
+                            "conflicts with edge number %d") % (
+                                i1 + 1,
+                                self._active_edges[i1].fine_structure_width,
+                                new_fine_structure_width,
+                                i2 + 1))
                         self._active_edges[i1].fine_structure_width = \
                             new_fine_structure_width
                         self.resolve_fine_structure(i1=i2)
@@ -454,7 +459,7 @@ class EELSModel(Model1D):
                     if powerlaw is None:
                         powerlaw = component
                     else:
-                        messages.warning(
+                        _logger.warning(
                             'There are more than two power law '
                             'background components defined in this model, '
                             'please use the powerlaw keyword to specify one'
@@ -475,7 +480,7 @@ class EELSModel(Model1D):
 
         if not powerlaw.estimate_parameters(
                 self.spectrum, E1, E2, only_current=False):
-            messages.warning(
+            _logger.warning(
                 "The power law background parameters could not "
                 "be estimated.\n"
                 "Try choosing a different energy range for the estimation")
@@ -535,7 +540,7 @@ class EELSModel(Model1D):
             edge.onset_energy.free = True
             self.fit(**kwargs)
             edge.onset_energy.free = False
-            print("onset_energy = ", edge.onset_energy.value)
+            _logger.info("onset_energy = %s", edge.onset_energy.value)
             self._classify_components()
         elif edge.intensity.free is True:
             self.enable_fine_structure(to_activate_fs)

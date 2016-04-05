@@ -23,12 +23,15 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
 
 import numpy as np
 import scipy.linalg
 
 from hyperspy.misc.machine_learning.import_sklearn import (
     fast_svd, sklearn_installed)
+
+_logger = logging.getLogger(__name__)
 
 
 def mlpca(X, varX, p, convlim=1E-10, maxiter=50000, fast=False):
@@ -68,15 +71,15 @@ def mlpca(X, varX, p, convlim=1E-10, maxiter=50000, fast=False):
     XX = X
 #    varX = stdX**2
     n = XX.shape[1]
-    print("\nPerforming maximum likelihood principal components analysis")
+    _logger.info("Performing maximum likelihood principal components analysis")
     # Generate initial estimates
-    print("Generating initial estimates")
+    _logger.info("Generating initial estimates")
     CV = np.cov(X)
     U, S, Vh = svd(CV)
     U0 = U
 
     # Loop for alternating least squares
-    print("Optimization iteration loop")
+    _logger.info("Optimization iteration loop")
     count = 0
     Sold = 0
     ErrFlag = -1
@@ -85,7 +88,6 @@ def mlpca(X, varX, p, convlim=1E-10, maxiter=50000, fast=False):
         Sobj = 0
         MLX = np.zeros(XX.shape)
         for i in range(n):
-
             Q = np.diag((1 / (varX[:, i])).squeeze())
             U0m = np.matrix(U0)
             F = np.linalg.inv((U0m.T * Q * U0m))
@@ -94,10 +96,11 @@ def mlpca(X, varX, p, convlim=1E-10, maxiter=50000, fast=False):
             dx = np.matrix((XX[:, i] - MLX[:, i]).squeeze())
             Sobj += float(dx * Q * dx.T)
         if (count % 2) == 1:
-            print("Iteration : %s" % (count / 2))
+            _logger.info("Iteration : %s" % (count / 2))
             if (abs(Sold - Sobj) / Sobj) < convlim:
                 ErrFlag = 1
-            print("(abs(Sold - Sobj) / Sobj) = %s" % (abs(Sold - Sobj) / Sobj))
+            _logger.info("(abs(Sold - Sobj) / Sobj) = %s" %
+                         (abs(Sold - Sobj) / Sobj))
             if count > maxiter:
                 ErrFlag = 1
 

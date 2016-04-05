@@ -1,5 +1,7 @@
 import os
-from hyperspy.messages import information
+import logging
+
+_logger = logging.getLogger(__name__)
 
 
 def dump_dictionary(file, dic, string='root', node_separator='.',
@@ -72,14 +74,13 @@ def overwrite(fname):
             if answer.lower() == 'y':
                 return True
             elif answer.lower() == 'n':
-                # print('Operation canceled.')
                 return False
         except:
             # We are running in the IPython notebook that does not
             # support raw_input
-            information("Your terminal does not support raw input. "
-                        "Not overwriting. "
-                        "To overwrite the file use `overwrite=True`")
+            _logger.info("Your terminal does not support raw input. "
+                         "Not overwriting. "
+                         "To overwrite the file use `overwrite=True`")
             return False
     else:
         return True

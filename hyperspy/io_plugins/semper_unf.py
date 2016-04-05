@@ -79,14 +79,18 @@ except ImportError:  # happens with Python < 2.7
     ordict = False
 
 from time import strftime
-import numpy as np
-from traits.api import Undefined
 import struct
 from functools import partial
+import logging
+import warnings
+
+import numpy as np
+from traits.api import Undefined
 
 from hyperspy.misc.array_tools import sarray2dict
 
-import logging
+
+_logger = logging.getLogger(__name__)
 
 
 # Plugin characteristics
@@ -128,8 +132,6 @@ class SemperFormat(object):
         A dictionary of all flags and metadata present in the `.unf`-file.
 
     """
-
-    _log = logging.getLogger(__name__)
 
     ICLASS_DICT = {1: 'image', 2: 'macro', 3: 'fourier', 4: 'spectrum',
                    5: 'correlation', 6: Undefined, 7: 'walsh',
@@ -192,9 +194,13 @@ class SemperFormat(object):
                     ('YUNIT', ('<i2', 4)),    # Bytes 249-252
                     ('ZUNIT', ('<i2', 4))]    # Bytes 253-256
 
-    def __init__(self, data, title='', offsets=(0., 0., 0.), scales=(1., 1., 1.),
-                 units=(Undefined, Undefined, Undefined), metadata=None):
-        self._log.debug('Calling __init__')
+    def __init__(self,
+                 data,
+                 title='',
+                 offsets=(0., 0., 0.),
+                 scales=(1., 1., 1.),
+                 units=(Undefined, Undefined, Undefined),
+                 metadata=None):
         if metadata is None:
             metadata = {}
         # Make sure data is 3D!
@@ -205,11 +211,10 @@ class SemperFormat(object):
         self.scales = scales
         self.units = units
         self.metadata = metadata
-        self._log.debug('Created ' + str(self))
+        _logger.debug('Created ' + str(self))
 
     @classmethod
     def _read_label(cls, unf_file):
-        cls._log.debug('Calling _read_label')
         unpack = partial(
             unpack_from_intbytes,
             '<f')  # Unpacking function for 4 byte floats!
@@ -275,7 +280,6 @@ class SemperFormat(object):
         return label
 
     def _get_label(self):
-        self._log.debug('Calling _get_label')
         pack = partial(
             pack_to_intbytes,
             '<f')  # Packing function for 4 byte floats!
@@ -337,7 +341,6 @@ class SemperFormat(object):
 
     @classmethod
     def _check_format(cls, data):
-        cls._log.debug('Calling _check_format')
         if data.dtype.name == 'int8':
             iform = 0  # byte
         elif data.dtype.name == 'int16':
@@ -375,11 +378,10 @@ class SemperFormat(object):
             SEMPER file format object containing the loaded information.
 
         """
-        cls._log.debug('Calling load_from_file')
         if ordict:
             metadata = OrderedDict()
         else:
-            cls._log.warning(
+            _logger.warning(
                 'OrderedDict is not available, using a standard dictionary.\n')
             metadata = {}
         with open(filename, 'rb') as f:
@@ -420,7 +422,7 @@ class SemperFormat(object):
                     warning = ('Could not read label, trying to proceed '
                                'without it!')
                     warning += ' (Error message: {})'.format(str(e))
-                    cls._log.warning(warning)
+                    warnings.warn(warning)
             # Read picture data:
             nlay, nrow, ncol = metadata['NLAY'], metadata[
                 'NROW'], metadata['NCOL']
@@ -465,7 +467,6 @@ class SemperFormat(object):
         None
 
         """
-        self._log.debug('Calling to_file')
         nlay, nrow, ncol = self.data.shape
         data, iform = self._check_format(self.data)
         title = self.title if self.title is not Undefined else ''
@@ -557,8 +558,8 @@ class SemperFormat(object):
 
         """
         data = signal.data
-        assert len(
-            data.shape) <= 3, 'Only up to 3-dimensional datasets can be handled!'
+        assert len(data.shape) <= 3, \
+            'Only up to 3-dimensional datasets can be handled!'
         scales, offsets, units = [1.] * 3, [0.] * \
             3, [Undefined] * 3  # Defaults!
         for i in range(len(data.shape)):
@@ -575,7 +576,7 @@ class SemperFormat(object):
         if ordict:
             metadata = OrderedDict()
         else:
-            cls._log.warning(
+            _logger.warning(
                 'OrderedDict is not available, using a standard dictionary!')
             metadata = {}
         metadata.update({'DATE': strftime('%Y-%m-%d %H:%M:%S'),
@@ -627,8 +628,9 @@ class SemperFormat(object):
         signal.original_metadata.add_dictionary(self.metadata)
         return signal
 
-    def print_info(self):
-        """Print important flag information of the :class:`.~SemperFormat` object.
+    def log_info(self):
+        """log important flag information of the :class:`.~SemperFormat`
+        object.
 
         Parameters
         ----------
@@ -639,26 +641,21 @@ class SemperFormat(object):
         None
 
         """
-        self._log.debug('Calling print_info')
-        print ('\n------------------------------------------------------')
-        print (self.title)
-        print (
-            'dimensions: x: {}, y: {}, z: {}'.format(
-                *
-                reversed(
-                    self.data.shape)))
-        print (
-            'scaling:    x: {:.3g}, y: {:.3g}, z: {:.3g}'.format(
-                *self.scales))
-        print (
-            'offsets:    x: {:.3g}, y: {:.3g}, z: {:.3g}'.format(
-                *self.offsets))
-        print ('units:      x: {}, y: {}, z: {}'.format(*self.units))
-        print ('data range:', (self.data.min(), self.data.max()), '\n')
-        print ('metadata:')
+        info_str = (
+            "Semper info:\n" +
+            ("\t%s\n" % self.title) +
+            ('\tdimensions: x: {}, y: {}, z: {}\n'.format(
+                *reversed(self.data.shape))) +
+            ('\tscaling:    x: {:.3g}, y: {:.3g}, z: {:.3g}\n'.format(
+                *self.scales)) +
+            ('\toffsets:    x: {:.3g}, y: {:.3g}, z: {:.3g}'.format(
+                *self.offsets)) +
+            ('\tunits:      x: {}, y: {}, z: {}'.format(*self.units)) +
+            ('\tdata range: %s %s\n' % (self.data.min(), self.data.max())) +
+            ('\tmetadata:\n'))
         for k, v in self.metadata.items():
-            print ('    {}: {}'.format(k, v))
-        print ('------------------------------------------------------\n')
+            info_str += '\t\t{}: {}'.format(k, v)
+        _logger.info(info_str)
 
 
 def unpack_from_intbytes(fmt, byte_list):
@@ -676,10 +673,9 @@ def pack_to_intbytes(fmt, value):
     return [int(c) for c in struct.pack(fmt, value)]
 
 
-def file_reader(filename, print_info=False, **kwds):
+def file_reader(filename, **kwds):
     semper = SemperFormat.load_from_unf(filename)
-    if print_info:
-        semper.print_info()
+    semper.log_info()
     return [semper.to_signal()._to_dictionary()]
 
 

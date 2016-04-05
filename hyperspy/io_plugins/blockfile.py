@@ -178,8 +178,8 @@ def file_reader(filename, endianess='<', load_to_memory=True, mmap_mode='c',
     note = note.strip(b'\x00')
     header['Note'] = note.decode()
     _logger.debug("File header: " + str(header))
-    NX, NY = header['NX'], header['NY']
-    DP_SZ = header['DP_SZ']
+    NX, NY = int(header['NX']), int(header['NY'])
+    DP_SZ = int(header['DP_SZ'])
     if header['SDP']:
         SDP = 100. / header['SDP']
     else:
