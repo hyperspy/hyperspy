@@ -7,6 +7,7 @@ import numpy as np
 
 from hyperspy.io import load
 from hyperspy.signal import Signal
+from hyperspy.datasets.example_signals import EDS_TEM_Spectrum
 
 my_path = os.path.dirname(__file__)
 
@@ -225,3 +226,7 @@ def test_rgba16():
         "npy_files",
         "test_rgba16.npy"))
     nt.assert_true((s.data == data).all())
+
+def test_strings_from_py2():
+    s = EDS_TEM_Spectrum()
+    nt.assert_equal(s.metadata.Sample.elements.dtype.char, "U")

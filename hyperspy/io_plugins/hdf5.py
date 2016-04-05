@@ -396,10 +396,11 @@ def hdfgroup2dict(group, dictionary=None):
                 value = None
         elif isinstance(value, np.bool_):
             value = bool(value)
-
-        elif isinstance(value, np.ndarray) and \
-                value.dtype == np.dtype('|S1'):
-            value = value.tolist()
+        elif isinstance(value, np.ndarray) and value.dtype.char == "S":
+            # Convert strings to unicode
+            value = value.astype("U")
+            if value.dtype.str.endswith("U1"):
+                value = value.tolist()
         # skip signals - these are handled below.
         if key.startswith('_sig_'):
             pass
@@ -421,6 +422,8 @@ def hdfgroup2dict(group, dictionary=None):
                     dict2signal(hdfgroup2signaldict(group[key])))
             elif isinstance(group[key], h5py.Dataset):
                 ans = np.array(group[key])
+                if ans.dtype.char == "S":
+                    ans = ans.astype("U")
                 kn = key
                 if key.startswith("_list_"):
                     ans = ans.tolist()
