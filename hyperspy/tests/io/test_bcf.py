@@ -8,7 +8,7 @@ try:
 except ImportError:
     print('falling back to slow bcf implementation')
 
-from nose.tools import assert_true
+from nose.tools import assert_true, assert_almost_equal
 from hyperspy.io import load
 
 test_files = ['P45_instructively_packed_16bit_compressed.bcf',
@@ -23,10 +23,13 @@ def test_load_16bit():
     # it cant use cython parsing implementation, as it is not compiled
     my_path = os.path.dirname(__file__)
     filename = os.path.join(my_path, 'bcf_data', test_files[0])
-    print('testing bcf instructivele packed16bit...')
+    print('testing bcf instructivele packed 16bit...')
     s = load(filename)
     bse, sei, hype = s
+    #Bruker saves all images in true 16bit:
     assert_true(bse.data.dtype == np.uint16)
+    assert_true(sei.data.dtype == np.uint16)
+    assert_true(bse.data.shape == (75, 100))
     np_filename = os.path.join(my_path, 'bcf_data', np_file[0])
     np.testing.assert_array_equal(hype.data[:22, :22, 222],
                                   np.load(np_filename))
@@ -39,10 +42,16 @@ def test_load_16bit_reduced():
     print('testing downsampled 16bit bcf...')
     s = load(filename, downsample=4, cutoff_at_kV=10)
     bse, sei, hype = s
+    assert_true(bse.data.shape == (75, 100))  # sem images never are downsampled
     np_filename = os.path.join(my_path, 'bcf_data', np_file[1])
     np.testing.assert_array_equal(hype.data[:2, :2, 222],
                                   np.load(np_filename))
     assert_true(hype.data.shape == (19, 25, 1047))
+    #Bruker saves all images in true 16bit:
+    assert_true(bse.data.dtype == np.uint16)
+    assert_true(sei.data.dtype == np.uint16)
+    #hypermaps should always return unsigned integers:
+    assert_true(str(hype.data.dtype) == 'u')
 
 
 def test_load_8bit():
@@ -52,7 +61,34 @@ def test_load_8bit():
         print('testing simple 8bit bcf...')
         s = load(filename)
         bse, sei, hype = s
+        #Bruker saves all images in true 16bit:
+        assert_true(bse.data.dtype == np.uint16)
+        assert_true(sei.data.dtype == np.uint16)
+        #hypermaps should always return unsigned integers:
+        assert_true(str(hype.data.dtype) == 'u')
 
+
+def test_hyperspy_wrap():
+    my_path = os.path.dirname(__file__)
+    filename = os.path.join(my_path, 'bcf_data', test_files[0])
+    print('testing bcf wrap to hyperspy signal...')
+    hype = load(filename, record_by='spectrum')
+    assert_almost_equal(hype.axes_manager[0].scale, 8.736785062e-06, places=12)
+    assert_almost_equal(hype.axes_manager[1].scale, 8.736785062e-06, places=12)
+    assert_true(hype.axes_manager[1].units == 'm')
+    assert_almost_equal(hype.axes_manager[2].scale, 10.001)
+    assert_almost_equal(hype.axes_manager[2].offset, -472.397235)
+    assert_true(hype.axes_manager[2].units == 'eV')
+
+
+def test_hyperspy_wrap_downsampled():
+    my_path = os.path.dirname(__file__)
+    filename = os.path.join(my_path, 'bcf_data', test_files[0])
+    print('testing bcf wrap to hyperspy signal...')
+    hype = load(filename, record_by='spectrum', downsample=5)
+    assert_almost_equal(hype.axes_manager[0].scale, 4.368392531e-05, places=12)
+    assert_almost_equal(hype.axes_manager[1].scale, 4.368392531e-05, places=12)
+    assert_true(hype.axes_manager[1].units == 'm')
 
 #def test_fast_bcf():
 #    from hyperspy.io_plugins import unbcf_fast
