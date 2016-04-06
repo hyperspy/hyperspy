@@ -169,9 +169,8 @@ class Test_quantification:
         kfactors = [1, 2.0009344042484134]
         composition_units = 'weight'
         intensities = s.get_lines_intensity()
-<<<<<<< HEAD
         res = s.quantification(intensities, method, kfactors, composition_units)
-        assert_true(np.allclose(res[0].data, np.array(
+        nt.assert_true(np.allclose(res[0].data, np.array(
                     [22.70779, 22.70779],[22.70779, 22.70779]), atol=1e-3))
 
     def test_quant_zeta(self):
@@ -181,10 +180,10 @@ class Test_quantification:
         factors = [20, 50]
         intensities = s.get_lines_intensity()
         res = s.quantification(intensities, method, factors, compositions_units)
-        assert_true(np.allclose(res[1].data, array(
+        nt.assert_true(np.allclose(res[1].data, array(
                 [[  16.216216216,   16.216216216],
                 [  16.216216216,   16.216216216]]), atol=1e-3))
-        assert_true(np.allclose(res[0][1].data, array(
+        nt.assert_true(np.allclose(res[0][1].data, array(
                 [[  2.37122140e-06,   2.37122140e-06],
                 [  2.37122140e-06,   2.37122140e-06]]), atol=1e-3))
 
@@ -197,16 +196,11 @@ class Test_quantification:
         assert_true(np.allclose(res[1][1].data, np.array(
             [[ 16.02176621,  16.02176621],
             [ 16.02176621,  16.02176621]])), atol=1e-3)
-        assert_true(np.allclose(res[1][1].data, np.array(
+        nt.assert_true(np.allclose(res[1][1].data, np.array(
            [[ 19.8669901,  19.8669901],
            [ 19.8669901,  19.8669901]])), atol=1e-3)
-        assert_true(np.allclose(results1[0].data, np.array(
+        nt.assert_true(np.allclose(results1[0].data, np.array(
                     [23.2198, 23.2198]), atol=1e-3))
-=======
-        res = s.quantification(intensities, kfactors)
-        nt.assert_true(np.allclose(res[0].data, np.array(
-                       [22.70779, 22.70779]), atol=1e-3))
->>>>>>> hyperspy/master
 
     def test_quant_zeros(self):
         intens = np.array([[0.5, 0.5, 0.5],
@@ -263,11 +257,9 @@ class Test_get_lines_intentisity:
         s = EDS_TEM_Spectrum()
         np.allclose(np.array([res.data for res in s.get_lines_intensity()]),
                     np.array([3710, 15872]))
-
-<<<<<<< HEAD
 if __name__ == '__main__':
    nose.run(argv=[sys.argv[0], sys.modules[__name__].__file__, '-v'])
-=======
+
 
 class Test_eds_markers:
 
@@ -301,4 +293,3 @@ class Test_eds_markers:
         nt.assert_sequence_equal(
             sorted(s._xray_markers.keys()),
             ['Zn_Ka', 'Zn_La'])
->>>>>>> hyperspy/master

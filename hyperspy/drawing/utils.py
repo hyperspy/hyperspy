@@ -723,7 +723,7 @@ def plot_images(images,
                 yaxis.low_value,
             )
 
-            if not isinstance(aspect, (int, long, float)) and aspect not in [
+            if not isinstance(aspect, (int, float)) and aspect not in [
                     'auto', 'square', 'equal']:
                 raise ValueError('Did not understand aspect ratio input.')
 

@@ -2924,6 +2924,7 @@ class Signal(FancySlicing,
                         new_nav_axes.append(saxis if saxis.size > 1 or
                                             oaxis.size == 1 else
                                             oaxis)
+                    bigger_am = None
                     if sam.navigation_dimension != oam.navigation_dimension:
                         bigger_am = (sam
                                      if sam.navigation_dimension >
@@ -3033,7 +3034,7 @@ class Signal(FancySlicing,
 
     def _summary(self):
         string = "\n\tTitle: "
-        string += self.metadata.General.title.decode('utf8')
+        string += self.metadata.General.title
         if self.metadata.has_item("Signal.signal_type"):
             string += "\n\tSignal type: "
             string += self.metadata.Signal.signal_type
