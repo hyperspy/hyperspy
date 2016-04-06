@@ -284,8 +284,8 @@ class EDSTEMSpectrum(EDSSpectrum):
         factors: list of float
             The list of kfactors, zfactors or cross sections in same order as
             intensities. Note that intensities provided by Hyperspy are sorted
-            by the aplhabetical order of the X-ray lines.
-            eg. kfactors =[0.982, 1.32, 1.60] for ['Al_Ka','Cr_Ka', 'Ni_Ka'].
+            by the alphabetical order of the X-ray lines.
+            eg. factors =[0.982, 1.32, 1.60] for ['Al_Ka', 'Cr_Ka', 'Ni_Ka'].
         composition_units: 'weight' or 'atomic'
             Quantification returns weight percent. By choosing 'atomic', the
             return composition is in atomic percent.
@@ -340,8 +340,9 @@ class EDSTEMSpectrum(EDSSpectrum):
                 composition.data, zfactors=factors,
                 dose=self._get_dose(method))
             composition.data = results[0] * 100.
-            mass_thickness = intensities[0]
+            mass_thickness = intensities[0].deepcopy()
             mass_thickness.data = results[1]
+            mass_thickness.metadata.General.title = 'Mass thickness'
         elif method == 'cross_section':
             results = utils_eds.quantification_cross_section(composition.data,
                     cross_sections=factors,
@@ -354,9 +355,7 @@ class EDSTEMSpectrum(EDSSpectrum):
             raise Exception ('Please specify method for quantification, as CL, zeta or cross_section')
         composition = composition.split()
         if composition_units == 'atomic':
-            if method == 'cross_section':
-                composition == composition
-            else:
+            if method != 'cross_section':
                 composition = utils.material.weight_to_atomic(composition)
         else:
             if method == 'cross_section':
