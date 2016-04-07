@@ -257,8 +257,6 @@ class Test_get_lines_intentisity:
         s = EDS_TEM_Spectrum()
         np.allclose(np.array([res.data for res in s.get_lines_intensity()]),
                     np.array([3710, 15872]))
-if __name__ == '__main__':
-   nose.run(argv=[sys.argv[0], sys.modules[__name__].__file__, '-v'])
 
 
 class Test_eds_markers:

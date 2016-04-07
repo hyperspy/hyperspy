@@ -18,7 +18,6 @@
 
 
 import traits.api as t
-import traitsui.api as tui
 import numpy as np
 from scipy import constants
 from hyperspy import utils
@@ -392,7 +391,7 @@ class EDSTEMSpectrum(EDSSpectrum):
         else:
             return composition
 
-    def vacuum_mask(self, threshold=1.0, closing=True):
+    def vacuum_mask(self, threshold=1.0, closing=True, opening=False):
         """
         Generate mask of the vacuum region
 
@@ -424,10 +423,10 @@ class EDSTEMSpectrum(EDSSpectrum):
         """
         from scipy.ndimage.morphology import binary_dilation, binary_erosion
         mask = (self.max(-1) <= threshold)
-        if closing == True:
+        if closing:
             mask.data = binary_dilation(mask.data, border_value=0)
             mask.data = binary_erosion(mask.data, border_value=1)
-        if closing == False:
+        if opening:
             mask.data = binary_erosion(mask.data, border_value=1)
             mask.data = binary_dilation(mask.data, border_value=0)
         return mask
@@ -588,7 +587,6 @@ axes_manger[0].scale functions.')
             area = pixel1 * pixel2
             return (real_time * beam_current * 1e-9) /(constants.e * area)
         elif method == 'zeta':
-            print real_time * beam_current * 1e-9 / constants.e
             return real_time * beam_current * 1e-9 / constants.e
         else:
             raise Error('no method provided')
