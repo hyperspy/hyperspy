@@ -30,7 +30,9 @@ install:
   - conda install pip
   - pip install coverage coveralls traits traitsui request
   - python setup.py install
+  - python setup.py build_ext --inplace
+  - python setup.py clean
 
-script: python setup.py develop && python continuous_integration/nosetest.py --with-coverage hyperspy && python setup.py clean
+script: python continuous_integration/nosetest.py --with-coverage hyperspy
 after_success:
     coveralls
