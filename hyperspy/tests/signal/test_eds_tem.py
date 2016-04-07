@@ -180,10 +180,10 @@ class Test_quantification:
         factors = [20, 50]
         intensities = s.get_lines_intensity()
         res = s.quantification(intensities, method, factors, compositions_units)
-        nt.assert_true(np.allclose(res[1].data, array(
+        nt.assert_true(np.allclose(res[1].data, np.array(
                 [[  16.216216216,   16.216216216],
                 [  16.216216216,   16.216216216]]), atol=1e-3))
-        nt.assert_true(np.allclose(res[0][1].data, array(
+        nt.assert_true(np.allclose(res[0][1].data, np.array(
                 [[  2.37122140e-06,   2.37122140e-06],
                 [  2.37122140e-06,   2.37122140e-06]]), atol=1e-3))
 
