@@ -193,7 +193,7 @@ class Test_quantification:
         factors = [3, 5]
         intensities = s.get_lines_intensity()
         res = s.quantification(intensities, method, factors)
-        (np.allclose(res[1][1].data, np.array(
+        nt.assert_true(np.allclose(res[1][1].data, np.array(
             [[ 16.02176621,  16.02176621],
             [ 16.02176621,  16.02176621]])), atol=1e-3)
         nt.assert_true(np.allclose(res[1][1].data, np.array(

@@ -271,7 +271,7 @@ class EDSTEMSpectrum(EDSSpectrum):
                        **kwargs):
         """
         Quantification using Cliff-Lorimer, the zeta factor method, or
-        ionization cross_sections.
+        ionization cross sections.
 
         Parameters
         ----------
@@ -358,7 +358,7 @@ class EDSTEMSpectrum(EDSSpectrum):
                 composition = utils.material.weight_to_atomic(composition)
         else:
             if method == 'cross_section':
-                composition = util.material.atomic_to_weight(composition)
+                composition = utils.material.atomic_to_weight(composition)
         for i, xray_line in enumerate(xray_lines):
             element, line = utils_eds._get_element_and_line(xray_line)
             composition[i].metadata.General.title = composition_units + \
@@ -384,7 +384,6 @@ class EDSTEMSpectrum(EDSSpectrum):
             utils.plot.plot_signals(composition, **kwargs)
         if method=='zeta':
             self.metadata.set_item("Sample.mass_thickness", mass_thickness)
-        if method == 'zeta':
             return composition, mass_thickness
         elif method == 'cross_section':
             return composition, number_of_atoms
@@ -580,7 +579,7 @@ self.metadata.Acquisition_instrument.TEM.Detector.EDS.real_time .')
                 pixel1 = self.axes_manager[0].scale
                 pixel2 = self.axes_manager[1].scale
             if self.axes_manager[0].scale == 1 or self.axes_manager[1].scale == 1:
-                    warnings.warn('Please note your pixel width is set to the \
+                warnings.warn('Please note your pixel width is set to the \
 default value of 1nm. The function will still run. However, if this is \
 incorrect you should consider changing this using the axes_manager.gui() or \
 axes_manger[0].scale functions.')
