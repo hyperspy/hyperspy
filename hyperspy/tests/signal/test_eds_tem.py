@@ -199,7 +199,7 @@ class Test_quantification:
         nt.assert_true(np.allclose(res[1][1].data, np.array(
            [[ 19.8669901,  19.8669901],
            [ 19.8669901,  19.8669901]])), atol=1e-3)
-        nt.assertTrue(np.allclose(results1[0].data, np.array(
+        nt.assert_true(np.allclose(results1[0].data, np.array(
                     [23.2198, 23.2198]), atol=1e-3))
 
     def test_quant_zeros(self):
@@ -212,7 +212,7 @@ class Test_quantification:
                             category=RuntimeWarning):
             quant = utils_eds.quantification_cliff_lorimer(
                 intens, [1, 1, 3]).T
-        nt.assertTrue(np.allclose(
+        nt.assert_true(np.allclose(
             quant,
             np.array([[0.2, 0.2, 0.6],
                       [0., 0.25, 0.75],
