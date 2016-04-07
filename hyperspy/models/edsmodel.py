@@ -317,6 +317,56 @@ class EDSModel(Model1D):
         """
         for component in self._active_xray_lines:
             component.active = False
+    def fit(self, fitter='mpfit', method='ls', grad=False,
+            bounded=True, ext_bounding=False, update_plot=False,
+            **kwargs):
+        """Fits the model to the experimental data
+
+        Parameters
+        ----------
+        fitter : {None, "leastsq", "odr", "mpfit", "fmin"}
+            The optimizer to perform the fitting. If None the fitter
+            defined in the Preferences is used. leastsq is the most
+            stable but it does not support bounding. mpfit supports
+            bounding. fmin is the only one that supports
+            maximum likelihood estimation, but it is less robust than
+            the Levenberg–Marquardt based leastsq and mpfit, and it is
+            better to use it after one of them to refine the estimation.
+        method : {'ls', 'ml'}
+            Choose 'ls' (default) for least squares and 'ml' for
+            maximum-likelihood estimation. The latter only works with
+            fitter = 'fmin'.
+        grad : bool
+            If True, the analytical gradient is used if defined to
+            speed up the estimation.
+        ext_bounding : bool
+            If True, enforce bounding by keeping the value of the
+            parameters constant out of the defined bounding area.
+        bounded : bool
+            If True performs bounded optimization if the fitter
+            supports it. Currently only mpfit support bounding.
+        update_plot : bool
+            If True, the plot is updated during the optimization
+            process. It slows down the optimization but it permits
+            to visualize the optimization evolution.
+        **kwargs : key word arguments
+            Any extra key word argument will be passed to the chosen
+            fitter
+
+        See Also
+        --------
+        multifit
+
+        """
+        Model1D.fit(self,
+                    fitter=fitter,
+                    method=method,
+                    grad=grad,
+                    bounded=bounded,
+                    ext_bounded=ext_bounded,
+                    update_plot=update_plot,
+                    **kwargs)
+
 
     def fit_background(self,
                        start_energy=None,
