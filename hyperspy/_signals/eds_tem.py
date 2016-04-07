@@ -588,4 +588,4 @@ axes_manger[0].scale functions.')
         elif method == 'zeta':
             return real_time * beam_current * 1e-9 / constants.e
         else:
-            raise ValeError('no method provided')
+            raise ValueError('no method provided')

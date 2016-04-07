@@ -181,11 +181,11 @@ class Test_quantification:
         intensities = s.get_lines_intensity()
         res = s.quantification(intensities, method, factors, compositions_units)
         np.testing.assert_allclose(res[1].data, np.array(
-                [[  16.216216216,   16.216216216],
-                [  16.216216216,   16.216216216]]), atol=1e-3)
+                [[ 2.7125736e-03,   2.7125736e-03],
+                [  2.7125736e-03,   2.7125736e-03]]), atol=1e-3)
         np.testing.assert_allclose(res[0][1].data, np.array(
-                [[  2.37122140e-06,   2.37122140e-06],
-                [  2.37122140e-06,   2.37122140e-06]]), atol=1e-3)
+                [[ 80.962287987,   80.962287987],
+                [  80.962287987,   80.962287987]]), atol=1e-3)
 
     def test_quant_cross_section(self):
         s =self.signal
@@ -194,13 +194,14 @@ class Test_quantification:
         intensities = s.get_lines_intensity()
         res = s.quantification(intensities, method, factors)
         np.testing.assert_allclose(res[1][0].data, np.array(
-            [[ 16.02176621,  16.02176621],
-            [ 16.02176621,  16.02176621]]), atol=1e-3)
+            [[ 21517.1647074,  21517.1647074],
+            [  21517.1647074,  21517.1647074]]), atol=1e-3)
         np.testing.assert_allclose(res[1][1].data, np.array(
-           [[ 19.8669901,  19.8669901],
-           [ 19.8669901,  19.8669901]]), atol=1e-3)
-        np.testing.assert_allclose(res[0].data, np.array(
-                    [23.2198, 23.2198]), atol=1e-3)
+           [[ 21961.616621,  21961.616621],
+           [  21961.616621,  21961.616621]]), atol=1e-3)
+        np.testing.assert_allclose(res[0][1].data, np.array(
+            [[ 49.4888856823,  49.4888856823],
+            [  49.4888856823,  49.4888856823]]), atol=1e-3)
 
     def test_quant_zeros(self):
         intens = np.array([[0.5, 0.5, 0.5],
@@ -210,8 +211,8 @@ class Test_quantification:
                            [0.5, 0.0, 0.0]]).T
         with ignore_warning(message="divide by zero encountered",
                             category=RuntimeWarning):
-            quant = utils_eds.quantification(
-                intens, 'CL', [1, 1, 3]).T
+            quant = utils_eds.quantification_cliff_lorimer(
+                intens, [1, 1, 3]).T
         np.testing.assert_allclose(
             quant,
             np.array([[0.2, 0.2, 0.6],
