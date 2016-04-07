@@ -2,12 +2,6 @@ import os
 
 import numpy as np
 
-import hyperspy.api as hs
-try:
-    from hyperspy.io_plugins import unbcf_fast
-except ImportError:
-    print('falling back to slow bcf implementation')
-
 from nose.tools import assert_true, assert_almost_equal
 from hyperspy.io import load
 
@@ -90,6 +84,18 @@ def test_hyperspy_wrap_downsampled():
     assert_almost_equal(hype.axes_manager[1].scale, 4.368392531e-05, places=12)
     assert_true(hype.axes_manager[1].units == 'm')
 
-#def test_fast_bcf():
-#    from hyperspy.io_plugins import unbcf_fast
-#    unbcf_fast
+
+def test_fast_bcf():
+    from hyperspy.io_plugins import bcf
+
+    for bcffile in test_files:
+        my_path = os.path.dirname(__file__)
+        filename = os.path.join(my_path, 'bcf_data', bcffile)
+        thingy = bcf.BCF_reader(filename)
+        for j in range(2, 5, 1):
+            print('downsampling:', j)
+            bcf.fast_unbcf = True              # manually enabling fast parsing
+            hmap1 = thingy.parse_hypermap(downsample=j)    # using cython
+            bcf.fast_unbcf = False            # manually disabling fast parsing
+            hmap2 = thingy.parse_hypermap(downsample=j)    # py implementation
+            np.testing.assert_array_equal(hmap1, hmap2)
