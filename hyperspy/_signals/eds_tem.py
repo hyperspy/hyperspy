@@ -560,7 +560,7 @@ class EDSTEMSpectrum(EDSSpectrum):
 
         parameters = self.metadata.Acquisition_instrument.TEM
         if beam_current == 'auto':
-            if 'beam_current' in self.metadata.Acquisition_instrument.TEM == False:
+            if 'beam_current' in self.metadata.Acquisition_instrument.TEM is False:
                 raise Exception ('It is not possible to carry out EDX \
 quantification_cross_section without a beam_current please set one using \
 self.metadata.Acquisition_instrument.TEM.beam_current and run quantification \
@@ -569,7 +569,7 @@ again.')
                 beam_current = parameters.beam_current
         if real_time == 'auto':
             real_time = parameters.Detector.EDS.real_time
-            if 'real_time' in self.metadata.Acquisition_instrument.TEM.Detector.EDS == False:
+            if 'real_time' in self.metadata.Acquisition_instrument.TEM.Detector.EDS is False:
                 raise Exception ('Please note that your real time is set to\
 the default value of 0.5s. The function will still run. However, if this is \
 incorrect you should consider changing it using \
