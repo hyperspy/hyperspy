@@ -199,7 +199,7 @@ class Test_quantification:
         np.testing.assert_allclose(res[1][1].data, np.array(
            [[ 21961.616621,  21961.616621],
            [  21961.616621,  21961.616621]]), atol=1e-3)
-        np.testing.assert_allclose(res[0][1].data, np.array(
+        np.testing.assert_allclose(res[0][0].data, np.array(
             [[ 49.4888856823,  49.4888856823],
             [  49.4888856823,  49.4888856823]]), atol=1e-3)
 
