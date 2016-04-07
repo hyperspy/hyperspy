@@ -261,8 +261,8 @@ class EDSTEMSpectrum(EDSSpectrum):
 
 
     def quantification(self,
-                       intensities='auto',
-                       method='auto',
+                       intensities,
+                       method,
                        factors='auto',
                        composition_units='atomic',
                        navigation_mask=1.0,
@@ -560,7 +560,7 @@ class EDSTEMSpectrum(EDSSpectrum):
 
         parameters = self.metadata.Acquisition_instrument.TEM
         if beam_current == 'auto':
-            if 'beam_current' in self.metadata.Acquisition_instrument.TEM is False:
+            if 'beam_current' not in self.metadata.Acquisition_instrument.TEM:
                 raise Exception ('It is not possible to carry out EDX \
 quantification_cross_section without a beam_current please set one using \
 self.metadata.Acquisition_instrument.TEM.beam_current and run quantification \
@@ -569,7 +569,7 @@ again.')
                 beam_current = parameters.beam_current
         if real_time == 'auto':
             real_time = parameters.Detector.EDS.real_time
-            if 'real_time' in self.metadata.Acquisition_instrument.TEM.Detector.EDS is False:
+            if 'real_time' not in self.metadata.Acquisition_instrument.TEM.Detector.EDS:
                 raise Exception ('Please note that your real time is set to\
 the default value of 0.5s. The function will still run. However, if this is \
 incorrect you should consider changing it using \
@@ -588,4 +588,4 @@ axes_manger[0].scale functions.')
         elif method == 'zeta':
             return real_time * beam_current * 1e-9 / constants.e
         else:
-            raise Error('no method provided')
+            raise ValeError('no method provided')

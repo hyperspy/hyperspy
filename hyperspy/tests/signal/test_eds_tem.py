@@ -170,8 +170,8 @@ class Test_quantification:
         composition_units = 'weight'
         intensities = s.get_lines_intensity()
         res = s.quantification(intensities, method, kfactors, composition_units)
-        nt.assert_true(np.allclose(res[0].data, np.array([[22.70779, 22.70779],
-                    [22.70779, 22.70779]]), atol=1e-3))
+        np.testing.assert_allclose(res[0].data, np.array([[22.70779, 22.70779],
+                    [22.70779, 22.70779]]), atol=1e-3)
 
     def test_quant_zeta(self):
         s = self.signal
@@ -180,12 +180,12 @@ class Test_quantification:
         factors = [20, 50]
         intensities = s.get_lines_intensity()
         res = s.quantification(intensities, method, factors, compositions_units)
-        nt.assert_true(np.allclose(res[1].data, np.array(
+        np.testing.assert_allclose(res[1].data, np.array(
                 [[  16.216216216,   16.216216216],
-                [  16.216216216,   16.216216216]]), atol=1e-3))
-        nt.assert_true(np.allclose(res[0][1].data, np.array(
+                [  16.216216216,   16.216216216]]), atol=1e-3)
+        np.testing.assert_allclose(res[0][1].data, np.array(
                 [[  2.37122140e-06,   2.37122140e-06],
-                [  2.37122140e-06,   2.37122140e-06]]), atol=1e-3))
+                [  2.37122140e-06,   2.37122140e-06]]), atol=1e-3)
 
     def test_quant_cross_section(self):
         s =self.signal
@@ -193,14 +193,14 @@ class Test_quantification:
         factors = [3, 5]
         intensities = s.get_lines_intensity()
         res = s.quantification(intensities, method, factors)
-        nt.assert_true(np.allclose(res[1][0].data, np.array(
+        np.testing.assert_allclose(res[1][0].data, np.array(
             [[ 16.02176621,  16.02176621],
-            [ 16.02176621,  16.02176621]])), atol=1e-3)
-        nt.assert_true(np.allclose(res[1][1].data, np.array(
+            [ 16.02176621,  16.02176621]]), atol=1e-3)
+        np.testing.assert_allclose(res[1][1].data, np.array(
            [[ 19.8669901,  19.8669901],
-           [ 19.8669901,  19.8669901]])), atol=1e-3)
-        nt.assert_true(np.allclose(res[0].data, np.array(
-                    [23.2198, 23.2198]), atol=1e-3))
+           [ 19.8669901,  19.8669901]]), atol=1e-3)
+        np.testing.assert_allclose(res[0].data, np.array(
+                    [23.2198, 23.2198]), atol=1e-3)
 
     def test_quant_zeros(self):
         intens = np.array([[0.5, 0.5, 0.5],
@@ -210,15 +210,15 @@ class Test_quantification:
                            [0.5, 0.0, 0.0]]).T
         with ignore_warning(message="divide by zero encountered",
                             category=RuntimeWarning):
-            quant = utils_eds.quantification_cliff_lorimer(
-                intens, [1, 1, 3]).T
-        nt.assert_true(np.allclose(
+            quant = utils_eds.quantification(
+                intens, 'CL', [1, 1, 3]).T
+        np.testing.assert_allclose(
             quant,
             np.array([[0.2, 0.2, 0.6],
                       [0., 0.25, 0.75],
                       [0.25, 0., 0.75],
                       [0.5, 0.5, 0.],
-                      [1., 0., 0.]])))
+                      [1., 0., 0.]]))
 
 
 class Test_vacum_mask:
