@@ -534,8 +534,8 @@ Using the Cliff-Lorimer method as an example, quantification can be carried out 
     >>> bw = s.estimate_background_windows(line_width=[5.0, 2.0])
     >>> intensities = s.get_lines_intensity(background_windows=bw)
     >>> atomic_percent = s.quantification(intensities, method='CL', kfactors)
-    Fe (Fe_Ka): Composition = 4.96 weight percent
-    Pt (Pt_La): Composition = 95.04 weight percent
+    Fe (Fe_Ka): Composition = 15.41 atomic percent
+    Pt (Pt_La): Composition = 84.59 atomic percent
 
 The obtained composition is in atomic percent, by default. However, it can be transformed into weight percent either with the option :py:meth:`~._signals.eds_tem.EDSTEMSpectrum.quantification`:
 
@@ -544,8 +544,8 @@ The obtained composition is in atomic percent, by default. However, it can be tr
     >>> # With s, intensities and kfactors from before
     >>> s.quantification(intensities, method='CL',kfactors,
     >>>                  composition_units='weight')
-    Fe (Fe_Ka): Composition = 15.41 atomic percent
-    Pt (Pt_La): Composition = 84.59 atomic percent
+    Fe (Fe_Ka): Composition = 4.96 weight percent
+    Pt (Pt_La): Composition = 95.04 weight percent
 
 or with :py:func:`~.misc.material.atomic_to_weight`. The reverse method is :py:func:`~.misc.material.weight_to_atomic`.
 

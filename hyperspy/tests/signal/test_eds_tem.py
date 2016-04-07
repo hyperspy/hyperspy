@@ -170,8 +170,8 @@ class Test_quantification:
         composition_units = 'weight'
         intensities = s.get_lines_intensity()
         res = s.quantification(intensities, method, kfactors, composition_units)
-        nt.assert_true(np.allclose(res[0].data, np.array(
-                    [22.70779, 22.70779],[22.70779, 22.70779]), atol=1e-3))
+        nt.assert_true(np.allclose(res[0].data, np.array([22.70779, 22.70779],
+                    [22.70779, 22.70779]), atol=1e-3))
 
     def test_quant_zeta(self):
         s = self.signal
@@ -193,10 +193,10 @@ class Test_quantification:
         factors = [3, 5]
         intensities = s.get_lines_intensity()
         res = s.quantification(intensities, method, factors)
-        assertTrue(np.allclose(res[1][1].data, np.array(
+        (np.allclose(res[1][1].data, np.array(
             [[ 16.02176621,  16.02176621],
             [ 16.02176621,  16.02176621]])), atol=1e-3)
-        nt.assertTrue(np.allclose(res[1][1].data, np.array(
+        nt.assert_true(np.allclose(res[1][1].data, np.array(
            [[ 19.8669901,  19.8669901],
            [ 19.8669901,  19.8669901]])), atol=1e-3)
         nt.assertTrue(np.allclose(results1[0].data, np.array(
