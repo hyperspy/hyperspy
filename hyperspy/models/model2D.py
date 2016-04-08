@@ -19,6 +19,8 @@
 import numpy as np
 
 from hyperspy.model import BaseModel, ModelComponents, ModelSpecialSlicers
+import hyperspy.drawing.image
+from hyperspy.drawing.utils import on_figure_window_close
 from hyperspy._signals.image import Image
 from hyperspy.exceptions import WrongObjectError
 from hyperspy.decorators import interactive_range_selector
@@ -225,23 +227,22 @@ class Model2D(BaseModel):
         # If new coordinates
         self.image.plot()
         _plot = self.image._plot
-        im1 = _plot.signal_plot.ax_lines[0]
 
         im2 = hyperspy.drawing.image.ImagePlot()
         im2.data_function = self._model2plot
-        _plot.signal_plot.add_line(im2)
         im2.plot()
-        on_figure_window_close(_plot.signal_plot.figure,
-                               self._close_plot)
+        on_figure_window_close(self._close_plot)
 
         self._model_repr = im2
         self._plot = self.image._plot
         self._connect_parameters2update_plot(self)
         if plot_components is True:
-            self.enable_plot_components()
-        else:
-            self.disable_plot_components()
-        self.disable_adjust_position()
+            # self.enable_plot_components()
+            raise ValueError('Plotting components is not currently implemented\
+                             for Model2D - pelease set plot_componets=False')
+        # else:
+            # self.disable_plot_components()
+        # self.disable_adjust_position()
 
     @staticmethod
     def _connect_component_line(component):
@@ -265,9 +266,6 @@ class Model2D(BaseModel):
         raise NotImplementedError
 
     def _disable_plot_component(self, component):
-        raise NotImplementedError
-
-    def _close_plot(self):
         raise NotImplementedError
 
     def enable_plot_components(self):

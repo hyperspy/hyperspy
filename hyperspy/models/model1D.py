@@ -167,8 +167,7 @@ class Model1D(BaseModel):
         self._adjust_position_all = None
         self._plot_components = False
         self._suspend_update = False
-        self._model_line = None
-        self._model_repr = self._model_line
+        self._model_repr = None
         self._adjust_position_all = None
         self.axis = self.axes_manager.signal_axes[0]
         self.axes_manager.events.indices_changed.connect(
