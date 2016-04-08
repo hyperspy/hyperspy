@@ -604,7 +604,8 @@ The model is created with :py:func:`~._signals.eds_sem.create_model`. One gaussi
     Zr_Lb3
     background_order_6
 
-The width and the energy are fixed. The height of the sub-X-ray lines are twinned to the main X-ray lines (alpha lines). The model can be fitted.
+The width and the energy are fixed. The height of the sub-X-ray lines are twinned to the main X-ray lines (alpha lines). The model can be fitted using :py:meth`~.models.edsmodel.EDSModel.fit` which
+by default performes bounded optimisation using the mpfit algorithm. This default constrains the components in the model to be positive as is physically appropriate for EDS spectra. Alternative fitters are available should the user wish to change this option or refine their fit with a different approach.
 
 .. code-block:: python
 
