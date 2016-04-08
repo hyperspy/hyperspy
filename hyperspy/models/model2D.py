@@ -94,7 +94,7 @@ class Model2D(BaseModel):
         self._adjust_position_all = None
         self._plot_components = False
         self._suspend_update = False
-        self._model_line = None
+        self._model_repr = None
         self._adjust_position_all = None
         self.xaxis, self.yaxis = np.meshgrid(
             self.axes_manager.signal_axes[0].axis,
@@ -172,29 +172,6 @@ class Model2D(BaseModel):
         errfunc = self._model_function(param).ravel() - y
         return errfunc * weights
 
-    # TODO: The methods below are implemented only for Model1D and should be
-    # added eventually also for Model2D. Probably there are smarter ways to do
-    # it than redefining every method, but it is structured this way now to
-    # make clear what is and isn't available
-    def _connect_parameters2update_plot(self):
-        raise NotImplementedError
-
-    def _disconnect_parameters2update_plot(self):
-        raise NotImplementedError
-
-    def update_plot(self, *args, **kwargs):
-        if self._plot_active is True:
-            raise NotImplementedError
-
-    def suspend_update(self):
-        raise NotImplementedError
-
-    def resume_update(self, update=True):
-        raise NotImplementedError
-
-    def _update_model_line(self):
-        raise NotImplementedError
-
     def _set_signal_range_in_pixels(self, i1=None, i2=None):
         raise NotImplementedError
 
@@ -241,7 +218,30 @@ class Model2D(BaseModel):
         raise NotImplementedError
 
     def plot(self, plot_components=False):
-        raise NotImplementedError
+        """
+        Plots the current two dimensional signal to the screen with an
+        associated navigation window to explore the data.
+        """
+        # If new coordinates
+        self.image.plot()
+        _plot = self.image._plot
+        im1 = _plot.signal_plot.ax_lines[0]
+
+        im2 = hyperspy.drawing.image.ImagePlot()
+        im2.data_function = self._model2plot
+        _plot.signal_plot.add_line(im2)
+        im2.plot()
+        on_figure_window_close(_plot.signal_plot.figure,
+                               self._close_plot)
+
+        self._model_repr = im2
+        self._plot = self.image._plot
+        self._connect_parameters2update_plot(self)
+        if plot_components is True:
+            self.enable_plot_components()
+        else:
+            self.disable_plot_components()
+        self.disable_adjust_position()
 
     @staticmethod
     def _connect_component_line(component):

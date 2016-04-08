@@ -24,6 +24,7 @@ import logging
 
 import numpy as np
 import scipy.odr as odr
+from contextlib import contextmanager
 from scipy.optimize import (leastsq,
                             fmin,
                             fmin_cg,
@@ -47,6 +48,7 @@ from hyperspy.misc.export_dictionary import (export_to_dictionary,
 from hyperspy.misc.utils import (slugify, shorten_name, stash_active_state,
                                  dummy_context_manager)
 from hyperspy.misc.slicing import copy_slice_from_whitelist
+from hyperspy.events import EventSupressor
 
 _logger = logging.getLogger(__name__)
 
@@ -450,6 +452,92 @@ class BaseModel(list):
             return True
         else:
             return False
+
+    def _connect_parameters2update_plot(self, components):
+        if self._plot_active is False:
+            return
+        for i, component in enumerate(components):
+            component.events.active_changed.connect(
+                self._model_repr.update, [])
+            for parameter in component.parameters:
+                parameter.events.value_changed.connect(
+                    self._model_repr.update, [])
+        if self._plot_components is True:
+            self._connect_component_lines()
+
+    def _disconnect_parameters2update_plot(self, components):
+        if self._model_repr is None:
+            return
+        for component in components:
+            component.events.active_changed.disconnect(self._model_repr.update)
+            for parameter in component.parameters:
+                parameter.events.value_changed.disconnect(
+                    self._model_repr.update)
+        if self._plot_components is True:
+            self._disconnect_component_lines()
+
+    def update_plot(self, *args, **kwargs):
+        """Update model plot.
+
+        The updating can be suspended using `suspend_update`.
+
+        See Also
+        --------
+        suspend_update
+
+        """
+        if self._plot_active is True and self._suspend_update is False:
+            try:
+                self._update_model_repr()
+                for component in [component for component in self if
+                                  component.active is True]:
+                    self._update_component_line(component)
+            except:
+                self._disconnect_parameters2update_plot(components=self)
+
+    @contextmanager
+    def suspend_update(self, update_on_resume=True):
+        """Prevents plot from updating until 'with' clause completes.
+
+        See Also
+        --------
+        update_plot
+        """
+
+        es = EventSupressor()
+        es.add(self.axes_manager.events.indices_changed)
+        if self._model_repr:
+            f = self._model_repr.update
+            for c in self:
+                es.add(c.events, f)
+                for p in c.parameters:
+                    es.add(p.events, f)
+        for c in self:
+            if hasattr(c, '_model_plot_repr'):
+                f = c._model_plot_repr.update
+                es.add(c.events, f)
+                for p in c.parameters:
+                    es.add(p.events, f)
+
+        old = self._suspend_update
+        self._suspend_update = True
+        with es.suppress():
+            yield
+        self._suspend_update = old
+
+        if update_on_resume is True:
+            self.update_plot()
+
+    def _close_plot(self):
+        if self._plot_components is True:
+            self.disable_plot_components()
+        self._disconnect_parameters2update_plot(components=self)
+        self._model_repr = None
+
+    def _update_model_repr(self):
+        if (self._plot_active is True and
+                self._model_repr is not None):
+            self._model_repr.update()
 
     def _set_p0(self):
         self.p0 = ()
