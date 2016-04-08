@@ -19,6 +19,7 @@
 from operator import attrgetter
 from hyperspy.misc.utils import attrsetter
 from copy import deepcopy
+import logging
 try:
     import dill
     dill_avail = True
@@ -26,6 +27,9 @@ except ImportError:
     dill_avail = False
     import types
     import marshal
+
+
+_logger = logging.getLogger(__name__)
 
 
 def check_that_flags_make_sense(flags):
@@ -220,7 +224,12 @@ def reconstruct_object(flags, value):
                 raise ValueError("the dictionary was constructed using "
                                  "\"dill\" package, which is not available on the system")
             else:
-                return dill.loads(thing)
+                try:
+                    return dill.loads(thing)
+                except UnicodeDecodeError:
+                    _logger.warn('Did not load the function with dill, '
+                                 'sorry')
+                    return lambda x: x
         # should not be reached
         raise ValueError("The object format is not recognized")
     return value

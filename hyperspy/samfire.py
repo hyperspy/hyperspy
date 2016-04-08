@@ -138,7 +138,7 @@ class Samfire(object):
                     name = repr(s)
                     a = u" x" if self.samf._active_strategy_ind == n else u""
                     ans += signature % (a, str(n), name)
-            return ans.encode('utf8')
+            return ans
 
     def __init__(self, model, marker=None, workers=None):
         # constants:
@@ -567,4 +567,4 @@ class Samfire(object):
         ans = u"<SAMFire of the signal titled: '"
         ans += self.model.spectrum.metadata.General.title
         ans += u"'>"
-        return ans.encode('utf8')
+        return ans

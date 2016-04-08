@@ -65,7 +65,7 @@ class strategy(object):
         self._update_database(ind, count)
 
     def __repr__(self):
-        return self.name.encode('utf8')
+        return self.name
 
     def remove(self):
         self.samf.strategies.remove(self)
