@@ -21,59 +21,76 @@ import nose.tools as nt
 import numpy as np
 from hyperspy.components import Gaussian2D, SymmetricGaussian2D
 from hyperspy.signals import Image
+from hyperspy.io import load
+import os
 
 sqrt2pi = np.sqrt(2 * np.pi)
 sigma2fwhm = 2 * np.sqrt(2 * np.log(2))
+my_path = os.path.dirname(__file__)
 
 
-class TestSymmetricGaussian2D:
+class TestSymmetricGaussian2DFitting:
 
+    """Test using a 2-D Gaussian generated with
+    Gaussian2D(
+        A=1000., sigma=2.)"""
     def setUp(self):
-        g = SymmetricGaussian2D()
-        g.centre_x.value = 50
-        g.centre_y.value = 100
-        g.sigma.value = 20
-        g.A.value = 40
-        self.g = g
-        self.s = Image(g.function(*np.mgrid[0:150, 0:150]))
+        self.s = load(
+            my_path +
+            "/test_gaussian2d/test_symmetricgaussian2d.hdf5")
 
     def test_fitting(self):
         m = self.s.create_model()
         g = SymmetricGaussian2D()
-        # Need to set some sensible initial values
-        g.centre_x.value = 40
-        g.centre_y.value = 120
-        g.A.value = 20
-        g.sigma.value = 10
         m.append(g)
         m.fit()
         model_data = m.as_signal().data
-        nt.assert_true((self.s.data == model_data).all)
+        s_model = m.as_signal()
+        residual = (s_model-self.s).sum()
+        nt.assert_true(residual < 1)
+
+
+class TestSymmetricGaussian2DValues:
+
+    def setUp(self):
+        g = hs.model.components.SymmetricGaussian2D(
+            centre_x=-5.,
+            centre_y=-5.,
+            sigma_x=1.,
+            sigma_y=2.)
+        x = np.arange(-10, 10, 0.01)
+        y = np.arange(-10, 10, 0.01)
+        X, Y = np.meshgrid(x, y)
+        gt = g.function(X, Y)
+        self.g = g
+        self.gt = gt
+
+    def test_values(self):
+        gt = self.gt
+        g = self.g
+        nt.assert_almost_equal(g.fwhm_x, 2.35482004503)
+        nt.assert_almost_equal(g.fwhm_y, 4.70964009006)
+        nt.assert_almost_equal(gt.max(), 0.0795774715459)
+        nt.assert_almost_equal(gt.argmax(axis=0)[0], 500)
+        nt.assert_almost_equal(gt.argmax(axis=1)[0], 500)
 
 
 class TestGaussian2D:
 
+    """Test using a 2-D Gaussian generated with
+    Gaussian2D(
+        A=1000., sigma_x=1., sigma_y=2., rotation=np.pi/4)"""
     def setUp(self):
-        g = Gaussian2D()
-        g.centre_x.value = 60
-        g.centre_y.value = 80
-        g.sigma_x.value = 10
-        g.sigma_y.value = 20
-        g.rotation.value = np.pi/4
-        g.A.value = 40
-        self.g = g
-        self.s = Image(g.function(*np.mgrid[0:150, 0:150]))
+        self.s = load(
+            my_path +
+            "/test_gaussian2d/test_gaussian2d.hdf5")
 
     def test_fitting(self):
         m = self.s.create_model()
         g = Gaussian2D()
         # Need to set some sensible initial values
-        g.centre_x.value = 40
-        g.centre_y.value = 120
-        g.A.value = 20
-        g.sigma_x.value = 10
-        g.sigma_y.value = 10
         m.append(g)
         m.fit()
-        model_data = m.as_signal().data
-        nt.assert_true((self.s.data == model_data).all)
+        s_model = m.as_signal()
+        residual = (s_model-self.s).sum()
+        nt.assert_true(residual < 1)
