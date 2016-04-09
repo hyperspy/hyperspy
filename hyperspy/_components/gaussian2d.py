@@ -54,7 +54,7 @@ class Gaussian2D(Component):
                  sigma_y=1.,
                  centre_x=0.,
                  centre_y=0.,
-                 rotation=0.,
+                 rotation=0.01,
                  ):
         """Note: the rotation value is given in
         radians."""
