@@ -42,6 +42,10 @@ class Gaussian2D(Component):
     +------------+-----------+
     |    theta   | rotation  |
     +------------+-----------+
+
+    The rotation value is in radians.
+    The rotation in degrees can be accesed using rotation_degrees.
+
     """
 
     def __init__(self,
@@ -52,6 +56,8 @@ class Gaussian2D(Component):
                  centre_y=0.,
                  rotation=0.,
                  ):
+        """Note: the rotation value is given in
+        radians."""
         Component.__init__(self, ['A',
                                   'sigma_x',
                                   'sigma_y',
@@ -78,13 +84,13 @@ class Gaussian2D(Component):
 
         sx2 = sx**2
         sy2 = sy**2
-        cos2_theta = math.cos(theta)**2
-        sin2_theta = math.sin(theta)**2
-        sin_theta2 = math.sin(2*theta)
+        cos_theta2 = math.cos(theta)**2
+        sin_theta2 = math.sin(theta)**2
+        sin_2theta = math.sin(2*theta)
 
-        a = cos2_theta/(2*sx2) + sin2_theta/(2*sy2)
-        b = -sin_theta2/(4*sx2) + sin_theta2/(4*sy2)
-        c = sin2_theta/(2*sx2) + cos2_theta/(2*sy2)
+        a = cos_theta2/(2*sx2) + sin_theta2/(2*sy2)
+        b = -sin_2theta/(4*sx2) + sin_2theta/(4*sy2)
+        c = sin_theta2/(2*sx2) + cos_theta2/(2*sy2)
 
         return A * (1 / (sx * sy * pi2)) * np.exp(-(a*(x - x0) ** 2 +
                                                   2*b*(x - x0) * (y - y0) +
@@ -113,7 +119,7 @@ class Gaussian2D(Component):
     # Rotation compared to "x"-axis
     @property
     def rotation_degrees(self):
-        """ Finds the rotation compared to the "x-axis" """
+        """ Angle between major axis and x-axis."""
         if self.sigma_x.value > self.sigma_y.value:
             return math.degrees(self.rotation.value)
         else:
