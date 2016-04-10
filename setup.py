@@ -29,7 +29,7 @@ if v[0] != 3:
     sys.exit(1)
 
 from setuptools import setup, Extension
-import setuptools.distutils.dir_util
+import setuptools
 
 import os
 import subprocess
