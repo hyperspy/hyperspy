@@ -446,6 +446,12 @@ class BaseModel(list):
             signal.metadata.Signal.binned = self.signal.metadata.Signal.binned
         return signal
 
+    def _function4odr(self, param, x):
+        return self._model_function(param)
+
+    def _jacobian4odr(self, param, x):
+        return self._jacobian(param, x)
+
     @property
     def _plot_active(self):
         if self._plot is not None and self._plot.is_active() is True:
@@ -538,6 +544,59 @@ class BaseModel(list):
         if (self._plot_active is True and
                 self._model_repr is not None):
             self._model_repr.update()
+
+    @staticmethod
+    def _connect_component_line(component):
+        if hasattr(component, "_model_plot_line"):
+            f = component._model_plot_line.update
+            component.events.active_changed.connect(f, [])
+            for parameter in component.parameters:
+                parameter.events.value_changed.connect(f, [])
+
+    @staticmethod
+    def _disconnect_component_line(component):
+        if hasattr(component, "_model_plot_line"):
+            f = component._model_plot_line.update
+            component.events.active_changed.disconnect(f)
+            for parameter in component.parameters:
+                parameter.events.value_changed.disconnect(f)
+
+    def _connect_component_lines(self):
+        for component in self:
+            if component.active:
+                self._connect_component_line(component)
+
+    def _disconnect_component_lines(self):
+        for component in self:
+            if component.active:
+                self._disconnect_component_line(component)
+
+    @staticmethod
+    def _update_component_line(component):
+        if hasattr(component, "_model_plot_line"):
+            component._model_plot_line.update()
+
+    def _disable_plot_component(self, component):
+        self._disconnect_component_line(component)
+        if hasattr(component, "_model_plot_line"):
+            component._model_plot_line.close()
+            del component._model_plot_line
+        self._plot_components = False
+
+    def enable_plot_components(self):
+        if self._plot is None or self._plot_components:
+            return
+        self._plot_components = True
+        for component in [component for component in self if
+                          component.active]:
+            self._plot_component(component)
+
+    def disable_plot_components(self):
+        if self._plot is None:
+            return
+        for component in self:
+            self._disable_plot_component(component)
+        self._plot_components = False
 
     def _set_p0(self):
         self.p0 = ()

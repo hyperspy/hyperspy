@@ -204,12 +204,6 @@ class Model2D(BaseModel):
     def _jacobian(self, param, y, weights=None):
         raise NotImplementedError
 
-    def _function4odr(self, param, x):
-        raise NotImplementedError
-
-    def _jacobian4odr(self, param, x):
-        raise NotImplementedError
-
     def _poisson_likelihood_function(self, param, y, weights=None):
         raise NotImplementedError
 
@@ -249,52 +243,24 @@ class Model2D(BaseModel):
         """
         # If new coordinates
         self.image.plot()
+        _plot = self.image._plot
 
         im2 = hyperspy.drawing.image.ImagePlot()
         im2.data_function = self._model2plot
         im2.xaxis = self.axes_manager.signal_axes[0]
         im2.yaxis = self.axes_manager.signal_axes[1]
         im2.plot()
-        on_figure_window_close(self._close_plot)
+        on_figure_window_close(_plot.signal_plot.figure,
+                               self._close_plot)
 
         self._model_repr = im2
         self._plot = self.image._plot
         self._connect_parameters2update_plot(self)
-        if plot_components is True:
-            self.enable_plot_components()
-        else:
-            self.disable_plot_components()
-        self.disable_adjust_position()
-
-    @staticmethod
-    def _connect_component_line(component):
-        raise NotImplementedError
-
-    @staticmethod
-    def _disconnect_component_line(component):
-        raise NotImplementedError
-
-    def _connect_component_lines(self):
-        raise NotImplementedError
-
-    def _disconnect_component_lines(self):
-        raise NotImplementedError
-
-    def _plot_component(self, component):
-        raise NotImplementedError
-
-    @staticmethod
-    def _update_component_line(component):
-        raise NotImplementedError
-
-    def _disable_plot_component(self, component):
-        raise NotImplementedError
-
-    def enable_plot_components(self):
-        raise NotImplementedError
-
-    def disable_plot_components(self):
-        raise NotImplementedError
+        # if plot_components is True:
+          #  self.enable_plot_components()
+        # else:
+          #  self.disable_plot_components()
+        # self.disable_adjust_position()
 
     def enable_adjust_position(
             self, components=None, fix_them=True, show_label=True):
