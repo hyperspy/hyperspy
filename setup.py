@@ -29,7 +29,7 @@ if v[0] != 3:
     sys.exit(1)
 
 from setuptools import setup, Extension
-from setuptools import distutils.dir_util
+import setuptools.distutils.dir_util
 
 import os
 import subprocess
@@ -39,7 +39,7 @@ import hyperspy.Release as Release
 # clean the build directory so we aren't mixing Windows and Linux
 # installations carelessly.
 if os.path.exists('build'):
-    distutils.dir_util.remove_tree('build')
+    setuptools.distutils.dir_util.remove_tree('build')
 
 install_req = ['scipy',
                'ipython>=2.0',
