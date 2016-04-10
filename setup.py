@@ -29,6 +29,8 @@ if v[0] != 3:
     sys.exit(1)
 
 from setuptools import setup, Extension
+from setuptools.command.install import install
+from setuptools.command.develop import develop
 import setuptools
 
 import os
@@ -53,7 +55,8 @@ install_req = ['scipy',
                'sympy']
 
 
-cython_extensions = []     # explicitly cython (not c or c++) extension paths without .pyx ending
+# explicitly cython (not c or c++) extension paths without .pyx ending
+cython_extensions = ['hyperspy/misc/test_cython_integration',]
 
 
 def isnot_cythonised(cython_extensions):
@@ -66,16 +69,21 @@ def cythonize_extensions(extension_list):
     try:
         from Cython.Build import cythonize
     except ImportError:
-        print("""cython required to generate fast c code
-is not found on this system.
-Only slow python alternative functions will be available.
-To use fast implementation of some functions writen in cython,
-either install cython and re-run the installation, or try alternative
-source distribution containing cythonized C versions of fast code,
-or binary distribution (i.e. wheels).""")
-        return 0
-    cythonize([i+'.pyx' for i in extension_list])
-    
+        print("""WARNING: cython required to generate fast c code is not found on this system.
+Only slow pure python alternative functions will be available.
+To use fast implementation of some functions writen in cython either:
+a) install cython and re-run the installation,
+b) try alternative source distribution containing cythonized C versions of fast code,
+c) use binary distribution (i.e. wheels).""")
+        return []
+    return cythonize([i+'.pyx' for i in extension_list])
+
+
+#class InstallWithCythonization(install):
+#    """customize install command by adding cythonization check and
+#    force cythonization option"""
+#    cls.user_options.add(('force-cython',None,'Force cythonization of *.pyx extensions'))
+
 
 class update_version_when_dev:
 
@@ -134,6 +142,8 @@ with update_version_when_dev() as version:
         name="hyperspy",
         package_dir={'hyperspy': 'hyperspy'},
         version=version,
+        ext_modules=[Extension("hyperspy.io_plugins.unbcf_fast",
+                               ['hyperspy/io_plugins/unbcf_fast.c'])],
         packages=['hyperspy',
                   'hyperspy.datasets',
                   'hyperspy._components',
