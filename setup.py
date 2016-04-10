@@ -65,12 +65,16 @@ def isnot_cythonised(cython_extensions):
 def cythonize_extensions(extension_list):
     try:
         from Cython.Build import cythonize
-    except ImportError('''cython is not found on this system.
+    except ImportError:
+        print("""cython required to generate fast c code
+is not found on this system.
 Only slow python alternative functions will be available.
 To use fast implementation of some functions writen in cython,
 either install cython and re-run the installation, or try alternative
 source distribution containing cythonized C versions of fast code,
-or binary distribution (i.e. wheels).''')
+or binary distribution (i.e. wheels).""")
+        return 0
+    cythonize([i+'.pyx' for i in extension_list])
     
 
 class update_version_when_dev:
