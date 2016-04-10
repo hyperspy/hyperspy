@@ -515,6 +515,23 @@ class Model1D(BaseModel):
                self._jacobian(param, y)).sum(1)
         return gls
 
+    def _model2plot(self, axes_manager, out_of_range2nans=True):
+        old_axes_manager = None
+        if axes_manager is not self.axes_manager:
+            old_axes_manager = self.axes_manager
+            self.axes_manager = axes_manager
+            self.fetch_stored_values()
+        s = self.__call__(non_convolved=False, onlyactive=True)
+        if old_axes_manager is not None:
+            self.axes_manager = old_axes_manager
+            self.fetch_stored_values()
+        if out_of_range2nans is True:
+            ns = np.empty(self.axis.axis.shape)
+            ns.fill(np.nan)
+            ns[np.where(self.channel_switches)] = s
+            s = ns
+        return s
+
     def plot(self, plot_components=False):
         """Plots the current spectrum to the screen and a map with a
         cursor to explore the SI.

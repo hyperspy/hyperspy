@@ -639,23 +639,6 @@ class BaseModel(list):
                     comp_p_std, onlyfree=True)
                 counter += component._nfree_param
 
-    def _model2plot(self, axes_manager, out_of_range2nans=True):
-        old_axes_manager = None
-        if axes_manager is not self.axes_manager:
-            old_axes_manager = self.axes_manager
-            self.axes_manager = axes_manager
-            self.fetch_stored_values()
-        s = self.__call__(non_convolved=False, onlyactive=True)
-        if old_axes_manager is not None:
-            self.axes_manager = old_axes_manager
-            self.fetch_stored_values()
-        if out_of_range2nans is True:
-            ns = np.empty(self.axis.axis.shape)
-            ns.fill(np.nan)
-            ns[np.where(self.channel_switches)] = s
-            s = ns
-        return s
-
     def _model_function(self, param):
         self.p0 = param
         self._fetch_values_from_p0()

@@ -219,17 +219,41 @@ class Model2D(BaseModel):
     def _gradient_ls(self, param, y, weights=None):
         raise NotImplementedError
 
+    def _model2plot(self, axes_manager, out_of_range2nans=True):
+        old_axes_manager = None
+        if axes_manager is not self.axes_manager:
+            old_axes_manager = self.axes_manager
+            self.axes_manager = axes_manager
+            self.fetch_stored_values()
+        s = self.__call__(non_convolved=False, onlyactive=True)
+        if old_axes_manager is not None:
+            self.axes_manager = old_axes_manager
+            self.fetch_stored_values()
+        if out_of_range2nans is True:
+            ns = np.empty(self.xaxis.shape)
+            ns.fill(np.nan)
+            ns[np.where(self.channel_switches)] = s.ravel()
+            s = ns
+        return s
+
     def plot(self, plot_components=False):
         """
         Plots the current two dimensional signal to the screen with an
         associated navigation window to explore the data.
+
+        Parameters
+        ----------
+        plot_components : bool
+            If True, add a marker indicating the position of the center of each
+            component to the signal figure.
         """
         # If new coordinates
         self.image.plot()
-        _plot = self.image._plot
 
         im2 = hyperspy.drawing.image.ImagePlot()
         im2.data_function = self._model2plot
+        im2.xaxis = self.axes_manager.signal_axes[0]
+        im2.yaxis = self.axes_manager.signal_axes[1]
         im2.plot()
         on_figure_window_close(self._close_plot)
 
@@ -237,12 +261,10 @@ class Model2D(BaseModel):
         self._plot = self.image._plot
         self._connect_parameters2update_plot(self)
         if plot_components is True:
-            # self.enable_plot_components()
-            raise ValueError('Plotting components is not currently implemented\
-                             for Model2D - pelease set plot_componets=False')
-        # else:
-            # self.disable_plot_components()
-        # self.disable_adjust_position()
+            self.enable_plot_components()
+        else:
+            self.disable_plot_components()
+        self.disable_adjust_position()
 
     @staticmethod
     def _connect_component_line(component):
