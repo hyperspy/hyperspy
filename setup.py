@@ -28,9 +28,8 @@ if v[0] != 3:
     print(error, file=sys.stderr)
     sys.exit(1)
 
-from setuptools import setup
-
-import setuptools
+from setuptools import setup, Extension
+from setuptools import distutils.dir_util
 
 import os
 import subprocess
@@ -40,7 +39,7 @@ import hyperspy.Release as Release
 # clean the build directory so we aren't mixing Windows and Linux
 # installations carelessly.
 if os.path.exists('build'):
-    setuptools.distutils.dir_util.remove_tree('build')
+    distutils.dir_util.remove_tree('build')
 
 install_req = ['scipy',
                'ipython>=2.0',
@@ -53,6 +52,26 @@ install_req = ['scipy',
                'setuptools',
                'sympy']
 
+
+cython_extensions = []     # explicitly cython (not c or c++) extension paths without .pyx ending
+
+
+def isnot_cythonised(cython_extensions):
+    for path in cython_extensions:
+        if not os.path.exists(path+'.c'):
+            return True
+            
+            
+def cythonize_extensions(extension_list):
+    try:
+        from Cython.Build import cythonize
+    except ImportError('''cython is not found on this system.
+Only slow python alternative functions will be available.
+To use fast implementation of some functions writen in cython,
+either install cython and re-run the installation, or try alternative
+source distribution containing cythonized C versions of fast code,
+or binary distribution (i.e. wheels).''')
+    
 
 class update_version_when_dev:
 
