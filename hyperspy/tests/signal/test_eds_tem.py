@@ -205,7 +205,7 @@ class Test_quantification:
 
     def test_quant_zeros(self):
         intens = np.array([[0.5, 0.5, 0.5],
-                           [0., 0.5, 0.5],
+                           [0.0, 0.5, 0.5],
                            [0.5, 0.0, 0.5],
                            [0.5, 0.5, 0.0],
                            [0.5, 0.0, 0.0]]).T
@@ -216,10 +216,10 @@ class Test_quantification:
         np.testing.assert_allclose(
             quant,
             np.array([[0.2, 0.2, 0.6],
-                      [0., 0.25, 0.75],
-                      [0.25, 0., 0.75],
-                      [0.5, 0.5, 0.],
-                      [1., 0., 0.]]))
+                      [0.0, 0.25, 0.75],
+                      [0.25, 0.0, 0.75],
+                      [0.5, 0.5, 0.0],
+                      [1.0, 0.0, 0.0]]))
 
 
 class Test_vacum_mask:

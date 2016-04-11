@@ -342,7 +342,7 @@ class EDSTEMSpectrum(EDSSpectrum):
             mass_thickness = intensities[0].deepcopy()
             mass_thickness.data = results[1]
             mass_thickness.metadata.General.title = 'Mass thickness'
-        elif method == 'cross_section':
+        else:
             results = utils_eds.quantification_cross_section(composition.data,
                     cross_sections=factors,
                     dose=self._get_dose(method))
@@ -350,9 +350,6 @@ class EDSTEMSpectrum(EDSSpectrum):
             number_of_atoms = utils.stack(intensities)
             number_of_atoms.data = results[1]
             number_of_atoms = number_of_atoms.split()
-        else:
-            raise Exception ('Please specify method for quantification, as CL, zeta or cross_section')
-        composition = composition.split()
         if composition_units == 'atomic':
             if method != 'cross_section':
                 composition = utils.material.weight_to_atomic(composition)
@@ -578,8 +575,6 @@ self.metadata.Acquisition_instrument.TEM.Detector.EDS.real_time .')
             if beam_area == 'auto':
                 if beam_area in self.metadata.Acquisition_instrument.TEM:
                     area = self.metadata.Acquisition_instrument.TEM.beam_area
-                elif pixel_area in self.metadata.Acquisition_instrument.TEM:
-                    area = self.metadata.Acquisition_instrument.TEM.pixel_area
                 else:
                     pixel1 = self.axes_manager[0].scale
                     pixel2 = self.axes_manager[1].scale
