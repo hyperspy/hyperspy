@@ -528,7 +528,7 @@ class EDSTEMSpectrum(EDSSpectrum):
         return model
 
     def _get_dose(self, method, beam_current='auto', real_time='auto',
-                            area='auto'):
+                            beam_area='auto'):
         """
         Calculates the total electron dose for the zeta factor or cross section
         methods of quantification.
@@ -575,17 +575,19 @@ the default value of 0.5s. The function will still run. However, if this is \
 incorrect you should consider changing it using \
 self.metadata.Acquisition_instrument.TEM.Detector.EDS.real_time .')
         if method == 'cross_section':
-            if area == 'auto':
-                pixel1 = self.axes_manager[0].scale
-                pixel2 = self.axes_manager[1].scale
-            if self.axes_manager[0].scale == 1 or self.axes_manager[1].scale == 1:
-                warnings.warn('Please note your pixel width is set to the \
-default value of 1nm. The function will still run. However, if this is \
-incorrect you should consider changing this using the axes_manager.gui() or \
-axes_manger[0].scale functions.')
-            area = pixel1 * pixel2
+            if beam_area == 'auto':
+                if beam_area in self.metadata.Acquisition_instrument.TEM:
+                    area = self.metadata.Acquisition_instrument.TEM.beam_area
+                elif pixel_area in self.metadata.Acquisition_instrument.TEM:
+                    area = self.metadata.Acquisition_instrument.TEM.pixel_area
+                else:
+                    pixel1 = self.axes_manager[0].scale
+                    pixel2 = self.axes_manager[1].scale
+                    if self.axes_manager[0].scale == 1 or self.axes_manager[1].scale == 1:
+                        warnings.warn('Please note your beam_area is set to \
+the defaul value of 1nm^2. The function will still run. However if 1nm^2 is not\
+ correct, please read the user documentations for how to set this properly.')
+                    area = pixel1 * pixel2
             return (real_time * beam_current * 1e-9) /(constants.e * area)
-        elif method == 'zeta':
-            return real_time * beam_current * 1e-9 / constants.e
         else:
-            raise ValueError('no method provided')
+            return real_time * beam_current * 1e-9 / constants.e
