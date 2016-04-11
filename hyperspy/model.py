@@ -1871,6 +1871,10 @@ class Model(list):
             parameters in the component.
         fit_independent : bool, default False
             If True, all other components are disabled. If False, all other
+            component parameters are fixed.
+        only_current : bool, default True
+            If True, will only fit the currently selected index in the model.
+            If False, will fit the full dataset.
             component paramemeters are fixed.
 
         Examples
