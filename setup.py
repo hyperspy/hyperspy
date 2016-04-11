@@ -58,6 +58,9 @@ install_req = ['scipy',
 # explicitly cython (not c or c++) extension paths without .pyx ending
 cython_extensions = ['hyperspy/misc/test_cython_integration',]
 
+# here you can add pure c/ c++ extensions
+# like: tuple(Extension('hyperspy.misc.example_c),['hyperspy/misc/example_c.c', headers...])
+extensions = []
 
 def get_cythonised_list(cython_extensions):
     ext = []
@@ -97,7 +100,7 @@ class InstallWithCythonization(orig_install):
         ext_list = get_cythonised_list(cython_extensions)
         if self.force_cythonization or (len(ext_list) < len(cython_extensions)):
             print('cythonizing the *.pyx source')
-            extensions = cythonize_extensions(cython_extensions)
+            extensions.extend(cythonize_extensions(cython_extensions))
         else:
             extensions = ext_list
         orig_install.run()
