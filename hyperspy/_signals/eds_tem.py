@@ -389,6 +389,7 @@ class EDSTEMSpectrum(EDSSpectrum):
         else:
             if method == 'cross_section':
                 composition = utils.material.atomic_to_weight(composition)
+        composition = composition.split()
         for i, xray_line in enumerate(xray_lines):
             element, line = utils_eds._get_element_and_line(xray_line)
             composition[i].metadata.General.title = composition_units + \
