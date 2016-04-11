@@ -560,8 +560,8 @@ The zeta-factor method needs both the beam_current (in nA) and the dwell time (r
 
 ..code-block:: python
 
-    >>> s.metadata.Acquisition_instrument.TEM.beam_current = 0.5
-    >>> s.metadata.Acquisition_instrument.TEM.Detector.EDS.real_time = 1.5
+    >>> s.set_microscope_parameters(beam_current = 0.5)
+    >>> s.set_microscope_parameters(real_time = 1.5)
 
 If these are not set the code will produce an error stating which parameter has been forgotten.
 The zeta-factor method will produce two sets of results. Index [0] is the composition maps for each element in atomic percent and index [1] is the mass-thickness map.
@@ -570,7 +570,7 @@ The cross section method needs the beam_current, real_time and probe area in ord
 
 ..code-block: python
 
-    >>> s.metadata.Acquisition_instrument.TEM.beam_area = 0.00125
+    >>> s.set_microscope_parameters(beam_area = 0.00125)
 
  Alternatively, if sub-pixel scanning is used (or the spectrum map was recorded at a high spatial sampling and then the data binned into much larger pixels before quantification) the illumination area then becomes the pixel area of the spectrum image. This is a much more accurate approach for quantitative EDX and should be used where possible.  The pixel width could either be added to the metadata by putting the pixel area in as the beam_area (above) or by calibrating the spectrum image using:
 

@@ -76,7 +76,10 @@ class EDSTEMSpectrum(EDSSpectrum):
                                   tilt_stage=None,
                                   azimuth_angle=None,
                                   elevation_angle=None,
-                                  energy_resolution_MnKa=None):
+                                  energy_resolution_MnKa=None,
+                                  beam_current=None,
+                                  beam_area=None,
+                                  real_time=None):
         """Set the microscope parameters.
 
         If no arguments are given, raises an interactive mode to fill
@@ -96,6 +99,12 @@ class EDSTEMSpectrum(EDSSpectrum):
             In degree
         energy_resolution_MnKa : float
             In eV
+        beam_current: float
+            In nA
+        beam_area: float
+            In nm^2
+        real_time: float
+            In second
 
         Examples
         --------
@@ -132,6 +141,18 @@ class EDSTEMSpectrum(EDSSpectrum):
                 "Acquisition_instrument.TEM.Detector.EDS." +
                 "energy_resolution_MnKa",
                 energy_resolution_MnKa)
+        if beam_current is not None:
+            md.set_item(
+                "Acquisition_instrument.TEM.beam_current",
+                beam_current)
+        if beam_area is not None:
+            md.set_item(
+                "Acquisition_instrument.TEM.beam_area",
+                beam_area)
+        if real_time is not None:
+            md.set_item(
+                 "Acquisition_instrument.TEM.Detector.EDS.real_time",
+                 real_time)
 
         if set([beam_energy, live_time, tilt_stage, azimuth_angle,
                 elevation_angle, energy_resolution_MnKa]) == {None}:
@@ -152,7 +173,13 @@ class EDSTEMSpectrum(EDSSpectrum):
             'Acquisition_instrument.TEM.Detector.EDS.elevation_angle':
             'tem_par.elevation_angle',
             'Acquisition_instrument.TEM.Detector.EDS.energy_resolution_MnKa':
-            'tem_par.energy_resolution_MnKa', }
+            'tem_par.energy_resolution_MnKa',
+            'Acquisition_instrument.TEM.beam_current':
+            'tem_par.beam_current',
+            'Acquisition_instrument.TEM.beam_area':
+            'tem_par.beam_area',
+            'Acquisition_instrument.TEM.Detector.EDS.real_time':
+            'tem_par.real_time', }
         for key, value in mapping.items():
             if self.metadata.has_item(key):
                 exec('%s = self.metadata.%s' % (value, key))
@@ -170,7 +197,13 @@ class EDSTEMSpectrum(EDSSpectrum):
             'Acquisition_instrument.TEM.Detector.EDS.elevation_angle':
             tem_par.elevation_angle,
             'Acquisition_instrument.TEM.Detector.EDS.energy_resolution_MnKa':
-            tem_par.energy_resolution_MnKa, }
+            tem_par.energy_resolution_MnKa,
+            'Acquisition_instrument.TEM.beam_current':
+            tem_par.beam_current,
+            'Acquisition_instrument.TEM.beam_area':
+            tem_par.beam_area,
+            'Acquisition_instrument.TEM.Detector.EDS.real_time':
+            tem_par.real_time, }
 
         for key, value in mapping.items():
             if value != t.Undefined:
