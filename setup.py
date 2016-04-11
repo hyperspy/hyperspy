@@ -29,8 +29,8 @@ if v[0] != 3:
     sys.exit(1)
 
 from setuptools import setup, Extension
-from setuptools.command.install import install
-from setuptools.command.develop import develop
+from setuptools.command.install import install as orig_install
+
 import setuptools
 
 import os
@@ -59,12 +59,14 @@ install_req = ['scipy',
 cython_extensions = ['hyperspy/misc/test_cython_integration',]
 
 
-def isnot_cythonised(cython_extensions):
+def get_cythonised_list(cython_extensions):
+    ext = []
     for path in cython_extensions:
-        if not os.path.exists(path+'.c'):
-            return True
-            
-            
+        if os.path.exists(path+'.c'):
+            ext.append(Extension(path.replace('/', '.'), [path + '.c']))
+    return ext
+
+
 def cythonize_extensions(extension_list):
     try:
         from Cython.Build import cythonize
@@ -74,15 +76,31 @@ Only slow pure python alternative functions will be available.
 To use fast implementation of some functions writen in cython either:
 a) install cython and re-run the installation,
 b) try alternative source distribution containing cythonized C versions of fast code,
-c) use binary distribution (i.e. wheels).""")
+c) use binary distribution (i.e. wheels, egg).""")
         return []
     return cythonize([i+'.pyx' for i in extension_list])
 
 
-#class InstallWithCythonization(install):
-#    """customize install command by adding cythonization check and
-#    force cythonization option"""
-#    cls.user_options.add(('force-cython',None,'Force cythonization of *.pyx extensions'))
+class InstallWithCythonization(orig_install):
+    """customize install command by adding cythonization check and
+    force cythonization option"""
+    orig_install.user_options.append(
+           ('force-cythonization', None, 'Force cythonization of *.pyx code'))
+    
+    def initialize_options(self):
+        orig_install.initialize_options(self)
+        self.force_cythonization = None
+    
+    def run(self):
+        global cython_extensions
+        global extensions
+        ext_list = get_cythonised_list(cython_extensions)
+        if self.force_cythonization or (len(ext_list) < len(cython_extensions)):
+            print('cythonizing the *.pyx source')
+            extensions = cythonize_extensions(cython_extensions)
+        else:
+            extensions = ext_list
+        orig_install.run()
 
 
 class update_version_when_dev:
@@ -142,8 +160,7 @@ with update_version_when_dev() as version:
         name="hyperspy",
         package_dir={'hyperspy': 'hyperspy'},
         version=version,
-        ext_modules=[Extension("hyperspy.io_plugins.unbcf_fast",
-                               ['hyperspy/io_plugins/unbcf_fast.c'])],
+        ext_modules=extensions,
         packages=['hyperspy',
                   'hyperspy.datasets',
                   'hyperspy._components',
@@ -220,6 +237,8 @@ with update_version_when_dev() as version:
         platforms=Release.platforms,
         url=Release.url,
         keywords=Release.keywords,
+        cmdclass={
+        'install': InstallWithCythonization},
         classifiers=[
             "Programming Language :: Python :: 3",
             "Development Status :: 4 - Beta",
