@@ -103,7 +103,7 @@ class InstallWithCythonization(orig_install):
             extensions.extend(cythonize_extensions(cython_extensions))
         else:
             extensions = ext_list
-        orig_install.run()
+        orig_install.run(self)
 
 
 class update_version_when_dev:
