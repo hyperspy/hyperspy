@@ -93,6 +93,9 @@ class InstallWithCythonization(orig_install):
     def initialize_options(self):
         orig_install.initialize_options(self)
         self.force_cythonization = None
+        
+    def finalize_options(self):
+        orig_install.finalize_options(self)
     
     def run(self):
         global cython_extensions
