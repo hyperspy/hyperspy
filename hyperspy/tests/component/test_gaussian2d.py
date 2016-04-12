@@ -53,11 +53,10 @@ class TestSymmetricGaussian2DFitting:
 class TestSymmetricGaussian2DValues:
 
     def setUp(self):
-        g = hs.model.components.SymmetricGaussian2D(
+        g = SymmetricGaussian2D(
             centre_x=-5.,
             centre_y=-5.,
-            sigma_x=1.,
-            sigma_y=2.)
+            sigma=1.)
         x = np.arange(-10, 10, 0.01)
         y = np.arange(-10, 10, 0.01)
         X, Y = np.meshgrid(x, y)
@@ -68,9 +67,8 @@ class TestSymmetricGaussian2DValues:
     def test_values(self):
         gt = self.gt
         g = self.g
-        nt.assert_almost_equal(g.fwhm_x, 2.35482004503)
-        nt.assert_almost_equal(g.fwhm_y, 4.70964009006)
-        nt.assert_almost_equal(gt.max(), 0.0795774715459)
+        nt.assert_almost_equal(g.fwhm, 2.35482004503)
+        nt.assert_almost_equal(gt.max(), 0.15915494309)
         nt.assert_almost_equal(gt.argmax(axis=0)[0], 500)
         nt.assert_almost_equal(gt.argmax(axis=1)[0], 500)
 
