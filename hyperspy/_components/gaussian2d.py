@@ -116,11 +116,11 @@ class Gaussian2D(Component):
     def fwhm_y(self, value):
         self.sigma_y.value = value / sigma2fwhm
 
-    # Rotation compared to "x"-axis
     @property
     def rotation_degrees(self):
         """ Angle between major axis and x-axis."""
+        rotation = math.fmod(self.rotation.value, pi2) 
         if self.sigma_x.value > self.sigma_y.value:
-            return math.degrees(self.rotation.value)
+            return math.degrees(rotation)
         else:
-            return math.degrees(self.rotation.value-pi2/4)
+            return math.degrees(rotation-pi2/4)
