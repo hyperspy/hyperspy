@@ -14,7 +14,7 @@ try:
     sip.setapi('QTime', 2)
     sip.setapi('QUrl', 2)
     del sip
-except ImportError:
+except (ImportError, ValueError):
     _logger.debug('sip not present, Qt API not set')
     pass
 
