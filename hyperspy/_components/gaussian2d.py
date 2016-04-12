@@ -43,8 +43,10 @@ class Gaussian2D(Component):
     |    theta   | rotation  |
     +------------+-----------+
 
-    The rotation value is in radians.
-    The rotation in degrees can be accesed using rotation_degrees.
+    The rotation value is in radians from the x-axis.
+    The rotation in degrees can be accessed using the property 
+    rotation_degrees which will give the angle between the x-axis and the 
+    major axis, ergo between the x-axis and the highest sigma.
 
     """
 
