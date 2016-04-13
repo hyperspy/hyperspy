@@ -58,7 +58,7 @@ def test_metadata():
     np.testing.assert_equal(signal.metadata.General.microscope.as_dictionary(), microscope)
     np.testing.assert_equal(signal.metadata.General.sample.as_dictionary(), sample)
     np.testing.assert_equal(signal.metadata.General.comments.as_dictionary(), comments)
-    for key, ref_value in sig_metadata.iteritems():
+    for key, ref_value in sig_metadata.items():
         np.testing.assert_equal(signal.metadata.Signal.as_dictionary().get(key), ref_value)
     nt.assert_is_instance(signal, Image)
 
@@ -102,7 +102,7 @@ class TestCaseSaveAndRead():
         np.testing.assert_equal(signal.metadata.General.microscope.as_dictionary(), microscope)
         np.testing.assert_equal(signal.metadata.General.sample.as_dictionary(), sample)
         np.testing.assert_equal(signal.metadata.General.comments.as_dictionary(), comments)
-        for key, ref_value in sig_metadata.iteritems():
+        for key, ref_value in sig_metadata.items():
             np.testing.assert_equal(signal.metadata.Signal.as_dictionary().get(key), ref_value)
         nt.assert_is_instance(signal, Signal)
 

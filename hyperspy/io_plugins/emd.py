@@ -161,7 +161,7 @@ class EMD(object):
         signal.set_signal_type = group.attrs.get('signal_type', '')
         # Iterate over all dimensions:
         for i in range(len(data.shape)):
-            dim = group.get('dim{}'.format(i+1))
+            dim = group.get('dim{}'.format(i + 1))
             axis = signal.axes_manager._axes[i]
             axis.name = dim.attrs.get('name', '')
             units = re.findall('[^_\W]+', dim.attrs.get('units', ''))
@@ -277,7 +277,7 @@ class EMD(object):
             for key, value in comments_group.attrs.items():
                 emd.comments[key] = value
         # Extract signals:
-        node_list = emd_file.keys()
+        node_list = list(emd_file.keys())
         for key in ['user', 'microscope', 'sample', 'comments']:  # Nodes which are not the data!
             if key in node_list:
                 node_list.pop(node_list.index(key))  # Pop all unwanted nodes!
