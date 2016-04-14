@@ -34,8 +34,11 @@ import distutils.dir_util
 import warnings
 
 import os
+import stat
 import subprocess
 import fileinput
+
+setup_path = os.path.dirname(__file__)
 
 import hyperspy.Release as Release
 # clean the build directory so we aren't mixing Windows and Linux
@@ -103,11 +106,24 @@ def no_cythonize(extensions):
     return extensions
 
 
-#to cythonize, or not to cythonize... :
+# to cythonize, or not to cythonize... :
 if len(raw_extensions) > count_c_extensions(raw_extensions):
     extensions = cythonize_extensions(raw_extensions)
 else:
     extensions = no_cythonize(raw_extensions)
+
+
+# generate some git hook to rebuild_ext --inplace after changing branches:
+if os.path.exists('.git'):
+    if not os.path.exists('.git/hooks/post-checkout'):
+        with open('.git/hooks/post-checkout', 'w') as pchook:
+            pchook.write('#!/bin/sh\n')
+            pchook.write(' '.join([sys.executable,
+                                   os.path.join(setup_path, 'setup.py'),
+                                   'recythonize',
+                                   'build_ext --inplace']))
+        hook_mode = 0o777  # make it executable
+        os.chmod('.git/hooks/post-checkout', hook_mode)
 
 
 class Recythonize(Command):
