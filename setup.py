@@ -28,10 +28,10 @@ if v[0] != 3:
     print(error, file=sys.stderr)
     sys.exit(1)
 
-from setuptools import setup, Extension
-from setuptools.command.install import install as orig_install
+from setuptools import setup, Extension, Command
+import distutils.dir_util
 
-import setuptools
+import warnings
 
 import os
 import subprocess
@@ -41,7 +41,7 @@ import hyperspy.Release as Release
 # clean the build directory so we aren't mixing Windows and Linux
 # installations carelessly.
 if os.path.exists('build'):
-    setuptools.distutils.dir_util.remove_tree('build')
+    distutils.dir_util.remove_tree('build')
 
 install_req = ['scipy',
                'ipython>=2.0',
@@ -55,58 +55,80 @@ install_req = ['scipy',
                'sympy']
 
 
-# explicitly cython (not c or c++) extension paths without .pyx ending
-cython_extensions = ['hyperspy/misc/test_cython_integration',]
+# Extensions:
+raw_extensions = [Extension("hyperspy.tests.cython.test_cython_integration",
+                        ['hyperspy/tests/cython/test_cython_integration.pyx']),
+                 ]
 
-# here you can add pure c/ c++ extensions
-# like: tuple(Extension('hyperspy.misc.example_c),['hyperspy/misc/example_c.c', headers...])
-extensions = []
+def count_c_extensions(extensions):
+    c_num = 0
+    for extension in extensions:
+        # if first source file with extension *.c or *.cpp exists
+        # it is cythonised or pure c/c++ extension:
+        sfile = extension.sources[0]
+        path, ext = os.path.splitext(sfile)
+        if os.path.exists(path + '.c') or os.path.exists(path + '.cpp'):
+            c_num += 1
+    return c_num
 
-def get_cythonised_list(cython_extensions):
-    ext = []
-    for path in cython_extensions:
-        if os.path.exists(path+'.c'):
-            ext.append(Extension(path.replace('/', '.'), [path + '.c']))
-    return ext
 
-
-def cythonize_extensions(extension_list):
+def cythonize_extensions(extensions):
     try:
         from Cython.Build import cythonize
+        return cythonize(extensions)
     except ImportError:
-        print("""WARNING: cython required to generate fast c code is not found on this system.
+        warnings.warn("""WARNING: cython required to generate fast c code is not found on this system.
 Only slow pure python alternative functions will be available.
 To use fast implementation of some functions writen in cython either:
 a) install cython and re-run the installation,
 b) try alternative source distribution containing cythonized C versions of fast code,
 c) use binary distribution (i.e. wheels, egg).""")
         return []
-    return cythonize([i+'.pyx' for i in extension_list])
 
 
-class InstallWithCythonization(orig_install):
-    """customize install command by adding cythonization check and
-    force cythonization option"""
-    orig_install.user_options.append(
-           ('force-cythonization', None, 'Force cythonization of *.pyx code'))
+def no_cythonize(extensions):
+    for extension in extensions:
+        sources = []
+        for sfile in extension.sources:
+            path, ext = os.path.splitext(sfile)
+            if ext in ('.pyx', '.py'):
+                if extension.language == 'c++':
+                    ext = '.cpp'
+                else:
+                    ext = '.c'
+                sfile = path + ext
+            sources.append(sfile)
+        extension.sources[:] = sources
+    return extensions
+
+
+#to cythonize, or not to cythonize... :
+if len(raw_extensions) > count_c_extensions(raw_extensions):
+    extensions = cythonize_extensions(raw_extensions)
+else:
+    extensions = no_cythonize(raw_extensions)
+
+
+class Recythonize(Command):
+    """cythonize all extensions"""
+    description = "(re-)cythonize all cython extensions"
     
+    user_options = []
+
     def initialize_options(self):
-        orig_install.initialize_options(self)
-        self.force_cythonization = None
-        
+        """init options"""
+        pass
+
     def finalize_options(self):
-        orig_install.finalize_options(self)
-    
+        """finalize options"""
+        pass
+
     def run(self):
-        global cython_extensions
+        # if there is no cython it is supposed to fail:
+        from Cython.Build import cythonize
+        global raw_extensions
         global extensions
-        ext_list = get_cythonised_list(cython_extensions)
-        if self.force_cythonization or (len(ext_list) < len(cython_extensions)):
-            print('cythonizing the *.pyx source')
-            extensions.extend(cythonize_extensions(cython_extensions))
-        else:
-            extensions = ext_list
-        orig_install.run(self)
+        cythonize(extensions)
 
 
 class update_version_when_dev:
@@ -244,7 +266,8 @@ with update_version_when_dev() as version:
         url=Release.url,
         keywords=Release.keywords,
         cmdclass={
-        'install': InstallWithCythonization},
+        'recythonize': Recythonize,
+        },
         classifiers=[
             "Programming Language :: Python :: 3",
             "Development Status :: 4 - Beta",
