@@ -56,9 +56,10 @@ install_req = ['scipy',
 
 
 # Extensions:
-raw_extensions = [Extension("hyperspy.tests.cython.test_cython_integration",
-                        ['hyperspy/tests/cython/test_cython_integration.pyx']),
+raw_extensions = [Extension("hyperspy.tests.misc.cython.test_cython_integration",
+                        ['hyperspy/tests/misc/cython/test_cython_integration.pyx']),
                  ]
+
 
 def count_c_extensions(extensions):
     c_num = 0
@@ -112,7 +113,7 @@ else:
 class Recythonize(Command):
     """cythonize all extensions"""
     description = "(re-)cythonize all cython extensions"
-    
+
     user_options = []
 
     def initialize_options(self):
