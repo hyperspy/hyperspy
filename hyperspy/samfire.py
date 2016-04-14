@@ -205,6 +205,9 @@ class Samfire(object):
         if hasattr(self.model, '_suspend_auto_fine_structure_width'):
             self.model._suspend_auto_fine_structure_width = True
 
+        if hasattr(self, '_log'):
+            self._log = []
+
         if self.workers:
             if self._result_q is None:
                 m = Manager()
@@ -342,6 +345,12 @@ class Samfire(object):
 
         if isgood is None:
             isgood = self.metadata.goodness_test.test(self.model, ind)
+        if hasattr(self, '_log'):
+            if isinstance(self._log, list):
+                if isinstance(results, dict):
+                    self._log.append((ind, isgood, count, results['current']))
+                else:
+                    self._log.append((ind, isgood, count, None))
 
         self.active_strategy.update(ind, isgood, count)
         if not isgood and results is not None:

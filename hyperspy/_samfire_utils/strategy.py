@@ -48,7 +48,7 @@ def nearest_indices(shape, ind, radii):
     for c, i in enumerate(ind):
         top = min(i + radii[c] + 1, shape[c])
         bot = max(0, i - radii[c])
-        center = center + (i - bot,)
+        center = center + (int(i - bot),)
         par = par + (slice(int(bot), int(top)),)
     return par, center
 
