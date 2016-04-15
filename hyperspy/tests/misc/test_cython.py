@@ -14,8 +14,10 @@ def test_cythonization():
         raise SkipTest
 
     if not os.path.exists(my_path + '/cython/test_cython_integration.c'):
-        raise RuntimeError("""Automatic cythonization of extension failed
-try to run 'python setup.py recythonize' to find out the bug introduced""")
+        raise RuntimeError("""Cython library presence but cythonized c extension absence
+indicate that either test is run on clean source where any setup.py commands were not called,
+or setup.py deprecated automatic cythonization.
+Try to run 'python setup.py recythonize', then rerun the test""")
 
 
 def test_extensions_built():
