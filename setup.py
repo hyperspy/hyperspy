@@ -29,7 +29,7 @@ if v[0] != 3:
     sys.exit(1)
 
 from setuptools import setup, Extension, Command
-import distutils.dir_util
+#import distutils.dir_util
 
 import warnings
 
@@ -44,8 +44,8 @@ setup_path = os.path.dirname(__file__)
 import hyperspy.Release as Release
 # clean the build directory so we aren't mixing Windows and Linux
 # installations carelessly.
-if os.path.exists('build'):
-    distutils.dir_util.remove_tree('build')
+#if os.path.exists('build'):
+#    distutils.dir_util.remove_tree('build')
 
 install_req = ['scipy',
                'ipython>=2.0',
@@ -136,7 +136,7 @@ def find_post_checkout_cleanup_line():
 if os.path.exists('.git') and (not os.path.exists('.hook_ignore')):
     recythonize_str = ' '.join([sys.executable,
                                 os.path.join(setup_path, 'setup.py'),
-                                'build_ext --inplace \n'])
+                                'clean --all build_ext --inplace \n'])
     if (not os.path.exists('.git/hooks/post-checkout')):
         with open('.git/hooks/post-checkout', 'w') as pchook:
             pchook.write('#!/bin/sh\n')
