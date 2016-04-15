@@ -1,7 +1,7 @@
 ﻿Developer Guide
 ===============
 
-This 5-step guide is intended to give people who want to start contributing their 
+This 6-step guide is intended to give people who want to start contributing their 
 own tools to HyperSpy a foothold to kick-start the process. This is also the way
 to start if you ultimately hope to become a member of the developer team.
 
@@ -180,6 +180,8 @@ quite large. Cythonization will take place during Travis CI and Appveyor buildin
 The cythonized code will be generated and included in source or binary distributions
 for end users. To help troubleshoot potential deprecation with future cython releases,
 add a comment with in the header of your .pyx files with the cython version.
+If cython is present in the build environment and any cythonized c/c++ file is missing,
+then setup.py tries to cythonize all extensions automatically.
 
 To make the development easier the new command ``recythonize`` has been added to setup.py.
 It can be used in conjunction with other default commands.
@@ -189,6 +191,6 @@ will recythonize all changed (and described in setup.py!) cython code and compil
 When developing on git branches, the first time you call setup.py in conjunction with
 or without any other command - it will generate a post-checkout hook, which will include
 a potential cythonization and compilation product list (.c/.cpp/.so/.pyd). With your next
-``git checkout`` the hook will remove them and run ``python setup.py build_ext --inplace``
+``git checkout`` the hook will remove them and automatically run ``python setup.py build_ext --inplace``
 to cythonize and compile the code if available. If an older version of HyperSpy (<= 0.8.4.x)
 is checked out this should have no side effects.
