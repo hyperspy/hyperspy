@@ -152,7 +152,7 @@ if os.path.exists('.git') and (not os.path.exists('.hook_ignore')):
             if line_n is not None:
                 hook_lines[line_n] = 'rm ' + ' '.join([i for i in cleanup_list]) + '\n'
             else:
-                hook_lines.append('rm ' + ' '.join([i for i in cleanup_list]) + '\n')
+                hook_lines.append('\nrm ' + ' '.join([i for i in cleanup_list]) + '\n')
                 hook_lines.append(recythonize_str)
             with open('.git/hooks/post-checkout', 'w') as pchook:
                 pchook.writelines(hook_lines)
