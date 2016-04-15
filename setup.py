@@ -63,6 +63,14 @@ raw_extensions = [Extension("hyperspy.tests.misc.cython.test_cython_integration"
                         ['hyperspy/tests/misc/cython/test_cython_integration.pyx']),
                  ]
 
+cleanup_list = []
+for leftover in raw_extensions:
+    path, ext = os.path.splitext(leftover.sources[0])
+    if ext in ('.pyx', '.py'):
+        cleanup_list.append(os.path.join(setup_path, path + '.c*'))
+        cleanup_list.append(os.path.join(setup_path, path + '.cpython-*.so'))
+        cleanup_list.append(os.path.join(setup_path, path + '.cpython-*.pyd'))
+
 
 def count_c_extensions(extensions):
     c_num = 0
@@ -112,19 +120,22 @@ if len(raw_extensions) > count_c_extensions(raw_extensions):
 else:
     extensions = no_cythonize(raw_extensions)
 
+for i in raw_extensions:
+    print(i.sources)
 
-# generate some git hook to rebuild_ext --inplace after changing branches:
+# generate some git hook to clean up and rebuild_ext --inplace after changing branches:
 if os.path.exists('.git'):
-    if not os.path.exists('.git/hooks/post-checkout'):
-        with open('.git/hooks/post-checkout', 'w') as pchook:
-            pchook.write('#!/bin/sh\n')
-            pchook.write(' '.join([sys.executable,
-                                   os.path.join(setup_path, 'setup.py'),
-                                   'recythonize',
-                                   'build_ext --inplace']))
-        hook_mode = 0o777  # make it executable
-        os.chmod('.git/hooks/post-checkout', hook_mode)
+    with open('.git/hooks/post-checkout', 'w') as pchook:
+        pchook.write('#!/bin/sh\n')
+        pchook.write('rm ' + ' '.join([i for i in cleanup_list]) + '\n')
+        pchook.write(' '.join([sys.executable,
+                               os.path.join(setup_path, 'setup.py'),
+                               'build_ext --inplace']))
+    hook_mode = 0o777  # make it executable
+    os.chmod('.git/hooks/post-checkout', hook_mode)
 
+for i in raw_extensions:
+    print(i.sources)
 
 class Recythonize(Command):
     """cythonize all extensions"""
