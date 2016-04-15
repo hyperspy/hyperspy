@@ -192,4 +192,4 @@ Developing with git branches is most convinient: by first time calling ``setup.p
 with any other command it will generate post-checkout hook, which will be provided with potential
 cythonization and compilation product list (.c/.cpp/.so/.pyd). With next ``git checkout`` the hook
 will remove them, then run ``python setup.py build_ext --inplace`` to cythonize and compile the code
-if available. If older version of hyperspy is checked out <= 8.4.x this will do nothing. 
+if available. If older version of hyperspy is checked out <= 8.4.x this should have no side effects. 
