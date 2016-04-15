@@ -34,7 +34,6 @@ import distutils.dir_util
 import warnings
 
 import os
-import stat
 import subprocess
 import fileinput
 
@@ -120,10 +119,9 @@ if len(raw_extensions) > count_c_extensions(raw_extensions):
 else:
     extensions = no_cythonize(raw_extensions)
 
-for i in raw_extensions:
-    print(i.sources)
 
-# generate some git hook to clean up and rebuild_ext --inplace after changing branches:
+# generate some git hook to clean up and re-build_ext --inplace
+# after changing branches:
 if os.path.exists('.git'):
     with open('.git/hooks/post-checkout', 'w') as pchook:
         pchook.write('#!/bin/sh\n')
@@ -134,8 +132,6 @@ if os.path.exists('.git'):
     hook_mode = 0o777  # make it executable
     os.chmod('.git/hooks/post-checkout', hook_mode)
 
-for i in raw_extensions:
-    print(i.sources)
 
 class Recythonize(Command):
     """cythonize all extensions"""
