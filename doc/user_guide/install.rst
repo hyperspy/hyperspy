@@ -178,9 +178,6 @@ so for Ubuntu:
     $ cd hyperspy
     $ sudo pip install -e ./
 
-With development mode setup.py generates git post-checkout hook, which will cleanup
-the cythonized c files, cythonize it again and run ```build_ext --inplace```.
-
 If using Arch Linux, the latest checkout of the master development branch can be
 installed through the AUR by installing the `hyperspy-git package
 <https://aur.archlinux.org/packages/hyperspy-git/>`_
@@ -213,8 +210,7 @@ When installing HyperSpy using Python installers or from source the Python
 programming language and the following libraries must be installed in the
 system: numpy, scipy, matplotlib (>= 1.2), ipython, natsort, traits and
 traitsui. For full functionality it is recommended to also install h5py and
-scikit-learn. If HyperSpy is going to be installed from git source, cython is
-also required. In addition, since version 0.7.2 the lowess filter requires
+scikit-learn. In addition, since version 0.7.2 the lowess filter requires
 statsmodels. In Windows HyperSpy uses the Ipython's QtConsole and therefore Qt
 and PyQt or PySide are also required.
 
