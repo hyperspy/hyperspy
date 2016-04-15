@@ -59,7 +59,7 @@ install_req = ['scipy',
                'sympy']
 
 
-# Extensions:
+# Extensions. Add your extension here:
 raw_extensions = [Extension("hyperspy.tests.misc.cython.test_cython_integration",
                         ['hyperspy/tests/misc/cython/test_cython_integration.pyx']),
                  ]
@@ -69,8 +69,10 @@ for leftover in raw_extensions:
     path, ext = os.path.splitext(leftover.sources[0])
     if ext in ('.pyx', '.py'):
         cleanup_list.append(os.path.join(setup_path, path + '.c*'))
-        cleanup_list.append(os.path.join(setup_path, path + '.cpython-*.so'))
-        cleanup_list.append(os.path.join(setup_path, path + '.cpython-*.pyd'))
+        if os.name == 'nt':
+            cleanup_list.append(os.path.join(setup_path, path + '.cpython-*.pyd'))
+        else:
+            cleanup_list.append(os.path.join(setup_path, path + '.cpython-*.so'))
 
 
 def count_c_extensions(extensions):
@@ -121,6 +123,7 @@ if len(raw_extensions) > count_c_extensions(raw_extensions):
 else:
     extensions = no_cythonize(raw_extensions)
 
+# HOOKS ######
 
 def find_post_checkout_cleanup_line():
     """find the line index in the git post-checkout hooks"""
