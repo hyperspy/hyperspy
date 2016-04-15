@@ -210,7 +210,8 @@ When installing HyperSpy using Python installers or from source the Python
 programming language and the following libraries must be installed in the
 system: numpy, scipy, matplotlib (>= 1.2), ipython, natsort, traits and
 traitsui. For full functionality it is recommended to also install h5py and
-scikit-learn. In addition, since version 0.7.2 the lowess filter requires
+scikit-learn. If HyperSpy is going to be installed from git source, cython is
+also required. In addition, since version 0.7.2 the lowess filter requires
 statsmodels. In Windows HyperSpy uses the Ipython's QtConsole and therefore Qt
 and PyQt or PySide are also required.
 
@@ -222,6 +223,9 @@ In Debian/Ubuntu you can install the libraries as follows:
     $ sudo apt-get install python-numpy python-matplotlib ipython
     ipython-notebook python-traits python-traitsui python-h5py
     python-scikits-learn python-nose python-statsmodels
+
+With development mode setup.py generates git post-checkout hook, which will cleanup
+the cythonized c files, cythonize it again and run ```build_ext --inplace```.
 
 In Arch Linux, the following command should install the required packages to
 get a fully functional installation:
