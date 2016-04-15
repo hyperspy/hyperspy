@@ -194,3 +194,7 @@ a potential cythonization and compilation product list (.c/.cpp/.so/.pyd). With 
 ``git checkout`` the hook will remove them and automatically run ``python setup.py build_ext --inplace``
 to cythonize and compile the code if available. If an older version of HyperSpy (<= 0.8.4.x)
 is checked out this should have no side effects.
+
+If another custom post-checkout hook is detected on PR, then setup.py tries to append
+or update the relevant part. To prevent unwanted hook generation or update you can create
+the empty file ``.hook_ignore`` in source directory (same level as setup.py).
