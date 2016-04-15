@@ -168,28 +168,27 @@ discussed.
 6. Contributing cython code
 ---------------------------
 
-Python is not the fastest language, it is slow in loops. Sometimes using vectorisation
-of calculations with numpy is not possible. It is mostly actual for some proprietary
-binary electron microscopy formats. In such and similar cases where the speed can be
-significantly improved, it is recommended to implement optional cython parts alongside
-pure python versions. While developing cython code keep the official cython
-recommendations http://docs.cython.org/.
-Add your cython extensions to the setup.py, to the existing list of ```raw_extensions```.
+Python is not the fastest language, and can be particularly slow in loops.
+Performance can sometimes be significantly improved by implementing optional cython
+code alongside the pure Python versions. While developing cython code, make use of
+the official cython recommendations (http://docs.cython.org/).
+Add your cython extensions to the setup.py, in the existing list of ``raw_extensions``.
 
-Differently than cython recommendation, the cythonized huge and obscure *.c or .cpp* files
-are not welcome in git source repository (except original c or c++ files). Cythonization
-will take place during Travis CI and Appveyor building. The c/c++ cythonized c will be
-generated and included in source or binary distributions meant to be for end users.
-To help troubleshoot potential deprecation with future cython releases, add the comment
-with cython version the code is developed in your .pyx files at the top in the header.
+Unlike the cython recommendation, the cythonized .c or .cpp files are not welcome
+in the git source repository (except original c or c++ files), since they are typically
+quite large. Cythonization will take place during Travis CI and Appveyor building.
+The cythonized code will be generated and included in source or binary distributions
+for end users. To help troubleshoot potential deprecation with future cython releases,
+add a comment with in the header of your .pyx files with the cython version.
 
-To make the development easier the new command ``recythonize`` is coded in setup.py
-which can be used in conjunction with other default commands. ``python setup.py cythonize build_ext --inplace``
-will recythonize all changed (and described in setup.py!) cython code
-and compile over.
+To make the development easier the new command ``recythonize`` has been added to setup.py.
+It can be used in conjunction with other default commands.
+For example ``python setup.py recythonize build_ext --inplace``
+will recythonize all changed (and described in setup.py!) cython code and compile.
 
-Developing with git branches is most convinient: by first time calling ``setup.py`` in conjunction
-with any other command it will generate post-checkout hook, which will be provided with potential
-cythonization and compilation product list (.c/.cpp/.so/.pyd). With next ``git checkout`` the hook
-will remove them, then run ``python setup.py build_ext --inplace`` to cythonize and compile the code
-if available. If older version of hyperspy is checked out <= 8.4.x this should have no side effects. 
+When developing on git branches, the first time you call setup.py in conjunction with
+or without any other command - it will generate a post-checkout hook, which will include
+a potential cythonization and compilation product list (.c/.cpp/.so/.pyd). With your next
+``git checkout`` the hook will remove them and run ``python setup.py build_ext --inplace``
+to cythonize and compile the code if available. If an older version of HyperSpy (<= 0.8.4.x)
+is checked out this should have no side effects.
