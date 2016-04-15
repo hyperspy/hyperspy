@@ -37,6 +37,8 @@ import os
 import subprocess
 import fileinput
 
+import re
+
 setup_path = os.path.dirname(__file__)
 
 import hyperspy.Release as Release
@@ -120,17 +122,40 @@ else:
     extensions = no_cythonize(raw_extensions)
 
 
+def find_post_checkout_cleanup_line():
+    """find the line index in the git post-checkout hooks"""
+    with open('.git/hooks/post-checkout', 'r') as pchook:
+        hook_lines = pchook.readlines()
+        for i in range(1, len(hook_lines), 1):
+            if re.search(r'^rm hyperspy/*', hook_lines[i]) is not None and \
+              (re.search(r'python.*?build_ext --inplace', hook_lines[i+1]) is not None):
+                return i
+
 # generate some git hook to clean up and re-build_ext --inplace
 # after changing branches:
-if os.path.exists('.git'):
-    with open('.git/hooks/post-checkout', 'w') as pchook:
-        pchook.write('#!/bin/sh\n')
-        pchook.write('rm ' + ' '.join([i for i in cleanup_list]) + '\n')
-        pchook.write(' '.join([sys.executable,
-                               os.path.join(setup_path, 'setup.py'),
-                               'build_ext --inplace']))
-    hook_mode = 0o777  # make it executable
-    os.chmod('.git/hooks/post-checkout', hook_mode)
+if os.path.exists('.git') and (not os.path.exists('.hook_ignore')):
+    recythonize_str = ' '.join([sys.executable,
+                                os.path.join(setup_path, 'setup.py'),
+                                'build_ext --inplace \n'])
+    if (not os.path.exists('.git/hooks/post-checkout')):
+        with open('.git/hooks/post-checkout', 'w') as pchook:
+            pchook.write('#!/bin/sh\n')
+            pchook.write('rm ' + ' '.join([i for i in cleanup_list]) + '\n')
+            pchook.write(recythonize_str)
+        hook_mode = 0o777  # make it executable
+        os.chmod('.git/hooks/post-checkout', hook_mode)
+    else:
+        with open('.git/hooks/post-checkout', 'r') as pchook:
+            hook_lines = pchook.readlines()
+        if re.search(r'#!/bin/.*?sh', hook_lines[0]) is not None:
+            line_n = find_post_checkout_cleanup_line()
+            if line_n is not None:
+                hook_lines[line_n] = 'rm ' + ' '.join([i for i in cleanup_list]) + '\n'
+            else:
+                hook_lines.append('rm ' + ' '.join([i for i in cleanup_list]) + '\n')
+                hook_lines.append(recythonize_str)
+            with open('.git/hooks/post-checkout', 'w') as pchook:
+                pchook.writelines(hook_lines)
 
 
 class Recythonize(Command):
