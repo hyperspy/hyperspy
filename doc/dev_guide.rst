@@ -164,3 +164,32 @@ to use it with examples and links to the relevant code.
 When you've got a branch that's ready to be incorporated in to the main code of
 HyperSpy -- make a pull request on GitHub and wait for it to be reviewed and
 discussed.
+
+6. Contributing cython code
+---------------------------
+
+Python is not the fastest language, it is slow in loops. Sometimes using vectorisation
+of calculations with numpy is not possible. It is mostly actual for some proprietary
+binary electron microscopy formats. In such and similar cases where the speed can be
+significantly improved, it is recommended to implement optional cython parts alongside
+pure python versions. While developing cython code keep the official cython
+recommendations http://docs.cython.org/.
+Add your cython extensions to the setup.py, to the existing list of ```raw_extensions```.
+
+Differently than cython recommendation, the cythonized huge and obscure *.c or .cpp* files
+are not welcome in git source repository (except original c or c++ files). Cythonization
+will take place during Travis CI and Appveyor building. The c/c++ cythonized c will be
+generated and included in source or binary distributions meant to be for end users.
+To help troubleshoot potential deprecation with future cython releases, add the comment
+with cython version the code is developed in your .pyx files at the top in the header.
+
+To make the development easier the new command ``recythonize`` is coded in setup.py
+which can be used in conjunction with other default commands. ``python setup.py cythonize build_ext --inplace``
+will recythonize all changed (and described in setup.py!) cython code
+and compile over.
+
+Developing with git branches is most convinient: by first time calling ``setup.py`` in conjunction
+with any other command it will generate post-checkout hook, which will be provided with potential
+cythonization and compilation product list (.c/.cpp/.so/.pyd). With next ``git checkout`` the hook
+will remove them, then run ``python setup.py build_ext --inplace`` to cythonize and compile the code
+if available. If older version of hyperspy is checked out <= 8.4.x this will do nothing. 
