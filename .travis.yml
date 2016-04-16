@@ -8,6 +8,7 @@ matrix:
       env: export FAIL_ON_EXTERNAL_DEPRECATION='True'
     - os: osx
       language: generic
+      python: 3.5
       env: export FAIL_ON_EXTERNAL_DEPRECATION='False'
   allow_failures:
     - env: export FAIL_ON_EXTERNAL_DEPRECATION='True'
@@ -33,7 +34,7 @@ install:
 
 script:
   - python setup.py build_ext --inplace
-  - if [[ $TRAVIS_OS_NAME == 'osx' ]]; then python setup.py build_wheel; fi
+  - if [[ $TRAVIS_OS_NAME == 'osx' ]]; then python setup.py bdist_wheel; fi
   - python continuous_integration/nosetest.py --with-coverage hyperspy
 
 after_success:
