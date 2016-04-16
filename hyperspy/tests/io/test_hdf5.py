@@ -257,9 +257,9 @@ class TestLoadingOOMReadOnly:
             chunks=True)
         f.close()
 
-    #@nt.raises(MemoryError, ValueError)
-    #def test_in_memory_loading(self):
-        #s = load('tmp.hdf5')
+    @nt.raises(MemoryError, ValueError)
+    def test_in_memory_loading(self):
+        s = load('tmp.hdf5')
 
     #def test_oom_loading(self):
         #s = load('tmp.hdf5', load_to_memory=False)
