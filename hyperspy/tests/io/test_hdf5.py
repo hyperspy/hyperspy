@@ -257,19 +257,19 @@ class TestLoadingOOMReadOnly:
             chunks=True)
         f.close()
 
-    @nt.raises(MemoryError, ValueError)
-    def test_in_memory_loading(self):
-        s = load('tmp.hdf5')
+    #@nt.raises(MemoryError, ValueError)
+    #def test_in_memory_loading(self):
+    #    s = load('tmp.hdf5')
 
-    #def test_oom_loading(self):
-        #s = load('tmp.hdf5', load_to_memory=False)
-        #nt.assert_equal(self.shape, s.data.shape)
-        #nt.assert_is_instance(s.data, h5py.Dataset)
+    def test_oom_loading(self):
+        s = load('tmp.hdf5', load_to_memory=False)
+        nt.assert_equal(self.shape, s.data.shape)
+        nt.assert_is_instance(s.data, h5py.Dataset)
 
-    #def tearDown(self):
-        #gc.collect()        # Make sure any memmaps are closed first!
-        #try:
-            #remove('tmp.hdf5')
-        #except:
-            ## Don't fail tests if we cannot remove
-            #pass
+    def tearDown(self):
+        gc.collect()        # Make sure any memmaps are closed first!
+        try:
+            remove('tmp.hdf5')
+        except:
+            # Don't fail tests if we cannot remove
+            pass

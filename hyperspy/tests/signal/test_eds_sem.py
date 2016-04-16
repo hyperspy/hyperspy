@@ -186,7 +186,8 @@ class Test_metadata:
 
     def test_take_off_angle(self):
         s = self.signal
-        nt.assert_equal(s.get_take_off_angle(), 12.886929785732487)
+        nt.assert_almost_equal(s.get_take_off_angle(), 12.886929785732487,
+                               places=14)
 
 
 class Test_get_lines_intentisity:
