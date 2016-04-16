@@ -61,7 +61,11 @@ install:
   - ps: Add-AppveyorMessage "Installing hyperspy..."
   - "python setup.py install"
 
-build: false  # Not a C# project, build stuff at the test step instead.
+#build: false  # Not a C# project, build stuff at the test step instead.
+build:
+    - ps: Add-AppveyorMessage "Running bdist_wheel..."
+    - "python setup.py bdist_wheel"
+    - ps: Add-AppveyorMessage "bdist_wheel completed."
 
 test_script:
   # Run the project tests
@@ -121,7 +125,9 @@ deploy:
     secure: ptV5Dkz3pSVdjD0qRDpxJgjVlddFtleZ+B+c2X1Fg67P8OX3bHWVktRmlj6hfLhM
     #   vidartf:
     #secure: KwAfARhGEqOnZHltPB6kKu8xmnoiGSk7NMYJBIEbWvFCuVnepoPV7ZcIjUN3pUpK
-  artifact: /.*\.exe/              # upload all exe installers to release assets
+  artifact: 
+  - /.*\.exe/ # upload all exe installers to release assets
+  - dist/*
   draft: true
   prerelease: false
   on:
