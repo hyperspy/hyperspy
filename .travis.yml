@@ -1,10 +1,5 @@
 language: python
 
-sudo: false
-
-python:
-  - 3.5
-
 matrix:
   include:
     - python: 3.5
@@ -38,7 +33,7 @@ install:
 
 script:
   - python setup.py build_ext --inplace
-  - if [[ $TRAVIS_OS_NAME == 'osx' ]]; then python setup.py build_wheel
+  - if [[ $TRAVIS_OS_NAME == 'osx' ]]; then python setup.py build_wheel; fi
   - python continuous_integration/nosetest.py --with-coverage hyperspy
 
 after_success:
