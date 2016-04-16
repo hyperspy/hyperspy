@@ -7,16 +7,17 @@ python:
 
 matrix:
   allow_failures:
-    - env: export FAIL_ON_EXTERNAL_DEPRECATION='True'
-  include:
-    - env: export FAIL_ON_EXTERNAL_DEPRECATION='False'
-    - env: export FAIL_ON_EXTERNAL_DEPRECATION='True'
-    - os: osx
-      language: generic
-      env: export FAIL_ON_EXTERNAL_DEPRECATION='False'
+    - python 3.5
+      env: export FAIL_ON_EXTERNAL_DEPRECATION='True'
     - os: osx
       language: generic
       env: export FAIL_ON_EXTERNAL_DEPRECATION='True'
+  include:
+    - python: 3.5
+      env: export FAIL_ON_EXTERNAL_DEPRECATION='False'
+    - os: osx
+      language: generic
+      env: export FAIL_ON_EXTERNAL_DEPRECATION='False'
 
 before_install:
   # Does not matter which miniconda we get, we still create a virtualenv
