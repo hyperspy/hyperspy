@@ -34,8 +34,9 @@ install:
 
 script:
   - python setup.py build_ext --inplace
-  - if [[ $TRAVIS_OS_NAME == 'osx' ]]; then python setup.py bdist_wheel; fi
-  - python continuous_integration/nosetest.py --with-coverage hyperspy
+  - python continuous_integration/nosetest.py --verbose --with-coverage hyperspy
 
 after_success:
-    coveralls
+    - coveralls
+    - python setup.py sdist
+    - if [[ $TRAVIS_OS_NAME == 'osx' ]]; then python setup.py bdist_wheel; fi
