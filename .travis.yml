@@ -12,7 +12,6 @@ matrix:
       env: export FAIL_ON_EXTERNAL_DEPRECATION='False'
   allow_failures:
     - env: export FAIL_ON_EXTERNAL_DEPRECATION='True'
-    - os: osx
 
 before_install:
   # Does not matter which miniconda we get, we still create a virtualenv
