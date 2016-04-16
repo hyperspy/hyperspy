@@ -240,22 +240,22 @@ def test_rgba16():
     nt.assert_true((s.data == data).all())
 
 
-#class TestLoadingOOMReadOnly:
+class TestLoadingOOMReadOnly:
 
-    #def setUp(self):
-        #s = Signal(np.empty((5, 5, 5)))
-        #s.save('tmp.hdf5', overwrite=True)
-        #self.shape = (10000, 10000, 100)
-        #del s
-        #f = h5py.File('tmp.hdf5', model='r+')
-        #s = f['Experiments/__unnamed__']
-        #del s['data']
-        #s.create_dataset(
-            #'data',
-            #shape=self.shape,
-            #dtype='float64',
-            #chunks=True)
-        #f.close()
+    def setUp(self):
+        s = Signal(np.empty((5, 5, 5)))
+        s.save('tmp.hdf5', overwrite=True)
+        self.shape = (10000, 10000, 100)
+        del s
+        f = h5py.File('tmp.hdf5', model='r+')
+        s = f['Experiments/__unnamed__']
+        del s['data']
+        s.create_dataset(
+            'data',
+            shape=self.shape,
+            dtype='float64',
+            chunks=True)
+        f.close()
 
     #@nt.raises(MemoryError, ValueError)
     #def test_in_memory_loading(self):
