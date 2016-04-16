@@ -13,8 +13,8 @@ matrix:
       language: generic
       env: export FAIL_ON_EXTERNAL_DEPRECATION='False'
   allow_failures:
-    - python: 3.5
-      env: export FAIL_ON_EXTERNAL_DEPRECATION='True'
+    - env: export FAIL_ON_EXTERNAL_DEPRECATION='True'
+    - os: osx
 
 before_install:
   # Does not matter which miniconda we get, we still create a virtualenv
@@ -36,6 +36,7 @@ install:
 
 script:
   - python setup.py build_ext --inplace
+  - if [[ $TRAVIS_OS_NAME == 'osx' ]]; then python setup.py build_wheel
   - python continuous_integration/nosetest.py --with-coverage hyperspy
 
 after_success:
