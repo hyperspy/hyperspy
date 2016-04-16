@@ -6,17 +6,15 @@ python:
   - 3.5
 
 matrix:
-  allow_failures:
-    - python: 3.5
-      env: export FAIL_ON_EXTERNAL_DEPRECATION='True'
-
   include:
     - python: 3.5
       env: export FAIL_ON_EXTERNAL_DEPRECATION='False'
     - os: osx
       language: generic
-      python: 3.5
       env: export FAIL_ON_EXTERNAL_DEPRECATION='False'
+  allow_failures:
+    - python: 3.5
+      env: export FAIL_ON_EXTERNAL_DEPRECATION='True'
 
 before_install:
   # Does not matter which miniconda we get, we still create a virtualenv
@@ -30,7 +28,7 @@ before_install:
 
 install:
   - DEPS="nose numpy scipy matplotlib ipython h5py sympy scikit-learn dill natsort mock setuptools cython"
-  - conda create -n testenv --yes python=$TRAVIS_PYTHON_VERSION $DEPS
+  - conda create -n testenv --yes $DEPS
   - source activate testenv
   - conda install pip
   - pip install coverage coveralls traits traitsui request
