@@ -72,7 +72,7 @@ test_script:
   - ps: Add-AppveyorMessage "Testing completed."
 
 after_test:
-  - python setup.py build_ext bdist_wheels
+  - python setup.py bdist_wheel
 
 artifacts:
   - path: dist\*
