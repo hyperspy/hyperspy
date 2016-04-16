@@ -9,6 +9,8 @@ matrix:
   include:
     - python: 3.5
       env: export FAIL_ON_EXTERNAL_DEPRECATION='False'
+    - python: 3.5
+      env: export FAIL_ON_EXTERNAL_DEPRECATION='True'
     - os: osx
       language: generic
       env: export FAIL_ON_EXTERNAL_DEPRECATION='False'
