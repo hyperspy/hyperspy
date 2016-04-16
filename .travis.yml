@@ -7,7 +7,7 @@ python:
 
 matrix:
   allow_failures:
-    - python 3.5
+    - python: 3.5
       env: export FAIL_ON_EXTERNAL_DEPRECATION='True'
     - os: osx
       language: generic
