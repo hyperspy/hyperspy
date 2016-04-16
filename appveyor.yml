@@ -75,7 +75,7 @@ after_test:
   - python setup.py bdist_wheel
 
 artifacts:
-  - path: dist\*
+  - path: dist\*.whl
 
 # Auto-deployment of bundle installer for tags:
 before_deploy:
