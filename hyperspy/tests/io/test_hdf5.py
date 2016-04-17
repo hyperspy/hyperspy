@@ -260,10 +260,10 @@ class TestLoadingOOMReadOnly:
 
     @nt.raises(MemoryError, ValueError)
     def test_in_memory_loading(self):
-        if sys.platform == "darwin":
-            raise MemoryError  # a thilfy hack to not freeze the test on osx
-        else:
-            s = load('tmp.hdf5')
+        #if sys.platform == "darwin":
+        #    raise MemoryError  # a thilfy hack to not freeze the test on osx
+        #else:
+        s = load('tmp.hdf5')
 
     def test_oom_loading(self):
         s = load('tmp.hdf5', load_to_memory=False)
