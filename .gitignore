@@ -2,7 +2,7 @@ syntax: glob
 .spyderworkspace
 .coverage
 /MANIFEST
-.hook_ignore
+.hook_ignore*
 *.so
 *.pyc
 *.pyd

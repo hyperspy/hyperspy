@@ -28,7 +28,7 @@ before_install:
   - conda update --yes conda
 
 install:
-  - DEPS="nose numpy scipy matplotlib ipython h5py sympy scikit-learn dill natsort mock setuptools cython"
+  - DEPS="nose numpy scipy matplotlib ipython h5py sympy scikit-learn dill natsort mock setuptools cython psutil"
   - conda create -n testenv --yes $DEPS
   - source activate testenv
   - conda install pip

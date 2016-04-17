@@ -3,6 +3,8 @@ from os import remove
 import datetime
 import h5py
 import gc
+import psutil
+import sys
 
 import nose.tools as nt
 import numpy as np
@@ -257,9 +259,14 @@ class TestLoadingOOMReadOnly:
             chunks=True)
         f.close()
 
-    #@nt.raises(MemoryError, ValueError)
-    #def test_in_memory_loading(self):
-    #    s = load('tmp.hdf5')
+    @nt.raises(MemoryError, ValueError)
+    def test_in_memory_loading(self):
+        if sys.platform == "darwin":
+            print('hdf5 size: 80 000 000 000 Bytes')
+            print(psutil.virtual_memory())
+            raise MemoryError
+        else:
+            s = load('tmp.hdf5')
 
     def test_oom_loading(self):
         s = load('tmp.hdf5', load_to_memory=False)
