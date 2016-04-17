@@ -32,15 +32,15 @@ install:
   - conda create -n testenv --yes $DEPS
   - source activate testenv
   - conda install pip
-  #- pip install coverage coveralls traits traitsui request
-  #- python setup.py install
-  - python setup.py
+  - pip install coverage coveralls traits traitsui request
+  - python setup.py install
+  #- python setup.py
 
-#script:
-#  - python setup.py build_ext --inplace
-#  - python continuous_integration/nosetest.py --verbose --with-coverage hyperspy
+script:
+  - python setup.py build_ext --inplace
+  - python continuous_integration/nosetest.py --verbose --with-coverage hyperspy
 
-#after_success:
-#    - coveralls
-#    - python setup.py sdist
-#    - if [[ $TRAVIS_OS_NAME == 'osx' ]]; then python setup.py bdist_wheel; fi
+after_success:
+    - coveralls
+    - python setup.py sdist
+    - if [[ $TRAVIS_OS_NAME == 'osx' ]]; then python setup.py bdist_wheel; fi
