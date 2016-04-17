@@ -37,7 +37,7 @@ install:
 
 script:
   - python setup.py build_ext --inplace
-  - python continuous_integration/nosetest.py --verbose --with-coverage hyperspy
+  - python continuous_integration/nosetest.py --with-coverage hyperspy
 
 after_success:
     - coveralls
