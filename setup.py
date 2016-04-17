@@ -49,6 +49,7 @@ import hyperspy.Release as Release
 import psutil
 print('hdf5 size: 80 000 000 000 Bytes')
 print(psutil.virtual_memory())
+print(psutil.swap_memory())
 
 install_req = ['scipy',
                'ipython>=2.0',
