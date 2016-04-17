@@ -46,6 +46,9 @@ import hyperspy.Release as Release
 # installations carelessly.
 #if os.path.exists('build'):
 #    distutils.dir_util.remove_tree('build')
+import psutil
+print('hdf5 size: 80 000 000 000 Bytes')
+print(psutil.virtual_memory())
 
 install_req = ['scipy',
                'ipython>=2.0',

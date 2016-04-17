@@ -3,7 +3,6 @@ from os import remove
 import datetime
 import h5py
 import gc
-import psutil
 import sys
 
 import nose.tools as nt
@@ -262,9 +261,7 @@ class TestLoadingOOMReadOnly:
     @nt.raises(MemoryError, ValueError)
     def test_in_memory_loading(self):
         if sys.platform == "darwin":
-            print('hdf5 size: 80 000 000 000 Bytes')
-            print(psutil.virtual_memory())
-            raise MemoryError
+            raise MemoryError  # a thilfy hack to not freeze the test on osx
         else:
             s = load('tmp.hdf5')
 
