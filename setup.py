@@ -42,14 +42,6 @@ import re
 setup_path = os.path.dirname(__file__)
 
 import hyperspy.Release as Release
-# clean the build directory so we aren't mixing Windows and Linux
-# installations carelessly.
-#if os.path.exists('build'):
-#    distutils.dir_util.remove_tree('build')
-import psutil
-print('hdf5 size: 80 000 000 000 Bytes')
-print(psutil.virtual_memory())
-print(psutil.swap_memory())
 
 install_req = ['scipy',
                'ipython>=2.0',
@@ -126,6 +118,7 @@ if len(raw_extensions) > count_c_extensions(raw_extensions):
     extensions = cythonize_extensions(raw_extensions)
 else:
     extensions = no_cythonize(raw_extensions)
+
 
 # HOOKS ######
 

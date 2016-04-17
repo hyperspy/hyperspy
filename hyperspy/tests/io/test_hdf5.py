@@ -3,7 +3,6 @@ from os import remove
 import datetime
 import h5py
 import gc
-import sys
 
 import nose.tools as nt
 import numpy as np
@@ -246,7 +245,7 @@ class TestLoadingOOMReadOnly:
     def setUp(self):
         s = Signal(np.empty((5, 5, 5)))
         s.save('tmp.hdf5', overwrite=True)
-        self.shape = (10000, 1100, 100)
+        self.shape = (10000, 10000, 100)
         del s
         f = h5py.File('tmp.hdf5', model='r+')
         s = f['Experiments/__unnamed__']
@@ -258,12 +257,12 @@ class TestLoadingOOMReadOnly:
             chunks=True)
         f.close()
 
-    @nt.raises(MemoryError, ValueError)
-    def test_in_memory_loading(self):
-        #if sys.platform == "darwin":
-        #    raise MemoryError  # a thilfy hack to not freeze the test on osx
-        #else:
-        s = load('tmp.hdf5')
+    # Bellow is commented out as it brakes test on OS'es with dynamic swapping.
+    # Also this causes travis osx to hang, as it tries to put that
+    # 80GB array to fit to swap and times out:
+    #@nt.raises(MemoryError, ValueError)
+    #def test_in_memory_loading(self):
+        #s = load('tmp.hdf5')
 
     def test_oom_loading(self):
         s = load('tmp.hdf5', load_to_memory=False)
