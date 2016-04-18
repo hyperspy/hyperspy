@@ -21,11 +21,11 @@ class TestRGBA8:
 
     def test_torgb(self):
         self.s.change_dtype("rgba8")
-        assert_true(np.all(self.s.data == self.im.data))
+        np.testing.assert_array_equal(self.s.data, self.im.data)
 
     def test_touint(self):
         self.im.change_dtype("uint8")
-        assert_true(np.all(self.s.data == self.im.data))
+        np.testing.assert_array_equal(self.s.data, self.im.data)
 
     @raises(AttributeError)
     def test_wrong_bs(self):
@@ -52,11 +52,11 @@ class TestRGBA16:
 
     def test_torgb(self):
         self.s.change_dtype("rgba16")
-        assert_true(np.all(self.s.data == self.im.data))
+        np.testing.assert_array_equal(self.s.data, self.im.data)
 
     def test_touint(self):
         self.im.change_dtype("uint16")
-        assert_true(np.all(self.s.data == self.im.data))
+        np.testing.assert_array_equal(self.s.data, self.im.data)
 
     @raises(AttributeError)
     def test_wrong_bs(self):

@@ -1,5 +1,6 @@
 import numpy as np
-import nose.tools
+import nose.tools as nt
+import mock
 
 import hyperspy.api as hs
 from hyperspy.misc.utils import slugify
@@ -18,7 +19,7 @@ class TestModel:
         g2 = hs.model.components.Gaussian()
         g2.name = "test"
         m.extend((g1, g2))
-        nose.tools.assert_is(m["test"], g2)
+        nt.assert_is(m["test"], g2)
 
     def test_access_component_by_index(self):
         m = self.model
@@ -26,7 +27,7 @@ class TestModel:
         g2 = hs.model.components.Gaussian()
         g2.name = "test"
         m.extend((g1, g2))
-        nose.tools.assert_is(m[1], g2)
+        nt.assert_is(m[1], g2)
 
     def test_component_name_when_append(self):
         m = self.model
@@ -35,11 +36,11 @@ class TestModel:
             hs.model.components.Gaussian(),
             hs.model.components.Gaussian()]
         m.extend(gs)
-        nose.tools.assert_is(m['Gaussian'], gs[0])
-        nose.tools.assert_is(m['Gaussian_0'], gs[1])
-        nose.tools.assert_is(m['Gaussian_1'], gs[2])
+        nt.assert_is(m['Gaussian'], gs[0])
+        nt.assert_is(m['Gaussian_0'], gs[1])
+        nt.assert_is(m['Gaussian_1'], gs[2])
 
-    @nose.tools.raises(ValueError)
+    @nt.raises(ValueError)
     def test_several_component_with_same_name(self):
         m = self.model
         gs = [
@@ -52,12 +53,12 @@ class TestModel:
         m[2]._name = "hs.model.components.Gaussian"
         m['Gaussian']
 
-    @nose.tools.raises(ValueError)
+    @nt.raises(ValueError)
     def test_no_component_with_that_name(self):
         m = self.model
         m['Voigt']
 
-    @nose.tools.raises(ValueError)
+    @nt.raises(ValueError)
     def test_component_already_in_model(self):
         m = self.model
         g1 = hs.model.components.Gaussian()
@@ -68,35 +69,35 @@ class TestModel:
         g1 = hs.model.components.Gaussian()
         m.append(g1)
         m.remove(g1)
-        nose.tools.assert_equal(len(m), 0)
+        nt.assert_equal(len(m), 0)
 
     def test_remove_component_by_index(self):
         m = self.model
         g1 = hs.model.components.Gaussian()
         m.append(g1)
         m.remove(0)
-        nose.tools.assert_equal(len(m), 0)
+        nt.assert_equal(len(m), 0)
 
     def test_remove_component_by_name(self):
         m = self.model
         g1 = hs.model.components.Gaussian()
         m.append(g1)
         m.remove(g1.name)
-        nose.tools.assert_equal(len(m), 0)
+        nt.assert_equal(len(m), 0)
 
     def test_delete_component_by_index(self):
         m = self.model
         g1 = hs.model.components.Gaussian()
         m.append(g1)
         del m[0]
-        nose.tools.assert_not_in(g1, m)
+        nt.assert_not_in(g1, m)
 
     def test_delete_component_by_name(self):
         m = self.model
         g1 = hs.model.components.Gaussian()
         m.append(g1)
         del m[g1.name]
-        nose.tools.assert_not_in(g1, m)
+        nt.assert_not_in(g1, m)
 
     def test_delete_slice(self):
         m = self.model
@@ -105,9 +106,9 @@ class TestModel:
         g3 = hs.model.components.Gaussian()
         m.extend([g1, g2, g3])
         del m[:2]
-        nose.tools.assert_not_in(g1, m)
-        nose.tools.assert_not_in(g2, m)
-        nose.tools.assert_in(g3, m)
+        nt.assert_not_in(g1, m)
+        nt.assert_not_in(g2, m)
+        nt.assert_in(g3, m)
 
     def test_get_component_by_name(self):
         m = self.model
@@ -115,7 +116,7 @@ class TestModel:
         g2 = hs.model.components.Gaussian()
         g2.name = "test"
         m.extend((g1, g2))
-        nose.tools.assert_is(m._get_component("test"), g2)
+        nt.assert_is(m._get_component("test"), g2)
 
     def test_get_component_by_index(self):
         m = self.model
@@ -123,7 +124,7 @@ class TestModel:
         g2 = hs.model.components.Gaussian()
         g2.name = "test"
         m.extend((g1, g2))
-        nose.tools.assert_is(m._get_component(1), g2)
+        nt.assert_is(m._get_component(1), g2)
 
     def test_get_component_by_component(self):
         m = self.model
@@ -131,9 +132,9 @@ class TestModel:
         g2 = hs.model.components.Gaussian()
         g2.name = "test"
         m.extend((g1, g2))
-        nose.tools.assert_is(m._get_component(g2), g2)
+        nt.assert_is(m._get_component(g2), g2)
 
-    @nose.tools.raises(ValueError)
+    @nt.raises(ValueError)
     def test_get_component_wrong(self):
         m = self.model
         g1 = hs.model.components.Gaussian()
@@ -146,16 +147,16 @@ class TestModel:
         m = self.model
         g1 = hs.model.components.Gaussian()
         m.append(g1)
-        nose.tools.assert_is(getattr(m.components, g1.name), g1)
+        nt.assert_is(getattr(m.components, g1.name), g1)
 
     def test_components_class_change_name(self):
         m = self.model
         g1 = hs.model.components.Gaussian()
         m.append(g1)
         g1.name = "test"
-        nose.tools.assert_is(getattr(m.components, g1.name), g1)
+        nt.assert_is(getattr(m.components, g1.name), g1)
 
-    @nose.tools.raises(AttributeError)
+    @nt.raises(AttributeError)
     def test_components_class_change_name_del_default(self):
         m = self.model
         g1 = hs.model.components.Gaussian()
@@ -168,11 +169,11 @@ class TestModel:
         g1 = hs.model.components.Gaussian()
         m.append(g1)
         g1.name = "1, Test This!"
-        nose.tools.assert_is(
+        nt.assert_is(
             getattr(m.components,
                     slugify(g1.name, valid_variable_name=True)), g1)
 
-    @nose.tools.raises(AttributeError)
+    @nt.raises(AttributeError)
     def test_components_class_change_name_del_default(self):
         m = self.model
         g1 = hs.model.components.Gaussian()
@@ -258,7 +259,7 @@ class TestModelFitBinned:
         np.testing.assert_almost_equal(self.m[0].centre.value, 0.5)
         np.testing.assert_almost_equal(self.m[0].sigma.value, 2.08398236966)
 
-    @nose.tools.raises(ValueError)
+    @nt.raises(ValueError)
     def test_wrong_method(self):
         self.m.fit(method="dummy")
 
@@ -426,9 +427,9 @@ class TestModelSignalVariance:
     def test_std1_red_chisq(self):
         self.m.multifit(fitter="leastsq", method="ls", show_progressbar=None)
         np.testing.assert_almost_equal(self.m.red_chisq.data[0],
-                                        0.79693355673230915)
+                                       0.79693355673230915)
         np.testing.assert_almost_equal(self.m.red_chisq.data[1],
-                                        0.91453032901427167)
+                                       0.91453032901427167)
 
 
 class TestMultifit:
@@ -477,15 +478,15 @@ class TestStoreCurrentValues:
         self.o.offset.value = 2
         self.o.offset.std = 3
         self.m.store_current_values()
-        nose.tools.assert_equal(self.o.offset.map["values"][0], 2)
-        nose.tools.assert_equal(self.o.offset.map["is_set"][0], True)
+        nt.assert_equal(self.o.offset.map["values"][0], 2)
+        nt.assert_equal(self.o.offset.map["is_set"][0], True)
 
     def test_not_active(self):
         self.o.active = False
         self.o.offset.value = 2
         self.o.offset.std = 3
         self.m.store_current_values()
-        nose.tools.assert_not_equal(self.o.offset.map["values"][0], 2)
+        nt.assert_not_equal(self.o.offset.map["values"][0], 2)
 
 
 class TestSetCurrentValuesTo:
@@ -502,14 +503,14 @@ class TestSetCurrentValuesTo:
         for c in self.comps:
             c.offset.value = 2
         self.m.assign_current_values_to_all()
-        nose.tools.assert_true((self.comps[0].offset.map["values"] == 2).all())
-        nose.tools.assert_true((self.comps[1].offset.map["values"] == 2).all())
+        nt.assert_true((self.comps[0].offset.map["values"] == 2).all())
+        nt.assert_true((self.comps[1].offset.map["values"] == 2).all())
 
     def test_set_1(self):
         self.comps[1].offset.value = 2
         self.m.assign_current_values_to_all([self.comps[1]])
-        nose.tools.assert_true((self.comps[0].offset.map["values"] != 2).all())
-        nose.tools.assert_true((self.comps[1].offset.map["values"] == 2).all())
+        nt.assert_true((self.comps[0].offset.map["values"] != 2).all())
+        nt.assert_true((self.comps[1].offset.map["values"] == 2).all())
 
 
 class TestAsSignal:
@@ -527,44 +528,44 @@ class TestAsSignal:
 
     def test_all_components_simple(self):
         s = self.m.as_signal(show_progressbar=None)
-        nose.tools.assert_true(np.all(s.data == 4.))
+        nt.assert_true(np.all(s.data == 4.))
 
     def test_one_component_simple(self):
         s = self.m.as_signal(component_list=[0], show_progressbar=None)
-        nose.tools.assert_true(np.all(s.data == 2.))
-        nose.tools.assert_true(self.m[1].active)
+        nt.assert_true(np.all(s.data == 2.))
+        nt.assert_true(self.m[1].active)
 
     def test_all_components_multidim(self):
         self.m[0].active_is_multidimensional = True
 
         s = self.m.as_signal(show_progressbar=None)
-        nose.tools.assert_true(np.all(s.data == 4.))
+        nt.assert_true(np.all(s.data == 4.))
 
         self.m[0]._active_array[0] = False
         s = self.m.as_signal(show_progressbar=None)
-        nose.tools.assert_true(
-            np.all(s.data == np.array([np.ones(5) * 2, np.ones(5) * 4])))
-        nose.tools.assert_true(self.m[0].active_is_multidimensional)
+        np.testing.assert_array_equal(
+            s.data, np.array([np.ones(5) * 2, np.ones(5) * 4]))
+        nt.assert_true(self.m[0].active_is_multidimensional)
 
     def test_one_component_multidim(self):
         self.m[0].active_is_multidimensional = True
 
         s = self.m.as_signal(component_list=[0], show_progressbar=None)
-        nose.tools.assert_true(np.all(s.data == 2.))
-        nose.tools.assert_true(self.m[1].active)
-        nose.tools.assert_false(self.m[1].active_is_multidimensional)
+        nt.assert_true(np.all(s.data == 2.))
+        nt.assert_true(self.m[1].active)
+        nt.assert_false(self.m[1].active_is_multidimensional)
 
         s = self.m.as_signal(component_list=[1], show_progressbar=None)
-        nose.tools.assert_true(np.all(s.data == 2.))
-        nose.tools.assert_true(self.m[0].active_is_multidimensional)
+        np.testing.assert_equal(s.data, 2.)
+        nt.assert_true(self.m[0].active_is_multidimensional)
 
         self.m[0]._active_array[0] = False
         s = self.m.as_signal(component_list=[1], show_progressbar=None)
-        nose.tools.assert_true(np.all(s.data == 2.))
+        nt.assert_true(np.all(s.data == 2.))
 
         s = self.m.as_signal(component_list=[0], show_progressbar=None)
-        nose.tools.assert_true(
-            np.all(s.data == np.array([np.zeros(5), np.ones(5) * 2])))
+        np.testing.assert_array_equal(s.data,
+                                      np.array([np.zeros(5), np.ones(5) * 2]))
 
 
 class TestCreateModel:
@@ -574,5 +575,5 @@ class TestCreateModel:
 
     def test_create_model(self):
         from hyperspy.model import Model
-        nose.tools.assert_is_instance(
+        nt.assert_is_instance(
             self.s.create_model(), Model)

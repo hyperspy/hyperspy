@@ -1,7 +1,6 @@
 import numpy as np
 
-import nose.tools
-from nose.tools import assert_true, raises
+from nose.tools import raises
 from hyperspy import signals
 
 
@@ -102,43 +101,43 @@ class TestReverseDecompositionComponent:
 
     def test_reversal_factors_one_component_reversed(self):
         self.s.reverse_decomposition_component(0)
-        assert_true((self.s.learning_results.factors[:, 0] ==
-                     self.factors[:, 0] * -1).all())
+        np.testing.assert_array_equal(self.s.learning_results.factors[:, 0],
+                                      self.factors[:, 0] * -1)
 
     def test_reversal_loadings_one_component_reversed(self):
         self.s.reverse_decomposition_component(0)
-        assert_true((self.s.learning_results.loadings[:, 0] ==
-                     self.loadings[:, 0] * -1).all())
+        np.testing.assert_array_equal(self.s.learning_results.loadings[:, 0],
+                                      self.loadings[:, 0] * -1)
 
     def test_reversal_factors_one_component_not_reversed(self):
         self.s.reverse_decomposition_component(0)
-        assert_true((self.s.learning_results.factors[:, 1:] ==
-                     self.factors[:, 1:]).all())
+        np.testing.assert_array_equal(self.s.learning_results.factors[:, 1:],
+                                      self.factors[:, 1:])
 
     def test_reversal_loadings_one_component_not_reversed(self):
         self.s.reverse_decomposition_component(0)
-        assert_true((self.s.learning_results.loadings[:, 1:] ==
-                     self.loadings[:, 1:]).all())
+        np.testing.assert_array_equal(self.s.learning_results.loadings[:, 1:],
+                                      self.loadings[:, 1:])
 
     def test_reversal_factors_multiple_components_reversed(self):
         self.s.reverse_decomposition_component((0, 2))
-        assert_true((self.s.learning_results.factors[:, (0, 2)] ==
-                     self.factors[:, (0, 2)] * -1).all())
+        np.testing.assert_array_equal(self.s.learning_results.factors[:, (0, 2)],
+                                      self.factors[:, (0, 2)] * -1)
 
     def test_reversal_loadings_multiple_components_reversed(self):
         self.s.reverse_decomposition_component((0, 2))
-        assert_true((self.s.learning_results.loadings[:, (0, 2)] ==
-                     self.loadings[:, (0, 2)] * -1).all())
+        np.testing.assert_array_equal(self.s.learning_results.loadings[:, (0, 2)],
+                                      self.loadings[:, (0, 2)] * -1)
 
     def test_reversal_factors_multiple_components_not_reversed(self):
         self.s.reverse_decomposition_component((0, 2))
-        assert_true((self.s.learning_results.factors[:, 1] ==
-                     self.factors[:, 1]).all())
+        np.testing.assert_array_equal(self.s.learning_results.factors[:, 1],
+                                      self.factors[:, 1])
 
     def test_reversal_loadings_multiple_components_not_reversed(self):
         self.s.reverse_decomposition_component((0, 2))
-        assert_true((self.s.learning_results.loadings[:, 1] ==
-                     self.loadings[:, 1]).all())
+        np.testing.assert_array_equal(self.s.learning_results.loadings[:, 1],
+                                      self.loadings[:, 1])
 
 
 class TestNormalizeComponents():
@@ -157,38 +156,34 @@ class TestNormalizeComponents():
         s = self.s
         s.normalize_bss_components(target="factors",
                                    function=np.sum)
-        nose.tools.assert_true(
-            (s.learning_results.bss_factors == self.factors / 2.).all())
-        nose.tools.assert_true(
-            (s.learning_results.bss_loadings == self.loadings * 2.).all())
+        np.testing.assert_array_equal(s.learning_results.bss_factors,
+                                      self.factors / 2.)
+        np.testing.assert_array_equal(s.learning_results.bss_loadings,
+                                      self.loadings * 2.)
 
     def test_normalize_bss_loadings(self):
         s = self.s
         s.normalize_bss_components(target="loadings",
                                    function=np.sum)
-        nose.tools.assert_true(
-            (s.learning_results.bss_factors == self.factors * 2.).all())
-        nose.tools.assert_true(
-            (s.learning_results.bss_loadings == self.loadings / 2.).all())
+        np.testing.assert_array_equal(s.learning_results.bss_factors,
+                                      self.factors * 2.)
+        np.testing.assert_array_equal(s.learning_results.bss_loadings,
+                                      self.loadings / 2.)
 
     def test_normalize_decomposition_factors(self):
         s = self.s
         s.normalize_decomposition_components(target="factors",
                                              function=np.sum)
-        nose.tools.assert_true(
-            (s.learning_results.factors ==
-             self.factors / 2.).all())
-        nose.tools.assert_true(
-            (s.learning_results.loadings ==
-             self.loadings * 2.).all())
+        np.testing.assert_array_equal(s.learning_results.factors,
+                                      self.factors / 2.)
+        np.testing.assert_array_equal(s.learning_results.loadings,
+                                      self.loadings * 2.)
 
     def test_normalize_decomposition_loadings(self):
         s = self.s
         s.normalize_decomposition_components(target="loadings",
                                              function=np.sum)
-        nose.tools.assert_true(
-            (s.learning_results.factors ==
-             self.factors * 2.).all())
-        nose.tools.assert_true(
-            (s.learning_results.loadings ==
-             self.loadings / 2.).all())
+        np.testing.assert_array_equal(s.learning_results.factors,
+                                      self.factors * 2.)
+        np.testing.assert_array_equal(s.learning_results.loadings,
+                                      self.loadings / 2.)
