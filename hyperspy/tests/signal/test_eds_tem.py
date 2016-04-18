@@ -67,7 +67,7 @@ class Test_metadata:
         s.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time = 4.2
         s_resum = s.sum(0)
         r = s.sum(0, out=sSum)
-        nt.assert_equal(r, None)
+        nt.assert_is_none(r)
         nt.assert_equal(
             s_resum.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time,
             sSum.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time)
@@ -164,8 +164,8 @@ class Test_quantification:
         kfactors = [1, 2.0009344042484134]
         intensities = s.get_lines_intensity()
         res = s.quantification(intensities, kfactors)
-        nt.assert_true(np.allclose(res[0].data, np.array(
-                       [22.70779, 22.70779]), atol=1e-3))
+        np.testing.assert_allclose(res[0].data, np.array(
+            [22.70779, 22.70779]), atol=1e-3)
 
     def test_quant_zeros(self):
         intens = np.array([[0.5, 0.5, 0.5],
@@ -177,13 +177,13 @@ class Test_quantification:
                             category=RuntimeWarning):
             quant = utils_eds.quantification_cliff_lorimer(
                 intens, [1, 1, 3]).T
-        nt.assert_true(np.allclose(
+        np.testing.assert_allclose(
             quant,
             np.array([[0.2, 0.2, 0.6],
                       [0., 0.25, 0.75],
                       [0.25, 0., 0.75],
                       [0.5, 0.5, 0.],
-                      [1., 0., 0.]])))
+                      [1., 0., 0.]]))
 
 
 class Test_vacum_mask:
@@ -196,8 +196,8 @@ class Test_vacum_mask:
 
     def test_vacuum_mask(self):
         s = self.signal
-        nt.assert_equal(s.vacuum_mask().data[0], True)
-        nt.assert_equal(s.vacuum_mask().data[-1], False)
+        nt.assert_true(s.vacuum_mask().data[0])
+        nt.assert_false(s.vacuum_mask().data[-1])
 
 
 class Test_simple_model:
@@ -209,9 +209,11 @@ class Test_simple_model:
 
     def test_intensity(self):
         s = self.signal
-        nt.assert_true(np.allclose(
-            [i.data for i in s.get_lines_intensity(
-                integration_window_factor=5.0)], [0.5, 0.5], atol=1e-1))
+        np.testing.assert_allclose(
+            [i.data[0] for i in s.get_lines_intensity(
+                integration_window_factor=5.0)],
+            [0.5, 0.5],
+            atol=1e-1)
 
 
 class Test_get_lines_intentisity:
@@ -220,8 +222,9 @@ class Test_get_lines_intentisity:
         from hyperspy.misc.example_signals_loading import \
             load_1D_EDS_TEM_spectrum as EDS_TEM_Spectrum
         s = EDS_TEM_Spectrum()
-        np.allclose(np.array([res.data for res in s.get_lines_intensity()]),
-                    np.array([3710, 15872]))
+        np.testing.assert_allclose(
+            np.array([res.data[0] for res in s.get_lines_intensity()]),
+            np.array([3710, 15872]))
 
 
 class Test_eds_markers:
