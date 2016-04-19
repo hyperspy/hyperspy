@@ -24,7 +24,6 @@ import matplotlib.pyplot as plt
 
 from hyperspy.defaults_parser import preferences
 from hyperspy.external.progressbar import progressbar
-from hyperspy.misc.image_tools import (shift_image, estimate_image_shift)
 from hyperspy.misc.math_tools import symmetrize, antisymmetrize
 from scipy.fftpack import fftn, ifftn
 

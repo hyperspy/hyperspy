@@ -27,7 +27,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 
-from hyperspy.misc.image_tools import (contrast_stretching,
+from hyperspy._signals.signal2D import (contrast_stretching,
                                        MPL_DIVERGING_COLORMAPS,
                                        centre_colormap_values)
 from hyperspy.defaults_parser import preferences
