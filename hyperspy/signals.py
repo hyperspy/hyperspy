@@ -38,6 +38,8 @@ The Signal class and its specilized subclasses:
 
 from hyperspy._signals.spectrum import Spectrum
 from hyperspy._signals.image import Image
+from hyperspy._signals.signal1D import Signal1D
+from hyperspy._signals.signal2D import Signal2D
 from hyperspy._signals.eels import EELSSpectrum
 from hyperspy._signals.eds_sem import EDSSEMSpectrum
 from hyperspy._signals.eds_tem import EDSTEMSpectrum

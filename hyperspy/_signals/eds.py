@@ -23,18 +23,18 @@ import warnings
 from matplotlib import pyplot as plt
 
 from hyperspy import utils
-from hyperspy._signals.spectrum import Spectrum
+from hyperspy._signals.signal1D import Signal1D
 from hyperspy.misc.elements import elements as elements_db
 from hyperspy.misc.eds import utils as utils_eds
 from hyperspy.misc.utils import isiterable
 from hyperspy.utils import markers
 
 
-class EDSSpectrum(Spectrum):
+class EDSSpectrum(Signal1D):
     _signal_type = "EDS"
 
     def __init__(self, *args, **kwards):
-        Spectrum.__init__(self, *args, **kwards)
+        Signal1D.__init__(self, *args, **kwards)
         if self.metadata.Signal.signal_type == 'EDS':
             print('The microscope type is not set. Use '
                   'set_signal_type(\'EDS_TEM\')  '

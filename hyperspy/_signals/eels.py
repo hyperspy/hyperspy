@@ -23,7 +23,7 @@ import numpy as np
 import traits.api as t
 from scipy import constants
 
-from hyperspy._signals.spectrum import Spectrum
+from hyperspy._signals.signal1D import Signal1D
 from hyperspy.misc.elements import elements as elements_db
 import hyperspy.axes
 from hyperspy.decorators import only_interactive
@@ -36,11 +36,11 @@ from hyperspy.misc.utils import isiterable, closest_power_of_two, underline
 from hyperspy.misc.utils import without_nans
 
 
-class EELSSpectrum(Spectrum):
+class EELSSpectrum(Signal1D):
     _signal_type = "EELS"
 
     def __init__(self, *args, **kwards):
-        Spectrum.__init__(self, *args, **kwards)
+        Signal1D.__init__(self, *args, **kwards)
         # Attributes defaults
         self.subshells = set()
         self.elements = set()
