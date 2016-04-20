@@ -653,9 +653,9 @@ def _add_spc_metadata(metadata, spc_header):
         element_list = sorted([atomic_num_dict[i] for
                                i in spc_header['at'][:num_elem]])
         metadata['Sample'] = {'elements': element_list}
-        print "Elemental information found in the spectral metadata " \
+        print("Elemental information found in the spectral metadata " \
               "was added to the signal.\n" \
-              "Elements found were: {}\n".format(element_list)
+              "Elements found were: {}\n".format(element_list))
 
     return metadata
 
@@ -805,8 +805,8 @@ def spd_reader(filename,
             0] + '.spc'
     read_spc = os.path.isfile(spc_fname)
     if not read_spc:
-        print 'Could not find .spc file named {}.\n' \
-              'No spectral metadata will be loaded.\n'.format(spc_fname)
+        print('Could not find .spc file named {}.\n' \
+              'No spectral metadata will be loaded.\n'.format(spc_fname))
 
     # Get name of .ipr file from bitmap image (if not explicitly given):
     if not ipr_fname:
@@ -816,8 +816,8 @@ def spd_reader(filename,
                     'fName']))[0] + '.ipr'
     read_ipr = os.path.isfile(ipr_fname)
     if not read_ipr:
-        print 'Could not find .ipr file named {}.\n' \
-              'No spatial calibration will be loaded.\n'.format(ipr_fname)
+        print('Could not find .ipr file named {}.\n' \
+              'No spatial calibration will be loaded.\n'.format(ipr_fname))
 
     # Read the .ipr header (if possible)
     if read_ipr:
@@ -854,8 +854,8 @@ def spd_reader(filename,
     scale = 1000 if nav_units == 'nm' else 1
     if nav_units is not 'nm':
         if nav_units not in [None, 'um']:
-            print "Did not understand nav_units input \"{}\". Defaulting to " \
-                  "microns.\n".format(nav_units)
+            print("Did not understand nav_units input \"{}\". Defaulting to " \
+                  "microns.\n".format(nav_units))
         nav_units = '$\mu m$'
 
     # Create navigation axes dictionaries:
