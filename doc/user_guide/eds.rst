@@ -511,7 +511,7 @@ The background can be subtracted from the X-ray intensities with the :py:meth:`~
 Quantification
 --------------
 
-Hyperspy now includes three methods for EDS quantification; Cliff-Lorimer, zeta-factors and ionization cross sections.
+Hyperspy now includes three methods for EDS quantification; Cliff-Lorimer, the zeta-factor method and ionization cross sections.
 
 Quantification must be applied to the background subtracted intensities, which can be found using :py:meth:`~._signals.eds.EDSSpectrum.get_lines_intensity`. The quantification of these intensities can then be determined using the :py:meth:`~._signals.eds_tem.EDSTEMSpectrum.quantification` method. These instensities are a stack of images for each element which can be extracted using :py:meth:`~._signals.eds.EDSSpectrum.get_lines_intensity`. The quantification method, needs be specified as either 'CL', 'zeta', or 'cross_section'. If no method is specified the function will raise an exception.
 A list of factors or cross sections should be supplied in the same order of the listed intensities (please note Hyperspy intensities made using :py:meth:`~._signals.eds.EDSSpectrum.get_lines_intensity` will be in alphabetical order. The required k-factors can be usually found in the EDS manufacturer software. Where as, zeta-factors and cross sections will need to be determined experimentally using standards.
@@ -559,7 +559,7 @@ or with :py:func:`~.misc.material.atomic_to_weight`. The reverse method is :py:f
     >>> # With atomic_percent from before
     >>> weight_percent = hs.material.atomic_to_weight(atomic_percent)
 
-The zeta-factor method needs both the beam_current (in nA) and the dwell time (referred to as real_time in seconds) in order to provide an accurate quantification. Both of the these parameters can be set to in the metadata of the spectrum image using:
+The zeta-factor method needs both the beam_current (in nA) and the acquisition time (referred to as real_time in seconds) in order to provide an accurate quantification. Both of the these parameters can be assigned to the metadata of the spectrum using :py:meth:`~._signals.eds_tem.EDSTEMSpectrum.quantification`:
 
 ..code-block:: python
 
@@ -569,7 +569,7 @@ The zeta-factor method needs both the beam_current (in nA) and the dwell time (r
 If these are not set the code will produce an error stating which parameter has been forgotten.
 The zeta-factor method will produce two sets of results. Index [0] is the composition maps for each element in atomic percent and index [1] is the mass-thickness map.
 
-The cross section method needs the beam_current, real_time and probe area in order to provide accurate quantification. beam_current and real_time can be set using the metadata as above. The beam_area (in nm^2) can be defined in two different ways. Either, the probe diameter is narrower than the pixel width, which case the probe is being under-sampled and therefore an estimation of the probe area needs to be used. This can be added to the metadata by:
+The cross section method needs the beam_current, real_time and probe area in order to provide accurate quantification. The beam_current and real_time can be set using :py:meth:`~._signals.eds_tem.EDSTEMSpectrum.set_microscope_parameters` as shown above. The beam_area (in nm^2) can be defined in two different ways. Either, the probe diameter is narrower than the pixel width, which case the probe is being under-sampled and therefore an estimation of the probe area needs to be used. This can be added to the metadata by:
 
 ..code-block: python
 

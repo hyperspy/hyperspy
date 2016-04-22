@@ -459,23 +459,23 @@ def quantification_zeta_factor(intensities,
                                 zfactors,
                                 dose):
     """
-    Quantification using zeta factors.
+    Quantification using the zeta-factor method
 
     Parameters
     ----------
     intensities: numpy.array
-        the intensities for each X-ray lines. The first axis should be the
+        The intensities for each X-ray line. The first axis should be the
         elements axis.
     zfactors: list of float
-        The list of kfactor in same order as  intensities eg. zfactors =
-        [1, 1.47, 1.72] for ['Al_Ka','Cr_Ka', 'Ni_Ka']
+        The list of zeta-factors in the same order as intensities
+        e.g. zfactors = [628.10, 539.89] for ['As_Ka', 'Ga_Ka'].
     dose: float
-        the dose given by i*t*N, i the current, t the acquisition time, and N
-        the number of electron by unit electric charge.
+        The total electron dose given by i*t*N, i the current, t the acquisition time
+        and N the number of electrons per unit electric charge (1/e).
 
     Return
     ------
-    numpy.array containing the weight fraction with the same
+    A numpy.array containing the weight fraction with the same
     shape as intensities and mass thickness in kg/m^2.
     """
 

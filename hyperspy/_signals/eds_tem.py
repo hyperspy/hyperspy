@@ -90,7 +90,7 @@ class EDSTEMSpectrum(EDSSpectrum):
         beam_energy: float
             The energy of the electron beam in keV
         live_time : float
-            In second
+            In seconds
         tilt_stage : float
             In degree
         azimuth_angle : float
@@ -104,7 +104,7 @@ class EDSTEMSpectrum(EDSSpectrum):
         beam_area: float
             In nm^2
         real_time: float
-            In second
+            In seconds
 
         Examples
         --------
@@ -213,7 +213,7 @@ class EDSTEMSpectrum(EDSSpectrum):
     def _are_microscope_parameters_missing(self):
         """Check if the EDS parameters necessary for quantification
         are defined in metadata. Raise in interactive mode
-         an UI item to fill or cahnge the values"""
+         an UI item to fill or change the values"""
         must_exist = (
             'Acquisition_instrument.TEM.beam_energy',
             'Acquisition_instrument.TEM.Detector.EDS.live_time',)
@@ -303,7 +303,7 @@ class EDSTEMSpectrum(EDSSpectrum):
                        plot_result=False,
                        **kwargs):
         """
-        Quantification using Cliff-Lorimer, the zeta factor method, or
+        Quantification using Cliff-Lorimer, the zeta-factor method, or
         ionization cross sections.
 
         Parameters
@@ -311,16 +311,16 @@ class EDSTEMSpectrum(EDSSpectrum):
         intensities: list of signal
             the intensitiy for each X-ray lines.
         method: 'CL' or 'zeta' or 'cross_section'
-            Set the quantification method: Cliff-Lorimer, zeta factor, or
-            ionization cross sections
+            Set the quantification method: Cliff-Lorimer, zeta-factor, or
+            ionization cross sections.
         factors: list of float
-            The list of kfactors, zfactors or cross sections in same order as
+            The list of kfactors, zeta-factors or cross sections in same order as
             intensities. Note that intensities provided by Hyperspy are sorted
             by the alphabetical order of the X-ray lines.
             eg. factors =[0.982, 1.32, 1.60] for ['Al_Ka', 'Cr_Ka', 'Ni_Ka'].
         composition_units: 'weight' or 'atomic'
-            Quantification returns weight percent. By choosing 'atomic', the
-            return composition is in atomic percent.
+            The quantification returns the composition in atomic percent by default,
+            but can also return weight percent if specified.
         navigation_mask : None or float or signal
             The navigation locations marked as True are not used in the
             quantification. If int is given the vacuum_mask method is used to
@@ -384,7 +384,7 @@ class EDSTEMSpectrum(EDSSpectrum):
             number_of_atoms.data = results[1]
             number_of_atoms = number_of_atoms.split()
         else:
-            raise Exception ('Please specify method for quantification, as CL, zeta or cross_section')
+            raise Exception ('Please specify method for quantification, as \'CL\', \'zeta\' or \'cross_section\'')
         composition = composition.split()
         if composition_units == 'atomic':
             if method != 'cross_section':
@@ -563,62 +563,72 @@ class EDSTEMSpectrum(EDSSpectrum):
     def _get_dose(self, method, beam_current='auto', real_time='auto',
                             beam_area='auto'):
         """
-        Calculates the total electron dose for the zeta factor or cross section
+        Calculates the total electron dose for the zeta-factor or cross section
         methods of quantification.
 
-        Inputgiven by i*t*N, i the current, t the
+        Input given by i*t*N, i the current, t the
         acquisition time, and N the number of electron by unit electric charge.
 
         Parameters
         ----------
-        method : Defined as either 'zfactor' or 'cross_section'
-        If 'zfactor', the dose is given by i*t*N,
-        i is the current
-        t is the dwell time
-        N is the number of electrons by unit charge or 1/e.
-        If 'cross_section', the dose per unit is area is returned by i*t*N/A
-        A is the beam area or pixel area in nm^2
-        beam_current: Defined in nA with the symbol i above.
-        real_time: Defined in s with the symbol t above.
-        area: Defined in nm^2 with the symbol A above, is the illumination area
-        of the electron beam. If none is given it is extracted from the scale
-        axes_manager. Therefore we assume the probe is oversampling such that
-        the illumination area can be approximated to the pixel area of the
-        pectrum image.
+        method : 'zeta' or 'cross_section'
+            If 'zeta', the dose is given by i*t*N
+            If 'cross section', the dose is given by i*t*N/A
+            where i is the beam current, t is the acquistion time,
+            N is the number of electrons per unit charge (1/e) and
+            A is the illuminated beam area or pixel area.
+        beam_current: float
+            Probe current in nA
+        real_time: float
+            Acquisiton time in s
+        beam_area: float
+            The illumination area of the electron beam in nm^2.
+            If not set the value is extracted from the scale axes_manager. 
+            Therefore we assume the probe is oversampling such that
+            the illumination area can be approximated to the pixel area of the spectrum image.
 
         Returns
         --------
-        Dose in electrons (zfactor) or electrons per nm^2 (cross_section).
+        Dose in electrons (zeta factor) given by i*t*N or electrons per nm^2 (cross_section)
+
+        See also
+        --------
+        set_microscope_parameters
         """
 
         parameters = self.metadata.Acquisition_instrument.TEM
-        if beam_current == 'auto':
-            if 'beam_current' not in self.metadata.Acquisition_instrument.TEM:
-                raise Exception ('It is not possible to carry out EDX \
-quantification_cross_section without a beam_current please set one using \
-self.metadata.Acquisition_instrument.TEM.beam_current and run quantification \
-again.')
+
+        if beam_current is 'auto':
+            if 'beam_current' not in parameters:
+                raise Exception('Electron dose could not be calculated as beam_current is not set. '
+                                'The beam current can be set by calling set_microscope_parameters()')
             else:
                 beam_current = parameters.beam_current
+
         if real_time == 'auto':
             real_time = parameters.Detector.EDS.real_time
-            if 'real_time' not in self.metadata.Acquisition_instrument.TEM.Detector.EDS:
-                raise Exception ('Please note that your real time is set to\
-the default value of 0.5s. The function will still run. However, if this is \
-incorrect you should consider changing it using \
-self.metadata.Acquisition_instrument.TEM.Detector.EDS.real_time .')
+            if 'real_time' not in parameters.Detector.EDS:
+                raise Exception('Electron dose could not be calculated as real_time is not set. '
+                                'The beam current can be set by calling set_microscope_parameters()')
+            elif real_time == 0.5:
+                warnings.warn('Please note that your real time is set to '
+                     'the default value of 0.5 s. If this is not correct, you should change it using '
+                     'set_microscope_parameters() and run quantification again.')
+
         if method == 'cross_section':
             if beam_area == 'auto':
-                if beam_area in self.metadata.Acquisition_instrument.TEM:
-                    area = self.metadata.Acquisition_instrument.TEM.beam_area
+                if beam_area in parameters:
+                    area = parameters.TEM.beam_area
                 else:
                     pixel1 = self.axes_manager[0].scale
                     pixel2 = self.axes_manager[1].scale
                     if self.axes_manager[0].scale == 1 or self.axes_manager[1].scale == 1:
-                        warnings.warn('Please note your beam_area is set to \
-the defaul value of 1nm^2. The function will still run. However if 1nm^2 is not\
- correct, please read the user documentations for how to set this properly.')
+                        warnings.warn('Please note your beam_area is set to'
+                        'the default value of 1 nm^2. The function will still run. However if 1 nm^2 is not'
+                        'correct, please read the user documentations for how to set this properly.')
                     area = pixel1 * pixel2
             return (real_time * beam_current * 1e-9) /(constants.e * area)
-        else:
+        elif method =='zeta':
             return real_time * beam_current * 1e-9 / constants.e
+        else:
+            raise Exception('Method need to be \'zeta\' or \'cross_section\'.')
