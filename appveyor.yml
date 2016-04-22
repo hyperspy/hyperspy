@@ -124,10 +124,12 @@ deploy:
   provider: GitHub
   auth_token:
     #   to266:
-    secure: ptV5Dkz3pSVdjD0qRDpxJgjVlddFtleZ+B+c2X1Fg67P8OX3bHWVktRmlj6hfLhM
+    #secure: ptV5Dkz3pSVdjD0qRDpxJgjVlddFtleZ+B+c2X1Fg67P8OX3bHWVktRmlj6hfLhM
     #   vidartf:
     #secure: KwAfARhGEqOnZHltPB6kKu8xmnoiGSk7NMYJBIEbWvFCuVnepoPV7ZcIjUN3pUpK
-  artifact: /.*\.exe/              # upload all exe installers to release assets
+    #   sem-geologist:
+    secure: a4a1f306b3f51b761ec2bce0298eed59badf50ba
+  artifact: /.*\.exe/ /.*\.whl/  # upload all exe installers and wheels to release assets
   draft: true
   prerelease: false
   on:
