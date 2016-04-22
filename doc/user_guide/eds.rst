@@ -290,7 +290,6 @@ overvoltage of 2 (< beam energy / 2)).
 
 .. code-block:: python
 
-
     >>> s.set_microscope_parameters(beam_energy=10)
     >>> s.set_lines([])
     >>> s.metadata.Sample
@@ -578,7 +577,7 @@ The cross section method needs the beam_current, real_time and probe area in ord
 
  Alternatively, if sub-pixel scanning is used (or the spectrum map was recorded at a high spatial sampling and then the data binned into much larger pixels before quantification) the illumination area then becomes the pixel area of the spectrum image. This is a much more accurate approach for quantitative EDX and should be used where possible.  The pixel width could either be added to the metadata by putting the pixel area in as the beam_area (above) or by calibrating the spectrum image (see `Setting axis properties <http://hyperspy.org/hyperspy-doc/dev/user_guide/getting_started.html#setting-axis-properties>`_ )
 
-Please note that the function does not assume square pixels so both the x and y pixel dimensions must be set. For analysing line scans the pixel area should simply be added to the metadata as above.
+Please note that the function does not assume square pixels so both the x and y pixel dimensions must be set. For quantification of line scans, rather than spectrum images, the pixel area should simply be added to the metadata as above.
 Either of the two methods will provide an illumination area for the cross_section quantification. If the pixel width is not set, the code will still run with the default value of 1nm with a warning message to remind the user that this is the case.
 The cross section method will produce two sets of results. Index [0] is the composition maps for each element in atomic percent and index [1] is the number of atoms per pixel for each element.
 
