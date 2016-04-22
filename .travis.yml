@@ -41,11 +41,10 @@ script:
 
 after_success:
     - coveralls
-    - python setup.py sdist
-    - if [[ $TRAVIS_OS_NAME == 'osx' ]]; then python setup.py bdist_wheel; fi
+    - if [[ $TRAVIS_OS_NAME == 'osx' ]]; then python setup.py bdist_wheel; else python setup.py sdist; fi
 
 before_deploy:
-  - if [[ $TRAVIS_OS_NAME == 'osx' ]]; export DISTRIB=$(ls ./dist/*.whl); else export DISTRIB=$(ls ./dist/*.tar.gz); fi
+  - if [[ $TRAVIS_OS_NAME == 'osx' ]]; then export DISTRIB=$(ls ./dist/*.whl); else export DISTRIB=$(ls ./dist/*.tar.gz); fi
 
 deploy:
     provider: releases
