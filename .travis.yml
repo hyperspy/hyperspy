@@ -45,13 +45,13 @@ after_success:
     - if [[ $TRAVIS_OS_NAME == 'osx' ]]; then python setup.py bdist_wheel; fi
 
 before_deploy:
-  - export WHEELS=$(ls ./dist/*.whl)
+  - if [[ $TRAVIS_OS_NAME == 'osx' ]]; export DISTRIB=$(ls ./dist/*.whl); else export DISTRIB=$(ls ./dist/*.tar.gz); fi
 
 deploy:
     provider: releases
     api_key: "GITHUB OAUTH TOKEN"
     file:
-        - "${WHEELS}"
+        - "${DISTRIB}"
     overwrite: true
     on:
         tags: true
