@@ -121,10 +121,12 @@ else:
 
 
 # HOOKS ######
+post_checout_hook_file = os.path.join(setup_path,
+                                      '.git/hooks/post-checkout')
 
 def find_post_checkout_cleanup_line():
     """find the line index in the git post-checkout hooks"""
-    with open('.git/hooks/post-checkout', 'r') as pchook:
+    with open(post_checout_hook_file, 'r') as pchook:
         hook_lines = pchook.readlines()
         for i in range(1, len(hook_lines), 1):
             if re.search(r'^rm hyperspy/*', hook_lines[i]) is not None and \
@@ -137,15 +139,15 @@ if os.path.exists('.git') and (not os.path.exists('.hook_ignore')):
     recythonize_str = ' '.join([sys.executable,
                                 os.path.join(setup_path, 'setup.py'),
                                 'clean --all build_ext --inplace \n'])
-    if (not os.path.exists('.git/hooks/post-checkout')):
-        with open('.git/hooks/post-checkout', 'w') as pchook:
+    if (not os.path.exists(post_checout_hook_file)):
+        with open(post_checout_hook_file, 'w') as pchook:
             pchook.write('#!/bin/sh\n')
             pchook.write('rm ' + ' '.join([i for i in cleanup_list]) + '\n')
             pchook.write(recythonize_str)
         hook_mode = 0o777  # make it executable
-        os.chmod('.git/hooks/post-checkout', hook_mode)
+        os.chmod(post_checout_hook_file, hook_mode)
     else:
-        with open('.git/hooks/post-checkout', 'r') as pchook:
+        with open(post_checout_hook_file, 'r') as pchook:
             hook_lines = pchook.readlines()
         if re.search(r'#!/bin/.*?sh', hook_lines[0]) is not None:
             line_n = find_post_checkout_cleanup_line()
@@ -154,13 +156,13 @@ if os.path.exists('.git') and (not os.path.exists('.hook_ignore')):
             else:
                 hook_lines.append('\nrm ' + ' '.join([i for i in cleanup_list]) + '\n')
                 hook_lines.append(recythonize_str)
-            with open('.git/hooks/post-checkout', 'w') as pchook:
+            with open(post_checout_hook_file, 'w') as pchook:
                 pchook.writelines(hook_lines)
 
 
 class Recythonize(Command):
     """cythonize all extensions"""
-    description = "(re-)cythonize all cython extensions"
+    description = "(re-)cythonize all changed cython extensions"
 
     user_options = []
 
