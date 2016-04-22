@@ -41,4 +41,13 @@ script:
 
 after_success:
     - coveralls
+    - python setup.py sdist
     - if [[ $TRAVIS_OS_NAME == 'osx' ]]; then python setup.py bdist_wheel; fi
+
+deploy:
+    provider: releases
+    api_key: "GITHUB OAUTH TOKEN"
+    file:"dist/*"
+    overwrite: true
+    on:
+        tags: true
