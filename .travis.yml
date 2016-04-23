@@ -50,5 +50,6 @@ deploy:
   api_key:
     secure: n1CcuRSDf9GxJBFYr5GXGAhYL+sY1If1IzgMVY0YeeS4zHvIgn4DWf32iE+k/7GN6EsS59scVagg5zbDsO+DxVvYFT4BkqvBKz7SoHo1TMX7oqCHlwi+RnnUUBqeBCuq8zC7x9IPtfoLPXoFeUiGeYoAWcB+iPKrUIoWkBdAGi0fEl7b8K8JAn9kVF5xoqe4V4Bwcxnd2fTD2eI7JeA+mcRabGO53ERfZiJZqx9Do7YBKSG31E6IVcUCoehc2VFvTKwA7yzEXvPWyrmrKlRdYWjyLHRk+wDflHWkvzXGcr/6hewgxI5KjJ6eERWKZ9PqxukGr5G4lixMUlfgtNSxbnqyvBN7L0lGwpMBpT9XIjwaikcHd0bUgP6W8hNFP9OFVcrmMdYil7ko5OIZTw3Dc27RH6mLr/653hgvCDPg+GO/wfx0mVGAvn+vl7u0i/kfH0sMjvBKWmy3CEyt3jbrrawXwZa1wPgcCEwt/7f3WgiMEOOiZMrVQbB1QtLOXFi6KXr0gCKS3mShr3cmr4r6p6Xi95zNLQ0IM/B+mC3+/a8g1fDFYOJjzxlbQjn9WEV5Bzj8iw/VLx1ndnE2BE1A7bvk+yWKb1WiGP8n60OudQpHU5yrtwWCbrjUCl1PoYvB1zrZClAAFTr7/oxQRRACZ80ipYhSOSGC0FWPWSJ/gVs=
   file: "${DISTRIB}"
+  skip_cleanup: true
   on:
     tags: true
