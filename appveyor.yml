@@ -128,7 +128,7 @@ deploy:
     #   vidartf:
     #secure: KwAfARhGEqOnZHltPB6kKu8xmnoiGSk7NMYJBIEbWvFCuVnepoPV7ZcIjUN3pUpK
     #   sem-geologist:
-    secure: rq3r4O/z4ZMSek/zya7kDENgaQycCMTA05eK4dCXsFM6zA4b4quF1jG9ziN1jGdP
+    secure: fx+ZN/ss16fvLaQUsNtFXJOkE1/Dxl/NXcbl+AG0yTGXVPzc+XjqWcWPGurLrkeD
   #artifact: /.*\.exe/ /.*\.whl/  # upload all exe installers and wheels to release assets
   artifact: /.*\.whl/
   draft: true
