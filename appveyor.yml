@@ -135,6 +135,4 @@ deploy:
   draft: false
   prerelease: false
   on:
-    branch: patch-2 
-    repo: sem-geologist/hyperspy
     appveyor_repo_tag: true        # deploy on tag push only
