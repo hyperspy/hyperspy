@@ -29,7 +29,6 @@ if v[0] != 3:
     sys.exit(1)
 
 from setuptools import setup, Extension, Command
-#import distutils.dir_util
 
 import warnings
 
