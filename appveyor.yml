@@ -76,6 +76,7 @@ after_test:
 
 artifacts:
   - path: dist\*.whl
+    name: win_wheels
 
 # Auto-deployment of bundle installer for tags:
 #before_deploy:
@@ -119,7 +120,7 @@ artifacts:
   #- "appveyor PushArtifact HyperSpy-%APPVEYOR_REPO_TAG_NAME%-Bundle-Windows-%PYTHON_ARCH%bit.exe"
 
 deploy:
-  #release: $(APPVEYOR_REPO_TAG_NAME)
+  release: v.0.0.5-testing #$(APPVEYOR_REPO_TAG_NAME)
   #description: 'Release: $(APPVEYOR_REPO_COMMIT_MESSAGE)'
   provider: GitHub
   auth_token:
@@ -130,7 +131,7 @@ deploy:
     #   sem-geologist:
     secure: fx+ZN/ss16fvLaQUsNtFXJOkE1/Dxl/NXcbl+AG0yTGXVPzc+XjqWcWPGurLrkeD
   #artifact: /.*\.exe/ /.*\.whl/  # upload all exe installers and wheels to release assets
-  artifact: /.*\.whl/
+  artifact: win_wheels
   draft: false
   prerelease: false
   on:
