@@ -120,8 +120,8 @@ artifacts:
   #- "appveyor PushArtifact HyperSpy-%APPVEYOR_REPO_TAG_NAME%-Bundle-Windows-%PYTHON_ARCH%bit.exe"
 
 deploy:
-  release: v.0.0.5-testing #$(APPVEYOR_REPO_TAG_NAME)
-  #description: 'Release: $(APPVEYOR_REPO_COMMIT_MESSAGE)'
+  release: $(APPVEYOR_REPO_TAG_NAME)
+  description: 'Release: $(APPVEYOR_REPO_COMMIT_MESSAGE)'
   provider: GitHub
   auth_token:
     #   to266:
@@ -135,4 +135,6 @@ deploy:
   draft: false
   prerelease: false
   on:
+    branch: patch-2 
+    repo: sem-geologist/hyperspy
     appveyor_repo_tag: true        # deploy on tag push only
