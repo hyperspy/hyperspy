@@ -119,8 +119,8 @@ artifacts:
   #- "appveyor PushArtifact HyperSpy-%APPVEYOR_REPO_TAG_NAME%-Bundle-Windows-%PYTHON_ARCH%bit.exe"
 
 deploy:
-  release: $(APPVEYOR_REPO_TAG_NAME)
-  description: 'Release: $(APPVEYOR_REPO_COMMIT_MESSAGE)'
+  #release: $(APPVEYOR_REPO_TAG_NAME)
+  #description: 'Release: $(APPVEYOR_REPO_COMMIT_MESSAGE)'
   provider: GitHub
   auth_token:
     #   to266:
@@ -131,7 +131,7 @@ deploy:
     secure: fx+ZN/ss16fvLaQUsNtFXJOkE1/Dxl/NXcbl+AG0yTGXVPzc+XjqWcWPGurLrkeD
   #artifact: /.*\.exe/ /.*\.whl/  # upload all exe installers and wheels to release assets
   artifact: /.*\.whl/
-  draft: true
+  draft: false
   prerelease: false
   on:
     appveyor_repo_tag: true        # deploy on tag push only
