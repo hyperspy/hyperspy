@@ -178,6 +178,10 @@ so for Ubuntu:
     $ cd hyperspy
     $ sudo pip install -e ./
 
+With development mode setup.py generates or updates git post-checkout hook, which will cleanup
+the cythonized c files, cythonize it again and run ```build_ext --inplace``` after the next checkout.
+
+
 If using Arch Linux, the latest checkout of the master development branch can be
 installed through the AUR by installing the `hyperspy-git package
 <https://aur.archlinux.org/packages/hyperspy-git/>`_
@@ -223,9 +227,6 @@ In Debian/Ubuntu you can install the libraries as follows:
     $ sudo apt-get install python-numpy python-matplotlib ipython
     ipython-notebook python-traits python-traitsui python-h5py
     python-scikits-learn python-nose python-statsmodels
-
-With development mode setup.py generates git post-checkout hook, which will cleanup
-the cythonized c files, cythonize it again and run ```build_ext --inplace```.
 
 In Arch Linux, the following command should install the required packages to
 get a fully functional installation:
