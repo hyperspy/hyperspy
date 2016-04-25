@@ -284,7 +284,7 @@ class EDSTEMSpectrum(EDSSpectrum):
         else:
             raise ValueError("The reference has no metadata." +
                              "Acquisition_instrument.TEM" +
-                             "\n nor metadata.Acquisition_instrument.SEM ")
+                             "\n or metadata.Acquisition_instrument.SEM ")
 
         mp = self.metadata
         mp.Acquisition_instrument.TEM = mp_ref.deepcopy()
