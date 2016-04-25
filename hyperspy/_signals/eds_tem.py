@@ -284,7 +284,7 @@ class EDSTEMSpectrum(EDSSpectrum):
         else:
             raise ValueError("The reference has no metadata." +
                              "Acquisition_instrument.TEM" +
-                             "\n nor metadata.Acquisition_instrument.SEM ")
+                             "\n or metadata.Acquisition_instrument.SEM ")
 
         mp = self.metadata
         mp.Acquisition_instrument.TEM = mp_ref.deepcopy()
@@ -583,13 +583,13 @@ class EDSTEMSpectrum(EDSSpectrum):
             Acquisiton time in s
         beam_area: float
             The illumination area of the electron beam in nm^2.
-            If not set the value is extracted from the scale axes_manager. 
+            If not set the value is extracted from the scale axes_manager.
             Therefore we assume the probe is oversampling such that
             the illumination area can be approximated to the pixel area of the spectrum image.
 
         Returns
         --------
-        Dose in electrons (zeta factor) given by i*t*N or electrons per nm^2 (cross_section)
+        Dose in electrons (zeta factor) or electrons per nm^2 (cross_section)
 
         See also
         --------

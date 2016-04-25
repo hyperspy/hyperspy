@@ -559,7 +559,7 @@ or with :py:func:`~.misc.material.atomic_to_weight`. The reverse method is :py:f
     >>> # With atomic_percent from before
     >>> weight_percent = hs.material.atomic_to_weight(atomic_percent)
 
-The zeta-factor method needs both the beam_current (in nA) and the acquisition time (referred to as real_time in seconds) in order to provide an accurate quantification. Both of the these parameters can be assigned to the metadata of the spectrum using :py:meth:`~._signals.eds_tem.EDSTEMSpectrum.quantification`:
+The zeta-factor method needs both the beam_current (in nA) and the acquisition or dwell time (referred to as real_time in seconds) in order to provide an accurate quantification. Both of the these parameters can be assigned to the metadata of the spectrum using:
 
 ..code-block:: python
 
@@ -569,7 +569,7 @@ The zeta-factor method needs both the beam_current (in nA) and the acquisition t
 If these are not set the code will produce an error stating which parameter has been forgotten.
 The zeta-factor method will produce two sets of results. Index [0] is the composition maps for each element in atomic percent and index [1] is the mass-thickness map.
 
-The cross section method needs the beam_current, real_time and probe area in order to provide accurate quantification. The beam_current and real_time can be set using :py:meth:`~._signals.eds_tem.EDSTEMSpectrum.set_microscope_parameters` as shown above. The beam_area (in nm^2) can be defined in two different ways. Either, the probe diameter is narrower than the pixel width, which case the probe is being under-sampled and therefore an estimation of the probe area needs to be used. This can be added to the metadata by:
+The cross section method needs the beam_current, dwell time (real_time) and probe area in order to provide accurate quantification. The beam_current and real_time can be set using :py:meth:`~._signals.eds_tem.EDSTEMSpectrum.set_microscope_parameters` as shown above. The beam_area (in nm^2) can be defined in two different ways. Either, the probe diameter is narrower than the pixel width, which case the probe is being under-sampled and therefore an estimation of the probe area needs to be used. This can be added to the metadata by:
 
 ..code-block: python
 
