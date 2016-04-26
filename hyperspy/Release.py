@@ -16,7 +16,6 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-
 name = 'hyperspy'
 
 # The commit following to a release must update the version number
@@ -26,7 +25,7 @@ name = 'hyperspy'
 # When running setup.py the "+dev" string will be replaced (if possible)
 # by the output of "git describe" if git is available or the git
 # hash if .git is present.
-version = "0.9+dev"
+version = "0.8.4"
 description = "Multidimensional data analysis toolbox"
 license = 'GPL v3'
 
@@ -74,10 +73,11 @@ keywords = ['EDX',
             'spectroscopy',
             'spectrum image']
 
-info = u"""
+info = """
     H y p e r S p y
     Version %s
 
     http://www.hyperspy.org
 
     """ % version.replace('_', ' ')
+

@@ -42,10 +42,12 @@ def test_read1():
     ref_date = datetime(2015, 4, 16, 13, 53)
     nt.assert_equal(s.metadata.General.time, ref_date)
 
+
 @nt.raises(AssertionError)
 def test_read2():
     hs.load(file2)
-    
+
+
 @nt.raises(AssertionError)
 def test_read3():
     hs.load(file3)

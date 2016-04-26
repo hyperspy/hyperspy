@@ -188,3 +188,13 @@ class NavigationSizeError(Exception):
         self.expected_navigation_size = expected_navigation_size
         self.msg = 'navigation_size =%i, %i expected' % (
             self.navigation_size, self.expected_navigation_size)
+
+
+class VisibleDeprecationWarning(UserWarning):
+
+    """Visible deprecation warning.
+    By default, python will not show deprecation warnings, so this class
+    provides a visible one.
+
+    """
+    pass

@@ -29,7 +29,10 @@ from hyperspy.misc.utils import slugify
 from hyperspy.misc.io.tools import (incremental_filename,
                                     append2pathname,)
 from hyperspy.exceptions import NavigationDimensionError
-from hyperspy.misc.export_dictionary import export_to_dictionary, load_from_dictionary
+from hyperspy.misc.export_dictionary import export_to_dictionary, \
+    load_from_dictionary
+from hyperspy.events import Events, Event
+from hyperspy.exceptions import VisibleDeprecationWarning
 
 import logging
 
@@ -40,7 +43,7 @@ class NoneFloat(t.CFloat):   # Lazy solution, but usable
     default_value = None
 
     def validate(self, object, name, value):
-        if value == "None" or value == u"None":
+        if value == "None" or value == b"None":
             value = None
         if value is None:
             super(NoneFloat, self).validate(object, name, 0)
@@ -117,7 +120,20 @@ class Parameter(t.HasTraits):
 
     def __init__(self):
         self._twins = set()
-        self.connected_functions = list()
+        self.events = Events()
+        self.events.value_changed = Event("""
+            Event that triggers when the `Parameter.value` changes.
+
+            The event triggers after the internal state of the `Parameter` has
+            been updated.
+
+            Arguments
+            ---------
+            obj : Parameter
+                The `Parameter` that the event belongs to
+            value : {float | array}
+                The new value of the parameter
+            """, arguments=["obj", 'value'])
         self.twin_function = lambda x: x
         self.twin_inverse_function = lambda x: x
         self.std = None
@@ -178,22 +194,26 @@ class Parameter(t.HasTraits):
         if self.component is not None:
             text += ' of %s' % self.component._get_short_description()
         text = '<' + text + '>'
-        return text.encode('utf8')
+        return text
 
     def __len__(self):
         return self._number_of_elements
 
     def connect(self, f):
-        if f not in self.connected_functions:
-            self.connected_functions.append(f)
-            if self.twin:
-                self.twin.connect(f)
+        warnings.warn(
+            "The method `Parameter.connect()` has been deprecated and will be "
+            "removed in HyperSpy 0.10. Please use "
+            "`Parameter.events.value_changed.connect()` instead.",
+            VisibleDeprecationWarning)
+        self.events.value_changed.connect(f, [])
 
     def disconnect(self, f):
-        if f in self.connected_functions:
-            self.connected_functions.remove(f)
-            if self.twin:
-                self.twin.disconnect(f)
+        warnings.warn(
+            "The method `Parameter.disconnect()` has been deprecated and will "
+            "be removed in HyperSpy 0.10. Please use "
+            "`Parameter.events.value_changed.disconnect()` instead.",
+            VisibleDeprecationWarning)
+        self.events.value_changed.disconnect(f)
 
     def _get_value(self):
         if self.twin is None:
@@ -201,18 +221,18 @@ class Parameter(t.HasTraits):
         else:
             return self.twin_function(self.twin.value)
 
-    def _set_value(self, arg):
+    def _set_value(self, value):
         try:
             # Use try/except instead of hasattr("__len__") because a numpy
             # memmap has a __len__ wrapper even for numbers that raises a
             # TypeError when calling. See issue #349.
-            if len(arg) != self._number_of_elements:
+            if len(value) != self._number_of_elements:
                 raise ValueError(
                     "The length of the parameter must be ",
                     self._number_of_elements)
             else:
-                if not isinstance(arg, tuple):
-                    arg = tuple(arg)
+                if not isinstance(value, tuple):
+                    value = tuple(value)
         except TypeError:
             if self._number_of_elements != 1:
                 raise ValueError(
@@ -222,37 +242,34 @@ class Parameter(t.HasTraits):
 
         if self.twin is not None:
             if self.twin_inverse_function is not None:
-                self.twin.value = self.twin_inverse_function(arg)
+                self.twin.value = self.twin_inverse_function(value)
             return
 
         if self.ext_bounded is False:
-            self.__value = arg
+            self.__value = value
         else:
             if self.ext_force_positive is True:
-                arg = np.abs(arg)
+                value = np.abs(value)
             if self._number_of_elements == 1:
-                if self.bmin is not None and arg <= self.bmin:
+                if self.bmin is not None and value <= self.bmin:
                     self.__value = self.bmin
-                elif self.bmax is not None and arg >= self.bmax:
+                elif self.bmax is not None and value >= self.bmax:
                     self.__value = self.bmax
                 else:
-                    self.__value = arg
+                    self.__value = value
             else:
                 bmin = (self.bmin if self.bmin is not None
                         else -np.inf)
                 bmax = (self.bmax if self.bmin is not None
                         else np.inf)
-                self.__value = np.clip(arg, bmin, bmax)
+                self.__value = np.clip(value, bmin, bmax)
 
         if (self._number_of_elements != 1 and
                 not isinstance(self.__value, tuple)):
             self.__value = tuple(self.__value)
         if old_value != self.__value:
-            for f in self.connected_functions:
-                try:
-                    f()
-                except:
-                    self.disconnect(f)
+            self.events.value_changed.trigger(value=self.__value,
+                                              obj=self)
         self.trait_property_changed('value', old_value, self.__value)
 
     # Fix the parameter when coupled
@@ -269,6 +286,16 @@ class Parameter(t.HasTraits):
             self.component._update_free_parameters()
         self.trait_property_changed('free', old_value, self.__free)
 
+    def _on_twin_update(self, value, twin=None):
+        if (twin is not None
+                and hasattr(twin, 'events')
+                and hasattr(twin.events, 'value_changed')):
+            with twin.events.value_changed.suppress_callback(
+                    self._on_twin_update):
+                self.events.value_changed.trigger(value=value, obj=self)
+        else:
+            self.events.value_changed.trigger(value=value, obj=self)
+
     def _set_twin(self, arg):
         if arg is None:
             if self.twin is not None:
@@ -277,16 +304,16 @@ class Parameter(t.HasTraits):
                 twin_value = self.value
                 if self in self.twin._twins:
                     self.twin._twins.remove(self)
-                    for f in self.connected_functions:
-                        self.twin.disconnect(f)
+                    self.twin.events.value_changed.disconnect(
+                        self._on_twin_update)
 
                 self.__twin = arg
                 self.value = twin_value
         else:
             if self not in arg._twins:
                 arg._twins.add(self)
-                for f in self.connected_functions:
-                    arg.connect(f)
+                arg.events.value_changed.connect(self._on_twin_update,
+                                                 ["value"])
             self.__twin = arg
 
         if self.component is not None:
@@ -577,7 +604,20 @@ class Component(t.HasTraits):
     name = t.Property(t.Str(''))
 
     def __init__(self, parameter_name_list):
-        self.connected_functions = list()
+        self.events = Events()
+        self.events.active_changed = Event("""
+            Event that triggers when the `Component.active` changes.
+
+            The event triggers after the internal state of the `Component` has
+            been updated.
+
+            Arguments
+            ---------
+            obj : Component
+                The `Component` that the event belongs to
+            active : bool
+                The new active state
+            """, arguments=["obj", 'active'])
         self.parameters = []
         self.init_parameters(parameter_name_list)
         self._update_free_parameters()
@@ -613,8 +653,8 @@ class Component(t.HasTraits):
             raise ValueError('Only boolean values are permitted')
 
         if value == self.active_is_multidimensional:
-            _logger.warn('`active_is_multidimensional` already %s for %s' %
-                         (str(value), self.name))
+            _logger.warning('`active_is_multidimensional` already %s for %s' %
+                            (str(value), self.name))
             return
 
         if value:  # Turn on
@@ -665,12 +705,20 @@ class Component(t.HasTraits):
         self.__axes_manager = value
 
     def connect(self, f):
-        if f not in self.connected_functions:
-            self.connected_functions.append(f)
+        warnings.warn(
+            "The method `Component.connect()` has been deprecated and will be "
+            "removed in HyperSpy 0.10. Please use "
+            "`Component.events.active_changed.connect()` instead.",
+            VisibleDeprecationWarning)
+        self.events.active_changed.connect(f, [])
 
     def disconnect(self, f):
-        if f in self.connected_functions:
-            self.connected_functions.remove(f)
+        warnings.warn(
+            "The method `Component.disconnect()` has been deprecated and will "
+            "be removed in HyperSpy 0.10. Please use "
+            "`Component.events.active_changed.disconnect()` instead.",
+            VisibleDeprecationWarning)
+        self.events.active_changed.disconnect(f)
 
     def _get_active(self):
         if self.active_is_multidimensional is True:
@@ -689,11 +737,7 @@ class Component(t.HasTraits):
         if self.active_is_multidimensional is True:
             self._store_active_value_in_array(arg)
 
-        for f in self.connected_functions:
-            try:
-                f()
-            except:
-                self.disconnect(f)
+        self.events.active_changed.trigger(active=self._active, obj=self)
         self.trait_property_changed('active', old_value, self._active)
 
     def init_parameters(self, parameter_name_list):
@@ -858,10 +902,10 @@ class Component(t.HasTraits):
                 is not None else 0
             if parameter.twin is None:
                 if dim <= 1:
-                    print '%s = %s ± %s %s' % (parameter.name,
-                                               parameter.value,
-                                               parameter.std,
-                                               parameter.units)
+                    return ('%s = %s ± %s %s' % (parameter.name,
+                                                 parameter.value,
+                                                 parameter.std,
+                                                 parameter.units))
 
     def __call__(self):
         """Returns the corresponding model for the current coordinates
@@ -965,6 +1009,11 @@ class Component(t.HasTraits):
 
         for _parameter in parameter_list:
             _parameter.free = False
+
+    def _estimate_parameters(self, signal):
+        if self._axes_manager != signal.axes_manager:
+            self._axes_manager = signal.axes_manager
+            self._create_arrays()
 
     def as_dictionary(self, fullcopy=True):
         """Returns component as a dictionary

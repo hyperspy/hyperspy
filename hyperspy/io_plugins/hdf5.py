@@ -19,13 +19,15 @@
 from distutils.version import StrictVersion
 import warnings
 import datetime
+import logging
 
 import h5py
 import numpy as np
 from traits.api import Undefined
-
 from hyperspy.misc.utils import ensure_unicode
 from hyperspy.axes import AxesManager
+
+_logger = logging.getLogger(__name__)
 
 
 # Plugin characteristics
@@ -83,6 +85,8 @@ default_version = StrictVersion(version)
 def get_hspy_format_version(f):
     if "file_format_version" in f.attrs:
         version = f.attrs["file_format_version"]
+        if isinstance(version, bytes):
+            version = version.decode()
         if isinstance(version, float):
             version = str(round(version, 2))
     elif "Experiments" in f:
@@ -127,8 +131,9 @@ def file_reader(filename, record_by, mode='r', driver='core',
                     del res['_signal']
                     models_with_signals.append((key, {model_name: res}))
                 else:
-                    standalone_models.append({model_name: hdfgroup2dict(m_gr[model_name],
-                                                                        load_to_memory=load_to_memory)})
+                    standalone_models.append(
+                        {model_name: hdfgroup2dict(
+                            m_gr[model_name], load_to_memory=load_to_memory)})
         except TypeError:
             raise IOError(not_valid_format)
 
@@ -177,8 +182,10 @@ def hdfgroup2signaldict(group, load_to_memory=True):
         metadata = "metadata"
         original_metadata = "original_metadata"
 
-    exp = {'metadata': hdfgroup2dict(group[metadata], load_to_memory=load_to_memory),
-           'original_metadata': hdfgroup2dict(group[original_metadata], load_to_memory=load_to_memory)
+    exp = {'metadata': hdfgroup2dict(
+               group[metadata], load_to_memory=load_to_memory),
+           'original_metadata': hdfgroup2dict(
+               group[original_metadata], load_to_memory=load_to_memory)
            }
 
     data = group['data']
@@ -186,11 +193,11 @@ def hdfgroup2signaldict(group, load_to_memory=True):
         data = np.asanyarray(data)
     exp['data'] = data
     axes = []
-    for i in xrange(len(exp['data'].shape)):
+    for i in range(len(exp['data'].shape)):
         try:
             axes.append(dict(group['axis-%i' % i].attrs))
             axis = axes[-1]
-            for key, item in axis.iteritems():
+            for key, item in axis.items():
                 axis[key] = ensure_unicode(item)
         except KeyError:
             break
@@ -198,7 +205,7 @@ def hdfgroup2signaldict(group, load_to_memory=True):
         try:
             axes = [i for k, i in sorted(iter(hdfgroup2dict(
                 group['_list_' + str(len(exp['data'].shape)) + '_axes'],
-                load_to_memory=load_to_memory).iteritems()))]
+                load_to_memory=load_to_memory).items()))]
         except KeyError:
             raise IOError(not_valid_format)
     exp['axes'] = axes
@@ -340,9 +347,9 @@ def dict2hdfgroup(dictionary, group, compression=None):
 
     def parse_structure(key, group, value, _type, compression):
         try:
-            # Here we check if there are any signals in the container, as casting a long list of signals to a
-            # numpy array takes a very long time. So we check if there are any,
-            # and save numpy the trouble
+            # Here we check if there are any signals in the container, as
+            # casting a long list of signals to a numpy array takes a very long
+            # time. So we check if there are any, and save numpy the trouble
             if np.any([isinstance(t, Signal) for t in value]):
                 tmp = np.array([[0]])
             else:
@@ -351,13 +358,13 @@ def dict2hdfgroup(dictionary, group, compression=None):
             tmp = np.array([[0]])
         if tmp.dtype is np.dtype('O') or tmp.ndim is not 1:
             dict2hdfgroup(dict(zip(
-                [unicode(i) for i in xrange(len(value))], value)),
+                [str(i) for i in range(len(value))], value)),
                 group.create_group(_type + str(len(value)) + '_' + key),
                 compression=compression)
         elif tmp.dtype.type is np.unicode_:
             group.create_dataset(_type + key,
                                  tmp.shape,
-                                 dtype=h5py.special_dtype(vlen=unicode),
+                                 dtype=h5py.special_dtype(vlen=str),
                                  compression=compression)
             group[_type + key][:] = tmp[:]
         else:
@@ -366,7 +373,7 @@ def dict2hdfgroup(dictionary, group, compression=None):
                 data=tmp,
                 compression=compression)
 
-    for key, value in dictionary.iteritems():
+    for key, value in dictionary.items():
         if isinstance(value, dict):
             dict2hdfgroup(value, group.create_group(key),
                           compression=compression)
@@ -388,20 +395,16 @@ def dict2hdfgroup(dictionary, group, compression=None):
                                  compression=compression)
         elif value is None:
             group.attrs[key] = '_None_'
-        elif isinstance(value, str):
+        elif isinstance(value, bytes):
             try:
                 # binary string if has any null characters (otherwise not
                 # supported by hdf5)
-                _ = value.index('\x00')
+                value.index(b'\x00')
                 group.attrs['_bs_' + key] = np.void(value)
             except ValueError:
-                try:
-                    # Store strings as unicode using the default encoding
-                    group.attrs[key] = unicode(value)
-                except UnicodeEncodeError:
-                    pass
-                except UnicodeDecodeError:
-                    group.attrs['_bs_' + key] = np.void(value)  # binary string
+                group.attrs[key] = value.decode()
+        elif isinstance(value, str):
+            group.attrs[key] = value
         elif isinstance(value, AxesManager):
             dict2hdfgroup(value.as_dictionary(),
                           group.create_group('_hspy_AxesManager_' + key),
@@ -425,15 +428,17 @@ def dict2hdfgroup(dictionary, group, compression=None):
             try:
                 group.attrs[key] = value
             except:
-                print("The hdf5 writer could not write the following "
-                      "information in the file")
-                print('%s : %s' % (key, value))
+                _logger.exception(
+                    "The hdf5 writer could not write the following "
+                    "information in the file: %s : %s", key, value)
 
 
 def hdfgroup2dict(group, dictionary=None, load_to_memory=True):
     if dictionary is None:
         dictionary = {}
-    for key, value in group.attrs.iteritems():
+    for key, value in group.attrs.items():
+        if isinstance(value, bytes):
+            value = value.decode()
         if isinstance(value, (np.string_, str)):
             if value == '_None_':
                 value = None
@@ -461,8 +466,8 @@ def hdfgroup2dict(group, dictionary=None, load_to_memory=True):
             if key.startswith('_sig_'):
                 from hyperspy.io import dict2signal
                 dictionary[key[len('_sig_'):]] = (
-                    dict2signal(hdfgroup2signaldict(group[key],
-                                                    load_to_memory=load_to_memory)))
+                    dict2signal(hdfgroup2signaldict(
+                        group[key], load_to_memory=load_to_memory)))
             elif isinstance(group[key], h5py.Dataset):
                 if key.startswith("_list_"):
                     ans = np.array(group[key])
@@ -481,18 +486,23 @@ def hdfgroup2dict(group, dictionary=None, load_to_memory=True):
                     kn = key
                 dictionary[kn] = ans
             elif key.startswith('_hspy_AxesManager_'):
-                dictionary[key[len('_hspy_AxesManager_'):]] = \
-                    AxesManager([i
-                                 for k, i in sorted(iter(
-                                     hdfgroup2dict(group[key], load_to_memory=load_to_memory).iteritems()))])
+                dictionary[key[len('_hspy_AxesManager_'):]] = AxesManager(
+                    [i for k, i in sorted(iter(
+                        hdfgroup2dict(
+                            group[key], load_to_memory=load_to_memory).items()
+                    ))])
             elif key.startswith('_list_'):
                 dictionary[key[7 + key[6:].find('_'):]] = \
                     [i for k, i in sorted(iter(
-                        hdfgroup2dict(group[key], load_to_memory=load_to_memory).iteritems()))]
+                        hdfgroup2dict(
+                            group[key], load_to_memory=load_to_memory).items()
+                    ))]
             elif key.startswith('_tuple_'):
                 dictionary[key[8 + key[7:].find('_'):]] = tuple(
                     [i for k, i in sorted(iter(
-                        hdfgroup2dict(group[key], load_to_memory=load_to_memory).iteritems()))])
+                        hdfgroup2dict(
+                            group[key], load_to_memory=load_to_memory).items()
+                    ))])
             else:
                 dictionary[key] = {}
                 hdfgroup2dict(

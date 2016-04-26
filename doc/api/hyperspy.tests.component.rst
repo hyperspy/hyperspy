@@ -20,6 +20,14 @@ hyperspy.tests.component.test_component_set_parameters module
     :undoc-members:
     :show-inheritance:
 
+hyperspy.tests.component.test_gaussianhf module
+-----------------------------------------------
+
+.. automodule:: hyperspy.tests.component.test_gaussianhf
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 
 Module contents
 ---------------

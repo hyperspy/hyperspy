@@ -25,10 +25,10 @@ from hyperspy.misc.spectrum_tools import find_peaks_ohaver
 import matplotlib.pyplot as plt
 
 
-def shift_image(im, shift, fill_value=np.nan):
+def shift_image(im, shift, interpolation_order=1, fill_value=np.nan):
     fractional, integral = np.modf(shift)
     if fractional.any():
-        order = 3
+        order = interpolation_order
     else:
         # Disable interpolation
         order = 0
