@@ -16,18 +16,21 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-from __future__ import division
+
 import math
+import logging
 
 import numpy as np
 from scipy.interpolate import splev
 
 from hyperspy.defaults_parser import preferences
 from hyperspy.component import Component
-from hyperspy import messages
 from hyperspy.misc.eels.hartree_slater_gos import HartreeSlaterGOS
 from hyperspy.misc.eels.hydrogenic_gos import HydrogenicGOS
 from hyperspy.misc.eels.effective_angle import effective_angle
+
+
+_logger = logging.getLogger(__name__)
 
 
 class EELSCLEdge(Component):
@@ -70,7 +73,7 @@ class EELSCLEdge(Component):
         Fix this parameter to fix the fine structure. It is a
         component.Parameter instance.
     effective_angle : Parameter
-        The effective collection angle. It is automatically
+        The effective collection semi-angle. It is automatically
         calculated by set_microscope_parameters. It is a
         component.Parameter instance. It is fixed by default.
     fine_structure_smoothing : float between 0 and 1
@@ -111,7 +114,7 @@ class EELSCLEdge(Component):
                 GOS = 'Hartree-Slater'
             except IOError:
                 GOS = 'hydrogenic'
-                messages.information(
+                _logger.info(
                     'Hartree-Slater GOS not available. '
                     'Using hydrogenic GOS')
         if self.GOS is None:
@@ -142,6 +145,11 @@ class EELSCLEdge(Component):
         self._whitelist['fine_structure_active'] = None
         self._whitelist['fine_structure_width'] = None
         self._whitelist['fine_structure_smoothing'] = None
+        self.effective_angle.events.value_changed.connect(
+            self._integrate_GOS, [])
+        self.onset_energy.events.value_changed.connect(self._integrate_GOS, [])
+        self.onset_energy.events.value_changed.connect(
+            self._calculate_knots, [])
 
     # Automatically fix the fine structure when the fine structure is
     # disable.
@@ -178,7 +186,7 @@ class EELSCLEdge(Component):
         self._calculate_effective_angle()
     E0 = property(_get_E0, _set_E0)
 
-    # Collection angles
+    # Collection semi-angle
     def _get_collection_angle(self):
         return self.__collection_angle
 
@@ -187,7 +195,7 @@ class EELSCLEdge(Component):
         self._calculate_effective_angle()
     collection_angle = property(_get_collection_angle,
                                 _set_collection_angle)
-    # Convergence angle
+    # Convergence semi-angle
 
     def _get_convergence_angle(self):
         return self.__convergence_angle
@@ -252,19 +260,22 @@ class EELSCLEdge(Component):
         E0 : float
             Electron beam energy in keV.
         alpha: float
-            Convergence angle in mrad.
+            Convergence semi-angle in mrad.
         beta: float
-            Collection angle in mrad.
+            Collection semi-angle in mrad.
         energy_scale : float
             The energy step in eV.
         """
         # Relativistic correction factors
-
-        self.convergence_angle = alpha
-        self.collection_angle = beta
-        self.energy_scale = energy_scale
-        self.E0 = E0
-        self._integrate_GOS()
+        old = self.effective_angle.value
+        with self.effective_angle.events.value_changed.suppress_callback(
+                self._integrate_GOS):
+            self.convergence_angle = alpha
+            self.collection_angle = beta
+            self.energy_scale = energy_scale
+            self.E0 = E0
+        if self.effective_angle.value != old:
+            self._integrate_GOS()
 
     def _integrate_GOS(self):
         # Integration over q using splines
@@ -278,12 +289,6 @@ class EELSCLEdge(Component):
         y2 = self.GOS.qint[-1]  # in m**2/bin */
         self.r = math.log(y2 / y1) / math.log(E1 / E2)
         self.A = y1 / E1 ** -self.r
-
-        # Connect them at this point where it is certain that all the
-        # parameters are well defined
-        self.effective_angle.connect(self._integrate_GOS)
-        self.onset_energy.connect(self._integrate_GOS)
-        self.onset_energy.connect(self._calculate_knots)
 
     def _calculate_knots(self):
         start = self.onset_energy.value
@@ -332,7 +337,7 @@ class EELSCLEdge(Component):
         if len(fs) == len(self.__knots):
             self.fine_structure_coeff.value = fs
         else:
-            messages.warning_exit(
+            raise ValueError(
                 "The provided fine structure file "
                 "doesn't match the size of the current fine structure")
 

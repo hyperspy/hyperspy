@@ -28,6 +28,22 @@ hyperspy.tests.model.test_components module
     :undoc-members:
     :show-inheritance:
 
+hyperspy.tests.model.test_components2D module
+---------------------------------------------
+
+.. automodule:: hyperspy.tests.model.test_components2D
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+hyperspy.tests.model.test_edsmodel module
+-----------------------------------------
+
+.. automodule:: hyperspy.tests.model.test_edsmodel
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 hyperspy.tests.model.test_eelsmodel module
 ------------------------------------------
 

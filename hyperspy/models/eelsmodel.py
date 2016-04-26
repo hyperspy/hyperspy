@@ -18,14 +18,16 @@
 
 import copy
 import warnings
+import logging
 
 from hyperspy.models.model1D import Model1D
 from hyperspy.components import EELSCLEdge
 from hyperspy.components import PowerLaw
 from hyperspy.defaults_parser import preferences
-import hyperspy.messages as messages
 from hyperspy import components
 from hyperspy._signals.eels import EELSSpectrum
+
+_logger = logging.getLogger(__name__)
 
 
 def _give_me_delta(master, slave):
@@ -76,7 +78,8 @@ class EELSModel(Model1D):
         self.convolved = False
         self.low_loss = ll
         self.GOS = GOS
-        self.edges = list()
+        self.edges = []
+        self._background_components = []
         if dictionary is not None:
             auto_background = False
             auto_add_edges = False
@@ -104,29 +107,42 @@ class EELSModel(Model1D):
                 "but an object of type %s was provided" %
                 str(type(value)))
 
-    def _touch(self):
-        """Run model setup tasks
+    def append(self, component):
+        super(EELSModel, self).append(component)
+        if isinstance(component, EELSCLEdge):
+            tem = self.spectrum.metadata.Acquisition_instrument.TEM
+            component.set_microscope_parameters(
+                E0=tem.beam_energy,
+                alpha=tem.convergence_angle,
+                beta=tem.Detector.EELS.collection_angle,
+                energy_scale=self.axis.scale)
+            component.energy_scale = self.axis.scale
+            component._set_fine_structure_coeff()
+        self._classify_components()
 
-        This function must be called everytime that we add or remove components
-        from the model.
-        It creates the bookmarks self.edges and self._background_components and
-        configures the edges by setting the energy_scale attribute and setting
-        the fine structure.
+    append.__doc__ = Model1D.append.__doc__
+
+    def remove(self, component):
+        super(EELSModel, self).remove(component)
+        self._classify_components()
+    remove.__doc__ = Model1D.remove.__doc__
+
+    def _classify_components(self):
+        """Classify components between background and ionization edge
+        components.
+
+        This method should be called everytime that components are added and
+        removed. An ionization edge becomes background when its onset falls to
+        the left of the first non-masked energy channel. The ionization edges
+        are stored in a list in the `edges` attribute. They are sorted by
+        increasing `onset_energy`. The background components are stored in
+        `_background_components`.
 
         """
-        self._BaseModel__touch()
         self.edges = []
         self._background_components = []
         for component in self:
             if isinstance(component, EELSCLEdge):
-                tem = self.spectrum.metadata.Acquisition_instrument.TEM
-                component.set_microscope_parameters(
-                    E0=tem.beam_energy,
-                    alpha=tem.convergence_angle,
-                    beta=tem.Detector.EELS.collection_angle,
-                    energy_scale=self.axis.scale)
-                component.energy_scale = self.axis.scale
-                component._set_fine_structure_coeff()
                 if component.onset_energy.value < \
                         self.axis.axis[self.channel_switches][0]:
                     component.isbackground = True
@@ -135,8 +151,6 @@ class EELSModel(Model1D):
                 else:
                     component.fine_structure_active = False
                     component.fine_structure_coeff.free = False
-                    component.backgroundtype = "edge"
-                    self._background_components.append(component)
             elif (isinstance(component, PowerLaw) or
                   component.isbackground is True):
                 self._background_components.append(component)
@@ -149,9 +163,10 @@ class EELSModel(Model1D):
         elif len(self._background_components) == 1:
             self._backgroundtype = \
                 self._background_components[0].__repr__()
-            if self._firstimetouch and self.edges:
+            bg = self._background_components[0]
+            if isinstance(bg, PowerLaw) and self.edges and not \
+               bg.A.map["is_set"].any():
                 self.two_area_background_estimation()
-                self._firstimetouch = False
 
     @property
     def _active_edges(self):
@@ -204,7 +219,8 @@ class EELSModel(Model1D):
 
     def resolve_fine_structure(
             self,
-            preedge_safe_window_width=preferences.EELS.preedge_safe_window_width,
+            preedge_safe_window_width=preferences.EELS.
+            preedge_safe_window_width,
             i1=0):
         """Adjust the fine structure of all edges to avoid overlapping
 
@@ -242,9 +258,10 @@ class EELSModel(Model1D):
                         min_distance_between_edges_for_fine_structure
                     if (distance_between_edges -
                             preedge_safe_window_width) <= min_d:
-                        print " Automatically desactivating the fine \
-                        structure of edge number", i2 + 1, "to avoid conflicts\
-                         with edge number", i1 + 1
+                        _logger.info((
+                            "Automatically deactivating the fine structure "
+                            "of edge number %d to avoid conflicts with edge "
+                            "number %d") % (i2 + 1, i1 + 1))
                         self._active_edges[i2].fine_structure_active = False
                         self._active_edges[
                             i2].fine_structure_coeff.free = False
@@ -252,12 +269,14 @@ class EELSModel(Model1D):
                     else:
                         new_fine_structure_width = (
                             distance_between_edges - preedge_safe_window_width)
-                        print (
+                        _logger.info((
                             "Automatically changing the fine structure "
-                            "width of edge", i1 + 1, "from",
-                            self._active_edges[i1].fine_structure_width,
-                            "eV to", new_fine_structure_width,
-                            "eV to avoid conflicts with edge number", i2 + 1)
+                            "width of edge %d from %s eV to %s eV to avoid "
+                            "conflicts with edge number %d") % (
+                                i1 + 1,
+                                self._active_edges[i1].fine_structure_width,
+                                new_fine_structure_width,
+                                i2 + 1))
                         self._active_edges[i1].fine_structure_width = \
                             new_fine_structure_width
                         self.resolve_fine_structure(i1=i2)
@@ -356,7 +375,7 @@ class EELSModel(Model1D):
         self.fit_background(start_energy, **kwargs)
 
         # Fit the edges
-        for i in xrange(0, len(self._active_edges)):
+        for i in range(0, len(self._active_edges)):
             self._fit_edge(i, start_energy, **kwargs)
 
     def _get_first_ionization_edge_energy(self, start_energy=None):
@@ -440,7 +459,7 @@ class EELSModel(Model1D):
                     if powerlaw is None:
                         powerlaw = component
                     else:
-                        messages.warning(
+                        _logger.warning(
                             'There are more than two power law '
                             'background components defined in this model, '
                             'please use the powerlaw keyword to specify one'
@@ -461,7 +480,7 @@ class EELSModel(Model1D):
 
         if not powerlaw.estimate_parameters(
                 self.spectrum, E1, E2, only_current=False):
-            messages.warning(
+            _logger.warning(
                 "The power law background parameters could not "
                 "be estimated.\n"
                 "Try choosing a different energy range for the estimation")
@@ -521,8 +540,8 @@ class EELSModel(Model1D):
             edge.onset_energy.free = True
             self.fit(**kwargs)
             edge.onset_energy.free = False
-            print "onset_energy = ", edge.onset_energy.value
-            self._touch()
+            _logger.info("onset_energy = %s", edge.onset_energy.value)
+            self._classify_components()
         elif edge.intensity.free is True:
             self.enable_fine_structure(to_activate_fs)
             self.remove_fine_structure_data(to_activate_fs)
@@ -551,18 +570,18 @@ class EELSModel(Model1D):
                 if element not in elements:
                     elements[element] = {}
                 elements[element][subshell] = edge.intensity.value
-        print
-        print "Absolute quantification:"
-        print "Elem.\tIntensity"
+        print()
+        print("Absolute quantification:")
+        print("Elem.\tIntensity")
         for element in elements:
             if len(elements[element]) == 1:
                 for subshell in elements[element]:
-                    print "%s\t%f" % (
-                        element, elements[element][subshell])
+                    print("%s\t%f" % (
+                        element, elements[element][subshell]))
             else:
                 for subshell in elements[element]:
-                    print "%s_%s\t%f" % (element, subshell,
-                                         elements[element][subshell])
+                    print("%s_%s\t%f" % (element, subshell,
+                                         elements[element][subshell]))
 
     def remove_fine_structure_data(self, edges_list=None):
         """Remove the fine structure data from the fitting routine as
@@ -927,8 +946,7 @@ class EELSModel(Model1D):
 
         See Also
         --------
-        resume_update
-        update_plot
+        resume_auto_fine_structure_width
 
         """
         if self._suspend_auto_fine_structure_width is False:
@@ -948,8 +966,7 @@ class EELSModel(Model1D):
 
         See Also
         --------
-        suspend_update
-        update_plot
+        suspend_auto_fine_structure_width
 
         """
         if self._suspend_auto_fine_structure_width is True:

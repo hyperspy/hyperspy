@@ -15,7 +15,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
-from __future__ import division
+
 
 import traits.api as t
 
@@ -59,9 +59,9 @@ class EDSSEMSpectrum(EDSSpectrum):
         >>> ref = hs.datasets.example_signals.EDS_SEM_Spectrum()
         >>> s = hs.signals.EDSSEMSpectrum(
         >>>     hs.datasets.example_signals.EDS_SEM_Spectrum().data)
-        >>> print s.axes_manager[0].scale
+        >>> print(s.axes_manager[0].scale)
         >>> s.get_calibration_from(ref)
-        >>> print s.axes_manager[0].scale
+        >>> print(s.axes_manager[0].scale)
         1.0
         0.01
 
@@ -220,7 +220,7 @@ class EDSSEMSpectrum(EDSSpectrum):
             'Acquisition_instrument.SEM.Detector.EDS.energy_resolution_MnKa':
             'tem_par.energy_resolution_MnKa', }
 
-        for key, value in mapping.iteritems():
+        for key, value in mapping.items():
             if self.metadata.has_item(key):
                 exec('%s = self.metadata.%s' % (value, key))
         tem_par.edit_traits()
@@ -237,7 +237,7 @@ class EDSSEMSpectrum(EDSSpectrum):
             'Acquisition_instrument.SEM.Detector.EDS.energy_resolution_MnKa':
             tem_par.energy_resolution_MnKa, }
 
-        for key, value in mapping.iteritems():
+        for key, value in mapping.items():
             if value != t.Undefined:
                 self.metadata.set_item(key, value)
         self._are_microscope_parameters_missing()
@@ -281,15 +281,15 @@ class EDSSEMSpectrum(EDSSpectrum):
         Parameters
         ----------
         auto_background : boolean, default True
-            If True, adds automatically a polynomial order 6 to the model, using
-            the edsmodel.add_polynomial_background method.
+            If True, adds automatically a polynomial order 6 to the model,
+            using the edsmodel.add_polynomial_background method.
         auto_add_lines : boolean, default True
-            If True, automatically add Gaussians for all X-rays generated in the
-            energy range by an element using the edsmodel.add_family_lines
+            If True, automatically add Gaussians for all X-rays generated in
+            the energy range by an element using the edsmodel.add_family_lines
             method.
         dictionary : {None, dict}, optional
-            A dictionary to be used to recreate a model. Usually generated using
-            :meth:`hyperspy.model.as_dictionary`
+            A dictionary to be used to recreate a model. Usually generated
+            using :meth:`hyperspy.model.as_dictionary`
 
         Returns
         -------
@@ -300,5 +300,6 @@ class EDSSEMSpectrum(EDSSpectrum):
         from hyperspy.models.edssemmodel import EDSSEMModel
         model = EDSSEMModel(self,
                             auto_background=auto_background,
-                            auto_add_lines=auto_add_lines)
+                            auto_add_lines=auto_add_lines,
+                            *args, **kwargs)
         return model

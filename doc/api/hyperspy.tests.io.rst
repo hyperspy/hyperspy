@@ -20,6 +20,14 @@ hyperspy.tests.io.test_blockfile module
     :undoc-members:
     :show-inheritance:
 
+hyperspy.tests.io.test_dens module
+----------------------------------
+
+.. automodule:: hyperspy.tests.io.test_dens
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 hyperspy.tests.io.test_dm3 module
 ---------------------------------
 
@@ -40,6 +48,14 @@ hyperspy.tests.io.test_dm_stackbuilder_plugin module
 ----------------------------------------------------
 
 .. automodule:: hyperspy.tests.io.test_dm_stackbuilder_plugin
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+hyperspy.tests.io.test_fei module
+---------------------------------
+
+.. automodule:: hyperspy.tests.io.test_fei
     :members:
     :undoc-members:
     :show-inheritance:

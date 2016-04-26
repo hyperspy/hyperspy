@@ -16,7 +16,7 @@ MANY_AXIS_PARAMETER = \
             axes (default)."""
 
 OUT_ARG = \
-      """out : {Signal, None}
+    """out : {Signal, None}
             If None, a new Signal is created with the result of the operation
             and returned (default). If a Signal is passed, it is used to
             receive the output of the operation, and nothing is returned."""

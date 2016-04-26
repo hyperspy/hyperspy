@@ -1,3 +1,5 @@
+import mock
+
 import numpy as np
 from numpy.testing import assert_array_equal
 import nose.tools as nt
@@ -39,9 +41,12 @@ class Test2D:
         _verify_test_sum_x_E(self, s)
 
     def test_axis_by_str(self):
+        m = mock.Mock()
         s1 = self.signal.deepcopy()
+        s1.events.data_changed.connect(m.data_changed)
         s2 = self.signal.deepcopy()
         s1.crop(0, 2, 4)
+        nt.assert_true(m.data_changed.called)
         s2.crop("x", 2, 4)
         nt.assert_true((s1.data == s2.data).all())
 
@@ -117,6 +122,10 @@ class Test2D:
         s = self.signal
         s.axes_manager.set_signal_dimension(2)
         nt.assert_true(s.unfold())
+
+    def test_print_summary(self):
+        # Just test if it doesn't raise an exception
+        self.signal._print_summary()
 
 
 def _test_default_navigation_signal_operations_over_many_axes(self, op):
@@ -393,7 +402,7 @@ class Test4D:
 
 def test_signal_iterator():
     s = Signal(np.arange(3).reshape((3, 1)))
-    nt.assert_equal(s.next().data[0], 0)
+    nt.assert_equal(next(s).data[0], 0)
     # If the following fails it can be because the iteration index was not
     # restarted
     for i, signal in enumerate(s):
@@ -421,6 +430,8 @@ class TestDerivative:
 class TestOutArg:
 
     def setup(self):
+        # Some test require consistent random data for reference to be correct
+        np.random.seed(0)
         s = signals.Spectrum(np.random.rand(5, 4, 3, 6))
         for axis, name in zip(
                 s.axes_manager._get_axes_in_natural_order(),
@@ -429,10 +440,13 @@ class TestOutArg:
         self.s = s
 
     def _run_single(self, f, s, kwargs):
+        m = mock.Mock()
         s1 = f(**kwargs)
+        s1.events.data_changed.connect(m.data_changed)
         s.data = s.data + 2
         s2 = f(**kwargs)
         r = f(out=s1, **kwargs)
+        m.data_changed.assert_called_with(obj=s1)
         nt.assert_is_none(r)
         assert_array_equal(s1.data, s2.data)
 
@@ -441,6 +455,14 @@ class TestOutArg:
 
     def test_sum(self):
         self._run_single(self.s.sum, self.s, dict(axis=('x', 'z')))
+        self._run_single(self.s.sum, self.s.get_current_signal(),
+                         dict(axis=0))
+
+    def test_sum_return_1d_signal(self):
+        self._run_single(self.s.sum, self.s, dict(
+            axis=self.s.axes_manager._axes))
+        self._run_single(self.s.sum, self.s.get_current_signal(),
+                         dict(axis=0))
 
     def test_mean(self):
         self._run_single(self.s.mean, self.s, dict(axis=('x', 'z')))
@@ -528,3 +550,48 @@ class TestOutArg:
         assert_array_equal(h1.data, h2.data)
         nt.assert_equal(h1.axes_manager[-1].size,
                         h2.axes_manager[-1].size,)
+
+    def test_masked_array_mean(self):
+        s = self.s
+        mask = (s.data > 0.5)
+        s.data = np.arange(s.data.size).reshape(s.data.shape)
+        s.data = np.ma.masked_array(s.data, mask=mask)
+        sr = s.mean(axis=('x', 'z',))
+        np.testing.assert_array_equal(
+            sr.data.shape, [ax.size for ax in s.axes_manager[('y', 'E')]])
+        print(sr.data.tolist())
+        ref = [[202.28571428571428, 203.28571428571428, 182.0,
+                197.66666666666666, 187.0, 177.8],
+               [134.0, 190.0, 191.27272727272728, 170.14285714285714, 172.0,
+                209.85714285714286],
+               [168.0, 161.8, 162.8, 185.4, 197.71428571428572,
+                178.14285714285714],
+               [240.0, 184.33333333333334, 260.0, 229.0, 173.2, 167.0]]
+        np.testing.assert_array_equal(sr.data, ref)
+
+    def test_masked_array_sum(self):
+        s = self.s
+        mask = (s.data > 0.5)
+        s.data = np.ma.masked_array(np.ones_like(s.data), mask=mask)
+        sr = s.sum(axis=('x', 'z',))
+        np.testing.assert_array_equal(sr.data.sum(), (~mask).sum())
+
+    def test_masked_arrays_out(self):
+        s = self.s
+        mask = (s.data > 0.5)
+        s.data = np.ones_like(s.data)
+        s.data = np.ma.masked_array(s.data, mask=mask)
+        self._run_single(s.sum, s, dict(axis=('x', 'z')))
+
+    @nt.raises(ValueError)
+    def test_wrong_out_shape(self):
+        s = self.s
+        ss = s.sum()  # Sum over navigation, data shape (6,)
+        s.sum(axis=s.axes_manager._axes, out=ss)
+
+    @nt.raises(ValueError)
+    def test_wrong_out_shape_masked(self):
+        s = self.s
+        s.data = np.ma.array(s.data)
+        ss = s.sum()  # Sum over navigation, data shape (6,)
+        s.sum(axis=s.axes_manager._axes, out=ss)
