@@ -16,8 +16,11 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-from multiprocessing import (cpu_count, Pool, Manager)
+#from multiprocessing import (cpu_count, Pool, Queue, Manager)
+#from multiprocessing.pool import Pool as Pool_type
+#from ipyparallel import (Client, DirectView)
 from itertools import product
+import logging
 
 import numpy as np
 import dill
@@ -25,6 +28,7 @@ import time
 
 from hyperspy.misc.utils import DictionaryTreeBrowser
 from hyperspy.misc.utils import slugify
+from hyperspy.signal import Signal
 from hyperspy._samfire_utils.strategy import (diffusion_strategy,
                                               segmenter_strategy)
 from hyperspy._samfire_utils._strategies.diffusion.red_chisq import \
@@ -32,6 +36,11 @@ from hyperspy._samfire_utils._strategies.diffusion.red_chisq import \
 from hyperspy._samfire_utils._strategies.segmenter.histogram import \
     histogram_strategy
 from hyperspy.events import EventSupressor
+from hyperspy._samfire_utils.samfire_worker import create_worker
+from hyperspy._samfire_utils.samfire_pool import samfire_pool
+
+
+_logger = logging.getLogger(__name__)
 
 
 class Samfire(object):
@@ -105,7 +114,7 @@ class Samfire(object):
 
     """
 
-    _workers = 0
+    _workers = {}
     __active_strategy_ind = 0
 
     class _strategy_list(list):
@@ -140,15 +149,13 @@ class Samfire(object):
                     ans += signature % (a, str(n), name)
             return ans
 
-    def __init__(self, model, marker=None, workers=None):
+    def __init__(self, model, marker=None, workers=None, ipython_kwargs=None):
+
         # constants:
         if workers is None:
             workers = cpu_count() - 1
-
-        self.workers = workers
         self.optional_components = []
         self._running_pixels = []
-        self.pool = None
         self.model = model
         self.metadata = DictionaryTreeBrowser()
         self._figure = None
@@ -172,20 +179,23 @@ class Samfire(object):
         self.strategies.append(reduced_chi_squared_strategy())
         self.strategies.append(histogram_strategy())
         self._active_strategy_ind = 0
-        self._result_q = None
-        self.update_every = max(
-            10,
-            self.workers *
-            2)  # some sensible number....
+        self.result_queue = None
+        self.shared_queue = None
+        self.update_every = max(10, workers * 2)  # some sensible number....
         self.plot_every = self.update_every
         self.save_every = np.nan
         from hyperspy._samfire_utils.fit_tests import red_chisq_test
         self.metadata.goodness_test = red_chisq_test(tolerance=1.0)
         self._gt_dump = None
-        from hyperspy._samfire_utils.samfire_kernel import multi_kernel, single_kernel
-        self.multi_kernel = multi_kernel
+        from hyperspy._samfire_utils.samfire_kernel import (multi_kernel,
+                                                            single_kernel)
+        # self.multi_kernel = multi_kernel
         self.single_kernel = single_kernel
-        self._max_time_in_seconds = 60
+        self._setup()
+        self.pool = None
+        if workers:
+            self.pool = samfire_pool(workers, ipython_kwargs)
+            self.pool.prepare_workers(self)
         self.refresh_database()
 
     @property
@@ -208,19 +218,6 @@ class Samfire(object):
         if hasattr(self, '_log'):
             self._log = []
 
-        if self.workers:
-            if self._result_q is None:
-                m = Manager()
-                self._result_q = m.Queue()
-
-            if self.pool is None:
-                self.pool = Pool(processes=self.workers)
-
-            # in case the pool was not "deleted" when terminating:
-            if self.pool._state is not 0:
-                self.pool.terminate()
-                self.pool = Pool(processes=self.workers)
-
     def start(self, **kwargs):
         """Starts SAMFire.
 
@@ -230,7 +227,6 @@ class Samfire(object):
             Any key-word arguments to be passed to Model.fit() call
         """
         self._args = kwargs
-        self._setup()
         num_of_strat = len(self.strategies)
 
         while True:
@@ -241,7 +237,6 @@ class Samfire(object):
                 break
 
             self.change_strategy(self._active_strategy_ind + 1)
-        self.stop()
 
     def append(self, strategy):
         """appends the given strategy to the end of the strategies list
@@ -272,14 +267,6 @@ class Samfire(object):
         self.strategies.remove(thing)
 
     @property
-    def workers(self):
-        return self._workers
-
-    @workers.setter
-    def workers(self, value):
-        self._workers = np.abs(int(value))
-
-    @property
     def _active_strategy_ind(self):
         return self.__active_strategy_ind
 
@@ -288,34 +275,26 @@ class Samfire(object):
         self.__active_strategy_ind = np.abs(int(value))
 
     def _run_active_strategy(self):
-        if self.workers:
-            self._run_active_strategy_multi()
+        if self.pool is not None:
+            self.count = 0
+            self.pool.run()
         else:
             self._run_active_strategy_one()
 
-    def _run_active_strategy_multi(self):
-        count = 0
-        last_time = time.time()
-        while np.any(self.metadata.marker > 0.) or len(
-                self._running_pixels) > 0:
-            if self._result_q.empty():
-                if len(self._running_pixels) < self.workers:
-                    self._add_jobs()
-                if time.time() - last_time > self._max_time_in_seconds:
-                    break
-            else:
-                count += 1
-                (ind, results, isgood) = self._result_q.get()
-                if ind in self._running_pixels:
-                    self._running_pixels.remove(ind)
-                    self._update(ind, count, results, isgood)
+    @property
+    def pixels_left(self):
+        return np.any(self.metadata.marker > 0.)
 
-                    self._plot(count)
-                    self._save(count)
-                    last_time = time.time()
+    @property
+    def pixels_done(self):
+        return np.sum(self.metadata.marker == -self._scale)
+
+    @property
+    def running_pixels(self):
+        return len(self._running_pixels)
 
     def _run_active_strategy_one(self):
-        count = 0
+        self.count = 0
         while np.any(self.metadata.marker > 0.):
             ind = self._next_pixels(1)[0]
             vals = self.active_strategy.values(ind)
@@ -327,32 +306,26 @@ class Samfire(object):
                                         self._args,
                                         self.metadata.goodness_test)
             self._running_pixels.remove(ind)
-            count += 1
-            self.active_strategy.update(ind, isgood, count)
-            self._plot(count)
-            self._save(count)
+            self.count += 1
+            self.active_strategy.update(ind, isgood)
+            self._plot()
+            self._save()
 
-    def _save(self, count):
+    def _save(self):
         # maybe add saving marker + strategies as well?
-        if count % self.save_every == 0:
+        if self.count % self.save_every == 0:
             self.model.save(slugify('backup_' + self.model.spectrum.metadata.General.title),
                             name='samfire_backup', overwrite=True)
             self.model.spectrum.models.remove('samfire_backup')
 
-    def _update(self, ind, count, results=None, isgood=None):
+    def _update(self, ind, results=None, isgood=None):
         if results is not None and (isgood is None or isgood):
             self._swap_dict_and_model(ind, results)
 
         if isgood is None:
             isgood = self.metadata.goodness_test.test(self.model, ind)
-        if hasattr(self, '_log'):
-            if isinstance(self._log, list):
-                if isinstance(results, dict):
-                    self._log.append((ind, isgood, count, results['current']))
-                else:
-                    self._log.append((ind, isgood, count, None))
 
-        self.active_strategy.update(ind, isgood, count)
+        self.active_strategy.update(ind, isgood, self.count)
         if not isgood and results is not None:
             self._swap_dict_and_model(ind, results)
 
@@ -424,22 +397,26 @@ class Samfire(object):
             current.close_plot()
         self._active_strategy_ind = new_strat
 
-    def _add_jobs(self):
-        # check that really need more jobs
-        need_inds = self.workers - len(self._running_pixels)
+    def _add_jobs(self, need_inds):
         if need_inds:
             # get pixel index
             inds = self._next_pixels(need_inds)
             for ind in inds:
                 # get starting parameters / array of possible values
-                vals = self.active_strategy.values(ind)
-                m = self.model.inav[ind[::-1]]
-                m.store('z')
-                m_dict = m.spectrum._to_dictionary(False)
-                m_dict['models'] = m.spectrum.models._models.as_dictionary()
-                self._dispatch_worker(ind, m_dict, vals)
+                value_dict = self.active_strategy.values(ind)
+                value_dict['fitting_kwargs'] = self._args
+                value_dict['spectrum.data'] = \
+                    self.model.spectrum.data[ind + (...,)]
+                var = self.model.spectrum.metadata.Signal.Noise_properties.variance
+                if isinstance(var, Signal):
+                    value_dict['variance.data'] = var.data[ind + (...,)]
+                if self.model.low_loss is not None:
+                    value_dict['low_loss.data'] = \
+                        self.model.low_loss.data[ind + (...,)]
+
                 self._running_pixels.append(ind)
                 self.metadata.marker[ind] = 0.
+                yield ind, value_dict
 
     def _next_pixels(self, number):
         best = self.metadata.marker.max()
@@ -456,17 +433,6 @@ class Samfire(object):
                 number -= 1
         return inds
 
-    def _dispatch_worker(self, ind, m_dict, vals):
-        run_args = (ind,
-                    m_dict,
-                    vals,
-                    self.optional_components,
-                    self._args,
-                    self._result_q,
-                    self._gt_dump)
-        self.pool.apply_async(self.multi_kernel,
-                              args=run_args)
-
     def _swap_dict_and_model(self, m_ind, dic, d_ind=None):
         if d_ind is None:
             d_ind = tuple([0 for _ in dic['chisq.data'].shape])
@@ -475,38 +441,37 @@ class Samfire(object):
         self.model.dof.data[m_ind], dic['dof.data'] = dic[
             'dof.data'].copy(), self.model.dof.data[m_ind].copy()
 
-        for num, comp in enumerate(dic['components']):
-            if self.model[num].active_is_multidimensional:
-                self.model[num]._active_array[m_ind] = comp['active']
-            self.model[num].active = comp['active']
-            for (p_d, p_m) in product(comp['parameters'],
-                                      self.model[num].parameters):
-                if p_d['_id_name'] == p_m._id_name:
-                    p_m.map[m_ind], p_d['map'][d_ind] = p_d[
-                        'map'][d_ind].copy(), p_m.map[m_ind].copy()
+        for comp_name, comp in dic['components'].items():
+            # only active components are sent
+            if self.model[comp_name].active_is_multidimensional:
+                self.model[comp_name]._active_array[m_ind] = True
+            self.model[comp_name].active = True
 
-    def stop(self):
-        if self.workers:
-            self.pool.terminate()
-            del self.pool
-            self.pool = None
+            for param_model in self.model[comp_name].parameters:
+                param_dict = comp[para_model.name]
+                param_model.map[m_ind], param_dict[d_ind] = \
+                    param_dict[d_ind].copy(), param_model.map[m_ind].copy()
+            # for (p_d, p_m) in product(comp['parameters'],
+            #                           self.model[num].parameters):
+            #     if p_d['_id_name'] == p_m._id_name:
+            #         p_m.map[m_ind], p_d['map'][d_ind] = p_d[
+            #             'map'][d_ind].copy(), p_m.map[m_ind].copy()
 
     def _enable_optional_components(self):
         if len(self.optional_components) == 0:
             return
-        else:
-            for c in self.optional_components:
-                comp = self.model._get_component(c)
-                if not comp.active_is_multidimensional:
-                    comp.active_is_multidimensional = True
-            if not np.all([isinstance(a, int) for a in
-                           self.optional_components]):
-                new_list = []
-                for op in self.optional_components:
-                    for ic, c in enumerate(self.model):
-                        if c is self.model._get_component(op):
-                            new_list.append(ic)
-                self.optional_components = new_list
+        for c in self.optional_components:
+            comp = self.model._get_component(c)
+            if not comp.active_is_multidimensional:
+                comp.active_is_multidimensional = True
+        if not np.all([isinstance(a, int) for a in
+                       self.optional_components]):
+            new_list = []
+            for op in self.optional_components:
+                for ic, c in enumerate(self.model):
+                    if c is self.model._get_component(op):
+                        new_list.append(ic)
+            self.optional_components = new_list
 
     def _request_user_input(self):
         from hyperspy.signals import Image
@@ -565,9 +530,9 @@ class Samfire(object):
 
     def plot(self):
         """(if possible) plots current strategy plot.
-        Diffusion strategies plot grayscale navigation signal with brightness representing order of the pixel
-        selection.
-        Segmenter strategies plot a collection of histograms, one per parameter
+        Diffusion strategies plot grayscale navigation signal with brightness
+        representing order of the pixel selection.
+        Segmenter strategies plot a collection of histograms, one per parameter.
         """
         if self.strategies:
             self._figure = self.active_strategy.plot(self._figure)

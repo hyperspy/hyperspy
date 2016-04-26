@@ -16,42 +16,45 @@
 # along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
-import sys
+import os
 from itertools import combinations, product
 from hyperspy.signal import Signal
 import dill
 import time
 from queue import Empty
+import copy
 
 
 class worker:
 
-    def __init__(self, identity, individual_queue):
+    def __init__(self, identity, individual_queue=None, shared_queue=None,
+                 result_queue=None):
         self.identity = identity
         self.individual_queue = individual_queue
-        self.shared_queue = None
-        self.result_queue = None
-        self.timestep = 0.05
-        self.max_get_timeout = 3
-
-        self._AICc_fraction = 0.99
-
-        self.reset()
-
-        self.last_time = 1
-        self.start_listening()
-
-    def setup_queues(self, shared_queue, result_queue):
         self.shared_queue = shared_queue
         self.result_queue = result_queue
+        self.timestep = 0.05
+        self.max_get_timeout = 3
+        self._AICc_fraction = 0.99
+        self.reset()
+        self.last_time = 1
 
     def create_model(self, signal_dict, model_letter):
-        sig = Signal(**signal_dict)
+        sig = Signal(signal_dict)
+        sig.data = sig.data.copy()
         sig._assign_subclass()
         self.model = getattr(sig.models, model_letter).restore()
         for component in self.model:
             component.active_is_multidimensional = False
             component.active = True
+            for par in component.parameters:
+                par.map = par.map.copy()
+
+        var = self.model.spectrum.metadata.Signal.Noise_properties.variance
+        if isinstance(var, Signal):
+            var.data = var.data.copy()
+        if self.model.low_loss is not None:
+            self.model.low_loss.data = self.model.low_loss.data.copy()
 
     def set_optional_names(self, optional_names):
         self.optional_names = optional_names
@@ -83,10 +86,10 @@ class worker:
                     except:
                         e = sys.exc_info()[0]
                         self.result_queue.put(('Error',
-                                               'Setting {}.{} value to {}.'
-                                               'Caught:\n{}'.format(comp_name,
-                                                                    parameter_name,
-                                                                    value, e)))
+                                               (self.identity,
+                                                'Setting {}.{} value to {}.'
+                                                'Caught:\n{}'.format(comp_name,
+                                                                     parameter_name, value, e))))
             yield
 
     def fit(self, component_comb):
@@ -121,6 +124,15 @@ class worker:
         self.value_dict = value_dict
 
         self.fitting_kwargs = self.value_dict.pop('fitting_kwargs', {})
+        self.model.spectrum.data[:] = self.value_dict.pop('spectrum.data')
+
+        var = self.model.spectrum.metadata.Signal.Noise_properties.variance
+        if isinstance(var, Signal):
+            var.data[:] = self.value_dict.pop('variance.data')
+
+        if 'low_loss.data' in self.value_dict:
+            self.model.low_loss.data[:] = self.value_dict.pop('low_loss.data')
+
         for component_comb in generate_component_combinations():
             good_fit = self.fit(component_comb)
 
@@ -133,7 +145,7 @@ class worker:
         self.send_results()
 
     def _collect_values(self):
-        result = {component.name: {parameter.name: parameter.map[0] for
+        result = {component.name: {parameter.name: parameter.map for
                                    parameter in component.parameters} for
                   component in self.model if component.active}
         return result
@@ -141,74 +153,82 @@ class worker:
     def compare_model(self):
         new_AICc = AICc(self.model)
 
-        if (new_AICc < self._AICc_fraction * self.best_AICc) or \
-            (np.abs(new_AICc - self.best_AICc) <= np.abs(self._AICc_fraction *
-                                                         self.best_AICc) and
-             len(self.model.p0) < self.best_dof:
+        AICc_test = new_AICc < (self._AICc_fraction * self.best_AICc)
+        AICc_absolute_test = np.abs(new_AICc - self.best_AICc) <= \
+            np.abs(self._AICc_fraction * self.best_AICc)
+        dof_test = len(self.model.p0) < self.best_dof
 
-             self.best_values=self._collect_values()
-             self.best_AICc=new_AICc
-             self.best_dof=len(self.model.p0)
-             self.best_chisq=self.model.chisq.data[0]
+        if AICc_test or AICc_absolute_test and dof_test:
+
+            self.best_values = self._collect_values()
+            self.best_AICc = new_AICc
+            self.best_dof = len(self.model.p0)
+            self.best_chisq = self.model.chisq.data[0]
 
     def send_results(self, current=False):
         if current:
-             self.best_chisq=self.model.chisq.data[0]
-             self.best_dof=len(self.model.p0)
-             self.best_values=self._collect_values()
+            self.best_chisq = self.model.chisq.data[0]
+            self.best_dof = len(self.model.p0)
+            self.best_values = self._collect_values()
         if len(self.best_values):  # i.e. we have a good result
-             result={'chisq': self.best_chisq
-                      'dof': self.best_dof,
+            result = {'chisq.data': self.best_chisq,
+                      'dof.data': self.best_dof,
                       'components': self.best_values
-                     }
-             found_solution=True
+                      }
+            found_solution = True
         else:
-             result=None
-             found_solution=False
-        self.result_queue.put((self.ind, result, found_solution))
+            result = None
+            found_solution = False
+        to_send = ('result', (self.identity, self.ind, result, found_solution))
+        if individual_queue is None:
+            return to_send
+        self.result_queue.put(to_send)
 
     def setup_test(self, test_string):
-        self.fit_test=dill.loads(test_string)
+        self.fit_test = dill.loads(test_string)
 
     def start_listening(self):
-        self._listening=True
+        self._listening = True
         self.listen()
 
     def stop_listening(self):
-        self._listening=False
+        self._listening = False
 
     def parse(self, result):
-        function=result
-        arguments=[]
+        function = result
+        arguments = []
         if isinstance(result, tuple):
-            function, arguments=result
+            function, arguments = result
         getattr(self, function)(*arguments)
 
     def ping(self, message=None):
-        self.result_queue.put(('pong', self.identity, time.time(), message))
+        to_send = ('pong', (self.identity, os.getpid(), time.time(), message))
+        if self.result_queue is None:
+            return to_send
+        self.result_queue.put(to_send)
 
-    def sleep(self, time=None):
-        if time is None:
-            time=self.timestep
-        self.last_time=time.time()
-        time.sleep(time)
+    def sleep(self, howlong=None):
+        if howlong is None:
+            howlong = self.timestep
+        self.last_time = time.time()
+        time.sleep(howlong)
 
     def listen(self):
         while self._listening:
-            queue=None
-            found_what_to_do=False
-            time_diff=time.time() - self.last_time
+            queue = None
+            found_what_to_do = False
+            time_diff = time.time() - self.last_time
             if time_diff >= self.timestep:
                 if not self.individual_queue.empty():
-                    queue=self.individual_queue
+                    queue = self.individual_queue
                 elif (self.shared_queue is not None and not
                       self.shared_queue.empty()):
-                    queue=self.shared_queue
+                    queue = self.shared_queue
                 if queue is not None:
                     try:
-                        result=queue.get(block=True,
+                        result = queue.get(block=True,
                                            timeout=self.max_get_timeout)
-                        found_what_to_do=True
+                        found_what_to_do = True
                         self.parse(result)
                     except Empty:
                         pass
@@ -216,3 +236,11 @@ class worker:
                     self.sleep()
             else:
                 self.sleep()
+
+
+def create_worker(identity, individual_queue=None,
+                  shared_queue=None, result_queue=None):
+    w = worker(identity, individual_queue, shared_queue, result_queue)
+    if individual_queue is None:
+        return w
+    w.start_listening()

@@ -59,7 +59,8 @@ class strategy(object):
     close_plot = None
     name = ""
 
-    def update(self, ind, isgood, count):
+    def update(self, ind, isgood):
+        count = self.samf.count
         if isgood:
             self._update_marker(ind)
         self._update_database(ind, count)
