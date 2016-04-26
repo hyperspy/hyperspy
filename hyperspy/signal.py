@@ -69,7 +69,7 @@ from hyperspy.misc.spectrum_tools import find_peaks_ohaver
 from hyperspy.misc.image_tools import (shift_image, estimate_image_shift,
                                        find_peaks_max, find_peaks_minmax,
                                        find_peaks_zaefferer, find_peaks_stat,
-                                       find_peaks_massiel)
+                                       find_peaks_masiel)
 from hyperspy.misc.math_tools import symmetrize, antisymmetrize
 from hyperspy.exceptions import SignalDimensionError, DataDimensionError
 from hyperspy.misc import array_tools
@@ -664,7 +664,7 @@ class Signal2DTools(object):
             if method == 'stat':
                 peaks[indices] = find_peaks_stat(z, *args, **kwargs)
             if method == 'massiel':
-                peaks[indices] = find_peaks_massiel(z, *args, **kwargs)
+                peaks[indices] = find_peaks_masiel(z, *args, **kwargs)
 
         return peaks
 
