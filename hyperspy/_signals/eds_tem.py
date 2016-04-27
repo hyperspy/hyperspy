@@ -426,7 +426,7 @@ class EDSTEMSpectrum(EDSSpectrum):
             return composition, mass_thickness
         elif method == 'cross_section':
             return composition, number_of_atoms
-        elif method == 'CL'
+        elif method == 'CL':
             return composition
         else:
             raise ValueError ('Please specify method for quantification, as \'CL\', \'zeta\' or \'cross_section\'')
@@ -636,7 +636,7 @@ class EDSTEMSpectrum(EDSSpectrum):
                         'correct, please read the user documentations for how to set this properly.')
                     area = pixel1 * pixel2
             return (real_time * beam_current * 1e-9) /(constants.e * area)
-            # 1e-9 is included here because the beam_current is in nA. 
+            # 1e-9 is included here because the beam_current is in nA.
         elif method =='zeta':
             return real_time * beam_current * 1e-9 / constants.e
         else:
