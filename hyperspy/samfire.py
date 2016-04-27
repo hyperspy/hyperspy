@@ -32,6 +32,7 @@ from hyperspy._samfire_utils._strategies.diffusion.red_chisq import \
 from hyperspy._samfire_utils._strategies.segmenter.histogram import \
     histogram_strategy
 from hyperspy.events import EventSupressor
+from tqdm import tqdm
 
 
 class Samfire(object):
@@ -152,6 +153,7 @@ class Samfire(object):
         self.model = model
         self.metadata = DictionaryTreeBrowser()
         self._figure = None
+        self._progressbar = None
 
         self._scale = 1.0
         # -1 -> done pixel, use
@@ -232,6 +234,8 @@ class Samfire(object):
         self._args = kwargs
         self._setup()
         num_of_strat = len(self.strategies)
+
+        self._progressbar = tqdm(total=self.model.axes_manager.navigation_size)
 
         while True:
             self._run_active_strategy()
@@ -353,6 +357,8 @@ class Samfire(object):
                     self._log.append((ind, isgood, count, None))
 
         self.active_strategy.update(ind, isgood, count)
+        if isgood:
+            self._progressbar.update(1)
         if not isgood and results is not None:
             self._swap_dict_and_model(ind, results)
 
