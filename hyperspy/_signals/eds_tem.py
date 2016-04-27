@@ -426,8 +426,10 @@ class EDSTEMSpectrum(EDSSpectrum):
             return composition, mass_thickness
         elif method == 'cross_section':
             return composition, number_of_atoms
-        elif:
+        elif method == 'CL'
             return composition
+        else:
+            raise ValueError ('Please specify method for quantification, as \'CL\', \'zeta\' or \'cross_section\'')
 
     def vacuum_mask(self, threshold=1.0, closing=True, opening=False):
         """
