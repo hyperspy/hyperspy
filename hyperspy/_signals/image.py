@@ -17,12 +17,12 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from hyperspy._signals.signal2D import Signal2D, Signal2DTools
+from hyperspy._signals.signal2D import Signal2D, Signal1DTools
 from hyperspy.misc.hspy_warnings import VisibleDeprecationWarning
 
 
 class Image(Signal2D,
-            Signal2DTools,):
+            Signal1DTools,):
 
     VisibleDeprecationWarning('The Image class will be deprecated in\
                               Hyperspy 1.0.0 and replaced with Signal2D')

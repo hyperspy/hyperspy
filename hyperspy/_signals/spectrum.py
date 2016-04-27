@@ -17,12 +17,12 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from hyperspy._signals.signal1D import Signal1D, Signal1DTools
+from hyperspy._signals.signal1D import Signal1D, Signal2DTools
 from hyperspy.misc.hspy_warnings import VisibleDeprecationWarning
 
 
 class Spectrum(Signal1D,
-               Signal1DTools,):
+               Signal2DTools,):
 
     VisibleDeprecationWarning('The Spectrum class will be deprecated in\
                               HyperSpy 1.0.0 and replaced with Signal1D')

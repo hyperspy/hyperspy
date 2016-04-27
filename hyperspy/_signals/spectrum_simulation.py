@@ -21,5 +21,5 @@ from hyperspy._signals.signal1D import Signal1D
 from hyperspy._signals.simulation import Simulation
 
 
-class SpectrumSimulation(Simulation, Signal1D):
+class SpectrumSimulation(Simulation, Spectrum):
     pass

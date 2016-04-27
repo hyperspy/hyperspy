@@ -21,5 +21,5 @@ from hyperspy._signals.signal2D import Signal2D
 from hyperspy._signals.simulation import Simulation
 
 
-class ImageSimulation(Simulation, Signal2D):
+class ImageSimulation(Simulation, Image):
     pass
