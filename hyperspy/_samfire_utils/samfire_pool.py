@@ -17,7 +17,7 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from multiprocessing import (cpu_count, Pool, Queue)
+from multiprocessing import (cpu_count, Pool, Manager)
 from multiprocessing.pool import Pool as Pool_type
 import ipyparallel as ipp
 import os
@@ -44,7 +44,7 @@ class samfire_pool:
         self.num_workers = num_workers
         self.workers = {}
         self.timestep = 0.05
-        self.timeout = 15.
+        self.timeout = 3.
         self.setup()
 
     @property
@@ -70,7 +70,7 @@ class samfire_pool:
                 self.results = []
             except OSError:
                 self.num_workers = min(self.num_workers, cpu_count() - 1)
-                self.pool(processes=self.num_workers)
+                self.pool = Pool(processes=self.num_workers)
 
     def prepare_workers(self, samfire):
         self.samf = samfire
@@ -78,8 +78,8 @@ class samfire_pool:
         mall = samfire.model
         m = mall.inav[mall.axes_manager.indices]
         m.store('z')
-        model_dict = m.spectrum._to_dictionary(False)
-        model_dict['models'] = m.spectrum.models._models.as_dictionary()
+        m_dict = m.spectrum._to_dictionary(False)
+        m_dict['models'] = m.spectrum.models._models.as_dictionary()
 
         optional_names = {mall[c].name for c in samfire.optional_components}
 
@@ -92,26 +92,25 @@ class samfire_pool:
             dv.execute('worker = create_worker(identity)')
             self.rworker = ipp.Reference('worker')
             dv.apply(lambda worker, m_dict: worker.create_model(m_dict, 'z'),
-                     self.rworker, model_dict)
+                     self.rworker, m_dict)
             dv.apply(lambda worker, ts: worker.setup_test(ts), self.rworker,
                      samfire._gt_dump)
             dv.apply(lambda worker, on: worker.set_optional_names(on),
                      self.rworker, optional_names)
 
-            # self.pid = dv.apply_async(os.getpid).get_dict()
-
         if self.is_multiprocessing:
-            self.shared_queue = Queue()
-            self.result_queue = Queue()
+            manager = Manager()
+            self.shared_queue = manager.Queue()
+            self.result_queue = manager.Queue()
             for i in range(self.num_workers):
-                this_queue = Queue()
+                this_queue = manager.Queue()
                 self.workers[i] = this_queue
-                self.pool.apply_async(create_worker, args=(i, this_queue,
-                                                           self.shared_queue,
-                                                           self.result_queue))
                 this_queue.put(('setup_test', (samfire._gt_dump,)))
                 this_queue.put(('create_model', (m_dict, 'z')))
                 this_queue.put(('set_optional_names', (optional_names,)))
+                self.pool.apply_async(create_worker, args=(i, this_queue,
+                                                           self.shared_queue,
+                                                           self.result_queue))
 
     def ping_workers(self, timeout=None):
         if self.samf is None:
@@ -136,7 +135,7 @@ class samfire_pool:
         if self.is_ipyparallel:
             return self.pool.client.queue_status()['unassigned']
         elif self.is_multiprocessing:
-            return self.shared_queue.qlen()
+            return self.shared_queue.qsize()
 
     def add_jobs(self, needed_number=None):
         if needed_number is None:
@@ -152,7 +151,10 @@ class samfire_pool:
                                                            value_dict), ind))
 
     def parse(self, value):
-        keyword, the_rest = value
+        if value is None:
+            keyword = 'Failed'
+        else:
+            keyword, the_rest = value
         samf = self.samf
         if keyword == 'pong':
             _id, pid, pong_time, message = the_rest
@@ -164,7 +166,7 @@ class samfire_pool:
             _id, err_message = the_rest
             _logger.error('Error in worker {}\n{}'.format(_id, err_message))
         elif keyword == 'result':
-            _id, ind, result, found = the_rest
+            _id, ind, result, isgood = the_rest
             if ind in samf._running_pixels:
                 samf._running_pixels.remove(ind)
                 samf._update(ind, result, isgood)
@@ -184,7 +186,7 @@ class samfire_pool:
             for res, ind in reversed(self.results):
                 if res.ready():
                     try:
-                        result = res.get(timeout=self.timeout)
+                        result = res.get(timeout=timeout)
                     except TimeoutError:
                         _logger.info('Ind {} failed to come back in {} '
                                      'seconds. Assuming failed'.format(
@@ -205,7 +207,6 @@ class samfire_pool:
                 except TimeoutError:
                     _logger.info('Some ind failed to come back in {} '
                                  'seconds.'.format(self.timeout))
-
         return found_something
 
     @property
@@ -213,16 +214,27 @@ class samfire_pool:
         return min(self.samf.pixels_done * self.samf.metadata.marker.ndim,
                    self.num_workers - len(self))
 
+    @property
+    def _not_too_long(self):
+        if not hasattr(self, '_last_time') or not isinstance(self._last_time,
+                                                             float):
+            self._last_time = time.time()
+        return (time.time() - self._last_time) <= self.timeout
+
     def run(self):
-        while self.samf.pixels_left or self.samf.running_pixels:
+        while self._not_too_long and (self.samf.pixels_left or
+                                      self.samf.running_pixels):
             # bool if got something
             new_result = self.collect_results()
             need_number = self.need_pixels
+
             if need_number:
                 self.add_jobs(need_number)
             if not need_number or not new_result:
                 # did not spend much time, since no new results or added pixels
                 self.sleep()
+            else:
+                self._last_time = time.time()
 
     def sleep(self, howlong=None):
         if howlong is None:
@@ -231,6 +243,8 @@ class samfire_pool:
 
     def stop(self):
         if self.is_multiprocessing:
+            for queue in self.workers.values():
+                queue.put('stop_listening')
             self.pool.close()
             # self.pool.terminate()
         elif self.is_ipyparallel:

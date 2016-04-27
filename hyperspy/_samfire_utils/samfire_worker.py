@@ -40,10 +40,10 @@ class worker:
         self.last_time = 1
 
     def create_model(self, signal_dict, model_letter):
-        sig = Signal(signal_dict)
-        sig.data = sig.data.copy()
+        sig = Signal(**signal_dict)
         sig._assign_subclass()
-        self.model = getattr(sig.models, model_letter).restore()
+        self.model = sig.models[model_letter].restore()
+        self.model.signal.data = self.model.signal.data.copy()
         for component in self.model:
             component.active_is_multidimensional = False
             component.active = True
@@ -59,7 +59,7 @@ class worker:
     def set_optional_names(self, optional_names):
         self.optional_names = optional_names
 
-    def generate_values_iterator(turned_on_names):
+    def generate_values_iterator(self, turned_on_names):
         tmp = []
         name_list = []
         for _comp_n, _comp in self.value_dict.items():
@@ -89,7 +89,9 @@ class worker:
                                                (self.identity,
                                                 'Setting {}.{} value to {}.'
                                                 'Caught:\n{}'.format(comp_name,
-                                                                     parameter_name, value, e))))
+                                                                     parameter_name,
+                                                                     value,
+                                                                     e))))
             yield
 
     def fit(self, component_comb):
@@ -133,16 +135,15 @@ class worker:
         if 'low_loss.data' in self.value_dict:
             self.model.low_loss.data[:] = self.value_dict.pop('low_loss.data')
 
-        for component_comb in generate_component_combinations():
+        for component_comb in self.generate_component_combinations():
             good_fit = self.fit(component_comb)
 
             if good_fit:
                 if len(self.optional_names) == 0:
-                    self.send_results(current=True)
-                    return
+                    return self.send_results(current=True)
                 else:
                     self.compare_models()
-        self.send_results()
+        return self.send_results()
 
     def _collect_values(self):
         result = {component.name: {parameter.name: parameter.map for
@@ -171,8 +172,8 @@ class worker:
             self.best_dof = len(self.model.p0)
             self.best_values = self._collect_values()
         if len(self.best_values):  # i.e. we have a good result
-            result = {'chisq.data': self.best_chisq,
-                      'dof.data': self.best_dof,
+            result = {'chisq.data': np.array(self.best_chisq),
+                      'dof.data': np.array(self.best_dof),
                       'components': self.best_values
                       }
             found_solution = True
@@ -180,7 +181,7 @@ class worker:
             result = None
             found_solution = False
         to_send = ('result', (self.identity, self.ind, result, found_solution))
-        if individual_queue is None:
+        if self.individual_queue is None:
             return to_send
         self.result_queue.put(to_send)
 
@@ -244,3 +245,4 @@ def create_worker(identity, individual_queue=None,
     if individual_queue is None:
         return w
     w.start_listening()
+    return 1

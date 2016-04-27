@@ -38,6 +38,7 @@ from hyperspy._samfire_utils._strategies.segmenter.histogram import \
 from hyperspy.events import EventSupressor
 from hyperspy._samfire_utils.samfire_worker import create_worker
 from hyperspy._samfire_utils.samfire_pool import samfire_pool
+from tqdm import tqdm
 
 
 _logger = logging.getLogger(__name__)
@@ -66,6 +67,8 @@ class Samfire(object):
         returns a better Akaike's Information Criterion with correction (AICc)
     workers : int
         A number of processes that will perform the fitting parallely
+    pool : samfire_pool instance
+        A proxy object that manages either multiprocessing or ipyparallel pool
     strategies : strategy list
         A list of strategies that will be used to select pixel fitting order and
         calculate required starting parameters. Strategies come in two
@@ -87,9 +90,6 @@ class Samfire(object):
     save_every : int
         When running, samfire saves results every time save_every good fits are
         found.
-    kernel : function
-        The function that performs fitting and model selection in parallely-run
-        cores when running.
 
     Methods
     -------
@@ -114,8 +114,16 @@ class Samfire(object):
 
     """
 
-    _workers = {}
     __active_strategy_ind = 0
+    _gt_dump = None
+    _progressbar = None
+    pool = None
+    _figure = None
+    optional_components = []
+    _running_pixels = []
+    plot_every = 0
+    save_every = np.nan
+    _workers = None
 
     class _strategy_list(list):
 
@@ -154,11 +162,8 @@ class Samfire(object):
         # constants:
         if workers is None:
             workers = cpu_count() - 1
-        self.optional_components = []
-        self._running_pixels = []
         self.model = model
         self.metadata = DictionaryTreeBrowser()
-        self._figure = None
 
         self._scale = 1.0
         # -1 -> done pixel, use
@@ -179,23 +184,13 @@ class Samfire(object):
         self.strategies.append(reduced_chi_squared_strategy())
         self.strategies.append(histogram_strategy())
         self._active_strategy_ind = 0
-        self.result_queue = None
-        self.shared_queue = None
         self.update_every = max(10, workers * 2)  # some sensible number....
-        self.plot_every = self.update_every
-        self.save_every = np.nan
         from hyperspy._samfire_utils.fit_tests import red_chisq_test
         self.metadata.goodness_test = red_chisq_test(tolerance=1.0)
-        self._gt_dump = None
-        from hyperspy._samfire_utils.samfire_kernel import (multi_kernel,
-                                                            single_kernel)
-        # self.multi_kernel = multi_kernel
+        from hyperspy._samfire_utils.samfire_kernel import single_kernel
         self.single_kernel = single_kernel
-        self._setup()
-        self.pool = None
-        if workers:
-            self.pool = samfire_pool(workers, ipython_kwargs)
-            self.pool.prepare_workers(self)
+        self._workers = workers
+        self._setup(ipython_kwargs=ipython_kwargs)
         self.refresh_database()
 
     @property
@@ -206,7 +201,7 @@ class Samfire(object):
     def active_strategy(self, value):
         self.change_strategy(value)
 
-    def _setup(self):
+    def _setup(self, ipython_kwargs=None):
 
         self._figure = None
         self._gt_dump = dill.dumps(self.metadata.goodness_test)
@@ -218,6 +213,12 @@ class Samfire(object):
         if hasattr(self, '_log'):
             self._log = []
 
+        if self._workers:
+            if self.pool is None:
+                self.pool = samfire_pool(self._workers, ipython_kwargs)
+            self._workers = self.pool.num_workers
+            self.pool.prepare_workers(self)
+
     def start(self, **kwargs):
         """Starts SAMFire.
 
@@ -228,6 +229,7 @@ class Samfire(object):
         """
         self._args = kwargs
         num_of_strat = len(self.strategies)
+        self._progressbar = tqdm(total=self.model.axes_manager.navigation_size)
 
         while True:
             self._run_active_strategy()
@@ -283,11 +285,11 @@ class Samfire(object):
 
     @property
     def pixels_left(self):
-        return np.any(self.metadata.marker > 0.)
+        return np.sum(self.metadata.marker > 0.)
 
     @property
     def pixels_done(self):
-        return np.sum(self.metadata.marker == -self._scale)
+        return np.sum(self.metadata.marker <= -self._scale)
 
     @property
     def running_pixels(self):
@@ -324,8 +326,10 @@ class Samfire(object):
 
         if isgood is None:
             isgood = self.metadata.goodness_test.test(self.model, ind)
+        if isgood and self._progressbar is not None:
+            self._progressbar.update(1)
 
-        self.active_strategy.update(ind, isgood, self.count)
+        self.active_strategy.update(ind, isgood)
         if not isgood and results is not None:
             self._swap_dict_and_model(ind, results)
 
@@ -448,14 +452,15 @@ class Samfire(object):
             self.model[comp_name].active = True
 
             for param_model in self.model[comp_name].parameters:
-                param_dict = comp[para_model.name]
+                param_dict = comp[param_model.name]
                 param_model.map[m_ind], param_dict[d_ind] = \
                     param_dict[d_ind].copy(), param_model.map[m_ind].copy()
-            # for (p_d, p_m) in product(comp['parameters'],
-            #                           self.model[num].parameters):
-            #     if p_d['_id_name'] == p_m._id_name:
-            #         p_m.map[m_ind], p_d['map'][d_ind] = p_d[
-            #             'map'][d_ind].copy(), p_m.map[m_ind].copy()
+
+        for component in self.model:
+            # switch off all that did not appear in the dictionary
+            if component.name not in dic['components'].keys():
+                if component.active_is_multidimensional:
+                    component._active_array[m_ind] = False
 
     def _enable_optional_components(self):
         if len(self.optional_components) == 0:
@@ -524,9 +529,12 @@ class Samfire(object):
             lambda: self.model.axes_manager.events.indices_changed.disconnect(
                 connect_other_navigation1), [])
 
-    def _plot(self, count):
-        if count % self.plot_every == 0:
-            self.plot()
+    def _plot(self, count=None):
+        if count is None:
+            count = self.count
+        if self.plot_every:
+            if count % self.plot_every == 0:
+                self.plot()
 
     def plot(self):
         """(if possible) plots current strategy plot.
