@@ -290,7 +290,6 @@ overvoltage of 2 (< beam energy / 2)).
 
 .. code-block:: python
 
-
     >>> s.set_microscope_parameters(beam_energy=10)
     >>> s.set_lines([])
     >>> s.metadata.Sample
@@ -512,11 +511,16 @@ The background can be subtracted from the X-ray intensities with the :py:meth:`~
 Quantification
 --------------
 
-.. versionadded:: 0.8
+-.. versionadded:: 0.8
 
-One TEM quantification method (Cliff-Lorimer) is implemented so far.
+Hyperspy now includes three methods for EDS quantification; Cliff-Lorimer, the zeta-factor method and ionization cross sections.
 
-Quantification can be applied from the intensities (background subtracted) with the :py:meth:`~._signals.eds_tem.EDSTEMSpectrum.quantification` method. The required k-factors can be usually found in the EDS manufacturer software.
+Quantification must be applied to the background subtracted intensities, which can be found using :py:meth:`~._signals.eds.EDSSpectrum.get_lines_intensity`. The quantification of these intensities can then be determined using the :py:meth:`~._signals.eds_tem.EDSTEMSpectrum.quantification` method. These instensities are a stack (of images images or otherwise) for each element which can be extracted using :py:meth:`~._signals.eds.EDSSpectrum.get_lines_intensity`. The quantification method, needs be specified as either 'CL', 'zeta', or 'cross_section'. If no method is specified the function will raise an exception.
+A list of factors or cross sections should be supplied in the same order of the listed intensities (please note Hyperspy intensities made using :py:meth:~._signals.eds.EDSSpectrum.get_lines_intensity will be in alphabetical order). A set of k-factors can be usually found in the EDS manufacturer software although determination from standard samples for the particular instrument used is usually preferable. On the other hand, zeta-factors and cross sections must be determined experimentally using standards.
+The zeta-factors should be provided in units of kg/m^2. The method is described further in [Watanabe1996]_ and [Watanabe2006]_ .
+Cross sections should be provided in units of megabarns (Mb). Further details on the cross section method can be found in [MacArthur2016]_ .
+
+Using the Cliff-Lorimer method as an example, quantification can be carried out as follows:
 
 .. code-block:: python
 
@@ -525,31 +529,53 @@ Quantification can be applied from the intensities (background subtracted) with 
     >>> kfactors = [1.450226, 5.075602] #For Fe Ka and Pt La
     >>> bw = s.estimate_background_windows(line_width=[5.0, 2.0])
     >>> intensities = s.get_lines_intensity(background_windows=bw)
-    >>> weight_percent = s.quantification(intensities, kfactors, plot_result=True)
-    Fe (Fe_Ka): Composition = 4.96 weight percent
-    Pt (Pt_La): Composition = 95.04 weight percent
+    >>> atomic_percent = s.quantification(intensities, method='CL', kfactors)
+    Fe (Fe_Ka): Composition = 15.41 atomic percent
+    Pt (Pt_La): Composition = 84.59 atomic percent
 
-The obtained composition is in weight percent. It can be changed transformed into atomic percent either with the option :py:meth:`~._signals.eds_tem.EDSTEMSpectrum.quantification`:
+The obtained composition is in atomic percent, by default. However, it can be transformed into weight percent either with the option :py:meth:`~._signals.eds_tem.EDSTEMSpectrum.quantification`:
 
 .. code-block:: python
 
     >>> # With s, intensities and kfactors from before
-    >>> s.quantification(intensities, kfactors, plot_result=True,
-    >>>                  composition_units='atomic')
-    Fe (Fe_Ka): Composition = 15.41 atomic percent
-    Pt (Pt_La): Composition = 84.59 atomic percent
+    >>> s.quantification(intensities, method='CL',kfactors,
+    >>>                  composition_units='weight')
+    Fe (Fe_Ka): Composition = 4.96 weight percent
+    Pt (Pt_La): Composition = 95.04 weight percent
 
-either with :py:func:`~.misc.material.weight_to_atomic`. The reverse method is :py:func:`~.misc.material.atomic_to_weight`.
+or with :py:func:`~.misc.material.atomic_to_weight`. The reverse method is :py:func:`~.misc.material.weight_to_atomic`.
 
 .. code-block:: python
 
-    >>> # With weight_percent from before
-    >>> atomic_percent = hs.material.weight_to_atomic(weight_percent)
+    >>> # With atomic_percent from before
+    >>> weight_percent = hs.material.atomic_to_weight(atomic_percent)
+
+The zeta-factor method needs both the 'beam_current' (in nA) and the acquisition or dwell time (referred to as 'real_time' in seconds) in order to provide an accurate quantification. Both of the these parameters can be assigned to the metadata of the spectrum using:
+
+..code-block:: python
+
+    >>> s.set_microscope_parameters(beam_current=0.5)
+    >>> s.set_microscope_parameters(real_time=1.5)
+
+If these are not set the code will produce an error stating which parameter has been forgotten.
+The zeta-factor method will produce two sets of results. Index [0] is the composition maps for each element in atomic percent and index [1] is the mass-thickness map.
+
+The cross section method needs the 'beam_current', dwell time ('real_time') and probe area in order to provide accurate quantification. The 'beam_current' and 'real_time' can be set using :py:meth:`~._signals.eds_tem.EDSTEMSpectrum.set_microscope_parameters` as shown above. The 'probe_area' (in nm^2) can be defined in two different ways. Either, the probe diameter is narrower than the pixel width, which case the probe is being under-sampled and therefore an estimation of the probe area needs to be used. This can be added to the metadata by:
+
+..code-block: python
+
+    >>> s.set_microscope_parameters(probe_area=0.00125)
+
+Alternatively, if sub-pixel scanning is used (or the spectrum map was recorded at a high spatial sampling and then the data binned into much larger pixels before quantification) the illumination area then becomes the pixel area of the spectrum image. This is a much more accurate approach for quantitative EDX and should be used where possible.  The pixel width could either be added to the metadata by putting the pixel area in as the 'probe_area' (above) or by calibrating the spectrum image (see :ref:`Setting axis properties')
+
+Please note that the function does not assume square pixels so both the x and y pixel dimensions must be set. For quantification of line scans, rather than spectrum images, the pixel area should simply be added to the metadata as above.
+Either of the two methods will provide an illumination area for the cross_section quantification. If the pixel width is not set, the code will still run with the default value of 1nm with a warning message to remind the user that this is the case.
+The cross section method will produce two sets of results. Index [0] is the composition maps for each element in atomic percent and index [1] is the number of atoms per pixel for each element.
 
 EDS curve fitting
 -----------------
 
-HyperSpy makes it really easy to extract the intensity of X-ray lines by curve fitting as it is shown in the next example for an EDS-SEM spectrum recorded on a test material EDS-TM001 provided by `BAM <http://www.webshop.bam.de>`_. 
+HyperSpy makes it really easy to extract the intensity of X-ray lines by curve fitting as it is shown in the next example for an EDS-SEM spectrum recorded on a test material EDS-TM001 provided by `BAM <http://www.webshop.bam.de>`_.
 
 Load the spectrum, define the chemical composition of the sample and set the beam energy.
 
