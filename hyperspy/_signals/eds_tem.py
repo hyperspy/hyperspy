@@ -335,10 +335,16 @@ class EDSTEMSpectrum(EDSSpectrum):
         kwargs
             The extra keyword arguments are passed to plot.
 
-        Return
+        Returns
         ------
         A list of quantified elemental maps (signal) giving the composition of
         the sample in weight or atomic percent.
+
+        If the method is 'zeta' this function also returns the mass thickness
+        profile for the data.
+
+        If the method is 'cross_section' this function also returns the atom
+        counts for each element.
 
         Examples
         --------
@@ -384,7 +390,7 @@ class EDSTEMSpectrum(EDSSpectrum):
             number_of_atoms.data = results[1]
             number_of_atoms = number_of_atoms.split()
         else:
-            raise Exception ('Please specify method for quantification, as \'CL\', \'zeta\' or \'cross_section\'')
+            raise ValueError ('Please specify method for quantification, as \'CL\', \'zeta\' or \'cross_section\'')
         composition = composition.split()
         if composition_units == 'atomic':
             if method != 'cross_section':
@@ -420,7 +426,7 @@ class EDSTEMSpectrum(EDSSpectrum):
             return composition, mass_thickness
         elif method == 'cross_section':
             return composition, number_of_atoms
-        else:
+        elif:
             return composition
 
     def vacuum_mask(self, threshold=1.0, closing=True, opening=False):
@@ -628,6 +634,7 @@ class EDSTEMSpectrum(EDSSpectrum):
                         'correct, please read the user documentations for how to set this properly.')
                     area = pixel1 * pixel2
             return (real_time * beam_current * 1e-9) /(constants.e * area)
+            # 1e-9 is include here because the beam_current is in nA.
         elif method =='zeta':
             return real_time * beam_current * 1e-9 / constants.e
         else:

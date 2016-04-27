@@ -473,7 +473,7 @@ def quantification_zeta_factor(intensities,
         The total electron dose given by i*t*N, i the current, t the acquisition time
         and N the number of electrons per unit electric charge (1/e).
 
-    Return
+    Returns
     ------
     A numpy.array containing the weight fraction with the same
     shape as intensities and mass thickness in kg/m^2.
