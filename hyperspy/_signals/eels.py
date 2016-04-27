@@ -34,12 +34,15 @@ from hyperspy.external.progressbar import progressbar
 from hyperspy.components import PowerLaw
 from hyperspy.misc.utils import isiterable, closest_power_of_two, underline
 from hyperspy.misc.utils import without_nans
+from hyperspy.misc.hspy_warnings import VisibleDeprecationWarning
 
 
 class EELSSpectrum(Spectrum):
     _signal_type = "EELS"
 
     def __init__(self, *args, **kwards):
+        VisibleDeprecationWarning('From HyperSpy 1.0.0 EELSSpectrum will\
+                                  inherit from the Signal1D class')
         Spectrum.__init__(self, *args, **kwards)
         # Attributes defaults
         self.subshells = set()

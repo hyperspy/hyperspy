@@ -17,7 +17,6 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 
-
 import math
 import warnings
 
@@ -30,9 +29,9 @@ from hyperspy.drawing import utils
 from hyperspy.gui.tools import ImageContrastEditor
 from hyperspy.misc import math_tools
 from hyperspy.misc import rgb_tools
-from hyperspy.misc.image_tools import (contrast_stretching,
-                                       MPL_DIVERGING_COLORMAPS,
-                                       centre_colormap_values)
+from hyperspy._signals.signal2D import (contrast_stretching,
+                                        MPL_DIVERGING_COLORMAPS,
+                                        centre_colormap_values)
 from hyperspy.drawing.figure import BlittedFigure
 
 
