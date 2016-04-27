@@ -23,18 +23,21 @@ import warnings
 from matplotlib import pyplot as plt
 
 from hyperspy import utils
-from hyperspy._signals.signal1D import Signal1D
+from hyperspy._signals.spectrum import Spectrum
 from hyperspy.misc.elements import elements as elements_db
 from hyperspy.misc.eds import utils as utils_eds
 from hyperspy.misc.utils import isiterable
 from hyperspy.utils import markers
+from hyperspy.misc.hspy_warnings import VisibleDeprecationWarning
 
 
-class EDSSpectrum(Signal1D):
+class EDSSpectrum(Spectrum):
     _signal_type = "EDS"
 
     def __init__(self, *args, **kwards):
-        Signal1D.__init__(self, *args, **kwards)
+        VisibleDeprecationWarning('From HyperSpy 1.0.0 EDSSpectrum will\
+                                  inherit from the Signal1D class')
+        Spectrum.__init__(self, *args, **kwards)
         if self.metadata.Signal.signal_type == 'EDS':
             print('The microscope type is not set. Use '
                   'set_signal_type(\'EDS_TEM\')  '
@@ -513,8 +516,8 @@ class EDSSpectrum(Signal1D):
         for element in elements:
             # Possible line (existing and excited by electron)
             element_lines = []
-            for subshell in list(elements_db[element]['Atomic_properties'
-                                                 ]['Xray_lines'].keys()):
+            for subshell in list(elements_db[element]['Atomic_properties']
+                                 ['Xray_lines'].keys()):
                 if only_lines and subshell not in only_lines:
                     continue
                 element_lines.append(element + "_" + subshell)
