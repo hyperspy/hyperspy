@@ -43,6 +43,7 @@ from hyperspy.misc import rgb_tools
 from hyperspy.misc.utils import underline
 from hyperspy.external.astroML.histtools import histogram
 from hyperspy.drawing.utils import animate_legend
+from hyperspy.misc.slicing import FancySlicing
 from hyperspy.misc.hspy_warnings import VisibleDeprecationWarning
 from hyperspy.misc.signal_tools import are_signals_aligned
 from hyperspy._signals.signal1D import Signal1DTools
