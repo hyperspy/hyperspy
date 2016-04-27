@@ -16,16 +16,13 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-import warnings
 
-import matplotlib.pyplot as plt
-import numpy as np
-
-from hyperspy.exceptions import DataDimensionError
-from hyperspy.signal import Signal
-from hyperspy.gui.egerton_quantification import SpikesRemoval
+from hyperspy._signals.signal1D import Signal1D, Signal1DTools
+from hyperspy.misc.hspy_warnings import VisibleDeprecationWarning
 
 
-class Spectrum(Signal):
+class Spectrum(Signal1D,
+               Signal1DTools,):
 
-
+    VisibleDeprecationWarning('The Spectrum class will be deprecated in\
+                              HyperSpy 1.0.0 and replaced with Signal1D')

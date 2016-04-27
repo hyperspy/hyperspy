@@ -1248,10 +1248,9 @@ class MVATools(object):
         factors.plot(navigator=factors_navigator)
 
 
-class Signal(MVA,
-             MVATools,
-             Signal1DTools,
-             Signal2DTools,):
+class BaseSignal(FancySlicing,
+                 MVA,
+                 MVATools,):
 
     _record_by = ""
     _signal_type = ""
@@ -3565,6 +3564,14 @@ class Signal(MVA,
         """
         from hyperspy.model import Model
         return Model(self)
+
+
+class Signal(BaseSignal,
+             Signal1DTools,
+             Signal2DTools,):
+        VisibleDeprecationWarning('The Signal class will be deprecated\
+                                  in HyperSpy 1.0.0 and replaced with\
+                                  BaseSignal, Signal1D and Signal2D.')
 
 
 ARITHMETIC_OPERATORS = (
