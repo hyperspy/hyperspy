@@ -517,8 +517,8 @@ Hyperspy now includes three methods for EDS quantification; Cliff-Lorimer, the z
 
 Quantification must be applied to the background subtracted intensities, which can be found using :py:meth:`~._signals.eds.EDSSpectrum.get_lines_intensity`. The quantification of these intensities can then be determined using the :py:meth:`~._signals.eds_tem.EDSTEMSpectrum.quantification` method. These instensities are a stack (of images images or otherwise) for each element which can be extracted using :py:meth:`~._signals.eds.EDSSpectrum.get_lines_intensity`. The quantification method, needs be specified as either 'CL', 'zeta', or 'cross_section'. If no method is specified the function will raise an exception.
 A list of factors or cross sections should be supplied in the same order of the listed intensities (please note Hyperspy intensities made using :py:meth:~._signals.eds.EDSSpectrum.get_lines_intensity will be in alphabetical order). A set of k-factors can be usually found in the EDS manufacturer software although determination from standard samples for the particular instrument used is usually preferable. On the other hand, zeta-factors and cross sections must be determined experimentally using standards.
-The zeta-factor method is described further in [Watanabe1996]_ and [Watanabe2006]_ .
-Further details on the cross section method can be found in [MacArthur2016]_ .
+The zeta-factors should be provided in units of kg/m^2. The method is described further in [Watanabe1996]_ and [Watanabe2006]_ .
+Cross sections should be provided in units of megabarns (Mb). Further details on the cross section method can be found in [MacArthur2016]_ .
 
 Using the Cliff-Lorimer method as an example, quantification can be carried out as follows:
 
