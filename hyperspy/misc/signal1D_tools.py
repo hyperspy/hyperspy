@@ -176,18 +176,6 @@ class Signal1DTools(object):
             dat[i1:i2] = dat_int(list(range(i1, i2)))
             pbar.update(i + 1)
 
-#    def _check_navigation_mask(self, mask):
-#        if mask is not None:
-#            if not isinstance(mask, Signal):
-#                raise ValueError("mask must be a Signal instance.")
-#            elif mask.axes_manager.signal_dimension not in (0, 1):
-#                raise ValueError("mask must be a Signal with signal_dimension "
-#                                 "equal to 1")
-#            elif (mask.axes_manager.navigation_dimension !=
-#                  self.axes_manager.navigation_dimension):
-#                raise ValueError("mask must be a Signal with the same "
-#                                 "navigation_dimension as the current signal.")
-
     def estimate_shift1D(self,
                          start=None,
                          end=None,
