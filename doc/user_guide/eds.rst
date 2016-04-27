@@ -516,8 +516,7 @@ Quantification
 Hyperspy now includes three methods for EDS quantification; Cliff-Lorimer, the zeta-factor method and ionization cross sections.
 
 Quantification must be applied to the background subtracted intensities, which can be found using :py:meth:`~._signals.eds.EDSSpectrum.get_lines_intensity`. The quantification of these intensities can then be determined using the :py:meth:`~._signals.eds_tem.EDSTEMSpectrum.quantification` method. These instensities are a stack (of images images or otherwise) for each element which can be extracted using :py:meth:`~._signals.eds.EDSSpectrum.get_lines_intensity`. The quantification method, needs be specified as either 'CL', 'zeta', or 'cross_section'. If no method is specified the function will raise an exception.
-A list of factors or cross sections should be supplied in the same order of the listed intensities (please note Hyperspy intensities made using :py:meth:`~._signals.eds.EDSSpectrum.get_lines_intensity` will be in alphabetical order). The required k-factors can be usually found in the EDS manufacturer software. Where as, zeta-factors and cross sections will need to be determined experimentally using standards.
-For further information about k-factor quantification and determining k-factors from standard samples please look at [Williams2009]_ .
+A list of factors or cross sections should be supplied in the same order of the listed intensities (please note Hyperspy intensities made using :py:meth:~._signals.eds.EDSSpectrum.get_lines_intensity will be in alphabetical order). A set of k-factors can be usually found in the EDS manufacturer software although determination from standard samples for the particular instrument used is usually preferable. On the other hand, zeta-factors and cross sections must be determined experimentally using standards.
 The zeta-factor method is described further in [Watanabe1996]_ and [Watanabe2006]_ .
 Further details on the cross section method can be found in [MacArthur2016]_ .
 
@@ -561,13 +560,13 @@ The zeta-factor method needs both the 'beam_current' (in nA) and the acquisition
 If these are not set the code will produce an error stating which parameter has been forgotten.
 The zeta-factor method will produce two sets of results. Index [0] is the composition maps for each element in atomic percent and index [1] is the mass-thickness map.
 
-The cross section method needs the 'beam_current', dwell time ('real_time') and probe area in order to provide accurate quantification. The 'beam_current' and 'real_time' can be set using :py:meth:`~._signals.eds_tem.EDSTEMSpectrum.set_microscope_parameters` as shown above. The 'beam_area' (in nm^2) can be defined in two different ways. Either, the probe diameter is narrower than the pixel width, which case the probe is being under-sampled and therefore an estimation of the probe area needs to be used. This can be added to the metadata by:
+The cross section method needs the 'beam_current', dwell time ('real_time') and probe area in order to provide accurate quantification. The 'beam_current' and 'real_time' can be set using :py:meth:`~._signals.eds_tem.EDSTEMSpectrum.set_microscope_parameters` as shown above. The 'probe_area' (in nm^2) can be defined in two different ways. Either, the probe diameter is narrower than the pixel width, which case the probe is being under-sampled and therefore an estimation of the probe area needs to be used. This can be added to the metadata by:
 
 ..code-block: python
 
-    >>> s.set_microscope_parameters(beam_area=0.00125)
+    >>> s.set_microscope_parameters(probe_area=0.00125)
 
-Alternatively, if sub-pixel scanning is used (or the spectrum map was recorded at a high spatial sampling and then the data binned into much larger pixels before quantification) the illumination area then becomes the pixel area of the spectrum image. This is a much more accurate approach for quantitative EDX and should be used where possible.  The pixel width could either be added to the metadata by putting the pixel area in as the 'beam_area' (above) or by calibrating the spectrum image (see :ref:`Setting axis properties')
+Alternatively, if sub-pixel scanning is used (or the spectrum map was recorded at a high spatial sampling and then the data binned into much larger pixels before quantification) the illumination area then becomes the pixel area of the spectrum image. This is a much more accurate approach for quantitative EDX and should be used where possible.  The pixel width could either be added to the metadata by putting the pixel area in as the 'probe_area' (above) or by calibrating the spectrum image (see :ref:`Setting axis properties')
 
 Please note that the function does not assume square pixels so both the x and y pixel dimensions must be set. For quantification of line scans, rather than spectrum images, the pixel area should simply be added to the metadata as above.
 Either of the two methods will provide an illumination area for the cross_section quantification. If the pixel width is not set, the code will still run with the default value of 1nm with a warning message to remind the user that this is the case.
