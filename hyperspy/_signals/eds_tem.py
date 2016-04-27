@@ -617,7 +617,7 @@ class EDSTEMSpectrum(EDSSpectrum):
             real_time = parameters.Detector.EDS.real_time
             if 'real_time' not in parameters.Detector.EDS:
                 raise Exception('Electron dose could not be calculated as real_time is not set. '
-                                'The beam current can be set by calling set_microscope_parameters()')
+                                'The beam_current can be set by calling set_microscope_parameters()')
             elif real_time == 0.5:
                 warnings.warn('Please note that your real time is set to '
                      'the default value of 0.5 s. If this is not correct, you should change it using '
