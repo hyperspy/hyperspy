@@ -1,6 +1,6 @@
 import nose.tools
 import numpy as np
-from hyperspy.misc.image_tools import contrast_stretching
+from hyperspy.misc.signal2D_tools import contrast_stretching
 
 
 class TestImageStretching:

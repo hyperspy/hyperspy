@@ -30,9 +30,9 @@ from hyperspy.drawing import utils
 from hyperspy.gui.tools import ImageContrastEditor
 from hyperspy.misc import math_tools
 from hyperspy.misc import rgb_tools
-from hyperspy.misc.image_tools import (contrast_stretching,
-                                       MPL_DIVERGING_COLORMAPS,
-                                       centre_colormap_values)
+from hyperspy.misc.signal2D_tools import (contrast_stretching,
+                                          MPL_DIVERGING_COLORMAPS,
+                                          centre_colormap_values)
 from hyperspy.drawing.figure import BlittedFigure
 
 
