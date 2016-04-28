@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2015 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -39,6 +39,7 @@ from hyperspy._components.eels_cl_edge import EELSCLEdge
 from hyperspy._components.error_function import Erf
 from hyperspy._components.exponential import Exponential
 from hyperspy._components.gaussian import Gaussian
+from hyperspy._components.gaussianhf import GaussianHF
 from hyperspy._components.logistic import Logistic
 from hyperspy._components.lorentzian import Lorentzian
 from hyperspy._components.offset import Offset

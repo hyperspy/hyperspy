@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2015 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -22,8 +22,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from traits.api import Undefined
-
-import hyperspy.messages as messages
 
 
 def _plot_quiver_scatter_overlay(image, axes_manager,
@@ -187,4 +185,4 @@ def _plot_loading(loadings, idx, axes_manager, ax=None,
         else:
             plt.xlabel('depth')
     else:
-        messages.warning_exit('View not supported')
+        raise ValueError('View not supported')

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2015 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -181,6 +181,7 @@ class Voigt(Component):
         >>> g.estimate_parameters(s, -10,10, False)
 
         """
+        super(Voigt, self)._estimate_parameters(signal)
         axis = signal.axes_manager.signal_axes[0]
 
         energy2index = axis._get_index

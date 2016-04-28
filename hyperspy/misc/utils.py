@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2015 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -16,31 +16,31 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-from __future__ import division
 from operator import attrgetter
 import inspect
 import copy
 import types
-from StringIO import StringIO
+from io import StringIO
 import codecs
 import collections
 import tempfile
 import unicodedata
+from contextlib import contextmanager
 
 import numpy as np
 
-from hyperspy.misc.hspy_warnings import VisibleDeprecationWarning
-
 
 def attrsetter(target, attrs, value):
-    """ Sets attribute of the target to specified value, supports nested attributes.
-        Only creates a new attribute if the object supports such behaviour (e.g. DictionaryTreeBrowser does)
+    """ Sets attribute of the target to specified value, supports nested
+        attributes. Only creates a new attribute if the object supports such
+        behaviour (e.g. DictionaryTreeBrowser does)
 
         Parameters
         ----------
             target : object
             attrs : string
-                attributes, separated by periods (e.g. 'metadata.Signal.Noise_parameters.variance' )
+                attributes, separated by periods (e.g.
+                'metadata.Signal.Noise_parameters.variance' )
             value : object
 
         Example
@@ -90,25 +90,28 @@ def generate_axis(origin, step, N, index=0):
         origin - index * step, origin + step * (N - 1 - index), N)
 
 
-# TODO: Remove in 0.9
-def unfold_if_multidim(signal):
-    """Unfold the SI if it is 2D
+@contextmanager
+def stash_active_state(model):
+    active_state = []
+    for component in model:
+        if component.active_is_multidimensional:
+            active_state.append(component._active_array)
+        else:
+            active_state.append(component.active)
+    yield
+    for component in model:
+        active_s = active_state.pop(0)
+        if isinstance(active_s, bool):
+            component.active = active_s
+        else:
+            if not component.active_is_multidimensional:
+                component.active_is_multidimensional = True
+            component._active_array[:] = active_s
 
-    Parameters
-    ----------
-    signal : Signal instance
 
-    Returns
-    -------
-
-    Boolean. True if the SI was unfolded by the function.
-
-    """
-    import warnings
-    warnings.warn("unfold_if_multidim is deprecated and will be removed in "
-                  "0.9 please use Signal.unfold instead",
-                  VisibleDeprecationWarning)
-    return None
+@contextmanager
+def dummy_context_manager(*args, **kwargs):
+    yield
 
 
 def str2num(string, **kargs):
@@ -131,7 +134,7 @@ _slugify_strip_re_data = ''.join(
     c for c in map(
         chr, np.delete(
             np.arange(256), [
-                95, 32])) if not c.isalnum())
+                95, 32])) if not c.isalnum()).encode()
 
 
 def slugify(value, valid_variable_name=False):
@@ -142,19 +145,19 @@ def slugify(value, valid_variable_name=False):
     Adapted from Django's "django/template/defaultfilters.py".
 
     """
-    if not isinstance(value, unicode):
+    if not isinstance(value, str):
         try:
             # Convert to unicode using the default encoding
-            value = unicode(value)
+            value = str(value)
         except:
             # Try latin1. If this does not work an exception is raised.
-            value = unicode(value, "latin1")
+            value = str(value, "latin1")
     value = unicodedata.normalize('NFKD', value).encode('ascii', 'ignore')
-    value = unicode(value.translate(None, _slugify_strip_re_data).strip())
+    value = value.translate(None, _slugify_strip_re_data).decode().strip()
     value = value.replace(' ', '_')
     if valid_variable_name is True:
         if value[:1].isdigit():
-            value = u'Number_' + value
+            value = 'Number_' + value
     return value
 
 
@@ -172,7 +175,8 @@ class DictionaryTreeBrowser(object):
 
     Methods
     -------
-    export : saves the dictionary in pretty tree printing format in a text file.
+    export : saves the dictionary in pretty tree printing format in a text
+        file.
     keys : returns a list of non-private keys.
     as_dictionary : returns a dictionary representation of the object.
     set_item : easily set items, creating any necessary node on the way.
@@ -201,7 +205,7 @@ class DictionaryTreeBrowser(object):
         ├── caterpillar = True
         └── color = brown
     >>> for label, leaf in tree.Branch:
-            print("%s is %s" % (label, leaf.color))
+    ...     print("%s is %s" % (label, leaf.color))
     Leaf1 is green
     Leaf2 is brown
     >>> tree.Branch.Leaf2.caterpillar
@@ -225,7 +229,7 @@ class DictionaryTreeBrowser(object):
         """Add new items from dictionary.
 
         """
-        for key, value in dictionary.iteritems():
+        for key, value in dictionary.items():
             if key == '_double_lines':
                 value = double_lines
             self.__setattr__(key, value)
@@ -252,14 +256,14 @@ class DictionaryTreeBrowser(object):
         from hyperspy.defaults_parser import preferences
 
         def check_long_string(value, max_len):
-            if not isinstance(value, (basestring, np.string_)):
+            if not isinstance(value, (str, np.string_)):
                 value = repr(value)
             value = ensure_unicode(value)
-            strvalue = unicode(value)
+            strvalue = str(value)
             _long = False
             if max_len is not None and len(strvalue) > 2 * max_len:
                 right_limit = min(max_len, len(strvalue) - max_len)
-                strvalue = u'%s ... %s' % (
+                strvalue = '%s ... %s' % (
                     strvalue[:max_len], strvalue[-right_limit:])
                 _long = True
             return _long, strvalue
@@ -268,14 +272,14 @@ class DictionaryTreeBrowser(object):
         eoi = len(self)
         j = 0
         if preferences.General.dtb_expand_structures and self._double_lines:
-            s_end = u'╚══ '
-            s_middle = u'╠══ '
-            pad_middle = u'║   '
+            s_end = '╚══ '
+            s_middle = '╠══ '
+            pad_middle = '║   '
         else:
-            s_end = u'└── '
-            s_middle = u'├── '
-            pad_middle = u'│   '
-        for key_, value in iter(sorted(self.__dict__.iteritems())):
+            s_end = '└── '
+            s_middle = '├── '
+            pad_middle = '│   '
+        for key_, value in iter(sorted(self.__dict__.items())):
             if key_.startswith("_"):
                 continue
             if not isinstance(key_, types.MethodType):
@@ -289,33 +293,35 @@ class DictionaryTreeBrowser(object):
                     if isinstance(value, list) or isinstance(value, tuple):
                         iflong, strvalue = check_long_string(value, max_len)
                         if iflong:
-                            key += u" <list>" if isinstance(value,
-                                                            list) else u" <tuple>"
+                            key += (" <list>"
+                                    if isinstance(value, list)
+                                    else " <tuple>")
                             value = DictionaryTreeBrowser(
-                                {u'[%d]' % i: v for i, v in enumerate(value)}, double_lines=True)
+                                {'[%d]' % i: v for i, v in enumerate(value)},
+                                double_lines=True)
                         else:
-                            string += u"%s%s%s = %s\n" % (
+                            string += "%s%s%s = %s\n" % (
                                 padding, symbol, key, strvalue)
                             j += 1
                             continue
 
                 if isinstance(value, DictionaryTreeBrowser):
-                    string += u'%s%s%s\n' % (padding, symbol, key)
+                    string += '%s%s%s\n' % (padding, symbol, key)
                     if j == eoi - 1:
-                        extra_padding = u'    '
+                        extra_padding = '    '
                     else:
                         extra_padding = pad_middle
                     string += value._get_print_items(
                         padding + extra_padding)
                 else:
                     _, strvalue = check_long_string(value, max_len)
-                    string += u"%s%s%s = %s\n" % (
+                    string += "%s%s%s = %s\n" % (
                         padding, symbol, key, strvalue)
             j += 1
         return string
 
     def __repr__(self):
-        return self._get_print_items().encode('utf8', errors='ignore')
+        return self._get_print_items()
 
     def __getitem__(self, key):
         return self.__getattribute__(key)
@@ -324,6 +330,8 @@ class DictionaryTreeBrowser(object):
         self.__setattr__(key, value)
 
     def __getattribute__(self, name):
+        if isinstance(name, bytes):
+            name = name.decode()
         name = slugify(name, valid_variable_name=True)
         item = super(DictionaryTreeBrowser, self).__getattribute__(name)
         if isinstance(item, dict) and '_dtb_value_' in item and "key" in item:
@@ -368,7 +376,7 @@ class DictionaryTreeBrowser(object):
         """
         from hyperspy.signal import Signal
         par_dict = {}
-        for key_, item_ in self.__dict__.iteritems():
+        for key_, item_ in self.__dict__.items():
             if not isinstance(item_, types.MethodType):
                 key = item_['key']
                 if key in ["_db_index", "_double_lines"]:
@@ -407,7 +415,7 @@ class DictionaryTreeBrowser(object):
         False
 
         """
-        if isinstance(item_path, basestring):
+        if isinstance(item_path, str):
             item_path = item_path.split('.')
         else:
             item_path = copy.copy(item_path)
@@ -448,7 +456,7 @@ class DictionaryTreeBrowser(object):
         False
 
         """
-        if isinstance(item_path, basestring):
+        if isinstance(item_path, str):
             item_path = item_path.split('.')
         else:
             item_path = copy.copy(item_path)
@@ -497,7 +505,7 @@ class DictionaryTreeBrowser(object):
         """
         if not self.has_item(item_path):
             self.add_node(item_path)
-        if isinstance(item_path, basestring):
+        if isinstance(item_path, str):
             item_path = item_path.split('.')
         if len(item_path) > 1:
             self.__getattribute__(item_path.pop(0)).set_item(
@@ -531,7 +539,7 @@ class DictionaryTreeBrowser(object):
                 dtb[key] = DictionaryTreeBrowser()
             dtb = dtb[key]
 
-    def next(self):
+    def __next__(self):
         """
         Standard iterator method, updates the index and returns the
         current coordiantes
@@ -552,7 +560,7 @@ class DictionaryTreeBrowser(object):
             raise StopIteration
         else:
             self._db_index += 1
-        key = self.keys()[self._db_index]
+        key = list(self.keys())[self._db_index]
         return key, getattr(self, key)
 
     def __iter__(self):
@@ -572,7 +580,7 @@ def strlist2enumeration(lst):
 
 
 def ensure_unicode(stuff, encoding='utf8', encoding2='latin-1'):
-    if not isinstance(stuff, (str, np.string_)):
+    if not isinstance(stuff, (bytes, np.string_)):
         return stuff
     else:
         string = stuff
@@ -590,7 +598,7 @@ def swapelem(obj, i, j):
     E.g.
     >>> L = ['a', 'b', 'c']
     >>> spwapelem(L, 1, 2)
-    >>> print L
+    >>> print(L)
         ['a', 'c', 'b']
 
     """
@@ -679,26 +687,26 @@ def ordinal(value):
     >>> for i in range(1,13):
     ...     ordinal(i)
     ...
-    u'1st'
-    u'2nd'
-    u'3rd'
-    u'4th'
-    u'5th'
-    u'6th'
-    u'7th'
-    u'8th'
-    u'9th'
-    u'10th'
-    u'11th'
-    u'12th'
+    '1st'
+    '2nd'
+    '3rd'
+    '4th'
+    '5th'
+    '6th'
+    '7th'
+    '8th'
+    '9th'
+    '10th'
+    '11th'
+    '12th'
 
     >>> for i in (100, '111', '112',1011):
     ...     ordinal(i)
     ...
-    u'100th'
-    u'111th'
-    u'112th'
-    u'1011th'
+    '100th'
+    '111th'
+    '112th'
+    '1011th'
 
     Notes
     -----
@@ -713,15 +721,15 @@ def ordinal(value):
 
     if value % 100 // 10 != 1:
         if value % 10 == 1:
-            ordval = u"%d%s" % (value, "st")
+            ordval = "%d%s" % (value, "st")
         elif value % 10 == 2:
-            ordval = u"%d%s" % (value, "nd")
+            ordval = "%d%s" % (value, "nd")
         elif value % 10 == 3:
-            ordval = u"%d%s" % (value, "rd")
+            ordval = "%d%s" % (value, "rd")
         else:
-            ordval = u"%d%s" % (value, "th")
+            ordval = "%d%s" % (value, "th")
     else:
-        ordval = u"%d%s" % (value, "th")
+        ordval = "%d%s" % (value, "th")
 
     return ordval
 
@@ -782,7 +790,8 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
     Examples
     --------
     >>> data = np.arange(20)
-    >>> s = hs.stack([hs.signals.Spectrum(data[:10]), hs.signals.Spectrum(data[10:])])
+    >>> s = hs.stack([hs.signals.Spectrum(data[:10]),
+    ...               hs.signals.Spectrum(data[10:])])
     >>> s
     <Spectrum, title: Stack of , dimensions: (2, 10)>
     >>> s.data
@@ -875,6 +884,6 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
 
 def shorten_name(name, req_l):
     if len(name) > req_l:
-        return name[:req_l - 2] + u'..'
+        return name[:req_l - 2] + '..'
     else:
         return name

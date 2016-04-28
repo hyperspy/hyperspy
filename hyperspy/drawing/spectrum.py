@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2015 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -21,9 +21,9 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-from hyperspy import messages
 from hyperspy.drawing.figure import BlittedFigure
 from hyperspy.drawing import utils
+from hyperspy.events import Event, Events
 
 
 class SpectrumFigure(BlittedFigure):
@@ -32,6 +32,7 @@ class SpectrumFigure(BlittedFigure):
     """
 
     def __init__(self, title=""):
+        super(SpectrumFigure, self).__init__()
         self.figure = None
         self.ax = None
         self.right_ax = None
@@ -58,7 +59,7 @@ class SpectrumFigure(BlittedFigure):
         self.figure = utils.create_figure(
             window_title="Figure " + self.title if self.title
             else None)
-        utils.on_figure_window_close(self.figure, self.close)
+        utils.on_figure_window_close(self.figure, self._on_close)
         self.figure.canvas.mpl_connect('draw_event', self._on_draw)
 
     def create_axis(self):
@@ -113,13 +114,16 @@ class SpectrumFigure(BlittedFigure):
         x_axis_lower_lims = []
         for line in self.ax_lines:
             line.plot()
-            x_axis_lower_lims.append(line.axis[0])
-            x_axis_upper_lims.append(line.axis[-1])
+            x_axis_lower_lims.append(line.axis.axis[0])
+            x_axis_upper_lims.append(line.axis.axis[-1])
         for marker in self.ax_markers:
             marker.plot()
         plt.xlim(np.min(x_axis_lower_lims), np.max(x_axis_upper_lims))
         # To be discussed
-        self.axes_manager.connect(self.update)
+        self.axes_manager.events.indices_changed.connect(self.update, [])
+        self.events.closed.connect(
+            lambda: self.axes_manager.events.indices_changed.disconnect(
+                self.update), [])
         if hasattr(self.figure, 'tight_layout'):
             try:
                 self.figure.tight_layout()
@@ -128,16 +132,18 @@ class SpectrumFigure(BlittedFigure):
                 # complains
                 pass
 
-    def close(self):
+    def _on_close(self):
         for marker in self.ax_markers:
             marker.close()
         for line in self.ax_lines + self.right_ax_lines:
             line.close()
-        try:
-            plt.close(self.figure)
-        except:
-            pass
+        self.events.closed.trigger(obj=self)
+        for f in self.events.closed.connected:
+            self.events.closed.disconnect(f)
         self.figure = None
+
+    def close(self):
+        plt.close(self.figure)
 
     def update(self):
         for marker in self.ax_markers:
@@ -177,6 +183,14 @@ class SpectrumLine(object):
     """
 
     def __init__(self):
+        self.events = Events()
+        self.events.closed = Event("""
+            Event that triggers when the line is closed.
+
+            Arguments:
+                obj:  SpectrumLine instance
+                    The instance that triggered the event.
+            """, arguments=["obj"])
         self.sf_lines = None
         self.ax = None
         # Data attributes
@@ -210,7 +224,7 @@ class SpectrumLine(object):
             del kwargs['color']
             self.color = color
 
-        for key, item in kwargs.iteritems():
+        for key, item in kwargs.items():
             if item is None and key in self._line_properties:
                 del self._line_properties[key]
             else:
@@ -237,12 +251,10 @@ class SpectrumLine(object):
         elif value == 'line':
             lp['linestyle'] = '-'
             lp['marker'] = "None"
-            lp['markersize'] = None
             lp['drawstyle'] = "default"
         elif value == 'step':
             lp['drawstyle'] = 'steps-mid'
             lp['marker'] = "None"
-            lp['markersize'] = None
         else:
             raise ValueError(
                 "`type` must be one of "
@@ -287,10 +299,13 @@ class SpectrumLine(object):
             data = f(axes_manager=self.axes_manager).imag
         if self.line is not None:
             self.line.remove()
-        self.line, = self.ax.plot(self.axis, data,
+        self.line, = self.ax.plot(self.axis.axis, data,
                                   **self.line_properties)
         self.line.set_animated(True)
-        self.axes_manager.connect(self.update)
+        self.axes_manager.events.indices_changed.connect(self.update, [])
+        self.events.closed.connect(
+            lambda: self.axes_manager.events.indices_changed.disconnect(
+                self.update), [])
         if not self.axes_manager or self.axes_manager.navigation_size == 0:
             self.plot_indices = False
         if self.plot_indices is True:
@@ -315,11 +330,18 @@ class SpectrumLine(object):
             ydata = self.data_function(axes_manager=self.axes_manager).real
         else:
             ydata = self.data_function(axes_manager=self.axes_manager).imag
-        self.line.set_ydata(ydata)
+
+        old_xaxis = self.line.get_xdata()
+        if len(old_xaxis) != self.axis.size or \
+                np.any(np.not_equal(old_xaxis, self.axis.axis)):
+            self.ax.set_xlim(self.axis.axis[0], self.axis.axis[-1])
+            self.line.set_data(self.axis.axis, ydata)
+        else:
+            self.line.set_ydata(ydata)
 
         if self.autoscale is True:
             self.ax.relim()
-            y1, y2 = np.searchsorted(self.axis,
+            y1, y2 = np.searchsorted(self.axis.axis,
                                      self.ax.get_xbound())
             y2 += 2
             y1, y2 = np.clip((y1, y2), 0, len(ydata - 1))
@@ -341,9 +363,11 @@ class SpectrumLine(object):
             self.ax.lines.remove(self.line)
         if self.text and self.text in self.ax.texts:
             self.ax.texts.remove(self.text)
-        self.axes_manager.disconnect(self.update)
         if self.sf_lines and self in self.sf_lines:
             self.sf_lines.remove(self)
+        self.events.closed.trigger(obj=self)
+        for f in self.events.closed.connected:
+            self.events.closed.disconnect(f)
         try:
             self.ax.figure.canvas.draw()
         except:
@@ -392,4 +416,4 @@ def _plot_loading(loadings, idx, axes_manager, ax=None,
             x = np.arange(axes_manager._axes[0].size)
         ax.step(x, loadings[idx])
     else:
-        messages.warning_exit('View not supported')
+        raise ValueError('View not supported')

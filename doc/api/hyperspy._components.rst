@@ -84,6 +84,22 @@ hyperspy._components.gaussian module
     :undoc-members:
     :show-inheritance:
 
+hyperspy._components.gaussian2d module
+--------------------------------------
+
+.. automodule:: hyperspy._components.gaussian2d
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+hyperspy._components.gaussianhf module
+--------------------------------------
+
+.. automodule:: hyperspy._components.gaussianhf
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 hyperspy._components.logistic module
 ------------------------------------
 
