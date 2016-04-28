@@ -17,7 +17,8 @@ spectrum (SEM or TEM).
 Spectrum loading and parameters
 -------------------------------
 
-Data files used in the following examples can be downloaded using:
+The sample and  data used in this section are described in [Burdet2013]_, and can be
+downloaded using:
 
 .. code-block:: python
 
@@ -26,13 +27,6 @@ Data files used in the following examples can be downloaded using:
     >>> urlretrieve(url + 'Ni_superalloy_1pix.msa', 'Ni_superalloy_1pix.msa')
     >>> urlretrieve(url + 'Ni_superalloy_010.rpl', 'Ni_superalloy_010.rpl')
     >>> urlretrieve(url + 'Ni_superalloy_010.raw', 'Ni_superalloy_010.raw')
-
-.. NOTE::
-
-    The sample and the data used in this chapter are described in
-    P. Burdet, `et al.`, Acta Materialia, 61, p. 3090-3098 (2013) (see
-    `abstract <http://infoscience.epfl.ch/record/185861/>`_).
-
 
 Loading data
 ^^^^^^^^
@@ -423,18 +417,14 @@ Geting the intensity of an X-ray line
 
 .. versionadded:: 0.8
 
-Data used in the following examples can be downloaded using:
+The sample and data used in this section are described in [Rossouw2015]_, and
+can be downloaded using:
 
 .. code-block:: python
 
     >>> from urllib import urlretrieve
     >>> url = 'http://cook.msm.cam.ac.uk//~hyperspy//EDS_tutorial//'
     >>> urlretrieve(url + 'core_shell.hdf5', 'core_shell.hdf5')
-
-.. NOTE::
-
-    The sample and the data used in this section are described in
-    D. Roussow et al., Nano Lett, 10.1021/acs.nanolett.5b00449 (2015).
 
 The width of integration is defined by extending the energy resolution of
 Mn Ka to the peak energy ("energy_resolution_MnKa" in metadata):
