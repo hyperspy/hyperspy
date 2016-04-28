@@ -16,15 +16,12 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-#from multiprocessing import (cpu_count, Pool, Queue, Manager)
-#from multiprocessing.pool import Pool as Pool_type
-#from ipyparallel import (Client, DirectView)
-from itertools import product
 import logging
 
 import numpy as np
 import dill
 import time
+from multiprocessing import cpu_count
 
 from hyperspy.misc.utils import DictionaryTreeBrowser
 from hyperspy.misc.utils import slugify
@@ -44,14 +41,48 @@ from tqdm import tqdm
 _logger = logging.getLogger(__name__)
 
 
-class Samfire(object):
+class StrategyList(list):
+
+    def __init__(self, samf):
+        super(StrategyList, self).__init__()
+        self.samf = samf
+
+    def append(self, thing):
+        thing.samf = self.samf
+        list.append(self, thing)
+
+    def extend(self, iterable):
+        for thing in iterable:
+            self.append(thing)
+
+    def remove(self, thing):
+        if isinstance(thing, int):
+            thing = self[thing]
+        thing.samf = None
+        list.remove(self, thing)
+
+    def __repr__(self):
+        signature = u"%3s | %4s | %s"
+        ans = signature % ("A", "#", "Strategy")
+        ans += u"\n"
+        ans += signature % (u'-' * 2, u'-' * 4, u'-' * 25)
+        if self:
+            for n, s in enumerate(self):
+                ans += u"\n"
+                name = repr(s)
+                a = u" x" if self.samf._active_strategy_ind == n else u""
+                ans += signature % (a, str(n), name)
+        return ans
+
+
+class Samfire:
 
     """Smart Adaptive Multidimensional Fitting (SAMFire) object
 
     SAMFire is a more robust way of fitting multidimensional datasets. By
     extracting starting values for each pixel from already fitted pixels,
-    SAMFire stops the fitting algorithm from getting lost in the parameter space
-    by always starting close to the optimal solution.
+    SAMFire stops the fitting algorithm from getting lost in the parameter
+    space by always starting close to the optimal solution.
 
     SAMFire only picks starting parameters and the order the pixels (in the
     navigation space) are fitted, and does not provide any new minimisation
@@ -70,8 +101,8 @@ class Samfire(object):
     pool : samfire_pool instance
         A proxy object that manages either multiprocessing or ipyparallel pool
     strategies : strategy list
-        A list of strategies that will be used to select pixel fitting order and
-        calculate required starting parameters. Strategies come in two
+        A list of strategies that will be used to select pixel fitting order
+        and calculate required starting parameters. Strategies come in two
         "flavours" - diffusion and segmenter. Diffusion spreads the starting
         values to the nearest pixels and forces certain pixel fitting order.
         Segmenter looks for clusters in parameter values, and suggests most
@@ -124,38 +155,8 @@ class Samfire(object):
     plot_every = 0
     save_every = np.nan
     _workers = None
-
-    class _strategy_list(list):
-
-        def __init__(self, samf):
-            self.samf = samf
-
-        def append(self, thing):
-            thing.samf = self.samf
-            list.append(self, thing)
-
-        def extend(self, iterable):
-            for thing in iterable:
-                self.append(thing)
-
-        def remove(self, thing):
-            if isinstance(thing, int):
-                thing = self[thing]
-            thing.samf = None
-            list.remove(self, thing)
-
-        def __repr__(self):
-            signature = u"%3s | %4s | %s"
-            ans = signature % ("A", "#", "Strategy")
-            ans += u"\n"
-            ans += signature % (u'-' * 2, u'-' * 4, u'-' * 25)
-            if self:
-                for n, s in enumerate(self):
-                    ans += u"\n"
-                    name = repr(s)
-                    a = u" x" if self.samf._active_strategy_ind == n else u""
-                    ans += signature % (a, str(n), name)
-            return ans
+    _args = None
+    _count = 0
 
     def __init__(self, model, marker=None, workers=None, ipython_kwargs=None):
 
@@ -180,7 +181,7 @@ class Samfire(object):
             marker.fill(self._scale)
 
         self.metadata.marker = marker
-        self.strategies = Samfire._strategy_list(self)
+        self.strategies = StrategyList(self)
         self.strategies.append(reduced_chi_squared_strategy())
         self.strategies.append(histogram_strategy())
         self._active_strategy_ind = 0
@@ -195,6 +196,7 @@ class Samfire(object):
 
     @property
     def active_strategy(self):
+        """Returns the actuve strategy"""
         return self.strategies[self._active_strategy_ind]
 
     @active_strategy.setter
@@ -202,7 +204,7 @@ class Samfire(object):
         self.change_strategy(value)
 
     def _setup(self, ipython_kwargs=None):
-
+        """Set up SAMFire - configure models, set up pool if necessary"""
         self._figure = None
         self._gt_dump = dill.dumps(self.metadata.goodness_test)
         self._enable_optional_components()
@@ -326,6 +328,7 @@ class Samfire(object):
 
         if isgood is None:
             isgood = self.metadata.goodness_test.test(self.model, ind)
+        self.count += 1
         if isgood and self._progressbar is not None:
             self._progressbar.update(1)
 

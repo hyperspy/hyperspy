@@ -214,6 +214,9 @@ class worker:
         self.last_time = time.time()
         time.sleep(howlong)
 
+    def change_timestep(self, value):
+        self.timestep = value
+
     def listen(self):
         while self._listening:
             queue = None

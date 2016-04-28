@@ -32,6 +32,8 @@ _logger = logging.getLogger(__name__)
 
 class samfire_pool:
 
+    _timestep = 0
+
     def __init__(self, num_workers=None, ipython_kwargs=None):
         if ipython_kwargs is None:
             ipython_kwargs = {}
@@ -44,8 +46,20 @@ class samfire_pool:
         self.num_workers = num_workers
         self.workers = {}
         self.timestep = 0.05
-        self.timeout = 3.
+        self.timeout = 15.
         self.setup()
+
+    @property
+    def timestep(self):
+        return self._timestep
+
+    @timestep.setter
+    def timestep(self, value):
+        value = np.abs(value)
+        self._timestep = value
+        if self.has_pool and self.is_multiprocessing:
+            for this_queue in self.workers.values():
+                this_queue.put(('change_timestep', (value,)))
 
     @property
     def is_ipyparallel(self):
@@ -172,7 +186,7 @@ class samfire_pool:
                 samf._update(ind, result, isgood)
                 samf._plot()
                 samf._save()
-                if hasattr(samf, '_log') and isinstance(self._samf, list):
+                if hasattr(samf, '_log') and isinstance(samf._log, list):
                     samf._log.append((ind, isgood, samf.count, _id))
         else:
             _logger.error('Unusual return from some worker. The value '
