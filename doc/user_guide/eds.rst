@@ -141,10 +141,10 @@ or through the GUI:
    :align:   center
    :width:   350
 
-   EDS microscope parameters preferences window.
+   EDS microscope parameters preferences window
 
-If the microscope and detector parameters are not written in the original file, some
-of them are set by default. The default values can be changed in the
+Any microscope and detector parameters that are not found in the imported file
+will be set by default. These default values can be changed in the
 :py:class:`~.defaults_parser.Preferences` class (see :ref:`preferences
 <configuring-hyperspy-label>`).
 
@@ -162,12 +162,14 @@ or through the GUI:
    :align:   center
    :width:   400
 
-   EDS preferences window.
+   EDS preferences window
 
 Energy axis
 ^^^^^^^^^^^
 
-The main values for the energy axis are automatically imported from the file, if existing. The properties of the energy axis can be set manually with the :py:class:`~.axes.AxesManager`.
+The size, scale and units of the energy axis are automatically imported from
+the imported file, where they exist. These properties can also be set
+or adjusted manually with the :py:class:`~.axes.AxesManager`
 (see :ref:`Axis properties<Setting_axis_properties>` for more info):
 
 .. code-block:: python
@@ -178,7 +180,7 @@ The main values for the energy axis are automatically imported from the file, if
     >>> si.axes_manager['E'].scale = 0.01
     >>> si.axes_manager['E'].offset = -0.1
 
-or with the :py:meth:`~.axes.AxesManager.gui` method:
+or through the GUI:
 
 .. code-block:: python
 
@@ -188,13 +190,13 @@ or with the :py:meth:`~.axes.AxesManager.gui` method:
    :align:   center
    :width:   280
 
-   Axis properties window.
+   Axis properties window
 
 
-Related method
+Copying spectrum calibration
 ^^^^^^^^^^^^^^
 
-All the above parameters can be copy from one spectrum (for example exported from one pixel) to another one
+All of the above parameters can be copied from one spectrum to another
 with the :py:meth:`~._signals.eds_tem.EDSTEMSpectrum.get_calibration_from`
 method.
 
@@ -202,14 +204,10 @@ method.
 
     >>> # s1pixel contains all the parameters
     >>> s1pixel = hs.load("Ni_superalloy_1pix.msa", signal_type="EDS_TEM")
-
-.. code-block:: python
-
+    >>>
     >>> # si contains no parameters
     >>> si = hs.load("Ni_superalloy_010.rpl", signal_type="EDS_TEM").as_spectrum(0)
-
-.. code-block:: python
-
+    >>>
     >>> # Copy all the properties of s1pixel to si
     >>> si.get_calibration_from(s1pixel)
 
@@ -218,9 +216,8 @@ method.
 Describing the sample
 ---------------------
 
-The description of the sample is stored in metadata.Sample (in the
-:py:attr:`~.signal.Signal.metadata` attribute). It can be displayed as
-follow:
+The description of the sample is also stored in the
+:py:attr:`~.signal.Signal.metadata` attribute. It can be displayed using:
 
 .. code-block:: python
 
@@ -234,14 +231,15 @@ follow:
     └── xray_lines = ['Fe_Ka', 'Pt_La']
 
 
-The following methods are either called "set" or "add". When "set"
-methods erases all previously defined values, the "add" methods add the
-values to the previously defined values.
+The following methods are either called "set" or "add".
+
+* "set" methods overwrite previously defined values
+* "add" methods add to the previously defined values
 
 Elements
 ^^^^^^^^
 
-The elements present in the sample can be defined with the
+The elements present in the sample can be defined using the
 :py:meth:`~._signals.eds.EDSSpectrum.set_elements`  and
 :py:meth:`~._signals.eds.EDSSpectrum.add_elements` methods.  Only element
 abbreviations are accepted:
@@ -257,10 +255,11 @@ abbreviations are accepted:
 X-ray lines
 ^^^^^^^^^^^
 
-Similarly, the X-ray lines can be defined with the
+Similarly, the X-ray lines can be defined using the
 :py:meth:`~._signals.eds.EDSSpectrum.set_lines` and
 :py:meth:`~._signals.eds.EDSSpectrum.add_lines` methods. The corresponding
-elements will be added automatically. Several lines per elements can be defined.
+elements will be added automatically.
+Several lines per element can be defined at once.
 
 .. code-block:: python
 
@@ -272,9 +271,9 @@ elements will be added automatically. Several lines per elements can be defined.
     ├── elements = ['Fe', 'Pt']
     └── xray_lines = ['Fe_Ka', 'Fe_La', 'Pt_La']
 
-These methods can be used automatically, if the beam energy is set.
+The X-ray lines can also be defined automatically, if the beam energy is set.
 The most excited X-ray line is selected per element (highest energy above an
-overvoltage of 2 (< beam energy / 2)).
+overvoltage of 2 (< beam energy / 2)):
 
 .. code-block:: python
 
@@ -294,7 +293,7 @@ overvoltage of 2 (< beam energy / 2)).
     ├── elements = ['Al', 'Cu', 'Mn']
     └── xray_lines = ['Al_Ka', 'Cu_La', 'Mn_La']
 
-A warning is raised, if setting a X-ray lines higher than the beam energy.
+A warning is raised if you try to set an X-ray line higher than the beam energy:
 
 .. code-block:: python
 
@@ -305,10 +304,10 @@ A warning is raised, if setting a X-ray lines higher than the beam energy.
     Warning: Mn Ka is above the data energy range.
 
 
-Element database
+Elemental database
 ^^^^^^^^^^^^^^^^
 
-An elemental database is available with the energy of the X-ray lines.
+HyperSpy includes an elemental database, which contains the energy of the X-ray lines.
 
 .. code-block:: python
 
