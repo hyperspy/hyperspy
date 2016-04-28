@@ -124,9 +124,8 @@ class TestLoadingNewSavedMetadata:
             "with_lists_etc.hdf5"))
 
     def test_signal_inside(self):
-        nt.assert_true(
-            np.all(
-                self.s.data == self.s.metadata.Signal.Noise_properties.variance.data))
+        np.testing.assert_array_almost_equal(self.s.data,
+                                             self.s.metadata.Signal.Noise_properties.variance.data)
 
     def test_empty_things(self):
         nt.assert_equal(self.s.metadata.test.empty_list, [])
@@ -226,6 +225,7 @@ def test_rgba16():
         "npy_files",
         "test_rgba16.npy"))
     nt.assert_true((s.data == data).all())
+
 
 def test_strings_from_py2():
     s = EDS_TEM_Spectrum()
