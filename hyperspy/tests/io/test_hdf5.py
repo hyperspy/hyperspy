@@ -9,6 +9,7 @@ import numpy as np
 
 from hyperspy.io import load
 from hyperspy.signal import Signal
+from hyperspy.roi import Point2DROI
 
 my_path = os.path.dirname(__file__)
 
@@ -16,34 +17,34 @@ data = np.array([4066., 3996., 3932., 3923., 5602., 5288., 7234., 7809.,
                  4710., 5015., 4366., 4524., 4832., 5474., 5718., 5034.,
                  4651., 4613., 4637., 4429., 4217.])
 example1_original_metadata = {
-    u'BEAMDIAM -nm': 100.0,
-    u'BEAMKV   -kV': 120.0,
-    u'CHOFFSET': -168.0,
-    u'COLLANGLE-mR': 3.4,
-    u'CONVANGLE-mR': 1.5,
-    u'DATATYPE': u'XY',
-    u'DATE': u'01-OCT-1991',
-    u'DWELLTIME-ms': 100.0,
-    u'ELSDET': u'SERIAL',
-    u'EMISSION -uA': 5.5,
-    u'FORMAT': u'EMSA/MAS Spectral Data File',
-    u'MAGCAM': 100.0,
-    u'NCOLUMNS': 1.0,
-    u'NPOINTS': 20.0,
-    u'OFFSET': 520.13,
-    u'OPERMODE': u'IMAG',
-    u'OWNER': u'EMSA/MAS TASK FORCE',
-    u'PROBECUR -nA': 12.345,
-    u'SIGNALTYPE': u'ELS',
-    u'THICKNESS-nm': 50.0,
-    u'TIME': u'12:00',
-    u'TITLE': u'NIO EELS OK SHELL',
-    u'VERSION': u'1.0',
-    u'XLABEL': u'Energy',
-    u'XPERCHAN': 3.1,
-    u'XUNITS': u'eV',
-    u'YLABEL': u'Counts',
-    u'YUNITS': u'Intensity'}
+    'BEAMDIAM -nm': 100.0,
+    'BEAMKV   -kV': 120.0,
+    'CHOFFSET': -168.0,
+    'COLLANGLE-mR': 3.4,
+    'CONVANGLE-mR': 1.5,
+    'DATATYPE': 'XY',
+    'DATE': '01-OCT-1991',
+    'DWELLTIME-ms': 100.0,
+    'ELSDET': 'SERIAL',
+    'EMISSION -uA': 5.5,
+    'FORMAT': 'EMSA/MAS Spectral Data File',
+    'MAGCAM': 100.0,
+    'NCOLUMNS': 1.0,
+    'NPOINTS': 20.0,
+    'OFFSET': 520.13,
+    'OPERMODE': 'IMAG',
+    'OWNER': 'EMSA/MAS TASK FORCE',
+    'PROBECUR -nA': 12.345,
+    'SIGNALTYPE': 'ELS',
+    'THICKNESS-nm': 50.0,
+    'TIME': '12:00',
+    'TITLE': 'NIO EELS OK SHELL',
+    'VERSION': '1.0',
+    'XLABEL': 'Energy',
+    'XPERCHAN': 3.1,
+    'XUNITS': 'eV',
+    'YLABEL': 'Counts',
+    'YUNITS': 'Intensity'}
 
 
 class Example1:
@@ -150,12 +151,10 @@ class TestLoadingNewSavedMetadata:
                 137, (123, 44)])
 
     def test_binary_string(self):
-        import marshal
-        import types
-        f = types.FunctionType(
-            marshal.loads(
-                self.s.metadata.test.binary_string),
-            globals())
+        import dill
+        # apparently pickle is not "full" and marshal is not
+        # backwards-compatible
+        f = dill.loads(self.s.metadata.test.binary_string)
         nt.assert_equal(f(3.5), 4.5)
 
 
@@ -166,18 +165,18 @@ class TestSavingMetadataContainers:
 
     def test_save_unicode(self):
         s = self.s
-        s.metadata.set_item('test', [u'a', u'b', u'\u6f22\u5b57'])
+        s.metadata.set_item('test', ['a', 'b', '\u6f22\u5b57'])
         s.save('tmp.hdf5', overwrite=True)
         l = load('tmp.hdf5')
-        nt.assert_is_instance(l.metadata.test[0], unicode)
-        nt.assert_is_instance(l.metadata.test[1], unicode)
-        nt.assert_is_instance(l.metadata.test[2], unicode)
-        nt.assert_equal(l.metadata.test[2], u'\u6f22\u5b57')
+        nt.assert_is_instance(l.metadata.test[0], str)
+        nt.assert_is_instance(l.metadata.test[1], str)
+        nt.assert_is_instance(l.metadata.test[2], str)
+        nt.assert_equal(l.metadata.test[2], '\u6f22\u5b57')
 
     @nt.timed(1.0)
     def test_save_long_list(self):
         s = self.s
-        s.metadata.set_item('long_list', range(10000))
+        s.metadata.set_item('long_list', list(range(10000)))
         s.save('tmp.hdf5', overwrite=True)
 
     def test_numpy_only_inner_lists(self):
@@ -196,8 +195,8 @@ class TestSavingMetadataContainers:
         l = load('tmp.hdf5')
         nt.assert_is_instance(l.metadata.test[0][0], float)
         nt.assert_is_instance(l.metadata.test[0][1], float)
-        nt.assert_is_instance(l.metadata.test[1][0], basestring)
-        nt.assert_is_instance(l.metadata.test[1][1], basestring)
+        nt.assert_is_instance(l.metadata.test[1][0], str)
+        nt.assert_is_instance(l.metadata.test[1][1], str)
 
     def test_general_type_not_working(self):
         s = self.s
@@ -207,7 +206,14 @@ class TestSavingMetadataContainers:
         nt.assert_is_instance(l.metadata.test, tuple)
         nt.assert_is_instance(l.metadata.test[0], Signal)
         nt.assert_is_instance(l.metadata.test[1], float)
-        nt.assert_is_instance(l.metadata.test[2], unicode)
+        nt.assert_is_instance(l.metadata.test[2], str)
+
+    def test_unsupported_type(self):
+        s = self.s
+        s.metadata.set_item('test', Point2DROI(1, 2))
+        s.save('tmp.hdf5', overwrite=True)
+        l = load('tmp.hdf5')
+        nt.assert_not_in('test', l.metadata)
 
     def tearDown(self):
         gc.collect()        # Make sure any memmaps are closed first!

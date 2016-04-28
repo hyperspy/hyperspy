@@ -160,7 +160,6 @@ class BackgroundRemoval(SpanSelectorInSpectrum):
                 self.ss_right_value <= self.ss_left_value:
             return
         if self.background_estimator is None:
-            print("No bg estimator")
             return
         if self.bg_line is None and \
             self.background_estimator.estimate_parameters(

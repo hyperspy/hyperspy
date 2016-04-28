@@ -131,7 +131,6 @@ Examples
 
 """
 
-from __future__ import division, print_function
 
 import sys
 import os
@@ -187,7 +186,7 @@ def imsave(filename, data, **kwargs):
     Examples
     --------
     >>> data = numpy.random.rand(2, 5, 3, 301, 219)
-    >>> description = u'{"shape": %s}' % str(list(data.shape))
+    >>> description = '{"shape": %s}' % str(list(data.shape))
     >>> imsave('temp.tif', data, compress=6,
     ...        extratags=[(270, 's', 0, description, True)])
 
@@ -694,14 +693,14 @@ def imread(files, **kwargs):
         kwargs_seq['pattern'] = kwargs['pattern']
         del kwargs['pattern']
 
-    if isinstance(files, basestring) and any(i in files for i in '?*'):
+    if isinstance(files, str) and any(i in files for i in '?*'):
         files = glob.glob(files)
     if not files:
         raise ValueError('no files found')
     if len(files) == 1:
         files = files[0]
 
-    if isinstance(files, basestring):
+    if isinstance(files, str):
         with TiffFile(files, **kwargs_file) as tif:
             return tif.asarray(**kwargs)
     else:
@@ -2269,7 +2268,7 @@ class TiffSequence(object):
             By default this matches Olympus OIF and Leica TIFF series.
 
         """
-        if isinstance(files, basestring):
+        if isinstance(files, str):
             files = natural_sorted(glob.glob(files))
         files = list(files)
         if not files:
@@ -2512,7 +2511,7 @@ class FileHandle(object):
         if self._fh:
             return  # file is open
 
-        if isinstance(self._arg, basestring):
+        if isinstance(self._arg, str):
             # file name
             self._arg = os.path.abspath(self._arg)
             self._dir, self._name = os.path.split(self._arg)
@@ -2679,7 +2678,7 @@ def read_json(fh, byteorder, dtype, count):
     """Read JSON tag data from file and return as object."""
     data = fh.read(count)
     try:
-        return json.loads(unicode(stripnull(data), 'utf-8'))
+        return json.loads(str(stripnull(data), 'utf-8'))
     except ValueError:
         warnings.warn("invalid JSON `%s`" % data)
 
@@ -4583,7 +4582,7 @@ def imshow(data, title=None, vmin=0, vmax=None, cmap=None,
 
     if title:
         try:
-            title = unicode(title, 'Windows-1252')
+            title = str(title, 'Windows-1252')
         except TypeError:
             pass
         pyplot.title(title, size=11)
@@ -4795,7 +4794,7 @@ def main(argv=None):
     print("\nTIFF file:", tif)
     print()
     for i, s in enumerate(tif.series):
-        print ("Series %i" % i)
+        print("Series %i" % i)
         print(s)
         print()
     for i, page in images:

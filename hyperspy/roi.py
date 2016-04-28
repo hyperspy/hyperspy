@@ -81,10 +81,10 @@ class BaseROI(t.HasTraits):
         """
         raise NotImplementedError()
 
-    def _make_slices(self, axes_collecion, axes, ranges=None):
+    def _make_slices(self, axes_collection, axes, ranges=None):
         """
         Utility function to make a slice structure that will slice all the axes
-        in 'axes_collecion'. The axes in the `axes` argument will be sliced by
+        in 'axes_collection'. The axes in the `axes` argument will be sliced by
         the ROI, all other axes with 'slice(None)'. Alternatively, if 'ranges'
         is passed, `axes[i]` will be sliced with 'ranges[i]'.
         """
@@ -92,7 +92,7 @@ class BaseROI(t.HasTraits):
             # Use ROI to slice
             ranges = self._get_ranges()
         slices = []
-        for ax in axes_collecion:
+        for ax in axes_collection:
             if ax in axes:
                 i = axes.index(ax)
                 try:
@@ -106,8 +106,7 @@ class BaseROI(t.HasTraits):
                     slices.append(ilow)
                 else:
                     try:
-                        ihigh = 1 + ax.value2index(
-                            ranges[i][1], rounding=lambda x: round(x - 1))
+                        ihigh = ax.value2index(ranges[i][1])
                     except ValueError:
                         if ranges[i][1] > ax.high_value:
                             ihigh = ax.high_index + 1
@@ -332,13 +331,13 @@ class BaseInteractiveROI(BaseROI):
             If not None, it will use 'out' as the output instead of returning
             a new Signal.
         """
-        if isinstance(navigation_signal,
-                      basestring) and navigation_signal == "same":
+        if isinstance(navigation_signal, str) and navigation_signal == "same":
             navigation_signal = signal
         if navigation_signal is not None:
             if navigation_signal not in self.signal_map:
                 self.add_widget(navigation_signal)
-        if self.update not in signal.axes_manager.events.any_axis_changed.connected:
+        if (self.update not in
+                signal.axes_manager.events.any_axis_changed.connected):
             signal.axes_manager.events.any_axis_changed.connect(
                 self.update,
                 [])
@@ -430,7 +429,7 @@ class BaseInteractiveROI(BaseROI):
         widget.events.closed.disconnect(self._remove_widget)
         widget.events.changed.disconnect(self._on_widget_change)
         widget.close()
-        for signal, w in self.signal_map.iteritems():
+        for signal, w in self.signal_map.items():
             if w[0] == widget:
                 self.signal_map.pop(signal)
                 break
@@ -826,8 +825,8 @@ class CircleROI(BaseInteractiveROI):
 
         natax = signal.axes_manager._get_axes_in_natural_order()
         # Slice original data with a circumscribed rectangle
-        cx = self.cx + 0.5 * axes[0].scale
-        cy = self.cy + 0.5 * axes[1].scale
+        cx = self.cx + 0.5001 * axes[0].scale
+        cy = self.cy + 0.5001 * axes[1].scale
         ranges = [[cx - self.r, cx + self.r],
                   [cy - self.r, cy + self.r]]
         slices = self._make_slices(natax, axes, ranges)
@@ -842,7 +841,7 @@ class CircleROI(BaseInteractiveROI):
             mask |= gr < self.r_inner**2
         tiles = []
         shape = []
-        for i in xrange(len(slices)):
+        for i in range(len(slices)):
             if i == natax.index(axes[0]):
                 tiles.append(1)
                 shape.append(mask.shape[0])
@@ -1061,7 +1060,7 @@ class Line2DROI(BaseInteractiveROI):
                              (np.product(orig_shape[2:]),))
             pixels = [nd.map_coordinates(img[..., i], perp_lines,
                                          order=order, mode=mode, cval=cval)
-                      for i in xrange(img.shape[2])]
+                      for i in range(img.shape[2])]
             i0 = min(axes[0].index_in_array, axes[1].index_in_array)
             pixels = np.transpose(np.asarray(pixels), (1, 2, 0))
             intensities = pixels.mean(axis=1)

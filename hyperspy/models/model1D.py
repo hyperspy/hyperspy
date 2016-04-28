@@ -258,17 +258,20 @@ class Model1D(BaseModel):
             self._make_position_adjuster(thing, self._adjust_position_all[0],
                                          self._adjust_position_all[1])
 
-    def remove(self, thing):
-        thing = self._get_component(thing)
-        parameter = thing._position
-        if parameter in self._position_widgets:
-            for pw in reversed(self._position_widgets[parameter]):
-                pw.close()
-        if hasattr(thing, '_model_plot_line'):
-            line = thing._model_plot_line
-            line.close()
-        super(Model1D, self).remove(thing)
-        self._disconnect_parameters2update_plot([thing])
+    def remove(self, things):
+        things = self._get_component(things)
+        if not np.iterable(things):
+            things = [things]
+        for thing in things:
+            parameter = thing._position
+            if parameter in self._position_widgets:
+                for pw in reversed(self._position_widgets[parameter]):
+                    pw.close()
+            if hasattr(thing, '_model_plot_line'):
+                line = thing._model_plot_line
+                line.close()
+        super(Model1D, self).remove(things)
+        self._disconnect_parameters2update_plot(things)
 
     remove.__doc__ = BaseModel.remove.__doc__
 
@@ -777,7 +780,7 @@ class Model1D(BaseModel):
                                     {'obj': 'widget'})
 
     def _reverse_lookup_position_widget(self, widget):
-        for parameter, widgets in self._position_widgets.iteritems():
+        for parameter, widgets in self._position_widgets.items():
             if widget in widgets:
                 return parameter
         raise KeyError()
@@ -808,7 +811,7 @@ class Model1D(BaseModel):
 
         """
         self._adjust_position_all = False
-        for pws in self._position_widgets.values():
+        for pws in list(self._position_widgets.values()):
             # Iteration works on a copied collection, so changes during
             # iteration should be ok
             for pw in reversed(pws):    # pws is reference, so work in reverse
