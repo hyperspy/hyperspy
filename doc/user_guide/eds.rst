@@ -506,14 +506,22 @@ can be plotted using :py:meth:`~._signals.eds.EDSSpectrum.plot`:
 
 .. _eds_quantification-label:
 
-Quantification
+EDS Quantification
 --------------
 
 -.. versionadded:: 0.8
 
-Hyperspy now includes three methods for EDS quantification; Cliff-Lorimer, the zeta-factor method and ionization cross sections.
+HyperSpy now includes three methods for EDS quantification:
 
-Quantification must be applied to the background subtracted intensities, which can be found using :py:meth:`~._signals.eds.EDSSpectrum.get_lines_intensity`. The quantification of these intensities can then be determined using the :py:meth:`~._signals.eds_tem.EDSTEMSpectrum.quantification` method. These instensities are a stack (of images images or otherwise) for each element which can be extracted using :py:meth:`~._signals.eds.EDSSpectrum.get_lines_intensity`. The quantification method, needs be specified as either 'CL', 'zeta', or 'cross_section'. If no method is specified the function will raise an exception.
+* Cliff-Lorimer
+* Zeta-factors
+* Ionization cross-sections
+
+Quantification must be applied to the background-subtracted intensities, which can
+be found using :py:meth:`~._signals.eds.EDSSpectrum.get_lines_intensity`. The quantification
+of these intensities can then be determined using :py:meth:`~._signals.eds_tem.EDSTEMSpectrum.quantification`.
+
+These intensities are a stack (of images or otherwise) for each element which can be extracted using :py:meth:`~._signals.eds.EDSSpectrum.get_lines_intensity`. The quantification method, needs be specified as either 'CL', 'zeta', or 'cross_section'. If no method is specified the function will raise an exception.
 A list of factors or cross sections should be supplied in the same order of the listed intensities (please note Hyperspy intensities made using :py:meth:~._signals.eds.EDSSpectrum.get_lines_intensity will be in alphabetical order). A set of k-factors can be usually found in the EDS manufacturer software although determination from standard samples for the particular instrument used is usually preferable. On the other hand, zeta-factors and cross sections must be determined experimentally using standards.
 The zeta-factors should be provided in units of kg/m^2. The method is described further in [Watanabe1996]_ and [Watanabe2006]_ .
 Cross sections should be provided in units of megabarns (Mb). Further details on the cross section method can be found in [MacArthur2016]_ .
@@ -531,7 +539,8 @@ Using the Cliff-Lorimer method as an example, quantification can be carried out 
     Fe (Fe_Ka): Composition = 15.41 atomic percent
     Pt (Pt_La): Composition = 84.59 atomic percent
 
-The obtained composition is in atomic percent, by default. However, it can be transformed into weight percent either with the option :py:meth:`~._signals.eds_tem.EDSTEMSpectrum.quantification`:
+The obtained composition is in atomic percent, by default. However, it can be
+transformed into weight percent either with the option :py:meth:`~._signals.eds_tem.EDSTEMSpectrum.quantification`:
 
 .. code-block:: python
 
@@ -541,14 +550,18 @@ The obtained composition is in atomic percent, by default. However, it can be tr
     Fe (Fe_Ka): Composition = 4.96 weight percent
     Pt (Pt_La): Composition = 95.04 weight percent
 
-or with :py:func:`~.misc.material.atomic_to_weight`. The reverse method is :py:func:`~.misc.material.weight_to_atomic`.
+or using :py:func:`~.misc.material.atomic_to_weight`:
 
 .. code-block:: python
 
     >>> # With atomic_percent from before
     >>> weight_percent = hs.material.atomic_to_weight(atomic_percent)
 
-The zeta-factor method needs both the 'beam_current' (in nA) and the acquisition or dwell time (referred to as 'real_time' in seconds) in order to provide an accurate quantification. Both of the these parameters can be assigned to the metadata of the spectrum using:
+The reverse method is :py:func:`~.misc.material.weight_to_atomic`.
+
+The zeta-factor method needs both the 'beam_current' (in nA) and the acquisition
+or dwell time (referred to as 'real_time' in seconds) in order to obtain an accurate
+quantification. Both of the these parameters can be assigned to the metadata of the spectrum with:
 
 ..code-block:: python
 
