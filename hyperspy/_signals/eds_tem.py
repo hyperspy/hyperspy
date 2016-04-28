@@ -78,7 +78,7 @@ class EDSTEMSpectrum(EDSSpectrum):
                                   elevation_angle=None,
                                   energy_resolution_MnKa=None,
                                   beam_current=None,
-                                  beam_area=None,
+                                  probe_area=None,
                                   real_time=None):
         """Set the microscope parameters.
 
@@ -101,7 +101,7 @@ class EDSTEMSpectrum(EDSSpectrum):
             In eV
         beam_current: float
             In nA
-        beam_area: float
+        probe_area: float
             In nm^2
         real_time: float
             In seconds
@@ -145,10 +145,10 @@ class EDSTEMSpectrum(EDSSpectrum):
             md.set_item(
                 "Acquisition_instrument.TEM.beam_current",
                 beam_current)
-        if beam_area is not None:
+        if probe_area is not None:
             md.set_item(
-                "Acquisition_instrument.TEM.beam_area",
-                beam_area)
+                "Acquisition_instrument.TEM.probe_area",
+                probe_area)
         if real_time is not None:
             md.set_item(
                  "Acquisition_instrument.TEM.Detector.EDS.real_time",
@@ -176,8 +176,8 @@ class EDSTEMSpectrum(EDSSpectrum):
             'tem_par.energy_resolution_MnKa',
             'Acquisition_instrument.TEM.beam_current':
             'tem_par.beam_current',
-            'Acquisition_instrument.TEM.beam_area':
-            'tem_par.beam_area',
+            'Acquisition_instrument.TEM.probe_area':
+            'tem_par.probe_area',
             'Acquisition_instrument.TEM.Detector.EDS.real_time':
             'tem_par.real_time', }
         for key, value in mapping.items():
@@ -200,8 +200,8 @@ class EDSTEMSpectrum(EDSSpectrum):
             tem_par.energy_resolution_MnKa,
             'Acquisition_instrument.TEM.beam_current':
             tem_par.beam_current,
-            'Acquisition_instrument.TEM.beam_area':
-            tem_par.beam_area,
+            'Acquisition_instrument.TEM.probe_area':
+            tem_par.probe_area,
             'Acquisition_instrument.TEM.Detector.EDS.real_time':
             tem_par.real_time, }
 
@@ -426,8 +426,10 @@ class EDSTEMSpectrum(EDSSpectrum):
             return composition, mass_thickness
         elif method == 'cross_section':
             return composition, number_of_atoms
-        elif:
+        elif method == 'CL':
             return composition
+        else:
+            raise ValueError ('Please specify method for quantification, as \'CL\', \'zeta\' or \'cross_section\'')
 
     def vacuum_mask(self, threshold=1.0, closing=True, opening=False):
         """
@@ -567,7 +569,7 @@ class EDSTEMSpectrum(EDSSpectrum):
         return model
 
     def _get_dose(self, method, beam_current='auto', real_time='auto',
-                            beam_area='auto'):
+                            probe_area='auto'):
         """
         Calculates the total electron dose for the zeta-factor or cross section
         methods of quantification.
@@ -587,7 +589,7 @@ class EDSTEMSpectrum(EDSSpectrum):
             Probe current in nA
         real_time: float
             Acquisiton time in s
-        beam_area: float
+        probe_area: float
             The illumination area of the electron beam in nm^2.
             If not set the value is extracted from the scale axes_manager.
             Therefore we assume the probe is oversampling such that
@@ -615,21 +617,21 @@ class EDSTEMSpectrum(EDSSpectrum):
             real_time = parameters.Detector.EDS.real_time
             if 'real_time' not in parameters.Detector.EDS:
                 raise Exception('Electron dose could not be calculated as real_time is not set. '
-                                'The beam current can be set by calling set_microscope_parameters()')
+                                'The beam_current can be set by calling set_microscope_parameters()')
             elif real_time == 0.5:
                 warnings.warn('Please note that your real time is set to '
                      'the default value of 0.5 s. If this is not correct, you should change it using '
                      'set_microscope_parameters() and run quantification again.')
 
         if method == 'cross_section':
-            if beam_area == 'auto':
-                if beam_area in parameters:
-                    area = parameters.TEM.beam_area
+            if probe_area == 'auto':
+                if probe_area in parameters:
+                    area = parameters.TEM.probe_area
                 else:
                     pixel1 = self.axes_manager[0].scale
                     pixel2 = self.axes_manager[1].scale
                     if self.axes_manager[0].scale == 1 or self.axes_manager[1].scale == 1:
-                        warnings.warn('Please note your beam_area is set to'
+                        warnings.warn('Please note your probe_area is set to'
                         'the default value of 1 nm^2. The function will still run. However if 1 nm^2 is not'
                         'correct, please read the user documentations for how to set this properly.')
                     area = pixel1 * pixel2
