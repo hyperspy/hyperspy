@@ -617,13 +617,15 @@ number of atoms per pixel for each element.
     dimensions must be set. For quantification of line scans, rather than spectrum images,
     the pixel area should be added to the metadata as above.
 
-EDS curve fitting
+EDS curve-fitting
 -----------------
 
-HyperSpy makes it really easy to extract the intensity of X-ray lines by curve fitting as it is shown in the next example for an EDS-SEM spectrum recorded on a test material EDS-TM001 provided by `BAM <http://www.webshop.bam.de>`_.
+The intensity of X-ray lines can be extracted using curve-fitting in HyperSpy.
+This example uses an EDS-SEM spectrum of a a test material (EDS-TM001) provided
+by `BAM <http://www.webshop.bam.de>`_.
 
-Load the spectrum, define the chemical composition of the sample and set the beam energy.
-
+First, we load the spectrum, define the chemical composition of the sample and
+set the beam energy:
 
 .. code-block:: python
 
@@ -631,7 +633,9 @@ Load the spectrum, define the chemical composition of the sample and set the bea
     >>> s.add_elements(['Al', 'Ar', 'C', 'Cu', 'Mn', 'Zr'])
     >>> s.set_microscope_parameters(beam_energy=10)
 
-The model is created with :py:func:`~._signals.eds_sem.create_model`. One gaussian is automatically created per X-ray line and a polynomial for the backgronud.
+Next, the model is created with :py:func:`~._signals.eds_sem.create_model`. One
+Gaussian is automatically created per X-ray line, along with a polynomial for
+the background.
 
 .. code-block:: python
 
@@ -675,26 +679,30 @@ The model is created with :py:func:`~._signals.eds_sem.create_model`. One gaussi
     Zr_Lb3
     background_order_6
 
-The width and the energy are fixed. The height of the sub-X-ray lines are twinned to the main X-ray lines (alpha lines). The model can be fitted.
+The width and the energies are fixed, while the heights of the sub-X-ray lines are linked
+to the main X-ray lines (alpha lines). The model can now be fitted:
 
 .. code-block:: python
 
     >>> m.fit()
 
-The background fitting can be improved with the :py:meth:`~.models.edsmodel.EDSModel.fit_background` method by enabling only the energy ranges with no X-ray lines.
+The background fitting can be improved with :py:meth:`~.models.edsmodel.EDSModel.fit_background`
+by enabling only energy ranges containing no X-ray lines:
 
 .. code-block:: python
 
     >>> m.fit_background()
 
-The width of the X-ray lines is defined from the energy resolution (FWHM at Mn Ka) provided by `energy_resolution_MnKa` in `metadata`. This parameters can be calibrated by fitting with the :py:meth:`~.models.edsmodel.EDSModel.calibrate_energy_axis` method.
+The width of the X-ray lines is defined from the energy resolution (FWHM at Mn Ka)
+provided by `energy_resolution_MnKa` in `metadata`. This parameters can be calibrated
+by fitting with :py:meth:`~.models.edsmodel.EDSModel.calibrate_energy_axis`:
 
 .. code-block:: python
 
     >>> m.calibrate_energy_axis(calibrate='resolution')
     Energy resolution (FWHM at Mn Ka) changed from 130.000000 to 131.927922 eV
 
-Fine tuning of the parameters of specific X-ray lines can be done with the :py:meth:`~.models.edsmodel.EDSModel.calibrate_xray_lines` method.
+Fine-tuning of specific X-ray lines can be achieved using :py:meth:`~.models.edsmodel.EDSModel.calibrate_xray_lines`:
 
 .. code-block:: python
 
@@ -716,7 +724,7 @@ The result of the fit is obtained with the :py:meth:`~.models.edsmodel.EDSModel.
     Mn_La at 0.63316 keV : Intensity = 73665.70
     Zr_La at 2.0423 keV : Intensity = 68703.75
 
-Visualize the result
+Finally, we visualize the result:
 
 .. code-block:: python
 
@@ -726,7 +734,8 @@ Visualize the result
    :align:   center
    :width:   500
 
-The following methods permit to easily enable/disable several X-ray lines functionalities:
+The following methods can be used to enable/disable different functionalities of
+X-ray lines when fitting:
 
 * :py:meth:`~.models.edsmodel.EDSModel.free_background`
 * :py:meth:`~.models.edsmodel.EDSModel.fix_background`
