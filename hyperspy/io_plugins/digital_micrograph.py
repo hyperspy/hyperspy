@@ -795,12 +795,12 @@ class ImageObject(object):
 
         if self.signal_type == "EELS":
             mapping.update({
-                "ImageList.TagGroup0.ImageTags.EELS.Experimental_Conditions." +
-                "Collection_semi_angle_mrad": (
+                "ImageList.TagGroup0.ImageTags.EELS.Experimental Conditions." +
+                "Collection semi-angle (mrad)": (
                     "Acquisition_instrument.TEM.Detector.EELS.collection_angle",
                     None),
-                "ImageList.TagGroup0.ImageTags.EELS.Experimental_Conditions." +
-                "Convergence_semi_angle_mrad": (
+                "ImageList.TagGroup0.ImageTags.EELS.Experimental Conditions." +
+                "Convergence semi-angle (mrad)": (
                     "Acquisition_instrument.TEM.convergence_angle",
                     None),
                 "ImageList.TagGroup0.ImageTags.EELS.Acquisition.Exposure (s)":
