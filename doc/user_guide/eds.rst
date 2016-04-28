@@ -509,7 +509,7 @@ can be plotted using :py:meth:`~._signals.eds.EDSSpectrum.plot`:
 EDS Quantification
 --------------
 
--.. versionadded:: 0.8
+.. versionadded:: 0.8
 
 HyperSpy now includes three methods for EDS quantification:
 
@@ -574,7 +574,7 @@ The zeta-factor method needs both the 'beam_current' (in nA) and the acquisition
 or dwell time (referred to as 'real_time' in seconds) in order to obtain an accurate
 quantification. Both of the these parameters can be assigned to the metadata using:
 
-..code-block:: python
+.. code-block:: python
 
     >>> s.set_microscope_parameters(beam_current=0.5)
     >>> s.set_microscope_parameters(real_time=1.5)
@@ -591,7 +591,7 @@ If the probe diameter is narrower than the pixel width, then the probe is being
 under-sampled and an estimation of the probe area needs to be used. This can be added
 to the metadata with:
 
-..code-block: python
+.. code-block: python
 
     >>> s.set_microscope_parameters(probe_area=0.00125)
 
