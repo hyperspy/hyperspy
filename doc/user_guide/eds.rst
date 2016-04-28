@@ -340,10 +340,10 @@ HyperSpy includes an elemental database, which contains the energy of the X-ray 
 .. _eds_plot-label:
 
 Finding elements from energy
-----------------------------
+^^^^^^^^^^^^^^^^
 
-To find the nearest xray lines to a given energy, use the utility function
-:py:meth:`~.utils.eds.get_xray_lines_near_energy` to look up in the elemental
+To find the nearest X-ray line for a given energy, use the utility function
+:py:meth:`~.utils.eds.get_xray_lines_near_energy` to search the elemental
 database:
 
 .. code-block:: python
@@ -353,15 +353,15 @@ database:
     >>> hs.eds.get_xray_lines_near_energy(P['position'], only_lines=['a', 'b'])
     ['C_Ka', 'Ca_La', 'B_Ka']
 
-The lines are returned in order of closeness to the specified energy, and can
+The lines are returned in order of distance from the specified energy, and can
 be limited by additional, optional arguments.
 
 
 Plotting
 --------
 
-As decribed in :ref:`visualisation<visualization-label>`, the
-:py:meth:`~.signals.eds.EDSSpectrum.plot` method can be used:
+You can visualize an EDS spectrum using the :py:meth:`~.signals.eds.EDSSpectrum.plot`
+method (see :ref:`visualisation<visualization-label>`). For example:
 
 .. code-block:: python
 
@@ -372,26 +372,22 @@ As decribed in :ref:`visualisation<visualization-label>`, the
    :align:   center
    :width:   500
 
-   EDS spectrum.
+   EDS spectrum
 
-An example of plotting EDS data of higher dimension (3D SEM-EDS) is given in
+An example of multi-dimensional EDS data (e.g. 3D SEM-EDS) is given in
 :ref:`visualisation multi-dimension<visualization_multi_dim>`.
-
 
 .. _eds_plot_markers-label:
 
-Plot X-ray lines
+Plotting X-ray lines
 ^^^^^^^^^^^^^^^^
 
 .. versionadded:: 0.8
 
-X-ray lines can be labbeled on a plot with
-:py:meth:`~._signals.eds.EDSSpectrum.plot`. The lines are
-either given, either retrieved from "metadata.Sample.Xray_lines",
-or selected with the same method as
-:py:meth:`~._signals.eds.EDSSpectrum.add_lines` using the
-elements in "metadata.Sample.elements".
-
+X-ray lines can be added as plot labels with :py:meth:`~.signals.eds.EDSSpectrum.plot`.
+The lines are either retrieved from "metadata.Sample.Xray_lines",
+or selected with the same method as :py:meth:`~._signals.eds.EDSSpectrum.add_lines`
+using the elements in "metadata.Sample.elements".
 
 .. code-block:: python
 
@@ -403,9 +399,9 @@ elements in "metadata.Sample.elements".
    :align:   center
    :width:   500
 
-   EDS spectrum plot with line markers.
+   EDS spectrum plot with line markers
 
-Selecting certain type of lines:
+You can also select a subset of lines to label:
 
 .. code-block:: python
 
@@ -417,16 +413,17 @@ Selecting certain type of lines:
    :align:   center
    :width:   500
 
-   EDS spectrum plot with a selection of line markers.
+   EDS spectrum plot with a selection of line markers
 
 .. _get_lines_intensity:
 
 
-Get lines intensity
+Geting the intensity of an X-ray line
 -------------------
 
+.. versionadded:: 0.8
 
-Data files used in the following examples can be downloaded using
+Data used in the following examples can be downloaded using:
 
 .. code-block:: python
 
@@ -439,10 +436,8 @@ Data files used in the following examples can be downloaded using
     The sample and the data used in this section are described in
     D. Roussow et al., Nano Lett, 10.1021/acs.nanolett.5b00449 (2015).
 
-.. versionadded:: 0.8
-
 The width of integration is defined by extending the energy resolution of
-Mn Ka to the peak energy ("energy_resolution_MnKa" in metadata).
+Mn Ka to the peak energy ("energy_resolution_MnKa" in metadata):
 
 .. code-block:: python
 
@@ -453,10 +448,10 @@ Mn Ka to the peak energy ("energy_resolution_MnKa" in metadata).
    :align:   center
    :width:   500
 
-   Iron map as computed and displayed by ``get_lines_intensity``.
+   Iron map as computed and displayed by ``get_lines_intensity``
 
 The X-ray lines defined in "metadata.Sample.Xray_lines" (see above)
-are used by default.
+are used by default:
 
 .. code-block:: python
 
@@ -466,7 +461,7 @@ are used by default.
     [<Image, title: X-ray line intensity of Core shell: Fe_Ka at 6.40 keV, dimensions: (|64, 64)>,
     <Image, title: X-ray line intensity of Core shell: Pt_La at 9.44 keV, dimensions: (|64, 64)>]
 
-The windows of integration can be visualised using :py:meth:`~._signals.eds.EDSSpectrum.plot` method
+Finally, the windows of integration can be visualised using :py:meth:`~._signals.eds.EDSSpectrum.plot` method:
 
 .. code-block:: python
 
@@ -478,7 +473,7 @@ The windows of integration can be visualised using :py:meth:`~._signals.eds.EDSS
    :align:   center
    :width:   500
 
-   EDS spectrum with integration windows markers.
+   EDS spectrum with integration windows markers
 
 .. _eds_background_subtraction-label:
 
@@ -487,7 +482,13 @@ Background subtraction
 
 .. versionadded:: 0.8
 
-The background can be subtracted from the X-ray intensities with the :py:meth:`~._signals.eds.EDSSpectrum.get_lines_intensity` method. The background value is obtained by averaging the intensity in two windows on each side of the X-ray line. The position of the windows can be estimated with the :py:meth:`~._signals.eds.EDSSpectrum.estimate_background_windows` method and can be plotted with the :py:meth:`~._signals.eds.EDSSpectrum.plot` method as follow. The integration windows are plotted with dashed lines.
+The background can be subtracted from the X-ray intensities with
+:py:meth:`~._signals.eds.EDSSpectrum.get_lines_intensity`.
+The background value is obtained by averaging the intensity in two
+windows on each side of the X-ray line.
+The position of the windows can be estimated using
+:py:meth:`~._signals.eds.EDSSpectrum.estimate_background_windows`, and
+can be plotted using :py:meth:`~._signals.eds.EDSSpectrum.plot`:
 
 .. code-block:: python
 
@@ -501,7 +502,7 @@ The background can be subtracted from the X-ray intensities with the :py:meth:`~
    :align:   center
    :width:   500
 
-   EDS spectrum with background subtraction markers.
+   EDS spectrum with background subtraction markers
 
 .. _eds_quantification-label:
 
