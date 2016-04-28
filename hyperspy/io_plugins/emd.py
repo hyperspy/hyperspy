@@ -124,11 +124,11 @@ class EMD(object):
             dim = dataset.create_dataset(key, data=[offset, offset+scale])
             name = axis.name
             from traits.trait_base import _Undefined
-            if type(name) is _Undefined:
+            if isinstance(name, _Undefined):
                 name = ''
             dim.attrs['name'] = name
             units = axis.units
-            if type(units) is _Undefined:
+            if isinstance(units, _Undefined):
                 units = ''
             else:
                 units = '[{}]'.format('_'.join(list(units)))
@@ -136,10 +136,11 @@ class EMD(object):
         # Write metadata:
         dataset.attrs['emd_group_type'] = 1
         for key, value in signal.metadata.Signal:
-            try:  # If something h5py can't handle is saved in the metadata:
+            try:  # If something h5py can't handle is saved in the metadata...
                 dataset.attrs[key] = value
-            except Exception:
-                pass  # just don't add what can't be added!
+            except Exception:  # ...let the user know what could not be added!
+                self._log.exception('The hdf5 writer could not write the following '
+                                    'information in the file: %s : %s', key, value)
 
     def _read_signal_from_group(self, name, group, load_to_memory=True):
         self._log.debug('Calling _read_signal_from_group')
@@ -341,23 +342,26 @@ class EMD(object):
     def print_info(self):
         """Print all relevant information about the EMD instance."""
         self._log.debug('Calling print_info')
-        print('\nUser:\n--------------------')
+        info_str = '\nUser:\n-------------------------\n'
         for key, value in self.user.items():
-            print('{}:'.format(key).ljust(15), value)
-        print('--------------------\n\nMicroscope:\n--------------------')
+            info_str += '{:<15}: {}\n'.format(key, value)
+        info_str += '-------------------------\n\nMicroscope:\n-------------------------\n'
         for key, value in self.microscope.items():
-            print('{}:'.format(key).ljust(15), value)
-        print('--------------------\n\nSample:\n--------------------')
+            info_str += '{:<15}: {}\n'.format(key, value)
+        info_str += '-------------------------\n\nSample:\n-------------------------\n'
         for key, value in self.sample.items():
-            print('{}:'.format(key).ljust(15), value)
-        print('--------------------\n\nComments:\n--------------------')
+            info_str += '{:<15}: {}\n'.format(key, value)
+        info_str += '-------------------------\n\nComments:\n-------------------------\n'
         for key, value in self.comments.items():
-            print('{}:'.format(key).ljust(15), value)
-        print('--------------------\n\nData:\n--------------------')
+            info_str += '{:<15}: {}\n'.format(key, value)
+        info_str += '-------------------------\n\nData:\n-------------------------\n'
         for key, value in self.signals.items():
-            print('{}:'.format(key).ljust(15), value)
-            print(value.metadata.Signal)
-        print('--------------------\n')
+            info_str += '{:<15}: {}\n'.format(key, value)
+            sig_dict = value.metadata.Signal
+            for k in sig_dict.keys():
+                info_str += '  |-- {}: {}\n'.format(k, sig_dict[k])
+        info_str += '-------------------------\n'
+        self._log.info(info_str)
 
 
 def file_reader(filename, load_to_memory=True, print_info=False, **kwds):
