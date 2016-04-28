@@ -127,7 +127,7 @@ thing has it's own branch! You can merge some together for your personal use.
 
 Diagramatically you should be aiming for something like this:
 
-.. figure:: /user_guide/images/branching_schematic.eps1
+.. figure:: /user_guide/images/branching_schematic.eps
 
 
 Get the style right
