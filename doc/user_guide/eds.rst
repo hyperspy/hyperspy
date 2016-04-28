@@ -1,14 +1,14 @@
 ﻿.. _eds-label:
 
-Energy-Dispersive X-Rays Spectrometry (EDS)
+Energy-Dispersive X-ray Spectrometry (EDS)
 ******************************************
 
-The methods described here are specific to the following signals:
+The methods described in this chapter are specific to the following signals:
 
 * :py:class:`~._signals.eds_tem.EDSTEMSpectrum`
 * :py:class:`~._signals.eds_sem.EDSSEMSpectrum`
 
-This chapter described step by step the analysis of an EDS
+This chapter describes step-by-step the analysis of an EDS
 spectrum (SEM or TEM).
 
 .. NOTE::
@@ -17,7 +17,7 @@ spectrum (SEM or TEM).
 Spectrum loading and parameters
 -------------------------------
 
-Data files used in the following examples can be downloaded using
+Data files used in the following examples can be downloaded using:
 
 .. code-block:: python
 
@@ -34,14 +34,14 @@ Data files used in the following examples can be downloaded using
     `abstract <http://infoscience.epfl.ch/record/185861/>`_).
 
 
-Loading
+Loading data
 ^^^^^^^^
 
-All data are loaded with the :py:func:`~.io.load` function, as described in details in
+All data are loaded with the :py:func:`~.io.load` function, as described in detail in
 :ref:`Loading files<loading_files>`. HyperSpy is able to import different formats,
-among them ".msa" and ".rpl" (the raw format of Oxford Instrument and Brucker).
+among them ".msa" and ".rpl" (the raw format of Oxford Instruments and Brucker).
 
-Here is three example for files exported by Oxford Instrument software (INCA).
+Here are three example for files exported by Oxford Instruments software (INCA).
 For a single spectrum:
 
 .. code-block:: python
@@ -50,9 +50,9 @@ For a single spectrum:
     >>> s
     <Spectrum, title: Spectrum, dimensions: (|1024)>
 
-For a spectrum image (The .rpl file is recorded as an image in this example,
-The method :py:meth:`~.signal.Signal.as_spectrum` set it back to a spectrum
-with the energy axis in first position):
+Next, for a spectrum image. In this example, the ".rpl" file is recorded as
+an image, so the method :py:meth:`~.signal.Signal.as_spectrum` will set it
+back to a spectrum with the energy axis in first position:
 
 .. code-block:: python
 
@@ -60,8 +60,7 @@ with the energy axis in first position):
     >>> si
     <Spectrum, title: , dimensions: (256, 224|1024)>
 
-For a stack of spectrum images (The "*" replace all chains of string, in this
-example 01, 02, 03,...):
+Finally, for a stack of spectrum images, using "*" as a wildcard character:
 
 .. code-block:: python
 
@@ -75,9 +74,9 @@ example 01, 02, 03,...):
 Microscope and detector parameters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-First, the type of microscope ("EDS_TEM" or "EDS_SEM") needs to be set with the
-:py:meth:`~.signal.Signal.set_signal_type` method. The class of the
-object is thus assigned, and specific EDS methods become available.
+First, the signal type ("EDS_TEM" or "EDS_SEM") needs to be set with the
+:py:meth:`~.signal.Signal.set_signal_type` method. By assigning the class of
+the object, specific EDS methods are made available.
 
 .. code-block:: python
 
@@ -86,7 +85,8 @@ object is thus assigned, and specific EDS methods become available.
     >>> s
     <EDSSEMSpectrum, title: Spectrum, dimensions: (|1024)>
 
-or as an argument of the :py:func:`~.io.load` function:
+You can also specify the signal type as an argument of
+the :py:func:`~.io.load` function:
 
 .. code-block:: python
 
@@ -94,12 +94,10 @@ or as an argument of the :py:func:`~.io.load` function:
    >>> s
    <EDSSEMSpectrum, title: Spectrum, dimensions: (|1024)>
 
-The main values for the microscope parameters are
-automatically imported from the file, if existing. The microscope and
-detector parameters are stored in stored in the
-:py:attr:`~.signal.Signal.metadata`
+HyperSpy will automatically load any existing  microscope parameters from the
+file, and store them in the :py:attr:`~.signal.Signal.metadata`
 attribute (see :ref:`metadata_structure`). These parameters can be displayed
-as follow:
+as follows:
 
 .. code-block:: python
 
@@ -117,14 +115,14 @@ as follow:
     └── tilt_stage = 38.0
 
 
-These parameters can be set directly:
+You can also set these parameters directly:
 
 .. code-block:: python
 
     >>> s = hs.load("Ni_superalloy_1pix.msa", signal_type="EDS_SEM")
     >>> s.metadata.Acquisition_instrument.SEM.beam_energy = 30
 
-or with the
+or by using the
 :py:meth:`~._signals.eds_tem.EDSTEMSpectrum.set_microscope_parameters` method:
 
 .. code-block:: python
@@ -132,7 +130,7 @@ or with the
     >>> s = hs.load("Ni_superalloy_1pix.msa", signal_type="EDS_SEM")
     >>> s.set_microscope_parameters(beam_energy = 30)
 
-or raising the gui:
+or through the GUI:
 
 .. code-block:: python
 
@@ -154,7 +152,7 @@ of them are set by default. The default values can be changed in the
 
     >>> hs.preferences.EDS.eds_detector_elevation = 37
 
-or raising the gui:
+or through the GUI:
 
 .. code-block:: python
 
