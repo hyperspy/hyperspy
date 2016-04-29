@@ -49,7 +49,7 @@ class EMD(object):
     The :class:`~.EMD` class can hold an arbitrary amount of datasets in the `signals` dictionary.
     These are saved as HyperSpy :class:`~hyperspy.signal.Signal` instances. Global metadata
     are saved in four dictionaries (`user`, `microscope`, `sample`, `comments`). To print
-    relevant information about the EMD instance use the :func:`~.print_info` function. EMD
+    relevant information about the EMD instance use the :func:`~.log_info` function. EMD
     instances can be loaded from and saved to emd-files, an hdf5 standard developed at Lawrence
     Berkeley National Lab (http://emdatasets.lbl.gov/).
 
@@ -339,9 +339,9 @@ class EMD(object):
         # Close file and return EMD object:
         emd_file.close()
 
-    def print_info(self):
+    def log_info(self):
         """Print all relevant information about the EMD instance."""
-        self._log.debug('Calling print_info')
+        self._log.debug('Calling log_info')
         info_str = '\nUser:\n-------------------------\n'
         for key, value in self.user.items():
             info_str += '{:<15}: {}\n'.format(key, value)
@@ -364,10 +364,10 @@ class EMD(object):
         self._log.info(info_str)
 
 
-def file_reader(filename, load_to_memory=True, print_info=False, **kwds):
+def file_reader(filename, load_to_memory=True, log_info=False, **kwds):
     emd = EMD.load_from_emd(filename, load_to_memory)
-    if print_info:
-        emd.print_info()
+    if log_info:
+        emd.log_info()
     dictionaries = []
     for signal in emd.signals.values():
         dictionaries.append(signal._to_dictionary())
