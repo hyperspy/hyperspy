@@ -146,9 +146,7 @@ To perform Poissonian noise normalization:
      Because it is the first argument we cold have simply written:
      >>> s.decomposition(True)
 
-For more details about the scaling procedure you can read the `following
-research article
-<http://onlinelibrary.wiley.com/doi/10.1002/sia.1657/abstract>`_
+More details about the scaling procedure can be found in [Keenan2004]_.
 
 Blind Source Separation
 =======================
