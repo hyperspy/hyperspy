@@ -4,6 +4,10 @@ Bibliography
 Bibliography
 ------------
 
+.. [Burdet2013] P. Burdet, J. Vannod, A. Hessler-Wyser, M. Rappaz, M. Cantoni,
+   "Three-dimensional chemical analysis of laser-welded NiTi–stainless steel wires
+   using a dual-beam FIB", Acta Materialia 61 (2013) 3090–3098.
+
 .. [Egerton2011] Ray Egerton, "Electron Energy-Loss Spectroscopy in the
    Electron Microscope", Springer-Verlag, 2011.
 
@@ -12,6 +16,11 @@ Bibliography
    Energy-Dispersive X-Ray Analysis of Catalyst Nanoparticles Using a Partial
    Cross Section Approach." Microsc. Microanal. 22 (2016) 71–81.
    doi:10.1017/S1431927615015494.
+
+.. [Rossouw2015] David Rossouw, Pierre Burdet, Francisco de la Pena, Caterina
+   Ducati, Benjamin R. Knappett, Andrew E. H. Wheatley, Paul A. Midgley, "Multicomponent
+   Signal Unmixing from Nanoheterostructures: Overcoming the Traditional Challenges
+   of Nanoscale X-ray Analysis via Machine Learning" Nano Lett. 15(4) (2015) 2716–2720
 
 .. [Watanabe1996] Masashi Watanabe, Zenji Horita, Minoru Nemoto, "Absorption
    correction and thickness determination using the zeta factor in quantitative
