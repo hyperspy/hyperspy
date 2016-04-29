@@ -20,7 +20,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from hyperspy.exceptions import DataDimensionError
-from hyperspy.signal import Signal
+from hyperspy.signal_base import BaseSignal
 from hyperspy.gui.egerton_quantification import SpikesRemoval
 import math
 
@@ -1144,7 +1144,7 @@ class Signal1DTools(object):
             return width
 
 
-class Signal1D(Signal,
+class Signal1D(BaseSignal,
                Signal1DTools,):
 
     """
@@ -1152,7 +1152,7 @@ class Signal1D(Signal,
     _record_by = 'spectrum'
 
     def __init__(self, *args, **kwargs):
-        Signal.__init__(self, *args, **kwargs)
+        BaseSignal.__init__(self, *args, **kwargs)
         self.axes_manager.set_signal_dimension(1)
 
     def to_signal2D(self):
@@ -1172,7 +1172,7 @@ class Signal1D(Signal,
             raise DataDimensionError(
                 "A Signal dimension must be >= 2 to be converted to an Image")
         im = self.rollaxis(-1 + 3j, 0 + 3j)
-        im.metadata.Signal.record_by = "image"
+        im.metadata.BaseSignal.record_by = "image"
         im._assign_subclass()
         return im
 

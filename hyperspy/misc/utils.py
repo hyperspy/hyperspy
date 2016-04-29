@@ -281,7 +281,7 @@ class DictionaryTreeBrowser(object):
                         right_limit = min(max_len,
                                           len(strvalue) - max_len)
                         strvalue = '%s ... %s' % (strvalue[:max_len],
-                                                   strvalue[-right_limit:])
+                                                  strvalue[-right_limit:])
                     string += "%s%s%s = %s\n" % (
                         padding, symbol, key, strvalue)
             j += 1
@@ -309,8 +309,8 @@ class DictionaryTreeBrowser(object):
     def __setattr__(self, key, value):
         if key.startswith('_sig_'):
             key = key[5:]
-            from hyperspy.signal import Signal
-            value = Signal(**value)
+            from hyperspy.signal_base import BaseSignal
+            value = BaseSignal(**value)
         slugified_key = str(slugify(key, valid_variable_name=True))
         if isinstance(value, dict):
             if self.has_item(slugified_key):
@@ -337,7 +337,7 @@ class DictionaryTreeBrowser(object):
         """Returns its dictionary representation.
 
         """
-        from hyperspy.signal import Signal
+        from hyperspy.signal_base import BaseSignal
         par_dict = {}
         for key_, item_ in self.__dict__.items():
             if not isinstance(item_, types.MethodType):
@@ -346,7 +346,7 @@ class DictionaryTreeBrowser(object):
                     continue
                 if isinstance(item_['_dtb_value_'], DictionaryTreeBrowser):
                     item = item_['_dtb_value_'].as_dictionary()
-                elif isinstance(item_['_dtb_value_'], Signal):
+                elif isinstance(item_['_dtb_value_'], BaseSignal):
                     item = item_['_dtb_value_']._to_dictionary()
                     key = '_sig_' + key
                 else:
