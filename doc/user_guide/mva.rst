@@ -152,14 +152,10 @@ Blind Source Separation
 =======================
 
 In some cases (it largely depends on the particular application) it is possible
-to obtain more physically meaningful components from the result of a data
-decomposition by a process called Blind Source Separation (BSS). For more
-information about the blind source separation you can read the `following
-introductory article
-<http://www.sciencedirect.com/science/article/pii/S0893608000000265>`_ or `this
-other article
-<http://www.sciencedirect.com/science/article/pii/S030439911000255X>`_ from the
-authors of HyperSpy for an application to EELS analysis.
+to obtain more physically interpretable set of components using a process
+called Blind Source Separation (BSS). For more information about blind source separation
+please see [Hyvarinen2000]_, and for an example application to EELS analysis, see
+[Pena2010]_.
 
 To perform BSS on the result of a decomposition, run the
 :py:meth:`~.learn.mva.MVA.blind_source_separation` method, e.g.:
