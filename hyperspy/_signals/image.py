@@ -18,9 +18,11 @@
 
 
 from hyperspy._signals.signal2D import Signal2D
+from hyperspy._signals.signal1D import Signal1DTools
 from hyperspy.misc.hspy_warnings import VisibleDeprecationWarning
 
 
-class Image(Signal2D):
+class Image(Signal2D,
+            Signal1DTools,):
     VisibleDeprecationWarning('The Image class will be deprecated from version\
                               1.0.0 and replaced with Signal2D')

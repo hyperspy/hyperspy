@@ -22,7 +22,6 @@ import numpy as np
 from hyperspy.exceptions import DataDimensionError
 from hyperspy.signal import Signal
 from hyperspy.gui.egerton_quantification import SpikesRemoval
-from hyperspy.misc.signal2D_tools import Signal2DTools
 import math
 
 import scipy.interpolate
@@ -1146,8 +1145,7 @@ class Signal1DTools(object):
 
 
 class Signal1D(Signal,
-               Signal1DTools,
-               Signal2DTools,):
+               Signal1DTools,):
 
     """
     """
