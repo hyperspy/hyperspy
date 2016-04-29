@@ -223,22 +223,21 @@ analysis.
 Saving in the main file
 -------------------------
 
-When you save the object on which you've performed machine learning analysis in
+If you save the dataset on which you've performed machine learning analysis in
 the :ref:`hdf5-format` format (the default in HyperSpy) (see
-:ref:`saving_files`) the result of the analysis is automatically saved in the
-file and it is loaded with the rest of the data when you load the file.
+:ref:`saving_files`), the result of the analysis is also saved in the same
+file automatically, and it is loaded along with the rest of the data when you
+next open the file.
 
-This option is the simplest because everything is stored in the same file and
-it does not require any extra command to recover the result of machine learning
-analysis when loading a file. However, currently it only supports storing one
-decomposition and one BSS result, which may not be enough for your purposes.
+.. NOTE::
+  This approach currently supports storing one decomposition and one BSS result,
+  which may not be enough for your purposes.
 
-Saving to an external files
+Saving to an external file
 ---------------------------
 
-Alternatively, to save the results of the current machine learning analysis to
-a file you can use the :py:meth:`~.learn.mva.LearningResults.save` method,
-e.g.:
+Alternatively, you can save the results of the current machine learning analysis to
+a separate file with the :py:meth:`~.learn.mva.LearningResults.save` method:
 
 .. code-block:: python
 
@@ -248,20 +247,20 @@ e.g.:
     Load back the results
     >>> s.learning_results.load('my_results.npz')
 
+Exporting in different formats
+------------------------------
 
-Exporting
----------
-
-It is possible to export the results of machine learning to any format
-supported by HyperSpy using:
+It is also possible to export the results of machine learning to any format
+supported by HyperSpy with:
 
 * :py:meth:`~.signal.MVATools.export_decomposition_results` or
 * :py:meth:`~.signal.MVATools.export_bss_results`.
 
-These methods accept many arguments which can be used to customise the way the
+These methods accept many arguments to customise the way in which the
 data is exported, so please consult the method documentation. The options
 include the choice of file format, the prefixes for loadings and factors,
 saving figures instead of data and more.
 
-Please note that the exported data cannot easily be loaded into HyperSpy's
-machine learning structure.
+.. NOTE::
+  Data exported in this way cannot be easily  loaded into HyperSpy's
+  machine learning structure.
