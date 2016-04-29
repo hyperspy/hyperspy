@@ -10,33 +10,23 @@ algorithms, such as principal component analysis (PCA), or blind source
 separation (BSS) algorithms, such as independent component analysis (ICA), are
 available through the methods described in this section.
 
-.. Note::
-
-    Currently the BSS algorithms operate on the result of a previous
-    decomposition analysis. Therefore, it is necessary to perform a
-    decomposition before attempting to perform a BSS.
-
-
 .. _decomposition-nomenclature:
 
 Nomenclature
 ============
 
-HyperSpy performs the decomposition of a dataset into two new datasets: one
-with the dimension of the signal space which we will call `factors` and the
-other with the dimension of the navigation space which we will call `loadings`.
-The same nomenclature applies to the result of BSS.
-
+HyperSpy will decompose a dataset into two new datasets: one
+with the dimension of the signal space known as `factors`, and the
+other with the dimension of the navigation space known as `loadings`.
 
 .. _decomposition:
 
-Decomposition
+Principal component analysis
 =============
 
-There are several methods to decompose a matrix or tensor into several factors.
-The decomposition is most commonly applied as a means of noise reduction and
-dimensionality reduction. One of the most popular decomposition methods is
-principal component analysis (PCA). To perform PCA on your data set, run the
+Decomposition techniques are most commonly applied as a means of noise reduction (or `denoising`)
+and dimensionality reduction. One of the most popular decomposition methods is
+principal component analysis (PCA). To perform PCA on your dataset, run the
 :py:meth:`~.learn.mva.MVA.decomposition` method:
 
 .. code-block:: python
@@ -44,60 +34,35 @@ principal component analysis (PCA). To perform PCA on your data set, run the
    >>> s.decomposition()
 
 
-Note that the `s` variable must contain a :class:`~.signal.Signal`  class or
-any of its subclasses which most likely has been previously loaded with the
+Note that the `s` variable must contain either a :class:`~.signal.Signal`  class
+or its subclasses, which will most likely have been loaded with the
 :func:`~.io.load` function, e.g. ``s = load('my_file.hdf5')``. Also, the signal must be
-multidimensional, i.e. ``s.axes_manager.navigation_size`` must be greater than
+multi-dimensional, that is ``s.axes_manager.navigation_size`` must be greater than
 one.
 
-Several algorithms exist for performing this analysis. The default algorithm in
-HyperSpy is :py:const:`SVD`, which performs PCA using an approach called
-"singular value decomposition". This method has many options. For more details
-read method documentation.
-
-
-Poissonian noise
-----------------
-
-Most decomposition algorithms assume that the noise of the data follows a
-Gaussian distribution. In the case that the data that you are analysing follow
-a Poissonian distribution instead, HyperSpy can "normalize" the data by
-performing a scaling operation which can greatly enhance the result.
-
-To perform Poissonian noise normalisation:
-
-.. code-block:: python
-
-    The long way:
-    >>> s.decomposition(normalize_poissonian_noise=True)
-
-    Because it is the first argument we cold have simply written:
-    >>> s.decomposition(True)
-
-For more details about the scaling procedure you can read the `following
-research article
-<http://onlinelibrary.wiley.com/doi/10.1002/sia.1657/abstract>`_
-
-
-Principal component analysis
-----------------------------
+Several algorithms exist for performing PCA, and the default algorithm in
+HyperSpy is :py:const:`SVD`, which uses an approach called
+"singular value decomposition". This method has many options, and for more
+information please read the method documentation.
 
 .. _scree-plot:
 
-Scree plot
-^^^^^^^^^^
+Scree plots
+-----------
 
-PCA essentially sorts the components in the data in order of decreasing
+PCA will sort the components in the dataset in order of decreasing
 variance. It is often useful to estimate the dimensionality of the data by
-plotting the explained variance against the component index in a logarithmic
-y-scale. This plot is sometimes called scree-plot and it should drop quickly,
-eventually becoming a slowly descending line. The point at which it becomes
-linear (often referred to as an elbow) is generally judged to be a good
-estimation of the dimensionality of the data (or equivalently, the number of
-components that should be retained - see below).
+plotting the explained variance against the component index. This plot is
+sometimes called a scree plot and it should drop quickly,
+eventually becoming a slowly descending line.
 
-To obtain a scree plot, run the
-:py:meth:`~.learn.mva.MVA.plot_explained_variance_ratio` method e.g.:
+The point at which the scree plot becomes linear (often referred to as
+the `elbow`) is generally judged to be a good estimation of the dimensionality
+of the data (or equivalently, the number of components that should be retained
+ - see below).
+
+To obtain a scree plot for your dataset, run the
+:py:meth:`~.learn.mva.MVA.plot_explained_variance_ratio` method:
 
 .. code-block:: python
 
@@ -107,19 +72,18 @@ To obtain a scree plot, run the
    :align:   center
    :width:   500
 
-   PCA scree plot.
-
+   PCA scree plot
 
 Note that in the figure, the first component has index 0. This is because
 Python uses zero based indexing i.e. the initial element of a sequence is found
-using index 0.
+at index 0.
 
 .. versionadded:: 0.7
 
 Sometimes it can be useful to get the explained variance ratio as a spectrum,
-e.g. to store it separetely or to plot several scree plots obtained using
-different data pre-treatment in the same figure using
-:py:func:`~.drawing.utils.plot_spectra`. For that you can use
+for example to plot several scree plots obtained using
+different data pre-treatmentd in the same figure using
+:py:func:`~.drawing.utils.plot_spectra`. This can be achieved using
 :py:meth:`~.learn.mva.MVA.get_explained_variance_ratio`
 
 Data denoising (dimensionality reductions)
@@ -166,7 +130,26 @@ in one single line of code:
 
    >>> (s - sc).plot()
 
+Poissonian noise
+----------------
 
+Most decomposition algorithms assume that the noise of the data follows a
+Gaussian distribution. In the case that the data that you are analysing follow
+a Poissonian distribution instead, HyperSpy can "normalize" the data by
+performing a scaling operation which can greatly enhance the result.
+
+To perform Poissonian noise normalisation:
+
+.. code-block:: python
+     The long way:
+     >>> s.decomposition(normalize_poissonian_noise=True)
+
+     Because it is the first argument we cold have simply written:
+     >>> s.decomposition(True)
+
+For more details about the scaling procedure you can read the `following
+research article
+<http://onlinelibrary.wiley.com/doi/10.1002/sia.1657/abstract>`_
 
 Blind Source Separation
 =======================
@@ -189,8 +172,10 @@ To perform BSS on the result of a decomposition, run the
     s.blind_source_separation(number_of_components)
 
 .. NOTE::
-    You must have performed a :ref:`decomposition` before you attempt to
-    perform BSS.
+
+        Currently the BSS algorithms operate on the result of a previous
+        decomposition analysis. Therefore, it is necessary to perform a
+        :ref:`decomposition` first.
 
 .. NOTE::
     You must pass an integer number of components to ICA.  The best
