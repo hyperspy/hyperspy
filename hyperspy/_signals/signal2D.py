@@ -18,7 +18,7 @@
 
 
 from hyperspy.signal import Signal
-from hyperspy.misc.signal1D_tools import Signal1DTools
+from hyperspy._signals.signal1D import Signal1DTools
 from hyperspy.misc.signal2D_tools import Signal2DTools
 
 
