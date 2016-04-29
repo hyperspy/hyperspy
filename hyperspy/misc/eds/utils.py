@@ -553,7 +553,7 @@ def cross_section_to_zeta(cross_sections, elements):
     print(atomic_weights)
     zeta_factors = []
     for i in range(len(elements)):
-            zeta = atomic_weights[i]/(cross_sections[i]*constants.Avogadro)*1E-31
+            zeta = constants.Avogadro/(cross_sections[i]*atomic_weights[i])*1E-31
             zeta_factors.append(zeta)
     return zeta_factors
 
@@ -583,6 +583,6 @@ def zeta_to_cross_section(zfactors, elements):
     print(atomic_weights)
     cross_sections = []
     for i in range(len(elements)):
-            xsec = atomic_weights[i]/(zfactors[i]*constants.Avogadro)*1E-31
+            xsec = constants.Avogadro/(zfactors[i]*atomic_weights[i])*1E-31
             cross_sections.append(xsec)
     return cross_sections
