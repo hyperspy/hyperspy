@@ -11,6 +11,10 @@ Bibliography
 .. [Egerton2011] Ray Egerton, "Electron Energy-Loss Spectroscopy in the
    Electron Microscope", Springer-Verlag, 2011.
 
+.. [Keenan2004] Michael R. Keenan, Paul G. Kotula, "Accounting for Poisson noise
+   in the multivariate analysis of ToF-SIMS spectrum images", Surf. Interface Anal
+   36(3) (2004) 203–212.
+
 .. [MacArthur2016] Katherine E. MacArthur, Thomas J. A. Slater, Sarah J. Haigh,
    Dogan Ozkaya, Peter D. Nellist, Sergio Lozano-Perez, "Quantitative
    Energy-Dispersive X-Ray Analysis of Catalyst Nanoparticles Using a Partial

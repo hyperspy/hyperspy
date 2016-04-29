@@ -86,17 +86,18 @@ different data pre-treatmentd in the same figure using
 :py:func:`~.drawing.utils.plot_spectra`. This can be achieved using
 :py:meth:`~.learn.mva.MVA.get_explained_variance_ratio`
 
-Data denoising (dimensionality reductions)
+
+Denoising datasets
 ------------------------------------------
 
-One of the most popular uses of PCA is data denoising. The denoising property
-is achieved by using a limited set of components to make a model of the
-original, omitting the later components that ideally contain only noise. This
-is know as *dimensionality reduction*.
+One of the most popular uses of PCA is data denoising. This is achieved by
+using a limited set of components to make a model of the original, omitting
+the later components that ideally contain only noise. This
+is also known as *dimensionality reduction*.
 
 To perform this operation with HyperSpy, run the
 :py:meth:`~.learn.mva.MVA.get_decomposition_model` method, usually after
-estimating the dimension of your data e.g. by using the :ref:`scree-plot`. For
+estimating the dimension of your data using a scree plot. For
 example:
 
 .. code-block:: python
@@ -113,32 +114,30 @@ example:
     * if list of ints, only the components in the given list are used to
       construct the model.
 
+Sometimes, it is useful to examine the residuals between your original data and
+the decomposition model. You can easily calculate and display the residuals:
+
+.. code-block:: python
+
+    >>> (s - sc).plot()
 
 .. HINT::
     Unlike most of the analysis functions, this function returns a new
-    object, which in the example above we have called 'sc'. (The name of
-    the variable is totally arbitrary and you can choose it at your will).
+    object, which in the example above we have called 'sc'.
     You can perform operations on this new object later. It is a copy of the
     original :py:const:`s` object, except that the data has been replaced by
     the model constructed using the chosen components.
 
-Sometimes it is useful to examine the residuals between your original data and
-the decomposition model. You can easily compute and display the residuals
-in one single line of code:
-
-.. code-block:: python
-
-   >>> (s - sc).plot()
 
 Poissonian noise
 ----------------
 
-Most decomposition algorithms assume that the noise of the data follows a
-Gaussian distribution. In the case that the data that you are analysing follow
-a Poissonian distribution instead, HyperSpy can "normalize" the data by
-performing a scaling operation which can greatly enhance the result.
+Many decomposition methods such as PCA assume that the noise of the data follows a
+Gaussian distribution. In cases where your data is instead corrupted by Poisson noise,
+HyperSpy can "normalize" the data by performing a scaling operation, which
+can greatly enhance the result.
 
-To perform Poissonian noise normalisation:
+To perform Poissonian noise normalization:
 
 .. code-block:: python
      The long way:
