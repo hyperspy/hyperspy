@@ -3373,7 +3373,7 @@ class Signal(MVA,
         sp._assign_subclass()
         return sp
 
-    def as_image(self, image_axes):
+    def as_signal2D(self, image_axes):
         """Convert signal to image.
 
         The chosen image axes are moved to the last indices in the

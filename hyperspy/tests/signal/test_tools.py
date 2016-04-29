@@ -313,12 +313,12 @@ class Test4D:
         nt.assert_false(self.s.unfold_signal_space())
 
     def test_unfold_image(self):
-        im = self.s.to_image()
+        im = self.s.to_signal2D()
         im.unfold()
         nt.assert_equal(im.data.shape, (30, 12))
 
     def test_image_signal_unfolded_deepcopy(self):
-        im = self.s.to_image()
+        im = self.s.to_signal2D()
         im.unfold()
         # The following could fail if the constructor was not taking the fact
         # that the signal is unfolded into account when setting the signal
@@ -326,16 +326,16 @@ class Test4D:
         im.deepcopy()
 
     def test_image_signal_unfolded_false(self):
-        im = self.s.to_image()
+        im = self.s.to_signal2D()
         nt.assert_false(im.metadata._HyperSpy.Folding.signal_unfolded)
 
     def test_image_signal_unfolded_true(self):
-        im = self.s.to_image()
+        im = self.s.to_signal2D()
         im.unfold()
         nt.assert_true(im.metadata._HyperSpy.Folding.signal_unfolded)
 
     def test_image_signal_unfolded_back_to_false(self):
-        im = self.s.to_image()
+        im = self.s.to_signal2D()
         im.unfold()
         im.fold()
         nt.assert_false(im.metadata._HyperSpy.Folding.signal_unfolded)

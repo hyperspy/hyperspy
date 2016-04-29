@@ -1155,13 +1155,13 @@ class Signal1D(Signal,
         Signal.__init__(self, *args, **kwargs)
         self.axes_manager.set_signal_dimension(1)
 
-    def to_image(self):
+    def to_signal2D(self):
         """Returns the spectrum as an image.
 
         See Also
         --------
-        as_image : a method for the same purpose with more options.
-        signals.Spectrum.to_image : performs the inverse operation on images.
+        as_signal2D : a method for the same purpose with more options.
+        signals.Signal1D.to_signal2D : performs the inverse operation on images.
 
         Raises
         ------

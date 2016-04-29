@@ -271,7 +271,7 @@ class Test3D_Navigate_1:
                      self.signal.axes_manager.signal_axes[0].scale)
 
     def test_subclass_assignment(self):
-        im = self.signal.as_image((-2, -1))
+        im = self.signal.as_signal2D((-2, -1))
         assert_true(isinstance(im.isig[0], signals.Spectrum))
 
 
