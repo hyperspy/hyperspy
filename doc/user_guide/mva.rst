@@ -134,7 +134,12 @@ the decomposition model. You can easily calculate and display the residuals:
 Non-negative matrix factorization
 ----------------------------
 
-HyperSpy also enables the use of non-negative matrix factorization (NMF).
+Another popular decomposition method is non-negative matrix factorization (NMF), which
+can be accessed in HyperSpy with:
+
+.. code-block:: python
+
+   >>> s.decomposition(algorithm='nmf')
 
 Poissonian noise
 ----------------
