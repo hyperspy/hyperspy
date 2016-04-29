@@ -91,7 +91,7 @@ different data pre-treatmentd in the same figure using
 
 
 Denoising
-^^^^^^^^^^^^^^^^^^
+^^^^^^^^^
 
 One of the most popular uses of PCA is data denoising. This is achieved by
 using a limited set of components to make a model of the original, omitting
@@ -131,6 +131,10 @@ the decomposition model. You can easily calculate and display the residuals:
     original :py:const:`s` object, except that the data has been replaced by
     the model constructed using the chosen components.
 
+Non-negative matrix factorization
+----------------------------
+
+HyperSpy also enables the use of non-negative matrix factorization (NMF).
 
 Poissonian noise
 ----------------
