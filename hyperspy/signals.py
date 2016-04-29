@@ -5,12 +5,16 @@ The Signal class and its specilized subclasses:
         For generic data with arbitrary signal_dimension. All other signal
         classes inherit from this one. It should only be used with none of
         the others is appropriated.
-    Spectrum
+    Signal1D
         For generic data with signal_dimension equal 1, i.e. spectral data of
         n-dimensions. The signal is unbinned by default.
-    Image
+    Signal2D
         For generic data with signal_dimension equal 2, i.e. image data of
         n-dimensions. The signal is unbinned by default.
+    Spectrum
+        Deprecated in favour of Signal1D from version 1.0.0
+    Image
+        Deprecated in favour of Signal2D from version 1.0.0
     Simulation
         For generic simulated data with arbitrary signal_dimension. All other
         simulation signal classes inherit from this one. It should only be used
@@ -36,6 +40,8 @@ The Signal class and its specilized subclasses:
 
 # -*- coding: utf-8 -*-
 
+from hyperspy._signals.signal1D import Signal1D
+from hyperspy._signals.signal2D import Signal2D
 from hyperspy._signals.spectrum import Spectrum
 from hyperspy._signals.image import Image
 from hyperspy._signals.eels import EELSSpectrum

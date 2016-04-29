@@ -272,7 +272,7 @@ class Test3D_Navigate_1:
 
     def test_subclass_assignment(self):
         im = self.signal.as_signal2D((-2, -1))
-        assert_true(isinstance(im.isig[0], signals.Spectrum))
+        assert_true(isinstance(im.isig[0], signals.Signal1D))
 
 
 class TestFloatArguments:
