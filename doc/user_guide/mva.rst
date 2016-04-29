@@ -21,12 +21,15 @@ other with the dimension of the navigation space known as `loadings`.
 
 .. _decomposition:
 
-Principal component analysis
+Decomposition
 =============
 
 Decomposition techniques are most commonly applied as a means of noise reduction (or `denoising`)
-and dimensionality reduction. One of the most popular decomposition methods is
-principal component analysis (PCA). To perform PCA on your dataset, run the
+and dimensionality reduction.
+
+Principal component analysis
+----------------------------
+One of the most popular decomposition methods is principal component analysis (PCA). To perform PCA on your dataset, run the
 :py:meth:`~.learn.mva.MVA.decomposition` method:
 
 .. code-block:: python
@@ -48,7 +51,7 @@ information please read the method documentation.
 .. _scree-plot:
 
 Scree plots
------------
+^^^^^^^^^^^
 
 PCA will sort the components in the dataset in order of decreasing
 variance. It is often useful to estimate the dimensionality of the data by
