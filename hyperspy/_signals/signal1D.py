@@ -20,18 +20,18 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from hyperspy.exceptions import DataDimensionError
-from hyperspy.signal import BaseSignal
+from hyperspy.signal import Signal
 from hyperspy.gui.egerton_quantification import SpikesRemoval
 
 
-class Signal1D(BaseSignal):
+class Signal1D(Signal):
 
     """
     """
     _record_by = 'spectrum'
 
     def __init__(self, *args, **kwargs):
-        BaseSignal.__init__(self, *args, **kwargs)
+        Signal.__init__(self, *args, **kwargs)
         self.axes_manager.set_signal_dimension(1)
 
     def to_image(self):
@@ -86,7 +86,7 @@ class Signal1D(BaseSignal):
 
         # arbitrary cutoff for number of spectra necessary before histogram
         # data is compressed by finding maxima of each spectrum
-        tmp = BaseSignal(der) if n < 2000 else BaseSignal(np.ravel(der.max(-1)))
+        tmp = Signal(der) if n < 2000 else Signal(np.ravel(der.max(-1)))
 
         # get histogram signal using smart binning and plot
         tmph = tmp.get_histogram()

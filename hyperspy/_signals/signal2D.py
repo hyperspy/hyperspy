@@ -17,10 +17,10 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from hyperspy.signal import BaseSignal
+from hyperspy.signal import Signal
 
 
-class Signal2D(BaseSignal):
+class Signal2D(Signal):
 
     """
     """
