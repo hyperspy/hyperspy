@@ -90,8 +90,8 @@ different data pre-treatmentd in the same figure using
 :py:meth:`~.learn.mva.MVA.get_explained_variance_ratio`
 
 
-Denoising datasets
-------------------------------------------
+Denoising
+^^^^^^^^^^^^^^^^^^
 
 One of the most popular uses of PCA is data denoising. This is achieved by
 using a limited set of components to make a model of the original, omitting
