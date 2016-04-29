@@ -177,11 +177,11 @@ To perform BSS on the result of a decomposition, run the
 
 .. _mva.visualization:
 
-Visualising results
+Visualizing results
 ===================
 
-Plot methods exist for the results of decomposition and blind source separation.
-All the methods begin with "plot":
+HyperSpy includes a number of plotting methods for the results of decomposition
+and blind source separation. All the methods begin with "plot_":
 
 1. :py:meth:`~.signal.MVATools.plot_decomposition_results`.
 2. :py:meth:`~.signal.MVATools.plot_decomposition_factors`.
@@ -193,8 +193,8 @@ All the methods begin with "plot":
 1 and 4 (new in version 0.7) provide a more compact way of displaying the
 results. All the other methods display each component in its own window. For 2
 and 3 it is wise to provide the number of factors or loadings you wish to
-visualise, since the default is plot all. For BSS the default is the number you
-included when running the :py:meth:`~.learn.mva.MVA.blind_source_separation`
+visualise, since the default is to plot all of them. For BSS, the default is
+the number you included when running the :py:meth:`~.learn.mva.MVA.blind_source_separation`
 method.
 
 .. _mva.get_results:
@@ -203,11 +203,10 @@ Obtaining the results as Signal instances
 =========================================
 .. versionadded:: 0.7
 
-The decomposition and BSS results are internally stored in the
-:py:class:`~.signal.Signal` class where all the methods discussed in this
-chapter can find them. However, they are stored as numpy array. Frequently it
-is useful to obtain the decomposition/BSS factors and loadings as HyperSpy
-signals and HyperSpy provides the following four methods for that pourpose:
+The decomposition and BSS results are internally stored as numpy arrays in the
+:py:class:`~.signal.Signal` class. Frequently it is useful to obtain the
+decomposition/BSS factors and loadings as HyperSpy signals, and HyperSpy
+provides the following methods for that purpose:
 
 * :py:meth:`~.signal.MVATools.get_decomposition_loadings`.
 * :py:meth:`~.signal.MVATools.get_decomposition_factors`.
@@ -218,7 +217,7 @@ signals and HyperSpy provides the following four methods for that pourpose:
 Saving and loading results
 ==========================
 
-There are several methods for storing  the result of a machine learning
+There are several methods for storing the result of a machine learning
 analysis.
 
 Saving in the main file
