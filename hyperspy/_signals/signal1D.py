@@ -22,9 +22,13 @@ import numpy as np
 from hyperspy.exceptions import DataDimensionError
 from hyperspy.signal import Signal
 from hyperspy.gui.egerton_quantification import SpikesRemoval
+from hyperspy.misc.signal1D_tools import Signal1DTools
+from hyperspy.misc.signal2D_tools import Signal2DTools
 
 
-class Signal1D(Signal):
+class Signal1D(Signal,
+               Signal1DTools,
+               Signal2DTools,):
 
     """
     """

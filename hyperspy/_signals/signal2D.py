@@ -18,9 +18,13 @@
 
 
 from hyperspy.signal import Signal
+from hyperspy.misc.signal1D_tools import Signal1DTools
+from hyperspy.misc.signal2D_tools import Signal2DTools
 
 
-class Signal2D(Signal):
+class Signal2D(Signal,
+               Signal1DTools,
+               Signal2DTools,):
 
     """
     """

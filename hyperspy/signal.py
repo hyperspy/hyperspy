@@ -46,9 +46,6 @@ from hyperspy.drawing.utils import animate_legend
 from hyperspy.misc.hspy_warnings import VisibleDeprecationWarning
 from hyperspy.misc.signal_tools import are_signals_aligned
 
-from hyperspy.misc.signal1D_tools import Signal1DTools
-from hyperspy.misc.signal2D_tools import Signal2DTools
-
 
 class MVATools(object):
     # TODO: All of the plotting methods here should move to drawing
@@ -1250,9 +1247,7 @@ class MVATools(object):
 
 
 class Signal(MVA,
-             MVATools,
-             Signal1DTools,
-             Signal2DTools,):
+             MVATools,):
 
     _record_by = ""
     _signal_type = ""
