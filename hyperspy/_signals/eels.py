@@ -166,7 +166,7 @@ class EELSSpectrum(Spectrum):
         self._check_navigation_mask(mask)
         zlpc = self.valuemax(-1)
         if self.axes_manager.navigation_dimension == 1:
-            zlpc = zlpc.as_spectrum(0)
+            zlpc = zlpc.as_signal1D(0)
         elif self.axes_manager.navigation_dimension > 1:
             zlpc = zlpc.as_image((0, 1))
         if mask is not None:

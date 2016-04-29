@@ -3343,7 +3343,7 @@ class Signal(MVA,
         nitem = nitem if nitem > 0 else 1
         return nitem
 
-    def as_spectrum(self, spectral_axis):
+    def as_signal1D(self, spectral_axis):
         """Return the Signal as a spectrum.
 
         The chosen spectral axis is moved to the last index in the

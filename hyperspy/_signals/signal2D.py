@@ -513,7 +513,7 @@ class Signal2D(Signal,
         else:
             self.axes_manager.set_signal_dimension(2)
 
-    def to_spectrum(self):
+    def to_signal1D(self):
         """Returns the image as a spectrum.
 
         See Also
@@ -522,7 +522,7 @@ class Signal2D(Signal,
         signals.Image.to_spectrum : performs the inverse operation on images.
 
         """
-        return self.as_spectrum(0 + 3j)
+        return self.as_signal1D(0 + 3j)
 
     def plot(self,
              colorbar=True,
