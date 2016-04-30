@@ -22,5 +22,6 @@ setup/windows/requires/*
 setup/windows/reccomends/*
 examples/*.rst
 examples/data_navigation/*.rst
+.idea*
 
-
+desktop.ini
