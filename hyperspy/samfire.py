@@ -156,7 +156,7 @@ class Samfire:
     save_every = np.nan
     _workers = None
     _args = None
-    _count = 0
+    count = 0
 
     def __init__(self, model, marker=None, workers=None, ipython_kwargs=None):
 
@@ -231,7 +231,8 @@ class Samfire:
         """
         self._args = kwargs
         num_of_strat = len(self.strategies)
-        self._progressbar = tqdm(total=self.model.axes_manager.navigation_size)
+        total_size = self.model.axes_manager.navigation_size - self.pixels_done
+        self._progressbar = tqdm(total=total_size)
 
         while True:
             self._run_active_strategy()
@@ -311,14 +312,17 @@ class Samfire:
                                         self.metadata.goodness_test)
             self._running_pixels.remove(ind)
             self.count += 1
+            if isgood:
+                self._progressbar.update(1)
             self.active_strategy.update(ind, isgood)
             self._plot()
             self._save()
 
     def _save(self):
         # maybe add saving marker + strategies as well?
+        title = self.model.spectrum.metadata.General.title
         if self.count % self.save_every == 0:
-            self.model.save(slugify('backup_' + self.model.spectrum.metadata.General.title),
+            self.model.save(slugify('backup_' + title),
                             name='samfire_backup', overwrite=True)
             self.model.spectrum.models.remove('samfire_backup')
 
@@ -337,7 +341,8 @@ class Samfire:
             self._swap_dict_and_model(ind, results)
 
     def refresh_database(self):
-        """Refreshes currently selected strategy without preserving any "ignored" pixels
+        """Refreshes currently selected strategy without preserving any
+        "ignored" pixels
         """
         # updates current active strategy database / prob.
         # Assume when chisq is not None, it's relevant
@@ -540,10 +545,10 @@ class Samfire:
                 self.plot()
 
     def plot(self):
-        """(if possible) plots current strategy plot.
-        Diffusion strategies plot grayscale navigation signal with brightness
-        representing order of the pixel selection.
-        Segmenter strategies plot a collection of histograms, one per parameter.
+        """(if possible) plots current strategy plot. Diffusion strategies plot
+        grayscale navigation signal with brightness representing order of the
+        pixel selection. Segmenter strategies plot a collection of histograms,
+        one per parameter.
         """
         if self.strategies:
             self._figure = self.active_strategy.plot(self._figure)

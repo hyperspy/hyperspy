@@ -17,15 +17,13 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 
+import time
+import logging
 from multiprocessing import (cpu_count, Pool, Manager)
 from multiprocessing.pool import Pool as Pool_type
 import ipyparallel as ipp
-import os
-import logging
 
 from hyperspy._samfire_utils.samfire_worker import create_worker
-
-import time
 
 _logger = logging.getLogger(__name__)
 
@@ -45,7 +43,7 @@ class samfire_pool:
         self.pid = {}
         self.num_workers = num_workers
         self.workers = {}
-        self.timestep = 0.05
+        self.timestep = 0.001
         self.timeout = 15.
         self.setup()
 

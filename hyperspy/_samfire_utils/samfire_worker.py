@@ -33,7 +33,7 @@ class worker:
         self.individual_queue = individual_queue
         self.shared_queue = shared_queue
         self.result_queue = result_queue
-        self.timestep = 0.05
+        self.timestep = 0.001
         self.max_get_timeout = 3
         self._AICc_fraction = 0.99
         self.reset()
