@@ -353,7 +353,7 @@ be limited by additional, optional arguments.
 Mass absorption coefficient database
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-A mass absorption coefficient database (Chantler2005 see http://physics.nist.gov/ffast) is available
+A mass absorption coefficient database [Chantler2005]_ is available:
 
 .. code-block:: python
 

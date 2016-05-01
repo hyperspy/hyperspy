@@ -8,6 +8,8 @@ Bibliography
    "Three-dimensional chemical analysis of laser-welded NiTi–stainless steel wires
    using a dual-beam FIB", Acta Materialia 61 (2013) 3090–3098.
 
+.. [Chantler2015] http://physics.nist.gov/ffast
+
 .. [Egerton2011] Ray Egerton, "Electron Energy-Loss Spectroscopy in the
    Electron Microscope", Springer-Verlag, 2011.
 
