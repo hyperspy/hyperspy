@@ -47,12 +47,12 @@ def test_eels_spectrum_simulation():
         hs.signals.EELSSpectrumSimulation)
 
 
-def test_weird_spectrum():
+def test_weird_signal1D():
     cls = assign_signal_subclass(
         record_by="spectrum",
         signal_type="weird",
         signal_origin="")
-    assert_true(cls is hs.signals.Spectrum)
+    assert_true(cls is hs.signals.Signal1D)
 
 
 class TestSignalAssignSubclass:
