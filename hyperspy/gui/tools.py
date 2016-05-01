@@ -794,11 +794,11 @@ class ComponentFit(SpanSelectorInSpectrum):
     def __init__(self, model, component, signal_range=None,
                  estimate_parameters=True, fit_independent=False,
                  only_current=True, **kwargs):
-        if model.spectrum.axes_manager.signal_dimension != 1:
+        if model.signal1D.axes_manager.signal_dimension != 1:
             raise SignalDimensionError(
-                model.spectrum.axes_manager.signal_dimension, 1)
+                model.signal1D.axes_manager.signal_dimension, 1)
 
-        self.signal = model.spectrum
+        self.signal = model.signal1D
         self.axis = self.signal.axes_manager.signal_axes[0]
         self.span_selector = None
         self.only_current = [True] if only_current else []  # CheckListEditor

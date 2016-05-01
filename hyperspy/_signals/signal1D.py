@@ -1172,7 +1172,7 @@ class Signal1D(BaseSignal,
             raise DataDimensionError(
                 "A Signal dimension must be >= 2 to be converted to an Image")
         im = self.rollaxis(-1 + 3j, 0 + 3j)
-        im.metadata.BaseSignal.record_by = "image"
+        im.metadata.Signal.record_by = "image"
         im._assign_subclass()
         return im
 
@@ -1207,7 +1207,7 @@ class Signal1D(BaseSignal,
 
         # arbitrary cutoff for number of spectra necessary before histogram
         # data is compressed by finding maxima of each spectrum
-        tmp = Signal(der) if n < 2000 else Signal(np.ravel(der.max(-1)))
+        tmp = BaseSignal(der) if n < 2000 else BaseSignal(np.ravel(der.max(-1)))
 
         # get histogram signal using smart binning and plot
         tmph = tmp.get_histogram()

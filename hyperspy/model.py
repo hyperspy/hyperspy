@@ -37,7 +37,7 @@ from hyperspy import messages
 import hyperspy.drawing.spectrum
 from hyperspy.drawing.utils import on_figure_window_close
 from hyperspy.external import progressbar
-from hyperspy._signals.eels import Spectrum
+from hyperspy._signals.signal1D import Signal1D
 from hyperspy.defaults_parser import preferences
 from hyperspy.axes import generate_axis
 from hyperspy.exceptions import WrongObjectError
@@ -48,7 +48,7 @@ from hyperspy.drawing.widgets import (DraggableVerticalLine,
                                       DraggableLabel)
 from hyperspy.gui.tools import ComponentFit
 from hyperspy.component import Component
-from hyperspy.signal import Signal
+from hyperspy.signal_base import BaseSignal
 from hyperspy.misc.utils import slugify, shorten_name
 
 
@@ -220,10 +220,10 @@ class Model(list):
         # raise an exception when using windows.connect
         return id(self)
 
-    def __init__(self, spectrum):
+    def __init__(self, signal1D):
         self.convolved = False
-        self.spectrum = spectrum
-        self.axes_manager = self.spectrum.axes_manager
+        self.signal1D = signal1D
+        self.axes_manager = self.signal1D.axes_manager
         self.axis = self.axes_manager.signal_axes[0]
         self.axes_manager.connect(self.fetch_stored_values)
 
@@ -234,28 +234,28 @@ class Model(list):
         self._plot = None
         self._model_line = None
 
-        self.chisq = spectrum._get_navigation_signal()
+        self.chisq = signal1D._get_navigation_signal()
         self.chisq.change_dtype("float")
         self.chisq.data.fill(np.nan)
         self.chisq.metadata.General.title = \
-            self.spectrum.metadata.General.title + ' chi-squared'
+            self.signal1D.metadata.General.title + ' chi-squared'
         self.dof = self.chisq._deepcopy_with_new_data(
             np.zeros_like(
                 self.chisq.data,
                 dtype='int'))
         self.dof.metadata.General.title = \
-            self.spectrum.metadata.General.title + ' degrees of freedom'
+            self.signal1D.metadata.General.title + ' degrees of freedom'
         self._suspend_update = False
         self._adjust_position_all = None
         self._plot_components = False
         self.components = ModelComponents(self)
 
     def __repr__(self):
-        title = self.spectrum.metadata.General.title
+        title = self.signal1D.metadata.General.title
         class_name = str(self.__class__).split("'")[1].split('.')[-1]
 
         if len(title):
-            return "<%s, title: %s>" % (class_name, self.spectrum.metadata.General.title)
+            return "<%s, title: %s>" % (class_name, self.signal1D.metadata.General.title)
         else:
             return "<%s>" % class_name
 
@@ -273,15 +273,15 @@ class Model(list):
         raise NotImplementedError
 
     @property
-    def spectrum(self):
-        return self._spectrum
+    def signal1D(self):
+        return self._signal1D
 
-    @spectrum.setter
-    def spectrum(self, value):
-        if isinstance(value, Spectrum):
-            self._spectrum = value
+    @signal1D.setter
+    def signal1D(self, value):
+        if isinstance(value, Signal1D):
+            self._signal1D = value
         else:
-            raise WrongObjectError(str(type(value)), 'Spectrum')
+            raise WrongObjectError(str(type(value)), 'Signal1D')
 
     @property
     def low_loss(self):
@@ -291,7 +291,7 @@ class Model(list):
     def low_loss(self, value):
         if value is not None:
             if (value.axes_manager.navigation_shape !=
-                    self.spectrum.axes_manager.navigation_shape):
+                    self.signal1D.axes_manager.navigation_shape):
                 raise ValueError('The low-loss does not have '
                                  'the same navigation dimension as the '
                                  'core-loss')
@@ -347,7 +347,7 @@ class Model(list):
     def __delitem__(self, things):
         things = self.__getitem__(things)
         if not isinstance(things, list):
-            things = [things,]
+            things = [things, ]
         for thing in things:
             self.remove(thing)
 
@@ -498,7 +498,7 @@ class Model(list):
                         component_.active = True
                     else:
                         component_.active = False
-        data = np.empty(self.spectrum.data.shape, dtype='float')
+        data = np.empty(self.signal1D.data.shape, dtype='float')
         data.fill(np.nan)
         if out_of_range_to_nan is True:
             channel_switches_backup = copy.copy(self.channel_switches)
@@ -518,12 +518,12 @@ class Model(list):
         pbar.finish()
         if out_of_range_to_nan is True:
             self.channel_switches[:] = channel_switches_backup
-        spectrum = self.spectrum.__class__(
+        signal1D = self.signal1D.__class__(
             data,
-            axes=self.spectrum.axes_manager._get_axes_dicts())
-        spectrum.metadata.General.title = (
-            self.spectrum.metadata.General.title + " from fitted model")
-        spectrum.metadata.Signal.binned = self.spectrum.metadata.Signal.binned
+            axes=self.signal1D.axes_manager._get_axes_dicts())
+        signal1D.metadata.General.title = (
+            self.signal1D.metadata.General.title + " from fitted model")
+        signal1D.metadata.Signal.binned = self.signal1D.metadata.Signal.binned
 
         if component_list:
             for component_ in self:
@@ -533,7 +533,7 @@ class Model(list):
                 else:
                     if active_s == _multi_off_:
                         component_._toggle_connect_active_array(True)
-        return spectrum
+        return signal1D
 
     @property
     def _plot_active(self):
@@ -792,8 +792,8 @@ class Model(list):
                 self.low_loss(self.axes_manager),
                 sum_convolved, mode="valid")
             to_return = to_return[self.channel_switches]
-        if self.spectrum.metadata.Signal.binned is True:
-            to_return *= self.spectrum.axes_manager[-1].scale
+        if self.signal1D.metadata.Signal.binned is True:
+            to_return *= self.signal1D.axes_manager[-1].scale
         return to_return
 
     # TODO: the way it uses the axes
@@ -941,8 +941,8 @@ class Model(list):
                     counter += component._nfree_param
             to_return = sum
 
-        if self.spectrum.metadata.Signal.binned is True:
-            to_return *= self.spectrum.axes_manager[-1].scale
+        if self.signal1D.metadata.Signal.binned is True:
+            to_return *= self.signal1D.axes_manager[-1].scale
         return to_return
 
     # noinspection PyAssignmentToLoopOrWithParameter
@@ -1008,8 +1008,8 @@ class Model(list):
                 to_return = grad[1:, :]
             else:
                 to_return = grad[1:, :] * weights
-        if self.spectrum.metadata.Signal.binned is True:
-            to_return *= self.spectrum.axes_manager[-1].scale
+        if self.signal1D.metadata.Signal.binned is True:
+            to_return *= self.signal1D.axes_manager[-1].scale
         return to_return
 
     def _function4odr(self, param, x):
@@ -1060,28 +1060,28 @@ class Model(list):
             return [0, self._jacobian(p, y).T]
 
     def _calculate_chisq(self):
-        if self.spectrum.metadata.has_item('Signal.Noise_properties.variance'):
+        if self.signal1D.metadata.has_item('Signal.Noise_properties.variance'):
 
-            variance = self.spectrum.metadata.Signal.Noise_properties.variance
-            if isinstance(variance, Signal):
+            variance = self.signal1D.metadata.Signal.Noise_properties.variance
+            if isinstance(variance, BaseSignal):
                 variance = variance.data.__getitem__(
-                    self.spectrum.axes_manager._getitem_tuple
+                    self.signal1D.axes_manager._getitem_tuple
                 )[self.channel_switches]
         else:
             variance = 1.0
-        d = self(onlyactive=True) - self.spectrum()[self.channel_switches]
+        d = self(onlyactive=True) - self.signal1D()[self.channel_switches]
         d *= d / (1. * variance)  # d = difference^2 / variance.
-        self.chisq.data[self.spectrum.axes_manager.indices[::-1]] = sum(d)
+        self.chisq.data[self.signal1D.axes_manager.indices[::-1]] = sum(d)
 
     def _set_current_degrees_of_freedom(self):
-        self.dof.data[self.spectrum.axes_manager.indices[::-1]] = len(self.p0)
+        self.dof.data[self.signal1D.axes_manager.indices[::-1]] = len(self.p0)
 
     @property
     def red_chisq(self):
         """Reduced chi-squared. Calculated from self.chisq and self.dof
         """
         tmp = self.chisq / (- self.dof + sum(self.channel_switches) - 1)
-        tmp.metadata.General.title = self.spectrum.metadata.General.title + \
+        tmp.metadata.General.title = self.signal1D.metadata.General.title + \
             ' reduced chi-squared'
         return tmp
 
@@ -1185,14 +1185,14 @@ class Model(list):
                                           'optimizer')
         elif method == "ls":
             if ("Signal.Noise_properties.variance" not in
-                    self.spectrum.metadata):
+                    self.signal1D.metadata):
                 variance = 1
             else:
-                variance = self.spectrum.metadata.Signal.\
+                variance = self.signal1D.metadata.Signal.\
                     Noise_properties.variance
-                if isinstance(variance, Signal):
+                if isinstance(variance, BaseSignal):
                     if (variance.axes_manager.navigation_shape ==
-                            self.spectrum.axes_manager.navigation_shape):
+                            self.signal1D.axes_manager.navigation_shape):
                         variance = variance.data.__getitem__(
                             self.axes_manager._getitem_tuple)[
                             self.channel_switches]
@@ -1211,7 +1211,7 @@ class Model(list):
             raise ValueError(
                 'method must be "ls" or "ml" but %s given' %
                 method)
-        args = (self.spectrum()[self.channel_switches],
+        args = (self.signal1D()[self.channel_switches],
                 weights)
 
         # Least squares "dedicated" fitters
@@ -1233,7 +1233,7 @@ class Model(list):
                                fjacb=odr_jacobian)
             mydata = odr.RealData(
                 self.axis.axis[
-                    self.channel_switches], self.spectrum()[
+                    self.channel_switches], self.signal1D()[
                     self.channel_switches], sx=None, sy=(
                     1 / weights if weights is not None else None))
             myodr = odr.ODR(mydata, modelo, beta0=self.p0[:])
@@ -1253,7 +1253,7 @@ class Model(list):
                 self.mpfit_parinfo = None
             m = mpfit(self._errfunc4mpfit, self.p0[:],
                       parinfo=self.mpfit_parinfo, functkw={
-                          'y': self.spectrum()[self.channel_switches],
+                          'y': self.signal1D()[self.channel_switches],
                           'weights': weights}, autoderivative=autoderivative,
                       quiet=1)
             self.p0 = m.params

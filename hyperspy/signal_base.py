@@ -1388,9 +1388,9 @@ class BaseSignal(MVA,
         array_slices = tuple(array_slices)
         _signal.data = _signal.data[array_slices]
         if self.metadata.has_item('Signal.Noise_properties.variance'):
-            variance = self.metadata.BaseSignal.Noise_properties.variance
+            variance = self.metadata.Signal.Noise_properties.variance
             if isinstance(variance, BaseSignal):
-                _signal.metadata.BaseSignal.Noise_properties.variance = \
+                _signal.metadata.Signal.Noise_properties.variance = \
                     variance.__getitem__(_orig_slices, isNavigation)
         _signal.get_dimensions_from_data()
 
@@ -2078,7 +2078,7 @@ class BaseSignal(MVA,
             axis.scale *= factors[axis.index_in_array]
         s.get_dimensions_from_data()
         if s.metadata.has_item('Signal.Noise_properties.variance'):
-            if isinstance(s.metadata.BaseSignal.Noise_properties.variance,
+            if isinstance(s.metadata.Signal.Noise_properties.variance,
                           BaseSignal):
                 var = s.metadata.Signal.Noise_properties.variance
                 s.metadata.Signal.Noise_properties.variance = var.rebin(
@@ -2284,7 +2284,7 @@ class BaseSignal(MVA,
             self.axes_manager.remove(axis.index_in_axes_manager)
         self.data = self.data.squeeze()
         if self.metadata.has_item('Signal.Noise_properties.variance'):
-            variance = self.metadata.BaseSignal.Noise_properties.variance
+            variance = self.metadata.Signal.Noise_properties.variance
             if isinstance(variance, BaseSignal):
                 variance._unfold(steady_axes, unfolded_axis)
 
@@ -2388,8 +2388,8 @@ class BaseSignal(MVA,
             folding.original_axes_manager = None
             folding.unfolded = False
             folding.signal_unfolded = False
-            if self.metadata.has_item('BaseSignal.Noise_properties.variance'):
-                variance = self.metadata.BaseSignal.Noise_properties.variance
+            if self.metadata.has_item('Signal.Noise_properties.variance'):
+                variance = self.metadata.Signal.Noise_properties.variance
                 if isinstance(variance, BaseSignal):
                     variance.fold()
 
@@ -3324,7 +3324,7 @@ class BaseSignal(MVA,
 
         if self.axes_manager.signal_dimension == 0:
             s = BaseSignal(data)
-            s.set_signal_type(self.metadata.BaseSignal.signal_type)
+            s.set_signal_type(self.metadata.Signal.signal_type)
         else:
             s = self.__class__(data,
                                axes=self.axes_manager._get_signal_axes_dicts())

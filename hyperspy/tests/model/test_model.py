@@ -190,7 +190,7 @@ class TestModelFitBinned:
             np.random.normal(
                 scale=2,
                 size=10000)).get_histogram()
-        s.metadata.BaseSignal.binned = True
+        s.metadata.Signal.binned = True
         g = hs.model.components.Gaussian()
         m = s.create_model()
         m.append(g)
@@ -267,7 +267,7 @@ class TestModelWeighted:
     def setUp(self):
         np.random.seed(1)
         s = hs.signals.SpectrumSimulation(np.arange(10, 100, 0.1))
-        s.metadata.set_item("BaseSignal.Noise_properties.variance",
+        s.metadata.set_item("Signal.Noise_properties.variance",
                             hs.signals.Signal1D(np.arange(10, 100, 0.01)))
         s.axes_manager[0].scale = 0.1
         s.axes_manager[0].offset = 10
@@ -277,28 +277,28 @@ class TestModelWeighted:
         self.m = m
 
     def test_fit_leastsq_binned(self):
-        self.m.spectrum.metadata.BaseSignal.binned = True
+        self.m.signal1D.metadata.Signal.binned = True
         self.m.fit(fitter="leastsq", method="ls")
         for result, expected in zip(self.m[0].coefficients.value,
                                     (9.9165596693502778, 1.6628238107916631)):
             np.testing.assert_almost_equal(result, expected, decimal=5)
 
     def test_fit_odr_binned(self):
-        self.m.spectrum.metadata.BaseSignal.binned = True
+        self.m.signal1D.metadata.Signal.binned = True
         self.m.fit(fitter="odr", method="ls")
         for result, expected in zip(self.m[0].coefficients.value,
                                     (9.9165596548961972, 1.6628247412317521)):
             np.testing.assert_almost_equal(result, expected, decimal=5)
 
     def test_fit_mpfit_binned(self):
-        self.m.spectrum.metadata.BaseSignal.binned = True
+        self.m.signal1D.metadata.Signal.binned = True
         self.m.fit(fitter="mpfit", method="ls")
         for result, expected in zip(self.m[0].coefficients.value,
                                     (9.9165596607108739, 1.6628243846485873)):
             np.testing.assert_almost_equal(result, expected, decimal=5)
 
     def test_fit_fmin_binned(self):
-        self.m.spectrum.metadata.BaseSignal.binned = True
+        self.m.signal1D.metadata.Signal.binned = True
         self.m.fit(
             fitter="fmin",
             method="ls",
@@ -308,7 +308,7 @@ class TestModelWeighted:
             np.testing.assert_almost_equal(result, expected, decimal=5)
 
     def test_fit_leastsq_unbinned(self):
-        self.m.spectrum.metadata.BaseSignal.binned = False
+        self.m.signal1D.metadata.Signal.binned = False
         self.m.fit(fitter="leastsq", method="ls")
         for result, expected in zip(
                 self.m[0].coefficients.value,
@@ -316,7 +316,7 @@ class TestModelWeighted:
             np.testing.assert_almost_equal(result, expected, decimal=5)
 
     def test_fit_odr_unbinned(self):
-        self.m.spectrum.metadata.BaseSignal.binned = False
+        self.m.signal1D.metadata.Signal.binned = False
         self.m.fit(fitter="odr", method="ls")
         for result, expected in zip(
                 self.m[0].coefficients.value,
@@ -324,7 +324,7 @@ class TestModelWeighted:
             np.testing.assert_almost_equal(result, expected, decimal=5)
 
     def test_fit_mpfit_unbinned(self):
-        self.m.spectrum.metadata.BaseSignal.binned = False
+        self.m.signal1D.metadata.Signal.binned = False
         self.m.fit(fitter="mpfit", method="ls")
         for result, expected in zip(
                 self.m[0].coefficients.value,
@@ -332,7 +332,7 @@ class TestModelWeighted:
             np.testing.assert_almost_equal(result, expected, decimal=5)
 
     def test_fit_fmin_unbinned(self):
-        self.m.spectrum.metadata.BaseSignal.binned = False
+        self.m.signal1D.metadata.Signal.binned = False
         self.m.fit(
             fitter="fmin",
             method="ls",
@@ -343,7 +343,7 @@ class TestModelWeighted:
             np.testing.assert_almost_equal(result, expected, decimal=5)
 
     def test_chisq(self):
-        self.m.spectrum.metadata.BaseSignal.binned = True
+        self.m.signal1D.metadata.Signal.binned = True
         self.m.fit(fitter="leastsq", method="ls")
         np.testing.assert_almost_equal(self.m.chisq.data, 3029.16949561)
 
@@ -365,7 +365,7 @@ class TestModelScalarVariance:
         std = 1
         np.random.seed(1)
         self.s.add_gaussian_noise(std)
-        self.s.metadata.set_item("BaseSignal.Noise_properties.variance", std ** 2)
+        self.s.metadata.set_item("Signal.Noise_properties.variance", std ** 2)
         self.m.fit(fitter="leastsq", method="ls")
         np.testing.assert_almost_equal(self.m.chisq.data, 78.35015229)
 
@@ -373,7 +373,7 @@ class TestModelScalarVariance:
         std = 10
         np.random.seed(1)
         self.s.add_gaussian_noise(std)
-        self.s.metadata.set_item("BaseSignal.Noise_properties.variance", std ** 2)
+        self.s.metadata.set_item("Signal.Noise_properties.variance", std ** 2)
         self.m.fit(fitter="leastsq", method="ls")
         np.testing.assert_almost_equal(self.m.chisq.data, 78.35015229)
 
@@ -381,7 +381,7 @@ class TestModelScalarVariance:
         std = 1
         np.random.seed(1)
         self.s.add_gaussian_noise(std)
-        self.s.metadata.set_item("BaseSignal.Noise_properties.variance", std ** 2)
+        self.s.metadata.set_item("Signal.Noise_properties.variance", std ** 2)
         self.m.fit(fitter="leastsq", method="ls")
         np.testing.assert_almost_equal(self.m.red_chisq.data, 0.79949135)
 
@@ -389,7 +389,7 @@ class TestModelScalarVariance:
         std = 10
         np.random.seed(1)
         self.s.add_gaussian_noise(std)
-        self.s.metadata.set_item("BaseSignal.Noise_properties.variance", std ** 2)
+        self.s.metadata.set_item("Signal.Noise_properties.variance", std ** 2)
         self.m.fit(fitter="leastsq", method="ls")
         np.testing.assert_almost_equal(self.m.red_chisq.data, 0.79949135)
 
@@ -398,7 +398,7 @@ class TestModelScalarVariance:
         self.m.set_signal_range(10, 50)
         np.random.seed(1)
         self.s.add_gaussian_noise(std)
-        self.s.metadata.set_item("BaseSignal.Noise_properties.variance", std ** 2)
+        self.s.metadata.set_item("Signal.Noise_properties.variance", std ** 2)
         self.m.fit(fitter="leastsq", method="ls")
         np.testing.assert_almost_equal(self.m.red_chisq.data, 0.86206965)
 
