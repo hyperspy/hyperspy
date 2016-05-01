@@ -8,21 +8,21 @@ def test_signal():
     assert_true(assign_signal_subclass(
         record_by="",
         signal_type="",
-        signal_origin="") is hs.signals.Signal)
+        signal_origin="") is hs.signals.BaseSignal)
 
 
 def test_spectrum():
     assert_true(assign_signal_subclass(
         record_by="spectrum",
         signal_type="",
-        signal_origin="") is hs.signals.Spectrum)
+        signal_origin="") is hs.signals.Signal1D)
 
 
 def test_image():
     assert_true(assign_signal_subclass(
         record_by="image",
         signal_type="",
-        signal_origin="") is hs.signals.Image)
+        signal_origin="") is hs.signals.Signal2D)
 
 
 def test_image_simulation():
