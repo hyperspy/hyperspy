@@ -20,9 +20,9 @@
 import logging
 
 from hyperspy.io_plugins import (msa, digital_micrograph, fei, mrc, ripple,
-                                 tiff, semper_unf, blockfile, dens)
+                                 tiff, semper_unf, blockfile, dens, emd)
 io_plugins = [msa, digital_micrograph, fei, mrc, ripple, tiff, semper_unf,
-              blockfile, dens]
+              blockfile, dens, emd]
 
 _logger = logging.getLogger(__name__)
 
@@ -37,6 +37,8 @@ except ImportError:
 try:
     from hyperspy.io_plugins import hdf5
     io_plugins.append(hdf5)
+    from hyperspy.io_plugins import emd
+    io_plugins.append(emd)
 except ImportError:
     _logger.warning('The HDF5 IO features are not available. '
                     'It is highly reccomended to install h5py')
