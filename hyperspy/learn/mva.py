@@ -476,8 +476,8 @@ class MVA():
             Any keyword arguments are passed to the BSS algorithm.
 
         """
-        from hyperspy.signal import Signal
-        from hyperspy._signals.spectrum import Spectrum
+        from hyperspy.signal_base import BaseSignal
+        from hyperspy._signals.signal1D import Signal1D
 
         lr = self.learning_results
 
@@ -494,7 +494,7 @@ class MVA():
                     factors = self.get_decomposition_factors()
 
         # Check factors
-        if not isinstance(factors, Signal):
+        if not isinstance(factors, BaseSignal):
             if isinstance(factors, np.ndarray):
                 warnings.warn(
                     "factors as numpy arrays will raise an error in "
@@ -507,7 +507,7 @@ class MVA():
                 # behaviour.
                 # TODO: Don't forget to change `factors` docstring when
                 # removing this.
-                factors = Spectrum(factors.T)
+                factors = Signal1D(factors.T)
             else:
                 # Change next error message when removing the
                 # DeprecationWarning
@@ -549,7 +549,7 @@ class MVA():
                         mask = self._get_navigation_signal(data=mask)
                     else:
                         mask = self._get_signal_signal(data=mask)
-            elif isinstance(mask, Signal):
+            elif isinstance(mask, BaseSignal):
                 if mask.axes_manager.signal_shape != ref_shape:
                     raise ValueError(
                         "The `mask` signal shape is not equal to the %s shape."

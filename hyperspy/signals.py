@@ -54,3 +54,4 @@ from hyperspy._signals.spectrum_simulation import SpectrumSimulation
 from hyperspy._signals.eels_spectrum_simulation import (
     EELSSpectrumSimulation)
 from hyperspy.signal import Signal
+from hyperspy.signal_base import BaseSignal

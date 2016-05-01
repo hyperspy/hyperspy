@@ -267,14 +267,14 @@ def load_with_reader(filename,
     objects = []
 
     for signal_dict in file_data_list:
-        if "Signal" not in signal_dict["metadata"]:
-            signal_dict["metadata"]["Signal"] = {}
+        if "BaseSignal" not in signal_dict["metadata"]:
+            signal_dict["metadata"]["BaseSignal"] = {}
         if record_by is not None:
-            signal_dict['metadata']["Signal"]['record_by'] = record_by
+            signal_dict['metadata']["BaseSignal"]['record_by'] = record_by
         if signal_type is not None:
-            signal_dict['metadata']["Signal"]['signal_type'] = signal_type
+            signal_dict['metadata']["BaseSignal"]['signal_type'] = signal_type
         if signal_origin is not None:
-            signal_dict['metadata']["Signal"]['signal_origin'] = signal_origin
+            signal_dict['metadata']["BaseSignal"]['signal_origin'] = signal_origin
         objects.append(dict2signal(signal_dict))
         folder, filename = os.path.split(os.path.abspath(filename))
         filename, extension = os.path.splitext(filename)
@@ -304,7 +304,7 @@ def assign_signal_subclass(record_by="",
 
     """
     import hyperspy.signals
-    from hyperspy.signal import Signal
+    from hyperspy.signal_base import BaseSignal
     if record_by and record_by not in ["image", "spectrum"]:
         raise ValueError("record_by must be one of: None, empty string, "
                          "\"image\" or \"spectrum\"")
@@ -312,8 +312,8 @@ def assign_signal_subclass(record_by="",
         raise ValueError("signal_origin must be one of: None, empty string, "
                          "\"experiment\" or \"simulation\"")
 
-    signals = hyperspy.misc.utils.find_subclasses(hyperspy.signals, Signal)
-    signals['Signal'] = Signal
+    signals = hyperspy.misc.utils.find_subclasses(hyperspy.signals, BaseSignal)
+    signals['BaseSignal'] = BaseSignal
 
     if signal_origin == "experiment":
         signal_origin = ""
@@ -346,12 +346,12 @@ def dict2signal(signal_dict):
     signal_origin = ""
     if "metadata" in signal_dict:
         mp = signal_dict["metadata"]
-        if "Signal" in mp and "record_by" in mp["Signal"]:
-            record_by = mp["Signal"]['record_by']
-        if "Signal" in mp and "signal_type" in mp["Signal"]:
-            signal_type = mp["Signal"]['signal_type']
-        if "Signal" in mp and "signal_origin" in mp["Signal"]:
-            signal_origin = mp["Signal"]['signal_origin']
+        if "BaseSignal" in mp and "record_by" in mp["BaseSignal"]:
+            record_by = mp["BaseSignal"]['record_by']
+        if "BaseSignal" in mp and "signal_type" in mp["BaseSignal"]:
+            signal_type = mp["BaseSignal"]['signal_type']
+        if "BaseSignal" in mp and "signal_origin" in mp["BaseSignal"]:
+            signal_origin = mp["BaseSignal"]['signal_origin']
     if (not record_by and 'data' in signal_dict and
             signal_dict['data'].ndim < 2):
         record_by = "spectrum"

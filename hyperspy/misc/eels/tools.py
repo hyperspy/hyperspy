@@ -259,7 +259,7 @@ def eels_constant(s, zlp, t):
         # Avoid singularity at E=0
         eaxis[0] = 1e-10
 
-    if isinstance(zlp, hyperspy.signal.Signal):
+    if isinstance(zlp, hyperspy.signal.BaseSignal):
         if (zlp.axes_manager.navigation_dimension ==
                 s.axes_manager.navigation_dimension):
             if zlp.axes_manager.signal_dimension == 0:
@@ -275,9 +275,10 @@ def eels_constant(s, zlp, t):
     elif isinstance(zlp, numbers.Number):
         i0 = zlp
     else:
-        raise ValueError('The zero-loss peak input is not valid.')
+        raise ValueError('The zero-loss peak input must be a Hyperspy signal\
+                         or a number.')
 
-    if isinstance(t, hyperspy.signal.Signal):
+    if isinstance(t, hyperspy.signal.BaseSignal):
         if (t.axes_manager.navigation_dimension ==
                 s.axes_manager.navigation_dimension) and (
                 t.axes_manager.signal_dimension == 0):
