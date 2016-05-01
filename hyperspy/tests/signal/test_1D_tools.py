@@ -49,7 +49,7 @@ class TestAlignTools:
         self.signal1D = s
 
     def test_estimate_shift(self):
-        s = self.spectrum
+        s = self.signal1D
         eshifts = -1 * s.estimate_shift1D(show_progressbar=None)
         np.testing.assert_allclose(eshifts, self.ishifts * self.scale, atol=1e-3)
 
