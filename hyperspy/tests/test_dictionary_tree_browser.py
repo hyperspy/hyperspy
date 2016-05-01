@@ -49,11 +49,11 @@ class TestDictionaryBrowser:
         s.axes_manager[0].units = 'ly'
         tree.add_dictionary({"_sig_signal name": s._to_dictionary()})
         nt.assert_is_instance(tree.signal_name, BaseSignal)
-        nt.assert_true(np.all(tree.signal_name.data == s.data))
-        nt.assert_equal(tree.signal_name.metadata.as_dictionary(),
-                        s.metadata.as_dictionary())
+        np.testing.assert_array_equal(tree.signal_name.data, s.data)
+        nt.assert_dict_equal(tree.signal_name.metadata.as_dictionary(),
+                             s.metadata.as_dictionary())
         nt.assert_equal(tree.signal_name.axes_manager._get_axes_dicts(),
-                        s.axes_manager._get_axes_dicts())
+                         s.axes_manager._get_axes_dicts())
 
     def test_signal_to_dictionary(self):
         tree = self.tree
@@ -62,9 +62,9 @@ class TestDictionaryBrowser:
         s.axes_manager[0].units = 'ly'
         tree.set_item('Some name', s)
         d = tree.as_dictionary()
-        nt.assert_true(np.all(d['_sig_Some name']['data'] == s.data))
+        np.testing.assert_array_equal(d['_sig_Some name']['data'], s.data)
         d['_sig_Some name']['data'] = 0
-        nt.assert_equal(
+        nt.assert_dict_equal(
             {
                 "Node1": {
                     "leaf11": 11,

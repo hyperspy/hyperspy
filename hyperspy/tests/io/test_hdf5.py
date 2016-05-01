@@ -124,9 +124,8 @@ class TestLoadingNewSavedMetadata:
             "with_lists_etc.hdf5"))
 
     def test_signal_inside(self):
-        nt.assert_true(
-            np.all(
-                self.s.data == self.s.metadata.Signal.Noise_properties.variance.data))
+        np.testing.assert_array_almost_equal(self.s.data,
+                                             self.s.metadata.Signal.Noise_properties.variance.data)
 
     def test_empty_things(self):
         nt.assert_equal(self.s.metadata.test.empty_list, [])

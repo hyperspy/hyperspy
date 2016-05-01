@@ -1,5 +1,6 @@
 import numpy as np
 import nose.tools as nt
+import mock
 
 import hyperspy.api as hs
 from hyperspy.misc.utils import slugify
@@ -425,9 +426,9 @@ class TestModelSignalVariance:
     def test_std1_red_chisq(self):
         self.m.multifit(fitter="leastsq", method="ls", show_progressbar=None)
         np.testing.assert_almost_equal(self.m.red_chisq.data[0],
-                                        0.79693355673230915)
+                                       0.79693355673230915)
         np.testing.assert_almost_equal(self.m.red_chisq.data[1],
-                                        0.91453032901427167)
+                                       0.91453032901427167)
 
 
 class TestMultifit:
@@ -541,8 +542,8 @@ class TestAsSignal:
 
         self.m[0]._active_array[0] = False
         s = self.m.as_signal(show_progressbar=None)
-        nt.assert_true(
-            np.all(s.data == np.array([np.ones(5) * 2, np.ones(5) * 4])))
+        np.testing.assert_array_equal(
+            s.data, np.array([np.ones(5) * 2, np.ones(5) * 4]))
         nt.assert_true(self.m[0].active_is_multidimensional)
 
     def test_one_component_multidim(self):
@@ -554,7 +555,7 @@ class TestAsSignal:
         nt.assert_false(self.m[1].active_is_multidimensional)
 
         s = self.m.as_signal(component_list=[1], show_progressbar=None)
-        nt.assert_true(np.all(s.data == 2.))
+        np.testing.assert_equal(s.data, 2.)
         nt.assert_true(self.m[0].active_is_multidimensional)
 
         self.m[0]._active_array[0] = False
@@ -562,8 +563,8 @@ class TestAsSignal:
         nt.assert_true(np.all(s.data == 2.))
 
         s = self.m.as_signal(component_list=[0], show_progressbar=None)
-        nt.assert_true(
-            np.all(s.data == np.array([np.zeros(5), np.ones(5) * 2])))
+        np.testing.assert_array_equal(s.data,
+                                      np.array([np.zeros(5), np.ones(5) * 2]))
 
 
 class TestCreateModel:
@@ -573,4 +574,5 @@ class TestCreateModel:
 
     def test_create_model(self):
         from hyperspy.model import Model
-        nt.assert_is_instance(self.s.create_model(), Model)
+        nt.assert_is_instance(
+            self.s.create_model(), Model)
