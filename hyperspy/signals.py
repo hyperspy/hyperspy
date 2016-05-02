@@ -45,6 +45,7 @@ from hyperspy._signals.signal2D import Signal2D, Signal2DTools
 from hyperspy.misc.hspy_warnings import VisibleDeprecationWarning
 
 
+
 class Spectrum(Signal1D,
                Signal2DTools,):
     VisibleDeprecationWarning('The Spectrum class will be deprecated from\
@@ -66,11 +67,13 @@ from hyperspy._signals.image_simulation import ImageSimulation
 from hyperspy._signals.spectrum_simulation import SpectrumSimulation
 from hyperspy._signals.eels_spectrum_simulation import (
     EELSSpectrumSimulation)
-from hyperspy.signal import BaseSignal
 
+from hyperspy.signal import BaseSignal
 
 class Signal(BaseSignal,
              Signal1DTools,
              Signal2DTools,):
     VisibleDeprecationWarning('The Signal class will be deprecated from\
                               version 1.0.0 and replaced with BaseSignal')
+
+
