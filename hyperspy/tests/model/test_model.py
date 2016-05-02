@@ -416,7 +416,7 @@ class TestModelSignalVariance:
         std = 10
         s.add_gaussian_noise(std)
         s.add_poissonian_noise()
-        s.metadata.set_item("BaseSignal.Noise_properties.variance",
+        s.metadata.set_item("Signal.Noise_properties.variance",
                             variance + std ** 2)
         m = s.create_model()
         m.append(hs.model.components.Polynomial(order=1))
