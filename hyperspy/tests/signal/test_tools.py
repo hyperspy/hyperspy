@@ -1,7 +1,7 @@
 import numpy as np
 import nose.tools as nt
 
-from hyperspy.signal import Signal
+from hyperspy.signals import Signal
 from hyperspy import signals
 
 

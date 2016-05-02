@@ -20,7 +20,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from hyperspy.exceptions import DataDimensionError
-from hyperspy.signal_base import BaseSignal
+from hyperspy.signal import BaseSignal
 from hyperspy.gui.egerton_quantification import SpikesRemoval
 import math
 

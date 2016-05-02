@@ -6,15 +6,15 @@ import hyperspy.signal
 
 
 def test_signal_record_by():
-    assert_equal(hyperspy.signal.Signal._record_by, "")
+    assert_equal(hyperspy.signal.BaseSignal._record_by, "")
 
 
 def test_signal_signal_type():
-    assert_equal(hyperspy.signal.Signal._signal_type, "")
+    assert_equal(hyperspy.signal.BaseSignal._signal_type, "")
 
 
 def test_signal_signal_origin():
-    assert_equal(hyperspy.signal.Signal._signal_origin, "")
+    assert_equal(hyperspy.signal.BaseSignal._signal_origin, "")
 
 
 def test_spectrum_record_by():

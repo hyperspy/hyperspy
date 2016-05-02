@@ -2,7 +2,7 @@ import nose.tools as nt
 import numpy as np
 
 from hyperspy.misc.utils import DictionaryTreeBrowser
-from hyperspy.signal_base import BaseSignal
+from hyperspy.signal import BaseSignal
 
 
 class TestDictionaryBrowser:

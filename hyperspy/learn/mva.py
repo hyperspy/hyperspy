@@ -476,7 +476,7 @@ class MVA():
             Any keyword arguments are passed to the BSS algorithm.
 
         """
-        from hyperspy.signal_base import BaseSignal
+        from hyperspy.signal import BaseSignal
         from hyperspy._signals.signal1D import Signal1D
 
         lr = self.learning_results
@@ -943,13 +943,13 @@ class MVA():
         `get_decomposition_factors`.
 
         """
-        from hyperspy._signals.spectrum import Spectrum
+        from hyperspy._signals.signal1D import Signal1D
         target = self.learning_results
         if target.explained_variance_ratio is None:
             raise AttributeError("The explained_variance_ratio attribute is "
                                  "`None`, did you forget to perform a PCA "
                                  "decomposition?")
-        s = Spectrum(target.explained_variance_ratio)
+        s = Signal1D(target.explained_variance_ratio)
         s.metadata.General.title = self.metadata.General.title + \
             "\nPCA Scree Plot"
         s.axes_manager[-1].name = 'Principal component index'

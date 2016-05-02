@@ -20,7 +20,7 @@ import numpy as np
 from scipy import constants
 from scipy.integrate import simps, cumtrapz
 
-from hyperspy._signals.spectrum import Spectrum
+from hyperspy.signals import Spectrum
 from hyperspy.misc.eels.tools import eels_constant
 
 

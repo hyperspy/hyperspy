@@ -25,7 +25,7 @@ import matplotlib.pyplot as plt
 from hyperspy.defaults_parser import preferences
 from hyperspy.external.progressbar import progressbar
 from hyperspy.misc.math_tools import symmetrize, antisymmetrize
-from hyperspy.signal_base import BaseSignal
+from hyperspy.signal import BaseSignal
 
 
 def shift_image(im, shift, interpolation_order=1, fill_value=np.nan):

@@ -414,12 +414,12 @@ class Parameter(t.HasTraits):
         NavigationDimensionError : if the navigation dimension is 0
 
         """
-        from hyperspy.signal import Signal
+        from hyperspy.signal import BaseSignal
         if self._axes_manager.navigation_dimension == 0:
             raise NavigationDimensionError(0, '>0')
 
-        s = Signal(data=self.map[field],
-                   axes=self._axes_manager._get_navigation_axes_dicts())
+        s = BaseSignal(data=self.map[field],
+                       axes=self._axes_manager._get_navigation_axes_dicts())
         if self.component.active_is_multidimensional:
             s.data[np.logical_not(self.component._active_array)] = np.nan
         s.metadata.General.title = ("%s parameter" % self.name

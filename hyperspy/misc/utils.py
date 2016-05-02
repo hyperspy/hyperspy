@@ -309,7 +309,7 @@ class DictionaryTreeBrowser(object):
     def __setattr__(self, key, value):
         if key.startswith('_sig_'):
             key = key[5:]
-            from hyperspy.signal_base import BaseSignal
+            from hyperspy.signal import BaseSignal
             value = BaseSignal(**value)
         slugified_key = str(slugify(key, valid_variable_name=True))
         if isinstance(value, dict):
@@ -337,7 +337,7 @@ class DictionaryTreeBrowser(object):
         """Returns its dictionary representation.
 
         """
-        from hyperspy.signal_base import BaseSignal
+        from hyperspy.signal import BaseSignal
         par_dict = {}
         for key_, item_ in self.__dict__.items():
             if not isinstance(item_, types.MethodType):

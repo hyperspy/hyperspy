@@ -304,7 +304,7 @@ def assign_signal_subclass(record_by="",
 
     """
     import hyperspy.signals
-    from hyperspy.signal_base import BaseSignal
+    from hyperspy.signal import BaseSignal
     if record_by and record_by not in ["image", "spectrum"]:
         raise ValueError("record_by must be one of: None, empty string, "
                          "\"image\" or \"spectrum\"")

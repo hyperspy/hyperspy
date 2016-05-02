@@ -48,7 +48,7 @@ from hyperspy.drawing.widgets import (DraggableVerticalLine,
                                       DraggableLabel)
 from hyperspy.gui.tools import ComponentFit
 from hyperspy.component import Component
-from hyperspy.signal_base import BaseSignal
+from hyperspy.signal import BaseSignal
 from hyperspy.misc.utils import slugify, shorten_name
 
 

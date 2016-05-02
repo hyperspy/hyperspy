@@ -6,7 +6,7 @@ import nose.tools as nt
 import numpy as np
 
 from hyperspy.io import load
-from hyperspy.signal import Signal
+from hyperspy.signal import BaseSignal
 from hyperspy._signals.signal1D import Signal1D
 from hyperspy.datasets.example_signals import EDS_TEM_Spectrum
 
@@ -146,7 +146,7 @@ class TestLoadingNewSavedMetadata:
 class TestSavingMetadataContainers:
 
     def setUp(self):
-        self.s = Signal([0.1])
+        self.s = BaseSignal([0.1])
 
     def test_save_unicode(self):
         s = self.s
@@ -185,7 +185,7 @@ class TestSavingMetadataContainers:
 
     def test_general_type_not_working(self):
         s = self.s
-        s.metadata.set_item('test', (Signal([1]), 0.1, 'test_string'))
+        s.metadata.set_item('test', (BaseSignal([1]), 0.1, 'test_string'))
         s.save('tmp.hdf5', overwrite=True)
         l = load('tmp.hdf5')
         nt.assert_is_instance(l.metadata.test, tuple)
