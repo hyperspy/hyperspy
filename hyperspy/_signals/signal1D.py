@@ -884,9 +884,8 @@ class Signal1DTools(object):
 
         """
         self._check_signal_dimension_equals_one()
-        self.crop(
-            axis=self.axes_manager.signal_axes[0].index_in_axes_manager,
-            start=left_value, end=right_value)
+        self.crop(axis=self.axes_manager.signal_axes[0].index_in_axes_manager,
+                  start=left_value, end=right_value)
 
     @auto_replot
     def gaussian_filter(self, FWHM):

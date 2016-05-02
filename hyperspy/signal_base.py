@@ -1840,8 +1840,7 @@ class BaseSignal(MVA,
 
         self._plot.plot(**kwargs)
 
-    def save(self, filename=None, overwrite=None, extension=None,
-             **kwds):
+    def save(self, filename=None, overwrite=None, extension=None, **kwds):
         """Saves the signal in the specified format.
 
         The function gets the format from the extension.:
@@ -1881,9 +1880,8 @@ class BaseSignal(MVA,
         if filename is None:
             if (self.tmp_parameters.has_item('filename') and
                     self.tmp_parameters.has_item('folder')):
-                filename = os.path.join(
-                    self.tmp_parameters.folder,
-                    self.tmp_parameters.filename)
+                filename = os.path.join(self.tmp_parameters.folder,
+                                        self.tmp_parameters.filename)
                 extension = (self.tmp_parameters.extension
                              if not extension
                              else extension)
