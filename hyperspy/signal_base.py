@@ -3631,7 +3631,7 @@ for name in ARITHMETIC_OPERATORS + INPLACE_OPERATORS + COMPARISON_OPERATORS:
     # operands. They should be defined only for commutative operators
     # but for simplicity we don't support this at all atm.
 
-    # exec("setattr(Signal, \'%s\', %s)" % (name[:2] + "r" + name[2:],
+    # exec("setattr(BaseSignal, \'%s\', %s)" % (name[:2] + "r" + name[2:],
     # name))
 
 # Implement unary arithmetic operations

@@ -10,17 +10,17 @@ The Signal class and its subclasses
     Do not worry if you do not understand it all.
 
 
-HyperSpy stores the data in the :py:class:`~.signal.BaseSignal` class, that is
+HyperSpy stores the data in the :py:class:`~.signal_base.BaseSignal` class, that is
 the object that you get when e.g. you load a single file using
 :py:func:`~.io.load`. Most of the data analysis functions are also contained in
-this class or its specialized subclasses. The :py:class:`~.signal.BaseSignal` class
+this class or its specialized subclasses. The :py:class:`~.signal_base.BaseSignal` class
 contains general functionality that is available to all the subclasses. The
 subclasses provide functionality that is normally specific to a particular type
-of data, e.g. the :py:class:`~._signals.spectrum.Spectrum` class provides common
-functionality to deal with spectral data and
+of data, e.g. the :py:class:`~._signals.signal1D.Signal1D` class provides common
+functionality to deal with one-dimensional (e.g. spectral) data and
 :py:class:`~._signals.eels.EELSSpectrum` (which is a subclass of
-:py:class:`~._signals.spectrum.Spectrum`) adds extra functionality to the
-:py:class:`~._signals.spectrum.Spectrum` class for electron energy-loss
+:py:class:`~._signals.signal1D.Signal1D`) adds extra functionality to the
+:py:class:`~._signals.signal1D.Signal1D` class for electron energy-loss
 spectroscopy data analysis.
 
 .. versionchanged:: 0.8.5
@@ -51,11 +51,11 @@ example we create an Image instance from a 2D numpy array:
 
 The different signals store other objects in what are called attributes. For
 examples, the data is stored in a numpy array in the
-:py:attr:`~.signal.BaseSignal.data` attribute, the original parameters in the
-:py:attr:`~.signal.BaseSignal.original_metadata` attribute, the mapped parameters
-in the :py:attr:`~.signal.BaseSignal.metadata` attribute and the axes
+:py:attr:`~.signal.Signal.data` attribute, the original parameters in the
+:py:attr:`~.signal.Signal.original_metadata` attribute, the mapped parameters
+in the :py:attr:`~.signal.Signal.metadata` attribute and the axes
 information (including calibration) can be accessed (and modified) in the
-:py:attr:`~.signal.BaseSignal.axes_manager` attribute.
+:py:attr:`~.signal.Signal.axes_manager` attribute.
 
 
 .. _transforming.signal:
@@ -64,15 +64,15 @@ Transforming between signal subclasses
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The different subclasses are characterized by three
-:py:attr:`~.signal.BaseSignal.metadata` attributes (see the table below):
+:py:attr:`~.signal.Signal.metadata` attributes (see the table below):
 
 `record_by`
     Can be "signal1D", "signal2D" or "", the latter meaning undefined and describes 
     the way the data is arranged in memory. It is possible to transform any 
-    :py:class:`~.signal.BaseSignal` subclass to a :py:class:`~._signals.signal1D.Signal1D`
+    :py:class:`~.signal_base.BaseSignal` subclass to a :py:class:`~._signals.signal1D.Signal1D`
     or :py:class:`~._signals.signal2D.Signal2D` subclass using the following 
-    :py:class:`~.signal.BaseSignal` methods: :py:meth:`~.signal.BaseSignal.as_signal2D` 
-    and :py:meth:`~.signal.BaseSignal.as_signal1D`. In addition 
+    :py:class:`~.signal_base.BaseSignal` methods: :py:meth:`~.signal_base.BaseSignal.as_signal2D` 
+    and :py:meth:`~.signal_base.BaseSignal.as_signal1D`. In addition 
     :py:class:`~._signals.signal1D.Signal1D` instances can be transformed into 
     two-dimensional signals using :py:meth:`~._signals.signal1D.Sinal1D.to_signal2D`
     and two-dimensional instances transformed into one dimensional instances using
@@ -85,18 +85,18 @@ The different subclasses are characterized by three
     Describes the nature of the signal. It can be any string, normally the
     acronym associated with a particular signal. In certain cases HyperSpy provides 
     features that are only available for a particular signal type through 
-    :py:class:`~.signal.BaseSignal` subclasses. The :py:class:`~.signal.BaseSignal` method
-    :py:meth:`~.signal.BaseSignal.set_signal_type` changes the signal_type in place, which 
-    may result in a :py:class:`~.signal.BaseSignal` subclass transformation.
+    :py:class:`~.signal_base.BaseSignal` subclasses. The :py:class:`~.signal.BaseSignal` method
+    :py:meth:`~.signal_base.BaseSignal.set_signal_type` changes the signal_type in place, which 
+    may result in a :py:class:`~.signal_base.BaseSignal` subclass transformation.
 
 `signal_origin`
     Describes the origin of the signal and can be "simulation" or "experiment" or "", the
     latter meaning undefined. In certain cases HyperSpy provides features that are only 
-    available for a particular signal origin. The :py:class:`~.signal.BaseSignal` method
-    :py:meth:`~.signal.BaseSignal.set_signal_origin` changes the signal_origin in place, 
-    which may result in a :py:class:`~.signal.BaseSignal` subclass transformation.
+    available for a particular signal origin. The :py:class:`~.signal_base.BaseSignal` method
+    :py:meth:`~.signal_base.BaseSignal.set_signal_origin` changes the signal_origin in place, 
+    which may result in a :py:class:`~.signal_base.BaseSignal` subclass transformation.
 
-.. table:: BaseSignal subclass :py:attr:`~.signal.BaseSignal.metadata` attributes.
+.. table:: BaseSignal subclass :py:attr:`~.signal.Signal.metadata` attributes.
 
     +---------------------------------------------------------------+-----------+-------------+---------------+
     |                      BaseSignal subclass                      | record_by | signal_type | signal_origin |
@@ -184,7 +184,7 @@ Binned and unbinned signals
 .. versionadded:: 0.7
 
 Signals that are a histogram of a probability density function (pdf) should
-have the ``signal.metadata.BaseSignal.binned`` attribute set to
+have the ``signal.metadata.Signal.binned`` attribute set to
 ``True``. This is because some methods operate differently in signals that are
 *binned*.
 
@@ -219,14 +219,14 @@ To change the default value:
 
 .. code-block:: python
 
-    >>> s.metadata.BaseSignal.binned = True
+    >>> s.metadata.Signal.binned = True
 
 Generic tools
 -------------
 
 Below we briefly introduce some of the most commonly used tools (methods). For
 more details about a particular method click on its name. For a detailed list
-of all the methods available see the :py:class:`~.signal.BaseSignal` documentation.
+of all the methods available see the :py:class:`~.signal_base.BaseSignal` documentation.
 
 The methods of this section are available to all the signals. In other chapters
 methods that are only available in specialized
@@ -238,15 +238,15 @@ Indexing
 ^^^^^^^^
 .. versionadded:: 0.6
 
-Indexing the :py:class:`~.signal.BaseSignal`  provides a powerful, convenient and
+Indexing the :py:class:`~.signal_base.BaseSignal`  provides a powerful, convenient and
 Pythonic way to access and modify its data.  It is a concept that might take
 some time to grasp but, once mastered, it can greatly simplify many common
 signal processing tasks.
 
 Indexing refers to any use of the square brackets ([]) to index the data stored
-in a :py:class:`~.signal.BaseSignal`. The result of indexing a
-:py:class:`~.signal.BaseSignal` is another :py:class:`~.signal.BaseSignal` that shares
-a subset of the data of the original :py:class:`~.signal.BaseSignal`.
+in a :py:class:`~.signal_base.BaseSignal`. The result of indexing a
+:py:class:`~.signal_base.BaseSignal` is another :py:class:`~.signal_base.BaseSignal` that shares
+a subset of the data of the original :py:class:`~.signal_base.BaseSignal`.
 
 HyperSpy's Signal indexing is similar to numpy array indexing and, therefore,
 rather that explaining this feature in detail we will just give some examples
@@ -319,7 +319,7 @@ HyperSpy indexes using the axis scales instead of the indices.
     array([1, 3])
 
 
-Importantly the original :py:class:`~.signal.BaseSignal` and its "indexed self"
+Importantly the original :py:class:`~.signal_base.BaseSignal` and its "indexed self"
 share their data and, therefore, modifying the value of the data in one
 modifies the same value in the other.
 
@@ -451,7 +451,7 @@ Signal operations
 
 .. versionadded:: 0.8.3
 
-:py:class:`~.signal.BaseSignal` supports all the Python binary arithmetic
+:py:class:`~.signal_base.BaseSignal` supports all the Python binary arithmetic
 opearations (+, -, \*, //, %, divmod(), pow(), \*\*, <<, >>, &, ^, \|),
 augmented binary assignments (+=, -=, \*=, /=, //=, %=, \*\*=, <<=, >>=, &=,
 ^=, \|=), unary operations (-, +, abs() and ~) and rich comparisons operations
@@ -588,7 +588,7 @@ Iterating external functions with the map method
 
 Performing an operation on the data at each coordinate, as in the previous example, 
 using an external function can be more easily accomplished using the
-:py:meth:`~.signal.BaseSignal.map` method:
+:py:meth:`~.signal_base.BaseSignal.map` method:
 
 .. code-block:: python
 
@@ -608,7 +608,7 @@ using an external function can be more easily accomplished using the
 
   Rotation of images by the same amount using :py:meth:`~.signal.Signal.map`.
 
-The :py:meth:`~.signal.BaseSignal.map` method can also take variable
+The :py:meth:`~.signal_base.BaseSignal.map` method can also take variable
 arguments as in the following example.
 
 .. code-block:: python
@@ -631,7 +631,7 @@ arguments as in the following example.
   :align:   center
   :width:   500
 
-  Rotation of images using :py:meth:`~.signal.Signal.map` with different
+  Rotation of images using :py:meth:`~.signal_base.Signal.map` with different
   arguments for each image in the stack.
 
 Cropping
@@ -640,13 +640,13 @@ Cropping
 Cropping can be performed in a very compact and powerful way using
 :ref:`signal.indexing` . In addition it can be performed using the following
 method or GUIs if cropping :ref:`signal1D <signal1D.crop>` or :ref:`signal2D
-<signal2D.crop>`. There is also a general :py:meth:`~.signal.BaseSignal.crop`
+<signal2D.crop>`. There is also a general :py:meth:`~.signal_base.BaseSignal.crop`
 method that operates *in place*.
 
 Rebinning
 ^^^^^^^^^
 
-The :py:meth:`~.signal.BaseSignal.rebin` method rebins data in place down to a size
+The :py:meth:`~.signal_base.BaseSignal.rebin` method rebins data in place down to a size
 determined by the user.
 
 Folding and unfolding
@@ -656,13 +656,13 @@ When dealing with multidimensional datasets it is sometimes useful to transform
 the data into a two dimensional dataset. This can be accomplished using the
 following two methods:
 
-* :py:meth:`~.signal.BaseSignal.fold`
-* :py:meth:`~.signal.BaseSignal.unfold`
+* :py:meth:`~.signal_base.BaseSignal.fold`
+* :py:meth:`~.signal_base.BaseSignal.unfold`
 
 It is also possible to unfold only the navigation or only the signal space:
 
-* :py:meth:`~.signal.BaseSignal.unfold_navigation_space`
-* :py:meth:`~.signal.BaseSignal.unfold_signal_space`
+* :py:meth:`~.signal_base.BaseSignal.unfold_navigation_space`
+* :py:meth:`~.signal_base.BaseSignal.unfold_signal_space`
 
 
 .. _signal.stack_split:
@@ -687,7 +687,7 @@ with same dimension.
   Stacking example.
 
 An object can be splitted into several objects
-with the :py:meth:`~.signal.BaseSignal.split` method. This function can be used
+with the :py:meth:`~.signal_base.BaseSignal.split` method. This function can be used
 to reverse the :py:func:`~.utils.stack` function:
 
 .. code-block:: python
@@ -705,15 +705,15 @@ to reverse the :py:func:`~.utils.stack` function:
 Simple operations over one axis
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-* :py:meth:`~.signal.BaseSignal.sum`
-* :py:meth:`~.signal.BaseSignal.mean`
-* :py:meth:`~.signal.BaseSignal.max`
-* :py:meth:`~.signal.BaseSignal.min`
-* :py:meth:`~.signal.BaseSignal.std`
-* :py:meth:`~.signal.BaseSignal.var`
-* :py:meth:`~.signal.BaseSignal.diff`
-* :py:meth:`~.signal.BaseSignal.derivative`
-* :py:meth:`~.signal.BaseSignal.integrate_simpson`
+* :py:meth:`~.signal_base.BaseSignal.sum`
+* :py:meth:`~.signal_base.BaseSignal.mean`
+* :py:meth:`~.signal_base.BaseSignal.max`
+* :py:meth:`~.signal_base.BaseSignal.min`
+* :py:meth:`~.signal_base.BaseSignal.std`
+* :py:meth:`~.signal_base.BaseSignal.var`
+* :py:meth:`~.signal_base.BaseSignal.diff`
+* :py:meth:`~.signal_base.BaseSignal.derivative`
+* :py:meth:`~.signal_base.BaseSignal.integrate_simpson`
 
 .. _signal.change_dtype:
 
@@ -723,7 +723,7 @@ Changing the data type
 Even if the original data is recorded with a limited dynamic range, it is often
 desirable to perform the analysis operations with a higher precision.
 Conversely, if space is limited, storing in a shorter data type can decrease
-the file size. The :py:meth:`~.signal.BaseSignal.change_dtype` changes the data
+the file size. The :py:meth:`~.signal_base.BaseSignal.change_dtype` changes the data
 type in place, e.g.:
 
 .. code-block:: python
@@ -856,10 +856,10 @@ set this attribute as in the following example where we set the variance to be
     s.metadata.Signal.set_item("Noise_properties.variance", 10)
 
 For heterocedastic noise the ``variance`` attribute must be a
-:class:`~.signal.Signal`.  Poissonian noise is a common case  of
+:class:`~.signal_base.BaseSignal`.  Poissonian noise is a common case  of
 heterocedastic noise where the variance is equal to the expected value. The
-:meth:`~.signal.Signal.estimate_poissonian_noise_variance`
-:class:`~.signal.Signal` method can help setting the variance of data with
+:meth:`~.signal_base.BaseSignal.estimate_poissonian_noise_variance`
+:class:`~.signal_base.BaseSignal` method can help setting the variance of data with
 semi-poissonian noise. With the default arguments, this method simply sets the
 variance attribute to the given ``expected_value``. However, more generally
 (although then noise is not strictly poissonian), the variance may be proportional
