@@ -6,7 +6,8 @@ import nose.tools as nt
 import numpy as np
 
 from hyperspy.io import load
-from hyperspy.signal_base import BaseSignal
+from hyperspy.signal import Signal
+from hyperspy._signals.signal1D import Signal1D
 from hyperspy.datasets.example_signals import EDS_TEM_Spectrum
 
 my_path = os.path.dirname(__file__)
@@ -72,44 +73,36 @@ class Example1:
              4217.0], self.s.data.tolist())
 
     def test_original_metadata(self):
-        nt.assert_equal(
-            example1_original_metadata,
-            self.s.original_metadata.as_dictionary())
+        nt.assert_equal(example1_original_metadata,
+                        self.s.original_metadata.as_dictionary())
 
 
 class TestExample1_10(Example1):
 
     def setUp(self):
-        self.s = load(os.path.join(
-            my_path,
-            "hdf5_files",
-            "example1_v1.0.hdf5"))
+        self.s = load(os.path.join(my_path,
+                                   "hdf5_files",
+                                   "example1_v1.0.hdf5"))
 
 
 class TestExample1_11(Example1):
 
     def setUp(self):
-        self.s = load(os.path.join(
-            my_path,
-            "hdf5_files",
-            "example1_v1.1.hdf5"))
+        self.s = load(os.path.join(my_path,
+                                   "hdf5_files",
+                                   "example1_v1.1.hdf5"))
 
 
 class TestExample1_12(Example1):
 
     def setUp(self):
-        self.s = load(os.path.join(
-            my_path,
-            "hdf5_files",
-            "example1_v1.2.hdf5"))
+        self.s = load(os.path.join(my_path,
+                                   "hdf5_files",
+                                   "example1_v1.2.hdf5"))
 
     def test_date(self):
-        nt.assert_equal(
-            self.s.metadata.General.date,
-            datetime.date(
-                1991,
-                10,
-                1))
+        nt.assert_equal(self.s.metadata.General.date,
+                        datetime.date(1991, 10, 1))
 
     def test_time(self):
         nt.assert_equal(self.s.metadata.General.time, datetime.time(12, 0))
@@ -118,10 +111,9 @@ class TestExample1_12(Example1):
 class TestLoadingNewSavedMetadata:
 
     def setUp(self):
-        self.s = load(os.path.join(
-            my_path,
-            "hdf5_files",
-            "with_lists_etc.hdf5"))
+        self.s = load(os.path.join(my_path,
+                                   "hdf5_files",
+                                   "with_lists_etc.hdf5"))
 
     def test_signal_inside(self):
         np.testing.assert_array_almost_equal(self.s.data,
@@ -137,9 +129,7 @@ class TestLoadingNewSavedMetadata:
 
     def test_inside_things(self):
         nt.assert_equal(
-            self.s.metadata.test.list_inside_list, [
-                42, 137, [
-                    0, 1]])
+            self.s.metadata.test.list_inside_list, [42, 137, [0, 1]])
         nt.assert_equal(self.s.metadata.test.list_inside_tuple, (137, [42, 0]))
         nt.assert_equal(
             self.s.metadata.test.tuple_inside_tuple, (137, (123, 44)))
@@ -156,7 +146,7 @@ class TestLoadingNewSavedMetadata:
 class TestSavingMetadataContainers:
 
     def setUp(self):
-        self.s = BaseSignal([0.1])
+        self.s = Signal([0.1])
 
     def test_save_unicode(self):
         s = self.s
@@ -195,11 +185,11 @@ class TestSavingMetadataContainers:
 
     def test_general_type_not_working(self):
         s = self.s
-        s.metadata.set_item('test', (BaseSignal([1]), 0.1, 'test_string'))
+        s.metadata.set_item('test', (Signal([1]), 0.1, 'test_string'))
         s.save('tmp.hdf5', overwrite=True)
         l = load('tmp.hdf5')
         nt.assert_is_instance(l.metadata.test, tuple)
-        nt.assert_is_instance(l.metadata.test[0], BaseSignal)
+        nt.assert_is_instance(l.metadata.test[0], Signal1D)
         nt.assert_is_instance(l.metadata.test[1], float)
         nt.assert_is_instance(l.metadata.test[2], str)
 
