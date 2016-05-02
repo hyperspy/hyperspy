@@ -10,6 +10,7 @@ import numpy as np
 from hyperspy.io import load
 from hyperspy.signal import Signal
 from hyperspy.roi import Point2DROI
+from hyperspy.datasets.example_signals import EDS_TEM_Spectrum
 
 my_path = os.path.dirname(__file__)
 
@@ -268,3 +269,6 @@ class TestLoadingOOMReadOnly:
         except:
             # Don't fail tests if we cannot remove
             pass
+def test_strings_from_py2():
+    s = EDS_TEM_Spectrum()
+    nt.assert_equal(s.metadata.Sample.elements.dtype.char, "U")

@@ -821,8 +821,8 @@ def plot_images(images,
                 plt.colorbar(axes_im, cax=cax)
 
             # Add scalebars as necessary
-            if (scalelist and i in scalebar) or scalebar is 'all':
-                ax.scalebar = ScaleBar(
+            if (scalelist and idx - 1 in scalebar) or scalebar is 'all':
+                ax.scalebar = Scale_Bar(
                     ax=ax,
                     units=axes[0].units,
                     color=scalebar_color,
