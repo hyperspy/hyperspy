@@ -641,3 +641,63 @@ class EDSTEMSpectrum(EDSSpectrum):
             return real_time * beam_current * 1e-9 / constants.e
         else:
             raise Exception('Method need to be \'zeta\' or \'cross_section\'.')
+
+def cross_section_to_zeta(cross_sections, elements):
+    """Convert a list of cross_sections in (b) to zeta-factors (kg/m^2).
+
+    Parameters
+    ----------
+    cross_section: list of float
+        A list of cross sections.
+    elements: list of str
+        A list of element chemical symbols in the same order as the cross sections
+        e.g. ['Al','Zn']
+
+    Returns
+    -------
+    zeta_factors : list of float
+        zeta_factors with units kg/m^2.
+
+    """
+    if len(elements) != len(cross_sections):
+        raise ValueError(
+            'The number of elements must match the number of cross sections.')
+    atomic_weights = np.array(
+        [elements_db[element]['General_properties']['atomic_weight']
+            for element in elements])
+    print(atomic_weights)
+    zeta_factors = []
+    for i in range(len(elements)):
+            zeta = atomic_weights[i]/(cross_sections[i]**constants.Avogadro)*1E31
+            zeta_factors.append(zeta)
+    return zeta_factors
+
+def zeta_to_cross_section(zfactors, elements):
+    """Convert a list of zeta-factors (kg/m^2) to cross_sections in (b).
+
+    Parameters
+    ----------
+    zfactors: list of float
+        A list of zeta-factors.
+    elements: list of str
+        A list of element chemical symbols in the same order as the cross sections
+        e.g. ['Al','Zn']
+
+    Returns
+    -------
+    cross_sections : list of float
+        cross_sections with units in barns.
+
+    """
+    if len(elements) != len(zfactors):
+        raise ValueError(
+            'The number of elements must match the number of cross sections.')
+    atomic_weights = np.array(
+        [elements_db[element]['General_properties']['atomic_weight']
+            for element in elements])
+    print(atomic_weights)
+    cross_sections = []
+    for i in range(len(elements)):
+            xsec = atomic_weights[i]/(zfactors[i]*constants.Avogadro)*1E31
+            cross_sections.append(xsec)
+    return cross_sections
