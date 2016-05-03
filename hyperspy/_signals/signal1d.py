@@ -1155,7 +1155,7 @@ class Signal1D(BaseSignal,
         self.axes_manager.set_signal_dimension(1)
 
     def to_signal2D(self):
-        """Returns the spectrum as an image.
+        """Returns the one dimensional signal as a two dimensional signal.
 
         See Also
         --------

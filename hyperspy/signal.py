@@ -3343,6 +3343,36 @@ class BaseSignal(MVA,
         return nitem
 
     def as_signal1D(self, spectral_axis):
+        """Return the Signal as a one-dimensional Signal1D.
+
+        The chosen spectral axis is moved to the last index in the
+        array and the data is made contiguous for effecient
+        iteration over spectra.
+
+
+        Parameters
+        ----------
+        spectral_axis : {int, complex, str}
+            Select the spectral axis to-be using its index or name.
+
+        Examples
+        --------
+        >>> img = hs.signals.Signal2D(np.ones((3,4,5,6)))
+        >>> img
+        <Signal2D, title: , dimensions: (4, 3, 6, 5)>
+        >>> img.to_signal1D(-1+1j)
+        <Signal1D, title: , dimensions: (6, 5, 4, 3)>
+        >>> img.to_signal1D(0)
+        <Signal1D, title: , dimensions: (6, 5, 3, 4)>
+
+        """
+        # Roll the spectral axis to-be to the latex index in the array
+        sp = self.rollaxis(spectral_axis, -1 + 3j)
+        sp.metadata.Signal.record_by = "spectrum"
+        sp._assign_subclass()
+        return sp
+
+    def as_spectrum(self, spectral_axis):
         """Return the Signal as a spectrum.
 
         The chosen spectral axis is moved to the last index in the
@@ -3367,10 +3397,10 @@ class BaseSignal(MVA,
 
         """
         # Roll the spectral axis to-be to the latex index in the array
-        sp = self.rollaxis(spectral_axis, -1 + 3j)
-        sp.metadata.Signal.record_by = "spectrum"
-        sp._assign_subclass()
-        return sp
+        warnings.warn("The as_spectrum method will be deprecated from version"
+                      " 1.0.0 and replaced with as_signal1D",
+                      VisibleDeprecationWarning)
+        self.as_signal1D
 
     def as_signal2D(self, image_axes):
         """Convert signal to image.
@@ -3412,6 +3442,41 @@ class BaseSignal(MVA,
         im.metadata.Signal.record_by = "image"
         im._assign_subclass()
         return im
+
+    def as_image(self, image_axes):
+        """Convert signal to image.
+
+        The chosen image axes are moved to the last indices in the
+        array and the data is made contiguous for effecient
+        iteration over images.
+
+        Parameters
+        ----------
+        image_axes : tuple of {int, complex, str}
+            Select the image axes. Note that the order of the axes matters
+            and it is given in the "natural" i.e. X, Y, Z... order.
+
+        Examples
+        --------
+        >>> s = hs.signals.Spectrum(np.ones((2,3,4,5)))
+        >>> s
+        <Spectrum, title: , dimensions: (4, 3, 2, 5)>
+        >>> s.as_image((0,1))
+        <Image, title: , dimensions: (5, 2, 4, 3)>
+
+        >>> s.to_image((1,2))
+        <Image, title: , dimensions: (4, 5, 3, 2)>
+
+        Raises
+        ------
+        DataDimensionError : when data.ndim < 2
+
+        """
+        warnings.warn("The as_image method will be deprecated from version"
+                      " 1.0.0 and replaced with as_signal2D",
+                      VisibleDeprecationWarning)
+
+        self.as_signal2D
 
     def _assign_subclass(self):
         mp = self.metadata

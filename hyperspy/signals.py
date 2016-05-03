@@ -54,6 +54,23 @@ class Spectrum(Signal1D,
                       VisibleDeprecationWarning)
         Signal1D.__init__(self, *args, **kwargs)
 
+    def to_image(self):
+        """Returns the spectrum as an image.
+
+        See Also
+        --------
+        as_image : a method for the same purpose with more options.
+        signals.Image.to_spectrum : performs the inverse operation on images.
+
+        Raises
+        ------
+        DataDimensionError: when data.ndim < 2
+
+        """
+        warnings.warn("The to_image method will be deprecated from version"
+                      " 1.0.0 and replaced with to_signal2D",
+                      VisibleDeprecationWarning)
+        self.to_signal2D()
 
 class Image(Signal2D,
             Signal1DTools,):
@@ -63,6 +80,24 @@ class Image(Signal2D,
                       " and replaced with Signal2D",
                       VisibleDeprecationWarning)
         Signal2D.__init__(self, *args, **kwargs)
+
+    def to_spectrum(self):
+        """Returns the image as a spectrum.
+
+        See Also
+        --------
+        as_spectrum : a method for the same purpose with more options.
+        signals.Spectrum.to_image : performs the inverse operation on spectra.
+
+        Raises
+        ------
+        DataDimensionError: when data.ndim < 2
+
+        """
+        warnings.warn("The to_spectrum method will be deprecated from version"
+                      " 1.0.0 and replaced with to_signal1D",
+                      VisibleDeprecationWarning)
+        self.to_signal2D()
 
 
 from hyperspy._signals.eels import EELSSpectrum
