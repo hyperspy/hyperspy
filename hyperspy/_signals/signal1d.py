@@ -1169,7 +1169,7 @@ class Signal1D(BaseSignal,
         """
         if self.data.ndim < 2:
             raise DataDimensionError(
-                "A Signal dimension must be >= 2 to be converted to an Image")
+                "A Signal dimension must be >= 2 to be converted to Signal2D")
         im = self.rollaxis(-1 + 3j, 0 + 3j)
         im.metadata.Signal.record_by = "image"
         im._assign_subclass()

@@ -519,7 +519,8 @@ class Signal2D(BaseSignal,
         See Also
         --------
         as_spectrum : a method for the same purpose with more options.
-        signals.Image.to_spectrum : performs the inverse operation on images.
+        signals.Signal1D.to_signal1D : performs the inverse operation on one
+        dimensional signals.
 
         """
         return self.as_signal1D(0 + 3j)

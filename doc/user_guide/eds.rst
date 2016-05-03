@@ -449,8 +449,8 @@ are used by default.
     >>> s = hs.load('core_shell.hdf5')
     >>> s.set_lines(['Fe_Ka', 'Pt_La'])
     >>> s.get_lines_intensity()
-    [<Image, title: X-ray line intensity of Core shell: Fe_Ka at 6.40 keV, dimensions: (|64, 64)>,
-    <Image, title: X-ray line intensity of Core shell: Pt_La at 9.44 keV, dimensions: (|64, 64)>]
+    [<Signal2D, title: X-ray line intensity of Core shell: Fe_Ka at 6.40 keV, dimensions: (|64, 64)>,
+    <Signal2D, title: X-ray line intensity of Core shell: Pt_La at 9.44 keV, dimensions: (|64, 64)>]
 
 The windows of integration can be visualised using :py:meth:`~._signals.eds.EDSSpectrum.plot` method
 
