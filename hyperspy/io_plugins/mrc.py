@@ -88,11 +88,11 @@ def get_std_dtype_list(endianess='<'):
             ('XORIGIN', end + 'f4'),
             ('YORIGIN', end + 'f4'),
             ('ZORIGIN', end + 'f4'),
-            ('CMAP', (str, 4)),
-            ('STAMP', (str, 4)),
+            ('CMAP', (bytes, 4)),
+            ('STAMP', (bytes, 4)),
             ('RMS', end + 'f4'),
             ('NLABL', end + 'u4'),
-            ('LABELS', (str, 800)),
+            ('LABELS', (bytes, 800)),
         ]
 
     return dtype_list
@@ -159,6 +159,10 @@ def file_reader(filename, endianess='<', **kwds):
                      ).squeeze().reshape((NX, NY, NZ), order='F').T
 
     original_metadata = {'std_header': sarray2dict(std_header)}
+    # Convert bytes to unicode
+    for key in ["CMAP", "STAMP", "LABELS"]:
+        original_metadata["std_header"][key] = \
+            original_metadata["std_header"][key].decode()
     if fei_header is not None:
         fei_dict = sarray2dict(fei_header,)
         del fei_dict['empty']
