@@ -19,96 +19,63 @@
 
 import time
 import logging
-from multiprocessing import (cpu_count, Pool, Manager)
-from multiprocessing.pool import Pool as Pool_type
-import ipyparallel as ipp
+from multiprocessing import Manager
+from ipyparallel import Reference as ipp_Reference
+import numpy as np
 
+from hyperspy.utils.parallel_pool import ParallelPool
 from hyperspy._samfire_utils.samfire_worker import create_worker
 
 _logger = logging.getLogger(__name__)
 
 
-class samfire_pool:
+class SamfirePool(ParallelPool):
 
-    _timestep = 0
-
-    def __init__(self, num_workers=None, ipython_kwargs=None):
-        if ipython_kwargs is None:
-            ipython_kwargs = {}
-        self.ipython_kwargs = {'timeout': 5.}
-        self.ipython_kwargs.update(ipython_kwargs)
-        self.pool = None
+    def __init__(self, **kwargs):
+        super(SamfirePool, self).__init__(**kwargs)
         self.samf = None
         self.ping = {}
         self.pid = {}
-        self.num_workers = num_workers
         self.workers = {}
-        self.timestep = 0.001
-        self.timeout = 15.
-        self.setup()
+        self.rworker = None
+        self.result_queue = None
+        self.shared_queue = None
+        self._last_time = 0
 
-    @property
-    def timestep(self):
-        return self._timestep
-
-    @timestep.setter
-    def timestep(self, value):
+    def _timestep_set(self, value):
         value = np.abs(value)
         self._timestep = value
         if self.has_pool and self.is_multiprocessing:
             for this_queue in self.workers.values():
                 this_queue.put(('change_timestep', (value,)))
 
-    @property
-    def is_ipyparallel(self):
-        return hasattr(self.pool, 'client')
-
-    @property
-    def is_multiprocessing(self):
-        return isinstance(self.pool, Pool_type)
-
-    @property
-    def has_pool(self):
-        return self.is_ipyparallel or self.is_multiprocessing and \
-            self.pool._state is 0
-
-    def setup(self):
-        if not self.has_pool:
-            try:
-                ipyclient = ipp.Client(**self.ipython_kwargs)
-                self.num_workers = min(self.num_workers, len(ipyclient))
-                self.pool = ipyclient.load_balanced_view(
-                    range(self.num_workers))
-                self.results = []
-            except OSError:
-                self.num_workers = min(self.num_workers, cpu_count() - 1)
-                self.pool = Pool(processes=self.num_workers)
-
     def prepare_workers(self, samfire):
         self.samf = samfire
 
         mall = samfire.model
-        m = mall.inav[mall.axes_manager.indices]
-        m.store('z')
-        m_dict = m.spectrum._to_dictionary(False)
-        m_dict['models'] = m.spectrum.models._models.as_dictionary()
+        model = mall.inav[mall.axes_manager.indices]
+        model.store('z')
+        m_dict = model.spectrum._to_dictionary(False)
+        m_dict['models'] = model.spectrum.models._models.as_dictionary()
 
         optional_names = {mall[c].name for c in samfire.optional_components}
 
         if self.is_ipyparallel:
-            dv = self.pool.client[:self.num_workers]
-            dv.block = True
-            dv.execute("from hyperspy._samfire_utils.samfire_worker import "
-                       "create_worker")
-            dv.scatter('identity', range(self.num_workers), flatten=True)
-            dv.execute('worker = create_worker(identity)')
-            self.rworker = ipp.Reference('worker')
-            dv.apply(lambda worker, m_dict: worker.create_model(m_dict, 'z'),
-                     self.rworker, m_dict)
-            dv.apply(lambda worker, ts: worker.setup_test(ts), self.rworker,
-                     samfire._gt_dump)
-            dv.apply(lambda worker, on: worker.set_optional_names(on),
-                     self.rworker, optional_names)
+            direct_view = self.pool.client[:self.num_workers]
+            direct_view.block = True
+            direct_view.execute("from hyperspy._samfire_utils.samfire_worker"
+                                " import create_worker")
+            direct_view.scatter('identity', range(self.num_workers),
+                                flatten=True)
+            direct_view.execute('worker = create_worker(identity)')
+            self.rworker = ipp_Reference('worker')
+            direct_view.apply(lambda worker, m_dict:
+                              worker.create_model(m_dict, 'z'), self.rworker,
+                              m_dict)
+            direct_view.apply(lambda worker, ts: worker.setup_test(ts),
+                              self.rworker, samfire._gt_dump)
+            direct_view.apply(lambda worker, on: worker.set_optional_names(on),
+                              self.rworker, optional_names)
 
         if self.is_multiprocessing:
             manager = Manager()
@@ -124,6 +91,19 @@ class samfire_pool:
                                                            self.shared_queue,
                                                            self.result_queue))
 
+    def update_optional_names(self):
+        samfire = self.samf
+        optional_names = {samfire.model[c].name for c in
+                          samfire.optional_components}
+        if self.is_multiprocessing:
+            for this_queue in self.workers.values():
+                this_queue.put(('set_optional_names', (optional_names,)))
+        elif self.is_ipyparallel:
+            direct_view = self.pool.client[:self.num_workers]
+            direct_view.block = True
+            direct_view.apply(lambda worker, on: worker.set_optional_names(on),
+                              self.rworker, optional_names)
+
     def ping_workers(self, timeout=None):
         if self.samf is None:
             _logger.error('Have to add samfire to the pool first')
@@ -134,10 +114,10 @@ class samfire_pool:
                     self.ping[_id] = time.time()
             elif self.is_ipyparallel:
                 for i in range(self.num_workers):
-                    dv = self.pool.client[i]
-                    self.results.append((dv.apply_async(lambda worker:
-                                                        worker.ping(),
-                                                        self.rworker),
+                    direct_view = self.pool.client[i]
+                    self.results.append((direct_view.apply_async(lambda worker:
+                                                                 worker.ping(),
+                                                                 self.rworker),
                                          i))
                     self.ping[i] = time.time()
         time.sleep(0.5)
@@ -172,11 +152,11 @@ class samfire_pool:
             _id, pid, pong_time, message = the_rest
             self.ping[_id] = pong_time - self.ping[_id]
             self.pid[_id] = pid
-            _logger.info('pong worker {} with time {} and message'
-                         '"{}"'.format(_id, self.ping[_id], message))
+            _logger.info('pong worker %s with time %g and message'
+                         '"%s"' % (str(_id), self.ping[_id], message))
         elif keyword == 'Error':
             _id, err_message = the_rest
-            _logger.error('Error in worker {}\n{}'.format(_id, err_message))
+            _logger.error('Error in worker %s\n%s' % (str(_id), err_message))
         elif keyword == 'result':
             _id, ind, result, isgood = the_rest
             if ind in samf._running_pixels:
@@ -188,7 +168,7 @@ class samfire_pool:
                     samf._log.append((ind, isgood, samf.count, _id))
         else:
             _logger.error('Unusual return from some worker. The value '
-                          'is:\n{}'.format(value))
+                          'is:\n%s' % str(value))
 
     def collect_results(self, timeout=None):
         if timeout is None:
@@ -247,11 +227,6 @@ class samfire_pool:
                 self.sleep()
             else:
                 self._last_time = time.time()
-
-    def sleep(self, howlong=None):
-        if howlong is None:
-            howlong = self.timestep
-        time.sleep(howlong)
 
     def stop(self):
         if self.is_multiprocessing:

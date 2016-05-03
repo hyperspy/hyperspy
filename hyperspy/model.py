@@ -1457,9 +1457,10 @@ class BaseModel(list):
         else:
             return list.__getitem__(self, value)
 
-    def create_samfire(self, marker=None, workers=None):
+    def create_samfire(self, workers=None, setup=True, **kwargs):
         from hyperspy.samfire import Samfire
-        return Samfire(self, marker=marker, workers=workers)
+        return Samfire(self, workers=workers,
+                       setup=setup, **kwargs)
 
 
 class ModelSpecialSlicers(object):

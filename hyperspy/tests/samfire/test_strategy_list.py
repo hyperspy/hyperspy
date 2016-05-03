@@ -17,7 +17,7 @@
 
 import nose.tools as nt
 
-from hyperspy.samfire import Samfire
+from hyperspy.samfire import (Samfire, StrategyList)
 from hyperspy.misc.utils import DictionaryTreeBrowser
 
 
@@ -30,7 +30,7 @@ class TestStrategyList:
         for w in [self.w1, self.w2]:
             w.add_node('samf')
         self.samf = object()
-        self.sl = Samfire._strategy_list(self.samf)
+        self.sl = StrategyList(self.samf)
 
     def test_append(self):
         nt.assert_false(self.w1.samf is self.samf)

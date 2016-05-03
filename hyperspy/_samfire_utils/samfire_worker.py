@@ -19,13 +19,14 @@ import numpy as np
 import os
 from itertools import combinations, product
 from hyperspy.signal import Signal
+from hyperspy.utils.model_selection import AICc
 import dill
 import time
 from queue import Empty
 import copy
 
 
-class worker:
+class Worker:
 
     def __init__(self, identity, individual_queue=None, shared_queue=None,
                  result_queue=None):
@@ -38,6 +39,7 @@ class worker:
         self._AICc_fraction = 0.99
         self.reset()
         self.last_time = 1
+        self.optional_names = set()
 
     def create_model(self, signal_dict, model_letter):
         sig = Signal(**signal_dict)
@@ -85,13 +87,20 @@ class worker:
                                 parameter_name).value = value
                     except:
                         e = sys.exc_info()[0]
-                        self.result_queue.put(('Error',
-                                               (self.identity,
-                                                'Setting {}.{} value to {}.'
-                                                'Caught:\n{}'.format(comp_name,
-                                                                     parameter_name,
-                                                                     value,
-                                                                     e))))
+                        to_send = ('Error',
+                                   (self.identity,
+                                    'Setting {}.{} value to {}. '
+                                    'Caught:\n{}'.format(comp_name,
+                                                         parameter_name,
+                                                         value,
+                                                         e)
+                                    )
+                                   )
+                        if self.result_queue is None:
+                            return to_send
+                        else:
+                            self.result_queue.put()
+                            return
             yield
 
     def fit(self, component_comb):
@@ -146,12 +155,12 @@ class worker:
         return self.send_results()
 
     def _collect_values(self):
-        result = {component.name: {parameter.name: parameter.map for
+        result = {component.name: {parameter.name: parameter.map.copy() for
                                    parameter in component.parameters} for
                   component in self.model if component.active}
         return result
 
-    def compare_model(self):
+    def compare_models(self):
         new_AICc = AICc(self.model)
 
         AICc_test = new_AICc < (self._AICc_fraction * self.best_AICc)
@@ -244,7 +253,7 @@ class worker:
 
 def create_worker(identity, individual_queue=None,
                   shared_queue=None, result_queue=None):
-    w = worker(identity, individual_queue, shared_queue, result_queue)
+    w = Worker(identity, individual_queue, shared_queue, result_queue)
     if individual_queue is None:
         return w
     w.start_listening()

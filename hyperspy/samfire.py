@@ -34,7 +34,7 @@ from hyperspy._samfire_utils._strategies.segmenter.histogram import \
     histogram_strategy
 from hyperspy.events import EventSupressor
 from hyperspy._samfire_utils.samfire_worker import create_worker
-from hyperspy._samfire_utils.samfire_pool import samfire_pool
+from hyperspy._samfire_utils.samfire_pool import SamfirePool
 from tqdm import tqdm
 
 
@@ -158,7 +158,7 @@ class Samfire:
     _args = None
     count = 0
 
-    def __init__(self, model, marker=None, workers=None, ipython_kwargs=None):
+    def __init__(self, model, workers=None, setup=True, **kwargs):
 
         # constants:
         if workers is None:
@@ -175,10 +175,8 @@ class Samfire:
         self.metadata.add_node('marker')
         self.metadata.add_node('goodness_test')
 
-        if marker is None:
-            marker = np.empty(
-                self.model.axes_manager.navigation_shape[::-1])
-            marker.fill(self._scale)
+        marker = np.empty(self.model.axes_manager.navigation_shape[::-1])
+        marker.fill(self._scale)
 
         self.metadata.marker = marker
         self.strategies = StrategyList(self)
@@ -191,7 +189,8 @@ class Samfire:
         from hyperspy._samfire_utils.samfire_kernel import single_kernel
         self.single_kernel = single_kernel
         self._workers = workers
-        self._setup(ipython_kwargs=ipython_kwargs)
+        if len(kwargs) or setup:
+            self._setup(**kwargs)
         self.refresh_database()
 
     @property
@@ -203,7 +202,7 @@ class Samfire:
     def active_strategy(self, value):
         self.change_strategy(value)
 
-    def _setup(self, ipython_kwargs=None):
+    def _setup(self, **kwargs):
         """Set up SAMFire - configure models, set up pool if necessary"""
         self._figure = None
         self._gt_dump = dill.dumps(self.metadata.goodness_test)
@@ -215,9 +214,11 @@ class Samfire:
         if hasattr(self, '_log'):
             self._log = []
 
-        if self._workers:
+        if self._workers and self.pool is None:
+            if 'num_workers' not in kwargs:
+                kwargs['num_workers'] = self._workers
             if self.pool is None:
-                self.pool = samfire_pool(self._workers, ipython_kwargs)
+                self.pool = SamfirePool(**kwargs)
             self._workers = self.pool.num_workers
             self.pool.prepare_workers(self)
 
@@ -229,6 +230,9 @@ class Samfire:
         **kwargs : key-word arguments
             Any key-word arguments to be passed to Model.fit() call
         """
+        self._setup()
+        if self._workers and self.pool is None:
+            self.pool.update_optional_names()
         self._args = kwargs
         num_of_strat = len(self.strategies)
         total_size = self.model.axes_manager.navigation_size - self.pixels_done
