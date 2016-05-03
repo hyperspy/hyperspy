@@ -4,6 +4,7 @@ dependencies:
 - dill
 - h5py
 - ipython
+- ipyparallel
 - jupyter
 - matplotlib
 - mock
@@ -18,8 +19,11 @@ dependencies:
 - sympy
 - natsort
 - ncurses
+- requests
+- pango
 - pip:
   - dask
   - hyperspy
   - traits
   - traitsui
+  - tqdm
