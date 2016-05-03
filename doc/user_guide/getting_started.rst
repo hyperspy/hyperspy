@@ -159,9 +159,9 @@ to the constructor e.g.
 .. code-block:: python
 
     >>> my_np_array = np.random.random((10,20,100))
-    >>> s = hs.signals.Spectrum(my_np_array)
+    >>> s = hs.signals.Signal1D(my_np_array)
     >>> s
-    <Spectrum, title: , dimensions: (20, 10|100)>
+    <Signal1D, title: , dimensions: (20, 10|100)>
 
 The numpy array is stored in the :py:attr:`~.signal.Signal.data` attribute
 of the signal class.
@@ -178,22 +178,24 @@ the *navigation* dimensions an the energy-loss is the *signal* dimension. To
 make this distinction more explicit the representation of the object includes
 a separator ``|`` between the navigaton and signal dimensions e.g.
 
-In Hyperpsy a spectrum image has signal dimension 1 and navigation dimension 2.
+In Hyperpsy a spectrum image has signal dimension 1 and navigation dimension 2
+and is stored in the Signal1D subclass.
 
 .. code-block:: python
 
-    >>> s = hs.signals.Spectrum(np.zeros((10, 20, 30)))
+    >>> s = hs.signals.Signal1D(np.zeros((10, 20, 30)))
     >>> s
-    <Spectrum, title: , dimensions: (20, 10|30)>
+    <Signal1D, title: , dimensions: (20, 10|30)>
 
 
-An image stack has signal dimension 2 and navigation dimension 1.
+An image stack has signal dimension 2 and navigation dimension 1 and is stored
+in the Signal2D subclass.
 
 .. code-block:: python
 
-    >>> im = hs.signals.Image(np.zeros((30, 10, 20)))
+    >>> im = hs.signals.Signal2D(np.zeros((30, 10, 20)))
     >>> im
-    <Image, title: , dimensions: (30|20, 10)>
+    <Signal2D, title: , dimensions: (30|20, 10)>
 
 Note the HyperSpy rearranges the axes position to match the following pattern:
 (navigatons axis 0,..., navigation axis n|signal axis 0,..., signal axis n).
@@ -211,9 +213,9 @@ e.g.
 
 .. code-block:: python
 
-    >>> s = hs.signals.Spectrum(np.random.random((10, 20 , 100)))
+    >>> s = hs.signals.Signal1D(np.random.random((10, 20 , 100)))
     >>> s
-    <Spectrum, title: , dimensions: (20, 10|100)>
+    <Signal1D, title: , dimensions: (20, 10|100)>
     >>> s.axes_manager
     <Axes manager, axes: (<Unnamed 0th axis, size: 20, index: 0>, <Unnamed 1st
     axis, size: 10, index: 0>|<Unnamed 2nd axis, size: 100>)>
