@@ -414,8 +414,8 @@ API changes
 
 * Change syntax to create Signal objects. Instead of a dictionary
   Signal.__init__ takes keywords e.g with  a new syntax .
-  ``>>> s = signals.Spectrum(np.arange(10))`` instead of
-  ``>>> s = signals.Spectrum({'data' : np.arange(10)})``
+  ``>>> s = signals.Signal1D(np.arange(10))`` instead of
+  ``>>> s = signals.Signal1D({'data' : np.arange(10)})``
 
 
 

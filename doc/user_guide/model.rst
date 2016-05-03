@@ -279,7 +279,7 @@ To enable this feature for a given component set the
 
 .. code-block:: python
 
-    >>> s = hs.signals.Spectrum(np.arange(100).reshape(10,10))
+    >>> s = hs.signals.Signal1D(np.arange(100).reshape(10,10))
     >>> m = s.create_model()
     >>> g1 = hs.components.Gaussian()
     >>> g2 = hs.components.Gaussian()
@@ -319,7 +319,7 @@ Example:
 
 .. code-block:: python
 
-    >>> s = hs.signals.Spectrum(np.arange(100).reshape(10,10))
+    >>> s = hs.signals.Signal1D(np.arange(100).reshape(10,10))
     >>> m = s.create_model()
     >>> g1 = hs.model.components.Gaussian()
     >>> g2 = hs.model.components.Gaussian()
@@ -585,7 +585,7 @@ approximation in most cases.
 
 .. code-block:: python
 
-   >>> s.estimate_poissonian_noise_variance(expected_value=hs.signals.Spectrum(np.arange(300)))
+   >>> s.estimate_poissonian_noise_variance(expected_value=hs.signals.Signal1D(np.arange(300)))
    >>> m.fit()
    >>> line.coefficients.value
    (1.0004224896604759, -0.46982916592391377)

@@ -183,7 +183,7 @@ class Model(list):
     components to it, adjust the value of the parameters of the components,
     fit the model to the data and access the components in the model.
 
-    >>> s = hs.signals.Spectrum(
+    >>> s = hs.signals.Signal1D(
             np.random.normal(scale=2, size=10000)).get_histogram()
     >>> g = hs.model.components.Gaussian()
     >>> m = s.create_model()
@@ -357,7 +357,7 @@ class Model(list):
         Examples
         --------
 
-        >>> s = hs.signals.Spectrum(np.empty(1))
+        >>> s = hs.signals.Signal1D(np.empty(1))
         >>> m = s.create_model()
         >>> g = hs.model.components.Gaussian()
         >>> m.append(g)
@@ -465,7 +465,7 @@ class Model(list):
 
         Examples
         --------
-        >>> s = hs.signals.Spectrum(np.random.random((10,100)))
+        >>> s = hs.signals.Signal1D(np.random.random((10,100)))
         >>> m = s.create_model()
         >>> l1 = hs.model.components.Lorentzian()
         >>> l2 = hs.model.components.Lorentzian()

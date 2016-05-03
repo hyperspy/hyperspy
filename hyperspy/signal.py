@@ -1988,7 +1988,7 @@ class BaseSignal(MVA,
 
         Examples
         --------
-        >>> s = hs.signals.Spectrum(np.ones((5,4,3,6)))
+        >>> s = hs.signals.Signal1D(np.ones((5,4,3,6)))
         >>> s
         <Spectrum, title: , dimensions: (3, 4, 5, 6)>
         >>> s.rollaxis(3, 1)
@@ -2055,7 +2055,7 @@ class BaseSignal(MVA,
         Examples
         --------
         >>> import hyperspy.api as hs
-        >>> s = hs.signals.Spectrum(np.zeros((10, 100)))
+        >>> s = hs.signals.Signal1D(np.zeros((10, 100)))
         >>> s
         <Spectrum, title: , dimensions: (10|100)>
         >>> s.rebin((5, 100))
@@ -2117,7 +2117,7 @@ class BaseSignal(MVA,
 
         Examples
         --------
-        >>> s = hs.signals.Spectrum(random.random([4,3,2]))
+        >>> s = hs.signals.Signal1D(random.random([4,3,2]))
         >>> s
             <Spectrum, title: , dimensions: (3, 4|2)>
         >>> s.split()
@@ -2872,7 +2872,7 @@ class BaseSignal(MVA,
 
         Examples
         --------
-        >>> s = hs.signals.Spectrum(np.random.normal(size=(10, 100)))
+        >>> s = hs.signals.Signal1D(np.random.normal(size=(10, 100)))
         Plot the data histogram
         >>> s.get_histogram().plot()
         Plot the histogram of the signal at the current coordinates
@@ -2885,7 +2885,7 @@ class BaseSignal(MVA,
                                     bins=bins,
                                     range=range_bins,
                                     **kwargs)
-        hist_spec = signals.Spectrum(hist)
+        hist_spec = signals.Signal1D(hist)
         if bins == 'blocks':
             hist_spec.axes_manager.signal_axes[0].axis = bin_edges[:-1]
             warnings.warn(
@@ -3055,7 +3055,7 @@ class BaseSignal(MVA,
 
         Examples
         --------
-        >>> s = hs.signals.Spectrum([1,2,3,4,5])
+        >>> s = hs.signals.Signal1D([1,2,3,4,5])
         >>> s.data
         array([1, 2, 3, 4, 5])
         >>> s.change_dtype('float')
@@ -3417,7 +3417,7 @@ class BaseSignal(MVA,
 
         Examples
         --------
-        >>> s = hs.signals.Spectrum(np.ones((2,3,4,5)))
+        >>> s = hs.signals.Signal1D(np.ones((2,3,4,5)))
         >>> s
         <Spectrum, title: , dimensions: (4, 3, 2, 5)>
         >>> s.as_image((0,1))
@@ -3458,7 +3458,7 @@ class BaseSignal(MVA,
 
         Examples
         --------
-        >>> s = hs.signals.Spectrum(np.ones((2,3,4,5)))
+        >>> s = hs.signals.Signal1D(np.ones((2,3,4,5)))
         >>> s
         <Spectrum, title: , dimensions: (4, 3, 2, 5)>
         >>> s.as_image((0,1))

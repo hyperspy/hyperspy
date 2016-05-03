@@ -419,7 +419,7 @@ class AxesManager(t.HasTraits):
 
     >>> # Create a spectrum with random data
 
-    >>> s = hs.signals.Spectrum(np.random.random((2,3,4,5)))
+    >>> s = hs.signals.Signal1D(np.random.random((2,3,4,5)))
     >>> s.axes_manager
     <Axes manager, axes: (<axis2 axis, size: 4, index: 0>, <axis1 axis, size: 3, index: 0>, <axis0 axis, size: 2, index: 0>, <axis3 axis, size: 5>)>
     >>> s.axes_manager[0]

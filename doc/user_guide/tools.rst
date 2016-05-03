@@ -768,7 +768,7 @@ type in place, e.g.:
         >>> rgb_test[:,:,1] = (X - lx / 2 + lx*offset_factor) ** 2 + (Y - ly / 2 - ly*offset_factor) ** 2 < lx * ly / size_factor **2
         >>> rgb_test[:,:,2] = (X - lx / 2) ** 2 + (Y - ly / 2 + ly*offset_factor) ** 2 < lx * ly / size_factor **2
         >>> rgb_test *= 2**16 - 1
-        >>> s = hs.signals.Spectrum(rgb_test)
+        >>> s = hs.signals.Signal1D(rgb_test)
         >>> s.change_dtype("uint16")
         >>> s
         <Spectrum, title: , dimensions: (1024, 1024|3)>

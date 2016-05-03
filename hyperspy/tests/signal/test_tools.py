@@ -71,7 +71,7 @@ class Test2D:
 
     def test_histogram(self):
         result = self.signal.get_histogram(3)
-        nt.assert_true(isinstance(result, signals.Spectrum))
+        nt.assert_true(isinstance(result, signals.Signal1D))
         np.testing.assert_equal(result.data, [17, 16, 17])
         nt.assert_true(result.metadata.Signal.binned)
 
@@ -276,7 +276,7 @@ class Test3D:
 class Test4D:
 
     def setUp(self):
-        s = signals.Spectrum(np.ones((5, 4, 3, 6)))
+        s = signals.Signal1D(np.ones((5, 4, 3, 6)))
         for axis, name in zip(
                 s.axes_manager._get_axes_in_natural_order(),
                 ['x', 'y', 'z', 'E']):
@@ -356,7 +356,7 @@ class TestDerivative:
         offset = 3
         scale = 0.1
         x = np.arange(-offset, offset, scale)
-        s = signals.Spectrum(np.sin(x))
+        s = signals.Signal1D(np.sin(x))
         s.axes_manager[0].offset = x[0]
         s.axes_manager[0].scale = scale
         self.s = s

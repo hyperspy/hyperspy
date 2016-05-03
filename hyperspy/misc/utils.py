@@ -47,7 +47,7 @@ def attrsetter(target, attrs, value):
         -------
         First create a signal and model pair:
 
-        >>> s = hs.signals.Spectrum(np.arange(10))
+        >>> s = hs.signals.Signal1D(np.arange(10))
         >>> m = s.create_model()
         >>> m.spectrum.data
         array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
@@ -753,7 +753,7 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
     Examples
     --------
     >>> data = np.arange(20)
-    >>> s = hs.stack([hs.signals.Spectrum(data[:10]), hs.signals.Spectrum(data[10:])])
+    >>> s = hs.stack([hs.signals.Signal1D(data[:10]), hs.signals.Signal1D(data[10:])])
     >>> s
     <Spectrum, title: Stack of , dimensions: (2, 10)>
     >>> s.data

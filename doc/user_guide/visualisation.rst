@@ -442,7 +442,7 @@ This example also demonstrates how to wrap labels using `labelwrap` (for prevent
     >>> image2.metadata.General.title = 'Rocky Raccoon - G'
 
     >>> # load rgb image of the raccoon
-    >>> rgb = hs.signals.Spectrum(scipy.misc.face())
+    >>> rgb = hs.signals.Signal1D(scipy.misc.face())
     >>> rgb.change_dtype("rgb8")
     >>> rgb.metadata.General.title = 'Raccoon - RGB'
 
@@ -520,7 +520,7 @@ legended line, a spectrum can be toggled on and off.
 
 .. code-block:: python
 
-     >>> s = hs.signals.Spectrum(np.zeros((200)))
+     >>> s = hs.signals.Signal1D(np.zeros((200)))
      >>> s.axes_manager[0].offset = -10
      >>> s.axes_manager[0].scale = 0.1
      >>> m = s.create_model()
@@ -556,7 +556,7 @@ a file:
 .. code-block:: python
 
     >>> import scipy.misc
-    >>> s = hs.signals.Spectrum(scipy.misc.lena()[100:160:10])
+    >>> s = hs.signals.Signal1D(scipy.misc.lena()[100:160:10])
     >>> cascade_plot = hs.plot.plot_spectra(s, style='cascade')
     >>> cascade_plot.figure.savefig("cascade_plot.png")
 
@@ -578,7 +578,7 @@ and provide the legend labels:
 .. code-block:: python
 
     >>> import scipy.misc
-    >>> s = hs.signals.Spectrum(scipy.misc.lena()[100:160:10])
+    >>> s = hs.signals.Signal1D(scipy.misc.lena()[100:160:10])
     >>> color_list = ['red', 'red', 'blue', 'blue', 'red', 'red']
     >>> line_style_list = ['-','--','steps','-.',':','-']
     >>> hs.plot.plot_spectra(s, style='cascade', color=color_list,
@@ -599,8 +599,8 @@ generate a list of colors that follows a certain colormap:
 
     >>> import scipy.misc
     >>> fig, axarr = plt.subplots(1,2)
-    >>> s1 = hs.signals.Spectrum(scipy.misc.lena()[100:160:10])
-    >>> s2 = hs.signals.Spectrum(scipy.misc.lena()[200:260:10])
+    >>> s1 = hs.signals.Signal1D(scipy.misc.lena()[100:160:10])
+    >>> s2 = hs.signals.Signal1D(scipy.misc.lena()[200:260:10])
     >>> hs.plot.plot_spectra(s1,
     >>>                         style='cascade',
     >>>                         color=[plt.cm.RdBu(i/float(len(s1)-1))
@@ -627,7 +627,7 @@ There are also two other styles, "heatmap" and "mosaic":
 .. code-block:: python
 
     >>> import scipy.misc
-    >>> s = hs.signals.Spectrum(scipy.misc.lena()[100:160:10])
+    >>> s = hs.signals.Signal1D(scipy.misc.lena()[100:160:10])
     >>> hs.plot.plot_spectra(s, style='heatmap')
 
 .. figure::  images/plot_spectra_heatmap.png
@@ -640,7 +640,7 @@ There are also two other styles, "heatmap" and "mosaic":
 .. code-block:: python
 
     >>> import scipy.misc
-    >>> s = hs.signals.Spectrum(scipy.misc.lena()[100:120:10])
+    >>> s = hs.signals.Signal1D(scipy.misc.lena()[100:120:10])
     >>> hs.plot.plot_spectra(s, style='mosaic')
 
 .. figure::  images/plot_spectra_mosaic.png
@@ -656,7 +656,7 @@ For the "heatmap" style, different `matplotlib color schemes <http://matplotlib.
 
     >>> import matplotlib.cm
     >>> import scipy.misc
-    >>> s = hs.signals.Spectrum(scipy.misc.lena()[100:120:10])
+    >>> s = hs.signals.Signal1D(scipy.misc.lena()[100:120:10])
     >>> ax = hs.plot.plot_spectra(s, style="heatmap")
     >>> ax.images[0].set_cmap(matplotlib.cm.jet)
 
@@ -675,7 +675,7 @@ that are passed directly to matplotlib.pyplot.figure as keyword arguments:
 .. code-block:: python
 
     >>> import scipy.misc
-    >>> s = hs.signals.Spectrum(scipy.misc.lena()[100:160:10])
+    >>> s = hs.signals.Signal1D(scipy.misc.lena()[100:160:10])
     >>> legendtext = ['Plot 0', 'Plot 1', 'Plot 2', 'Plot 3', 'Plot 4', 'Plot 5']
     >>> cascade_plot = hs.plot.plot_spectra(
     >>>     s, style='cascade', legend=legendtext, dpi=60,
@@ -696,7 +696,7 @@ The function returns a matplotlib ax object, which can be used to customize the 
 .. code-block:: python
 
     >>> import scipy.misc
-    >>> s = hs.signals.Spectrum(scipy.misc.lena()[100:160:10])
+    >>> s = hs.signals.Signal1D(scipy.misc.lena()[100:160:10])
     >>> cascade_plot = hs.plot.plot_spectra(s)
     >>> cascade_plot.set_xlabel("An axis")
     >>> cascade_plot.set_ylabel("Another axis")
@@ -716,8 +716,8 @@ subplots in the same figure. This will only work for "cascade" and "overlap" sty
 
     >>> import scipy.misc
     >>> fig, axarr = plt.subplots(1,2)
-    >>> s1 = hs.signals.Spectrum(scipy.misc.lena()[100:160:10])
-    >>> s2 = hs.signals.Spectrum(scipy.misc.lena()[200:260:10])
+    >>> s1 = hs.signals.Signal1D(scipy.misc.lena()[100:160:10])
+    >>> s2 = hs.signals.Signal1D(scipy.misc.lena()[200:260:10])
     >>> hs.plot.plot_spectra(s1, style='cascade',color='blue',ax=axarr[0],fig=fig)
     >>> hs.plot.plot_spectra(s2, style='cascade',color='red',ax=axarr[1],fig=fig)
     >>> fig.canvas.draw()
@@ -740,7 +740,7 @@ signals must have the same dimensions. To plot two spectra at the same time:
 .. code-block:: python
 
     >>> import scipy.misc
-    >>> s1 = hs.signals.Spectrum(scipy.misc.face()).as_spectrum(0)[:,:3]
+    >>> s1 = hs.signals.Signal1D(scipy.misc.face()).as_spectrum(0)[:,:3]
     >>> s2 = s1.deepcopy()*-1
     >>> hs.plot.plot_signals([s1, s2])
 
@@ -760,7 +760,7 @@ To specify the navigator:
 .. code-block:: python
 
     >>> import scipy.misc
-    >>> s1 = hs.signals.Spectrum(scipy.misc.face()).as_spectrum(0)[:,:3]
+    >>> s1 = hs.signals.Signal1D(scipy.misc.face()).as_spectrum(0)[:,:3]
     >>> s2 = s1.deepcopy()*-1
     >>> hs.plot.plot_signals([s1, s2], navigator="slider")
 
@@ -778,9 +778,9 @@ For example:
 .. code-block:: python
 
     >>> import scipy.misc
-    >>> s1 = hs.signals.Spectrum(scipy.misc.face()).as_spectrum(0)[:,:3]
+    >>> s1 = hs.signals.Signal1D(scipy.misc.face()).as_spectrum(0)[:,:3]
     >>> s2 = s1.deepcopy()*-1
-    >>> s3 = hs.signals.Spectrum(np.linspace(0,9,9).reshape([3,3]))
+    >>> s3 = hs.signals.Signal1D(np.linspace(0,9,9).reshape([3,3]))
     >>> hs.plot.plot_signals([s1, s2], navigator_list=["slider", s3])
 
 .. figure::  images/plot_signals_navigator_list.png
@@ -797,7 +797,7 @@ each plot:
 .. code-block:: python
 
     >>> import scipy.misc
-    >>> s1 = hs.signals.Spectrum(scipy.misc.face()).as_spectrum(0)[:,:3]
+    >>> s1 = hs.signals.Signal1D(scipy.misc.face()).as_spectrum(0)[:,:3]
     >>> s2 = s1.deepcopy()*-1
     >>> hs.plot.plot_signals([s1, s2], sync=False, navigator_list=["slider", "slider"])
 
@@ -854,7 +854,7 @@ The markers can be added to the navigator as well. In the following example, eac
 
 .. code-block:: python
 
-    >>> s = hs.signals.Spectrum(np.arange(100).reshape([10,10]))
+    >>> s = hs.signals.Signal1D(np.arange(100).reshape([10,10]))
     >>> s.plot(navigator='spectrum')
     >>> for i in range(s.axes_manager.shape[0]):
     >>>     m = hs.plot.markers.text(y=s.sum(-1).data[i]+5,

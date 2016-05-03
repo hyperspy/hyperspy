@@ -61,7 +61,7 @@ class TestImage:
 class TestSpectrum:
 
     def setup(self):
-        self.s = hs.signals.Spectrum(np.arange(0., 6).reshape((2, 3)))
+        self.s = hs.signals.Signal1D(np.arange(0., 6).reshape((2, 3)))
 
     def test_constant_sigma(self):
         s = self.s
