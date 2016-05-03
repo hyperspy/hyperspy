@@ -42,7 +42,7 @@ Note that in 0.8.5 the :py:class:`~._signals.signal1D.Signal1D` and :py:class:`~
 
 The :py:mod:`~.signals` module, which contains all available signal subclasses,
 is imported in the user namespace when loading hyperspy. In the following
-example we create an Image instance from a 2D numpy array:
+example we create a Signal2D instance from a 2D numpy array:
 
 .. code-block:: python
 
@@ -67,14 +67,14 @@ The different subclasses are characterized by three
 :py:attr:`~.signal.Signal.metadata` attributes (see the table below):
 
 `record_by`
-    Can be "signal1D", "signal2D" or "", the latter meaning undefined and describes 
+    Can be "spectrum", "image" or "", the latter meaning undefined and describes 
     the way the data is arranged in memory. It is possible to transform any 
     :py:class:`~.signal.BaseSignal` subclass to a :py:class:`~._signals.signal1D.Signal1D`
     or :py:class:`~._signals.signal2D.Signal2D` subclass using the following 
     :py:class:`~.signal.BaseSignal` methods: :py:meth:`~.signal.BaseSignal.as_signal2D` 
     and :py:meth:`~.signal.BaseSignal.as_signal1D`. In addition 
     :py:class:`~._signals.signal1D.Signal1D` instances can be transformed into 
-    two-dimensional signals using :py:meth:`~._signals.signal1D.Sinal1D.to_signal2D`
+    two-dimensional signals using :py:meth:`~._signals.signal1D.Signal1D.to_signal2D`
     and two-dimensional instances transformed into one dimensional instances using
     :py:meth:`~._signals.signal2D.Signal2D.to_signal1D`. When transforming between
     one and two dimensinoal signal classes the order in which the data array is stored 
@@ -113,7 +113,7 @@ The different subclasses are characterized by three
     +---------------------------------------------------------------+-----------+-------------+---------------+
     |           :py:class:`~._signals.eds_tem.EDSTEMSpectrum`       | spectrum  |   EDS_TEM   |       -       |
     +---------------------------------------------------------------+-----------+-------------+---------------+
-    |              :py:class:`~._signals.signal2D.Signal2D          |   image   |      -      |       -       |
+    |              :py:class:`~._signals.signal2D.Signal2D`         |   image   |      -      |       -       |
     +---------------------------------------------------------------+-----------+-------------+---------------+
     |    :py:class:`~._signals.image_simulation.ImageSimulation`    |   image   |      -      |  simulation   |
     +---------------------------------------------------------------+-----------+-------------+---------------+
