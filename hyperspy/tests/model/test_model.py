@@ -890,8 +890,8 @@ class TestAsSignal:
         nt.assert_true(np.all(s.data == 2.))
 
         s = self.m.as_signal(component_list=[0], show_progressbar=None)
-        nt.assert_true(
-            np.all(s.data == np.array([np.zeros(5), np.ones(5) * 2])))
+        np.testing.assert_array_equal(s.data,
+                                      np.array([np.zeros(5), np.ones(5) * 2]))
 
 
 class TestCreateModel:

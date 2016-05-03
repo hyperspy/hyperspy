@@ -453,3 +453,75 @@ def _quantification_cliff_lorimer(intensities,
     for i in other_index:
         composition[i] = composition[ref_index] / ab[i]
     return composition
+
+
+def quantification_zeta_factor(intensities,
+                                zfactors,
+                                dose):
+    """
+    Quantification using the zeta-factor method
+
+    Parameters
+    ----------
+    intensities: numpy.array
+        The intensities for each X-ray line. The first axis should be the
+        elements axis.
+    zfactors: list of float
+        The list of zeta-factors in the same order as intensities
+        e.g. zfactors = [628.10, 539.89] for ['As_Ka', 'Ga_Ka'].
+    dose: float
+        The total electron dose given by i*t*N, i the current, t the acquisition time
+        and N the number of electrons per unit electric charge (1/e).
+
+    Returns
+    ------
+    A numpy.array containing the weight fraction with the same
+    shape as intensities and mass thickness in kg/m^2.
+    """
+
+    sumzi = np.zeros_like(intensities[0], dtype='float')
+    composition = np.zeros_like(intensities, dtype='float')
+    for intensity, zfactor in zip(intensities, zfactors):
+        sumzi = sumzi + intensity * zfactor
+    for i, (intensity, zfactor) in enumerate(zip(intensities, zfactors)):
+        composition[i] = intensity * zfactor / sumzi
+    mass_thickness = sumzi / dose
+    return composition, mass_thickness
+
+def quantification_cross_section(intensities,
+                                cross_sections,
+                                dose):
+    """
+    Quantification using EDX cross sections
+    Calculate the atomic compostion and the number of atoms per pixel
+    from the raw X-ray intensity
+    Parameters
+    ----------
+    intensity : numpy.array
+        The integrated intensity for each X-ray line, where the first axis
+        is the element axis.
+    cross_sections : list of floats
+        List of X-ray scattering cross-sections in the same order as the
+        intensities.
+    dose: float
+        the dose per unit area given by i*t*N/A, i the current, t the acquisition time, and N
+        the number of electron by unit electric charge.
+
+    Returns
+    -------
+    numpy.array containing the atomic fraction of each element, with
+    the same shape as the intensity input.
+    numpy.array of the number of atoms counts for each element, with the same
+    shape as the intensity input.
+    """
+
+    total_atoms = np.zeros_like(intensities[0], dtype='float')
+    composition = np.zeros_like(intensities, dtype='float')
+    number_of_atoms = np.zeros_like(intensities, dtype='float')
+    for intensity, cross_section in zip(intensities, cross_sections):
+        total_atoms = total_atoms + (intensity/(dose * cross_section * 1e-10))
+    for i, (intensity, cross_section) in enumerate(zip(intensities,
+              cross_sections)):
+        number_of_atoms[i] = (intensity) / (dose * cross_section * 1e-10)
+        composition[i] = number_of_atoms[i] / total_atoms
+    return composition, number_of_atoms

@@ -183,7 +183,7 @@ Detector
 
 All instruments can contain a "Detector" node with information about the
 detector used to acquire the signal. EDX and EELS detectors should follow the
-following strcture:
+following structure:
 
 EELS
 ^^^^

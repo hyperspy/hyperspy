@@ -442,7 +442,7 @@ class Signal2DTools(object):
                     correlation_threshold = \
                         (pcarray['max_value'].min(0)).max()
                     _logger.info("Correlation threshold = %1.2f",
-                          correlation_threshold)
+                                 correlation_threshold)
                 shifts[pcarray['max_value'] <
                        correlation_threshold] = ma.masked
                 shifts.mask[ref_index, :] = False
@@ -692,7 +692,7 @@ class Signal1DTools(object):
         original_axis = axis.axis.copy()
         for i, (dat, shift) in enumerate(zip(
                 self._iterate_signal(),
-                shift_array.ravel(()))):
+                shift_array.ravel())):
             if np.isnan(shift):
                 continue
             si = sp.interpolate.interp1d(original_axis,
