@@ -166,6 +166,8 @@ HyperSpy.
     +--------------------+-----------+----------+
     | DENS heater log    |    Yes    |    No    |
     +--------------------+-----------+----------+
+    | EMD (Berkley Labs) |    Yes    |    Yes   |
+    +--------------------+-----------+----------+
 
 .. _hdf5-format:
 
@@ -440,3 +442,17 @@ format stores all the captured data for each timestamp, together with a small
 header in a plain-text format. The reader extracts the measured temperature
 along the time axis, as well as the date and calibration constants stored in
 the header.
+
+
+.. _emd-format:
+
+EMD Electron Microscopy Datasets (HDF5)
+---------------------------------------
+
+EMD stands for “Electron Microscopy Dataset.” It is a subset of the open source
+HDF5 wrapper format. N-dimensional data arrays of any standard type can be stored
+in an HDF5 file, as well as tags and other metadata.
+The EMD format was developed at Lawrence Berkeley National Lab 
+(see http://emdatasets.lbl.gov/ for more information).
+NOT to be confused with the FEI EMD format which was developed later and has a
+different structure.
