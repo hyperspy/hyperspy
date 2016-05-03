@@ -1209,8 +1209,8 @@ def plot_histograms(signal_list,
     Example
     -------
     Histograms of two random chi-square distributions
-    >>> img = hs.signals.Image(np.random.chisquare(1,[10,10,100]))
-    >>> img2 = hs.signals.Image(np.random.chisquare(2,[10,10,100]))
+    >>> img = hs.signals.Signal2D(np.random.chisquare(1,[10,10,100]))
+    >>> img2 = hs.signals.Signal2D(np.random.chisquare(2,[10,10,100]))
     >>> hs.plot.plot_histograms([img,img2],legend=['hist1','hist2'])
 
     Returns

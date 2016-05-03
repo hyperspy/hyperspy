@@ -134,7 +134,7 @@ contrast controls are HyperSpy-specific, however `matplotlib.imshow
 .. code-block:: python
 
     >>> import scipy
-    >>> img = hs.signals.Image(scipy.misc.lena())
+    >>> img = hs.signals.Signal2D(scipy.misc.lena())
     >>> img.plot(colorbar=True, scalebar=False, auto_contrast=True,
     >>> 	 axes_ticks=True, cmap='RdYlBu_r', saturated_pixels=0)
 
@@ -165,7 +165,7 @@ The following example shows the effect of centering the color map:
     >>> data1 = np.sin(xx * yy)
     >>> data2 = data.copy()
     >>> data2[data2 < 0] /= 4
-    >>> im = hs.signals.Image([data1, data])
+    >>> im = hs.signals.Signal2D([data1, data])
     >>> hs.plot.plot_images(im, cmap="RdBu", tight_layout=True)
 
 
@@ -185,7 +185,7 @@ The same example with the feature disabled:
     >>> data1 = np.sin(xx * yy)
     >>> data2 = data.copy()
     >>> data2[data2 < 0] /= 4
-    >>> im = hs.signals.Image([data1, data])
+    >>> im = hs.signals.Signal2D([data1, data])
     >>> hs.plot.plot_images(im, centre_colormap=False, cmap="RdBu", tight_layout=True)
 
 
@@ -379,7 +379,7 @@ different slices of a multidimensional image (a *hyperimage*):
 .. code-block:: python
 
     >>> import scipy
-    >>> image = hs.signals.Image([scipy.misc.lena()]*6)
+    >>> image = hs.signals.Signal2D([scipy.misc.lena()]*6)
     >>> angles = hs.signals.Signal(range(10,70,10))
     >>> angles.axes_manager.set_signal_dimension(0)
     >>> image.map(scipy.ndimage.rotate, angle=angles, reshape=False)
@@ -402,7 +402,7 @@ In this example, the axes labels and the ticks are also disabled with `axes_deco
 .. code-block:: python
 
     >>> import scipy
-    >>> image = hs.signals.Image([scipy.misc.lena()]*6)
+    >>> image = hs.signals.Signal2D([scipy.misc.lena()]*6)
     >>> angles = hs.signals.Signal(range(10,70,10))
     >>> angles.axes_manager.set_signal_dimension(0)
     >>> image.map(scipy.ndimage.rotate, angle=angles, reshape=False)
@@ -428,17 +428,17 @@ This example also demonstrates how to wrap labels using `labelwrap` (for prevent
     >>> import scipy
 
     >>> # load red channel of raccoon as an image
-    >>> image0 = hs.signals.Image(scipy.misc.face()[:,:,0])
+    >>> image0 = hs.signals.Signal2D(scipy.misc.face()[:,:,0])
     >>> image0.metadata.General.title = 'Rocky Raccoon - R'
 
     >>> # load lena into 6 hyperimage
-    >>> image1 = hs.signals.Image([scipy.misc.lena()]*6)
+    >>> image1 = hs.signals.Signal2D([scipy.misc.lena()]*6)
     >>> angles = hs.signals.Signal(range(10,70,10))
     >>> angles.axes_manager.set_signal_dimension(0)
     >>> image1.map(scipy.ndimage.rotate, angle=angles, reshape=False)
 
     >>> # load green channel of raccoon as an image
-    >>> image2 = hs.signals.Image(scipy.misc.face()[:,:,1])
+    >>> image2 = hs.signals.Signal2D(scipy.misc.face()[:,:,1])
     >>> image2.metadata.General.title = 'Rocky Raccoon - G'
 
     >>> # load rgb image of the raccoon
@@ -819,7 +819,7 @@ Hyperspy provides an easy access to the main marker of matplotlib. The markers c
 .. code-block:: python
 
     >>> import scipy.misc
-    >>> im = hs.signals.Image(scipy.misc.lena())
+    >>> im = hs.signals.Signal2D(scipy.misc.lena())
     >>> m = hs.plot.markers.rectangle(x1=150, y1=100, x2=400, y2=400, color='red')
     >>> im.add_marker(m)
 

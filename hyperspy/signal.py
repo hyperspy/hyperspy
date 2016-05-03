@@ -2941,13 +2941,13 @@ class BaseSignal(MVA,
         parameter is constant.
 
         >>> import scipy.ndimage
-        >>> im = hs.signals.Image(np.random.random((10, 64, 64)))
+        >>> im = hs.signals.Signal2D(np.random.random((10, 64, 64)))
         >>> im.map(scipy.ndimage.gaussian_filter, sigma=2.5)
 
         Apply a gaussian filter to all the images in the dataset. The sigmal
         parameter is variable.
 
-        >>> im = hs.signals.Image(np.random.random((10, 64, 64)))
+        >>> im = hs.signals.Signal2D(np.random.random((10, 64, 64)))
         >>> sigmas = hs.signals.Signal(np.linspace(2,5,10))
         >>> sigmas.axes_manager.set_signal_dimension(0)
         >>> im.map(scipy.ndimage.gaussian_filter, sigma=sigmas)
@@ -3210,7 +3210,7 @@ class BaseSignal(MVA,
 
         Examples
         --------
-        >>> im = hs.signals.Image(np.zeros((2,3, 32,32)))
+        >>> im = hs.signals.Signal2D(np.zeros((2,3, 32,32)))
         >>> im
         <Image, title: , dimensions: (3, 2, 32, 32)>
         >>> im.axes_manager.indices = 2,1
@@ -3387,7 +3387,7 @@ class BaseSignal(MVA,
 
         Examples
         --------
-        >>> img = hs.signals.Image(np.ones((3,4,5,6)))
+        >>> img = hs.signals.Signal2D(np.ones((3,4,5,6)))
         >>> img
         <Image, title: , dimensions: (4, 3, 6, 5)>
         >>> img.to_spectrum(-1+1j)
@@ -3612,7 +3612,7 @@ class BaseSignal(MVA,
         Examples
         -------
         >>> import scipy.misc
-        >>> im = hs.signals.Image(scipy.misc.lena())
+        >>> im = hs.signals.Signal2D(scipy.misc.lena())
         >>> m = hs.plot.markers.rectangle(x1=150, y1=100, x2=400,
         >>>                                  y2=400, color='red')
         >>> im.add_marker(m)

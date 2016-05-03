@@ -8,7 +8,7 @@ import hyperspy.api as hs
 class TestImage:
 
     def setup(self):
-        self.im = hs.signals.Image(np.arange(0., 18).reshape((2, 3, 3)))
+        self.im = hs.signals.Signal2D(np.arange(0., 18).reshape((2, 3, 3)))
 
     def test_constant_sigma(self):
         im = self.im
