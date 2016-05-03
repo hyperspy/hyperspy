@@ -7,7 +7,7 @@ import numpy as np
 
 from hyperspy.io import load
 from hyperspy.signal import BaseSignal
-from hyperspy._signals.signal1D import Signal1D
+from hyperspy._signals.signal1d import Signal1D
 from hyperspy.datasets.example_signals import EDS_TEM_Spectrum
 
 my_path = os.path.dirname(__file__)

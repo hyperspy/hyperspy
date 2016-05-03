@@ -37,7 +37,7 @@ from hyperspy import messages
 import hyperspy.drawing.spectrum
 from hyperspy.drawing.utils import on_figure_window_close
 from hyperspy.external import progressbar
-from hyperspy._signals.signal1D import Signal1D
+from hyperspy._signals.signal1d import Signal1D
 from hyperspy.defaults_parser import preferences
 from hyperspy.axes import generate_axis
 from hyperspy.exceptions import WrongObjectError

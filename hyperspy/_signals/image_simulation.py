@@ -17,7 +17,7 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from hyperspy._signals.signal2D import Signal2D
+from hyperspy._signals.signal2d import Signal2D
 from hyperspy._signals.simulation import Simulation
 
 

@@ -40,8 +40,8 @@ The Signal class and its specilized subclasses:
 
 # -*- coding: utf-8 -*-
 
-from hyperspy._signals.signal1D import Signal1D, Signal1DTools
-from hyperspy._signals.signal2D import Signal2D, Signal2DTools
+from hyperspy._signals.signal1d import Signal1D, Signal1DTools
+from hyperspy._signals.signal2d import Signal2D, Signal2DTools
 from hyperspy.misc.hspy_warnings import VisibleDeprecationWarning
 
 

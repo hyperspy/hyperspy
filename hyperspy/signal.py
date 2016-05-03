@@ -3272,11 +3272,11 @@ class BaseSignal(MVA,
         if self.axes_manager.navigation_dimension == 0:
             s = BaseSignal(data)
         elif self.axes_manager.navigation_dimension == 1:
-            from hyperspy._signals.signal1D import Signal1D
+            from hyperspy._signals.signal1d import Signal1D
             s = Signal1D(data,
                          axes=self.axes_manager._get_navigation_axes_dicts())
         elif self.axes_manager.navigation_dimension == 2:
-            from hyperspy._signals.signal2D import Signal2D
+            from hyperspy._signals.signal2d import Signal2D
             s = Signal2D(data,
                          axes=self.axes_manager._get_navigation_axes_dicts())
         else:

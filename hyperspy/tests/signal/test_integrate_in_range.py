@@ -1,7 +1,7 @@
 import nose.tools
 import numpy as np
 
-from hyperspy._signals.signal1D import Signal1D
+from hyperspy._signals.signal1d import Signal1D
 from hyperspy.components import Gaussian
 
 

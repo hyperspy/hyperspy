@@ -477,7 +477,7 @@ class MVA():
 
         """
         from hyperspy.signal import BaseSignal
-        from hyperspy._signals.signal1D import Signal1D
+        from hyperspy._signals.signal1d import Signal1D
 
         lr = self.learning_results
 
@@ -943,7 +943,7 @@ class MVA():
         `get_decomposition_factors`.
 
         """
-        from hyperspy._signals.signal1D import Signal1D
+        from hyperspy._signals.signal1d import Signal1D
         target = self.learning_results
         if target.explained_variance_ratio is None:
             raise AttributeError("The explained_variance_ratio attribute is "

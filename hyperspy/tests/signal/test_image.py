@@ -1,8 +1,8 @@
 import nose.tools as nt
 import numpy as np
 
-from hyperspy._signals.signal1D import Signal1D
-from hyperspy._signals.signal2D import Signal2D
+from hyperspy._signals.signal1d import Signal1D
+from hyperspy._signals.signal2d import Signal2D
 
 class Test2D:
 
