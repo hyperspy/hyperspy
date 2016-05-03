@@ -27,8 +27,8 @@ from pyface.message_dialog import information
 from hyperspy import components
 from hyperspy.component import Component
 from hyperspy import drawing
-from hyperspy.gui.tools import (SpanSelectorInSpectrum,
-                                SpanSelectorInSpectrumHandler,
+from hyperspy.gui.tools import (SpanSelectorInSignal1D,
+                                SpanSelectorInSignal1DHandler,
                                 OurOKButton,
                                 OurFindButton,
                                 OurPreviousButton,
@@ -36,7 +36,7 @@ from hyperspy.gui.tools import (SpanSelectorInSpectrum,
 import hyperspy.gui.messages as messages
 
 
-class BackgroundRemoval(SpanSelectorInSpectrum):
+class BackgroundRemoval(SpanSelectorInSignal1D):
     background_type = t.Enum(
         'Power Law',
         'Gaussian',
@@ -57,7 +57,7 @@ class BackgroundRemoval(SpanSelectorInSpectrum):
                 'polynomial_order',
                 visible_when='background_type == \'Polynomial\''), ),
         buttons=[OKButton, CancelButton],
-        handler=SpanSelectorInSpectrumHandler,
+        handler=SpanSelectorInSignal1DHandler,
         title='Background removal tool',
         resizable=True,
         width=300,
@@ -106,7 +106,7 @@ class BackgroundRemoval(SpanSelectorInSpectrum):
             self.span_selector_changed()
 
     def create_background_line(self):
-        self.bg_line = drawing.spectrum.SpectrumLine()
+        self.bg_line = drawing.signal1d.Signal1DLine()
         self.bg_line.data_function = self.bg_to_plot
         self.bg_line.set_line_properties(
             color='blue',
@@ -209,7 +209,7 @@ class SpikesRemovalHandler(tu.Handler):
         return
 
 
-class SpikesRemoval(SpanSelectorInSpectrum):
+class SpikesRemoval(SpanSelectorInSignal1D):
     interpolator_kind = t.Enum(
         'Linear',
         'Spline',
@@ -468,7 +468,7 @@ class SpikesRemoval(SpanSelectorInSpectrum):
             self.span_selector_changed()
 
     def create_interpolation_line(self):
-        self.interpolated_line = drawing.spectrum.SpectrumLine()
+        self.interpolated_line = drawing.signal1d.Signal1DLine()
         self.interpolated_line.data_function = \
             self.get_interpolated_spectrum
         self.interpolated_line.set_line_properties(

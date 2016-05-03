@@ -1755,7 +1755,7 @@ class BaseSignal(MVA,
             self._plot = mpl_he.MPL_HyperExplorer()
         elif axes_manager.signal_dimension == 1:
             # Hyperspectrum
-            self._plot = mpl_hse.MPL_HyperSpectrum_Explorer()
+            self._plot = mpl_hse.MPL_HyperSignal1D_Explorer()
         elif axes_manager.signal_dimension == 2:
             self._plot = mpl_hie.MPL_HyperImage_Explorer()
         else:

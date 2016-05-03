@@ -18,14 +18,14 @@ image lena.jpg you can type:
 .. code-block:: python
 
     >>> s = hs.load("lena.jpg")
-    
+
 If the loading was successful, the variable :guilabel:`s` contains a generic
-:py:class:`~.signal.Signal`, a :py:class:`~._signals.spectrum.Spectrum` or an
-:py:class:`~._signals.image.Image`.
+:py:class:`~.signal.Signal`, a :py:class:`~._signals.signal1D.Signal1D` or an
+:py:class:`~._signals.signal2D.Signal2D`.
 
 .. NOTE::
     Note for python programmers: the data is stored in a numpy array
-    in the :py:attr:`~.signal.Signal.data` attribute, but you will not   
+    in the :py:attr:`~.signal.Signal.data` attribute, but you will not
     normally need to access it there.)
 
 
@@ -57,7 +57,7 @@ The :py:attr:`~.signal.Signal.original_metadata` and
 using the :py:meth:`~.misc.utils.DictionaryTreeBrowser.export` method, e.g.:
 
 .. code-block:: python
-    
+
     >>> s.original_metadata.export('parameters')
 
 Loading multiple files
@@ -70,7 +70,7 @@ functions, e.g.:
 .. code-block:: python
 
     >>> s = hs.load(["file1.hdf5", "file2.hdf5"])
-    
+
 or by using `shell-style wildcards <http://docs.python.org/library/glob.html>`_
 
 
@@ -89,10 +89,10 @@ which case the function will return a list of objects, e.g.:
     CL1.rpl  CL2.raw   CL3.raw  CL4.raw  hdf5/    LL3.rpl
     >>> s = hs.load('*.rpl')
     >>> s
-    [<EELSSpectrum, title: CL1, dimensions: (64, 64, 1024)>,     
-    <EELSSpectrum, title: CL2, dimensions: (64, 64, 1024)>, 
-    <EELSSpectrum, title: CL3, dimensions: (64, 64, 1024)>, 
-    <EELSSpectrum, title: CL4, dimensions: (64, 64, 1024)>, 
+    [<EELSSpectrum, title: CL1, dimensions: (64, 64, 1024)>,
+    <EELSSpectrum, title: CL2, dimensions: (64, 64, 1024)>,
+    <EELSSpectrum, title: CL3, dimensions: (64, 64, 1024)>,
+    <EELSSpectrum, title: CL4, dimensions: (64, 64, 1024)>,
     <EELSSpectrum, title: LL3, dimensions: (64, 64, 1024)>]
     >>> s = hs.load('*.rpl', stack=True)
     >>> s
@@ -104,7 +104,7 @@ which case the function will return a list of objects, e.g.:
 Saving data to files
 ====================
 
-To save data to a file use the :py:meth:`~.signal.Signal.save` method. The
+To save data to a file use the :py:meth:`~.signal.BaseSignal.save` method. The
 first argument is the filename and the format is defined by the filename
 extension. If the filename does not contain the extension the default format
 (:ref:`hdf5-format`) is used. For example, if the :py:const:`s` variable
@@ -115,7 +115,7 @@ default :ref:`hdf5-format` format:
 .. code-block:: python
 
     >>> s.save('spectrum')
-    
+
 If instead you want to save in the :ref:`ripple-format` write instead:
 
 .. code-block:: python
@@ -176,8 +176,8 @@ applications
 Note that only HDF5 files written by HyperSpy are supported
 
 .. versionadded:: 0.8
-    
-It is also possible to save more complex structures (i.e. lists, tuples and signals) in 
+
+It is also possible to save more complex structures (i.e. lists, tuples and signals) in
 :py:attr:`~.metadata` of the signal. Please note that in order to increase
 saving efficiency and speed, if possible, the inner-most structures are
 converted to numpy arrays when saved. This procedure homogenizes any types of
@@ -212,7 +212,7 @@ intensity<get_lines_intensity>`):
      <Signal, title: X-ray line intensity of EDS SEM Spectrum: Cu_La at 0.93 keV, dimensions: (|)>,
      <Signal, title: X-ray line intensity of EDS SEM Spectrum: Mn_La at 0.63 keV, dimensions: (|)>,
      <Signal, title: X-ray line intensity of EDS SEM Spectrum: Zr_La at 2.04 keV, dimensions: (|)>]
-        
+
 
 
 Extra saving arguments
@@ -267,14 +267,14 @@ For the MSA format the msa_format argument is used to specify whether the
 energy axis should also be saved with the data.  The default, 'Y' omits the
 energy axis in the file.  The alternative, 'XY', saves a second column with the
 calibrated energy data. It  is possible to personalise the separator with the
-`separator` keyword. 
+`separator` keyword.
 
 .. Warning::
 
     However, if a different separator is chosen the resulting file will not
     comply with the MSA/EMSA standard and HyperSpy and other software may not
     be able to read it.
-    
+
 The default encoding is `latin-1`. It is possible to set a different encoding
 using the `encoding` argument, e.g.:
 
@@ -319,7 +319,7 @@ exception of :ref:`tiff-format` which uses another library) to store data for
 analysis purposes.
 
 .. _tiff-format:
-    
+
 TIFF
 ----
 
@@ -333,7 +333,7 @@ bio-scientific imaging. See `the library webpage
 
 Currently HyperSpy cannot read the TIFF tags.
 
- 
+
 .. _dm3-format:
 
 Gatan Digital Micrograph
@@ -344,7 +344,7 @@ complete (and probably they will be unless Gatan releases the specifications of
 the format). That said, we understand that this is an important feature and if
 loading a particular Digital Micrograph file fails for you, please report it as
 an issue in the `issues tracker <github.com/hyperspy/hyperspy/issues>`_ to make
-us aware of the problem. 
+us aware of the problem.
 
 .. _fei-format:
 
@@ -364,5 +364,3 @@ Therefore strongly reccommend to load using the ``.emi`` file instead.
 
 When reading an ``.emi`` file if there are several ``.ser`` files associated
 with it, all of them will be read and returned as a list.
-
-

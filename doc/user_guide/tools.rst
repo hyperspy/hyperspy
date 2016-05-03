@@ -37,7 +37,7 @@ Currently the following signal subclasses are available:
 
 .. versionchanged:: 0.8.5
 
-Note that in 0.8.5 the :py:class:`~._signals.signal1D.Signal1D` and :py:class:`~._signals.signal2D.Signal2D` classes were created to deprecate the old :py:class:`~._signals.spectrum.Spectrum` and :py:class:`~._signals.image.Image` classes.  
+Note that in 0.8.5 the :py:class:`~._signals.signal1D.Signal1D` and :py:class:`~._signals.signal2D.Signal2D` classes were created to deprecate the old :py:class:`~._signals.spectrum.Spectrum` and :py:class:`~._signals.image.Image` classes.
 
 
 The :py:mod:`~.signals` module, which contains all available signal subclasses,
@@ -67,33 +67,33 @@ The different subclasses are characterized by three
 :py:attr:`~.signal.Signal.metadata` attributes (see the table below):
 
 `record_by`
-    Can be "spectrum", "image" or "", the latter meaning undefined and describes 
-    the way the data is arranged in memory. It is possible to transform any 
+    Can be "spectrum", "image" or "", the latter meaning undefined and describes
+    the way the data is arranged in memory. It is possible to transform any
     :py:class:`~.signal.BaseSignal` subclass to a :py:class:`~._signals.signal1D.Signal1D`
-    or :py:class:`~._signals.signal2D.Signal2D` subclass using the following 
-    :py:class:`~.signal.BaseSignal` methods: :py:meth:`~.signal.BaseSignal.as_signal2D` 
-    and :py:meth:`~.signal.BaseSignal.as_signal1D`. In addition 
-    :py:class:`~._signals.signal1D.Signal1D` instances can be transformed into 
+    or :py:class:`~._signals.signal2D.Signal2D` subclass using the following
+    :py:class:`~.signal.BaseSignal` methods: :py:meth:`~.signal.BaseSignal.as_signal2D`
+    and :py:meth:`~.signal.BaseSignal.as_signal1D`. In addition
+    :py:class:`~._signals.signal1D.Signal1D` instances can be transformed into
     two-dimensional signals using :py:meth:`~._signals.signal1D.Signal1D.to_signal2D`
     and two-dimensional instances transformed into one dimensional instances using
     :py:meth:`~._signals.signal2D.Signal2D.to_signal1D`. When transforming between
-    one and two dimensinoal signal classes the order in which the data array is stored 
-    in memory is modified to improve performance. Also, some functions, e.g. plotting 
+    one and two dimensinoal signal classes the order in which the data array is stored
+    in memory is modified to improve performance. Also, some functions, e.g. plotting
     or decomposing, will behave differently.
 
 `signal_type`
     Describes the nature of the signal. It can be any string, normally the
-    acronym associated with a particular signal. In certain cases HyperSpy provides 
-    features that are only available for a particular signal type through 
+    acronym associated with a particular signal. In certain cases HyperSpy provides
+    features that are only available for a particular signal type through
     :py:class:`~.signal.BaseSignal` subclasses. The :py:class:`~.signal.BaseSignal` method
-    :py:meth:`~.signal.BaseSignal.set_signal_type` changes the signal_type in place, which 
+    :py:meth:`~.signal.BaseSignal.set_signal_type` changes the signal_type in place, which
     may result in a :py:class:`~.signal.BaseSignal` subclass transformation.
 
 `signal_origin`
     Describes the origin of the signal and can be "simulation" or "experiment" or "", the
-    latter meaning undefined. In certain cases HyperSpy provides features that are only 
+    latter meaning undefined. In certain cases HyperSpy provides features that are only
     available for a particular signal origin. The :py:class:`~.signal.BaseSignal` method
-    :py:meth:`~.signal.BaseSignal.set_signal_origin` changes the signal_origin in place, 
+    :py:meth:`~.signal.BaseSignal.set_signal_origin` changes the signal_origin in place,
     which may result in a :py:class:`~.signal.BaseSignal` subclass transformation.
 
 .. table:: BaseSignal subclass :py:attr:`~.signal.Signal.metadata` attributes.
@@ -586,7 +586,7 @@ to make a horizontal "collage" of the image stack:
 Iterating external functions with the map method
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Performing an operation on the data at each coordinate, as in the previous example, 
+Performing an operation on the data at each coordinate, as in the previous example,
 using an external function can be more easily accomplished using the
 :py:meth:`~.signal.BaseSignal.map` method:
 
@@ -771,10 +771,10 @@ type in place, e.g.:
         >>> s = hs.signals.Signal1D(rgb_test)
         >>> s.change_dtype("uint16")
         >>> s
-        <Spectrum, title: , dimensions: (1024, 1024|3)>
+        <Signal1D, title: , dimensions: (1024, 1024|3)>
         >>> s.change_dtype("rgb16")
         >>> s
-        <Image, title: , dimensions: (|1024, 1024)>
+        <Signal2D, title: , dimensions: (|1024, 1024)>
         >>> s.plot()
 
 
@@ -796,7 +796,7 @@ calculate the bins. :py:meth:`~.signal.Signal.print_summary_statistics` prints
 the five-number summary statistics of the data.
 
 These two methods can be combined with
-:py:meth:`~.signal.Signal.get_current_signal` to compute the histogram or
+:py:meth:`~.signal.BaseSignal.get_current_signal` to compute the histogram or
 print the summary stastics of the signal at the current coordinates, e.g:
 .. code-block:: python
 

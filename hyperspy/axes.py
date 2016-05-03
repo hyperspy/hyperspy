@@ -474,7 +474,7 @@ class AxesManager(t.HasTraits):
         # view. It defaults to spectrum
         navigates = [i.navigate for i in self._axes]
         if t.Undefined in navigates:
-            # Default to Spectrum view if the view is not fully defined
+            # Default to Signal1D view if the view is not fully defined
             self.set_signal_dimension(1)
 
         self._update_attributes()

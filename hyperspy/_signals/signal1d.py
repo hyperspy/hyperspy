@@ -41,7 +41,7 @@ from hyperspy.decorators import auto_replot
 from hyperspy.defaults_parser import preferences
 from hyperspy.external.progressbar import progressbar
 from hyperspy.gui.tools import (
-    SpectrumCalibration,
+    Signal1DCalibration,
     SmoothingSavitzkyGolay,
     SmoothingLowess,
     SmoothingTV,
@@ -637,7 +637,7 @@ class Signal1DTools(object):
 
         """
         self._check_signal_dimension_equals_one()
-        calibration = SpectrumCalibration(self)
+        calibration = Signal1DCalibration(self)
         calibration.edit_traits()
 
     def smooth_savitzky_golay(self,

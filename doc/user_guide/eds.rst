@@ -48,17 +48,17 @@ For a single spectrum:
 
     >>> s = hs.load("Ni_superalloy_1pix.msa")
     >>> s
-    <Spectrum, title: Spectrum, dimensions: (|1024)>
+    <Signal1D, title: Signal1D, dimensions: (|1024)>
 
 For a spectrum image (The .rpl file is recorded as an image in this example,
-The method :py:meth:`~.signal.Signal.as_spectrum` set it back to a spectrum
-with the energy axis in first position):
+The method :py:meth:`~.signal.Signal.as_signal1D` set it back to a one
+dimensional signal with the energy axis in first position):
 
 .. code-block:: python
 
     >>> si = hs.load("Ni_superalloy_010.rpl").as_spectrum(0)
     >>> si
-    <Spectrum, title: , dimensions: (256, 224|1024)>
+    <Signal1D, title: , dimensions: (256, 224|1024)>
 
 For a stack of spectrum images (The "*" replace all chains of string, in this
 example 01, 02, 03,...):
@@ -66,9 +66,9 @@ example 01, 02, 03,...):
 .. code-block:: python
 
     >>> si4D = hs.load("Ni_superalloy_0*.rpl", stack=True)
-    >>> si4D = si4D.as_spectrum(0)
+    >>> si4D = si4D.as_signal1D(0)
     >>> si4D
-    <Spectrum, title:, dimensions: (256, 224, 2|1024)>
+    <Signal1D, title:, dimensions: (256, 224, 2|1024)>
 
 .. _eds_calibration-label:
 

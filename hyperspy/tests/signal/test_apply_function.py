@@ -58,7 +58,7 @@ class TestImage:
               [0., 14.76776695, 0.]]])))
 
 
-class TestSpectrum:
+class TestSignal1D:
 
     def setup(self):
         self.s = hs.signals.Signal1D(np.arange(0., 6).reshape((2, 3)))

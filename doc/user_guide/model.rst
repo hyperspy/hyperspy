@@ -16,7 +16,7 @@ Creating a model
 ^^^^^^^^^^^^^^^^
 
 A :py:class:`~.model.Model` can be created using the
-:py:meth:`~._signals.spectrum.Spectrum.create_model` method:
+:py:meth:`~._signals.signal1D.Signal1D.create_model` method:
 
 .. code-block:: python
 
@@ -539,8 +539,8 @@ to the data.
     >>> m.append(line)
     >>> m.fit()
 
-On fitting completion, the optimized value of the parameters and their estimated standard deviation
-are stored in the following line attributes:
+On fitting completion, the optimized value of the parameters and their estimated
+standard deviation are stored in the following line attributes:
 
 .. code-block:: python
 
@@ -553,7 +553,7 @@ are stored in the following line attributes:
 
 When the noise is heterocedastic, only if the
 ``metadata.Signal.Noise_properties.variance`` attribute of the
-:class:`~._signals.spectrum.Spectrum` instance is defined can the errors be
+:class:`~._signals.signal1D.Signal1D` instance is defined can the errors be
 estimated accurately. If the variance is not defined, the standard deviation of
 the parameters are still computed and stored in the
 :attr:`~.component.Parameter.std` attribute by setting variance equal 1.

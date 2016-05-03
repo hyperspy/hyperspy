@@ -34,7 +34,7 @@ from scipy.optimize import (leastsq,
 from traits.trait_errors import TraitError
 
 from hyperspy import messages
-import hyperspy.drawing.spectrum
+import hyperspy.drawing.signal1d
 from hyperspy.drawing.utils import on_figure_window_close
 from hyperspy.external import progressbar
 from hyperspy._signals.signal1d import Signal1D
@@ -110,7 +110,7 @@ class Model(list):
     Attributes
     ----------
 
-    spectrum : Spectrum instance
+    signal1D : Signal1D instance
         It contains the data to fit.
     chisq : A Signal of floats
         Chi-squared of the signal (or np.nan if not yet fit)
@@ -133,7 +133,7 @@ class Model(list):
     remove
         Remove component from model.
     as_signal
-        Generate a Spectrum instance (possible multidimensional)
+        Generate a Signal1D instance (possible multidimensional)
         from the model.
     store_current_values
         Store the value of the parameters at the current position.
@@ -179,7 +179,7 @@ class Model(list):
     --------
     In the following example we create a histogram from a normal distribution
     and fit it with a gaussian component. It demonstrates how to create
-    a model from a :class:`~._signals.spectrum.Spectrum` instance, add
+    a model from a :class:`~._signals.signal1D.Signal1D` instance, add
     components to it, adjust the value of the parameters of the components,
     fit the model to the data and access the components in the model.
 
@@ -1522,7 +1522,7 @@ class Model(list):
         color = l1.line.get_color()
         l1.set_line_properties(color=color, type='scatter')
 
-        l2 = hyperspy.drawing.spectrum.SpectrumLine()
+        l2 = hyperspy.drawing.signal1d.Signal1DLine()
         l2.data_function = self._model2plot
         l2.set_line_properties(color='blue', type='line')
         # Add the line to the figure
@@ -1562,7 +1562,7 @@ class Model(list):
             self._disconnect_component_line(component)
 
     def _plot_component(self, component):
-        line = hyperspy.drawing.spectrum.SpectrumLine()
+        line = hyperspy.drawing.signal1d.Signal1DLine()
         line.data_function = component._component2plot
         # Add the line to the figure
         self._plot.signal_plot.add_line(line)

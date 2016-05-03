@@ -44,10 +44,10 @@ def _estimate_gain(ns, cs,
 
     fit = np.polyfit(average2fit, variance2fit, pol_order)
     if weighted is True:
-        from hyperspy._signals.spectrum import Spectrum
+        from hyperspy._signals.signal1D import Signal1D
         from hyperspy.model import Model
         from hyperspy.components import Line
-        s = Spectrum(variance2fit)
+        s = Signal1D(variance2fit)
         s.axes_manager.signal_axes[0].axis = average2fit
         m = Model(s)
         l = Line()
@@ -96,7 +96,7 @@ def estimate_variance_parameters(
 
     Parameters
     ----------
-    noisy_SI, clean_SI : spectrum.Spectrum instances
+    noisy_SI, clean_SI : signal1D.Signal1D instances
     mask : numpy bool array
         To define the channels that will be used in the calculation.
     pol_order : int

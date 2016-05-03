@@ -86,7 +86,7 @@ def _normalize_components(target, other, function=np.sum):
 class MVA():
 
     """
-    Multivariate analysis capabilities for the Spectrum class.
+    Multivariate analysis capabilities for the Signal1D class.
 
     """
 
@@ -928,11 +928,11 @@ class MVA():
 
     def get_explained_variance_ratio(self):
         """Return the explained variation ratio of the PCA components as a
-        Spectrum.
+        Signal1D.
 
         Returns
         -------
-        s : Spectrum
+        s : Signal1D
             Explained variation ratio.
 
         See Also:
