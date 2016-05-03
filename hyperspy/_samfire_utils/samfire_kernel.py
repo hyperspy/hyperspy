@@ -172,17 +172,6 @@ def multi_kernel(
     sig = Signal(**m_dic)
     sig._assign_subclass()
     model = sig.models.z.restore()
-    # if s.metadata.Signal.signal_type == 'EELS':
-    #     additional_kwds = {'low_loss': None,
-    #                        'auto_background': False,
-    #                        'auto_add_edges': False,
-    #                        'GOS': None,
-    #                        }
-    # else:
-    #     additional_kwds = {}
-    # m = s.create_model(**additional_kwds)
-    # m.stash.pop('z')
-
     for combination in comb:
         # iterate all component combinations
         for component in combination:
