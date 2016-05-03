@@ -61,8 +61,8 @@ eventually becoming a slowly descending line.
 
 The point at which the scree plot becomes linear (often referred to as
 the `elbow`) is generally judged to be a good estimation of the dimensionality
-of the data (or equivalently, the number of components that should be retained
- - see below).
+of the data (or equivalently, the number of components that should be retained -
+see below).
 
 To obtain a scree plot for your dataset, run the
 :py:meth:`~.learn.mva.MVA.plot_explained_variance_ratio` method:
