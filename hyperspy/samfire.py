@@ -231,7 +231,7 @@ class Samfire:
             Any key-word arguments to be passed to Model.fit() call
         """
         self._setup()
-        if self._workers and self.pool is None:
+        if self._workers and self.pool is not None:
             self.pool.update_optional_names()
         self._args = kwargs
         num_of_strat = len(self.strategies)

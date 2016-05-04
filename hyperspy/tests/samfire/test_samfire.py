@@ -43,7 +43,7 @@ def generate_test_model():
     from scipy.ndimage import gaussian_filter
     total = None
 # blurs = [0., 0.5, 1., 2.,5.]
-    blurs = [2.5]
+    blurs = [1.5]
     radius = 5
     domain = 15
 # do circle/domain
@@ -59,10 +59,10 @@ def generate_test_model():
 
         gs01 = hs.model.components.Lorentzian()
         m0.append(gs01)
-        gs01.gamma.map['values'][:] = 40
+        gs01.gamma.map['values'][:] = 50
         gs01.gamma.map['is_set'][:] = True
         gs01.centre.map['values'][:] = 300
-        gs01.centre.map['values'][mask] = 450
+        gs01.centre.map['values'][mask] = 400
         gs01.centre.map['values'] = gaussian_filter(
             gs01.centre.map['values'],
             blur)
@@ -75,7 +75,7 @@ def generate_test_model():
 
         gs02 = hs.model.components.Gaussian()
         m0.append(gs02)
-        gs02.sigma.map['values'][:] = 30
+        gs02.sigma.map['values'][:] = 15
         gs02.sigma.map['is_set'][:] = True
         gs02.centre.map['values'][:] = 400
         gs02.centre.map['values'][mask] = 300
@@ -116,19 +116,21 @@ def generate_test_model():
     g = hs.model.components.Gaussian()
     l1 = hs.model.components.Lorentzian()
     l2 = hs.model.components.Lorentzian()
-    g.sigma.value = 30
+    g.sigma.value = 50
     g.centre.value = 400
     g.A.value = 50000
     l1.gamma.value = 40
     l1.centre.value = 300
     l1.A.value = 300000
-    l2.gamma.value = 20
+    l2.gamma.value = 15
     l2.centre.value = 100
     l2.A.value = 50000
     l2.centre.bmin = 0
-    l2.centre.bmax = 1000
+    l2.centre.bmax = 200
     l2.A.bmin = 30000
     l2.A.bmax = 100000
+    l2.gamma.bmin = 0
+    l2.gamma.bmax = 60
     m.extend([g, l1, l2])
     m.assign_current_values_to_all()
     l2.active_is_multidimensional = True
@@ -149,7 +151,7 @@ class TestSamfireEmpty:
 
     def test_setup(self):
         m = self.model
-        samf = m.create_samfire(workers=0, setup=False)
+        samf = m.create_samfire(workers=1, setup=False)
         nt.assert_is_none(samf._gt_dump)
         nt.assert_is_none(samf.pool)
         samf._setup(ipyparallel=False)
@@ -242,12 +244,19 @@ class TestSamfireEmpty:
         nt.assert_equal(d['dof.data'], 0.)
         nt.assert_true(np.isnan(d['chisq.data']))
 
-        # nt.assert_false(m[1]._active_array[1, 0])
+        nt.assert_true(np.all(~m[1]._active_array[:2, 0]))
         for c in m:
-            for p in c.parameters:
-                nt.assert_equal(p.map['values'][0, 0], p.map['values'][1, 0])
-                nt.assert_equal(p.map['std'][0, 0], p.map['std'][1, 0])
-                nt.assert_equal(p.map['is_set'][0, 0], p.map['is_set'][1, 0])
+            if c.active:
+                for p in c.parameters:
+                    nt.assert_equal(
+                        p.map['values'][
+                            0, 0], p.map['values'][
+                            1, 0])
+                    nt.assert_equal(p.map['std'][0, 0], p.map['std'][1, 0])
+                    nt.assert_equal(
+                        p.map['is_set'][
+                            0, 0], p.map['is_set'][
+                            1, 0])
 
     def test_next_pixels(self):
         m = self.model
@@ -316,14 +325,13 @@ class TestSamfireMain:
                 print(p1.map['values'][:4, :4])
                 print('ooooooooooooooooooooooooooooooooooooooooooo')
 
-                test = np.testing.assert_allclose(
+                np.testing.assert_allclose(
                     p1.map['values'][n_c._active_array],
                     p.map['values'][:7, :15][n_c._active_array],
                     rtol=0.3)
-                # nt.assert_true(test)
 
 
-def test_create_worker_defaults(self):
+def test_create_worker_defaults():
     worker = create_worker('worker')
     nt.assert_equal(worker.identity, 'worker')
     nt.assert_is_none(worker.shared_queue)
@@ -339,9 +347,9 @@ class TestSamfireWorker:
 
     def setUp(self):
         np.random.seed(17)
-        ax = np.arange(200)
+        ax = np.arange(250)
 
-        self.widths = [10, 20, 30]
+        self.widths = [5, 10, 15]
         self.centres = [50, 105, 180]
         self.areas = [5000, 10000, 20000]
 
@@ -390,7 +398,7 @@ class TestSamfireWorker:
                 }
 
         vals['g1']['centre'] = [50, 150]
-        vals['g1']['sigma'] = [13]
+        vals['g1']['sigma'] = [5]
         vals['g1']['A'] = [10000]
 
         vals['l1']['centre'] = [43]
@@ -437,39 +445,51 @@ class TestSamfireWorker:
             nt.assert_false(component.active_is_multidimensional)
             nt.assert_true(component.active)
 
-    def test_set_optional_names(self):
-        pass
-
     def test_main_result(self):
         worker = create_worker('worker')
         worker.create_model(self.model_dictionary, self.model_letter)
+        worker.setup_test(self.gt_dump)
+        worker.set_optional_names({self.model[comp].name for comp in
+                                   self.optional_comps})
+        self.vals.update({
+            'spectrum.data': self.model.signal(),
+            'fitting_kwargs': {},
+            'variance.data':
+            self.model.signal.metadata.Signal.Noise_properties.variance()
+        })
         keyword, (_id, _ind, result, found_solution) = worker.test(self.ind,
                                                                    self.vals)
         nt.assert_equal(_id, 'worker')
         nt.assert_equal(_ind, self.ind)
         nt.assert_true(found_solution)
 
-        nt.assert_equal(result['dof.data'][0], 9)
+        nt.assert_equal(result['dof.data'][()], 9)
 
-        for c in ['g1', 'l1', 'l2']:
-            nt.assert_true(result['components'][c]['active'])
-        for c in ['g2', 'g3', 'l3']:
-            nt.assert_false(result['components'][c]['active'])
+        lor_components = [key for key in result['components'].keys() if
+                          key.find('l') == 0]
+        nt.assert_equal(len(result['components']), 3)
+        nt.assert_equal(len(lor_components), 2)
 
-        gauss = result['components']['g1']
-        np.testing.assert_allclose(gauss['A'][0], self.areas[0], rtol=0.05)
-        np.testing.assert_allclose(gauss['sigma'][0], self.widths[0],
+        gauss_name = list(set(result['components'].keys()) -
+                          set(lor_components))[0]
+
+        gauss = result['components'][gauss_name]
+        np.testing.assert_allclose(gauss['A'][0]['values'], self.areas[0],
                                    rtol=0.05)
-        np.testing.assert_allclose(gauss['centre'][0], self.centres[0],
+        np.testing.assert_allclose(gauss['sigma'][0]['values'], self.widths[0],
                                    rtol=0.05)
+        np.testing.assert_allclose(gauss['centre'][0]['values'],
+                                   self.centres[0], rtol=0.05)
 
-        lor1 = result['components']['l1']
-        lor1_values = (lor1[par][0] for par in ['A', 'gamma', 'centre'])
-        lor2 = result['components']['l2']
-        lor2_values = (lor2[par][0] for par in ['A', 'gamma', 'centre'])
+        lor1 = result['components'][lor_components[0]]
+        lor1_values = tuple(lor1[par][0]['values'] for par in ['A', 'gamma',
+                                                               'centre'])
+        lor2 = result['components'][lor_components[1]]
+        lor2_values = tuple(lor2[par][0]['values'] for par in ['A', 'gamma',
+                                                               'centre'])
 
-        possible_values1 = (self.areas[1], self, widths[1], self.centres[1])
-        possible_values2 = (self.areas[2], self, widths[2], self.centres[2])
+        possible_values1 = (self.areas[1], self.widths[1], self.centres[1])
+        possible_values2 = (self.areas[2], self.widths[2], self.centres[2])
 
         nt.assert_true((np.allclose(lor1_values, possible_values1, rtol=0.05)
                         or
@@ -478,11 +498,3 @@ class TestSamfireWorker:
         nt.assert_true((np.allclose(lor2_values, possible_values1, rtol=0.05)
                         or
                         np.allclose(lor2_values, possible_values2, rtol=0.05)))
-
-        # for ic in ['g1', 'l1', 'l2']:
-        #     comp = result['components'][ic]
-        #     this_val = [comp['parameters'][ip]['value'] for ip in range(3)]
-        #     # to allow for swapping of the components
-        #     nt.assert_true(
-        # np.any([np.allclose(pp, this_val, rtol=0.05) for pp in
-        # possible_pars]))

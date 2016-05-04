@@ -15,15 +15,18 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
-import numpy as np
+import logging
 import os
+import time
+import sys
 from itertools import combinations, product
+from queue import Empty
+import dill
+import numpy as np
 from hyperspy.signal import Signal
 from hyperspy.utils.model_selection import AICc
-import dill
-import time
-from queue import Empty
-import copy
+
+_logger = logging.getLogger(__name__)
 
 
 class Worker:
@@ -40,8 +43,10 @@ class Worker:
         self.reset()
         self.last_time = 1
         self.optional_names = set()
+        self.model = None
 
     def create_model(self, signal_dict, model_letter):
+        _logger.debug('Creating model in worker {}'.format(self.identity))
         sig = Signal(**signal_dict)
         sig._assign_subclass()
         self.model = sig.models[model_letter].restore()
@@ -60,6 +65,8 @@ class Worker:
 
     def set_optional_names(self, optional_names):
         self.optional_names = optional_names
+        _logger.debug('Setting optional names in worker {} to '
+                      '{}'.format(self.identity, self.optional_names))
 
     def generate_values_iterator(self, turned_on_names):
         tmp = []
@@ -119,7 +126,7 @@ class Worker:
                                     for howmany in
                                     range(len(self.optional_names) + 1)]
         names_to_skip = []
-        for _gen in reversed(names_to_skip_generators):
+        for _gen in names_to_skip_generators:
             names_to_skip.extend(list(_gen))
         for name_comb in names_to_skip:
             yield all_names - set(name_comb)
@@ -181,12 +188,16 @@ class Worker:
             self.best_dof = len(self.model.p0)
             self.best_values = self._collect_values()
         if len(self.best_values):  # i.e. we have a good result
+            _logger.debug('we have a good result in worker '
+                          '{}'.format(self.identity))
             result = {'chisq.data': np.array(self.best_chisq),
                       'dof.data': np.array(self.best_dof),
                       'components': self.best_values
                       }
             found_solution = True
         else:
+            _logger.debug("we don't have a good result in worker "
+                          "{}".format(self.identity))
             result = None
             found_solution = False
         to_send = ('result', (self.identity, self.ind, result, found_solution))

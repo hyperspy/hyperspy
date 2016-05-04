@@ -78,6 +78,7 @@ class ParallelPool:
             self.results = []
             return True
         except OSError:
+            _logger.debug('Failed to find ipyparallel pool')
             return False
 
     def _setup_multiprocessing(self):

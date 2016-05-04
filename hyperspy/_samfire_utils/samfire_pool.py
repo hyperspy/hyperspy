@@ -145,6 +145,7 @@ class SamfirePool(ParallelPool):
     def parse(self, value):
         if value is None:
             keyword = 'Failed'
+            _logger.debug('Got None')
         else:
             keyword, the_rest = value
         samf = self.samf
@@ -159,6 +160,8 @@ class SamfirePool(ParallelPool):
             _logger.error('Error in worker %s\n%s' % (str(_id), err_message))
         elif keyword == 'result':
             _id, ind, result, isgood = the_rest
+            _logger.debug('Got result from pixel {} and it is good:'
+                          '{}'.format(ind, isgood))
             if ind in samf._running_pixels:
                 samf._running_pixels.remove(ind)
                 samf._update(ind, result, isgood)
