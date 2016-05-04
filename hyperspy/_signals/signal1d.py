@@ -18,6 +18,7 @@
 
 import matplotlib.pyplot as plt
 import numpy as np
+import warnings
 
 from hyperspy.exceptions import DataDimensionError
 from hyperspy.signal import BaseSignal
@@ -1173,6 +1174,8 @@ class Signal1D(BaseSignal,
         im = self.rollaxis(-1 + 3j, 0 + 3j)
         im.metadata.Signal.record_by = "image"
         im._assign_subclass()
+        warnings.warn("The to_signal2D method returns an Image instance in\
+                      version 0.8.5 it will return a Signal2D in 1.0.0")
         return im
 
     def _spikes_diagnosis(self, signal_mask=None,

@@ -70,7 +70,9 @@ class Spectrum(Signal1D,
         warnings.warn("The to_image method will be deprecated from version"
                       " 1.0.0 and replaced with to_signal2D",
                       VisibleDeprecationWarning)
-        self.to_signal2D()
+        im = self.to_signal2D()
+        return im
+
 
 class Image(Signal2D,
             Signal1DTools,):
@@ -97,7 +99,8 @@ class Image(Signal2D,
         warnings.warn("The to_spectrum method will be deprecated from version"
                       " 1.0.0 and replaced with to_signal1D",
                       VisibleDeprecationWarning)
-        self.to_signal2D()
+        s = self.to_signal1D()
+        return s
 
 
 from hyperspy._signals.eels import EELSSpectrum

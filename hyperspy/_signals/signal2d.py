@@ -21,6 +21,7 @@ import numpy.ma as ma
 import scipy as sp
 from scipy.fftpack import fftn, ifftn
 import matplotlib.pyplot as plt
+import warnings
 
 from hyperspy.defaults_parser import preferences
 from hyperspy.external.progressbar import progressbar
@@ -523,6 +524,8 @@ class Signal2D(BaseSignal,
         dimensional signals.
 
         """
+        warnings.warn("The to_signal1D method returns a Spectrum instance in\
+                      version 0.8.5 it will return a Signal1D in 1.0.0")
         return self.as_signal1D(0 + 3j)
 
     def plot(self,

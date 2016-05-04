@@ -3370,6 +3370,8 @@ class BaseSignal(MVA,
         sp = self.rollaxis(spectral_axis, -1 + 3j)
         sp.metadata.Signal.record_by = "spectrum"
         sp._assign_subclass()
+        warnings.warn("The as_signal1D method returns a Spectrum instance in\
+                      version 0.8.5 it will return a Signal1D in 1.0.0")
         return sp
 
     def as_spectrum(self, spectral_axis):
@@ -3400,7 +3402,8 @@ class BaseSignal(MVA,
         warnings.warn("The as_spectrum method will be deprecated from version"
                       " 1.0.0 and replaced with as_signal1D",
                       VisibleDeprecationWarning)
-        self.as_signal1D
+        s = self.as_signal1D
+        return s
 
     def as_signal2D(self, image_axes):
         """Convert signal to image.
@@ -3441,6 +3444,8 @@ class BaseSignal(MVA,
             iaxes[1] - np.argmax(iaxes) + 3j, -2 + 3j)
         im.metadata.Signal.record_by = "image"
         im._assign_subclass()
+        warnings.warn("The as_signal2D method returns an Image instance in\
+                      version 0.8.5 it will return a Signal2D in 1.0.0")
         return im
 
     def as_image(self, image_axes):
@@ -3476,7 +3481,8 @@ class BaseSignal(MVA,
                       " 1.0.0 and replaced with as_signal2D",
                       VisibleDeprecationWarning)
 
-        self.as_signal2D
+        im = self.as_signal2D
+        return im
 
     def _assign_subclass(self):
         mp = self.metadata
