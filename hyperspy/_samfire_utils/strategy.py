@@ -236,7 +236,7 @@ class diffusion_strategy(strategy):
         marker[slices][mask] += weight * distance_f[mask]
 
         scale = self.samf._scale
-        for i in self.samf._running_pixels:
+        for i in self.samf.running_pixels:
             marker[i] = 0
         marker[ind] = -scale
 

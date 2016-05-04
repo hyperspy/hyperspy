@@ -30,8 +30,76 @@ _logger = logging.getLogger(__name__)
 
 
 class SamfirePool(ParallelPool):
+    """ Creates and manages a pool of SAMFire workers. For based on
+    ParallelPool - either creates processes using multiprocessing, or connects
+    and sets up ipyparallel load_balanced_view.
+
+    Ipyparallel is managed directly, but multiprocessing pool is managed via
+    three of Queues:
+        - Shared by all (master and workers) for distributing "load-balanced"
+        work.
+        - Shared by all (master and workers) for sending results back to the
+        master
+        - Individual queues from master to each worker. For setting up and
+        addressing individual workers in general. This one is checked with
+        higher priority in workers.
+
+    Methods
+    -------
+
+    prepare_workers
+        given SAMFire object, populates the workers with the required
+        information. In case of multiprocessing, starts worker listening to the
+        queues.
+    update_optional_names
+        updates the optional names in all workers
+    ping_workers
+        pings all workers. Stores the one-way trip time and the process_id
+        (pid) of each worker if available
+    add_jobs
+        adds the requested number of jobs to the queue
+    parse
+        parses the messages, returned from the workers.
+    colect_results
+        collects all currently available results and parses them
+    run
+        runs the full procedure until no more pixels are left to run in the
+        SAMFire
+    stop
+        stops the pool, (for ipyparallel) clears the memory
+    setup
+        sets up the ipyparallel or multiprocessing pool (collects to the
+        client or creates the pool)
+    sleep
+        sleeps for the specified time, by default timestep
+
+    Attributes
+    ----------
+
+    has_pool: Bool
+        Boolean if the pool is available and active
+    pool: {ipyparallel.load_balanced_view, multiprocessing.Pool}
+        The pool object
+    ipython_kwargs: dict
+        The dictionary with Ipyparallel connection arguments.
+    timeout: float
+        Timeout for either pool when waiting for results
+    num_workers: int
+        The number of workers actually created (may be less than requested, but
+        can't be more)
+    timestep: float
+        The timestep between "ticks" that the result queues are checked. Higher
+        timestep means less frequent checking, which may reduce CPU load for
+        difficult fits that take a long time to finish.
+    ping: dict
+        If recorded, stores one-way trip time of each worker
+    pid: dict
+        If available, stores the process-id of each worker
+    """
 
     def __init__(self, **kwargs):
+        """Creates a ParallelPool with additional methods for SAMFire. All
+        arguments are passed to ParallelPool"""
         super(SamfirePool, self).__init__(**kwargs)
         self.samf = None
         self.ping = {}
@@ -51,6 +119,14 @@ class SamfirePool(ParallelPool):
                 this_queue.put(('change_timestep', (value,)))
 
     def prepare_workers(self, samfire):
+        """Prepares the workers for work, in case of multiprocessing starts
+        listening
+
+        Parameters
+        ----------
+        samfire : samfire
+            the SAMFire object that will be using the pool
+        """
         self.samf = samfire
 
         mall = samfire.model
@@ -93,6 +169,7 @@ class SamfirePool(ParallelPool):
                                                            self.result_queue))
 
     def update_optional_names(self):
+        """Updates the optional names on the workers"""
         samfire = self.samf
         optional_names = {samfire.model[c].name for c in
                           samfire.optional_components}
@@ -106,6 +183,15 @@ class SamfirePool(ParallelPool):
                               self.rworker, optional_names)
 
     def ping_workers(self, timeout=None):
+        """Pings the workers and records one-way trip time and (if available)
+        pid of the worker.
+
+        Parameters
+        ----------
+        timeout: {None, flaot}
+            the time to wait when collecting results after sending out the
+            ping. If None, the default timeout is used
+        """
         if self.samf is None:
             _logger.error('Have to add samfire to the pool first')
         else:
@@ -131,9 +217,16 @@ class SamfirePool(ParallelPool):
             return self.shared_queue.qsize()
 
     def add_jobs(self, needed_number=None):
+        """Adds jobs to the job queue that is consumed by the workers.
+
+        Parameters
+        ----------
+        needed_number: {None, int}
+            The number of jobs to add. If None (default), adds `need_pixels`
+        """
         if needed_number is None:
             needed_number = self.need_pixels
-        for ind, value_dict in self.samf._add_jobs(needed_number):
+        for ind, value_dict in self.samf.generate_values(needed_number):
             if self.is_multiprocessing:
                 self.shared_queue.put(('test', (ind, value_dict)))
             elif self.is_ipyparallel:
@@ -144,6 +237,22 @@ class SamfirePool(ParallelPool):
                                                            value_dict), ind))
 
     def parse(self, value):
+        """Parses the value, returned from the workers.
+
+        Parameters
+        ----------
+        value: tuple of the form (keyword, the_rest)
+            keyword currently can be one of ['pong', 'Error', 'result']. For
+            each of the keywords, "the_rest" is a tuple of different elements,
+            but generally the first one is always the worker_id that the result
+            came from. In particular:
+                - ('pong', (worker_id, pid, pong_time, optional_message_str))
+                - ('Error', (worker_id, error_message_string))
+                - ('result', (worker_id,
+                              pixel_index,
+                              result_dict,
+                              bool_if_result_converged))
+        """
         if value is None:
             keyword = 'Failed'
             _logger.debug('Got None')
@@ -163,18 +272,27 @@ class SamfirePool(ParallelPool):
             _id, ind, result, isgood = the_rest
             _logger.debug('Got result from pixel {} and it is good:'
                           '{}'.format(ind, isgood))
-            if ind in samf._running_pixels:
-                samf._running_pixels.remove(ind)
-                samf._update(ind, result, isgood)
-                samf._plot()
-                samf._save()
-                if hasattr(samf, '_log') and isinstance(samf._log, list):
-                    samf._log.append((ind, isgood, samf.count, _id))
+            if ind in samf.running_pixels:
+                samf.running_pixels.remove(ind)
+                samf.update(ind, result, isgood)
+                samf.plot(on_count=True)
+                samf.backup()
+                samf.log(ind, isgood, samf.count, _id)
         else:
             _logger.error('Unusual return from some worker. The value '
                           'is:\n%s' % str(value))
 
     def collect_results(self, timeout=None):
+        """Collects and parses all results, currently not processed due to
+        being in the queue.
+
+        Parameters
+        ----------
+        timeout: {None, flaot}
+            the time to wait when collecting results. If None, the default
+            timeout is used
+
+        """
         if timeout is None:
             timeout = self.timeout
         found_something = False
@@ -207,19 +325,29 @@ class SamfirePool(ParallelPool):
 
     @property
     def need_pixels(self):
+        """Returns the number of pixels that should be added to the processing
+        queue. At most is equal to the number of workers.
+        """
         return min(self.samf.pixels_done * self.samf.metadata.marker.ndim,
                    self.num_workers - len(self))
 
     @property
     def _not_too_long(self):
+        """Returns bool if it has been too long after receiving the last
+        result, probably meaning some of the workers timed out or hung.
+        """
         if not hasattr(self, '_last_time') or not isinstance(self._last_time,
                                                              float):
             self._last_time = time.time()
         return (time.time() - self._last_time) <= self.timeout
 
     def run(self):
+        """Runs the full process of adding jobs to the processing queue,
+        listening to the results and updating SAMFire as needed. Stops when
+        timed out or no pixels are left to run.
+        """
         while self._not_too_long and (self.samf.pixels_left or
-                                      self.samf.running_pixels):
+                                      len(self.samf.running_pixels)):
             # bool if got something
             new_result = self.collect_results()
             need_number = self.need_pixels
@@ -233,6 +361,9 @@ class SamfirePool(ParallelPool):
                 self._last_time = time.time()
 
     def stop(self):
+        """Stops the appropriate pool and (if ipyparallel) clears the memory
+        and history.
+        """
         if self.is_multiprocessing:
             for queue in self.workers.values():
                 queue.put('stop_listening')

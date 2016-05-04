@@ -134,6 +134,8 @@ class Samfire:
     refresh_database
         refresh current active strategy database. No previous structure is
         preserved
+    backup
+        backs up the current version of the model
     change_strategy
         changes strategy to a new one. Certain rules apply
     append
@@ -142,7 +144,12 @@ class Samfire:
         extends strategies list
     remove
         removes strategy from strategies list
-
+    update
+        updates the current model with values, received from a worker
+    log
+        if _log exists, logs the arguments to the list.
+    generate_values
+        creates a generator to calculate values to be sent to the workers
     """
 
     __active_strategy_ind = 0
@@ -150,7 +157,7 @@ class Samfire:
     pool = None
     _figure = None
     optional_components = []
-    _running_pixels = []
+    running_pixels = []
     plot_every = 0
     save_every = np.nan
     _workers = None
@@ -158,7 +165,6 @@ class Samfire:
     count = 0
 
     def __init__(self, model, workers=None, setup=True, **kwargs):
-
         # constants:
         if workers is None:
             workers = cpu_count() - 1
@@ -195,7 +201,7 @@ class Samfire:
 
     @property
     def active_strategy(self):
-        """Returns the actuve strategy"""
+        """Returns the active strategy"""
         return self.strategies[self._active_strategy_ind]
 
     @active_strategy.setter
@@ -240,7 +246,7 @@ class Samfire:
 
         while True:
             self._run_active_strategy()
-            self._plot(0)
+            self.plot()
             if self._active_strategy_ind == num_of_strat - 1:
                 # last one just finished running
                 break
@@ -292,29 +298,29 @@ class Samfire:
 
     @property
     def pixels_left(self):
+        """Returns the number of pixels that are left to solve. This number can
+        increase as SAMFire learns more information about the data.
+        """
         return np.sum(self.metadata.marker > 0.)
 
     @property
     def pixels_done(self):
+        """Returns the number of pixels that have been solved"""
         return np.sum(self.metadata.marker <= -self._scale)
-
-    @property
-    def running_pixels(self):
-        return len(self._running_pixels)
 
     def _run_active_strategy_one(self):
         self.count = 0
         while np.any(self.metadata.marker > 0.):
             ind = self._next_pixels(1)[0]
             vals = self.active_strategy.values(ind)
-            self._running_pixels.append(ind)
+            self.running_pixels.append(ind)
             isgood = self.single_kernel(self.model,
                                         ind,
                                         vals,
                                         self.optional_components,
                                         self._args,
                                         self.metadata.goodness_test)
-            self._running_pixels.remove(ind)
+            self.running_pixels.remove(ind)
             self.count += 1
             if isgood:
                 self._progressbar.update(1)
@@ -322,15 +328,41 @@ class Samfire:
             self._plot()
             self._save()
 
-    def _save(self):
+    def backup(self, filename=None, on_count=True):
+        """Backs-up the samfire results in a file
+
+        Parameters
+        ----------
+        filename: {str, None}
+            the filename. If None, a default value of "backup_"+signal_title is
+            used
+        on_count: bool
+            if True (default), only saves on the required count of steps
+        """
+        if filename is None:
+            title = self.model.spectrum.metadata.General.title
+            filename = slugify('backup_' + title)
         # maybe add saving marker + strategies as well?
-        title = self.model.spectrum.metadata.General.title
-        if self.count % self.save_every == 0:
-            self.model.save(slugify('backup_' + title),
+        if self.count % self.save_every == 0 or not on_count:
+            self.model.save(filename,
                             name='samfire_backup', overwrite=True)
             self.model.spectrum.models.remove('samfire_backup')
 
-    def _update(self, ind, results=None, isgood=None):
+    def update(self, ind, results=None, isgood=None):
+        """Updates the current model with the results, received from the
+        workers. Results are only stored if the results are good enough
+
+        Parameters
+        ----------
+        ind : tuple
+            contains the index of the pixel of the results
+        results : {dict, None}
+            dictionary of the results. If None, means we are updating in-place
+            (e.g. refreshing the marker or strategies)
+        isgood : {bool, None}
+            if it is known if the results are good according to the
+            goodness-of-fit test. If None, the pixel is tested
+        """
         if results is not None and (isgood is None or isgood):
             self._swap_dict_and_model(ind, results)
 
@@ -413,7 +445,15 @@ class Samfire:
             current.close_plot()
         self._active_strategy_ind = new_strat
 
-    def _add_jobs(self, need_inds):
+    def generate_values(self, need_inds):
+        """Returns an iterator that yields the index of the pixel and the
+        value dictionary to be sent to the workers.
+
+        Parameters
+        ----------
+        need_inds: int
+            the number of pixels to be returned in the generator
+        """
         if need_inds:
             # get pixel index
             inds = self._next_pixels(need_inds)
@@ -430,7 +470,7 @@ class Samfire:
                     value_dict['low_loss.data'] = \
                         self.model.low_loss.data[ind + (...,)]
 
-                self._running_pixels.append(ind)
+                self.running_pixels.append(ind)
                 self.metadata.marker[ind] = 0.
                 yield ind, value_dict
 
@@ -442,7 +482,7 @@ class Samfire:
             while number and ind_list[0].size > 0:
                 i = np.random.randint(len(ind_list[0]))
                 ind = tuple([lst[i] for lst in ind_list])
-                if ind not in self._running_pixels:
+                if ind not in self.running_pixels:
                     inds.append(ind)
                 # removing the added indices
                 ind_list = [np.delete(lst, i, 0) for lst in ind_list]
@@ -541,21 +581,32 @@ class Samfire:
             lambda: self.model.axes_manager.events.indices_changed.disconnect(
                 connect_other_navigation1), [])
 
-    def _plot(self, count=None):
-        if count is None:
-            count = self.count
-        if self.plot_every:
-            if count % self.plot_every == 0:
-                self.plot()
-
-    def plot(self):
+    def plot(self, on_count=False):
         """(if possible) plots current strategy plot. Diffusion strategies plot
         grayscale navigation signal with brightness representing order of the
         pixel selection. Segmenter strategies plot a collection of histograms,
         one per parameter.
+
+        Parameters
+        ----------
+        on_count : bool
+            if True, only tries to plot every speficied count, otherwise
+            (default) always plots if possible.
         """
-        if self.strategies:
-            self._figure = self.active_strategy.plot(self._figure)
+        count_test = self.plot_every and (self.count % self.plot_every == 0)
+        if not on_count or count_test:
+            if self.strategies:
+                try:
+                    self._figure = self.active_strategy.plot(self._figure)
+                except:
+                    self._figure = None
+                    self._figure = self.active_strategy.plot(self._figure)
+
+    def log(self, *args):
+        """If has a list named "_log", appends the arguments there
+        """
+        if hasattr(self, '_log') and isinstance(self._log, list):
+            self._log.append(args)
 
     def __repr__(self):
         ans = u"<SAMFire of the signal titled: '"
