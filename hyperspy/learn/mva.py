@@ -473,6 +473,9 @@ class MVA():
 
         **kwargs : extra key word arguments
             Any keyword arguments are passed to the BSS algorithm.
+        
+        FastICA documentation is here, with more arguments that can be passed as **kwargs: 
+        http://scikit-learn.org/stable/modules/generated/sklearn.decomposition.FastICA.html
 
         """
         from hyperspy.signal import Signal
