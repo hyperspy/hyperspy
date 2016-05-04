@@ -120,8 +120,6 @@ artifacts:
   #- "appveyor PushArtifact HyperSpy-%APPVEYOR_REPO_TAG_NAME%-Bundle-Windows-%PYTHON_ARCH%bit.exe"
 
 deploy:
-  release: $(APPVEYOR_REPO_TAG_NAME)
-  description: 'Release: $(APPVEYOR_REPO_COMMIT_MESSAGE)'
   provider: GitHub
   auth_token:
     #   to266:
