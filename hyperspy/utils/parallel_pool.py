@@ -75,7 +75,6 @@ class ParallelPool:
             self.num_workers = min(self.num_workers, len(ipyclient))
             self.pool = ipyclient.load_balanced_view(
                 range(self.num_workers))
-            self.results = []
             return True
         except OSError:
             _logger.debug('Failed to find ipyparallel pool')

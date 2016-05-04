@@ -152,10 +152,10 @@ class TestSamfireEmpty:
     def test_setup(self):
         m = self.model
         samf = m.create_samfire(workers=1, setup=False)
-        nt.assert_is_none(samf._gt_dump)
+        nt.assert_is_none(samf.metadata.gt_dump)
         nt.assert_is_none(samf.pool)
         samf._setup(ipyparallel=False)
-        nt.assert_is_not_none(samf._gt_dump)
+        nt.assert_is_not_none(samf.metadata.gt_dump)
         nt.assert_is_not_none(samf.pool)
 
     def test_samfire_init_marker(self):
