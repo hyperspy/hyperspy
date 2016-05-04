@@ -3402,7 +3402,7 @@ class BaseSignal(MVA,
         warnings.warn("The as_spectrum method will be deprecated from version"
                       " 1.0.0 and replaced with as_signal1D",
                       VisibleDeprecationWarning)
-        s = self.as_signal1D()
+        s = self.as_signal1D(spectral_axis)
         return s
 
     def as_signal2D(self, image_axes):
@@ -3481,7 +3481,7 @@ class BaseSignal(MVA,
                       " 1.0.0 and replaced with as_signal2D",
                       VisibleDeprecationWarning)
 
-        im = self.as_signal2D()
+        im = self.as_signal2D(image_axis)
         return im
 
     def _assign_subclass(self):
