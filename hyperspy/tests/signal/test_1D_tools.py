@@ -202,18 +202,18 @@ class TestInterpolateInBetween:
         m = mock.Mock()
         s.events.data_changed.connect(m.data_changed)
         s.interpolate_in_between(8, 12, show_progressbar=None)
-        nt.assert_true((s.data == np.arange(20)).all())
+        np.testing.assert_array_equal(s.data, np.arange(20))
         nt.assert_true(m.data_changed.called)
 
     def test_single_spectrum_in_units(self):
         s = self.s.inav[0]
         s.interpolate_in_between(0.8, 1.2, show_progressbar=None)
-        nt.assert_true((s.data == np.arange(20)).all())
+        np.testing.assert_array_equal(s.data, np.arange(20))
 
     def test_two_spectra(self):
         s = self.s
         s.interpolate_in_between(8, 12, show_progressbar=None)
-        nt.assert_true((s.data == np.arange(40).reshape(2, 20)).all())
+        np.testing.assert_array_equal(s.data, np.arange(40).reshape(2, 20))
 
     def test_delta_int(self):
         s = self.s.inav[0]
