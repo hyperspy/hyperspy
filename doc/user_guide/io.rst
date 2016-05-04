@@ -20,8 +20,8 @@ image lena.jpg you can type:
     >>> s = hs.load("lena.jpg")
 
 If the loading was successful, the variable :guilabel:`s` contains a generic
-:py:class:`~.signal.Signal`, a :py:class:`~._signals.signal1D.Signal1D` or an
-:py:class:`~._signals.signal2D.Signal2D`.
+:py:class:`~.signal.Signal`, a :py:class:`~._signals.signal1d.Signal1D` or an
+:py:class:`~._signals.signal2d.Signal2D`.
 
 .. NOTE::
     Note for python programmers: the data is stored in a numpy array

@@ -60,7 +60,7 @@ class MPL_HyperExplorer(object):
             return
         elif len(self.navigator_data_function().shape) == 1:
             # Create the figure
-            sf = spectrum.Signal1DFigure(title=self.signal_title + ' Navigator'
+            sf = signal1d.Signal1DFigure(title=self.signal_title + ' Navigator'
                                          if self.signal_title
                                          else "")
             axis = self.axes_manager.navigation_axes[0]
@@ -73,7 +73,7 @@ class MPL_HyperExplorer(object):
             self.navigator_plot = sf
             # Create a line to the left axis with the default
             # indices
-            sl = spectrum.Signal1DLine()
+            sl = signal1d.Signal1DLine()
             sl.data_function = self.navigator_data_function
             sl.set_line_properties(color='blue',
                                    type='step')

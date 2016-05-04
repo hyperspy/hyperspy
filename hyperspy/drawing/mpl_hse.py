@@ -83,7 +83,7 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
             self.xlabel += ' (%s)' % self.axes_manager.signal_axes[0].units
         self.ylabel = 'Intensity'
         self.axis = self.axes_manager.signal_axes[0].axis
-        sf = spectrum.Signal1DFigure(title=self.signal_title +
+        sf = signal1d.Signal1DFigure(title=self.signal_title +
                                      " Signal")
         sf.xlabel = self.xlabel
         sf.ylabel = self.ylabel
@@ -92,7 +92,7 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
         sf.axes_manager = self.axes_manager
         self.signal_plot = sf
         # Create a line to the left axis with the default indices
-        sl = spectrum.Signal1DLine()
+        sl = signal1d.Signal1DLine()
         sl.autoscale = True
         sl.data_function = self.signal_data_function
         sl.plot_indices = True
@@ -106,7 +106,7 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
         sf.add_line(sl)
         # If the data is complex create a line in the left axis with the
         # default coordinates
-        sl = spectrum.Signal1DLine()
+        sl = signal1d.Signal1DLine()
         sl.data_function = self.signal_data_function
         sl.plot_coordinates = True
         sl.get_complex = any(np.iscomplex(sl.data_function()))
@@ -156,7 +156,7 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
                     self._pointer_nav_dim:]:
                 self.signal_plot.right_axes_manager._axes[
                     axis.index_in_array] = axis
-        rl = spectrum.Signal1DLine()
+        rl = signal1d.Signal1DLine()
         rl.autoscale = True
         rl.data_function = self.signal_data_function
         rl.set_line_properties(color=self.right_pointer.color,

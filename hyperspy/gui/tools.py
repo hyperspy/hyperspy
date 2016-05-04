@@ -198,8 +198,8 @@ class LineInSignal1D(t.HasTraits):
     Attributes:
     -----------
     position : float
-        The position of the vertical line in the spectrum. Moving the
-        line changes the position but the reverse is not true.
+        The position of the vertical line in the one dimensional signal. Moving
+        the line changes the position but the reverse is not true.
     on : bool
         Turns on and off the line
     color : wx.Colour

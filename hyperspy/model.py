@@ -387,8 +387,8 @@ class Model(list):
             line.close()
             del line
             idx = self.index(thing)
-            self.spectrum._plot.signal_plot.ax_lines.remove(
-                self.spectrum._plot.signal_plot.ax_lines[2 + idx])
+            self.signal1D._plot.signal_plot.ax_lines.remove(
+                self.signal1D._plot.signal_plot.ax_lines[2 + idx])
         list.remove(self, thing)
         thing.model = None
         if touch is True:
@@ -1516,8 +1516,8 @@ class Model(list):
         """
 
         # If new coordinates are assigned
-        self.spectrum.plot()
-        _plot = self.spectrum._plot
+        self.signal1D.plot()
+        _plot = self.signal1D._plot
         l1 = _plot.signal_plot.ax_lines[0]
         color = l1.line.get_color()
         l1.set_line_properties(color=color, type='scatter')
@@ -1532,7 +1532,7 @@ class Model(list):
                                self._close_plot)
 
         self._model_line = l2
-        self._plot = self.spectrum._plot
+        self._plot = self.signal1D._plot
         self._connect_parameters2update_plot()
         if plot_components is True:
             self.enable_plot_components()

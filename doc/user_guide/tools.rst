@@ -13,22 +13,22 @@ The Signal class and its subclasses
 HyperSpy stores the data in the :py:class:`~.signal.BaseSignal` class, that is
 the object that you get when e.g. you load a single file using
 :py:func:`~.io.load`. Most of the data analysis functions are also contained in
-this class or its specialized subclasses. The :py:class:`~.signal.BaseSignal` class
-contains general functionality that is available to all the subclasses. The
-subclasses provide functionality that is normally specific to a particular type
-of data, e.g. the :py:class:`~._signals.signal1D.Signal1D` class provides common
-functionality to deal with one-dimensional (e.g. spectral) data and
+this class or its specialized subclasses. The :py:class:`~.signal.BaseSignal`
+class contains general functionality that is available to all the subclasses.
+The subclasses provide functionality that is normally specific to a particular
+type of data, e.g. the :py:class:`~._signals.signal1d.Signal1D` class provides
+common functionality to deal with one-dimensional (e.g. spectral) data and
 :py:class:`~._signals.eels.EELSSpectrum` (which is a subclass of
-:py:class:`~._signals.signal1D.Signal1D`) adds extra functionality to the
-:py:class:`~._signals.signal1D.Signal1D` class for electron energy-loss
+:py:class:`~._signals.signal1d.Signal1D`) adds extra functionality to the
+:py:class:`~._signals.signal1d.Signal1D` class for electron energy-loss
 spectroscopy data analysis.
 
 .. versionchanged:: 0.8.5
 
 Currently the following signal subclasses are available:
 
-* :py:class:`~._signals.signal1D.Signal1D`
-* :py:class:`~._signals.signal2D.Signal2D`
+* :py:class:`~._signals.signal1d.Signal1D`
+* :py:class:`~._signals.signal2d.Signal2D`
 * :py:class:`~._signals.eels.EELSSpectrum`
 * :py:class:`~._signals.eds_tem.EDSTEMSpectrum`
 * :py:class:`~._signals.eds_sem.EDSSEMSpectrum`
@@ -37,7 +37,10 @@ Currently the following signal subclasses are available:
 
 .. versionchanged:: 0.8.5
 
-Note that in 0.8.5 the :py:class:`~._signals.signal1D.Signal1D` and :py:class:`~._signals.signal2D.Signal2D` classes were created to deprecate the old :py:class:`~._signals.spectrum.Spectrum` and :py:class:`~._signals.image.Image` classes.
+Note that in 0.8.5 the :py:class:`~._signals.signal1d.Signal1D` and
+:py:class:`~._signals.signal2d.Signal2D` classes were created to deprecate the
+old :py:class:`~._signals.spectrum.Spectrum` and
+:py:class:`~._signals.image.Image` classes.
 
 
 The :py:mod:`~.signals` module, which contains all available signal subclasses,
@@ -69,14 +72,14 @@ The different subclasses are characterized by three
 `record_by`
     Can be "spectrum", "image" or "", the latter meaning undefined and describes
     the way the data is arranged in memory. It is possible to transform any
-    :py:class:`~.signal.BaseSignal` subclass to a :py:class:`~._signals.signal1D.Signal1D`
-    or :py:class:`~._signals.signal2D.Signal2D` subclass using the following
+    :py:class:`~.signal.BaseSignal` subclass to a :py:class:`~._signals.signal1d.Signal1D`
+    or :py:class:`~._signals.signal2d.Signal2D` subclass using the following
     :py:class:`~.signal.BaseSignal` methods: :py:meth:`~.signal.BaseSignal.as_signal2D`
     and :py:meth:`~.signal.BaseSignal.as_signal1D`. In addition
-    :py:class:`~._signals.signal1D.Signal1D` instances can be transformed into
-    two-dimensional signals using :py:meth:`~._signals.signal1D.Signal1D.to_signal2D`
+    :py:class:`~._signals.signal1d.Signal1D` instances can be transformed into
+    two-dimensional signals using :py:meth:`~._signals.signal1d.Signal1D.to_signal2D`
     and two-dimensional instances transformed into one dimensional instances using
-    :py:meth:`~._signals.signal2D.Signal2D.to_signal1D`. When transforming between
+    :py:meth:`~._signals.signal2d.Signal2D.to_signal1D`. When transforming between
     one and two dimensinoal signal classes the order in which the data array is stored
     in memory is modified to improve performance. Also, some functions, e.g. plotting
     or decomposing, will behave differently.
@@ -103,7 +106,7 @@ The different subclasses are characterized by three
     +===============================================================+===========+=============+===============+
     |                 :py:class:`~.signal.BaseSignal`               |     -     |      -      |       -       |
     +---------------------------------------------------------------+-----------+-------------+---------------+
-    |           :py:class:`~._signals.signal1D.Signal1D`            | spectrum  |      -      |       -       |
+    |           :py:class:`~._signals.signal1d.Signal1D`            | spectrum  |      -      |       -       |
     +---------------------------------------------------------------+-----------+-------------+---------------+
     | :py:class:`~._signals.spectrum_simulation.SpectrumSimulation` | spectrum  |      -      |  simulation   |
     +---------------------------------------------------------------+-----------+-------------+---------------+
@@ -113,7 +116,7 @@ The different subclasses are characterized by three
     +---------------------------------------------------------------+-----------+-------------+---------------+
     |           :py:class:`~._signals.eds_tem.EDSTEMSpectrum`       | spectrum  |   EDS_TEM   |       -       |
     +---------------------------------------------------------------+-----------+-------------+---------------+
-    |              :py:class:`~._signals.signal2D.Signal2D`         |   image   |      -      |       -       |
+    |              :py:class:`~._signals.signal2d.Signal2D`         |   image   |      -      |       -       |
     +---------------------------------------------------------------+-----------+-------------+---------------+
     |    :py:class:`~._signals.image_simulation.ImageSimulation`    |   image   |      -      |  simulation   |
     +---------------------------------------------------------------+-----------+-------------+---------------+
@@ -199,7 +202,7 @@ following table:
     +===============================================================+========+
     |                 :py:class:`~.signal.BaseSignal`               | False  |
     +---------------------------------------------------------------+--------+
-    |           :py:class:`~._signals.signal1D.Signal1D`            | False  |
+    |           :py:class:`~._signals.signal1d.Signal1D`            | False  |
     +---------------------------------------------------------------+--------+
     | :py:class:`~._signals.spectrum_simulation.SpectrumSimulation` | False  |
     +---------------------------------------------------------------+--------+
@@ -209,7 +212,7 @@ following table:
     +---------------------------------------------------------------+--------+
     |           :py:class:`~._signals.eds_tem.EDSTEMSpectrum`       | True   |
     +---------------------------------------------------------------+--------+
-    |              :py:class:`~._signals.signal2D.Signal2D`         | False  |
+    |              :py:class:`~._signals.signal2d.Signal2D`         | False  |
     +---------------------------------------------------------------+--------+
     |    :py:class:`~._signals.image_simulation.ImageSimulation`    | False  |
     +---------------------------------------------------------------+--------+

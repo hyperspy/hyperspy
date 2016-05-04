@@ -2191,10 +2191,10 @@ class BaseSignal(MVA,
 
         if number_of_parts == len_axis \
                 or step_sizes == [1] * len_axis:
-            for i, spectrum in enumerate(splitted):
-                spectrum.data = spectrum.data[
-                    spectrum.axes_manager._get_data_slice([(axis, 0)])]
-                spectrum._remove_axis(axis_in_manager)
+            for i, signal1D in enumerate(splitted):
+                signal1D.data = signal1D.data[
+                    signal1D.axes_manager._get_data_slice([(axis, 0)])]
+                signal1D._remove_axis(axis_in_manager)
 
         if mode == 'auto' and hasattr(
                 self.original_metadata, 'stack_elements'):

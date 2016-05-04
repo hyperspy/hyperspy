@@ -831,8 +831,8 @@ class Component(t.HasTraits):
         s = self.__call__()
         if not self.active:
             s.fill(np.nan)
-        if self.model.spectrum.metadata.Signal.binned is True:
-            s *= self.model.spectrum.axes_manager.signal_axes[0].scale
+        if self.model.signal1D.metadata.Signal.binned is True:
+            s *= self.model.signal1D.axes_manager.signal_axes[0].scale
         if old_axes_manager is not None:
             self.model.axes_manager = old_axes_manager
             self.charge()

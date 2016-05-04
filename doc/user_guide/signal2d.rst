@@ -9,7 +9,7 @@ Image registration (alignment)
 
 .. versionadded:: 0.5
 
-The :py:meth:`~._signals.signal2D.Signal2DTools.align2D` method provides advanced image
+The :py:meth:`~._signals.signal2d.Signal2DTools.align2D` method provides advanced image
 alignment functionality, including subpixel alignment.
 
 .. _image.crop:
@@ -21,6 +21,6 @@ In addition to cropping using the powerful and compact :ref:`signal.indexing`
 the following method is available to crop spectra the familiar top, bottom,
 left, right syntax.
 
-* :py:meth:`~._signals.signal2D.Signal2DTools.crop_image`
+* :py:meth:`~._signals.signal2d.Signal2DTools.crop_image`
 
 
