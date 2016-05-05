@@ -311,12 +311,12 @@ class SpikesRemoval(SpanSelectorInSignal1D):
         self.signal_mask = signal_mask
         self.navigation_mask = navigation_mask
         md = self.signal.metadata
-        from hyperspy.signal import Signal
+        from hyperspy.signal import BaseSignal
 
         if "Signal.Noise_properties" in md:
             if "Signal.Noise_properties.variance" in md:
                 self.noise_variance = md.Signal.Noise_properties.variance
-                if isinstance(md.Signal.Noise_properties.variance, Signal):
+                if isinstance(md.Signal.Noise_properties.variance, BaseSignal):
                     self.noise_type = "heteroscedastic"
                 else:
                     self.noise_type = "white"

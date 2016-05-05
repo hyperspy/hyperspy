@@ -22,7 +22,6 @@ import textwrap
 from traits import trait_base
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import warnings
-
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
@@ -488,9 +487,9 @@ def plot_images(images,
             specially useful when using diverging color schemes. If "auto"
             (default), diverging color schemes are automatically centred.
         saturated_pixels: scalar
-            The percentage of pixels that are left out of the bounds.  For example,
-            the low and high bounds of a value of 1 are the 0.5% and 99.5%
-            percentiles. It must be in the [0, 100] range.
+            The percentage of pixels that are left out of the bounds.  For
+            example, the low and high bounds of a value of 1 are the 0.5% and
+            99.5% percentiles. It must be in the [0, 100] range.
         scalebar : {None, 'all', list of ints}, optional
             If None (or False), no scalebars will be added to the images.
             If 'all', scalebars will be added to all images.
@@ -560,13 +559,13 @@ def plot_images(images,
     """
     from hyperspy.drawing.widgets import Scale_Bar
     from hyperspy.misc import rgb_tools
-    from hyperspy.signal import Signal
+    from hyperspy.signal import BaseSignal
 
-    if isinstance(images, Signal) and len(images) is 1:
+    if isinstance(images, BaseSignal) and len(images) is 1:
         images.plot()
         ax = plt.gca()
         return ax
-    elif not isinstance(images, (list, tuple, Signal)):
+    elif not isinstance(images, (list, tuple, BaseSignal)):
         raise ValueError("images must be a list of image signals or "
                          "multi-dimensional signal."
                          " " + repr(type(images)) + " was given.")
@@ -584,8 +583,8 @@ def plot_images(images,
 
     # If input is >= 1D signal (e.g. for multi-dimensional plotting),
     # copy it and put it in a list so labeling works out as (x,y) when plotting
-    if isinstance(
-            images, Signal) and images.axes_manager.navigation_dimension > 0:
+    if isinstance(images,
+                  BaseSignal) and images.axes_manager.navigation_dimension > 0:
         images = [images._deepcopy_with_new_data(images.data)]
 
     n = 0
