@@ -163,7 +163,6 @@ class Gaussian(Component):
 
         """
         super(Gaussian, self)._estimate_parameters(signal)
-        axis = signal.axes_manager.signal_axes[0]
         binned = signal.metadata.Signal.binned
         axis = signal.axes_manager.signal_axes[0]
         centre, height, sigma = _estimate_gaussian_parameters(signal, x1, x2,

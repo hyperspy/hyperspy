@@ -184,7 +184,7 @@ class TestFindPeaks1D:
         nt.assert_equal(len(peaks[1]), 8)
 
     def test_maxpeaksn(self):
-        for n in xrange(1, 10):
+        for n in range(1, 10):
             peaks = self.spectrum.find_peaks1D_ohaver(maxpeakn=n)
             nt.assert_equal(len(peaks[1]), min((8, n)))
 
@@ -202,25 +202,25 @@ class TestInterpolateInBetween:
         m = mock.Mock()
         s.events.data_changed.connect(m.data_changed)
         s.interpolate_in_between(8, 12, show_progressbar=None)
-        nt.assert_true((s.data == np.arange(20)).all())
+        np.testing.assert_array_equal(s.data, np.arange(20))
         nt.assert_true(m.data_changed.called)
 
     def test_single_spectrum_in_units(self):
         s = self.s.inav[0]
         s.interpolate_in_between(0.8, 1.2, show_progressbar=None)
-        nt.assert_true((s.data == np.arange(20)).all())
+        np.testing.assert_array_equal(s.data, np.arange(20))
 
     def test_two_spectra(self):
         s = self.s
         s.interpolate_in_between(8, 12, show_progressbar=None)
-        nt.assert_true((s.data == np.arange(40).reshape(2, 20)).all())
+        np.testing.assert_array_equal(s.data, np.arange(40).reshape(2, 20))
 
     def test_delta_int(self):
         s = self.s.inav[0]
         s.change_dtype('float')
         s.data[12] *= 10
         s.interpolate_in_between(8, 12, delta=2, kind='cubic')
-        print s.data[8:12]
+        print(s.data[8:12])
         np.testing.assert_allclose(
             s.data[8:12], np.array([44., 95.4, 139.6, 155.]))
 
@@ -229,7 +229,7 @@ class TestInterpolateInBetween:
         s.change_dtype('float')
         s.data[12] *= 10.
         s.interpolate_in_between(8, 12, delta=0.31, kind='cubic')
-        print s.data[8:12]
+        print(s.data[8:12])
         np.testing.assert_allclose(
             s.data[8:12], np.array([45.09388598, 104.16170809,
                                     155.48258721, 170.33564422]))

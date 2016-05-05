@@ -86,7 +86,7 @@ class Expression(Component):
             self._position = getattr(self, position)
         # Set the initial value of the parameters
         if kwargs:
-            for kwarg, value in kwargs.iteritems():
+            for kwarg, value in kwargs.items():
                 setattr(getattr(self, kwarg), 'value', value)
 
         if autodoc:

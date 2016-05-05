@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-from __future__ import division
+
 import copy
 
 import numpy as np
@@ -82,7 +82,7 @@ class MPL_HyperSpectrum_Explorer(MPL_HyperExplorer):
         if self.axes_manager.signal_axes[0].units is not Undefined:
             self.xlabel += ' (%s)' % self.axes_manager.signal_axes[0].units
         self.ylabel = 'Intensity'
-        self.axis = self.axes_manager.signal_axes[0].axis
+        self.axis = self.axes_manager.signal_axes[0]
         sf = spectrum.SpectrumFigure(title=self.signal_title +
                                      " Signal")
         sf.xlabel = self.xlabel
