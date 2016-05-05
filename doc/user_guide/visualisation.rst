@@ -5,8 +5,8 @@
 Data visualization
 ******************
 
-The object returned by :py:func:`~.io.load`, a :py:class:`~.signal.Signal`
-instance, has a :py:meth:`~.signal.Signal.plot` method that is powerful and
+The object returned by :py:func:`~.io.load`, a :py:class:`~.signal.BaseSignal`
+instance, has a :py:meth:`~.signal.BaseSignal.plot` method that is powerful and
 flexible tools to visualize n-dimensional data. In this chapter, the
 visualisation of multidimensional data  is exemplified with two experimental
 datasets: an EELS spectrum image and an EDX dataset consisting of a secondary

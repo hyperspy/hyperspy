@@ -20,12 +20,12 @@ image lena.jpg you can type:
     >>> s = hs.load("lena.jpg")
 
 If the loading was successful, the variable :guilabel:`s` contains a generic
-:py:class:`~.signal.Signal`, a :py:class:`~._signals.signal1d.Signal1D` or an
+:py:class:`~.signal.BaseSignal`, a :py:class:`~._signals.signal1d.Signal1D` or an
 :py:class:`~._signals.signal2d.Signal2D`.
 
 .. NOTE::
     Note for python programmers: the data is stored in a numpy array
-    in the :py:attr:`~.signal.Signal.data` attribute, but you will not
+    in the :py:attr:`~.signal.BaseSignal.data` attribute, but you will not
     normally need to access it there.)
 
 
@@ -40,10 +40,10 @@ providing the ``signal`` keyword, which has to be one of: ``spectrum``,
 
 Some file formats store some extra information about the data, which can be
 stored in "attributes". If HyperSpy manages to read some extra information
-about the data it stores it in :py:attr:`~.signal.Signal.original_metadata`
+about the data it stores it in :py:attr:`~.signal.BaseSignal.original_metadata`
 attribute. Also, it is possible that other information will be mapped by
 HyperSpy to a standard location where it can be used by some standard routines,
-the :py:attr:`~.signal.Signal.metadata` attribute.
+the :py:attr:`~.signal.BaseSignal.metadata` attribute.
 
 To print the content of the parameters simply:
 
@@ -52,8 +52,8 @@ To print the content of the parameters simply:
     >>> s.metadata
 
 
-The :py:attr:`~.signal.Signal.original_metadata` and
-:py:attr:`~.signal.Signal.metadata` can be exported to  text files
+The :py:attr:`~.signal.BaseSignal.original_metadata` and
+:py:attr:`~.signal.BaseSignal.metadata` can be exported to  text files
 using the :py:meth:`~.misc.utils.DictionaryTreeBrowser.export` method, e.g.:
 
 .. code-block:: python
@@ -108,7 +108,7 @@ To save data to a file use the :py:meth:`~.signal.BaseSignal.save` method. The
 first argument is the filename and the format is defined by the filename
 extension. If the filename does not contain the extension the default format
 (:ref:`hdf5-format`) is used. For example, if the :py:const:`s` variable
-contains the :py:class:`~.signal.Signal` that you want to write to a file, the
+contains the :py:class:`~.signal.BaseSignal` that you want to write to a file, the
 following will write the data to a file called :file:`spectrum.hdf5` in the
 default :ref:`hdf5-format` format:
 

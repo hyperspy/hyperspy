@@ -317,7 +317,7 @@ def plot_signals(signal_list, sync=True, navigator="auto",
         elif navigator is "slider":
             navigator_list.append("slider")
             navigator_list.extend([None] * (len(signal_list) - 1))
-        elif isinstance(navigator, hyperspy.signal.Signal):
+        elif isinstance(navigator, hyperspy.signal.BaseSignal):
             navigator_list.append(navigator)
             navigator_list.extend([None] * (len(signal_list) - 1))
         elif navigator is "spectrum":
@@ -1090,14 +1090,14 @@ def plot_spectra(
             ax.set_ylabel('Intensity')
             if legend is not None:
                 ax.set_title(legend)
-            if not isinstance(spectra, hyperspy.signal.Signal):
+            if not isinstance(spectra, hyperspy.signal.BaseSignal):
                 _set_spectrum_xlabel(spectrum, ax)
-        if isinstance(spectra, hyperspy.signal.Signal):
+        if isinstance(spectra, hyperspy.signal.BaseSignal):
             _set_spectrum_xlabel(spectrum, ax)
         fig.tight_layout()
 
     elif style == 'heatmap':
-        if not isinstance(spectra, hyperspy.signal.Signal):
+        if not isinstance(spectra, hyperspy.signal.BaseSignal):
             import hyperspy.utils
             spectra = hyperspy.utils.stack(spectra)
         with spectra.unfolded():

@@ -54,11 +54,11 @@ example we create a Signal2D instance from a 2D numpy array:
 
 The different signals store other objects in what are called attributes. For
 examples, the data is stored in a numpy array in the
-:py:attr:`~.signal.Signal.data` attribute, the original parameters in the
-:py:attr:`~.signal.Signal.original_metadata` attribute, the mapped parameters
-in the :py:attr:`~.signal.Signal.metadata` attribute and the axes
+:py:attr:`~.signal.BaseSignal.data` attribute, the original parameters in the
+:py:attr:`~.signal.BaseSignal.original_metadata` attribute, the mapped parameters
+in the :py:attr:`~.signal.BaseSignal.metadata` attribute and the axes
 information (including calibration) can be accessed (and modified) in the
-:py:attr:`~.signal.Signal.axes_manager` attribute.
+:py:attr:`~.signal.BaseSignal.axes_manager` attribute.
 
 
 .. _transforming.signal:
@@ -67,7 +67,7 @@ Transforming between signal subclasses
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The different subclasses are characterized by three
-:py:attr:`~.signal.Signal.metadata` attributes (see the table below):
+:py:attr:`~.signal.BaseSignal.metadata` attributes (see the table below):
 
 `record_by`
     Can be "spectrum", "image" or "", the latter meaning undefined and describes
@@ -99,7 +99,7 @@ The different subclasses are characterized by three
     :py:meth:`~.signal.BaseSignal.set_signal_origin` changes the signal_origin in place,
     which may result in a :py:class:`~.signal.BaseSignal` subclass transformation.
 
-.. table:: BaseSignal subclass :py:attr:`~.signal.Signal.metadata` attributes.
+.. table:: BaseSignal subclass :py:attr:`~.signal.BaseSignal.metadata` attributes.
 
     +---------------------------------------------------------------+-----------+-------------+---------------+
     |                      BaseSignal subclass                      | record_by | signal_type | signal_origin |
@@ -609,7 +609,7 @@ using an external function can be more easily accomplished using the
   :align:   center
   :width:   500
 
-  Rotation of images by the same amount using :py:meth:`~.signal.Signal.map`.
+  Rotation of images by the same amount using :py:meth:`~.signal.BaseSignal.map`.
 
 The :py:meth:`~.signal.BaseSignal.map` method can also take variable
 arguments as in the following example.
@@ -793,9 +793,9 @@ Basic statistical analysis
 --------------------------
 .. versionadded:: 0.7
 
-:py:meth:`~.signal.Signal.get_histogram` computes the histogram and
+:py:meth:`~.signal.BaseSignal.get_histogram` computes the histogram and
 conveniently returns it as signal instance. It provides methods to
-calculate the bins. :py:meth:`~.signal.Signal.print_summary_statistics` prints
+calculate the bins. :py:meth:`~.signal.BaseSignal.print_summary_statistics` prints
 the five-number summary statistics of the data.
 
 These two methods can be combined with
@@ -878,7 +878,7 @@ Where `a` is the ``gain_factor``, `b` is the ``gain_offset`` (the gaussian
 noise variance) and `c` the ``correlation_factor``. The correlation
 factor accounts for correlation of adjacent signal elements that can
 be modeled as a convolution with a gaussian point spread function.
-:meth:`~.signal.Signal.estimate_poissonian_noise_variance` can be used to set
+:meth:`~.signal.BaseSignal.estimate_poissonian_noise_variance` can be used to set
 the noise properties when the variance can be described by this linear model,
 for example:
 

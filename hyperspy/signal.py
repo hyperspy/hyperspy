@@ -3481,7 +3481,7 @@ class BaseSignal(MVA,
                       " 1.0.0 and replaced with as_signal2D",
                       VisibleDeprecationWarning)
 
-        im = self.as_signal2D(image_axis)
+        im = self.as_signal2D(image_axes)
         return im
 
     def _assign_subclass(self):
