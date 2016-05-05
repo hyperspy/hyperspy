@@ -39,7 +39,6 @@ class MPL_HyperExplorer(object):
         self.navigator_plot = None
         self.axis = None
         self.pointer = None
-        self._key_nav_cid = None
         self._pointer_nav_dim = None
 
     def plot_signal(self):
