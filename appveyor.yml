@@ -78,7 +78,7 @@ artifacts:
   - path: dist\*.whl
     name: win_wheels
 
- Auto-deployment of bundle installer for tags:
+  #Auto-deployment of bundle installer for tags:
 before_deploy:
   - ps: Add-AppveyorMessage "Running deployment step..."
   - "pip install winpython"
