@@ -20,6 +20,21 @@ import numpy as np
 
 
 def make_sure_ind(inds, req_len=None):
+    """Given an object, constructs a tuple of floats the required length.
+    Either removes items that cannot be cast as floats, or adds the last valid
+    item until the required length is reached.
+
+    Parameters
+    ----------
+    inds : sequence
+        the sequence to be constructed into tuple of floats
+    req_len : {None, number}
+        The required length of the output
+
+    Returns
+    -------
+    indices : tuple of floats
+    """
     try:
         number = len(inds)   # for error catching
         val = ()
@@ -41,6 +56,26 @@ def make_sure_ind(inds, req_len=None):
 
 
 def nearest_indices(shape, ind, radii):
+    """Returns the slices to slice a given size array to get the required size
+    rectangle around the given index. Deals nicely with boundaries.
+
+    Parameters
+    ----------
+    shape : tuple
+        the shape of the original (large) array
+    ind : tuple
+        the index of interest in the large array (centre)
+    radii : tuple of floats
+        the distances of interests in all dimensions around the centre index.
+
+    Returns
+    -------
+    slices : tuple of slices
+        The slices to slice the large array to get the required region.
+    center : tuple of ints
+        The index of the original centre (ind) position in the new (sliced)
+        array.
+    """
     par = ()
     center = ()
     for cent, i in enumerate(ind):
@@ -52,12 +87,23 @@ def nearest_indices(shape, ind, radii):
 
 
 class SamfireStrategy(object):
+    """A SAMFire strategy base class.
+    """
 
     samf = None
     close_plot = None
     name = ""
 
     def update(self, ind, isgood):
+        """Updates the database and marker with the given pixel results
+
+        Parameters
+        ----------
+        ind : tuple
+            the index with new results
+        isgood : bool
+            if the fit was successful.
+        """
         count = self.samf.count
         if isgood:
             self._update_marker(ind)
@@ -67,24 +113,32 @@ class SamfireStrategy(object):
         return self.name
 
     def remove(self):
+        """Removes this strategy from its SAMFire
+        """
         self.samf.strategies.remove(self)
 
 
 class DiffusionStrategy(SamfireStrategy):
+    """A SAMFire strategy that operates in "pixel space" - i.e calculates the
+    starting point estimates based on the local averages of the pixels.
+    Requires some weighting method (e.g. reduced chi-squared).
+    """
 
     _radii = None
     _radii_changed = True
     _untruncated = None
     _mask_all = None
-    decay_function = lambda x: np.exp(-x)
     _weight = None
     _samf = None
 
     def __init__(self, name):
         self.name = name
+        self.decay_function = lambda x: np.exp(-x)
 
     @property
     def samf(self):
+        """The SAMFire that owns this strategy.
+        """
         return self._samf
 
     @samf.setter
@@ -95,6 +149,9 @@ class DiffusionStrategy(SamfireStrategy):
 
     @property
     def weight(self):
+        """A Weight object, able to assign significance weights to separate
+        pixels or maps, given the model.
+        """
         return self._weight
 
     @weight.setter
@@ -106,12 +163,16 @@ class DiffusionStrategy(SamfireStrategy):
             value.model = self.samf.model
 
     def clean(self):
+        """Purges the currently saved values.
+        """
         self._untruncated = None
         self._mask_all = None
         self._radii_changed = True
 
     @property
     def radii(self):
+        """A tuple of >=0 floats that show the "radii of relevance"
+        """
         return self._radii
 
     @radii.setter
@@ -125,10 +186,25 @@ class DiffusionStrategy(SamfireStrategy):
             self._radii = value
 
     def _update_database(self, ind, count):
+        """Dummy method for compatibility
+        """
         pass
 
     def refresh(self, overwrite, given_pixels=None):
+        """Refreshes the marker - recalculates with the current values from
+        scratch.
 
+        Parameters
+        ----------
+        overwrite : Bool
+            If True, all but the given_pixels will be recalculated. Used when
+            part of already calculated results has to be refreshed.
+            If False, only use pixels with marker == -scale (by default -1) to
+            propagate to pixels with marker >= 0. This allows "ignoring" pixels
+            with marker < -scale (e.g. -2).
+        given_pixels : boolean numpy array
+            Pixels with True value are assumed as correctly calculated.
+        """
         marker = self.samf.metadata.marker
         shape = marker.shape
         scale = self.samf._scale
@@ -163,10 +239,10 @@ class DiffusionStrategy(SamfireStrategy):
         if done_number <= todo_number:
             # most efficient to propagate FROM fitted pixels
             ind_list = np.where(calc_pixels)
-            for ii in range(ind_list[0].size):
-                ind = [one_list[ii] for one_list in ind_list]
+            for iindex in range(ind_list[0].size):
+                ind = [one_list[iindex] for one_list in ind_list]
 
-                distances, slices, centre, mask = self._get_distance_array(
+                distances, slices, _, mask = self._get_distance_array(
                     shape, ind)
 
                 mask = np.logical_and(mask, todo_pixels[slices])
@@ -177,8 +253,8 @@ class DiffusionStrategy(SamfireStrategy):
         else:
             # most efficient to propagate TO unknown pixels
             ind_list = np.where(todo_pixels)
-            for ii in range(ind_list[0].size):
-                ind = [one_list[ii] for one_list in ind_list]
+            for iindex in range(ind_list[0].size):
+                ind = [one_list[iindex] for one_list in ind_list]
 
                 distances, slices, centre, mask = self._get_distance_array(
                     shape, ind)
@@ -218,23 +294,27 @@ class DiffusionStrategy(SamfireStrategy):
                 ind):
             self._untruncated = None
             self._mask_all = None
-        if self._radii_changed or self._untruncated is None or self._mask_all is None:
+        if self._radii_changed or \
+           self._untruncated is None or \
+           self._mask_all is None:
             par = []
-            for r in radii:
-                rc = np.ceil(r)
-                par.append(np.abs(np.arange(-rc, rc + 1)))
-            mg = np.array(np.meshgrid(*par, indexing='ij'))
-            self._untruncated = np.sqrt(np.sum(mg ** 2.0, axis=0))
+            for radius in radii:
+                radius_top = np.ceil(radius)
+                par.append(np.abs(np.arange(-radius_top, radius_top + 1)))
+            meshg = np.array(np.meshgrid(*par, indexing='ij'))
+            self._untruncated = np.sqrt(np.sum(meshg ** 2.0, axis=0))
             distance_mask = np.array(
-                [c / float(radii[i]) for i, c in enumerate(mg)])
+                [c / float(radii[i]) for i, c in enumerate(meshg)])
             self._mask_all = np.sum(distance_mask ** 2.0, axis=0)
             self._radii_changed = False
 
         slices_return, centre = nearest_indices(shape, ind, np.ceil(radii))
 
         slices_temp = ()
-        for r, c, s in zip(np.ceil(radii), centre, slices_return):
-            slices_temp += (slice(int(r - c), int(s.stop - s.start + r - c)),)
+        for radius, cent, _slice in zip(np.ceil(radii), centre, slices_return):
+            slices_temp += (slice(int(radius - cent),
+                                  int(_slice.stop - _slice.start +
+                                      radius - cent)),)
         ans = self._untruncated[slices_temp].copy()
         mask = self._mask_all[slices_temp].copy()
 
@@ -256,7 +336,7 @@ class DiffusionStrategy(SamfireStrategy):
         """
         marker = self.samf.metadata.marker
         shape = marker.shape
-        distances, slices, centre, mask = self._get_distance_array(shape, ind)
+        distances, slices, _, mask = self._get_distance_array(shape, ind)
         mask = np.logical_and(mask, marker[slices] >= 0)
 
         weight = self.decay_function(self.weight.function(ind))
@@ -288,9 +368,9 @@ class DiffusionStrategy(SamfireStrategy):
         """
         marker = self.samf.metadata.marker
         shape = marker.shape
-        m = self.samf.model
+        model = self.samf.model
 
-        distances, slices, centre, mask_dist = self._get_distance_array(
+        distances, slices, _, mask_dist = self._get_distance_array(
             shape, ind)
 
         # only use pixels that are calculated and "active"
@@ -305,7 +385,7 @@ class DiffusionStrategy(SamfireStrategy):
                 mask_dist_calc,
                 slices))
         ans = {}
-        for component in m:
+        for component in model:
             if component.active_is_multidimensional:
                 mask = np.logical_and(
                     component._active_array[slices],
@@ -362,7 +442,7 @@ class DiffusionStrategy(SamfireStrategy):
 
 
 class SegmenterStrategy(SamfireStrategy):
-    """A samfire strategy that operates in "parameter space" - i.e the pixel
+    """A SAMFire strategy that operates in "parameter space" - i.e the pixel
     positions are not important, and only parameter value distributions are
     segmented to be used as starting point estimators.
     """
@@ -404,10 +484,10 @@ class SegmenterStrategy(SamfireStrategy):
     def _package_values(self):
         """Packages he current values to be sent to the segmenter
         """
-        m = self.samf.model
+        model = self.samf.model
         mask_calc = self.samf.metadata.marker < 0
         ans = {}
-        for component in m:
+        for component in model:
             if component.active_is_multidimensional:
                 mask = np.logical_and(component._active_array, mask_calc)
             else:
