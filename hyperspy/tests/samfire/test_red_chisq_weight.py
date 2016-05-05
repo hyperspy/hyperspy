@@ -18,14 +18,14 @@
 import numpy as np
 import nose.tools as nt
 
-from hyperspy._samfire_utils._weights.red_chisq import Reduced_chi_squared_weight
+from hyperspy._samfire_utils._weights.red_chisq import ReducedChiSquaredWeight
 from hyperspy.misc.utils import DictionaryTreeBrowser
 
 
 class Test_Red_chisq_weight:
 
     def setUp(self):
-        self.w = Reduced_chi_squared_weight()
+        self.w = ReducedChiSquaredWeight()
         artificial_model = DictionaryTreeBrowser()
         artificial_model.add_node('red_chisq.data')
         artificial_model.red_chisq.data = np.arange(35).reshape((5, 7))

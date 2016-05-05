@@ -22,7 +22,7 @@ from scipy.signal import argrelextrema
 from hyperspy.external.astroML.histtools import histogram
 
 
-class Histogram_segmenter(object):
+class HistogramSegmenter(object):
 
     # add particular kind of histogram
 

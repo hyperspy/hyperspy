@@ -17,43 +17,41 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
-# import matplotlib.pyplot as plt
 
 
 def make_sure_ind(inds, req_len=None):
     try:
-        v = len(inds)   # for error catching
+        number = len(inds)   # for error catching
         val = ()
         for i in inds:
             try:
                 val = val + (float(i),)
             except TypeError:
                 pass
-        v = len(val)
+        number = len(val)
     except TypeError:
         val = (float(inds),)
-        v = len(val)
+        number = len(val)
     if req_len:
-        if req_len < v:
+        if req_len < number:
             val = val[:req_len]
         else:
-            val = val + tuple([val[-1] for _ in range(v, req_len)])
+            val = val + tuple([val[-1] for _ in range(number, req_len)])
     return val
 
 
 def nearest_indices(shape, ind, radii):
     par = ()
     center = ()
-
-    for c, i in enumerate(ind):
-        top = min(i + radii[c] + 1, shape[c])
-        bot = max(0, i - radii[c])
+    for cent, i in enumerate(ind):
+        top = min(i + radii[cent] + 1, shape[cent])
+        bot = max(0, i - radii[cent])
         center = center + (int(i - bot),)
         par = par + (slice(int(bot), int(top)),)
     return par, center
 
 
-class strategy(object):
+class SamfireStrategy(object):
 
     samf = None
     close_plot = None
@@ -72,13 +70,13 @@ class strategy(object):
         self.samf.strategies.remove(self)
 
 
-class diffusion_strategy(strategy):
+class DiffusionStrategy(SamfireStrategy):
 
     _radii = None
     _radii_changed = True
     _untruncated = None
     _mask_all = None
-    decay_function = None
+    decay_function = lambda x: np.exp(-x)
     _weight = None
     _samf = None
 
@@ -192,6 +190,28 @@ class diffusion_strategy(strategy):
                 marker[tuple(ind)] = np.sum(weight[mask] * distance_f[mask])
 
     def _get_distance_array(self, shape, ind):
+        """Calculatex the array of distances (withing radii) from the given
+        pixel. Deals with borders well.
+
+        Parameters
+        ----------
+        shape : tuple
+            the shape of the original array
+        ind : tuple
+            the index to calculate the distances from
+
+        Returns
+        -------
+        ans : numpy array
+            the array of distances
+        slices : tuple of slices
+            slices to slice the original marker to get the correct part of the
+            array
+        centre : tuple
+            the centre index in the sliced array
+        mask : boolean numpy array
+            a binary mask for the values to consider
+        """
         radii = make_sure_ind(self.radii, len(ind))
         # This should be unnecessary.......................
         if self._untruncated is not None and self._untruncated.ndim != len(
@@ -226,6 +246,14 @@ class diffusion_strategy(strategy):
         return ans, slices_return, centre, mask_to_send
 
     def _update_marker(self, ind):
+        """Updates the marker with the spatially decaying envelope around
+        calculated pixels.
+
+        Parameters
+        ----------
+        ind : tuple
+            the index of the pixel to "spread" the envelope around.
+        """
         marker = self.samf.metadata.marker
         shape = marker.shape
         distances, slices, centre, mask = self._get_distance_array(shape, ind)
@@ -241,6 +269,23 @@ class diffusion_strategy(strategy):
         marker[ind] = -scale
 
     def values(self, ind):
+        """Returns the current starting value estimates for the given pixel.
+        Calculated as the weighted local average. Only returns components that
+        are active, and parameters that are free.
+
+        Parameters
+        ----------
+        ind : tuple
+            the index of the pixel of interest.
+
+        Returns
+        -------
+        values : dict
+            A dictionary of estimates, structured as
+            {component_name: {parameter_name: value, ...}, ...}
+            for active components and free parameters.
+
+        """
         marker = self.samf.metadata.marker
         shape = marker.shape
         m = self.samf.model
@@ -270,19 +315,33 @@ class diffusion_strategy(strategy):
                     mask = mask_dist_calc
                 else:  # not multidim and not active, skip
                     continue
-            c = {}
+            comp_dict = {}
             weight = distance_f[mask] * weights_values[mask]
             if weight.size:  # should never happen that np.sum(weight) == 0
                 for par in component.parameters:
                     if par.free:
-                        c[par.name] = np.average(
-                            par.map[slices][mask]['values'], weights=weight, axis=0)
-                ans[component.name] = c
+                        comp_dict[par.name] = np.average(
+                            par.map[slices][mask]['values'],
+                            weights=weight,
+                            axis=0)
+                ans[component.name] = comp_dict
         return ans
 
-    def plot(self, fig):
+    def plot(self, fig=None):
+        """Plots the current marker in a flat image
 
-        kwargs = {'interpolation': 'nearest'}
+        Parameters
+        ----------
+        fig : {Image, None}
+            if an already plotted image, then updates. Otherwise creates a new
+            one.
+
+        Returns
+        -------
+        fig: Image
+            the resulting image. If passed again, will be updated
+            (computationally cheaper operation).
+        """
         marker = self.samf.metadata.marker.copy()
 
         if marker.ndim > 2:
@@ -302,18 +361,26 @@ class diffusion_strategy(strategy):
         return fig
 
 
-class segmenter_strategy(strategy):
+class SegmenterStrategy(SamfireStrategy):
+    """A samfire strategy that operates in "parameter space" - i.e the pixel
+    positions are not important, and only parameter value distributions are
+    segmented to be used as starting point estimators.
+    """
 
     segmenter = None
     _saved_values = None
 
     def clean(self):
+        """Purges the currently saved values (not the database).
+        """
         self._saved_values = None
 
     def __init__(self, name):
         self.name = name
 
     def refresh(self, overwrite, given_pixels=None):
+        """Refreshes the database (i.e. constructs it again from scratch)
+        """
         scale = self.samf._scale
         if overwrite:
             if given_pixels is None:
@@ -329,10 +396,14 @@ class segmenter_strategy(strategy):
         self._update_database(None, 0)  # to force to update
 
     def _update_marker(self, ind):
+        """Updates the SAMFire marker in the given pixel
+        """
         scale = self.samf._scale
         self.samf.metadata.marker[ind] = -scale
 
     def _package_values(self):
+        """Packages he current values to be sent to the segmenter
+        """
         m = self.samf.model
         mask_calc = self.samf.metadata.marker < 0
         ans = {}
@@ -344,37 +415,49 @@ class segmenter_strategy(strategy):
                     mask = mask_calc
                 else:  # not multidim and not active, skip
                     continue
-            c = {}
+            component_dict = {}
             for par in component.parameters:
                 if par.free:
                     # only keeps active values and ravels
-                    c[par.name] = par.map[mask]['values']
-            ans[component.name] = c
+                    component_dict[par.name] = par.map[mask]['values']
+            ans[component.name] = component_dict
         return ans
 
     def _update_database(self, ind, count):
+        """
+        Updates the database with current values
+        """
         if not count % self.samf.update_every:
             self._saved_values = None
             self.segmenter.update(self._package_values())
 
     def values(self, ind=None):
+        """Returns the saved most frequent values that should be used for
+        prediction
+        """
         if self._saved_values is None:
             self._saved_values = self.segmenter.most_frequent()
         return self._saved_values
 
-    def plot(self, fig):
+    def plot(self, fig=None):
+        """Plots the current database of histograms
+
+        Parameters
+        ----------
+        fig: {None, HistogramTilePlot}
+            If given updates the plot.
+        """
         from hyperspy.drawing.tiles import HistogramTilePlot
 
         kwargs = {'color': '#4C72B0'}
-        db = self.segmenter.database
-        if db is None or not len(db):
+        dbase = self.segmenter.database
+        if dbase is None or not len(dbase):
             return fig
 
         if not isinstance(fig, HistogramTilePlot):
             fig = HistogramTilePlot()
-            fig.plot(db, **kwargs)
+            fig.plot(dbase, **kwargs)
             self.close_plot = fig.close
         else:
-            fig.update(db, **kwargs)
-
+            fig.update(dbase, **kwargs)
         return fig

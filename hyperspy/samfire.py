@@ -17,25 +17,22 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-
-import numpy as np
-import dill
-import time
 from multiprocessing import cpu_count
+
+import dill
+import numpy as np
+from tqdm import tqdm
 
 from hyperspy.misc.utils import DictionaryTreeBrowser
 from hyperspy.misc.utils import slugify
 from hyperspy.signal import Signal
-from hyperspy._samfire_utils.strategy import (diffusion_strategy,
-                                              segmenter_strategy)
+from hyperspy._samfire_utils.strategy import (DiffusionStrategy,
+                                              SegmenterStrategy)
 from hyperspy._samfire_utils._strategies.diffusion.red_chisq import \
-    reduced_chi_squared_strategy
+    ReducedChiSquaredStrategy
 from hyperspy._samfire_utils._strategies.segmenter.histogram import \
-    histogram_strategy
-from hyperspy.events import EventSupressor
-from hyperspy._samfire_utils.samfire_worker import create_worker
+    HistogramStrategy
 from hyperspy._samfire_utils.samfire_pool import SamfirePool
-from tqdm import tqdm
 
 
 _logger = logging.getLogger(__name__)
@@ -185,8 +182,8 @@ class Samfire:
 
         self.metadata.marker = marker
         self.strategies = StrategyList(self)
-        self.strategies.append(reduced_chi_squared_strategy())
-        self.strategies.append(histogram_strategy())
+        self.strategies.append(ReducedChiSquaredStrategy())
+        self.strategies.append(HistogramStrategy())
         self._active_strategy_ind = 0
         self.update_every = max(10, workers * 2)  # some sensible number....
         from hyperspy._samfire_utils.fit_tests import red_chisq_test
@@ -426,13 +423,13 @@ class Samfire:
         current = self.active_strategy
         new = self.strategies[new_strat]
 
-        if isinstance(current, diffusion_strategy) and isinstance(
-                new, diffusion_strategy):
+        if isinstance(current, DiffusionStrategy) and isinstance(
+                new, DiffusionStrategy):
             # forget ignore/done levels, keep just calculated or not
             new.refresh(True)
         else:
-            if isinstance(current, diffusion_strategy) and isinstance(
-                    new, segmenter_strategy):
+            if isinstance(current, DiffusionStrategy) and isinstance(
+                    new, SegmenterStrategy):
                 # if diffusion->segmenter, set previous -1 to -2 (ignored for
                 # the next diffusion)
                 self.metadata.marker[

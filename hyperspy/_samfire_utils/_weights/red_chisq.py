@@ -19,7 +19,7 @@
 import numpy as np
 
 
-class Reduced_chi_squared_weight(object):
+class ReducedChiSquaredWeight(object):
 
     def __init__(self):
         self.expected = 1.0

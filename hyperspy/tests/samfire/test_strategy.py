@@ -17,7 +17,7 @@
 
 import nose.tools as nt
 import numpy as np
-from hyperspy._samfire_utils.strategy import diffusion_strategy, segmenter_strategy
+from hyperspy._samfire_utils.strategy import DiffusionStrategy, SegmenterStrategy
 from hyperspy.misc.utils import DictionaryTreeBrowser
 from hyperspy.signals import Spectrum
 from hyperspy.components import Gaussian
@@ -40,8 +40,8 @@ class someweight(object):
 
 def create_artificial_samfire(shape):
     artificial_samfire = DictionaryTreeBrowser()
-    artificial_samfire.add_node('_running_pixels')
-    artificial_samfire._running_pixels = []
+    artificial_samfire.add_node('running_pixels')
+    artificial_samfire.running_pixels = []
     artificial_samfire.add_node('model')
     artificial_samfire.add_node('metadata')
     artificial_samfire.metadata.add_node('marker')
@@ -71,7 +71,7 @@ class TestDiffusionSimple:
 
     def setUp(self):
         self.shape = (5, 7)
-        self.s = diffusion_strategy('test diffusion strategy')
+        self.s = DiffusionStrategy('test diffusion strategy')
         self.samf = create_artificial_samfire(self.shape)
 
         m = DictionaryTreeBrowser()
@@ -322,7 +322,7 @@ class TestDiffusionSimple:
         nt.assert_true(np.allclose(tmp_m1, s.samf.metadata.marker[:4, :4]))
 
         ind = (1, 1)
-        s.samf._running_pixels.append((1, 2))
+        s.samf.running_pixels.append((1, 2))
         s.samf._scale = 13
         s._update_marker(ind)
         tmp_m2 = np.array([[-1.00000000e+00, -3.30000000e-01, 2.54998964e-03, 0.00000000e+00],
@@ -340,7 +340,7 @@ class TestDiffusionWithModel:
 
     def setUp(self):
         self.shape = (5, 7)
-        self.s = diffusion_strategy('test diffusion strategy')
+        self.s = DiffusionStrategy('test diffusion strategy')
         self.samf = create_artificial_samfire(self.shape)
 
         m = Spectrum(np.empty(self.shape + (100,))).create_model()
@@ -404,7 +404,7 @@ class TestSegmenterStrategy:
     def setUp(self):
         # TODO: actually finish setup+ tests
         self.shape = (5, 7)
-        self.s = segmenter_strategy('test segmenter strategy')
+        self.s = SegmenterStrategy('test segmenter strategy')
         self.samf = create_artificial_samfire(self.shape)
 
         m = Spectrum(np.empty(self.shape + (100,))).create_model()

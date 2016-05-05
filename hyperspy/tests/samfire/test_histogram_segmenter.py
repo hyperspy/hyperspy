@@ -18,7 +18,7 @@
 import numpy as np
 import nose.tools as nt
 
-from hyperspy._samfire_utils._segmenters.histogram import Histogram_segmenter
+from hyperspy._samfire_utils._segmenters.histogram import HistogramSegmenter
 from hyperspy.misc.utils import DictionaryTreeBrowser
 from hyperspy.external.astroML.histtools import histogram
 
@@ -44,8 +44,9 @@ class TestHistogramSegmenter:
     def setUp(self):
         self.test_dict = {'one': {'A': np.array([10.])},
                           'two': {'centre': np.array([0., 1.]),
-                                  'sigma': np.array([-3., 0., 3., 1., 1.5, 2., 3.0, 3.05, 3.1, 3.15, 4., 4., 5., 17.,
-                                                     30.])}
+                                  'sigma': np.array([-3., 0., 3., 1., 1.5, 2.,
+                                                     3.0, 3.05, 3.1, 3.15, 4.,
+                                                     4., 5., 17., 30.])}
                           }
 
         self.test_database = {'one': {'A': None},
@@ -60,7 +61,7 @@ class TestHistogramSegmenter:
         self.test_database['two']['sigma'] = histogram(
             self.test_dict['two']['sigma'],
             'blocks')
-        self.s = Histogram_segmenter()
+        self.s = HistogramSegmenter()
 
     def test_init(self):
         s = self.s

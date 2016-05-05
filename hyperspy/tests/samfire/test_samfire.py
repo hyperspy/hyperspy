@@ -182,12 +182,12 @@ class TestSamfireEmpty:
     def test_samfire_init_strategies(self):
         m = self.model
         samf = m.create_samfire(workers=1, setup=False)
-        from hyperspy._samfire_utils._strategies.diffusion.red_chisq import reduced_chi_squared_strategy
-        from hyperspy._samfire_utils._strategies.segmenter.histogram import histogram_strategy
+        from hyperspy._samfire_utils._strategies.diffusion.red_chisq import ReducedChiSquaredStrategy
+        from hyperspy._samfire_utils._strategies.segmenter.histogram import HistogramStrategy
         nt.assert_is_instance(
             samf.strategies[0],
-            reduced_chi_squared_strategy)
-        nt.assert_is_instance(samf.strategies[1], histogram_strategy)
+            ReducedChiSquaredStrategy)
+        nt.assert_is_instance(samf.strategies[1], HistogramStrategy)
 
     def test_samfire_init_fig(self):
         m = self.model
@@ -278,12 +278,12 @@ class TestSamfireEmpty:
     def test_change_strategy(self):
         m = self.model
         samf = m.create_samfire(setup=False)
-        from hyperspy._samfire_utils._strategies.diffusion.red_chisq import reduced_chi_squared_strategy
-        from hyperspy._samfire_utils._strategies.segmenter.histogram import histogram_strategy
+        from hyperspy._samfire_utils._strategies.diffusion.red_chisq import ReducedChiSquaredStrategy
+        from hyperspy._samfire_utils._strategies.segmenter.histogram import HistogramStrategy
 
         ind = (0, 0)
         samf.metadata.marker[ind] = -2
-        samf.strategies.append(reduced_chi_squared_strategy())
+        samf.strategies.append(ReducedChiSquaredStrategy())
         samf.change_strategy(2)
         nt.assert_equal(samf.metadata.marker[ind], -1)
         nt.assert_equal(samf._active_strategy_ind, 2)
@@ -292,7 +292,7 @@ class TestSamfireEmpty:
         nt.assert_equal(samf._active_strategy_ind, 1)
         nt.assert_equal(samf.metadata.marker[ind], -2)
 
-        new_strat = histogram_strategy()
+        new_strat = HistogramStrategy()
         samf.strategies.append(new_strat)
         samf.change_strategy(3)
         nt.assert_equal(samf._active_strategy_ind, 3)
