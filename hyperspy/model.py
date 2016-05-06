@@ -255,7 +255,8 @@ class Model(list):
         class_name = str(self.__class__).split("'")[1].split('.')[-1]
 
         if len(title):
-            return "<%s, title: %s>" % (class_name, self.spectrum.metadata.General.title)
+            return "<%s, title: %s>" % (
+                class_name, self.spectrum.metadata.General.title)
         else:
             return "<%s>" % class_name
 
@@ -347,7 +348,7 @@ class Model(list):
     def __delitem__(self, things):
         things = self.__getitem__(things)
         if not isinstance(things, list):
-            things = [things,]
+            things = [things, ]
         for thing in things:
             self.remove(thing)
 
@@ -589,6 +590,24 @@ class Model(list):
                         self.mpfit_parinfo.extend((
                             {'limited': limited,
                              'limits': limits},) * param._number_of_elements)
+
+    def ensure_parameters_in_bounds(self):
+        """For all active components, snaps their free parameter values to
+        be within their boundaries (if bounded). Does not touch the array of
+        values.
+        """
+        for component in self:
+            if component.active:
+                for param in component.free_parameters:
+                    bmin = -np.inf if param.bmin is None else param.bmin
+                    bmax = np.inf if param.bmax is None else param.bmax
+                    if not bmin <= param.value <= bmax:
+                        min_d = np.abs(param.value - bmin)
+                        max_d = np.abs(param.value - bmax)
+                        if min_d < max_d:
+                            param.value = bmin
+                        else:
+                            param.value = bmax
 
     def store_current_values(self):
         """ Store the parameters of the current coordinates into the
@@ -1157,6 +1176,16 @@ class Model(list):
         if switch_aap is True and update_plot is False:
             self._disconnect_parameters2update_plot()
 
+        if bounded is True:
+            if fitter not in ("mpfit", "tnc", "l_bfgs_b"):
+                raise NotImplementedError("Bounded optimization is only"
+                                          "available for the mpfit "
+                                          "optimizer.")
+            else:
+                # this has to be done before setting the p0, so moved things
+                # around
+                self.ensure_parameters_in_bounds()
+
         self.p_std = None
         self._set_p0()
         if ext_bounding:
@@ -1174,9 +1203,6 @@ class Model(list):
             grad_ml = self._gradient_ml
             grad_ls = self._gradient_ls
 
-        if bounded is True and fitter not in ("mpfit", "tnc", "l_bfgs_b"):
-            raise NotImplementedError("Bounded optimization is only available "
-                                      "for the mpfit optimizer.")
         if method == 'ml':
             weights = None
             if fitter != "fmin":
@@ -1195,7 +1221,7 @@ class Model(list):
                             self.spectrum.axes_manager.navigation_shape):
                         variance = variance.data.__getitem__(
                             self.axes_manager._getitem_tuple)[
-                            self.channel_switches]
+                                self.channel_switches]
                     else:
                         raise AttributeError(
                             "The `navigation_shape` of the variance signals "
@@ -1232,10 +1258,10 @@ class Model(list):
             modelo = odr.Model(fcn=self._function4odr,
                                fjacb=odr_jacobian)
             mydata = odr.RealData(
-                self.axis.axis[
-                    self.channel_switches], self.spectrum()[
-                    self.channel_switches], sx=None, sy=(
-                    1 / weights if weights is not None else None))
+                self.axis.axis[self.channel_switches],
+                self.spectrum()[self.channel_switches],
+                sx=None,
+                sy=(1 / weights if weights is not None else None))
             myodr = odr.ODR(mydata, modelo, beta0=self.p0[:])
             myoutput = myodr.run()
             result = myoutput.beta
@@ -1301,7 +1327,7 @@ class Model(list):
                 if bounded is True:
                     self.set_boundaries()
                 elif bounded is False:
-                    self.self.free_parameters_boundaries = None
+                    self.free_parameters_boundaries = None
                 self.p0 = fmin_tnc(
                     tominimize,
                     self.p0,
@@ -1314,7 +1340,7 @@ class Model(list):
                 if bounded is True:
                     self.set_boundaries()
                 elif bounded is False:
-                    self.self.free_parameters_boundaries = None
+                    self.free_parameters_boundaries = None
                 self.p0 = fmin_l_bfgs_b(tominimize, self.p0,
                                         fprime=fprime, args=args,
                                         bounds=self.free_parameters_boundaries,
@@ -1408,13 +1434,7 @@ class Model(list):
             pbar = progressbar.progressbar(maxval=maxval,
                                            disabled=not show_progressbar)
         if 'bounded' in kwargs and kwargs['bounded'] is True:
-            if kwargs['fitter'] == 'mpfit':
-                self.set_mpfit_parameters_info()
-                kwargs['bounded'] = None
-            elif kwargs['fitter'] in ("tnc", "l_bfgs_b"):
-                self.set_boundaries()
-                kwargs['bounded'] = None
-            else:
+            if kwargs['fitter'] not in ("tnc", "l_bfgs_b", "mpfit"):
                 messages.information(
                     "The chosen fitter does not suppport bounding."
                     "If you require bounding please select one of the "
