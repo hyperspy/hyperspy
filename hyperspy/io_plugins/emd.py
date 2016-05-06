@@ -377,21 +377,33 @@ def file_reader(filename, load_to_memory=True, log_info=False, **kwds):
 def file_writer(filename, signal, signal_metadata=None, user=None,
                 microscope=None, sample=None, comments=None, **kwds):
     if user is None:  # If not provided, look in metadata:
-        user = signal.metadata.General.as_dictionary().get('user')
-    if user is None:  # If not found, check original_metadata:
-        user = signal.original_metadata.General.as_dictionary().get('user')
+        if 'user' in signal.metadata.General.as_dictionary():
+            user = signal.metadata.General.as_dictionary().get('user')
     if microscope is None:  # If not provided, look in metadata:
-        microscope = signal.metadata.General.as_dictionary().get('microscope')
-    if microscope is None:  # If not found, check original_metadata:
-        microscope = signal.original_metadata.General.as_dictionary().get('microscope')
+        if 'microscope' in signal.metadata.General.as_dictionary():
+            microscope = signal.metadata.General.as_dictionary().get('microscope')
     if sample is None:  # If not provided, look in metadata:
-        sample = signal.metadata.General.as_dictionary().get('sample')
-    if sample is None:  # If not found, check original_metadata:
-        sample = signal.original_metadata.General.as_dictionary().get('sample')
+        if 'sample' in signal.metadata.General.as_dictionary():
+            sample = signal.metadata.General.as_dictionary().get('sample')
     if comments is None:  # If not provided, look in metadata:
-        comments = signal.metadata.General.as_dictionary().get('comments')
-    if comments is None:  # If not found, check original_metadata:
-        comments = signal.original_metadata.General.as_dictionary().get('comments')
+        if 'comments' in signal.metadata.General.as_dictionary():
+            comments = signal.metadata.General.as_dictionary().get('comments')
+
+    if 'General' in signal.original_metadata.as_dictionary():
+        if user is None:  # If not found, check original_metadata:
+            if 'user' in signal.original_metadata.General.as_dictionary():
+                user = signal.original_metadata.General.as_dictionary().get('user')
+        if microscope is None:  # If not found, check original_metadata:
+            if 'microscope' in signal.original_metadata.General.as_dictionary():
+                microscope = signal.original_metadata.General.as_dictionary().get('microscope')
+        if sample is None:  # If not found, check original_metadata:
+            if 'sample' in signal.original_metadata.General.as_dictionary():
+                sample = signal.original_metadata.General.as_dictionary().get('sample')
+        if comments is None:  # If not found, check original_metadata:
+            if 'comments' in signal.original_metadata.General.as_dictionary():
+                comments = signal.original_metadata.General.as_dictionary().get('comments')
+
+
     emd = EMD(user=user, microscope=microscope, sample=sample, comments=comments)
     emd.add_signal(signal, metadata=signal_metadata)
     emd.save_to_emd(filename)
