@@ -301,6 +301,7 @@ class EDSTEMSpectrum(EDSSpectrum):
                        navigation_mask=1.0,
                        closing=True,
                        plot_result=False,
+                       iterations=1,
                        **kwargs):
         """
         Quantification using Cliff-Lorimer, the zeta-factor method, or
@@ -374,13 +375,21 @@ class EDSTEMSpectrum(EDSSpectrum):
                 composition.data, kfactors=factors,
                 mask=navigation_mask) * 100.
         elif method == 'zeta':
-            results = utils_eds.quantification_zeta_factor(
-                composition.data, zfactors=factors,
-                dose=self._get_dose(method))
-            composition.data = results[0] * 100.
-            mass_thickness = intensities[0].deepcopy()
-            mass_thickness.data = results[1]
+            int_stack = utils.stack(intensities)
+
+            abs_corr = None # initial
+            for i in range(iterations):
+                results = utils_eds.quantification_zeta_factor(
+                    int_stack.data, zfactors=factors,
+                    dose=self._get_dose(method), absorption_correction=abs_corr)
+                composition.data = results[0] * 100.
+                mass_thickness = intensities[0].deepcopy()
+                mass_thickness.data = results[1]
+                abs_corr = _absorption_correction_terms(composition.split(), mass_thickness)
+
             mass_thickness.metadata.General.title = 'Mass thickness'
+
+
         elif method == 'cross_section':
             results = utils_eds.quantification_cross_section(composition.data,
                     cross_sections=factors,
@@ -635,9 +644,33 @@ class EDSTEMSpectrum(EDSSpectrum):
                         'the default value of 1 nm^2. The function will still run. However if 1 nm^2 is not'
                         'correct, please read the user documentations for how to set this properly.')
                     area = pixel1 * pixel2
-            return (real_time * beam_current * 1e-9) /(constants.e * area)
+            return (real_time * beam_current * 1e-9) / (constants.e * area)
             # 1e-9 is included here because the beam_current is in nA.
         elif method =='zeta':
             return real_time * beam_current * 1e-9 / constants.e
         else:
             raise Exception('Method need to be \'zeta\' or \'cross_section\'.')
+
+
+def _absorption_correction_terms(weight_percent, mass_thickness, take_off_angle=20.0): # take_off_angle, temporary value for testing
+    """
+    Calculate absorption correction terms.
+
+    Parameters
+    ----------
+    weight_percent: list of signal
+        Composition in weight percent.
+    mass_thickness: signal
+        Density-thickness map in kg/m^2
+    take_off_angle: float
+        X-ray take-off angle in degrees.
+    """
+
+    toa_rad = (take_off_angle / 180) * np.pi # radians
+    csc_toa = 1.0/np.sin(toa_rad)
+
+    mac = utils.stack(utils.material.mass_absorption_mixture(weight_percent=weight_percent)) * 0.1 # convert from cm^2/g to m^2/kg
+    x = mac * mass_thickness * csc_toa
+    x.data = x.data/(1.0 - np.exp(-(x.data)))
+
+    return x.data
