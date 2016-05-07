@@ -317,21 +317,29 @@ class EMD(object):
         emd_file.attrs['version_major'] = ver_maj
         emd_file.attrs['version_minor'] = ver_min
         # Write user:
-        user_group = emd_file.require_group('user')
         for key, value in self.user.items():
-            user_group.attrs[key] = value
+            if not (value==''):
+                if 'user' not in emd_file:
+                    user_group = emd_file.require_group('user')
+                user_group.attrs[key] = value
         # Write microscope:
-        microscope_group = emd_file.require_group('microscope')
         for key, value in self.microscope.items():
-            microscope_group.attrs[key] = value
+            if not (value==''):
+                if 'microscope' not in emd_file:
+                    microscope_group = emd_file.require_group('microscope')
+                microscope_group.attrs[key] = value
         # Write sample:
-        sample_group = emd_file.require_group('sample')
         for key, value in self.sample.items():
-            sample_group.attrs[key] = value
+            if not (value==''):
+                if 'sample' not in emd_file:
+                    sample_group = emd_file.require_group('sample')
+                sample_group.attrs[key] = value
         # Write comments:
-        comments_group = emd_file.require_group('comments')
         for key, value in self.comments.items():
-            comments_group.attrs[key] = value
+            if not (value==''):
+                if 'comments' not in emd_file:
+                    comments_group = emd_file.require_group('comments')
+                comments_group.attrs[key] = value
         # Write signals:
         signal_group = emd_file.require_group('signals')
         for signal in self.signals.values():
