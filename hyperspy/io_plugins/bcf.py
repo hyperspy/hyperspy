@@ -51,8 +51,6 @@ import numpy as np
 from struct import unpack as strct_unp
 from zlib import decompress as unzip_block
 
-from hyperspy.misc.elements import elements as elem_db
-
 import logging
 _logger = logging.getLogger(__name__)
 
@@ -505,7 +503,7 @@ class HyperHeader(object):
         #fill the sem and stage attributes:
         self._set_sem(root)
         self._set_image(root)
-        self.elements = []
+        self.elements = {}
         self._set_elements(root)
         self.line_counter = np.fromstring(str(root.LineCounter),
                                           dtype=np.uint16, sep=',')
@@ -578,7 +576,9 @@ class HyperHeader(object):
                "/ClassInstance[@Type='TRTSpectrumRegionList']",
                "/ChildClassInstances"]))[0]
             for j in elements.xpath("ClassInstance[@Type='TRTSpectrumRegion']"):
-                self.elements.append(int(j.Element))
+                self.elements[j.attrib['Name']] = {'line': j.Line.pyval,
+                                                   'energy': j.Energy.pyval,
+                                                   'width': j.Width.pyval}
         except IndexError:
             _logger.info('no element selection present in the spectra..')
 
@@ -921,7 +921,7 @@ this is going to take a while... please wait""")
                 # use assigment, which is ~4 times faster, than inplace add
                 if max_chan < chan1:  # if pixel have more channels than we need
                     chan1 = max_chan
-                if (dwn_factor == 1): #or ((line_cnt % dwn_factor) or (x_pix % dwn_factor)):
+                if (dwn_factor == 1):
                     vfa[max_chan * pix_idx:chan1 + max_chan * pix_idx] =\
                                                                  pixel[:chan1]
                 else:
@@ -944,8 +944,8 @@ class HyperMap(object):
 
     def __init__(self, nparray, parent, index=0, downsample=1):
         sp_meta = parent.header.get_spectra_metadata(index=index)
-        self.calib_abs = sp_meta.calibAbs * 1000    # keV -> eV
-        self.calib_lin = sp_meta.calibLin * 1000
+        self.calib_abs = sp_meta.calibAbs # in keV
+        self.calib_lin = sp_meta.calibLin
         self.xcalib = parent.header.image.x_res * downsample
         self.ycalib = parent.header.image.y_res * downsample
         self.hypermap = nparray
@@ -1048,7 +1048,7 @@ def bcf_hyperspectra(obj_bcf, index=0, downsample=None, cutoff_at_kV=None):
                      'size': obj_bcf.hypermap[index].hypermap.shape[2],
                      'offset': obj_bcf.hypermap[index].calib_abs,
                      'scale': obj_bcf.hypermap[index].calib_lin,
-                     'units': 'eV'}],
+                     'units': 'keV'}],
            'metadata':
              # where is no way to determine what kind of instrument was used:
              # TEM or SEM
@@ -1074,8 +1074,8 @@ def bcf_hyperspectra(obj_bcf, index=0, downsample=None, cutoff_at_kV=None):
                           'title': 'EDX',
                           'datetime': obj_bcf.header.datetime},
               'Sample': {'name': obj_bcf.header.name,
-                         'elements': z_list_to_elem_list(
-                                            obj_bcf.header.elements)},
+                         'elements': list(obj_bcf.header.elements),
+                         'xray_lines': gen_elem_list(obj_bcf.header.elements)},
               'Signal': {'signal_type': 'EDS_SEM',
                            'record_by': 'spectrum', },
              }
@@ -1083,14 +1083,17 @@ def bcf_hyperspectra(obj_bcf, index=0, downsample=None, cutoff_at_kV=None):
     return hyperspectra
 
 
-# helper functions to convert atom number list to abbr. list:
-
-def z_to_element(z):
-    """get the element abbrevation from Z"""
-    for i in elem_db:
-        if z == elem_db[i]['General_properties']['Z']:
-            return i
+def gen_elem_list(the_dict):
+    return ['_'.join([i, parse_line(the_dict[i]['line'])]) for i in the_dict]
+#    return [z_to_element(i) for i in the_list]
 
 
-def z_list_to_elem_list(the_list):
-    return [z_to_element(i) for i in the_list]
+def parse_line(line_string):
+    """standardize line describtion.
+
+    Bruker saves line describtion in all caps
+    and omits the type if only one exists instead of
+    using alfa"""
+    if len(line_string) == 1:
+        line_string = line_string + 'a'
+    return line_string.capitalize()
