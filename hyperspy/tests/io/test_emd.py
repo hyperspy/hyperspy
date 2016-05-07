@@ -63,6 +63,18 @@ def test_metadata():
     nt.assert_is_instance(signal, Image)
 
 
+class TestSaveSimpleSignal():
+
+    def test_save_simple_signal(self):
+        simple_signal = Signal(data_save)
+        simple_signal.save(
+                os.path.join(
+                    my_path, 'emd_files', 'example_temp.emd'), overwrite=True)
+
+    def tearDown(self):
+        remove(os.path.join(my_path, 'emd_files', 'example_temp.emd'))
+
+
 class TestCaseSaveAndRead():
 
     def test_save_and_read(self):

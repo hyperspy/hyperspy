@@ -403,7 +403,6 @@ def file_writer(filename, signal, signal_metadata=None, user=None,
             if 'comments' in signal.original_metadata.General.as_dictionary():
                 comments = signal.original_metadata.General.as_dictionary().get('comments')
 
-
     emd = EMD(user=user, microscope=microscope, sample=sample, comments=comments)
     emd.add_signal(signal, metadata=signal_metadata)
     emd.save_to_emd(filename)
