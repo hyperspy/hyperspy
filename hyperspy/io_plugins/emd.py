@@ -170,7 +170,7 @@ class EMD(object):
             try:
                 axis.scale = dim[1] - dim[0]
                 axis.offset = dim[0]
-            except (IndexError, TypeError) as e:  # Hyperspy then uses defaults (1.0 and 0.0)!
+            except (IndexError, TypeError, ValueError) as e:  # Hyperspy then uses defaults (1.0 and 0.0)!
                 self._log.warning('Could not calculate scale/offset of axis {}: {}'.format(i, e))
         # Extract metadata:
         metadata = {}
