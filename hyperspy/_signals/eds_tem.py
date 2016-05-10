@@ -639,8 +639,7 @@ class EDSTEMSpectrum(EDSSpectrum):
                 else:
                     pixel1 = self.axes_manager[0].scale
                     pixel2 = self.axes_manager[1].scale
-                    if self.axes_manager[0].scale == 1 or
-                    self.axes_manager[1].scale == 1:
+                    if self.axes_manager[0].scale == 1 or self.axes_manager[1].scale == 1:
                         warnings.warn('Please note your probe_area is set to'
                                       'the default value of 1 nm^2. The \
                                       function will still run. However if'
