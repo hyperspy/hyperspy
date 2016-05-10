@@ -556,8 +556,10 @@ def edx_cross_section_to_zeta(cross_sections, elements):
     atomic_weights = np.array(
         [elements_db[element]['General_properties']['atomic_weight']
             for element in elements])
-    zeta_factors = ()
-    zeta_factors = atomic_weights/(cross_sections*constants.Avogadro)*1E25
+    zeta_factors = []
+    for i in range(len(elements)):
+        zeta = atomic_weights[i]/(cross_sections[i]**constants.Avogadro)*1E25
+        zeta_factors.append(zeta)
     return zeta_factors
 
 
@@ -566,7 +568,7 @@ def zeta_to_edx_cross_section(zfactors, elements):
 
     Parameters
     ----------
-    zfactors: array of floats
+    zfactors: list of float
         A list of zeta-factors.
     elements: list of str
         A list of element chemical symbols in the same order as the
@@ -574,7 +576,7 @@ def zeta_to_edx_cross_section(zfactors, elements):
 
     Returns
     -------
-    cross_sections : array of floats
+    cross_sections : list of float
         cross_sections with units in barns.
 
     """
@@ -584,6 +586,8 @@ def zeta_to_edx_cross_section(zfactors, elements):
     atomic_weights = np.array(
         [elements_db[element]['General_properties']['atomic_weight']
             for element in elements])
-    cross_sections = ()
-    cross_sections = atomic_weights/(zfactors*constants.Avogadro)*1E25
+    cross_sections = []
+    for i in range(len(elements)):
+        xsec = atomic_weights[i]/(zfactors[i]*constants.Avogadro)*1E25
+        cross_sections.append(xsec)
     return cross_sections
