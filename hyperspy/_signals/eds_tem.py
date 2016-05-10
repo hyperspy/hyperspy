@@ -665,11 +665,10 @@ def cross_section_to_zeta(cross_sections, elements):
     atomic_weights = np.array(
         [elements_db[element]['General_properties']['atomic_weight']
             for element in elements])
-    print(atomic_weights)
     zeta_factors = []
     for i in range(len(elements)):
-            zeta = atomic_weights[i]/(cross_sections[i]**constants.Avogadro)*1E25
-            zeta_factors.append(zeta)
+        zeta = atomic_weights[i]/(cross_sections[i]**constants.Avogadro)*1E25
+        zeta_factors.append(zeta)
     return zeta_factors
 
 def zeta_to_cross_section(zfactors, elements):
@@ -695,9 +694,8 @@ def zeta_to_cross_section(zfactors, elements):
     atomic_weights = np.array(
         [elements_db[element]['General_properties']['atomic_weight']
             for element in elements])
-    print(atomic_weights)
     cross_sections = []
     for i in range(len(elements)):
-            xsec = atomic_weights[i]/(zfactors[i]*constants.Avogadro)*1E25
-            cross_sections.append(xsec)
+        xsec = atomic_weights[i]/(zfactors[i]*constants.Avogadro)*1E25
+        cross_sections.append(xsec)
     return cross_sections
