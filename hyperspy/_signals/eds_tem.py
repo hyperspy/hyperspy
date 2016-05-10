@@ -292,7 +292,6 @@ class EDSTEMSpectrum(EDSSpectrum):
             mp.Acquisition_instrument.TEM.Detector.EDS.live_time = \
                 mp_ref.Detector.EDS.live_time / nb_pix
 
-
     def quantification(self,
                        intensities,
                        method,
@@ -314,13 +313,13 @@ class EDSTEMSpectrum(EDSSpectrum):
             Set the quantification method: Cliff-Lorimer, zeta-factor, or
             ionization cross sections.
         factors: list of float
-            The list of kfactors, zeta-factors or cross sections in same order as
-            intensities. Note that intensities provided by Hyperspy are sorted
-            by the alphabetical order of the X-ray lines.
+            The list of kfactors, zeta-factors or cross sections in same order
+            as intensities. Note that intensities provided by Hyperspy are
+            sorted by the alphabetical order of the X-ray lines.
             eg. factors =[0.982, 1.32, 1.60] for ['Al_Ka', 'Cr_Ka', 'Ni_Ka'].
         composition_units: 'weight' or 'atomic'
-            The quantification returns the composition in atomic percent by default,
-            but can also return weight percent if specified.
+            The quantification returns the composition in atomic percent by
+            default, but can also return weight percent if specified.
         navigation_mask : None or float or signal
             The navigation locations marked as True are not used in the
             quantification. If int is given the vacuum_mask method is used to
@@ -382,15 +381,17 @@ class EDSTEMSpectrum(EDSSpectrum):
             mass_thickness.data = results[1]
             mass_thickness.metadata.General.title = 'Mass thickness'
         elif method == 'cross_section':
-            results = utils_eds.quantification_cross_section(composition.data,
-                    cross_sections=factors,
-                    dose=self._get_dose(method))
+            results = utils_eds.quantification_cross_section(
+                                composition.data,
+                                cross_sections=factors,
+                                dose=self._get_dose(method))
             composition.data = results[0] * 100
             number_of_atoms = utils.stack(intensities)
             number_of_atoms.data = results[1]
             number_of_atoms = number_of_atoms.split()
         else:
-            raise ValueError ('Please specify method for quantification, as \'CL\', \'zeta\' or \'cross_section\'')
+            raise ValueError('Please specify method for quantification,'
+                             'as \'CL\', \'zeta\' or \'cross_section\'')
         composition = composition.split()
         if composition_units == 'atomic':
             if method != 'cross_section':
@@ -410,18 +411,18 @@ class EDSTEMSpectrum(EDSSpectrum):
                 print("%s (%s): Composition = %.2f %s percent"
                       % (element, xray_line, composition[i].data,
                          composition_units))
-        if method=='cross_section':
+        if method == 'cross_section':
             for i, xray_line in enumerate(xray_lines):
                 element, line = utils_eds._get_element_and_line(xray_line)
-                number_of_atoms[i].metadata.General.title = 'atom counts of ' +\
-                    element
+                number_of_atoms[i].metadata.General.title = \
+                    'atom counts of ' + element
                 number_of_atoms[i].metadata.set_item("Sample.elements",
-                    ([element]))
+                                                     ([element]))
                 number_of_atoms[i].metadata.set_item(
                     "Sample.xray_lines", ([xray_line]))
         if plot_result and composition[i].axes_manager.signal_dimension != 0:
             utils.plot.plot_signals(composition, **kwargs)
-        if method=='zeta':
+        if method == 'zeta':
             self.metadata.set_item("Sample.mass_thickness", mass_thickness)
             return composition, mass_thickness
         elif method == 'cross_section':
@@ -429,7 +430,8 @@ class EDSTEMSpectrum(EDSSpectrum):
         elif method == 'CL':
             return composition
         else:
-            raise ValueError ('Please specify method for quantification, as \'CL\', \'zeta\' or \'cross_section\'')
+            raise ValueError('Please specify method for quantification, as \
+            ''CL\', \'zeta\' or \'cross_section\'')
 
     def vacuum_mask(self, threshold=1.0, closing=True, opening=False):
         """
@@ -569,7 +571,7 @@ class EDSTEMSpectrum(EDSSpectrum):
         return model
 
     def _get_dose(self, method, beam_current='auto', real_time='auto',
-                            probe_area='auto'):
+                  probe_area='auto'):
         """
         Calculates the total electron dose for the zeta-factor or cross section
         methods of quantification.
@@ -593,7 +595,8 @@ class EDSTEMSpectrum(EDSSpectrum):
             The illumination area of the electron beam in nm^2.
             If not set the value is extracted from the scale axes_manager.
             Therefore we assume the probe is oversampling such that
-            the illumination area can be approximated to the pixel area of the spectrum image.
+            the illumination area can be approximated to the pixel area of the
+            spectrum image.
 
         Returns
         --------
@@ -608,20 +611,26 @@ class EDSTEMSpectrum(EDSSpectrum):
 
         if beam_current is 'auto':
             if 'beam_current' not in parameters:
-                raise Exception('Electron dose could not be calculated as beam_current is not set. '
-                                'The beam current can be set by calling set_microscope_parameters()')
+                raise Exception('Electron dose could not be calculated as\
+                     beam_current is not set.'
+                                'The beam current can be set by calling \
+                                set_microscope_parameters()')
             else:
                 beam_current = parameters.beam_current
 
         if real_time == 'auto':
             real_time = parameters.Detector.EDS.real_time
             if 'real_time' not in parameters.Detector.EDS:
-                raise Exception('Electron dose could not be calculated as real_time is not set. '
-                                'The beam_current can be set by calling set_microscope_parameters()')
+                raise Exception('Electron dose could not be calculated as \
+                real_time is not set. '
+                                'The beam_current can be set by calling \
+                                set_microscope_parameters()')
             elif real_time == 0.5:
                 warnings.warn('Please note that your real time is set to '
-                     'the default value of 0.5 s. If this is not correct, you should change it using '
-                     'set_microscope_parameters() and run quantification again.')
+                              'the default value of 0.5 s. If this is not \
+                              correct, you should change it using '
+                              'set_microscope_parameters() and run \
+                              quantification again.')
 
         if method == 'cross_section':
             if probe_area == 'auto':
@@ -630,72 +639,18 @@ class EDSTEMSpectrum(EDSSpectrum):
                 else:
                     pixel1 = self.axes_manager[0].scale
                     pixel2 = self.axes_manager[1].scale
-                    if self.axes_manager[0].scale == 1 or self.axes_manager[1].scale == 1:
+                    if self.axes_manager[0].scale == 1 or
+                    self.axes_manager[1].scale == 1:
                         warnings.warn('Please note your probe_area is set to'
-                        'the default value of 1 nm^2. The function will still run. However if 1 nm^2 is not'
-                        'correct, please read the user documentations for how to set this properly.')
+                                      'the default value of 1 nm^2. The \
+                                      function will still run. However if'
+                                      '1 nm^2 is not correct, please read the \
+                                      user documentations for how to set this \
+                                      properly.')
                     area = pixel1 * pixel2
-            return (real_time * beam_current * 1e-9) /(constants.e * area)
+            return (real_time * beam_current * 1e-9) / (constants.e * area)
             # 1e-9 is included here because the beam_current is in nA.
-        elif method =='zeta':
+        elif method == 'zeta':
             return real_time * beam_current * 1e-9 / constants.e
         else:
             raise Exception('Method need to be \'zeta\' or \'cross_section\'.')
-
-def cross_section_to_zeta(cross_sections, elements):
-    """Convert a list of cross_sections in (b) to zeta-factors (kg/m^2).
-
-    Parameters
-    ----------
-    cross_section: list of float
-        A list of cross sections.
-    elements: list of str
-        A list of element chemical symbols in the same order as the cross sections
-        e.g. ['Al','Zn']
-
-    Returns
-    -------
-    zeta_factors : list of float
-        zeta_factors with units kg/m^2.
-
-    """
-    if len(elements) != len(cross_sections):
-        raise ValueError(
-            'The number of elements must match the number of cross sections.')
-    atomic_weights = np.array(
-        [elements_db[element]['General_properties']['atomic_weight']
-            for element in elements])
-    zeta_factors = []
-    for i in range(len(elements)):
-        zeta = atomic_weights[i]/(cross_sections[i]**constants.Avogadro)*1E25
-        zeta_factors.append(zeta)
-    return zeta_factors
-
-def zeta_to_cross_section(zfactors, elements):
-    """Convert a list of zeta-factors (kg/m^2) to cross_sections in (b).
-
-    Parameters
-    ----------
-    zfactors: list of float
-        A list of zeta-factors.
-    elements: list of str
-        A list of element chemical symbols in the same order as the cross sections
-        e.g. ['Al','Zn']
-
-    Returns
-    -------
-    cross_sections : list of float
-        cross_sections with units in barns.
-
-    """
-    if len(elements) != len(zfactors):
-        raise ValueError(
-            'The number of elements must match the number of cross sections.')
-    atomic_weights = np.array(
-        [elements_db[element]['General_properties']['atomic_weight']
-            for element in elements])
-    cross_sections = []
-    for i in range(len(elements)):
-        xsec = atomic_weights[i]/(zfactors[i]*constants.Avogadro)*1E25
-        cross_sections.append(xsec)
-    return cross_sections
