@@ -221,6 +221,17 @@ class Test_quantification:
                       [0.5, 0.5, 0.0],
                       [1.0, 0.0, 0.0]]))
 
+    def test_cross_section_to_zeta(self):
+        cs = [3, 6]
+        elements = [Pt, Ni]
+        res = cross_section_to_zeta(cs, elements)
+        np.testing.assert_allclose(res, [1079.8, 162.44], atol=1e-3)
+
+    def test_zeta_to_cross_section(self):
+        factors = [1079.8, 162.44]
+        elements = [Pt, Ni]
+        res = zeta_to_cross_section(factors, elements)
+        np.testing.assert_allclose(res, [3 6], atol=1e-3)
 
 class Test_vacum_mask:
 
