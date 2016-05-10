@@ -231,7 +231,7 @@ class Test_quantification:
         factors = [1079.8, 162.44]
         elements = [Pt, Ni]
         res = zeta_to_cross_section(factors, elements)
-        np.testing.assert_allclose(res, [3 6], atol=1e-3)
+        np.testing.assert_allclose(res, [3, 6], atol=1e-3)
 
 class Test_vacum_mask:
 
