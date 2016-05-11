@@ -558,7 +558,7 @@ def edx_cross_section_to_zeta(cross_sections, elements):
             for element in elements])
     zeta_factors = []
     for i in range(len(elements)):
-        zeta = atomic_weights[i]/(cross_sections[i]**constants.Avogadro)*1E25
+        zeta = atomic_weights[i]/(cross_sections[i]*constants.Avogadro*1E-25)
         zeta_factors.append(zeta)
     return zeta_factors
 
@@ -588,6 +588,6 @@ def zeta_to_edx_cross_section(zfactors, elements):
             for element in elements])
     cross_sections = []
     for i in range(len(elements)):
-        xsec = atomic_weights[i]/(zfactors[i]*constants.Avogadro)*1E25
+        xsec = atomic_weights[i]/(zfactors[i]*constants.Avogadro*1E-25)
         cross_sections.append(xsec)
     return cross_sections
