@@ -228,10 +228,10 @@ class Test_quantification:
         cs = [3, 6]
         elements = ['Pt', 'Ni']
         res = utils_eds.edx_cross_section_to_zeta(cs, elements)
-        np.testing.assert_allclose(res, [1079.8, 162.44], atol=1e-3)
+        np.testing.assert_allclose(res, [1079.815272, 162.4378035], atol=1e-3)
 
     def test_zeta_to_edx_cross_section(self):
-        factors = [1079.8, 162.44]
+        factors = [1079.815272, 162.4378035]
         elements = ['Pt', 'Ni']
         res = utils_eds.zeta_to_edx_cross_section(factors, elements)
         np.testing.assert_allclose(res, [3, 6], atol=1e-3)
