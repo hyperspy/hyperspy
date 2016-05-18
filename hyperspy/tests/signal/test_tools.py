@@ -48,47 +48,47 @@ class Test2D:
         s1.crop(0, 2, 4)
         nt.assert_true(m.data_changed.called)
         s2.crop("x", 2, 4)
-        nt.assert_true((s1.data == s2.data).all())
+        np.testing.assert_array_almost_equal(s1.data, s2.data)
 
     def test_crop_int(self):
         s = self.signal
         d = self.data
         s.crop(0, 2, 4)
-        nt.assert_true((s.data == d[2:4, :]).all())
+        np.testing.assert_array_almost_equal(s.data, d[2:4, :])
 
     def test_crop_float(self):
         s = self.signal
         d = self.data
         s.crop(0, 2, 2.)
-        nt.assert_true((s.data == d[2:4, :]).all())
+        np.testing.assert_array_almost_equal(s.data, d[2:4, :])
 
     def test_split_axis0(self):
         result = self.signal.split(0, 2)
-        nt.assert_true(len(result) == 2)
-        nt.assert_true((result[0].data == self.data[:2, :]).all())
-        nt.assert_true((result[1].data == self.data[2:4, :]).all())
+        nt.assert_equal(len(result), 2)
+        np.testing.assert_array_almost_equal(result[0].data, self.data[:2, :])
+        np.testing.assert_array_almost_equal(result[1].data, self.data[2:4, :])
 
     def test_split_axis1(self):
         result = self.signal.split(1, 2)
-        nt.assert_true(len(result) == 2)
-        nt.assert_true((result[0].data == self.data[:, :5]).all())
-        nt.assert_true((result[1].data == self.data[:, 5:]).all())
+        nt.assert_equal(len(result), 2)
+        np.testing.assert_array_almost_equal(result[0].data, self.data[:, :5])
+        np.testing.assert_array_almost_equal(result[1].data, self.data[:, 5:])
 
     def test_split_axisE(self):
         result = self.signal.split("E", 2)
-        nt.assert_true(len(result) == 2)
-        nt.assert_true((result[0].data == self.data[:, :5]).all())
-        nt.assert_true((result[1].data == self.data[:, 5:]).all())
+        nt.assert_equal(len(result), 2)
+        np.testing.assert_array_almost_equal(result[0].data, self.data[:, :5])
+        np.testing.assert_array_almost_equal(result[1].data, self.data[:, 5:])
 
     def test_split_default(self):
         result = self.signal.split()
-        nt.assert_true(len(result) == 5)
-        nt.assert_true((result[0].data == self.data[0]).all())
+        nt.assert_equal(len(result), 5)
+        np.testing.assert_array_almost_equal(result[0].data, self.data[0])
 
     def test_histogram(self):
         result = self.signal.get_histogram(3)
         nt.assert_true(isinstance(result, signals.Spectrum))
-        nt.assert_true((result.data == np.array([17, 16, 17])).all())
+        np.testing.assert_equal(result.data, [17, 16, 17])
         nt.assert_true(result.metadata.Signal.binned)
 
     def test_estimate_poissonian_noise_copy_data(self):
@@ -100,7 +100,8 @@ class Test2D:
     def test_estimate_poissonian_noise_noarg(self):
         self.signal.estimate_poissonian_noise_variance()
         variance = self.signal.metadata.Signal.Noise_properties.variance
-        nt.assert_true((variance.data == self.signal.data).all())
+        np.testing.assert_array_equal(variance.data, self.signal.data)
+        np.testing.assert_array_equal(variance.data, self.signal.data)
 
     def test_estimate_poissonian_noise_with_args(self):
         self.signal.estimate_poissonian_noise_variance(
@@ -109,8 +110,8 @@ class Test2D:
             gain_offset=1,
             correlation_factor=0.5)
         variance = self.signal.metadata.Signal.Noise_properties.variance
-        nt.assert_true(
-            (variance.data == (self.signal.data * 2 + 1) * 0.5).all())
+        np.testing.assert_array_equal(variance.data,
+                                      (self.signal.data * 2 + 1) * 0.5)
 
     def test_unfold_image(self):
         s = self.signal
@@ -185,14 +186,13 @@ class Test3D:
         self.signal.estimate_poissonian_noise_variance()
         new_s = self.signal.rebin((2, 1, 6))
         var = new_s.metadata.Signal.Noise_properties.variance
-        nt.assert_true(new_s.data.shape == (1, 2, 6))
-        nt.assert_true(var.data.shape == (1, 2, 6))
+        nt.assert_equal(new_s.data.shape, (1, 2, 6))
+        nt.assert_equal(var.data.shape, (1, 2, 6))
         from hyperspy.misc.array_tools import rebin
-        nt.assert_true(np.all(rebin(self.signal.data, (1, 2, 6)) == var.data))
-        nt.assert_true(
-            np.all(
-                rebin(
-                    self.signal.data, (1, 2, 6)) == new_s.data))
+        np.testing.assert_array_equal(rebin(self.signal.data, (1, 2, 6)),
+                                      var.data)
+        np.testing.assert_array_equal(rebin(self.signal.data, (1, 2, 6)),
+                                      new_s.data)
 
     @nt.raises(AttributeError)
     def test_rebin_no_variance(self):
@@ -202,7 +202,7 @@ class Test3D:
     def test_rebin_const_variance(self):
         self.signal.metadata.set_item('Signal.Noise_properties.variance', 0.3)
         new_s = self.signal.rebin((2, 1, 6))
-        nt.assert_true(new_s.metadata.Signal.Noise_properties.variance == 0.3)
+        nt.assert_equal(new_s.metadata.Signal.Noise_properties.variance, 0.3)
 
     def test_swap_axes(self):
         s = self.signal
@@ -346,7 +346,7 @@ class Test4D:
         s = self.s
         diff = s.diff(axis=2, order=2)
         diff_data = np.diff(s.data, n=2, axis=0)
-        nt.assert_true((diff.data == diff_data).all())
+        np.testing.assert_array_equal(diff.data, diff_data)
 
     def test_diff_axis(self):
         s = self.s

@@ -10,6 +10,7 @@ import numpy as np
 from hyperspy.io import load
 from hyperspy.signal import Signal
 from hyperspy.roi import Point2DROI
+from hyperspy.datasets.example_signals import EDS_TEM_Spectrum
 
 my_path = os.path.dirname(__file__)
 
@@ -126,9 +127,8 @@ class TestLoadingNewSavedMetadata:
             "with_lists_etc.hdf5"))
 
     def test_signal_inside(self):
-        nt.assert_true(
-            np.all(
-                self.s.data == self.s.metadata.Signal.Noise_properties.variance.data))
+        np.testing.assert_array_almost_equal(self.s.data,
+                                             self.s.metadata.Signal.Noise_properties.variance.data)
 
     def test_empty_things(self):
         nt.assert_equal(self.s.metadata.test.empty_list, [])
@@ -257,10 +257,6 @@ class TestLoadingOOMReadOnly:
             chunks=True)
         f.close()
 
-    @nt.raises(MemoryError, ValueError)
-    def test_in_memory_loading(self):
-        s = load('tmp.hdf5')
-
     def test_oom_loading(self):
         s = load('tmp.hdf5', load_to_memory=False)
         nt.assert_equal(self.shape, s.data.shape)
@@ -273,3 +269,6 @@ class TestLoadingOOMReadOnly:
         except:
             # Don't fail tests if we cannot remove
             pass
+def test_strings_from_py2():
+    s = EDS_TEM_Spectrum()
+    nt.assert_equal(s.metadata.Sample.elements.dtype.char, "U")
