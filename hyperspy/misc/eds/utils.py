@@ -553,12 +553,11 @@ def edx_cross_section_to_zeta(cross_sections, elements):
     if len(elements) != len(cross_sections):
         raise ValueError(
             'The number of elements must match the number of cross sections.')
-    atomic_weights = np.array(
-        [elements_db[element]['General_properties']['atomic_weight']
-            for element in elements])
     zeta_factors = []
-    for i in range(len(elements)):
-        zeta = atomic_weights[i]/(cross_sections[i]*constants.Avogadro*1E-25)
+    for i, element in enumerate(elements):
+        atomic_weight = elements_db[element]['General_properties'][
+            'atomic_weight']
+        zeta = atomic_weight/(cross_sections[i]*constants.Avogadro*1E-25)
         zeta_factors.append(zeta)
     return zeta_factors
 
@@ -583,11 +582,10 @@ def zeta_to_edx_cross_section(zfactors, elements):
     if len(elements) != len(zfactors):
         raise ValueError(
             'The number of elements must match the number of cross sections.')
-    atomic_weights = np.array(
-        [elements_db[element]['General_properties']['atomic_weight']
-            for element in elements])
     cross_sections = []
-    for i in range(len(elements)):
-        xsec = atomic_weights[i]/(zfactors[i]*constants.Avogadro*1E-25)
+    for i, element in enumerate(elements):
+        atomic_weight = elements_db[element]['General_properties'][
+            'atomic_weight']
+        xsec = atomic_weight/(zfactors[i]*constants.Avogadro*1E-25)
         cross_sections.append(xsec)
     return cross_sections
