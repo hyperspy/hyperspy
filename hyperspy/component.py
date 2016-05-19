@@ -514,8 +514,23 @@ class Parameter(t.HasTraits):
                 navigate=True)
         return s
 
-    def plot(self):
-        self.as_signal().plot()
+    def plot(self, **kwargs):
+        """Plot parameter signal.
+    
+        Parameters
+        ----------
+        **kwargs
+            Any extra keyword arguments are passed to the signal plot.
+    
+        Example
+        -------    
+        >>> parameter.plot()
+        
+        Set the minimum and maximum displayed values
+        
+        >>> parameter.plot(vmin=0, vmax=1)
+        """
+        self.as_signal().plot(**kwargs)
 
     def export(self, folder=None, name=None, format=None,
                save_std=False):
