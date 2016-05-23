@@ -2966,8 +2966,8 @@ class BaseSignal(MVA,
         scale = set()
         units = set()
         for i in range(len(self.axes_manager.signal_axes)):
-            scale.add(self.axes_manager[i].scale)
-            units.add(self.axes_manager[i].units)
+            scale.add(self.axes_manager.signal_axes[i].scale)
+            units.add(self.axes_manager.signal_axes[i].units)
         if len(units) != 1 or len(scale) != 1:
             warnings.warn(
                 "The function you applied does not take into "

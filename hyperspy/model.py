@@ -590,6 +590,24 @@ class Model(list):
                             {'limited': limited,
                              'limits': limits},) * param._number_of_elements)
 
+    def ensure_parameters_in_bounds(self):
+        """For all active components, snaps their free parameter values to
+        be within their boundaries (if bounded). Does not touch the array of
+        values.
+        """
+        for component in self:
+            if component.active:
+                for param in component.free_parameters:
+                    bmin = -np.inf if param.bmin is None else param.bmin
+                    bmax = np.inf if param.bmax is None else param.bmax
+                    if not bmin <= param.value <= bmax:
+                        min_d = np.abs(param.value - bmin)
+                        max_d = np.abs(param.value - bmax)
+                        if min_d < max_d:
+                            param.value = bmin
+                        else:
+                            param.value = bmax
+
     def store_current_values(self):
         """ Store the parameters of the current coordinates into the
         parameters array.
@@ -1157,6 +1175,16 @@ class Model(list):
         if switch_aap is True and update_plot is False:
             self._disconnect_parameters2update_plot()
 
+        if bounded is True:
+            if fitter not in ("mpfit", "tnc", "l_bfgs_b"):
+                raise NotImplementedError("Bounded optimization is only"
+                                          "available for the mpfit "
+                                          "optimizer.")
+            else:
+                # this has to be done before setting the p0, so moved things
+                # around
+                self.ensure_parameters_in_bounds()
+
         self.p_std = None
         self._set_p0()
         if ext_bounding:
@@ -1174,9 +1202,6 @@ class Model(list):
             grad_ml = self._gradient_ml
             grad_ls = self._gradient_ls
 
-        if bounded is True and fitter not in ("mpfit", "tnc", "l_bfgs_b"):
-            raise NotImplementedError("Bounded optimization is only available "
-                                      "for the mpfit optimizer.")
         if method == 'ml':
             weights = None
             if fitter != "fmin":
@@ -1232,10 +1257,10 @@ class Model(list):
             modelo = odr.Model(fcn=self._function4odr,
                                fjacb=odr_jacobian)
             mydata = odr.RealData(
-                self.axis.axis[
-                    self.channel_switches], self.signal1D()[
-                    self.channel_switches], sx=None, sy=(
-                    1 / weights if weights is not None else None))
+                self.axis.axis[self.channel_switches],
+                self.signal1D()[self.channel_switches],
+                sx=None,
+                sy=(1 / weights if weights is not None else None))
             myodr = odr.ODR(mydata, modelo, beta0=self.p0[:])
             myoutput = myodr.run()
             result = myoutput.beta
@@ -1301,7 +1326,7 @@ class Model(list):
                 if bounded is True:
                     self.set_boundaries()
                 elif bounded is False:
-                    self.self.free_parameters_boundaries = None
+                    self.free_parameters_boundaries = None
                 self.p0 = fmin_tnc(
                     tominimize,
                     self.p0,
@@ -1314,7 +1339,7 @@ class Model(list):
                 if bounded is True:
                     self.set_boundaries()
                 elif bounded is False:
-                    self.self.free_parameters_boundaries = None
+                    self.free_parameters_boundaries = None
                 self.p0 = fmin_l_bfgs_b(tominimize, self.p0,
                                         fprime=fprime, args=args,
                                         bounds=self.free_parameters_boundaries,
@@ -1408,13 +1433,7 @@ class Model(list):
             pbar = progressbar.progressbar(maxval=maxval,
                                            disabled=not show_progressbar)
         if 'bounded' in kwargs and kwargs['bounded'] is True:
-            if kwargs['fitter'] == 'mpfit':
-                self.set_mpfit_parameters_info()
-                kwargs['bounded'] = None
-            elif kwargs['fitter'] in ("tnc", "l_bfgs_b"):
-                self.set_boundaries()
-                kwargs['bounded'] = None
-            else:
+            if kwargs['fitter'] not in ("tnc", "l_bfgs_b", "mpfit"):
                 messages.information(
                     "The chosen fitter does not suppport bounding."
                     "If you require bounding please select one of the "
@@ -1516,13 +1535,13 @@ class Model(list):
         """
 
         # If new coordinates are assigned
-        self.signal1D.plot()
-        _plot = self.signal1D._plot
+        self.spectrum.plot()
+        _plot = self.spectrum._plot
         l1 = _plot.signal_plot.ax_lines[0]
         color = l1.line.get_color()
         l1.set_line_properties(color=color, type='scatter')
 
-        l2 = hyperspy.drawing.signal1d.Signal1DLine()
+        l2 = hyperspy.drawing.spectrum.SpectrumLine()
         l2.data_function = self._model2plot
         l2.set_line_properties(color='blue', type='line')
         # Add the line to the figure
@@ -1532,7 +1551,7 @@ class Model(list):
                                self._close_plot)
 
         self._model_line = l2
-        self._plot = self.signal1D._plot
+        self._plot = self.spectrum._plot
         self._connect_parameters2update_plot()
         if plot_components is True:
             self.enable_plot_components()
@@ -1562,7 +1581,7 @@ class Model(list):
             self._disconnect_component_line(component)
 
     def _plot_component(self, component):
-        line = hyperspy.drawing.signal1d.Signal1DLine()
+        line = hyperspy.drawing.spectrum.SpectrumLine()
         line.data_function = component._component2plot
         # Add the line to the figure
         self._plot.signal_plot.add_line(line)
