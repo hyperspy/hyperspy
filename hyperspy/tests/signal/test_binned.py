@@ -25,7 +25,7 @@ def test_dielectric_function_binned_default():
 
 
 def test_signal_binned_default():
-    s = hs.signals.Signal([0])
+    s = hs.signals.BaseSignal([0])
     nt.assert_false(s.metadata.Signal.binned)
 
 
