@@ -28,10 +28,10 @@ Bundle. This is a customised `WinPython <http://winpython.github.io/>`_
 distribution that includes HyperSpy, all its dependencies and many other
 scientific Python packages. HyperSpy Bundle does not interact with any other
 Python installation in your system, so it can be safely installed alongside
-other Python distributions. Moreover it is portable, so it can be installed in
-an USB key. When intalling it with administator rights for all users it adds
-context menu entries to start the `Jupyter Notebook <http://jupyter.org>`_ and
-`Juypter QtConsole <http://jupyter.org/qtconsole/stable/>`_. See
+other Python distributions. Moreover it is portable, so it can be installed from
+a USB key. When installing it with administator rights for all users it adds
+context (right-click) menu  entries to start the `Jupyter Notebook <http://jupyter.org>`_ and
+`Juypter QtConsole <http://jupyter.org/qtconsole/stable/>`_ inside the folder being clicked. See
 `start_jupyter_cm <https://github.com/hyperspy/start_jupyter_cm>`_ for details.
 
 
@@ -42,9 +42,9 @@ Quick instructions to install HyperSpy using Anaconda (Linux, MacOs, Windows)
 
 #. Download and install
    `Anaconda. <https://store.continuum.io/cshop/anaconda/>`_
-   Anaconda is recommended for the best performance (it is compiled
+   Be sure to choose the graphical installer, not the command-line version. Anaconda is recommended for the best performance (it is compiled
    using Intel MKL libraries) and the easiest intallation (all the required
-   libraries are included). The academic license is free.
+   libraries are included). The academic license is free. Then install Hyperspy via the 'pip' command in the Mac Terminal:
 
    .. code-block:: bash
 
