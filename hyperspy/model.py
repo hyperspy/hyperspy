@@ -2129,3 +2129,64 @@ class Model(list):
                     "\" not found in model")
         else:
             return list.__getitem__(self, value)
+
+    def notebook_interaction(self):
+
+        from ipywidgets import (interactive, FloatSlider, Accordion)
+        from traitlets import TraitError as TraitletError
+        from IPython.display import display
+
+        def get_update_model_func(component):
+            def update_model(**kwargs):
+                for key, value in kwargs.items():
+                    if key == 'active':
+                        component.active = value
+                    else:
+                        getattr(component, key).value = value
+            return update_model
+
+        def figure_out_bounds(param):
+            fraction = 10.
+            _min, _max = None, None
+            if param.bmin is not None:
+                _min = param.bmin
+            if param.bmax is not None:
+                _max = param.bmax
+            if _max is None and _min is not None:
+                _max = param.value + fraction * (param.value - _min)
+            if _min is None and _max is not None:
+                _min = param.value - fraction * (_max - param.value)
+            if _min is None and _max is None:
+                _min = param.value / fraction
+                _max = param.value * fraction
+            step = (_max - _min) * 0.001
+            return {'min': _min, 'max': _max, 'step': step}
+
+        def create_component_widgets(component):
+
+            kwargs = {'active': component.active}
+
+            for parameter in component.parameters:
+                bounds = figure_out_bounds(parameter)
+                if bounds['min'] == bounds['max']:
+                    if component._position is parameter:
+                        axis = self.spectrum.axes_manager.signal_axes[-1]
+                        bounds['min'] = axis.axis.min()
+                        bounds['max'] = axis.axis.max()
+                        bounds['step'] = np.abs(axis.scale)
+                    else:
+                        bounds['max'] += 10
+                        bounds['step'] = 0.01
+                kwargs[parameter.name] = FloatSlider(value=parameter.value,
+                                                     **bounds)
+            return kwargs
+        try:
+            children = [interactive(get_update_model_func(component),
+                                    **create_component_widgets(component))
+                        for component in self]
+            accord = Accordion(children=children)
+            for i, comp in enumerate(self):
+                accord.set_title(i, comp.name)
+            display(accord)
+        except TraitletError:
+            print('This function is only avialable when running in a notebook')
