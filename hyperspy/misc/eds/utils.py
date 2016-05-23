@@ -557,7 +557,7 @@ def edx_cross_section_to_zeta(cross_sections, elements):
     for i, element in enumerate(elements):
         atomic_weight = elements_db[element]['General_properties'][
             'atomic_weight']
-        zeta = atomic_weight/(cross_sections[i]*constants.Avogadro*1E-25)
+        zeta = atomic_weight / (cross_sections[i] * constants.Avogadro * 1E-25)
         zeta_factors.append(zeta)
     return zeta_factors
 
@@ -586,6 +586,6 @@ def zeta_to_edx_cross_section(zfactors, elements):
     for i, element in enumerate(elements):
         atomic_weight = elements_db[element]['General_properties'][
             'atomic_weight']
-        xsec = atomic_weight/(zfactors[i]*constants.Avogadro*1E-25)
+        xsec = atomic_weight / (zfactors[i] * constants.Avogadro * 1E-25)
         cross_sections.append(xsec)
     return cross_sections
