@@ -2167,18 +2167,19 @@ class Model(list):
             kwargs = {'active': component.active}
 
             for parameter in component.parameters:
-                bounds = figure_out_bounds(parameter)
-                if bounds['min'] == bounds['max']:
-                    if component._position is parameter:
-                        axis = self.spectrum.axes_manager.signal_axes[-1]
-                        bounds['min'] = axis.axis.min()
-                        bounds['max'] = axis.axis.max()
-                        bounds['step'] = np.abs(axis.scale)
-                    else:
-                        bounds['max'] += 10
-                        bounds['step'] = 0.01
-                kwargs[parameter.name] = FloatSlider(value=parameter.value,
-                                                     **bounds)
+                if parameter._number_of_elements == 1:
+                    bounds = figure_out_bounds(parameter)
+                    if bounds['min'] == bounds['max']:
+                        if component._position is parameter:
+                            axis = self.spectrum.axes_manager.signal_axes[-1]
+                            bounds['min'] = axis.axis.min()
+                            bounds['max'] = axis.axis.max()
+                            bounds['step'] = np.abs(axis.scale)
+                        else:
+                            bounds['max'] += 10
+                            bounds['step'] = 0.01
+                    kwargs[parameter.name] = FloatSlider(value=parameter.value,
+                                                         **bounds)
             return kwargs
         try:
             children = [interactive(get_update_model_func(component),
