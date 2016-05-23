@@ -268,9 +268,9 @@ Windows
   .. code-block:: bash
 
     $ uninstall_hyperspy_here
-* If HyperSpy raise a MemoryError exceptions:
+* If HyperSpy raises a MemoryError exception:
 
-  * Install the 64bit if you're using the 32bit one and you are running
+  * Install the 64bit version if you're using the 32bit one and you are running
     HyperSpy in a 64bit system.
-  * Increase the available RAM but closing other applications or physically
+  * Increase the available RAM by closing other applications or physically
     adding more RAM to your computer.
