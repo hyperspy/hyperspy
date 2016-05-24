@@ -23,6 +23,10 @@ import warnings
 
 import traits.api as t
 from traits.trait_numeric import Array
+from ipywidgets import (FloatSlider, Accordion, Checkbox,
+                        FloatText, Layout, HBox, VBox)
+from traitlets import TraitError as TraitletError
+from IPython.display import display as ip_display
 
 from hyperspy.defaults_parser import preferences
 from hyperspy.misc.utils import slugify
@@ -488,6 +492,87 @@ class Parameter(t.HasTraits):
         view = View(editable_traits, buttons=['OK', 'Cancel'])
         return view
 
+    def _interactive_slider_bounds(self):
+        fraction = 10.
+        _min, _max, step = None, None, None
+        if self.bmin is not None:
+            _min = self.bmin
+        if self.bmax is not None:
+            _max = self.bmax
+        if _max is None and _min is not None:
+            _max = self.value + fraction * (self.value - _min)
+        if _min is None and _max is not None:
+            _min = self.value - fraction * (_max - self.value)
+        if _min is None and _max is None:
+            if self is self.component._position:
+                axis = self._axes_manager.signal_axes[-1]
+                _min = axis.axis.min()
+                _max = axis.axis.max()
+                step = np.abs(axis.scale)
+            else:
+                _max = self.value + np.abs(self.value * fraction)
+                _min = self.value - np.abs(self.value * fraction)
+        if step is None:
+            step = (_max - _min) * 0.001
+        return {'min': _min, 'max': _max, 'step': step}
+
+    def _interactive_update(self, value=None):
+        if value is not None:
+            self.value = value['new']
+
+    def notebook_interaction(self, display=True):
+        """Creates interactive notebook widgets for the parameter, if
+        available.
+
+        Parameters
+        ----------
+        display : bool
+            if True (default), attempts to display the parameter widget.
+            Otherwise returns the formatted widget object.
+        """
+        widget_bounds = self._interactive_slider_bounds()
+        try:
+            thismin = FloatText(value=widget_bounds['min'],
+                                description='min',
+                                layout=Layout(flex='0 1 auto',
+                                              width='auto'),)
+            thismax = FloatText(value=widget_bounds['max'],
+                                description='max',
+                                layout=Layout(flex='0 1 auto',
+                                              width='auto'),)
+            widget = FloatSlider(value=self.value,
+                                 min=thismin.value,
+                                 max=thismax.value,
+                                 step=widget_bounds['step'],
+                                 description=self.name,
+                                 layout=Layout(flex='1 1 auto', width='auto'))
+
+            def on_min_change(change):
+                if widget.max > change['new']:
+                    widget.min = change['new']
+                    widget.step = np.abs(widget.max - widget.min) * 0.001
+
+            def on_max_change(change):
+                if widget.min < change['new']:
+                    widget.max = change['new']
+                    widget.step = np.abs(widget.max - widget.min) * 0.001
+
+            thismin.observe(on_min_change, names='value')
+            thismax.observe(on_max_change, names='value')
+
+            widget.observe(self._interactive_update, names='value')
+            container = HBox()
+            container.children = (thismin, widget, thismax)
+            if not display:
+                return container
+            ip_display(container)
+        except TraitletError:
+            if display:
+                print('This function is only avialable when running in a'
+                      ' notebook')
+            else:
+                raise
+
 
 class Component(t.HasTraits):
     __axes_manager = None
@@ -917,3 +1002,36 @@ class Component(t.HasTraits):
         if self._axes_manager != signal.axes_manager:
             self._axes_manager = signal.axes_manager
             self._create_arrays()
+
+    def notebook_interaction(self, display=True):
+        """Creates interactive notebook widgets for all component parameters,
+        if available.
+
+        Parameters
+        ----------
+        display : bool
+            if True (default), attempts to display the widgets.
+            Otherwise returns the formatted widget object.
+        """
+        try:
+            active = Checkbox(description='active', value=self.active)
+
+            def on_active_change(change):
+                self.active = change['new']
+            active.observe(on_active_change, names='value')
+
+            container = VBox([active])
+            for parameter in self.parameters:
+                if parameter._number_of_elements == 1:
+                    container.children += parameter.notebook_interaction(
+                        False),
+
+            if not display:
+                return container
+            ip_display(container)
+        except TraitletError:
+            if display:
+                print('This function is only avialable when running in a'
+                      ' notebook')
+            else:
+                raise
