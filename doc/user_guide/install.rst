@@ -260,14 +260,14 @@ Windows
   and the entries in the context menu and the Start Menu are not installed
   properly. In most cases the problem can be solved by restarting the computer
   and reinstalling HyperSpy.
-* Due to a `Python bug <http://bugs.python.org/issue13276>`_ sometimes uninstalling
-  HyperSpy does not uninstall the "jupyter" entries in the context menu.
-  Please run the following code in a Windows Terminal with administrator rights
+* Concerning older installations with the "Hyperspy here" context menus: Due to a `Python bug <http://bugs.python.org/issue13276>`_ sometimes uninstalling
+  HyperSpy does not uninstall the "Hyperspy here" entries in the context menu.
+  Please run the following code in a Windows Terminal (command line prompt) with administrator rights
   to remove the entries manually:
 
   .. code-block:: bash
 
-    $ uninstall_start_jupyter_cm
+    > uninstall_hyperspy_here
 * If HyperSpy raises a MemoryError exception:
 
   * Install the 64bit version if you're using the 32bit one and you are running
