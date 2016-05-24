@@ -64,16 +64,17 @@ endianess2rpl = {
     '<': 'little-endian',
     '>': 'big-endian'}
 
+# Warning: for selection lists use tuples not lists.
 rpl_keys = {
     # spectrum/image keys
     'width': int,
     'height': int,
     'depth': int,
     'offset': int,
-    'data-length': ['1', '2', '4', '8'],
-    'data-type': ['signed', 'unsigned', 'float'],
-    'byte-order': ['little-endian', 'big-endian', 'dont-care'],
-    'record-by': ['image', 'vector', 'dont-care'],
+    'data-length': ('1', '2', '4', '8'),
+    'data-type': ('signed', 'unsigned', 'float'),
+    'byte-order': ('little-endian', 'big-endian', 'dont-care'),
+    'record-by': ('image', 'vector', 'dont-care'),
     # X-ray keys
     'ev-per-chan': float,    # usually 5 or 10 eV
     'detector-peak-width-ev': float,  # usually 150 eV
@@ -154,18 +155,18 @@ def parse_ripple(fp):
                 raise IOError(err)
             line = line.split(sep)  # now it's a list
             if (line[0] in rpl_keys) is True:
-                # is rpl_keys[line[0]] an iterable?
-                if hasattr(rpl_keys[line[0]], '__iter__'):
-                    if line[1] not in rpl_keys[line[0]]:
+                value_type = rpl_keys[line[0]]
+                if isinstance(value_type, tuple):  # is selection list
+                    if line[1] not in value_type:
                         err = \
                             'Wrong value for key %s.\n' \
                             'Value read is %s'  \
                             ' but it should be one of %s' % \
-                            (line[0], line[1], str(rpl_keys[line[0]]))
+                            (line[0], line[1], str(value_type))
                         raise IOError(err)
                 else:
                     # rpl_keys[line[0]] must then be a type
-                    line[1] = rpl_keys[line[0]](line[1])
+                    line[1] = value_type(line[1])
 
             rpl_info[line[0]] = line[1]
 
