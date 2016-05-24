@@ -44,7 +44,7 @@ Quick instructions to install HyperSpy using Anaconda (Linux, MacOs, Windows)
    `Anaconda. <https://store.continuum.io/cshop/anaconda/>`_
    For MacOS, be sure to choose the graphical installer, not the command-line version. Anaconda is recommended for the best performance (it is compiled
    using Intel MKL libraries) and the easiest intallation (all the required
-   libraries are included). The academic license is free. Then install Hyperspy via the 'pip' command (in the Mac Terminal  usually to be found in "Applications>Utilities" or in a unix terminal):
+   libraries are included). The academic license is free. Then install Hyperspy via the 'pip' command (in the Mac Terminal,  usually to be found in "Applications>Utilities" or in a Unix terminal):
 
    .. code-block:: bash
 
@@ -261,13 +261,13 @@ Windows
   properly. In most cases the problem can be solved by restarting the computer
   and reinstalling HyperSpy.
 * Due to a `Python bug <http://bugs.python.org/issue13276>`_ sometimes uninstalling
-  HyperSpy does not uninstall the "HyperSpy Here" entries in the context menu.
+  HyperSpy does not uninstall the "jupyter" entries in the context menu.
   Please run the following code in a Windows Terminal with administrator rights
   to remove the entries manually:
 
   .. code-block:: bash
 
-    $ uninstall_hyperspy_here
+    $ uninstall_start_jupyter_cm
 * If HyperSpy raises a MemoryError exception:
 
   * Install the 64bit version if you're using the 32bit one and you are running
