@@ -44,7 +44,7 @@ Quick instructions to install HyperSpy using Anaconda (Linux, MacOs, Windows)
    `Anaconda. <https://store.continuum.io/cshop/anaconda/>`_
    For MacOS, be sure to choose the graphical installer, not the command-line version. Anaconda is recommended for the best performance (it is compiled
    using Intel MKL libraries) and the easiest intallation (all the required
-   libraries are included). The academic license is free. Then install Hyperspy via the 'pip' command in the Mac Terminal(usually to be found in "Applications>Utilities"):
+   libraries are included). The academic license is free. Then install Hyperspy via the 'pip' command in the Mac Terminal  (usually to be found in "Applications>Utilities"):
 
    .. code-block:: bash
 
