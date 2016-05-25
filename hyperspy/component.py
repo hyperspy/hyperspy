@@ -24,7 +24,7 @@ import warnings
 
 import traits.api as t
 from traits.trait_numeric import Array
-from ipywidgets import (FloatSlider, Accordion, Checkbox,
+from ipywidgets import (FloatSlider, Checkbox,
                         FloatText, Layout, HBox, VBox)
 from traitlets import TraitError as TraitletError
 from IPython.display import display as ip_display
