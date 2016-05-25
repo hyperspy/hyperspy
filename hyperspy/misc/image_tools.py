@@ -575,6 +575,36 @@ def find_peaks_masiel(z, subpixel=False, peak_width=10, medfilt_radius=5,
     return peaks
 
 
+def find_peaks_blob(z, threshold=5., **kwargs):
+    """
+    Finds peaks via the difference of Gaussian Matrices method in scikit-image.
+
+    Parameters
+    ----------
+    z : ndarray
+        Array of image intensities.
+    threshold : Minimum cut-off value for peak detection. May be considerably
+        lower than minimum peak intensity.
+    kwargs : Additional parameters to be passed to the algorithm. See 'blob_dog'
+        documentation for details.
+
+    Returns
+    -------
+    ndarray
+        (n_peaks, 2)
+        Array of peak coordinates.
+
+    Notes
+    -----
+    While highly effective at finding even very faint peaks, this method is
+        sensitive to fluctuations in intensity near the edges of the image.
+
+    """
+    from skimage.feature import blob_dog
+    blobs = blob_dog(z, threshold=threshold, **kwargs)
+    return blobs[:, :2]
+
+
 def subpix_locate(z, peaks, peak_width, scale=None):
     top = left = peak_width / 2 + 1
     centers = np.array(peaks, dtype=np.float32)

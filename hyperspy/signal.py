@@ -69,7 +69,7 @@ from hyperspy.misc.spectrum_tools import find_peaks_ohaver
 from hyperspy.misc.image_tools import (shift_image, estimate_image_shift,
                                        find_peaks_max, find_peaks_minmax,
                                        find_peaks_zaefferer, find_peaks_stat,
-                                       find_peaks_masiel)
+                                       find_peaks_masiel, find_peaks_blob)
 from hyperspy.misc.math_tools import symmetrize, antisymmetrize
 from hyperspy.exceptions import SignalDimensionError, DataDimensionError
 from hyperspy.misc import array_tools
@@ -638,6 +638,8 @@ class Signal2DTools(object):
                      'stat' - statistical approach requiring no free params.
                      'massiel' - finds peaks in each direction and compares the
                                  positions where these coincide.
+                     'blob' - a blob finder implemented in scikit-image which
+                              uses the difference of Gaussian matrices approach
 
         keywords : associated with above methods.
 
@@ -665,6 +667,8 @@ class Signal2DTools(object):
                 peaks[indices] = find_peaks_stat(z, *args, **kwargs)
             if method == 'massiel':
                 peaks[indices] = find_peaks_masiel(z, *args, **kwargs)
+            if method == 'blob':
+                peaks[indices] = find_peaks_blob(z, *args, **kwargs)
 
         return peaks
 
