@@ -50,13 +50,13 @@ class TestModelIndexing:
         self.model = m
 
     def test_model_signal_indexer_slice(self):
-        s = self.model.spectrum.isig[:300]
+        s = self.model.signal.isig[:300]
         m = self.model.isig[:300]
         m1 = self.model.isig[300:]
         m2 = self.model.isig[:0.]
         nt.assert_is(m1[0].A.ext_bounded, m[0].A.ext_bounded)
-        np.testing.assert_array_almost_equal(s.data, m.spectrum.data)
-        np.testing.assert_array_almost_equal(s.data, m2.spectrum.data)
+        np.testing.assert_array_almost_equal(s.data, m.signal.data)
+        np.testing.assert_array_almost_equal(s.data, m2.signal.data)
         np.testing.assert_array_equal(m.dof.data, self.model.dof.data)
         for ic, c in enumerate(m):
             for p_new, p_old in zip(c.parameters, self.model[ic].parameters):
@@ -145,4 +145,4 @@ class TestEELSModelSlicing:
     def test_slicing_low_loss_isig(self):
         m = self.model
         m1 = m.isig[::2]
-        nt.assert_equal(m.spectrum.data.shape, m1.low_loss.data.shape)
+        nt.assert_equal(m.signal.data.shape, m1.low_loss.data.shape)

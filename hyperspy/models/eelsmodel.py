@@ -89,18 +89,18 @@ class EELSModel(Model1D):
             background = PowerLaw()
             self.append(background)
 
-        if self.spectrum.subshells and auto_add_edges is True:
+        if self.signal.subshells and auto_add_edges is True:
             self._add_edges_from_subshells_names()
 
     @property
     def spectrum(self):
-        return self._spectrum
+        return self._signal
 
     @spectrum.setter
     def spectrum(self, value):
         if isinstance(value, EELSSpectrum):
-            self._spectrum = value
-            self.spectrum._are_microscope_parameters_missing()
+            self._signal = value
+            self.signal._are_microscope_parameters_missing()
         else:
             raise ValueError(
                 "This attribute can only contain an EELSSpectrum "
@@ -110,7 +110,7 @@ class EELSModel(Model1D):
     def append(self, component):
         super(EELSModel, self).append(component)
         if isinstance(component, EELSCLEdge):
-            tem = self.spectrum.metadata.Acquisition_instrument.TEM
+            tem = self.signal.metadata.Acquisition_instrument.TEM
             component.set_microscope_parameters(
                 E0=tem.beam_energy,
                 alpha=tem.convergence_angle,
@@ -183,7 +183,7 @@ class EELSModel(Model1D):
         e_shells : list of strings
         """
         if e_shells is None:
-            e_shells = list(self.spectrum.subshells)
+            e_shells = list(self.signal.subshells)
         e_shells.sort()
         master_edge = EELSCLEdge(e_shells.pop(), self.GOS)
         # If self.GOS was None, the GOS is set by eels_cl_edge so
@@ -479,7 +479,7 @@ class EELSModel(Model1D):
                     preferences.EELS.preedge_safe_window_width
 
         if not powerlaw.estimate_parameters(
-                self.spectrum, E1, E2, only_current=False):
+                self.signal, E1, E2, only_current=False):
             _logger.warning(
                 "The power law background parameters could not "
                 "be estimated.\n"
