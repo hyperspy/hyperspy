@@ -902,6 +902,7 @@ class IntegrateArea(SpanSelectorInSpectrum):
                 signal.axes.signal_dimension, 1)
 
         self.signal = signal
+        self.axis = self.signal.axes_manager.signal_axes[0]
         self.span_selector = None
         if not hasattr(self.signal, '_plot'):
             self.signal.plot()
