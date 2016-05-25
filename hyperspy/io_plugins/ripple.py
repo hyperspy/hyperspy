@@ -91,13 +91,16 @@ rpl_keys = {
     'signal': str,
     # EELS HyperSpy keys
     'collection-angle': float,
-    # TEM Hyperespy keys
+    # TEM HyperSpy keys
     'convergence-angle': float,
     'beam-energy': float,
-    # EDS Hyperespy keys
+    # EDS HyperSpy keys
     'elevation-angle': float,
     'azimuth-angle': float,
     'live-time': float,
+    # From 0.8.5 energy-resolution is deprecated as it is a duplicate of
+    # detector-peak-width-ev of the ripple standard format. We keep it here
+    # to keep compatibility with rpl file written by HyperSpy < 0.8.4
     'energy-resolution': float,
     'tilt-stage': float,
 }
@@ -406,10 +409,6 @@ def file_reader(filename, rpl_info=None, encoding="latin-1",
     if 'signal' not in rpl_info:
         rpl_info['signal'] = ""
 
-    if 'detector-peak-width-ev' in rpl_info:
-        original_metadata['detector-peak-width-ev'] = \
-            rpl_info['detector-peak-width-ev']
-
     if 'depth-scale' in rpl_info:
         scales[idepth] = rpl_info['depth-scale']
     # ev-per-chan is the only calibration supported by the original ripple
@@ -480,6 +479,10 @@ def file_reader(filename, rpl_info=None, encoding="latin-1",
         mp.set_item('Acquisition_instrument.TEM.Detector.EDS.' +
                     'energy_resolution_MnKa',
                     rpl_info['energy-resolution'])
+    if 'detector-peak-width-ev' in rpl_info:
+        mp.set_item('Acquisition_instrument.TEM.Detector.EDS.' +
+                    'energy_resolution_MnKa',
+                    rpl_info['detector-peak-width-ev'])
     if 'live-time' in rpl_info:
         mp.set_item('Acquisition_instrument.TEM.Detector.EDS.live_time',
                     rpl_info['live-time'])
@@ -621,7 +624,8 @@ def file_writer(filename, signal, encoding='latin-1', *args, **kwds):
             keys_dictionary['live-time'] = mp.Detector.EDS.live_time
         if mp.has_item('Detector.EDS.energy_resolution_MnKa'):
             keys_dictionary[
-                'energy-resolution'] = mp.Detector.EDS.energy_resolution_MnKa
+                'detector-peak-width-ev'] = \
+                mp.Detector.EDS.energy_resolution_MnKa
 
     write_rpl(filename, keys_dictionary, encoding)
     write_raw(filename, signal, record_by)
