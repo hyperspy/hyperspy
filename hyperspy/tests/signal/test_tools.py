@@ -148,7 +148,7 @@ class Test3D:
     def test_swap_axes(self):
         s = self.signal
         nt.assert_equal(s.swap_axes(0, 1).data.shape, (4, 2, 6))
-        nt.assert_equal(s.swap_axes(0, 1).axes_manager.shape, (6, 2, 4))
+        nt.assert_equal(s.swap_axes(0, 2).axes_manager.shape, (6, 2, 4))
         nt.assert_true(s.swap_axes(0, 2).data.flags['C_CONTIGUOUS'])
 
     def test_get_navigation_signal_nav_dim0(self):
