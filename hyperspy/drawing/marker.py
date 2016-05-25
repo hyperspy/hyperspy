@@ -115,7 +115,7 @@ class MarkerBase(object):
         thing = data[ind].item()[()]
         if thing is None:
             return None
-        elif not isinstance(thing, str) and hasattr(thing, "__iter__") and \
+        elif not isinstance(thing, (str, bytes)) and hasattr(thing, "__iter__") and \
                 self.auto_update:
             indices = self.axes_manager.indices[::-1]
             return data[ind].item()[indices]
