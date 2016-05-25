@@ -18,7 +18,7 @@ class TestPowerLaw:
         self.m = m
 
     def test_estimate_parameters_binned_only_current(self):
-        self.m.signal1D.metadata.Signal.binned = True
+        self.m.signal.metadata.Signal.binned = True
         s = self.m.as_signal(show_progressbar=None)
         s.metadata.Signal.binned = True
         g = hs.model.components.PowerLaw()
@@ -30,7 +30,7 @@ class TestPowerLaw:
         nt.assert_almost_equal(g.r.value, 4.0017676988807409)
 
     def test_estimate_parameters_unbinned_only_current(self):
-        self.m.signal1D.metadata.Signal.binned = False
+        self.m.signal.metadata.Signal.binned = False
         s = self.m.as_signal(show_progressbar=None)
         s.metadata.Signal.binned = False
         g = hs.model.components.PowerLaw()
@@ -42,7 +42,7 @@ class TestPowerLaw:
         nt.assert_almost_equal(g.r.value, 4.0017522876514304)
 
     def test_estimate_parameters_binned(self):
-        self.m.signal1D.metadata.Signal.binned = True
+        self.m.signal.metadata.Signal.binned = True
         s = self.m.as_signal(show_progressbar=None)
         s.metadata.Signal.binned = True
         g = hs.model.components.PowerLaw()
@@ -54,7 +54,7 @@ class TestPowerLaw:
         nt.assert_almost_equal(g.r.value, 4.0017676988807409)
 
     def test_estimate_parameters_unbinned(self):
-        self.m.signal1D.metadata.Signal.binned = False
+        self.m.signal.metadata.Signal.binned = False
         s = self.m.as_signal(show_progressbar=None)
         s.metadata.Signal.binned = False
         g = hs.model.components.PowerLaw()
@@ -85,7 +85,7 @@ class TestOffset:
         self.m = m
 
     def test_estimate_parameters_binned(self):
-        self.m.signal1D.metadata.Signal.binned = True
+        self.m.signal.metadata.Signal.binned = True
         s = self.m.as_signal(show_progressbar=None)
         s.metadata.Signal.binned = True
         g = hs.model.components.Offset()
@@ -96,7 +96,7 @@ class TestOffset:
         nt.assert_almost_equal(g.offset.value, 10)
 
     def test_estimate_parameters_unbinned(self):
-        self.m.signal1D.metadata.Signal.binned = False
+        self.m.signal.metadata.Signal.binned = False
         s = self.m.as_signal(show_progressbar=None)
         s.metadata.Signal.binned = False
         g = hs.model.components.Offset()
@@ -125,7 +125,7 @@ class TestPolynomial:
         self.m_3d.append(m[0])
 
     def test_estimate_parameters_binned(self):
-        self.m.signal1D.metadata.Signal.binned = True
+        self.m.signal.metadata.Signal.binned = True
         s = self.m.as_signal(show_progressbar=None)
         s.metadata.Signal.binned = True
         g = hs.model.components.Polynomial(order=2)
@@ -138,7 +138,7 @@ class TestPolynomial:
         nt.assert_almost_equal(g.coefficients.value[2], 3)
 
     def test_estimate_parameters_unbinned(self):
-        self.m.signal1D.metadata.Signal.binned = False
+        self.m.signal.metadata.Signal.binned = False
         s = self.m.as_signal(show_progressbar=None)
         s.metadata.Signal.binned = False
         g = hs.model.components.Polynomial(order=2)
@@ -185,7 +185,7 @@ class TestGaussian:
         self.m = m
 
     def test_estimate_parameters_binned(self):
-        self.m.signal1D.metadata.Signal.binned = True
+        self.m.signal.metadata.Signal.binned = True
         s = self.m.as_signal(show_progressbar=None)
         s.metadata.Signal.binned = True
         g = hs.model.components.Gaussian()
@@ -198,7 +198,7 @@ class TestGaussian:
         nt.assert_almost_equal(g.centre.value, 1)
 
     def test_estimate_parameters_unbinned(self):
-        self.m.signal1D.metadata.Signal.binned = False
+        self.m.signal.metadata.Signal.binned = False
         s = self.m.as_signal(show_progressbar=None)
         s.metadata.Signal.binned = False
         g = hs.model.components.Gaussian()

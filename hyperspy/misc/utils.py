@@ -49,16 +49,16 @@ def attrsetter(target, attrs, value):
 
         >>> s = hs.signals.Signal1D(np.arange(10))
         >>> m = s.create_model()
-        >>> m.signal1D.data
+        >>> self.signal.data
         array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
 
         Now set the data of the model with attrsetter
         >>> attrsetter(m, 'signal1D.data', np.arange(10)+2)
-        >>> m.signal1D.data
+        >>> self.signal.data
         array([2, 3, 4, 5, 6, 7, 8, 9, 10, 10])
 
         The behaviour is identical to
-        >>> m.signal1D.data = np.arange(10) + 2
+        >>> self.signal.data = np.arange(10) + 2
 
 
     """

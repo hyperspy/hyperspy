@@ -46,15 +46,15 @@ class TestAlignTools:
         self.new_offset = self.offset - self.ishifts.min() * self.scale
         s.data[np.arange(10), self.ishifts + self.izlp] = 10
         s.data += self.bg
-        self.signal1D = s
+        self.signal = s
 
     def test_estimate_shift(self):
-        s = self.signal1D
+        s = self.signal
         eshifts = -1 * s.estimate_shift1D(show_progressbar=None)
         np.testing.assert_allclose(eshifts, self.ishifts * self.scale, atol=1e-3)
 
     def test_shift1D(self):
-        s = self.signal1D
+        s = self.signal
         s.shift1D(-
                   1 *
                   self.ishifts[:, np.newaxis] *
@@ -71,7 +71,7 @@ class TestAlignTools:
         nt.assert_equal(s.axes_manager._axes[1].scale, self.scale)
 
     def test_align(self):
-        s = self.signal1D
+        s = self.signal
         s.align1D(show_progressbar=None)
         i_zlp = s.axes_manager.signal_axes[0].value2index(0)
         nt.assert_true(np.allclose(s.data[:, i_zlp], 12))
@@ -85,7 +85,7 @@ class TestAlignTools:
         nt.assert_equal(s.axes_manager._axes[1].scale, self.scale)
 
     def test_align_axis0(self):
-        s = self.signal1D
+        s = self.signal
         s = s.swap_axes(0, 1)
         s.align1D(show_progressbar=None)
         s = s.swap_axes(0, 1)
@@ -135,37 +135,37 @@ class TestFindPeaks1D:
         s.axes_manager.signal_axes[0].scale = 0.01
         self.peak_positions0 = np.arange(8) * 2 * np.pi
         self.peak_positions1 = np.arange(8) * 2 * np.pi + np.pi / 2
-        self.signal1D = s
+        self.signal = s
 
     def test_single_spectrum(self):
-        peaks = self.signal1D.inav[0].find_peaks1D_ohaver()
+        peaks = self.signal.inav[0].find_peaks1D_ohaver()
         nt.assert_true(np.allclose(
             peaks[0]['position'], self.peak_positions0, rtol=1e-5, atol=1e-4))
 
     def test_two_spectra(self):
-        peaks = self.signal1D.find_peaks1D_ohaver()
+        peaks = self.signal.find_peaks1D_ohaver()
         nt.assert_true(np.allclose(
             peaks[1]['position'], self.peak_positions1, rtol=1e-5, atol=1e-4))
 
     def test_height(self):
-        peaks = self.signal1D.find_peaks1D_ohaver()
+        peaks = self.signal.find_peaks1D_ohaver()
         nt.assert_true(np.allclose(
             peaks[1]['height'], 1.0, rtol=1e-5, atol=1e-4))
 
     def test_width(self):
-        peaks = self.signal1D.find_peaks1D_ohaver()
+        peaks = self.signal.find_peaks1D_ohaver()
         nt.assert_true(np.allclose(
             peaks[1]['width'], 3.5758, rtol=1e-4, atol=1e-4),
             msg="One or several widths are not close enough to expected " +
             "value (3.5758): " + str(peaks[1]['width']))
 
     def test_n_peaks(self):
-        peaks = self.signal1D.find_peaks1D_ohaver()
+        peaks = self.signal.find_peaks1D_ohaver()
         nt.assert_equal(len(peaks[1]), 8)
 
     def test_maxpeaksn(self):
         for n in range(1, 10):
-            peaks = self.signal1D.find_peaks1D_ohaver(maxpeakn=n)
+            peaks = self.signal.find_peaks1D_ohaver(maxpeakn=n)
             nt.assert_equal(len(peaks[1]), min((8, n)))
 
 

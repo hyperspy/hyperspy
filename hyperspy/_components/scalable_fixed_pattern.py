@@ -67,7 +67,7 @@ class ScalableFixedPattern(Component):
         Component.__init__(self, ['yscale', 'xscale', 'shift'])
 
         self._position = self.shift
-        self.signal1D = signal1D
+        self.signal = signal1D
         self.yscale.free = True
         self.yscale.value = 1.
         self.xscale.value = 1.
@@ -104,8 +104,8 @@ class ScalableFixedPattern(Component):
         """
 
         self.f = interp1d(
-            self.signal1D.axes_manager.signal_axes[0].axis,
-            self.signal1D.data.squeeze(),
+            self.signal.axes_manager.signal_axes[0].axis,
+            self.signal.data.squeeze(),
             kind=kind,
             bounds_error=False,
             fill_value=fill_value,
@@ -116,9 +116,9 @@ class ScalableFixedPattern(Component):
             result = self.yscale.value * self.f(
                 x * self.xscale.value - self.shift.value)
         else:
-            result = self.yscale.value * self.signal1D.data
-        if self.signal1D.metadata.Signal.binned is True:
-            return result / self.signal1D.axes_manager.signal_axes[0].scale
+            result = self.yscale.value * self.signal.data
+        if self.signal.metadata.Signal.binned is True:
+            return result / self.signal.axes_manager.signal_axes[0].scale
         else:
             return result
 

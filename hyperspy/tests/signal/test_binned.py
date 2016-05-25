@@ -65,9 +65,9 @@ class TestModelBinned:
         self.m = m
 
     def test_unbinned(self):
-        self.m.signal1D.metadata.Signal.binned = False
+        self.m.signal.metadata.Signal.binned = False
         nt.assert_equal(self.m(), 1)
 
     def test_binned(self):
-        self.m.signal1D.metadata.Signal.binned = True
+        self.m.signal.metadata.Signal.binned = True
         nt.assert_equal(self.m(), 0.1)

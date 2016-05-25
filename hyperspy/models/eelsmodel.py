@@ -87,18 +87,18 @@ class EELSModel(Model):
             interactive_ns['background'] = background
             self.append(background)
 
-        if self.signal1D.subshells and auto_add_edges is True:
+        if self.signal.subshells and auto_add_edges is True:
             self._add_edges_from_subshells_names()
 
     @property
     def signal1D(self):
-        return self._signal1D
+        return self._signal
 
     @signal1D.setter
     def signal1D(self, value):
         if isinstance(value, EELSSpectrum):
-            self._signal1D = value
-            self.signal1D._are_microscope_parameters_missing()
+            self._signal = value
+            self.signal._are_microscope_parameters_missing()
         else:
             raise ValueError(
                 "This attribute can only contain an EELSSpectrum "
@@ -120,7 +120,7 @@ class EELSModel(Model):
         self._background_components = []
         for component in self:
             if isinstance(component, EELSCLEdge):
-                tem = self.signal1D.metadata.Acquisition_instrument.TEM
+                tem = self.signal.metadata.Acquisition_instrument.TEM
                 component.set_microscope_parameters(
                     E0=tem.beam_energy,
                     alpha=tem.convergence_angle,
@@ -174,7 +174,7 @@ class EELSModel(Model):
         """
         interactive_ns = get_interactive_ns()
         if e_shells is None:
-            e_shells = list(self.signal1D.subshells)
+            e_shells = list(self.signal.subshells)
         e_shells.sort()
         master_edge = EELSCLEdge(e_shells.pop(), self.GOS)
         # If self.GOS was None, the GOS is set by eels_cl_edge so
@@ -485,7 +485,7 @@ class EELSModel(Model):
                     preferences.EELS.preedge_safe_window_width
 
         if not powerlaw.estimate_parameters(
-                self.signal1D, E1, E2, only_current=False):
+                self.signal, E1, E2, only_current=False):
             messages.warning(
                 "The power law background parameters could not "
                 "be estimated.\n"

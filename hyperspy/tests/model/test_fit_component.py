@@ -150,7 +150,7 @@ class TestFitSeveralComponent:
         m.fit_component(g1, signal_range=(4500, 5200))
         m.fit_component(g2, signal_range=(1500, 2200))
         m.fit_component(g3, signal_range=(5800, 6150))
-        np.testing.assert_allclose(self.model.signal1D.data,
+        np.testing.assert_allclose(self.model.signal.data,
                                    m(),
                                    rtol=self.rtol,
                                    atol=10e-3)

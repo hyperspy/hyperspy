@@ -349,28 +349,28 @@ class TestModelWeighted:
         self.m = m
 
     def test_fit_leastsq_binned(self):
-        self.m.signal1D.metadata.Signal.binned = True
+        self.m.signal.metadata.Signal.binned = True
         self.m.fit(fitter="leastsq", method="ls")
         for result, expected in zip(self.m[0].coefficients.value,
                                     (9.9165596693502778, 1.6628238107916631)):
             np.testing.assert_almost_equal(result, expected, decimal=5)
 
     def test_fit_odr_binned(self):
-        self.m.signal1D.metadata.Signal.binned = True
+        self.m.signal.metadata.Signal.binned = True
         self.m.fit(fitter="odr", method="ls")
         for result, expected in zip(self.m[0].coefficients.value,
                                     (9.9165596548961972, 1.6628247412317521)):
             np.testing.assert_almost_equal(result, expected, decimal=5)
 
     def test_fit_mpfit_binned(self):
-        self.m.signal1D.metadata.Signal.binned = True
+        self.m.signal.metadata.Signal.binned = True
         self.m.fit(fitter="mpfit", method="ls")
         for result, expected in zip(self.m[0].coefficients.value,
                                     (9.9165596607108739, 1.6628243846485873)):
             np.testing.assert_almost_equal(result, expected, decimal=5)
 
     def test_fit_fmin_binned(self):
-        self.m.signal1D.metadata.Signal.binned = True
+        self.m.signal.metadata.Signal.binned = True
         self.m.fit(
             fitter="fmin",
             method="ls",
@@ -380,7 +380,7 @@ class TestModelWeighted:
             np.testing.assert_almost_equal(result, expected, decimal=5)
 
     def test_fit_leastsq_unbinned(self):
-        self.m.signal1D.metadata.Signal.binned = False
+        self.m.signal.metadata.Signal.binned = False
         self.m.fit(fitter="leastsq", method="ls")
         for result, expected in zip(
                 self.m[0].coefficients.value,
@@ -388,7 +388,7 @@ class TestModelWeighted:
             np.testing.assert_almost_equal(result, expected, decimal=5)
 
     def test_fit_odr_unbinned(self):
-        self.m.signal1D.metadata.Signal.binned = False
+        self.m.signal.metadata.Signal.binned = False
         self.m.fit(fitter="odr", method="ls")
         for result, expected in zip(
                 self.m[0].coefficients.value,
@@ -396,7 +396,7 @@ class TestModelWeighted:
             np.testing.assert_almost_equal(result, expected, decimal=5)
 
     def test_fit_mpfit_unbinned(self):
-        self.m.signal1D.metadata.Signal.binned = False
+        self.m.signal.metadata.Signal.binned = False
         self.m.fit(fitter="mpfit", method="ls")
         for result, expected in zip(
                 self.m[0].coefficients.value,
@@ -404,7 +404,7 @@ class TestModelWeighted:
             np.testing.assert_almost_equal(result, expected, decimal=5)
 
     def test_fit_fmin_unbinned(self):
-        self.m.signal1D.metadata.Signal.binned = False
+        self.m.signal.metadata.Signal.binned = False
         self.m.fit(
             fitter="fmin",
             method="ls",
@@ -415,7 +415,7 @@ class TestModelWeighted:
             np.testing.assert_almost_equal(result, expected, decimal=5)
 
     def test_chisq(self):
-        self.m.signal1D.metadata.Signal.binned = True
+        self.m.signal.metadata.Signal.binned = True
         self.m.fit(fitter="leastsq", method="ls")
         np.testing.assert_almost_equal(self.m.chisq.data, 3029.16949561)
 
@@ -539,7 +539,7 @@ class TestMultifit:
     def test_bounded_snapping(self):
         m = self.m
         m[0].A.free = True
-        m.signal1D.data *= 2.
+        self.m.signal.data *= 2.
         m[0].A.value = 2.
         m[0].A.bmin = 3.
         m.multifit(fitter='mpfit', bounded=True, show_progressbar=None)
