@@ -100,7 +100,9 @@ class MarkerBase(object):
         self._is_marker_static()
 
     def _is_marker_static(self):
-        isiterable = lambda obj: not isinstance(obj, (str, bytes)) and hasattr(obj, '__iter__')
+        isiterable = lambda obj: not isinstance(
+            obj, (str, bytes)) and hasattr(
+            obj, '__iter__')
         test = [isiterable(self.data[key].item()[()]) is False
                 for key in self.data.dtype.names]
         if np.alltrue(test):
@@ -110,14 +112,15 @@ class MarkerBase(object):
 
     def get_data_position(self, ind):
         data = self.data
-        if data[ind].item()[()] is None:
+        thing = data[ind].item()[()]
+        if thing is None:
             return None
-        elif hasattr(data[ind].item()[()], "__iter__") and \
+        elif not isinstance(thing, str) and hasattr(thing, "__iter__") and \
                 self.auto_update:
             indices = self.axes_manager.indices[::-1]
             return data[ind].item()[indices]
         else:
-            return data[ind].item()[()]
+            return thing
 
     def close(self):
         try:
