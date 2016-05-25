@@ -837,7 +837,7 @@ class BaseModel(list):
                     if bounded is True:
                         self.set_boundaries()
                     elif bounded is False:
-                        self.self.free_parameters_boundaries = None
+                        self.free_parameters_boundaries = None
                     self.p0 = fmin_tnc(
                         tominimize,
                         self.p0,
@@ -850,7 +850,7 @@ class BaseModel(list):
                     if bounded is True:
                         self.set_boundaries()
                     elif bounded is False:
-                        self.self.free_parameters_boundaries = None
+                        self.free_parameters_boundaries = None
                     self.p0 = fmin_l_bfgs_b(
                         tominimize, self.p0, fprime=fprime, args=args,
                         bounds=self.free_parameters_boundaries,
