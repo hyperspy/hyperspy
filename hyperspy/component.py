@@ -19,6 +19,7 @@
 import os
 
 import numpy as np
+import functools
 import warnings
 
 import traits.api as t
@@ -492,17 +493,18 @@ class Parameter(t.HasTraits):
         view = View(editable_traits, buttons=['OK', 'Cancel'])
         return view
 
-    def _interactive_slider_bounds(self):
+    def _interactive_slider_bounds(self, index=None):
         fraction = 10.
         _min, _max, step = None, None, None
+        value = self.value if index is None else self.value[index]
         if self.bmin is not None:
             _min = self.bmin
         if self.bmax is not None:
             _max = self.bmax
         if _max is None and _min is not None:
-            _max = self.value + fraction * (self.value - _min)
+            _max = value + fraction * (value - _min)
         if _min is None and _max is not None:
-            _min = self.value - fraction * (_max - self.value)
+            _min = value - fraction * (_max - value)
         if _min is None and _max is None:
             if self is self.component._position:
                 axis = self._axes_manager.signal_axes[-1]
@@ -510,15 +512,19 @@ class Parameter(t.HasTraits):
                 _max = axis.axis.max()
                 step = np.abs(axis.scale)
             else:
-                _max = self.value + np.abs(self.value * fraction)
-                _min = self.value - np.abs(self.value * fraction)
+                _max = value + np.abs(value * fraction)
+                _min = value - np.abs(value * fraction)
         if step is None:
             step = (_max - _min) * 0.001
         return {'min': _min, 'max': _max, 'step': step}
 
-    def _interactive_update(self, value=None):
+    def _interactive_update(self, value=None, index=None):
         if value is not None:
-            self.value = value['new']
+            if index is None:
+                self.value = value['new']
+            else:
+                self.value = self.value[:index] + (value['new'],) +\
+                    self.value[index + 1:]
 
     def notebook_interaction(self, display=True):
         """Creates interactive notebook widgets for the parameter, if
@@ -530,39 +536,13 @@ class Parameter(t.HasTraits):
             if True (default), attempts to display the parameter widget.
             Otherwise returns the formatted widget object.
         """
-        widget_bounds = self._interactive_slider_bounds()
         try:
-            thismin = FloatText(value=widget_bounds['min'],
-                                description='min',
-                                layout=Layout(flex='0 1 auto',
-                                              width='auto'),)
-            thismax = FloatText(value=widget_bounds['max'],
-                                description='max',
-                                layout=Layout(flex='0 1 auto',
-                                              width='auto'),)
-            widget = FloatSlider(value=self.value,
-                                 min=thismin.value,
-                                 max=thismax.value,
-                                 step=widget_bounds['step'],
-                                 description=self.name,
-                                 layout=Layout(flex='1 1 auto', width='auto'))
-
-            def on_min_change(change):
-                if widget.max > change['new']:
-                    widget.min = change['new']
-                    widget.step = np.abs(widget.max - widget.min) * 0.001
-
-            def on_max_change(change):
-                if widget.min < change['new']:
-                    widget.max = change['new']
-                    widget.step = np.abs(widget.max - widget.min) * 0.001
-
-            thismin.observe(on_min_change, names='value')
-            thismax.observe(on_max_change, names='value')
-
-            widget.observe(self._interactive_update, names='value')
-            container = HBox()
-            container.children = (thismin, widget, thismax)
+            if self._number_of_elements == 1:
+                container = self._create_notebook_widget()
+            else:
+                children = [self._create_notebook_widget(index=i) for i in
+                            range(self._number_of_elements)]
+                container = VBox(children)
             if not display:
                 return container
             ip_display(container)
@@ -572,6 +552,47 @@ class Parameter(t.HasTraits):
                       ' notebook')
             else:
                 raise
+
+    def _create_notebook_widget(self, index=None):
+        widget_bounds = self._interactive_slider_bounds(index=index)
+        thismin = FloatText(value=widget_bounds['min'],
+                            description='min',
+                            layout=Layout(flex='0 1 auto',
+                                          width='auto'),)
+        thismax = FloatText(value=widget_bounds['max'],
+                            description='max',
+                            layout=Layout(flex='0 1 auto',
+                                          width='auto'),)
+        current_value = self.value if index is None else self.value[index]
+        current_name = self.name
+        if index is not None:
+            current_name += '_{}'.format(index)
+        widget = FloatSlider(value=current_value,
+                             min=thismin.value,
+                             max=thismax.value,
+                             step=widget_bounds['step'],
+                             description=current_name,
+                             layout=Layout(flex='1 1 auto', width='auto'))
+
+        def on_min_change(change):
+            if widget.max > change['new']:
+                widget.min = change['new']
+                widget.step = np.abs(widget.max - widget.min) * 0.001
+
+        def on_max_change(change):
+            if widget.min < change['new']:
+                widget.max = change['new']
+                widget.step = np.abs(widget.max - widget.min) * 0.001
+
+        thismin.observe(on_min_change, names='value')
+        thismax.observe(on_max_change, names='value')
+
+        this_observed = functools.partial(self._interactive_update,
+                                          index=index)
+
+        widget.observe(this_observed, names='value')
+        container = HBox((thismin, widget, thismax))
+        return container
 
 
 class Component(t.HasTraits):
@@ -1022,9 +1043,7 @@ class Component(t.HasTraits):
 
             container = VBox([active])
             for parameter in self.parameters:
-                if parameter._number_of_elements == 1:
-                    container.children += parameter.notebook_interaction(
-                        False),
+                container.children += parameter.notebook_interaction(False),
 
             if not display:
                 return container
