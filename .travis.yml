@@ -13,9 +13,7 @@ install:
   - source activate testenv
   - conda install --yes $DEPS
   - conda install pip
-  - pip install coverage coveralls traits traitsui
-  # The following two lines set hyperspy to run headless. This is a temporary
-  # workaround until we fix hyperspy so that this is not required.
+  - pip install coverage coveralls traits traitsui ipywidgets
   - python setup.py install
 
 before_install:

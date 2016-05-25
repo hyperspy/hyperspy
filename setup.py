@@ -47,7 +47,8 @@ install_req = ['scipy',
                'traits>=4.5.0',
                'traitsui>=5.0',
                'natsort',
-               'sympy']
+               'sympy',
+               'ipywidgets>=5.0']
 
 
 def are_we_building4windows():
