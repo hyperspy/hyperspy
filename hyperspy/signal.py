@@ -3369,9 +3369,14 @@ class BaseSignal(MVA,
         # Roll the spectral axis to-be to the latex index in the array
         sp = self.rollaxis(spectral_axis, -1 + 3j)
         sp.metadata.Signal.record_by = "spectrum"
-        sp._assign_subclass()
-        warnings.warn("The as_signal1D method returns a Spectrum instance in\
-                      version 0.8.5 it will return a Signal1D in 1.0.0")
+        import hyperspy.io
+        hyperspy.io.BAN_DEPRECATED = True
+        try:
+            sp._assign_subclass()
+        except:
+            raise
+        finally:
+            hyperspy.io.BAN_DEPRECATED = False
         return sp
 
     def as_spectrum(self, spectral_axis):
@@ -3402,8 +3407,10 @@ class BaseSignal(MVA,
         warnings.warn("The as_spectrum method will be deprecated from version"
                       " 1.0.0 and replaced with as_signal1D",
                       VisibleDeprecationWarning)
-        s = self.as_signal1D(spectral_axis)
-        return s
+        sp = self.rollaxis(spectral_axis, -1 + 3j)
+        sp.metadata.Signal.record_by = "spectrum"
+        sp._assign_subclass()
+        return sp
 
     def as_signal2D(self, image_axes):
         """Convert signal to image.
@@ -3443,9 +3450,14 @@ class BaseSignal(MVA,
         im = self.rollaxis(iaxes[0] + 3j, -1 + 3j).rollaxis(
             iaxes[1] - np.argmax(iaxes) + 3j, -2 + 3j)
         im.metadata.Signal.record_by = "image"
-        im._assign_subclass()
-        warnings.warn("The as_signal2D method returns an Image instance in\
-                      version 0.8.5 it will return a Signal2D in 1.0.0")
+        import hyperspy.io
+        hyperspy.io.BAN_DEPRECATED = True
+        try:
+            im._assign_subclass()
+        except:
+            raise
+        finally:
+            hyperspy.io.BAN_DEPRECATED = False
         return im
 
     def as_image(self, image_axes):
@@ -3480,9 +3492,18 @@ class BaseSignal(MVA,
         warnings.warn("The as_image method will be deprecated from version"
                       " 1.0.0 and replaced with as_signal2D",
                       VisibleDeprecationWarning)
-
-        im = self.as_signal2D(image_axes)
+        if self.data.ndim < 2:
+            raise DataDimensionError(
+                "A Signal dimension must be >= 2 to be converted to an Image")
+        axes = (self.axes_manager[image_axes[0]],
+                self.axes_manager[image_axes[1]])
+        iaxes = [axis.index_in_array for axis in axes]
+        im = self.rollaxis(iaxes[0] + 3j, -1 + 3j).rollaxis(
+            iaxes[1] - np.argmax(iaxes) + 3j, -2 + 3j)
+        im.metadata.Signal.record_by = "image"
+        im._assign_subclass()
         return im
+
 
     def _assign_subclass(self):
         mp = self.metadata
