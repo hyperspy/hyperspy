@@ -1,0 +1,27 @@
+;File created by HyperSpy version 0.8.4
+key	value
+beam-energy	100.0
+byte-order	dont-care
+collection-angle	10.0
+convergence-angle	1.0
+data-length	1
+data-type	unsigned
+depth	4
+depth-name	2
+depth-origin	1.0
+depth-scale	200.0
+depth-units	eV
+ev-per-chan	200
+height	2
+height-name	0
+height-origin	0.0
+height-scale	0.0
+height-units	m
+offset	0
+record-by	vector
+signal	EELS
+width	3
+width-name	1
+width-origin	0.5
+width-scale	100.0
+width-units	m
