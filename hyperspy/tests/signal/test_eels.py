@@ -43,10 +43,10 @@ class Test_Estimate_Elastic_Scattering_Threshold:
         gauss2.centre.value = 5
         s.data[:] = (gauss.function(energy_axis.axis) +
                      gauss2.function(energy_axis.axis))
-        self.signal = s
+        self.spectrum = s
 
     def test_min_in_window_with_smoothing(self):
-        s = self.signal
+        s = self.spectrum
         thr = s.estimate_elastic_scattering_threshold(
             window=5,
             window_length=5,
@@ -55,7 +55,7 @@ class Test_Estimate_Elastic_Scattering_Threshold:
         nt.assert_true(np.allclose(thr.data, 2.5))
 
     def test_min_in_window_without_smoothing_single_spectrum(self):
-        s = self.signal.inav[0, 0]
+        s = self.spectrum.inav[0, 0]
         thr = s.estimate_elastic_scattering_threshold(
             window=5,
             window_length=0,
@@ -64,7 +64,7 @@ class Test_Estimate_Elastic_Scattering_Threshold:
         nt.assert_true(np.allclose(thr.data, 2.49))
 
     def test_min_in_window_without_smoothing(self):
-        s = self.signal
+        s = self.spectrum
         thr = s.estimate_elastic_scattering_threshold(
             window=5,
             window_length=0,
@@ -75,7 +75,7 @@ class Test_Estimate_Elastic_Scattering_Threshold:
     def test_min_not_in_window(self):
         # If I use a much lower window, this is the value that has to be
         # returned as threshold.
-        s = self.signal
+        s = self.spectrum
         with assert_warns("No inflexion point could be found in some "
                           "positions that have been marked with nans."):
             data = s.estimate_elastic_scattering_threshold(
@@ -89,10 +89,10 @@ class TestEstimateZLPCentre:
         s = hs.signals.EELSSpectrumSimulation(np.diag(np.arange(1, 11)))
         s.axes_manager[-1].scale = 0.1
         s.axes_manager[-1].offset = 100
-        self.signal = s
+        self.spectrum = s
 
     def test_estimate_zero_loss_peak_centre(self):
-        s = self.signal
+        s = self.spectrum
         nt.assert_true(
             np.allclose(
                 s.estimate_zero_loss_peak_centre().data,
@@ -118,10 +118,10 @@ class TestAlignZLP:
         s.data[np.arange(10), self.ishifts + self.izlp] = 10
         s.data += self.bg
         s.axes_manager[-1].offset += 100
-        self.signal = s
+        self.spectrum = s
 
     def test_align_zero_loss_peak_calibrate_true(self):
-        s = self.signal
+        s = self.spectrum
         s.align_zero_loss_peak(
             calibrate=True,
             print_stats=False,
@@ -131,7 +131,7 @@ class TestAlignZLP:
         nt.assert_true(np.allclose(zlpc.data.std(), 0))
 
     def test_align_zero_loss_peak_calibrate_false(self):
-        s = self.signal
+        s = self.spectrum
         s.align_zero_loss_peak(
             calibrate=False,
             print_stats=False,
@@ -140,7 +140,7 @@ class TestAlignZLP:
         nt.assert_true(np.allclose(zlpc.data.std(), 0))
 
     def test_also_aligns(self):
-        s = self.signal
+        s = self.spectrum
         s2 = s.deepcopy()
         s.align_zero_loss_peak(calibrate=True,
                                print_stats=False,
@@ -151,7 +151,7 @@ class TestAlignZLP:
         nt.assert_equal(zlpc.data.std(), 0)
 
     def test_align_zero_loss_peak_with_spike_signal_range(self):
-        s = self.signal
+        s = self.spectrum
         spike = np.zeros((10, 100))
         spike_amplitude = 20
         spike[:, 75] = spike_amplitude

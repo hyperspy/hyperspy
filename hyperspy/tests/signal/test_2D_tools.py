@@ -45,12 +45,12 @@ class TestSubPixelAlign:
             s.data[i, ...] = offset_image[center[0]:center[0] + 100,
                                           center[1]:center[1] + 100]
 
-            self.signal = s
+            self.spectrum = s
             self.shifts = shifts
 
     def test_align_subpix(self):
         # Align signal
-        s = self.signal
+        s = self.spectrum
         shifts = self.shifts
         s.align2D(shifts=shifts)
         # Compare by broadcasting
@@ -80,7 +80,7 @@ class TestAlignTools:
             slices = self.ascent_offset - zlp_pos[i, ...]
             s.data[i, ...] = im[slices[0]:slices[0] + 100,
                                 slices[1]:slices[1] + 100]
-        self.signal = s
+        self.spectrum = s
 
         # How image should be after successfull alignment
         smin = self.ishifts.min(0)
@@ -91,7 +91,7 @@ class TestAlignTools:
                           int(offsets[1]):int(offsets[1] + size[1])]
 
     def test_estimate_shift(self):
-        s = self.signal
+        s = self.spectrum
         shifts = s.estimate_shift2D()
         print(shifts)
         print(self.ishifts)
@@ -100,7 +100,7 @@ class TestAlignTools:
     def test_align(self):
         # Align signal
         m = mock.Mock()
-        s = self.signal
+        s = self.spectrum
         s.events.data_changed.connect(m.data_changed)
         s.align2D()
         # Compare by broadcasting
@@ -108,7 +108,7 @@ class TestAlignTools:
         nt.assert_true(m.data_changed.called)
 
     def test_align_expand(self):
-        s = self.signal
+        s = self.spectrum
         s.align2D(expand=True)
 
         # Check the numbers of NaNs to make sure expansion happened properly
