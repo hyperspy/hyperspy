@@ -3210,6 +3210,7 @@ class Signal(MVA,
         s = self._deepcopy_with_new_data(self.data.swapaxes(axis1, axis2))
         c1 = s.axes_manager._axes[axis1]
         c2 = s.axes_manager._axes[axis2]
+        c1.slice, c2.slice = c2.slice, c1.slice
         s.axes_manager._axes[axis1] = c2
         s.axes_manager._axes[axis2] = c1
         s.axes_manager._update_attributes()
