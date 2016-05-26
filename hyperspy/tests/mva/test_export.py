@@ -7,7 +7,7 @@ from hyperspy import signals
 class TestMVAExport:
 
     def setUp(self):
-        s = signals.Spectrum(np.random.random((2, 3, 4, 5)))
+        s = signals.Signal1D(np.random.random((2, 3, 4, 5)))
         sa = s.axes_manager[-1]
         na = s.axes_manager[0]
         sa.offset = 100

@@ -48,17 +48,17 @@ For a single spectrum:
 
     >>> s = hs.load("Ni_superalloy_1pix.msa")
     >>> s
-    <Spectrum, title: Spectrum, dimensions: (|1024)>
+    <Signal1D, title: Signal1D, dimensions: (|1024)>
 
 For a spectrum image (The .rpl file is recorded as an image in this example,
-The method :py:meth:`~.signal.Signal.as_spectrum` set it back to a spectrum
-with the energy axis in first position):
+The method :py:meth:`~.signal.BaseSignal.as_signal1D` set it back to a one
+dimensional signal with the energy axis in first position):
 
 .. code-block:: python
 
     >>> si = hs.load("Ni_superalloy_010.rpl").as_spectrum(0)
     >>> si
-    <Spectrum, title: , dimensions: (256, 224|1024)>
+    <Signal1D, title: , dimensions: (256, 224|1024)>
 
 For a stack of spectrum images (The "*" replace all chains of string, in this
 example 01, 02, 03,...):
@@ -66,9 +66,9 @@ example 01, 02, 03,...):
 .. code-block:: python
 
     >>> si4D = hs.load("Ni_superalloy_0*.rpl", stack=True)
-    >>> si4D = si4D.as_spectrum(0)
+    >>> si4D = si4D.as_signal1D(0)
     >>> si4D
-    <Spectrum, title:, dimensions: (256, 224, 2|1024)>
+    <Signal1D, title:, dimensions: (256, 224, 2|1024)>
 
 .. _eds_calibration-label:
 
@@ -76,7 +76,7 @@ Microscope and detector parameters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 First, the type of microscope ("EDS_TEM" or "EDS_SEM") needs to be set with the
-:py:meth:`~.signal.Signal.set_signal_type` method. The class of the
+:py:meth:`~.signal.BaseSignal.set_signal_type` method. The class of the
 object is thus assigned, and specific EDS methods become available.
 
 .. code-block:: python
@@ -97,7 +97,7 @@ or as an argument of the :py:func:`~.io.load` function:
 The main values for the microscope parameters are
 automatically imported from the file, if existing. The microscope and
 detector parameters are stored in stored in the
-:py:attr:`~.signal.Signal.metadata`
+:py:attr:`~.signal.BaseSignal.metadata`
 attribute (see :ref:`metadata_structure`). These parameters can be displayed
 as follow:
 
@@ -221,7 +221,7 @@ Describing the sample
 ---------------------
 
 The description of the sample is stored in metadata.Sample (in the
-:py:attr:`~.signal.Signal.metadata` attribute). It can be displayed as
+:py:attr:`~.signal.BaseSignal.metadata` attribute). It can be displayed as
 follow:
 
 .. code-block:: python
@@ -449,8 +449,8 @@ are used by default.
     >>> s = hs.load('core_shell.hdf5')
     >>> s.set_lines(['Fe_Ka', 'Pt_La'])
     >>> s.get_lines_intensity()
-    [<Image, title: X-ray line intensity of Core shell: Fe_Ka at 6.40 keV, dimensions: (|64, 64)>,
-    <Image, title: X-ray line intensity of Core shell: Pt_La at 9.44 keV, dimensions: (|64, 64)>]
+    [<Signal2D, title: X-ray line intensity of Core shell: Fe_Ka at 6.40 keV, dimensions: (|64, 64)>,
+    <Signal2D, title: X-ray line intensity of Core shell: Pt_La at 9.44 keV, dimensions: (|64, 64)>]
 
 The windows of integration can be visualised using :py:meth:`~._signals.eds.EDSSpectrum.plot` method
 

@@ -67,10 +67,10 @@ class EELSModel(Model):
 
     """
 
-    def __init__(self, spectrum, auto_background=True,
+    def __init__(self, signal1D, auto_background=True,
                  auto_add_edges=True, ll=None,
                  GOS=None):
-        Model.__init__(self, spectrum)
+        Model.__init__(self, signal1D)
         self._suspend_auto_fine_structure_width = False
         self.convolved = False
         self.low_loss = ll
@@ -82,23 +82,23 @@ class EELSModel(Model):
             background.name = 'background'
             warnings.warn(
                 "Adding \"background\" to the user namespace. "
-                "This feature will be removed in HyperSpy 0.9.",
+                "This feature will be removed in Hyperspy 1.0.",
                 VisibleDeprecationWarning)
             interactive_ns['background'] = background
             self.append(background)
 
-        if self.spectrum.subshells and auto_add_edges is True:
+        if self.signal.subshells and auto_add_edges is True:
             self._add_edges_from_subshells_names()
 
     @property
-    def spectrum(self):
-        return self._spectrum
+    def signal1D(self):
+        return self._signal
 
-    @spectrum.setter
-    def spectrum(self, value):
+    @signal1D.setter
+    def signal1D(self, value):
         if isinstance(value, EELSSpectrum):
-            self._spectrum = value
-            self.spectrum._are_microscope_parameters_missing()
+            self._signal = value
+            self.signal._are_microscope_parameters_missing()
         else:
             raise ValueError(
                 "This attribute can only contain an EELSSpectrum "
@@ -120,7 +120,7 @@ class EELSModel(Model):
         self._background_components = []
         for component in self:
             if isinstance(component, EELSCLEdge):
-                tem = self.spectrum.metadata.Acquisition_instrument.TEM
+                tem = self.signal.metadata.Acquisition_instrument.TEM
                 component.set_microscope_parameters(
                     E0=tem.beam_energy,
                     alpha=tem.convergence_angle,
@@ -174,7 +174,7 @@ class EELSModel(Model):
         """
         interactive_ns = get_interactive_ns()
         if e_shells is None:
-            e_shells = list(self.spectrum.subshells)
+            e_shells = list(self.signal.subshells)
         e_shells.sort()
         master_edge = EELSCLEdge(e_shells.pop(), self.GOS)
         # If self.GOS was None, the GOS is set by eels_cl_edge so
@@ -183,14 +183,14 @@ class EELSModel(Model):
         self.append(master_edge)
         interactive_ns[self[-1].name] = self[-1]
         warnings.warn("Adding \"%s\" to the user namespace. "
-                      "This feature will be removed in HyperSpy 0.9." % self[
+                      "This feature will be removed in Hyperspy 1.0." % self[
                           -1].name,
                       VisibleDeprecationWarning)
         element = master_edge.element
         interactive_ns[element] = []
         warnings.warn(
             "Adding \"%s\" to the user namespace. "
-            "This feature will be removed in HyperSpy 0.9." % element,
+            "This feature will be removed in Hyperspy 1.0." % element,
             VisibleDeprecationWarning)
         interactive_ns[element].append(self[-1])
         while len(e_shells) > 0:
@@ -222,7 +222,7 @@ class EELSModel(Model):
                     interactive_ns[edge.name] = edge
                     warnings.warn(
                         "Adding \"%s\" to the user namespace. "
-                        "This feature will be removed in HyperSpy 0.9." %
+                        "This feature will be removed in Hyperspy 1.0." %
                         edge.name,
                         VisibleDeprecationWarning)
                     interactive_ns[element].append(edge)
@@ -485,7 +485,7 @@ class EELSModel(Model):
                     preferences.EELS.preedge_safe_window_width
 
         if not powerlaw.estimate_parameters(
-                self.spectrum, E1, E2, only_current=False):
+                self.signal, E1, E2, only_current=False):
             messages.warning(
                 "The power law background parameters could not "
                 "be estimated.\n"

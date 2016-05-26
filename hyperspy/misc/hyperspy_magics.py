@@ -45,7 +45,7 @@ class HyperspyMagics(Magics):
 
         """
         warnings.warn(
-            "This magic is deprecated and will be removed in HyperSpy 0.9."
+            "This magic is deprecated and will be removed in Hyperspy 1.0."
             "The reccomended way to start HyperSpy is:\n\n"
             ">>> import hyperspy.api as hs\n"
             ">>> %matplotlib\n\n"
@@ -83,7 +83,7 @@ class HyperspyMagics(Magics):
             second_import_part = "from hyperspy.hspy import *\n"
             warnings.warn(
                 "Importing everything from ``hyperspy.hspy`` will be removed in "
-                "HyperSpy 0.9. Please use the new API imported as ``hs`` "
+                "Hyperspy 1.0. Please use the new API imported as ``hs`` "
                 "instead. See the "
                 "`Getting started` section of the User Guide for details.",
                 UserWarning)
