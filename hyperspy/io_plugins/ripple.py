@@ -565,7 +565,7 @@ def file_writer(filename, signal, encoding='latin-1', *args, **kwds):
             record_by = 'dont-care'
             depth, width, height = width_axis.size, 1, 1
     else:
-        print("Only Spectrum and Image objects can be saved")
+        print("Only Signal1D and Signal2D objects can be saved")
         return
 
     # Fill the keys dictionary

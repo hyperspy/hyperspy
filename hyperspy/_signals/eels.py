@@ -23,7 +23,7 @@ import numpy as np
 import traits.api as t
 from scipy import constants
 
-from hyperspy._signals.spectrum import Spectrum
+from hyperspy.signals import Spectrum
 from hyperspy.misc.elements import elements as elements_db
 import hyperspy.axes
 from hyperspy.decorators import only_interactive
@@ -166,7 +166,7 @@ class EELSSpectrum(Spectrum):
         self._check_navigation_mask(mask)
         zlpc = self.valuemax(-1)
         if self.axes_manager.navigation_dimension == 1:
-            zlpc = zlpc.as_spectrum(0)
+            zlpc = zlpc.as_signal1D(0)
         elif self.axes_manager.navigation_dimension > 1:
             zlpc = zlpc.as_image((0, 1))
         if mask is not None:
@@ -1046,7 +1046,7 @@ class EELSSpectrum(Spectrum):
         axis = s.axes_manager.signal_axes[0]
         eaxis = axis.axis.copy()
 
-        if isinstance(zlp, hyperspy.signal.Signal):
+        if isinstance(zlp, hyperspy.signal.BaseSignal):
             if (zlp.axes_manager.navigation_dimension ==
                     self.axes_manager.navigation_dimension):
                 if zlp.axes_manager.signal_dimension == 0:
@@ -1062,9 +1062,10 @@ class EELSSpectrum(Spectrum):
         elif isinstance(zlp, numbers.Number):
             i0 = zlp
         else:
-            raise ValueError('The zero-loss peak input is not valid.')
+            raise ValueError('The zero-loss peak input is not valid, it must be\
+                             in the BaseSignal class or a Number.')
 
-        if isinstance(t, hyperspy.signal.Signal):
+        if isinstance(t, hyperspy.signal.BaseSignal):
             if (t.axes_manager.navigation_dimension ==
                     self.axes_manager.navigation_dimension) and (
                     t.axes_manager.signal_dimension == 0):

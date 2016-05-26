@@ -1,7 +1,7 @@
 import numpy as np
 import nose.tools as nt
 
-from hyperspy.signal import Signal
+from hyperspy.signals import Signal
 from hyperspy import signals
 
 
@@ -71,7 +71,7 @@ class Test2D:
 
     def test_histogram(self):
         result = self.signal.get_histogram(3)
-        nt.assert_true(isinstance(result, signals.Spectrum))
+        nt.assert_true(isinstance(result, signals.Signal1D))
         np.testing.assert_equal(result.data, [17, 16, 17])
         nt.assert_true(result.metadata.Signal.binned)
 
@@ -276,7 +276,7 @@ class Test3D:
 class Test4D:
 
     def setUp(self):
-        s = signals.Spectrum(np.ones((5, 4, 3, 6)))
+        s = signals.Signal1D(np.ones((5, 4, 3, 6)))
         for axis, name in zip(
                 s.axes_manager._get_axes_in_natural_order(),
                 ['x', 'y', 'z', 'E']):
@@ -313,12 +313,12 @@ class Test4D:
         nt.assert_false(self.s.unfold_signal_space())
 
     def test_unfold_image(self):
-        im = self.s.to_image()
+        im = self.s.to_signal2D()
         im.unfold()
         nt.assert_equal(im.data.shape, (30, 12))
 
     def test_image_signal_unfolded_deepcopy(self):
-        im = self.s.to_image()
+        im = self.s.to_signal2D()
         im.unfold()
         # The following could fail if the constructor was not taking the fact
         # that the signal is unfolded into account when setting the signal
@@ -326,16 +326,16 @@ class Test4D:
         im.deepcopy()
 
     def test_image_signal_unfolded_false(self):
-        im = self.s.to_image()
+        im = self.s.to_signal2D()
         nt.assert_false(im.metadata._HyperSpy.Folding.signal_unfolded)
 
     def test_image_signal_unfolded_true(self):
-        im = self.s.to_image()
+        im = self.s.to_signal2D()
         im.unfold()
         nt.assert_true(im.metadata._HyperSpy.Folding.signal_unfolded)
 
     def test_image_signal_unfolded_back_to_false(self):
-        im = self.s.to_image()
+        im = self.s.to_signal2D()
         im.unfold()
         im.fold()
         nt.assert_false(im.metadata._HyperSpy.Folding.signal_unfolded)
@@ -356,7 +356,7 @@ class TestDerivative:
         offset = 3
         scale = 0.1
         x = np.arange(-offset, offset, scale)
-        s = signals.Spectrum(np.sin(x))
+        s = signals.Signal1D(np.sin(x))
         s.axes_manager[0].offset = x[0]
         s.axes_manager[0].scale = scale
         self.s = s

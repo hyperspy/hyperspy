@@ -32,7 +32,7 @@
 #~
 #~
 #~
-#~ class LoadSpectrum(t.HasTraits):
+#~ class LoadSignal1D(t.HasTraits):
 #~ sp_file = t.File()
 #~ traits_view = tui.View(
 #~ tui.Item('sp_file', label = 'File'),
@@ -108,7 +108,7 @@
 #~ class MainWindowHandler(tui.Handler):
 #~
 #~ def open_file(self, *args, **kw):
-#~ S = LoadSpectrum()
+#~ S = LoadSignal1D()
 #~ S.edit_traits()
 #~ if S.sp_file is not t.Undefined:
 #~ s = io.load(S.sp_file)
