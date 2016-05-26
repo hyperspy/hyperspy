@@ -490,6 +490,9 @@ class Parameter(t.HasTraits):
         return view
 
     def _interactive_slider_bounds(self, index=None):
+        """Guesstimates the bounds for the slider. They will probably have to
+        be changed later by the user.
+        """
         fraction = 10.
         _min, _max, step = None, None, None
         value = self.value if index is None else self.value[index]
@@ -515,6 +518,8 @@ class Parameter(t.HasTraits):
         return {'min': _min, 'max': _max, 'step': step}
 
     def _interactive_update(self, value=None, index=None):
+        """Callback function for the widgets, to update the value
+        """
         if value is not None:
             if index is None:
                 self.value = value['new']

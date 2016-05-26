@@ -400,3 +400,4 @@ class EELSCLEdge(Component):
                       ' notebook')
             else:
                 raise
+    notebook_interaction.__doc__ = Component.notebook_interaction.__doc__
