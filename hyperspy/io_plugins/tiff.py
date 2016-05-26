@@ -21,16 +21,15 @@ import warnings
 
 import traits.api as t
 from hyperspy.misc import rgb_tools
-try:
-    from skimage.external.tifffile import imsave, TiffFile
-except ImportError:
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        from hyperspy.external.tifffile import imsave, TiffFile
-    warnings.warn(
-        "Failed to import the optional scikit image package. "
-        "Loading of some compressed images will be slow.\n")
-
+#try:
+#    from skimage.external.tifffile import imsave, TiffFile
+#except ImportError:
+#    with warnings.catch_warnings():
+#        warnings.simplefilter("ignore")
+#        from hyperspy.external.tifffile import imsave, TiffFile
+#    warnings.warn(
+#        "Failed to import the optional scikit image package. "
+#        "Loading of some compressed images will be slow.\n")
 
 # Plugin characteristics
 # ----------------------
@@ -66,15 +65,33 @@ axes_label_codes = {
     '_': t.Undefined}
 
 
-def file_writer(filename, signal, **kwds):
+def import_tifffile_library(use_local_tifffile=False):
+    if use_local_tifffile:
+        from hyperspy.external.tifffile import imsave, TiffFile
+        return imsave, TiffFile
+    try:
+        from skimage.external.tifffile import imsave, TiffFile
+    except ImportError:
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            from hyperspy.external.tifffile import imsave, TiffFile
+        warnings.warn(
+            "Failed to import the optional scikit image package. "
+            "Loading of some compressed images will be slow.\n")
+    return imsave, TiffFile
+
+def file_writer(filename, signal, use_local_tifffile=False, **kwds):
     """Writes data to tif using Christoph Gohlke's tifffile library
 
-        Parameters
-        ----------
-        filename: str
-        signal: a Signal instance
-
+    Parameters
+    ----------
+    filename: str
+    signal: a Signal instance
+    use_local_tifffile: {False}
+        Use the hyperspy embedded tifffile library in favor the one shipped in
+        sklearn.
     """
+    imsave, TiffFile = import_tifffile_library(use_local_tifffile)
     data = signal.data
     if signal.is_rgbx is True:
         data = rgb_tools.rgbx2regular_array(data)
@@ -91,7 +108,7 @@ def file_writer(filename, signal, **kwds):
            **kwds)
 
 
-def file_reader(filename, record_by='image', **kwds):
+def file_reader(filename, record_by='image', use_local_tifffile=False, **kwds):
     """Read data from tif files using Christoph Gohlke's tifffile
     library
 
@@ -101,8 +118,13 @@ def file_reader(filename, record_by='image', **kwds):
     record_by: {'image'}
         Has no effect because this format only supports recording by
         image.
-
+    use_local_tifffile: {False}
+        Use the hyperspy embedded tifffile library in favor the one shipped in
+        sklearn.
     """
+    imsave, TiffFile = import_tifffile_library(use_local_tifffile)
+    if use_local_tifffile:
+        warnings.warn("Loading of some compressed images will be slow.\n")
     with TiffFile(filename, **kwds) as tiff:
         dc = tiff.asarray()
         axes = tiff.series[0]['axes']
