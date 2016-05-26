@@ -31,8 +31,7 @@ Typically you will need to `set up IPython for interactive plotting with
 matplotlib
 <http://ipython.readthedocs.org/en/stable/interactive/plotting.html>`_ using 
 ``%matplotlib`` (which is known as a 'python magic') *before executing any plotting command*. So, typically,
-after starting IPython, you can import
-HyperSpy and set up interactive matplotlib plotting by executing the following
+after starting IPython, you can import HyperSpy and set up interactive matplotlib plotting by executing the following
 two lines in the IPython terminal:
 
 .. code-block:: python
