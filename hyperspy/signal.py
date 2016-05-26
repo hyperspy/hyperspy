@@ -1327,7 +1327,7 @@ class BaseSignal(MVA,
         if isNavigation is None:
             warnings.warn(
                 "Indexing the `Signal` class is deprecated and will be removed "
-                "in HyperSpy 0.9. Please use `.isig` and/or `.inav` instead.",
+                "in Hyperspy 1.0. Please use `.isig` and/or `.inav` instead.",
                 VisibleDeprecationWarning)
 
         has_nav = True if isNavigation is None else isNavigation
@@ -2208,7 +2208,7 @@ class BaseSignal(MVA,
 
         return splitted
 
-    # TODO: remove in HyperSpy 0.9
+    # TODO: remove in Hyperspy 1.0
     @staticmethod
     def unfold_if_multidim():
         """Unfold the datacube if it is >2D
@@ -2218,7 +2218,7 @@ class BaseSignal(MVA,
         """
         warnings.warn(
             "`unfold_if_multidim` is deprecated and will be removed in "
-            "HyperSpy 0.9. Please use `unfold` instead.",
+            "Hyperspy 1.0. Please use `unfold` instead.",
             VisibleDeprecationWarning)
         if len(self.axes_manager._axes) > 2:
             print("Automatically unfolding the data")

@@ -498,7 +498,7 @@ class MVA():
             if isinstance(factors, np.ndarray):
                 warnings.warn(
                     "factors as numpy arrays will raise an error in "
-                    "HyperSpy 0.9 and newer. From them on only passing "
+                    "Hyperspy 1.0 and newer. From them on only passing "
                     "factors as HyperSpy Signal instances will be "
                     "supported.",
                     VisibleDeprecationWarning)
@@ -536,7 +536,7 @@ class MVA():
             if isinstance(mask, np.ndarray):
                 warnings.warn(
                     "Bare numpy array masks are deprecated and will be removed"
-                    " in next HyperSpy 0.9.",
+                    " in next Hyperspy 1.0.",
                     VisibleDeprecationWarning)
                 ref_shape = ref_shape[::-1]
                 if mask.shape != ref_shape:
@@ -677,7 +677,7 @@ class MVA():
 
         """
         warnings.warn(
-            "This function is deprecated an will be removed in HyperSpy 0.9. "
+            "This function is deprecated an will be removed in Hyperspy 1.0. "
             "Use `normalize_decomposition_components` or "
             "`normalize_bss_components` instead.", VisibleDeprecationWarning)
 

@@ -142,9 +142,13 @@ The following example shows how to transform between different subclasses.
        ├── signal_origin =
        ├── signal_type =
        └── title =
+       >>> s.set_si
+       s.set_signal_origin  s.set_signal_type
        >>> s.set_signal_type("EELS")
        >>> s
        <EELSSpectrum, title: , dimensions: (20, 10|100)>
+       >>> s.set_si
+       s.set_signal_origin  s.set_signal_type
        >>> s.set_signal_origin("simulation")
        >>> s
        <EELSSpectrumSimulation, title: , dimensions: (20, 10|100)>
@@ -218,6 +222,9 @@ following table:
     +---------------------------------------------------------------+--------+
 
 
+
+
+
 To change the default value:
 
 .. code-block:: python
@@ -240,37 +247,41 @@ subclasses.
 Indexing
 ^^^^^^^^
 .. versionadded:: 0.6
+.. versionchanged:: 0.8.1
 
-Indexing the :py:class:`~.signal.BaseSignal`  provides a powerful, convenient and
-Pythonic way to access and modify its data.  It is a concept that might take
-some time to grasp but, once mastered, it can greatly simplify many common
-signal processing tasks.
+Indexing a :py:class:`~.signal.BaseSignal`  provides a powerful, convenient and
+Pythonic way to access and modify its data. In HyperSpy indexing is achieved
+using ``isig`` and ``inav``, which allow the navigation and signal dimensions
+to be indexed independently. The idea is essentially to specify a subset of the
+data based on its position in the array and it is therefore essential to know
+the convention adopted for specifying that position, which is described here.
 
-Indexing refers to any use of the square brackets ([]) to index the data stored
-in a :py:class:`~.signal.BaseSignal`. The result of indexing a
-:py:class:`~.signal.BaseSignal` is another :py:class:`~.signal.BaseSignal` that shares
-a subset of the data of the original :py:class:`~.signal.BaseSignal`.
+Those new to Python may find indexing a somewhat esoteric concept but once
+mastered it is one of the most powerful features of Python based code and
+greatly simplifies many common tasks. HyperSpy's Signal indexing is similar
+to numpy array indexing and those new to Python are encouraged to read the
+associated `numpy documentation on the subject  <http://ipython.org/>`_.
 
-HyperSpy's Signal indexing is similar to numpy array indexing and, therefore,
-rather that explaining this feature in detail we will just give some examples
-of usage here. The interested reader is encouraged to read the `numpy
-documentation on the subject  <http://ipython.org/>`_ for a detailed
-explanation of the concept. When doing so it is worth to keep in mind the
-following main differences:
 
-* HyperSpy (unlike numpy) does not support:
+Key features of indexing in HyperSpy are as follows (note that some of these
+features differ from numpy):
 
-  + Indexing using arrays.
-  + Adding new axes using the newaxis object.
+* HyperSpy indexing does:
 
-* HyperSpy (unlike numpy):
-
-  + Supports indexing with decimal numbers.
-  + Uses the image order for indexing i.e. [x, y, z,...] (hyperspy) vs
+  + Allow independent indexing of signal and navigation dimensions
+  + Support indexing with decimal numbers.
+  + Use the image order for indexing i.e. [x, y, z,...] (hyperspy) vs
     [...,z,y,x] (numpy)
 
-Lets start by indexing a single spectrum:
+* HyperSpy indexing does not:
 
+  + Support indexing using arrays.
+  + Allow the addition of new axes using the newaxis object.
+
+The examples below illustrate a range of common indexing tasks.
+
+First consider indexing a single spectrum, which has only one signal dimension
+(and no navigation dimensions) so we use ``isig``:
 
 .. code-block:: python
 
@@ -279,25 +290,25 @@ Lets start by indexing a single spectrum:
     <Signal1D, title: , dimensions: (|10)>
     >>> s.data
     array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
-    >>> s[0]
+    >>> s.isig[0]
     <Signal1D, title: , dimensions: (|1)>
-    >>> s[0].data
+    >>> s.isig[0].data
     array([0])
-    >>> s[9].data
+    >>> s.isig[9].data
     array([9])
-    >>> s[-1].data
+    >>> s.isig[-1].data
     array([9])
-    >>> s[:5]
+    >>> s.isig[:5]
     <Signal1D, title: , dimensions: (|5)>
-    >>> s[:5].data
+    >>> s.isig[:5].data
     array([0, 1, 2, 3, 4])
-    >>> s[5::-1]
+    >>> s.isig[5::-1]
     <Signal1D, title: , dimensions: (|6)>
-    >>> s[5::-1]
+    >>> s.isig[5::-1]
     <Signal1D, title: , dimensions: (|6)>
-    >>> s[5::2]
+    >>> s.isig[5::2]
     <Signal1D, title: , dimensions: (|3)>
-    >>> s[5::2].data
+    >>> s.isig[5::2].data
     array([5, 7, 9])
 
 
@@ -314,26 +325,28 @@ HyperSpy indexes using the axis scales instead of the indices.
     >>> s.axes_manager[0].scale = 0.5
     >>> s.axes_manager[0].axis
     array([ 0. ,  0.5,  1. ,  1.5,  2. ,  2.5,  3. ,  3.5,  4. ,  4.5])
-    >>> s[0.5:4.].data
+    >>> s.isig[0.5:4.].data
     array([1, 2, 3, 4, 5, 6, 7])
-    >>> s[0.5:4].data
+    >>> s.isig[0.5:4].data
     array([1, 2, 3])
-    >>> s[0.5:4:2].data
+    >>> s.isig[0.5:4:2].data
     array([1, 3])
 
 
 Importantly the original :py:class:`~.signal.BaseSignal` and its "indexed self"
 share their data and, therefore, modifying the value of the data in one
-modifies the same value in the other.
+modifies the same value in the other. Note also that in the example below
+s.data is used to access the data as a numpy array directly and this array is
+then indexed using numpy indexing.
 
 .. code-block:: python
 
-    >>> s = hs.signals.Signal1D(np.arange(10))
+    >>> s = hs.signals.Spectrum(np.arange(10))
     >>> s
-    <Signal1D, title: , dimensions: (10,)>
+    <Spectrum, title: , dimensions: (10,)>
     >>> s.data
     array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
-    >>> si = s[::2]
+    >>> si = s.isig[::2]
     >>> si.data
     array([0, 2, 4, 6, 8])
     >>> si.data[:] = 10
@@ -346,9 +359,7 @@ modifies the same value in the other.
     array([0, 0, 0, 0, 0])
 
 Of course it is also possible to use the same syntax to index multidimensional
-data.  The first indexes are always the navigation indices in "natural order"
-i.e. x,y,z...  and the following indexes are the signal indices also in natural
-order.
+data treating navigation axes using ``inav`` and signal axes using ``isig``.
 
 .. code-block:: python
 
@@ -370,22 +381,22 @@ order.
     (<t axis, size: 4>,)
     >>> s.axes_manager.navigation_axes
     (<x axis, size: 3, index: 0>, <y axis, size: 2, index: 0>)
-    >>> s[0,0].data
+    >>> s.inav[0,0].data
     array([0, 1, 2, 3])
-    >>> s[0,0].axes_manager
+    >>> s.inav[0,0].axes_manager
     <Axes manager, axes: (<t axis, size: 4>,)>
-    >>> s[0,0,::-1].data
+    >>> s.inav[0,0].isig[::-1].data
     array([3, 2, 1, 0])
-    >>> s[...,0]
+    >>> s.isig[0]
     <Signal1D, title: , dimensions: (2, 3)>
-    >>> s[...,0].axes_manager
+    >>> s.isig[0].axes_manager
     <Axes manager, axes: (<x axis, size: 3, index: 0>, <y axis, size: 2, index: 0>)>
-    >>> s[...,0].data
+    >>> s.isig[0].data
     array([[ 0,  4,  8],
        [12, 16, 20]])
 
-For convenience and clarity it is possible to index the signal and navigation
-dimensions independently:
+Independent indexation of the signal and navigation dimensions is demonstrated
+further in the following:
 
 .. code-block:: python
 
@@ -420,7 +431,8 @@ dimensions independently:
        [12, 16, 20]])
 
 
-The same syntax can be used to set the data values:
+The same syntax can be used to set the data values in signal and navigation
+dimensions respectively:
 
 .. code-block:: python
 

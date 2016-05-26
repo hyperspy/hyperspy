@@ -157,7 +157,7 @@ HyperSpy has created the model and configured it automatically:
 
    Notice that the PowerLaw component has been automatically renamed to
    "background". This behaviour is deprecated and will be removed in
-   HyperSpy 0.9. From them on this component will keep its original name,
+   Hyperspy 1.0. From them on this component will keep its original name,
    "PowerLaw".
 
 
@@ -174,7 +174,7 @@ Furthermore, the components are available in the user namespace
 
 .. warning::
 
-   This feature is deprecated and will be removed in HyperSpy 0.9. To access
+   This feature is deprecated and will be removed in Hyperspy 1.0. To access
    the automatically created component use the following equivalent syntax:
 
     .. code-block:: python
