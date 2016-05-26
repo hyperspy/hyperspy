@@ -25,12 +25,12 @@ Linux users may find it more convenient to start Jupyter/IPython from the `file 
 context menu <https://github.com/hyperspy/start_jupyter_cm>`_ . In either OS you can also start by
 `double-clicking a notebook file <https://github.com/takluyver/nbopen>`_ if one already exists.
 
-Importing  HyperSpy into the notebook (or terminal)
+Starting HyperSpy in the notebook (or terminal)
 -----------------------------------------------
 Typically you will need to `set up IPython for interactive plotting with
 matplotlib
 <http://ipython.readthedocs.org/en/stable/interactive/plotting.html>`_ using 
-``%matplotlib`` (which is known as a 'python magic') *before executing any plotting command*. So, typically,
+``%matplotlib`` (which is known as a 'Jupyter magic') *before executing any plotting command*. So, typically,
 after starting IPython, you can import HyperSpy and set up interactive matplotlib plotting by executing the following
 two lines in the IPython terminal:
 
@@ -39,15 +39,15 @@ two lines in the IPython terminal:
    In [1]: %matplotlib qt
    In [2]: import hyperspy.api as hs
 
-Note that to execute lines of code in the notebook you must press shift+return. (For details about notebooks and their functionality try the help menu in the notebook).
-Next, import two necessary modules: numpy and matplotlib.pyplot, as follows:
+Note that to execute lines of code in the notebook you must press ``shift+return``. (For details about notebooks and their functionality try the help menu in the notebook).
+Next, import two useful modules: numpy and matplotlib.pyplot, as follows: (We use ``>>>`` as a general python propmt)
 
 .. code-block:: python
 
-   In [3]: import numpy as np
-   In [4]: import matplotlib.pyplot as plt
+   >>> import numpy as np
+   >>> import matplotlib.pyplot as plt
    
-Now you are ready to load your data (see below).    
+The rest of the documetation will assume you have done this. Now you are ready to load your data (see below).    
 
 **Notes for experienced users:** We also fully support the wx backend. Other backends are supported for plotting
 but some features such as navigation sliders may be missing.
