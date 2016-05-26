@@ -86,23 +86,6 @@ class TestAlignTools:
             s.axes_manager._axes[1].offset, self.new_offset)
         nt.assert_equal(s.axes_manager._axes[1].scale, self.scale)
 
-    def test_align_axis0(self):
-        s = self.spectrum
-        s = s.swap_axes(0, 1)
-        s.align1D(show_progressbar=None)
-        s = s.swap_axes(0, 1)
-        i_zlp = s.axes_manager.signal_axes[0].value2index(0)
-        nt.assert_true(np.allclose(s.data[:, i_zlp], 12))
-        # Check that at the edges of the spectrum the value == to the
-        # background value. If it wasn't it'll mean that the cropping
-        # code is buggy
-        nt.assert_true((s.data[:, -1] == 2).all())
-        nt.assert_true((s.data[:, 0] == 2).all())
-        # Check that the calibration is correct
-        nt.assert_equal(
-            s.axes_manager._axes[1].offset, self.new_offset)
-        nt.assert_equal(s.axes_manager._axes[1].scale, self.scale)
-
 
 class TestShift1D:
 

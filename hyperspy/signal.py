@@ -3211,9 +3211,12 @@ class Signal(MVA,
         c1 = s.axes_manager._axes[axis1]
         c2 = s.axes_manager._axes[axis2]
         c1.slice, c2.slice = c2.slice, c1.slice
+        c1.navigate, c2.navigate = c2.navigate, c1.navigate
         s.axes_manager._axes[axis1] = c2
         s.axes_manager._axes[axis2] = c1
         s.axes_manager._update_attributes()
+        am = s.axes_manager
+        am.connect(am._update_attributes)
         s._make_sure_data_is_contiguous()
         return s
 
