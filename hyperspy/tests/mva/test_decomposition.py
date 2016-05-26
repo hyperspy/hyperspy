@@ -8,15 +8,15 @@ class TestNdAxes:
 
     def setUp(self):
         # Create three signals with dimensions:
-        # s1 : <Signal, title: , dimensions: (4, 3, 2|2, 3)>
-        # s2 : <Signal, title: , dimensions: (2, 3|4, 3, 2)>
-        # s12 : <Signal, title: , dimensions: (2, 3|4, 3, 2)>
+        # s1 : <BaseSignal, title: , dimensions: (4, 3, 2|2, 3)>
+        # s2 : <BaseSignal, title: , dimensions: (2, 3|4, 3, 2)>
+        # s12 : <BaseSignal, title: , dimensions: (2, 3|4, 3, 2)>
         # Where s12 data is transposed in respect to s2
         dc1 = np.random.random((2, 3, 4, 3, 2))
         dc2 = np.rollaxis(np.rollaxis(dc1, -1), -1)
-        s1 = signals.Signal(dc1.copy())
-        s2 = signals.Signal(dc2)
-        s12 = signals.Signal(dc1.copy())
+        s1 = signals.BaseSignal(dc1.copy())
+        s2 = signals.BaseSignal(dc2)
+        s12 = signals.BaseSignal(dc1.copy())
         for i, axis in enumerate(s1.axes_manager._axes):
             if i < 3:
                 axis.navigate = True
@@ -75,7 +75,7 @@ class TestNdAxes:
 class TestGetExplainedVarinaceRatio:
 
     def setUp(self):
-        s = signals.Signal(np.empty(1))
+        s = signals.BaseSignal(np.empty(1))
         self.s = s
 
     def test_data(self):
@@ -92,7 +92,7 @@ class TestGetExplainedVarinaceRatio:
 class TestReverseDecompositionComponent:
 
     def setUp(self):
-        s = signals.Signal(np.zeros(1))
+        s = signals.BaseSignal(np.zeros(1))
         self.factors = np.ones([2, 3])
         self.loadings = np.ones([2, 3])
         s.learning_results.factors = self.factors.copy()
@@ -143,7 +143,7 @@ class TestReverseDecompositionComponent:
 class TestNormalizeComponents():
 
     def setUp(self):
-        s = signals.Signal(np.zeros(1))
+        s = signals.BaseSignal(np.zeros(1))
         self.factors = np.ones([2, 3])
         self.loadings = np.ones([2, 3])
         s.learning_results.factors = self.factors.copy()

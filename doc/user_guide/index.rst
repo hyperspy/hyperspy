@@ -9,14 +9,14 @@ HyperSpy User Guide (DRAFT)
 
 .. toctree::
     :maxdepth: 2
-    
+
     intro.rst
     what_is_new.rst
     install.rst
     getting_started.rst
     tools.rst
-    spectrum.rst
-    image.rst
+    signal1d.rst
+    signal2d.rst
     visualisation.rst
     mva.rst
     model.rst
@@ -27,4 +27,3 @@ HyperSpy User Guide (DRAFT)
     metadata_structure.rst
     credits.rst
     bibliography.rst
-
