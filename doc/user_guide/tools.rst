@@ -142,13 +142,9 @@ The following example shows how to transform between different subclasses.
        ├── signal_origin =
        ├── signal_type =
        └── title =
-       >>> s.set_si
-       s.set_signal_origin  s.set_signal_type
        >>> s.set_signal_type("EELS")
        >>> s
        <EELSSpectrum, title: , dimensions: (20, 10|100)>
-       >>> s.set_si
-       s.set_signal_origin  s.set_signal_type
        >>> s.set_signal_origin("simulation")
        >>> s
        <EELSSpectrumSimulation, title: , dimensions: (20, 10|100)>
