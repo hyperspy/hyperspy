@@ -124,6 +124,12 @@ class TestPolynomial:
         self.m_3d = s_3d.create_model()
         self.m_3d.append(m[0])
 
+    def test_gradient(self):
+        c = self.m[0]
+        np.testing.assert_array_almost_equal(c.grad_coefficients(1),
+                                             np.array([[6, ], [4.5], [3.5]]))
+        nt.assert_equal(c.grad_coefficients(np.arange(10)).shape, (3, 10))
+
     def test_estimate_parameters_binned(self):
         self.m.signal.metadata.Signal.binned = True
         s = self.m.as_signal(show_progressbar=None)
