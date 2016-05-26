@@ -22,10 +22,6 @@ import math
 import numpy as np
 from scipy.interpolate import splev
 
-from ipywidgets import (Checkbox, FloatSlider, VBox)
-from traitlets import TraitError as TraitletError
-from IPython.display import display as ip_display
-
 from hyperspy.defaults_parser import preferences
 from hyperspy.component import Component
 from hyperspy import messages
@@ -362,6 +358,11 @@ class EELSCLEdge(Component):
         return s
 
     def notebook_interaction(self, display=True):
+
+        from ipywidgets import (Checkbox, FloatSlider, VBox)
+        from traitlets import TraitError as TraitletError
+        from IPython.display import display as ip_display
+
         try:
             active = Checkbox(description='active', value=self.active)
 

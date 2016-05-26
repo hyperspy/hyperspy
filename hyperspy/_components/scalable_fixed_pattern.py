@@ -18,9 +18,6 @@
 
 
 from scipy.interpolate import interp1d
-from ipywidgets import Checkbox
-from traitlets import TraitError as TraitletError
-from IPython.display import display as ip_display
 from hyperspy.component import Component
 
 
@@ -129,6 +126,10 @@ class ScalableFixedPattern(Component):
         return self.function(x) / self.yscale.value
 
     def notebook_interaction(self, display=True):
+        from ipywidgets import Checkbox
+        from traitlets import TraitError as TraitletError
+        from IPython.display import display as ip_display
+
         try:
             container = super(ScalableFixedPattern,
                               self).notebook_interaction(display=False)

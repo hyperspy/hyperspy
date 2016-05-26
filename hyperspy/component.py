@@ -24,10 +24,6 @@ import warnings
 
 import traits.api as t
 from traits.trait_numeric import Array
-from ipywidgets import (FloatSlider, Checkbox,
-                        FloatText, Layout, HBox, VBox)
-from traitlets import TraitError as TraitletError
-from IPython.display import display as ip_display
 
 from hyperspy.defaults_parser import preferences
 from hyperspy.misc.utils import slugify
@@ -536,6 +532,9 @@ class Parameter(t.HasTraits):
             if True (default), attempts to display the parameter widget.
             Otherwise returns the formatted widget object.
         """
+        from ipywidgets import VBox
+        from traitlets import TraitError as TraitletError
+        from IPython.display import display as ip_display
         try:
             if self._number_of_elements == 1:
                 container = self._create_notebook_widget()
@@ -554,6 +553,9 @@ class Parameter(t.HasTraits):
                 raise
 
     def _create_notebook_widget(self, index=None):
+
+        from ipywidgets import (FloatSlider, FloatText, Layout, HBox)
+
         widget_bounds = self._interactive_slider_bounds(index=index)
         thismin = FloatText(value=widget_bounds['min'],
                             description='min',
@@ -1034,6 +1036,9 @@ class Component(t.HasTraits):
             if True (default), attempts to display the widgets.
             Otherwise returns the formatted widget object.
         """
+        from ipywidgets import (Checkbox, VBox)
+        from traitlets import TraitError as TraitletError
+        from IPython.display import display as ip_display
         try:
             active = Checkbox(description='active', value=self.active)
 
