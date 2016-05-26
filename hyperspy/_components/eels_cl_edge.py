@@ -341,7 +341,7 @@ class EELSCLEdge(Component):
                 "The provided fine structure file "
                 "doesn't match the size of the current fine structure")
 
-    def get_fine_structure_as_spectrum(self):
+    def get_fine_structure_as_signal1D(self):
         """Returns a spectrum containing the fine structure.
 
         Notes

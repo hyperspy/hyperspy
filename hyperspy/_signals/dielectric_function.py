@@ -56,8 +56,8 @@ class DielectricFunction(Signal1D):
 
         Returns
         -------
-        neff1, neff2: Signal
-            Signal instances containing neff1 and neff2. The signal and
+        neff1, neff2: Signal1D
+            Signal1D instances containing neff1 and neff2. The signal and
             navigation dimensions are the same as the current signal if
             `cumulative` is True, otherwise the signal dimension is 0
             and the navigation dimension is the same as the current

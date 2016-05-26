@@ -29,7 +29,7 @@ Nomenclature
 HyperSpy will decompose a dataset into two new datasets: one
 with the dimension of the signal space known as `factors`, and the
 other with the dimension of the navigation space known as `loadings`.
- 
+
 .. _decomposition:
 
 Decomposition
@@ -48,7 +48,7 @@ One of the most popular decomposition methods is principal component analysis (P
    >>> s.decomposition()
 
 
-Note that the `s` variable must contain either a :class:`~.signal.Signal`  class
+Note that the `s` variable must contain either a :class:`~.signal.BaseSignal`  class
 or its subclasses, which will most likely have been loaded with the
 :func:`~.io.load` function, e.g. ``s = load('my_file.hdf5')``. Also, the signal must be
 multi-dimensional, that is ``s.axes_manager.navigation_size`` must be greater than

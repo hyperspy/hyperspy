@@ -2,7 +2,7 @@ import numpy as np
 import nose.tools as nt
 
 import hyperspy.api as hs
-from hyperspy.models.model1D import Model1D
+from hyperspy.models.model1d import Model1D
 from hyperspy.misc.test_utils import ignore_warning
 
 

@@ -112,13 +112,13 @@ class BaseModel(list):
     Attributes
     ----------
 
-    signal : Signal instance
+    signal : BaseSignal instance
         It contains the data to fit.
-    chisq : A Signal of floats
+    chisq : A BaseSignal of floats
         Chi-squared of the signal (or np.nan if not yet fit)
-    dof : A Signal of integers
+    dof : A BaseSignal of integers
         Degrees of freedom of the signal (0 if not yet fit)
-    red_chisq : Signal instance
+    red_chisq : BaseSignal instance
         Reduced chi-squared.
     components : `ModelComponents` instance
         The components of the model are attributes of this class. This provides
@@ -215,7 +215,7 @@ class BaseModel(list):
             name : {None, str}
                 Stored model name. Auto-generated if left empty
             **kwargs :
-                Other keyword arguments are passed onto `Signal.save()`
+                Other keyword arguments are passed onto `BaseSignal.save()`
         """
         if self.signal is None:
             raise ValueError("Currently cannot store models with no signal")
@@ -671,11 +671,11 @@ class BaseModel(list):
             regression algorithm. It does not support bounds.
             "leastsq", "odr" and "mpfit" can estimate the standard deviation of
             the estimated value of the parameters if the
-            "metada.Signal.Noise_properties.variance" attribute is defined.
+            "metadata.Signal.Noise_properties.variance" attribute is defined.
             Note that if it is not defined the standard deviation is estimated
             using variance equal 1, what, if the noise is heterocedatic, will
             result in a biased estimation of the parameter values and errors.i
-            If `variance` is a `Signal` instance of the
+            If `variance` is a `BaseSignal` instance of the
             same `navigation_dimension` as the spectrum, and `method` is "ls"
             weighted least squares is performed.
         method : {'ls', 'ml'}
@@ -755,7 +755,7 @@ class BaseModel(list):
                     variance = 1
                 else:
                     variance = metadata.Signal.Noise_properties.variance
-                    if isinstance(variance, Signal):
+                    if isinstance(variance, BaseSignal):
                         if (variance.axes_manager.navigation_shape ==
                                 self.signal.axes_manager.navigation_shape):
                             variance = variance.data.__getitem__(
@@ -768,7 +768,7 @@ class BaseModel(list):
                                 "of the signal")
                     elif not isinstance(variance, numbers.Number):
                         raise AttributeError(
-                            "Variance must be a number or a `Signal` instance "
+                            "Variance must be a number or a `BaseSignal` instance "
                             "but currently it is a %s" % type(variance))
 
                 weights = 1. / np.sqrt(variance)
@@ -1362,7 +1362,7 @@ class BaseModel(list):
             * any field from _whitelist.keys() *
         Examples
         --------
-        >>> s = signals.Spectrum(np.random.random((10,100)))
+        >>> s = signals.Signal1D(np.random.random((10,100)))
         >>> m = s.create_model()
         >>> l1 = components.Lorentzian()
         >>> l2 = components.Lorentzian()
@@ -1462,3 +1462,76 @@ class BaseModel(list):
                     "\" not found in model")
         else:
             return list.__getitem__(self, value)
+
+
+
+class ModelSpecialSlicers(object):
+
+    def __init__(self, model, isNavigation):
+        self.isNavigation = isNavigation
+        self.model = model
+
+    def __getitem__(self, slices):
+        array_slices = self.model.signal._get_array_slices(
+            slices,
+            self.isNavigation)
+        _signal = self.model.signal._slicer(slices, self.isNavigation)
+        if _signal.metadata.Signal.signal_type == 'EELS':
+            _model = _signal.create_model(
+                auto_background=False,
+                auto_add_edges=False)
+        else:
+            _model = _signal.create_model()
+
+        dims = (self.model.axes_manager.navigation_dimension,
+                self.model.axes_manager.signal_dimension)
+        if self.isNavigation:
+            _model.channel_switches[:] = self.model.channel_switches
+        else:
+            _model.channel_switches[:] = \
+                np.atleast_1d(
+                    self.model.channel_switches[
+                        tuple(array_slices[-dims[1]:])])
+
+        twin_dict = {}
+        for comp in self.model:
+            init_args = {}
+            for k, v in comp._whitelist.items():
+                if v is None:
+                    continue
+                flags_str, value = v
+                if 'init' in parse_flag_string(flags_str):
+                    init_args[k] = value
+            _model.append(getattr(components, comp._id_name)(**init_args))
+        copy_slice_from_whitelist(self.model,
+                                  _model,
+                                  dims,
+                                  (slices, array_slices),
+                                  self.isNavigation,
+                                  )
+        for co, cn in zip(self.model, _model):
+            copy_slice_from_whitelist(co,
+                                      cn,
+                                      dims,
+                                      (slices, array_slices),
+                                      self.isNavigation)
+            for po, pn in zip(co.parameters, cn.parameters):
+                copy_slice_from_whitelist(po,
+                                          pn,
+                                          dims,
+                                          (slices, array_slices),
+                                          self.isNavigation)
+                twin_dict[id(po)] = ([id(i) for i in list(po._twins)], pn)
+
+        for k in twin_dict.keys():
+            for tw_id in twin_dict[k][0]:
+                twin_dict[tw_id][1].twin = twin_dict[k][1]
+
+        _model.chisq.data = _model.chisq.data.copy()
+        _model.dof.data = _model.dof.data.copy()
+        _model.fetch_stored_values()  # to update and have correct values
+        if not self.isNavigation:
+            for _ in _model.axes_manager:
+                _model._calculate_chisq()
+
+        return _model

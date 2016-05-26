@@ -25,7 +25,7 @@ import logging
 
 from hyperspy.misc.utils import stash_active_state
 
-from hyperspy.models.model1D import Model1D
+from hyperspy.models.model1d import Model1D
 from hyperspy._signals.eds import EDSSpectrum
 from hyperspy.misc.elements import elements as elements_db
 from hyperspy.misc.eds import utils as utils_eds

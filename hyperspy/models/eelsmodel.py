@@ -20,7 +20,7 @@ import copy
 import warnings
 import logging
 
-from hyperspy.models.model1D import Model1D
+from hyperspy.models.model1d import Model1D
 from hyperspy.components import EELSCLEdge
 from hyperspy.components import PowerLaw
 from hyperspy.defaults_parser import preferences
@@ -44,7 +44,7 @@ class EELSModel(Model1D):
 
     Parameters
     ----------
-    spectrum : an Spectrum (or any Spectrum subclass) instance
+    spectrum : a Signal1D (or any Signal1D subclass) instance
     auto_background : boolean
         If True, and if spectrum is an EELS instance adds automatically
         a powerlaw to the model and estimate the parameters by the
@@ -52,7 +52,7 @@ class EELSModel(Model1D):
     auto_add_edges : boolean
         If True, and if spectrum is an EELS instance, it will
         automatically add the ionization edges as defined in the
-        Spectrum instance. Adding a new element to the spectrum using
+        Signal1D instance. Adding a new element to the spectrum using
         the components.EELSSpectrum.add_elements method automatically
         add the corresponding ionisation edges to the model.
     ll : {None, EELSSpectrum}

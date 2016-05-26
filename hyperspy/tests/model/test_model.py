@@ -65,7 +65,7 @@ class TestModelJacobians:
 class TestModelCallMethod:
 
     def setUp(self):
-        s = hs.signals.Spectrum(np.empty(1))
+        s = hs.signals.Signal1D(np.empty(1))
         m = s.create_model()
         m.append(hs.model.components.Gaussian())
         m.append(hs.model.components.Gaussian())
@@ -118,7 +118,7 @@ class TestModelCallMethod:
 class TestModelPlotCall:
 
     def setUp(self):
-        s = hs.signals.Spectrum(np.empty(1))
+        s = hs.signals.Signal1D(np.empty(1))
         m = s.create_model()
         m.__call__ = mock.MagicMock()
         m.__call__.return_value = np.array([0.5, 0.25])
@@ -153,7 +153,7 @@ class TestModelPlotCall:
 class TestModelSettingPZero:
 
     def setUp(self):
-        s = hs.signals.Spectrum(np.empty(1))
+        s = hs.signals.Signal1D(np.empty(1))
         m = s.create_model()
         m.append(hs.model.components.Gaussian())
 
@@ -224,7 +224,7 @@ class TestModelSettingPZero:
 class TestModel1D:
 
     def setUp(self):
-        s = hs.signals.Spectrum(np.empty(1))
+        s = hs.signals.Signal1D(np.empty(1))
         m = s.create_model()
         self.model = m
 
@@ -984,7 +984,7 @@ class TestCreateModel:
         self.im = hs.signals.Signal2D(np.ones([1, 1, ]))
 
     def test_create_model(self):
-        from hyperspy.models.model1D import Model1D
+        from hyperspy.models.model1d import Model1D
         from hyperspy.models.model2D import Model2D
         nt.assert_is_instance(
             self.s.create_model(), Model1D)
@@ -995,7 +995,7 @@ class TestCreateModel:
 class TestAdjustPosition:
 
     def setUp(self):
-        self.s = hs.signals.Spectrum(np.random.rand(10, 10, 20))
+        self.s = hs.signals.Signal1D(np.random.rand(10, 10, 20))
         self.m = self.s.create_model()
 
     def test_enable_adjust_position(self):

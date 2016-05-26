@@ -791,8 +791,8 @@ class Signal1DTools(object):
 
     def _remove_background_cli(self, signal_range, background_estimator,
                                show_progressbar=None):
-        from hyperspy.model import Model
-        model = Model(self)
+        from hyperspy.models.model1d import Model1D
+        model = Model1D(self)
         model.append(background_estimator)
         background_estimator.estimate_parameters(
             self,
@@ -1174,8 +1174,6 @@ class Signal1D(BaseSignal,
         im = self.rollaxis(-1 + 3j, 0 + 3j)
         im.metadata.Signal.record_by = "image"
         im._assign_subclass()
-        warnings.warn("The to_signal2D method returns an Image instance in\
-                      version 0.8.5 it will return a Signal2D in 1.0.0")
         return im
 
     def _spikes_diagnosis(self, signal_mask=None,
@@ -1262,10 +1260,10 @@ class Signal1D(BaseSignal,
 
         Returns
         -------
-        model : `Model` instance.
+        model : `Model1D` instance.
 
         """
 
-        from hyperspy.model import Model
-        model = Model(self)
+        from hyperspy.models.model1d import Model1D
+        model = Model1D(self)
         return model

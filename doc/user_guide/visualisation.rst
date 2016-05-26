@@ -242,7 +242,7 @@ plotted with sliders.
 
 .. code-block:: python
 
-    >>> s = hs.load('TiFeNi_0*.rpl', stack=True).as_spectrum(0)
+    >>> s = hs.load('TiFeNi_0*.rpl', stack=True).as_signal1D(0)
     >>> s.plot()
 
 
@@ -259,7 +259,7 @@ can be used as an external signal for the navigator.
 .. code-block:: python
 
     >>> im = hs.load('image*.tif', stack=True)
-    >>> s = hs.load('TiFeNi_0*.rpl', stack=True).as_spectrum(0)
+    >>> s = hs.load('TiFeNi_0*.rpl', stack=True).as_signal1D(0)
     >>> dim = s.axes_manager.navigation_shape
     >>> #Rebin the image
     >>> im = im.rebin([dim[2], dim[0], dim[1]])
@@ -293,7 +293,7 @@ the "maximum spectrum" for which each channel is the maximum of all pixels.
 .. code-block:: python
 
     >>> imgSpec = hs.load('TiFeNi_0*.rpl', stack=True)
-    >>> specMax = imgSpec.max(-1).max(-1).max(-1).as_spectrum(0)
+    >>> specMax = imgSpec.max(-1).max(-1).max(-1).as_signal1D(0)
     >>> imgSpec.plot(navigator=specMax)
 
 
@@ -740,7 +740,7 @@ signals must have the same dimensions. To plot two spectra at the same time:
 .. code-block:: python
 
     >>> import scipy.misc
-    >>> s1 = hs.signals.Signal1D(scipy.misc.face()).as_spectrum(0)[:,:3]
+    >>> s1 = hs.signals.Signal1D(scipy.misc.face()).as_signal1D(0)[:,:3]
     >>> s2 = s1.deepcopy()*-1
     >>> hs.plot.plot_signals([s1, s2])
 
@@ -760,7 +760,7 @@ To specify the navigator:
 .. code-block:: python
 
     >>> import scipy.misc
-    >>> s1 = hs.signals.Signal1D(scipy.misc.face()).as_spectrum(0)[:,:3]
+    >>> s1 = hs.signals.Signal1D(scipy.misc.face()).as_signal1D(0)[:,:3]
     >>> s2 = s1.deepcopy()*-1
     >>> hs.plot.plot_signals([s1, s2], navigator="slider")
 
@@ -778,7 +778,7 @@ For example:
 .. code-block:: python
 
     >>> import scipy.misc
-    >>> s1 = hs.signals.Signal1D(scipy.misc.face()).as_spectrum(0)[:,:3]
+    >>> s1 = hs.signals.Signal1D(scipy.misc.face()).as_signal1D(0)[:,:3]
     >>> s2 = s1.deepcopy()*-1
     >>> s3 = hs.signals.Signal1D(np.linspace(0,9,9).reshape([3,3]))
     >>> hs.plot.plot_signals([s1, s2], navigator_list=["slider", s3])
@@ -797,7 +797,7 @@ each plot:
 .. code-block:: python
 
     >>> import scipy.misc
-    >>> s1 = hs.signals.Signal1D(scipy.misc.face()).as_spectrum(0)[:,:3]
+    >>> s1 = hs.signals.Signal1D(scipy.misc.face()).as_signal1D(0)[:,:3]
     >>> s2 = s1.deepcopy()*-1
     >>> hs.plot.plot_signals([s1, s2], sync=False, navigator_list=["slider", "slider"])
 

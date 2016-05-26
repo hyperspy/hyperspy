@@ -384,7 +384,7 @@ def file_reader(filename, rpl_info=None, encoding="latin-1",
         print('Loading as spectrum')
         record_by = 'spectrum'
     elif rpl_info['record-by'] == 'image':
-        print('Loading as Image')
+        print('Loading as Signal2D')
         record_by = 'image'
     else:
         if len(data.shape) == 1:

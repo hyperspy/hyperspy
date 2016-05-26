@@ -185,7 +185,7 @@ def plot_RGB_map(im_list, normalization='single', dont_plot=False):
 
     Parameters
     ----------
-    im_list : list of Image instances
+    im_list : list of Signal2D instances
     normalization : {'single', 'global'}
     dont_plot : bool
 
@@ -259,14 +259,14 @@ def plot_signals(signal_list, sync=True, navigator="auto",
 
     Parameters
     ----------
-    signal_list : list of Signal instances
+    signal_list : list of BaseSignal instances
         If sync is set to True, the signals must have the
         same navigation shape, but not necessarily the same signal shape.
     sync : True or False, default "True"
         If True: the signals will share navigation, all the signals
         must have the same navigation shape for this to work, but not
         necessarily the same signal shape.
-    navigator : {"auto", None, "spectrum", "slider", Signal}, default "auto"
+    navigator : {"auto", None, "spectrum", "slider", BaseSignal}, default "auto"
         See signal.plot docstring for full description
     navigator_list : {List of navigator arguments, None}, default None
         Set different navigator options for the signals. Must use valid
@@ -364,8 +364,8 @@ def plot_signals(signal_list, sync=True, navigator="auto",
 
 
 def _make_heatmap_subplot(spectra):
-    from hyperspy._signals.image import Image
-    im = Image(spectra.data, axes=spectra.axes_manager._get_axes_dicts())
+    from hyperspy._signals.signal2d import Signal2D
+    im = Signal2D(spectra.data, axes=spectra.axes_manager._get_axes_dicts())
     im.metadata.General.title = spectra.metadata.General.title
     im.plot()
     return im._plot.signal_plot.ax
@@ -461,7 +461,7 @@ def plot_images(images,
             Control the title labeling of the plotted images.
             If None, no titles will be shown.
             If 'auto' (default), function will try to determine suitable titles
-            using Image titles, falling back to the 'titles' option if no good
+            using Signal2D titles, falling back to the 'titles' option if no good
             short titles are detected.
             Works best if all images to be plotted have the same beginning
             to their titles.
@@ -853,7 +853,7 @@ def plot_images(images,
                 else:
                     if len(ims) == n:
                         # This is true if we are plotting just 1
-                        # multi-dimensional Image
+                        # multi-dimensional Signal2D
                         title = label_list[idx - 1]
                     elif user_labels:
                         title = label_list[idx - 1]

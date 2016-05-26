@@ -156,7 +156,7 @@ def nc_hyperspy_reader_0dot1(ncfile, filename, *args, **kwds):
     ncfile.close()
     # Now we'll map some parameters
     record_by = 'image' if original_metadata[
-        'record_by'] == 'Image' else 'spectrum'
+        'record_by'] == 'image' else 'spectrum'
     if record_by == 'image':
         dim = len(data.shape)
         names = ['Z', 'Y', 'X'][3 - dim:]

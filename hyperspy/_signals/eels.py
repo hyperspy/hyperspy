@@ -24,7 +24,7 @@ import numpy as np
 import traits.api as t
 from scipy import constants
 
-from hyperspy.signals import Spectrum
+from hyperspy.signals import Signal1D
 from hyperspy.misc.elements import elements as elements_db
 import hyperspy.axes
 from hyperspy.decorators import only_interactive
@@ -39,11 +39,11 @@ from hyperspy.misc.utils import without_nans
 _logger = logging.getLogger(__name__)
 
 
-class EELSSpectrum(Spectrum):
+class EELSSpectrum(Signal1D):
     _signal_type = "EELS"
 
     def __init__(self, *args, **kwards):
-        Spectrum.__init__(self, *args, **kwards)
+        Signal1D.__init__(self, *args, **kwards)
         # Attributes defaults
         self.subshells = set()
         self.elements = set()
@@ -142,14 +142,14 @@ class EELSSpectrum(Spectrum):
 
         Parameters
         ----------
-        mask : Signal of bool data type.
+        mask : Signal1D of bool data type.
             It must have signal_dimension = 0 and navigation_shape equal to the
             current signal. Where mask is True the shift is not computed
             and set to nan.
 
         Returns
         -------
-        zlpc : Signal subclass
+        zlpc : Signal1D subclass
             The estimated position of the maximum of the ZLP peak.
 
         Notes
@@ -208,7 +208,7 @@ class EELSSpectrum(Spectrum):
         subpixel : bool
             If True, perform the alignment with subpixel accuracy
             using cross-correlation.
-        mask : Signal of bool data type.
+        mask : Signal1D of bool data type.
             It must have signal_dimension = 0 and navigation_shape equal to the
             current signal. Where mask is True the shift is not computed
             and set to nan.
@@ -303,7 +303,7 @@ class EELSSpectrum(Spectrum):
 
         Parameters
         ----------
-        threshold : {Signal, float, int}
+        threshold : {Signal1D, float, int}
             Truncation energy to estimate the intensity of the elastic
             scattering. The threshold can be provided as a signal of the same
             dimension as the input spectrum navigation space containing the
@@ -317,7 +317,7 @@ class EELSSpectrum(Spectrum):
 
         Returns
         -------
-        I0: Signal
+        I0: Signal1D
             The elastic scattering intensity.
 
         See Also
@@ -406,8 +406,8 @@ class EELSSpectrum(Spectrum):
         Returns
         -------
 
-        threshold : Signal
-            A Signal of the same dimension as the input spectrum
+        threshold : Signal1D
+            A Signal1D of the same dimension as the input spectrum
             navigation space containing the estimated threshold. Where the
             threshold couldn't be estimated the value is set to nan.
 
@@ -487,7 +487,7 @@ class EELSSpectrum(Spectrum):
 
         Parameters
         ----------
-        threshold : {Signal, float, int}
+        threshold : {Signal1D, float, int}
             Truncation energy to estimate the intensity of the
             elastic scattering. The threshold can be provided as a signal of
             the same dimension as the input spectrum navigation space
@@ -502,9 +502,9 @@ class EELSSpectrum(Spectrum):
 
         Returns
         -------
-        s : Signal
-            The thickness relative to the MFP. It returns a Spectrum,
-            Image or a Signal, depending on the currenct spectrum navigation
+        s : Signal1D
+            The thickness relative to the MFP. It returns a Signal1D,
+            Signal2D or a BaseSignal, depending on the current navigation
             dimensions.
 
         Notes
@@ -952,16 +952,16 @@ class EELSSpectrum(Spectrum):
 
         Parameters
         ----------
-        zlp: {None, number, Signal}
+        zlp: {None, number, Signal1D}
             ZLP intensity. It is optional (can be None) if `t` is None and `n`
             is not None and the thickness estimation is not required. If `t`
             is not None, the ZLP is required to perform the normalization and
             if `t` is not None, the ZLP is required to calculate the thickness.
             If the ZLP is the same for all spectra, the integral of the ZLP
             can be provided as a number. Otherwise, if the ZLP intensity is not
-            the same for all spectra, it can be provided as i) a Signal
+            the same for all spectra, it can be provided as i) a Signal1D
             of the same dimensions as the current signal containing the ZLP
-            spectra for each location ii) a Signal of signal dimension 0
+            spectra for each location ii) a BaseSignal of signal dimension 0
             and navigation_dimension equal to the current signal containing the
             integrated ZLP intensity.
         iterations: int
@@ -972,11 +972,11 @@ class EELSSpectrum(Spectrum):
             The medium refractive index. Used for normalization of the
             SSD to obtain the energy loss function. If given the thickness
             is estimated and returned. It is only required when `t` is None.
-        t: {None, number, Signal}
+        t: {None, number, Signal1D}
             The sample thickness in nm. Used for normalization of the
             SSD to obtain the energy loss function. It is only required when
             `n` is None. If the thickness is the same for all spectra it can be
-            given by a number. Otherwise, it can be provided as a Signal with
+            given by a number. Otherwise, it can be provided as a BaseSignal with
             signal dimension 0 and navigation_dimension equal to the current
             signal.
         delta : float

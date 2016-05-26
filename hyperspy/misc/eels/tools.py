@@ -48,7 +48,7 @@ def _estimate_gain(ns, cs,
     fit = np.polyfit(average2fit, variance2fit, pol_order)
     if weighted is True:
         from hyperspy._signals.signal1D import Signal1D
-        from hyperspy.models.model1D import Model1D
+        from hyperspy.models.model1d import Model1D
         from hyperspy.components import Line
         s = Signal1D(variance2fit)
         s.axes_manager.signal_axes[0].axis = average2fit
@@ -217,7 +217,7 @@ def eels_constant(s, zlp, t):
 
     Parameters
     ----------
-    zlp: {number, Signal}
+    zlp: {number, BaseSignal}
         If the ZLP is the same for all spectra, the intengral of the ZLP
         can be provided as a number. Otherwise, if the ZLP intensity is not
         the same for all spectra, it can be provided as i) a Signal
@@ -225,7 +225,7 @@ def eels_constant(s, zlp, t):
         spectra for each location ii) a Signal of signal dimension 0
         and navigation_dimension equal to the current signal containing the
         integrated ZLP intensity.
-    t: {None, number, Signal}
+    t: {None, number, BaseSignal}
         The sample thickness in nm. If the thickness is the same for all
         spectra it can be given by a number. Otherwise, it can be provided
         as a Signal with signal dimension 0 and navigation_dimension equal

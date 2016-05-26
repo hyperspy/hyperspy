@@ -19,7 +19,7 @@
 import numpy as np
 import nose.tools
 
-from hyperspy.signals import Image
+from hyperspy.signals import Signal2D
 from hyperspy.utils import markers
 
 

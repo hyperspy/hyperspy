@@ -20,7 +20,7 @@
 import nose.tools as nt
 import numpy as np
 from hyperspy.components import GaussianHF
-from hyperspy.signals import Spectrum
+from hyperspy.signals import Signal1D
 
 sqrt2pi = np.sqrt(2 * np.pi)
 sigma2fwhm = 2 * np.sqrt(2 * np.log(2))

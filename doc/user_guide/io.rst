@@ -215,11 +215,11 @@ intensity<get_lines_intensity>`):
 
     >>> s_new = hs.load('EDS_spectrum.hdf5')
     >>> s_new.metadata.Sample.intensities
-    [<Signal, title: X-ray line intensity of EDS SEM Spectrum: Al_Ka at 1.49 keV, dimensions: (|)>,
-     <Signal, title: X-ray line intensity of EDS SEM Spectrum: C_Ka at 0.28 keV, dimensions: (|)>,
-     <Signal, title: X-ray line intensity of EDS SEM Spectrum: Cu_La at 0.93 keV, dimensions: (|)>,
-     <Signal, title: X-ray line intensity of EDS SEM Spectrum: Mn_La at 0.63 keV, dimensions: (|)>,
-     <Signal, title: X-ray line intensity of EDS SEM Spectrum: Zr_La at 2.04 keV, dimensions: (|)>]
+    [<BaseSignal, title: X-ray line intensity of EDS SEM Spectrum: Al_Ka at 1.49 keV, dimensions: (|)>,
+     <BaseSignal, title: X-ray line intensity of EDS SEM Spectrum: C_Ka at 0.28 keV, dimensions: (|)>,
+     <BaseSignal, title: X-ray line intensity of EDS SEM Spectrum: Cu_La at 0.93 keV, dimensions: (|)>,
+     <BaseSignal, title: X-ray line intensity of EDS SEM Spectrum: Mn_La at 0.63 keV, dimensions: (|)>,
+     <BaseSignal, title: X-ray line intensity of EDS SEM Spectrum: Zr_La at 2.04 keV, dimensions: (|)>]
 
 
 
@@ -383,7 +383,7 @@ suitable for applications in electron microscopy developed by Owen Saxton (see
 DOI: 10.1016/S0304-3991(79)80044-3 for more information).The unf format is a
 binary format with an extensive header for up to 3 dimensional data.
 HyperSpy can read and write unf-files and will try to convert the data into a
-fitting Signal subclass, based on the information stored in the label.
+fitting BaseSignal subclass, based on the information stored in the label.
 Currently version 7 of the format should be fully supported.
 
 .. _blockfile-format:
@@ -396,14 +396,14 @@ It is used to store a series of diffraction patterns from scanning precession
 electron difraction (SPED) measurements, with a limited set of metadata. The
 header of the blockfile contains information about centering and distortions
 of the diffraction patterns, but is not applied to the signal during reading.
-Blockfiles only support data values of type 
+Blockfiles only support data values of type
 `np.uint8 <http://docs.scipy.org/doc/numpy/user/basics.types.html>`_ (integers
 in range 0-255).
 
 .. warning::
 
    While Blockfiles are supported, it is a proprietary format, and future
-   versions of the format might therefore not be readable. Complete 
+   versions of the format might therefore not be readable. Complete
    interoperability with the official software can neither be guaranteed.
 
 Blockfiles are by default loaded into memory, but can instead be loaded in a
@@ -419,16 +419,16 @@ Examples of ways of loading:
     >>> hs.load('file.blo')     # Default loading, equivalent to the next line
     >>> hs.load('file.blo', load_to_memory=True)    # Load directly to memory
     >>> # Default memmap loading:
-    >>> hs.load('file.blo', load_to_memory=False, mmap_mode='c') 
+    >>> hs.load('file.blo', load_to_memory=False, mmap_mode='c')
 
     >>> # Loads data read only:
     >>> hs.load('file.blo', load_to_memory=False, mmap_mode='r')
     >>> # Loads data read/write:
     >>> hs.load('file.blo', load_to_memory=False, mmap_mode='r+')
 
-By loading the data read/write, any changes to the original data array will be 
+By loading the data read/write, any changes to the original data array will be
 written to disk. The data is written when the original data array is deleted,
-or when :py:meth:`Signal.data.flush() <http://docs.scipy.org/doc/numpy/reference/generated/numpy.memmap.flush.html>`_
+or when :py:meth:`BaseSignal.data.flush() <http://docs.scipy.org/doc/numpy/reference/generated/numpy.memmap.flush.html>`_
 is called.
 
 
@@ -452,7 +452,7 @@ EMD Electron Microscopy Datasets (HDF5)
 EMD stands for “Electron Microscopy Dataset.” It is a subset of the open source
 HDF5 wrapper format. N-dimensional data arrays of any standard type can be stored
 in an HDF5 file, as well as tags and other metadata.
-The EMD format was developed at Lawrence Berkeley National Lab 
+The EMD format was developed at Lawrence Berkeley National Lab
 (see http://emdatasets.lbl.gov/ for more information).
 NOT to be confused with the FEI EMD format which was developed later and has a
 different structure.

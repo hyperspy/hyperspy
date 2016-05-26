@@ -1124,8 +1124,8 @@ class Line2DROI(BaseInteractiveROI):
                             navigate=axes[0].navigate)
             axis.axes_manager = axm
             axm._axes.insert(i0, axis)
-            from hyperspy.signals import Signal
-            roi = Signal(profile, axes=axm._get_axes_dicts(),
+            from hyperspy.signals import BaseSignal
+            roi = BaseSignal(profile, axes=axm._get_axes_dicts(),
                          metadata=signal.metadata.deepcopy().as_dictionary(),
                          original_metadata=signal.original_metadata.
                          deepcopy().as_dictionary())

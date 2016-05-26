@@ -464,8 +464,8 @@ class MVATools(object):
                         vector_scale=1,
                         no_nans=True, per_row=3):
 
-        from hyperspy._signals.image import Image
-        from hyperspy._signals.spectrum import Spectrum
+        from hyperspy._signals.signal2d import Signal2D
+        from hyperspy._signals.signal1d import Signal1D
 
         if multiple_files is None:
             multiple_files = preferences.MachineLearning.multiple_files
@@ -524,7 +524,7 @@ class MVATools(object):
                                    'size': int(factors.shape[1]),
                                    'units': 'factor',
                                    'index_in_array': 0, })
-                s = Image(factor_data,
+                s = Signal2D(factor_data,
                           axes=axes_dicts,
                           metadata={
                               'General': {'title': '%s from %s' % (
@@ -541,7 +541,7 @@ class MVATools(object):
                          'index_in_array': 0,
                          }]
                 axes[0]['index_in_array'] = 1
-                s = Spectrum(
+                s = Signal1D(
                     factors.T, axes=axes, metadata={
                         "General": {
                             'title': '%s from %s' %
@@ -557,7 +557,7 @@ class MVATools(object):
                     get_axis_dictionary()
                 axis_dict['index_in_array'] = 0
                 for dim, index in zip(comp_ids, range(len(comp_ids))):
-                    s = Spectrum(factors[:, index],
+                    s = Signal1D(factors[:, index],
                                  axes=[axis_dict, ],
                                  metadata={
                                      "General": {'title': '%s from %s' % (
@@ -582,7 +582,7 @@ class MVATools(object):
                     self.axes_manager._signal_shape_in_array + [-1, ])
 
                 for dim, index in zip(comp_ids, range(len(comp_ids))):
-                    im = Image(factor_data[..., index],
+                    im = Signal2D(factor_data[..., index],
                                axes=axes_dicts,
                                metadata={
                                    "General": {'title': '%s from %s' % (
@@ -612,8 +612,8 @@ class MVATools(object):
                          no_nans=True,
                          per_row=3):
 
-        from hyperspy._signals.image import Image
-        from hyperspy._signals.spectrum import Spectrum
+        from hyperspy._signals.signal2d import Signal2D
+        from hyperspy._signals.signal1d import Signal1D
 
         if multiple_files is None:
             multiple_files = preferences.MachineLearning.multiple_files
@@ -665,7 +665,7 @@ class MVATools(object):
                                    'size': int(loadings.shape[0]),
                                    'units': 'factor',
                                    'index_in_array': 0, })
-                s = Image(loading_data,
+                s = Signal2D(loading_data,
                           axes=axes_dicts,
                           metadata={
                               "General": {'title': '%s from %s' % (
@@ -683,7 +683,7 @@ class MVATools(object):
                          'units': 'comp_id',
                          'index_in_array': 0, },
                         cal_axis]
-                s = Image(loadings,
+                s = Signal2D(loadings,
                           axes=axes,
                           metadata={
                               "General": {'title': '%s from %s' % (
@@ -700,7 +700,7 @@ class MVATools(object):
                     get_axis_dictionary()
                 axis_dict['index_in_array'] = 0
                 for dim, index in zip(comp_ids, range(len(comp_ids))):
-                    s = Spectrum(loadings[index],
+                    s = Signal1D(loadings[index],
                                  axes=[axis_dict, ])
                     filename = '%s-%i.%s' % (loading_prefix,
                                              dim,
@@ -718,7 +718,7 @@ class MVATools(object):
                 axes_dicts.append(axes[1].get_axis_dictionary())
                 axes_dicts[1]['index_in_array'] = 1
                 for dim, index in zip(comp_ids, range(len(comp_ids))):
-                    s = Image(loading_data[index, ...],
+                    s = Signal2D(loading_data[index, ...],
                               axes=axes_dicts,
                               metadata={
                                   "General": {'title': '%s from %s' % (
@@ -1440,7 +1440,7 @@ class SpecialSlicersSignal(SpecialSlicers):
     def __setitem__(self, i, j):
         """x.__setitem__(i, y) <==> x[i]=y
         """
-        if isinstance(j, Signal):
+        if isinstance(j, BaseSignal):
             j = j.data
         array_slices = self.obj._get_array_slices(i, self.isNavigation)
         self.obj.data[array_slices] = j
@@ -1449,7 +1449,8 @@ class SpecialSlicersSignal(SpecialSlicers):
         return self.obj.axes_manager.signal_shape[0]
 
 
-class BaseSignal(MVA,
+class BaseSignal(FancySlicing,
+                 MVA,
                  MVATools,):
 
     _record_by = ""
@@ -1497,10 +1498,10 @@ class BaseSignal(MVA,
 
             The event trigger when the data is ready for consumption by any
             process that depend on it as input. Plotted signals automatically
-            connect this Event to its `Signal.plot()`.
+            connect this Event to its `BaseSignal.plot()`.
 
             Note: The event only fires at certain specific times, not everytime
-            that the `Signal.data` array changes values.
+            that the `BaseSignal.data` array changes values.
 
             Arguments:
                 obj: The signal that owns the data.
@@ -1942,7 +1943,7 @@ class BaseSignal(MVA,
                         self.axes_manager.signal_axes)
                 if navigator.axes_manager.navigation_dimension == 1:
                     navigator = interactive(
-                        navigator.as_spectrum,
+                        navigator.as_signal1D,
                         navigator.events.data_changed,
                         navigator.axes_manager.events.any_axis_changed, 0)
                 else:
@@ -2158,11 +2159,11 @@ class BaseSignal(MVA,
         --------
         >>> s = hs.signals.Signal1D(np.ones((5,4,3,6)))
         >>> s
-        <Spectrum, title: , dimensions: (3, 4, 5, 6)>
+        <Signal1D, title: , dimensions: (3, 4, 5, 6)>
         >>> s.rollaxis(3, 1)
-        <Spectrum, title: , dimensions: (3, 4, 5, 6)>
+        <Signal1D, title: , dimensions: (3, 4, 5, 6)>
         >>> s.rollaxis(2,0)
-        <Spectrum, title: , dimensions: (5, 3, 4, 6)>
+        <Signal1D, title: , dimensions: (5, 3, 4, 6)>
 
         """
         axis = self.axes_manager[axis].index_in_array
@@ -2227,9 +2228,9 @@ class BaseSignal(MVA,
         >>> import hyperspy.api as hs
         >>> s = hs.signals.Signal1D(np.zeros((10, 100)))
         >>> s
-        <Spectrum, title: , dimensions: (10|100)>
+        <Signal1D, title: , dimensions: (10|100)>
         >>> s.rebin((5, 100))
-        <Spectrum, title: , dimensions: (5|100)>
+        <Signal1D, title: , dimensions: (5|100)>
         I
         """
         if len(new_shape) != len(self.data.shape):
@@ -2298,18 +2299,18 @@ class BaseSignal(MVA,
         --------
         >>> s = hs.signals.Signal1D(random.random([4,3,2]))
         >>> s
-            <Spectrum, title: , dimensions: (3, 4|2)>
+            <Signal1D, title: , dimensions: (3, 4|2)>
         >>> s.split()
-            [<Spectrum, title: , dimensions: (3 |2)>,
-            <Spectrum, title: , dimensions: (3 |2)>,
-            <Spectrum, title: , dimensions: (3 |2)>,
-            <Spectrum, title: , dimensions: (3 |2)>]
+            [<Signal1D, title: , dimensions: (3 |2)>,
+            <Signal1D, title: , dimensions: (3 |2)>,
+            <Signal1D, title: , dimensions: (3 |2)>,
+            <Signal1D, title: , dimensions: (3 |2)>]
         >>> s.split(step_sizes=2)
-            [<Spectrum, title: , dimensions: (3, 2|2)>,
-            <Spectrum, title: , dimensions: (3, 2|2)>]
+            [<Signal1D, title: , dimensions: (3, 2|2)>,
+            <Signal1D, title: , dimensions: (3, 2|2)>]
         >>> s.split(step_sizes=[1,2])
-            [<Spectrum, title: , dimensions: (3, 1|2)>,
-            <Spectrum, title: , dimensions: (3, 2|2)>]
+            [<Signal1D, title: , dimensions: (3, 1|2)>,
+            <Signal1D, title: , dimensions: (3, 2|2)>]
 
         Returns
         -------
@@ -2478,7 +2479,7 @@ class BaseSignal(MVA,
         Examples
         --------
         >>> import numpy as np
-        >>> s = Signal(np.random.random((64,64,1024)))
+        >>> s = BaseSignal(np.random.random((64,64,1024)))
         >>> with s.unfolded():
                 # Do whatever needs doing while unfolded here
                 pass
@@ -2694,7 +2695,7 @@ class BaseSignal(MVA,
         Examples
         --------
         >>> import numpy as np
-        >>> s = Signal(np.random.random((64,64,1024)))
+        >>> s = BaseSignal(np.random.random((64,64,1024)))
         >>> s.data.shape
         (64,64,1024)
         >>> s.sum(-1).data.shape
@@ -2727,7 +2728,7 @@ class BaseSignal(MVA,
         Examples
         --------
         >>> import numpy as np
-        >>> s = Signal(np.random.random((64,64,1024)))
+        >>> s = BaseSignal(np.random.random((64,64,1024)))
         >>> s.data.shape
         (64,64,1024)
         >>> s.max(-1).data.shape
@@ -2760,7 +2761,7 @@ class BaseSignal(MVA,
         Examples
         --------
         >>> import numpy as np
-        >>> s = Signal(np.random.random((64,64,1024)))
+        >>> s = BaseSignal(np.random.random((64,64,1024)))
         >>> s.data.shape
         (64,64,1024)
         >>> s.min(-1).data.shape
@@ -2793,7 +2794,7 @@ class BaseSignal(MVA,
         Examples
         --------
         >>> import numpy as np
-        >>> s = Signal(np.random.random((64,64,1024)))
+        >>> s = BaseSignal(np.random.random((64,64,1024)))
         >>> s.data.shape
         (64,64,1024)
         >>> s.mean(-1).data.shape
@@ -2826,7 +2827,7 @@ class BaseSignal(MVA,
         Examples
         --------
         >>> import numpy as np
-        >>> s = Signal(np.random.random((64,64,1024)))
+        >>> s = BaseSignal(np.random.random((64,64,1024)))
         >>> s.data.shape
         (64,64,1024)
         >>> s.std(-1).data.shape
@@ -2859,7 +2860,7 @@ class BaseSignal(MVA,
         Examples
         --------
         >>> import numpy as np
-        >>> s = Signal(np.random.random((64,64,1024)))
+        >>> s = BaseSignal(np.random.random((64,64,1024)))
         >>> s.data.shape
         (64,64,1024)
         >>> s.var(-1).data.shape
@@ -2890,7 +2891,7 @@ class BaseSignal(MVA,
         Examples
         --------
         >>> import numpy as np
-        >>> s = Signal(np.random.random((64,64,1024)))
+        >>> s = BaseSignal(np.random.random((64,64,1024)))
         >>> s.data.shape
         (64,64,1024)
         >>> s.diff(-1).data.shape
@@ -2970,7 +2971,7 @@ class BaseSignal(MVA,
         Examples
         --------
         >>> import numpy as np
-        >>> s = Signal(np.random.random((64,64,1024)))
+        >>> s = BaseSignal(np.random.random((64,64,1024)))
         >>> s.data.shape
         (64,64,1024)
         >>> s.var(-1).data.shape
@@ -3013,7 +3014,7 @@ class BaseSignal(MVA,
         Examples
         --------
         >>> import numpy as np
-        >>> s = Signal(np.random.random((64,64,1024)))
+        >>> s = BaseSignal(np.random.random((64,64,1024)))
         >>> s.data.shape
         (64,64,1024)
         >>> s.var(-1).data.shape
@@ -3046,7 +3047,7 @@ class BaseSignal(MVA,
         Usage
         -----
         >>> import numpy as np
-        >>> s = Signal(np.random.random((64,64,1024)))
+        >>> s = BaseSignal(np.random.random((64,64,1024)))
         >>> s.data.shape
         (64,64,1024)
         >>> s.indexmax(-1).data.shape
@@ -3076,7 +3077,7 @@ class BaseSignal(MVA,
         Usage
         -----
         >>> import numpy as np
-        >>> s = Signal(np.random.random((64,64,1024)))
+        >>> s = BaseSignal(np.random.random((64,64,1024)))
         >>> s.data.shape
         (64,64,1024)
         >>> s.valuemax(-1).data.shape
@@ -3221,7 +3222,7 @@ class BaseSignal(MVA,
         parameter is variable.
 
         >>> im = hs.signals.Signal2D(np.random.random((10, 64, 64)))
-        >>> sigmas = hs.signals.Signal(np.linspace(2,5,10))
+        >>> sigmas = hs.signals.BaseSignal(np.linspace(2,5,10))
         >>> sigmas.axes_manager.set_signal_dimension(0)
         >>> im.map(scipy.ndimage.gaussian_filter, sigma=sigmas)
 
@@ -3493,10 +3494,10 @@ class BaseSignal(MVA,
         --------
         >>> im = hs.signals.Signal2D(np.zeros((2,3, 32,32)))
         >>> im
-        <Image, title: , dimensions: (3, 2, 32, 32)>
+        <Signal2D, title: , dimensions: (3, 2, 32, 32)>
         >>> im.axes_manager.indices = 2,1
         >>> im.get_current_signal()
-        <Image, title:  (2, 1), dimensions: (32, 32)>
+        <Signal2D, title:  (2, 1), dimensions: (32, 32)>
 
         """
         cs = self.__class__(
@@ -3640,11 +3641,11 @@ class BaseSignal(MVA,
         --------
         >>> img = hs.signals.Signal2D(np.ones((3,4,5,6)))
         >>> img
-        <Image, title: , dimensions: (4, 3, 6, 5)>
+        <Signal2D, title: , dimensions: (4, 3, 6, 5)>
         >>> img.to_spectrum(-1+1j)
-        <Spectrum, title: , dimensions: (6, 5, 4, 3)>
+        <Signal1D, title: , dimensions: (6, 5, 4, 3)>
         >>> img.to_spectrum(0)
-        <Spectrum, title: , dimensions: (6, 5, 3, 4)>
+        <Signal1D, title: , dimensions: (6, 5, 3, 4)>
 
         """
         # Roll the spectral axis to-be to the latex index in the array
@@ -3656,7 +3657,7 @@ class BaseSignal(MVA,
         else:
             out.data[:] = sp.data
             out.events.data_changed.trigger(obj=out)
-    as_spectrum.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
+    as_signal1D.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
 
     def as_signal2D(self, image_axes, out=None):
         """Convert signal to image.
@@ -3680,7 +3681,7 @@ class BaseSignal(MVA,
         >>> s.as_image((0,1))
         <Signal2D, title: , dimensions: (5, 2, 4, 3)>
 
-        >>> s.to_image((1,2))
+        >>> s.to_signal2D((1,2))
         <Signal2D, title: , dimensions: (4, 5, 3, 2)>
 
         Raises
@@ -3690,7 +3691,7 @@ class BaseSignal(MVA,
         """
         if self.data.ndim < 2:
             raise DataDimensionError(
-                "A Signal dimension must be >= 2 to be converted to an Image")
+                "A Signal dimension must be >= 2 to be converted to a Signal2D")
         axes = (self.axes_manager[image_axes[0]],
                 self.axes_manager[image_axes[1]])
         iaxes = [axis.index_in_array for axis in axes]
@@ -3703,7 +3704,7 @@ class BaseSignal(MVA,
         else:
             out.data[:] = im.data
             out.events.data_changed.trigger(obj=out)
-    as_image.__doc__ %= OUT_ARG
+    as_signal2D.__doc__ %= OUT_ARG
 
     def _assign_subclass(self):
         mp = self.metadata

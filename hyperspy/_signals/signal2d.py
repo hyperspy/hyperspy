@@ -519,13 +519,11 @@ class Signal2D(BaseSignal,
 
         See Also
         --------
-        as_spectrum : a method for the same purpose with more options.
+        as_signal1D : a method for the same purpose with more options.
         signals.Signal1D.to_signal1D : performs the inverse operation on one
         dimensional signals.
 
         """
-        warnings.warn("The to_signal1D method returns a Spectrum instance in\
-                      version 0.8.5 it will return a Signal1D in 1.0.0")
         return self.as_signal1D(0 + 3j)
 
     def plot(self,

@@ -14,7 +14,7 @@ class TestInteractive():
         d = np.linspace(3, 10.5)
         d = np.tile(d, (3, 3, 1))
         # data shape (3, 3, 50)
-        s = hs.signals.Spectrum(d)
+        s = hs.signals.Signal1D(d)
         self.s = s
 
     def test_interactive_sum(self):

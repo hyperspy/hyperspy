@@ -122,7 +122,7 @@ Although usually there is no need to trigger events manually, there are
 cases where it is required. When triggering events manually it is important
 to pass the right keywords as specified in the event docstring. In the
 following example we change the :py:attr:`data` attribute of a
-:py:class:`~.signal.Signal` manually and we then trigger the `data_changed`
+:py:class:`~.signal.BaseSignal` manually and we then trigger the `data_changed`
 event.
 
 .. code-block:: python

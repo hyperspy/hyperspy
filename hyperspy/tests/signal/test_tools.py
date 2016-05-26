@@ -9,7 +9,7 @@ from hyperspy import signals
 
 
 def _verify_test_sum_x_E(self, s):
-    np.testing.assert_array_equal(self.spectrum.data.sum(), s.data)
+    np.testing.assert_array_equal(self.signal.data.sum(), s.data)
     nt.assert_equal(s.data.ndim, 1)
     # Check that there is still one signal axis.
     nt.assert_equal(s.axes_manager.signal_dimension, 1)
@@ -35,7 +35,7 @@ class Test2D:
         _verify_test_sum_x_E(self, s)
         s = self.signal.sum((0, "E"))
         _verify_test_sum_x_E(self, s)
-        s = self.signal.sum((self.spectrum.axes_manager[0], "E"))
+        s = self.signal.sum((self.signal.axes_manager[0], "E"))
         _verify_test_sum_x_E(self, s)
         s = self.signal.sum("x").sum("E")
         _verify_test_sum_x_E(self, s)
@@ -141,12 +141,12 @@ def _test_default_navigation_signal_operations_over_many_axes(self, op):
 class Test3D:
 
     def setUp(self):
-        self.signal = Signal(np.arange(2 * 4 * 6).reshape(2, 4, 6))
+        self.signal = BaseSignal(np.arange(2 * 4 * 6).reshape(2, 4, 6))
         self.signal.axes_manager[0].name = "x"
         self.signal.axes_manager[1].name = "y"
         self.signal.axes_manager[2].name = "E"
         self.signal.axes_manager[0].scale = 0.5
-        self.data = self.spectrum.data.copy()
+        self.data = self.signal.data.copy()
 
     def test_indexmax(self):
         s = self.signal.indexmax('E')
@@ -401,7 +401,7 @@ class Test4D:
 
 
 def test_signal_iterator():
-    s = Signal(np.arange(3).reshape((3, 1)))
+    s = BaseSignal(np.arange(3).reshape((3, 1)))
     nt.assert_equal(next(s).data[0], 0)
     # If the following fails it can be because the iteration index was not
     # restarted

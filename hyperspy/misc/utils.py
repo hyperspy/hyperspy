@@ -251,7 +251,6 @@ class DictionaryTreeBrowser(object):
 
     def _get_print_items(self, padding='', max_len=78):
         """Prints only the attributes that are not methods
-
         """
         from hyperspy.defaults_parser import preferences
 
@@ -271,12 +270,40 @@ class DictionaryTreeBrowser(object):
         string = ''
         eoi = len(self)
         j = 0
+        if preferences.General.dtb_expand_structures and self._double_lines:
+            s_end = '╚══ '
+            s_middle = '╠══ '
+            pad_middle = '║   '
+        else:
+            s_end = '└── '
+            s_middle = '├── '
+            pad_middle = '│   '
         for key_, value in iter(sorted(self.__dict__.items())):
             if key_.startswith("_"):
                 continue
             if not isinstance(key_, types.MethodType):
                 key = ensure_unicode(value['key'])
                 value = value['_dtb_value_']
+                if j == eoi - 1:
+                    symbol = s_end
+                else:
+                    symbol = s_middle
+                if preferences.General.dtb_expand_structures:
+                    if isinstance(value, list) or isinstance(value, tuple):
+                        iflong, strvalue = check_long_string(value, max_len)
+                        if iflong:
+                            key += (" <list>"
+                                    if isinstance(value, list)
+                                    else " <tuple>")
+                            value = DictionaryTreeBrowser(
+                                {'[%d]' % i: v for i, v in enumerate(value)},
+                                double_lines=True)
+                        else:
+                            string += "%s%s%s = %s\n" % (
+                                padding, symbol, key, strvalue)
+                            j += 1
+                            continue
+
                 if isinstance(value, DictionaryTreeBrowser):
                     string += '%s%s%s\n' % (padding, symbol, key)
                     if j == eoi - 1:
@@ -730,7 +757,7 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
 
     Parameters
     ----------
-    signal_list : list of Signal instances
+    signal_list : list of BaseSignal instances
     axis : {None, int, str}
         If None, the signals are stacked over a new axis. The data must
         have the same dimensions. Otherwise the
@@ -756,7 +783,7 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
 
     Returns
     -------
-    signal : Signal instance (or subclass, determined by the objects in
+    signal : BaseSignal instance (or subclass, determined by the objects in
         signal list)
 
     Examples
@@ -765,7 +792,7 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
     >>> s = hs.stack([hs.signals.Signal1D(data[:10]),
     ...               hs.signals.Signal1D(data[10:])])
     >>> s
-    <Spectrum, title: Stack of , dimensions: (2, 10)>
+    <Signal1D, title: Stack of , dimensions: (2, 10)>
     >>> s.data
     array([[ 0,  1,  2,  3,  4,  5,  6,  7,  8,  9],
            [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]])

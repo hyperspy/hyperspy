@@ -88,10 +88,10 @@ class TestEstimateZLPCentre:
         s = hs.signals.EELSSpectrumSimulation(np.diag(np.arange(1, 11)))
         s.axes_manager[-1].scale = 0.1
         s.axes_manager[-1].offset = 100
-        self.spectrum = s
+        self.signal = s
 
     def test_estimate_zero_loss_peak_centre(self):
-        s = self.spectrum
+        s = self.signal
         np.testing.assert_allclose(
             s.estimate_zero_loss_peak_centre().data,
             np.arange(100,
@@ -115,10 +115,10 @@ class TestAlignZLP:
         s.data[np.arange(10), self.ishifts + self.izlp] = 10
         s.data += self.bg
         s.axes_manager[-1].offset += 100
-        self.spectrum = s
+        self.signal = s
 
     def test_align_zero_loss_peak_calibrate_true(self):
-        s = self.spectrum
+        s = self.signal
         s.align_zero_loss_peak(
             calibrate=True,
             print_stats=False,
@@ -128,7 +128,7 @@ class TestAlignZLP:
         np.testing.assert_allclose(zlpc.data.std(), 0)
 
     def test_align_zero_loss_peak_calibrate_false(self):
-        s = self.spectrum
+        s = self.signal
         s.align_zero_loss_peak(
             calibrate=False,
             print_stats=False,
@@ -137,7 +137,7 @@ class TestAlignZLP:
         np.testing.assert_allclose(zlpc.data.std(), 0, atol=10e-3)
 
     def test_also_aligns(self):
-        s = self.spectrum
+        s = self.signal
         s2 = s.deepcopy()
         s.align_zero_loss_peak(calibrate=True,
                                print_stats=False,

@@ -36,7 +36,7 @@ class TestImage:
         im = self.im
 # Here sigmas have to be floats because the fix for https://github.com/numpy/numpy/issues/2951 has not
 # propagated yet to the conda environments
-        sigmas = hs.signals.Signal(np.array([0., 1.]))
+        sigmas = hs.signals.BaseSignal(np.array([0., 1.]))
 
         sigmas.axes_manager.set_signal_dimension(0)
         im.map(gaussian_filter,

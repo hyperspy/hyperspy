@@ -50,7 +50,7 @@ dimensional signal with the energy axis in first position):
 
 .. code-block:: python
 
-    >>> si = hs.load("Ni_superalloy_010.rpl").as_spectrum(0)
+    >>> si = hs.load("Ni_superalloy_010.rpl").as_signal1D(0)
     >>> si
     <Signal1D, title: , dimensions: (256, 224|1024)>
 
@@ -168,7 +168,7 @@ or adjusted manually with the :py:class:`~.axes.AxesManager`
 
 .. code-block:: python
 
-    >>> si = hs.load("Ni_superalloy_010.rpl", signal_type="EDS_TEM").as_spectrum(0)
+    >>> si = hs.load("Ni_superalloy_010.rpl", signal_type="EDS_TEM").as_signal1D(0)
     >>> si.axes_manager[-1].name = 'E'
     >>> si.axes_manager['E'].units = 'keV'
     >>> si.axes_manager['E'].scale = 0.01
@@ -200,7 +200,7 @@ method.
     >>> s1pixel = hs.load("Ni_superalloy_1pix.msa", signal_type="EDS_TEM")
     >>>
     >>> # si contains no parameters
-    >>> si = hs.load("Ni_superalloy_010.rpl", signal_type="EDS_TEM").as_spectrum(0)
+    >>> si = hs.load("Ni_superalloy_010.rpl", signal_type="EDS_TEM").as_signal1D(0)
     >>>
     >>> # Copy all the properties of s1pixel to si
     >>> si.get_calibration_from(s1pixel)

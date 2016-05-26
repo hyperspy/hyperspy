@@ -304,7 +304,7 @@ Noise_properties
 ----------------
 
 variance
-    type: float or Signal instance.
+    type: float or BaseSignal instance.
 
     The variance of the data. It can be a float when the noise is Gaussian or a
     :class:`~.signal.BaseSignal` instance if the noise is heteroscedastic, in which

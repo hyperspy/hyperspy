@@ -83,7 +83,7 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
             self.xlabel += ' (%s)' % self.axes_manager.signal_axes[0].units
         self.ylabel = 'Intensity'
         self.axis = self.axes_manager.signal_axes[0]
-        sf = signal1D.Signal1DFigure(title=self.signal_title +
+        sf = spectrum.Signal1DFigure(title=self.signal_title +
                                      " Signal")
         sf.xlabel = self.xlabel
         sf.ylabel = self.ylabel
