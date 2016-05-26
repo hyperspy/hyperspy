@@ -82,7 +82,7 @@ class EELSModel(Model):
             background.name = 'background'
             warnings.warn(
                 "Adding \"background\" to the user namespace. "
-                "This feature will be removed in HyperSpy 0.9.",
+                "This feature will be removed in Hyperspy 1.0.",
                 VisibleDeprecationWarning)
             interactive_ns['background'] = background
             self.append(background)
@@ -183,14 +183,14 @@ class EELSModel(Model):
         self.append(master_edge)
         interactive_ns[self[-1].name] = self[-1]
         warnings.warn("Adding \"%s\" to the user namespace. "
-                      "This feature will be removed in HyperSpy 0.9." % self[
+                      "This feature will be removed in Hyperspy 1.0." % self[
                           -1].name,
                       VisibleDeprecationWarning)
         element = master_edge.element
         interactive_ns[element] = []
         warnings.warn(
             "Adding \"%s\" to the user namespace. "
-            "This feature will be removed in HyperSpy 0.9." % element,
+            "This feature will be removed in Hyperspy 1.0." % element,
             VisibleDeprecationWarning)
         interactive_ns[element].append(self[-1])
         while len(e_shells) > 0:
@@ -222,7 +222,7 @@ class EELSModel(Model):
                     interactive_ns[edge.name] = edge
                     warnings.warn(
                         "Adding \"%s\" to the user namespace. "
-                        "This feature will be removed in HyperSpy 0.9." %
+                        "This feature will be removed in Hyperspy 1.0." %
                         edge.name,
                         VisibleDeprecationWarning)
                     interactive_ns[element].append(edge)

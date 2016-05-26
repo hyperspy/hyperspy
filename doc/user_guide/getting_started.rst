@@ -75,7 +75,7 @@ follows:
 .. warning::
     Starting HyperSpy using the ``hyperspy`` starting script and the
     ``%hyperspy`` IPython magic is now deprecated and will be removed in
-    HyperSpy 0.9. The IPython magic does not work with IPython 4 and
+    Hyperspy 1.0. The IPython magic does not work with IPython 4 and
     above.
 
 .. _starting_hyperspy-label:
