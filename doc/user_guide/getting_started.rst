@@ -66,11 +66,6 @@ but some features such as navigation sliders may be missing.
        In [3]: import hyperspy.api as hs
 
 
-.. warning::
-        When using the qt4 backend it is important to import hyperspy
-        before executing the ``%matplotlib`` magic as above to ensure that
-        matplotlib uses version 2 of the PyQt API. This is necessary to avoid
-        conflicts with other libraries.
 
 
 This documentation assumes that numpy and matplotlib are also imported as
@@ -78,7 +73,6 @@ follows:
 
    >>> import numpy as np
    >>> import matplotlib.pyplot as plt
-
 
 
 Getting help
