@@ -29,11 +29,11 @@ Creating a model
 ----------------
 
 A :py:class:`~.models.model1D.Model1D` can be created for data in the :py:class:`~._signals.spectrum.Spectrum`
-class using the :py:meth:`~._signals.spectrum.Spectrum.create_model` method:
+class using the :py:meth:`~._signals.signal1D.Signal1D.create_model` method:
 
 .. code-block:: python
 
-    >>> s = hs.signals.Spectrum('SomeDataHere') # Load the data from a file
+    >>> s = hs.signals.Signal1D('SomeDataHere') # Load the data from a file
     >>> m = s.create_model() # Creates the 1D-Model and asign it to the variable m
 
 Similarly A :py:class:`~.models.model2D.Model2D` can be created for data in the :py:class:`~._signals.image.Image`
@@ -310,7 +310,7 @@ To enable this feature for a given component set the
 
 .. code-block:: python
 
-    >>> s = hs.signals.Spectrum(np.arange(100).reshape(10,10))
+    >>> s = hs.signals.Signal1D(np.arange(100).reshape(10,10))
     >>> m = s.create_model()
     >>> g1 = hs.model.components.Gaussian()
     >>> g2 = hs.model.components.Gaussian()
@@ -345,13 +345,13 @@ recomputed for the resulting slices.
 
 .. code-block:: python
 
-    >>> s = hs.signals.Spectrum(np.arange(100).reshape(10,10))
+    >>> s = hs.signals.Signal1D(np.arange(100).reshape(10,10))
     >>> m = s.create_model()
     >>> m.append(hs.model.components.Gaussian())
     >>> # select first three navigation pixels and last five signal channels
     >>> m1 = m.inav[:3].isig[-5:]
     >>> m1.spectrum
-    <Spectrum, title: , dimensions: (3|5)>
+    <Signal1D, title: , dimensions: (3|5)>
 
 
 Getting and setting parameter values and attributes
@@ -373,7 +373,7 @@ Example:
 
 .. code-block:: python
 
-    >>> s = hs.signals.Spectrum(np.arange(100).reshape(10,10))
+    >>> s = hs.signals.Signal1D(np.arange(100).reshape(10,10))
     >>> m = s.create_model()
     >>> g1 = hs.model.components.Gaussian()
     >>> g2 = hs.model.components.Gaussian()
@@ -593,8 +593,8 @@ to the data.
     >>> m.append(line)
     >>> m.fit()
 
-On fitting completion, the optimized value of the parameters and their estimated standard deviation
-are stored in the following line attributes:
+On fitting completion, the optimized value of the parameters and their estimated
+standard deviation are stored in the following line attributes:
 
 .. code-block:: python
 
@@ -607,7 +607,7 @@ are stored in the following line attributes:
 
 When the noise is heterocedastic, only if the
 ``metadata.Signal.Noise_properties.variance`` attribute of the
-:class:`~._signals.spectrum.Spectrum` instance is defined can the errors be
+:class:`~._signals.signal1d.Signal1D` instance is defined can the errors be
 estimated accurately. If the variance is not defined, the standard deviation of
 the parameters are still computed and stored in the
 :attr:`~.component.Parameter.std` attribute by setting variance equal 1.
@@ -639,7 +639,7 @@ approximation in most cases.
 
 .. code-block:: python
 
-   >>> s.estimate_poissonian_noise_variance(expected_value=hs.signals.Spectrum(np.arange(300)))
+   >>> s.estimate_poissonian_noise_variance(expected_value=hs.signals.Signal1D(np.arange(300)))
    >>> m.fit()
    >>> line.coefficients.value
    (1.0004224896604759, -0.46982916592391377)
@@ -804,7 +804,7 @@ datasets**.
 
 Storing models
 --------------
-.. versionadded:: 0.9 :py:class:`~.signal.ModelManager`
+.. versionadded:: 1.0 :py:class:`~.signal.ModelManager`
 
 Multiple models can be stored in the same signal. In particular, when
 :py:meth:`~.model.store` is called, a full "frozen" copy of the model is stored
@@ -865,7 +865,7 @@ Current stored models can be listed by calling :py:attr:`~.signal.models`:
 
 Saving and loading the result of the fit
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. versionadded:: 0.9
+.. versionadded:: 1.0
 
 To save a model, a convenience function :py:meth:`~.model.save` is provided,
 which stores the current model into its signal and saves the signal. As

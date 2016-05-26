@@ -35,7 +35,7 @@ class TestSubPixelAlign:
                            (-2.3, 2.9), (5.2, -2.1), (2.7, 2.9),
                            (5.0, 6.8), (-9.1, -9.5), (-9.0, -9.9),
                            (-6.3, -9.2)])
-        s = hs.signals.Image(np.zeros((10, 100, 100)))
+        s = hs.signals.Signal2D(np.zeros((10, 100, 100)))
         for i in range(10):
             # Apply each sup-pixel shift using FFT and InverseFFT
             offset_image = fourier_shift(np.fft.fftn(ref_image), shifts[i])

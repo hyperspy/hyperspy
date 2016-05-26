@@ -381,17 +381,17 @@ def file_reader(filename, rpl_info=None, encoding="latin-1",
         data = read_raw(rpl_info, rawfname, mmap_mode=mmap_mode)
 
     if rpl_info['record-by'] == 'vector':
-        _logger.info('Loading as spectrum')
+        print('Loading as spectrum')
         record_by = 'spectrum'
     elif rpl_info['record-by'] == 'image':
-        _logger.info('Loading as Image')
+        print('Loading as Image')
         record_by = 'image'
     else:
         if len(data.shape) == 1:
-            _logger.info('Loading as spectrum')
+            print('Loading as spectrum')
             record_by = 'spectrum'
         else:
-            _logger.info('Loading as image')
+            print('Loading as image')
             record_by = 'image'
 
     if rpl_info['record-by'] == 'vector':
@@ -568,7 +568,8 @@ def file_writer(filename, signal, encoding='latin-1', *args, **kwds):
             record_by = 'dont-care'
             depth, width, height = width_axis.size, 1, 1
     else:
-        raise TypeError("Only Spectrum and Image objects can be saved")
+        print("Only Signal1D and Signal2D objects can be saved")
+        return
 
     # Fill the keys dictionary
     keys_dictionary = {

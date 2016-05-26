@@ -26,7 +26,7 @@ from hyperspy.drawing import utils
 from hyperspy.events import Event, Events
 
 
-class SpectrumFigure(BlittedFigure):
+class Signal1DFigure(BlittedFigure):
 
     """
     """
@@ -155,9 +155,9 @@ class SpectrumFigure(BlittedFigure):
         # self.ax.hspy_fig._draw_animated()
 
 
-class SpectrumLine(object):
+class Signal1DLine(object):
 
-    """Line that can be added to SpectrumFigure.
+    """Line that can be added to Signal1DFigure.
 
     Attributes
     ----------

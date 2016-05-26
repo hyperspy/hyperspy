@@ -58,7 +58,7 @@ def test_weird_spectrum():
 class TestSignalAssignSubclass:
 
     def setUp(self):
-        self.s = hs.signals.Spectrum([0])
+        self.s = hs.signals.Signal1D([0])
 
     def test_type_to_eels(self):
         self.s.set_signal_type("EELS")

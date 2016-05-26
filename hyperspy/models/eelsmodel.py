@@ -70,10 +70,10 @@ class EELSModel(Model1D):
 
     """
 
-    def __init__(self, spectrum, auto_background=True,
+    def __init__(self, signal1D, auto_background=True,
                  auto_add_edges=True, ll=None,
                  GOS=None, dictionary=None):
-        Model1D.__init__(self, spectrum)
+        Model1D.__init__(self, signal1D)
         self._suspend_auto_fine_structure_width = False
         self.convolved = False
         self.low_loss = ll
@@ -93,11 +93,11 @@ class EELSModel(Model1D):
             self._add_edges_from_subshells_names()
 
     @property
-    def spectrum(self):
+    def signal1D(self):
         return self._signal
 
-    @spectrum.setter
-    def spectrum(self, value):
+    @signal1D.setter
+    def signal1D(self, value):
         if isinstance(value, EELSSpectrum):
             self._signal = value
             self.signal._are_microscope_parameters_missing()

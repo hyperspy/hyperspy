@@ -343,14 +343,14 @@ def hdfgroup2signaldict(group, load_to_memory=True):
 
 def dict2hdfgroup(dictionary, group, compression=None):
     from hyperspy.misc.utils import DictionaryTreeBrowser
-    from hyperspy.signal import Signal
+    from hyperspy.signal import BaseSignal
 
     def parse_structure(key, group, value, _type, compression):
         try:
             # Here we check if there are any signals in the container, as
             # casting a long list of signals to a numpy array takes a very long
             # time. So we check if there are any, and save numpy the trouble
-            if np.any([isinstance(t, Signal) for t in value]):
+            if np.any([isinstance(t, BaseSignal) for t in value]):
                 tmp = np.array([[0]])
             else:
                 tmp = np.array(value)
@@ -381,7 +381,7 @@ def dict2hdfgroup(dictionary, group, compression=None):
             dict2hdfgroup(value.as_dictionary(),
                           group.create_group(key),
                           compression=compression)
-        elif isinstance(value, Signal):
+        elif isinstance(value, BaseSignal):
             if key.startswith('_sig_'):
                 try:
                     write_signal(value, group[key])

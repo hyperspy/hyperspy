@@ -10,6 +10,17 @@ algorithms, such as principal component analysis (PCA), or blind source
 separation (BSS) algorithms, such as independent component analysis (ICA), are
 available through the methods described in this section.
 
+The behaviour of some machine learning operations can be customised
+:ref:`customised <configuring-hyperspy-label>` in the Machine Learning section
+Preferences.
+
+.. Note::
+
+    Currently the BSS algorithms operate on the result of a previous
+    decomposition analysis. Therefore, it is necessary to perform a
+    decomposition before attempting to perform a BSS.
+
+
 .. _decomposition-nomenclature:
 
 Nomenclature
@@ -18,7 +29,7 @@ Nomenclature
 HyperSpy will decompose a dataset into two new datasets: one
 with the dimension of the signal space known as `factors`, and the
 other with the dimension of the navigation space known as `loadings`.
-
+ 
 .. _decomposition:
 
 Decomposition
@@ -216,7 +227,7 @@ Obtaining the results as Signal instances
 .. versionadded:: 0.7
 
 The decomposition and BSS results are internally stored as numpy arrays in the
-:py:class:`~.signal.Signal` class. Frequently it is useful to obtain the
+:py:class:`~.signal.BaseSignal` class. Frequently it is useful to obtain the
 decomposition/BSS factors and loadings as HyperSpy signals, and HyperSpy
 provides the following methods for that purpose:
 

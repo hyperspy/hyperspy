@@ -322,7 +322,7 @@ def assign_signal_subclass(record_by="",
 
     """
     import hyperspy.signals
-    from hyperspy.signal import Signal
+    from hyperspy.signal import BaseSignal
     if record_by and record_by not in ["image", "spectrum"]:
         raise ValueError("record_by must be one of: None, empty string, "
                          "\"image\" or \"spectrum\"")
@@ -330,7 +330,7 @@ def assign_signal_subclass(record_by="",
         raise ValueError("signal_origin must be one of: None, empty string, "
                          "\"experiment\" or \"simulation\"")
 
-    signals = hyperspy.misc.utils.find_subclasses(hyperspy.signals, Signal)
+    signals = hyperspy.misc.utils.find_subclasses(hyperspy.signals, BaseSignal)
     signals['Signal'] = Signal
 
     if signal_origin == "experiment":

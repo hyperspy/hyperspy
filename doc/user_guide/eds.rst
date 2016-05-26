@@ -42,26 +42,26 @@ For a single spectrum:
 
     >>> s = hs.load("Ni_superalloy_1pix.msa")
     >>> s
-    <Spectrum, title: Spectrum, dimensions: (|1024)>
+    <Signal1D, title: Signal1D, dimensions: (|1024)>
 
-Next, for a spectrum image. In this example, the ".rpl" file is recorded as
-an image, so the method :py:meth:`~.signal.Signal.as_spectrum` will set it
-back to a spectrum with the energy axis in first position:
+For a spectrum image (The .rpl file is recorded as an image in this example,
+The method :py:meth:`~.signal.BaseSignal.as_signal1D` set it back to a one
+dimensional signal with the energy axis in first position):
 
 .. code-block:: python
 
     >>> si = hs.load("Ni_superalloy_010.rpl").as_spectrum(0)
     >>> si
-    <Spectrum, title: , dimensions: (256, 224|1024)>
+    <Signal1D, title: , dimensions: (256, 224|1024)>
 
 Finally, for a stack of spectrum images, using "*" as a wildcard character:
 
 .. code-block:: python
 
     >>> si4D = hs.load("Ni_superalloy_0*.rpl", stack=True)
-    >>> si4D = si4D.as_spectrum(0)
+    >>> si4D = si4D.as_signal1D(0)
     >>> si4D
-    <Spectrum, title:, dimensions: (256, 224, 2|1024)>
+    <Signal1D, title:, dimensions: (256, 224, 2|1024)>
 
 .. _eds_calibration-label:
 
@@ -69,7 +69,7 @@ Microscope and detector parameters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 First, the signal type ("EDS_TEM" or "EDS_SEM") needs to be set with the
-:py:meth:`~.signal.Signal.set_signal_type` method. By assigning the class of
+:py:meth:`~.signal.BaseSignal.set_signal_type` method. By assigning the class of
 the object, specific EDS methods are made available.
 
 .. code-block:: python
@@ -89,7 +89,7 @@ the :py:func:`~.io.load` function:
    <EDSSEMSpectrum, title: Spectrum, dimensions: (|1024)>
 
 HyperSpy will automatically load any existing  microscope parameters from the
-file, and store them in the :py:attr:`~.signal.Signal.metadata`
+file, and store them in the :py:attr:`~.signal.BaseSignal.metadata`
 attribute (see :ref:`metadata_structure`). These parameters can be displayed
 as follows:
 
@@ -188,7 +188,7 @@ or through the GUI:
 
 
 Copying spectrum calibration
-^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 All of the above parameters can be copied from one spectrum to another
 with the :py:meth:`~._signals.eds_tem.EDSTEMSpectrum.get_calibration_from`
@@ -211,7 +211,7 @@ Describing the sample
 ---------------------
 
 The description of the sample is also stored in the
-:py:attr:`~.signal.Signal.metadata` attribute. It can be displayed using:
+:py:attr:`~.signal.BaseSignal.metadata` attribute. It can be displayed using:
 
 .. code-block:: python
 
@@ -281,6 +281,7 @@ overvoltage of 2 (< beam energy / 2)):
 
 .. code-block:: python
 
+
     >>> s.set_microscope_parameters(beam_energy=10)
     >>> s.set_lines([])
     >>> s.metadata.Sample
@@ -299,7 +300,7 @@ A warning is raised if you try to set an X-ray line higher than the beam energy:
 
 
 Elemental database
-^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^
 
 HyperSpy includes an elemental database, which contains the energy of the X-ray lines.
 
@@ -371,10 +372,11 @@ method (see :ref:`visualisation<visualization-label>`). For example:
 An example of multi-dimensional EDS data (e.g. 3D SEM-EDS) is given in
 :ref:`visualisation multi-dimension<visualization_multi_dim>`.
 
+
 .. _eds_plot_markers-label:
 
 Plotting X-ray lines
-^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^
 
 .. versionadded:: 0.8
 
@@ -448,8 +450,8 @@ are used by default:
     >>> s = hs.load('core_shell.hdf5')
     >>> s.set_lines(['Fe_Ka', 'Pt_La'])
     >>> s.get_lines_intensity()
-    [<Image, title: X-ray line intensity of Core shell: Fe_Ka at 6.40 keV, dimensions: (|64, 64)>,
-    <Image, title: X-ray line intensity of Core shell: Pt_La at 9.44 keV, dimensions: (|64, 64)>]
+    [<Signal2D, title: X-ray line intensity of Core shell: Fe_Ka at 6.40 keV, dimensions: (|64, 64)>,
+    <Signal2D, title: X-ray line intensity of Core shell: Pt_La at 9.44 keV, dimensions: (|64, 64)>]
 
 Finally, the windows of integration can be visualised using :py:meth:`~._signals.eds.EDSSpectrum.plot` method:
 
@@ -492,12 +494,12 @@ can be plotted using :py:meth:`~._signals.eds.EDSSpectrum.plot`:
    :align:   center
    :width:   500
 
-   EDS spectrum with background subtraction markers
+   EDS spectrum with background subtraction markers.
 
 .. _eds_quantification-label:
 
 EDS Quantification
---------------
+------------------
 
 .. versionadded:: 0.8
 
