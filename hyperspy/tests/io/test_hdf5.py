@@ -4,6 +4,7 @@ import datetime
 
 import nose.tools as nt
 import numpy as np
+import h5py
 
 from hyperspy.io import load
 from hyperspy.signal import BaseSignal
@@ -211,3 +212,19 @@ def test_rgba16():
 def test_strings_from_py2():
     s = EDS_TEM_Spectrum()
     nt.assert_equal(s.metadata.Sample.elements.dtype.char, "U")
+
+
+class TestPassingArgs:
+
+    def setUp(self):
+        self.filename = 'testfile.hdf5'
+        BaseSignal([1, 2, 3]).save(self.filename, compression_opts=8)
+
+    def test_compression_opts(self):
+        f = h5py.File(self.filename)
+        d = f['Experiments/__unnamed__/data']
+        nt.assert_equal(d.compression_opts, 8)
+        nt.assert_equal(d.compression, 'gzip')
+
+    def tearDown(self):
+        remove(self.filename)
