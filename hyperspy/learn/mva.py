@@ -86,7 +86,7 @@ def _normalize_components(target, other, function=np.sum):
 class MVA():
 
     """
-    Multivariate analysis capabilities for the Spectrum class.
+    Multivariate analysis capabilities for the Signal1D class.
 
     """
 
@@ -476,8 +476,8 @@ class MVA():
             Any keyword arguments are passed to the BSS algorithm.
 
         """
-        from hyperspy.signal import Signal
-        from hyperspy._signals.spectrum import Spectrum
+        from hyperspy.signal import BaseSignal
+        from hyperspy._signals.signal1d import Signal1D
 
         lr = self.learning_results
 
@@ -494,11 +494,11 @@ class MVA():
                     factors = self.get_decomposition_factors()
 
         # Check factors
-        if not isinstance(factors, Signal):
+        if not isinstance(factors, BaseSignal):
             if isinstance(factors, np.ndarray):
                 warnings.warn(
                     "factors as numpy arrays will raise an error in "
-                    "HyperSpy 0.9 and newer. From them on only passing "
+                    "Hyperspy 1.0 and newer. From them on only passing "
                     "factors as HyperSpy Signal instances will be "
                     "supported.",
                     VisibleDeprecationWarning)
@@ -507,7 +507,7 @@ class MVA():
                 # behaviour.
                 # TODO: Don't forget to change `factors` docstring when
                 # removing this.
-                factors = Spectrum(factors.T)
+                factors = Signal1D(factors.T)
             else:
                 # Change next error message when removing the
                 # DeprecationWarning
@@ -536,7 +536,7 @@ class MVA():
             if isinstance(mask, np.ndarray):
                 warnings.warn(
                     "Bare numpy array masks are deprecated and will be removed"
-                    " in next HyperSpy 0.9.",
+                    " in next Hyperspy 1.0.",
                     VisibleDeprecationWarning)
                 ref_shape = ref_shape[::-1]
                 if mask.shape != ref_shape:
@@ -549,7 +549,7 @@ class MVA():
                         mask = self._get_navigation_signal(data=mask)
                     else:
                         mask = self._get_signal_signal(data=mask)
-            elif isinstance(mask, Signal):
+            elif isinstance(mask, BaseSignal):
                 if mask.axes_manager.signal_shape != ref_shape:
                     raise ValueError(
                         "The `mask` signal shape is not equal to the %s shape."
@@ -677,7 +677,7 @@ class MVA():
 
         """
         warnings.warn(
-            "This function is deprecated an will be removed in HyperSpy 0.9. "
+            "This function is deprecated an will be removed in Hyperspy 1.0. "
             "Use `normalize_decomposition_components` or "
             "`normalize_bss_components` instead.", VisibleDeprecationWarning)
 
@@ -928,11 +928,11 @@ class MVA():
 
     def get_explained_variance_ratio(self):
         """Return the explained variation ratio of the PCA components as a
-        Spectrum.
+        Signal1D.
 
         Returns
         -------
-        s : Spectrum
+        s : Signal1D
             Explained variation ratio.
 
         See Also:
@@ -943,13 +943,13 @@ class MVA():
         `get_decomposition_factors`.
 
         """
-        from hyperspy._signals.spectrum import Spectrum
+        from hyperspy._signals.signal1d import Signal1D
         target = self.learning_results
         if target.explained_variance_ratio is None:
             raise AttributeError("The explained_variance_ratio attribute is "
                                  "`None`, did you forget to perform a PCA "
                                  "decomposition?")
-        s = Spectrum(target.explained_variance_ratio)
+        s = Signal1D(target.explained_variance_ratio)
         s.metadata.General.title = self.metadata.General.title + \
             "\nPCA Scree Plot"
         s.axes_manager[-1].name = 'Principal component index'
