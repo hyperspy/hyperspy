@@ -1,7 +1,7 @@
 import nose.tools as nt
 import numpy as np
 
-from hyperspy.signal import Signal
+from hyperspy.signals import BaseSignal
 from hyperspy import signals
 from hyperspy.exceptions import DataDimensionError
 
@@ -9,17 +9,17 @@ from hyperspy.exceptions import DataDimensionError
 class Test1d:
 
     def setUp(self):
-        self.s = Signal(np.arange(2))
+        self.s = BaseSignal(np.arange(2))
 
     @nt.raises(DataDimensionError)
-    def test_as_image(self):
-        self.s.as_image((0, 1))
+    def test_as_signal2D(self):
+        nt.assert_true((self.s.data == self.s.as_signal2D((0, 1)).data).all())
 
-    def test_as_spectrum(self):
-        np.testing.assert_array_equal(self.s.data, self.s.as_spectrum(0).data)
+    def test_as_signal1D(self):
+        nt.assert_true((self.s.data == self.s.as_signal1D(0).data).all())
 
     def test_set_EELS(self):
-        s = self.s.as_spectrum(0)
+        s = self.s.as_signal1D(0)
         s.set_signal_type("EELS")
         nt.assert_equal(s.metadata.Signal.signal_type, "EELS")
         nt.assert_is_instance(s, signals.EELSSpectrum)
@@ -28,30 +28,30 @@ class Test1d:
 class Test2d:
 
     def setUp(self):
-        self.s = Signal(np.random.random((2, 3)))
+        self.s = BaseSignal(np.random.random((2, 3)))
 
-    def test_as_image_T(self):
+    def test_as_signal2D_T(self):
         nt.assert_equal(
-            self.s.data.T.shape, self.s.as_image((0, 1)).data.shape)
+            self.s.data.T.shape, self.s.as_signal2D((0, 1)).data.shape)
 
-    def test_as_image(self):
+    def test_as_signal2D(self):
         nt.assert_equal(
-            self.s.data.shape, self.s.as_image((1, 0)).data.shape)
+            self.s.data.shape, self.s.as_signal2D((1, 0)).data.shape)
 
-    def test_as_spectrum_T(self):
+    def test_as_signal1D_T(self):
         nt.assert_equal(
-            self.s.data.T.shape, self.s.as_spectrum(0).data.shape)
+            self.s.data.T.shape, self.s.as_signal1D(0).data.shape)
 
-    def test_as_spectrum(self):
+    def test_as_signal1D(self):
         nt.assert_equal(
-            self.s.data.shape, self.s.as_spectrum(1).data.shape)
+            self.s.data.shape, self.s.as_signal1D(1).data.shape)
 
     def test_s2EELS2im2s(self):
-        s = self.s.as_spectrum(0)
+        s = self.s.as_signal1D(0)
         s.set_signal_type("EELS")
-        im = s.as_image((1, 0))
+        im = s.as_signal2D((1, 0))
         nt.assert_equal(im.metadata.Signal.signal_type, "EELS")
-        s = im.as_spectrum(0)
+        s = im.as_signal1D(0)
         nt.assert_equal(s.metadata.Signal.signal_type, "EELS")
         nt.assert_is_instance(s, signals.EELSSpectrum)
 
@@ -59,43 +59,43 @@ class Test2d:
 class Test3d:
 
     def setUp(self):
-        self.s = Signal(np.random.random((2, 3, 4)))
+        self.s = BaseSignal(np.random.random((2, 3, 4)))
 
-    def test_as_image_contigous(self):
-        nt.assert_true(self.s.as_image((0, 1)).data.flags['C_CONTIGUOUS'])
+    def test_as_signal2D_contigous(self):
+        nt.assert_true(self.s.as_signal2D((0, 1)).data.flags['C_CONTIGUOUS'])
 
-    def test_as_image_1(self):
+    def test_as_signal2D_1(self):
         nt.assert_equal(
-            self.s.as_image((0, 1)).data.shape, (4, 2, 3))
+            self.s.as_signal2D((0, 1)).data.shape, (4, 2, 3))
 
-    def test_as_image_2(self):
+    def test_as_signal2D_2(self):
         nt.assert_equal(
-            self.s.as_image((1, 0)).data.shape, (4, 3, 2))
+            self.s.as_signal2D((1, 0)).data.shape, (4, 3, 2))
 
-    def test_as_image_3(self):
+    def test_as_signal2D_3(self):
         nt.assert_equal(
-            self.s.as_image((1, 2)).data.shape, (3, 4, 2))
+            self.s.as_signal2D((1, 2)).data.shape, (3, 4, 2))
 
-    def test_as_spectrum_contigous(self):
-        nt.assert_true(self.s.as_spectrum(0).data.flags['C_CONTIGUOUS'])
+    def test_as_signal1D_contigous(self):
+        nt.assert_true(self.s.as_signal1D(0).data.flags['C_CONTIGUOUS'])
 
-    def test_as_spectrum_0(self):
+    def test_as_signal1D_0(self):
         nt.assert_equal(
-            self.s.as_spectrum(0).data.shape, (2, 4, 3))
+            self.s.as_signal1D(0).data.shape, (2, 4, 3))
 
-    def test_as_spectrum_1(self):
+    def test_as_signal1D_1(self):
         nt.assert_equal(
-            self.s.as_spectrum(1).data.shape, (3, 4, 2))
+            self.s.as_signal1D(1).data.shape, (3, 4, 2))
 
-    def test_as_spectrum_2(self):
+    def test_as_signal1D_2(self):
         nt.assert_equal(
-            self.s.as_spectrum(1).data.shape, (3, 4, 2))
+            self.s.as_signal1D(1).data.shape, (3, 4, 2))
 
-    def test_as_spectrum_3(self):
+    def test_as_signal1D_3(self):
         nt.assert_equal(
-            self.s.as_spectrum(2).data.shape, (2, 3, 4))
+            self.s.as_signal1D(2).data.shape, (2, 3, 4))
 
     def test_remove_axis(self):
-        im = self.s.as_image((-2, -1))
+        im = self.s.as_signal2D((-2, -1))
         im._remove_axis(-1)
-        nt.assert_is_instance(im, signals.Spectrum)
+        nt.assert_is_instance(im, signals.Signal1D)

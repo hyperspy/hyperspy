@@ -1,14 +1,14 @@
 
-Spectrum tools
---------------
+Signal1D Tools
+**************
 
-These methods are only available for Signal object with signal_dimension equal
-to one.
+The methods described in this section are only available for one-dimensional
+signals in the Signal1D class.
 
-.. _spectrum.crop:
+.. _signal1D.crop:
 
 Cropping
-^^^^^^^^
+--------
 
 In addition to cropping using the powerful and compact :ref:`Signal indexing
 <signal.indexing>` syntax the following method is available to crop spectra
@@ -16,55 +16,55 @@ using a GUI:
 
 The :py:meth:`~.signal.Signal1DTools.crop_spectrum`, method is used to crop the
 spectral energy range. If no parameter is passed, a user interface appears in
-which to crop the spectrum.
+which to crop the one dimensional signal.
 
 Background removal
-^^^^^^^^^^^^^^^^^^
+------------------
 
 The :py:meth:`~.signal.Signal1DTools.remove_background` method provides
 background removal capabilities through both a CLI and a GUI. Current
 background type supported are power law, offset, polynomial and gaussian.
 
 Calibration
-^^^^^^^^^^^
+-----------
 
 The :py:meth:`~.signal.Signal1DTools.calibrate` method provides a user
 interface to calibrate the spectral axis.
 
-Spectral alignment
-^^^^^^^^^^^^^^^^^^
+Alignment
+---------
 
 The following methods use sub-pixel cross-correlation or user-provided shifts
 to align spectra. They support applying the same transformation to multiple
 files.
 
-* :py:meth:`~.signal.Signal1DTools.align1D`
-* :py:meth:`~.signal.Signal1DTools.shift1D`
+* :py:meth:`~._signals.signal1d.Signal1DTools.align1D`
+* :py:meth:`~._signals.signal1d.Signal1DTools.shift1D`
 
 .. _integrate_1D-label:
 
 Integration
-^^^^^^^^^^^
+-----------
 
-The :py:meth:`~.signal.Signal1DTools.integrate_in_range` method provides a GUI
-and a CLI to integrate the 1D signal dimension in a given range using the
-Simpson's rule.
+The :py:meth:`~._signals.signal1d.Signal1DTools.integrate_in_range` method
+provides a GUI and a CLI to integrate the 1D signal dimension in a given range
+using Simpson's rule.
 
 Data smoothing
-^^^^^^^^^^^^^^
+--------------
 
 The following methods (that include user interfaces when no arguments are
 passed) can perform data smoothing with different algorithms:
 
-* :py:meth:`~.signal.Signal1DTools.smooth_lowess`
-* :py:meth:`~.signal.Signal1DTools.smooth_tv`
-* :py:meth:`~.signal.Signal1DTools.smooth_savitzky_golay`
+* :py:meth:`~._signals.signal1d.Signal1DTools.smooth_lowess`
+* :py:meth:`~._signals.signal1d.Signal1DTools.smooth_tv`
+* :py:meth:`~._signals.signal1d.Signal1DTools.smooth_savitzky_golay`
 
-Spikes removal
-^^^^^^^^^^^^^^
+Spike removal
+--------------
 .. versionadded:: 0.5
 
-:py:meth:`~._signals.spectrum.Spectrum.spikes_removal_tool` provides an user
+:py:meth:`~._signals.signal1d.Signal1D.spikes_removal_tool` provides an user
 interface to remove spikes from spectra.
 
 
@@ -75,14 +75,20 @@ interface to remove spikes from spectra.
    Spikes removal tool.
 
 
-Other methods
-^^^^^^^^^^^^^^
+Peak finding
+------------
 
-* Apply a hanning taper to the spectra
-  :py:meth:`~.signal.Signal1DTools.hanning_taper`
-* Find peaks in spectra
-  :py:meth:`~.signal.Signal1DTools.find_peaks1D_ohaver`
+A peak finding routine based on the work of T. O'Haver is available in HyperSpy
+through the :py:meth:`~._signals.signal1d.Signal1DTools.find_peaks1D_ohaver`
+method.
+
+
+Other methods
+-------------
+
 * Interpolate the spectra in between two positions
-  :py:meth:`~.signal.Signal1DTools.interpolate_in_between`
+  :py:meth:`~._signals.signal1d.Signal1DTools.interpolate_in_between`
 * Convolve the spectra with a gaussian
-  :py:meth:`~.signal.Signal1DTools.gaussian_filter`
+  :py:meth:`~._signals.signal1d.Signal1DTools.gaussian_filter`
+* Apply a hanning taper to the spectra
+  :py:meth:`~._signals.signal1d.Signal1DTools.hanning_taper`

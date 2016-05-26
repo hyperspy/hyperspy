@@ -16,7 +16,7 @@ Creating a model
 ^^^^^^^^^^^^^^^^
 
 A :py:class:`~.model.Model` can be created using the
-:py:meth:`~._signals.spectrum.Spectrum.create_model` method:
+:py:meth:`~._signals.signal1d.Signal1D.create_model` method:
 
 .. code-block:: python
 
@@ -279,7 +279,7 @@ To enable this feature for a given component set the
 
 .. code-block:: python
 
-    >>> s = hs.signals.Spectrum(np.arange(100).reshape(10,10))
+    >>> s = hs.signals.Signal1D(np.arange(100).reshape(10,10))
     >>> m = s.create_model()
     >>> g1 = hs.components.Gaussian()
     >>> g2 = hs.components.Gaussian()
@@ -319,7 +319,7 @@ Example:
 
 .. code-block:: python
 
-    >>> s = hs.signals.Spectrum(np.arange(100).reshape(10,10))
+    >>> s = hs.signals.Signal1D(np.arange(100).reshape(10,10))
     >>> m = s.create_model()
     >>> g1 = hs.model.components.Gaussian()
     >>> g2 = hs.model.components.Gaussian()
@@ -539,8 +539,8 @@ to the data.
     >>> m.append(line)
     >>> m.fit()
 
-On fitting completion, the optimized value of the parameters and their estimated standard deviation
-are stored in the following line attributes:
+On fitting completion, the optimized value of the parameters and their estimated
+standard deviation are stored in the following line attributes:
 
 .. code-block:: python
 
@@ -553,7 +553,7 @@ are stored in the following line attributes:
 
 When the noise is heterocedastic, only if the
 ``metadata.Signal.Noise_properties.variance`` attribute of the
-:class:`~._signals.spectrum.Spectrum` instance is defined can the errors be
+:class:`~._signals.signal1d.Signal1D` instance is defined can the errors be
 estimated accurately. If the variance is not defined, the standard deviation of
 the parameters are still computed and stored in the
 :attr:`~.component.Parameter.std` attribute by setting variance equal 1.
@@ -585,7 +585,7 @@ approximation in most cases.
 
 .. code-block:: python
 
-   >>> s.estimate_poissonian_noise_variance(expected_value=hs.signals.Spectrum(np.arange(300)))
+   >>> s.estimate_poissonian_noise_variance(expected_value=hs.signals.Signal1D(np.arange(300)))
    >>> m.fit()
    >>> line.coefficients.value
    (1.0004224896604759, -0.46982916592391377)
