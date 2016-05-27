@@ -19,14 +19,14 @@
 import numpy as np
 import nose.tools
 
-from hyperspy.signals import Image
+from hyperspy.signals import Signal2D
 from hyperspy.utils import markers
 
 
 class Test_markers:
 
     def test_get_data(self):
-        s = Image(np.zeros([3, 2, 2]))
+        s = Signal2D(np.zeros([3, 2, 2]))
         m = markers.line_segment(x1=list(range(3)),
                                  x2=list(range(3)),
                                  y1=1.3,
@@ -39,7 +39,7 @@ class Test_markers:
         nose.tools.assert_equal(m.get_data_position('y1'), 1.3)
 
     def test_iterate_strings(self):
-        s = Image(np.zeros([3, 2, 2]))
+        s = Signal2D(np.zeros([3, 2, 2]))
         m = markers.text(x=list(range(3)),
                          y=list(range(3)),
                          text=['one', 'two', 'three'])
@@ -49,7 +49,7 @@ class Test_markers:
         nose.tools.assert_equal(m.get_data_position('text'), 'three')
 
     def test_get_one_string(self):
-        s = Image(np.zeros([3, 2, 2]))
+        s = Signal2D(np.zeros([3, 2, 2]))
         m = markers.text(x=list(range(3)),
                          y=list(range(3)),
                          text='one')
@@ -59,7 +59,7 @@ class Test_markers:
         nose.tools.assert_equal(m.get_data_position('text'), 'one')
 
     def test_get_data_array(self):
-        s = Image(np.zeros([2, 2, 2, 2]))
+        s = Signal2D(np.zeros([2, 2, 2, 2]))
         m = markers.line_segment(x1=[[1.1, 1.2], [1.3, 1.4]], x2=1.1, y1=1.3,
                                  y2=1.5)
         m.axes_manager = s.axes_manager

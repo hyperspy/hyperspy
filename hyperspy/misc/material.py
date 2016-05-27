@@ -33,7 +33,8 @@ def _weight_to_atomic(weight_percent, elements):
     atomic_weights = np.array(
         [elements_db[element]['General_properties']['atomic_weight']
             for element in elements])
-    atomic_percent = np.array(list(map(np.divide, weight_percent, atomic_weights)))
+    atomic_percent = np.array(
+        list(map(np.divide, weight_percent, atomic_weights)))
     sum_weight = atomic_percent.sum(axis=0) / 100.
     for i, el in enumerate(elements):
         atomic_percent[i] /= sum_weight
@@ -65,10 +66,10 @@ def weight_to_atomic(weight_percent, elements='auto'):
     array([ 93.19698614,   6.80301386])
 
     """
-    from hyperspy.signals import Signal
+    from hyperspy.signals import BaseSignal
     elements = _elements_auto(weight_percent, elements)
 
-    if isinstance(weight_percent[0], Signal):
+    if isinstance(weight_percent[0], BaseSignal):
         atomic_percent = stack(weight_percent)
         atomic_percent.data = _weight_to_atomic(
             atomic_percent.data, elements)
@@ -108,7 +109,8 @@ def _atomic_to_weight(atomic_percent, elements):
     atomic_weights = np.array(
         [elements_db[element]['General_properties']['atomic_weight']
             for element in elements])
-    weight_percent = np.array(list(map(np.multiply, atomic_percent, atomic_weights)))
+    weight_percent = np.array(
+        list(map(np.multiply, atomic_percent, atomic_weights)))
     sum_atomic = weight_percent.sum(axis=0) / 100.
     for i, el in enumerate(elements):
         weight_percent[i] /= sum_atomic

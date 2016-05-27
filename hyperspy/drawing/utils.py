@@ -184,7 +184,7 @@ def plot_RGB_map(im_list, normalization='single', dont_plot=False):
 
     Parameters
     ----------
-    im_list : list of Image instances
+    im_list : list of Signal2D instances
     normalization : {'single', 'global'}
     dont_plot : bool
 
@@ -358,8 +358,8 @@ def plot_signals(signal_list, sync=True, navigator="auto",
 
 
 def _make_heatmap_subplot(spectra):
-    from hyperspy._signals.image import Image
-    im = Image(spectra.data, axes=spectra.axes_manager._get_axes_dicts())
+    from hyperspy._signals.signal2d import Signal2D
+    im = Signal2D(spectra.data, axes=spectra.axes_manager._get_axes_dicts())
     im.metadata.General.title = spectra.metadata.General.title
     im.plot()
     return im._plot.signal_plot.ax
