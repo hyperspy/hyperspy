@@ -14,8 +14,7 @@ Starting Python in Linux and MacOS
 You can start IPython by opening a system terminal and executing ``ipython``,
 (optionally followed by the "frontend": "qtconsole" for example). However, in most cases, **the most agreeable way**
 to work with HyperSpy interactively is using the `Jupyter Notebook
-<http://jupyter.org>`_ (previously known as the IPython Notebook), which can be
-started as follows:
+<http://jupyter.org>`_ (previously known as the IPython Notebook), which can be started as follows:
 
 .. code-block:: bash
 
@@ -32,15 +31,15 @@ matplotlib
 <http://ipython.readthedocs.org/en/stable/interactive/plotting.html>`_ using 
 ``%matplotlib`` (which is known as a 'Jupyter magic') *before executing any plotting command*. So, typically,
 after starting IPython, you can import HyperSpy and set up interactive matplotlib plotting by executing the following
-two lines in the IPython terminal:
+two lines in the IPython terminal (In these docs we normally use the general Python prompt symbol ``>>>`` but you will probably see ``In [1]:`` etc.):
 
 .. code-block:: python
 
-   In [1]: %matplotlib qt
-   In [2]: import hyperspy.api as hs
+   >>> %matplotlib qt
+   >>> import hyperspy.api as hs
 
 Note that to execute lines of code in the notebook you must press ``Shift+Return``. (For details about notebooks and their functionality try the help menu in the notebook).
-Next, import two useful modules: numpy and matplotlib.pyplot, as follows: (We use ``>>>`` as a general python propmt)
+Next, import two useful modules: numpy and matplotlib.pyplot, as follows: 
 
 .. code-block:: python
 
@@ -65,9 +64,9 @@ but some features such as navigation sliders may be missing.
 
     .. code-block:: python
 
-       In [1]: import matplotlib
-       In [2]: matplotlib.rcParams["backend"] = "Agg"
-       In [3]: import hyperspy.api as hs
+       >>> import matplotlib
+       >>> matplotlib.rcParams["backend"] = "Agg"
+       >>> import hyperspy.api as hs
 
 
 
