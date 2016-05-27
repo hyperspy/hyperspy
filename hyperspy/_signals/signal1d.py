@@ -1209,7 +1209,8 @@ class Signal1D(BaseSignal,
 
         # arbitrary cutoff for number of spectra necessary before histogram
         # data is compressed by finding maxima of each spectrum
-        tmp = BaseSignal(der) if n < 2000 else BaseSignal(np.ravel(der.max(-1)))
+        tmp = BaseSignal(der) if n < 2000 else BaseSignal(
+            np.ravel(der.max(-1)))
 
         # get histogram signal using smart binning and plot
         tmph = tmp.get_histogram()

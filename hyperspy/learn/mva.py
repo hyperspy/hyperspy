@@ -1184,8 +1184,8 @@ class LearningResults(object):
         print("Decomposition parameters:")
         print("-------------------------")
         print("Decomposition algorithm : ", self.decomposition_algorithm)
-        print("Poissonian noise normalization : %s" % \
-            self.poissonian_noise_normalized)
+        print("Poissonian noise normalization : %s" %
+              self.poissonian_noise_normalized)
         print("Output dimension : %s" % self.output_dimension)
         print("Centre : %s" % self.centre)
         if self.bss_algorithm is not None:

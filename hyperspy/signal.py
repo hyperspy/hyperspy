@@ -1960,9 +1960,13 @@ class BaseSignal(MVA,
         s = self._deepcopy_with_new_data(self.data.swapaxes(axis1, axis2))
         c1 = s.axes_manager._axes[axis1]
         c2 = s.axes_manager._axes[axis2]
+        c1.slice, c2.slice = c2.slice, c1.slice
+        c1.navigate, c2.navigate = c2.navigate, c1.navigate
         s.axes_manager._axes[axis1] = c2
         s.axes_manager._axes[axis2] = c1
         s.axes_manager._update_attributes()
+        am = s.axes_manager
+        am.connect(am._update_attributes)
         s._make_sure_data_is_contiguous()
         return s
 
@@ -3281,8 +3285,8 @@ class BaseSignal(MVA,
                          axes=self.axes_manager._get_navigation_axes_dicts())
         else:
             s = BaseSignal(np.zeros(self.axes_manager._navigation_shape_in_array,
-                                dtype=self.data.dtype),
-                       axes=self.axes_manager._get_navigation_axes_dicts())
+                                    dtype=self.data.dtype),
+                           axes=self.axes_manager._get_navigation_axes_dicts())
             s.axes_manager.set_signal_dimension(
                 self.axes_manager.navigation_dimension)
         return s
@@ -3503,7 +3507,6 @@ class BaseSignal(MVA,
         im.metadata.Signal.record_by = "image"
         im._assign_subclass()
         return im
-
 
     def _assign_subclass(self):
         mp = self.metadata

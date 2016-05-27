@@ -26,7 +26,8 @@ class TestParametersAsSignals:
 
     def setUp(self):
         self.gaussian = Gaussian()
-        self.gaussian._axes_manager = BaseSignal(np.zeros((3, 3, 1))).axes_manager
+        self.gaussian._axes_manager = BaseSignal(
+            np.zeros((3, 3, 1))).axes_manager
 
     def test_always_active(self):
         g = self.gaussian

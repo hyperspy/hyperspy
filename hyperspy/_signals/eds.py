@@ -509,12 +509,13 @@ class EDSSpectrum(Spectrum):
         only_lines = self._parse_only_lines(only_lines)
         beam_energy = self._get_beam_energy()
         lines = []
-        elements = [el if isinstance(el, str) else el.decode() for el in elements]
+        elements = [el if isinstance(el, str) else el.decode()
+                    for el in elements]
         for element in elements:
             # Possible line (existing and excited by electron)
             element_lines = []
             for subshell in list(elements_db[element]['Atomic_properties'
-                                                 ]['Xray_lines'].keys()):
+                                                      ]['Xray_lines'].keys()):
                 if only_lines and subshell not in only_lines:
                     continue
                 element_lines.append(element + "_" + subshell)

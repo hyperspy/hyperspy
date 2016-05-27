@@ -33,6 +33,7 @@ from hyperspy.io_plugins import io_plugins, default_write_ext
 # TODO: remove in v1.0
 BAN_DEPRECATED = False
 
+
 def load(filenames=None,
          record_by=None,
          signal_type=None,
