@@ -6,7 +6,7 @@ python:
   - 3.5
 
 env:
-  - DEPS="nose numpy scipy matplotlib ipython h5py sympy scikit-learn natsort mock dill"
+  - DEPS="nose numpy scipy matplotlib ipython h5py sympy scikit-learn natsort dill"
 
 install:
   - conda create -n testenv --yes python=$TRAVIS_PYTHON_VERSION
