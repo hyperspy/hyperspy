@@ -255,7 +255,8 @@ class Model(list):
         class_name = str(self.__class__).split("'")[1].split('.')[-1]
 
         if len(title):
-            return "<%s, title: %s>" % (class_name, self.signal.metadata.General.title)
+            return "<%s, title: %s>" % (
+                class_name, self.signal.metadata.General.title)
         else:
             return "<%s>" % class_name
 
@@ -2132,6 +2133,8 @@ class Model(list):
     def notebook_interaction(self):
         """Creates interactive notebook widgets for all components and
         parameters, if available.
+
+        Requires `ipywidgets` to be installed.
         """
         from ipywidgets import Accordion
         from traitlets import TraitError as TraitletError

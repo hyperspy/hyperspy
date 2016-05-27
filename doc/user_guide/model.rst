@@ -697,6 +697,11 @@ conveniently adjust the parameter values by running
 :py:class:`~.component.Component` and
 :py:class:`~.component.Parameter`.
 
+.. Warning::
+    
+    :py:meth:`~.model.Model.notebook_interaction` functions require
+    ``ipywidgets``, which is an optional dependency of HyperSpy.
+
 
 .. figure::  images/notebook_widgets.png
     :align:   center

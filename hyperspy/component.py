@@ -531,6 +531,8 @@ class Parameter(t.HasTraits):
         """Creates interactive notebook widgets for the parameter, if
         available.
 
+        Requires `ipywidgets` to be installed.
+
         Parameters
         ----------
         display : bool
@@ -1034,6 +1036,8 @@ class Component(t.HasTraits):
     def notebook_interaction(self, display=True):
         """Creates interactive notebook widgets for all component parameters,
         if available.
+
+        Requires `ipywidgets` to be installed.
 
         Parameters
         ----------
