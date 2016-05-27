@@ -140,7 +140,7 @@ class TestEELSModelSlicing:
     def test_slicing_low_loss_inav(self):
         m = self.model
         m1 = m.inav[::2]
-        nt.assert_equal(m1.spectrum.data.shape, m1.low_loss.data.shape)
+        nt.assert_equal(m1.signal.data.shape, m1.low_loss.data.shape)
 
     def test_slicing_low_loss_isig(self):
         m = self.model

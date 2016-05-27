@@ -234,7 +234,7 @@ class TestModelDictionary:
             remove_empty_numpy_strings(tmp)
             nt.assert_equal(d['components'][num]['name'], tmp['name'])
             nt.assert_equal(d['components'][num]['_id_name'], tmp['_id_name'])
-        np.testing.assert_equal(d['components'][-1]['spectrum'],
+        np.testing.assert_equal(d['components'][-1]['signal1D'],
                                 (m.signal * 0.3)._to_dictionary())
 
     def test_load_dictionary(self):

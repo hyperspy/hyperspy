@@ -1253,7 +1253,7 @@ class Signal1D(BaseSignal,
         sr.configure_traits()
         return sr
 
-    def create_model(self):
+    def create_model(self, dictionary=None):
         """Create a model for the current data.
 
         Returns
@@ -1263,5 +1263,5 @@ class Signal1D(BaseSignal,
         """
 
         from hyperspy.models.model1d import Model1D
-        model = Model1D(self)
+        model = Model1D(self, dictionary=dictionary)
         return model
