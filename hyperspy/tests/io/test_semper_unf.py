@@ -113,7 +113,7 @@ def test_no_label_loading():
 class TestCaseSaveAndReadImage():
 
     def test_save_and_read(self):
-        signal_ref = Image(data_image)
+        signal_ref = Signal2D(data_image)
         signal_ref.metadata.General.title = test_title
         signal_ref.save(
             os.path.join(
@@ -133,7 +133,7 @@ class TestCaseSaveAndReadImage():
 class TestCaseSaveAndReadByte():
 
     def test_save_and_read(self):
-        signal_ref = Image(data_image_byte)
+        signal_ref = Signal2D(data_image_byte)
         signal_ref.metadata.General.title = test_title
         signal_ref.save(os.path.join(my_path, 'unf_files', 'example_temp.unf'),
                         overwrite=True)

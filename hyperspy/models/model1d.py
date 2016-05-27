@@ -613,7 +613,7 @@ class Model1D(BaseModel):
         color = l1.line.get_color()
         l1.set_line_properties(color=color, type='scatter')
 
-        l2 = hyperspy.drawing.signal1d.SpectrumLine()
+        l2 = hyperspy.drawing.signal1d.Signal1DLine()
         l2.data_function = self._model2plot
         l2.set_line_properties(color='blue', type='line')
         # Add the line to the figure
