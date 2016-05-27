@@ -14,8 +14,7 @@ Starting Python in Linux and MacOS
 You can start IPython by opening a system terminal and executing ``ipython``,
 (optionally followed by the "frontend": "qtconsole" for example). However, in most cases, **the most agreeable way**
 to work with HyperSpy interactively is using the `Jupyter Notebook
-<http://jupyter.org>`_ (previously known as the IPython Notebook), which can be
-started as follows:
+<http://jupyter.org>`_ (previously known as the IPython Notebook), which can be started as follows:
 
 .. code-block:: bash
 
