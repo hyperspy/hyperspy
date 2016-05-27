@@ -17,20 +17,17 @@ SHAPES_SDIM = (((3,), (1, )),
                ((2, 3, 4), (1, 2)),
                )
 
-TMPDIR = tempfile.mkdtemp()
 MYPATH = os.path.dirname(__file__)
 
 nt.assert_equal.__self__.maxDiff = None
 
 
 def test_ripple():
-    try:
+    with tempfile.TemporaryDirectory() as tmpdir:
         for dtype in ripple.dtype2keys.keys():
             for shape, dims in SHAPES_SDIM:
                 for dim in dims:
-                    yield _run_test, dtype, shape, dim
-    finally:
-        shutil.rmtree(TMPDIR)
+                    yield _run_test, dtype, shape, dim, tmpdir
 
 
 def _get_filename(s):
@@ -76,11 +73,11 @@ def _create_signal(shape, dim, dtype,):
     return s
 
 
-def _run_test(dtype, shape, dim):
+def _run_test(dtype, shape, dim, tmpdir):
     s = _create_signal(shape=shape, dim=dim, dtype=dtype)
     filename = _get_filename(s)
-    s.save(os.path.join(TMPDIR, filename))
-    s_just_saved = load(os.path.join(TMPDIR, filename))
+    s.save(os.path.join(tmpdir, filename))
+    s_just_saved = load(os.path.join(tmpdir, filename))
     s_ref = load(os.path.join(MYPATH, "ripple_files", filename))
     for stest in (s_just_saved, s_ref):
         npt.assert_array_equal(s.data, stest.data)
