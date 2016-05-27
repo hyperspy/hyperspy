@@ -194,6 +194,13 @@ class TestSavingMetadataContainers:
         nt.assert_is_instance(l.metadata.test[1], float)
         nt.assert_is_instance(l.metadata.test[2], str)
 
+    def test_title_with_slash(self):
+        s = self.s
+        s.metadata.General.title = "A / B"
+        s.save('tmp.hdf5', overwrite=True)
+        # If the following doesn't raise an Exception it is fine. See #942
+        s = load("tmp.hdf5")
+
     def tearDown(self):
         remove('tmp.hdf5')
 
