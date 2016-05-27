@@ -208,16 +208,13 @@ class Signal2DTools(object):
                          dtype='float',
                          show_progressbar=None):
         """Estimate the shifts in a image using phase correlation
-
         This method can only estimate the shift by comparing
         bidimensional features that should not change position
         between frames. To decrease the memory usage, the time of
         computation and the accuracy of the results it is convenient
         to select a region of interest by setting the roi keyword.
-
         Parameters
         ----------
-
         reference : {'current', 'cascade' ,'stat'}
             If 'current' (default) the image at the current
             coordinates is taken as reference. If 'cascade' each image
@@ -253,27 +250,20 @@ class Signal2DTools(object):
         show_progressbar : None or bool
             If True, display a progress bar. If None the default is set in
             `preferences`.
-
         Returns
         -------
-
         list of applied shifts
-
         Notes
         -----
-
         The statistical analysis approach to the translation estimation
         when using `reference`='stat' roughly follows [1]_ . If you use
         it please cite their article.
-
         References
         ----------
-
         .. [1] Schaffer, Bernhard, Werner Grogger, and Gerald
         Kothleitner. “Automated Spatial Drift Correction for EFTEM
         Image Series.”
         Ultramicroscopy 102, no. 1 (December 2004): 27–36.
-
         """
         if show_progressbar is None:
             show_progressbar = preferences.General.show_progressbar
@@ -369,8 +359,8 @@ class Signal2DTools(object):
                 if correlation_threshold == 'auto':
                     correlation_threshold = \
                         (pcarray['max_value'].min(0)).max()
-                    print("Correlation threshold = %1.2f" %
-                          correlation_threshold)
+                    _logger.info("Correlation threshold = %1.2f",
+                                 correlation_threshold)
                 shifts[pcarray['max_value'] <
                        correlation_threshold] = ma.masked
                 shifts.mask[ref_index, :] = False
@@ -381,7 +371,7 @@ class Signal2DTools(object):
             del ref
         return shifts
 
-    def align2D(self, crop=True, fill_value=np.nan, shifts=None,
+    def align2D(self, crop=True, fill_value=np.nan, shifts=None, expand=False,
                 roi=None,
                 sobel=True,
                 medfilter=True,
@@ -395,11 +385,9 @@ class Signal2DTools(object):
                 interpolation_order=1):
         """Align the images in place using user provided shifts or by
         estimating the shifts.
-
         Please, see `estimate_shift2D` docstring for details
         on the rest of the parameters not documented in the following
         section
-
         Parameters
         ----------
         crop : bool
@@ -411,30 +399,27 @@ class Signal2DTools(object):
         shifts : None or list of tuples
             If None the shifts are estimated using
             `estimate_shift2D`.
+        expand : bool
+            If True, the data will be expanded to fit all data after alignment.
+            Overrides `crop`.
         interpolation_order: int, default 1.
             The order of the spline interpolation. Default is 1, linear
             interpolation.
-
         Returns
         -------
         shifts : np.array
             The shifts are returned only if `shifts` is None
-
         Notes
         -----
-
         The statistical analysis approach to the translation estimation
         when using `reference`='stat' roughly follows [1]_ . If you use
         it please cite their article.
-
         References
         ----------
-
         .. [1] Schaffer, Bernhard, Werner Grogger, and Gerald
         Kothleitner. “Automated Spatial Drift Correction for EFTEM
         Image Series.”
         Ultramicroscopy 102, no. 1 (December 2004): 27–36.
-
         """
         self._check_signal_dimension_equals_two()
         if shifts is None:
@@ -452,6 +437,41 @@ class Signal2DTools(object):
             return_shifts = True
         else:
             return_shifts = False
+        if not np.any(shifts):
+            # The shift array if filled with zeros, nothing to do.
+            return
+
+        if expand:
+            # Expand to fit all valid data
+            left, right = (int(np.floor(shifts[:, 1].min())) if
+                           shifts[:, 1].min() < 0 else 0,
+                           int(np.ceil(shifts[:, 1].max())) if
+                           shifts[:, 1].max() > 0 else 0)
+            top, bottom = (int(np.floor(shifts[:, 0].min())) if
+                           shifts[:, 0].min() < 0 else 0,
+                           int(np.ceil(shifts[:, 0].max())) if
+                           shifts[:, 0].max() > 0 else 0)
+            xaxis = self.axes_manager.signal_axes[0]
+            yaxis = self.axes_manager.signal_axes[1]
+            padding = []
+            for i in range(self.data.ndim):
+                if i == xaxis.index_in_array:
+                    padding.append((right, -left))
+                elif i == yaxis.index_in_array:
+                    padding.append((bottom, -top))
+                else:
+                    padding.append((0, 0))
+            self.data = np.pad(self.data, padding, mode='constant',
+                               constant_values=(fill_value,))
+            if left < 0:
+                xaxis.offset += left * xaxis.scale
+            if np.any((left < 0, right > 0)):
+                xaxis.size += right - left
+            if top < 0:
+                yaxis.offset += top * yaxis.scale
+            if np.any((top < 0, bottom > 0)):
+                yaxis.size += bottom - top
+
         # Translate with sub-pixel precision if necesary
         for im, shift in zip(self._iterate_signal(),
                              shifts):
@@ -461,8 +481,8 @@ class Signal2DTools(object):
                             interpolation_order=interpolation_order)
                 del im
 
-        # Crop the image to the valid size
-        if crop is True:
+        if crop and not expand:
+            # Crop the image to the valid size
             shifts = -shifts
             bottom, top = (int(np.floor(shifts[:, 0].min())) if
                            shifts[:, 0].min() < 0 else None,
@@ -474,6 +494,8 @@ class Signal2DTools(object):
                            shifts[:, 1].max() > 0 else 0)
             self.crop_image(top, bottom, left, right)
             shifts = -shifts
+
+        self.events.data_changed.trigger(obj=self)
         if return_shifts:
             return shifts
 
