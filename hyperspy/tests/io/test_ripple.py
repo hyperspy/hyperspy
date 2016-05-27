@@ -83,7 +83,7 @@ def _run_test(dtype, shape, dim):
     s_just_saved = load(os.path.join(TMPDIR, filename))
     s_ref = load(os.path.join(MYPATH, "ripple_files", filename))
     for stest in (s_just_saved, s_ref):
-        # npt.assert_array_equal(s.data, stest.data)
+        npt.assert_array_equal(s.data, stest.data)
         nt.assert_equal(s.data.dtype, stest.data.dtype)
         nt.assert_equal(s.axes_manager.signal_dimension,
                         stest.axes_manager.signal_dimension)
@@ -126,7 +126,7 @@ def generate_files():
     for dtype in ripple.dtype2keys.keys():
         for shape, dims in SHAPES_SDIM:
             for dim in dims:
-                s = create_signal(shape=shape, dim=dim, dtype=dtype,)
-                filename = get_filename(s)
+                s = _create_signal(shape=shape, dim=dim, dtype=dtype,)
+                filename = _get_filename(s)
                 filepath = os.path.join(MYPATH, "ripple_files", filename)
                 s.save(filepath, overwrite=True)

@@ -6,13 +6,13 @@ byte-order	dont-care
 data-length	8
 data-type	signed
 depth	3
-depth-name	0
-depth-origin	0.0
-depth-scale	0.0
+depth-name	1
+depth-origin	0.5
+depth-scale	100.0
 depth-units	eV
 detector-peak-width-ev	5.0
 elevation-angle	4.0
-ev-per-chan	0
+ev-per-chan	100
 height	1
 live-time	1.0
 offset	0

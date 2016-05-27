@@ -5,15 +5,15 @@ data-length	8
 data-type	signed
 depth	1
 height	2
-height-name	0
-height-origin	0.0
-height-scale	0.0
+height-name	1
+height-origin	0.5
+height-scale	100.0
 height-units	eV
 offset	0
 record-by	dont-care
 signal	
 width	3
-width-name	1
-width-origin	0.5
-width-scale	100.0
+width-name	2
+width-origin	1.0
+width-scale	200.0
 width-units	eV
