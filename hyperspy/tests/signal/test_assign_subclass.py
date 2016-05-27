@@ -8,7 +8,7 @@ def test_signal():
     assert_true(assign_signal_subclass(
         record_by="",
         signal_type="",
-        signal_origin="") is hs.signals.Signal)
+        signal_origin="") is hs.signals.BaseSignal)
 
 
 def test_spectrum():

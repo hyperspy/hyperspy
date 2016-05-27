@@ -985,7 +985,7 @@ class TestCreateModel:
 
     def test_create_model(self):
         from hyperspy.models.model1d import Model1D
-        from hyperspy.models.model2D import Model2D
+        from hyperspy.models.model2d import Model2D
         nt.assert_is_instance(
             self.s.create_model(), Model1D)
         nt.assert_is_instance(

@@ -1274,7 +1274,7 @@ class MVATools(object):
         from hyperspy.api import signals
         data = loadings.T.reshape(
             (-1,) + self.axes_manager.navigation_shape[::-1])
-        signal = signals.Signal(
+        signal = signals.BaseSignal(
             data,
             axes=(
                 [{"size": data.shape[0], "navigate": True}] +
@@ -1948,7 +1948,7 @@ class BaseSignal(FancySlicing,
                         navigator.axes_manager.events.any_axis_changed, 0)
                 else:
                     navigator = interactive(
-                        navigator.as_image,
+                        navigator.as_signal2D,
                         navigator.events.data_changed,
                         navigator.axes_manager.events.any_axis_changed,
                         (0, 1))
