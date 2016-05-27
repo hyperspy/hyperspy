@@ -9,9 +9,16 @@ from hyperspy.misc.utils import slugify
 class TestModel:
 
     def setUp(self):
-        s = hs.signals.Spectrum(np.zeros(1))
+        s = hs.signals.Signal1D(np.zeros(1))
         m = s.create_model()
         self.model = m
+
+    def test_notebook_interactions(self):
+        m = self.model
+        m.notebook_interaction()
+        m.append(hs.model.components.Offset())
+        m[0].notebook_interaction()
+        m[0].offset.notebook_interaction()
 
     def test_access_component_by_name(self):
         m = self.model
@@ -169,9 +176,8 @@ class TestModel:
         g1 = hs.model.components.Gaussian()
         m.append(g1)
         g1.name = "1, Test This!"
-        nt.assert_is(
-            getattr(m.components,
-                    slugify(g1.name, valid_variable_name=True)), g1)
+        nt.assert_is(getattr(m.components,
+                             slugify(g1.name, valid_variable_name=True)), g1)
 
     @nt.raises(AttributeError)
     def test_components_class_change_name_del_default(self):
@@ -183,12 +189,74 @@ class TestModel:
         g1.name = "test"
         getattr(m.components, slugify(invalid_name))
 
+    def test_snap_parameter_bounds(self):
+        m = self.model
+        g1 = hs.model.components.Gaussian()
+        m.append(g1)
+        g2 = hs.model.components.Gaussian()
+        m.append(g2)
+        g3 = hs.model.components.Gaussian()
+        m.append(g3)
+        g4 = hs.model.components.Gaussian()
+        m.append(g4)
+
+        g1.A.value = 3.
+        g1.centre.bmin = 300.
+        g1.centre.value = 1.
+        g1.sigma.bmax = 15.
+        g1.sigma.value = 30
+
+        g2.A.value = 1
+        g2.A.bmin = 0.
+        g2.A.bmax = 3.
+        g2.centre.value = 0
+        g2.centre.bmin = 1
+        g2.centre.bmax = 3.
+        g2.sigma.value = 4
+        g2.sigma.bmin = 1
+        g2.sigma.bmax = 3.
+
+        g3.A.bmin = 0
+        g3.A.value = -3
+        g3.A.free = False
+
+        g3.centre.value = 15
+        g3.centre.bmax = 10
+        g3.centre.free = False
+
+        g3.sigma.value = 1
+        g3.sigma.bmin = 0
+        g3.sigma.bmax = 0
+
+        g4.active = False
+        g4.A.value = 300
+        g4.A.bmin = 500
+        g4.centre.value = 0
+        g4.centre.bmax = -1
+        g4.sigma.value = 1
+        g4.sigma.bmin = 10
+        m.ensure_parameters_in_bounds()
+        np.testing.assert_almost_equal(g1.A.value, 3.)
+        np.testing.assert_almost_equal(g2.A.value, 1.)
+        np.testing.assert_almost_equal(g3.A.value, -3.)
+        np.testing.assert_almost_equal(g4.A.value, 300.)
+
+        np.testing.assert_almost_equal(g1.centre.value, 300.)
+        np.testing.assert_almost_equal(g2.centre.value, 1.)
+        np.testing.assert_almost_equal(g3.centre.value, 15.)
+        np.testing.assert_almost_equal(g4.centre.value, 0)
+
+        np.testing.assert_almost_equal(g1.sigma.value, 15.)
+        np.testing.assert_almost_equal(g2.sigma.value, 3.)
+        np.testing.assert_almost_equal(g3.sigma.value, 0.)
+        np.testing.assert_almost_equal(g4.sigma.value, 1)
+
 
 class TestModelFitBinned:
 
     def setUp(self):
         np.random.seed(1)
-        s = hs.signals.Spectrum(
+        s = hs.signals.Signal1D(
             np.random.normal(
                 scale=2,
                 size=10000)).get_histogram()
@@ -253,7 +321,16 @@ class TestModelFitBinned:
 
     def test_fit_bounded(self):
         self.m[0].centre.bmin = 0.5
-        self.m[0].bounded = True
+        # self.m[0].bounded = True
+        self.m.fit(fitter="mpfit", bounded=True)
+        np.testing.assert_almost_equal(self.m[0].A.value, 9991.65422046, 4)
+        np.testing.assert_almost_equal(self.m[0].centre.value, 0.5)
+        np.testing.assert_almost_equal(self.m[0].sigma.value, 2.08398236966)
+
+    def test_fit_bounded_bad_starting_values(self):
+        self.m[0].centre.bmin = 0.5
+        self.m[0].centre.value = -1
+        # self.m[0].bounded = True
         self.m.fit(fitter="mpfit", bounded=True)
         np.testing.assert_almost_equal(self.m[0].A.value, 9991.65422046, 4)
         np.testing.assert_almost_equal(self.m[0].centre.value, 0.5)
@@ -270,7 +347,7 @@ class TestModelWeighted:
         np.random.seed(1)
         s = hs.signals.SpectrumSimulation(np.arange(10, 100, 0.1))
         s.metadata.set_item("Signal.Noise_properties.variance",
-                            hs.signals.Spectrum(np.arange(10, 100, 0.01)))
+                            hs.signals.Signal1D(np.arange(10, 100, 0.01)))
         s.axes_manager[0].scale = 0.1
         s.axes_manager[0].offset = 10
         s.add_poissonian_noise()
@@ -279,28 +356,28 @@ class TestModelWeighted:
         self.m = m
 
     def test_fit_leastsq_binned(self):
-        self.m.spectrum.metadata.Signal.binned = True
+        self.m.signal.metadata.Signal.binned = True
         self.m.fit(fitter="leastsq", method="ls")
         for result, expected in zip(self.m[0].coefficients.value,
                                     (9.9165596693502778, 1.6628238107916631)):
             np.testing.assert_almost_equal(result, expected, decimal=5)
 
     def test_fit_odr_binned(self):
-        self.m.spectrum.metadata.Signal.binned = True
+        self.m.signal.metadata.Signal.binned = True
         self.m.fit(fitter="odr", method="ls")
         for result, expected in zip(self.m[0].coefficients.value,
                                     (9.9165596548961972, 1.6628247412317521)):
             np.testing.assert_almost_equal(result, expected, decimal=5)
 
     def test_fit_mpfit_binned(self):
-        self.m.spectrum.metadata.Signal.binned = True
+        self.m.signal.metadata.Signal.binned = True
         self.m.fit(fitter="mpfit", method="ls")
         for result, expected in zip(self.m[0].coefficients.value,
                                     (9.9165596607108739, 1.6628243846485873)):
             np.testing.assert_almost_equal(result, expected, decimal=5)
 
     def test_fit_fmin_binned(self):
-        self.m.spectrum.metadata.Signal.binned = True
+        self.m.signal.metadata.Signal.binned = True
         self.m.fit(
             fitter="fmin",
             method="ls",
@@ -310,7 +387,7 @@ class TestModelWeighted:
             np.testing.assert_almost_equal(result, expected, decimal=5)
 
     def test_fit_leastsq_unbinned(self):
-        self.m.spectrum.metadata.Signal.binned = False
+        self.m.signal.metadata.Signal.binned = False
         self.m.fit(fitter="leastsq", method="ls")
         for result, expected in zip(
                 self.m[0].coefficients.value,
@@ -318,7 +395,7 @@ class TestModelWeighted:
             np.testing.assert_almost_equal(result, expected, decimal=5)
 
     def test_fit_odr_unbinned(self):
-        self.m.spectrum.metadata.Signal.binned = False
+        self.m.signal.metadata.Signal.binned = False
         self.m.fit(fitter="odr", method="ls")
         for result, expected in zip(
                 self.m[0].coefficients.value,
@@ -326,7 +403,7 @@ class TestModelWeighted:
             np.testing.assert_almost_equal(result, expected, decimal=5)
 
     def test_fit_mpfit_unbinned(self):
-        self.m.spectrum.metadata.Signal.binned = False
+        self.m.signal.metadata.Signal.binned = False
         self.m.fit(fitter="mpfit", method="ls")
         for result, expected in zip(
                 self.m[0].coefficients.value,
@@ -334,7 +411,7 @@ class TestModelWeighted:
             np.testing.assert_almost_equal(result, expected, decimal=5)
 
     def test_fit_fmin_unbinned(self):
-        self.m.spectrum.metadata.Signal.binned = False
+        self.m.signal.metadata.Signal.binned = False
         self.m.fit(
             fitter="fmin",
             method="ls",
@@ -345,7 +422,7 @@ class TestModelWeighted:
             np.testing.assert_almost_equal(result, expected, decimal=5)
 
     def test_chisq(self):
-        self.m.spectrum.metadata.Signal.binned = True
+        self.m.signal.metadata.Signal.binned = True
         self.m.fit(fitter="leastsq", method="ls")
         np.testing.assert_almost_equal(self.m.chisq.data, 3029.16949561)
 
@@ -435,7 +512,7 @@ class TestModelSignalVariance:
 class TestMultifit:
 
     def setUp(self):
-        s = hs.signals.Spectrum(np.zeros((2, 200)))
+        s = hs.signals.Signal1D(np.zeros((2, 200)))
         s.axes_manager[-1].offset = 1
         s.data[:] = 2 * s.axes_manager[-1].axis ** (-3)
         m = s.create_model()
@@ -466,11 +543,23 @@ class TestMultifit:
         np.testing.assert_array_almost_equal(self.m[0].A.map['values'],
                                              [2., 2.])
 
+    def test_bounded_snapping(self):
+        m = self.m
+        m[0].A.free = True
+        self.m.signal.data *= 2.
+        m[0].A.value = 2.
+        m[0].A.bmin = 3.
+        m.multifit(fitter='mpfit', bounded=True, show_progressbar=None)
+        np.testing.assert_array_almost_equal(self.m[0].r.map['values'],
+                                             [3., 3.])
+        np.testing.assert_array_almost_equal(self.m[0].A.map['values'],
+                                             [4., 4.])
+
 
 class TestStoreCurrentValues:
 
     def setUp(self):
-        self.m = hs.signals.Spectrum(np.arange(10)).create_model()
+        self.m = hs.signals.Signal1D(np.arange(10)).create_model()
         self.o = hs.model.components.Offset()
         self.m.append(self.o)
 
@@ -492,7 +581,7 @@ class TestStoreCurrentValues:
 class TestSetCurrentValuesTo:
 
     def setUp(self):
-        self.m = hs.signals.Spectrum(
+        self.m = hs.signals.Signal1D(
             np.arange(10).reshape(2, 5)).create_model()
         self.comps = [
             hs.model.components.Offset(),
@@ -516,7 +605,7 @@ class TestSetCurrentValuesTo:
 class TestAsSignal:
 
     def setUp(self):
-        self.m = hs.signals.Spectrum(
+        self.m = hs.signals.Signal1D(
             np.arange(10).reshape(2, 5)).create_model()
         self.comps = [
             hs.model.components.Offset(),
@@ -571,7 +660,7 @@ class TestAsSignal:
 class TestCreateModel:
 
     def setUp(self):
-        self.s = hs.signals.Spectrum(np.asarray([0, ]))
+        self.s = hs.signals.Signal1D(np.asarray([0, ]))
 
     def test_create_model(self):
         from hyperspy.model import Model

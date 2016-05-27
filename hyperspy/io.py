@@ -30,6 +30,9 @@ from natsort import natsorted
 import hyperspy.misc.io.tools
 from hyperspy.io_plugins import io_plugins, default_write_ext
 
+# TODO: remove in v1.0
+BAN_DEPRECATED = False
+
 
 def load(filenames=None,
          record_by=None,
@@ -304,7 +307,8 @@ def assign_signal_subclass(record_by="",
 
     """
     import hyperspy.signals
-    from hyperspy.signal import Signal
+    from hyperspy.signal import BaseSignal
+    from hyperspy.signals import Signal
     if record_by and record_by not in ["image", "spectrum"]:
         raise ValueError("record_by must be one of: None, empty string, "
                          "\"image\" or \"spectrum\"")
@@ -312,8 +316,17 @@ def assign_signal_subclass(record_by="",
         raise ValueError("signal_origin must be one of: None, empty string, "
                          "\"experiment\" or \"simulation\"")
 
-    signals = hyperspy.misc.utils.find_subclasses(hyperspy.signals, Signal)
+    signals = hyperspy.misc.utils.find_subclasses(hyperspy.signals, BaseSignal)
     signals['Signal'] = Signal
+    # This removal is only for 0.8.5 and will be removed in 1.0.0 when Spectrum
+    # and Image are deprecated.
+    if BAN_DEPRECATED:
+        del signals["Spectrum"]
+        del signals["Image"]
+    else:
+        del signals["Signal1D"]
+        del signals["Signal2D"]
+    del signals["BaseSignal"]
 
     if signal_origin == "experiment":
         signal_origin = ""

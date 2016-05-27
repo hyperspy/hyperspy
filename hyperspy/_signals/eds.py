@@ -23,7 +23,7 @@ import warnings
 from matplotlib import pyplot as plt
 
 from hyperspy import utils
-from hyperspy._signals.spectrum import Spectrum
+from hyperspy.signals import Spectrum
 from hyperspy.misc.elements import elements as elements_db
 from hyperspy.misc.eds import utils as utils_eds
 from hyperspy.misc.utils import isiterable
@@ -509,12 +509,13 @@ class EDSSpectrum(Spectrum):
         only_lines = self._parse_only_lines(only_lines)
         beam_energy = self._get_beam_energy()
         lines = []
-        elements = [el if isinstance(el, str) else el.decode() for el in elements]
+        elements = [el if isinstance(el, str) else el.decode()
+                    for el in elements]
         for element in elements:
             # Possible line (existing and excited by electron)
             element_lines = []
             for subshell in list(elements_db[element]['Atomic_properties'
-                                                 ]['Xray_lines'].keys()):
+                                                      ]['Xray_lines'].keys()):
                 if only_lines and subshell not in only_lines:
                     continue
                 element_lines.append(element + "_" + subshell)
@@ -672,10 +673,10 @@ class EDSSpectrum(Spectrum):
                  self.axes_manager.signal_axes[0].units,
                  ))
             if img.axes_manager.navigation_dimension >= 2:
-                img = img.as_image([0, 1])
+                img = img.as_signal2D([0, 1])
             elif img.axes_manager.navigation_dimension == 1:
                 img.axes_manager.set_signal_dimension(1)
-            if plot_result and img.axes_manager.signal_dimension == 0:
+            if plot_result and img.axes_manager.signal_size == 1:
                 print("%s at %s %s : Intensity = %.2f"
                       % (Xray_line,
                          line_energy,
@@ -684,7 +685,7 @@ class EDSSpectrum(Spectrum):
             img.metadata.set_item("Sample.elements", ([element]))
             img.metadata.set_item("Sample.xray_lines", ([Xray_line]))
             intensities.append(img)
-        if plot_result and img.axes_manager.signal_dimension != 0:
+        if plot_result and img.axes_manager.signal_size != 1:
             utils.plot.plot_signals(intensities, **kwargs)
         return intensities
 

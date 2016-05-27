@@ -34,10 +34,10 @@ from scipy.optimize import (leastsq,
 from traits.trait_errors import TraitError
 
 from hyperspy import messages
-import hyperspy.drawing.spectrum
+import hyperspy.drawing.signal1d
 from hyperspy.drawing.utils import on_figure_window_close
 from hyperspy.external import progressbar
-from hyperspy._signals.eels import Spectrum
+from hyperspy._signals.signal1d import Signal1D
 from hyperspy.defaults_parser import preferences
 from hyperspy.axes import generate_axis
 from hyperspy.exceptions import WrongObjectError
@@ -48,7 +48,7 @@ from hyperspy.drawing.widgets import (DraggableVerticalLine,
                                       DraggableLabel)
 from hyperspy.gui.tools import ComponentFit
 from hyperspy.component import Component
-from hyperspy.signal import Signal
+from hyperspy.signal import BaseSignal
 from hyperspy.misc.utils import slugify, shorten_name
 
 
@@ -110,7 +110,7 @@ class Model(list):
     Attributes
     ----------
 
-    spectrum : Spectrum instance
+    signal1D : Signal1D instance
         It contains the data to fit.
     chisq : A Signal of floats
         Chi-squared of the signal (or np.nan if not yet fit)
@@ -133,7 +133,7 @@ class Model(list):
     remove
         Remove component from model.
     as_signal
-        Generate a Spectrum instance (possible multidimensional)
+        Generate a Signal1D instance (possible multidimensional)
         from the model.
     store_current_values
         Store the value of the parameters at the current position.
@@ -179,11 +179,11 @@ class Model(list):
     --------
     In the following example we create a histogram from a normal distribution
     and fit it with a gaussian component. It demonstrates how to create
-    a model from a :class:`~._signals.spectrum.Spectrum` instance, add
+    a model from a :class:`~._signals.signal1D.Signal1D` instance, add
     components to it, adjust the value of the parameters of the components,
     fit the model to the data and access the components in the model.
 
-    >>> s = hs.signals.Spectrum(
+    >>> s = hs.signals.Signal1D(
             np.random.normal(scale=2, size=10000)).get_histogram()
     >>> g = hs.model.components.Gaussian()
     >>> m = s.create_model()
@@ -220,10 +220,10 @@ class Model(list):
         # raise an exception when using windows.connect
         return id(self)
 
-    def __init__(self, spectrum):
+    def __init__(self, signal1D):
         self.convolved = False
-        self.spectrum = spectrum
-        self.axes_manager = self.spectrum.axes_manager
+        self.signal = signal1D
+        self.axes_manager = self.signal.axes_manager
         self.axis = self.axes_manager.signal_axes[0]
         self.axes_manager.connect(self.fetch_stored_values)
 
@@ -234,28 +234,29 @@ class Model(list):
         self._plot = None
         self._model_line = None
 
-        self.chisq = spectrum._get_navigation_signal()
+        self.chisq = signal1D._get_navigation_signal()
         self.chisq.change_dtype("float")
         self.chisq.data.fill(np.nan)
         self.chisq.metadata.General.title = \
-            self.spectrum.metadata.General.title + ' chi-squared'
+            self.signal.metadata.General.title + ' chi-squared'
         self.dof = self.chisq._deepcopy_with_new_data(
             np.zeros_like(
                 self.chisq.data,
                 dtype='int'))
         self.dof.metadata.General.title = \
-            self.spectrum.metadata.General.title + ' degrees of freedom'
+            self.signal.metadata.General.title + ' degrees of freedom'
         self._suspend_update = False
         self._adjust_position_all = None
         self._plot_components = False
         self.components = ModelComponents(self)
 
     def __repr__(self):
-        title = self.spectrum.metadata.General.title
+        title = self.signal.metadata.General.title
         class_name = str(self.__class__).split("'")[1].split('.')[-1]
 
         if len(title):
-            return "<%s, title: %s>" % (class_name, self.spectrum.metadata.General.title)
+            return "<%s, title: %s>" % (
+                class_name, self.signal.metadata.General.title)
         else:
             return "<%s>" % class_name
 
@@ -273,15 +274,15 @@ class Model(list):
         raise NotImplementedError
 
     @property
-    def spectrum(self):
-        return self._spectrum
+    def signal(self):
+        return self._signal
 
-    @spectrum.setter
-    def spectrum(self, value):
-        if isinstance(value, Spectrum):
-            self._spectrum = value
+    @signal.setter
+    def signal(self, value):
+        if isinstance(value, Signal1D):
+            self._signal = value
         else:
-            raise WrongObjectError(str(type(value)), 'Spectrum')
+            raise WrongObjectError(str(type(value)), 'Signal1D')
 
     @property
     def low_loss(self):
@@ -291,7 +292,7 @@ class Model(list):
     def low_loss(self, value):
         if value is not None:
             if (value.axes_manager.navigation_shape !=
-                    self.spectrum.axes_manager.navigation_shape):
+                    self.signal.axes_manager.navigation_shape):
                 raise ValueError('The low-loss does not have '
                                  'the same navigation dimension as the '
                                  'core-loss')
@@ -347,7 +348,7 @@ class Model(list):
     def __delitem__(self, things):
         things = self.__getitem__(things)
         if not isinstance(things, list):
-            things = [things,]
+            things = [things, ]
         for thing in things:
             self.remove(thing)
 
@@ -357,7 +358,7 @@ class Model(list):
         Examples
         --------
 
-        >>> s = hs.signals.Spectrum(np.empty(1))
+        >>> s = hs.signals.Signal1D(np.empty(1))
         >>> m = s.create_model()
         >>> g = hs.model.components.Gaussian()
         >>> m.append(g)
@@ -387,8 +388,8 @@ class Model(list):
             line.close()
             del line
             idx = self.index(thing)
-            self.spectrum._plot.signal_plot.ax_lines.remove(
-                self.spectrum._plot.signal_plot.ax_lines[2 + idx])
+            self.signal._plot.signal_plot.ax_lines.remove(
+                self.signal._plot.signal_plot.ax_lines[2 + idx])
         list.remove(self, thing)
         thing.model = None
         if touch is True:
@@ -465,7 +466,7 @@ class Model(list):
 
         Examples
         --------
-        >>> s = hs.signals.Spectrum(np.random.random((10,100)))
+        >>> s = hs.signals.Signal1D(np.random.random((10,100)))
         >>> m = s.create_model()
         >>> l1 = hs.model.components.Lorentzian()
         >>> l2 = hs.model.components.Lorentzian()
@@ -498,7 +499,7 @@ class Model(list):
                         component_.active = True
                     else:
                         component_.active = False
-        data = np.empty(self.spectrum.data.shape, dtype='float')
+        data = np.empty(self.signal.data.shape, dtype='float')
         data.fill(np.nan)
         if out_of_range_to_nan is True:
             channel_switches_backup = copy.copy(self.channel_switches)
@@ -518,12 +519,12 @@ class Model(list):
         pbar.finish()
         if out_of_range_to_nan is True:
             self.channel_switches[:] = channel_switches_backup
-        spectrum = self.spectrum.__class__(
+        signal1D = self.signal.__class__(
             data,
-            axes=self.spectrum.axes_manager._get_axes_dicts())
-        spectrum.metadata.General.title = (
-            self.spectrum.metadata.General.title + " from fitted model")
-        spectrum.metadata.Signal.binned = self.spectrum.metadata.Signal.binned
+            axes=self.signal.axes_manager._get_axes_dicts())
+        signal1D.metadata.General.title = (
+            self.signal.metadata.General.title + " from fitted model")
+        signal1D.metadata.Signal.binned = self.signal.metadata.Signal.binned
 
         if component_list:
             for component_ in self:
@@ -533,7 +534,7 @@ class Model(list):
                 else:
                     if active_s == _multi_off_:
                         component_._toggle_connect_active_array(True)
-        return spectrum
+        return signal1D
 
     @property
     def _plot_active(self):
@@ -589,6 +590,24 @@ class Model(list):
                         self.mpfit_parinfo.extend((
                             {'limited': limited,
                              'limits': limits},) * param._number_of_elements)
+
+    def ensure_parameters_in_bounds(self):
+        """For all active components, snaps their free parameter values to
+        be within their boundaries (if bounded). Does not touch the array of
+        values.
+        """
+        for component in self:
+            if component.active:
+                for param in component.free_parameters:
+                    bmin = -np.inf if param.bmin is None else param.bmin
+                    bmax = np.inf if param.bmax is None else param.bmax
+                    if not bmin <= param.value <= bmax:
+                        min_d = np.abs(param.value - bmin)
+                        max_d = np.abs(param.value - bmax)
+                        if min_d < max_d:
+                            param.value = bmin
+                        else:
+                            param.value = bmax
 
     def store_current_values(self):
         """ Store the parameters of the current coordinates into the
@@ -792,8 +811,8 @@ class Model(list):
                 self.low_loss(self.axes_manager),
                 sum_convolved, mode="valid")
             to_return = to_return[self.channel_switches]
-        if self.spectrum.metadata.Signal.binned is True:
-            to_return *= self.spectrum.axes_manager[-1].scale
+        if self.signal.metadata.Signal.binned is True:
+            to_return *= self.signal.axes_manager[-1].scale
         return to_return
 
     # TODO: the way it uses the axes
@@ -941,8 +960,8 @@ class Model(list):
                     counter += component._nfree_param
             to_return = sum
 
-        if self.spectrum.metadata.Signal.binned is True:
-            to_return *= self.spectrum.axes_manager[-1].scale
+        if self.signal.metadata.Signal.binned is True:
+            to_return *= self.signal.axes_manager[-1].scale
         return to_return
 
     # noinspection PyAssignmentToLoopOrWithParameter
@@ -1008,8 +1027,8 @@ class Model(list):
                 to_return = grad[1:, :]
             else:
                 to_return = grad[1:, :] * weights
-        if self.spectrum.metadata.Signal.binned is True:
-            to_return *= self.spectrum.axes_manager[-1].scale
+        if self.signal.metadata.Signal.binned is True:
+            to_return *= self.signal.axes_manager[-1].scale
         return to_return
 
     def _function4odr(self, param, x):
@@ -1060,28 +1079,28 @@ class Model(list):
             return [0, self._jacobian(p, y).T]
 
     def _calculate_chisq(self):
-        if self.spectrum.metadata.has_item('Signal.Noise_properties.variance'):
+        if self.signal.metadata.has_item('Signal.Noise_properties.variance'):
 
-            variance = self.spectrum.metadata.Signal.Noise_properties.variance
-            if isinstance(variance, Signal):
+            variance = self.signal.metadata.Signal.Noise_properties.variance
+            if isinstance(variance, BaseSignal):
                 variance = variance.data.__getitem__(
-                    self.spectrum.axes_manager._getitem_tuple
+                    self.signal.axes_manager._getitem_tuple
                 )[self.channel_switches]
         else:
             variance = 1.0
-        d = self(onlyactive=True) - self.spectrum()[self.channel_switches]
+        d = self(onlyactive=True) - self.signal()[self.channel_switches]
         d *= d / (1. * variance)  # d = difference^2 / variance.
-        self.chisq.data[self.spectrum.axes_manager.indices[::-1]] = sum(d)
+        self.chisq.data[self.signal.axes_manager.indices[::-1]] = sum(d)
 
     def _set_current_degrees_of_freedom(self):
-        self.dof.data[self.spectrum.axes_manager.indices[::-1]] = len(self.p0)
+        self.dof.data[self.signal.axes_manager.indices[::-1]] = len(self.p0)
 
     @property
     def red_chisq(self):
         """Reduced chi-squared. Calculated from self.chisq and self.dof
         """
         tmp = self.chisq / (- self.dof + sum(self.channel_switches) - 1)
-        tmp.metadata.General.title = self.spectrum.metadata.General.title + \
+        tmp.metadata.General.title = self.signal.metadata.General.title + \
             ' reduced chi-squared'
         return tmp
 
@@ -1157,6 +1176,16 @@ class Model(list):
         if switch_aap is True and update_plot is False:
             self._disconnect_parameters2update_plot()
 
+        if bounded is True:
+            if fitter not in ("mpfit", "tnc", "l_bfgs_b"):
+                raise NotImplementedError("Bounded optimization is only"
+                                          "available for the mpfit "
+                                          "optimizer.")
+            else:
+                # this has to be done before setting the p0, so moved things
+                # around
+                self.ensure_parameters_in_bounds()
+
         self.p_std = None
         self._set_p0()
         if ext_bounding:
@@ -1174,9 +1203,6 @@ class Model(list):
             grad_ml = self._gradient_ml
             grad_ls = self._gradient_ls
 
-        if bounded is True and fitter not in ("mpfit", "tnc", "l_bfgs_b"):
-            raise NotImplementedError("Bounded optimization is only available "
-                                      "for the mpfit optimizer.")
         if method == 'ml':
             weights = None
             if fitter != "fmin":
@@ -1185,14 +1211,14 @@ class Model(list):
                                           'optimizer')
         elif method == "ls":
             if ("Signal.Noise_properties.variance" not in
-                    self.spectrum.metadata):
+                    self.signal.metadata):
                 variance = 1
             else:
-                variance = self.spectrum.metadata.Signal.\
+                variance = self.signal.metadata.Signal.\
                     Noise_properties.variance
-                if isinstance(variance, Signal):
+                if isinstance(variance, BaseSignal):
                     if (variance.axes_manager.navigation_shape ==
-                            self.spectrum.axes_manager.navigation_shape):
+                            self.signal.axes_manager.navigation_shape):
                         variance = variance.data.__getitem__(
                             self.axes_manager._getitem_tuple)[
                             self.channel_switches]
@@ -1211,7 +1237,7 @@ class Model(list):
             raise ValueError(
                 'method must be "ls" or "ml" but %s given' %
                 method)
-        args = (self.spectrum()[self.channel_switches],
+        args = (self.signal()[self.channel_switches],
                 weights)
 
         # Least squares "dedicated" fitters
@@ -1232,10 +1258,10 @@ class Model(list):
             modelo = odr.Model(fcn=self._function4odr,
                                fjacb=odr_jacobian)
             mydata = odr.RealData(
-                self.axis.axis[
-                    self.channel_switches], self.spectrum()[
-                    self.channel_switches], sx=None, sy=(
-                    1 / weights if weights is not None else None))
+                self.axis.axis[self.channel_switches],
+                self.signal()[self.channel_switches],
+                sx=None,
+                sy=(1 / weights if weights is not None else None))
             myodr = odr.ODR(mydata, modelo, beta0=self.p0[:])
             myoutput = myodr.run()
             result = myoutput.beta
@@ -1253,7 +1279,7 @@ class Model(list):
                 self.mpfit_parinfo = None
             m = mpfit(self._errfunc4mpfit, self.p0[:],
                       parinfo=self.mpfit_parinfo, functkw={
-                          'y': self.spectrum()[self.channel_switches],
+                          'y': self.signal()[self.channel_switches],
                           'weights': weights}, autoderivative=autoderivative,
                       quiet=1)
             self.p0 = m.params
@@ -1301,7 +1327,7 @@ class Model(list):
                 if bounded is True:
                     self.set_boundaries()
                 elif bounded is False:
-                    self.self.free_parameters_boundaries = None
+                    self.free_parameters_boundaries = None
                 self.p0 = fmin_tnc(
                     tominimize,
                     self.p0,
@@ -1314,7 +1340,7 @@ class Model(list):
                 if bounded is True:
                     self.set_boundaries()
                 elif bounded is False:
-                    self.self.free_parameters_boundaries = None
+                    self.free_parameters_boundaries = None
                 self.p0 = fmin_l_bfgs_b(tominimize, self.p0,
                                         fprime=fprime, args=args,
                                         bounds=self.free_parameters_boundaries,
@@ -1408,13 +1434,7 @@ class Model(list):
             pbar = progressbar.progressbar(maxval=maxval,
                                            disabled=not show_progressbar)
         if 'bounded' in kwargs and kwargs['bounded'] is True:
-            if kwargs['fitter'] == 'mpfit':
-                self.set_mpfit_parameters_info()
-                kwargs['bounded'] = None
-            elif kwargs['fitter'] in ("tnc", "l_bfgs_b"):
-                self.set_boundaries()
-                kwargs['bounded'] = None
-            else:
+            if kwargs['fitter'] not in ("tnc", "l_bfgs_b", "mpfit"):
                 messages.information(
                     "The chosen fitter does not suppport bounding."
                     "If you require bounding please select one of the "
@@ -2109,3 +2129,23 @@ class Model(list):
                     "\" not found in model")
         else:
             return list.__getitem__(self, value)
+
+    def notebook_interaction(self):
+        """Creates interactive notebook widgets for all components and
+        parameters, if available.
+
+        Requires `ipywidgets` to be installed.
+        """
+        from ipywidgets import Accordion
+        from traitlets import TraitError as TraitletError
+        from IPython.display import display as ip_display
+
+        try:
+            children = [component.notebook_interaction(False) for component in
+                        self]
+            accord = Accordion(children=children)
+            for i, comp in enumerate(self):
+                accord.set_title(i, comp.name)
+            ip_display(accord)
+        except TraitletError:
+            print('This function is only avialable when running in a notebook')

@@ -31,7 +31,7 @@ with the dimension of the signal space which we will call `factors` and the
 other with the dimension of the navigation space which we will call `loadings`.
 The same nomenclature applies to the result of BSS.
 
-   
+
 .. _decomposition:
 
 Decomposition
@@ -44,11 +44,11 @@ principal component analysis (PCA). To perform PCA on your data set, run the
 :py:meth:`~.learn.mva.MVA.decomposition` method:
 
 .. code-block:: python
-   
+
    >>> s.decomposition()
 
 
-Note that the `s` variable must contain a :class:`~.signal.Signal`  class or
+Note that the `s` variable must contain a :class:`~.signal.BaseSignal`  class or
 any of its subclasses which most likely has been previously loaded with the
 :func:`~.io.load` function, e.g. ``s = load('my_file.hdf5')``. Also, the signal must be
 multidimensional, i.e. ``s.axes_manager.navigation_size`` must be greater than
@@ -77,7 +77,7 @@ To perform Poissonian noise normalisation:
 
     Because it is the first argument we cold have simply written:
     >>> s.decomposition(True)
-    
+
 For more details about the scaling procedure you can read the `following
 research article
 <http://onlinelibrary.wiley.com/doi/10.1002/sia.1657/abstract>`_
@@ -117,18 +117,18 @@ To obtain a scree plot, run the
 Note that in the figure, the first component has index 0. This is because
 Python uses zero based indexing i.e. the initial element of a sequence is found
 using index 0.
- 
+
 .. versionadded:: 0.7
 
 Sometimes it can be useful to get the explained variance ratio as a spectrum,
-e.g. to store it separetely or to plot several scree plots obtained using 
+e.g. to store it separetely or to plot several scree plots obtained using
 different data pre-treatment in the same figure using
 :py:func:`~.drawing.utils.plot_spectra`. For that you can use
 :py:meth:`~.learn.mva.MVA.get_explained_variance_ratio`
 
 Data denoising (dimensionality reductions)
 ------------------------------------------
-    
+
 One of the most popular uses of PCA is data denoising. The denoising property
 is achieved by using a limited set of components to make a model of the
 original, omitting the later components that ideally contain only noise. This
@@ -143,7 +143,7 @@ example:
 
     >>> sc = s.get_decomposition_model(components)
 
-.. NOTE:: 
+.. NOTE::
     The components argument can be one of several things (None, int,
     or list of ints):
 
@@ -193,7 +193,7 @@ To perform BSS on the result of a decomposition, run the
     s.blind_source_separation(number_of_components)
 
 .. NOTE::
-    You must have performed a :ref:`decomposition` before you attempt to 
+    You must have performed a :ref:`decomposition` before you attempt to
     perform BSS.
 
 .. NOTE::
@@ -202,7 +202,7 @@ To perform BSS on the result of a decomposition, run the
     inspecting the :ref:`scree-plot`.
 
 .. _mva.visualization:
-    
+
 Visualising results
 ===================
 
@@ -230,7 +230,7 @@ Obtaining the results as Signal instances
 .. versionadded:: 0.7
 
 The decomposition and BSS results are internally stored in the
-:py:class:`~.signal.Signal` class where all the methods discussed in this
+:py:class:`~.signal.BaseSignal` class where all the methods discussed in this
 chapter can find them. However, they are stored as numpy array. Frequently it
 is useful to obtain the decomposition/BSS factors and loadings as HyperSpy
 signals and HyperSpy provides the following four methods for that pourpose:
@@ -244,7 +244,7 @@ signals and HyperSpy provides the following four methods for that pourpose:
 Saving and loading results
 ==========================
 
-There are several methods for storing  the result of a machine learning 
+There are several methods for storing  the result of a machine learning
 analysis.
 
 Saving in the main file
@@ -268,14 +268,14 @@ a file you can use the :py:meth:`~.learn.mva.LearningResults.save` method,
 e.g.:
 
 .. code-block:: python
-    
+
     Save the result of the analysis
     >>> s.learning_results.save('my_results')
-    
+
     Load back the results
     >>> s.learning_results.load('my_results.npz')
-    
-    
+
+
 Exporting
 ---------
 
@@ -292,8 +292,3 @@ saving figures instead of data and more.
 
 Please note that the exported data cannot easily be loaded into HyperSpy's
 machine learning structure.
-
-
-
-
-

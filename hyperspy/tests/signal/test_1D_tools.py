@@ -34,7 +34,7 @@ import hyperspy.api as hs
 class TestAlignTools:
 
     def setUp(self):
-        s = hs.signals.Spectrum(np.zeros((10, 100)))
+        s = hs.signals.Signal1D(np.zeros((10, 100)))
         self.scale = 0.1
         self.offset = -2
         eaxis = s.axes_manager.signal_axes[0]
@@ -46,15 +46,16 @@ class TestAlignTools:
         self.new_offset = self.offset - self.ishifts.min() * self.scale
         s.data[np.arange(10), self.ishifts + self.izlp] = 10
         s.data += self.bg
-        self.spectrum = s
+        self.signal = s
 
     def test_estimate_shift(self):
-        s = self.spectrum
+        s = self.signal
         eshifts = -1 * s.estimate_shift1D(show_progressbar=None)
-        nt.assert_true(np.allclose(eshifts, self.ishifts * self.scale))
+        np.testing.assert_allclose(
+            eshifts, self.ishifts * self.scale, atol=1e-3)
 
     def test_shift1D(self):
-        s = self.spectrum
+        s = self.signal
         s.shift1D(-
                   1 *
                   self.ishifts[:, np.newaxis] *
@@ -67,30 +68,12 @@ class TestAlignTools:
         nt.assert_true((s.data[:, -1] == 2).all())
         nt.assert_true((s.data[:, 0] == 2).all())
         # Check that the calibration is correct
-        nt.assert_equal(
-            s.axes_manager._axes[1].offset, self.new_offset)
+        nt.assert_equal(s.axes_manager._axes[1].offset, self.new_offset)
         nt.assert_equal(s.axes_manager._axes[1].scale, self.scale)
 
     def test_align(self):
-        s = self.spectrum
+        s = self.signal
         s.align1D(show_progressbar=None)
-        i_zlp = s.axes_manager.signal_axes[0].value2index(0)
-        nt.assert_true(np.allclose(s.data[:, i_zlp], 12))
-        # Check that at the edges of the spectrum the value == to the
-        # background value. If it wasn't it'll mean that the cropping
-        # code is buggy
-        nt.assert_true((s.data[:, -1] == 2).all())
-        nt.assert_true((s.data[:, 0] == 2).all())
-        # Check that the calibration is correct
-        nt.assert_equal(
-            s.axes_manager._axes[1].offset, self.new_offset)
-        nt.assert_equal(s.axes_manager._axes[1].scale, self.scale)
-
-    def test_align_axis0(self):
-        s = self.spectrum
-        s = s.swap_axes(0, 1)
-        s.align1D(show_progressbar=None)
-        s = s.swap_axes(0, 1)
         i_zlp = s.axes_manager.signal_axes[0].value2index(0)
         nt.assert_true(np.allclose(s.data[:, i_zlp], 12))
         # Check that at the edges of the spectrum the value == to the
@@ -107,7 +90,7 @@ class TestAlignTools:
 class TestShift1D:
 
     def setUp(self):
-        self.s = hs.signals.Spectrum(np.arange(10))
+        self.s = hs.signals.Signal1D(np.arange(10))
         self.s.axes_manager[0].scale = 0.2
 
     def test_crop_left(self):
@@ -133,48 +116,48 @@ class TestFindPeaks1D:
 
     def setUp(self):
         x = np.arange(0, 50, 0.01)
-        s = hs.signals.Spectrum(np.vstack((np.cos(x), np.sin(x))))
+        s = hs.signals.Signal1D(np.vstack((np.cos(x), np.sin(x))))
         s.axes_manager.signal_axes[0].scale = 0.01
         self.peak_positions0 = np.arange(8) * 2 * np.pi
         self.peak_positions1 = np.arange(8) * 2 * np.pi + np.pi / 2
-        self.spectrum = s
+        self.signal = s
 
     def test_single_spectrum(self):
-        peaks = self.spectrum.inav[0].find_peaks1D_ohaver()
+        peaks = self.signal.inav[0].find_peaks1D_ohaver()
         nt.assert_true(np.allclose(
             peaks[0]['position'], self.peak_positions0, rtol=1e-5, atol=1e-4))
 
     def test_two_spectra(self):
-        peaks = self.spectrum.find_peaks1D_ohaver()
+        peaks = self.signal.find_peaks1D_ohaver()
         nt.assert_true(np.allclose(
             peaks[1]['position'], self.peak_positions1, rtol=1e-5, atol=1e-4))
 
     def test_height(self):
-        peaks = self.spectrum.find_peaks1D_ohaver()
+        peaks = self.signal.find_peaks1D_ohaver()
         nt.assert_true(np.allclose(
             peaks[1]['height'], 1.0, rtol=1e-5, atol=1e-4))
 
     def test_width(self):
-        peaks = self.spectrum.find_peaks1D_ohaver()
+        peaks = self.signal.find_peaks1D_ohaver()
         nt.assert_true(np.allclose(
             peaks[1]['width'], 3.5758, rtol=1e-4, atol=1e-4),
             msg="One or several widths are not close enough to expected " +
             "value (3.5758): " + str(peaks[1]['width']))
 
     def test_n_peaks(self):
-        peaks = self.spectrum.find_peaks1D_ohaver()
+        peaks = self.signal.find_peaks1D_ohaver()
         nt.assert_equal(len(peaks[1]), 8)
 
     def test_maxpeaksn(self):
         for n in range(1, 10):
-            peaks = self.spectrum.find_peaks1D_ohaver(maxpeakn=n)
+            peaks = self.signal.find_peaks1D_ohaver(maxpeakn=n)
             nt.assert_equal(len(peaks[1]), min((8, n)))
 
 
 class TestInterpolateInBetween:
 
     def setUp(self):
-        s = hs.signals.Spectrum(np.arange(40).reshape((2, 20)))
+        s = hs.signals.Signal1D(np.arange(40).reshape((2, 20)))
         s.axes_manager.signal_axes[0].scale = 0.1
         s.isig[8:12] = 0
         self.s = s
@@ -221,7 +204,7 @@ class TestEstimatePeakWidth:
         window = 2
         x = np.arange(-window, window, scale)
         g = hs.model.components.Gaussian()
-        s = hs.signals.Spectrum(g.function(x))
+        s = hs.signals.Signal1D(g.function(x))
         s.axes_manager[-1].scale = scale
         self.s = s
 

@@ -59,7 +59,7 @@ and `documentation
 Importantly, the way to start HyperSpy changes in this release. Read :ref:`importing_hyperspy-label` for details.
 
 It also includes some new features and introduces important API changes that
-will be fully enforced in HyperSpy 0.9.
+will be fully enforced in Hyperspy 1.0.
 
 New features
 ------------
@@ -87,7 +87,7 @@ API changes
 
     In HyperSpy 0.8.1 the full content of :py:mod:`~.hyperspy.hspy` is still
     imported in the user namespace, but this can now be disabled in
-    ``hs.preferences.General.import_hspy``. In HyperSpy 0.9 it will be
+    ``hs.preferences.General.import_hspy``. In Hyperspy 1.0 it will be
     disabled by default and the :py:mod:`~.hyperspy.hspy` module will be fully
     removed in HyperSpy 0.10. We encourage all users to migrate to the new
     syntax. For more details see :ref:`importing_hyperspy-label`.
@@ -414,8 +414,8 @@ API changes
 
 * Change syntax to create Signal objects. Instead of a dictionary
   Signal.__init__ takes keywords e.g with  a new syntax .
-  ``>>> s = signals.Spectrum(np.arange(10))`` instead of
-  ``>>> s = signals.Spectrum({'data' : np.arange(10)})``
+  ``>>> s = signals.Signal1D(np.arange(10))`` instead of
+  ``>>> s = signals.Signal1D({'data' : np.arange(10)})``
 
 
 
