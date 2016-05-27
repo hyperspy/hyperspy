@@ -676,7 +676,7 @@ class EDSSpectrum(Spectrum):
                 img = img.as_signal2D([0, 1])
             elif img.axes_manager.navigation_dimension == 1:
                 img.axes_manager.set_signal_dimension(1)
-            if plot_result and img.axes_manager.signal_dimension == 0:
+            if plot_result and img.axes_manager.signal_size == 1:
                 print("%s at %s %s : Intensity = %.2f"
                       % (Xray_line,
                          line_energy,
@@ -685,7 +685,7 @@ class EDSSpectrum(Spectrum):
             img.metadata.set_item("Sample.elements", ([element]))
             img.metadata.set_item("Sample.xray_lines", ([Xray_line]))
             intensities.append(img)
-        if plot_result and img.axes_manager.signal_dimension != 0:
+        if plot_result and img.axes_manager.signal_size != 1:
             utils.plot.plot_signals(intensities, **kwargs)
         return intensities
 

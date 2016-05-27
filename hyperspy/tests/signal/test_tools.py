@@ -1,14 +1,14 @@
 import numpy as np
 import nose.tools as nt
 
-from hyperspy.signals import Signal
+from hyperspy.signals import BaseSignal
 from hyperspy import signals
 
 
 class Test2D:
 
     def setUp(self):
-        self.signal = Signal(np.arange(5 * 10).reshape(5, 10))
+        self.signal = BaseSignal(np.arange(5 * 10).reshape(5, 10))
         self.signal.axes_manager[0].name = "x"
         self.signal.axes_manager[1].name = "E"
         self.signal.axes_manager[0].scale = 0.5
@@ -116,7 +116,7 @@ class Test2D:
 class Test3D:
 
     def setUp(self):
-        self.signal = Signal(np.arange(2 * 4 * 6).reshape(2, 4, 6))
+        self.signal = BaseSignal(np.arange(2 * 4 * 6).reshape(2, 4, 6))
         self.signal.axes_manager[0].name = "x"
         self.signal.axes_manager[1].name = "y"
         self.signal.axes_manager[2].name = "E"
@@ -350,7 +350,7 @@ class Test4D:
 
 
 def test_signal_iterator():
-    s = Signal(np.arange(3).reshape((3, 1)))
+    s = BaseSignal(np.arange(3).reshape((3, 1)))
     nt.assert_equal(next(s).data[0], 0)
     # If the following fails it can be because the iteration index was not
     # restarted
