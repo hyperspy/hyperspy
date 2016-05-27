@@ -7,7 +7,7 @@ import nose.tools as nt
 import numpy.testing as npt
 
 from hyperspy.io import load
-from hyperspy.signals import Signal, EELSSpectrum, EDSTEMSpectrum
+from hyperspy.signals import BaseSignal, EELSSpectrum, EDSTEMSpectrum
 from hyperspy.io_plugins import ripple
 
 
@@ -61,9 +61,10 @@ def _create_signal(shape, dim, dtype,):
                 elevation_angle=4.,
                 energy_resolution_MnKa=5.)
     else:
-        s = Signal(data)
+        s = BaseSignal(data)
         s.axes_manager.set_signal_dimension(dim)
     for i, axis in enumerate(s.axes_manager._axes):
+        i += 1
         axis.offset = i * 0.5
         axis.scale = i * 100
         axis.name = "%i" % i
