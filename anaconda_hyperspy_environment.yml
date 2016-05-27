@@ -6,7 +6,6 @@ dependencies:
 - ipython
 - jupyter
 - matplotlib
-- mock
 - nose
 - numpy
 - qt

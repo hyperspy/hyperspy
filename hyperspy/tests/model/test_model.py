@@ -1,6 +1,6 @@
 import numpy as np
 import nose.tools as nt
-import mock
+from unittest import mock
 
 import hyperspy.api as hs
 from hyperspy.misc.utils import slugify
