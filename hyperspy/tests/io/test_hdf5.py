@@ -225,6 +225,7 @@ class TestPassingArgs:
         d = f['Experiments/__unnamed__/data']
         nt.assert_equal(d.compression_opts, 8)
         nt.assert_equal(d.compression, 'gzip')
+        f.close()
 
     def tearDown(self):
         remove(self.filename)
