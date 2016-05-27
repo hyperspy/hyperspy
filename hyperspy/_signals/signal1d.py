@@ -241,11 +241,11 @@ class Signal1DTools(object):
                 shift_array,
                 interpolation_method='linear',
                 crop=True,
+                expand=False,
                 fill_value=np.nan,
                 show_progressbar=None):
         """Shift the data in place over the signal axis by the amount specified
         by an array.
-
         Parameters
         ----------
         shift_array : numpy array
@@ -259,30 +259,60 @@ class Signal1DTools(object):
         crop : bool
             If True automatically crop the signal axis at both ends if
             needed.
+        expand : bool
+            If True, the data will be expanded to fit all data after alignment.
+            Overrides `crop`.
         fill_value : float
             If crop is False fill the data outside of the original
             interval with the given value where needed.
         show_progressbar : None or bool
             If True, display a progress bar. If None the default is set in
             `preferences`.
-
         Raises
         ------
         SignalDimensionError if the signal dimension is not 1.
-
         """
+        if not np.any(shift_array):
+            # Nothing to do, the shift array if filled with zeros
+            return
         if show_progressbar is None:
             show_progressbar = preferences.General.show_progressbar
         self._check_signal_dimension_equals_one()
         axis = self.axes_manager.signal_axes[0]
-        offset = axis.offset
-        original_axis = axis.axis.copy()
         pbar = progressbar(
             maxval=self.axes_manager.navigation_size,
             disabled=not show_progressbar)
+
+        # Figure out min/max shifts, and translate to shifts in index as well
+        minimum, maximum = np.nanmin(shift_array), np.nanmax(shift_array)
+        if minimum < 0:
+            ihigh = 1 + axis.value2index(
+                axis.high_value + minimum,
+                rounding=math.floor)
+        else:
+            ihigh = axis.high_index + 1
+        if maximum > 0:
+            ilow = axis.value2index(axis.offset + maximum,
+                                    rounding=math.ceil)
+        else:
+            ilow = axis.low_index
+        if expand:
+            padding = []
+            for i in range(self.data.ndim):
+                if i == axis.index_in_array:
+                    padding.append(
+                        (axis.high_index - ihigh + 1, ilow - axis.low_index))
+                else:
+                    padding.append((0, 0))
+            self.data = np.pad(self.data, padding, mode='constant',
+                               constant_values=(fill_value,))
+            axis.offset += minimum
+            axis.size += axis.high_index - ihigh + 1 + ilow - axis.low_index
+        offset = axis.offset
+        original_axis = axis.axis.copy()
         for i, (dat, shift) in enumerate(zip(
                 self._iterate_signal(),
-                shift_array.ravel(()))):
+                shift_array.ravel())):
             if np.isnan(shift):
                 continue
             si = sp.interpolate.interp1d(original_axis,
@@ -296,49 +326,33 @@ class Signal1DTools(object):
 
         axis.offset = offset
 
-        if crop is True:
-            minimum, maximum = np.nanmin(shift_array), np.nanmax(shift_array)
-            if minimum < 0:
-                iminimum = 1 + axis.value2index(
-                    axis.high_value + minimum,
-                    rounding=math.floor)
-                print(iminimum)
-                self.crop(axis.index_in_axes_manager,
-                          None,
-                          iminimum)
-            if maximum > 0:
-                imaximum = axis.value2index(offset + maximum,
-                                            rounding=math.ceil)
-                self.crop(axis.index_in_axes_manager,
-                          imaximum)
+        if crop and not expand:
+            self.crop(axis.index_in_axes_manager,
+                      ilow,
+                      ihigh)
+
+        self.events.data_changed.trigger(obj=self)
 
     def interpolate_in_between(self, start, end, delta=3,
                                show_progressbar=None, **kwargs):
         """Replace the data in a given range by interpolation.
-
         The operation is performed in place.
-
         Parameters
         ----------
         start, end : {int | float}
             The limits of the interval. If int they are taken as the
             axis index. If float they are taken as the axis value.
-
         delta : {int | float}
             The windows around the (start, end) to use for interpolation
-
         show_progressbar : None or bool
             If True, display a progress bar. If None the default is set in
             `preferences`.
-
         All extra keyword arguments are passed to
         scipy.interpolate.interp1d. See the function documentation
         for details.
-
         Raises
         ------
         SignalDimensionError if the signal dimension is not 1.
-
         """
         if show_progressbar is None:
             show_progressbar = preferences.General.show_progressbar
@@ -360,6 +374,19 @@ class Signal1DTools(object):
                 **kwargs)
             dat[i1:i2] = dat_int(list(range(i1, i2)))
             pbar.update(i + 1)
+        self.events.data_changed.trigger(obj=self)
+
+    def _check_navigation_mask(self, mask):
+        if mask is not None:
+            if not isinstance(mask, Signal):
+                raise ValueError("mask must be a Signal instance.")
+            elif mask.axes_manager.signal_dimension not in (0, 1):
+                raise ValueError("mask must be a Signal with signal_dimension "
+                                 "equal to 1")
+            elif (mask.axes_manager.navigation_dimension !=
+                  self.axes_manager.navigation_dimension):
+                raise ValueError("mask must be a Signal with the same "
+                                 "navigation_dimension as the current signal.")
 
     def estimate_shift1D(self,
                          start=None,
@@ -372,7 +399,6 @@ class Signal1DTools(object):
                          show_progressbar=None):
         """Estimate the shifts in the current signal axis using
          cross-correlation.
-
         This method can only estimate the shift by comparing
         unidimensional features that should not change the position in
         the signal axis. To decrease the memory usage, the time of
@@ -380,7 +406,6 @@ class Signal1DTools(object):
         select the feature of interest providing sensible values for
         `start` and `end`. By default interpolation is used to obtain
         subpixel precision.
-
         Parameters
         ----------
         start, end : {int | float | None}
@@ -405,14 +430,12 @@ class Signal1DTools(object):
         show_progressbar : None or bool
             If True, display a progress bar. If None the default is set in
             `preferences`.
-
         Returns
         -------
         An array with the result of the estimation in the axis units.
-
         Raises
+        ------
         SignalDimensionError if the signal dimension is not 1.
-
         """
         if show_progressbar is None:
             show_progressbar = preferences.General.show_progressbar
@@ -464,13 +487,13 @@ class Signal1DTools(object):
                 number_of_interpolation_points=5,
                 interpolation_method='linear',
                 crop=True,
+                expand=False,
                 fill_value=np.nan,
                 also_align=[],
                 mask=None,
                 show_progressbar=None):
         """Estimate the shifts in the signal axis using
         cross-correlation and use the estimation to align the data in place.
-
         This method can only estimate the shift by comparing
         unidimensional
         features that should not change the position.
@@ -478,7 +501,6 @@ class Signal1DTools(object):
         accuracy it is convenient to select the feature of interest
         setting the `start` and `end` keywords. By default interpolation is
         used to obtain subpixel precision.
-
         Parameters
         ----------
         start, end : {int | float | None}
@@ -504,8 +526,10 @@ class Signal1DTools(object):
         crop : bool
             If True automatically crop the signal axis at both ends if
             needed.
+        expand : bool
+            If True, the data will be expanded to fit all data after alignment.
+            Overrides `crop`.
         fill_value : float
-
             If crop is False fill the data outside of the original
             interval with the given value where needed.
         also_align : list of signals
@@ -520,19 +544,15 @@ class Signal1DTools(object):
         show_progressbar : None or bool
             If True, display a progress bar. If None the default is set in
             `preferences`.
-
         Returns
         -------
         An array with the result of the estimation. The shift will be
-
         Raises
         ------
         SignalDimensionError if the signal dimension is not 1.
-
         See also
         --------
         estimate_shift1D
-
         """
         if also_align is None:
             also_align = []
@@ -551,15 +571,14 @@ class Signal1DTools(object):
                            interpolation_method=interpolation_method,
                            crop=crop,
                            fill_value=fill_value,
+                           expand=expand,
                            show_progressbar=show_progressbar)
 
     def integrate_in_range(self, signal_range='interactive'):
         """ Sums the spectrum over an energy range, giving the integrated
         area.
-
         The energy range can either be selected through a GUI or the command
         line.
-
         Parameters
         ----------
         signal_range : {a tuple of this form (l, r), "interactive"}
@@ -569,76 +588,61 @@ class Signal1DTools(object):
             example eV). If l and r are integers the `signal_range` will be in
             index units. When `signal_range` is "interactive" (default) the
             range is selected using a GUI.
-
         Returns
         -------
         integrated_spectrum : Signal subclass
-
         See Also
         --------
         integrate_simpson
-
         Examples
         --------
-
         Using the GUI
-
         >>> s.integrate_in_range()
-
         Using the CLI
-
         >>> s_int = s.integrate_in_range(signal_range=(560,None))
-
         Selecting a range in the axis units, by specifying the
         signal range with floats.
-
         >>> s_int = s.integrate_in_range(signal_range=(560.,590.))
-
         Selecting a range using the index, by specifying the
         signal range with integers.
-
         >>> s_int = s.integrate_in_range(signal_range=(100,120))
-
         """
+
         if signal_range == 'interactive':
             self_copy = self.deepcopy()
             ia = IntegrateArea(self_copy, signal_range)
             ia.edit_traits()
-            integrated_spectrum = self_copy
+            integrated_signal1D = self_copy
         else:
-            integrated_spectrum = self._integrate_in_range_commandline(
+            integrated_signal1D = self._integrate_in_range_commandline(
                 signal_range)
-        return integrated_spectrum
+        return integrated_signal1D
 
     def _integrate_in_range_commandline(self, signal_range):
         e1 = signal_range[0]
         e2 = signal_range[1]
-        integrated_spectrum = self.isig[..., e1:e2].integrate1D(-1)
-        return integrated_spectrum
+        integrated_signal1D = self.isig[e1:e2].integrate1D(-1)
+        return integrated_signal1D
 
     @only_interactive
     def calibrate(self):
         """Calibrate the spectral dimension using a gui.
-
         It displays a window where the new calibration can be set by:
         * Setting the offset, units and scale directly
         * Selection a range by dragging the mouse on the spectrum figure
          and
         setting the new values for the given range limits
-
         Notes
         -----
         For this method to work the output_dimension must be 1. Set the
         view
         accordingly
-
         Raises
         ------
         SignalDimensionError if the signal dimension is not 1.
-
         """
         self._check_signal_dimension_equals_one()
-        calibration = Signal1DCalibration(self)
+        calibration = SpectrumCalibration(self)
         calibration.edit_traits()
 
     def smooth_savitzky_golay(self,
@@ -646,10 +650,8 @@ class Signal1DTools(object):
                               window_length=None,
                               differential_order=0):
         """Apply a Savitzky-Golay filter to the data in place.
-
         If `polynomial_order` or `window_length` or `differential_order` are
         None the method is run in interactive mode.
-
         Parameters
         ----------
         window_length : int
@@ -662,11 +664,9 @@ class Signal1DTools(object):
             The order of the derivative to compute.  This must be a
             nonnegative integer.  The default is 0, which means to filter
             the data without differentiating.
-
         Notes
         -----
         More information about the filter in `scipy.signal.savgol_filter`.
-
         """
         if not savgol_imported:
             raise ImportError("scipy >= 0.14 needs to be installed to use"
@@ -682,7 +682,7 @@ class Signal1DTools(object):
                 deriv=differential_order,
                 delta=axis.scale,
                 axis=axis.index_in_array)
-
+            self.events.data_changed.trigger(obj=self)
         else:
             # Interactive mode
             smoother = SmoothingSavitzkyGolay(self)
@@ -698,10 +698,8 @@ class Signal1DTools(object):
                       number_of_iterations=None,
                       show_progressbar=None):
         """Lowess data smoothing in place.
-
         If `smoothing_parameter` or `number_of_iterations` are None the method
         is run in interactive mode.
-
         Parameters
         ----------
         smoothing_parameter: float or None
@@ -713,17 +711,14 @@ class Signal1DTools(object):
         show_progressbar : None or bool
             If True, display a progress bar. If None the default is set in
             `preferences`.
-
         Raises
         ------
         SignalDimensionError if the signal dimension is not 1.
         ImportError if statsmodels is not installed.
-
         Notes
         -----
         This method uses the lowess algorithm from statsmodels. statsmodels
         is required for this method.
-
         """
         if not statsmodels_installed:
             raise ImportError("statsmodels is not installed. This package is "
@@ -747,7 +742,6 @@ class Signal1DTools(object):
 
     def smooth_tv(self, smoothing_parameter=None, show_progressbar=None):
         """Total variation data smoothing in place.
-
         Parameters
         ----------
         smoothing_parameter: float or None
@@ -756,11 +750,9 @@ class Signal1DTools(object):
         show_progressbar : None or bool
             If True, display a progress bar. If None the default is set in
             `preferences`.
-
         Raises
         ------
         SignalDimensionError if the signal dimension is not 1.
-
         """
         self._check_signal_dimension_equals_one()
         if smoothing_parameter is None:
@@ -775,11 +767,9 @@ class Signal1DTools(object):
                            type='low',
                            order=2):
         """Butterworth filter in place.
-
         Raises
         ------
         SignalDimensionError if the signal dimension is not 1.
-
         """
         self._check_signal_dimension_equals_one()
         smoother = ButterworthFilter(self)
@@ -789,16 +779,21 @@ class Signal1DTools(object):
         else:
             smoother.edit_traits()
 
-    def _remove_background_cli(self, signal_range, background_estimator,
-                               show_progressbar=None):
+    def _remove_background_cli(
+            self, signal_range, background_estimator, estimate_background=True,
+            show_progressbar=None):
         from hyperspy.models.model1d import Model1D
         model = Model1D(self)
         model.append(background_estimator)
-        background_estimator.estimate_parameters(
-            self,
-            signal_range[0],
-            signal_range[1],
-            only_current=False)
+        if estimate_background:
+            background_estimator.estimate_parameters(
+                self,
+                signal_range[0],
+                signal_range[1],
+                only_current=False)
+        else:
+            model.set_signal_range(signal_range[0], signal_range[1])
+            model.multifit(show_progressbar=show_progressbar)
         return self - model.as_signal(show_progressbar=show_progressbar)
 
     def remove_background(
@@ -806,10 +801,10 @@ class Signal1DTools(object):
             signal_range='interactive',
             background_type='PowerLaw',
             polynomial_order=2,
+            estimate_background=True,
             show_progressbar=None):
         """Remove the background, either in place using a gui or returned as a new
         spectrum using the command line.
-
         Parameters
         ----------
         signal_range : tuple, optional
@@ -822,21 +817,24 @@ class Signal1DTools(object):
             If Polynomial is used, the polynomial order can be specified
         polynomial_order : int, default 2
             Specify the polynomial order if a Polynomial background is used.
+        estimate_background : bool
+            If True, estimate the background. If False, the signal is fitted
+            using a full model. This is slower compared to the estimation but
+            possibly more accurate.
         show_progressbar : None or bool
             If True, display a progress bar. If None the default is set in
             `preferences`.
-
         Examples
         --------
-        >>>> s.remove_background() # Using gui, replaces spectrum s
-        >>>> s2 = s.remove_background(
-                 signal_range=(400,450),
-                 background_type='PowerLaw') #Using cli, returns a spectrum
-
+        Using gui, replaces spectrum s
+        >>>> s.remove_background()
+        Using command line, returns a spectrum
+        >>>> s = s.remove_background(signal_range=(400,450), background_type='PowerLaw')
+        Using a full model to fit the background
+        >>>> s = s.remove_background(signal_range=(400,450), estimate_background=False)
         Raises
         ------
         SignalDimensionError if the signal dimension is not 1.
-
         """
         self._check_signal_dimension_equals_one()
         if signal_range == 'interactive':
@@ -858,12 +856,12 @@ class Signal1DTools(object):
                     " not recognized")
 
             spectra = self._remove_background_cli(
-                signal_range, background_estimator,
+                signal_range, background_estimator, estimate_background,
                 show_progressbar=show_progressbar)
             return spectra
 
     @interactive_range_selector
-    def crop_spectrum(self, left_value=None, right_value=None,):
+    def crop_signal1D(self, left_value=None, right_value=None,):
         """Crop in place the spectral dimension.
 
         Parameters

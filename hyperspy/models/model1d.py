@@ -159,8 +159,8 @@ class Model1D(BaseModel):
 
     """
 
-    def __init__(self, spectrum, dictionary=None):
-        self.signal = spectrum
+    def __init__(self, signal1D, dictionary=None):
+        self.signal = signal1D
         self.axes_manager = self.signal.axes_manager
         self._plot = None
         self._position_widgets = {}

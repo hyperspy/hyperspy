@@ -85,8 +85,8 @@ class Model2D(BaseModel):
 
     """
 
-    def __init__(self, image, dictionary=None):
-        self.signal = image
+    def __init__(self, signal2D, dictionary=None):
+        self.signal = signal2D
         self.axes_manager = self.signal.axes_manager
         self._plot = None
         self._position_widgets = {}
@@ -101,7 +101,7 @@ class Model2D(BaseModel):
         self.axes_manager.events.indices_changed.connect(
             self.fetch_stored_values, [])
         self.channel_switches = np.ones(self.xaxis.shape, dtype=bool)
-        self.chisq = image._get_navigation_signal()
+        self.chisq = signal2D._get_navigation_signal()
         self.chisq.change_dtype("float")
         self.chisq.data.fill(np.nan)
         self.chisq.metadata.General.title = (
