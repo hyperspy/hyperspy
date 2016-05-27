@@ -39,7 +39,7 @@ class Text(MarkerBase):
 
     Example
     -------
-    >>> s = hs.signals.Spectrum(np.arange(100).reshape([10,10]))
+    >>> s = hs.signals.Signal1D(np.arange(100).reshape([10,10]))
     >>> s.plot(navigator='spectrum')
     >>> for i in range(10):
     >>>     m = hs.plot.markers.text(y=range(50,1000,100)[i],

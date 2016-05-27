@@ -47,18 +47,18 @@ def attrsetter(target, attrs, value):
         -------
         First create a signal and model pair:
 
-        >>> s = hs.signals.Spectrum(np.arange(10))
+        >>> s = hs.signals.Signal1D(np.arange(10))
         >>> m = s.create_model()
-        >>> m.spectrum.data
+        >>> self.signal.data
         array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
 
         Now set the data of the model with attrsetter
-        >>> attrsetter(m, 'spectrum.data', np.arange(10)+2)
-        >>> m.spectrum.data
+        >>> attrsetter(m, 'signal1D.data', np.arange(10)+2)
+        >>> self.signal.data
         array([2, 3, 4, 5, 6, 7, 8, 9, 10, 10])
 
         The behaviour is identical to
-        >>> m.spectrum.data = np.arange(10) + 2
+        >>> self.signal.data = np.arange(10) + 2
 
 
     """
@@ -281,7 +281,7 @@ class DictionaryTreeBrowser(object):
                         right_limit = min(max_len,
                                           len(strvalue) - max_len)
                         strvalue = '%s ... %s' % (strvalue[:max_len],
-                                                   strvalue[-right_limit:])
+                                                  strvalue[-right_limit:])
                     string += "%s%s%s = %s\n" % (
                         padding, symbol, key, strvalue)
             j += 1
@@ -309,8 +309,8 @@ class DictionaryTreeBrowser(object):
     def __setattr__(self, key, value):
         if key.startswith('_sig_'):
             key = key[5:]
-            from hyperspy.signal import Signal
-            value = Signal(**value)
+            from hyperspy.signal import BaseSignal
+            value = BaseSignal(**value)
         slugified_key = str(slugify(key, valid_variable_name=True))
         if isinstance(value, dict):
             if self.has_item(slugified_key):
@@ -337,7 +337,7 @@ class DictionaryTreeBrowser(object):
         """Returns its dictionary representation.
 
         """
-        from hyperspy.signal import Signal
+        from hyperspy.signal import BaseSignal
         par_dict = {}
         for key_, item_ in self.__dict__.items():
             if not isinstance(item_, types.MethodType):
@@ -346,7 +346,7 @@ class DictionaryTreeBrowser(object):
                     continue
                 if isinstance(item_['_dtb_value_'], DictionaryTreeBrowser):
                     item = item_['_dtb_value_'].as_dictionary()
-                elif isinstance(item_['_dtb_value_'], Signal):
+                elif isinstance(item_['_dtb_value_'], BaseSignal):
                     item = item_['_dtb_value_']._to_dictionary()
                     key = '_sig_' + key
                 else:
@@ -753,7 +753,7 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
     Examples
     --------
     >>> data = np.arange(20)
-    >>> s = hs.stack([hs.signals.Spectrum(data[:10]), hs.signals.Spectrum(data[10:])])
+    >>> s = hs.stack([hs.signals.Signal1D(data[:10]), hs.signals.Signal1D(data[10:])])
     >>> s
     <Spectrum, title: Stack of , dimensions: (2, 10)>
     >>> s.data

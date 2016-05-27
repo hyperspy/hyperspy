@@ -22,14 +22,14 @@ from nose.tools import (
     assert_equal,
     raises)
 
-from hyperspy.signal import Signal
+from hyperspy.signal import BaseSignal
 from hyperspy import signals
 
 
 class Test1D:
 
     def setUp(self):
-        self.signal = Signal(np.arange(10))
+        self.signal = BaseSignal(np.arange(10))
         self.data = self.signal.data.copy()
 
     def test_slice_None(self):
@@ -116,7 +116,7 @@ class Test1D:
 class Test2D:
 
     def setUp(self):
-        self.signal = Signal(np.arange(24).reshape(6, 4))
+        self.signal = BaseSignal(np.arange(24).reshape(6, 4))
         self.signal.axes_manager.set_signal_dimension(2)
         self.data = self.signal.data.copy()
 
@@ -136,7 +136,7 @@ class Test2D:
 class Test3D_SignalDim0:
 
     def setUp(self):
-        self.signal = Signal(np.arange(24).reshape((2, 3, 4)))
+        self.signal = BaseSignal(np.arange(24).reshape((2, 3, 4)))
         self.data = self.signal.data.copy()
         self.signal.axes_manager._axes[2].navigate = True
 
@@ -163,7 +163,7 @@ class Test3D_SignalDim0:
 class Test3D_Navigate_0_and_1:
 
     def setUp(self):
-        self.signal = Signal(np.arange(24).reshape((2, 3, 4)))
+        self.signal = BaseSignal(np.arange(24).reshape((2, 3, 4)))
         self.data = self.signal.data.copy()
         self.signal.axes_manager._axes[0].navigate = True
         self.signal.axes_manager._axes[1].navigate = True
@@ -231,7 +231,7 @@ class Test3D_Navigate_0_and_1:
 class Test3D_Navigate_1:
 
     def setUp(self):
-        self.signal = Signal(np.arange(24).reshape((2, 3, 4)))
+        self.signal = BaseSignal(np.arange(24).reshape((2, 3, 4)))
         self.data = self.signal.data.copy()
         self.signal.axes_manager._axes[0].navigate = False
         self.signal.axes_manager._axes[1].navigate = True
@@ -256,14 +256,14 @@ class Test3D_Navigate_1:
                      self.signal.axes_manager.signal_axes[0].scale)
 
     def test_subclass_assignment(self):
-        im = self.signal.as_image((-2, -1))
-        assert_true(isinstance(im.isig[0], signals.Spectrum))
+        im = self.signal.as_signal2D((-2, -1))
+        assert_true(isinstance(im.isig[0], signals.Signal1D))
 
 
 class TestFloatArguments:
 
     def setUp(self):
-        self.signal = Signal(np.arange(10))
+        self.signal = BaseSignal(np.arange(10))
         self.signal.axes_manager[0].scale = 0.5
         self.signal.axes_manager[0].offset = 0.25
         self.data = self.signal.data.copy()
@@ -312,7 +312,7 @@ class TestFloatArguments:
 class TestEllipsis:
 
     def setUp(self):
-        self.signal = Signal(np.arange(2 ** 5).reshape(
+        self.signal = BaseSignal(np.arange(2 ** 5).reshape(
             (2, 2, 2, 2, 2)))
         self.data = self.signal.data.copy()
 
