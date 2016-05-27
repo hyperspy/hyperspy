@@ -61,7 +61,7 @@ def create_model(signal, *args, **kwargs):
     """
     import warnings
     warnings.warn(
-        "This function is deprecated and will be removed in HyperSpy 0.9. "
+        "This function is deprecated and will be removed in Hyperspy 1.0. "
         "Please use the equivalent `Signal.create_model` method "
         "instead.", VisibleDeprecationWarning)
     return signal.create_model(*args, **kwargs)
