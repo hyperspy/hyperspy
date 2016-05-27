@@ -691,6 +691,8 @@ by hand.
 .. versionadded:: 0.8.5
     :py:meth:`~.model.Model.notebook_interaction`,
 
+.. _notebook_interaction-label:
+
 If running in a Jupyter Notebook, interactive widgets can be used to
 conveniently adjust the parameter values by running
 :py:meth:`~.model.Model.notebook_interaction` for :py:class:`~.model.Model`,
@@ -698,7 +700,7 @@ conveniently adjust the parameter values by running
 :py:class:`~.component.Parameter`.
 
 .. Warning::
-    
+
     :py:meth:`~.model.Model.notebook_interaction` functions require
     ``ipywidgets``, which is an optional dependency of HyperSpy.
 
