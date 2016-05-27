@@ -2129,3 +2129,23 @@ class Model(list):
                     "\" not found in model")
         else:
             return list.__getitem__(self, value)
+
+    def notebook_interaction(self):
+        """Creates interactive notebook widgets for all components and
+        parameters, if available.
+
+        Requires `ipywidgets` to be installed.
+        """
+        from ipywidgets import Accordion
+        from traitlets import TraitError as TraitletError
+        from IPython.display import display as ip_display
+
+        try:
+            children = [component.notebook_interaction(False) for component in
+                        self]
+            accord = Accordion(children=children)
+            for i, comp in enumerate(self):
+                accord.set_title(i, comp.name)
+            ip_display(accord)
+        except TraitletError:
+            print('This function is only avialable when running in a notebook')

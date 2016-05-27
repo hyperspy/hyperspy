@@ -13,6 +13,13 @@ class TestModel:
         m = s.create_model()
         self.model = m
 
+    def test_notebook_interactions(self):
+        m = self.model
+        m.notebook_interaction()
+        m.append(hs.model.components.Offset())
+        m[0].notebook_interaction()
+        m[0].offset.notebook_interaction()
+
     def test_access_component_by_name(self):
         m = self.model
         g1 = hs.model.components.Gaussian()

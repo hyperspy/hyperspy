@@ -688,6 +688,29 @@ by hand.
     the :py:meth:`~.model.Model.fit_component` method.
 
 
+.. versionadded:: 0.8.5
+    :py:meth:`~.model.Model.notebook_interaction`,
+
+If running in a Jupyter Notebook, interactive widgets can be used to
+conveniently adjust the parameter values by running
+:py:meth:`~.model.Model.notebook_interaction` for :py:class:`~.model.Model`,
+:py:class:`~.component.Component` and
+:py:class:`~.component.Parameter`.
+
+.. Warning::
+    
+    :py:meth:`~.model.Model.notebook_interaction` functions require
+    ``ipywidgets``, which is an optional dependency of HyperSpy.
+
+
+.. figure::  images/notebook_widgets.png
+    :align:   center
+    :width:   985
+
+    Interactive widgets for the full model in a Jupyter notebook. Drag the
+    sliders to adjust current parameter values. Typing different minimum and
+    maximum values changes the boundaries of the slider.
+
 
 .. versionadded:: 0.6
     :py:meth:`~.model.Model.enable_adjust_position` and
