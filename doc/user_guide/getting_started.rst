@@ -39,7 +39,7 @@ two lines in the IPython terminal:
    In [1]: %matplotlib qt
    In [2]: import hyperspy.api as hs
 
-Note that to execute lines of code in the notebook you must press ``shift+return``. (For details about notebooks and their functionality try the help menu in the notebook).
+Note that to execute lines of code in the notebook you must press ``Shift+Return``. (For details about notebooks and their functionality try the help menu in the notebook).
 Next, import two useful modules: numpy and matplotlib.pyplot, as follows: (We use ``>>>`` as a general python propmt)
 
 .. code-block:: python
@@ -47,7 +47,7 @@ Next, import two useful modules: numpy and matplotlib.pyplot, as follows: (We us
    >>> import numpy as np
    >>> import matplotlib.pyplot as plt
    
-The rest of the documetation will assume you have done this. Now you are ready to load your data (see below).    
+The rest of the documentation will assume you have done this. Now you are ready to load your data (see below).    
 
 **Notes for experienced users:** We also fully support the wx backend. Other backends are supported for plotting
 but some features such as navigation sliders may be missing.
