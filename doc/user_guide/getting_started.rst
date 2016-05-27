@@ -4,48 +4,51 @@ Getting started
 
 .. _importing_hyperspy-label:
 
-Starting HyperSpy
------------------
+Starting Python in Windows
+----------------------------
+If you used the bundle installation you should be able to use the context menus to get started. Right-click on the folder containing the data you wish to analyse and select "Jupyter notebook here" or "Jupyter qtconsole here". We recommend the former, since notebooks have many advantages over convetional consoles, as will be illustrated in later sections. The examples in some later sections assume Notebook operation. A new tab should appear in your default browser listing the files in the selected folder. To start a python notebook choose "Python 3" in the "New" drop-down menu at the top right of the page. Another new tab will open which is your Notebook.
 
-HyperSpy is a `Python <http://python.org>`_ library for multi-dimensional data
-analysis.  HyperSpy's API can be imported as any other Python library as
-follows:
+Starting Python in Linux and MacOS
+------------------------------------
 
-.. code-block:: python
-
-   >>> import hyperspy.api as hs
-
-The most common way of using HyperSpy is interactively using  interactive
-computing package `IPython <http://ipython.org>`_. In all operating systems (OS)
-you can start IPython by opening a system terminal and executing ``ipython``,
-optionally followed by the frontend. In most cases, **the most agreeable way**
+You can start IPython by opening a system terminal and executing ``ipython``,
+(optionally followed by the "frontend": "qtconsole" for example). However, in most cases, **the most agreeable way**
 to work with HyperSpy interactively is using the `Jupyter Notebook
-<http://jupyter.org>`_ (previously known as the IPython Notebook), which can be
-started as follows:
+<http://jupyter.org>`_ (previously known as the IPython Notebook), which can be started as follows:
 
 .. code-block:: bash
 
     $ jupyter notebook
 
-Some may find it more convenient to start Jupyter/IPython from the `file manager
-context menu <https://github.com/hyperspy/start_jupyter_cm>`_ or by
-`double-clicking a notebook file <https://github.com/takluyver/nbopen>`_.
+Linux users may find it more convenient to start Jupyter/IPython from the `file manager
+context menu <https://github.com/hyperspy/start_jupyter_cm>`_ . In either OS you can also start by
+`double-clicking a notebook file <https://github.com/takluyver/nbopen>`_ if one already exists.
 
+Starting HyperSpy in the notebook (or terminal)
+-----------------------------------------------
 Typically you will need to `set up IPython for interactive plotting with
 matplotlib
-<http://ipython.readthedocs.org/en/stable/interactive/plotting.html>`_ using the
-``%matplotlib`` magic *before executing any plotting command*. So, typically,
-after starting IPython, you can import
-HyperSpy and set up interactive matplotlib plotting by executing the following
-two lines in the IPython terminal:
+<http://ipython.readthedocs.org/en/stable/interactive/plotting.html>`_ using 
+``%matplotlib`` (which is known as a 'Jupyter magic') *before executing any plotting command*. So, typically,
+after starting IPython, you can import HyperSpy and set up interactive matplotlib plotting by executing the following
+two lines in the IPython terminal (In these docs we normally use the general Python prompt symbol ``>>>`` but you will probably see ``In [1]:`` etc.):
 
 .. code-block:: python
 
-   In [1]: %matplotlib qt
-   In [2]: import hyperspy.api as hs
+   >>> %matplotlib qt
+   >>> import hyperspy.api as hs
 
+Note that to execute lines of code in the notebook you must press ``Shift+Return``. (For details about notebooks and their functionality try the help menu in the notebook).
+Next, import two useful modules: numpy and matplotlib.pyplot, as follows: 
 
-We also fully support the wx backend. Other backends are supported for plotting
+.. code-block:: python
+
+   >>> import numpy as np
+   >>> import matplotlib.pyplot as plt
+   
+The rest of the documentation will assume you have done this. Now you are ready to load your data (see below).    
+
+**Notes for experienced users:** We also fully support the wx backend. Other backends are supported for plotting
 but some features such as navigation sliders may be missing.
 
 .. warning::
@@ -61,9 +64,9 @@ but some features such as navigation sliders may be missing.
 
     .. code-block:: python
 
-       In [1]: import matplotlib
-       In [2]: matplotlib.rcParams["backend"] = "Agg"
-       In [3]: import hyperspy.api as hs
+       >>> import matplotlib
+       >>> matplotlib.rcParams["backend"] = "Agg"
+       >>> import hyperspy.api as hs
 
 
 .. warning::
@@ -73,11 +76,7 @@ but some features such as navigation sliders may be missing.
         conflicts with other libraries.
 
 
-This documentation assumes that numpy and matplotlib are also imported as
-follows:
 
-   >>> import numpy as np
-   >>> import matplotlib.pyplot as plt
 
 
 
