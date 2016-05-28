@@ -60,58 +60,44 @@ def find_peaks_ohaver(y, x=None, slope_thresh=0., amp_thresh=None,
                       medfilt_radius=5, maxpeakn=30000, peakgroup=10,
                       subchannel=True,):
     """Find peaks along a 1D line.
-
     Function to locate the positive peaks in a noisy x-y data set.
-
     Detects peaks by looking for downward zero-crossings in the first
     derivative that exceed 'slope_thresh'.
-
     Returns an array containing position, height, and width of each peak.
     Sorted by position.
-
     'slope_thresh' and 'amp_thresh', control sensitivity: higher values will
     neglect smaller features.
-
     Parameters
     ---------
     y : array
         1D input array, e.g. a spectrum
-
     x : array (optional)
         1D array describing the calibration of y (must have same shape as y)
-
     slope_thresh : float (optional)
                    1st derivative threshold to count the peak
                    default is set to 0.5
                    higher values will neglect smaller features.
-
     amp_thresh : float (optional)
                  intensity threshold above which
                  default is set to 10% of max(y)
                  higher values will neglect smaller features.
-
     medfilt_radius : int (optional)
                      median filter window to apply to smooth the data
                      (see scipy.signal.medfilt)
                      if 0, no filter will be applied.
                      default is set to 5
-
     peakgroup : int (optional)
                 number of points around the "top part" of the peak
                 default is set to 10
-
     maxpeakn : int (optional)
               number of maximum detectable peaks
               default is set to 30000
-
     subchannel : bool (optional)
              default is set to True
-
     Returns
     -------
     P : structured array of shape (npeaks) and fields: position, width, height
         contains position, height, and width of each peak
-
     Examples
     --------
     >>> x = arange(0,50,0.01)
@@ -125,15 +111,14 @@ def find_peaks_ohaver(y, x=None, slope_thresh=0., amp_thresh=None,
            [  3.14159267e+01,   1.00000002e+00,   3.57600856e+00],
            [  3.76991124e+01,   1.00000002e+00,   3.57597984e+00],
            [  4.39822980e+01,   1.00000002e+00,   3.57591479e+00]])
-
     Notes
     -----
     Original code from T. C. O'Haver, 1995.
     Version 2  Last revised Oct 27, 2006 Converted to Python by
     Michael Sarahan, Feb 2011.
     Revised to handle edges better.  MCS, Mar 2011
-
     """
+
     if x is None:
         x = np.arange(len(y), dtype=np.int64)
     if not amp_thresh:
@@ -166,7 +151,7 @@ def find_peaks_ohaver(y, x=None, slope_thresh=0., amp_thresh=None,
                         yy = np.zeros(peakgroup)
                         s = 0
                         for k in range(peakgroup):
-                            groupindex = j + k - n + 1
+                            groupindex = int(j + k - n + 1)
                             if groupindex < 1:
                                 xx = xx[1:]
                                 yy = yy[1:]
@@ -184,8 +169,8 @@ def find_peaks_ohaver(y, x=None, slope_thresh=0., amp_thresh=None,
                         # Fit parabola to log10 of sub-group with
                         # centering and scaling
                         yynz = yy != 0
-                        coef = np.polyfit(xxf[yynz],
-                                          np.log10(np.abs(yy[yynz])), 2)
+                        coef = np.polyfit(
+                            xxf[yynz], np.log10(np.abs(yy[yynz])), 2)
                         c1 = coef[2]
                         c2 = coef[1]
                         c3 = coef[0]

@@ -28,7 +28,7 @@ import matplotlib as mpl
 import hyperspy as hs
 
 from hyperspy.defaults_parser import preferences
-
+from hyperspy.drawing import widgets
 
 def contrast_stretching(data, saturated_pixels):
     """Calculate bounds that leaves out a given percentage of the data.
