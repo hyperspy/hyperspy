@@ -41,7 +41,7 @@ class using the :py:meth:`~._signals.image.Image.create_model` method:
 
 .. code-block:: python
 
-    >>> im = hs.signals.Image('SomeDataHere') # Load the data from a file
+    >>> im = hs.signals.Signal2D('SomeDataHere') # Load the data from a file
     >>> mod = im.create_model() # Create the 2D-Model and asign it to the variable mod
 
 The syntax for creating both one-dimensional and two-dimensional models is thus
@@ -664,7 +664,7 @@ the ``centre`` parameter.
 
 .. code-block:: python
 
-    >>> s = hs.signals.Signal(np.random.normal(loc=10, scale=0.01,
+    >>> s = hs.signals.BaseSignal(np.random.normal(loc=10, scale=0.01,
     size=1e5)).get_histogram()
     >>> s.metadata.Signal.binned = True
     >>> m = s.create_model()

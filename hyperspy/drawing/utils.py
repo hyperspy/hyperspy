@@ -380,7 +380,7 @@ def _make_overlap_plot(spectra, ax, color="blue", line_style='-'):
             zip(spectra, color, line_style)):
         x_axis = spectrum.axes_manager.signal_axes[0]
         ax.plot(x_axis.axis, spectrum.data, color=color, ls=line_style)
-    _set_spectrum_xlabel(spectra if isinstance(spectra, hs.signals.Signal)
+    _set_spectrum_xlabel(spectra if isinstance(spectra, hs.signals.BaseSignal)
                          else spectra[-1], ax)
     ax.set_ylabel('Intensity')
     ax.autoscale(tight=True)
@@ -404,7 +404,7 @@ def _make_cascade_subplot(
         data_to_plot = ((spectrum.data - spectrum.data.min()) /
                         float(max_value) + spectrum_index * padding)
         ax.plot(x_axis.axis, data_to_plot, color=color, ls=line_style)
-    _set_spectrum_xlabel(spectra if isinstance(spectra, hs.signals.Signal)
+    _set_spectrum_xlabel(spectra if isinstance(spectra, hs.signals.BaseSignal)
                          else spectra[-1], ax)
     ax.set_yticks([])
     ax.autoscale(tight=True)

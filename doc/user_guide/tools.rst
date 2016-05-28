@@ -244,7 +244,7 @@ of them are just wrapped numpy functions, as an example:
 
 .. code-block:: python
 
-    >>> s = hs.signals.Signal(np.random.random((2,4,6)))
+    >>> s = hs.signals.BaseSignal(np.random.random((2,4,6)))
     >>> s.axes_manager[0].name = 'E'
     >>> s
     <BaseSignal, title: , dimensions: (4, 2|6)>
@@ -368,7 +368,7 @@ then indexed using numpy indexing.
 
 .. code-block:: python
 
-    >>> s = hs.signals.Spectrum(np.arange(10))
+    >>> s = hs.signals.Signal1D(np.arange(10))
     >>> s
     <Spectrum, title: , dimensions: (10,)>
     >>> s.data
@@ -658,9 +658,9 @@ arguments as in the following example.
     >>> image_stack = hs.signals.Signal2D(np.array([scipy.misc.lena()]*4))
     >>> image_stack.axes_manager[1].name = "x"
     >>> image_stack.axes_manager[2].name = "y"
-    >>> angles = hs.signals.Signal(np.array([0, 45, 90, 135]))
+    >>> angles = hs.signals.BaseSignal(np.array([0, 45, 90, 135]))
     >>> angles.axes_manager.set_signal_dimension(0)
-    >>> modes = hs.signals.Signal(np.array(['constant', 'nearest', 'reflect', 'wrap']))
+    >>> modes = hs.signals.BaseSignal(np.array(['constant', 'nearest', 'reflect', 'wrap']))
     >>> modes.axes_manager.set_signal_dimension(0)
     >>> image_stack.map(scipy.ndimage.rotate,
     ...                            angle=angles,

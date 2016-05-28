@@ -380,7 +380,7 @@ different slices of a multidimensional image (a *hyperimage*):
 
     >>> import scipy
     >>> image = hs.signals.Signal2D([scipy.misc.lena()]*6)
-    >>> angles = hs.signals.Signal(range(10,70,10))
+    >>> angles = hs.signals.BaseSignal(range(10,70,10))
     >>> angles.axes_manager.set_signal_dimension(0)
     >>> image.map(scipy.ndimage.rotate, angle=angles, reshape=False)
     >>> hs.plot.plot_images(image, tight_layout=True)
@@ -403,7 +403,7 @@ In this example, the axes labels and the ticks are also disabled with `axes_deco
 
     >>> import scipy
     >>> image = hs.signals.Signal2D([scipy.misc.lena()]*6)
-    >>> angles = hs.signals.Signal(range(10,70,10))
+    >>> angles = hs.signals.BaseSignal(range(10,70,10))
     >>> angles.axes_manager.set_signal_dimension(0)
     >>> image.map(scipy.ndimage.rotate, angle=angles, reshape=False)
     >>> hs.plot.plot_images(
@@ -433,7 +433,7 @@ This example also demonstrates how to wrap labels using `labelwrap` (for prevent
 
     >>> # load lena into 6 hyperimage
     >>> image1 = hs.signals.Signal2D([scipy.misc.lena()]*6)
-    >>> angles = hs.signals.Signal(range(10,70,10))
+    >>> angles = hs.signals.BaseSignal(range(10,70,10))
     >>> angles.axes_manager.set_signal_dimension(0)
     >>> image1.map(scipy.ndimage.rotate, angle=angles, reshape=False)
 
@@ -835,7 +835,7 @@ By providing an array of positions, the marker can also change position when nav
 
     >>> from skimage.feature import peak_local_max
     >>> import scipy.misc
-    >>> ims = hs.signals.Signal(scipy.misc.face()).as_image([0,1])
+    >>> ims = hs.signals.BaseSignal(scipy.misc.face()).as_image([0,1])
     >>> index = array([peak_local_max(im.data, min_distance=100, num_peaks=4)
     >>>                for im in ims])
     >>> for i in range(4):
