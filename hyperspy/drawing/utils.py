@@ -28,7 +28,7 @@ import matplotlib as mpl
 import hyperspy as hs
 
 from hyperspy.defaults_parser import preferences
-from hyperspy.drawing import widgets
+
 
 def contrast_stretching(data, saturated_pixels):
     """Calculate bounds that leaves out a given percentage of the data.
@@ -887,7 +887,7 @@ def plot_images(images,
 
             # Add scalebars as necessary
             if (scalelist and idx - 1 in scalebar) or scalebar is 'all':
-                ax.scalebar = widgets.ScaleBar(
+                ax.scalebar = ScaleBar(
                     ax=ax,
                     units=axes[0].units,
                     color=scalebar_color,
