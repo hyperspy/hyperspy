@@ -101,6 +101,7 @@ def file_writer(filename, signal, use_local_tifffile=False, **kwds):
     if description not in kwds:
         if signal.metadata.General.title:
             kwds['description'] = signal.metadata.General.title
+    kwds.update(get_tags_dict(signal))
 
     imsave(filename, data,
            software="hyperspy",
@@ -156,3 +157,64 @@ def file_reader(filename, record_by='image', use_local_tifffile=False, **kwds):
                 },
             },
         }]
+
+def get_tags_dict(signal, factor=int(1E8)):
+    """ Get the tags to export the scale and the unit to be used in
+        Digital Micrograph and ImageJ.
+    """
+    scales, units = _get_scale_unit(signal)
+    tags_dict = _get_imagej_kwargs(signal, scales, units, factor=factor)
+    tags_dict["extratags"].extend(_get_dm_kwargs_extratag(signal, scales, units))
+    return tags_dict
+        
+def _get_imagej_kwargs(signal, scales, units, factor=int(1E8)):
+    resolution = ((factor, int(scales[0]*factor)), (factor, int(scales[1]*factor)))
+    description_string = imagej_description(kwargs={"unit":units[0], "scale":scales[0]})
+    description_string = imagej_description(kwargs={"unit":units[0]})
+    extratag = [(270, 's', 1, description_string, False)]
+    return {"resolution":resolution, "extratags":extratag}
+
+def _get_dm_kwargs_extratag(signal, scales, units):
+    extratags = [(65003, 's', 3, units[0], False), # x unit
+                 (65004, 's', 3, units[1], False), # y unit
+                 (65006, 'd', 1, 0.0, False), # x origin in pixel
+                 (65007, 'd', 1, 2.0, False), # y origin in pixel
+                 (65009, 'd', 1, float(scales[0]), False), # x scale
+                 (65010, 'd', 1, float(scales[1]), False), # y scale
+                 (65012, 's', 3, units[0], False), # x unit
+                 (65013, 's', 3, units[1], False), # y unit
+                 (65015, 'i', 1, 1, False),
+                 (65016, 'i', 1, 1, False),
+                 (65024, 'd', 1, 0.0, False),
+                 (65025, 'd', 1, 1.0, False),
+                 (65026, 'i', 1, 1, False)]
+    if signal.axes_manager.navigation_dimension > 0:
+        extratags.extend([(65005, 's', 3, units[2], False), # z unit
+                          (65008, 'd', 1, 3.0, False), # z origin in pixel
+                          (65011, 'd', 1, float(scales[2]), False), # z scale
+                          (65014, 's', 3, units[2], False),  # z unit
+                          (65017, 'i', 1, 1, False)])
+    return extratags
+
+def _get_scale_unit(signal):
+    """ Return a list of scales and units, the length of the list is egal to 
+        the signal dimension """
+    signal_axes = signal.axes_manager.navigation_axes + signal.axes_manager.signal_axes 
+    scales = [signal_axis.scale for signal_axis in signal_axes]
+    units = [signal_axis.units for signal_axis in signal_axes]
+    for i, unit in enumerate(units):
+        if unit == '\xb5m':
+            units[i] = 'um'
+        if unit == t.Undefined:
+            units[i] = ''
+    return scales, units
+    
+def imagej_description(version='1.11a', kwargs={}):
+    """ Return a string that will be used by ImageJ to read the unit when
+        appropriate arguments are provided """
+    result = ['ImageJ=%s' % version]
+    append = []
+    for key, value in list(kwargs.items()):
+        append.append('%s=%s' % (key.lower(), value))
+
+    return '\n'.join(result + append + [''])
