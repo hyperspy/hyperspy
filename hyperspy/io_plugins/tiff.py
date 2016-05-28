@@ -18,6 +18,7 @@
 
 import os
 import warnings
+from distutils.version import LooseVersion
 
 import traits.api as t
 from hyperspy.misc import rgb_tools
@@ -65,8 +66,10 @@ axes_label_codes = {
     '_': t.Undefined}
 
 
-def import_tifffile_library(use_local_tifffile=False):
-    if use_local_tifffile:
+def import_tifffile_library(import_local_tifffile_if_necessary=False):
+    import skimage
+    skimage_version = LooseVersion(skimage.__version__)
+    if import_local_tifffile_if_necessary and skimage_version <= LooseVersion('0.12.2'):
         from hyperspy.external.tifffile import imsave, TiffFile
         return imsave, TiffFile
     try:
@@ -80,18 +83,18 @@ def import_tifffile_library(use_local_tifffile=False):
             "Loading of some compressed images will be slow.\n")
     return imsave, TiffFile
 
-def file_writer(filename, signal, use_local_tifffile=False, **kwds):
+def file_writer(filename, signal, export_scale=True, **kwds):
     """Writes data to tif using Christoph Gohlke's tifffile library
 
     Parameters
     ----------
     filename: str
     signal: a Signal instance
-    use_local_tifffile: {False}
-        Use the hyperspy embedded tifffile library in favor the one shipped in
-        sklearn.
+    export_scale: {True}
+        If the scikit-image version is too old, use the hyperspy embedded
+        tifffile library to allow exporting the scale and the unit.
     """
-    imsave, TiffFile = import_tifffile_library(use_local_tifffile)
+    imsave, TiffFile = import_tifffile_library(export_scale)
     data = signal.data
     if signal.is_rgbx is True:
         data = rgb_tools.rgbx2regular_array(data)
@@ -109,7 +112,7 @@ def file_writer(filename, signal, use_local_tifffile=False, **kwds):
            **kwds)
 
 
-def file_reader(filename, record_by='image', use_local_tifffile=False, **kwds):
+def file_reader(filename, record_by='image', **kwds):
     """Read data from tif files using Christoph Gohlke's tifffile
     library
 
@@ -119,13 +122,8 @@ def file_reader(filename, record_by='image', use_local_tifffile=False, **kwds):
     record_by: {'image'}
         Has no effect because this format only supports recording by
         image.
-    use_local_tifffile: {False}
-        Use the hyperspy embedded tifffile library in favor the one shipped in
-        sklearn.
     """
-    imsave, TiffFile = import_tifffile_library(use_local_tifffile)
-    if use_local_tifffile:
-        warnings.warn("Loading of some compressed images will be slow.\n")
+    imsave, TiffFile = import_tifffile_library()
     with TiffFile(filename, **kwds) as tiff:
         dc = tiff.asarray()
         axes = tiff.series[0]['axes']
