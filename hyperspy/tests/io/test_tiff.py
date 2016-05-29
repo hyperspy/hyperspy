@@ -1,7 +1,8 @@
 import os
 
 import numpy as np
-from nose.tools import assert_true
+import nose.tools as nt
+import traits.api as t
 
 import hyperspy.api as hs
 
@@ -19,7 +20,40 @@ def test_rgba16():
         my_path,
         "npy_files",
         "test_rgba16.npy"))
-    assert_true((s.data == data).all())
+    nt.assert_true((s.data == data).all())
+    nt.assert_equal(s.axes_manager[0].units, t.Undefined)
+    nt.assert_equal(s.axes_manager[1].units, t.Undefined)
+    nt.assert_equal(s.axes_manager[2].units, t.Undefined)
+    nt.assert_almost_equal(s.axes_manager[0].scale, 1.0, places=5)
+    nt.assert_almost_equal(s.axes_manager[1].scale, 1.0, places=5)
+    nt.assert_almost_equal(s.axes_manager[2].scale, 1.0, places=5)
+    
+#def test_read_unit_um():
+#    if not remove_files:
+#        fname = os.path.join(my_path, 'tiff_files', 'test_export_um_unit.tif')
+#        s = hs.load(fname)
+#        nt.assert_equal(s.axes_manager[0].units, 'um')
+#        nt.assert_equal(s.axes_manager[1].units, 'um')
+#        nt.assert_almost_equal(s.axes_manager[0].scale, 0.16867, places=5)
+#        nt.assert_almost_equal(s.axes_manager[1].scale, 0.16867, places=5)
+        
+def test_read_unit_from_imagej():
+    fname = os.path.join(my_path, 'tiff_files',
+                         'test_loading_image_saved_with_imageJ.tif')
+    s = hs.load(fname)
+    nt.assert_equal(s.axes_manager[0].units, 'micron')
+    nt.assert_equal(s.axes_manager[1].units, 'micron')
+    nt.assert_almost_equal(s.axes_manager[0].scale, 0.16867, places=5)
+    nt.assert_almost_equal(s.axes_manager[1].scale, 0.16867, places=5)
+    
+def test_read_unit_from_dm():
+    fname = os.path.join(my_path, 'tiff_files',
+                         'test_loading_image_saved_with_DM.tif')
+    s = hs.load(fname)
+    nt.assert_equal(s.axes_manager[0].units, 'um')
+    nt.assert_equal(s.axes_manager[1].units, 'um')
+    nt.assert_almost_equal(s.axes_manager[0].scale, 0.16867, places=5)
+    nt.assert_almost_equal(s.axes_manager[1].scale, 0.16867, places=5)   
     
 def test_write_scale_unit():
     """ Lazy test, still need to open the files in ImageJ or DM to check if the
@@ -31,7 +65,7 @@ def test_write_scale_unit():
     s.axes_manager['y'].scale = 0.25
     s.axes_manager['x'].units = 'nm'
     s.axes_manager['y'].units = 'nm'
-    fname = os.path.join('tiff_files', 'test_export_scale_unit.tif')
+    fname = os.path.join(my_path, 'tiff_files', 'test_export_scale_unit.tif')
     s.save(fname, overwrite=True, export_scale=True)
     if remove_files:
         os.remove(fname)
@@ -47,7 +81,8 @@ def test_write_scale_unit_not_square_pixel():
     s.axes_manager['y'].scale = 0.5
     s.axes_manager['x'].units = 'nm'
     s.axes_manager['y'].units = 'um'
-    fname = os.path.join('tiff_files', 'test_export_scale_unit_not_square_pixel.tif')
+    fname = os.path.join(my_path, 'tiff_files',
+                         'test_export_scale_unit_not_square_pixel.tif')
     s.save(fname, overwrite=True, export_scale=True)
     if remove_files:
         os.remove(fname)
@@ -60,7 +95,8 @@ def test_write_scale_with_undefined_unit():
     s.axes_manager[1].name = 'y'
     s.axes_manager['x'].scale = 0.25
     s.axes_manager['y'].scale = 0.25
-    fname = os.path.join('tiff_files', 'test_export_scale_undefined_unit.tif')
+    fname = os.path.join(my_path, 'tiff_files',
+                         'test_export_scale_undefined_unit.tif')
     s.save(fname, overwrite=True, export_scale=True)
     if remove_files:
         os.remove(fname)
@@ -71,7 +107,8 @@ def test_write_scale_with_undefined_scale():
     s = hs.signals.Image(np.arange(10*15, dtype=np.uint8).reshape((10, 15)))
     s.axes_manager[0].name = 'x'
     s.axes_manager[1].name = 'y'
-    fname = os.path.join('tiff_files', 'test_export_scale_undefined_scale.tif')
+    fname = os.path.join(my_path, 'tiff_files',
+                         'test_export_scale_undefined_scale.tif')
     s.save(fname, overwrite=True, export_scale=True)
     if remove_files:
         os.remove(fname)
@@ -80,7 +117,7 @@ def test_write_scale_with_um_unit():
     """ Lazy test, still need to open the files in ImageJ or DM to check if the
         scale and unit are correct """
     s = hs.load(os.path.join('tiff_files', 'test_dm_image_um_unit.dm3'))
-    fname = os.path.join('tiff_files', 'test_export_um_unit.tif')
+    fname = os.path.join(my_path, 'tiff_files', 'test_export_um_unit.tif')
     s.save(fname, overwrite=True, export_scale=True)
     if remove_files:
         os.remove(fname)
@@ -98,7 +135,8 @@ def test_write_scale_unit_image_stack():
     s.axes_manager['x'].units = 'nm'
     s.axes_manager['y'].units = 'um'
     s.axes_manager['z'].units = 'mm'
-    fname = os.path.join('tiff_files', 'test_export_scale_unit_stack.tif')
+    fname = os.path.join(my_path, 'tiff_files',
+                         'test_export_scale_unit_stack.tif')
     s.save(fname, overwrite=True, export_scale=True)
     if remove_files:
         os.remove(fname)

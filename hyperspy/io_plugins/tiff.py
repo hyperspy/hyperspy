@@ -113,8 +113,9 @@ def file_writer(filename, signal, export_scale=True, **kwds):
 
 
 def file_reader(filename, record_by='image', **kwds):
-    """Read data from tif files using Christoph Gohlke's tifffile
-    library
+    """ Read data from tif files using Christoph Gohlke's tifffile library.
+        The units and the scale of images saved with ImageJ or Digital
+        Micrograph is read.
 
     Parameters
     ----------
@@ -131,31 +132,55 @@ def file_reader(filename, record_by='image', **kwds):
             dc = rgb_tools.regular_array2rgbx(dc)
             axes = axes[:-1]
         op = {}
-        names = [axes_label_codes[axis] for axis in axes]
-        axes = [{'size': size,
-                 'name': str(name),
-                 #'scale': scales[i],
-                 #'offset' : origins[i],
-                 #'units' : unicode(units[i]),
-                 }
-                for size, name in zip(dc.shape, names)]
-        op = {}
         for key, tag in tiff[0].tags.items():
             op[key] = tag.value
-    return [
-        {
-            'data': dc,
-            'original_metadata': op,
-            'metadata': {
-                'General': {
-                    'original_filename': os.path.split(filename)[1]},
-                "Signal": {
-                    'signal_type': "",
-                    'record_by': "image",
-                },
-            },
-        }]
+        names = [axes_label_codes[axis] for axis in axes]
+        units = t.Undefined
+        scales = []
 
+        # for files created with imageJ        
+        image_description = op["image_description"].decode()
+        if 'ImageJ' in image_description:
+            # ImageJ write the unit in the image description
+            units = image_description.split('unit=')[1].split('\n')[0]
+            scales = get_scales_from_x_y_resolution(op)
+        # for files created with DM
+        if '65003' in op.keys():
+            units = []
+            units.extend([op['65003'].decode(),  # x unit
+                          op['65004'].decode()]) # y unit
+            scales= get_scales_from_x_y_resolution(op)
+
+        # add the scale for the missing axes when necessary
+        for i in dc.shape[len(scales):]:
+            scales.append(1.0)
+
+        if type(units) is str or units == t.Undefined:
+            units = [units for i in dc.shape]
+                        
+        axes = [{'size': size,
+                 'name': str(name),
+                 'scale': scale,
+                 #'offset' : origins[i],
+                 'units' : unit,
+                 }
+                for size, name, scale, unit in zip(dc.shape, names, scales, units)]
+            
+    return [{'data': dc,
+             'original_metadata': op,
+             'axes': axes,
+             'metadata': {'General': {'original_filename': os.path.split(filename)[1]},
+                          'Signal': {'signal_type': "",
+                                     'record_by': "image",},
+                          },
+            }]
+
+def get_scales_from_x_y_resolution(op):
+    scales = []
+    scales.append(op["x_resolution"][1]/op["x_resolution"][0])
+    scales.append(op["y_resolution"][1]/op["y_resolution"][0])
+    return scales
+            
 def get_tags_dict(signal, factor=int(1E8)):
     """ Get the tags to export the scale and the unit to be used in
         Digital Micrograph and ImageJ.
