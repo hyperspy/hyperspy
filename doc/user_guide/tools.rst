@@ -239,8 +239,8 @@ Simple mathematical operations
 
 .. versionchanged:: 1.0.0
 
-A number of simple operations are supported by :py:class:`~.signal.Signal`. Most
-of them are just wrapped numpy functions, as an example:
+A number of simple operations are supported by :py:class:`~.signal.BaseSignal`.
+Most of them are just wrapped numpy functions, as an example:
 
 .. code-block:: python
 
@@ -370,7 +370,7 @@ then indexed using numpy indexing.
 
     >>> s = hs.signals.Signal1D(np.arange(10))
     >>> s
-    <Spectrum, title: , dimensions: (10,)>
+    <Signal1D, title: , dimensions: (10,)>
     >>> s.data
     array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
     >>> si = s.isig[::2]
@@ -575,7 +575,7 @@ not change the left most signal dimensions:
 Iterating over the navigation axes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Signal instances are iterables over the navigation axes. For example, the
+BaseSignal instances are iterables over the navigation axes. For example, the
 following code creates a stack of 10 images and saves them in separate "png"
 files by iterating over the signal instance:
 

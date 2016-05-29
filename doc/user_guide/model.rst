@@ -9,14 +9,14 @@ Bounds and weights are supported. The syntax for creating both kinds of model
 is essentially the same as in this documentation any method referred to in
 the :py:class`~.model.BaseModel` class is available for both kinds.
 
-.. versionadded:: 0.9
+.. versionadded:: 1.0
 
     Models can be created and and fit to experimental data in both one and two
     dimensions i.e. spectra and images respectively. Most of the syntax is
     identical in either case. A one-dimensional model is created when a model
-    is created for a :py:class:`~._signals.spectrum.Spectrum` whereas a two-
-    dimensional model is created for a :py:class:`._signals.image.Image`. At
-    present plotting and gradient fitting methods tools for are not yet
+    is created for a :py:class:`~._signals.signal1D.Signal1D` whereas a two-
+    dimensional model is created for a :py:class:`._signals.signal2D.Signal2D`.
+    At present plotting and gradient fitting methods tools for are not yet
     provided for the :py:class:`~.models.model2D.Model2D` class.
 
 .. versionadded:: 0.7
@@ -28,16 +28,18 @@ the :py:class`~.model.BaseModel` class is available for both kinds.
 Creating a model
 ----------------
 
-A :py:class:`~.models.model1D.Model1D` can be created for data in the :py:class:`~._signals.spectrum.Spectrum`
-class using the :py:meth:`~._signals.signal1D.Signal1D.create_model` method:
+A :py:class:`~.models.model1D.Model1D` can be created for data in the
+:py:class:`~._signals.signal1D.Signal1D` class using the
+:py:meth:`~._signals.signal1D.Signal1D.create_model` method:
 
 .. code-block:: python
 
     >>> s = hs.signals.Signal1D('SomeDataHere') # Load the data from a file
     >>> m = s.create_model() # Creates the 1D-Model and asign it to the variable m
 
-Similarly A :py:class:`~.models.model2D.Model2D` can be created for data in the :py:class:`~._signals.image.Image`
-class using the :py:meth:`~._signals.image.Image.create_model` method:
+Similarly A :py:class:`~.models.model2D.Model2D` can be created for data in the
+:py:class:`~._signals.signal2D.Signal2D` class using the
+:py:meth:`~._signals.signal2D.Signal2D.create_model` method:
 
 .. code-block:: python
 
@@ -76,7 +78,7 @@ The following components are currently available for one-dimensional models:
 * :py:class:`~._components.pes_see.SEE`
 * :py:class:`~._components.arctan.Arctan`
 
-.. versionadded:: 0.9 The following components are currently available for two-dimensional models:
+.. versionadded:: 1.0 The following components are currently available for two-dimensional models:
 
 * :py:class:`~._components.gaussian2d.Gaussian2D`
 
@@ -196,9 +198,9 @@ component type will be printed:
 
 
 In fact, components may be created automatically in some cases. For example, if
-the `Signal` is recognised as EELS data, a power-law background component will
-automatically be placed in the model. To add a component first we have to create an
-instance of the component. Once the instance has been created we can add the
+the `Signal1D` is recognised as EELS data, a power-law background component will
+automatically be placed in the model. To add a component first we have to create
+an instance of the component. Once the instance has been created we can add the
 component to the model using the :py:meth:`append` method, e.g. for a type of
 data that can be modelled using gaussians we might proceed as follows:
 

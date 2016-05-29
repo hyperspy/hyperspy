@@ -25,7 +25,7 @@ from hyperspy.component import Component
 class DoubleOffset(Component):
 
     """
-    Given an array of the same shape as Spectrum energy_axis, returns it as
+    Given an array of the same shape as EELSSpectrum energy_axis, returns it as
     a component that can be added to a model.
     """
 

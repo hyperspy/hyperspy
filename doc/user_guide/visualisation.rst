@@ -78,7 +78,7 @@ PageUp      Increase step size
 PageDown    Decrease step size
 ``+``           Increase pointer size
 ``-``           Decrease pointer size
-``h``       Launch the contrast adjustment tool (only for Image)
+``h``       Launch the contrast adjustment tool (only for Signal2D)
 =========   =============================
 
 To close all the figures run the following command:

@@ -4,8 +4,8 @@ Signal2D Tools
 
 The methods described in this section are only available for one-dimensional signals in the Signal1D class.
 
-Image registration (alignment)
-------------------------------
+Two dimensional signal registration (alignment)
+-----------------------------------------------
 
 .. versionadded:: 0.5
 
@@ -22,5 +22,3 @@ the following method is available to crop spectra the familiar top, bottom,
 left, right syntax.
 
 * :py:meth:`~._signals.signal2d.Signal2DTools.crop_image`
-
-

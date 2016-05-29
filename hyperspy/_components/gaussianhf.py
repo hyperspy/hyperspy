@@ -87,7 +87,7 @@ class GaussianHF(Expression):
 
         Parameters
         ----------
-        signal : Signal instance
+        signal : Signal1D instance
         x1 : float
             Defines the left limit of the spectral range to use for the
             estimation.
@@ -164,7 +164,7 @@ class GaussianHF(Expression):
 
     def integral_as_signal(self):
         """
-        Utility function to get gaussian integral as Signal
+        Utility function to get gaussian integral as Signal1D
         """
         return (self.height.as_signal() * self.fwhm.as_signal() *
                 sqrt2pi / sigma2fwhm)

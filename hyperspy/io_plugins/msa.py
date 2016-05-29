@@ -144,7 +144,7 @@ def parse_msa_string(string, filename=None):
     --------
     file_data_list: list
         The list containts a dictionary that contains the parsed
-        information. It can be used to create a `:class:Signal`
+        information. It can be used to create a `:class:BaseSignal`
         using `:func:hyperspy.io.dict2signal`.
 
     """

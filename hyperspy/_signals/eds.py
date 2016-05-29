@@ -166,7 +166,7 @@ class EDSSpectrum(Signal1D):
 
         Returns
         -------
-        s : Signal
+        s : Signal1D
 
         See also
         --------
@@ -592,7 +592,7 @@ class EDSSpectrum(Signal1D):
         Returns
         -------
         intensities : list
-            A list containing the intensities as Signal subclasses.
+            A list containing the intensities as BaseSignal subclasses.
 
         Examples
         --------
@@ -636,7 +636,7 @@ class EDSSpectrum(Signal1D):
                 windows_width=integration_windows, xray_lines=xray_lines)
         intensities = []
         ax = self.axes_manager.signal_axes[0]
-        # test 1D Spectrum (0D problem)
+        # test Signal1D (0D problem)
         # signal_to_index = self.axes_manager.navigation_dimension - 2
         for i, (Xray_line, window) in enumerate(
                 zip(xray_lines, integration_windows)):

@@ -222,8 +222,8 @@ method.
 
 .. _mva.get_results:
 
-Obtaining the results as Signal instances
-=========================================
+Obtaining the results as BaseSignal instances
+=============================================
 .. versionadded:: 0.7
 
 The decomposition and BSS results are internally stored as numpy arrays in the

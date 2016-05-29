@@ -363,14 +363,14 @@ class Signal1DTools(object):
 
     def _check_navigation_mask(self, mask):
         if mask is not None:
-            if not isinstance(mask, Signal):
-                raise ValueError("mask must be a Signal instance.")
+            if not isinstance(mask, BaseSignal):
+                raise ValueError("mask must be a BaseSignal instance.")
             elif mask.axes_manager.signal_dimension not in (0, 1):
-                raise ValueError("mask must be a Signal with signal_dimension "
-                                 "equal to 1")
+                raise ValueError("mask must be a BaseSignal "
+                                 "with signal_dimension equal to 1")
             elif (mask.axes_manager.navigation_dimension !=
                   self.axes_manager.navigation_dimension):
-                raise ValueError("mask must be a Signal with the same "
+                raise ValueError("mask must be a BaseSignal with the same "
                                  "navigation_dimension as the current signal.")
 
     def estimate_shift1D(self,
@@ -408,7 +408,7 @@ class Signal1DTools(object):
         number_of_interpolation_points : int
             Number of interpolation points. Warning: making this number
             too big can saturate the memory
-        mask : Signal of bool data type.
+        mask : BaseSignal of bool data type.
             It must have signal_dimension = 0 and navigation_shape equal to the
             current signal. Where mask is True the shift is not computed
             and set to nan.
@@ -518,11 +518,10 @@ class Signal1DTools(object):
             If crop is False fill the data outside of the original
             interval with the given value where needed.
         also_align : list of signals
-            A list of Signal instances that has exactly the same
-            dimensions
-            as this one and that will be aligned using the shift map
+            A list of BaseSignal instances that has exactly the same
+            dimensions as this one and that will be aligned using the shift map
             estimated using the this signal.
-        mask : Signal of bool data type.
+        mask : BaseSignal of bool data type.
             It must have signal_dimension = 0 and navigation_shape equal to the
             current signal. Where mask is True the shift is not computed
             and set to nan.
@@ -575,7 +574,7 @@ class Signal1DTools(object):
             range is selected using a GUI.
         Returns
         -------
-        integrated_spectrum : Signal subclass
+        integrated_spectrum : BaseSignal subclass
         See Also
         --------
         integrate_simpson
