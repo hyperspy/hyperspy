@@ -497,6 +497,9 @@ def file_writer(filename,
         exps = f.create_group('Experiments')
         group_name = signal.metadata.General.title if \
             signal.metadata.General.title else '__unnamed__'
+        # / is a invalid character, see #942
+        if "/" in group_name:
+            group_name = group_name.replace("/", "-")
         expg = exps.create_group(group_name)
         if 'compression' not in kwds:
             kwds['compression'] = 'gzip'
