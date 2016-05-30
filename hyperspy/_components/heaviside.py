@@ -22,7 +22,7 @@ import numpy as np
 from hyperspy.component import Component
 
 
-class Heaviside_step(Component):
+class HeavisideStep(Component):
 
     """The Heaviside step function
 

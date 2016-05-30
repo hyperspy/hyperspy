@@ -17,7 +17,7 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 
-"""
+__doc__ = """
 
 Components that can be used to define a model for e.g. curve fitting.
 
@@ -25,14 +25,12 @@ There are some components that are only useful for one particular kind of signal
 and therefore their name are preceded by the signal name: eg. eels_cl_edge.
 
 For more details see each component docstring.
-
-
-
+====================================================================
 """
 
 from hyperspy._components.arctan import Arctan
 from hyperspy._components.bleasdale import Bleasdale
-from hyperspy._components.heaviside import Heaviside_step
+from hyperspy._components.heaviside import HeavisideStep
 from hyperspy._components.eels_double_power_law import DoublePowerLaw
 from hyperspy._components.eels_cl_edge import EELSCLEdge
 from hyperspy._components.error_function import Erf
@@ -52,3 +50,16 @@ from hyperspy._components.polynomial import Polynomial
 from hyperspy._components.pes_core_line_shape import PESCoreLineShape
 from hyperspy._components.volume_plasmon_drude import VolumePlasmonDrude
 from hyperspy._components.expression import Expression
+
+_keys = [key for key in globals().keys()]
+for key in _keys:
+    if not key.startswith('_'):
+        component = eval(key)
+        second_part = '..' if component.__doc__ is None else \
+            component.__doc__.split('\n')[0][:43] + '..'
+        __doc__ += key[:25] + ' ' * (26 - len(key)) + second_part + '\n'
+
+del key
+del _keys
+del component
+del second_part
