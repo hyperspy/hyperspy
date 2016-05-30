@@ -124,10 +124,21 @@ def file_reader(filename, record_by='image', **kwds):
         Has no effect because this format only supports recording by
         image.
     """
-    imsave, TiffFile = import_tifffile_library()
+    # For testing the use of local and skimage tifffile library
+    import_local_tifffile = False
+    if 'import_local_tifffile' in kwds.keys():
+        import_local_tifffile = kwds.pop('import_local_tifffile')
+
+    imsave, TiffFile = import_tifffile_library(import_local_tifffile)
     with TiffFile(filename, **kwds) as tiff:
         dc = tiff.asarray()
-        axes = tiff.series[0]['axes']
+        # change in the Tifffiles API
+        if hasattr(tiff.series[0], 'axes'):
+            # in newer version the axes is an attribute
+            axes = tiff.series[0].axes
+        else:
+            # old version
+            axes = tiff.series[0]['axes']
         if tiff.is_rgb:
             dc = rgb_tools.regular_array2rgbx(dc)
             axes = axes[:-1]

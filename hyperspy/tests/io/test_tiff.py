@@ -12,14 +12,17 @@ my_path = os.path.dirname(__file__)
 remove_files = True
 
 def test_rgba16():
-    s = hs.load(os.path.join(
-        my_path,
-        "tiff_files",
-        "test_rgba16.tif"))
-    data = np.load(os.path.join(
-        my_path,
-        "npy_files",
-        "test_rgba16.npy"))
+    """ Use skimage tifffile.py library """
+    _test_rgba16(import_local_tifffile=False)
+
+def test_rgba16_local_tifffile():
+    """ Use local tifffile.py library """
+    _test_rgba16(import_local_tifffile=True)
+    
+def _test_rgba16(import_local_tifffile=False):
+    s = hs.load(os.path.join(my_path, "tiff_files", "test_rgba16.tif"),
+                import_local_tifffile=import_local_tifffile)
+    data = np.load(os.path.join( my_path, "npy_files", "test_rgba16.npy"))
     nt.assert_true((s.data == data).all())
     nt.assert_equal(s.axes_manager[0].units, t.Undefined)
     nt.assert_equal(s.axes_manager[1].units, t.Undefined)
@@ -36,26 +39,64 @@ def test_rgba16():
 #        nt.assert_equal(s.axes_manager[1].units, 'um')
 #        nt.assert_almost_equal(s.axes_manager[0].scale, 0.16867, places=5)
 #        nt.assert_almost_equal(s.axes_manager[1].scale, 0.16867, places=5)
-        
+
 def test_read_unit_from_imagej():
+    """ Use skimage tifffile.py library """
+    _test_read_unit_from_imagej(import_local_tifffile=False)
+
+def test_read_unit_from_imagej_local_tifffile():
+    """ Use local tifffile.py library """
+    _test_read_unit_from_imagej(import_local_tifffile=True)
+        
+def _test_read_unit_from_imagej(import_local_tifffile=False):
     fname = os.path.join(my_path, 'tiff_files',
                          'test_loading_image_saved_with_imageJ.tif')
-    s = hs.load(fname)
+    s = hs.load(fname, import_local_tifffile=import_local_tifffile)
     nt.assert_equal(s.axes_manager[0].units, 'micron')
     nt.assert_equal(s.axes_manager[1].units, 'micron')
     nt.assert_almost_equal(s.axes_manager[0].scale, 0.16867, places=5)
     nt.assert_almost_equal(s.axes_manager[1].scale, 0.16867, places=5)
-    
+
 def test_read_unit_from_dm():
+    """ Use skimage tifffile.py library """
+    _test_read_unit_from_dm(import_local_tifffile=False)
+
+def test_read_unit_from_dm_local_tifffile():
+    """ Use local tifffile.py library """
+    _test_read_unit_from_dm(import_local_tifffile=True)
+    
+def _test_read_unit_from_dm(import_local_tifffile=False):
     fname = os.path.join(my_path, 'tiff_files',
                          'test_loading_image_saved_with_DM.tif')
-    s = hs.load(fname)
+    s = hs.load(fname, import_local_tifffile=import_local_tifffile)
     nt.assert_equal(s.axes_manager[0].units, 'um')
     nt.assert_equal(s.axes_manager[1].units, 'um')
     nt.assert_almost_equal(s.axes_manager[0].scale, 0.16867, places=5)
     nt.assert_almost_equal(s.axes_manager[1].scale, 0.16867, places=5)   
     
 def test_write_scale_unit():
+    _test_write_scale_unit(export_scale=True)
+
+def test_write_scale_unit_no_export_scale():
+    _test_write_scale_unit(export_scale=False)
+    
+def _test_write_scale_unit(export_scale=True):
+    """ Lazy test, still need to open the files in ImageJ or DM to check if the
+        scale and unit are correct """
+    s = hs.signals.Image(np.arange(10*15, dtype=np.uint8).reshape((10, 15)))
+    s.axes_manager[0].name = 'x'
+    s.axes_manager[1].name = 'y'
+    s.axes_manager['x'].scale = 0.25
+    s.axes_manager['y'].scale = 0.25
+    s.axes_manager['x'].units = 'nm'
+    s.axes_manager['y'].units = 'nm'
+    fname = os.path.join(my_path, 'tiff_files',
+                         'test_export_scale_unit_%s.tif'%export_scale)
+    s.save(fname, overwrite=True, export_scale=export_scale)
+    if remove_files:
+        os.remove(fname)
+
+def test_write_scale_unit2():
     """ Lazy test, still need to open the files in ImageJ or DM to check if the
         scale and unit are correct """
     s = hs.signals.Image(np.arange(10*15, dtype=np.uint8).reshape((10, 15)))
@@ -66,10 +107,10 @@ def test_write_scale_unit():
     s.axes_manager['x'].units = 'nm'
     s.axes_manager['y'].units = 'nm'
     fname = os.path.join(my_path, 'tiff_files', 'test_export_scale_unit.tif')
-    s.save(fname, overwrite=True, export_scale=True)
+    s.save(fname, overwrite=True, export_scale=False)
     if remove_files:
         os.remove(fname)
-
+        
 def test_write_scale_unit_not_square_pixel():
     """ Lazy test, still need to open the files in ImageJ or DM to check if the
         scale and unit are correct """
