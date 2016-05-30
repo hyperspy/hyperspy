@@ -157,7 +157,8 @@ def test_write_scale_with_undefined_scale():
 def test_write_scale_with_um_unit():
     """ Lazy test, still need to open the files in ImageJ or DM to check if the
         scale and unit are correct """
-    s = hs.load(os.path.join('tiff_files', 'test_dm_image_um_unit.dm3'))
+    s = hs.load(os.path.join(my_path, 'tiff_files',
+                             'test_dm_image_um_unit.dm3'))
     fname = os.path.join(my_path, 'tiff_files', 'test_export_um_unit.tif')
     s.save(fname, overwrite=True, export_scale=True)
     if remove_files:
