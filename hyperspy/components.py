@@ -24,16 +24,15 @@ Components that can be used to define a model for e.g. curve fitting.
 There are some components that are only useful for one particular kind of signal
 and therefore their name are preceded by the signal name: eg. eels_cl_edge.
 
-Writing a new template is really easy, just edit _template.py and maybe take a
-look to the other components.
-
 For more details see each component docstring.
+
+
 
 """
 
 from hyperspy._components.arctan import Arctan
 from hyperspy._components.bleasdale import Bleasdale
-from hyperspy._components.eels_double_offset import DoubleOffset
+from hyperspy._components.heaviside import Heaviside_step
 from hyperspy._components.eels_double_power_law import DoublePowerLaw
 from hyperspy._components.eels_cl_edge import EELSCLEdge
 from hyperspy._components.error_function import Erf
