@@ -67,22 +67,28 @@ axes_label_codes = {
 
 
 def import_tifffile_library(import_local_tifffile_if_necessary=False):
-    import skimage
-    skimage_version = LooseVersion(skimage.__version__)
-    if import_local_tifffile_if_necessary and skimage_version <= LooseVersion('0.12.2'):
-        from hyperspy.external.tifffile import imsave, TiffFile
-        return imsave, TiffFile
-    try:
-        from skimage.external.tifffile import imsave, TiffFile
-    except ImportError:
+    def import_local_tifffile():
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             from hyperspy.external.tifffile import imsave, TiffFile
         warnings.warn(
             "Failed to import the optional scikit image package. "
             "Loading of some compressed images will be slow.\n")
-    return imsave, TiffFile
+        return imsave, TiffFile
 
+    try: # in case skimage is not available, import local tifffile.py
+        import skimage
+    except ImportError:
+        return import_local_tifffile()
+        
+    # import local tifffile.py only if the skimage version too old
+    skimage_version = LooseVersion(skimage.__version__)
+    if import_local_tifffile_if_necessary and skimage_version <= LooseVersion('0.12.2'):
+        return import_local_tifffile()
+    else:
+        from skimage.external.tifffile import imsave, TiffFile
+        return imsave, TiffFile
+        
 def file_writer(filename, signal, export_scale=True, **kwds):
     """Writes data to tif using Christoph Gohlke's tifffile library
 
