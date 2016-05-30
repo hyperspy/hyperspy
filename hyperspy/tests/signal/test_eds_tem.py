@@ -33,10 +33,10 @@ class Test_metadata:
         s = EDSTEMSpectrum(np.ones((4, 2, 1024)))
         s.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time = 3.1
         s.metadata.Acquisition_instrument.TEM.beam_energy = 15.0
-        self.signal = s
+        self.spectrum = s
 
     def test_sum_live_time1(self):
-        s = self.signal
+        s = self.spectrum
         old_metadata = s.metadata.deepcopy()
         sSum = s.sum(0)
         nt.assert_equal(
@@ -49,7 +49,7 @@ class Test_metadata:
                              "Source metadata changed")
 
     def test_sum_live_time2(self):
-        s = self.signal
+        s = self.spectrum
         old_metadata = s.metadata.deepcopy()
         sSum = s.sum((0, 1))
         nt.assert_equal(
@@ -62,7 +62,7 @@ class Test_metadata:
                              "Source metadata changed")
 
     def test_sum_live_time_out_arg(self):
-        s = self.signal
+        s = self.spectrum
         sSum = s.sum(0)
         s.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time = 4.2
         s_resum = s.sum(0)
@@ -74,7 +74,7 @@ class Test_metadata:
         np.testing.assert_allclose(s_resum.data, sSum.data)
 
     def test_rebin_live_time(self):
-        s = self.signal
+        s = self.spectrum
         old_metadata = s.metadata.deepcopy()
         dim = s.axes_manager.shape
         s = s.rebin([dim[0] / 2, dim[1] / 2, dim[2]])
@@ -82,13 +82,13 @@ class Test_metadata:
             s.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time,
             3.1 * 2 * 2)
         # Check that metadata is unchanged
-        print(old_metadata, self.signal.metadata)    # Captured on error
+        print(old_metadata, self.spectrum.metadata)    # Captured on error
         nt.assert_dict_equal(old_metadata.as_dictionary(),
-                             self.signal.metadata.as_dictionary(),
+                             self.spectrum.metadata.as_dictionary(),
                              "Source metadata changed")
 
     def test_add_elements(self):
-        s = self.signal
+        s = self.spectrum
         s.add_elements(['Al', 'Ni'])
         nt.assert_equal(s.metadata.Sample.elements, ['Al', 'Ni'])
         s.add_elements(['Al', 'Ni'])
@@ -99,14 +99,14 @@ class Test_metadata:
         nt.assert_equal(s.metadata.Sample.elements, ['Al', 'Ni'])
 
     def test_default_param(self):
-        s = self.signal
+        s = self.spectrum
         mp = s.metadata
         nt.assert_equal(
             mp.Acquisition_instrument.TEM.Detector.EDS.energy_resolution_MnKa,
             preferences.EDS.eds_mn_ka)
 
     def test_TEM_to_SEM(self):
-        s = self.signal.inav[0, 0]
+        s = self.spectrum.inav[0, 0]
         signal_type = 'EDS_SEM'
         mp = s.metadata.Acquisition_instrument.TEM.Detector.EDS
         mp.energy_resolution_MnKa = 125.3
@@ -122,7 +122,7 @@ class Test_metadata:
         nt.assert_equal(results, resultsSEM)
 
     def test_get_calibration_from(self):
-        s = self.signal
+        s = self.spectrum
         scalib = EDSTEMSpectrum(np.ones(1024))
         energy_axis = scalib.axes_manager.signal_axes[0]
         energy_axis.scale = 0.01
@@ -161,47 +161,50 @@ class Test_quantification:
         s.add_lines(xray_lines)
         s.axes_manager[0].scale = 0.5
         s.axes_manager[1].scale = 0.5
-        self.signal = s
+        self.spectrum = s
 
     def test_quant_lorimer(self):
-        s = self.signal
+        s = self.spectrum
         method = 'CL'
         kfactors = [1, 2.0009344042484134]
         composition_units = 'weight'
         intensities = s.get_lines_intensity()
-        res = s.quantification(intensities, method, kfactors, composition_units)
-        np.testing.assert_allclose(res[0].data, np.array([[22.70779, 22.70779],
-                    [22.70779, 22.70779]]), atol=1e-3)
+        res = s.quantification(intensities, method, kfactors,
+                               composition_units)
+        np.testing.assert_allclose(res[0].data, np.array([
+                [22.70779, 22.70779],
+                [22.70779, 22.70779]]), atol=1e-3)
 
     def test_quant_zeta(self):
-        s = self.signal
+        s = self.spectrum
         method = 'zeta'
         compositions_units = 'weight'
         factors = [20, 50]
         intensities = s.get_lines_intensity()
-        res = s.quantification(intensities, method, factors, compositions_units)
+        res = s.quantification(intensities, method, factors,
+                               compositions_units)
         np.testing.assert_allclose(res[1].data, np.array(
-                [[ 2.7125736e-03,   2.7125736e-03],
-                [  2.7125736e-03,   2.7125736e-03]]), atol=1e-3)
+                [[2.7125736e-03,   2.7125736e-03],
+                    [2.7125736e-03,   2.7125736e-03]]), atol=1e-3)
         np.testing.assert_allclose(res[0][1].data, np.array(
-                [[ 80.962287987,   80.962287987],
-                [  80.962287987,   80.962287987]]), atol=1e-3)
+                [[80.962287987,   80.962287987],
+                    [80.962287987,   80.962287987]]), atol=1e-3)
 
     def test_quant_cross_section(self):
-        s =self.signal
+        s = self.spectrum
         method = 'cross_section'
         factors = [3, 5]
         intensities = s.get_lines_intensity()
         res = s.quantification(intensities, method, factors)
         np.testing.assert_allclose(res[1][0].data, np.array(
-            [[ 21517.1647074,  21517.1647074],
-            [  21517.1647074,  21517.1647074]]), atol=1e-3)
+            [[21517.1647074,  21517.1647074],
+                [21517.1647074,  21517.1647074]]), atol=1e-3)
         np.testing.assert_allclose(res[1][1].data, np.array(
-           [[ 21961.616621,  21961.616621],
-           [  21961.616621,  21961.616621]]), atol=1e-3)
+           [[21961.616621,  21961.616621],
+            [21961.616621,  21961.616621]]), atol=1e-3)
         np.testing.assert_allclose(res[0][0].data, np.array(
-            [[ 49.4888856823,  49.4888856823],
-            [  49.4888856823,  49.4888856823]]), atol=1e-3)
+            [[49.4888856823,  49.4888856823],
+                [49.4888856823,  49.4888856823]]), atol=1e-3)
 
     def test_quant_zeros(self):
         intens = np.array([[0.5, 0.5, 0.5],
@@ -221,6 +224,18 @@ class Test_quantification:
                       [0.5, 0.5, 0.0],
                       [1.0, 0.0, 0.0]]))
 
+    def test_edx_cross_section_to_zeta(self):
+        cs = [3, 6]
+        elements = ['Pt', 'Ni']
+        res = utils_eds.edx_cross_section_to_zeta(cs, elements)
+        np.testing.assert_allclose(res, [1079.815272, 162.4378035], atol=1e-3)
+
+    def test_zeta_to_edx_cross_section(self):
+        factors = [1079.815272, 162.4378035]
+        elements = ['Pt', 'Ni']
+        res = utils_eds.zeta_to_edx_cross_section(factors, elements)
+        np.testing.assert_allclose(res, [3, 6], atol=1e-3)
+
 
 class Test_vacum_mask:
 
@@ -228,10 +243,10 @@ class Test_vacum_mask:
         s = Simulation(np.array([np.linspace(0.001, 0.5, 20)] * 100).T)
         s.add_poissonian_noise()
         s = EDSTEMSpectrum(s.data)
-        self.signal = s
+        self.spectrum = s
 
     def test_vacuum_mask(self):
-        s = self.signal
+        s = self.spectrum
         nt.assert_true(s.vacuum_mask().data[0])
         nt.assert_false(s.vacuum_mask().data[-1])
 
@@ -241,10 +256,10 @@ class Test_simple_model:
     def setUp(self):
         s = utils_eds.xray_lines_model(elements=['Al', 'Zn'],
                                        weight_percents=[50, 50])
-        self.signal = s
+        self.spectrum = s
 
     def test_intensity(self):
-        s = self.signal
+        s = self.spectrum
         np.testing.assert_allclose(
             [i.data[0] for i in s.get_lines_intensity(
                 integration_window_factor=5.0)],
@@ -268,10 +283,10 @@ class Test_eds_markers:
     def setUp(self):
         s = utils_eds.xray_lines_model(elements=['Al', 'Zn'],
                                        weight_percents=[50, 50])
-        self.signal = s
+        self.spectrum = s
 
     def test_plot_auto_add(self):
-        s = self.signal
+        s = self.spectrum
         s.plot(xray_lines=True)
         # Should contain 6 lines
         nt.assert_sequence_equal(
@@ -279,7 +294,7 @@ class Test_eds_markers:
             ['Al_Ka', 'Al_Kb', 'Zn_Ka', 'Zn_Kb', 'Zn_La', 'Zn_Lb1'])
 
     def test_manual_add_line(self):
-        s = self.signal
+        s = self.spectrum
         s.add_xray_lines_markers(['Zn_La'])
         nt.assert_sequence_equal(
             list(s._xray_markers.keys()),
@@ -289,7 +304,7 @@ class Test_eds_markers:
         nt.assert_equal(len(s._xray_markers['Zn_La']), 2)
 
     def test_manual_remove_element(self):
-        s = self.signal
+        s = self.spectrum
         s.add_xray_lines_markers(['Zn_Ka', 'Zn_Kb', 'Zn_La'])
         s.remove_xray_lines_markers(['Zn_Kb'])
         nt.assert_sequence_equal(

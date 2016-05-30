@@ -525,7 +525,8 @@ is usually preferable. In the case of zeta-factors and cross sections, these mus
 be determined experimentally using standards.
 
 Zeta-factors should be provided in units of kg/m^2. The method is described further in [Watanabe1996]_ and [Watanabe2006]_ .
-Cross sections should be provided in units of megabarns (Mb). Further details on the cross section method can be found in [MacArthur2016]_ .
+Cross sections should be provided in units of barns (b). Further details on the cross section method can be found in [MacArthur2016]_ .
+Conversion between zeta-factors and cross sections is possible using :py:meth:~._misc.eds.util.edx_cross_section_to_zeta or :py:meth:~._misc.eds.util.zeta_to_edx_cross_section .
 
 Using the Cliff-Lorimer method as an example, quantification can be carried out as follows:
 

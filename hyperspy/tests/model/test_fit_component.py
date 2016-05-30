@@ -155,6 +155,6 @@ class TestFitSeveralComponent:
         m.fit_component(g3, signal_range=(5800, 6150))
         assert_true(
             np.allclose(
-                self.model.spectrum.data,
+                self.model.signal.data,
                 m(),
                 rtol=self.rtol))

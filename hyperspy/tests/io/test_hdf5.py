@@ -269,6 +269,8 @@ class TestLoadingOOMReadOnly:
         except:
             # Don't fail tests if we cannot remove
             pass
+
+
 def test_strings_from_py2():
     s = EDS_TEM_Spectrum()
     nt.assert_equal(s.metadata.Sample.elements.dtype.char, "U")
