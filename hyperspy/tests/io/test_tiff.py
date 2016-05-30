@@ -32,14 +32,20 @@ def _test_rgba16(import_local_tifffile=False):
     nt.assert_almost_equal(s.axes_manager[2].scale, 1.0, places=5)
     
 #def test_read_unit_um():
-#    if not remove_files:
-#        fname = os.path.join(my_path, 'tiff_files', 'test_export_um_unit.tif')
-#        s = hs.load(fname)
-#        nt.assert_equal(s.axes_manager[0].units, 'um')
-#        nt.assert_equal(s.axes_manager[1].units, 'um')
-#        nt.assert_almost_equal(s.axes_manager[0].scale, 0.16867, places=5)
-#        nt.assert_almost_equal(s.axes_manager[1].scale, 0.16867, places=5)
-
+#    # Load DM file and save it as tif
+#    s = hs.load(os.path.join(my_path, 'tiff_files',
+#                             'test_dm_image_um_unit.dm3'))
+#    fname = os.path.join(my_path, 'tiff_files', 'test_export_um_unit.tif')
+#    s.save(fname, overwrite=True, export_scale=True)
+#    # load tif file
+#    s = hs.load(fname)
+#    nt.assert_equal(s.axes_manager[0].units, 'um')
+#    nt.assert_equal(s.axes_manager[1].units, 'um')
+#    nt.assert_almost_equal(s.axes_manager[0].scale, 0.16867, places=5)
+#    nt.assert_almost_equal(s.axes_manager[1].scale, 0.16867, places=5)
+#    if remove_files:
+#        os.remove(fname)
+        
 def test_read_unit_from_imagej():
     """ Use skimage tifffile.py library """
     _test_read_unit_from_imagej(import_local_tifffile=False)
@@ -69,8 +75,8 @@ def _test_read_unit_from_dm(import_local_tifffile=False):
     fname = os.path.join(my_path, 'tiff_files',
                          'test_loading_image_saved_with_DM.tif')
     s = hs.load(fname, import_local_tifffile=import_local_tifffile)
-    nt.assert_equal(s.axes_manager[0].units, 'um')
-    nt.assert_equal(s.axes_manager[1].units, 'um')
+    nt.assert_equal(s.axes_manager[0].units, 'µm')
+    nt.assert_equal(s.axes_manager[1].units, 'µm')
     nt.assert_almost_equal(s.axes_manager[0].scale, 0.16867, places=5)
     nt.assert_almost_equal(s.axes_manager[1].scale, 0.16867, places=5)   
     

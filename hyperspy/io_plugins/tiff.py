@@ -22,15 +22,6 @@ from distutils.version import LooseVersion
 
 import traits.api as t
 from hyperspy.misc import rgb_tools
-#try:
-#    from skimage.external.tifffile import imsave, TiffFile
-#except ImportError:
-#    with warnings.catch_warnings():
-#        warnings.simplefilter("ignore")
-#        from hyperspy.external.tifffile import imsave, TiffFile
-#    warnings.warn(
-#        "Failed to import the optional scikit image package. "
-#        "Loading of some compressed images will be slow.\n")
 
 # Plugin characteristics
 # ----------------------
@@ -164,10 +155,11 @@ def file_reader(filename, record_by='image', **kwds):
         # for files created with DM
         if '65003' in op.keys():
             units = []
-            units.extend([op['65003'].decode(),  # x unit
-                          op['65004'].decode()]) # y unit
-            scales= get_scales_from_x_y_resolution(op)
-
+            units.extend([op['65003'].decode('latin-1'),  # x unit
+                          op['65004'].decode('latin-1')]) # y unit
+            scales = []
+            scales.extend([op['65009'],  # x scale
+                           op['65010']]) # y scale
         # add the scale for the missing axes when necessary
         for i in dc.shape[len(scales):]:
             scales.append(1.0)
@@ -217,17 +209,17 @@ def _get_imagej_kwargs(signal, scales, units, factor=int(1E8)):
 def _get_dm_kwargs_extratag(signal, scales, units):
     extratags = [(65003, 's', 3, units[0], False), # x unit
                  (65004, 's', 3, units[1], False), # y unit
-                 (65006, 'd', 1, 0.0, False), # x origin in pixel
-                 (65007, 'd', 1, 2.0, False), # y origin in pixel
+#                 (65006, 'd', 1, 0.0, False), # x origin in pixel
+#                 (65007, 'd', 1, 0.0, False), # y origin in pixel
                  (65009, 'd', 1, float(scales[0]), False), # x scale
                  (65010, 'd', 1, float(scales[1]), False), # y scale
                  (65012, 's', 3, units[0], False), # x unit
-                 (65013, 's', 3, units[1], False), # y unit
-                 (65015, 'i', 1, 1, False),
-                 (65016, 'i', 1, 1, False),
-                 (65024, 'd', 1, 0.0, False),
-                 (65025, 'd', 1, 1.0, False),
-                 (65026, 'i', 1, 1, False)]
+                 (65013, 's', 3, units[1], False)] # y unit
+#                 (65015, 'i', 1, 1, False),
+#                 (65016, 'i', 1, 1, False),
+#                 (65024, 'd', 1, 0.0, False),
+#                 (65025, 'd', 1, 0.0, False),
+#                 (65026, 'i', 1, 1, False)]
     if signal.axes_manager.navigation_dimension > 0:
         extratags.extend([(65005, 's', 3, units[2], False), # z unit
                           (65008, 'd', 1, 3.0, False), # z origin in pixel
@@ -237,7 +229,7 @@ def _get_dm_kwargs_extratag(signal, scales, units):
     return extratags
 
 def _get_scale_unit(signal):
-    """ Return a list of scales and units, the length of the list is egal to 
+    """ Return a list of scales and units, the length of the list is equal to 
         the signal dimension """
     signal_axes = signal.axes_manager.navigation_axes + signal.axes_manager.signal_axes 
     scales = [signal_axis.scale for signal_axis in signal_axes]
