@@ -22,31 +22,45 @@ import numpy as np
 from hyperspy.component import Component
 
 
-class DoubleOffset(Component):
+class Heaviside_step(Component):
 
-    """
-    Given an array of the same shape as Spectrum energy_axis, returns it as
-    a component that can be added to a model.
+    """The Heaviside step function
+
+    .. math::
+
+        f(x) =
+        \\begin{cases}
+          0     $ \\quad \\text{if } x < n \\\\
+          A/2     $ \\quad \\text{if } x = n \\\\
+          A     $ \\quad \\text{if } x > n \\\\
+        \\end{cases}
+
     """
 
     def __init__(self):
-        Component.__init__(self, ('offset', 'step'))
+        Component.__init__(self, ('n', 'A'))
         self.isbackground = True
         self.convolved = False
 
-        # Options
-        self.interfase = 0
         # Gradients
-        self.offset.grad = self.grad_offset
-        self.step.grad = self.grad_step
+        self.A.grad = self.grad_A
+        self.n.grad = self.grad_n
 
     def function(self, x):
+        return np.where(x < self.n.value,
+                        0,
+                        np.where(x == self.n.value,
+                                 self.A.value * 0.5,
+                                 self.A.value)
+                        )
 
-        return np.where(x < self.interfase, self.offset.value + x * 0,
-                        self.offset.value + self.step.value + x * 0)
+    def grad_A(self, x):
+        return np.ones(x.shape)
 
-    def grad_offset(self, x):
-        return np.ones((len(x)))
-
-    def grad_step(self, x):
-        np.where(x < self.interfase, x * 0, 1 + x * 0)
+    def grad_n(self, x):
+        return np.where(x < self.n.value,
+                        0,
+                        np.where(x == self.n.value,
+                                 0.5,
+                                 1)
+                        )
