@@ -48,30 +48,8 @@ Quick instructions to install HyperSpy using Anaconda (Linux, MacOs, Windows)
 
    .. code-block:: bash
 
+       $ conda install -c conda-forge traits traitsui
        $ pip install hyperspy
-
-.. warning::
-
-    HyperSpy requires two packages, `traits` and `traitsui` which are not
-    written in pure Python and, therefore, needs to be compiled. The above
-    command will download these packages and try to compile them automatically.
-    However, if the required development tools are not installed in your system
-    the installation will fail. This is more likely to be the case in Microsoft
-    Windows and (to a lesser extend) MacOS. Microsoft Windows users could
-    install the HyperSpy Bundle instead which includes all the required
-    libraries. Alternatively, they could download and install `traits` and
-    `traitsui` from `Christoph Gohlke's repository
-    <http://www.lfd.uci.edu/~gohlke/pythonlibs/>`_.
-
-    As of the 27th of May 2016, Anaconda does not distribute `traits` and
-    `traitsui` for Python 3. Once it does, the simples solution is to install
-    those packages using `conda` before installing HyperSpy as above e.g.:
-
-   .. code-block:: bash
-
-       $ conda install traits traitsui
-       $ pip install hyperspy
-
 
 
 .. warning::
@@ -109,26 +87,10 @@ Install using `pip`:
 
 .. warning::
 
-    HyperSpy requires two packages, `traits` and `traitsui` which are not
-    written in pure Python and, therefore, needs to be compiled. The above
-    command will download these packages and try to compile them automatically.
-    However, if the required development tools are not installed in your system
-    the installation will fail. This is more likely to be the case in Microsoft
-    Windows and (to a lesser extend) MacOS. Microsoft Windows users could
-    install the HyperSpy Bundle instead which includes all the required
-    libraries. Alternatively, they could download and install `traits` and
-    `traitsui` from `Christoph Gohlke's repository
-    <http://www.lfd.uci.edu/~gohlke/pythonlibs/>`_.
-
-    As of the 27th of May 2016, Anaconda does not distribute `traits` and
-    `traitsui` for Python 3. Once it does, the simples solution is to install
-    those packages using `conda` before installing HyperSpy as above e.g.:
-
-   .. code-block:: bash
-
-       $ conda install traits traitsui
-       $ pip install hyperspy
-
+   The command above downloads and installs HyperSpy and all its dependencies. However,
+   HyperSpy depends on several external libraries which are not written in pure Python.
+   We recommend to those not familiar with the installation of Python libraries  that may 
+   require compilation to install HyperSpy using :ref:`Anaconda <quick-anaconda-install>` instead. 
 
 .. warning::
     Since version 0.8.4 HyperSpy only supports Python 3. If you need to
