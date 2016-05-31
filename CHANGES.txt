@@ -17,7 +17,7 @@ and `documentation
 <https://github.com/hyperspy/hyperspy/pulls?utf8=%E2%9C%93&q=milestone%3Anext_maintenance_release+label%3Adocumentation+is%3Aclosed+>`_ enhancements.
 
 
-It also includes one new features and introduces an important API change that
+It also includes a new feature and introduces an important API change that
 will be fully enforced in Hyperspy 1.0.
 
 New feature
