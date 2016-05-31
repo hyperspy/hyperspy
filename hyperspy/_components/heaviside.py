@@ -18,8 +18,10 @@
 
 
 import numpy as np
+import warnings
 
 from hyperspy.component import Component
+from hyperspy.misc.hspy_warnings import VisibleDeprecationWarning
 
 
 class HeavisideStep(Component):
@@ -37,8 +39,10 @@ class HeavisideStep(Component):
 
     """
 
-    def __init__(self):
+    def __init__(self, A=1, n=0):
         Component.__init__(self, ('n', 'A'))
+        self.A.value = A
+        self.n.value = n
         self.isbackground = True
         self.convolved = False
 
@@ -47,6 +51,7 @@ class HeavisideStep(Component):
         self.n.grad = self.grad_n
 
     def function(self, x):
+        x = np.asanyarray(x)
         return np.where(x < self.n.value,
                         0,
                         np.where(x == self.n.value,
@@ -55,12 +60,26 @@ class HeavisideStep(Component):
                         )
 
     def grad_A(self, x):
+        x = np.asanyarray(x)
         return np.ones(x.shape)
 
     def grad_n(self, x):
+        x = np.asanyarray(x)
         return np.where(x < self.n.value,
                         0,
                         np.where(x == self.n.value,
                                  0.5,
                                  1)
                         )
+
+# TODO: remove this for 1.0.0
+
+
+def DoubleOffset(*args, **kwargs):
+    """Deprecated in favour of HeavisideStep component.
+    """
+
+    warnings.warn("The DoubleOffset component will be deprecated from"
+                  " version 1.0.0 and replaced with HeavisideStep",
+                  VisibleDeprecationWarning)
+    return HeavisideStep(*args, **kwargs)
