@@ -23,7 +23,7 @@ import nose.tools as nt
 from hyperspy._signals.spectrum import Spectrum
 from hyperspy.io import load
 from hyperspy.components import Gaussian
-import mock
+from unittest import mock
 import gc
 
 
