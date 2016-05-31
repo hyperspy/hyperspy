@@ -49,6 +49,7 @@ These are some of the components which are currently available:
 * :py:class:`~._components.error_function.Erf`
 * :py:class:`~._components.pes_see.SEE`
 * :py:class:`~._components.arctan.Arctan`
+* :py:class:`~._components.heaviside.HeavisideStep`
 
 
 

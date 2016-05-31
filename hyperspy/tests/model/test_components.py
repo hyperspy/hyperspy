@@ -307,3 +307,31 @@ class TestScalableFixedPattern:
         m.append(fp)
         m.fit()
         nt.assert_almost_equal(fp.yscale.value, 10, delta=.1)
+
+
+class TestHeavisideStep:
+
+    def setUp(self):
+        self.c = hs.model.components.HeavisideStep()
+
+    def test_integer_values(self):
+        c = self.c
+        np.testing.assert_array_almost_equal(c.function([-1, 0, 2]),
+                                             [0, 0.5, 1])
+
+    def test_float_values(self):
+        c = self.c
+        np.testing.assert_array_almost_equal(c.function([-0.5, 0.5, 2]),
+                                             [0, 1, 1])
+
+    def test_not_sorted(self):
+        c = self.c
+        np.testing.assert_array_almost_equal(c.function([3, -0.1, 0]),
+                                             [1, 0, 0.5])
+
+    def test_gradients(self):
+        c = self.c
+        np.testing.assert_array_almost_equal(c.A.grad([3, -0.1, 0]),
+                                             [1, 1, 1])
+        np.testing.assert_array_almost_equal(c.n.grad([3, -0.1, 0]),
+                                             [1, 0, 0.5])
