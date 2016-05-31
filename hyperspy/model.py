@@ -462,7 +462,7 @@ class Model(list):
 
         Returns
         -------
-        spectrum : An instance of the same class as `spectrum`.
+        signal : An instance of the same class as `signal`.
 
         Examples
         --------
@@ -1137,9 +1137,9 @@ class Model(list):
             "metada.Signal.Noise_properties.variance" attribute is defined.
             Note that if it is not defined the standard deviation is estimated
             using variance equal 1, what, if the noise is heterocedatic, will
-            result in a biased estimation of the parameter values and errors.i
-            If `variance` is a `Signal` instance of the
-            same `navigation_dimension` as the spectrum, and `method` is "ls"
+            result in a biased estimation of the parameter values and errors.
+            If `variance` is a `Signal` instance of the same
+            `navigation_dimension` as the signal, and `method` is "ls"
             weighted least squares is performed.
         method : {'ls', 'ml'}
             Choose 'ls' (default) for least squares and 'ml' for poissonian
@@ -1226,7 +1226,7 @@ class Model(list):
                         raise AttributeError(
                             "The `navigation_shape` of the variance signals "
                             "is not equal to the variance shape of the "
-                            "spectrum")
+                            "signal")
                 elif not isinstance(variance, numbers.Number):
                     raise AttributeError(
                         "Variance must be a number or a `Signal` instance but "
@@ -1525,7 +1525,7 @@ class Model(list):
         self.fetch_stored_values()
 
     def plot(self, plot_components=False):
-        """Plots the current spectrum to the screen and a map with a
+        """Plots the current signal to the screen and a map with a
         cursor to explore the SI.
 
         Parameters
@@ -1536,13 +1536,13 @@ class Model(list):
         """
 
         # If new coordinates are assigned
-        self.spectrum.plot()
-        _plot = self.spectrum._plot
+        self.signal.plot()
+        _plot = self.signal._plot
         l1 = _plot.signal_plot.ax_lines[0]
         color = l1.line.get_color()
         l1.set_line_properties(color=color, type='scatter')
 
-        l2 = hyperspy.drawing.spectrum.SpectrumLine()
+        l2 = hyperspy.drawing.signal1d.Signal1DLine()
         l2.data_function = self._model2plot
         l2.set_line_properties(color='blue', type='line')
         # Add the line to the figure
@@ -1552,7 +1552,7 @@ class Model(list):
                                self._close_plot)
 
         self._model_line = l2
-        self._plot = self.spectrum._plot
+        self._plot = self.signal._plot
         self._connect_parameters2update_plot()
         if plot_components is True:
             self.enable_plot_components()
@@ -1582,7 +1582,7 @@ class Model(list):
             self._disconnect_component_line(component)
 
     def _plot_component(self, component):
-        line = hyperspy.drawing.spectrum.SpectrumLine()
+        line = hyperspy.drawing.signal1d.Signal1DLine()
         line.data_function = component._component2plot
         # Add the line to the figure
         self._plot.signal_plot.add_line(line)
