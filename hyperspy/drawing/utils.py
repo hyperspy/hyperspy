@@ -27,6 +27,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 import hyperspy as hs
+from hyperspy.drawing import widgets
 
 from hyperspy.misc.image_tools import (contrast_stretching,
                                        MPL_DIVERGING_COLORMAPS,
@@ -822,7 +823,7 @@ def plot_images(images,
 
             # Add scalebars as necessary
             if (scalelist and idx - 1 in scalebar) or scalebar is 'all':
-                ax.scalebar = Scale_Bar(
+                ax.scalebar = widgets.ScaleBar(
                     ax=ax,
                     units=axes[0].units,
                     color=scalebar_color,
