@@ -5,6 +5,41 @@ We only cover here the main highlights, for a detailed list of all the changes
 see `the github commits changelog
 <https://github.com/hyperspy/hyperspy/commits/master>`_.
 
+v0.8.5
+======
+
+
+This is a maintenance release. Follow the following links for details on all
+the `bugs fixed
+<https://github.com/hyperspy/hyperspy/issues?q=is%3Aissue+milestone%3Anext_maintenance_release+label%3Abug+is%3Aclosed>`_,
+`feature <https://github.com/hyperspy/hyperspy/issues?utf8=%E2%9C%93&q=milestone%3Anext_maintenance_release+is%3Aclosed++label%3Aenhancement+>`_
+and `documentation
+<https://github.com/hyperspy/hyperspy/pulls?utf8=%E2%9C%93&q=milestone%3Anext_maintenance_release+label%3Adocumentation+is%3Aclosed+>`_ enhancements.
+
+
+It also includes a new feature and introduces an important API change that
+will be fully enforced in Hyperspy 1.0.
+
+New feature
+-----------
+
+* Widgets to interact with the model components in the Jupyter Notebook.
+  See :ref:`here <notebook_interaction-label>` and
+  `#1007 <https://github.com/hyperspy/hyperspy/pull/1007>`_ .
+
+API changes
+-----------
+
+The new :py:class:`~.signal.BaseSignal`,
+:py:class:`~._signals.signal1d.Signal1D` and
+:py:class:`~._signals.signal2d.Signal2D` deprecate :py:class:`~.signal.Signal`,
+:py:class:`~._signals.spectrum.Spectrum` and :py:class:`~._signals.image.Image`
+respectively. Also `as_signal1D`, `as_signal2D`, `to_signal1D` and `to_signal2D`
+deprecate `as_spectrum`, `as_image`, `to_spectrum` and `to_image`. See `#963
+<https://github.com/hyperspy/hyperspy/pull/963>`_ and `#943
+<https://github.com/hyperspy/hyperspy/issues/943>`_ for details.
+
+
 v0.8.4
 ======
 
