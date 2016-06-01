@@ -1,6 +1,9 @@
+from distutils.version import StrictVersion
+
 import numpy as np
 import nose.tools as nt
 from unittest import mock
+from nose.plugins.skip import SkipTest
 
 import hyperspy.api as hs
 from hyperspy.misc.utils import slugify
@@ -14,6 +17,13 @@ class TestModel:
         self.model = m
 
     def test_notebook_interactions(self):
+        try:
+            import ipywidgets
+        except:
+            raise SkipTest("ipywidgets not installed")
+        if StrictVersion(ipywidgets.__version__) < StrictVersion("5.0"):
+            raise SkipTest("ipywigets > 5.0 required but %s installed" %
+                           ipywidgets.__version__)
         m = self.model
         m.notebook_interaction()
         m.append(hs.model.components.Offset())
