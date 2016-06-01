@@ -1,6 +1,6 @@
 import tempfile
 import os.path
-import shutil
+import gc
 
 import numpy as np
 import nose.tools as nt
@@ -79,38 +79,49 @@ def _run_test(dtype, shape, dim, tmpdir):
     s.save(os.path.join(tmpdir, filename))
     s_just_saved = load(os.path.join(tmpdir, filename))
     s_ref = load(os.path.join(MYPATH, "ripple_files", filename))
-    for stest in (s_just_saved, s_ref):
-        npt.assert_array_equal(s.data, stest.data)
-        nt.assert_equal(s.data.dtype, stest.data.dtype)
-        nt.assert_equal(s.axes_manager.signal_dimension,
-                        stest.axes_manager.signal_dimension)
-        mdpaths = (
-            "Signal.signal_type",)
-        if s.metadata.Signal.signal_type == "EELS":
-            mdpaths += (
-                "Acquisition_instrument.TEM.convergence_angle",
-                "Acquisition_instrument.TEM.beam_energy",
-                "Acquisition_instrument.TEM.Detector.EELS.collection_angle",
-            )
-        elif "EDS" in s.metadata.Signal.signal_type:
-            mdpaths += (
-                "Acquisition_instrument.TEM.tilt_stage",
-                "Acquisition_instrument.TEM.Detector.EDS.azimuth_angle",
-                "Acquisition_instrument.TEM.Detector.EDS.elevation_angle",
-                "Acquisition_instrument.TEM.Detector."
-                "EDS.energy_resolution_MnKa",
-                "Acquisition_instrument.TEM.Detector.EDS.live_time",
-            )
-        for mdpath in mdpaths:
-            nt.assert_equal(
-                s.metadata.get_item(mdpath),
-                stest.metadata.get_item(mdpath),)
-        for saxis, taxis in zip(
-                s.axes_manager._axes, stest.axes_manager._axes):
-            nt.assert_equal(saxis.scale, taxis.scale)
-            nt.assert_equal(saxis.offset, taxis.offset)
-            nt.assert_equal(saxis.units, taxis.units)
-            nt.assert_equal(saxis.name, taxis.name)
+    try:
+        for stest in (s_just_saved, s_ref):
+            npt.assert_array_equal(s.data, stest.data)
+            nt.assert_equal(s.data.dtype, stest.data.dtype)
+            nt.assert_equal(s.axes_manager.signal_dimension,
+                            stest.axes_manager.signal_dimension)
+            mdpaths = (
+                "Signal.signal_type",)
+            if s.metadata.Signal.signal_type == "EELS":
+                mdpaths += (
+                    "Acquisition_instrument.TEM.convergence_angle",
+                    "Acquisition_instrument.TEM.beam_energy",
+                    "Acquisition_instrument.TEM.Detector.EELS.collection_angle"
+                )
+            elif "EDS" in s.metadata.Signal.signal_type:
+                mdpaths += (
+                    "Acquisition_instrument.TEM.tilt_stage",
+                    "Acquisition_instrument.TEM.Detector.EDS.azimuth_angle",
+                    "Acquisition_instrument.TEM.Detector.EDS.elevation_angle",
+                    "Acquisition_instrument.TEM.Detector."
+                    "EDS.energy_resolution_MnKa",
+                    "Acquisition_instrument.TEM.Detector.EDS.live_time",
+                )
+            for mdpath in mdpaths:
+                nt.assert_equal(
+                    s.metadata.get_item(mdpath),
+                    stest.metadata.get_item(mdpath),)
+            for saxis, taxis in zip(
+                    s.axes_manager._axes, stest.axes_manager._axes):
+                nt.assert_equal(saxis.scale, taxis.scale)
+                nt.assert_equal(saxis.offset, taxis.offset)
+                nt.assert_equal(saxis.units, taxis.units)
+                nt.assert_equal(saxis.name, taxis.name)
+    except:
+        raise
+    finally:
+       # As of v0.8.5 the data in the ripple files are loaded as memmaps
+       # instead of array. In Windows the garbage collector doesn't close
+       # the file before attempting to delete it making the test fail.
+       # The following lines simply make sure that the memmap is closed.
+       del s_just_saved.data
+       del s_ref.data
+       gc.collect()
 
 
 def generate_files():
