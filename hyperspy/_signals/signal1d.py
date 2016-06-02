@@ -521,10 +521,6 @@ class Signal1DTools(object):
             If True, display a progress bar. If None the default is set in
             `preferences`.
 
-        Returns
-        -------
-        An array with the result of the estimation. The shift will be
-
         Raises
         ------
         SignalDimensionError if the signal dimension is not 1.
