@@ -10,12 +10,12 @@ entry
 
     @misc{francisco_de_la_pena_2015_27735,
       author       = {Francisco de la Peña and
-                      Vidar Tonaas Fauske
+                      Vidar Tonaas Fauske and
                       Pierre Burdet and
                       Tomas Ostasevicius and
                       Mike Sarahan and
                       Magnus Nord and
-                      Josh Taillon and
+                      Joshua A. Taillon and
                       Duncan Johnstone and
                       Katherine E. MacArthur and
                       Alberto Eljarrat and
@@ -28,8 +28,8 @@ entry
                       Ben Martineau and
                       Luiz Fernando Zagonel and
                       Petras and
-                      Thomas Aarholt
-                      and Andreas Garmannslund
+                      Thomas Aarholt and
+                      and Andreas Garmannslund and
                       Ilya Iyengar and
                       },
       title        = {hyperspy: HyperSpy 0.8.5},
