@@ -27,7 +27,7 @@ entry
                       Gaël Donval and
                       Ben Martineau and
                       Luiz Fernando Zagonel and
-                      Petras and
+                      Petras Jokubauskas and
                       Thomas Aarholt and
                       and Andreas Garmannslund and
                       Ilya Iyengar and
