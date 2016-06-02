@@ -70,7 +70,12 @@ class Spectrum(Signal1D,
         warnings.warn("The to_image method will be deprecated from version"
                       " 1.0.0 and replaced with to_signal2D",
                       VisibleDeprecationWarning)
-        im = self.to_signal2D()
+        if self.data.ndim < 2:
+            raise DataDimensionError(
+                "A Signal dimension must be >= 2 to be converted to Signal2D")
+        im = self.rollaxis(-1 + 3j, 0 + 3j)
+        im.metadata.Signal.record_by = "image"
+        im._assign_subclass()
         return im
 
 
@@ -112,6 +117,7 @@ from hyperspy._signals.image_simulation import ImageSimulation
 from hyperspy._signals.spectrum_simulation import SpectrumSimulation
 from hyperspy._signals.eels_spectrum_simulation import (
     EELSSpectrumSimulation)
+from hyperspy.exceptions import DataDimensionError
 
 from hyperspy.signal import BaseSignal
 

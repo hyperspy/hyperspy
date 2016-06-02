@@ -1173,9 +1173,14 @@ class Signal1D(BaseSignal,
                 "A Signal dimension must be >= 2 to be converted to Signal2D")
         im = self.rollaxis(-1 + 3j, 0 + 3j)
         im.metadata.Signal.record_by = "image"
-        im._assign_subclass()
-        warnings.warn("The to_signal2D method returns an Image instance in\
-                      version 0.8.5 it will return a Signal2D in 1.0.0")
+        import hyperspy.io
+        hyperspy.io.BAN_DEPRECATED = True
+        try:
+            im._assign_subclass()
+        except:
+            raise
+        finally:
+            hyperspy.io.BAN_DEPRECATED = False
         return im
 
     def _spikes_diagnosis(self, signal_mask=None,
