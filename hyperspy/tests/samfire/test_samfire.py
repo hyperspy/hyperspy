@@ -431,8 +431,8 @@ class TestSamfireWorker:
         self.gt_dump = dill.dumps(rct(tolerance=1.0))
         m_slice = m.inav[self.ind[::-1]]
         m_slice.store(self.model_letter)
-        m_dict = m_slice.spectrum._to_dictionary(False)
-        m_dict['models'] = m_slice.spectrum.models._models.as_dictionary()
+        m_dict = m_slice.signal._to_dictionary(False)
+        m_dict['models'] = m_slice.signal.models._models.as_dictionary()
         self.model_dictionary = m_dict
         self.optional_comps = [1, 2, 3, 4, 5]
 
@@ -452,7 +452,7 @@ class TestSamfireWorker:
         worker.set_optional_names({self.model[comp].name for comp in
                                    self.optional_comps})
         self.vals.update({
-            'spectrum.data': self.model.signal(),
+            'signal.data': self.model.signal(),
             'fitting_kwargs': {},
             'variance.data':
             self.model.signal.metadata.Signal.Noise_properties.variance()

@@ -132,8 +132,8 @@ class SamfirePool(ParallelPool):
         mall = samfire.model
         model = mall.inav[mall.axes_manager.indices]
         model.store('z')
-        m_dict = model.spectrum._to_dictionary(False)
-        m_dict['models'] = model.spectrum.models._models.as_dictionary()
+        m_dict = model.signal._to_dictionary(False)
+        m_dict['models'] = model.signal.models._models.as_dictionary()
 
         optional_names = {mall[c].name for c in samfire.optional_components}
 

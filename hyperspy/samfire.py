@@ -337,13 +337,13 @@ class Samfire:
             if True (default), only saves on the required count of steps
         """
         if filename is None:
-            title = self.model.spectrum.metadata.General.title
+            title = self.model.signal.metadata.General.title
             filename = slugify('backup_' + title)
         # maybe add saving marker + strategies as well?
         if self.count % self.save_every == 0 or not on_count:
             self.model.save(filename,
                             name='samfire_backup', overwrite=True)
-            self.model.spectrum.models.remove('samfire_backup')
+            self.model.signal.models.remove('samfire_backup')
 
     def update(self, ind, results=None, isgood=None):
         """Updates the current model with the results, received from the
@@ -458,9 +458,9 @@ class Samfire:
                 # get starting parameters / array of possible values
                 value_dict = self.active_strategy.values(ind)
                 value_dict['fitting_kwargs'] = self._args
-                value_dict['spectrum.data'] = \
-                    self.model.spectrum.data[ind + (...,)]
-                var = self.model.spectrum.metadata.Signal.Noise_properties.variance
+                value_dict['signal.data'] = \
+                    self.model.signal.data[ind + (...,)]
+                var = self.model.signal.metadata.Signal.Noise_properties.variance
                 if isinstance(var, Signal):
                     value_dict['variance.data'] = var.data[ind + (...,)]
                 if self.model.low_loss is not None:
@@ -607,6 +607,6 @@ class Samfire:
 
     def __repr__(self):
         ans = u"<SAMFire of the signal titled: '"
-        ans += self.model.spectrum.metadata.General.title
+        ans += self.model.signal.metadata.General.title
         ans += u"'>"
         return ans
