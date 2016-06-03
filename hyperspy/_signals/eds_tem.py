@@ -296,7 +296,7 @@ class EDSTEMSpectrum(EDSSpectrum):
     def quantification(self,
                        intensities,
                        method,
-                       factors='auto',
+                       factors,
                        composition_units='atomic',
                        navigation_mask=1.0,
                        closing=True,
@@ -316,9 +316,9 @@ class EDSTEMSpectrum(EDSSpectrum):
             ionization cross sections.
         factors: list of float
             The list of kfactors, zeta-factors or cross sections in same order as
-            intensities. Note that intensities provided by Hyperspy are sorted
+            intensities. Note that intensities provided by HyperSpy are sorted
             by the alphabetical order of the X-ray lines.
-            eg. factors =[0.982, 1.32, 1.60] for ['Al_Ka', 'Cr_Ka', 'Ni_Ka'].
+            eg. factors = [0.982, 1.32, 1.60] for ['Al_Ka', 'Cr_Ka', 'Ni_Ka'].
         composition_units: 'weight' or 'atomic'
             The quantification returns the composition in atomic percent by default,
             but can also return weight percent if specified.
@@ -360,7 +360,7 @@ class EDSTEMSpectrum(EDSSpectrum):
         >>> bw = s.estimate_background_windows(line_width=[5.0, 2.0])
         >>> s.plot(background_windows=bw)
         >>> intensities = s.get_lines_intensity(background_windows=bw)
-        >>> res = s.quantification(intensities, kfactors, plot_result=True,
+        >>> res = s.quantification(intensities, 'CL', kfactors, plot_result=True,
         >>>                        composition_units='atomic')
         Fe (Fe_Ka): Composition = 15.41 atomic percent
         Pt (Pt_La): Composition = 84.59 atomic percent
@@ -374,8 +374,8 @@ class EDSTEMSpectrum(EDSSpectrum):
         elif navigation_mask is not None:
             navigation_mask = navigation_mask.data
 
-        # TODO: Add check if xray_lines exists!
-        xray_lines = self.metadata.Sample.xray_lines
+        xray_lines = [xray.metadata.Sample.xray_lines[0] for xray in intensities]
+
         composition = utils.stack(intensities)
 
         if absorption_correction and method != 'zeta':
@@ -406,9 +406,6 @@ class EDSTEMSpectrum(EDSSpectrum):
                 mass_thickness.data = results[1]
 
                 res_max = np.max((composition - comp_old).data)
-
-                it += 1
-                print("Iteration #", it)
 
                 if not absorption_correction or res_max < 0.001:
                     break
@@ -451,7 +448,7 @@ class EDSTEMSpectrum(EDSSpectrum):
                 print("%s (%s): Composition = %.2f %s percent"
                       % (element, xray_line, composition[i].data,
                          composition_units))
-        if method=='cross_section':
+        if method == 'cross_section':
             for i, xray_line in enumerate(xray_lines):
                 element, line = utils_eds._get_element_and_line(xray_line)
                 number_of_atoms[i].metadata.General.title = 'atom counts of ' +\
