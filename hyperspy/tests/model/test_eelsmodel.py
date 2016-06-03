@@ -103,8 +103,8 @@ class TestEELSModel:
         nt.assert_is_none(self.m._get_first_ionization_edge_energy())
 
     def test_two_area_powerlaw_estimation_BC(self):
-        self.m.spectrum.data = 2. * self.m.axis.axis ** (-3)  # A= 2, r=3
-        self.m.spectrum.metadata.Signal.binned = False
+        self.m.signal.data = 2. * self.m.axis.axis ** (-3)  # A= 2, r=3
+        self.m.signal.metadata.Signal.binned = False
         self.m.two_area_background_estimation()
         nt.assert_almost_equal(
             self.m._background_components[0].A.value,
@@ -115,8 +115,8 @@ class TestEELSModel:
 
     def test_two_area_powerlaw_estimation_C(self):
         self.m["B_K"].active = False
-        self.m.spectrum.data = 2. * self.m.axis.axis ** (-3)  # A= 2, r=3
-        self.m.spectrum.metadata.Signal.binned = False
+        self.m.signal.data = 2. * self.m.axis.axis ** (-3)  # A= 2, r=3
+        self.m.signal.metadata.Signal.binned = False
         self.m.two_area_background_estimation()
         nt.assert_almost_equal(
             self.m._background_components[0].A.value,
@@ -128,8 +128,8 @@ class TestEELSModel:
     def test_two_area_powerlaw_estimation_no_edge(self):
         self.m["B_K"].active = False
         self.m["C_K"].active = False
-        self.m.spectrum.data = 2. * self.m.axis.axis ** (-3)  # A= 2, r=3
-        self.m.spectrum.metadata.Signal.binned = False
+        self.m.signal.data = 2. * self.m.axis.axis ** (-3)  # A= 2, r=3
+        self.m.signal.metadata.Signal.binned = False
         self.m.two_area_background_estimation()
         nt.assert_almost_equal(
             self.m._background_components[0].A.value,
