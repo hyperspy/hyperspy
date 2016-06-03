@@ -1,4 +1,3 @@
-
 import numpy as np
 import math
 
@@ -455,7 +454,7 @@ def _quantification_cliff_lorimer(intensities,
     return composition
 
 
-def _quantification_zeta_factor(intensities,
+def quantification_zeta_factor(intensities,
                                 zfactors,
                                 dose,
                                 absorption_correction):
@@ -479,6 +478,8 @@ def _quantification_zeta_factor(intensities,
     A numpy.array containing the weight fraction with the same
     shape as intensities and mass thickness in kg/m^2.
     """
+    if absorption_correction is None:
+        absorption_correction = np.ones_like(intensities, dtype='float') # default to ones
 
     sumzi = np.zeros_like(intensities[0], dtype='float')
     composition = np.zeros_like(intensities, dtype='float')
@@ -488,52 +489,6 @@ def _quantification_zeta_factor(intensities,
         composition[i] = intensity * zfactor * abs_corr / sumzi
     mass_thickness = sumzi / dose
     return composition, mass_thickness
-
-def quantification_zeta_factor(intensities, zfactors, dose, absorption_correction=None):
-    if absorption_correction is None:
-        absorption_correction = np.ones_like(intensities, dtype='float')
-
-    composition, mass_thickness = _quantification_zeta_factor(intensities, zfactors, dose, absorption_correction)
-    return composition, mass_thickness
-
-# Temporarily for testing: elements As and Ga, need to figure out the best way to pass this information
-# Temporaily for testing TOA = 20.0
-def _absorption_correction_terms(weight_percent, mass_thickness, take_off_angle=20.0, elements=['As', 'Ga']):
-    """
-    Calculate absorption correction terms for thin-films according to [Goldstein et al. 1977]
-
-    Parameters
-    ----------
-    weight_percent: numpy.array
-        Composition in weight percent. The first axis should be the element axis.
-    mass_thickness: numpy.array
-        Density-thickness map.
-    take_off_angle: float
-        X-ray take-off angle in degrees.
-    """
-
-    toa_rad = (take_off_angle / 180) * np.pi # radians
-    csc_toa = 1.0/np.sin(toa_rad)
-
-    mac = hs.material.mass_absorption_mixture(weight_percent=weight_percent)
-
-
-
-
-    #1 cm^2/g = 0.1 m^2/kg 
-    # alpha given in degrees
-    abs_correction = np.ones_like(utils.stack(composition))
-    
-    mac = (utils.stack(hs.material.mass_absorption_mixture(weight_percent=composition)).data * 0.1)
-
-    
-
-    x = (mac * pt.data * csc_alpha)
-    abs_correction.data = (x/(1.0 - np.exp(-x)))
-
-    return abs_correction
- 
-
 
 def quantification_cross_section(intensities,
                                 cross_sections,

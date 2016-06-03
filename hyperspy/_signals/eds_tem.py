@@ -301,7 +301,7 @@ class EDSTEMSpectrum(EDSSpectrum):
                        navigation_mask=1.0,
                        closing=True,
                        plot_result=False,
-                       iterations=1,
+                       absorption_correction=False,
                        **kwargs):
         """
         Quantification using Cliff-Lorimer, the zeta-factor method, or
@@ -333,6 +333,11 @@ class EDSTEMSpectrum(EDSSpectrum):
         plot_result : bool
             If True, plot the calculated composition. If the current
             object is a single spectrum it prints the result instead.
+        absorption_correction: bool
+            If True, automatic absorption correction will be perfomed. Note that absorption,
+            correction is currently only available for the zeta-factor method and this parameter
+            will have no effect for other methods!
+
         kwargs
             The extra keyword arguments are passed to plot.
 
@@ -368,8 +373,14 @@ class EDSTEMSpectrum(EDSSpectrum):
             navigation_mask = self.vacuum_mask(navigation_mask, closing).data
         elif navigation_mask is not None:
             navigation_mask = navigation_mask.data
+
+        # TODO: Add check if xray_lines exists!
         xray_lines = self.metadata.Sample.xray_lines
         composition = utils.stack(intensities)
+
+        if absorption_correction and method != 'zeta':
+            raise Exception('Absorption correction is only implemented for the zeta-factor method.')
+
         if method == 'CL':
             composition.data = utils_eds.quantification_cliff_lorimer(
                 composition.data, kfactors=factors,
@@ -377,18 +388,38 @@ class EDSTEMSpectrum(EDSSpectrum):
         elif method == 'zeta':
             int_stack = utils.stack(intensities)
 
+            comp_old = utils.stack(intensities)
+            comp_old.data = np.zeros_like(comp_old.data)
+
+            toa = self.get_take_off_angle()
             abs_corr = None # initial
-            for i in range(iterations):
+
+            it = 0
+            MAX_ITERATIONS = 30
+
+            while True:
                 results = utils_eds.quantification_zeta_factor(
                     int_stack.data, zfactors=factors,
                     dose=self._get_dose(method), absorption_correction=abs_corr)
                 composition.data = results[0] * 100.
                 mass_thickness = intensities[0].deepcopy()
                 mass_thickness.data = results[1]
-                abs_corr = _absorption_correction_terms(composition.split(), mass_thickness)
+
+                res_max = np.max((composition - comp_old).data)
+
+                it += 1
+                print("Iteration #", it)
+
+                if not absorption_correction or res_max < 0.001:
+                    break
+                elif it >= MAX_ITERATIONS:
+                    raise Exception('Absorption correction failed as solution did not converge '
+                                    'after %d iterations' % (MAX_ITERATIONS))
+
+                comp_old.data = composition.data
+                abs_corr = _get_absorption_correction_terms(utils.material.atomic_to_weight(composition.split()), mass_thickness, toa)
 
             mass_thickness.metadata.General.title = 'Mass thickness'
-
 
         elif method == 'cross_section':
             results = utils_eds.quantification_cross_section(composition.data,
@@ -402,7 +433,8 @@ class EDSTEMSpectrum(EDSSpectrum):
             raise ValueError ('Please specify method for quantification, as \'CL\', \'zeta\' or \'cross_section\'')
         composition = composition.split()
         if composition_units == 'atomic':
-            if method != 'cross_section':
+            if method == 'CL': # Zeta assumes at.% zeta factors. CL still ues wt%
+            #if method != 'cross_section':
                 composition = utils.material.weight_to_atomic(composition)
         else:
             if method == 'cross_section':
@@ -652,7 +684,7 @@ class EDSTEMSpectrum(EDSSpectrum):
             raise Exception('Method need to be \'zeta\' or \'cross_section\'.')
 
 
-def _absorption_correction_terms(weight_percent, mass_thickness, take_off_angle=20.0): # take_off_angle, temporary value for testing
+def _get_absorption_correction_terms(weight_percent, mass_thickness, take_off_angle): # take_off_angle, temporary value for testing
     """
     Calculate absorption correction terms.
 
@@ -666,7 +698,7 @@ def _absorption_correction_terms(weight_percent, mass_thickness, take_off_angle=
         X-ray take-off angle in degrees.
     """
 
-    toa_rad = (take_off_angle / 180) * np.pi # radians
+    toa_rad = np.radians(take_off_angle)
     csc_toa = 1.0/np.sin(toa_rad)
 
     mac = utils.stack(utils.material.mass_absorption_mixture(weight_percent=weight_percent)) * 0.1 # convert from cm^2/g to m^2/kg
