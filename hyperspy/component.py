@@ -514,8 +514,23 @@ class Parameter(t.HasTraits):
                 navigate=True)
         return s
 
-    def plot(self):
-        self.as_signal().plot()
+    def plot(self, **kwargs):
+        """Plot parameter signal.
+
+        Parameters
+        ----------
+        **kwargs
+            Any extra keyword arguments are passed to the signal plot.
+
+        Example
+        -------
+        >>> parameter.plot()
+
+        Set the minimum and maximum displayed values
+
+        >>> parameter.plot(vmin=0, vmax=1)
+        """
+        self.as_signal().plot(**kwargs)
 
     def export(self, folder=None, name=None, format=None,
                save_std=False):
@@ -928,8 +943,8 @@ class Component(t.HasTraits):
         s = self.__call__()
         if not self.active:
             s.fill(np.nan)
-        if self.model.spectrum.metadata.Signal.binned is True:
-            s *= self.model.spectrum.axes_manager.signal_axes[0].scale
+        if self.model.signal.metadata.Signal.binned is True:
+            s *= self.model.signal.axes_manager.signal_axes[0].scale
         if out_of_range2nans is True:
             ns = np.empty(self.model.axis.axis.shape)
             ns.fill(np.nan)

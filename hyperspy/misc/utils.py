@@ -49,16 +49,16 @@ def attrsetter(target, attrs, value):
 
         >>> s = hs.signals.Spectrum(np.arange(10))
         >>> m = s.create_model()
-        >>> m.spectrum.data
+        >>> m.signal.data
         array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
 
         Now set the data of the model with attrsetter
         >>> attrsetter(m, 'spectrum.data', np.arange(10)+2)
-        >>> m.spectrum.data
+        >>> m.signal.data
         array([2, 3, 4, 5, 6, 7, 8, 9, 10, 10])
 
         The behaviour is identical to
-        >>> m.spectrum.data = np.arange(10) + 2
+        >>> m.signal.data = np.arange(10) + 2
 
 
     """
@@ -879,8 +879,10 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
         'Stacking_history.step_sizes',
         step_sizes)
     from hyperspy.signal import Signal
-    if np.all([s.metadata.has_item('Signal.Noise_properties.variance') for s in signal_list]):
-        if np.all([isinstance(s.metadata.Signal.Noise_properties.variance, Signal) for s in signal_list]):
+    if np.all([s.metadata.has_item('Signal.Noise_properties.variance')
+               for s in signal_list]):
+        if np.all([isinstance(s.metadata.Signal.Noise_properties.variance, Signal)
+                   for s in signal_list]):
             variance = stack(
                 [s.metadata.Signal.Noise_properties.variance for s in signal_list], axis)
             signal.metadata.set_item(

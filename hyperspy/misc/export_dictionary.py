@@ -19,17 +19,7 @@
 from operator import attrgetter
 from hyperspy.misc.utils import attrsetter
 from copy import deepcopy
-import logging
-try:
-    import dill
-    dill_avail = True
-except ImportError:
-    dill_avail = False
-    import types
-    import marshal
-
-
-_logger = logging.getLogger(__name__)
+import dill
 
 
 def check_that_flags_make_sense(flags):
@@ -77,11 +67,11 @@ def export_to_dictionary(target, whitelist, dic, fullcopy=True):
                 object used for initialization of the target. The object is
                 saved in the tuple in whitelist
             * 'fn':
-                the targeted attribute is a function, and may be pickled
-                (preferably with dill package). A tuple of (thing, value) will
-                be exported to the dictionary, where thing is None if function
-                is passed as-is, and bool if dill package is used to pickle the
-                function, and value is the result.
+                the targeted attribute is a function, and may be pickled. A
+                tuple of (thing, value) will be exported to the dictionary,
+                where thing is None if function is passed as-is, and True if
+                dill package is used to pickle the function, with the value as
+                the result of the pickle.
             * 'id':
                 the id of the targeted attribute is exported (e.g.
                 id(target.name))
@@ -131,13 +121,7 @@ def export_to_dictionary(target, whitelist, dic, fullcopy=True):
                     value['data'] = deepcopy(value['data'])
         elif 'fn' in flags:
             if fullcopy:
-                if dill_avail:
-                    value = (True, dill.dumps(value))
-                else:
-                    # Apparently this fails because Python does not guarantee backwards-compatibility for marshal, and pickle does
-                    # not work for our lambda functions. Hence drop marshal
-                    # support and only work with dill package
-                    value = (False, marshal.dumps(value.__code__))
+                value = (True, dill.dumps(value))
             else:
                 value = (None, value)
         elif fullcopy:
@@ -217,19 +201,8 @@ def reconstruct_object(flags, value):
         ifdill, thing = value
         if ifdill is None:
             return thing
-        if ifdill in [False, 'False', b'False']:
-            return types.FunctionType(marshal.loads(thing), globals())
         if ifdill in [True, 'True', b'True']:
-            if not dill_avail:
-                raise ValueError("the dictionary was constructed using "
-                                 "\"dill\" package, which is not available on the system")
-            else:
-                try:
-                    return dill.loads(thing)
-                except UnicodeDecodeError:
-                    _logger.warn('Did not load the function with dill, '
-                                 'sorry')
-                    return lambda x: x
+            return dill.loads(thing)
         # should not be reached
         raise ValueError("The object format is not recognized")
     return value

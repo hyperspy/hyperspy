@@ -235,7 +235,7 @@ class TestModelDictionary:
             nt.assert_equal(d['components'][num]['name'], tmp['name'])
             nt.assert_equal(d['components'][num]['_id_name'], tmp['_id_name'])
         np.testing.assert_equal(d['components'][-1]['spectrum'],
-                                (m.spectrum * 0.3)._to_dictionary())
+                                (m.signal * 0.3)._to_dictionary())
 
     def test_load_dictionary(self):
         d = self.model.as_dictionary()
