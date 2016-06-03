@@ -52,6 +52,7 @@ install_req = ['scipy',
                'requests',
                'setuptools',
                'sympy',
+               'dill',
                'h5py']
 
 

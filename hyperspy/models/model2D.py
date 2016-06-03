@@ -86,8 +86,7 @@ class Model2D(BaseModel):
     """
 
     def __init__(self, image, dictionary=None):
-        self.image = image
-        self.signal = self.image
+        self.signal = image
         self.axes_manager = self.signal.axes_manager
         self._plot = None
         self._position_widgets = {}
@@ -130,13 +129,13 @@ class Model2D(BaseModel):
             'dof.data': 'inav'}
 
     @property
-    def image(self):
-        return self._image
+    def signal(self):
+        return self._signal
 
-    @image.setter
-    def image(self, value):
+    @signal.setter
+    def signal(self, value):
         if isinstance(value, Image):
-            self._image = value
+            self._signal = value
         else:
             raise WrongObjectError(str(type(value)), 'Image')
 
