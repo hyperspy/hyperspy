@@ -297,6 +297,7 @@ class EDSTEMSpectrum(EDSSpectrum):
                        method,
                        factors='auto',
                        composition_units='atomic',
+                       calibration_units = 'default',
                        navigation_mask=1.0,
                        closing=True,
                        plot_result=False,
@@ -320,6 +321,12 @@ class EDSTEMSpectrum(EDSSpectrum):
         composition_units: 'weight' or 'atomic'
             The quantification returns the composition in atomic percent by
             default, but can also return weight percent if specified.
+        calibration_units: 'default' or 'weight' or 'atomic'
+            Specifies if weight or atomic percent was used to calibrate the factors.
+            If this differs from composition_units a conversion between weight/atomic percent
+            will be performed. If 'default', the Cliff-Lorimer and zeta-factor method will
+            use 'weight'. Cross sections can only use 'atomic', so this argument has
+            no effect on the output.
         navigation_mask : None or float or signal
             The navigation locations marked as True are not used in the
             quantification. If int is given the vacuum_mask method is used to
@@ -368,6 +375,12 @@ class EDSTEMSpectrum(EDSSpectrum):
             navigation_mask = navigation_mask.data
         xray_lines = self.metadata.Sample.xray_lines
         composition = utils.stack(intensities)
+
+        if method == 'cross_section':
+            calibration_units = 'atomic'
+        elif calibration_units == 'default':
+            calibration_units = 'weight'
+
         if method == 'CL':
             composition.data = utils_eds.quantification_cliff_lorimer(
                 composition.data, kfactors=factors,
@@ -393,12 +406,12 @@ class EDSTEMSpectrum(EDSSpectrum):
             raise ValueError('Please specify method for quantification,'
                              'as \'CL\', \'zeta\' or \'cross_section\'')
         composition = composition.split()
-        if composition_units == 'atomic':
-            if method != 'cross_section':
-                composition = utils.material.weight_to_atomic(composition)
-        else:
-            if method == 'cross_section':
-                composition = utils.material.atomic_to_weight(composition)
+
+        if calibration_units == 'atomic' and composition_units == 'weight':
+            composition = utils.material.atomic_to_weight(composition)
+        elif calibration_units == 'weight' and composition_units == 'atomic':
+            composition = utils.material.weight_to_atomic(composition)
+
         for i, xray_line in enumerate(xray_lines):
             element, line = utils_eds._get_element_and_line(xray_line)
             composition[i].metadata.General.title = composition_units + \
