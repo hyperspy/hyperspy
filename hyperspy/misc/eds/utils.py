@@ -589,3 +589,29 @@ def zeta_to_edx_cross_section(zfactors, elements):
         xsec = atomic_weight / (zfactors[i] * constants.Avogadro * 1E-25)
         cross_sections.append(xsec)
     return cross_sections
+
+def determine_zeta_factor(intensities, composition, dose, mass_thickness):
+    """
+    Determine zeta-factors from a known sample.
+
+    Parameters
+    ----------
+    intensities: numpy.array
+        The intensities for each X-ray line. The first axis should be the element axis.
+    composition: list of float
+        Composition of the elements given in weight-percent in the same order as intensities.
+    dose: float
+        Total electron dose given by i*t*N, where i is the beam_current, t is the acquisition time,
+        and N the number of electrons per unit electric charge (1/e).
+
+    Returns
+    -------
+    A numpy.array containing the zeta_factors with the same shape as intensities
+    """
+
+    zfactors = np.zeros_like(intensities, dtype='float')
+
+    for i, (intensity, comp) in enumerate(zip(intensities, composition)):
+        zfactors[i] = (dose * mass_thickness * comp) / intensity
+
+    return zfactors

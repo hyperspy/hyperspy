@@ -653,3 +653,52 @@ class EDSTEMSpectrum(EDSSpectrum):
             return real_time * beam_current * 1e-9 / constants.e
         else:
             raise Exception('Method need to be \'zeta\' or \'cross_section\'.')
+
+    def determine_zeta_factor(self, intensities, composition, thickness, density):
+        """
+        Determine the zeta-factors from a known sample.
+
+        Parameters
+        ----------
+        intensities: list of signal
+            The intensity for each X-ray line.
+        composition: list of float or list of signal
+            Composition of the elements in the same order as intensities.
+        thickness: float or signal
+            Thickness for the sample. If signal, must be same shape as intensities
+        density: float or signal
+            Density of the sample. If signal, must be same shape as intensities.
+
+        Returns
+        -------
+        A signal in the same shape as intensities, giving the zeta-factors for each X-ray line.
+        """
+
+        from hyperspy.signals import Signal
+        if isinstance(composition[0], Signal):
+            comp = [c.data for c in composition]
+        else:
+            comp = composition
+
+        if isinstance(thickness, Signal):
+            t = thickness.data
+        else:
+            t = thickness
+
+        if isinstance(density, Signal):
+            dens = density.data
+        else:
+            dens = density
+        
+        mass_thickness = dens * t
+
+        zfactors = utils.stack(intensities)
+        zfactors.data = utils_eds.determine_zeta_factor(zfactors.data, comp, self._get_dose('zeta'), mass_thickness)
+        zfactors = zfactors.split()
+
+        xray_lines = [xray.metadata.Sample.xray_lines[0] for xray in intensities]
+
+        for i, line in enumerate(xray_lines):
+            zfactors[i].metadata.General.title = "Zeta-factor for " + line
+
+        return zfactors
