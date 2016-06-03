@@ -27,9 +27,8 @@ install:
   - DEPS="nose numpy scipy matplotlib ipython h5py sympy scikit-learn dill natsort mock setuptools"
   - conda create -n testenv --yes python=$TRAVIS_PYTHON_VERSION $DEPS
   - source activate testenv
-  - conda config --add channels conda-forge
-  - conda install pip traits traitsui request tqdm ipyparallel
-  - pip install coverage coveralls
+  - conda install pip
+  - pip install coverage coveralls traits traitsui request
   - python setup.py install
 
 script: python continuous_integration/nosetest.py --with-coverage hyperspy
