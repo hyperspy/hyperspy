@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
@@ -16,16 +15,20 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
+import sys
 
-from hyperspy._signals.image import Image
+import numpy as np
+
+import nose
+import nose.tools as nt
+
+import hyperspy.api as hs
 
 
-class HologramImage(Image):
-    """
-    """
+# def test_reconstruct_phase():
+#     nt.assert_true(True)
+# TODO: Vadim, this is where your tests belong!
 
-    _signal_type = 'HOLOGRAM'
 
-    # def reconstruct_phase(self, ref_data=None, rec_param=None, show_phase=False, **kwargs):
-    #     pass
-    # TODO: Vadim, this is where your function should go!
+if __name__ == '__main__':
+    nose.run(argv=[sys.argv[0], sys.modules[__name__].__file__, '-v'])
