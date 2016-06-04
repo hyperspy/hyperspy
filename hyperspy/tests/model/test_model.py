@@ -1,6 +1,9 @@
+from distutils.version import StrictVersion
+
 import numpy as np
 import nose.tools as nt
-import mock
+from unittest import mock
+from nose.plugins.skip import SkipTest
 
 import hyperspy.api as hs
 from hyperspy.misc.utils import slugify
@@ -305,6 +308,20 @@ class TestModel1D:
         # tests
         np.testing.assert_array_equal(m.convolution_axis, np.arange(7, 23))
         np.testing.assert_equal(ll_axis.value2index.call_args[0][0], 0)
+
+    def test_notebook_interactions(self):
+        try:
+            import ipywidgets
+        except:
+            raise SkipTest("ipywidgets not installed")
+        if StrictVersion(ipywidgets.__version__) < StrictVersion("5.0"):
+            raise SkipTest("ipywigets > 5.0 required but %s installed" %
+                           ipywidgets.__version__)
+        m = self.model
+        m.notebook_interaction()
+        m.append(hs.model.components.Offset())
+        m[0].notebook_interaction()
+        m[0].offset.notebook_interaction()
 
     def test_access_component_by_name(self):
         m = self.model

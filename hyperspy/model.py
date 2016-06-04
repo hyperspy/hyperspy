@@ -768,8 +768,13 @@ class BaseModel(list):
                                 "of the signal")
                     elif not isinstance(variance, numbers.Number):
                         raise AttributeError(
-                            "Variance must be a number or a `BaseSignal` instance "
-                            "but currently it is a %s" % type(variance))
+                            "The `navigation_shape` of the variance signals "
+                            "is not equal to the variance shape of the "
+                            "signal")
+                elif not isinstance(variance, numbers.Number):
+                    raise AttributeError(
+                        "Variance must be a number or a `BaseSignal` instance but "
+                        "currently it is a %s" % type(variance))
 
                 weights = 1. / np.sqrt(variance)
             else:
@@ -1075,6 +1080,105 @@ class BaseModel(list):
 
         self.fetch_stored_values()
 
+    def plot(self, plot_components=False):
+        """Plots the current spectrum to the screen and a map with a
+        cursor to explore the SI.
+
+        Parameters
+        ----------
+        plot_components : bool
+            If True, add a line per component to the signal figure.
+
+        """
+
+        # If new coordinates are assigned
+        self.spectrum.plot()
+        _plot = self.spectrum._plot
+        l1 = _plot.signal_plot.ax_lines[0]
+        color = l1.line.get_color()
+        l1.set_line_properties(color=color, type='scatter')
+
+        l2 = hyperspy.drawing.spectrum.SpectrumLine()
+        l2.data_function = self._model2plot
+        l2.set_line_properties(color='blue', type='line')
+        # Add the line to the figure
+        _plot.signal_plot.add_line(l2)
+        l2.plot()
+        on_figure_window_close(_plot.signal_plot.figure,
+                               self._close_plot)
+
+        self._model_line = l2
+        self._plot = self.spectrum._plot
+        self._connect_parameters2update_plot()
+        if plot_components is True:
+            self.enable_plot_components()
+
+    @staticmethod
+    def _connect_component_line(component):
+        if hasattr(component, "_model_plot_line"):
+            component.connect(component._model_plot_line.update)
+            for parameter in component.parameters:
+                parameter.connect(component._model_plot_line.update)
+
+    @staticmethod
+    def _disconnect_component_line(component):
+        if hasattr(component, "_model_plot_line"):
+            component.disconnect(component._model_plot_line.update)
+            for parameter in component.parameters:
+                parameter.disconnect(component._model_plot_line.update)
+
+    def _connect_component_lines(self):
+        for component in [component for component in self if
+                          component.active]:
+            self._connect_component_line(component)
+
+    def _disconnect_component_lines(self):
+        for component in [component for component in self if
+                          component.active]:
+            self._disconnect_component_line(component)
+
+    def _plot_component(self, component):
+        line = hyperspy.drawing.spectrum.SpectrumLine()
+        line.data_function = component._component2plot
+        # Add the line to the figure
+        self._plot.signal_plot.add_line(line)
+        line.plot()
+        component._model_plot_line = line
+        self._connect_component_line(component)
+
+    @staticmethod
+    def _update_component_line(component):
+        if hasattr(component, "_model_plot_line"):
+            component._model_plot_line.update()
+
+    def _disable_plot_component(self, component):
+        self._disconnect_component_line(component)
+        if hasattr(component, "_model_plot_line"):
+            component._model_plot_line.close()
+            del component._model_plot_line
+        self._plot_components = False
+
+    def _close_plot(self):
+        if self._plot_components is True:
+            self.disable_plot_components()
+        self._disconnect_parameters2update_plot()
+        self._model_line = None
+
+    def enable_plot_components(self):
+        if self._plot is None or self._plot_components:
+            return
+        self._plot_components = True
+        for component in [component for component in self if
+                          component.active]:
+            self._plot_component(component)
+
+    def disable_plot_components(self):
+        if self._plot is None:
+            return
+        for component in self:
+            self._disable_plot_component(component)
+        self._plot_components = False
+
     def assign_current_values_to_all(self, components_list=None, mask=None):
         """Set parameter values for all positions to the current ones.
 
@@ -1198,6 +1302,177 @@ class BaseModel(list):
                     if not hasattr(parameter.value, '__iter__'):
                         print("\t\t%s\t%g" % (
                             parameter.name, parameter.value))
+
+    def enable_adjust_position(
+            self, components=None, fix_them=True, show_label=True):
+        """Allow changing the *x* position of component by dragging
+        a vertical line that is plotted in the signal model figure
+
+        Parameters
+        ----------
+        components : {None, list of components}
+            If None, the position of all the active components of the
+            model that has a well defined *x* position with a value
+            in the axis range will get a position adjustment line.
+            Otherwise the feature is added only to the given components.
+            The components can be specified by name, index or themselves.
+        fix_them : bool
+            If True the position parameter of the components will be
+            temporarily fixed until adjust position is disable.
+            This can
+            be useful to iteratively adjust the component positions and
+            fit the model.
+        show_label : bool, optional
+            If True, a label showing the component name is added to the
+            plot next to the vertical line.
+
+        See also
+        --------
+        disable_adjust_position
+
+        """
+        if (self._plot is None or
+                self._plot.is_active() is False):
+            self.plot()
+        if self._position_widgets:
+            self.disable_adjust_position()
+        on_figure_window_close(self._plot.signal_plot.figure,
+                               self.disable_adjust_position)
+        if components:
+            components = [self._get_component(x) for x in components]
+        else:
+            self._adjust_position_all = (fix_them, show_label)
+
+        components = components if components else self
+        if not components:
+            # The model does not have components so we do nothing
+            return
+        components = [
+            component for component in components if component.active]
+        for component in components:
+            self._make_position_adjuster(component, fix_them, show_label)
+
+    def _make_position_adjuster(self, component, fix_it, show_label):
+        if (component._position is not None and
+                not component._position.twin):
+            set_value = component._position._set_value
+            get_value = component._position._get_value
+        else:
+            return
+        # Create an AxesManager for the widget
+        axis_dict = self.axes_manager.signal_axes[0].get_axis_dictionary()
+        am = AxesManager([axis_dict, ])
+        am._axes[0].navigate = True
+        try:
+            am._axes[0].value = get_value()
+        except TraitError:
+            # The value is outside of the axis range
+            return
+        # Create the vertical line and labels
+        if show_label:
+            self._position_widgets.extend((
+                DraggableVerticalLine(am),
+                DraggableLabel(am),))
+            # Store the component for bookkeeping, and to reset
+            # its twin when disabling adjust position
+            self._position_widgets[-2].component = component
+            self._position_widgets[-1].component = component
+            w = self._position_widgets[-1]
+            w.string = component._get_short_description().replace(
+                ' component', '')
+            w.set_mpl_ax(self._plot.signal_plot.ax)
+            self._position_widgets[-2].set_mpl_ax(
+                self._plot.signal_plot.ax)
+        else:
+            self._position_widgets.extend((
+                DraggableVerticalLine(am),))
+            # Store the component for bookkeeping, and to reset
+            # its twin when disabling adjust position
+            self._position_widgets[-1].component = component
+            self._position_widgets[-1].set_mpl_ax(
+                self._plot.signal_plot.ax)
+        # Create widget -> parameter connection
+        am._axes[0].continuous_value = True
+        am._axes[0].on_trait_change(set_value, 'value')
+        # Create parameter -> widget connection
+        # This is done with a duck typing trick
+        # We disguise the AxesManager axis of Parameter by adding
+        # the _twin attribute
+        am._axes[0]._twins = set()
+        component._position.twin = am._axes[0]
+
+    def disable_adjust_position(self):
+        """Disables the interactive adjust position feature
+
+        See also
+        --------
+        enable_adjust_position
+
+        """
+        self._adjust_position_all = None
+        while self._position_widgets:
+            pw = self._position_widgets.pop()
+            if hasattr(pw, 'component'):
+                pw.component._position.twin = None
+                del pw.component
+            pw.close()
+            del pw
+
+    def fit_component(
+            self,
+            component,
+            signal_range="interactive",
+            estimate_parameters=True,
+            fit_independent=False,
+            only_current=True,
+            **kwargs):
+        """Fit just the given component in the given signal range.
+
+        This method is useful to obtain starting parameters for the
+        components. Any keyword arguments are passed to the fit method.
+
+        Parameters
+        ----------
+        component : component instance
+            The component must be in the model, otherwise an exception
+            is raised. The component can be specified by name, index or itself.
+        signal_range : {'interactive', (left_value, right_value), None}
+            If 'interactive' the signal range is selected using the span
+             selector on the spectrum plot. The signal range can also
+             be manually specified by passing a tuple of floats. If None
+             the current signal range is used.
+        estimate_parameters : bool, default True
+            If True will check if the component has an
+            estimate_parameters function, and use it to estimate the
+            parameters in the component.
+        fit_independent : bool, default False
+            If True, all other components are disabled. If False, all other
+            component parameters are fixed.
+        only_current : bool, default True
+            If True, will only fit the currently selected index in the model.
+            If False, will fit the full dataset.
+            component paramemeters are fixed.
+
+        Examples
+        --------
+        Signal range set interactivly
+
+        >>> g1 = hs.model.components.Gaussian()
+        >>> m.append(g1)
+        >>> m.fit_component(g1)
+
+        Signal range set through direct input
+
+        >>> m.fit_component(g1, signal_range=(50,100))
+        """
+        component = self._get_component(component)
+        cf = ComponentFit(self, component, signal_range,
+                          estimate_parameters, fit_independent,
+                          only_current, **kwargs)
+        if signal_range == "interactive":
+            cf.edit_traits()
+        else:
+            cf.apply()
 
     def set_parameters_not_free(self, component_list=None,
                                 parameter_name_list=None):
@@ -1462,76 +1737,3 @@ class BaseModel(list):
                     "\" not found in model")
         else:
             return list.__getitem__(self, value)
-
-
-
-class ModelSpecialSlicers(object):
-
-    def __init__(self, model, isNavigation):
-        self.isNavigation = isNavigation
-        self.model = model
-
-    def __getitem__(self, slices):
-        array_slices = self.model.signal._get_array_slices(
-            slices,
-            self.isNavigation)
-        _signal = self.model.signal._slicer(slices, self.isNavigation)
-        if _signal.metadata.Signal.signal_type == 'EELS':
-            _model = _signal.create_model(
-                auto_background=False,
-                auto_add_edges=False)
-        else:
-            _model = _signal.create_model()
-
-        dims = (self.model.axes_manager.navigation_dimension,
-                self.model.axes_manager.signal_dimension)
-        if self.isNavigation:
-            _model.channel_switches[:] = self.model.channel_switches
-        else:
-            _model.channel_switches[:] = \
-                np.atleast_1d(
-                    self.model.channel_switches[
-                        tuple(array_slices[-dims[1]:])])
-
-        twin_dict = {}
-        for comp in self.model:
-            init_args = {}
-            for k, v in comp._whitelist.items():
-                if v is None:
-                    continue
-                flags_str, value = v
-                if 'init' in parse_flag_string(flags_str):
-                    init_args[k] = value
-            _model.append(getattr(components, comp._id_name)(**init_args))
-        copy_slice_from_whitelist(self.model,
-                                  _model,
-                                  dims,
-                                  (slices, array_slices),
-                                  self.isNavigation,
-                                  )
-        for co, cn in zip(self.model, _model):
-            copy_slice_from_whitelist(co,
-                                      cn,
-                                      dims,
-                                      (slices, array_slices),
-                                      self.isNavigation)
-            for po, pn in zip(co.parameters, cn.parameters):
-                copy_slice_from_whitelist(po,
-                                          pn,
-                                          dims,
-                                          (slices, array_slices),
-                                          self.isNavigation)
-                twin_dict[id(po)] = ([id(i) for i in list(po._twins)], pn)
-
-        for k in twin_dict.keys():
-            for tw_id in twin_dict[k][0]:
-                twin_dict[tw_id][1].twin = twin_dict[k][1]
-
-        _model.chisq.data = _model.chisq.data.copy()
-        _model.dof.data = _model.dof.data.copy()
-        _model.fetch_stored_values()  # to update and have correct values
-        if not self.isNavigation:
-            for _ in _model.axes_manager:
-                _model._calculate_chisq()
-
-        return _model

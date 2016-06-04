@@ -32,6 +32,7 @@ from hyperspy.io_plugins import io_plugins, default_write_ext
 _logger = logging.getLogger(__name__)
 
 
+
 def load(filenames=None,
          record_by=None,
          signal_type=None,

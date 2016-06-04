@@ -48,9 +48,12 @@ Quick instructions to install HyperSpy using Anaconda (Linux, MacOs, Windows)
 
    .. code-block:: bash
 
+       $ conda install -c conda-forge traits traitsui
        $ pip install hyperspy
 
+
 .. warning::
+
     Since version 0.8.4 HyperSpy only supports Python 3. If you need to
     install HyperSpy in Python 2.7 install version 0.8.3:
 
@@ -80,6 +83,14 @@ Install using `pip`:
 .. code-block:: bash
 
     $ pip install hyperspy
+
+
+.. warning::
+
+   The command above downloads and installs HyperSpy and all its dependencies. However,
+   HyperSpy depends on several external libraries which are not written in pure Python.
+   We recommend to those not familiar with the installation of Python libraries  that may 
+   require compilation to install HyperSpy using :ref:`Anaconda <quick-anaconda-install>` instead. 
 
 .. warning::
     Since version 0.8.4 HyperSpy only supports Python 3. If you need to
@@ -209,10 +220,10 @@ Installing the required libraries
 When installing HyperSpy using Python installers or from source the Python
 programming language and the following libraries must be installed in the
 system: numpy, scipy, matplotlib (>= 1.2), ipython, natsort, traits and
-traitsui. For full functionality it is recommended to also install h5py and
-scikit-learn. In addition, since version 0.7.2 the lowess filter requires
-statsmodels. In Windows HyperSpy uses the Ipython's QtConsole and therefore Qt
-and PyQt or PySide are also required.
+traitsui. For full functionality it is recommended to also install h5py,
+scikit-learn and ipywidgets. In addition, since version 0.7.2 the lowess filter
+requires statsmodels. In Windows HyperSpy uses the Ipython's QtConsole and
+therefore Qt and PyQt or PySide are also required.
 
 
 In Debian/Ubuntu you can install the libraries as follows:

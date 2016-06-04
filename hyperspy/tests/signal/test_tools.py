@@ -4,7 +4,7 @@ import numpy as np
 from numpy.testing import assert_array_equal
 import nose.tools as nt
 
-from hyperspy.signal import BaseSignal
+from hyperspy.signals import Signal
 from hyperspy import signals
 
 
@@ -204,10 +204,18 @@ class Test3D:
         new_s = self.signal.rebin((2, 1, 6))
         nt.assert_equal(new_s.metadata.Signal.Noise_properties.variance, 0.3)
 
-    def test_swap_axes(self):
+    def test_swap_axes_simple(self):
         s = self.signal
         nt.assert_equal(s.swap_axes(0, 1).data.shape, (4, 2, 6))
+        nt.assert_equal(s.swap_axes(0, 2).axes_manager.shape, (6, 2, 4))
         nt.assert_true(s.swap_axes(0, 2).data.flags['C_CONTIGUOUS'])
+
+    def test_swap_axes_iteration(self):
+        s = self.signal
+        s = s.swap_axes(0, 2)
+        nt.assert_equal(s.axes_manager._getitem_tuple[:2], (0, 0))
+        s.axes_manager.indices = (2, 1)
+        nt.assert_equal(s.axes_manager._getitem_tuple[:2], (1, 2))
 
     def test_get_navigation_signal_nav_dim0(self):
         s = self.signal

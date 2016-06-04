@@ -611,6 +611,120 @@ class Parameter(t.HasTraits):
         view = View(editable_traits, buttons=['OK', 'Cancel'])
         return view
 
+    def _interactive_slider_bounds(self, index=None):
+        """Guesstimates the bounds for the slider. They will probably have to
+        be changed later by the user.
+        """
+        fraction = 10.
+        _min, _max, step = None, None, None
+        value = self.value if index is None else self.value[index]
+        if self.bmin is not None:
+            _min = self.bmin
+        if self.bmax is not None:
+            _max = self.bmax
+        if _max is None and _min is not None:
+            _max = value + fraction * (value - _min)
+        if _min is None and _max is not None:
+            _min = value - fraction * (_max - value)
+        if _min is None and _max is None:
+            if self is self.component._position:
+                axis = self._axes_manager.signal_axes[-1]
+                _min = axis.axis.min()
+                _max = axis.axis.max()
+                step = np.abs(axis.scale)
+            else:
+                _max = value + np.abs(value * fraction)
+                _min = value - np.abs(value * fraction)
+        if step is None:
+            step = (_max - _min) * 0.001
+        return {'min': _min, 'max': _max, 'step': step}
+
+    def _interactive_update(self, value=None, index=None):
+        """Callback function for the widgets, to update the value
+        """
+        if value is not None:
+            if index is None:
+                self.value = value['new']
+            else:
+                self.value = self.value[:index] + (value['new'],) +\
+                    self.value[index + 1:]
+
+    def notebook_interaction(self, display=True):
+        """Creates interactive notebook widgets for the parameter, if
+        available.
+
+        Requires `ipywidgets` to be installed.
+
+        Parameters
+        ----------
+        display : bool
+            if True (default), attempts to display the parameter widget.
+            Otherwise returns the formatted widget object.
+        """
+        from ipywidgets import VBox
+        from traitlets import TraitError as TraitletError
+        from IPython.display import display as ip_display
+        try:
+            if self._number_of_elements == 1:
+                container = self._create_notebook_widget()
+            else:
+                children = [self._create_notebook_widget(index=i) for i in
+                            range(self._number_of_elements)]
+                container = VBox(children)
+            if not display:
+                return container
+            ip_display(container)
+        except TraitletError:
+            if display:
+                print('This function is only avialable when running in a'
+                      ' notebook')
+            else:
+                raise
+
+    def _create_notebook_widget(self, index=None):
+
+        from ipywidgets import (FloatSlider, FloatText, Layout, HBox)
+
+        widget_bounds = self._interactive_slider_bounds(index=index)
+        thismin = FloatText(value=widget_bounds['min'],
+                            description='min',
+                            layout=Layout(flex='0 1 auto',
+                                          width='auto'),)
+        thismax = FloatText(value=widget_bounds['max'],
+                            description='max',
+                            layout=Layout(flex='0 1 auto',
+                                          width='auto'),)
+        current_value = self.value if index is None else self.value[index]
+        current_name = self.name
+        if index is not None:
+            current_name += '_{}'.format(index)
+        widget = FloatSlider(value=current_value,
+                             min=thismin.value,
+                             max=thismax.value,
+                             step=widget_bounds['step'],
+                             description=current_name,
+                             layout=Layout(flex='1 1 auto', width='auto'))
+
+        def on_min_change(change):
+            if widget.max > change['new']:
+                widget.min = change['new']
+                widget.step = np.abs(widget.max - widget.min) * 0.001
+
+        def on_max_change(change):
+            if widget.min < change['new']:
+                widget.max = change['new']
+                widget.step = np.abs(widget.max - widget.min) * 0.001
+
+        thismin.observe(on_min_change, names='value')
+        thismax.observe(on_max_change, names='value')
+
+        this_observed = functools.partial(self._interactive_update,
+                                          index=index)
+
+        widget.observe(this_observed, names='value')
+        container = HBox((thismin, widget, thismax))
+        return container
+
 
 class Component(t.HasTraits):
     __axes_manager = None
@@ -945,6 +1059,9 @@ class Component(t.HasTraits):
             s.fill(np.nan)
         if self.model.signal.metadata.Signal.binned is True:
             s *= self.model.signal.axes_manager.signal_axes[0].scale
+        if old_axes_manager is not None:
+            self.model.axes_manager = old_axes_manager
+            self.charge()
         if out_of_range2nans is True:
             ns = np.empty(self.model.axis.axis.shape)
             ns.fill(np.nan)
@@ -1029,71 +1146,3 @@ class Component(t.HasTraits):
         if self._axes_manager != signal.axes_manager:
             self._axes_manager = signal.axes_manager
             self._create_arrays()
-
-    def as_dictionary(self, fullcopy=True):
-        """Returns component as a dictionary
-        For more information on method and conventions, see
-        :meth:`hyperspy.misc.export_dictionary.export_to_dictionary`
-        Parameters
-        ----------
-        fullcopy : Bool (optional, False)
-            Copies of objects are stored, not references. If any found,
-            functions will be pickled and signals converted to dictionaries
-        Returns
-        -------
-        dic : dictionary
-            A dictionary, containing at least the following fields:
-            parameters : list
-                a list of dictionaries of the parameters, one per
-            _whitelist : dictionary
-                a dictionary with keys used as references saved attributes, for
-                more information, see
-                :meth:`hyperspy.misc.export_dictionary.export_to_dictionary`
-            * any field from _whitelist.keys() *
-        """
-        dic = {
-            'parameters': [
-                p.as_dictionary(fullcopy) for p in self.parameters]}
-        export_to_dictionary(self, self._whitelist, dic, fullcopy)
-        return dic
-
-    def _load_dictionary(self, dic):
-        """Load data from dictionary.
-        Parameters
-        ----------
-        dict : dictionary
-            A dictionary containing following items:
-            _id_name : string
-                _id_name of the original component, used to create the
-                dictionary. Has to match with the self._id_name
-            parameters : list
-                A list of dictionaries, one per parameter of the component (see
-                parameter.as_dictionary() documentation for more)
-            _whitelist : dictionary
-                a dictionary, which keys are used as keywords to match with the
-                component attributes.  For more information see
-                :meth:`hyperspy.misc.export_dictionary.load_from_dictionary`
-            * any field from _whitelist.keys() *
-        Returns
-        -------
-        twin_dict : dictionary
-            Dictionary of 'id' values from input dictionary as keys with all of
-            the parameters of the component, to be later used for setting up
-            correct twins.
-        """
-        if dic['_id_name'] == self._id_name:
-            id_dict = {}
-            for p in dic['parameters']:
-                idname = p['_id_name']
-                if hasattr(self, idname):
-                    par = getattr(self, idname)
-                    t_id = par._load_dictionary(p)
-                    id_dict[t_id] = par
-                else:
-                    raise ValueError(
-                        "_id_name of parameters in component and dictionary do not match")
-            load_from_dictionary(self, dic)
-            return id_dict
-        else:
-            raise ValueError( "_id_name of component and dictionary do not match, \ncomponent._id_name = %s\
-                    \ndictionary['_id_name'] = %s" % (self._id_name, dic['_id_name']))

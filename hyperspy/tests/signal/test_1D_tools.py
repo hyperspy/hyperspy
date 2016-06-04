@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
-import mock
+from unittest import mock
 
 import numpy as np
 import nose.tools as nt
@@ -51,7 +51,8 @@ class TestAlignTools:
     def test_estimate_shift(self):
         s = self.signal
         eshifts = -1 * s.estimate_shift1D(show_progressbar=None)
-        np.testing.assert_allclose(eshifts, self.ishifts * self.scale, atol=1e-3)
+        np.testing.assert_allclose(
+            eshifts, self.ishifts * self.scale, atol=1e-3)
 
     def test_shift1D(self):
         s = self.signal
@@ -76,22 +77,6 @@ class TestAlignTools:
     def test_align(self):
         s = self.signal
         s.align1D(show_progressbar=None)
-        i_zlp = s.axes_manager.signal_axes[0].value2index(0)
-        nt.assert_true(np.allclose(s.data[:, i_zlp], 12))
-        # Check that at the edges of the spectrum the value == to the
-        # background value. If it wasn't it'll mean that the cropping
-        # code is buggy
-        nt.assert_true((s.data[:, -1] == 2).all())
-        nt.assert_true((s.data[:, 0] == 2).all())
-        # Check that the calibration is correct
-        nt.assert_equal(s.axes_manager._axes[1].offset, self.new_offset)
-        nt.assert_equal(s.axes_manager._axes[1].scale, self.scale)
-
-    def test_align_axis0(self):
-        s = self.signal
-        s = s.swap_axes(0, 1)
-        s.align1D(show_progressbar=None)
-        s = s.swap_axes(0, 1)
         i_zlp = s.axes_manager.signal_axes[0].value2index(0)
         nt.assert_true(np.allclose(s.data[:, i_zlp], 12))
         # Check that at the edges of the spectrum the value == to the

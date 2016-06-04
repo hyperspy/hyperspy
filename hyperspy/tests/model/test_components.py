@@ -125,6 +125,12 @@ class TestPolynomial:
         self.m_3d = s_3d.create_model()
         self.m_3d.append(m[0])
 
+    def test_gradient(self):
+        c = self.m[0]
+        np.testing.assert_array_almost_equal(c.grad_coefficients(1),
+                                             np.array([[6, ], [4.5], [3.5]]))
+        nt.assert_equal(c.grad_coefficients(np.arange(10)).shape, (3, 10))
+
     def test_estimate_parameters_binned(self):
         self.m.signal.metadata.Signal.binned = True
         s = self.m.as_signal(show_progressbar=None)
@@ -310,3 +316,31 @@ class TestScalableFixedPattern:
                             category=RuntimeWarning):
             m.fit()
         nt.assert_almost_equal(fp.yscale.value, 10, delta=.1)
+
+
+class TestHeavisideStep:
+
+    def setUp(self):
+        self.c = hs.model.components.HeavisideStep()
+
+    def test_integer_values(self):
+        c = self.c
+        np.testing.assert_array_almost_equal(c.function([-1, 0, 2]),
+                                             [0, 0.5, 1])
+
+    def test_float_values(self):
+        c = self.c
+        np.testing.assert_array_almost_equal(c.function([-0.5, 0.5, 2]),
+                                             [0, 1, 1])
+
+    def test_not_sorted(self):
+        c = self.c
+        np.testing.assert_array_almost_equal(c.function([3, -0.1, 0]),
+                                             [1, 0, 0.5])
+
+    def test_gradients(self):
+        c = self.c
+        np.testing.assert_array_almost_equal(c.A.grad([3, -0.1, 0]),
+                                             [1, 1, 1])
+        np.testing.assert_array_almost_equal(c.n.grad([3, -0.1, 0]),
+                                             [1, 0, 0.5])

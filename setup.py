@@ -29,9 +29,7 @@ if v[0] != 3:
     sys.exit(1)
 
 from distutils.core import setup
-
 import distutils.dir_util
-
 import os
 import subprocess
 import fileinput

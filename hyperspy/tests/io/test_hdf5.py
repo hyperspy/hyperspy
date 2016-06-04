@@ -271,6 +271,12 @@ class TestLoadingOOMReadOnly:
             # Don't fail tests if we cannot remove
             pass
 
+    def test_compression_opts(self):
+        f = h5py.File(self.filename)
+        d = f['Experiments/__unnamed__/data']
+        nt.assert_equal(d.compression_opts, 8)
+        nt.assert_equal(d.compression, 'gzip')
+        f.close()
 
 def test_strings_from_py2():
     s = EDS_TEM_Spectrum()

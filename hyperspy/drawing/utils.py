@@ -790,7 +790,9 @@ def plot_images(images,
 
             if not isinstance(aspect, (int, float)) and aspect not in [
                     'auto', 'square', 'equal']:
-                raise ValueError('Did not understand aspect ratio input.')
+                print('Did not understand aspect ratio input. ' \
+                      'Using \'auto\' as default.')
+                aspect = 'auto'
 
             if aspect is 'auto':
                 if float(yaxis.size) / xaxis.size < min_asp:

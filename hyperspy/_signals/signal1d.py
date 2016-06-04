@@ -531,6 +531,7 @@ class Signal1DTools(object):
         Returns
         -------
         An array with the result of the estimation. The shift will be
+
         Raises
         ------
         SignalDimensionError if the signal dimension is not 1.
