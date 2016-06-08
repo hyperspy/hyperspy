@@ -30,6 +30,8 @@ Currently the following signal subclasses are available:
 * :py:class:`~._signals.eels.EELSSpectrum`
 * :py:class:`~._signals.eds_tem.EDSTEMSpectrum`
 * :py:class:`~._signals.eds_sem.EDSSEMSpectrum`
+* :py:class:`~._signals.hologram_image.HologramImage`
+* :py:class:`~._signals.wave_image.WaveImage`
 * :py:class:`~._signals.spectrum_simulation.SpectrumSimulation`
 * :py:class:`~._signals.image_simulation.ImageSimulation`
 
@@ -115,6 +117,10 @@ The different subclasses are characterized by three
     |           :py:class:`~._signals.eds_tem.EDSTEMSpectrum`       | spectrum  |   EDS_TEM   |       -       |
     +---------------------------------------------------------------+-----------+-------------+---------------+
     |              :py:class:`~._signals.image.Image`               |   image   |      -      |       -       |
+    +---------------------------------------------------------------+-----------+-------------+---------------+
+    |      :py:class:`~._signals.hologram_image.HologramImage`      |   image   |   HOLOGRAM  |       -       |
+    +---------------------------------------------------------------+-----------+-------------+---------------+
+    |          :py:class:`~._signals.wave_image.WaveImage`          |   image   |     WAVE    |       -       |
     +---------------------------------------------------------------+-----------+-------------+---------------+
     |    :py:class:`~._signals.image_simulation.ImageSimulation`    |   image   |      -      |  simulation   |
     +---------------------------------------------------------------+-----------+-------------+---------------+
@@ -215,6 +221,10 @@ following table:
     |           :py:class:`~._signals.eds_tem.EDSTEMSpectrum`       | True   |
     +---------------------------------------------------------------+--------+
     |              :py:class:`~._signals.image.Image`               | False  |
+    +---------------------------------------------------------------+--------+
+    |      :py:class:`~._signals.hologram_image.HologramImage`      | False  |
+    +---------------------------------------------------------------+--------+
+    |          :py:class:`~._signals.wave_image.WaveImage`          | False  |
     +---------------------------------------------------------------+--------+
     |    :py:class:`~._signals.image_simulation.ImageSimulation`    | False  |
     +---------------------------------------------------------------+--------+

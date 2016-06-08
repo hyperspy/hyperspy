@@ -40,36 +40,36 @@ class TestProperties:
         self.s = hs.signals.WaveImage(test)
 
     def test_get_real(self):
-        nt.assert_almost_equal(self.s.real, real_ref)
+        nt.assert_almost_equal(self.s.real.data, real_ref)
 
     def test_set_real(self):
         test = np.random.random((3, 3))
         self.s.real = test
-        nt.assert_almost_equal(self.s.real, test)
+        nt.assert_almost_equal(self.s.real.data, test)
 
     def test_get_imag(self):
-        nt.assert_almost_equal(self.s.imag, imag_ref)
+        nt.assert_almost_equal(self.s.imag.data, imag_ref)
 
     def test_set_imag(self):
         test = np.random.random((3, 3))
         self.s.imag = test
-        nt.assert_almost_equal(self.s.imag, test)
+        nt.assert_almost_equal(self.s.imag.data, test)
 
     def test_get_phase(self):
-        nt.assert_almost_equal(self.s.phase, phase_ref)
+        nt.assert_almost_equal(self.s.phase.data, phase_ref)
 
     def test_set_phase(self):
         test = np.random.random((3, 3))
         self.s.phase = test
-        nt.assert_almost_equal(self.s.phase, test)
+        nt.assert_almost_equal(self.s.phase.data, test)
 
     def test_get_amplitude(self):
-        nt.assert_almost_equal(self.s.amplitude, amplitude_ref)
+        nt.assert_almost_equal(self.s.amplitude.data, amplitude_ref)
 
     def test_set_amplitude(self):
         test = np.random.random((3, 3))
         self.s.amplitude = test
-        nt.assert_almost_equal(self.s.amplitude, test)
+        nt.assert_almost_equal(self.s.amplitude.data, test)
 
     def test_get_unwrapped_phase(self):
         phase_ref = np.arange(9).reshape((3, 3))
@@ -81,21 +81,18 @@ class TestProperties:
     def test_normalize(self):
         normalization = np.mean(comp_ref)
         self.s.normalize(self.s.data)
-        nt.assert_almost_equal(self.s.amplitude, amplitude_ref / np.abs(normalization))
-        nt.assert_almost_equal(self.s.phase, phase_ref - np.angle(normalization))
+        nt.assert_almost_equal(self.s.amplitude.data, amplitude_ref / np.abs(normalization))
+        nt.assert_almost_equal(self.s.phase.data, phase_ref - np.angle(normalization))
 
     def test_subtract_reference(self):
         self.s.subtract_reference(self.s)
-        nt.assert_almost_equal(self.s.amplitude, 1)
-        nt.assert_almost_equal(self.s.phase, 0)
+        nt.assert_almost_equal(self.s.amplitude.data, 1)
+        nt.assert_almost_equal(self.s.phase.data, 0)
 
     def test_add_phase_ramp(self):
         self.s.phase = np.indices((3,3)).sum(axis=0) + 4
         self.s.add_phase_ramp(-1, -1, -4)
-        nt.assert_almost_equal(self.s.phase, 0)
-
-
-# TODO: After image stacks can be handled, test for them here!
+        nt.assert_almost_equal(self.s.phase.data, 0)
 
 
 if __name__ == '__main__':

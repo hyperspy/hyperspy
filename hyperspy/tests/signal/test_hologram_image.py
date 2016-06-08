@@ -1,4 +1,5 @@
-# Copyright 2007-2016 The HyperSpy developers
+# -*- coding: utf-8 -*-
+#  Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -27,7 +28,6 @@ import hyperspy.api as hs
 
 # def test_reconstruct_phase():
 #     nt.assert_true(True)
-# TODO: Vadim, this is where your tests belong!
 
 
 if __name__ == '__main__':

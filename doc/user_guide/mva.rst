@@ -132,7 +132,7 @@ the decomposition model. You can easily calculate and display the residuals:
     the model constructed using the chosen components.
 
 Non-negative matrix factorization
-----------------------------
+---------------------------------
 
 Another popular decomposition method is non-negative matrix factorization (NMF), which
 can be accessed in HyperSpy with:

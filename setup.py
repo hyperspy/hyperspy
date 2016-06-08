@@ -51,6 +51,7 @@ install_req = ['scipy',
                'natsort',
                'requests',
                'setuptools',
+               'skimage',
                'sympy',
                'dill',
                'h5py']

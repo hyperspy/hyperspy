@@ -21,11 +21,9 @@ from hyperspy._signals.image import Image
 
 
 class HologramImage(Image):
-    """
-    """
+    """Image subclass for holograms acquired via electron holography."""
 
     _signal_type = 'HOLOGRAM'
 
-    # def reconstruct_phase(self, ref_data=None, rec_param=None, show_phase=False, **kwargs):
+    # def reconstruct_wave_image(self, ref_data=None, rec_param=None, show_phase=False, **kwargs):
     #     pass
-    # TODO: Vadim, this is where your function should go!

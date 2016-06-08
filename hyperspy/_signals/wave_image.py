@@ -25,71 +25,100 @@ from hyperspy.signals import Image
 
 
 class WaveImage(Image):
-    """
-    """
+    """Image subclass for complex electron wave data (e.g. reconstructed from holograms)."""
 
     _signal_type = 'WAVE'
 
     @property
     def phase(self):
-        return np.angle(self.data)
+        """Get/set the phase of the data. Returns an :class:`~hyperspy._signals.Image`."""
+        phase = self._deepcopy_with_new_data(np.angle(self.data))
+        phase.set_signal_type('')  # Result is a normal Image!
+        return phase
 
     @phase.setter
     def phase(self, phase):
-        self.data = self.amplitude * np.exp(1j * phase)
+        if isinstance(phase, Image):
+            phase = phase.data
+        self.data = self.amplitude.data * np.exp(1j * phase)
 
     @property
     def amplitude(self):
-        return np.abs(self.data)
+        """Get/set the amplitude of the data. Returns an :class:`~hyperspy._signals.Image`."""
+        amplitude = self._deepcopy_with_new_data(np.abs(self.data))
+        amplitude.set_signal_type('')  # Result is a normal Image!
+        return amplitude
 
     @amplitude.setter
     def amplitude(self, amplitude):
-        self.data = amplitude * np.exp(1j * self.phase)
+        if isinstance(amplitude, Image):
+            amplitude = amplitude.data
+        self.data = amplitude * np.exp(1j * self.phase.data)
 
     @property
     def real(self):
-        return np.real(self.data)
+        """Get/set the real part of the data. Returns an :class:`~hyperspy._signals.Image`."""
+        real = self._deepcopy_with_new_data(np.real(self.data))
+        real.set_signal_type('')  # Result is a normal Image!
+        return real
 
     @real.setter
     def real(self, real):
-        self.data = real + 1j * self.imag
+        if isinstance(real, Image):
+            real = real.data
+        self.data = real + 1j * self.imag.data
 
     @property
     def imag(self):
-        return np.imag(self.data)
+        """Get/set the imaginary part of the data. Returns an :class:`~hyperspy._signals.Image`."""
+        imag = self._deepcopy_with_new_data(np.imag(self.data))
+        imag.set_signal_type('')  # Result is a normal Image!
+        return imag
 
     @imag.setter
     def imag(self, imag):
-        self.data = self.real + 1j * imag
+        if isinstance(imag, Image):
+            imag = imag.data
+        self.data = self.real.data + 1j * imag
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Make sure data is 2D and complex
-        self.data = self.data.astype(complex, copy=False)  # Avoid copy if data is already complex!
-        # TODO: Add wave image specific constructor commands here if anything comes to mind!
+        # Make sure data is complex:
+        self.change_dtype(complex)
 
-    def get_unwrapped_phase(self):
+    def get_unwrapped_phase(self, wrap_around=False):
         """Return the unwrapped phase as an :class:`~hyperspy._signals.Image`.
+
+        Parameters
+        ----------
+        wrap_around : bool or sequence of bool, optional
+            When an element of the sequence is  `True`, the unwrapping process
+            will regard the edges along the corresponding axis of the image to be
+            connected and use this connectivity to guide the phase unwrapping
+            process. If only a single boolean is given, it will apply to all axes.
+            Wrap around is not supported for 1D arrays.
 
         Returns
         -------
         phase_image: :class:`~hyperspy._signals.Image`
             Unwrapped phase.
 
+        Notes
+        -----
+        Uses the :func:`~skimage.restoration.unwrap_phase` function from `skimage`.
+
         """
-        # TODO: For different unwrap algorithms, maybe add a 'mode' parameter and let user choose!
-        # TODO: This single images (not stacks). How should I best iterate over the stacks?
-        phase_image = self._deepcopy_with_new_data(unwrap(self.phase))
+        phase_image = self._deepcopy_with_new_data(self.phase.data)  # Get copy of just the phase!
         phase_image.set_signal_type('')  # New signal is normal image without special signal type!
-        phase_image._assign_subclass()  # Changes subclass to be Image!
-        return phase_image  # TODO: Is this the correct way to generate image with same metadata?
+        phase_image.map(unwrap, wrap_around=wrap_around)  # Unwrap phase!
+        return phase_image
 
     def normalize(self, normalization):
         """Normalize the wave. Takes the mean if input is an array.
 
         Parameters
         ----------
-        normalization: float or :class:`~numpy.ndarray`
+        normalization: complex or :class:`~numpy.ndarray`
 
         """
         self.data /= np.mean(normalization)
@@ -125,40 +154,9 @@ class WaveImage(Image):
             `axes_manager` of the signal.
 
         """
-        yy, xx = np.indices(self.data.shape)
-        phase_ramp = offset * np.ones(self.data.shape)
-        phase_ramp += ramp_x * xx
-        phase_ramp += ramp_y * yy
-        self.phase += phase_ramp
-        # TODO: Same problem as before, does not work for stacks. How to best iterate over them?
-
-    # def fit_phase_ramp(self, roi=None, filter_order=5, subtract_ramp=True):
-    #     """
-    #
-    #     Parameters
-    #     ----------
-    #     roi: ???, optional
-    #
-    #     filter_order: int, optional
-    #         Default is 5.
-    #     subtract_ramp: boolean, optional
-    #         Default is True.
-    #
-    #     Returns
-    #     -------
-    #     (ramp_x, ramp_y): tuple of floats
-    #
-    #     """
-    #     ramp_x, ramp_y = 1, 1
-    #     if subtract_ramp:
-    #         self.add_phase_ramp(-ramp_x, -ramp_y)
-    #     return ramp_x, ramp_y
-    # TODO: Florian, do your magic here and edit docstring!
-
-# TODO: Some functions can't handle image stacks. Use wrapper functions which iterate over images?
-
-# TODO: Overwrite plot function to be able to plot real, imag, phase, amplitude?
-
-# TODO: Store applied operations somewhere in metadata?
-
-# TODO: Will this work with image stacks? Should we ensure that the size is just 2D (no stacks)?
+        yy, xx = np.indices(self.axes_manager._signal_shape_in_array)
+        phase = self.phase.data
+        phase += offset * np.ones(self.data.shape)
+        phase += ramp_x * xx
+        phase += ramp_y * yy
+        self.phase = phase
