@@ -210,9 +210,9 @@ When installing HyperSpy using Python installers or from source the Python
 programming language and the following libraries must be installed in the
 system: numpy, scipy, matplotlib (>= 1.2), ipython, natsort, traits and
 traitsui. For full functionality it is recommended to also install h5py,
-skimage and scikit-learn. In addition, since version 0.7.2 the lowess filter
-requires statsmodels. In Windows HyperSpy uses the Ipython's QtConsole and 
-therefore Qt and PyQt or PySide are also required.
+scikit-image and scikit-learn. In addition, since version 0.7.2 the lowess
+filter requires statsmodels. In Windows HyperSpy uses the Ipython's 
+QtConsole and therefore Qt and PyQt or PySide are also required.
 
 
 In Debian/Ubuntu you can install the libraries as follows:
@@ -221,7 +221,8 @@ In Debian/Ubuntu you can install the libraries as follows:
 
     $ sudo apt-get install python-numpy python-matplotlib ipython
     ipython-notebook python-traits python-traitsui python-h5py
-    python-scikits-learn python-nose python-statsmodels python-skimage
+    python-scikits-learn python-scikit-image python-nose
+	python-statsmodels
 
 In Arch Linux, the following command should install the required packages to
 get a fully functional installation:
@@ -232,7 +233,7 @@ get a fully functional installation:
     python2-traits python2-traitsui python2-h5py python2-scikit-learn python2-nose
     python2-statsmodels python2-pillow python2-pyqt4 python2-pyqt5 python2-scipy
     python2-pandas python2-setuptools ipython2	python2-jinja python2-pyzmq
-    python2-pyqt4 python2-tornado python2-sip python2-pygments python2-skimage
+    python2-pyqt4 python2-tornado python2-sip python2-pygments python2-scikit-image
 
     # Or, just run this command from the root hyperspy directory to import the
     # list of packages and install automatically:
