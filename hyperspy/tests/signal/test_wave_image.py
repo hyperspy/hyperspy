@@ -72,9 +72,9 @@ class TestProperties:
         nt.assert_almost_equal(self.s.amplitude.data, test)
 
     def test_get_unwrapped_phase(self):
-        phase_ref = np.arange(9).reshape((3, 3))
+        phase_ref = np.arange(9).reshape((3, 3)) - 4
         self.s.phase = phase_ref
-        phase = self.s.get_unwrapped_phase()
+        phase = self.s.get_unwrapped_phase(seed=42)
         assert isinstance(phase, hs.signals.Image)
         nt.assert_almost_equal(phase.data, phase_ref)
 

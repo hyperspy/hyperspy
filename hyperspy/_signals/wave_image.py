@@ -86,7 +86,7 @@ class WaveImage(Image):
         # Make sure data is complex:
         self.change_dtype(complex)
 
-    def get_unwrapped_phase(self, wrap_around=False):
+    def get_unwrapped_phase(self, wrap_around=False, seed=None):
         """Return the unwrapped phase as an :class:`~hyperspy._signals.Image`.
 
         Parameters
@@ -97,6 +97,9 @@ class WaveImage(Image):
             connected and use this connectivity to guide the phase unwrapping
             process. If only a single boolean is given, it will apply to all axes.
             Wrap around is not supported for 1D arrays.
+        seed : int, optional
+            Unwrapping 2D or 3D images uses random initialization. This sets the
+            seed of the PRNG to achieve deterministic behavior.
 
         Returns
         -------
@@ -110,7 +113,7 @@ class WaveImage(Image):
         """
         phase_image = self._deepcopy_with_new_data(self.phase.data)  # Get copy of just the phase!
         phase_image.set_signal_type('')  # New signal is normal image without special signal type!
-        phase_image.map(unwrap, wrap_around=wrap_around)  # Unwrap phase!
+        phase_image.map(unwrap, wrap_around=wrap_around, seed=seed)  # Unwrap phase!
         return phase_image
 
     def normalize(self, normalization):
