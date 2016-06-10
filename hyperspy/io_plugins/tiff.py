@@ -17,11 +17,15 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import logging
 import warnings
 from distutils.version import LooseVersion
 
 import traits.api as t
 from hyperspy.misc import rgb_tools
+from hyperspy.misc.utils import DictionaryTreeBrowser
+
+_logger = logging.getLogger(__name__)
 
 # Plugin characteristics
 # ----------------------
@@ -146,12 +150,14 @@ def file_reader(filename, record_by='image', **kwds):
         units = t.Undefined
         scales = []
 
-        # for files created with imageJ        
-        image_description = op["image_description"].decode()
-        if 'ImageJ' in image_description:
-            # ImageJ write the unit in the image description
-            units = image_description.split('unit=')[1].split('\n')[0]
-            scales = get_scales_from_x_y_resolution(op)
+        _logger.info('Tiff tags list: %s'%op.keys())
+        # for files created with imageJ
+        if 'image_description' in op.keys():
+            image_description = op["image_description"].decode()
+            if 'ImageJ' in image_description:
+                # ImageJ write the unit in the image description
+                units = image_description.split('unit=')[1].split('\n')[0]
+                scales = get_scales_from_x_y_resolution(op)
         # for files created with DM
         if '65003' in op.keys():
             units = []
@@ -160,6 +166,18 @@ def file_reader(filename, record_by='image', **kwds):
             scales = []
             scales.extend([op['65009'],  # x scale
                            op['65010']]) # y scale
+        # for FEI tiff files:
+        if '34682' in op.keys():
+            op = _read_original_metadata_FEI(op['34682'])
+            scales = _get_scale_FEI(op)
+            units = 'm'
+
+        # for Zeiss tiff files:
+        if '34118' in op.keys():
+            op = _read_original_metadata_Zeiss(op['34118'])
+            scales = _get_scale_Zeiss(op)
+            units = 'm'
+                           
         # add the scale for the missing axes when necessary
         for i in dc.shape[len(scales):]:
             scales.append(1.0)
@@ -250,3 +268,32 @@ def imagej_description(version='1.11a', kwargs={}):
         append.append('%s=%s' % (key.lower(), value))
 
     return '\n'.join(result + append + [''])
+
+#def read_OME_metadata():
+#    """
+#    see http://www.openmicroscopy.org/site/support/bio-formats5.1/formats/fei-tiff-metadata.html
+#    OME-XML in tag 'image_description'
+#    """
+#    pass
+    
+def _read_original_metadata_FEI(tag):
+    """ information saved in tag '34682' """
+    metadata_string = tag.decode('latin-1')
+    import configparser
+    metadata = configparser.ConfigParser(allow_no_value=True)
+    metadata.read_string(metadata_string)
+    d = {section: dict(metadata.items(section)) for section in metadata.sections()}
+    om = DictionaryTreeBrowser()
+    om.add_dictionary(d)
+    return om
+
+def _get_scale_FEI(original_metadata):
+    return original_metadata.Scan.pixelwidth, original_metadata.Scan.pixelheight
+    
+def _read_original_metadata_Zeiss(tag):
+    """ information saved in tag '34118' """
+    metadata_list = tag.decode('latin-1').split('\r\n')
+    return metadata_list
+
+def _get_scale_Zeiss(original_metadata):
+    pass
