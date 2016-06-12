@@ -66,7 +66,7 @@ build: false  # Not a C# project, build stuff at the test step instead.
 test_script:
   # Run the project tests
   - ps: Add-AppveyorMessage "Running tests..."
-  - "python continuous_integration/nosetest.py hyperspy"
+  - "python continuous_integration/nosetest.py hyperspy.tests"
   - ps: Add-AppveyorMessage "Testing completed."
 
 # Auto-deployment of bundle installer for tags:
