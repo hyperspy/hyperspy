@@ -195,7 +195,8 @@ class TestDiffusionSimple:
         nt.assert_equal(slices, (slice(0, 4, None), slice(0, 3, None)))
         tmp = np.array([[0., 1., np.nan],
                         [1., 1.41421356, np.nan],
-                        [2., np.nan, np.nan]])
+                        [2., np.nan, np.nan],
+                        [np.nan, np.nan, np.nan]])
         tmp_m = np.array([[False, True, False],
                           [True, True, False],
                           [True, False, False],
