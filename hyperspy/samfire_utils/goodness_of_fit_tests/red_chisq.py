@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
+# Copyright 2007-2011 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -18,22 +18,20 @@
 
 import numpy as np
 
-from hyperspy._samfire_utils.strategy import DiffusionStrategy
-from hyperspy._samfire_utils._weights.red_chisq import ReducedChiSquaredWeight
+from hyperspy.samfire_utils.goodness_of_fit_tests.test_general import goodness_test
 
 
-def exp_decay(distances):
-    """Exponential decay function."""
-    return np.exp(-distances)
+class red_chisq_test(goodness_test):
 
+    def __init__(self, tolerance):
+        self.name = 'Reduced chi-squared test'
+        self.expected = 1.0
+        self.tolerance = tolerance
 
-class ReducedChiSquaredStrategy(DiffusionStrategy):
-    """Reduced chi-squared Diffusion strategy of the SAMFire. Uses reduced
-    chi-squared as the weight, and exponential decay as the decau function.
-    """
+    def test(self, model, ind):
+        return np.abs(
+            model.red_chisq.data[ind] - self.expected) < self.tolerance
 
-    def __init__(self):
-        DiffusionStrategy.__init__(self, 'Reduced chi squared strategy')
-        self.weight = ReducedChiSquaredWeight()
-        self.radii = 3.
-        self.decay_function = exp_decay
+    def map(self, model, mask):
+        ans = np.abs(model.red_chisq.data - self.expected) < self.tolerance
+        return np.logical_and(mask, ans)

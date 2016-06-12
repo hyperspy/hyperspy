@@ -21,10 +21,10 @@ import nose.tools as nt
 import dill
 import copy
 import hyperspy.api as hs
-from hyperspy._samfire_utils.samfire_kernel import multi_kernel
+from hyperspy.samfire_utils.samfire_kernel import multi_kernel
 from hyperspy.misc.utils import DictionaryTreeBrowser
 from hyperspy.samfire import StrategyList
-from hyperspy._samfire_utils.samfire_worker import create_worker
+from hyperspy.samfire_utils.samfire_worker import create_worker
 
 
 class Mock_queue(object):
@@ -182,8 +182,8 @@ class TestSamfireEmpty:
     def test_samfire_init_strategies(self):
         m = self.model
         samf = m.create_samfire(workers=1, setup=False)
-        from hyperspy._samfire_utils._strategies.diffusion.red_chisq import ReducedChiSquaredStrategy
-        from hyperspy._samfire_utils._strategies.segmenter.histogram import HistogramStrategy
+        from hyperspy.samfire_utils.strategies.diffusion.red_chisq import ReducedChiSquaredStrategy
+        from hyperspy.samfire_utils.strategies.segmenter.histogram import HistogramStrategy
         nt.assert_is_instance(
             samf.strategies[0],
             ReducedChiSquaredStrategy)
@@ -278,8 +278,8 @@ class TestSamfireEmpty:
     def test_change_strategy(self):
         m = self.model
         samf = m.create_samfire(setup=False)
-        from hyperspy._samfire_utils._strategies.diffusion.red_chisq import ReducedChiSquaredStrategy
-        from hyperspy._samfire_utils._strategies.segmenter.histogram import HistogramStrategy
+        from hyperspy.samfire_utils.strategies.diffusion.red_chisq import ReducedChiSquaredStrategy
+        from hyperspy.samfire_utils.strategies.segmenter.histogram import HistogramStrategy
 
         ind = (0, 0)
         samf.metadata.marker[ind] = -2
@@ -427,7 +427,7 @@ class TestSamfireWorker:
         self.ind = (1,)
         self.args = {}
         self.model_letter = 'sldkfjg'
-        from hyperspy._samfire_utils.fit_tests import red_chisq_test as rct
+        from hyperspy.samfire_utils.fit_tests import red_chisq_test as rct
         self.gt_dump = dill.dumps(rct(tolerance=1.0))
         m_slice = m.inav[self.ind[::-1]]
         m_slice.store(self.model_letter)

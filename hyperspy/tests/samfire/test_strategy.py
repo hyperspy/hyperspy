@@ -17,7 +17,7 @@
 
 import nose.tools as nt
 import numpy as np
-from hyperspy._samfire_utils.strategy import DiffusionStrategy, SegmenterStrategy
+from hyperspy.samfire_utils.strategy import DiffusionStrategy, SegmenterStrategy
 from hyperspy.misc.utils import DictionaryTreeBrowser
 from hyperspy.signals import Spectrum
 from hyperspy.components import Gaussian

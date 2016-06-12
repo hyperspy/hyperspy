@@ -18,7 +18,7 @@
 import numpy as np
 import nose.tools as nt
 
-from hyperspy._samfire_utils._segmenters.histogram import HistogramSegmenter
+from hyperspy.samfire_utils.segmenters.histogram import HistogramSegmenter
 from hyperspy.misc.utils import DictionaryTreeBrowser
 from hyperspy.external.astroML.histtools import histogram
 

@@ -24,7 +24,7 @@ from ipyparallel import Reference as ipp_Reference
 import numpy as np
 
 from hyperspy.utils.parallel_pool import ParallelPool
-from hyperspy._samfire_utils.samfire_worker import create_worker
+from hyperspy.samfire_utils.samfire_worker import create_worker
 
 _logger = logging.getLogger(__name__)
 
@@ -140,7 +140,7 @@ class SamfirePool(ParallelPool):
         if self.is_ipyparallel:
             direct_view = self.pool.client[:self.num_workers]
             direct_view.block = True
-            direct_view.execute("from hyperspy._samfire_utils.samfire_worker"
+            direct_view.execute("from hyperspy.samfire_utils.samfire_worker"
                                 " import create_worker")
             direct_view.scatter('identity', range(self.num_workers),
                                 flatten=True)

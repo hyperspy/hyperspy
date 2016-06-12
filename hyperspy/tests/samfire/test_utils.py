@@ -18,7 +18,7 @@
 import numpy as np
 import nose.tools as nt
 
-from hyperspy._samfire_utils.strategy import nearest_indices
+from hyperspy.samfire_utils.strategy import nearest_indices
 
 
 class TestSamfireUtils:

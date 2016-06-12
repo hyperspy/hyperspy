@@ -32,7 +32,8 @@ class TestRedChisq:
         art_model.red_chisq.data[2, 5] = 2.
         self.m = art_model
         # have to be imported here, as otherwise crashes nosetools
-        from hyperspy._samfire_utils._goodness_of_fit_tests.red_chisq import red_chisq_test as rct
+        from hyperspy.samfire_utils.goodness_of_fit_tests.red_chisq import \
+            red_chisq_test as rct
         self.t = rct(0.9)
 
     def test_changing_tolerance(self):
@@ -72,8 +73,8 @@ class TestInformationCriteria:
         m.multifit(show_progressbar=False)
         self.m = m
         # have to be imported here, as otherwise crashes nosetools
-        from hyperspy._samfire_utils._goodness_of_fit_tests.information_theory import \
-            AIC_test, AICc_test, BIC_test
+        from hyperspy.samfire_utils.goodness_of_fit_tests.information_theory \
+            import (AIC_test, AICc_test, BIC_test)
         self.aic = AIC_test(0.)
         self.aicc = AICc_test(0.)
         self.bic = BIC_test(0.)

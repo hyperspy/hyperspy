@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-from hyperspy._samfire_utils._goodness_of_fit_tests.red_chisq import red_chisq_test
-from hyperspy._samfire_utils._goodness_of_fit_tests.information_theory import AIC_test
-from hyperspy._samfire_utils._goodness_of_fit_tests.information_theory import AICc_test
-from hyperspy._samfire_utils._goodness_of_fit_tests.information_theory import BIC_test
+from hyperspy.samfire_utils.goodness_of_fit_tests.red_chisq import \
+    red_chisq_test
+from hyperspy.samfire_utils.goodness_of_fit_tests.information_theory import \
+    (AIC_test, AICc_test, BIC_test)

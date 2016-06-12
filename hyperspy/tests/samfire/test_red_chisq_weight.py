@@ -18,7 +18,7 @@
 import numpy as np
 import nose.tools as nt
 
-from hyperspy._samfire_utils._weights.red_chisq import ReducedChiSquaredWeight
+from hyperspy.samfire_utils.weights.red_chisq import ReducedChiSquaredWeight
 from hyperspy.misc.utils import DictionaryTreeBrowser
 
 

@@ -26,13 +26,13 @@ from tqdm import tqdm
 from hyperspy.misc.utils import DictionaryTreeBrowser
 from hyperspy.misc.utils import slugify
 from hyperspy.signal import Signal
-from hyperspy._samfire_utils.strategy import (DiffusionStrategy,
-                                              SegmenterStrategy)
-from hyperspy._samfire_utils._strategies.diffusion.red_chisq import \
+from hyperspy.samfire_utils.strategy import (DiffusionStrategy,
+                                             SegmenterStrategy)
+from hyperspy.samfire_utils.strategies.diffusion.red_chisq import \
     ReducedChiSquaredStrategy
-from hyperspy._samfire_utils._strategies.segmenter.histogram import \
+from hyperspy.samfire_utils.strategies.segmenter.histogram import \
     HistogramStrategy
-from hyperspy._samfire_utils.samfire_pool import SamfirePool
+from hyperspy.samfire_utils.samfire_pool import SamfirePool
 
 
 _logger = logging.getLogger(__name__)
@@ -186,10 +186,10 @@ class Samfire:
         self.strategies.append(HistogramStrategy())
         self._active_strategy_ind = 0
         self.update_every = max(10, workers * 2)  # some sensible number....
-        from hyperspy._samfire_utils.fit_tests import red_chisq_test
+        from hyperspy.samfire_utils.fit_tests import red_chisq_test
         self.metadata.goodness_test = red_chisq_test(tolerance=1.0)
         self.metadata.gt_dump = None
-        from hyperspy._samfire_utils.samfire_kernel import single_kernel
+        from hyperspy.samfire_utils.samfire_kernel import single_kernel
         self.single_kernel = single_kernel
         self._workers = workers
         if len(kwargs) or setup:
