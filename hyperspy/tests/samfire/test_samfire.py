@@ -457,8 +457,8 @@ class TestSamfireWorker:
             'variance.data':
             self.model.signal.metadata.Signal.Noise_properties.variance()
         })
-        keyword, (_id, _ind, result, found_solution) = worker.test(self.ind,
-                                                                   self.vals)
+        keyword, (_id, _ind, result, found_solution) = \
+            worker.run_pixel(self.ind, self.vals)
         nt.assert_equal(_id, 'worker')
         nt.assert_equal(_ind, self.ind)
         nt.assert_true(found_solution)

@@ -136,7 +136,7 @@ class Worker:
         self.best_values = []
         self.best_dof = np.inf
 
-    def test(self, ind, value_dict):
+    def run_pixel(self, ind, value_dict):
         self.reset()
         self.ind = ind
         self.value_dict = value_dict

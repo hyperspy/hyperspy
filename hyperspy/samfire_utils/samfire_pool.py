@@ -228,10 +228,10 @@ class SamfirePool(ParallelPool):
             needed_number = self.need_pixels
         for ind, value_dict in self.samf.generate_values(needed_number):
             if self.is_multiprocessing:
-                self.shared_queue.put(('test', (ind, value_dict)))
+                self.shared_queue.put(('run_pixel', (ind, value_dict)))
             elif self.is_ipyparallel:
                 def test_func(worker, ind, value_dict):
-                    return worker.test(ind, value_dict)
+                    return worker.run_pixel(ind, value_dict)
                 self.results.append((self.pool.apply_async(test_func,
                                                            self.rworker, ind,
                                                            value_dict), ind))
