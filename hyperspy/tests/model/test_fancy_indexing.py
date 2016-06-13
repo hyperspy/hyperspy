@@ -73,13 +73,6 @@ class TestModelIndexing:
         self.model.axes_manager.indices = (0, 0)
         self.model[0].active = False
 
-        # Make sure the array we copy has been appropriatelly updated before
-        # slicing
-        _test = self.model[0]._active_array[0, 0]
-        while _test:
-            time.sleep(0.1)
-            _test = self.model[0]._active_array[0, 0]
-
         m = self.model.inav[0::2, :]
         np.testing.assert_array_equal(
             m.chisq.data, self.model.chisq.data[:, 0::2])
