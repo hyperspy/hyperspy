@@ -35,6 +35,8 @@ class Mock_queue(object):
     def put(self, value):
         self.var.append(value)
 
+np.random.seed(123)
+
 
 def generate_test_model():
 
