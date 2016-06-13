@@ -88,6 +88,17 @@ class TestModelIndexing:
             for p_new, p_old in zip(c.parameters, self.model[ic].parameters):
                 nt.assert_true((p_old.map[:, 0::2] == p_new.map).all())
 
+    # test that explicitly does the wrong thing by mixing up the order
+    def test_component_copying_order(self):
+        self.model.axes_manager.indices = (0, 0)
+        self.model[0].active = False
+        g = self.model[0]
+        g._slicing_order = ('_active_array', 'active_is_multidimensional',
+                            'active')
+        nt.assert_false(g._active_array[0, 0])
+        m = self.model.inav[0:2, 0:2]
+        nt.assert_true(m[0]._active_array[0, 0])
+
 
 class TestModelIndexingClass:
 

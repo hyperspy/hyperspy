@@ -653,8 +653,8 @@ class Component(t.HasTraits):
                            'active': None
                            }
         self._slicing_whitelist = {'_active_array': 'inav'}
-        self._slicing_order = ('active_is_multidimensional', '_active_array',
-                               'active')
+        self._slicing_order = ('active', 'active_is_multidimensional',
+                               '_active_array',)
 
     _name = ''
     _active_is_multidimensional = False
