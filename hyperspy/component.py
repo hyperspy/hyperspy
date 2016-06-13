@@ -674,9 +674,7 @@ class Component(t.HasTraits):
 
         if value:  # Turn on
             if self._axes_manager.navigation_size < 2:
-                warnings.warn(
-                    '`navigation_size` < 2, skipping',
-                    RuntimeWarning)
+                _logger.warning('`navigation_size` < 2, skipping')
                 return
             # Store value at current position
             self._create_active_array()

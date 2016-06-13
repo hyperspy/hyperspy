@@ -80,7 +80,7 @@ class TestModelIndexing:
             time.sleep(0.1)
             _test = self.model[0]._active_array[0, 0]
 
-        m = self.model.inav[0::2]
+        m = self.model.inav[0::2, :]
         np.testing.assert_array_equal(
             m.chisq.data, self.model.chisq.data[:, 0::2])
         np.testing.assert_array_equal(m.dof.data, self.model.dof.data[:, 0::2])
