@@ -45,13 +45,16 @@ if os.path.exists('build'):
 install_req = ['scipy',
                'ipython>=2.0',
                'matplotlib>=1.2',
-               'numpy',
+               'numpy>=1.10',
                'traits>=4.5.0',
                'traitsui>=5.0',
                'natsort',
                'requests',
                'setuptools',
-               'sympy']
+               'tqdm',
+               'sympy',
+               'dill',
+               'h5py']
 
 
 class update_version_when_dev:

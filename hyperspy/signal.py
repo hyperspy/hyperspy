@@ -692,7 +692,7 @@ class Signal1DTools(object):
                          leave=True) as pbar:
             for i, (dat, shift) in enumerate(zip(
                     self._iterate_signal(),
-                    shift_array.ravel(()))):
+                    shift_array.ravel())):
                 if np.isnan(shift):
                     continue
                 si = sp.interpolate.interp1d(original_axis,
@@ -3030,7 +3030,7 @@ class Signal(FancySlicing,
 
     def _summary(self):
         string = "\n\tTitle: "
-        string += self.metadata.General.title.decode('utf8')
+        string += self.metadata.General.title
         if self.metadata.has_item("Signal.signal_type"):
             string += "\n\tSignal type: "
             string += self.metadata.Signal.signal_type
@@ -4584,8 +4584,8 @@ class Signal(FancySlicing,
         scale = set()
         units = set()
         for i in range(len(self.axes_manager.signal_axes)):
-            scale.add(self.axes_manager[i].scale)
-            units.add(self.axes_manager[i].units)
+            scale.add(self.axes_manager.signal_axes[i].scale)
+            units.add(self.axes_manager.signal_axes[i].units)
         if len(units) != 1 or len(scale) != 1:
             warnings.warn(
                 "The function you applied does not take into "

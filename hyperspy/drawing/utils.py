@@ -723,7 +723,7 @@ def plot_images(images,
                 yaxis.low_value,
             )
 
-            if not isinstance(aspect, (int, long, float)) and aspect not in [
+            if not isinstance(aspect, (int, float)) and aspect not in [
                     'auto', 'square', 'equal']:
                 raise ValueError('Did not understand aspect ratio input.')
 
@@ -821,7 +821,7 @@ def plot_images(images,
                 plt.colorbar(axes_im, cax=cax)
 
             # Add scalebars as necessary
-            if (scalelist and i in scalebar) or scalebar is 'all':
+            if (scalelist and idx - 1 in scalebar) or scalebar is 'all':
                 ax.scalebar = ScaleBar(
                     ax=ax,
                     units=axes[0].units,

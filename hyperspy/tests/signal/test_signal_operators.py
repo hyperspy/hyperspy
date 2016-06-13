@@ -128,13 +128,13 @@ class TestUnaryOperators:
         self.s1 = Signal(np.array((1, -1, 4, -3)))
 
     def test_minus(self):
-        nt.assert_true(((-self.s1).data == -self.s1.data).all())
+        assert_array_equal((-self.s1).data, -self.s1.data)
 
     def test_plus(self):
-        nt.assert_true(((+self.s1).data == +self.s1.data).all())
+        assert_array_equal((+self.s1).data, +self.s1.data)
 
     def test_invert(self):
-        nt.assert_true(((~self.s1).data == ~self.s1.data).all())
+        assert_array_equal((~self.s1).data, ~self.s1.data)
 
     def test_abs(self):
-        nt.assert_true((abs(self.s1).data == abs(self.s1.data)).all())
+        assert_array_equal(abs(self.s1).data, abs(self.s1.data))

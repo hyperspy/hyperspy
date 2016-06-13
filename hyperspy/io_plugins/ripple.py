@@ -158,7 +158,8 @@ def parse_ripple(fp):
             line = line.split(sep)  # now it's a list
             if (line[0] in rpl_keys) is True:
                 # is rpl_keys[line[0]] an iterable?
-                if hasattr(rpl_keys[line[0]], '__iter__'):
+                try:
+                    hasattr(rpl_keys[line[0]], '__iter__')
                     if line[1] not in rpl_keys[line[0]]:
                         err = \
                             'Wrong value for key %s.\n' \
@@ -166,7 +167,7 @@ def parse_ripple(fp):
                             ' but it should be one of %s' % \
                             (line[0], line[1], str(rpl_keys[line[0]]))
                         raise IOError(err)
-                else:
+                except:
                     # rpl_keys[line[0]] must then be a type
                     line[1] = rpl_keys[line[0]](line[1])
 

@@ -494,6 +494,32 @@ class BaseModel(list):
                             {'limited': limited,
                              'limits': limits},) * param._number_of_elements)
 
+    def ensure_parameters_in_bounds(self):
+        """For all active components, snaps their free parameter values to
+        be within their boundaries (if bounded). Does not touch the array of
+        values.
+        """
+        for component in self:
+            if component.active:
+                for param in component.free_parameters:
+                    bmin = -np.inf if param.bmin is None else param.bmin
+                    bmax = np.inf if param.bmax is None else param.bmax
+                    if param._number_of_elements == 1:
+                        if not bmin <= param.value <= bmax:
+                            min_d = np.abs(param.value - bmin)
+                            max_d = np.abs(param.value - bmax)
+                            if min_d < max_d:
+                                param.value = bmin
+                            else:
+                                param.value = bmax
+                    else:
+                        values = np.array(param.value)
+                        minmask = values < bmin
+                        maxmask = values > bmax
+                        values[maxmask] = bmax
+                        values[minmask] = bmin
+                        param.value = tuple(values)
+
     def store_current_values(self):
         """ Store the parameters of the current coordinates into the
         parameters array.
@@ -685,6 +711,16 @@ class BaseModel(list):
         else:
             cm = dummy_context_manager
 
+        if bounded is True:
+            if fitter not in ("mpfit", "tnc", "l_bfgs_b"):
+                raise NotImplementedError("Bounded optimization is only"
+                                          "available for the mpfit "
+                                          "optimizer.")
+            else:
+                # this has to be done before setting the p0, so moved things
+                # around
+                self.ensure_parameters_in_bounds()
+
         with cm(update_on_resume=True):
             self.p_std = None
             self._set_p0()
@@ -703,10 +739,6 @@ class BaseModel(list):
                 grad_ml = self._gradient_ml
                 grad_ls = self._gradient_ls
 
-            if bounded is True and fitter not in ("mpfit", "tnc", "l_bfgs_b"):
-                raise NotImplementedError(
-                    "Bounded optimization is only available for the mpfit "
-                    "optimizer.")
             if method == 'ml':
                 weights = None
                 if fitter != "fmin":
@@ -832,7 +864,7 @@ class BaseModel(list):
                     if bounded is True:
                         self.set_boundaries()
                     elif bounded is False:
-                        self.self.free_parameters_boundaries = None
+                        self.free_parameters_boundaries = None
                     self.p0 = fmin_tnc(
                         tominimize,
                         self.p0,
@@ -845,7 +877,7 @@ class BaseModel(list):
                     if bounded is True:
                         self.set_boundaries()
                     elif bounded is False:
-                        self.self.free_parameters_boundaries = None
+                        self.free_parameters_boundaries = None
                     self.p0 = fmin_l_bfgs_b(
                         tominimize, self.p0, fprime=fprime, args=args,
                         bounds=self.free_parameters_boundaries,
@@ -938,13 +970,7 @@ class BaseModel(list):
         maxval = self.axes_manager.navigation_size - masked_elements
         show_progressbar = show_progressbar and (maxval > 0)
         if 'bounded' in kwargs and kwargs['bounded'] is True:
-            if kwargs['fitter'] == 'mpfit':
-                self.set_mpfit_parameters_info()
-                kwargs['bounded'] = None
-            elif kwargs['fitter'] in ("tnc", "l_bfgs_b"):
-                self.set_boundaries()
-                kwargs['bounded'] = None
-            else:
+            if kwargs['fitter'] not in ("tnc", "l_bfgs_b", "mpfit"):
                 _logger.info(
                     "The chosen fitter does not suppport bounding."
                     "If you require bounding please select one of the "
