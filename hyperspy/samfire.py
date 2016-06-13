@@ -307,7 +307,7 @@ class Samfire:
 
     def _run_active_strategy_one(self):
         self.count = 0
-        while np.any(self.metadata.marker > 0.):
+        while self.pixels_left:
             ind = self._next_pixels(1)[0]
             vals = self.active_strategy.values(ind)
             self.running_pixels.append(ind)
@@ -453,8 +453,7 @@ class Samfire:
         """
         if need_inds:
             # get pixel index
-            inds = self._next_pixels(need_inds)
-            for ind in inds:
+            for ind in self._next_pixels(need_inds):
                 # get starting parameters / array of possible values
                 value_dict = self.active_strategy.values(ind)
                 value_dict['fitting_kwargs'] = self._args

@@ -29,7 +29,7 @@ def exp_decay(distances):
 
 class ReducedChiSquaredStrategy(DiffusionStrategy):
     """Reduced chi-squared Diffusion strategy of the SAMFire. Uses reduced
-    chi-squared as the weight, and exponential decay as the decau function.
+    chi-squared as the weight, and exponential decay as the decay function.
     """
 
     def __init__(self):
