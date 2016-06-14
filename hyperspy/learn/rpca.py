@@ -28,10 +28,10 @@ import logging
 import numpy as np
 import scipy.linalg
 
-_logger = logging.getLogger(__name__)
-
 from hyperspy.misc.machine_learning.import_sklearn import (
     fast_svd, sklearn_installed)
+
+_logger = logging.getLogger(__name__)
 
 def _solveproj(z, X, I, lambda2):
     m, n = X.shape
@@ -44,7 +44,7 @@ def _solveproj(z, X, I, lambda2):
     ddt = np.dot(scipy.linalg.inv(np.dot(X.T, X) + I), X.T)
 
     while converged is False:
-        iter = iter + 1
+        iter += 1
         xtmp = x
         x = np.dot(ddt, (z - s))
         stmp = s
@@ -71,7 +71,8 @@ def _updatecol(X, A, B, I):
 
     return L
 
-def orpca(X, rank, lambda1=None, lambda2=None, method='BCD', fast=False):
+def orpca(X, rank, lambda1=None, lambda2=None,
+          method=None, init=None, fast=False):
     """
     This function performs Online Robust PCA with
     with missing or corrupted data.
@@ -86,25 +87,24 @@ def orpca(X, rank, lambda1=None, lambda2=None, method='BCD', fast=False):
         Nuclear norm regularization parameter.
     lambda2 : float
         Sparse error regularization parameter.
-    method : 'BCD' or 'CF'
-        BCD - Block-coordinate descent (default)
-        CF  - Closed-form
+    method : 'BCD' | 'CF'
+        BCD - Block-coordinate descent
+        CF  - Closed-form (default)
+    init : 'BRP' | 'rand'
+        BRP  - Bilateral random projection
+        rand - Random initialization (default)
 
     Returns
     -------
-    L : numpy array
-        is the [m x r] basis.
-    R : numpy array
-        is the [r x n] coefficients.
+    Y : numpy array
+        is the [m x n] low-rank component.
     E : numpy array
         is the sparse error
-    U, S, V : numpy array
-        are the pseudo-svd parameters.
 
     """
     if fast is True and sklearn_installed is True:
         def svd(X):
-            return fast_svd(X, p)
+            return fast_svd(X, rank)
     else:
         def svd(X):
             return scipy.linalg.svd(X, full_matrices=False)
@@ -112,28 +112,39 @@ def orpca(X, rank, lambda1=None, lambda2=None, method='BCD', fast=False):
     # Initialize by rescaling to [0,1]
     Xmin = X.min()
     Xmax = X.max()
-    X = (X - Xmin)/(Xmax-Xmin)
+    X = (X - Xmin) / (Xmax - Xmin)
 
     m, n = X.shape
 
     # Check options
-    methods = {'BCD':'Block coordinate descent',
-               'CF':'Closed-form'}
-    if method not in methods:
-        raise ValueError("'method' must be one of " + methods.keys())
+    if method not in ('BCD', 'CF'):
+        raise ValueError("'method' not recognised")
+    if init not in ('BRP', 'rand'):
+        raise ValueError("'init' not recognised")
 
     if lambda1 is None:
         _logger.warning("Nuclear norm regularization parameter "
                         "is set to default.")
-        lambda1 = 1.0 / np.sqrt(m)
+        lambda1 = 1.0 / np.sqrt(n)
     if lambda2 is None:
         _logger.warning("Sparse regularization parameter "
                         "is set to default.")
-        lambda2 = 1.0 / np.sqrt(m)
+        lambda2 = 1.0 / np.sqrt(n)
 
-    # Use random initialization
-    Y2 = np.random.rand(m, rank)
-    L, tmp = scipy.linalg.qr(Y2, mode='economic')
+    if init == 'BRP':
+        # Use bilateral random projections
+        power = 1
+        Z = X[:, 0:rank]
+        Y2 = np.random.randn(rank, rank)
+        for i in range(power):
+            Y1 = np.dot(Z, Y2)
+            Y2 = np.dot(Z.T, Y1)
+        Q, tmp = scipy.linalg.qr(Y2, mode='economic')
+        L = np.dot(np.dot(Z, Q), Q.T)
+    else:
+        # Use random initialization
+        Y2 = np.random.randn(m, rank)
+        L, tmp = scipy.linalg.qr(Y2, mode='economic')
 
     R = np.zeros((rank, n))
     E = np.zeros((m, n))
@@ -165,10 +176,12 @@ def orpca(X, rank, lambda1=None, lambda2=None, method='BCD', fast=False):
             L = np.dot(B, scipy.linalg.inv(A + I))
 
     # Scale back
-    Xnew = np.dot(L, R) * (Xmax-Xmin) + Xmin
+    Y = np.dot(L, R)
+    Y = Y * (Xmax - Xmin) + Xmin
+    E = E * (Xmax - Xmin) + Xmin
 
-    # Perform final SVD on low-rank component
-    U, S, Vh = svd(Xnew)
+    # Do final SVD
+    U, S, Vh = svd(Y)
     V = Vh.T
 
-    return L, R, E, U, S, V
+    return Y, E, U, S, V
