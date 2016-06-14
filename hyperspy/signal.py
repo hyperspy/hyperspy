@@ -3272,17 +3272,15 @@ class BaseSignal(FancySlicing,
             self.data = function(self.data, **kwargs)
         else:
             # Iteration over coordinates.
-            pbar = progressbar(
-                maxval=self.axes_manager.navigation_size,
-                disabled=not show_progressbar)
             iterators = [signal[1]._iterate_signal() for signal in ndkwargs]
             iterators = tuple([self._iterate_signal()] + iterators)
-            for data in zip(*iterators):
+            for data in progressbar(zip(*iterators),
+                                    disable=not show_progressbar,
+                                    total=self.axes_manager.navigation_size,
+                                    leave=True):
                 for (key, value), datum in zip(ndkwargs, data[1:]):
                     kwargs[key] = datum[0]
                 data[0][:] = function(data[0], **kwargs)
-                next(pbar)
-            pbar.finish()
         self.events.data_changed.trigger(obj=self)
 
     def copy(self):

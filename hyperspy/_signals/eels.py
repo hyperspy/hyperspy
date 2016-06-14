@@ -336,18 +336,16 @@ class EELSSpectrum(Signal1D):
         else:
             I0 = self._get_navigation_signal()
             I0.axes_manager.set_signal_dimension(0)
-            pbar = hyperspy.external.progressbar.progressbar(
-                maxval=self.axes_manager.navigation_size,
-            )
-            for i, s in enumerate(I0):
+            for i, s in progressbar(enumerate(self),
+                                    total=self.axes_manager.navigation_size,
+                                    disable=not show_progressbar,
+                                    leave=True):
                 threshold_ = threshold.isig[I0.axes_manager.indices].data[0]
                 if np.isnan(threshold_):
                     s.data[:] = np.nan
                 else:
                     s.data[:] = (self.inav[I0.axes_manager.indices].isig[
                                  :threshold_].integrate1D(-1).data)
-                pbar.update(i)
-            pbar.finish()
         I0.axes_manager.set_signal_dimension(
             self.axes_manager.navigation_dimension)
         I0.metadata.General.title = (
@@ -749,10 +747,10 @@ class EELSSpectrum(Signal1D):
         imax = kernel.argmax()
         j = 0
         maxval = self.axes_manager.navigation_size
-        if maxval > 0:
-            pbar = progressbar(maxval=maxval,
-                               disabled=not show_progressbar)
-        for D in self:
+        show_progressbar = show_progressbar and (maxval > 0)
+        for D in progressbar(self, total=maxval,
+                             disable=not show_progressbar,
+                             leave=True):
             D = D.data.copy()
             if psf.axes_manager.navigation_dimension != 0:
                 kernel = psf(axes_manager=self.axes_manager)
@@ -767,10 +765,6 @@ class EELSSpectrum(Signal1D):
                                      D / first)[mimax: mimax + psf_size])
             s[:] = O
             j += 1
-            if maxval > 0:
-                pbar.update(j)
-        if maxval > 0:
-            pbar.finish()
 
         return ds
 

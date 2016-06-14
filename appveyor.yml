@@ -57,7 +57,7 @@ install:
   - "%CMD_IN_ENV% move %PYTHON%\\sip %PYTHON%\\Lib\\site-packages\\PyQt4\\sip"
   - "%CMD_IN_ENV% conda install pip"
   # TODO: Remove once anaconda taitsui package is at v5:
-  - "IF \"%PYTHON_MAJOR%\" EQU \"3\" pip install --upgrade traitsui ipywidgets"
+  - "IF \"%PYTHON_MAJOR%\" EQU \"3\" pip install --upgrade traitsui tqdm"
   - ps: Add-AppveyorMessage "Installing hyperspy..."
   - "python setup.py install"
 
@@ -101,7 +101,7 @@ before_deploy:
   - "SET PATH=%ORIGPATH%"
   - "%CMD_IN_ENV% %WP_INSTDIR%/scripts/env.bat"
   - "%CMD_IN_ENV% python.exe setup.py install"
-  - "%CMD_IN_ENV% pip install --upgrade configobj traitsui natsort start_jupyter_cm"
+  - "%CMD_IN_ENV% pip install --upgrade configobj traitsui natsort start_jupyter_cm tqdm"
   # Custom installer step
   # TODO: Re-run tests in WinPython environment
   - ps: Add-AppveyorMessage "Creating installer..."

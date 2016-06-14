@@ -417,7 +417,7 @@ class EDSModel(Model1D):
         if xray_lines == 'all_alpha':
             xray_lines = [compo.name for compo in self.xray_lines]
         energy_Mn_Ka, FWHM_MnKa_old = self.signal._get_line_energy('Mn_Ka',
-                                                                     'auto')
+                                                                   'auto')
         FWHM_MnKa_old *= eV2keV / self.units_factor
         get_sigma_Mn_Ka = _get_sigma(
             energy_Mn_Ka, self[xray_lines[0]].centre.value, self.units_factor)

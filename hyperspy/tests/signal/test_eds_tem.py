@@ -172,8 +172,8 @@ class Test_quantification:
         res = s.quantification(intensities, method, kfactors,
                                composition_units)
         np.testing.assert_allclose(res[0].data, np.array([
-                [22.70779, 22.70779],
-                [22.70779, 22.70779]]), atol=1e-3)
+            [22.70779, 22.70779],
+            [22.70779, 22.70779]]), atol=1e-3)
 
     def test_quant_zeta(self):
         s = self.signal
@@ -184,11 +184,11 @@ class Test_quantification:
         res = s.quantification(intensities, method, factors,
                                compositions_units)
         np.testing.assert_allclose(res[1].data, np.array(
-                [[2.7125736e-03,   2.7125736e-03],
-                    [2.7125736e-03,   2.7125736e-03]]), atol=1e-3)
+            [[2.7125736e-03, 2.7125736e-03],
+             [2.7125736e-03, 2.7125736e-03]]), atol=1e-3)
         np.testing.assert_allclose(res[0][1].data, np.array(
-                [[80.962287987,   80.962287987],
-                    [80.962287987,   80.962287987]]), atol=1e-3)
+            [[80.962287987, 80.962287987],
+             [80.962287987, 80.962287987]]), atol=1e-3)
 
     def test_quant_cross_section(self):
         s = self.signal
@@ -197,14 +197,14 @@ class Test_quantification:
         intensities = s.get_lines_intensity()
         res = s.quantification(intensities, method, factors)
         np.testing.assert_allclose(res[1][0].data, np.array(
-            [[21517.1647074,  21517.1647074],
-                [21517.1647074,  21517.1647074]]), atol=1e-3)
+            [[21517.1647074, 21517.1647074],
+                [21517.1647074, 21517.1647074]]), atol=1e-3)
         np.testing.assert_allclose(res[1][1].data, np.array(
-           [[21961.616621,  21961.616621],
-            [21961.616621,  21961.616621]]), atol=1e-3)
+            [[21961.616621, 21961.616621],
+             [21961.616621, 21961.616621]]), atol=1e-3)
         np.testing.assert_allclose(res[0][0].data, np.array(
-            [[49.4888856823,  49.4888856823],
-                [49.4888856823,  49.4888856823]]), atol=1e-3)
+            [[49.4888856823, 49.4888856823],
+                [49.4888856823, 49.4888856823]]), atol=1e-3)
 
     def test_quant_zeros(self):
         intens = np.array([[0.5, 0.5, 0.5],
