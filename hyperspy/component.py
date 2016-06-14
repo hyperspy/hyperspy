@@ -652,9 +652,7 @@ class Parameter(t.HasTraits):
     def notebook_interaction(self, display=True):
         """Creates interactive notebook widgets for the parameter, if
         available.
-
         Requires `ipywidgets` to be installed.
-
         Parameters
         ----------
         display : bool
@@ -1147,3 +1145,105 @@ class Component(t.HasTraits):
         if self._axes_manager != signal.axes_manager:
             self._axes_manager = signal.axes_manager
             self._create_arrays()
+
+    def as_dictionary(self, fullcopy=True):
+        """Returns component as a dictionary
+        For more information on method and conventions, see
+        :meth:`hyperspy.misc.export_dictionary.export_to_dictionary`
+        Parameters
+        ----------
+        fullcopy : Bool (optional, False)
+            Copies of objects are stored, not references. If any found,
+            functions will be pickled and signals converted to dictionaries
+        Returns
+        -------
+        dic : dictionary
+            A dictionary, containing at least the following fields:
+            parameters : list
+                a list of dictionaries of the parameters, one per
+            _whitelist : dictionary
+                a dictionary with keys used as references saved attributes, for
+                more information, see
+                :meth:`hyperspy.misc.export_dictionary.export_to_dictionary`
+            * any field from _whitelist.keys() *
+        """
+        dic = {
+            'parameters': [
+                p.as_dictionary(fullcopy) for p in self.parameters]}
+        export_to_dictionary(self, self._whitelist, dic, fullcopy)
+        return dic
+
+    def _load_dictionary(self, dic):
+        """Load data from dictionary.
+        Parameters
+        ----------
+        dict : dictionary
+            A dictionary containing following items:
+            _id_name : string
+                _id_name of the original component, used to create the
+                dictionary. Has to match with the self._id_name
+            parameters : list
+                A list of dictionaries, one per parameter of the component (see
+                parameter.as_dictionary() documentation for more)
+            _whitelist : dictionary
+                a dictionary, which keys are used as keywords to match with the
+                component attributes.  For more information see
+                :meth:`hyperspy.misc.export_dictionary.load_from_dictionary`
+            * any field from _whitelist.keys() *
+        Returns
+        -------
+        twin_dict : dictionary
+            Dictionary of 'id' values from input dictionary as keys with all of
+            the parameters of the component, to be later used for setting up
+            correct twins.
+        """
+        if dic['_id_name'] == self._id_name:
+            id_dict = {}
+            for p in dic['parameters']:
+                idname = p['_id_name']
+                if hasattr(self, idname):
+                    par = getattr(self, idname)
+                    t_id = par._load_dictionary(p)
+                    id_dict[t_id] = par
+                else:
+                    raise ValueError(
+                        "_id_name of parameters in component and dictionary do not match")
+            load_from_dictionary(self, dic)
+            return id_dict
+        else:
+            raise ValueError( "_id_name of component and dictionary do not match, \ncomponent._id_name = %s\
+                    \ndictionary['_id_name'] = %s" % (self._id_name, dic['_id_name']))
+
+    def notebook_interaction(self, display=True):
+        """Creates interactive notebook widgets for all component parameters,
+        if available.
+        Requires `ipywidgets` to be installed.
+        Parameters
+        ----------
+        display : bool
+            if True (default), attempts to display the widgets.
+            Otherwise returns the formatted widget object.
+        """
+        from ipywidgets import (Checkbox, VBox)
+        from traitlets import TraitError as TraitletError
+        from IPython.display import display as ip_display
+        try:
+            active = Checkbox(description='active', value=self.active)
+
+            def on_active_change(change):
+                self.active = change['new']
+            active.observe(on_active_change, names='value')
+
+            container = VBox([active])
+            for parameter in self.parameters:
+                container.children += parameter.notebook_interaction(False),
+
+            if not display:
+                return container
+            ip_display(container)
+        except TraitletError:
+            if display:
+                print('This function is only avialable when running in a'
+                      ' notebook')
+            else:
+                raise

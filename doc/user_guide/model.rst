@@ -353,7 +353,7 @@ recomputed for the resulting slices.
     >>> m.append(hs.model.components.Gaussian())
     >>> # select first three navigation pixels and last five signal channels
     >>> m1 = m.inav[:3].isig[-5:]
-    >>> m1.spectrum
+    >>> m1.signal1D
     <Signal1D, title: , dimensions: (3|5)>
 
 

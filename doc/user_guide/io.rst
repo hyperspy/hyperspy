@@ -148,7 +148,7 @@ HyperSpy.
     +--------------------+-----------+----------+
     | HDF5               |    Yes    |    Yes   |
     +--------------------+-----------+----------+
-    | Image: jpg..       |    Yes    |    Yes   |
+    | Signal2D: jpg..       |    Yes    |    Yes   |
     +--------------------+-----------+----------+
     | TIFF               |    Yes    |    Yes   |
     +--------------------+-----------+----------+
@@ -215,11 +215,11 @@ intensity<get_lines_intensity>`):
 
     >>> s_new = hs.load('EDS_spectrum.hdf5')
     >>> s_new.metadata.Sample.intensities
-    [<BaseSignal, title: X-ray line intensity of EDS SEM Spectrum: Al_Ka at 1.49 keV, dimensions: (|)>,
-     <BaseSignal, title: X-ray line intensity of EDS SEM Spectrum: C_Ka at 0.28 keV, dimensions: (|)>,
-     <BaseSignal, title: X-ray line intensity of EDS SEM Spectrum: Cu_La at 0.93 keV, dimensions: (|)>,
-     <BaseSignal, title: X-ray line intensity of EDS SEM Spectrum: Mn_La at 0.63 keV, dimensions: (|)>,
-     <BaseSignal, title: X-ray line intensity of EDS SEM Spectrum: Zr_La at 2.04 keV, dimensions: (|)>]
+    [<BaseSignal, title: X-ray line intensity of EDS SEM Signal1D: Al_Ka at 1.49 keV, dimensions: (|)>,
+     <BaseSignal, title: X-ray line intensity of EDS SEM Signal1D: C_Ka at 0.28 keV, dimensions: (|)>,
+     <BaseSignal, title: X-ray line intensity of EDS SEM Signal1D: Cu_La at 0.93 keV, dimensions: (|)>,
+     <BaseSignal, title: X-ray line intensity of EDS SEM Signal1D: Mn_La at 0.63 keV, dimensions: (|)>,
+     <BaseSignal, title: X-ray line intensity of EDS SEM Signal1D: Zr_La at 2.04 keV, dimensions: (|)>]
 
 
 
@@ -317,7 +317,7 @@ Images
 ------
 
 HyperSpy is able to read and write data too all the image formats supported by
-`the Python Image Library <http://www.pythonware.com/products/pil/>`_ (PIL).
+`the Python Signal2D Library <http://www.pythonware.com/products/pil/>`_ (PIL).
 This includes png, pdf, gif etc.
 
 It is important to note that these image formats only support 8-bit files, and

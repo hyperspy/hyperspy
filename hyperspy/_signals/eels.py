@@ -169,7 +169,7 @@ class EELSSpectrum(Signal1D):
         if self.axes_manager.navigation_dimension == 1:
             zlpc = zlpc.as_signal1D(0)
         elif self.axes_manager.navigation_dimension > 1:
-            zlpc = zlpc.as_image((0, 1))
+            zlpc = zlpc.as_signal2D((0, 1))
         if mask is not None:
             zlpc.data[mask.data] = np.nan
         return zlpc
@@ -1224,7 +1224,7 @@ class EELSSpectrum(Signal1D):
         auto_add_edges : boolean, default True
             If True, and if spectrum is an EELS instance, it will
             automatically add the ionization edges as defined in the
-            Spectrum instance. Adding a new element to the spectrum using
+            Signal1D instance. Adding a new element to the spectrum using
             the components.EELSSpectrum.add_elements method automatically
             add the corresponding ionisation edges to the model.
         GOS : {'hydrogenic' | 'Hartree-Slater'}, optional

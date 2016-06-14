@@ -244,7 +244,7 @@ class TestModelDictionary:
         mn._load_dictionary(d)
         mo = self.model
 
-        # nt.assert_true(np.allclose(mo.spectrum.data, mn.spectrum.data))
+        # nt.assert_true(np.allclose(mo.signal1D.data, mn.signal1D.data))
         np.testing.assert_allclose(mo.chisq.data, mn.chisq.data)
         np.testing.assert_allclose(mo.dof.data, mn.dof.data)
 

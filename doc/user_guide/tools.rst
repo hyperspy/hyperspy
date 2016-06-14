@@ -35,8 +35,8 @@ Currently the following signal subclasses are available:
 * :py:class:`~._signals.spectrum_simulation.SpectrumSimulation`
 * :py:class:`~._signals.image_simulation.ImageSimulation`
 
-Note that in HyperSpy 1.0.0 the :py:class:`~._signals.spectrum.Spectrum` and
-:py:class:`~._signals.image.Image` classes were deprecated.
+Note that in HyperSpy 1.0.0 the :py:class:`~._signals.signal1D.Signal1D` and
+:py:class:`~._signals.image.Signal2D` classes were deprecated.
 
 
 The :py:mod:`~.signals` module, which contains all available signal subclasses,
@@ -756,15 +756,15 @@ type in place, e.g.:
 
 .. code-block:: python
 
-    >>> s = hs.load('EELS Spectrum Image (high-loss).dm3')
-        Title: EELS Spectrum Image (high-loss).dm3
+    >>> s = hs.load('EELS Signal1D Signal2D (high-loss).dm3')
+        Title: EELS Signal1D Signal2D (high-loss).dm3
         Signal type: EELS
         Data dimensions: (21, 42, 2048)
         Data representation: spectrum
         Data type: float32
     >>> s.change_dtype('float64')
     >>> print(s)
-        Title: EELS Spectrum Image (high-loss).dm3
+        Title: EELS Signal1D Signal2D (high-loss).dm3
         Signal type: EELS
         Data dimensions: (21, 42, 2048)
         Data representation: spectrum

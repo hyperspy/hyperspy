@@ -209,8 +209,8 @@ class EDSSpectrum(Signal1D):
         >>> s = hs.datasets.example_signals.EDS_SEM_Spectrum()
         >>> print(s)
         >>> print(s.rebin([512]))
-        <EDSSEMSpectrum, title: EDS SEM Spectrum, dimensions: (|1024)>
-        <EDSSEMSpectrum, title: EDS SEM Spectrum, dimensions: (|512)>
+        <EDSSEMSpectrum, title: EDS SEM Signal1D, dimensions: (|1024)>
+        <EDSSEMSpectrum, title: EDS SEM Signal1D, dimensions: (|512)>
 
         """
         new_shape_in_array = []

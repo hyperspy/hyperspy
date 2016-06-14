@@ -3676,7 +3676,7 @@ class BaseSignal(FancySlicing,
         >>> s = hs.signals.Signal1D(np.ones((2,3,4,5)))
         >>> s
         <Signal1D, title: , dimensions: (4, 3, 2, 5)>
-        >>> s.as_image((0,1))
+        >>> s.as_signal2D((0,1))
         <Signal2D, title: , dimensions: (5, 2, 4, 3)>
 
         >>> s.to_signal2D((1,2))

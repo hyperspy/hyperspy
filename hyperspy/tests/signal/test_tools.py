@@ -4,7 +4,7 @@ import numpy as np
 from numpy.testing import assert_array_equal
 import nose.tools as nt
 
-from hyperspy.signals import Signal
+from hyperspy.signals import BaseSignal
 from hyperspy import signals
 
 
@@ -200,7 +200,7 @@ class Test3D:
         _ = new_s.metadata.Signal.Noise_properties
 
     def test_rebin_const_variance(self):
-        self.spectrum.metadata.set_item(
+        self.signal1D.metadata.set_item(
             'Signal.Noise_properties.variance', 0.3)
         new_s = self.signal.rebin((2, 1, 6))
         nt.assert_equal(new_s.metadata.Signal.Noise_properties.variance, 0.3)
@@ -441,7 +441,7 @@ class TestOutArg:
     def setup(self):
         # Some test require consistent random data for reference to be correct
         np.random.seed(0)
-        s = signals.Spectrum(np.random.rand(5, 4, 3, 6))
+        s = signals.Signal1D(np.random.rand(5, 4, 3, 6))
         for axis, name in zip(
                 s.axes_manager._get_axes_in_natural_order(),
                 ['x', 'y', 'z', 'E']):
@@ -513,11 +513,11 @@ class TestOutArg:
 
     def test_as_spectrum(self):
         s = self.s
-        self._run_single(s.as_spectrum, s, dict(spectral_axis=1))
+        self._run_single(s.as_signal1D, s, dict(spectral_axis=1))
 
     def test_as_image(self):
         s = self.s
-        self._run_single(s.as_image, s, dict(image_axes=(
+        self._run_single(s.as_signal2D, s, dict(image_axes=(
             s.axes_manager.navigation_axes[0:2])))
 
     def test_inav(self):

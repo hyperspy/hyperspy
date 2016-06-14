@@ -182,7 +182,7 @@ def estimate_image_shift(ref, image, roi=None, sobel=True,
         axarr[1].imshow(image)
         axarr[2].imshow(phase_correlation)
         axarr[0].set_title('Reference')
-        axarr[1].set_title('Image')
+        axarr[1].set_title('Signal2D')
         axarr[2].set_title('Phase correlation')
         plt.show()
     # Liberate the memory. It is specially necessary if it is a
@@ -262,7 +262,7 @@ class Signal2DTools(object):
         ----------
         .. [1] Schaffer, Bernhard, Werner Grogger, and Gerald
         Kothleitner. “Automated Spatial Drift Correction for EFTEM
-        Image Series.”
+        Signal2D Series.”
         Ultramicroscopy 102, no. 1 (December 2004): 27–36.
         """
         if show_progressbar is None:
@@ -418,7 +418,7 @@ class Signal2DTools(object):
         ----------
         .. [1] Schaffer, Bernhard, Werner Grogger, and Gerald
         Kothleitner. “Automated Spatial Drift Correction for EFTEM
-        Image Series.”
+        Signal2D Series.”
         Ultramicroscopy 102, no. 1 (December 2004): 27–36.
         """
         self._check_signal_dimension_equals_two()

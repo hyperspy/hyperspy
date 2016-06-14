@@ -14,7 +14,7 @@ spectrum (SEM or TEM).
 .. NOTE::
     See also the `EDS tutorials <http://nbviewer.ipython.org/github/hyperspy/hyperspy-	demos/blob/master/electron_microscopy/EDS/>`_ .
 
-Spectrum loading and parameters
+Signal1D loading and parameters
 -------------------------------
 
 The sample and  data used in this section are described in [Burdet2013]_, and can be
@@ -77,7 +77,7 @@ the object, specific EDS methods are made available.
     >>> s = hs.load("Ni_superalloy_1pix.msa")
     >>> s.set_signal_type("EDS_SEM")
     >>> s
-    <EDSSEMSpectrum, title: Spectrum, dimensions: (|1024)>
+    <EDSSEMSpectrum, title: Signal1D, dimensions: (|1024)>
 
 You can also specify the signal type as an argument of
 the :py:func:`~.io.load` function:
@@ -86,7 +86,7 @@ the :py:func:`~.io.load` function:
 
    >>> s = hs.load("Ni_superalloy_1pix.msa", signal_type="EDS_SEM")
    >>> s
-   <EDSSEMSpectrum, title: Spectrum, dimensions: (|1024)>
+   <EDSSEMSpectrum, title: Signal1D, dimensions: (|1024)>
 
 HyperSpy will automatically load any existing  microscope parameters from the
 file, and store them in the :py:attr:`~.signal.BaseSignal.metadata`

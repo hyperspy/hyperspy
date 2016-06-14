@@ -835,7 +835,7 @@ By providing an array of positions, the marker can also change position when nav
 
     >>> from skimage.feature import peak_local_max
     >>> import scipy.misc
-    >>> ims = hs.signals.BaseSignal(scipy.misc.face()).as_image([0,1])
+    >>> ims = hs.signals.BaseSignal(scipy.misc.face()).as_signal2D([0,1])
     >>> index = array([peak_local_max(im.data, min_distance=100, num_peaks=4)
     >>>                for im in ims])
     >>> for i in range(4):

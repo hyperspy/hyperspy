@@ -127,7 +127,7 @@ class ImagePlot(BlittedFigure):
     def configure(self):
         xaxis = self.xaxis
         yaxis = self.yaxis
-        # Image labels
+        # Signal2D labels
         self._xlabel = '%s' % str(xaxis)
         if xaxis.units is not Undefined:
             self._xlabel += ' (%s)' % xaxis.units

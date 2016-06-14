@@ -34,7 +34,6 @@ For more details see each component docstring.
 from hyperspy._components.arctan import Arctan
 from hyperspy._components.bleasdale import Bleasdale
 from hyperspy._components.heaviside import HeavisideStep
-from hyperspy._components.heaviside import DoubleOffset
 from hyperspy._components.eels_double_power_law import DoublePowerLaw
 from hyperspy._components.eels_cl_edge import EELSCLEdge
 from hyperspy._components.error_function import Erf

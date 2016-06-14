@@ -18,10 +18,7 @@
 
 
 import numpy as np
-import warnings
-
 from hyperspy.component import Component
-from hyperspy.misc.hspy_warnings import VisibleDeprecationWarning
 
 
 class HeavisideStep(Component):
@@ -71,15 +68,3 @@ class HeavisideStep(Component):
                                  0.5,
                                  1)
                         )
-
-# TODO: remove this for 1.0.0
-
-
-def DoubleOffset(*args, **kwargs):
-    """Deprecated in favour of HeavisideStep component.
-    """
-
-    warnings.warn("The DoubleOffset component will be deprecated from"
-                  " version 1.0.0 and replaced with HeavisideStep",
-                  VisibleDeprecationWarning)
-    return HeavisideStep(*args, **kwargs)

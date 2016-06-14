@@ -11,9 +11,9 @@ The Signal class and its specilized subclasses:
     Signal2D
         For generic data with signal_dimension equal 2, i.e. image data of
         n-dimensions. The signal is unbinned by default.
-    Spectrum
+    Signal1D
         Deprecated in favour of Signal1D from version 1.0.0
-    Image
+    Signal2D
         Deprecated in favour of Signal2D from version 1.0.0
     Simulation
         For generic simulated data with arbitrary signal_dimension. All other
