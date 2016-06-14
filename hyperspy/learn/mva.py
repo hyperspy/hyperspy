@@ -33,6 +33,7 @@ from hyperspy.misc.machine_learning import import_sklearn
 import hyperspy.misc.io.tools as io_tools
 from hyperspy.learn.svd_pca import svd_pca
 from hyperspy.learn.mlpca import mlpca
+from hyperspy.learn.orpca import orpca
 from hyperspy.decorators import do_not_replot
 from scipy import linalg
 from hyperspy.misc.machine_learning.orthomax import orthomax
