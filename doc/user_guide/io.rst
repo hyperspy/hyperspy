@@ -38,6 +38,9 @@ providing the ``signal`` keyword, which has to be one of: ``spectrum``,
 
     >>> s = hs.load("filename", signal = "EELS")
 
+Particularly big files can be loaded in a new (experimental) "out-of-memory" mode
+by passing ``load_to_memory=False``. For more information please see :ref:`oom-files`
+
 Some file formats store some extra information about the data, which can be
 stored in "attributes". If HyperSpy manages to read some extra information
 about the data it stores it in :py:attr:`~.signal.Signal.original_metadata`
@@ -229,6 +232,24 @@ compression: One of None, 'gzip', 'szip', 'lzf'.
 
 'gzip' is the default
 
+.. _oom-files:
+
+Out-of-memory files
+^^^^^^^^^^^^^^^^^^^
+
+.. versionadded:: 0.9   Out-of-memory files
+
+
+Reading files bigger than available computer memory can be enabled by passing
+``load_to_memory=False`` when loading the data. If the original files were not
+created by HyperSpy (or multiple signals from various file formats are stacked
+according to the usual rules), a new temporary HDF5 file will be created, where
+the data will be stored. If the resultant signal is not saved manually, upon
+exiting HyperSpy the temporary file will be automatically deleted.
+
+Note that at the moment we do not support any analysis or operations for the
+out-of-memory signals, however they can be plotted with option
+``navigator=slider``
 
 .. _netcdf-format:
 

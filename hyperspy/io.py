@@ -19,9 +19,11 @@
 import os
 import glob
 import logging
+from psutil import virtual_memory
 
 import hyperspy.defaults_parser
 
+from hyperspy.misc.utils import stack
 import hyperspy.misc.utils
 from hyperspy.misc.io.tools import ensure_directory
 from hyperspy.misc.utils import strlist2enumeration
@@ -41,6 +43,7 @@ def load(filenames=None,
          new_axis_name="stack_element",
          mmap=False,
          mmap_dir=None,
+         load_to_memory=None,
          **kwds):
     """
     Load potentially multiple supported file into an hyperspy structure
@@ -125,9 +128,11 @@ def load(filenames=None,
         mapped file will be created in the given directory,
         otherwise the default directory is used.
 
-    load_to_memory: bool
-        for HDF5 files, blockfiles and EMD files, if True (default) loads all
-        data to memory. If False, enables only loading the data upon request
+    load_to_memory: bool, None
+        for HDF5 files, blockfiles and EMD files, if True (default) loads all data to
+        memory. If False, enables only loading the data upon request.
+            If stack=True as well, the result will be written to a new temporary HDF5 file.
+        If None the default is set in `preferences`.
     mmap_mode: {'r', 'r+', 'c'}
         Used when loading blockfiles to determine which mode to use for when
         loading as memmap (i.e. when load_to_memory=False)
@@ -160,9 +165,12 @@ def load(filenames=None,
     >>> d = hs.load('file*.dm3')
 
     """
+    if load_to_memory is None:
+        load_to_memory = hyperspy.defaults_parser.preferences.General.load_to_memory
     kwds['record_by'] = record_by
     kwds['signal_type'] = signal_type
     kwds['signal_origin'] = signal_origin
+    kwds['load_to_memory'] = load_to_memory
     if filenames is None:
         if hyperspy.defaults_parser.preferences.General.interactive is True:
             from hyperspy.gui.tools import Load
@@ -190,15 +198,18 @@ def load(filenames=None,
         if len(filenames) > 1:
             _logger.info('Loading individual files')
         if stack is True:
-            signal = []
-            for i, filename in enumerate(filenames):
-                obj = load_single_file(filename,
-                                       **kwds)
-                signal.append(obj)
-            signal = hyperspy.misc.utils.stack(signal,
-                                               axis=stack_axis,
-                                               new_axis_name=new_axis_name,
-                                               mmap=mmap, mmap_dir=mmap_dir)
+            if load_to_memory is False:
+                signal = (load_single_file(filename, **kwds)
+                          for filename in filenames)
+            else:  # True or None
+                signal = [
+                    load_single_file(
+                        filename,
+                        **kwds) for filename in filenames]
+            signal = stack(signal,
+                           axis=stack_axis,
+                           new_axis_name=new_axis_name,
+                           mmap=mmap, mmap_dir=mmap_dir)
             signal.metadata.General.title = \
                 os.path.split(
                     os.path.split(
@@ -216,9 +227,12 @@ def load(filenames=None,
         if hyperspy.defaults_parser.preferences.Plot.plot_on_load:
             for obj in objects:
                 obj.plot()
+        if load_to_memory is False:
+            for obj in objects:
+                obj._available_memory = virtual_memory().available
         if len(objects) == 1:
             objects = objects[0]
-    return objects
+        return objects
 
 
 def load_single_file(filename,
@@ -251,6 +265,7 @@ def load_single_file(filename,
     if i == len(io_plugins):
         # Try to load it with the python imaging library
         try:
+            del kwds['load_to_memory']
             from hyperspy.io_plugins import image
             reader = image
             return load_with_reader(filename, reader, record_by,
@@ -260,6 +275,9 @@ def load_single_file(filename,
                           ' please report this error')
     else:
         reader = io_plugins[i]
+        if not (reader.__name__.endswith('hdf5') or
+                reader.__name__.endswith('blockfile')):
+            del kwds['load_to_memory']
         return load_with_reader(filename=filename,
                                 reader=reader,
                                 record_by=record_by,

@@ -55,11 +55,17 @@ def test_metadata():
     np.testing.assert_equal(signal.data, data_image)
     np.testing.assert_equal(signal.metadata.General.title, test_title)
     np.testing.assert_equal(signal.metadata.General.user.as_dictionary(), user)
-    np.testing.assert_equal(signal.metadata.General.microscope.as_dictionary(), microscope)
-    np.testing.assert_equal(signal.metadata.General.sample.as_dictionary(), sample)
-    np.testing.assert_equal(signal.metadata.General.comments.as_dictionary(), comments)
+    np.testing.assert_equal(
+        signal.metadata.General.microscope.as_dictionary(),
+        microscope)
+    np.testing.assert_equal(
+        signal.metadata.General.sample.as_dictionary(), sample)
+    np.testing.assert_equal(
+        signal.metadata.General.comments.as_dictionary(),
+        comments)
     for key, ref_value in sig_metadata.items():
-        np.testing.assert_equal(signal.metadata.Signal.as_dictionary().get(key), ref_value)
+        np.testing.assert_equal(
+            signal.metadata.Signal.as_dictionary().get(key), ref_value)
     nt.assert_is_instance(signal, Image)
 
 
@@ -98,12 +104,18 @@ class TestCaseSaveAndRead():
         np.testing.assert_equal(signal.axes_manager[1].units, 'nmy')
         np.testing.assert_equal(signal.axes_manager[2].units, 'nmz')
         np.testing.assert_equal(signal.metadata.General.title, test_title)
-        np.testing.assert_equal(signal.metadata.General.user.as_dictionary(), user)
-        np.testing.assert_equal(signal.metadata.General.microscope.as_dictionary(), microscope)
-        np.testing.assert_equal(signal.metadata.General.sample.as_dictionary(), sample)
-        np.testing.assert_equal(signal.metadata.General.comments.as_dictionary(), comments)
+        np.testing.assert_equal(
+            signal.metadata.General.user.as_dictionary(), user)
+        np.testing.assert_equal(
+            signal.metadata.General.microscope.as_dictionary(),
+            microscope)
+        np.testing.assert_equal(
+            signal.metadata.General.sample.as_dictionary(), sample)
+        np.testing.assert_equal(
+            signal.metadata.General.comments.as_dictionary(), comments)
         for key, ref_value in sig_metadata.items():
-            np.testing.assert_equal(signal.metadata.Signal.as_dictionary().get(key), ref_value)
+            np.testing.assert_equal(
+                signal.metadata.Signal.as_dictionary().get(key), ref_value)
         nt.assert_is_instance(signal, Signal)
 
     def tearDown(self):

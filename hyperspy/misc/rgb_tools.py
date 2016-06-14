@@ -1,4 +1,5 @@
 import numpy as np
+import h5py
 
 rgba8 = np.dtype({'names': ['R', 'G', 'B', 'A'],
                   'formats': ['u1', 'u1', 'u1', 'u1']})
@@ -48,6 +49,8 @@ def rgbx2regular_array(data, plot_friendly=False):
         normalize the array so that it is ready to be plotted by matplotlib.
 
     """
+    if isinstance(data, h5py.Dataset):
+        return data
     # Make sure that the data is contiguous
     if data.flags['C_CONTIGUOUS'] is False:
         if np.ma.is_masked(data):
@@ -69,6 +72,8 @@ def rgbx2regular_array(data, plot_friendly=False):
 
 
 def regular_array2rgbx(data):
+    # TODO: with h5py
+
     # Make sure that the data is contiguous
     if data.flags['C_CONTIGUOUS'] is False:
         if np.ma.is_masked(data):

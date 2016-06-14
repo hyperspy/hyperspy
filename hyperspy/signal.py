@@ -28,6 +28,7 @@ import logging
 
 import numpy as np
 import numpy.ma as ma
+import dask.array as da
 import scipy.interpolate
 try:
     from scipy.signal import savgol_filter
@@ -251,8 +252,10 @@ class ModelManager(object):
         pop
         """
         name = self._check_name(name, True)
-        d = self._models.get_item(name + '._dict').as_dictionary()
-        return self._signal.create_model(dictionary=copy.deepcopy(d))
+        dictionary = self._models.get_item(name + '._dict').as_dictionary()
+        if not isinstance(self._signal.data, h5py.Dataset):
+            dictionary = copy.deepcopy(dictionary)
+        return self._signal.create_model(dictionary=dictionary)
 
     def __repr__(self):
         return repr(self._models)
@@ -2793,7 +2796,10 @@ class SpecialSlicersSignal(SpecialSlicers):
         self.obj.data[array_slices] = j
 
     def __len__(self):
-        return self.obj.axes_manager.signal_shape[0]
+        if self.isNavigation:
+            return self.obj.axes_manager.navigation_size
+        else:
+            return self.obj.axes_manager.signal_size
 
 
 class Signal(FancySlicing,
@@ -2889,9 +2895,21 @@ class Signal(FancySlicing,
         return string
 
     def _binary_operator_ruler(self, other, op_name):
+        old_data = None
+        old_other_data = None
+        if isinstance(self._data, h5py.Dataset):
+            old_data = self._data
+            self._data = da.from_array(
+                old_data,
+                chunks=self._get_dask_chunks())
         exception_message = (
             "Invalid dimensions for this operation")
         if isinstance(other, Signal):
+            if isinstance(other._data, h5py.Dataset):
+                old_other_data = other._data
+                other._data = da.from_array(
+                    old_other_data,
+                    chunks=other._get_dask_chunks())
             # Both objects are signals
             oam = other.axes_manager
             sam = self.axes_manager
@@ -2906,11 +2924,17 @@ class Signal(FancySlicing,
                 if op_name in INPLACE_OPERATORS:
                     self.data = getattr(sdata, op_name)(odata)
                     self.axes_manager._sort_axes()
+                    if old_other_data is not None:
+                        other._data = old_other_data
                     return self
                 else:
                     ns = self._deepcopy_with_new_data(
                         getattr(sdata, op_name)(odata))
                     ns.axes_manager._sort_axes()
+                    if old_other_data is not None:
+                        other._data = old_other_data
+                    if old_data is not None:
+                        self._data = old_data
                     return ns
             else:
                 # Different navigation and/or signal shapes
@@ -2955,20 +2979,26 @@ class Signal(FancySlicing,
                         if bigger_am is sam:
                             # Pad odata
                             while sdim_diff:
-                                odata = np.expand_dims(
-                                    odata, oam.navigation_dimension)
+                                slices = (
+                                    slice(None),) * oam.navigation_dimension
+                                slices += (None, Ellipsis)
+                                odata = odata[slices]
                                 sdim_diff -= 1
                         else:
                             # Pad sdata
                             while sdim_diff:
-                                sdata = np.expand_dims(
-                                    sdata, sam.navigation_dimension)
+                                slices = (
+                                    slice(None),) * sam.navigation_dimension
+                                slices += (None, Ellipsis)
+                                sdata = sdata[slices]
                                 sdim_diff -= 1
                     if op_name in INPLACE_OPERATORS:
                         # This should raise a ValueError if the operation
                         # changes the shape of the object on the left.
                         self.data = getattr(sdata, op_name)(odata)
                         self.axes_manager._sort_axes()
+                        if old_other_data is not None:
+                            other._data = old_other_data
                         return self
                     else:
                         ns = self._deepcopy_with_new_data(
@@ -2980,19 +3010,38 @@ class Signal(FancySlicing,
                             ns.metadata.Signal.record_by = \
                                 other.metadata.Signal.record_by
                             ns._assign_subclass()
+                        if old_other_data is not None:
+                            other._data = old_other_data
+                        if old_data is not None:
+                            self._data = old_data
                         return ns
 
         else:
             # Second object is not a Signal
             if op_name in INPLACE_OPERATORS:
                 getattr(self.data, op_name)(other)
+                # to trigger storing / computing
+                self.data = self._data
                 return self
             else:
-                return self._deepcopy_with_new_data(
-                    getattr(self.data, op_name)(other))
+                try:
+                    return self._deepcopy_with_new_data(
+                        getattr(self.data, op_name)(other))
+                finally:
+                    if old_data is not None:
+                        self._data = old_data
 
     def _unary_operator_ruler(self, op_name):
-        return self._deepcopy_with_new_data(getattr(self.data, op_name)())
+        old_data = None
+        if isinstance(self.data, h5py.Dataset):
+            old_data = self._data
+            self._data = da.from_array(
+                old_data,
+                chunks=self._get_dask_chunks())
+        result = getattr(self.data, op_name)()
+        if old_data is not None:
+            self._data = old_data
+        return self._deepcopy_with_new_data(result)
 
     def _check_signal_dimension_equals_one(self):
         if self.axes_manager.signal_dimension != 1:
@@ -3010,27 +3059,59 @@ class Signal(FancySlicing,
 
         Parameters
         ---------
-        data : {None | np.array}
+        data : {None | np.array | h5py.Dataset | dask.Array}
 
         Returns
         -------
-        ns : Signal
+        Signal
 
         """
-        try:
-            old_data = self.data
-            self.data = None
-            old_plot = self._plot
-            self._plot = None
-            old_models = self.models._models
-            self.models._models = DictionaryTreeBrowser()
-            ns = self.deepcopy()
-            ns.data = np.atleast_1d(data)
-            return ns
-        finally:
-            self.data = old_data
-            self._plot = old_plot
-            self.models._models = old_models
+        if isinstance(data, h5py.Dataset) or \
+                isinstance(data, da.Array) or \
+                (isinstance(self.data, h5py.Dataset) and data is None):
+            try:
+                old_data = self.data
+                if data is None or isinstance(data, da.Array):
+                    from hyperspy.io_plugins.hdf5 import get_temp_hdf5_file, write_empty_signal
+                    tempf = get_temp_hdf5_file()
+                    if isinstance(data, da.Array):
+                        new_shape = data.shape
+                        new_dtype = data.dtype
+                    else:
+                        new_shape = old_data.shape
+                        new_dtype = old_data.dtype
+
+                    self.data = write_empty_signal(tempf.file,
+                                                   new_shape,
+                                                   new_dtype,
+                                                   metadata=self.metadata)['data']
+                else:
+                    self.data = data
+                old_models = self.models._models
+                self.models._models = DictionaryTreeBrowser()
+                ns = self.deepcopy()
+                if isinstance(data, da.Array):
+                    data.store(ns.data)
+                ns.axes_manager = self.axes_manager.deepcopy()
+                return ns
+            finally:
+                self.data = old_data
+                self.models._models = old_models
+        else:
+            try:
+                old_data = self.data
+                self.data = None
+                old_plot = self._plot
+                self._plot = None
+                old_models = self.models._models
+                self.models._models = DictionaryTreeBrowser()
+                ns = self.deepcopy()
+                ns.data = data
+                return ns
+            finally:
+                self.data = old_data
+                self._plot = old_plot
+                self.models._models = old_models
 
     def _summary(self):
         string = "\n\tTitle: "
@@ -3058,6 +3139,21 @@ class Signal(FancySlicing,
     def data(self, value):
         if isinstance(value, h5py.Dataset):
             self._data = value
+        elif isinstance(value, da.Array):
+            if not hasattr(self, '_tempfile'):
+                try:
+                    self._data = np.atleast_1d(np.array(value))
+                except MemoryError:
+                    from hyperspy.io_plugins.hdf5 import (get_temp_hdf5_file,
+                                                          write_empty_signal)
+                    tempf = get_temp_hdf5_file()
+                    self._data = write_empty_signal(tempf.file, value.shape,
+                                                    value.dtype,
+                                                    metadata=self.metadata)['data']
+                    self._tempfile = tempf
+                    value.store(self._data)
+            else:
+                self = self._replace_hdf5_data(value)
         else:
             self._data = np.atleast_1d(np.asanyarray(value))
 
@@ -3089,29 +3185,7 @@ class Signal(FancySlicing,
 
         """
 
-        self.data = file_data_dict['data']
-        if 'models' in file_data_dict:
-            self.models._add_dictionary(file_data_dict['models'])
-        if 'axes' not in file_data_dict:
-            file_data_dict['axes'] = self._get_undefined_axes_list()
-        self.axes_manager = AxesManager(
-            file_data_dict['axes'])
-        if 'metadata' not in file_data_dict:
-            file_data_dict['metadata'] = {}
-        if 'original_metadata' not in file_data_dict:
-            file_data_dict['original_metadata'] = {}
-        if 'attributes' in file_data_dict:
-            for key, value in file_data_dict['attributes'].items():
-                if hasattr(self, key):
-                    if isinstance(value, dict):
-                        for k, v in value.items():
-                            eval('self.%s.__setattr__(k,v)' % key)
-                    else:
-                        self.__setattr__(key, value)
-        self.original_metadata.add_dictionary(
-            file_data_dict['original_metadata'])
-        self.metadata.add_dictionary(
-            file_data_dict['metadata'])
+        self.metadata.add_dictionary(file_data_dict.get('metadata', {}))
         if "title" not in self.metadata.General:
             self.metadata.General.title = ''
         if (self._record_by or
@@ -3124,16 +3198,75 @@ class Signal(FancySlicing,
                 not self.metadata.has_item("Signal.signal_type")):
             self.metadata.Signal.signal_type = self._signal_type
 
+        self.data = file_data_dict['data']
+        self.models._add_dictionary(file_data_dict.get('models', {}))
+
+        self.axes_manager = AxesManager(file_data_dict.get('axes',
+                                                           self._get_undefined_axes_list()))
+
+        self.original_metadata.add_dictionary(file_data_dict.get('original_metadata',
+                                                                 {}))
+
+        if 'attributes' in file_data_dict:
+            for key, value in file_data_dict['attributes'].items():
+                if hasattr(self, key):
+                    if isinstance(value, dict):
+                        for k, v in value.items():
+                            getattr(self, key).__setattr__(k, v)
+                    else:
+                        self.__setattr__(key, value)
+
+    def _replace_hdf5_data(self, new_data):
+        """new_data is dask array
+        """
+        if isinstance(self.data, h5py.Dataset):
+            if self.data.file.mode == 'r+':
+                success = False
+                if new_data.shape == self.data.shape:
+                    try:
+                        new_data.store(self.data)
+                        success = True
+                    except:
+                        pass
+                if not success:
+                    from io_plugins.hdf5 import get_signal_chunks
+                    self.data.parent.move('data', 'data_old')
+                    data = self.data.parent.create_dataset(name='data',
+                                                           shape=new_data.shape,
+                                                           dtype=new_data.dtype,
+                                                           compression='gzip',
+                                                           chunks=get_signal_chunks(new_data.shape,
+                                                                                    new_data.dtype,
+                                                                                    self.metadata),
+                                                           maxshape=tuple(None for _
+                                                                          in
+                                                                          new_data.shape),
+                                                           shuffle=True,
+                                                           )
+                    new_data.store(data)
+                    del self.data.parent['data_old']
+                    self.data = data
+                return self
+            else:
+                # have to deepcopy because can't modify the file
+                return self._deepcopy_with_new_data(new_data)
+        else:
+            raise ValueError("the signal is not oom")
+
     def squeeze(self):
         """Remove single-dimensional entries from the shape of an array
         and the axes.
 
         """
-        # We deepcopy everything but data
-        self = self._deepcopy_with_new_data(self.data)
+        self.axes_manager = self.axes_manager.deepcopy()
         for axis in self.axes_manager._axes:
             if axis.size == 1:
                 self._remove_axis(axis.index_in_axes_manager)
+        if isinstance(self.data, h5py.Dataset):
+            current_data = da.from_array(self.data,
+                                         chunks=self._get_dask_chunks())
+            new_data = current_data.squeeze()
+            return self._replace_hdf5_data(new_data)
         self.data = self.data.squeeze()
         return self
 
@@ -3451,9 +3584,16 @@ class Signal(FancySlicing,
         if i1 is not None:
             new_offset = axis.axis[i1]
         # We take a copy to guarantee the continuity of the data
-        self.data = self.data[
-            (slice(None),) * axis.index_in_array + (slice(i1, i2),
-                                                    Ellipsis)]
+        _slices = (slice(None),) * axis.index_in_array + (slice(i1, i2),
+                                                          Ellipsis)
+        if isinstance(self.data, h5py.Dataset):
+            raise TypeError('The data is read directly from file, cannot modify the data in-place. '
+                            'Please use indexing instead.')
+            # current_data = da.from_array(self.data,
+            #                              chunks=self._get_dask_chunks())
+            # new_data = current_data[_slices]
+        else:
+            self.data = self.data[_slices]
 
         if i1 is not None:
             axis.offset = new_offset
@@ -3473,6 +3613,9 @@ class Signal(FancySlicing,
         s : a copy of the object with the axes swapped.
 
         """
+        if isinstance(self.data, h5py.Dataset):
+            raise NotImplementedError("This method is not available for signals"
+                                      "with out-of-memory data")
         axis1 = self.axes_manager[axis1].index_in_array
         axis2 = self.axes_manager[axis2].index_in_array
         s = self._deepcopy_with_new_data(self.data.swapaxes(axis1, axis2))
@@ -3524,7 +3667,13 @@ class Signal(FancySlicing,
             index=axis,
             to_index=to_index)
 
-        s = self._deepcopy_with_new_data(self.data.transpose(new_axes_indices))
+        if isinstance(self.data, h5py.Dataset):
+            current_data = da.from_array(self.data,
+                                         chunks=self._get_dask_chunks())
+            new_data = current_data.transpose(new_axes_indices)
+        else:
+            new_data = self.data.transpose(new_axes_indices)
+        s = self._deepcopy_with_new_data(new_data)
         s.axes_manager._axes = hyperspy.misc.utils.rollelem(
             s.axes_manager._axes,
             index=axis,
@@ -3539,15 +3688,20 @@ class Signal(FancySlicing,
         """Returns a view of `data` with is axes aligned with the Signal axes.
 
         """
+        if isinstance(self.data, h5py.Dataset):
+            current_data = da.from_array(self.data,
+                                         chunks=self._get_dask_chunks())
+        else:
+            current_data = self.data
         if self.axes_manager.axes_are_aligned_with_data:
-            return self.data
+            return current_data
         else:
             am = self.axes_manager
             nav_iia_r = am.navigation_indices_in_array[::-1]
             sig_iia_r = am.signal_indices_in_array[::-1]
             # nav_sort = np.argsort(nav_iia_r)
             # sig_sort = np.argsort(sig_iia_r) + len(nav_sort)
-            data = self.data.transpose(nav_iia_r + sig_iia_r)
+            data = current_data.transpose(nav_iia_r + sig_iia_r)
             return data
 
     def rebin(self, new_shape, out=None):
@@ -3584,18 +3738,40 @@ class Signal(FancySlicing,
         """
         if len(new_shape) != len(self.data.shape):
             raise ValueError("Wrong shape size")
-        new_shape_in_array = []
-        for axis in self.axes_manager._axes:
-            new_shape_in_array.append(
-                new_shape[axis.index_in_axes_manager])
+        new_shape_in_array = [new_shape[ax.index_in_axes_manager] for ax in
+                              self.axes_manager._axes]
         factors = (np.array(self.data.shape) /
                    np.array(new_shape_in_array))
-        s = out or self._deepcopy_with_new_data(None)
-        data = array_tools.rebin(self.data, new_shape_in_array)
-        if out:
-            out.data[:] = data
+
+        if isinstance(self.data, h5py.Dataset):
+            if np.product(new_shape_in_array) * np.product(factors) != \
+                    np.product(self.data.shape):
+                raise ValueError("New shape does not divide current data shape"
+                                 " to integers")
+            if factors.max() < 2:
+                return self.deepcopy()
+            else:
+                axis = {ax.index_in_array: ax for ax in
+                        self.axes_manager._axes}[factors.argmax()]
+                current_data = da.from_array(self.data,
+                                             chunks=self._get_dask_chunks(axis))
+                try:
+                    new_data = da.coarsen(np.sum, current_data, {i: f for i, f in
+                                                                 enumerate(factors)})
+                # we provide slighly better error message in hyperspy context
+                except ValueError:
+                    raise ValueError("Rebining does not allign with dask"
+                                     " chunks. Rebin fewer dimensions at a time"
+                                     " to avoid this error")
         else:
-            s.data = data
+            new_data = array_tools.rebin(self.data, new_shape_in_array)
+
+        s = out or self._deepcopy_with_new_data(new_data)
+        if out:
+            if isinstance(new_data, da.Array):
+                out.data = new_data
+            else:
+                out.data[:] = new_data
         for axis, axis_src in zip(s.axes_manager._axes,
                                   self.axes_manager._axes):
             axis.scale = axis_src.scale * factors[axis.index_in_array]
@@ -3707,11 +3883,16 @@ class Signal(FancySlicing,
         cut_index = np.array([0] + step_sizes).cumsum()
 
         axes_dict = signal_dict['axes']
+        if isinstance(self.data, h5py.Dataset):
+            orig_data = da.from_array(self.data,
+                                      chunks=self._get_dask_chunks(axis_in_manager))
+        else:
+            orig_data = self.data
         for i in range(len(cut_index) - 1):
             axes_dict[axis]['offset'] = \
                 self.axes_manager._axes[axis].index2value(cut_index[i])
             axes_dict[axis]['size'] = cut_index[i + 1] - cut_index[i]
-            data = self.data[
+            data = orig_data[
                 (slice(None), ) * axis +
                 (slice(cut_index[i], cut_index[i + 1]), Ellipsis)]
             signal_dict['data'] = data
@@ -3754,6 +3935,9 @@ class Signal(FancySlicing,
         --------
         fold
         """
+        if isinstance(self.data, h5py.Dataset):
+            raise ValueError('The signal data is loaded out-of-memory, folding'
+                             ' is not allowed')
 
         # It doesn't make sense unfolding when dim < 2
         if self.data.squeeze().ndim < 2:
@@ -3885,6 +4069,9 @@ class Signal(FancySlicing,
     @auto_replot
     def fold(self):
         """If the signal was previously unfolded, folds it back"""
+        if isinstance(self.data, h5py.Dataset):
+            raise ValueError('The signal data is loaded out-of-memory, folding'
+                             ' is not allowed')
         folding = self.metadata._HyperSpy.Folding
         # Note that == must be used instead of is True because
         # if the value was loaded from a file its type can be np.bool_
@@ -3901,6 +4088,8 @@ class Signal(FancySlicing,
                     variance.fold()
 
     def _make_sure_data_is_contiguous(self):
+        if isinstance(self.data, h5py.Dataset):
+            return
         if self.data.flags['C_CONTIGUOUS'] is False:
             self.data = np.ascontiguousarray(self.data)
 
@@ -3960,6 +4149,106 @@ class Signal(FancySlicing,
                 offset=0,
                 name="Scalar",
                 navigate=False,)
+
+    def _get_dask_chunks(self, axis=None):
+        """Returns dask chunks
+
+        Aims:
+            - Have at least one signal (or specified axis) in a single chunk, or
+              as many as fit in memory
+
+        Parameters
+        ----------
+        axis : {int, string, None, axis, tuple}
+            If axis is None (default), returns chunks for current data shape so
+            that at least one signal is in the chunk. If an axis is specified,
+            only that particular axis is guaranteed to be "not sliced".
+
+        Returns
+        -------
+        Tuple of tuples, dask chunks
+        """
+        # self.get_dimensions_from_data(), but it replots, so do it manually:
+        dc = self.data
+        for axis in self.axes_manager._axes:
+            axis.size = int(dc.shape[axis.index_in_array])
+
+        if axis is not None:
+            need_axes = self.axes_manager[axis]
+            if not np.iterable(need_axes):
+                need_axes = [need_axes, ]
+        else:
+            need_axes = self.axes_manager.signal_axes
+
+        if hasattr(self, '_available_memory'):
+
+            # available_mem = 2**30 * np.floor(virtual_memory().available /
+            #                                  2.**30)
+            available_mem = min(np.floor(self._available_memory / 2.**30) *
+                                2**30 / 2, 4 * 2**30)
+            typesize = dc.dtype.itemsize
+            want_to_keep = np.product([ax.size for ax in need_axes]) * typesize
+
+            # should be int anyway, but force it to be sure
+            num_that_fit = int(available_mem / want_to_keep)
+        else:
+            num_that_fit = np.inf
+
+        if num_that_fit < 2:
+            chunks = [tuple(1 for _ in range(i)) for i in dc.shape]
+            for ax in need_axes:
+                chunks[ax.index_in_array] = dc.shape[ax.index_in_array],
+            return tuple(chunks)
+
+        # have enough memory, yay!
+
+        sizes = [ax.size for ax in self.axes_manager._axes
+                 if ax not in need_axes]
+        indices = [ax.index_in_array for ax in self.axes_manager._axes
+                   if ax not in need_axes]
+
+        while True:
+            if np.product(sizes) <= num_that_fit:
+                break
+
+            i = np.argmax(sizes)
+            sizes[i] = np.floor(sizes[i] / 2)
+        chunks = []
+        ndim = len(dc.shape)
+        for i in range(ndim):
+            if i in indices:
+                size = float(dc.shape[i])
+                chunks.append(tuple(len(sp) for sp in
+                                    np.array_split(np.arange(size),
+                                                   np.ceil(size / sizes[indices.index(i)]))))
+            else:
+                chunks.append((dc.shape[i],))
+        return tuple(chunks)
+
+    def _dask_function_and_remove_axis(self, function_name, axes,
+                                       out=None):
+        axes = self.axes_manager[axes]
+        if not np.iterable(axes):
+            axes = (axes,)
+        ar_axes = tuple(ax.index_in_array for ax in axes)
+        if len(ar_axes) == 1:
+            ar_axes = ar_axes[0]
+        current_data = da.from_array(self.data,
+                                     chunks=self._get_dask_chunks(axes))
+        new_data = getattr(current_data,
+                           function_name)(axis=ar_axes)
+        s = out or self._deepcopy_with_new_data(new_data)
+        if out:
+            if out.data.shape == new_data.shape:
+                out.data = new_data
+                out.events.data_changed.trigger(obj=out)
+            else:
+                raise ValueError(
+                    "The output shape %s does not match  the shape of "
+                    "`out` %s" % (new_data.shape, out.data.shape))
+        else:
+            s._remove_axis([ax.index_in_axes_manager for ax in axes])
+            return s
 
     def _ma_workaround(self, s, function, axes, ar_axes, out):
         # TODO: Remove if and when numpy.ma accepts tuple `axis`
@@ -4052,8 +4341,11 @@ class Signal(FancySlicing,
         """
         if axis is None:
             axis = self.axes_manager.navigation_axes
-        return self._apply_function_on_data_and_remove_axis(np.sum, axis,
-                                                            out=out)
+        if isinstance(self.data, h5py.Dataset):
+            return self._dask_function_and_remove_axis('sum', axis, out=out)
+        else:
+            return self._apply_function_on_data_and_remove_axis(np.sum, axis,
+                                                                out=out)
     sum.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG)
 
     def max(self, axis=None, out=None):
@@ -4085,8 +4377,11 @@ class Signal(FancySlicing,
         """
         if axis is None:
             axis = self.axes_manager.navigation_axes
-        return self._apply_function_on_data_and_remove_axis(np.max, axis,
-                                                            out=out)
+        if isinstance(self.data, h5py.Dataset):
+            return self._dask_function_and_remove_axis('max', axis, out=out)
+        else:
+            return self._apply_function_on_data_and_remove_axis(
+                np.max, axis, out=out)
     max.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG)
 
     def min(self, axis=None, out=None):
@@ -4118,8 +4413,11 @@ class Signal(FancySlicing,
         """
         if axis is None:
             axis = self.axes_manager.navigation_axes
-        return self._apply_function_on_data_and_remove_axis(np.min, axis,
-                                                            out=out)
+        if isinstance(self.data, h5py.Dataset):
+            return self._dask_function_and_remove_axis('min', axis, out=out)
+        else:
+            return self._apply_function_on_data_and_remove_axis(
+                np.min, axis, out=out)
     min.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG)
 
     def mean(self, axis=None, out=None):
@@ -4151,8 +4449,11 @@ class Signal(FancySlicing,
         """
         if axis is None:
             axis = self.axes_manager.navigation_axes
-        return self._apply_function_on_data_and_remove_axis(np.mean, axis,
-                                                            out=out)
+        if isinstance(self.data, h5py.Dataset):
+            return self._dask_function_and_remove_axis('mean', axis, out=out)
+        else:
+            return self._apply_function_on_data_and_remove_axis(np.mean,
+                                                                axis, out=out)
     mean.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG)
 
     def std(self, axis=None, out=None):
@@ -4184,8 +4485,11 @@ class Signal(FancySlicing,
         """
         if axis is None:
             axis = self.axes_manager.navigation_axes
-        return self._apply_function_on_data_and_remove_axis(np.std, axis,
-                                                            out=out)
+        if isinstance(self.data, h5py.Dataset):
+            return self._dask_function_and_remove_axis('std', axis, out=out)
+        else:
+            return self._apply_function_on_data_and_remove_axis(
+                np.std, axis, out=out)
     std.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG)
 
     def var(self, axis=None, out=None):
@@ -4217,8 +4521,11 @@ class Signal(FancySlicing,
         """
         if axis is None:
             axis = self.axes_manager.navigation_axes
-        return self._apply_function_on_data_and_remove_axis(np.var, axis,
-                                                            out=out)
+        if isinstance(self.data, h5py.Dataset):
+            return self._dask_function_and_remove_axis('var', axis, out=out)
+        else:
+            return self._apply_function_on_data_and_remove_axis(
+                np.var, axis, out=out)
     var.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG)
 
     def diff(self, axis, order=1, out=None):
@@ -4245,13 +4552,44 @@ class Signal(FancySlicing,
         >>> s.diff(-1).data.shape
         (64,64,1023)
         """
-        s = out or self._deepcopy_with_new_data(None)
-        data = np.diff(self.data, n=order,
-                       axis=self.axes_manager[axis].index_in_array)
-        if out is not None:
-            out.data[:] = data
+        arr_axis = self.axes_manager[axis].index_in_array
+        if isinstance(self.data, h5py.Dataset):
+
+            def dask_diff(arr, n, axis):
+                # assume arr is da.Array already
+                n = int(n)
+                if n == 0:
+                    return arr
+                if n < 0:
+                    raise ValueError("order must be positive")
+                nd = len(arr.shape)
+                slice1 = [slice(None)] * nd
+                slice2 = [slice(None)] * nd
+                slice1[axis] = slice(1, None)
+                slice2[axis] = slice(None, -1)
+                slice1 = tuple(slice1)
+                slice2 = tuple(slice2)
+                if n > 1:
+                    return dask_diff(
+                        arr[slice1] - arr[slice2], n - 1, axis=axis)
+                else:
+                    return arr[slice1] - arr[slice2]
+
+            current_data = da.from_array(
+                self.data,
+                self._get_dask_chunks(axis))
+            new_data = dask_diff(current_data, order, arr_axis)
         else:
-            s.data = data
+            new_data = np.diff(self.data, n=order, axis=arr_axis)
+
+        s = out or self._deepcopy_with_new_data(new_data)
+        if out:
+            if out.data.shape == new_data.shape:
+                out.data = new_data
+            else:
+                raise ValueError(
+                    "The output shape %s does not match  the shape of "
+                    "`out` %s" % (new_data.shape, out.data.shape))
         axis2 = s.axes_manager[axis]
         new_offset = self.axes_manager[axis].offset + (order * axis2.scale / 2)
         axis2.offset = new_offset
@@ -4327,14 +4665,39 @@ class Signal(FancySlicing,
 
         """
         axis = self.axes_manager[axis]
-        s = out or self._deepcopy_with_new_data(None)
-        data = sp.integrate.simps(y=self.data, x=axis.axis,
-                                  axis=axis.index_in_array)
-        if out is not None:
-            out.data[:] = data
-            out.events.data_changed.trigger(obj=out)
+        if isinstance(self.data, h5py.Dataset):
+            from dask.imperative import do as di_do
+            from dask.imperative import value as di_value
+            from dask.array.core import slices_from_chunks
+            from itertools import product
+            data = di_value(self.data)
+            chunks = self._get_dask_chunks(axis=axis)
+            d_chunks = [data[_slice] for _slice in slices_from_chunks(chunks)]
+            integs = [di_do(sp.integrate.simps, pure=True)(dc,
+                                                           x=axis.axis,
+                                                           axis=axis.index_in_array)
+                      for dc in d_chunks]
+            shapes = product(*chunks)
+            result_list = [
+                da.from_imperative(
+                    integ, shape) for integ, shape in zip(
+                    integs, shapes)]
+            new_data = da.concatenate(result_list, axis=axis.axis_in_array)
         else:
-            s.data = data
+            new_data = sp.integrate.simps(y=self.data,
+                                          x=axis.axis,
+                                          axis=axis.index_in_array)
+
+        s = out or self._deepcopy_with_new_data(new_data)
+        if out:
+            if out.data.shape == new_data.shape:
+                out.data = new_data
+                out.events.data_changed.trigger(obj=out)
+            else:
+                raise ValueError(
+                    "The output shape %s does not match  the shape of "
+                    "`out` %s" % (new_data.shape, out.data.shape))
+        else:
             s._remove_axis(axis.index_in_axes_manager)
             return s
     integrate_simpson.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
@@ -4402,8 +4765,11 @@ class Signal(FancySlicing,
         (64,64)
 
         """
-        return self._apply_function_on_data_and_remove_axis(np.argmax, axis,
-                                                            out=out)
+        if isinstance(self.data, h5py.Dataset):
+            return self._dask_function_and_remove_axis('argmax', axis, out=out)
+        else:
+            return self._apply_function_on_data_and_remove_axis(
+                np.argmax, axis, out=out)
     indexmax.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
 
     def valuemax(self, axis, out=None):
@@ -4432,14 +4798,25 @@ class Signal(FancySlicing,
         (64,64)
 
         """
-        idx = self.indexmax(axis)
-        data = self.axes_manager[axis].index2value(idx.data)
-        if out is None:
-            idx.data = data
-            return idx
+        s = self.indexmax(axis)
+        if isinstance(s.data, h5py.Dataset):
+            current_data = da.from_array(s.data,
+                                         chunks=s._get_dask_chunks(axis))
+            new_data = current_data.map_blocks(
+                lambda x: self.axes_manager[axis].index2value(x))
         else:
-            out.data[:] = data
-            out.events.data_changed.trigger(obj=out)
+            new_data = self.axes_manager[axis].index2value(s.data)
+        if out is None:
+            s.data = new_data
+            return s
+        else:
+            if out.data.shape == new_data.shape:
+                out.data = new_data
+                out.events.data_changed.trigger(obj=out)
+            else:
+                raise ValueError(
+                    "The output shape %s does not match  the shape of "
+                    "`out` %s" % (new_data.shape, out.data.shape))
     valuemax.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
 
     def get_histogram(self, bins='freedman', range_bins=None, out=None,
@@ -4491,7 +4868,10 @@ class Signal(FancySlicing,
 
         """
         from hyperspy import signals
-        data = self.data[~np.isnan(self.data)].flatten()
+        if isinstance(self.data, h5py.Dataset):
+            data = da.from_array(self.data, self._get_dask_chunks())
+        else:
+            data = self.data[~np.isnan(self.data)].flatten()
         hist, bin_edges = histogram(data,
                                     bins=bins,
                                     range=range_bins,
@@ -4642,16 +5022,17 @@ class Signal(FancySlicing,
             self._plot = backup_plot
 
     def __deepcopy__(self, memo):
-        dc = type(self)(**self._to_dictionary())
-        if dc.data is not None:
-            dc.data = dc.data.copy()
-
-        # uncomment if we want to deepcopy models as well:
-
-        # dc.models._add_dictionary(
-        #     copy.deepcopy(
-        #         self.models._models.as_dictionary()))
-
+        if isinstance(self.data, h5py.Dataset):
+            from hyperspy.io_plugins.hdf5 import get_temp_hdf5_file, file_writer
+            from hyperspy.io import load
+            tempf = get_temp_hdf5_file()
+            file_writer(tempf.name, self, fileobj=tempf.file)
+            dc = load(tempf.name, load_to_memory=False, mode='r+')
+            dc._tempfile = tempf
+        else:
+            dc = type(self)(**self._to_dictionary())
+            if dc.data is not None:
+                dc.data = dc.data.copy()
         # The Signal subclasses might change the view on init
         # The following code just copies the original view
         for oaxis, caxis in zip(self.axes_manager._axes,
@@ -4707,7 +5088,6 @@ class Signal(FancySlicing,
                     raise AttributeError(
                         "Only signals with dtype uint16 can be converted to "
                         "rgb16 images")
-                dtype = rgb_tools.rgb_dtypes[dtype]
                 self.data = rgb_tools.regular_array2rgbx(self.data)
                 self.axes_manager.remove(-1)
                 self.metadata.Signal.record_by = "image"
@@ -4729,7 +5109,13 @@ class Signal(FancySlicing,
             self._assign_subclass()
             return
         else:
-            self.data = self.data.astype(dtype)
+            if isinstance(self.data, h5py.Dataset):
+                current_data = da.from_array(self.data,
+                                             chunks=self._get_dask_chunks())
+                new_data = current_data.astype(dtype)
+            else:
+                new_data = self.data.astype(dtype)
+            self.data = new_data
 
     def estimate_poissonian_noise_variance(self,
                                            expected_value=None,
@@ -4774,9 +5160,10 @@ class Signal(FancySlicing,
 
         """
         if expected_value is None:
-            dc = self.data.copy()
+            dc = da.from_array(self.data, self._get_dask_chunks())
         else:
-            dc = expected_value.data.copy()
+            dc = da.from_array(expected_value.data,
+                               expected_value._get_dask_chunks())
         if self.metadata.has_item(
                 "Signal.Noise_properties.Variance_linear_model"):
             vlm = self.metadata.Signal.Noise_properties.Variance_linear_model
@@ -4809,7 +5196,7 @@ class Signal(FancySlicing,
 
         variance = (dc * gain_factor + gain_offset) * correlation_factor
         # The lower bound of the variance is the gaussian noise.
-        variance = np.clip(variance, gain_offset * correlation_factor, np.inf)
+        variance = da.clip(variance, gain_offset * correlation_factor, np.inf)
         variance = type(self)(variance)
         variance.axes_manager = self.axes_manager
         variance.metadata.General.title = ("Variance of " +
@@ -4897,8 +5284,14 @@ class Signal(FancySlicing,
             if self.axes_manager.navigation_dimension == 0:
                 data = np.array([0, ], dtype=dtype)
             else:
-                data = np.zeros(self.axes_manager._navigation_shape_in_array,
-                                dtype=dtype)
+                try:
+                    data = np.zeros(self.axes_manager._navigation_shape_in_array,
+                                    dtype=dtype)
+                except MemoryError:
+                    data = da.zeros(self.axes_manager._navigation_shape_in_array,
+                                    chunks=1000,
+                                    dtype=dtype)
+
         if self.axes_manager.navigation_dimension == 0:
             s = Signal(data)
         elif self.axes_manager.navigation_dimension == 1:
@@ -4910,8 +5303,7 @@ class Signal(FancySlicing,
             s = Image(data,
                       axes=self.axes_manager._get_navigation_axes_dicts())
         else:
-            s = Signal(np.zeros(self.axes_manager._navigation_shape_in_array,
-                                dtype=self.data.dtype),
+            s = Signal(data,
                        axes=self.axes_manager._get_navigation_axes_dicts())
             s.axes_manager.set_signal_dimension(
                 self.axes_manager.navigation_dimension)
@@ -4947,8 +5339,13 @@ class Signal(FancySlicing,
             if self.axes_manager.signal_dimension == 0:
                 data = np.array([0, ], dtype=dtype)
             else:
-                data = np.zeros(self.axes_manager._signal_shape_in_array,
-                                dtype=dtype)
+                try:
+                    data = np.zeros(self.axes_manager._signal_shape_in_array,
+                                    dtype=dtype)
+                except MemoryError:
+                    data = da.zeros(self.axes_manager._signal_shape_in_array,
+                                    chunks=1000,
+                                    dtype=dtype)
 
         if self.axes_manager.signal_dimension == 0:
             s = Signal(data)
@@ -4972,7 +5369,8 @@ class Signal(FancySlicing,
         nitem = nitem if nitem > 0 else 1
         return nitem
 
-    def as_spectrum(self, spectral_axis, out=None):
+    def as_spectrum(self, spectral_axis, reorder_data=None,
+                    out=None):
         """Return the Signal as a spectrum.
 
         The chosen spectral axis is moved to the last index in the
@@ -4983,6 +5381,11 @@ class Signal(FancySlicing,
         Parameters
         ----------
         spectral_axis %s
+        reorder_data : {None, bool}
+            If True, the chosen spectral axis is moved to the last index in the
+            array and the data is made contiguous for effecient iteration over
+            spectra.If None, by default reorders for in-memory signals and
+            leaves data as-is for out-of-memory signals.
         %s
 
         Examples
@@ -4997,17 +5400,42 @@ class Signal(FancySlicing,
 
         """
         # Roll the spectral axis to-be to the latex index in the array
-        sp = self.rollaxis(spectral_axis, -1 + 3j)
-        sp.metadata.Signal.record_by = "spectrum"
-        sp._assign_subclass()
+        if reorder_data is None:
+            if isinstance(self.data, h5py.Dataset):
+                reorder_data = False
+            else:
+                reorder_data = True
+        spectral_axis = self.axes_manager[spectral_axis]
+        if reorder_data is True:
+            sp = self.rollaxis(spectral_axis, -1 + 3j)
+            sp.metadata.Signal.record_by = "spectrum"
+            sp._assign_subclass()
+        elif reorder_data is False:
+            sp = self
+            sp.metadata.Signal.record_by = "spectrum"
+            sp._assign_subclass()
+            for ax in self.axes_manager._axes:
+                if ax.index_in_array is spectral_axis.index_in_array:
+                    ax.navigate = False
+                else:
+                    ax.navigate = True
         if out is None:
             return sp
         else:
-            out.data[:] = sp.data
+            if isinstance(sp.data, h5py.Dataset):
+                if out.data.shape == sp.data.shape:
+                    out.data = sp.data
+                else:
+                    raise ValueError(
+                        "The output shape %s does not match  the shape of "
+                        "`out` %s" % (sp.data.shape, out.data.shape))
+            else:
+                out.data[:] = sp.data
             out.events.data_changed.trigger(obj=out)
     as_spectrum.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
 
-    def as_image(self, image_axes, out=None):
+    def as_image(self, image_axes, reorder_data=None,
+                 out=None):
         """Convert signal to image.
 
         The chosen image axes are moved to the last indices in the
@@ -5019,6 +5447,11 @@ class Signal(FancySlicing,
         image_axes : tuple of {int | str | axis}
             Select the image axes. Note that the order of the axes matters
             and it is given in the "natural" i.e. X, Y, Z... order.
+        reorder_data : {None, bool}
+            If True, the chosen image axes are moved to the last indices in the
+            array and the data is made contiguous for effecient iteration over
+            images. If None, by default reorders for in-memory signals and
+            leaves data as-is for out-of-memory signals.
         %s
 
         Examples
@@ -5037,20 +5470,43 @@ class Signal(FancySlicing,
         DataDimensionError : when data.ndim < 2
 
         """
-        if self.data.ndim < 2:
+        if len(self.data.shape) < 2:
             raise DataDimensionError(
                 "A Signal dimension must be >= 2 to be converted to an Image")
         axes = (self.axes_manager[image_axes[0]],
                 self.axes_manager[image_axes[1]])
         iaxes = [axis.index_in_array for axis in axes]
-        im = self.rollaxis(iaxes[0] + 3j, -1 + 3j).rollaxis(
-            iaxes[1] - np.argmax(iaxes) + 3j, -2 + 3j)
-        im.metadata.Signal.record_by = "image"
-        im._assign_subclass()
+        if reorder_data is None:
+            if isinstance(self.data, h5py.Dataset):
+                reorder_data = False
+            else:
+                reorder_data = True
+        if reorder_data is True:
+            im = self.rollaxis(iaxes[0] + 3j, -1 + 3j).rollaxis(
+                iaxes[1] - np.argmax(iaxes) + 3j, -2 + 3j)
+            im.metadata.Signal.record_by = "image"
+            im._assign_subclass()
+        elif reorder_data is False:
+            im = self
+            im.metadata.Signal.record_by = "image"
+            im._assign_subclass()
+            for ax in self.axes_manager._axes:
+                if ax.index_in_array in iaxes:
+                    ax.navigate = False
+                else:
+                    ax.navigate = True
         if out is None:
             return im
         else:
-            out.data[:] = im.data
+            if isinstance(im.data, h5py.Dataset):
+                if out.data.shape == im.data.shape:
+                    out.data = im.data
+                else:
+                    raise ValueError(
+                        "The output shape %s does not match  the shape of "
+                        "`out` %s" % (im.data.shape, out.data.shape))
+            else:
+                out.data[:] = im.data
             out.events.data_changed.trigger(obj=out)
     as_image.__doc__ %= OUT_ARG
 
@@ -5143,19 +5599,40 @@ class Signal(FancySlicing,
 
         """
         data = self.data
-        # To make it work with nans
-        data = data[~np.isnan(data)]
+        if isinstance(data, h5py.Dataset):
+            current_data = da.from_array(data,
+                                         chunks=self._get_dask_chunks())
+            _raveled = current_data.ravel()
+            _mean, _std, _min, _q1, _q2, _q3, _max = da.compute(
+                current_data.nanmean(),
+                current_data.nanstd(),
+                current_data.nanmin(),
+                da.percentile(_raveled, [25, ]),
+                da.percentile(_raveled, [50, ]),
+                da.percentile(_raveled, [75, ]),
+                current_data.nanmax(),
+            )
+        else:
+            # To work with nans, but do the same in both dask and numpy
+            # data = data[~np.isnan(data)]
+
+            _mean = data.nanmean(),
+            _std = data.nanstd()
+            _min = data.nanmin()
+            _q1 = np.percentile(data, 25)
+            _q2 = np.percentile(data, 50)
+            _q3 = np.percentile(data, 75)
+            _max = data.nanmax()
+
         print(underline("Summary statistics"))
-        print("mean:\t" + formatter % data.mean())
-        print("std:\t" + formatter % data.std())
-        print()
-        print("min:\t" + formatter % data.min())
-        print("Q1:\t" + formatter % np.percentile(data,
-                                                  25))
-        print("median:\t" + formatter % np.median(data))
-        print("Q3:\t" + formatter % np.percentile(data,
-                                                  75))
-        print("max:\t" + formatter % data.max())
+        print("mean:\t" + formatter % _mean)
+        print("std:\t" + formatter % _std)
+        print
+        print("min:\t" + formatter % _min)
+        print("Q1:\t" + formatter % _q1)
+        print("median:\t" + formatter % _q2)
+        print("Q3:\t" + formatter % _q3)
+        print("max:\t" + formatter % _max)
 
     @property
     def is_rgba(self):

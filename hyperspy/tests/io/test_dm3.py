@@ -71,7 +71,7 @@ def test_content():
 
 def check_load(filename, subfolder, key):
     print('loading %s\\test-%i' % (subfolder, key))
-    s = load(filename)
+    s = load(filename, load_to_memory=True)
     # Store the data for the next tests
     data_dict[subfolder][key] = s.data
 

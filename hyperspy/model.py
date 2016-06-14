@@ -637,7 +637,7 @@ class BaseModel(list):
     def red_chisq(self):
         """Reduced chi-squared. Calculated from self.chisq and self.dof
         """
-        tmp = self.chisq / (- self.dof + self.channel_switches.sum() - 1)
+        tmp = self.chisq / (- self.dof + np.sum(self.channel_switches) - 1)
         tmp.metadata.General.title = self.signal.metadata.General.title + \
             ' reduced chi-squared'
         return tmp
@@ -719,8 +719,8 @@ class BaseModel(list):
         if bounded is True:
             if fitter not in ("mpfit", "tnc", "l_bfgs_b"):
                 raise NotImplementedError("Bounded optimization is only"
-                                            "available for the mpfit "
-                                            "optimizer.")
+                                          "available for the mpfit "
+                                          "optimizer.")
             else:
                 # this has to be done before setting the p0, so moved things
                 # around
@@ -820,7 +820,7 @@ class BaseModel(list):
                     self.mpfit_parinfo = None
                 m = mpfit(self._errfunc4mpfit, self.p0[:],
                           parinfo=self.mpfit_parinfo, functkw={
-                              'y': self.signal()[self.channel_switches],
+                              'y': self.signal()[np.where(self.channel_switches)],
                               'weights': weights},
                           autoderivative=autoderivative,
                           quiet=1)

@@ -103,6 +103,11 @@ class GeneralConfig(t.HasTraits):
         label='Show progress bar',
         desc='If enabled, show a progress bar when available')
 
+    load_to_memory = t.CBool(
+        True,
+        label='Load to memory',
+        desc='If enabled, signals are by default loaded to memory')
+
     dtb_expand_structures = t.CBool(
         True,
         label='Expand structures in DictionaryTreeBrowser',

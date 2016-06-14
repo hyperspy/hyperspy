@@ -1,4 +1,5 @@
 import nose.tools as nt
+import h5py
 import numpy as np
 
 from hyperspy.signal import Signal
@@ -8,7 +9,7 @@ from hyperspy import utils
 class TestUtilsStack:
 
     def setUp(self):
-        s = Signal(np.random.random((3, 2, 5)))
+        s = Signal(np.arange(3 * 2 * 5).reshape((3, 2, 5)))
         s.axes_manager[0].name = "x"
         s.axes_manager[1].name = "y"
         s.axes_manager[2].name = "E"
@@ -61,3 +62,26 @@ class TestUtilsStack:
         res = s1.split()
         np.testing.assert_array_almost_equal(list_s[-1].data, res[-1].data)
         nt.assert_equal(res[-1].metadata.General.title, 'test')
+
+    def test_stack_oom_default(self):
+        s = self.signal
+        s1 = s.deepcopy() + 1
+        s2 = s.deepcopy() * 4
+        result_signal = utils.stack([s, s1, s2], load_to_memory=False)
+        nt.assert_is_instance(result_signal.data, h5py.Dataset)
+        nt.assert_true(hasattr(result_signal, '_tempfile'))
+        nt.assert_equal(result_signal.data.shape, (3, 3, 2, 5))
+        for res_d, _s in zip(result_signal.data, [s, s1, s2]):
+            np.testing.assert_array_equal(res_d, _s.data)
+
+    def test_stack_oom_not_default(self):
+        s = self.signal
+        s1 = s.deepcopy() + 1
+        s2 = s.deepcopy() * 4
+        result_signal = utils.stack([s, s1, s2], load_to_memory=False, axis=1)
+        nt.assert_is_instance(result_signal.data, h5py.Dataset)
+        nt.assert_true(hasattr(result_signal, '_tempfile'))
+        nt.assert_equal(result_signal.data.shape, (9, 2, 5))
+        for res_d, _s in zip(
+                np.split(result_signal.data.value, 3), [s, s1, s2]):
+            np.testing.assert_array_equal(res_d, _s.data)
