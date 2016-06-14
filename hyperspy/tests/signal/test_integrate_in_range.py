@@ -17,5 +17,5 @@ class Test1D:
 
     def test_integrate_in_range(self):
         integrated_signal = self.spectrum.integrate_in_range(signal_range=(None,
-                                                                         None))
+                                                                           None))
         nose.tools.assert_true(np.allclose(integrated_signal.data, 20,))

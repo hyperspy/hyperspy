@@ -151,8 +151,8 @@ class EDSTEMSpectrum(EDSSpectrum):
                 probe_area)
         if real_time is not None:
             md.set_item(
-                 "Acquisition_instrument.TEM.Detector.EDS.real_time",
-                 real_time)
+                "Acquisition_instrument.TEM.Detector.EDS.real_time",
+                real_time)
 
         if set([beam_energy, live_time, tilt_stage, azimuth_angle,
                 elevation_angle, energy_resolution_MnKa]) == {None}:
@@ -382,9 +382,9 @@ class EDSTEMSpectrum(EDSSpectrum):
             mass_thickness.metadata.General.title = 'Mass thickness'
         elif method == 'cross_section':
             results = utils_eds.quantification_cross_section(
-                                composition.data,
-                                cross_sections=factors,
-                                dose=self._get_dose(method))
+                composition.data,
+                cross_sections=factors,
+                dose=self._get_dose(method))
             composition.data = results[0] * 100
             number_of_atoms = utils.stack(intensities)
             number_of_atoms.data = results[1]

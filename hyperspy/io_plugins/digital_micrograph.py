@@ -209,7 +209,9 @@ class DigitalMicrographReader(object):
                 if not tag_name:
                     tag_name = 'TagGroup%i' % unnammed_group_tags
                     unnammed_group_tags += 1
-                _logger.debug('Reading Tag group at address: %s', self.f.tell())
+                _logger.debug(
+                    'Reading Tag group at address: %s',
+                    self.f.tell())
                 ntags = self.parse_tag_group(skip4=3)[2]
                 group_dict[tag_name] = {}
                 self.parse_tags(
