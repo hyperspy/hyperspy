@@ -21,7 +21,7 @@ import numpy as np
 
 from skimage.restoration import unwrap_phase as unwrap
 
-from hyperspy._signals import Image
+from hyperspy._signals.image import Image
 
 
 class WaveImage(Image):
