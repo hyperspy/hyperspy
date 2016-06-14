@@ -87,12 +87,12 @@ def orpca(X, rank, lambda1=None, lambda2=None,
         Nuclear norm regularization parameter.
     lambda2 : float
         Sparse error regularization parameter.
-    method : 'BCD' | 'CF'
-        BCD - Block-coordinate descent
+    method : 'CF' | 'BCD'
         CF  - Closed-form (default)
-    init : 'BRP' | 'rand'
-        BRP  - Bilateral random projection
+        BCD - Block-coordinate descent
+    init : 'rand' | 'BRP'
         rand - Random initialization (default)
+        BRP  - Bilateral random projection
 
     Returns
     -------
@@ -100,6 +100,8 @@ def orpca(X, rank, lambda1=None, lambda2=None,
         is the [m x n] low-rank component.
     E : numpy array
         is the sparse error
+    U, S, V : numpy arrays
+        are the results of an SVD on Y
 
     """
     if fast is True and sklearn_installed is True:
@@ -117,9 +119,9 @@ def orpca(X, rank, lambda1=None, lambda2=None,
     m, n = X.shape
 
     # Check options
-    if method not in ('BCD', 'CF'):
+    if method not in ('CF', 'BCD'):
         raise ValueError("'method' not recognised")
-    if init not in ('BRP', 'rand'):
+    if init not in ('rand', 'BRP'):
         raise ValueError("'init' not recognised")
 
     if lambda1 is None:
@@ -131,7 +133,11 @@ def orpca(X, rank, lambda1=None, lambda2=None,
                         "is set to default.")
         lambda2 = 1.0 / np.sqrt(n)
 
-    if init == 'BRP':
+    if init == 'rand':
+        # Use random initialization
+        Y2 = np.random.randn(m, rank)
+        L, tmp = scipy.linalg.qr(Y2, mode='economic')
+    else:
         # Use bilateral random projections
         power = 1
         Z = X[:, 0:rank]
@@ -141,10 +147,6 @@ def orpca(X, rank, lambda1=None, lambda2=None,
             Y2 = np.dot(Z.T, Y1)
         Q, tmp = scipy.linalg.qr(Y2, mode='economic')
         L = np.dot(np.dot(Z, Q), Q.T)
-    else:
-        # Use random initialization
-        Y2 = np.random.randn(m, rank)
-        L, tmp = scipy.linalg.qr(Y2, mode='economic')
 
     R = np.zeros((rank, n))
     E = np.zeros((m, n))
@@ -156,7 +158,6 @@ def orpca(X, rank, lambda1=None, lambda2=None,
     for t in range(n):
         if t == 0 or np.mod(t + 1, np.round(n / 10)) == 0:
             _logger.info("Processing sample : %s" % (t + 1))
-            print("Processing sample : %s" % (t + 1))
 
         z = X[:, t]
         r, e = _solveproj(z, L, I, lambda2)
@@ -164,16 +165,16 @@ def orpca(X, rank, lambda1=None, lambda2=None,
         R[:, t] = r
         E[:, t] = e
 
-        if method == 'BCD':
+        if method == 'CF':
+            # Closed-form solution
+            A = A + np.outer(r, r.T)
+            B = B + np.outer((z - e), r.T)
+            L = np.dot(B, scipy.linalg.inv(A + I))
+        else:
             # Block-coordinate descent
             A = A + np.outer(r, r.T)
             B = B + np.outer((z - e), r.T)
             L = _updatecol(L, A, B, I)
-        else:
-            # Closed-form
-            A = A + np.outer(r, r.T)
-            B = B + np.outer((z - e), r.T)
-            L = np.dot(B, scipy.linalg.inv(A + I))
 
     # Scale back
     Y = np.dot(L, R)
