@@ -227,6 +227,11 @@ class TestSavingMetadataContainers:
         nt.assert_not_in('test', l.metadata)
 
     def tearDown(self):
+        try:
+            del l
+        except:
+            # if we did not load the data, as in the timed test
+            pass
         gc.collect()        # Make sure any memmaps are closed first!
         remove('tmp.hdf5')
 
@@ -297,6 +302,8 @@ def test_temp_hdf5_file():
         nt.assert_equal(f.file.filename, name)
         nt.assert_true(os_exists(name))
         f.close()
+        del f
+        gc.collect()
         nt.assert_false(os_exists(name))
     finally:
         try:
@@ -323,3 +330,5 @@ def test_deepcopy2hdf5():
     nt.assert_is_not(d1['three']['3'], d2['three']['3'])
     np.testing.assert_array_equal(g['three/3'].value, np.arange(3))
     f.close()
+    del f
+    gc.collect()
