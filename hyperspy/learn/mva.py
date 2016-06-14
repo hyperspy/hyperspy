@@ -33,7 +33,7 @@ from hyperspy.misc.machine_learning import import_sklearn
 import hyperspy.misc.io.tools as io_tools
 from hyperspy.learn.svd_pca import svd_pca
 from hyperspy.learn.mlpca import mlpca
-from hyperspy.learn.orpca import orpca
+from hyperspy.learn.rpca import orpca
 from hyperspy.decorators import do_not_replot
 from scipy import linalg
 from hyperspy.misc.machine_learning.orthomax import orthomax
@@ -111,6 +111,8 @@ class MVA():
                       reproject=None,
                       lambda1=None,
                       lambda2=None,
+                      orpca_method=None,
+                      orpca_init=None,
                       **kwargs):
         """Decomposition with a choice of algorithms
 
@@ -165,6 +167,12 @@ class MVA():
         lambda2 : float
             Sparse regularization parameter for ORPCA
 
+        orpca_method : 'BCD' | 'CF'
+            Algorithm for ORPCA
+
+        orpca_init : 'BRP' | 'rand'
+            Initilization method for ORPCA
+
         See also
         --------
         plot_decomposition_factors, plot_decomposition_loadings, plot_lev
@@ -194,7 +202,7 @@ class MVA():
                 normalize_poissonian_noise = False
             if output_dimension is None:
                 raise ValueError("With the MLPCA algorithm the "
-                                 "output_dimension must be expecified")
+                                 "output_dimension must be specified")
 
         if algorithm == 'orpca':
             if normalize_poissonian_noise is True:
@@ -205,7 +213,7 @@ class MVA():
                 normalize_poissonian_noise = False
             if output_dimension is None:
                 raise ValueError("With the ORPCA algorithm the "
-                                 "output_dimension must be expecified")
+                                 "output_dimension must be specified")
 
         # Apply pre-treatments
         # Transform the data in a line spectrum
@@ -352,11 +360,18 @@ class MVA():
                 explained_variance = S ** 2 / len(factors)
             elif algorithm == 'orpca':
                 _logger.info("Performing Online Robust PCA")
-                L, R, E, U, S, V = orpca(
+                if orpca_method is None:
+                    orpca_method = 'CF'
+                if orpca_init is None:
+                    orpca_init = 'rand'
+                X, E, U, S, V = orpca(
                     dc[:, signal_mask][navigation_mask, :],
-                    output_dimension, lambda1, lambda2,
-                    method='BCD', fast=False)
-                S[S<1e-9] = 0
+                    rank=output_dimension, lambda1=lambda1, lambda2=lambda2,
+                    method=orpca_method, init=orpca_init,
+                    fast=True)
+
+                # Chop small singular values
+                S[S<=1e-8] = 0.0
                 loadings = U * S
                 factors = V
                 explained_variance = S ** 2 / len(factors)
