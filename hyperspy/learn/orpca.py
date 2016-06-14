@@ -30,6 +30,8 @@ import scipy.linalg
 
 _logger = logging.getLogger(__name__)
 
+from hyperspy.misc.machine_learning.import_sklearn import (
+    fast_svd, sklearn_installed)
 
 def _solveproj(z, X, I, lambda2):
     m, n = X.shape
@@ -69,7 +71,7 @@ def _updatecol(X, A, B, I):
 
     return L
 
-def orpca(X, rank, lambda1, lambda2, method='BCD'):
+def orpca(X, rank, lambda1=None, lambda2=None, method='BCD', fast=False):
     """
     This function performs Online Robust PCA with
     with missing or corrupted data.
@@ -94,26 +96,47 @@ def orpca(X, rank, lambda1, lambda2, method='BCD'):
         is the [m x r] basis.
     R : numpy array
         is the [r x n] coefficients.
-    S : numpy array
+    E : numpy array
         is the sparse error
-    """
+    U, S, V : numpy array
+        are the pseudo-svd parameters.
 
+    """
+    if fast is True and sklearn_installed is True:
+        def svd(X):
+            return fast_svd(X, p)
+    else:
+        def svd(X):
+            return scipy.linalg.svd(X, full_matrices=False)
+
+    # Initialize by rescaling to [0,1]
+    Xmin = X.min()
+    Xmax = X.max()
+    X = (X - Xmin)/(Xmax-Xmin)
+
+    m, n = X.shape
+
+    # Check options
     methods = {'BCD':'Block coordinate descent',
                'CF':'Closed-form'}
     if method not in methods:
         raise ValueError("'method' must be one of " + methods.keys())
 
-    _logger.info("Performing Online Robust PCA")
-
-    # Initialize
-    m, n = X.shape
+    if lambda1 is None:
+        _logger.warning("Nuclear norm regularization parameter "
+                        "is set to default.")
+        lambda1 = 1.0 / np.sqrt(m)
+    if lambda2 is None:
+        _logger.warning("Sparse regularization parameter "
+                        "is set to default.")
+        lambda2 = 1.0 / np.sqrt(m)
 
     # Use random initialization
     Y2 = np.random.rand(m, rank)
     L, tmp = scipy.linalg.qr(Y2, mode='economic')
 
     R = np.zeros((rank, n))
-    S = np.zeros((m, n))
+    E = np.zeros((m, n))
     I = lambda1 * np.eye(rank)
 
     A = np.zeros((rank, rank))
@@ -121,23 +144,31 @@ def orpca(X, rank, lambda1, lambda2, method='BCD'):
 
     for t in range(n):
         if t == 0 or np.mod(t + 1, np.round(n / 10)) == 0:
-            _logger.info("Iteration: %s" % t + 1)
+            _logger.info("Processing sample : %s" % (t + 1))
+            print("Processing sample : %s" % (t + 1))
 
         z = X[:, t]
-        r, s = _solveproj(z, L, I, lambda2)
+        r, e = _solveproj(z, L, I, lambda2)
 
         R[:, t] = r
-        S[:, t] = s
+        E[:, t] = e
 
         if method == 'BCD':
             # Block-coordinate descent
             A = A + np.outer(r, r.T)
-            B = B + np.outer((z - s), r.T)
+            B = B + np.outer((z - e), r.T)
             L = _updatecol(L, A, B, I)
         else:
             # Closed-form
             A = A + np.outer(r, r.T)
-            B = B + np.outer((z - s), r.T)
+            B = B + np.outer((z - e), r.T)
             L = np.dot(B, scipy.linalg.inv(A + I))
 
-    return L, R, S
+    # Scale back
+    Xnew = np.dot(L, R) * (Xmax-Xmin) + Xmin
+
+    # Perform final SVD on low-rank component
+    U, S, Vh = svd(Xnew)
+    V = Vh.T
+
+    return L, R, E, U, S, V
