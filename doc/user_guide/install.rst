@@ -221,7 +221,7 @@ In Debian/Ubuntu you can install the libraries as follows:
 
     $ sudo apt-get install python-numpy python-matplotlib ipython
     ipython-notebook python-traits python-traitsui python-h5py
-    python-scikits-learn python-nose python-statsmodels
+    python-scikits-learn python-nose python-statsmodels python3-tqdm
 
 In Arch Linux, the following command should install the required packages to
 get a fully functional installation:
