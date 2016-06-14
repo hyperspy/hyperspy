@@ -17,7 +17,6 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import numbers
-import warnings
 import logging
 
 import numpy as np
@@ -455,7 +454,7 @@ class EELSSpectrum(Signal1D):
                 threshold.data[:] = np.nan
         del s
         if np.isnan(threshold.data).any():
-            warnings.warn(
+            _logger.warning(
                 "No inflexion point could be found in some positions "
                 "that have been marked with nans.")
         # Create spectrum image, stop and return value
