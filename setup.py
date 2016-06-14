@@ -54,6 +54,7 @@ install_req = ['scipy',
                'sympy',
                'dask>=0.9',
                'dill',
+               'psutil',
                'h5py']
 
 
