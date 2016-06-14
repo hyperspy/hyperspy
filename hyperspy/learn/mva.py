@@ -109,6 +109,8 @@ class MVA():
                       var_func=None,
                       polyfit=None,
                       reproject=None,
+                      lambda1=None,
+                      lambda2=None,
                       **kwargs):
         """Decomposition with a choice of algorithms
 
@@ -120,7 +122,7 @@ class MVA():
             If True, scale the SI to normalize Poissonian noise
 
         algorithm : 'svd' | 'fast_svd' | 'mlpca' | 'fast_mlpca' | 'nmf' |
-            'sparse_pca' | 'mini_batch_sparse_pca'
+            'sparse_pca' | 'mini_batch_sparse_pca' | 'orpca'
 
         output_dimension : None or int
             number of components to keep/calculate
@@ -157,6 +159,11 @@ class MVA():
             If not None, the results of the decomposition will be projected in
             the selected masked area.
 
+        lambda1 : float
+            Nuclear norm regularization parameter for ORPCA
+
+        lambda2 : float
+            Sparse regularization parameter for ORPCA
 
         See also
         --------
@@ -186,7 +193,18 @@ class MVA():
                     "normalize_poissonian_noise is set to False")
                 normalize_poissonian_noise = False
             if output_dimension is None:
-                raise ValueError("With the mlpca algorithm the "
+                raise ValueError("With the MLPCA algorithm the "
+                                 "output_dimension must be expecified")
+
+        if algorithm == 'orpca':
+            if normalize_poissonian_noise is True:
+                _logger.warning(
+                    "It makes no sense to do normalize_poissonian_noise with "
+                    "the ORPCA algorithm. Therefore, "
+                    "normalize_poissonian_noise is set to False")
+                normalize_poissonian_noise = False
+            if output_dimension is None:
+                raise ValueError("With the ORPCA algorithm the "
                                  "output_dimension must be expecified")
 
         # Apply pre-treatments
@@ -331,6 +349,16 @@ class MVA():
                 loadings = U * S
                 factors = V
                 explained_variance_ratio = S ** 2 / Sobj
+                explained_variance = S ** 2 / len(factors)
+            elif algorithm == 'orpca':
+                _logger.info("Performing Online Robust PCA")
+                L, R, E, U, S, V = orpca(
+                    dc[:, signal_mask][navigation_mask, :],
+                    output_dimension, lambda1, lambda2,
+                    method='BCD', fast=False)
+                S[S<1e-9] = 0
+                loadings = U * S
+                factors = V
                 explained_variance = S ** 2 / len(factors)
             else:
                 raise ValueError('Algorithm not recognised. '
