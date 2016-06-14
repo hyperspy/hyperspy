@@ -167,10 +167,10 @@ class MVA():
         lambda2 : float
             Sparse regularization parameter for ORPCA
 
-        orpca_method : 'BCD' | 'CF'
+        orpca_method : 'CF' | 'BCD'
             Algorithm for ORPCA
 
-        orpca_init : 'BRP' | 'rand'
+        orpca_init : 'rand' | 'BRP'
             Initilization method for ORPCA
 
         See also
@@ -366,11 +366,13 @@ class MVA():
                     orpca_init = 'rand'
                 X, E, U, S, V = orpca(
                     dc[:, signal_mask][navigation_mask, :],
-                    rank=output_dimension, lambda1=lambda1, lambda2=lambda2,
+                    rank=output_dimension,
+                    lambda1=lambda1, lambda2=lambda2,
                     method=orpca_method, init=orpca_init,
                     fast=True)
 
-                # Chop small singular values
+                # Chop small singular values which
+                # likely arise from numerical noise
                 S[S<=1e-8] = 0.0
                 loadings = U * S
                 factors = V
