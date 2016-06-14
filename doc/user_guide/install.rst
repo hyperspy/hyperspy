@@ -208,7 +208,7 @@ Installing the required libraries
 
 When installing HyperSpy using Python installers or from source the Python
 programming language and the following libraries must be installed in the
-system: numpy, scipy, matplotlib (>= 1.2), ipython, natsort, traits and
+system: numpy, scipy, matplotlib (>= 1.2), ipython, natsort, tqdm, traits and
 traitsui. For full functionality it is recommended to also install h5py and
 scikit-learn. In addition, since version 0.7.2 the lowess filter requires
 statsmodels. In Windows HyperSpy uses the Ipython's QtConsole and therefore Qt
