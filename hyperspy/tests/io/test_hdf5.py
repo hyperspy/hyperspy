@@ -11,6 +11,8 @@ import numpy as np
 from hyperspy.io import load
 from hyperspy.io_plugins.hdf5 import get_temp_hdf5_file, deepcopy2hdf5
 from hyperspy.signal import Signal
+from hyperspy.roi import Point2DROI
+from hyperspy.datasets.example_signals import EDS_TEM_Spectrum
 
 my_path = os.path.dirname(__file__)
 
@@ -18,34 +20,34 @@ data = np.array([4066., 3996., 3932., 3923., 5602., 5288., 7234., 7809.,
                  4710., 5015., 4366., 4524., 4832., 5474., 5718., 5034.,
                  4651., 4613., 4637., 4429., 4217.])
 example1_original_metadata = {
-    u'BEAMDIAM -nm': 100.0,
-    u'BEAMKV   -kV': 120.0,
-    u'CHOFFSET': -168.0,
-    u'COLLANGLE-mR': 3.4,
-    u'CONVANGLE-mR': 1.5,
-    u'DATATYPE': u'XY',
-    u'DATE': u'01-OCT-1991',
-    u'DWELLTIME-ms': 100.0,
-    u'ELSDET': u'SERIAL',
-    u'EMISSION -uA': 5.5,
-    u'FORMAT': u'EMSA/MAS Spectral Data File',
-    u'MAGCAM': 100.0,
-    u'NCOLUMNS': 1.0,
-    u'NPOINTS': 20.0,
-    u'OFFSET': 520.13,
-    u'OPERMODE': u'IMAG',
-    u'OWNER': u'EMSA/MAS TASK FORCE',
-    u'PROBECUR -nA': 12.345,
-    u'SIGNALTYPE': u'ELS',
-    u'THICKNESS-nm': 50.0,
-    u'TIME': u'12:00',
-    u'TITLE': u'NIO EELS OK SHELL',
-    u'VERSION': u'1.0',
-    u'XLABEL': u'Energy',
-    u'XPERCHAN': 3.1,
-    u'XUNITS': u'eV',
-    u'YLABEL': u'Counts',
-    u'YUNITS': u'Intensity'}
+    'BEAMDIAM -nm': 100.0,
+    'BEAMKV   -kV': 120.0,
+    'CHOFFSET': -168.0,
+    'COLLANGLE-mR': 3.4,
+    'CONVANGLE-mR': 1.5,
+    'DATATYPE': 'XY',
+    'DATE': '01-OCT-1991',
+    'DWELLTIME-ms': 100.0,
+    'ELSDET': 'SERIAL',
+    'EMISSION -uA': 5.5,
+    'FORMAT': 'EMSA/MAS Spectral Data File',
+    'MAGCAM': 100.0,
+    'NCOLUMNS': 1.0,
+    'NPOINTS': 20.0,
+    'OFFSET': 520.13,
+    'OPERMODE': 'IMAG',
+    'OWNER': 'EMSA/MAS TASK FORCE',
+    'PROBECUR -nA': 12.345,
+    'SIGNALTYPE': 'ELS',
+    'THICKNESS-nm': 50.0,
+    'TIME': '12:00',
+    'TITLE': 'NIO EELS OK SHELL',
+    'VERSION': '1.0',
+    'XLABEL': 'Energy',
+    'XPERCHAN': 3.1,
+    'XUNITS': 'eV',
+    'YLABEL': 'Counts',
+    'YUNITS': 'Intensity'}
 
 
 class Example1:
@@ -131,9 +133,8 @@ class TestLoadingNewSavedMetadata:
             load_to_memory=True)
 
     def test_signal_inside(self):
-        nt.assert_true(
-            np.all(
-                self.s.data == self.s.metadata.Signal.Noise_properties.variance.data))
+        np.testing.assert_array_almost_equal(self.s.data,
+                                             self.s.metadata.Signal.Noise_properties.variance.data)
 
     def test_empty_things(self):
         nt.assert_equal(self.s.metadata.test.empty_list, [])
@@ -156,12 +157,10 @@ class TestLoadingNewSavedMetadata:
                 137, (123, 44)])
 
     def test_binary_string(self):
-        import marshal
-        import types
-        f = types.FunctionType(
-            marshal.loads(
-                self.s.metadata.test.binary_string),
-            globals())
+        import dill
+        # apparently pickle is not "full" and marshal is not
+        # backwards-compatible
+        f = dill.loads(self.s.metadata.test.binary_string)
         nt.assert_equal(f(3.5), 4.5)
 
 
@@ -172,19 +171,19 @@ class TestSavingMetadataContainers:
 
     def test_save_unicode(self):
         s = self.s
-        s.metadata.set_item('test', [u'a', u'b', u'\u6f22\u5b57'])
+        s.metadata.set_item('test', ['a', 'b', '\u6f22\u5b57'])
         s.save('tmp.hdf5', overwrite=True)
         l = load('tmp.hdf5',
                  load_to_memory=True)
-        nt.assert_is_instance(l.metadata.test[0], unicode)
-        nt.assert_is_instance(l.metadata.test[1], unicode)
-        nt.assert_is_instance(l.metadata.test[2], unicode)
-        nt.assert_equal(l.metadata.test[2], u'\u6f22\u5b57')
+        nt.assert_is_instance(l.metadata.test[0], str)
+        nt.assert_is_instance(l.metadata.test[1], str)
+        nt.assert_is_instance(l.metadata.test[2], str)
+        nt.assert_equal(l.metadata.test[2], '\u6f22\u5b57')
 
     @nt.timed(1.0)
     def test_save_long_list(self):
         s = self.s
-        s.metadata.set_item('long_list', range(10000))
+        s.metadata.set_item('long_list', list(range(10000)))
         s.save('tmp.hdf5', overwrite=True)
 
     def test_numpy_only_inner_lists(self):
@@ -205,8 +204,8 @@ class TestSavingMetadataContainers:
                  load_to_memory=True)
         nt.assert_is_instance(l.metadata.test[0][0], float)
         nt.assert_is_instance(l.metadata.test[0][1], float)
-        nt.assert_is_instance(l.metadata.test[1][0], basestring)
-        nt.assert_is_instance(l.metadata.test[1][1], basestring)
+        nt.assert_is_instance(l.metadata.test[1][0], str)
+        nt.assert_is_instance(l.metadata.test[1][1], str)
 
     def test_general_type_not_working(self):
         s = self.s
@@ -217,7 +216,15 @@ class TestSavingMetadataContainers:
         nt.assert_is_instance(l.metadata.test, tuple)
         nt.assert_is_instance(l.metadata.test[0], Signal)
         nt.assert_is_instance(l.metadata.test[1], float)
-        nt.assert_is_instance(l.metadata.test[2], unicode)
+        nt.assert_is_instance(l.metadata.test[2], str)
+
+    def test_unsupported_type(self):
+        s = self.s
+        s.metadata.set_item('test', Point2DROI(1, 2))
+        s.save('tmp.hdf5', overwrite=True)
+        l = load('tmp.hdf5',
+                 load_to_memory=True)
+        nt.assert_not_in('test', l.metadata)
 
     def tearDown(self):
         gc.collect()        # Make sure any memmaps are closed first!
@@ -263,10 +270,6 @@ class TestLoadingOOM:
             chunks=True)
         f.close()
 
-    @nt.raises(MemoryError, ValueError)
-    def test_in_memory_loading(self):
-        s = load('tmp.hdf5', load_to_memory=True)
-
     def test_oom_loading(self):
         s = load('tmp.hdf5', load_to_memory=False)
         nt.assert_equal(self.shape, s.data.shape)
@@ -281,11 +284,16 @@ class TestLoadingOOM:
             pass
 
 
+def test_strings_from_py2():
+    s = EDS_TEM_Spectrum()
+    nt.assert_equal(s.metadata.Sample.elements.dtype.char, "U")
+
+
 def test_temp_hdf5_file():
     f = get_temp_hdf5_file()
     name = f.name
     try:
-        print name
+        print(name)
         nt.assert_equal(f.file.filename, name)
         nt.assert_true(os_exists(name))
         f.close()
@@ -303,13 +311,13 @@ def test_deepcopy2hdf5():
     g.attrs['one'] = 1
     d1 = {
         u'one': 1,
-        u'two': u'du',
+        u'two': 'du',
         u'three': {
-            u'1': 1,
-            u'2': [
+            '1': 1,
+            '2': [
                 1,
                 2],
-            u'3': np.arange(3)}}
+            '3': np.arange(3)}}
     d2 = deepcopy2hdf5(d1, g, load_to_memory=True)
     np.testing.assert_equal(d1, d2)
     nt.assert_is_not(d1['three']['3'], d2['three']['3'])

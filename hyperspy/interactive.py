@@ -63,18 +63,18 @@ class Interactive:
         else:
             self.out = self.f(*self.args, **self.kwargs)
         try:
-            fargs = inspect.getargspec(self.f).args
+            fargs = list(inspect.signature(self.f).parameters.keys())
         except TypeError:
             # This is probably a Cython function that is not supported by
             # inspect.
             fargs = []
         has_out = "out" in fargs
-        if hasattr(f, "im_self") and isinstance(f.im_self, Signal):
+        if hasattr(f, "__self__") and isinstance(f.__self__, Signal):
             if event is None:
-                event = self.f.im_self.events.data_changed
+                event = self.f.__self__.events.data_changed
             if recompute_out_event is None and has_out:
                 recompute_out_event = \
-                    self.f.im_self.axes_manager.events.any_axis_changed
+                    self.f.__self__.axes_manager.events.any_axis_changed
         if recompute_out_event:
             recompute_out_event.connect(self.recompute_out, [])
         if event:

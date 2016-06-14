@@ -21,11 +21,14 @@
 # and http://ami.scripps.edu/software/mrctools/mrc_specification.php
 
 import os
+import logging
 
 import numpy as np
 from traits.api import Undefined
 
 from hyperspy.misc.array_tools import sarray2dict
+
+_logger = logging.getLogger(__name__)
 
 
 # Plugin characteristics
@@ -85,11 +88,11 @@ def get_std_dtype_list(endianess='<'):
             ('XORIGIN', end + 'f4'),
             ('YORIGIN', end + 'f4'),
             ('ZORIGIN', end + 'f4'),
-            ('CMAP', (str, 4)),
-            ('STAMP', (str, 4)),
+            ('CMAP', (bytes, 4)),
+            ('STAMP', (bytes, 4)),
             ('RMS', end + 'f4'),
             ('NLABL', end + 'u4'),
-            ('LABELS', (str, 800)),
+            ('LABELS', (bytes, 800)),
         ]
 
     return dtype_list
@@ -141,13 +144,13 @@ def file_reader(filename, endianess='<', **kwds):
                              count=1)
     fei_header = None
     if std_header['NEXT'] / 1024 == 128:
-        print "It seems to contain an extended FEI header"
+        _logger.info("%s seems to contain an extended FEI header", filename)
         fei_header = np.fromfile(f, dtype=get_fei_dtype_list(endianess),
                                  count=1024)
     if f.tell() == 1024 + std_header['NEXT']:
-        print "The FEI header was correctly loaded"
+        _logger.debug("The FEI header was correctly loaded")
     else:
-        print "There was a problem reading the extended header"
+        _logger.warn("There was a problem reading the extended header")
         f.seek(1024 + std_header['NEXT'])
         fei_header = None
     NX, NY, NZ = std_header['NX'], std_header['NY'], std_header['NZ']
@@ -156,6 +159,10 @@ def file_reader(filename, endianess='<', **kwds):
                      ).squeeze().reshape((NX, NY, NZ), order='F').T
 
     original_metadata = {'std_header': sarray2dict(std_header)}
+    # Convert bytes to unicode
+    for key in ["CMAP", "STAMP", "LABELS"]:
+        original_metadata["std_header"][key] = \
+            original_metadata["std_header"][key].decode()
     if fei_header is not None:
         fei_dict = sarray2dict(fei_header,)
         del fei_dict['empty']
@@ -196,7 +203,7 @@ def file_reader(filename, endianess='<', **kwds):
             'scale': scales[i + 3 - dim],
             'offset': offsets[i + 3 - dim],
             'units': units[i + 3 - dim], }
-        for i in xrange(dim)]
+        for i in range(dim)]
 
     dictionary = {'data': data,
                   'axes': axes,

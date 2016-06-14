@@ -86,8 +86,7 @@ class Model2D(BaseModel):
     """
 
     def __init__(self, image, dictionary=None):
-        self.image = image
-        self.signal = self.image
+        self.signal = image
         self.axes_manager = self.signal.axes_manager
         self._plot = None
         self._position_widgets = {}
@@ -105,12 +104,12 @@ class Model2D(BaseModel):
         self.chisq = image._get_navigation_signal()
         self.chisq.change_dtype("float")
         self.chisq.data.fill(np.nan)
-        self.chisq.metadata.General.title = self.signal.metadata.General.title + \
-            ' chi-squared'
+        self.chisq.metadata.General.title = (
+            self.signal.metadata.General.title + ' chi-squared')
         self.dof = self.chisq._deepcopy_with_new_data(
             np.zeros_like(self.chisq.data, dtype='int'))
-        self.dof.metadata.General.title = self.signal.metadata.General.title + \
-            ' degrees of freedom'
+        self.dof.metadata.General.title = (
+            self.signal.metadata.General.title + ' degrees of freedom')
         self.free_parameters_boundaries = None
         self.convolved = False
         self.components = ModelComponents(self)
@@ -130,13 +129,13 @@ class Model2D(BaseModel):
             'dof.data': 'inav'}
 
     @property
-    def image(self):
-        return self._image
+    def signal(self):
+        return self._signal
 
-    @image.setter
-    def image(self, value):
+    @signal.setter
+    def signal(self, value):
         if isinstance(value, Image):
-            self._image = value
+            self._signal = value
         else:
             raise WrongObjectError(str(type(value)), 'Image')
 
@@ -146,7 +145,8 @@ class Model2D(BaseModel):
         Parameters
         ----------
         only_active : bool
-            If true, only the active components will be used to build the model.
+            If true, only the active components will be used to build the
+            model.
 
         Returns
         -------
@@ -173,8 +173,8 @@ class Model2D(BaseModel):
 
     # TODO: The methods below are implemented only for Model1D and should be
     # added eventually also for Model2D. Probably there are smarter ways to do
-    # it than redefining every method, but it is structured this way now to make
-    # clear what is and isn't available
+    # it than redefining every method, but it is structured this way now to
+    # make clear what is and isn't available
     def _connect_parameters2update_plot(self):
         raise NotImplementedError
 

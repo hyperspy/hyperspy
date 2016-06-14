@@ -23,13 +23,16 @@
 
 import codecs
 import os.path
-from StringIO import StringIO
+from io import StringIO
+import logging
 
 import numpy as np
 
 from hyperspy.misc.io.utils_readfile import *
 from hyperspy import Release
 from hyperspy.misc.utils import DictionaryTreeBrowser
+
+_logger = logging.getLogger(__name__)
 
 # Plugin characteristics
 # ----------------------
@@ -80,14 +83,14 @@ rpl_keys = {
     # HyperSpy-specific keys
     'depth-origin': float,
     'depth-scale': float,
-    'depth-units': unicode,
+    'depth-units': str,
     'width-origin': float,
     'width-scale': float,
-    'width-units': unicode,
+    'width-units': str,
     'height-origin': float,
     'height-scale': float,
-    'height-units': unicode,
-    'signal': unicode,
+    'height-units': str,
+    'signal': str,
     # EELS HyperSpy keys
     'collection-angle': float,
     # TEM Hyperespy keys
@@ -155,7 +158,8 @@ def parse_ripple(fp):
             line = line.split(sep)  # now it's a list
             if (line[0] in rpl_keys) is True:
                 # is rpl_keys[line[0]] an iterable?
-                if hasattr(rpl_keys[line[0]], '__iter__'):
+                try:
+                    hasattr(rpl_keys[line[0]], '__iter__')
                     if line[1] not in rpl_keys[line[0]]:
                         err = \
                             'Wrong value for key %s.\n' \
@@ -163,7 +167,7 @@ def parse_ripple(fp):
                             ' but it should be one of %s' % \
                             (line[0], line[1], str(rpl_keys[line[0]]))
                         raise IOError(err)
-                else:
+                except:
                     # rpl_keys[line[0]] must then be a type
                     line[1] = rpl_keys[line[0]](line[1])
 
@@ -377,17 +381,17 @@ def file_reader(filename, rpl_info=None, encoding="latin-1",
         data = read_raw(rpl_info, rawfname, mmap_mode=mmap_mode)
 
     if rpl_info['record-by'] == 'vector':
-        print 'Loading as spectrum'
+        _logger.info('Loading as spectrum')
         record_by = 'spectrum'
     elif rpl_info['record-by'] == 'image':
-        print 'Loading as Image'
+        _logger.info('Loading as Image')
         record_by = 'image'
     else:
         if len(data.shape) == 1:
-            print 'Loading as spectrum'
+            _logger.info('Loading as spectrum')
             record_by = 'spectrum'
         else:
-            print 'Loading as image'
+            _logger.info('Loading as image')
             record_by = 'image'
 
     if rpl_info['record-by'] == 'vector':
@@ -400,7 +404,7 @@ def file_reader(filename, rpl_info=None, encoding="latin-1",
     scales = [1, 1, 1]
     origins = [0, 0, 0]
     units = ['', '', '']
-    sizes = [rpl_info[names[i]] for i in xrange(3)]
+    sizes = [rpl_info[names[i]] for i in range(3)]
 
     if 'signal' not in rpl_info:
         rpl_info['signal'] = ""
@@ -485,7 +489,7 @@ def file_reader(filename, rpl_info=None, encoding="latin-1",
 
     axes = []
     index_in_array = 0
-    for i in xrange(3):
+    for i in range(3):
         if sizes[i] > 1:
             axes.append({
                 'size': sizes[i],
@@ -564,8 +568,7 @@ def file_writer(filename, signal, encoding='latin-1', *args, **kwds):
             record_by = 'dont-care'
             depth, width, height = width_axis.size, 1, 1
     else:
-        print("Only Spectrum and Image objects can be saved")
-        return
+        raise TypeError("Only Spectrum and Image objects can be saved")
 
     # Fill the keys dictionary
     keys_dictionary = {
@@ -631,8 +634,8 @@ def write_rpl(filename, keys_dictionary, encoding='ascii'):
     f.write('key\tvalue\n')
     # Even if it is not necessary, we sort the keywords when writing
     # to make the rpl file more human friendly
-    for key, value in iter(sorted(keys_dictionary.iteritems())):
-        if not isinstance(value, basestring):
+    for key, value in iter(sorted(keys_dictionary.items())):
+        if not isinstance(value, str):
             value = str(value)
         f.write(key + '\t' + value + '\n')
     f.close()

@@ -43,10 +43,10 @@ class Test_Estimate_Elastic_Scattering_Threshold:
         gauss2.centre.value = 5
         s.data[:] = (gauss.function(energy_axis.axis) +
                      gauss2.function(energy_axis.axis))
-        self.signal = s
+        self.spectrum = s
 
     def test_min_in_window_with_smoothing(self):
-        s = self.signal
+        s = self.spectrum
         thr = s.estimate_elastic_scattering_threshold(
             window=5,
             window_length=5,
@@ -55,7 +55,7 @@ class Test_Estimate_Elastic_Scattering_Threshold:
         nt.assert_true(np.allclose(thr.data, 2.5))
 
     def test_min_in_window_without_smoothing_single_spectrum(self):
-        s = self.signal.inav[0, 0]
+        s = self.spectrum.inav[0, 0]
         thr = s.estimate_elastic_scattering_threshold(
             window=5,
             window_length=0,
@@ -64,7 +64,7 @@ class Test_Estimate_Elastic_Scattering_Threshold:
         nt.assert_true(np.allclose(thr.data, 2.49))
 
     def test_min_in_window_without_smoothing(self):
-        s = self.signal
+        s = self.spectrum
         thr = s.estimate_elastic_scattering_threshold(
             window=5,
             window_length=0,
@@ -75,7 +75,7 @@ class Test_Estimate_Elastic_Scattering_Threshold:
     def test_min_not_in_window(self):
         # If I use a much lower window, this is the value that has to be
         # returned as threshold.
-        s = self.signal
+        s = self.spectrum
         with assert_warns("No inflexion point could be found in some "
                           "positions that have been marked with nans."):
             data = s.estimate_elastic_scattering_threshold(

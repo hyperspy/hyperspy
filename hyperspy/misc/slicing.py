@@ -79,7 +79,7 @@ def copy_slice_from_whitelist(_from, _to, dims, both_slices, isNav):
     if hasattr(_from, '_slicing_whitelist'):
         swl = _from._slicing_whitelist
 
-    for key, val in _from._whitelist.iteritems():
+    for key, val in _from._whitelist.items():
         if key == 'self':
             target = None
         else:
@@ -190,12 +190,15 @@ class FancySlicing(object):
         array_slices = self._get_array_slices(slices, isNavigation)
         if out is None:
             _obj = self._deepcopy_with_new_data(self.data[array_slices])
+            _to_remove = []
             for slice_, axis in zip(array_slices, _obj.axes_manager._axes):
                 if (isinstance(slice_, slice) or
                         len(self.axes_manager._axes) < 2):
                     axis._slice_me(slice_)
                 else:
-                    _obj._remove_axis(axis.index_in_axes_manager)
+                    _to_remove.append(axis.index_in_axes_manager)
+            for _ind in reversed(sorted(_to_remove)):
+                _obj._remove_axis(_ind)
         else:
             out.data = self.data[array_slices]
             _obj = out

@@ -29,7 +29,7 @@ from subprocess import Popen, PIPE, CalledProcessError, check_call
 pages_dir = 'gh-pages'
 html_dir = '_build/html'
 pdf_dir = '_build/latex'
-pages_repo = 'git@github.com:hyperspy/hyperspy-doc.git'
+pages_repo = 'https://github.com/hyperspy/hyperspy-doc.git'
 
 #-----------------------------------------------------------------------------
 # Functions
@@ -70,7 +70,7 @@ def sh3(cmd):
 def init_repo(path):
     """clone the gh-pages repo if we haven't already."""
     sh("git clone %s %s" % (pages_repo, path))
-    here = os.getcwdu()
+    here = os.getcwd()
     cd(path)
     sh('git checkout gh-pages')
     cd(here)
@@ -86,7 +86,7 @@ if __name__ == '__main__':
     except IndexError:
         tag = "dev"
 
-    startdir = os.getcwdu()
+    startdir = os.getcwd()
     if not os.path.exists(pages_dir):
         # init the repo
         init_repo(pages_dir)
@@ -124,13 +124,13 @@ if __name__ == '__main__':
 
         sh('git add -A %s' % tag)
         sh('git commit -m"Updated doc release: %s"' % tag)
-        print
-        print 'Most recent 3 commits:'
+        print()
+        print('Most recent 3 commits:')
         sys.stdout.flush()
         sh('git --no-pager log --oneline HEAD~3..')
     finally:
         cd(startdir)
 
-    print
-    print 'Now verify the build in: %r' % dest
-    print "If everything looks good, 'git push'"
+    print()
+    print('Now verify the build in: %r' % dest)
+    print("If everything looks good, 'git push'")

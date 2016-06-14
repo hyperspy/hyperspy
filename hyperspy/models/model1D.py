@@ -17,10 +17,8 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import copy
-from functools import partial
 
 import numpy as np
-from traits.trait_errors import TraitError
 from contextlib import contextmanager
 
 from hyperspy.model import BaseModel, ModelComponents, ModelSpecialSlicers
@@ -30,7 +28,6 @@ from hyperspy._signals.eels import Spectrum
 from hyperspy.axes import generate_axis
 from hyperspy.exceptions import WrongObjectError
 from hyperspy.decorators import interactive_range_selector
-from hyperspy.axes import AxesManager
 from hyperspy.drawing.widgets import VerticalLineWidget, LabelWidget
 from hyperspy.gui.tools import ComponentFit
 from hyperspy.events import EventSupressor
@@ -163,8 +160,7 @@ class Model1D(BaseModel):
     """
 
     def __init__(self, spectrum, dictionary=None):
-        self.spectrum = spectrum
-        self.signal = self.spectrum
+        self.signal = spectrum
         self.axes_manager = self.signal.axes_manager
         self._plot = None
         self._position_widgets = {}
@@ -208,13 +204,13 @@ class Model1D(BaseModel):
             'dof.data': 'inav'}
 
     @property
-    def spectrum(self):
-        return self._spectrum
+    def signal(self):
+        return self._signal
 
-    @spectrum.setter
-    def spectrum(self, value):
+    @signal.setter
+    def signal(self, value):
         if isinstance(value, Spectrum):
-            self._spectrum = value
+            self._signal = value
         else:
             raise WrongObjectError(str(type(value)), 'Spectrum')
 
@@ -226,7 +222,7 @@ class Model1D(BaseModel):
     def low_loss(self, value):
         if value is not None:
             if (value.axes_manager.navigation_shape !=
-                    self.spectrum.axes_manager.navigation_shape):
+                    self.signal.axes_manager.navigation_shape):
                 raise ValueError('The low-loss does not have '
                                  'the same navigation dimension as the '
                                  'core-loss')
@@ -261,17 +257,20 @@ class Model1D(BaseModel):
             self._make_position_adjuster(thing, self._adjust_position_all[0],
                                          self._adjust_position_all[1])
 
-    def remove(self, thing):
-        thing = self._get_component(thing)
-        parameter = thing._position
-        if parameter in self._position_widgets:
-            for pw in reversed(self._position_widgets[parameter]):
-                pw.close()
-        if hasattr(thing, '_model_plot_line'):
-            line = thing._model_plot_line
-            line.close()
-        super(Model1D, self).remove(thing)
-        self._disconnect_parameters2update_plot([thing])
+    def remove(self, things):
+        things = self._get_component(things)
+        if not np.iterable(things):
+            things = [things]
+        for thing in things:
+            parameter = thing._position
+            if parameter in self._position_widgets:
+                for pw in reversed(self._position_widgets[parameter]):
+                    pw.close()
+            if hasattr(thing, '_model_plot_line'):
+                line = thing._model_plot_line
+                line.close()
+        super(Model1D, self).remove(things)
+        self._disconnect_parameters2update_plot(things)
 
     remove.__doc__ = BaseModel.remove.__doc__
 
@@ -407,8 +406,8 @@ class Model1D(BaseModel):
                 self.low_loss(self.axes_manager),
                 sum_convolved, mode="valid")
             to_return = to_return[self.channel_switches]
-        if self.spectrum.metadata.Signal.binned is True:
-            to_return *= self.spectrum.axes_manager[-1].scale
+        if self.signal.metadata.Signal.binned is True:
+            to_return *= self.signal.axes_manager[-1].scale
         return to_return
 
     def _errfunc(self, param, y, weights=None):
@@ -569,8 +568,8 @@ class Model1D(BaseModel):
                         grad = np.vstack((grad, par_grad))
                     counter += component._nfree_param
             to_return = grad[1:, :] * weights
-        if self.spectrum.metadata.Signal.binned is True:
-            to_return *= self.spectrum.axes_manager[-1].scale
+        if self.signal.metadata.Signal.binned is True:
+            to_return *= self.signal.axes_manager[-1].scale
         return to_return
 
     def _function4odr(self, param, x):
@@ -608,8 +607,8 @@ class Model1D(BaseModel):
         """
 
         # If new coordinates are assigned
-        self.spectrum.plot()
-        _plot = self.spectrum._plot
+        self.signal.plot()
+        _plot = self.signal._plot
         l1 = _plot.signal_plot.ax_lines[0]
         color = l1.line.get_color()
         l1.set_line_properties(color=color, type='scatter')
@@ -624,7 +623,7 @@ class Model1D(BaseModel):
                                self._close_plot)
 
         self._model_line = l2
-        self._plot = self.spectrum._plot
+        self._plot = self.signal._plot
         self._connect_parameters2update_plot(self)
         if plot_components is True:
             self.enable_plot_components()
@@ -754,7 +753,6 @@ class Model1D(BaseModel):
     def _make_position_adjuster(self, component, fix_it, show_label):
         if (component._position is None or component._position.twin):
             return
-        # Create an AxesManager for the widget
         axis = self.axes_manager.signal_axes[0]
         # Create the vertical line and labels
         widgets = [VerticalLineWidget(self.axes_manager)]
@@ -781,7 +779,7 @@ class Model1D(BaseModel):
                                     {'obj': 'widget'})
 
     def _reverse_lookup_position_widget(self, widget):
-        for parameter, widgets in self._position_widgets.iteritems():
+        for parameter, widgets in self._position_widgets.items():
             if widget in widgets:
                 return parameter
         raise KeyError()
@@ -812,7 +810,7 @@ class Model1D(BaseModel):
 
         """
         self._adjust_position_all = False
-        for pws in self._position_widgets.values():
+        for pws in list(self._position_widgets.values()):
             # Iteration works on a copied collection, so changes during
             # iteration should be ok
             for pw in reversed(pws):    # pws is reference, so work in reverse

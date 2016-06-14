@@ -20,6 +20,8 @@ import copy
 import os
 import tempfile
 import numbers
+import logging
+
 import numpy as np
 import scipy.odr as odr
 from scipy.optimize import (leastsq,
@@ -31,7 +33,7 @@ from scipy.optimize import (leastsq,
                             fmin_tnc,
                             fmin_powell)
 
-from hyperspy import messages
+
 from hyperspy.external import progressbar
 from hyperspy.defaults_parser import preferences
 from hyperspy.external.mpfit.mpfit import mpfit
@@ -46,6 +48,8 @@ from hyperspy.misc.utils import (slugify, shorten_name, stash_active_state,
                                  dummy_context_manager)
 from hyperspy.misc.slicing import copy_slice_from_whitelist
 
+_logger = logging.getLogger(__name__)
+
 
 class ModelComponents(object):
 
@@ -59,16 +63,16 @@ class ModelComponents(object):
         self._model = model
 
     def __repr__(self):
-        signature = u"%4s | %25s | %25s | %25s"
+        signature = "%4s | %25s | %25s | %25s"
         ans = signature % ('#',
                            'Attribute Name',
                            'Component Name',
                            'Component Type')
-        ans += u"\n"
+        ans += "\n"
         ans += signature % ('-' * 4, '-' * 25, '-' * 25, '-' * 25)
         if self._model:
             for i, c in enumerate(self._model):
-                ans += u"\n"
+                ans += "\n"
                 name_string = c.name
                 variable_name = slugify(name_string, valid_variable_name=True)
                 component_type = c._id_name
@@ -81,7 +85,6 @@ class ModelComponents(object):
                                     variable_name,
                                     name_string,
                                     component_type)
-        ans = ans.encode('utf8')
         return ans
 
 
@@ -244,7 +247,7 @@ class BaseModel(list):
 
             for comp in dic['components']:
                 init_args = {}
-                for k, flags_str in comp['_whitelist'].iteritems():
+                for k, flags_str in comp['_whitelist'].items():
                     if not len(flags_str):
                         continue
                     if 'init' in parse_flag_string(flags_str):
@@ -266,14 +269,17 @@ class BaseModel(list):
         class_name = str(self.__class__).split("'")[1].split('.')[-1]
 
         if len(title):
-            return u"<%s, title: %s>".encode(
-                'utf8') % (class_name, self.signal.metadata.General.title)
+            return "<%s, title: %s>" % (
+                class_name, self.signal.metadata.General.title)
         else:
-            return u"<%s>".encode('utf8') % class_name
+            return "<%s>" % class_name
 
     def _get_component(self, thing):
-        if isinstance(thing, int) or isinstance(thing, basestring):
+        if isinstance(thing, int) or isinstance(thing, str):
             thing = self[thing]
+        elif np.iterable(thing):
+            thing = [self._get_component(athing) for athing in thing]
+            return thing
         elif not isinstance(thing, Component):
             raise ValueError("Not a component or component id.")
         if thing in self:
@@ -355,8 +361,11 @@ class BaseModel(list):
 
         """
         thing = self._get_component(thing)
-        list.remove(self, thing)
-        thing.model = None
+        if not np.iterable(thing):
+            thing = [thing, ]
+        for athing in thing:
+            list.remove(self, athing)
+            athing.model = None
         if self._plot_active:
             self.update_plot()
 
@@ -489,6 +498,32 @@ class BaseModel(list):
                         self.mpfit_parinfo.extend((
                             {'limited': limited,
                              'limits': limits},) * param._number_of_elements)
+
+    def ensure_parameters_in_bounds(self):
+        """For all active components, snaps their free parameter values to
+        be within their boundaries (if bounded). Does not touch the array of
+        values.
+        """
+        for component in self:
+            if component.active:
+                for param in component.free_parameters:
+                    bmin = -np.inf if param.bmin is None else param.bmin
+                    bmax = np.inf if param.bmax is None else param.bmax
+                    if param._number_of_elements == 1:
+                        if not bmin <= param.value <= bmax:
+                            min_d = np.abs(param.value - bmin)
+                            max_d = np.abs(param.value - bmax)
+                            if min_d < max_d:
+                                param.value = bmin
+                            else:
+                                param.value = bmax
+                    else:
+                        values = np.array(param.value)
+                        minmask = values < bmin
+                        maxmask = values > bmax
+                        values[maxmask] = bmax
+                        values[minmask] = bmin
+                        param.value = tuple(values)
 
     def store_current_values(self):
         """ Store the parameters of the current coordinates into the
@@ -681,6 +716,16 @@ class BaseModel(list):
         else:
             cm = dummy_context_manager
 
+        if bounded is True:
+            if fitter not in ("mpfit", "tnc", "l_bfgs_b"):
+                raise NotImplementedError("Bounded optimization is only"
+                                          "available for the mpfit "
+                                          "optimizer.")
+            else:
+                # this has to be done before setting the p0, so moved things
+                # around
+                self.ensure_parameters_in_bounds()
+
         with cm(update_on_resume=True):
             self.p_std = None
             self._set_p0()
@@ -699,10 +744,6 @@ class BaseModel(list):
                 grad_ml = self._gradient_ml
                 grad_ls = self._gradient_ls
 
-            if bounded is True and fitter not in ("mpfit", "tnc", "l_bfgs_b"):
-                raise NotImplementedError(
-                    "Bounded optimization is only available for the mpfit "
-                    "optimizer.")
             if method == 'ml':
                 weights = None
                 if fitter != "fmin":
@@ -757,8 +798,8 @@ class BaseModel(list):
             elif fitter == "odr":
                 modelo = odr.Model(fcn=self._function4odr,
                                    fjacb=odr_jacobian)
-                mydata = odr.RealData(self.axis.axis[np.where(
-                    self.channel_switches)],
+                mydata = odr.RealData(
+                    self.axis.axis[np.where(self.channel_switches)],
                     self.signal()[np.where(self.channel_switches)],
                     sx=None,
                     sy=(1 / weights if weights is not None else None))
@@ -828,7 +869,7 @@ class BaseModel(list):
                     if bounded is True:
                         self.set_boundaries()
                     elif bounded is False:
-                        self.self.free_parameters_boundaries = None
+                        self.free_parameters_boundaries = None
                     self.p0 = fmin_tnc(
                         tominimize,
                         self.p0,
@@ -841,14 +882,13 @@ class BaseModel(list):
                     if bounded is True:
                         self.set_boundaries()
                     elif bounded is False:
-                        self.self.free_parameters_boundaries = None
+                        self.free_parameters_boundaries = None
                     self.p0 = fmin_l_bfgs_b(
                         tominimize, self.p0, fprime=fprime, args=args,
                         bounds=self.free_parameters_boundaries,
                         approx_grad=approx_grad, **kwargs)[0]
                 else:
-                    print \
-                        """
+                    raise ValueError("""
                     The %s optimizer is not available.
 
                     Available optimizers:
@@ -860,7 +900,7 @@ class BaseModel(list):
                     Cosntrained:
                     ------------
                     tnc and l_bfgs_b
-                    """ % fitter
+                    """ % fitter)
             if np.iterable(self.p0) == 0:
                 self.p0 = (self.p0,)
             self._fetch_values_from_p0(p_std=self.p_std)
@@ -919,15 +959,15 @@ class BaseModel(list):
                 dir='.', suffix='.npz')
             os.close(fd)
             autosave_fn = autosave_fn[:-4]
-            messages.information(
+            _logger.info(
                 "Autosaving each %s pixels to %s.npz" % (autosave_every,
                                                          autosave_fn))
-            messages.information(
+            _logger.info(
                 "When multifit finishes its job the file will be deleted")
         if mask is not None and (
             mask.shape != tuple(
                 self.axes_manager._navigation_shape_in_array)):
-            messages.warning_exit(
+            raise ValueError(
                 "The mask must be a numpy array of boolen type with "
                 " shape: %s" +
                 str(self.axes_manager._navigation_shape_in_array))
@@ -937,14 +977,8 @@ class BaseModel(list):
             pbar = progressbar.progressbar(maxval=maxval,
                                            disabled=not show_progressbar)
         if 'bounded' in kwargs and kwargs['bounded'] is True:
-            if kwargs['fitter'] == 'mpfit':
-                self.set_mpfit_parameters_info()
-                kwargs['bounded'] = None
-            elif kwargs['fitter'] in ("tnc", "l_bfgs_b"):
-                self.set_boundaries()
-                kwargs['bounded'] = None
-            else:
-                messages.information(
+            if kwargs['fitter'] not in ("tnc", "l_bfgs_b", "mpfit"):
+                _logger.info(
                     "The chosen fitter does not suppport bounding."
                     "If you require bounding please select one of the "
                     "following fitters instead: mpfit, tnc, l_bfgs_b")
@@ -973,7 +1007,7 @@ class BaseModel(list):
                 if maxval > 0:
                     pbar.finish()
         if autosave is True:
-            messages.information(
+            _logger.info(
                 'Deleting the temporary file %s pixels' % (
                     autosave_fn + 'npz'))
             os.remove(autosave_fn + '.npz')
@@ -1152,7 +1186,7 @@ class BaseModel(list):
              be printed.
 
         """
-        print "Components\tParameter\tValue"
+        print("Components\tParameter\tValue")
         for component in self:
             if component.active:
                 if component.name:
@@ -1344,7 +1378,7 @@ class BaseModel(list):
         export_to_dictionary(self, self._whitelist, dic, fullcopy)
 
         def remove_empty_numpy_strings(dic):
-            for k, v in dic.iteritems():
+            for k, v in dic.items():
                 if isinstance(v, dict):
                     remove_empty_numpy_strings(v)
                 elif isinstance(v, list):
@@ -1408,7 +1442,7 @@ class BaseModel(list):
 
     def __getitem__(self, value):
         """x.__getitem__(y) <==> x[y]"""
-        if isinstance(value, basestring):
+        if isinstance(value, str):
             component_list = []
             for component in self:
                 if component.name:
@@ -1462,7 +1496,7 @@ class ModelSpecialSlicers(object):
         twin_dict = {}
         for comp in self.model:
             init_args = {}
-            for k, v in comp._whitelist.iteritems():
+            for k, v in comp._whitelist.items():
                 if v is None:
                     continue
                 flags_str, value = v
@@ -1501,3 +1535,5 @@ class ModelSpecialSlicers(object):
                 _model._calculate_chisq()
 
         return _model
+
+# vim: textwidth=80

@@ -16,11 +16,15 @@
 # dataou should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
+
 import numpy as np
 import scipy.linalg
 
-from hyperspy.misc.machine_learning.import_sklearn import *
-from hyperspy import messages
+from hyperspy.misc.machine_learning.import_sklearn import (
+    fast_svd, sklearn_installed)
+
+_logger = logging.getLogger(__name__)
 
 
 def svd_pca(data, fast=False, output_dimension=None, centre=None,
@@ -65,14 +69,14 @@ def svd_pca(data, fast=False, output_dimension=None, centre=None,
         mean = None
     if auto_transpose is True:
         if N < M:
-            print("Auto transposing the data")
+            _logger.info("Auto transposing the data")
             data = data.T
         else:
             auto_transpose = False
     if fast is True and sklearn_installed is True:
         if output_dimension is None:
-            messages.warning_exit('When using fast_svd it is necessary to '
-                                  'define the output_dimension')
+            raise ValueError('When using fast_svd it is necessary to '
+                             'define the output_dimension')
         U, S, V = fast_svd(data, output_dimension)
     else:
         U, S, V = scipy.linalg.svd(data, full_matrices=False)

@@ -32,7 +32,7 @@ from hyperspy.exceptions import NavigationDimensionError
 from hyperspy.misc.export_dictionary import export_to_dictionary, \
     load_from_dictionary
 from hyperspy.events import Events, Event
-from hyperspy.misc.hspy_warnings import VisibleDeprecationWarning
+from hyperspy.exceptions import VisibleDeprecationWarning
 
 import logging
 
@@ -43,7 +43,7 @@ class NoneFloat(t.CFloat):   # Lazy solution, but usable
     default_value = None
 
     def validate(self, object, name, value):
-        if value == "None" or value == u"None":
+        if value == "None" or value == b"None":
             value = None
         if value is None:
             super(NoneFloat, self).validate(object, name, 0)
@@ -194,7 +194,7 @@ class Parameter(t.HasTraits):
         if self.component is not None:
             text += ' of %s' % self.component._get_short_description()
         text = '<' + text + '>'
-        return text.encode('utf8')
+        return text
 
     def __len__(self):
         return self._number_of_elements
@@ -518,9 +518,24 @@ class Parameter(t.HasTraits):
                 navigate=True)
         return s
 
-    def plot(self):
+    def plot(self, **kwargs):
+        """Plot parameter signal.
+
+        Parameters
+        ----------
+        **kwargs
+            Any extra keyword arguments are passed to the signal plot.
+
+        Example
+        -------
+        >>> parameter.plot()
+
+        Set the minimum and maximum displayed values
+
+        >>> parameter.plot(vmin=0, vmax=1)
+        """
         # TODO: use some sort of lazy signal for plotting..?
-        self.as_signal().plot()
+        self.as_signal().plot(**kwargs)
 
     def export(self, folder=None, name=None, format=None,
                save_std=False):
@@ -658,8 +673,8 @@ class Component(t.HasTraits):
             raise ValueError('Only boolean values are permitted')
 
         if value == self.active_is_multidimensional:
-            _logger.warn('`active_is_multidimensional` already %s for %s' %
-                         (str(value), self.name))
+            _logger.warning('`active_is_multidimensional` already %s for %s' %
+                            (str(value), self.name))
             return
 
         if value:  # Turn on
@@ -909,10 +924,10 @@ class Component(t.HasTraits):
                 is not None else 0
             if parameter.twin is None:
                 if dim <= 1:
-                    print '%s = %s ± %s %s' % (parameter.name,
-                                               parameter.value,
-                                               parameter.std,
-                                               parameter.units)
+                    return ('%s = %s ± %s %s' % (parameter.name,
+                                                 parameter.value,
+                                                 parameter.std,
+                                                 parameter.units))
 
     def __call__(self):
         """Returns the corresponding model for the current coordinates
@@ -935,8 +950,8 @@ class Component(t.HasTraits):
         s = self.__call__()
         if not self.active:
             s.fill(np.nan)
-        if self.model.spectrum.metadata.Signal.binned is True:
-            s *= self.model.spectrum.axes_manager.signal_axes[0].scale
+        if self.model.signal.metadata.Signal.binned is True:
+            s *= self.model.signal.axes_manager.signal_axes[0].scale
         if out_of_range2nans is True:
             ns = np.empty(self.model.axis.axis.shape)
             ns.fill(np.nan)
@@ -1017,6 +1032,11 @@ class Component(t.HasTraits):
         for _parameter in parameter_list:
             _parameter.free = False
 
+    def _estimate_parameters(self, signal):
+        if self._axes_manager != signal.axes_manager:
+            self._axes_manager = signal.axes_manager
+            self._create_arrays()
+
     def as_dictionary(self, fullcopy=True):
         """Returns component as a dictionary
 
@@ -1091,7 +1111,4 @@ class Component(t.HasTraits):
             raise ValueError( "_id_name of component and dictionary do not match, \ncomponent._id_name = %s\
                     \ndictionary['_id_name'] = %s" % (self._id_name, dic['_id_name']))
 
-    def _estimate_parameters(self, signal):
-        if self._axes_manager != signal.axes_manager:
-            self._axes_manager = signal.axes_manager
-            self._create_arrays()
+# vim: textwidth=80
