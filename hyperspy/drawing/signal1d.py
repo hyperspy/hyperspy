@@ -188,7 +188,7 @@ class Signal1DLine(object):
             Event that triggers when the line is closed.
 
             Arguments:
-                obj:  SpectrumLine instance
+                obj:  Signal1DLine instance
                     The instance that triggered the event.
             """, arguments=["obj"])
         self.sf_lines = None

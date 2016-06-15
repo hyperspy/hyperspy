@@ -660,7 +660,7 @@ class Model1D(BaseModel):
                 self._disconnect_component_line(component)
 
     def _plot_component(self, component):
-        line = hyperspy.drawing.signal1d.SpectrumLine()
+        line = hyperspy.drawing.signal1d.Signal1DLine()
         line.data_function = component._component2plot
         # Add the line to the figure
         self._plot.signal_plot.add_line(line)
