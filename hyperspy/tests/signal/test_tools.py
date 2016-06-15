@@ -200,7 +200,8 @@ class Test3D:
         _ = new_s.metadata.Signal.Noise_properties
 
     def test_rebin_const_variance(self):
-        self.spectrum.metadata.set_item('Signal.Noise_properties.variance', 0.3)
+        self.spectrum.metadata.set_item(
+            'Signal.Noise_properties.variance', 0.3)
         new_s = self.spectrum.rebin((2, 1, 6))
         nt.assert_equal(new_s.metadata.Signal.Noise_properties.variance, 0.3)
 
