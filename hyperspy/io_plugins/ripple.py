@@ -384,17 +384,17 @@ def file_reader(filename, rpl_info=None, encoding="latin-1",
         data = read_raw(rpl_info, rawfname, mmap_mode=mmap_mode)
 
     if rpl_info['record-by'] == 'vector':
-        print('Loading as spectrum')
+        _logger.info('Loading as Signal1D')
         record_by = 'spectrum'
     elif rpl_info['record-by'] == 'image':
-        print('Loading as Signal2D')
+        _logger.info('Loading as Signal2D')
         record_by = 'image'
     else:
         if len(data.shape) == 1:
-            print('Loading as spectrum')
+            _logger.info('Loading as Signal1D')
             record_by = 'spectrum'
         else:
-            print('Loading as image')
+            _logger.info('Loading as Signal2D')
             record_by = 'image'
 
     if rpl_info['record-by'] == 'vector':
@@ -571,7 +571,7 @@ def file_writer(filename, signal, encoding='latin-1', *args, **kwds):
             record_by = 'dont-care'
             depth, width, height = width_axis.size, 1, 1
     else:
-        print("Only Signal1D and Signal2D objects can be saved")
+        _logger.info("Only Signal1D and Signal2D objects can be saved")
         return
 
     # Fill the keys dictionary
