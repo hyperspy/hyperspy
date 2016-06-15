@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+h# -*- coding: utf-8 -*-
 # Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
@@ -360,10 +360,7 @@ class MVA():
                 explained_variance = S ** 2 / len(factors)
             elif algorithm == 'orpca':
                 _logger.info("Performing Online Robust PCA")
-                if orpca_method is None:
-                    orpca_method = 'CF'
-                if orpca_init is None:
-                    orpca_init = 'rand'
+
                 X, E, U, S, V = orpca(
                     dc[:, signal_mask][navigation_mask, :],
                     rank=output_dimension,
@@ -373,7 +370,8 @@ class MVA():
 
                 # Chop small singular values which
                 # likely arise from numerical noise
-                S[S<=1e-8] = 0.0
+                # in the SVD.
+                S[S<=1e-9] = 0.0
                 loadings = U * S
                 factors = V
                 explained_variance = S ** 2 / len(factors)
