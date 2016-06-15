@@ -19,6 +19,7 @@
 import os
 
 import numpy as np
+import functools
 import warnings
 
 import traits.api as t
@@ -496,7 +497,7 @@ class Parameter(t.HasTraits):
             raise NavigationDimensionError(0, '>0')
 
         s = BaseSignal(data=self.map[field],
-                   axes=self._axes_manager._get_navigation_axes_dicts())
+                       axes=self._axes_manager._get_navigation_axes_dicts())
         if self.component is not None and \
                 self.component.active_is_multidimensional:
             s.data[np.logical_not(self.component._active_array)] = np.nan
@@ -674,8 +675,8 @@ class Parameter(t.HasTraits):
             ip_display(container)
         except TraitletError:
             if display:
-                print('This function is only avialable when running in a'
-                      ' notebook')
+                _logger.info('This function is only avialable when running in'
+                             ' a notebook')
             else:
                 raise
 
@@ -1243,7 +1244,7 @@ class Component(t.HasTraits):
             ip_display(container)
         except TraitletError:
             if display:
-                print('This function is only avialable when running in a'
-                      ' notebook')
+                _logger.info('This function is only avialable when running in'
+                             ' a notebook')
             else:
                 raise

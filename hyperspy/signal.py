@@ -525,12 +525,12 @@ class MVATools(object):
                                    'units': 'factor',
                                    'index_in_array': 0, })
                 s = Signal2D(factor_data,
-                          axes=axes_dicts,
-                          metadata={
-                              'General': {'title': '%s from %s' % (
-                                  factor_prefix,
-                                  self.metadata.General.title),
-                              }})
+                             axes=axes_dicts,
+                             metadata={
+                                 'General': {'title': '%s from %s' % (
+                                     factor_prefix,
+                                     self.metadata.General.title),
+                                 }})
             elif self.axes_manager.signal_dimension == 1:
                 axes = [self.axes_manager.signal_axes[0].get_axis_dictionary(),
                         {'name': 'factor_index',
@@ -583,12 +583,12 @@ class MVATools(object):
 
                 for dim, index in zip(comp_ids, range(len(comp_ids))):
                     im = Signal2D(factor_data[..., index],
-                               axes=axes_dicts,
-                               metadata={
-                                   "General": {'title': '%s from %s' % (
-                                       factor_prefix,
-                                       self.metadata.General.title),
-                                   }})
+                                  axes=axes_dicts,
+                                  metadata={
+                        "General": {'title': '%s from %s' % (
+                            factor_prefix,
+                            self.metadata.General.title),
+                        }})
                     filename = '%s-%i.%s' % (factor_prefix,
                                              dim,
                                              factor_format)
@@ -666,12 +666,12 @@ class MVATools(object):
                                    'units': 'factor',
                                    'index_in_array': 0, })
                 s = Signal2D(loading_data,
-                          axes=axes_dicts,
-                          metadata={
-                              "General": {'title': '%s from %s' % (
-                                  loading_prefix,
-                                  self.metadata.General.title),
-                              }})
+                             axes=axes_dicts,
+                             metadata={
+                                 "General": {'title': '%s from %s' % (
+                                     loading_prefix,
+                                     self.metadata.General.title),
+                                 }})
             elif self.axes_manager.navigation_dimension == 1:
                 cal_axis = self.axes_manager.navigation_axes[0].\
                     get_axis_dictionary()
@@ -684,12 +684,12 @@ class MVATools(object):
                          'index_in_array': 0, },
                         cal_axis]
                 s = Signal2D(loadings,
-                          axes=axes,
-                          metadata={
-                              "General": {'title': '%s from %s' % (
-                                  loading_prefix,
-                                  self.metadata.General.title),
-                              }})
+                             axes=axes,
+                             metadata={
+                                 "General": {'title': '%s from %s' % (
+                                     loading_prefix,
+                                     self.metadata.General.title),
+                                 }})
             filename = '%ss.%s' % (loading_prefix, loading_format)
             if folder is not None:
                 filename = os.path.join(folder, filename)
@@ -719,12 +719,12 @@ class MVATools(object):
                 axes_dicts[1]['index_in_array'] = 1
                 for dim, index in zip(comp_ids, range(len(comp_ids))):
                     s = Signal2D(loading_data[index, ...],
-                              axes=axes_dicts,
-                              metadata={
-                                  "General": {'title': '%s from %s' % (
-                                      loading_prefix,
-                                      self.metadata.General.title),
-                                  }})
+                                 axes=axes_dicts,
+                                 metadata={
+                        "General": {'title': '%s from %s' % (
+                            loading_prefix,
+                            self.metadata.General.title),
+                        }})
                     filename = '%s-%i.%s' % (loading_prefix,
                                              dim,
                                              loading_format)
@@ -2129,9 +2129,13 @@ class BaseSignal(FancySlicing,
         s = self._deepcopy_with_new_data(self.data.swapaxes(axis1, axis2))
         c1 = s.axes_manager._axes[axis1]
         c2 = s.axes_manager._axes[axis2]
+        c1.slice, c2.slice = c2.slice, c1.slice
+        c1.navigate, c2.navigate = c2.navigate, c1.navigate
         s.axes_manager._axes[axis1] = c2
         s.axes_manager._axes[axis2] = c1
         s.axes_manager._update_attributes()
+        am = s.axes_manager
+        am.connect(am._update_attributes)
         s._make_sure_data_is_contiguous()
         return s
     swap_axes.__doc__ %= ONE_AXIS_PARAMETER
@@ -3561,8 +3565,8 @@ class BaseSignal(FancySlicing,
                          axes=self.axes_manager._get_navigation_axes_dicts())
         else:
             s = BaseSignal(np.zeros(self.axes_manager._navigation_shape_in_array,
-                                dtype=self.data.dtype),
-                       axes=self.axes_manager._get_navigation_axes_dicts())
+                                    dtype=self.data.dtype),
+                           axes=self.axes_manager._get_navigation_axes_dicts())
             s.axes_manager.set_signal_dimension(
                 self.axes_manager.navigation_dimension)
         return s
