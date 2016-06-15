@@ -2135,7 +2135,7 @@ class BaseSignal(FancySlicing,
         s.axes_manager._axes[axis2] = c1
         s.axes_manager._update_attributes()
         am = s.axes_manager
-        am.connect(am._update_attributes)
+        am.events.indices_changed.connect(am._update_attributes, [])
         s._make_sure_data_is_contiguous()
         return s
     swap_axes.__doc__ %= ONE_AXIS_PARAMETER
