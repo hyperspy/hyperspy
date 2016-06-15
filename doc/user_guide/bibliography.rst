@@ -11,6 +11,9 @@ Bibliography
 .. [Egerton2011] Ray Egerton, "Electron Energy-Loss Spectroscopy in the
    Electron Microscope", Springer-Verlag, 2011.
 
+.. [Feng2013] J. Feng, H. Xu and S. Yan, "Online Robust PCA via Stochastic Optimization",
+   NIPS 2013, 2013.
+
 .. [Hyvarinen2000] A. Hyvarinen, E. Oja, "Independent component analysis: algorithms
    and applications", Neural Networks 13 (2000) 411–430.
 
