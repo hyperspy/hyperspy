@@ -166,10 +166,38 @@ To perform Poissonian noise normalization:
      The long way:
      >>> s.decomposition(normalize_poissonian_noise=True)
 
-     Because it is the first argument we cold have simply written:
+     Because it is the first argument we could have simply written:
      >>> s.decomposition(True)
 
 More details about the scaling procedure can be found in [Keenan2004]_.
+
+Non-negative matrix factorization
+----------------------------
+
+Another popular decomposition method is non-negative matrix factorization (NMF), which
+can be accessed in HyperSpy with:
+
+.. code-block:: python
+
+   >>> s.decomposition(algorithm='nmf')
+
+Robust principal component analysis
+-----------------------------------
+
+PCA is known to be very sensitive to the presence of outliers in data. These outliers
+can be the result of missing or dead pixels, X-ray spikes, or very low count data.
+If one assumes a dataset to consist of a low-rank component **L** corrupted by
+a sparse error component **S**, then Robust PCA (RPCA) can be used to recover the
+low-rank component for subsequent processing.
+
+HyperSpy implements an *online* algorithm for RPCA developed by Feng et al. [Feng2013]_.
+This minimizes memory usage to make it suitable for large datasets. The method will
+return both **L** and **S**, as well as the factors and loadings of **L**.
+
+.. code-block:: python
+
+   >>> s.decomposition(algorithm='orpca',
+                       output_dimension='3')
 
 Blind Source Separation
 =======================
