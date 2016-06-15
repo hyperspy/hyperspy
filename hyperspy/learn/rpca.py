@@ -118,12 +118,15 @@ def orpca(X, rank, lambda1=None, lambda2=None,
 
     m, n = X.shape
 
-    # Check options
-    if method not in ('CF', 'BCD'):
-        raise ValueError("'method' not recognised")
-    if init not in ('rand', 'BRP'):
-        raise ValueError("'init' not recognised")
-
+    # Check options if None
+    if method is None:
+        _logger.warning("No method specified. Defaulting to "
+                        "closed-form solver")
+        _method = 'CF'
+    if init is None:
+        _logger.warning("No initializer specified. Defaulting to "
+                        "random.")
+        init = 'rand'
     if lambda1 is None:
         _logger.warning("Nuclear norm regularization parameter "
                         "is set to default.")
@@ -132,6 +135,12 @@ def orpca(X, rank, lambda1=None, lambda2=None,
         _logger.warning("Sparse regularization parameter "
                         "is set to default.")
         lambda2 = 1.0 / np.sqrt(n)
+
+    # Check options are valid
+    if method not in ('CF', 'BCD'):
+        raise ValueError("'method' not recognised")
+    if init not in ('rand', 'BRP'):
+        raise ValueError("'init' not recognised")
 
     if init == 'rand':
         # Use random initialization
