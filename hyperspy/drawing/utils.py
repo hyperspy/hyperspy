@@ -822,7 +822,7 @@ def plot_images(images,
 
             # Add scalebars as necessary
             if (scalelist and idx - 1 in scalebar) or scalebar is 'all':
-                ax.scalebar = Scale_Bar(
+                ax.scalebar = ScaleBar(
                     ax=ax,
                     units=axes[0].units,
                     color=scalebar_color,

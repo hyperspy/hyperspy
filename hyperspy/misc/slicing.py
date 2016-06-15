@@ -1,8 +1,7 @@
 from operator import attrgetter
+import numpy as np
 from hyperspy.misc.utils import attrsetter
 from hyperspy.misc.export_dictionary import parse_flag_string
-
-import numpy as np
 
 
 def _slice_target(target, dims, both_slices, slice_nav=None, issignal=False):
@@ -35,18 +34,20 @@ def _slice_target(target, dims, both_slices, slice_nav=None, issignal=False):
         if isinstance(target, np.ndarray):
             return np.atleast_1d(target[tuple(array_slices[:nav_dims])])
         raise ValueError(
-            'tried to slice with navigation dimensions, but was neither a signal nor an array')
+            'tried to slice with navigation dimensions, but was neither a '
+            'signal nor an array')
     if slice_nav is False:  # check explicitly
         if issignal:
             return target.isig[slices]
         if isinstance(target, np.ndarray):
             return np.atleast_1d(target[tuple(array_slices[-sig_dims:])])
         raise ValueError(
-            'tried to slice with signal dimensions, but was neither a signal nor an array')
-    # return thing
+            'tried to slice with navigation dimensions, but was neither a '
+            'signal nor an array')
 
 
-def copy_slice_from_whitelist(_from, _to, dims, both_slices, isNav):
+def copy_slice_from_whitelist(
+        _from, _to, dims, both_slices, isNav, order=None):
     """Copies things from one object to another, according to whitelist, slicing
     where required.
 
@@ -64,6 +65,10 @@ def copy_slice_from_whitelist(_from, _to, dims, both_slices, isNav):
     isNav : bool
         if the slicing operation is performed on navigation dimensions of the
         object
+    order : tuple, None
+        if given, performs the copying in the order given. If not all attributes
+        given, the rest is random (the order a whitelist.keys() returns them).
+        If given in the object, _slicing_order is looked up.
     """
 
     def make_slice_navigation_decision(flags, isnav):
@@ -79,7 +84,20 @@ def copy_slice_from_whitelist(_from, _to, dims, both_slices, isNav):
     if hasattr(_from, '_slicing_whitelist'):
         swl = _from._slicing_whitelist
 
-    for key, val in _from._whitelist.items():
+    if order is not None and not isinstance(order, tuple):
+        raise ValueError('order argument has to be None or a tuple of strings')
+
+    if order is None:
+        order = ()
+    if hasattr(_from, '_slicing_order'):
+        order = order + \
+            tuple(k for k in _from._slicing_order if k not in order)
+
+    keys = order + tuple(k for k in _from._whitelist.keys() if k not in
+                         order)
+
+    for key in keys:
+        val = _from._whitelist[key]
         if key == 'self':
             target = None
         else:

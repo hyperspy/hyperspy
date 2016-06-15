@@ -33,8 +33,7 @@ from scipy.optimize import (leastsq,
                             fmin_tnc,
                             fmin_powell)
 
-
-from hyperspy.external import progressbar
+from hyperspy.external.progressbar import progressbar
 from hyperspy.defaults_parser import preferences
 from hyperspy.external.mpfit.mpfit import mpfit
 from hyperspy.component import Component
@@ -422,18 +421,14 @@ class BaseModel(list):
                 channel_switches_backup = copy.copy(self.channel_switches)
                 self.channel_switches[:] = True
             maxval = self.axes_manager.navigation_size
-            pbar = progressbar.progressbar(maxval=maxval,
-                                           disabled=not show_progressbar)
-            i = 0
-            for index in self.axes_manager:
+            show_progressbar = show_progressbar and (maxval > 0)
+            for index in progressbar(self.axes_manager, total=maxval,
+                                     disable=not show_progressbar,
+                                     leave=True):
                 self.fetch_stored_values(only_fixed=False)
                 data[self.axes_manager._getitem_tuple][
                     np.where(self.channel_switches)] = self.__call__(
                     non_convolved=not self.convolved, onlyactive=True).ravel()
-                i += 1
-                if maxval > 0:
-                    pbar.update(i)
-            pbar.finish()
             if out_of_range_to_nan is True:
                 self.channel_switches[:] = channel_switches_backup
             signal = self.signal.__class__(
@@ -719,8 +714,8 @@ class BaseModel(list):
         if bounded is True:
             if fitter not in ("mpfit", "tnc", "l_bfgs_b"):
                 raise NotImplementedError("Bounded optimization is only"
-                                            "available for the mpfit "
-                                            "optimizer.")
+                                          "available for the mpfit "
+                                          "optimizer.")
             else:
                 # this has to be done before setting the p0, so moved things
                 # around
@@ -973,9 +968,7 @@ class BaseModel(list):
                 str(self.axes_manager._navigation_shape_in_array))
         masked_elements = 0 if mask is None else mask.sum()
         maxval = self.axes_manager.navigation_size - masked_elements
-        if maxval > 0:
-            pbar = progressbar.progressbar(maxval=maxval,
-                                           disabled=not show_progressbar)
+        show_progressbar = show_progressbar and (maxval > 0)
         if 'bounded' in kwargs and kwargs['bounded'] is True:
             if kwargs['fitter'] not in ("tnc", "l_bfgs_b", "mpfit"):
                 _logger.info(
@@ -993,19 +986,18 @@ class BaseModel(list):
                 outer = self.suspend_update
                 inner = dummy_context_manager
             with outer(update_on_resume=True):
-                for index in self.axes_manager:
-                    with inner(update_on_resume=True):
-                        if mask is None or not mask[index[::-1]]:
-                            self.fetch_stored_values(
-                                only_fixed=fetch_only_fixed)
-                            self.fit(**kwargs)
-                            i += 1
-                            if maxval > 0:
-                                pbar.update(i)
-                        if autosave is True and i % autosave_every == 0:
-                            self.save_parameters2file(autosave_fn)
-                if maxval > 0:
-                    pbar.finish()
+                with progressbar(total=maxval, disable=not show_progressbar,
+                                 leave=True) as pbar:
+                    for index in self.axes_manager:
+                        with inner(update_on_resume=True):
+                            if mask is None or not mask[index[::-1]]:
+                                self.fetch_stored_values(
+                                    only_fixed=fetch_only_fixed)
+                                self.fit(**kwargs)
+                                i += 1
+                                pbar.update(1)
+                            if autosave is True and i % autosave_every == 0:
+                                self.save_parameters2file(autosave_fn)
         if autosave is True:
             _logger.info(
                 'Deleting the temporary file %s pixels' % (

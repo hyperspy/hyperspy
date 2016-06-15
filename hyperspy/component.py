@@ -653,6 +653,8 @@ class Component(t.HasTraits):
                            'active': None
                            }
         self._slicing_whitelist = {'_active_array': 'inav'}
+        self._slicing_order = ('active', 'active_is_multidimensional',
+                               '_active_array',)
 
     _name = ''
     _active_is_multidimensional = False
@@ -674,9 +676,7 @@ class Component(t.HasTraits):
 
         if value:  # Turn on
             if self._axes_manager.navigation_size < 2:
-                warnings.warn(
-                    '`navigation_size` < 2, skipping',
-                    RuntimeWarning)
+                _logger.warning('`navigation_size` < 2, skipping')
                 return
             # Store value at current position
             self._create_active_array()
@@ -751,7 +751,6 @@ class Component(t.HasTraits):
         self._active = arg
         if self.active_is_multidimensional is True:
             self._store_active_value_in_array(arg)
-
         self.events.active_changed.trigger(active=self._active, obj=self)
         self.trait_property_changed('active', old_value, self._active)
 
@@ -821,6 +820,8 @@ class Component(t.HasTraits):
             shape = [1, ]
         if (not isinstance(self._active_array, np.ndarray)
                 or self._active_array.shape != shape):
+            _logger.debug('Creating _active_array for {}.\n\tCurrent array '
+                          'is:\n{}'.format(self, self._active_array))
             self._active_array = np.ones(shape, dtype=bool)
 
     def _create_arrays(self):
