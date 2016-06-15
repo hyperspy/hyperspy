@@ -264,9 +264,6 @@ class Signal1DTools(object):
             show_progressbar = preferences.General.show_progressbar
         self._check_signal_dimension_equals_one()
         axis = self.axes_manager.signal_axes[0]
-        pbar = progressbar(
-            maxval=self.axes_manager.navigation_size,
-            disabled=not show_progressbar)
 
         # Figure out min/max shifts, and translate to shifts in index as well
         minimum, maximum = np.nanmin(shift_array), np.nanmax(shift_array)
@@ -295,19 +292,22 @@ class Signal1DTools(object):
             axis.size += axis.high_index - ihigh + 1 + ilow - axis.low_index
         offset = axis.offset
         original_axis = axis.axis.copy()
-        for i, (dat, shift) in enumerate(zip(
-                self._iterate_signal(),
-                shift_array.ravel())):
-            if np.isnan(shift):
-                continue
-            si = sp.interpolate.interp1d(original_axis,
-                                         dat,
-                                         bounds_error=False,
-                                         fill_value=fill_value,
-                                         kind=interpolation_method)
-            axis.offset = float(offset - shift)
-            dat[:] = si(axis.axis)
-            pbar.update(i + 1)
+        with progressbar(total=self.axes_manager.navigation_size,
+                         disable=not show_progressbar,
+                         leave=True) as pbar:
+            for i, (dat, shift) in enumerate(zip(
+                    self._iterate_signal(),
+                    shift_array.ravel())):
+                if np.isnan(shift):
+                    continue
+                si = sp.interpolate.interp1d(original_axis,
+                                             dat,
+                                             bounds_error=False,
+                                             fill_value=fill_value,
+                                             kind=interpolation_method)
+                axis.offset = float(offset - shift)
+                dat[:] = si(axis.axis)
+                pbar.update(1)
 
         axis.offset = offset
 
@@ -349,16 +349,16 @@ class Signal1DTools(object):
             delta = int(delta / axis.scale)
         i0 = int(np.clip(i1 - delta, 0, np.inf))
         i3 = int(np.clip(i2 + delta, 0, axis.size))
-        pbar = progressbar(
-            maxval=self.axes_manager.navigation_size,
-            disabled=not show_progressbar)
-        for i, dat in enumerate(self._iterate_signal()):
-            dat_int = sp.interpolate.interp1d(
-                list(range(i0, i1)) + list(range(i2, i3)),
-                dat[i0:i1].tolist() + dat[i2:i3].tolist(),
-                **kwargs)
-            dat[i1:i2] = dat_int(list(range(i1, i2)))
-            pbar.update(i + 1)
+        with progressbar(total=self.axes_manager.navigation_size,
+                         disable=not show_progressbar,
+                         leave=True) as pbar:
+            for i, dat in enumerate(self._iterate_signal()):
+                dat_int = sp.interpolate.interp1d(
+                    list(range(i0, i1)) + list(range(i2, i3)),
+                    dat[i0:i1].tolist() + dat[i2:i3].tolist(),
+                    **kwargs)
+                dat[i1:i2] = dat_int(list(range(i1, i2)))
+                pbar.update(1)
         self.events.data_changed.trigger(obj=self)
 
     def _check_navigation_mask(self, mask):
@@ -437,22 +437,21 @@ class Signal1DTools(object):
         ref = self.inav[reference_indices].data[i1:i2]
         if interpolate is True:
             ref = interpolate1D(ip, ref)
-        pbar = progressbar(
-            maxval=self.axes_manager.navigation_size,
-            disabled=not show_progressbar)
-        for i, (dat, indices) in enumerate(zip(
-                self._iterate_signal(),
-                self.axes_manager._array_indices_generator())):
-            if mask is not None and bool(mask.data[indices]) is True:
-                shift_array[indices] = np.nan
-            else:
-                dat = dat[i1:i2]
-                if interpolate is True:
-                    dat = interpolate1D(ip, dat)
-                shift_array[indices] = np.argmax(
-                    np.correlate(ref, dat, 'full')) - len(ref) + 1
-            pbar.update(i + 1)
-        pbar.finish()
+        with progressbar(total=self.axes_manager.navigation_size,
+                         disable=not show_progressbar,
+                         leave=True) as pbar:
+            for i, (dat, indices) in enumerate(zip(
+                    self._iterate_signal(),
+                    self.axes_manager._array_indices_generator())):
+                if mask is not None and bool(mask.data[indices]) is True:
+                    shift_array[indices] = np.nan
+                else:
+                    dat = dat[i1:i2]
+                    if interpolate is True:
+                        dat = interpolate1D(ip, dat)
+                    shift_array[indices] = np.argmax(
+                        np.correlate(ref, dat, 'full')) - len(ref) + 1
+                pbar.update(1)
 
         if max_shift is not None:
             if interpolate is True:
@@ -1078,10 +1077,11 @@ class Signal1DTools(object):
         axis = self.axes_manager.signal_axes[0]
         x = axis.axis
         maxval = self.axes_manager.navigation_size
-        if maxval > 0:
-            pbar = progressbar(maxval=maxval,
-                               disabled=not show_progressbar)
-        for i, spectrum in enumerate(self):
+        show_progressbar = show_progressbar and maxval > 0
+        for i, spectrum in progressbar(enumerate(self),
+                                       total=maxval,
+                                       disable=not show_progressbar,
+                                       leave=True):
             if window is not None:
                 vmax = axis.index2value(spectrum.data.argmax())
                 spectrum = spectrum.isig[vmax - window / 2.:vmax + window / 2.]
@@ -1097,10 +1097,6 @@ class Signal1DTools(object):
             else:
                 left.isig[self.axes_manager.indices] = np.nan
                 right.isig[self.axes_manager.indices] = np.nan
-            if maxval > 0:
-                pbar.update(i)
-        if maxval > 0:
-            pbar.finish()
         width = right - left
         if factor == 0.5:
             width.metadata.General.title = (
@@ -1190,7 +1186,8 @@ class Signal1D(BaseSignal,
 
         # arbitrary cutoff for number of spectra necessary before histogram
         # data is compressed by finding maxima of each spectrum
-        tmp = BaseSignal(der) if n < 2000 else BaseSignal(np.ravel(der.max(-1)))
+        tmp = BaseSignal(der) if n < 2000 else BaseSignal(
+            np.ravel(der.max(-1)))
 
         # get histogram signal using smart binning and plot
         tmph = tmp.get_histogram()

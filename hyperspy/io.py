@@ -32,7 +32,6 @@ from hyperspy.io_plugins import io_plugins, default_write_ext
 _logger = logging.getLogger(__name__)
 
 
-
 def load(filenames=None,
          record_by=None,
          signal_type=None,
@@ -332,7 +331,6 @@ def assign_signal_subclass(record_by="",
                          "\"experiment\" or \"simulation\"")
 
     signals = hyperspy.misc.utils.find_subclasses(hyperspy.signals, BaseSignal)
-    signals['Signal'] = BaseSignal
 
     if signal_origin == "experiment":
         signal_origin = ""

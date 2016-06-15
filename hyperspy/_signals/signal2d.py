@@ -299,52 +299,53 @@ class Signal2DTools(object):
                 plot=plot,
                 dtype=dtype)
             np.fill_diagonal(pcarray['max_value'], max_value)
-            pbar = progressbar(maxval=nrows * images_number,
-                               disabled=not show_progressbar)
+            pbar_max = nrows * images_number
         else:
-            pbar = progressbar(maxval=images_number,
-                               disabled=not show_progressbar)
+            pbar_max = images_number
 
         # Main iteration loop. Fills the rows of pcarray when reference
         # is stat
-        for i1, im in enumerate(self._iterate_signal()):
-            if reference in ['current', 'cascade']:
-                if ref is None:
-                    ref = im.copy()
-                    shift = np.array([0, 0])
-                nshift, max_val = estimate_image_shift(
-                    ref, im, roi=roi, sobel=sobel, medfilter=medfilter,
-                    hanning=hanning, plot=plot,
-                    normalize_corr=normalize_corr, dtype=dtype)
-                if reference == 'cascade':
-                    shift += nshift
-                    ref = im.copy()
-                else:
-                    shift = nshift
-                shifts.append(shift.copy())
-                pbar.update(i1 + 1)
-            elif reference == 'stat':
-                if i1 == nrows:
-                    break
-                # Iterate to fill the columns of pcarray
-                for i2, im2 in enumerate(
-                        self._iterate_signal()):
-                    if i2 > i1:
-                        nshift, max_value = estimate_image_shift(
-                            im,
-                            im2,
-                            roi=roi,
-                            sobel=sobel,
-                            medfilter=medfilter,
-                            hanning=hanning,
-                            normalize_corr=normalize_corr,
-                            plot=plot,
-                            dtype=dtype)
+        with progressbar(total=pbar_max,
+                         disable=not show_progressbar,
+                         leave=True) as pbar:
+            for i1, im in enumerate(self._iterate_signal()):
+                if reference in ['current', 'cascade']:
+                    if ref is None:
+                        ref = im.copy()
+                        shift = np.array([0, 0])
+                    nshift, max_val = estimate_image_shift(
+                        ref, im, roi=roi, sobel=sobel, medfilter=medfilter,
+                        hanning=hanning, plot=plot,
+                        normalize_corr=normalize_corr, dtype=dtype)
+                    if reference == 'cascade':
+                        shift += nshift
+                        ref = im.copy()
+                    else:
+                        shift = nshift
+                    shifts.append(shift.copy())
+                    pbar.update(1)
+                elif reference == 'stat':
+                    if i1 == nrows:
+                        break
+                    # Iterate to fill the columns of pcarray
+                    for i2, im2 in enumerate(
+                            self._iterate_signal()):
+                        if i2 > i1:
+                            nshift, max_value = estimate_image_shift(
+                                im,
+                                im2,
+                                roi=roi,
+                                sobel=sobel,
+                                medfilter=medfilter,
+                                hanning=hanning,
+                                normalize_corr=normalize_corr,
+                                plot=plot,
+                                dtype=dtype)
 
-                        pcarray[i1, i2] = max_value, nshift
-                    del im2
-                    pbar.update(i2 + images_number * i1 + 1)
-                del im
+                            pcarray[i1, i2] = max_value, nshift
+                        del im2
+                        pbar.update(1)
+                    del im
         if reference == 'stat':
             # Select the reference image as the one that has the
             # higher max_value in the row
@@ -652,7 +653,6 @@ class Signal2D(BaseSignal,
             centre_colormap=centre_colormap,
             **kwargs
         )
-
 
     def create_model(self, dictionary=None):
         """Create a model for the current signal

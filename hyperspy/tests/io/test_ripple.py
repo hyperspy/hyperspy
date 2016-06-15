@@ -115,13 +115,15 @@ def _run_test(dtype, shape, dim, tmpdir):
     except:
         raise
     finally:
-       # As of v0.8.5 the data in the ripple files are loaded as memmaps
-       # instead of array. In Windows the garbage collector doesn't close
-       # the file before attempting to delete it making the test fail.
-       # The following lines simply make sure that the memmap is closed.
-       del s_just_saved.data
-       del s_ref.data
-       gc.collect()
+        # As of v0.8.5 the data in the ripple files are loaded as memmaps
+        # instead of array. In Windows the garbage collector doesn't close
+        # the file before attempting to delete it making the test fail.
+        # The following lines simply make sure that the memmap is closed.
+        # del s_just_saved.data
+        # del s_ref.data
+        del s_just_saved
+        del s_ref
+        gc.collect()
 
 
 def generate_files():

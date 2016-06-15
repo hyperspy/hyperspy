@@ -559,8 +559,7 @@ def write_signal(signal, group, **kwds):
     if len(signal.models):
         model_group = group.file.require_group('Analysis/models')
         dict2hdfgroup(signal.models._models.as_dictionary(),
-                      model_group,
-                      compression=compression)
+                      model_group, **kwds)
         for model in model_group.values():
             model.attrs['_signal'] = group.name
 
