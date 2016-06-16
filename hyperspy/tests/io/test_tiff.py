@@ -137,7 +137,7 @@ def test_write_scale_unit_no_export_scale():
 def _test_write_scale_unit(export_scale=True):
     """ Lazy test, still need to open the files in ImageJ or DM to check if the
         scale and unit are correct """
-    s = hs.signals.Image(np.arange(10*15, dtype=np.uint8).reshape((10, 15)))
+    s = hs.signals.Signal2D(np.arange(10*15, dtype=np.uint8).reshape((10, 15)))
     s.axes_manager[0].name = 'x'
     s.axes_manager[1].name = 'y'
     s.axes_manager['x'].scale = 0.25
@@ -153,7 +153,7 @@ def _test_write_scale_unit(export_scale=True):
 def test_write_scale_unit_not_square_pixel():
     """ Lazy test, still need to open the files in ImageJ or DM to check if the
         scale and unit are correct """
-    s = hs.signals.Image(np.arange(10*15, dtype=np.uint8).reshape((10, 15)))
+    s = hs.signals.Signal2D(np.arange(10*15, dtype=np.uint8).reshape((10, 15)))
     s.change_dtype(np.uint8)
     s.axes_manager[0].name = 'x'
     s.axes_manager[1].name = 'y'
@@ -170,7 +170,7 @@ def test_write_scale_unit_not_square_pixel():
 def test_write_scale_with_undefined_unit():
     """ Lazy test, still need to open the files in ImageJ or DM to check if the
         scale and unit are correct """
-    s = hs.signals.Image(np.arange(10*15, dtype=np.uint8).reshape((10, 15)))
+    s = hs.signals.Signal2D(np.arange(10*15, dtype=np.uint8).reshape((10, 15)))
     s.axes_manager[0].name = 'x'
     s.axes_manager[1].name = 'y'
     s.axes_manager['x'].scale = 0.25
@@ -184,7 +184,7 @@ def test_write_scale_with_undefined_unit():
 def test_write_scale_with_undefined_scale():
     """ Lazy test, still need to open the files in ImageJ or DM to check if the
         scale and unit are correct """
-    s = hs.signals.Image(np.arange(10*15, dtype=np.uint8).reshape((10, 15)))
+    s = hs.signals.Signal2D(np.arange(10*15, dtype=np.uint8).reshape((10, 15)))
     s.axes_manager[0].name = 'x'
     s.axes_manager[1].name = 'y'
     fname = os.path.join(my_path, 'tiff_files',
@@ -206,7 +206,7 @@ def test_write_scale_with_um_unit():
 def test_write_scale_unit_image_stack():
     """ Lazy test, still need to open the files in ImageJ or DM to check if the
         scale and unit are correct """
-    s = hs.signals.Image(np.arange(5*10*15, dtype=np.uint8).reshape((5, 10, 15)))
+    s = hs.signals.Signal2D(np.arange(5*10*15, dtype=np.uint8).reshape((5, 10, 15)))
     s.axes_manager[0].name = 'x'
     s.axes_manager[1].name = 'y'
     s.axes_manager[2].name = 'z'
