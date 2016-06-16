@@ -1,0 +1,19 @@
+;File created by HyperSpy version 0.8.4
+key	value
+byte-order	dont-care
+data-length	2
+data-type	unsigned
+depth	1
+height	2
+height-name	1
+height-origin	0.5
+height-scale	100.0
+height-units	eV
+offset	0
+record-by	dont-care
+signal	
+width	3
+width-name	2
+width-origin	1.0
+width-scale	200.0
+width-units	eV

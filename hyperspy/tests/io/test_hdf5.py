@@ -8,7 +8,8 @@ import nose.tools as nt
 import numpy as np
 
 from hyperspy.io import load
-from hyperspy.signal import Signal
+from hyperspy.signal import BaseSignal
+from hyperspy._signals.signal1d import Signal1D
 from hyperspy.roi import Point2DROI
 from hyperspy.datasets.example_signals import EDS_TEM_Spectrum
 
@@ -161,7 +162,7 @@ class TestLoadingNewSavedMetadata:
 class TestSavingMetadataContainers:
 
     def setUp(self):
-        self.s = Signal([0.1])
+        self.s = BaseSignal([0.1])
 
     def test_save_unicode(self):
         s = self.s
@@ -200,11 +201,11 @@ class TestSavingMetadataContainers:
 
     def test_general_type_not_working(self):
         s = self.s
-        s.metadata.set_item('test', (Signal([1]), 0.1, 'test_string'))
+        s.metadata.set_item('test', (BaseSignal([1]), 0.1, 'test_string'))
         s.save('tmp.hdf5', overwrite=True)
         l = load('tmp.hdf5')
         nt.assert_is_instance(l.metadata.test, tuple)
-        nt.assert_is_instance(l.metadata.test[0], Signal)
+        nt.assert_is_instance(l.metadata.test[0], Signal1D)
         nt.assert_is_instance(l.metadata.test[1], float)
         nt.assert_is_instance(l.metadata.test[2], str)
 
@@ -243,7 +244,7 @@ def test_rgba16():
 class TestLoadingOOMReadOnly:
 
     def setUp(self):
-        s = Signal(np.empty((5, 5, 5)))
+        s = BaseSignal(np.empty((5, 5, 5)))
         s.save('tmp.hdf5', overwrite=True)
         self.shape = (10000, 10000, 100)
         del s
@@ -269,6 +270,25 @@ class TestLoadingOOMReadOnly:
         except:
             # Don't fail tests if we cannot remove
             pass
+
+
+class TestPassingArgs:
+
+    def setUp(self):
+        self.filename = 'testfile.hdf5'
+        BaseSignal([1, 2, 3]).save(self.filename, compression_opts=8)
+
+    def test_compression_opts(self):
+        f = h5py.File(self.filename)
+        d = f['Experiments/__unnamed__/data']
+        nt.assert_equal(d.compression_opts, 8)
+        nt.assert_equal(d.compression, 'gzip')
+        f.close()
+
+    def tearDown(self):
+        remove(self.filename)
+
+
 def test_strings_from_py2():
     s = EDS_TEM_Spectrum()
     nt.assert_equal(s.metadata.Sample.elements.dtype.char, "U")
