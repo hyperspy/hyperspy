@@ -413,10 +413,10 @@ def mass_absorption_mixture(weight_percent,
     Scattering Tables (version 2.1).
 
     """
-    from hyperspy.signals import Signal
+    from hyperspy.signals import BaseSignal
     elements = _elements_auto(weight_percent, elements)
     energies = _lines_auto(weight_percent, energies)
-    if isinstance(weight_percent[0], Signal):
+    if isinstance(weight_percent[0], BaseSignal):
         weight_per = np.array([wt.data for wt in weight_percent])
         mac_res = stack([weight_percent[0].deepcopy()]*len(energies))
         mac_res.data = \

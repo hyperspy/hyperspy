@@ -88,6 +88,6 @@ def test_mixture_mac():
     np.testing.assert_array_almost_equal(
         hs.material.mass_absorption_mixture(wt, elements, lines)[:, 0, 0],
         np.array([8003.05391481,  4213.4235561]))
-    wt = hs.signals.Image(wt).split()
+    wt = hs.signals.Signal2D(wt).split()
     mac = hs.material.mass_absorption_mixture(wt, elements, lines)
     np.testing.assert_array_almost_equal(mac[0].data[0, 0], 8003.053914)
