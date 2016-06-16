@@ -9,14 +9,14 @@ Bounds and weights are supported. The syntax for creating both kinds of model
 is essentially the same as in this documentation any method referred to in
 the :py:class`~.model.BaseModel` class is available for both kinds.
 
-.. versionadded:: 0.9
+.. versionadded:: 1.0
 
     Models can be created and and fit to experimental data in both one and two
     dimensions i.e. spectra and images respectively. Most of the syntax is
     identical in either case. A one-dimensional model is created when a model
-    is created for a :py:class:`~._signals.spectrum.Spectrum` whereas a two-
-    dimensional model is created for a :py:class:`._signals.image.Image`. At
-    present plotting and gradient fitting methods tools for are not yet
+    is created for a :py:class:`~._signals.signal1D.Signal1D` whereas a two-
+    dimensional model is created for a :py:class:`._signals.signal2D.Signal2D`.
+    At present plotting and gradient fitting methods tools for are not yet
     provided for the :py:class:`~.models.model2D.Model2D` class.
 
 .. versionadded:: 0.7
@@ -28,20 +28,22 @@ the :py:class`~.model.BaseModel` class is available for both kinds.
 Creating a model
 ----------------
 
-A :py:class:`~.models.model1D.Model1D` can be created for data in the :py:class:`~._signals.spectrum.Spectrum`
-class using the :py:meth:`~._signals.spectrum.Spectrum.create_model` method:
+A :py:class:`~.models.model1D.Model1D` can be created for data in the
+:py:class:`~._signals.signal1D.Signal1D` class using the
+:py:meth:`~._signals.signal1D.Signal1D.create_model` method:
 
 .. code-block:: python
 
-    >>> s = hs.signals.Spectrum('SomeDataHere') # Load the data from a file
+    >>> s = hs.signals.Signal1D('SomeDataHere') # Load the data from a file
     >>> m = s.create_model() # Creates the 1D-Model and asign it to the variable m
 
-Similarly A :py:class:`~.models.model2D.Model2D` can be created for data in the :py:class:`~._signals.image.Image`
-class using the :py:meth:`~._signals.image.Image.create_model` method:
+Similarly A :py:class:`~.models.model2D.Model2D` can be created for data in the
+:py:class:`~._signals.signal2D.Signal2D` class using the
+:py:meth:`~._signals.signal2D.Signal2D.create_model` method:
 
 .. code-block:: python
 
-    >>> im = hs.signals.Image('SomeDataHere') # Load the data from a file
+    >>> im = hs.signals.Signal2D('SomeDataHere') # Load the data from a file
     >>> mod = im.create_model() # Create the 2D-Model and asign it to the variable mod
 
 The syntax for creating both one-dimensional and two-dimensional models is thus
@@ -75,8 +77,9 @@ The following components are currently available for one-dimensional models:
 * :py:class:`~._components.error_function.Erf`
 * :py:class:`~._components.pes_see.SEE`
 * :py:class:`~._components.arctan.Arctan`
+* :py:class:`~._components.heaviside.HeavisideStep`
 
-.. versionadded:: 0.9 The following components are currently available for two-dimensional models:
+.. versionadded:: 1.0 The following components are currently available for two-dimensional models:
 
 * :py:class:`~._components.gaussian2d.Gaussian2D`
 
@@ -196,9 +199,9 @@ component type will be printed:
 
 
 In fact, components may be created automatically in some cases. For example, if
-the `Signal` is recognised as EELS data, a power-law background component will
-automatically be placed in the model. To add a component first we have to create an
-instance of the component. Once the instance has been created we can add the
+the `Signal1D` is recognised as EELS data, a power-law background component will
+automatically be placed in the model. To add a component first we have to create
+an instance of the component. Once the instance has been created we can add the
 component to the model using the :py:meth:`append` method, e.g. for a type of
 data that can be modelled using gaussians we might proceed as follows:
 
@@ -310,7 +313,7 @@ To enable this feature for a given component set the
 
 .. code-block:: python
 
-    >>> s = hs.signals.Spectrum(np.arange(100).reshape(10,10))
+    >>> s = hs.signals.Signal1D(np.arange(100).reshape(10,10))
     >>> m = s.create_model()
     >>> g1 = hs.model.components.Gaussian()
     >>> g2 = hs.model.components.Gaussian()
@@ -345,13 +348,13 @@ recomputed for the resulting slices.
 
 .. code-block:: python
 
-    >>> s = hs.signals.Spectrum(np.arange(100).reshape(10,10))
+    >>> s = hs.signals.Signal1D(np.arange(100).reshape(10,10))
     >>> m = s.create_model()
     >>> m.append(hs.model.components.Gaussian())
     >>> # select first three navigation pixels and last five signal channels
     >>> m1 = m.inav[:3].isig[-5:]
-    >>> m1.spectrum
-    <Spectrum, title: , dimensions: (3|5)>
+    >>> m1.signal1D
+    <Signal1D, title: , dimensions: (3|5)>
 
 
 Getting and setting parameter values and attributes
@@ -373,7 +376,7 @@ Example:
 
 .. code-block:: python
 
-    >>> s = hs.signals.Spectrum(np.arange(100).reshape(10,10))
+    >>> s = hs.signals.Signal1D(np.arange(100).reshape(10,10))
     >>> m = s.create_model()
     >>> g1 = hs.model.components.Gaussian()
     >>> g2 = hs.model.components.Gaussian()
@@ -593,8 +596,8 @@ to the data.
     >>> m.append(line)
     >>> m.fit()
 
-On fitting completion, the optimized value of the parameters and their estimated standard deviation
-are stored in the following line attributes:
+On fitting completion, the optimized value of the parameters and their estimated
+standard deviation are stored in the following line attributes:
 
 .. code-block:: python
 
@@ -607,7 +610,7 @@ are stored in the following line attributes:
 
 When the noise is heterocedastic, only if the
 ``metadata.Signal.Noise_properties.variance`` attribute of the
-:class:`~._signals.spectrum.Spectrum` instance is defined can the errors be
+:class:`~._signals.signal1d.Signal1D` instance is defined can the errors be
 estimated accurately. If the variance is not defined, the standard deviation of
 the parameters are still computed and stored in the
 :attr:`~.component.Parameter.std` attribute by setting variance equal 1.
@@ -639,7 +642,7 @@ approximation in most cases.
 
 .. code-block:: python
 
-   >>> s.estimate_poissonian_noise_variance(expected_value=hs.signals.Spectrum(np.arange(300)))
+   >>> s.estimate_poissonian_noise_variance(expected_value=hs.signals.Signal1D(np.arange(300)))
    >>> m.fit()
    >>> line.coefficients.value
    (1.0004224896604759, -0.46982916592391377)
@@ -664,7 +667,7 @@ the ``centre`` parameter.
 
 .. code-block:: python
 
-    >>> s = hs.signals.Signal(np.random.normal(loc=10, scale=0.01,
+    >>> s = hs.signals.BaseSignal(np.random.normal(loc=10, scale=0.01,
     size=1e5)).get_histogram()
     >>> s.metadata.Signal.binned = True
     >>> m = s.create_model()
@@ -742,6 +745,31 @@ by hand.
     the :py:meth:`~.model.Model.fit_component` method.
 
 
+.. versionadded:: 0.8.5
+    :py:meth:`~.model.Model.notebook_interaction`,
+
+.. _notebook_interaction-label:
+
+If running in a Jupyter Notebook, interactive widgets can be used to
+conveniently adjust the parameter values by running
+:py:meth:`~.model.Model.notebook_interaction` for :py:class:`~.model.Model`,
+:py:class:`~.component.Component` and
+:py:class:`~.component.Parameter`.
+
+.. Warning::
+
+    :py:meth:`~.model.Model.notebook_interaction` functions require
+    ``ipywidgets``, which is an optional dependency of HyperSpy.
+
+
+.. figure::  images/notebook_widgets.png
+    :align:   center
+    :width:   985
+
+    Interactive widgets for the full model in a Jupyter notebook. Drag the
+    sliders to adjust current parameter values. Typing different minimum and
+    maximum values changes the boundaries of the slider.
+
 
 .. versionadded:: 0.6
     :py:meth:`~.model.Model.enable_adjust_position` and
@@ -804,7 +832,7 @@ datasets**.
 
 Storing models
 --------------
-.. versionadded:: 0.9 :py:class:`~.signal.ModelManager`
+.. versionadded:: 1.0 :py:class:`~.signal.ModelManager`
 
 Multiple models can be stored in the same signal. In particular, when
 :py:meth:`~.model.store` is called, a full "frozen" copy of the model is stored
@@ -865,7 +893,7 @@ Current stored models can be listed by calling :py:attr:`~.signal.models`:
 
 Saving and loading the result of the fit
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. versionadded:: 0.9
+.. versionadded:: 1.0
 
 To save a model, a convenience function :py:meth:`~.model.save` is provided,
 which stores the current model into its signal and saves the signal. As

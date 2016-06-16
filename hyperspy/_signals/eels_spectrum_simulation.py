@@ -35,7 +35,7 @@ class EELSSpectrumSimulation(SpectrumSimulation, EELSSpectrum):
 #            std in energy units of the energy instability.
 #        See also
 #        --------
-#        Spectrum.simulate
+#        Signal1D.simulate
 #        """
 #        if abs(std) > 0:
 #            delta_map = np.random.normal(

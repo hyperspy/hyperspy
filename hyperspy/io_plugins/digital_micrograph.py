@@ -209,7 +209,9 @@ class DigitalMicrographReader(object):
                 if not tag_name:
                     tag_name = 'TagGroup%i' % unnammed_group_tags
                     unnammed_group_tags += 1
-                _logger.debug('Reading Tag group at address: %s', self.f.tell())
+                _logger.debug(
+                    'Reading Tag group at address: %s',
+                    self.f.tell())
                 ntags = self.parse_tag_group(skip4=3)[2]
                 group_dict[tag_name] = {}
                 self.parse_tags(
@@ -555,8 +557,8 @@ class ImageObject(object):
         if len(self.scales) == 1:
             return "spectrum"
         elif (('ImageTags.Meta_Data.Format' in self.imdict and
-               self.imdict.ImageTags.Meta_Data.Format in ("Spectrum image",
-                                                          "Spectrum")) or (
+               self.imdict.ImageTags.Meta_Data.Format in ("Signal1D image",
+                                                          "Signal1D")) or (
                 "ImageTags.spim" in self.imdict)) and len(self.scales) == 2:
             return "spectrum"
         else:
@@ -565,7 +567,7 @@ class ImageObject(object):
     @property
     def to_spectrum(self):
         if (('ImageTags.Meta_Data.Format' in self.imdict and
-                self.imdict.ImageTags.Meta_Data.Format == "Spectrum image") or
+                self.imdict.ImageTags.Meta_Data.Format == "Signal1D image") or
                 ("ImageTags.spim" in self.imdict)) and len(self.scales) > 2:
             return True
         else:
@@ -584,7 +586,7 @@ class ImageObject(object):
 
     @property
     def dtype(self):
-        # Image data types (Image Object chapter on DM help)#
+        # Signal2D data types (Signal2D Object chapter on DM help)#
         # key = DM data type code
         # value = numpy data type
         if self.imdict.ImageData.DataType == 4:
@@ -822,7 +824,7 @@ def file_reader(filename, record_by=None, order=None):
     Parameters
     ----------
     record_by: Str
-        One of: SI, Image
+        One of: SI, Signal2D
     order: Str
         One of 'C' or 'F'
 
