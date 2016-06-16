@@ -39,7 +39,7 @@ class Point(MarkerBase):
 
     Example
     -------
-    >>> im = hs.signals.Image(np.random.random([10, 50, 50]))
+    >>> im = hs.signals.Signal2D(np.random.random([10, 50, 50]))
     >>> m = hs.plot.markers.point(x=range(10), y=range(10)[::-1],
                                      color='red')
     >>> im.add_marker(m)
@@ -47,7 +47,7 @@ class Point(MarkerBase):
     #Markers on local maxima
     >>> from skimage.feature import peak_local_max
     >>> import scipy.misc
-    >>> im = hs.signals.Image(scipy.misc.ascent()).as_image([2,0])
+    >>> im = hs.signals.Signal2D(scipy.misc.ascent()).as_signal2D([2,0])
     >>> index = array([peak_local_max(i.data, min_distance=100, num_peaks=4)
     >>>                for i in im])
     >>> for i in range(4):

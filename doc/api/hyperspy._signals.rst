@@ -84,10 +84,10 @@ hyperspy._signals.simulation module
     :undoc-members:
     :show-inheritance:
 
-hyperspy._signals.spectrum module
+hyperspy._signals.signal1D module
 ---------------------------------
 
-.. automodule:: hyperspy._signals.spectrum
+.. automodule:: hyperspy._signals.signal1D
     :members:
     :undoc-members:
     :show-inheritance:

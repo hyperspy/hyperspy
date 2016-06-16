@@ -211,24 +211,22 @@ class Test_get_lines_intentisity:
         sAl = s.get_lines_intensity(["Al_Ka"],
                                     plot_result=False,
                                     integration_windows=5)[0]
-        nt.assert_true(
-            np.allclose(24.99516, sAl.data[0, 0, 0], atol=1e-3))
+        np.testing.assert_allclose(24.99516, sAl.data[0, 0, 0], atol=1e-3)
         sAl = s.inav[0].get_lines_intensity(
             ["Al_Ka"], plot_result=False, integration_windows=5)[0]
-        nt.assert_true(
-            np.allclose(24.99516, sAl.data[0, 0], atol=1e-3))
+        np.testing.assert_allclose(24.99516, sAl.data[0, 0], atol=1e-3)
         sAl = s.inav[0, 0].get_lines_intensity(
             ["Al_Ka"], plot_result=False, integration_windows=5)[0]
-        nt.assert_true(np.allclose(24.99516, sAl.data[0], atol=1e-3))
+        np.testing.assert_allclose(24.99516, sAl.data[0], atol=1e-3)
         sAl = s.inav[0, 0, 0].get_lines_intensity(
             ["Al_Ka"], plot_result=False, integration_windows=5)[0]
-        nt.assert_true(np.allclose(24.99516, sAl.data, atol=1e-3))
+        np.testing.assert_allclose(24.99516, sAl.data, atol=1e-3)
         s.axes_manager[-1].offset = 1.0
         with assert_warns(message="C_Ka is not in the data energy range."):
             sC = s.get_lines_intensity(["C_Ka"], plot_result=False)
         nt.assert_equal(len(sC), 0)
-        nt.assert_true(sAl.metadata.Sample.elements, ["Al"])
-        nt.assert_true(sAl.metadata.Sample.xray_lines, ["Al_Ka"])
+        nt.assert_equal(sAl.metadata.Sample.elements, ["Al"])
+        nt.assert_equal(sAl.metadata.Sample.xray_lines, ["Al_Ka"])
 
     def test_eV(self):
         s = self.signal
@@ -239,32 +237,35 @@ class Test_get_lines_intentisity:
         sAl = s.get_lines_intensity(["Al_Ka"],
                                     plot_result=False,
                                     integration_windows=5)[0]
-        nt.assert_true(
-            np.allclose(24.99516, sAl.data[0, 0, 0], atol=1e-3))
+        np.testing.assert_allclose(24.99516, sAl.data[0, 0, 0], atol=1e-3)
 
     def test_background_substraction(self):
         s = self.signal
         intens = s.get_lines_intensity(["Al_Ka"], plot_result=False)[0].data
         s += 1.
-        nt.assert_true(np.allclose(s.estimate_background_windows(
-            xray_lines=["Al_Ka"])[0, 0], 1.25666201, atol=1e-3))
-        nt.assert_true(np.allclose(s.get_lines_intensity(
-            ["Al_Ka"], background_windows=s.estimate_background_windows(
-                [4, 4], xray_lines=["Al_Ka"]), plot_result=False)[0].data,
-            intens, atol=1e-3))
+        np.testing.assert_allclose(s.estimate_background_windows(
+            xray_lines=["Al_Ka"])[0, 0], 1.25666201, atol=1e-3)
+        np.testing.assert_allclose(
+            s.get_lines_intensity(
+                ["Al_Ka"],
+                background_windows=s.estimate_background_windows(
+                    [4, 4], xray_lines=["Al_Ka"]),
+                plot_result=False)[0].data,
+            intens, atol=1e-3)
 
     def test_estimate_integration_windows(self):
         s = self.signal
-        nt.assert_true(np.allclose(
+        np.testing.assert_allclose(
             s.estimate_integration_windows(3.0, ["Al_Ka"]),
-            [[1.371, 1.601]], atol=1e-2))
+            [[1.371, 1.601]], atol=1e-2)
 
     def test_with_signals_examples(self):
         from hyperspy.misc.example_signals_loading import \
             load_1D_EDS_SEM_spectrum as EDS_SEM_Spectrum
         s = EDS_SEM_Spectrum()
-        np.allclose(utils.stack(s.get_lines_intensity()).data,
-                    np.array([84163, 89063, 96117, 96700, 99075]))
+        np.testing.assert_allclose(
+            utils.stack(s.get_lines_intensity()).data.squeeze(),
+            np.array([84163, 89063, 96117, 96700, 99075]))
 
 
 class Test_tools_bulk:
@@ -287,7 +288,7 @@ class Test_tools_bulk:
             mp.Acquisition_instrument.SEM.beam_energy,
             density='auto',
             tilt=mp.Acquisition_instrument.SEM.tilt_stage)
-        nt.assert_equal(elec_range, 0.41350651162374225)
+        np.testing.assert_allclose(elec_range, 0.41350651162374225)
 
     def test_xray_range(self):
         s = self.signal
@@ -296,7 +297,7 @@ class Test_tools_bulk:
             mp.Sample.xray_lines[0],
             mp.Acquisition_instrument.SEM.beam_energy,
             density=4.37499648818)
-        nt.assert_equal(xr_range, 0.1900368800933955)
+        np.testing.assert_allclose(xr_range, 0.1900368800933955)
 
 
 class Test_energy_units:
@@ -322,7 +323,7 @@ class Test_energy_units:
         nt.assert_equal(s._get_line_energy('Al_Ka'), 1486.5)
         s.axes_manager.signal_axes[0].units = 'keV'
 
-        nt.assert_equal(s._get_line_energy('Al_Ka', FWHM_MnKa='auto'),
-                        (1.4865, 0.07661266213883969))
-        nt.assert_equal(s._get_line_energy('Al_Ka', FWHM_MnKa=128),
-                        (1.4865, 0.073167615787314))
+        np.testing.assert_allclose(s._get_line_energy('Al_Ka', FWHM_MnKa='auto'),
+                                   (1.4865, 0.07661266213883969))
+        np.testing.assert_allclose(s._get_line_energy('Al_Ka', FWHM_MnKa=128),
+                                   (1.4865, 0.073167615787314))

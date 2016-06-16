@@ -609,16 +609,16 @@ class SemperFormat(object):
         data = np.squeeze(self.data)  # Reduce unneeded dimensions!
         iclass = self.ICLASS_DICT.get(self.metadata.get('ICLASS'))
         if iclass == 'spectrum':
-            signal = hp.signals.Spectrum(data)
+            signal = hp.signals.Signal1D(data)
         elif iclass == 'image':
-            signal = hp.signals.Image(data)
+            signal = hp.signals.Signal2D(data)
         else:  # Class is not given, but can be determined by the data shape:
             if len(data.shape) == 1:
-                signal = hp.signals.Spectrum(data)
+                signal = hp.signals.Signal1D(data)
             elif len(data.shape) == 2:
-                signal = hp.signals.Image(data)
+                signal = hp.signals.Signal2D(data)
             else:  # 3D data!
-                signal = hp.signals.Signal(data)
+                signal = hp.signals.BaseSignal(data)
         for i in range(len(data.shape)):
             signal.axes_manager[i].name = {0: 'x', 1: 'y', 2: 'z'}[i]
             signal.axes_manager[i].scale = self.scales[i]

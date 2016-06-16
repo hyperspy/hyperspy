@@ -138,7 +138,7 @@ def test_save_load_cycle():
                         sig_reload.axes_manager.as_dictionary())
         nt.assert_equal(signal.original_metadata.as_dictionary(),
                         sig_reload.original_metadata.as_dictionary())
-        nt.assert_is_instance(signal, hs.signals.Image)
+        nt.assert_is_instance(signal, hs.signals.Signal2D)
     finally:
         # Delete reference to close memmap file!
         del sig_reload
@@ -153,7 +153,7 @@ def test_default_header():
 
 
 def test_non_square():
-    signal = hs.signals.Image((255 * np.random.rand(10, 3, 5, 6)
+    signal = hs.signals.Signal2D((255 * np.random.rand(10, 3, 5, 6)
                                ).astype(np.uint8))
     try:
         with nt.assert_raises(ValueError):
@@ -181,7 +181,7 @@ def test_load_readonly():
 
 def test_load_inplace():
     sig_reload = None
-    signal = hs.signals.Image((255 * np.random.rand(2, 3, 2, 2)
+    signal = hs.signals.Signal2D((255 * np.random.rand(2, 3, 2, 2)
                                ).astype(np.uint8))
     try:
         signal.save(save_path, overwrite=True)
@@ -202,7 +202,7 @@ def test_load_inplace():
 
 
 def test_write_fresh():
-    signal = hs.signals.Image((255 * np.random.rand(10, 3, 5, 5)
+    signal = hs.signals.Signal2D((255 * np.random.rand(10, 3, 5, 5)
                                ).astype(np.uint8))
     try:
         signal.save(save_path, overwrite=True)
@@ -226,7 +226,7 @@ def test_write_fresh():
 
 
 def test_write_data_line():
-    signal = hs.signals.Image((255 * np.random.rand(3, 5, 5)
+    signal = hs.signals.Signal2D((255 * np.random.rand(3, 5, 5)
                                ).astype(np.uint8))
     try:
         signal.save(save_path, overwrite=True)
@@ -237,7 +237,7 @@ def test_write_data_line():
 
 
 def test_write_data_single():
-    signal = hs.signals.Image((255 * np.random.rand(5, 5)
+    signal = hs.signals.Signal2D((255 * np.random.rand(5, 5)
                                ).astype(np.uint8))
     try:
         signal.save(save_path, overwrite=True)
@@ -248,7 +248,7 @@ def test_write_data_single():
 
 
 def test_write_data_am_mismatch():
-    signal = hs.signals.Image((255 * np.random.rand(10, 3, 5, 5)
+    signal = hs.signals.Signal2D((255 * np.random.rand(10, 3, 5, 5)
                                ).astype(np.uint8))
     signal.axes_manager.navigation_axes[1].size = 4
     try:
@@ -259,7 +259,7 @@ def test_write_data_am_mismatch():
 
 
 def test_write_cutoff():
-    signal = hs.signals.Image((255 * np.random.rand(10, 3, 5, 5)
+    signal = hs.signals.Signal2D((255 * np.random.rand(10, 3, 5, 5)
                                ).astype(np.uint8))
     signal.axes_manager.navigation_axes[0].size = 20
     try:
@@ -282,7 +282,7 @@ def test_write_cutoff():
 def test_crop_notes():
     note_len = 0x1000 - 0xF0
     note = 'test123' * 1000     # > note_len
-    signal = hs.signals.Image((255 * np.random.rand(2, 3, 2, 2)
+    signal = hs.signals.Signal2D((255 * np.random.rand(2, 3, 2, 2)
                                ).astype(np.uint8))
     signal.original_metadata.add_node('blockfile_header.Note')
     signal.original_metadata.blockfile_header.Note = note

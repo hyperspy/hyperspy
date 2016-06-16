@@ -45,7 +45,7 @@ class VerticalLineSegment(MarkerBase):
     Example
     -------
     >>> import numpy as np
-    >>> im = hs.signals.Image(np.zeros((100, 100)))
+    >>> im = hs.signals.Signal2D(np.zeros((100, 100)))
     >>> m = hs.plot.markers.vertical_line_segment(
     >>>     x=20, y1=30, y2=70, linewidth=4, color='red', linestyle='dotted')
     >>> im.add_marker(m)

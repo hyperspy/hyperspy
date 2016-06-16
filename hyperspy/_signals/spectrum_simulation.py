@@ -17,9 +17,9 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from hyperspy._signals.spectrum import Spectrum
+from hyperspy._signals.signal1d import Signal1D
 from hyperspy._signals.simulation import Simulation
 
 
-class SpectrumSimulation(Simulation, Spectrum):
+class SpectrumSimulation(Simulation, Signal1D):
     pass

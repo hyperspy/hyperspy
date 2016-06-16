@@ -24,7 +24,7 @@ from hyperspy.misc.rgb_tools import regular_array2rgbx
 
 # Plugin characteristics
 # ----------------------
-format_name = 'Image'
+format_name = 'Signal2D'
 description = 'Import/Export standard image formats using PIL or freeimage'
 full_support = False
 file_extensions = ['png', 'bmp', 'dib', 'gif', 'jpeg', 'jpe', 'jpg',

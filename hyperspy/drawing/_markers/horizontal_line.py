@@ -36,7 +36,7 @@ class HorizontalLine(MarkerBase):
     Example
     -------
     >>> import numpy as np
-    >>> s = hs.signals.Spectrum(np.random.random([10, 100])) * 10
+    >>> s = hs.signals.Signal1D(np.random.random([10, 100])) * 10
     >>> m = hs.plot.markers.horizontal_line(y=range(10), color='green')
     >>> s.add_marker(m)
 
