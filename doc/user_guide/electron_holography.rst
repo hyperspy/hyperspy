@@ -1,7 +1,7 @@
 Electron Holography
 *******************
 
-HyperSpy provides the user with two classes which can be used to process electron microscopy data:
+HyperSpy provides the user with two classes which can be used to process electron holography data:
  
 * :py:class:`~._signals.hologram_image.HologramImage`
 * :py:class:`~._signals.wave_image.WaveImage`
