@@ -2127,15 +2127,16 @@ class BaseSignal(FancySlicing,
         axis1 = self.axes_manager[axis1].index_in_array
         axis2 = self.axes_manager[axis2].index_in_array
         s = self._deepcopy_with_new_data(self.data.swapaxes(axis1, axis2))
-        c1 = s.axes_manager._axes[axis1]
-        c2 = s.axes_manager._axes[axis2]
+        am = s.axes_manager
+        am._update_trait_handlers(remove=True)
+        c1 = am._axes[axis1]
+        c2 = am._axes[axis2]
         c1.slice, c2.slice = c2.slice, c1.slice
         c1.navigate, c2.navigate = c2.navigate, c1.navigate
-        s.axes_manager._axes[axis1] = c2
-        s.axes_manager._axes[axis2] = c1
-        s.axes_manager._update_attributes()
-        am = s.axes_manager
-        am.events.indices_changed.connect(am._update_attributes, [])
+        am._axes[axis1] = c2
+        am._axes[axis2] = c1
+        am._update_attributes()
+        am._update_trait_handlers(remove=False)
         s._make_sure_data_is_contiguous()
         return s
     swap_axes.__doc__ %= ONE_AXIS_PARAMETER
