@@ -115,8 +115,8 @@ def export_to_dictionary(target, whitelist, dic, fullcopy=True):
         # here value either id(thing), or an actual target to export
         if 'sig' in flags:
             if fullcopy:
-                from hyperspy.signal import Signal
-                if isinstance(value, Signal):
+                from hyperspy.signal import BaseSignal
+                if isinstance(value, BaseSignal):
                     value = value._to_dictionary()
                     value['data'] = deepcopy(value['data'])
         elif 'fn' in flags:
@@ -193,8 +193,8 @@ def reconstruct_object(flags, value):
         flags = parse_flag_string(flags)
     if 'sig' in flags:
         if isinstance(value, dict):
-            from hyperspy.signal import Signal
-            value = Signal(**value)
+            from hyperspy.signal import BaseSignal
+            value = BaseSignal(**value)
             value._assign_subclass()
         return value
     if 'fn' in flags:

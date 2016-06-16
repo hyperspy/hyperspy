@@ -5,12 +5,16 @@ The Signal class and its specilized subclasses:
         For generic data with arbitrary signal_dimension. All other signal
         classes inherit from this one. It should only be used with none of
         the others is appropriated.
-    Spectrum
+    Signal1D
         For generic data with signal_dimension equal 1, i.e. spectral data of
         n-dimensions. The signal is unbinned by default.
-    Image
+    Signal2D
         For generic data with signal_dimension equal 2, i.e. image data of
         n-dimensions. The signal is unbinned by default.
+    Signal1D
+        Deprecated in favour of Signal1D from version 1.0.0
+    Signal2D
+        Deprecated in favour of Signal2D from version 1.0.0
     Simulation
         For generic simulated data with arbitrary signal_dimension. All other
         simulation signal classes inherit from this one. It should only be used
@@ -19,7 +23,7 @@ The Signal class and its specilized subclasses:
         For electron energy-loss data with signal_dimension equal 1, i.e.
         spectral data of n-dimensions. The signal is binned by default.
     EELSSpectrumSimulation, SpectrumSimulation, ImageSimulation
-        Simulation versions of EELSSpectrum, Spectrum and Image.
+        Simulation versions of EELSSpectrum, Signal1D and Signal2D.
     EDSTEMSpectrum
         For electron energy-dispersive X-rays data acquired in a transmission
         electron microscopy with signal_dimension equal 1, i.e.
@@ -41,9 +45,8 @@ The Signal class and its specilized subclasses:
 """
 
 # -*- coding: utf-8 -*-
-
-from hyperspy._signals.spectrum import Spectrum
-from hyperspy._signals.image import Image
+from hyperspy._signals.signal1d import Signal1D
+from hyperspy._signals.signal2d import Signal2D
 from hyperspy._signals.eels import EELSSpectrum
 from hyperspy._signals.eds_sem import EDSSEMSpectrum
 from hyperspy._signals.eds_tem import EDSTEMSpectrum
@@ -55,4 +58,4 @@ from hyperspy._signals.eels_spectrum_simulation import (
     EELSSpectrumSimulation)
 from hyperspy._signals.hologram_image import HologramImage
 from hyperspy._signals.wave_image import WaveImage
-from hyperspy.signal import Signal
+from hyperspy.signal import BaseSignal

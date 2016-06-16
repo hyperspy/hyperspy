@@ -20,7 +20,7 @@ import numpy as np
 
 from os import remove
 import nose.tools as nt
-from hyperspy._signals.spectrum import Spectrum
+from hyperspy._signals.signal1d import Signal1D
 from hyperspy.io import load
 from hyperspy.components import Gaussian
 import mock
@@ -39,7 +39,7 @@ def clean_model_dictionary(d):
 class TestModelStoring:
 
     def setUp(self):
-        s = Spectrum(range(100))
+        s = Signal1D(range(100))
         m = s.create_model()
         m.append(Gaussian())
         m.fit()
@@ -142,7 +142,7 @@ class TestModelStoring:
 class TestModelSaving:
 
     def setUp(self):
-        s = Spectrum(range(100))
+        s = Signal1D(range(100))
         m = s.create_model()
         m.append(Gaussian())
         m.components.Gaussian.A.value = 13

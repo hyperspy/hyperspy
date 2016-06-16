@@ -156,13 +156,13 @@ class EMD(object):
         if load_to_memory:
             data = np.asanyarray(data)
         record_by = group.attrs.get('record_by', '')
-        # Create Signal, Image or Spectrum:
+        # Create BaseSignal, Signal2D or Signal1D:
         if record_by == 'spectrum':
-            signal = signals.Spectrum(data)
+            signal = signals.Signal1D(data)
         elif record_by == 'image':
-            signal = signals.Image(data)
+            signal = signals.Signal2D(data)
         else:
-            signal = signals.Signal(data)
+            signal = signals.BaseSignal(data)
         # Set signal properties:
         signal.set_signal_origin = group.attrs.get('signal_origin', '')
         signal.set_signal_type = group.attrs.get('signal_type', '')

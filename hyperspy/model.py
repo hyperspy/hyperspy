@@ -38,7 +38,7 @@ from hyperspy.defaults_parser import preferences
 from hyperspy.external.mpfit.mpfit import mpfit
 from hyperspy.component import Component
 from hyperspy import components
-from hyperspy.signal import Signal
+from hyperspy.signal import BaseSignal
 from hyperspy.misc.export_dictionary import (export_to_dictionary,
                                              load_from_dictionary,
                                              parse_flag_string,
@@ -112,13 +112,13 @@ class BaseModel(list):
     Attributes
     ----------
 
-    signal : Signal instance
+    signal : BaseSignal instance
         It contains the data to fit.
-    chisq : A Signal of floats
+    chisq : A BaseSignal of floats
         Chi-squared of the signal (or np.nan if not yet fit)
-    dof : A Signal of integers
+    dof : A BaseSignal of integers
         Degrees of freedom of the signal (0 if not yet fit)
-    red_chisq : Signal instance
+    red_chisq : BaseSignal instance
         Reduced chi-squared.
     components : `ModelComponents` instance
         The components of the model are attributes of this class. This provides
@@ -135,7 +135,7 @@ class BaseModel(list):
     remove
         Remove component from model.
     as_signal
-        Generate a Spectrum instance (possible multidimensional)
+        Generate a BaseSignal instance (possible multidimensional)
         from the model.
     store_current_values
         Store the value of the parameters at the current position.
@@ -215,7 +215,7 @@ class BaseModel(list):
             name : {None, str}
                 Stored model name. Auto-generated if left empty
             **kwargs :
-                Other keyword arguments are passed onto `Signal.save()`
+                Other keyword arguments are passed onto `BaseSignal.save()`
         """
         if self.signal is None:
             raise ValueError("Currently cannot store models with no signal")
@@ -341,7 +341,7 @@ class BaseModel(list):
         Examples
         --------
 
-        >>> s = hs.signals.Spectrum(np.empty(1))
+        >>> s = hs.signals.Signal1D(np.empty(1))
         >>> m = s.create_model()
         >>> g = hs.model.components.Gaussian()
         >>> m.append(g)
@@ -391,7 +391,7 @@ class BaseModel(list):
 
         Examples
         --------
-        >>> s = hs.signals.Spectrum(np.random.random((10,100)))
+        >>> s = hs.signals.Signal1D(np.random.random((10,100)))
         >>> m = s.create_model()
         >>> l1 = hs.model.components.Lorentzian()
         >>> l2 = hs.model.components.Lorentzian()
@@ -614,7 +614,7 @@ class BaseModel(list):
         if self.signal.metadata.has_item('Signal.Noise_properties.variance'):
 
             variance = self.signal.metadata.Signal.Noise_properties.variance
-            if isinstance(variance, Signal):
+            if isinstance(variance, BaseSignal):
                 variance = variance.data.__getitem__(
                     self.axes_manager._getitem_tuple)[np.where(
                                                       self.channel_switches)]
@@ -641,7 +641,6 @@ class BaseModel(list):
             bounded=False, ext_bounding=False, update_plot=False,
             **kwargs):
         """Fits the model to the experimental data.
-
         The chi-squared, reduced chi-squared and the degrees of freedom are
         computed automatically when fitting. They are stored as signals, in the
         `chisq`, `red_chisq`  and `dof`. Note that,
@@ -649,7 +648,6 @@ class BaseModel(list):
         accurate estimation of the variance of the data, the chi-squared and
         reduced chi-squared cannot be computed correctly. This is also true for
         homocedastic noise.
-
         Parameters
         ----------
         fitter : {None, "leastsq", "odr", "mpfit", "fmin"}
@@ -670,9 +668,9 @@ class BaseModel(list):
             "metada.Signal.Noise_properties.variance" attribute is defined.
             Note that if it is not defined the standard deviation is estimated
             using variance equal 1, what, if the noise is heterocedatic, will
-            result in a biased estimation of the parameter values and errors.i
-            If `variance` is a `Signal` instance of the
-            same `navigation_dimension` as the spectrum, and `method` is "ls"
+            result in a biased estimation of the parameter values and errors.
+            If `variance` is a `Signal` instance of the same
+            `navigation_dimension` as the signal, and `method` is "ls"
             weighted least squares is performed.
         method : {'ls', 'ml'}
             Choose 'ls' (default) for least squares and 'ml' for poissonian
@@ -691,16 +689,13 @@ class BaseModel(list):
         ext_bounding : bool
             If True, enforce bounding by keeping the value of the
             parameters constant out of the defined bounding area.
-
         **kwargs : key word arguments
             Any extra key word argument will be passed to the chosen
             fitter. For more information read the docstring of the optimizer
             of your choice in `scipy.optimize`.
-
         See Also
         --------
         multifit
-
         """
 
         if fitter is None:
@@ -751,7 +746,7 @@ class BaseModel(list):
                     variance = 1
                 else:
                     variance = metadata.Signal.Noise_properties.variance
-                    if isinstance(variance, Signal):
+                    if isinstance(variance, BaseSignal):
                         if (variance.axes_manager.navigation_shape ==
                                 self.signal.axes_manager.navigation_shape):
                             variance = variance.data.__getitem__(
@@ -885,13 +880,11 @@ class BaseModel(list):
                 else:
                     raise ValueError("""
                     The %s optimizer is not available.
-
                     Available optimizers:
                     Unconstrained:
                     --------------
                     Only least Squares: leastsq and odr
                     General: fmin, powell, cg, ncg, bfgs
-
                     Cosntrained:
                     ------------
                     tnc and l_bfgs_b
@@ -1355,7 +1348,7 @@ class BaseModel(list):
             * any field from _whitelist.keys() *
         Examples
         --------
-        >>> s = signals.Spectrum(np.random.random((10,100)))
+        >>> s = signals.Signal1D(np.random.random((10,100)))
         >>> m = s.create_model()
         >>> l1 = components.Lorentzian()
         >>> l2 = components.Lorentzian()
@@ -1455,6 +1448,26 @@ class BaseModel(list):
                     "\" not found in model")
         else:
             return list.__getitem__(self, value)
+
+    def notebook_interaction(self):
+        """Creates interactive notebook widgets for all components and
+        parameters, if available.
+        Requires `ipywidgets` to be installed.
+        """
+        from ipywidgets import Accordion
+        from traitlets import TraitError as TraitletError
+        from IPython.display import display as ip_display
+
+        try:
+            children = [component.notebook_interaction(False) for component in
+                        self]
+            accord = Accordion(children=children)
+            for i, comp in enumerate(self):
+                accord.set_title(i, comp.name)
+            ip_display(accord)
+        except TraitletError:
+            _logger.info('This function is only avialable when running in a'
+                         ' notebook')
 
 
 class ModelSpecialSlicers(object):

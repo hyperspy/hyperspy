@@ -8,21 +8,21 @@ def test_signal():
     assert_true(assign_signal_subclass(
         record_by="",
         signal_type="",
-        signal_origin="") is hs.signals.Signal)
+        signal_origin="") is hs.signals.BaseSignal)
 
 
 def test_spectrum():
     assert_true(assign_signal_subclass(
         record_by="spectrum",
         signal_type="",
-        signal_origin="") is hs.signals.Spectrum)
+        signal_origin="") is hs.signals.Signal1D)
 
 
 def test_image():
     assert_true(assign_signal_subclass(
         record_by="image",
         signal_type="",
-        signal_origin="") is hs.signals.Image)
+        signal_origin="") is hs.signals.Signal2D)
 
 
 def test_image_simulation():
@@ -52,7 +52,7 @@ def test_weird_spectrum():
         record_by="spectrum",
         signal_type="weird",
         signal_origin="")
-    assert_true(cls is hs.signals.Spectrum)
+    assert_true(cls is hs.signals.Signal1D)
 
 
 def test_holography_image():
@@ -74,7 +74,7 @@ def test_wave_image():
 class TestSignalAssignSubclass:
 
     def setUp(self):
-        self.s = hs.signals.Spectrum([0])
+        self.s = hs.signals.Signal1D([0])
 
     def test_type_to_eels(self):
         self.s.set_signal_type("EELS")
