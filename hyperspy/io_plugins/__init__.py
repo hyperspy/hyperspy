@@ -47,7 +47,7 @@ try:
     from hyperspy.io_plugins import image
     io_plugins.append(image)
 except ImportError:
-    _logger.info('The Image (PIL) IO features are not available')
+    _logger.info('The Signal2D (PIL) IO features are not available')
 
 default_write_ext = set()
 for plugin in io_plugins:

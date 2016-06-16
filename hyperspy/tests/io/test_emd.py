@@ -13,7 +13,7 @@ import nose.tools as nt
 import numpy as np
 
 from hyperspy.io import load
-from hyperspy.signals import Signal, Image, Spectrum
+from hyperspy.signals import BaseSignal, Signal2D, Signal1D
 
 
 my_path = os.path.dirname(__file__)
@@ -35,19 +35,19 @@ test_title = 'This is a test!'
 def test_signal_3d_loading():
     signal = load(os.path.join(my_path, 'emd_files', 'example_signal.emd'))
     np.testing.assert_equal(signal.data, data_signal)
-    nt.assert_is_instance(signal, Signal)
+    nt.assert_is_instance(signal, BaseSignal)
 
 
 def test_image_2d_loading():
     signal = load(os.path.join(my_path, 'emd_files', 'example_image.emd'))
     np.testing.assert_equal(signal.data, data_image)
-    nt.assert_is_instance(signal, Image)
+    nt.assert_is_instance(signal, Signal2D)
 
 
 def test_spectrum_1d_loading():
     signal = load(os.path.join(my_path, 'emd_files', 'example_spectrum.emd'))
     np.testing.assert_equal(signal.data, data_spectrum)
-    nt.assert_is_instance(signal, Spectrum)
+    nt.assert_is_instance(signal, Signal1D)
 
 
 def test_metadata():
@@ -66,13 +66,13 @@ def test_metadata():
     for key, ref_value in sig_metadata.items():
         np.testing.assert_equal(
             signal.metadata.Signal.as_dictionary().get(key), ref_value)
-    nt.assert_is_instance(signal, Image)
+    nt.assert_is_instance(signal, Signal2D)
 
 
 class TestCaseSaveAndRead():
 
     def test_save_and_read(self):
-        signal_ref = Signal(data_save)
+        signal_ref = BaseSignal(data_save)
         signal_ref.metadata.General.title = test_title
         signal_ref.axes_manager[0].name = 'x'
         signal_ref.axes_manager[1].name = 'y'
@@ -116,7 +116,7 @@ class TestCaseSaveAndRead():
         for key, ref_value in sig_metadata.items():
             np.testing.assert_equal(
                 signal.metadata.Signal.as_dictionary().get(key), ref_value)
-        nt.assert_is_instance(signal, Signal)
+        nt.assert_is_instance(signal, BaseSignal)
 
     def tearDown(self):
         remove(os.path.join(my_path, 'emd_files', 'example_temp.emd'))

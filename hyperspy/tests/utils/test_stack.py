@@ -1,14 +1,14 @@
 import nose.tools as nt
 import numpy as np
 
-from hyperspy.signal import Signal
+from hyperspy.signal import BaseSignal
 from hyperspy import utils
 
 
 class TestUtilsStack:
 
     def setUp(self):
-        s = Signal(np.random.random((3, 2, 5)))
+        s = BaseSignal(np.random.random((3, 2, 5)))
         s.axes_manager[0].name = "x"
         s.axes_manager[1].name = "y"
         s.axes_manager[2].name = "E"

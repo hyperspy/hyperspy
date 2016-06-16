@@ -66,10 +66,10 @@ def weight_to_atomic(weight_percent, elements='auto'):
     array([ 93.19698614,   6.80301386])
 
     """
-    from hyperspy.signals import Signal
+    from hyperspy.signals import BaseSignal
     elements = _elements_auto(weight_percent, elements)
 
-    if isinstance(weight_percent[0], Signal):
+    if isinstance(weight_percent[0], BaseSignal):
         atomic_percent = stack(weight_percent)
         atomic_percent.data = _weight_to_atomic(
             atomic_percent.data, elements)
@@ -142,9 +142,9 @@ def atomic_to_weight(atomic_percent, elements='auto'):
     array([ 88.00501989,  11.99498011])
 
     """
-    from hyperspy.signals import Signal
+    from hyperspy.signals import BaseSignal
     elements = _elements_auto(atomic_percent, elements)
-    if isinstance(atomic_percent[0], Signal):
+    if isinstance(atomic_percent[0], BaseSignal):
         weight_percent = stack(atomic_percent)
         weight_percent.data = _atomic_to_weight(
             weight_percent.data, elements)
@@ -243,9 +243,9 @@ def density_of_mixture_of_pure_elements(weight_percent,
     8.6903187973131466
 
     """
-    from hyperspy.signals import Signal
+    from hyperspy.signals import BaseSignal
     elements = _elements_auto(weight_percent, elements)
-    if isinstance(weight_percent[0], Signal):
+    if isinstance(weight_percent[0], BaseSignal):
         density = weight_percent[0]._deepcopy_with_new_data(
             _density_of_mixture_of_pure_elements(
                 stack(weight_percent).data, elements, mean=mean))

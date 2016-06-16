@@ -1,6 +1,9 @@
+from distutils.version import StrictVersion
+
 import numpy as np
 import nose.tools as nt
-import mock
+from unittest import mock
+from nose.plugins.skip import SkipTest
 
 import hyperspy.api as hs
 from hyperspy.misc.utils import slugify
@@ -9,7 +12,7 @@ from hyperspy.misc.utils import slugify
 class TestModelJacobians:
 
     def setUp(self):
-        s = hs.signals.Spectrum(np.zeros(1))
+        s = hs.signals.Signal1D(np.zeros(1))
         m = s.create_model()
         self.low_loss = 7.
         self.weights = 0.3
@@ -65,7 +68,7 @@ class TestModelJacobians:
 class TestModelCallMethod:
 
     def setUp(self):
-        s = hs.signals.Spectrum(np.empty(1))
+        s = hs.signals.Signal1D(np.empty(1))
         m = s.create_model()
         m.append(hs.model.components.Gaussian())
         m.append(hs.model.components.Gaussian())
@@ -118,7 +121,7 @@ class TestModelCallMethod:
 class TestModelPlotCall:
 
     def setUp(self):
-        s = hs.signals.Spectrum(np.empty(1))
+        s = hs.signals.Signal1D(np.empty(1))
         m = s.create_model()
         m.__call__ = mock.MagicMock()
         m.__call__.return_value = np.array([0.5, 0.25])
@@ -153,7 +156,7 @@ class TestModelPlotCall:
 class TestModelSettingPZero:
 
     def setUp(self):
-        s = hs.signals.Spectrum(np.empty(1))
+        s = hs.signals.Signal1D(np.empty(1))
         m = s.create_model()
         m.append(hs.model.components.Gaussian())
 
@@ -224,7 +227,7 @@ class TestModelSettingPZero:
 class TestModel1D:
 
     def setUp(self):
-        s = hs.signals.Spectrum(np.empty(1))
+        s = hs.signals.Signal1D(np.empty(1))
         m = s.create_model()
         self.model = m
 
@@ -305,6 +308,20 @@ class TestModel1D:
         # tests
         np.testing.assert_array_equal(m.convolution_axis, np.arange(7, 23))
         np.testing.assert_equal(ll_axis.value2index.call_args[0][0], 0)
+
+    def test_notebook_interactions(self):
+        try:
+            import ipywidgets
+        except:
+            raise SkipTest("ipywidgets not installed")
+        if StrictVersion(ipywidgets.__version__) < StrictVersion("5.0"):
+            raise SkipTest("ipywigets > 5.0 required but %s installed" %
+                           ipywidgets.__version__)
+        m = self.model
+        m.notebook_interaction()
+        m.append(hs.model.components.Offset())
+        m[0].notebook_interaction()
+        m[0].offset.notebook_interaction()
 
     def test_access_component_by_name(self):
         m = self.model
@@ -550,7 +567,7 @@ class TestModel2D:
         x = np.arange(-10, 10, 0.01)
         y = np.arange(-10, 10, 0.01)
         X, Y = np.meshgrid(x, y)
-        im = hs.signals.Image(g.function(X, Y))
+        im = hs.signals.Signal2D(g.function(X, Y))
         im.axes_manager[0].scale = 0.01
         im.axes_manager[0].offset = -10
         im.axes_manager[1].scale = 0.01
@@ -576,7 +593,7 @@ class TestModelFitBinned:
 
     def setUp(self):
         np.random.seed(1)
-        s = hs.signals.Spectrum(
+        s = hs.signals.Signal1D(
             np.random.normal(
                 scale=2,
                 size=10000)).get_histogram()
@@ -667,7 +684,7 @@ class TestModelWeighted:
         np.random.seed(1)
         s = hs.signals.SpectrumSimulation(np.arange(10, 100, 0.1))
         s.metadata.set_item("Signal.Noise_properties.variance",
-                            hs.signals.Spectrum(np.arange(10, 100, 0.01)))
+                            hs.signals.Signal1D(np.arange(10, 100, 0.01)))
         s.axes_manager[0].scale = 0.1
         s.axes_manager[0].offset = 10
         s.add_poissonian_noise()
@@ -832,7 +849,7 @@ class TestModelSignalVariance:
 class TestMultifit:
 
     def setUp(self):
-        s = hs.signals.Spectrum(np.zeros((2, 200)))
+        s = hs.signals.Signal1D(np.zeros((2, 200)))
         s.axes_manager[-1].offset = 1
         s.data[:] = 2 * s.axes_manager[-1].axis ** (-3)
         m = s.create_model()
@@ -879,7 +896,7 @@ class TestMultifit:
 class TestStoreCurrentValues:
 
     def setUp(self):
-        self.m = hs.signals.Spectrum(np.arange(10)).create_model()
+        self.m = hs.signals.Signal1D(np.arange(10)).create_model()
         self.o = hs.model.components.Offset()
         self.m.append(self.o)
 
@@ -901,7 +918,7 @@ class TestStoreCurrentValues:
 class TestSetCurrentValuesTo:
 
     def setUp(self):
-        self.m = hs.signals.Spectrum(
+        self.m = hs.signals.Signal1D(
             np.arange(10).reshape(2, 5)).create_model()
         self.comps = [
             hs.model.components.Offset(),
@@ -925,7 +942,7 @@ class TestSetCurrentValuesTo:
 class TestAsSignal:
 
     def setUp(self):
-        self.m = hs.signals.Spectrum(
+        self.m = hs.signals.Signal1D(
             np.arange(10).reshape(2, 5)).create_model()
         self.comps = [
             hs.model.components.Offset(),
@@ -980,12 +997,12 @@ class TestAsSignal:
 class TestCreateModel:
 
     def setUp(self):
-        self.s = hs.signals.Spectrum(np.asarray([0, ]))
-        self.im = hs.signals.Image(np.ones([1, 1, ]))
+        self.s = hs.signals.Signal1D(np.asarray([0, ]))
+        self.im = hs.signals.Signal2D(np.ones([1, 1, ]))
 
     def test_create_model(self):
-        from hyperspy.models.model1D import Model1D
-        from hyperspy.models.model2D import Model2D
+        from hyperspy.models.model1d import Model1D
+        from hyperspy.models.model2d import Model2D
         nt.assert_is_instance(
             self.s.create_model(), Model1D)
         nt.assert_is_instance(
@@ -995,7 +1012,7 @@ class TestCreateModel:
 class TestAdjustPosition:
 
     def setUp(self):
-        self.s = hs.signals.Spectrum(np.random.rand(10, 10, 20))
+        self.s = hs.signals.Signal1D(np.random.rand(10, 10, 20))
         self.m = self.s.create_model()
 
     def test_enable_adjust_position(self):

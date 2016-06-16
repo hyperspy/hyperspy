@@ -21,6 +21,9 @@ def _fill_function_args(fn):
 
 class Expression(Component):
 
+    """Create a component from a string expression.
+    """
+
     def __init__(self, expression, name, position=None, module="numpy",
                  autodoc=True, **kwargs):
         """Create a component from a string expression.
