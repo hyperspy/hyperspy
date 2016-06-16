@@ -88,7 +88,7 @@ def file_writer(filename, signal, export_scale=True, **kwds):
     Parameters
     ----------
     filename: str
-    signal: a Signal instance
+    signal: a BaseSignal instance
     export_scale: bool
         default: True
         Export the scale and the units (compatible with DM and ImageJ) to
