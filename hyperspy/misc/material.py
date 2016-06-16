@@ -183,7 +183,7 @@ def _density_of_mixture(weight_percent,
     Examples
     --------
     Calculate the density of modern bronze given its weight percent:
-    >>> hs.material.density_of_mixture((88, 12),("Cu", "Sn"))
+    >>> hs.material.density_of_mixture([88, 12],['Cu', 'Sn'])
     8.6903187973131466
 
     """
@@ -239,7 +239,7 @@ def density_of_mixture(weight_percent,
     Examples
     --------
     Calculate the density of modern bronze given its weight percent:
-    >>> hs.material.density_of_mixture((88, 12),("Cu", "Sn"))
+    >>> hs.material.density_of_mixture([88, 12],['Cu', 'Sn'])
     8.6903187973131466
 
     """
@@ -290,7 +290,6 @@ def mass_absorption_coefficient(element, energies):
     S.A., and Zucker, D.S. (2005), X-Ray Form Factor, Attenuation and
     Scattering Tables (version 2.1).
     """
-
     energies_db = np.array(ffast_mac[element].energies_keV)
     macs = np.array(ffast_mac[element].mass_absorption_coefficient_cm2g)
     energies = copy.copy(energies)
