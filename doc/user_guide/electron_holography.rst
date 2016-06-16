@@ -6,24 +6,9 @@ HyperSpy provides the user with two classes which can be used to process electro
 * :py:class:`~._signals.hologram_image.HologramImage`
 * :py:class:`~._signals.wave_image.WaveImage`
 
-Both inherit directly from the :py:class:`~._signals.image.Image` class and thus can use all of its
+Both inherit directly from the :py:class:`~._signals.signal2d.Signal2D` class and thus can use all of its
 functionality. The usage of both classes is explained in the following sections.
 
-
-The HologramImage class
-=======================
-
-The :py:class:`~._signals.hologram_image.HologramImage` class is designed to hold images acquired via
-electron holography. The complex electron wave can be reconstructed from the signal via  the
-:py:func:`~._signals.hologram_image.HologramImage.reconstruct_wave_image` method which will return
-a :py:class:`~._signals.wave_image.WaveImage` class, which can then be further analysed.
-
-To transform a :py:class:`~._signals.image.Image` (or subclass) into a 
-:py:class:`~._signals.hologram_image.HologramImage` use:
-
-.. code-block:: python
-
-    >>> im.set_signal_type('HOLOGRAM')
 
 
 The WaveImage class
@@ -31,35 +16,22 @@ The WaveImage class
 
 The :py:class:`~._signals.wave_image.WaveImage` class can hold information about the complex electron
 wave. As such, relevant properties like the `amplitude`, `phase` and the `real` and `imag` part can be
-directly accessed and return appropriate :py:class:`~._signals.image.Image` signals.
+directly accessed and return appropriate :py:class:`~._signals.signal2d.Signal2D` signals.
+
+To transform a :py:class:`~._signals.signal2d.Signa2D` (or subclass) into a 
+:py:class:`~._signals.wave_image.WaveImage` use:
+
+.. code-block:: python
+
+    >>> im.set_signal_type('wave')
 
 
 Unwrap the phase
 ----------------
 
 With the :py:func:`~._signals.wave_image.WaveImage.get_unwrapped_phase` method the phase can be
-unwrapped and returned as an :class:`~hyperspy._signals.Image`. The underlying method is
+unwrapped and returned as an :class:`~hyperspy._signals.signal2d.Signal2D`. The underlying method is
 :py:func:`~skimage.restoration.unwrap`.
-
-
-Normalize the wave
-------------------
-
-The :py:func:`~._signals.wave_image.WaveImage.normalize` method can be used to normalize the wave.
-If the normalization factor is a complex number, the amplitude will be divided and the phase shifted
-according to:
-
-.. math::
-
-    wave_normalized = \frac{A}{A_0}\cdot\exp{\phi-\phi_0}
-   
-If the input is an array instead, the mean value will be calculated before normalization.
-
-
-Subtract a reference wave
--------------------------
-With the :py:func:`~._signals.wave_image.WaveImage.subtract_reference` method a reference wave can
-be subtracted element wise. The reference wave also has to be a :py:class:`~_signals.wave_image.WaveImage`.
 
 
 Add a linear ramp
