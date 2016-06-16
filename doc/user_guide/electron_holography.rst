@@ -6,7 +6,7 @@ HyperSpy provides the user with two classes which can be used to process electro
 * :py:class:`~._signals.hologram_image.HologramImage`
 * :py:class:`~._signals.wave_image.WaveImage`
 
-Both inherit directly from the :py:class:`~._signals.signal1d.SignalD` class and thus can use all of
+Both inherit directly from the :py:class:`~._signals.signal2d.Signa2D` class and thus can use all of
 its functionality. The usage of both classes is explained in the following sections.
 
 
@@ -18,7 +18,7 @@ electron holography. The complex electron wave can be reconstructed from the sig
 :py:func:`~._signals.hologram_image.HologramImage.reconstruct_wave_image` method which will return
 a :py:class:`~._signals.wave_image.WaveImage` class, which can then be further analysed.
 
-To transform a :py:class:`~._signals.image.Image` (or subclass) into a 
+To transform a :py:class:`~._signals.signal2d.Signa2D` (or subclass) into a 
 :py:class:`~._signals.hologram_image.HologramImage` use:
 
 .. code-block:: python
