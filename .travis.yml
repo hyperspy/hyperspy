@@ -28,7 +28,7 @@ install:
   - conda create -n testenv --yes python=$TRAVIS_PYTHON_VERSION $DEPS
   - source activate testenv
   - conda install pip
-  - pip install coverage coveralls traits traitsui request
+  - pip install coverage coveralls traits traitsui request tqdm
   - python setup.py install
 
 script: python continuous_integration/nosetest.py --with-coverage hyperspy

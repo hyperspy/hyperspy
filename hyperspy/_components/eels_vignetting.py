@@ -62,7 +62,8 @@ class Vignetting(Component):
         if self.side_vignetting is True:
 
             x = x.tolist()
-            x = list(range(-ex, 0)) + x + list(range(int(x[-1]) + 1, int(x[-1]) + ex + 1))
+            x = list(range(-ex, 0)) + x + \
+                list(range(int(x[-1]) + 1, int(x[-1]) + ex + 1))
             x = np.array(x)
             v1 = A * np.cos((x - x0) / (2 * np.pi * period)) ** 4
             v2 = np.where(x < l,

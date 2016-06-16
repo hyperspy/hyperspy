@@ -409,7 +409,7 @@ def get_axes_from_position(header, data):
             array_shape.append(axes[-1]["size"])
 
         elif xcal[b"size"] * ycal[b"size"] == array_size:
-            # Image
+            # Signal2D
             axes.append({
                 'name': "y",
                 'units': "meters",

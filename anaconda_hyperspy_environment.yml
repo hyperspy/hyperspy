@@ -6,7 +6,6 @@ dependencies:
 - ipython
 - jupyter
 - matplotlib
-- mock
 - nose
 - numpy
 - qt
@@ -23,3 +22,4 @@ dependencies:
   - hyperspy
   - traits
   - traitsui
+  - ipywidgets
