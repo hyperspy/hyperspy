@@ -21,63 +21,63 @@ import numpy as np
 
 from skimage.restoration import unwrap_phase as unwrap
 
-from hyperspy._signals.image import Image
+from hyperspy._signals.signal2d import Signal2D
 
 
-class WaveImage(Image):
-    """Image subclass for complex electron wave data (e.g. reconstructed from holograms)."""
+class WaveImage(Signal2D):
+    """Signal2D subclass for complex electron wave data (e.g. reconstructed from holograms)."""
 
-    _signal_type = 'WAVE'
+    _signal_type = 'wave'
 
     @property
     def phase(self):
-        """Get/set the phase of the data. Returns an :class:`~hyperspy._signals.Image`."""
+        """Get/set the phase of the data. Returns an :class:`~hyperspy.signals.Signal2D`."""
         phase = self._deepcopy_with_new_data(np.angle(self.data))
-        phase.set_signal_type('')  # Result is a normal Image!
+        phase.set_signal_type('')  # Result is a normal Signal2D!
         return phase
 
     @phase.setter
     def phase(self, phase):
-        if isinstance(phase, Image):
+        if isinstance(phase, Signal2D):
             phase = phase.data
         self.data = self.amplitude.data * np.exp(1j * phase)
 
     @property
     def amplitude(self):
-        """Get/set the amplitude of the data. Returns an :class:`~hyperspy._signals.Image`."""
+        """Get/set the amplitude of the data. Returns an :class:`~hyperspy.signals.Signal2D`."""
         amplitude = self._deepcopy_with_new_data(np.abs(self.data))
-        amplitude.set_signal_type('')  # Result is a normal Image!
+        amplitude.set_signal_type('')  # Result is a normal Signal2D!
         return amplitude
 
     @amplitude.setter
     def amplitude(self, amplitude):
-        if isinstance(amplitude, Image):
+        if isinstance(amplitude, Signal2D):
             amplitude = amplitude.data
         self.data = amplitude * np.exp(1j * self.phase.data)
 
     @property
     def real(self):
-        """Get/set the real part of the data. Returns an :class:`~hyperspy._signals.Image`."""
+        """Get/set the real part of the data. Returns an :class:`~hyperspy.signals.Signal2D`."""
         real = self._deepcopy_with_new_data(np.real(self.data))
-        real.set_signal_type('')  # Result is a normal Image!
+        real.set_signal_type('')  # Result is a normal Signal2D!
         return real
 
     @real.setter
     def real(self, real):
-        if isinstance(real, Image):
+        if isinstance(real, Signal2D):
             real = real.data
         self.data = real + 1j * self.imag.data
 
     @property
     def imag(self):
-        """Get/set the imaginary part of the data. Returns an :class:`~hyperspy._signals.Image`."""
+        """Get/set imaginary part of the data. Returns an :class:`~hyperspy.signals.Signal2D`."""
         imag = self._deepcopy_with_new_data(np.imag(self.data))
-        imag.set_signal_type('')  # Result is a normal Image!
+        imag.set_signal_type('')  # Result is a normal Signal2D!
         return imag
 
     @imag.setter
     def imag(self, imag):
-        if isinstance(imag, Image):
+        if isinstance(imag, Signal2D):
             imag = imag.data
         self.data = self.real.data + 1j * imag
 
@@ -87,7 +87,7 @@ class WaveImage(Image):
         self.change_dtype(complex)
 
     def get_unwrapped_phase(self, wrap_around=False, seed=None):
-        """Return the unwrapped phase as an :class:`~hyperspy._signals.Image`.
+        """Return the unwrapped phase as an :class:`~hyperspy.signals.Signal2D`.
 
         Parameters
         ----------
@@ -103,7 +103,7 @@ class WaveImage(Image):
 
         Returns
         -------
-        phase_image: :class:`~hyperspy._signals.Image`
+        phase_image: :class:`~hyperspy._signals.Signal2D`
             Unwrapped phase.
 
         Notes
@@ -131,7 +131,7 @@ class WaveImage(Image):
 
         Parameters
         ----------
-        reference: :class:`~hyperspy._signals.WaveImage`
+        reference: :class:`~hyperspy._signals.WaveSignal2D`
             The reference wave, which should be subtracted.
 
         """

@@ -17,13 +17,13 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from hyperspy._signals.image import Image
+from hyperspy._signals.signal2d import Signal2D
 
 
-class HologramImage(Image):
+class HologramImage(Signal2D):
     """Image subclass for holograms acquired via electron holography."""
 
-    _signal_type = 'HOLOGRAM'
+    _signal_type = 'hologram'
 
     # def reconstruct_wave_image(self, ref_data=None, rec_param=None, show_phase=False, **kwargs):
     #     pass
