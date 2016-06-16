@@ -19,9 +19,8 @@
 
 import numpy as np
 
-from skimage.restoration import unwrap_phase as unwrap
-
 from hyperspy._signals.signal2d import Signal2D
+from hyperspy.signal import BaseSignal
 
 
 class WaveImage(Signal2D):
@@ -33,12 +32,12 @@ class WaveImage(Signal2D):
     def phase(self):
         """Get/set the phase of the data. Returns an :class:`~hyperspy.signals.Signal2D`."""
         phase = self._deepcopy_with_new_data(np.angle(self.data))
-        phase.set_signal_type('')  # Result is a normal Signal2D!
+        phase.set_signal_type('')
         return phase
 
     @phase.setter
     def phase(self, phase):
-        if isinstance(phase, Signal2D):
+        if isinstance(phase, BaseSignal):
             phase = phase.data
         self.data = self.amplitude.data * np.exp(1j * phase)
 
@@ -46,47 +45,16 @@ class WaveImage(Signal2D):
     def amplitude(self):
         """Get/set the amplitude of the data. Returns an :class:`~hyperspy.signals.Signal2D`."""
         amplitude = self._deepcopy_with_new_data(np.abs(self.data))
-        amplitude.set_signal_type('')  # Result is a normal Signal2D!
+        amplitude.set_signal_type('')
         return amplitude
 
     @amplitude.setter
     def amplitude(self, amplitude):
-        if isinstance(amplitude, Signal2D):
+        if isinstance(amplitude, BaseSignal):
             amplitude = amplitude.data
         self.data = amplitude * np.exp(1j * self.phase.data)
 
-    @property
-    def real(self):
-        """Get/set the real part of the data. Returns an :class:`~hyperspy.signals.Signal2D`."""
-        real = self._deepcopy_with_new_data(np.real(self.data))
-        real.set_signal_type('')  # Result is a normal Signal2D!
-        return real
-
-    @real.setter
-    def real(self, real):
-        if isinstance(real, Signal2D):
-            real = real.data
-        self.data = real + 1j * self.imag.data
-
-    @property
-    def imag(self):
-        """Get/set imaginary part of the data. Returns an :class:`~hyperspy.signals.Signal2D`."""
-        imag = self._deepcopy_with_new_data(np.imag(self.data))
-        imag.set_signal_type('')  # Result is a normal Signal2D!
-        return imag
-
-    @imag.setter
-    def imag(self, imag):
-        if isinstance(imag, Signal2D):
-            imag = imag.data
-        self.data = self.real.data + 1j * imag
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # Make sure data is complex:
-        self.change_dtype(complex)
-
-    def get_unwrapped_phase(self, wrap_around=False, seed=None):
+    def get_unwrapped_phase(self, wrap_around=False, seed=None, show_progressbar=None):
         """Return the unwrapped phase as an :class:`~hyperspy.signals.Signal2D`.
 
         Parameters
@@ -100,6 +68,9 @@ class WaveImage(Signal2D):
         seed : int, optional
             Unwrapping 2D or 3D images uses random initialization. This sets the
             seed of the PRNG to achieve deterministic behavior.
+        show_progressbar : None or bool
+            If True, display a progress bar. If None the default is set in
+            `preferences`.
 
         Returns
         -------
@@ -111,33 +82,11 @@ class WaveImage(Signal2D):
         Uses the :func:`~skimage.restoration.unwrap_phase` function from `skimage`.
 
         """
-        phase_image = self._deepcopy_with_new_data(self.phase.data)  # Get copy of just the phase!
-        phase_image.set_signal_type('')  # New signal is normal image without special signal type!
-        phase_image.map(unwrap, wrap_around=wrap_around, seed=seed)  # Unwrap phase!
-        return phase_image
-
-    def normalize(self, normalization):
-        """Normalize the wave. Takes the mean if input is an array.
-
-        Parameters
-        ----------
-        normalization: complex or :class:`~numpy.ndarray`
-
-        """
-        self.data /= np.mean(normalization)
-
-    def subtract_reference(self, reference):
-        """Subtract a reference wave.
-
-        Parameters
-        ----------
-        reference: :class:`~hyperspy._signals.WaveSignal2D`
-            The reference wave, which should be subtracted.
-
-        """
-        assert isinstance(reference, WaveImage), 'Reference should be a WaveImage!'
-        assert self.data.shape == reference.data.shape, 'Reference must have the same shape!'
-        self.data /= reference.data
+        from skimage.restoration import unwrap_phase
+        phase = self.phase.deepcopy()
+        phase.map(unwrap_phase, wrap_around=wrap_around, seed=seed,
+                  show_progressbar=show_progressbar)
+        return phase  # Now unwrapped!
 
     def add_phase_ramp(self, ramp_x, ramp_y, offset=0):
         """Add a linear ramp to the wave.

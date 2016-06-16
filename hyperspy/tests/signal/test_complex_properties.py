@@ -30,50 +30,29 @@ import hyperspy.api as hs
 real_ref = np.arange(9).reshape((3, 3))
 imag_ref = np.arange(9).reshape((3, 3)) + 9
 comp_ref = real_ref + 1j * imag_ref
-phase_ref = np.angle(comp_ref)
-amplitude_ref = np.abs(comp_ref)
 
 
-class TestProperties:
+class TestComplexProperties:
 
     def setUp(self):
         test = np.arange(9).reshape((3, 3)) + 1j * (9 + np.arange(9).reshape((3, 3)))
-        self.s = hs.signals.WaveImage(test)
+        self.s = hs.signals.BaseSignal(test)
 
-    def test_get_phase(self):
-        nt.assert_almost_equal(self.s.phase.data, phase_ref)
+    def test_get_real(self):
+        nt.assert_almost_equal(self.s.real.data, real_ref)
 
-    def test_set_phase(self):
+    def test_set_real(self):
         test = np.random.random((3, 3))
-        self.s.phase = test
-        nt.assert_almost_equal(self.s.phase.data, test)
+        self.s.real = test
+        nt.assert_almost_equal(self.s.real.data, test)
 
-    def test_get_amplitude(self):
-        nt.assert_almost_equal(self.s.amplitude.data, amplitude_ref)
+    def test_get_imag(self):
+        nt.assert_almost_equal(self.s.imag.data, imag_ref)
 
-    def test_set_amplitude(self):
+    def test_set_imag(self):
         test = np.random.random((3, 3))
-        self.s.amplitude = test
-        nt.assert_almost_equal(self.s.amplitude.data, test)
-
-
-class TestPhaseFunctions:
-
-    def setUp(self):
-        test = np.arange(9).reshape((3, 3)) + 1j * (9 + np.arange(9).reshape((3, 3)))
-        self.s = hs.signals.WaveImage(test)
-
-    def test_get_unwrapped_phase(self):
-        phase_ref = np.arange(9).reshape((3, 3)) - 4
-        self.s.phase = phase_ref
-        phase = self.s.get_unwrapped_phase(seed=42, show_progressbar=False)
-        assert isinstance(phase, hs.signals.Signal2D)
-        nt.assert_almost_equal(phase.data, phase_ref)
-
-    def test_add_phase_ramp(self):
-        self.s.phase = np.indices((3,3)).sum(axis=0) + 4
-        self.s.add_phase_ramp(-1, -1, -4)
-        nt.assert_almost_equal(self.s.phase.data, 0)
+        self.s.imag = test
+        nt.assert_almost_equal(self.s.imag.data, test)
 
 
 if __name__ == '__main__':
