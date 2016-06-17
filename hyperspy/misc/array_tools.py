@@ -95,10 +95,23 @@ def rebin(a, new_shape):
     # ensure the new shape is integers
     new_shape = tuple(int(ns) for ns in new_shape)
     factor = np.asarray(shape) // np.asarray(new_shape)
-    evList = ['a.reshape('] + \
-             ['new_shape[%d],factor[%d],' % (i, i) for i in range(lenShape)] + \
-             [')'] + ['.sum(%d)' % (i + 1) for i in range(lenShape)]
-    return eval(''.join(evList))
+    if factor.max() < 2:
+        return a.copy()
+    if isinstance(a, np.ndarray):
+        # most of the operations will fall here and dask is not imported
+        evList = ['a.reshape('] + \
+                 ['new_shape[%d],factor[%d],' % (i, i) for i in range(lenShape)] + \
+                 [')'] + ['.sum(%d)' % (i + 1) for i in range(lenShape)]
+        return eval(''.join(evList))
+    else:
+        import dask.array as da
+        try:
+            return da.coarsen(np.sum, a, {i: f for i, f in enumerate(factor)})
+        # we provide slightly better error message in hypersy context
+        except ValueError:
+            raise ValueError("Rebinning does not allign with data dask chunks."
+                             " Rebin fewer dimensions at a time to avoid this"
+                             " error")
 
 
 def sarray2dict(sarray, dictionary=None):

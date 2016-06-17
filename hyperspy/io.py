@@ -307,7 +307,8 @@ def load_with_reader(filename,
 
 def assign_signal_subclass(record_by="",
                            signal_type="",
-                           signal_origin="",):
+                           signal_origin="",
+                           lazy=False):
     """Given record_by and signal_type return the matching Signal subclass.
 
     Parameters
@@ -315,6 +316,7 @@ def assign_signal_subclass(record_by="",
     record_by: {"spectrum", "image", ""}
     signal_type : {"EELS", "EDS", "EDS_TEM", "", str}
     signal_origin : {"experiment", "simulation", ""}
+    lazy: bool
 
     Returns
     -------
@@ -329,8 +331,12 @@ def assign_signal_subclass(record_by="",
     if signal_origin and signal_origin not in ["experiment", "simulation"]:
         raise ValueError("signal_origin must be one of: None, empty string, "
                          "\"experiment\" or \"simulation\"")
-
-    signals = hyperspy.misc.utils.find_subclasses(hyperspy.signals, BaseSignal)
+    if lazy:
+        signals = hyperspy.misc.utils.find_subclasses(hyperspy.signals,
+                                                      hyperspy.signals.LazySignal)
+    else:
+        signals = hyperspy.misc.utils.find_subclasses(
+            hyperspy.signals, BaseSignal)
 
     if signal_origin == "experiment":
         signal_origin = ""

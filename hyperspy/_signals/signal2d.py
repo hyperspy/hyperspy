@@ -27,6 +27,7 @@ from hyperspy.defaults_parser import preferences
 from hyperspy.external.progressbar import progressbar
 from hyperspy.misc.math_tools import symmetrize, antisymmetrize
 from hyperspy.signal import BaseSignal
+from hyperspy._signals.lazy import LazySignal
 
 
 def shift_image(im, shift, interpolation_order=1, fill_value=np.nan):
@@ -667,3 +668,11 @@ class Signal2D(BaseSignal,
         """
         from hyperspy.models.model2d import Model2D
         return Model2D(self, dictionary=dictionary)
+
+
+class LazySignal2D(LazySignal, Signal2D):
+
+    _lazy = True
+
+    def __init__(self, *args, **kwargs):
+        super(LazySignal2D, self).__init__(*args, **kwargs)
