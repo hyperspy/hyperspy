@@ -1712,6 +1712,32 @@ class BaseSignal(FancySlicing,
         else:
             self._data = np.atleast_1d(np.asanyarray(value))
 
+    @property
+    def real(self):
+        """Get/set the real part of the data. Returns an :class:`~hyperspy.signals.Signal2D`."""
+        real = self._deepcopy_with_new_data(np.real(self.data))
+        real.set_signal_type('')
+        return real
+
+    @real.setter
+    def real(self, real):
+        if isinstance(real, BaseSignal):
+            real = real.data
+        self.data = real + 1j * self.imag.data
+
+    @property
+    def imag(self):
+        """Get/set imaginary part of the data. Returns an :class:`~hyperspy.signals.Signal2D`."""
+        imag = self._deepcopy_with_new_data(np.imag(self.data))
+        imag.set_signal_type('')
+        return imag
+
+    @imag.setter
+    def imag(self, imag):
+        if isinstance(imag, BaseSignal):
+            imag = imag.data
+        self.data = self.real.data + 1j * imag
+
     def _load_dictionary(self, file_data_dict):
         """Load data from dictionary.
 

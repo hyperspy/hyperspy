@@ -38,6 +38,9 @@ The Signal class and its specilized subclasses:
     HolographyImage
         For 2D-images taken via electron holography. WaveImages can be
         reconstructed from them.
+    WaveImage
+        For complex 2D-images. Phase, amplitude, real and imaginary parts are
+        easily accessible and can be manipulated.
 
 """
 
@@ -54,4 +57,5 @@ from hyperspy._signals.spectrum_simulation import SpectrumSimulation
 from hyperspy._signals.eels_spectrum_simulation import (
     EELSSpectrumSimulation)
 from hyperspy._signals.hologram_image import HologramImage
+from hyperspy._signals.wave_image import WaveImage
 from hyperspy.signal import BaseSignal
