@@ -267,10 +267,10 @@ class HologramImage(Signal2D):
         sinc_k = 5.0  # Sink times SBsize
         w_one = np.sinc(
             np.linspace(-sb_ny/2, sb_ny/2, sb_ny) * np.pi / (sinc_k * sb_size))
-        w_one = w_one.reshape((image_size, 1))
+        w_one = w_one.reshape((np.int(image_size), 1))
         w_two = np.sinc(
             np.linspace(-sb_nx/2, sb_nx/2, sb_nx) * np.pi / (sinc_k * sb_size))
-        window = w_one.dot(w_two.reshape((1, image_size)))
+        window = w_one.dot(w_two.reshape((1, np.int(image_size))))
 
         # IFFT
         wav = ifft2(fftshift(sb_roi * c_mask * np.logical_not(f_mask) * window))
