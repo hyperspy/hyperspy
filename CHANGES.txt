@@ -11,10 +11,10 @@ v0.8.5
 
 This is a maintenance release. Follow the following links for details on all
 the `bugs fixed
-<https://github.com/hyperspy/hyperspy/issues?q=is%3Aissue+milestone%3Anext_maintenance_release+label%3Abug+is%3Aclosed>`_,
-`feature <https://github.com/hyperspy/hyperspy/issues?utf8=%E2%9C%93&q=milestone%3Anext_maintenance_release+is%3Aclosed++label%3Aenhancement+>`_
+<https://github.com/hyperspy/hyperspy/issues?q=is%3Aissue+milestone%3A0.8.5+label%3Abug+is%3Aclosed>`_,
+`feature <https://github.com/hyperspy/hyperspy/issues?utf8=%E2%9C%93&q=milestone%3A0.8.5+is%3Aclosed++label%3Aenhancement+>`_
 and `documentation
-<https://github.com/hyperspy/hyperspy/pulls?utf8=%E2%9C%93&q=milestone%3Anext_maintenance_release+label%3Adocumentation+is%3Aclosed+>`_ enhancements.
+<https://github.com/hyperspy/hyperspy/pulls?utf8=%E2%9C%93&q=milestone%3A0.8.5+label%3Adocumentation+is%3Aclosed+>`_ enhancements.
 
 
 It also includes a new feature and introduces an important API change that
