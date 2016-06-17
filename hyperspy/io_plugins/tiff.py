@@ -76,7 +76,7 @@ def _import_tifffile_library(import_local_tifffile_if_necessary=False):
         
     # import local tifffile.py only if the skimage version too old
     skimage_version = LooseVersion(skimage.__version__)
-    if import_local_tifffile_if_necessary and skimage_version <= LooseVersion('0.12.2'):
+    if import_local_tifffile_if_necessary and skimage_version <= LooseVersion('0.12.3'):
         return import_local_tifffile()
     else:
         from skimage.external.tifffile import imsave, TiffFile
