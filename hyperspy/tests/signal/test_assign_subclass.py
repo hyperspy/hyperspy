@@ -55,6 +55,22 @@ def test_weird_spectrum():
     assert_true(cls is hs.signals.Signal1D)
 
 
+def test_hologram_image():
+    assert_true(assign_signal_subclass(
+        record_by="image",
+        signal_type="hologram",
+        signal_origin="") is
+        hs.signals.HologramImage)
+
+
+def test_wave_image():
+    assert_true(assign_signal_subclass(
+        record_by="image",
+        signal_type="wave",
+        signal_origin="") is
+        hs.signals.WaveImage)
+
+
 class TestSignalAssignSubclass:
 
     def setUp(self):
