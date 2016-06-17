@@ -214,11 +214,21 @@ def file_reader(filename, record_by='image', **kwds):
                     scales = [scale*10000 for scale in scales]                
                     units = 'µm'
 
+        _logger.info("data shape: {0}".format(dc.shape))
+
+        # workaround for 'palette' photometric, keep only 'X' and 'Y' axes     
+        if op['photometric'] == 3:
+            sl = [0] * dc.ndim
+            for i, axis in enumerate(axes):
+                if axis == 'X' or axis == 'Y':
+                    sl[i] = slice(None)
+            dc = dc[sl]
+                    
         # add the scale for the missing axes when necessary
         for i in dc.shape[len(scales):]:
             if op['photometric'] == 0 or op['photometric'] == 1:
                 scales.append(1.0)
-            elif op['photometric'] == 2 or op['photometric'] == 3:
+            elif op['photometric'] == 2:
                 scales.insert(0, 1.0)
 
         if type(units) is str or units == t.Undefined:

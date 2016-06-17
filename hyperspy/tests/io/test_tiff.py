@@ -19,7 +19,7 @@ def test_rgba16():
 
 def test_rgba16_local_tifffile():
     """ Use local tifffile.py library """
-    _test_rgba16(import_local_tifffile=True)
+    _test_rgba16(import_local_tifffile=True)    
     
 def _test_rgba16(import_local_tifffile=False):
     s = hs.load(os.path.join(my_path2, "test_rgba16.tif"),
@@ -242,7 +242,7 @@ def test_read_FEI_SEM_scale_metadata_16bits():
     
 def test_read_RGB_Zeiss_optical_scale_metadata():
     fname = os.path.join(my_path2, 'optical_Zeiss_AxioVision_RGB.tif')
-    s = hs.load(fname)
+    s = hs.load(fname, import_local_tifffile=True)
     dtype = np.dtype([('R', 'u1'), ('G', 'u1'), ('B', 'u1')])
     nt.assert_equal(s.data.dtype, dtype)
     nt.assert_equal(s.data.shape, (10, 13))
@@ -253,12 +253,20 @@ def test_read_RGB_Zeiss_optical_scale_metadata():
     
 def test_read_BW_Zeiss_optical_scale_metadata():
     fname = os.path.join(my_path2, 'optical_Zeiss_AxioVision_BW.tif')
+    s = hs.load(fname, force_read_resolution=True, import_local_tifffile=True)
+    nt.assert_equal(s.data.dtype, np.uint16)
+    nt.assert_equal(s.data.shape, (10, 13))
+    nt.assert_equal(s.axes_manager[0].units, 'µm')
+    nt.assert_equal(s.axes_manager[1].units, 'µm')
+    nt.assert_almost_equal(s.axes_manager[0].scale, 169.3333, places=3)
+    nt.assert_almost_equal(s.axes_manager[1].scale, 169.3333, places=3)
+    
+def test_read_BW_Zeiss_optical_scale_metadata_old():
+    fname = os.path.join(my_path2, 'optical_Zeiss_AxioVision_BW.tif')
     s = hs.load(fname, force_read_resolution=True)
     nt.assert_equal(s.data.dtype, np.uint16)
-    nt.assert_equal(s.data.shape, (3, 10, 13))
-    nt.assert_equal(s.axes_manager[0].units, t.Undefined)
+    nt.assert_equal(s.data.shape, (10, 13))
+    nt.assert_equal(s.axes_manager[0].units, 'µm')
     nt.assert_equal(s.axes_manager[1].units, 'µm')
-    nt.assert_equal(s.axes_manager[2].units, 'µm')
-    nt.assert_almost_equal(s.axes_manager[0].scale, 1.0, places=3)
+    nt.assert_almost_equal(s.axes_manager[0].scale, 169.3333, places=3)
     nt.assert_almost_equal(s.axes_manager[1].scale, 169.3333, places=3)
-    nt.assert_almost_equal(s.axes_manager[2].scale, 169.3333, places=3)
