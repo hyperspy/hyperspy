@@ -72,7 +72,8 @@ def _updatecol(X, A, B, I):
     return L
 
 def orpca(X, rank, fast=False, lambda1=None,
-          lambda2=None, method=None, init=None):
+          lambda2=None, method=None, init=None,
+          mask=None):
     """
     This function performs Online Robust PCA with
     with missing or corrupted data.
@@ -93,6 +94,8 @@ def orpca(X, rank, fast=False, lambda1=None,
     init : 'rand' | 'BRP'
         rand - Random initialization (default)
         BRP  - Bilateral random projection
+    mask : numpy array
+        is an initial estimate of the sparse error matrix
 
     Returns
     -------
@@ -159,8 +162,13 @@ def orpca(X, rank, fast=False, lambda1=None,
         L = np.dot(np.dot(Z, Q), Q.T)
 
     R = np.zeros((rank, n))
-    E = np.zeros((m, n))
     I = lambda1 * np.eye(rank)
+
+    # Allow the error matrix to be initialized
+    if mask is None:
+        E = np.zeros((m, n))
+    else:
+        E = mask.reshape((m, n))
 
     A = np.zeros((rank, rank))
     B = np.zeros((m, rank))
@@ -168,7 +176,6 @@ def orpca(X, rank, fast=False, lambda1=None,
     for t in range(n):
         if t == 0 or np.mod(t + 1, np.round(n / 10)) == 0:
             _logger.info("Processing sample : %s" % (t + 1))
-            print("Processing sample : %s" % (t + 1))
 
         z = X[:, t]
         r, e = _solveproj(z, L, I, lambda2)
