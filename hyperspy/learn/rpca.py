@@ -71,8 +71,8 @@ def _updatecol(X, A, B, I):
 
     return L
 
-def orpca(X, rank, lambda1=None, lambda2=None,
-          method=None, init=None, fast=False):
+def orpca(X, rank, fast=False, lambda1=None,
+          lambda2=None, method=None, init=None):
     """
     This function performs Online Robust PCA with
     with missing or corrupted data.
@@ -116,13 +116,14 @@ def orpca(X, rank, lambda1=None, lambda2=None,
     Xmax = X.max()
     X = (X - Xmin) / (Xmax - Xmin)
 
+    # Get shape
     m, n = X.shape
 
     # Check options if None
     if method is None:
         _logger.warning("No method specified. Defaulting to "
                         "closed-form solver")
-        _method = 'CF'
+        method = 'CF'
     if init is None:
         _logger.warning("No initializer specified. Defaulting to "
                         "random.")
@@ -167,6 +168,7 @@ def orpca(X, rank, lambda1=None, lambda2=None,
     for t in range(n):
         if t == 0 or np.mod(t + 1, np.round(n / 10)) == 0:
             _logger.info("Processing sample : %s" % (t + 1))
+            print("Processing sample : %s" % (t + 1))
 
         z = X[:, t]
         r, e = _solveproj(z, L, I, lambda2)
@@ -193,5 +195,10 @@ def orpca(X, rank, lambda1=None, lambda2=None,
     # Do final SVD
     U, S, Vh = svd(Y)
     V = Vh.T
+
+    # Chop small singular values which
+    # likely arise from numerical noise
+    # in the SVD.
+    S[S<=1e-9] = 0.0
 
     return Y, E, U, S, V
