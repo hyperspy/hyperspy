@@ -5,6 +5,41 @@ We only cover here the main highlights, for a detailed list of all the changes
 see `the github commits changelog
 <https://github.com/hyperspy/hyperspy/commits/master>`_.
 
+v0.8.5
+======
+
+
+This is a maintenance release. Follow the following links for details on all
+the `bugs fixed
+<https://github.com/hyperspy/hyperspy/issues?q=is%3Aissue+milestone%3A0.8.5+label%3Abug+is%3Aclosed>`_,
+`feature <https://github.com/hyperspy/hyperspy/issues?utf8=%E2%9C%93&q=milestone%3A0.8.5+is%3Aclosed++label%3Aenhancement+>`_
+and `documentation
+<https://github.com/hyperspy/hyperspy/pulls?utf8=%E2%9C%93&q=milestone%3A0.8.5+label%3Adocumentation+is%3Aclosed+>`_ enhancements.
+
+
+It also includes a new feature and introduces an important API change that
+will be fully enforced in Hyperspy 1.0.
+
+New feature
+-----------
+
+* Widgets to interact with the model components in the Jupyter Notebook.
+  See :ref:`here <notebook_interaction-label>` and
+  `#1007 <https://github.com/hyperspy/hyperspy/pull/1007>`_ .
+
+API changes
+-----------
+
+The new :py:class:`~.signal.BaseSignal`,
+:py:class:`~._signals.signal1d.Signal1D` and
+:py:class:`~._signals.signal2d.Signal2D` deprecate :py:class:`~.signal.Signal`,
+:py:class:`~._signals.signal1D.Signal1D` and :py:class:`~._signals.image.Signal2D`
+respectively. Also `as_signal1D`, `as_signal2D`, `to_signal1D` and `to_signal2D`
+deprecate `as_signal1D`, `as_signal2D`, `to_spectrum` and `to_image`. See `#963
+<https://github.com/hyperspy/hyperspy/pull/963>`_ and `#943
+<https://github.com/hyperspy/hyperspy/issues/943>`_ for details.
+
+
 v0.8.4
 ======
 
@@ -59,7 +94,7 @@ and `documentation
 Importantly, the way to start HyperSpy changes in this release. Read :ref:`importing_hyperspy-label` for details.
 
 It also includes some new features and introduces important API changes that
-will be fully enforced in HyperSpy 0.9.
+will be fully enforced in Hyperspy 1.0.
 
 New features
 ------------
@@ -87,7 +122,7 @@ API changes
 
     In HyperSpy 0.8.1 the full content of :py:mod:`~.hyperspy.hspy` is still
     imported in the user namespace, but this can now be disabled in
-    ``hs.preferences.General.import_hspy``. In HyperSpy 0.9 it will be
+    ``hs.preferences.General.import_hspy``. In Hyperspy 1.0 it will be
     disabled by default and the :py:mod:`~.hyperspy.hspy` module will be fully
     removed in HyperSpy 0.10. We encourage all users to migrate to the new
     syntax. For more details see :ref:`importing_hyperspy-label`.
@@ -109,7 +144,7 @@ New features
 Core
 ^^^^
 
-* :py:meth:`~._signals.spectrum.Spectrum.spikes_removal_tool` displays derivative max value when used with
+* :py:meth:`~._signals.signal1D.Signal1D.spikes_removal_tool` displays derivative max value when used with
   GUI.
 * Progress-bar can now be suppressed by passing ``show_progressbar`` argument to all functions that generate
   it.
@@ -126,7 +161,7 @@ Plotting
 
 * New class,  :py:class:`~.drawing.marker.MarkerBase`, to plot markers with ``hspy.utils.plot.markers`` module.  See :ref:`plot.markers`.
 * New method to plot images with the :py:func:`~.drawing.utils.plot_images` function in  ``hspy.utils.plot.plot_images``. See :ref:`plot.images`.
-* Improved :py:meth:`~._signals.image.Image.plot` method to customize the image. See :ref:`plot.customize_images`.
+* Improved :py:meth:`~._signals.image.Signal2D.plot` method to customize the image. See :ref:`plot.customize_images`.
 
 EDS
 ^^^
@@ -207,8 +242,8 @@ Core
 
   + :py:meth:`~.signal.Signal.set_signal_type`
   + :py:meth:`~.signal.Signal.set_signal_origin`
-  + :py:meth:`~.signal.Signal.as_image`
-  + :py:meth:`~.signal.Signal.as_spectrum`
+  + :py:meth:`~.signal.Signal.as_signal2D`
+  + :py:meth:`~.signal.Signal.as_signal1D`
 
 * The string representation of the Signal class now prints the shape of the
   data and includes a separator between the navigation and the signal axes e.g
@@ -235,7 +270,7 @@ Core
   :ref:`signal.iterator`.
 * New :py:meth:`~.signal.Signal.get_histogram` and
   :py:meth:`~.signal.Signal.print_summary_statistics` methods.
-* The spikes removal tool has been moved to the :class:`~._signal.Spectrum`
+* The spikes removal tool has been moved to the :class:`~._signal.Signal1D`
   class so that it is available for all its subclasses.
 * The :py:meth:`~.signal.Signal.split` method now can automatically split back
   stacked signals into its original part. See :ref:`signal.stack_split`.
@@ -397,14 +432,14 @@ API changes
         * energy_shift removed
 
     * components.Voigt.origin -> centre
-    * signals.Spectrum
+    * signals.Signal1D
 
         * find_peaks_1D -> Signal.find_peaks1D_ohaver
         * align_1D -> Signal.align1D
         * shift_1D -> Signal.shift1D
         * interpolate_1D -> Signal.interpolate1D
 
-    * signals.Image.estimate_2D_translation -> Signal.estimate_shift2D
+    * signals.Signal2D.estimate_2D_translation -> Signal.estimate_shift2D
     * Signal
 
         * split_in -> split
@@ -414,8 +449,8 @@ API changes
 
 * Change syntax to create Signal objects. Instead of a dictionary
   Signal.__init__ takes keywords e.g with  a new syntax .
-  ``>>> s = signals.Spectrum(np.arange(10))`` instead of
-  ``>>> s = signals.Spectrum({'data' : np.arange(10)})``
+  ``>>> s = signals.Signal1D(np.arange(10))`` instead of
+  ``>>> s = signals.Signal1D({'data' : np.arange(10)})``
 
 
 
@@ -429,7 +464,7 @@ New features
 * New Signal method `get_current_signal` proposed by magnunor.
 * New Signal `save` method keyword `extension` to easily change the saving format while keeping the same file name.
 * New EELSSpectrum methods: estimate_elastic_scattering_intensity, fourier_ratio_deconvolution, richardson_lucy_deconvolution, power_law_extrapolation.
-* New Spectrum method: hanning_taper.
+* New Signal1D method: hanning_taper.
 
 
 
@@ -461,7 +496,7 @@ New features
 ------------
 * The documentation was thoroughly revised, courtesy of M. Walls.
 * New user interface to remove spikes from EELS spectra.
-* New align2D signals.Image method to align image stacks.
+* New align2D signals.Signal2D method to align image stacks.
 * When loading image files, the data are now automatically converted to
   grayscale when all the color channels are equal.
 * Add the possibility to load a stack memory mapped (similar to ImageJ
@@ -497,7 +532,7 @@ Major bugs fixed
 API changes
 -----------
 * spatial_mask was renamed to navigation_mask.
-* Spectrum and Image are not loaded into the user namespace by default.
+* Signal1D and Signal2D are not loaded into the user namespace by default.
   The signals module is loaded instead.
 * Change the default BSS algorithm to sklearn fastica, that is now
   distributed with HyperSpy and used in case that sklearn is not
@@ -571,7 +606,7 @@ New features
  * Add the possibility to pass extra parameters to the ICA algorithm.
  * Add the possibility to reproject the data after a decomposition.
  * Add warning when decomposing a non-float signal.
- * adds a method to get the PCs as a Spectrum object and adds smoothing to the ICA preprocessing.
+ * adds a method to get the PCs as a Signal1D object and adds smoothing to the ICA preprocessing.
  * Add the possibility to select the energy range in which to perform spike removal operations.
  * the smoothings guis now offer differentiation and line color option. Smoothing now does not require a gui.
  * Fix reverse_ic which was not reversing the scores and improve the autoreversing method.

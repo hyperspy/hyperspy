@@ -17,14 +17,13 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import numbers
-import warnings
 import logging
 
 import numpy as np
 import traits.api as t
 from scipy import constants
 
-from hyperspy._signals.spectrum import Spectrum
+from hyperspy.signals import Signal1D
 from hyperspy.misc.elements import elements as elements_db
 import hyperspy.axes
 from hyperspy.decorators import only_interactive
@@ -39,11 +38,11 @@ from hyperspy.misc.utils import without_nans
 _logger = logging.getLogger(__name__)
 
 
-class EELSSpectrum(Spectrum):
+class EELSSpectrum(Signal1D):
     _signal_type = "EELS"
 
     def __init__(self, *args, **kwards):
-        Spectrum.__init__(self, *args, **kwards)
+        Signal1D.__init__(self, *args, **kwards)
         # Attributes defaults
         self.subshells = set()
         self.elements = set()
@@ -142,14 +141,14 @@ class EELSSpectrum(Spectrum):
 
         Parameters
         ----------
-        mask : Signal of bool data type.
+        mask : Signal1D of bool data type.
             It must have signal_dimension = 0 and navigation_shape equal to the
             current signal. Where mask is True the shift is not computed
             and set to nan.
 
         Returns
         -------
-        zlpc : Signal subclass
+        zlpc : Signal1D subclass
             The estimated position of the maximum of the ZLP peak.
 
         Notes
@@ -168,9 +167,9 @@ class EELSSpectrum(Spectrum):
         self._check_navigation_mask(mask)
         zlpc = self.valuemax(-1)
         if self.axes_manager.navigation_dimension == 1:
-            zlpc = zlpc.as_spectrum(0)
+            zlpc = zlpc.as_signal1D(0)
         elif self.axes_manager.navigation_dimension > 1:
-            zlpc = zlpc.as_image((0, 1))
+            zlpc = zlpc.as_signal2D((0, 1))
         if mask is not None:
             zlpc.data[mask.data] = np.nan
         return zlpc
@@ -208,7 +207,7 @@ class EELSSpectrum(Spectrum):
         subpixel : bool
             If True, perform the alignment with subpixel accuracy
             using cross-correlation.
-        mask : Signal of bool data type.
+        mask : Signal1D of bool data type.
             It must have signal_dimension = 0 and navigation_shape equal to the
             current signal. Where mask is True the shift is not computed
             and set to nan.
@@ -303,7 +302,7 @@ class EELSSpectrum(Spectrum):
 
         Parameters
         ----------
-        threshold : {Signal, float, int}
+        threshold : {Signal1D, float, int}
             Truncation energy to estimate the intensity of the elastic
             scattering. The threshold can be provided as a signal of the same
             dimension as the input spectrum navigation space containing the
@@ -317,7 +316,7 @@ class EELSSpectrum(Spectrum):
 
         Returns
         -------
-        I0: Signal
+        I0: Signal1D
             The elastic scattering intensity.
 
         See Also
@@ -336,18 +335,16 @@ class EELSSpectrum(Spectrum):
         else:
             I0 = self._get_navigation_signal()
             I0.axes_manager.set_signal_dimension(0)
-            pbar = hyperspy.external.progressbar.progressbar(
-                maxval=self.axes_manager.navigation_size,
-            )
-            for i, s in enumerate(I0):
+            for i, s in progressbar(enumerate(self),
+                                    total=self.axes_manager.navigation_size,
+                                    disable=not show_progressbar,
+                                    leave=True):
                 threshold_ = threshold.isig[I0.axes_manager.indices].data[0]
                 if np.isnan(threshold_):
                     s.data[:] = np.nan
                 else:
                     s.data[:] = (self.inav[I0.axes_manager.indices].isig[
                                  :threshold_].integrate1D(-1).data)
-                pbar.update(i)
-            pbar.finish()
         I0.axes_manager.set_signal_dimension(
             self.axes_manager.navigation_dimension)
         I0.metadata.General.title = (
@@ -406,8 +403,8 @@ class EELSSpectrum(Spectrum):
         Returns
         -------
 
-        threshold : Signal
-            A Signal of the same dimension as the input spectrum
+        threshold : Signal1D
+            A Signal1D of the same dimension as the input spectrum
             navigation space containing the estimated threshold. Where the
             threshold couldn't be estimated the value is set to nan.
 
@@ -457,7 +454,7 @@ class EELSSpectrum(Spectrum):
                 threshold.data[:] = np.nan
         del s
         if np.isnan(threshold.data).any():
-            warnings.warn(
+            _logger.warning(
                 "No inflexion point could be found in some positions "
                 "that have been marked with nans.")
         # Create spectrum image, stop and return value
@@ -487,7 +484,7 @@ class EELSSpectrum(Spectrum):
 
         Parameters
         ----------
-        threshold : {Signal, float, int}
+        threshold : {Signal1D, float, int}
             Truncation energy to estimate the intensity of the
             elastic scattering. The threshold can be provided as a signal of
             the same dimension as the input spectrum navigation space
@@ -502,9 +499,9 @@ class EELSSpectrum(Spectrum):
 
         Returns
         -------
-        s : Signal
-            The thickness relative to the MFP. It returns a Spectrum,
-            Image or a Signal, depending on the currenct spectrum navigation
+        s : Signal1D
+            The thickness relative to the MFP. It returns a Signal1D,
+            Signal2D or a BaseSignal, depending on the current navigation
             dimensions.
 
         Notes
@@ -749,10 +746,10 @@ class EELSSpectrum(Spectrum):
         imax = kernel.argmax()
         j = 0
         maxval = self.axes_manager.navigation_size
-        if maxval > 0:
-            pbar = progressbar(maxval=maxval,
-                               disabled=not show_progressbar)
-        for D in self:
+        show_progressbar = show_progressbar and (maxval > 0)
+        for D in progressbar(self, total=maxval,
+                             disable=not show_progressbar,
+                             leave=True):
             D = D.data.copy()
             if psf.axes_manager.navigation_dimension != 0:
                 kernel = psf(axes_manager=self.axes_manager)
@@ -767,10 +764,6 @@ class EELSSpectrum(Spectrum):
                                      D / first)[mimax: mimax + psf_size])
             s[:] = O
             j += 1
-            if maxval > 0:
-                pbar.update(j)
-        if maxval > 0:
-            pbar.finish()
 
         return ds
 
@@ -952,16 +945,16 @@ class EELSSpectrum(Spectrum):
 
         Parameters
         ----------
-        zlp: {None, number, Signal}
+        zlp: {None, number, Signal1D}
             ZLP intensity. It is optional (can be None) if `t` is None and `n`
             is not None and the thickness estimation is not required. If `t`
             is not None, the ZLP is required to perform the normalization and
             if `t` is not None, the ZLP is required to calculate the thickness.
             If the ZLP is the same for all spectra, the integral of the ZLP
             can be provided as a number. Otherwise, if the ZLP intensity is not
-            the same for all spectra, it can be provided as i) a Signal
+            the same for all spectra, it can be provided as i) a Signal1D
             of the same dimensions as the current signal containing the ZLP
-            spectra for each location ii) a Signal of signal dimension 0
+            spectra for each location ii) a BaseSignal of signal dimension 0
             and navigation_dimension equal to the current signal containing the
             integrated ZLP intensity.
         iterations: int
@@ -972,11 +965,11 @@ class EELSSpectrum(Spectrum):
             The medium refractive index. Used for normalization of the
             SSD to obtain the energy loss function. If given the thickness
             is estimated and returned. It is only required when `t` is None.
-        t: {None, number, Signal}
+        t: {None, number, Signal1D}
             The sample thickness in nm. Used for normalization of the
             SSD to obtain the energy loss function. It is only required when
             `n` is None. If the thickness is the same for all spectra it can be
-            given by a number. Otherwise, it can be provided as a Signal with
+            given by a number. Otherwise, it can be provided as a BaseSignal with
             signal dimension 0 and navigation_dimension equal to the current
             signal.
         delta : float
@@ -1064,7 +1057,7 @@ class EELSSpectrum(Spectrum):
         axis = s.axes_manager.signal_axes[0]
         eaxis = axis.axis.copy()
 
-        if isinstance(zlp, hyperspy.signal.Signal):
+        if isinstance(zlp, hyperspy.signal.BaseSignal):
             if (zlp.axes_manager.navigation_dimension ==
                     self.axes_manager.navigation_dimension):
                 if zlp.axes_manager.signal_dimension == 0:
@@ -1080,9 +1073,10 @@ class EELSSpectrum(Spectrum):
         elif isinstance(zlp, numbers.Number):
             i0 = zlp
         else:
-            raise ValueError('The zero-loss peak input is not valid.')
+            raise ValueError('The zero-loss peak input is not valid, it must be\
+                             in the BaseSignal class or a Number.')
 
-        if isinstance(t, hyperspy.signal.Signal):
+        if isinstance(t, hyperspy.signal.BaseSignal):
             if (t.axes_manager.navigation_dimension ==
                     self.axes_manager.navigation_dimension) and (
                     t.axes_manager.signal_dimension == 0):
@@ -1230,7 +1224,7 @@ class EELSSpectrum(Spectrum):
         auto_add_edges : boolean, default True
             If True, and if spectrum is an EELS instance, it will
             automatically add the ionization edges as defined in the
-            Spectrum instance. Adding a new element to the spectrum using
+            Signal1D instance. Adding a new element to the spectrum using
             the components.EELSSpectrum.add_elements method automatically
             add the corresponding ionisation edges to the model.
         GOS : {'hydrogenic' | 'Hartree-Slater'}, optional

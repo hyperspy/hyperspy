@@ -67,10 +67,10 @@ hyperspy.drawing.signal module
     :undoc-members:
     :show-inheritance:
 
-hyperspy.drawing.spectrum module
+hyperspy.drawing.signal1D module
 --------------------------------
 
-.. automodule:: hyperspy.drawing.spectrum
+.. automodule:: hyperspy.drawing.signal1D
     :members:
     :undoc-members:
     :show-inheritance:

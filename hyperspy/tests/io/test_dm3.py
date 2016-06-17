@@ -22,7 +22,7 @@ import os
 import numpy as np
 from .generate_dm_testing_files import dm3_data_types
 
-from nose.tools import assert_true
+from nose.tools import assert_equal
 from hyperspy.io import load
 
 my_path = os.path.dirname(__file__)
@@ -77,10 +77,12 @@ def check_load(filename, subfolder, key):
 
 
 def check_dtype(d1, d2, i):
-    assert_true(d1 == d2, msg='test_dtype-%i' % i)
+    assert_equal(d1, d2, msg='test_dtype-%i' % i)
 
 
 def check_content(dat1, dat2, subfolder, key):
-    assert_true((dat1 == dat2).all(), msg='content %s type % i: '
-                '\n%s not equal to \n%s' %
-                (subfolder, key, str(dat1), str(dat2)))
+    np.testing.assert_array_equal(dat1, dat2,
+                                  err_msg='content %s type % i: '
+                                  '\n%s not equal to \n%s' % (subfolder, key,
+                                                              str(dat1),
+                                                              str(dat2)))
