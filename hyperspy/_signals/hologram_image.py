@@ -230,8 +230,8 @@ class HologramImage(Signal2D):
 
         h_hw_fft = fftshift(fft2(holo_data))  # <---- NO Hanning filtering
 
-        sb_roi = h_hw_fft[(sb_pos[0]-image_size//2):(sb_pos[0]+image_size//2),
-                 (sb_pos[1]-image_size//2):(sb_pos[1]+image_size//2)]
+        sb_roi = h_hw_fft[np.int(sb_pos[0]-image_size//2):np.int(sb_pos[0]+image_size//2),
+                 np.int(sb_pos[1]-image_size//2):np.int(sb_pos[1]+image_size//2)]
 
         (sb_ny, sb_nx) = sb_roi.shape
         sb_l = min(sb_ny / 2, sb_nx / 2)
