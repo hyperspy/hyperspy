@@ -109,10 +109,6 @@ class MVA():
                       var_func=None,
                       polyfit=None,
                       reproject=None,
-                      lambda1=None,
-                      lambda2=None,
-                      orpca_method=None,
-                      orpca_init=None,
                       **kwargs):
         """Decomposition with a choice of algorithms
 
@@ -160,18 +156,6 @@ class MVA():
         reproject : None | signal | navigation | both
             If not None, the results of the decomposition will be projected in
             the selected masked area.
-
-        lambda1 : float
-            Nuclear norm regularization parameter for ORPCA
-
-        lambda2 : float
-            Sparse regularization parameter for ORPCA
-
-        orpca_method : 'CF' | 'BCD'
-            Algorithm for ORPCA
-
-        orpca_init : 'rand' | 'BRP'
-            Initilization method for ORPCA
 
         See also
         --------
@@ -363,15 +347,8 @@ class MVA():
 
                 X, E, U, S, V = orpca(
                     dc[:, signal_mask][navigation_mask, :],
-                    rank=output_dimension,
-                    lambda1=lambda1, lambda2=lambda2,
-                    method=orpca_method, init=orpca_init,
-                    fast=True)
+                    rank=output_dimension, fast=True, **kwargs)
 
-                # Chop small singular values which
-                # likely arise from numerical noise
-                # in the SVD.
-                S[S<=1e-9] = 0.0
                 loadings = U * S
                 factors = V
                 explained_variance = S ** 2 / len(factors)
