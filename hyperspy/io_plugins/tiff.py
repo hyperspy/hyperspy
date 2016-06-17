@@ -219,10 +219,15 @@ def file_reader(filename, record_by='image', **kwds):
         # workaround for 'palette' photometric, keep only 'X' and 'Y' axes     
         if op['photometric'] == 3:
             sl = [0] * dc.ndim
+            names = []
             for i, axis in enumerate(axes):
                 if axis == 'X' or axis == 'Y':
                     sl[i] = slice(None)
+                    names.append(axes_label_codes[axis])
+                else:
+                    axes.replace(axis, '')
             dc = dc[sl]
+        _logger.info("names: {0}".format(names))
                     
         # add the scale for the missing axes when necessary
         for i in dc.shape[len(scales):]:
@@ -231,6 +236,9 @@ def file_reader(filename, record_by='image', **kwds):
             elif op['photometric'] == 2:
                 scales.insert(0, 1.0)
 
+        if len(scales) == 0:
+            scales = [1.0]*dc.ndim
+                
         if type(units) is str or units == t.Undefined:
             units = [units for i in dc.shape]
 

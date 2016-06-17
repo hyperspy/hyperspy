@@ -270,3 +270,13 @@ def test_read_BW_Zeiss_optical_scale_metadata_old():
     nt.assert_equal(s.axes_manager[1].units, 'µm')
     nt.assert_almost_equal(s.axes_manager[0].scale, 169.3333, places=3)
     nt.assert_almost_equal(s.axes_manager[1].scale, 169.3333, places=3)
+    
+def test_read_BW_Zeiss_optical_scale_metadata_old2():
+    fname = os.path.join(my_path2, 'optical_Zeiss_AxioVision_BW.tif')
+    s = hs.load(fname, force_read_resolution=False)
+    nt.assert_equal(s.data.dtype, np.uint16)
+    nt.assert_equal(s.data.shape, (10, 13))
+    nt.assert_equal(s.axes_manager[0].units, t.Undefined)
+    nt.assert_equal(s.axes_manager[1].units, t.Undefined)
+    nt.assert_almost_equal(s.axes_manager[0].scale, 1.0, places=3)
+    nt.assert_almost_equal(s.axes_manager[1].scale, 1.0, places=3)
