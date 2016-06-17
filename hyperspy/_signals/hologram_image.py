@@ -82,7 +82,7 @@ class HologramImage(Signal2D):
 
         # Preparing reconstruction parameters:
         if rec_param is None:
-            eh_hw_fft_half = eh_hw_fft[0:np.round(sx / 2.02), :]  # selects half of the fft excluding fraction of points
+            eh_hw_fft_half = eh_hw_fft[0:np.int(sx / 2.02), :]  # selects half of the fft excluding fraction of points
             #  in the middle
             yr, xc = np.unravel_index(eh_hw_fft_half.argmax(), eh_hw_fft_half.shape)  # Center of selected sideBand
             sb_pos = [yr, xc]
