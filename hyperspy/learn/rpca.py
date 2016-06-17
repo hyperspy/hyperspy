@@ -169,6 +169,7 @@ def orpca(X, rank, fast=False, lambda1=None,
         E = np.zeros((m, n))
     else:
         E = mask.reshape((m, n))
+        E = (E - Xmin) / (Xmax - Xmin)
 
     A = np.zeros((rank, rank))
     B = np.zeros((m, rank))
