@@ -25,7 +25,7 @@ from hyperspy.component import Component
 
 class Arctan(Component):
 
-    """Arctan function components
+    """Arctan function component
 
     f(x) = A*arctan{k*(x-x0)}
 

@@ -16,7 +16,6 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
-
 import math
 import warnings
 
@@ -29,9 +28,6 @@ from hyperspy.drawing import utils
 from hyperspy.gui.tools import ImageContrastEditor
 from hyperspy.misc import math_tools
 from hyperspy.misc import rgb_tools
-from hyperspy.misc.image_tools import (contrast_stretching,
-                                       MPL_DIVERGING_COLORMAPS,
-                                       centre_colormap_values)
 from hyperspy.drawing.figure import BlittedFigure
 
 
@@ -131,7 +127,7 @@ class ImagePlot(BlittedFigure):
     def configure(self):
         xaxis = self.xaxis
         yaxis = self.yaxis
-        # Image labels
+        # Signal2D labels
         self._xlabel = '%s' % str(xaxis)
         if xaxis.units is not Undefined:
             self._xlabel += ' (%s)' % xaxis.units
@@ -181,7 +177,7 @@ class ImagePlot(BlittedFigure):
             return
         if 'complex' in data.dtype.name:
             data = np.log(np.abs(data))
-        vmin, vmax = contrast_stretching(data, self.saturated_pixels)
+        vmin, vmax = utils.contrast_stretching(data, self.saturated_pixels)
         if self.vmin is None or self.auto_contrast:
             self.vmin = vmin
         if self.vmax is None or self.auto_contrast:
@@ -292,7 +288,7 @@ class ImagePlot(BlittedFigure):
                 cmap = ims[0].get_cmap().name
             else:
                 cmap = plt.cm.get_cmap().name
-            if cmap in MPL_DIVERGING_COLORMAPS:
+            if cmap in utils.MPL_DIVERGING_COLORMAPS:
                 self.centre_colormap = True
             else:
                 self.centre_colormap = False
@@ -334,7 +330,7 @@ class ImagePlot(BlittedFigure):
         if self.no_nans:
             data = np.nan_to_num(data)
         if self.centre_colormap:
-            vmin, vmax = centre_colormap_values(self.vmin, self.vmax)
+            vmin, vmax = utils.centre_colormap_values(self.vmin, self.vmax)
         else:
             vmin, vmax = self.vmin, self.vmax
         if ims:

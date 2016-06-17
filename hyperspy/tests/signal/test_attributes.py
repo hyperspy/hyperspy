@@ -6,39 +6,39 @@ import hyperspy.signal
 
 
 def test_signal_record_by():
-    assert_equal(hyperspy.signal.Signal._record_by, "")
+    assert_equal(hyperspy.signal.BaseSignal._record_by, "")
 
 
 def test_signal_signal_type():
-    assert_equal(hyperspy.signal.Signal._signal_type, "")
+    assert_equal(hyperspy.signal.BaseSignal._signal_type, "")
 
 
 def test_signal_signal_origin():
-    assert_equal(hyperspy.signal.Signal._signal_origin, "")
+    assert_equal(hyperspy.signal.BaseSignal._signal_origin, "")
 
 
 def test_spectrum_record_by():
-    assert_equal(hyperspy.signals.Spectrum._record_by, "spectrum")
+    assert_equal(hyperspy.signals.Signal1D._record_by, "spectrum")
 
 
 def test_spectrum_signal_type():
-    assert_equal(hyperspy.signals.Spectrum._signal_type, "")
+    assert_equal(hyperspy.signals.Signal1D._signal_type, "")
 
 
 def test_spectrum_signal_origin():
-    assert_equal(hyperspy.signals.Spectrum._signal_origin, "")
+    assert_equal(hyperspy.signals.Signal1D._signal_origin, "")
 
 
 def test_image_record_by():
-    assert_equal(hyperspy.signals.Image._record_by, "image")
+    assert_equal(hyperspy.signals.Signal2D._record_by, "image")
 
 
 def test_image_signal_type():
-    assert_equal(hyperspy.signals.Image._signal_type, "")
+    assert_equal(hyperspy.signals.Signal2D._signal_type, "")
 
 
 def test_image_signal_origin():
-    assert_equal(hyperspy.signals.Image._signal_origin, "")
+    assert_equal(hyperspy.signals.Signal2D._signal_origin, "")
 
 
 def test_simulation_record_by():

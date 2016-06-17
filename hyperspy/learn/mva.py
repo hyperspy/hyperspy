@@ -88,7 +88,7 @@ def _normalize_components(target, other, function=np.sum):
 class MVA():
 
     """
-    Multivariate analysis capabilities for the Spectrum class.
+    Multivariate analysis capabilities for the Signal1D class.
 
     """
 
@@ -522,7 +522,7 @@ class MVA():
         http://scikit-learn.org/stable/modules/generated/sklearn.decomposition.FastICA.html
 
         """
-        from hyperspy.signal import Signal
+        from hyperspy.signal import BaseSignal
 
         lr = self.learning_results
 
@@ -539,9 +539,9 @@ class MVA():
                     factors = self.get_decomposition_factors()
 
         # Check factors
-        if not isinstance(factors, Signal):
+        if not isinstance(factors, BaseSignal):
             raise ValueError(
-                "`factors` must be a Signal instance, but an object of type "
+                "`factors` must be a BaseSignal instance, but an object of type "
                 "%s was provided." %
                 type(factors))
 
@@ -562,7 +562,7 @@ class MVA():
         if mask is not None:
             ref_shape, space = (factors.axes_manager.signal_shape,
                                 "navigation" if on_loadings else "signal")
-            if isinstance(mask, Signal):
+            if isinstance(mask, BaseSignal):
                 if mask.axes_manager.signal_shape != ref_shape:
                     raise ValueError(
                         "The `mask` signal shape is not equal to the %s shape."
@@ -895,11 +895,11 @@ class MVA():
 
     def get_explained_variance_ratio(self):
         """Return the explained variation ratio of the PCA components as a
-        Spectrum.
+        Signal1D.
 
         Returns
         -------
-        s : Spectrum
+        s : Signal1D
             Explained variation ratio.
 
         See Also:
@@ -910,13 +910,13 @@ class MVA():
         `get_decomposition_factors`.
 
         """
-        from hyperspy._signals.spectrum import Spectrum
+        from hyperspy._signals.signal1d import Signal1D
         target = self.learning_results
         if target.explained_variance_ratio is None:
             raise AttributeError("The explained_variance_ratio attribute is "
                                  "`None`, did you forget to perform a PCA "
                                  "decomposition?")
-        s = Spectrum(target.explained_variance_ratio)
+        s = Signal1D(target.explained_variance_ratio)
         s.metadata.General.title = self.metadata.General.title + \
             "\nPCA Scree Plot"
         s.axes_manager[-1].name = 'Principal component index'

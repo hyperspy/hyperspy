@@ -52,7 +52,7 @@ class EDSTEMSpectrum(EDSSpectrum):
         mp.Signal.signal_type = 'EDS_TEM'
 
         mp = self.metadata
-        if "mp.Acquisition_instrument.TEM.tilt_stage" not in mp:
+        if "Acquisition_instrument.TEM.tilt_stage" not in mp:
             mp.set_item(
                 "Acquisition_instrument.TEM.tilt_stage",
                 preferences.EDS.eds_tilt_stage)
