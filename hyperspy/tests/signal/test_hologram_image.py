@@ -21,13 +21,48 @@ import sys
 import numpy as np
 
 import nose
-import nose.tools as nt
+import numpy.testing as nt
 
 import hyperspy.api as hs
+from scipy.interpolate import interp2d
 
 
-# def test_reconstruct_phase():
-#     nt.assert_true(True)
+class TestCaseHologramImage(object):
+
+    def setUp(self):
+        self.img_size = 1024
+        fringe_direction = -np.pi/6
+        x, y = np.meshgrid(np.linspace(-self.img_size/2, self.img_size/2-1, self.img_size),
+                           np.linspace(-self.img_size/2, self.img_size/2-1, self.img_size))
+        self.phase_ref = np.pi*x/(self.img_size/2.2)
+        self.amp_ref = np.ones((self.img_size, self.img_size))
+        holo = 2 * (1 + np.cos(self.phase_ref+5.23/(2*np.pi)*(x*np.cos(fringe_direction) + y*np.sin(fringe_direction))))
+        self.holo_image = hs.signals.HologramImage(holo)
+        self.ref = 2 * (1 + np.cos(5.23/(2*np.pi)*(x*np.cos(fringe_direction) + y*np.sin(fringe_direction))))
+        self.ref_image = hs.signals.HologramImage(self.ref)
+
+    def test_reconstruct_phase(self):
+        wave_image, rec_param = self.holo_image.reconstruct_phase(self.ref, return_param=True)
+        rec_param_cc = [self.img_size-rec_param[2], self.img_size-rec_param[3],
+                        self.img_size-rec_param[0], self.img_size-rec_param[1], rec_param[4]]
+        wave_image_cc = self.holo_image.reconstruct_phase(self.ref_image, rec_param=rec_param_cc)
+        x_start = int(rec_param[4]*2/10)
+        x_stop = int(rec_param[4]*2*9/10)
+        wave_crop = wave_image.data[x_start:x_stop, x_start:x_stop]
+        wave_cc_crop = wave_image_cc.data[x_start:x_stop, x_start:x_stop]
+
+        nt.assert_allclose(wave_crop, np.conj(wave_cc_crop), rtol=1e-3)  # asserts that waves from different
+        # sidebands are complex conjugate; this also tests possibility of reconstruction with given rec_param
+
+        # interpolate reconstructed phase to compare with the input (reference phase):
+        interp_x = np.arange(rec_param[4]*2)
+        phase_interp = interp2d(interp_x, interp_x, wave_image.get_unwrapped_phase().data, kind='cubic')
+        phase_new = phase_interp(np.linspace(0, rec_param[4]*2, self.img_size), np.linspace(0, rec_param[4]*2, self.img_size))
+        x_start = int(self.img_size/10)
+        x_stop = self.img_size-1-int(self.img_size/10)
+        phase_new_crop = phase_new[x_start:x_stop, x_start:x_stop]
+        phase_ref_crop = self.phase_ref[x_start:x_stop, x_start:x_stop]
+        nt.assert_almost_equal(phase_new_crop, phase_ref_crop, decimal=2)
 
 
 if __name__ == '__main__':
