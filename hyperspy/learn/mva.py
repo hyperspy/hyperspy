@@ -1,4 +1,4 @@
-h# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 # Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
