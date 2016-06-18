@@ -56,6 +56,5 @@ from hyperspy._signals.image_simulation import ImageSimulation
 from hyperspy._signals.spectrum_simulation import SpectrumSimulation
 from hyperspy._signals.eels_spectrum_simulation import (
     EELSSpectrumSimulation)
-from hyperspy._signals.hologram_image import HologramImage
 from hyperspy._signals.wave_image import WaveImage
 from hyperspy.signal import BaseSignal
