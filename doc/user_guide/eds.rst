@@ -351,24 +351,6 @@ database:
 The lines are returned in order of distance from the specified energy, and can
 be limited by additional, optional arguments.
 
-Mass absorption coefficient database
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-A mass absorption coefficient database [Chantler2005]_ is available:
-
-.. code-block:: python
-
-    >>> hs.material.mass_absorption_coefficient(
-    >>>     element='Al', energies=['C_Ka','Al_Ka'])
-    array([ 26330.38933818,    372.02616732])
-
-.. code-block:: python
-
-    >>> hs.material.mass_absorption_mixture(
-    >>>     elements=['Al','Zn'], weight_percent=[50,50], energies='Al_Ka')
-    2587.4161643905127
-
-.. _eds_plot-label: 
 
 Plotting
 --------

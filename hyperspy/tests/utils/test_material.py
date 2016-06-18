@@ -1,6 +1,7 @@
 
 import numpy as np
-import nose.tools as nt
+from nose.tools import assert_almost_equal
+import nose.tools
 
 import hyperspy.api as hs
 from hyperspy.misc.elements import elements_db
@@ -21,22 +22,22 @@ class TestWeightToFromAtomic:
 
     def test_weight_to_atomic(self):
         cwt = hs.material.weight_to_atomic(self.wt, self.elements)
-        nt.assert_almost_equal(cwt[0], self.at[0])
-        nt.assert_almost_equal(cwt[1], self.at[1])
+        assert_almost_equal(cwt[0], self.at[0])
+        assert_almost_equal(cwt[1], self.at[1])
 
     def test_atomic_to_weight(self):
         cat = hs.material.atomic_to_weight(self.at, self.elements)
-        nt.assert_almost_equal(cat[0], self.wt[0])
-        nt.assert_almost_equal(cat[1], self.wt[1])
+        assert_almost_equal(cat[0], self.wt[0])
+        assert_almost_equal(cat[1], self.wt[1])
 
     def test_multi_dim(self):
         elements = ("Cu", "Sn")
         wt = np.array([[[88] * 2] * 3, [[12] * 2] * 3])
         at = hs.material.weight_to_atomic(wt, elements)
-        nt.assert_true(np.allclose(
+        nose.tools.assert_true(np.allclose(
             at[:, 0, 0], np.array([93.196986, 6.803013]), atol=1e-3))
         wt2 = hs.material.atomic_to_weight(at, elements)
-        nt.assert_true(np.allclose(wt, wt2))
+        nose.tools.assert_true(np.allclose(wt, wt2))
 
 
 def test_density_of_mixture():
@@ -49,45 +50,17 @@ def test_density_of_mixture():
 
     volumes = wt * densities
     density = volumes.sum() / 100.
-    nt.assert_almost_equal(
-        density, hs.material.density_of_mixture(wt, elements, mean='weighted'))
+    assert_almost_equal(
+        density, hs.material.density_of_mixture_of_pure_elements(
+            wt, elements, mean='weighted'))
 
     volumes = wt / densities
     density = 100. / volumes.sum()
-    nt.assert_almost_equal(
-        density, hs.material.density_of_mixture(wt, elements))
+    assert_almost_equal(
+        density, hs.material.density_of_mixture_of_pure_elements(
+            wt, elements))
 
     wt = np.array([[[88] * 2] * 3, [[12] * 2] * 3])
-    nt.assert_almost_equal(
-        density, hs.material.density_of_mixture(wt, elements)[0, 0])
-
-
-def test_mac():
-    nt.assert_almost_equal(
-        hs.material.mass_absorption_coefficient('Al', 3.5), 506.0153356472)
-    nt.assert_true(np.allclose(
-        hs.material.mass_absorption_coefficient('Ta', [1, 3.2, 2.3]),
-        [3343.7083701143229, 1540.0819991890, 3011.264941118]))
-    nt.assert_almost_equal(
-        hs.material.mass_absorption_coefficient('Zn', 'Zn_La'),
-        1413.291119134)
-    nt.assert_true(np.allclose(
-        hs.material.mass_absorption_coefficient(
-            'Zn', ['Cu_La', 'Nb_La']), [1704.7912903000029,
-                                        1881.2081950943339]))
-
-
-def test_mixture_mac():
-    nt.assert_almost_equal(hs.material.mass_absorption_mixture([50, 50],
-                                                               ['Al', 'Zn'],
-                                                               'Al_Ka'),
-                           2587.4161643905127)
-    elements = ("Cu", "Sn")
-    lines = [0.5, 'Al_Ka']
-    wt = np.array([[[88.]*2]*3, [[12.]*2]*3])
-    np.testing.assert_array_almost_equal(
-        hs.material.mass_absorption_mixture(wt, elements, lines)[:, 0, 0],
-        np.array([8003.05391481,  4213.4235561]))
-    wt = hs.signals.Signal2D(wt).split()
-    mac = hs.material.mass_absorption_mixture(wt, elements, lines)
-    np.testing.assert_array_almost_equal(mac[0].data[0, 0], 8003.053914)
+    assert_almost_equal(
+        density, hs.material.density_of_mixture_of_pure_elements(
+            wt, elements)[0, 0])
