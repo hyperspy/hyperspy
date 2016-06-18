@@ -1775,6 +1775,15 @@ class BaseSignal(FancySlicing,
                 not self.metadata.has_item("Signal.signal_type")):
             self.metadata.Signal.signal_type = self._signal_type
 
+    def __array__(self, *args):
+        if args:
+            return self.data.astype(args[0])
+        else:
+            return self.data
+
+    def __array_wrap__(self, array, context=None):
+        return self._deepcopy_with_new_data(array)
+
     def squeeze(self):
         """Remove single-dimensional entries from the shape of an array
         and the axes.
