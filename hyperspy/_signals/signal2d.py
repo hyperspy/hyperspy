@@ -248,8 +248,7 @@ def find_peaks_max(z, alpha=3, size=10):
             break
     # trim array to have shape (number of peaks, 2)
     peaks = k_arr[:peak_ct]
-
-return peaks
+    return peaks
 
 def find_peaks_zaefferer(z, grad_threshold=400, window_size=40,
                          distance_cutoff=50):
@@ -434,7 +433,7 @@ def find_peaks_stat(z):
         peak_centers = np.array([np.mean(peak, axis=0) for peak in peaks])  # 7
         return peak_centers
 
-return stat_peak_finder(z)
+    return stat_peak_finder(z)
 
 
 def find_peaks_masiel(z, subpixel=False, peak_width=10, medfilt_radius=5,
