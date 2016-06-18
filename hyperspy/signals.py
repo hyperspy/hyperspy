@@ -35,9 +35,6 @@ The Signal class and its specilized subclasses:
     DielectricFunction
         For dielectric function data with signal_dimension equal 1. The signal
         is unbinned by default.
-    HolographyImage
-        For 2D-images taken via electron holography. WaveImages can be
-        reconstructed from them.
     WaveImage
         For complex 2D-images. Phase, amplitude, real and imaginary parts are
         easily accessible and can be manipulated.
