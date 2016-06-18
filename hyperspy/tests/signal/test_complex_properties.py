@@ -30,7 +30,8 @@ import hyperspy.api as hs
 real_ref = np.arange(9).reshape((3, 3))
 imag_ref = np.arange(9).reshape((3, 3)) + 9
 comp_ref = real_ref + 1j * imag_ref
-
+phase_ref = np.angle(comp_ref)
+amplitude_ref = np.abs(comp_ref)
 
 class TestComplexProperties:
 
@@ -53,6 +54,22 @@ class TestComplexProperties:
         test = np.random.random((3, 3))
         self.s.imag = test
         nt.assert_almost_equal(self.s.imag.data, test)
+
+    def test_get_phase(self):
+        nt.assert_almost_equal(self.s.phase.data, phase_ref)
+
+    def test_set_phase(self):
+        test = np.random.random((3, 3))
+        self.s.phase = test
+        nt.assert_almost_equal(self.s.phase.data, test)
+
+    def test_get_amplitude(self):
+        nt.assert_almost_equal(self.s.amplitude.data, amplitude_ref)
+
+    def test_set_amplitude(self):
+        test = np.random.random((3, 3))
+        self.s.amplitude = test
+        nt.assert_almost_equal(self.s.amplitude.data, test)
 
 
 if __name__ == '__main__':

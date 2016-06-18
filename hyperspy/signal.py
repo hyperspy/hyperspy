@@ -1715,9 +1715,10 @@ class BaseSignal(FancySlicing,
     @property
     def real(self):
         """Get/set the real part of the data. Returns an :class:`~hyperspy.signals.Signal2D`."""
-        real = self._deepcopy_with_new_data(np.real(self.data))
-        real.set_signal_type('')
-        return real
+        sig = self._deepcopy_with_new_data(np.real(self.data))
+        sig.set_signal_type('')
+        sig.metadata.General.title = 'Real part of {}'.format(sig.metadata.General.title)
+        return sig
 
     @real.setter
     def real(self, real):
@@ -1728,15 +1729,45 @@ class BaseSignal(FancySlicing,
     @property
     def imag(self):
         """Get/set imaginary part of the data. Returns an :class:`~hyperspy.signals.Signal2D`."""
-        imag = self._deepcopy_with_new_data(np.imag(self.data))
-        imag.set_signal_type('')
-        return imag
+        sig = self._deepcopy_with_new_data(np.imag(self.data))
+        sig.set_signal_type('')
+        sig.metadata.General.title = 'Imaginary part of {}'.format(sig.metadata.General.title)
+        return sig
 
     @imag.setter
     def imag(self, imag):
         if isinstance(imag, BaseSignal):
             imag = imag.data
         self.data = self.real.data + 1j * imag
+
+    @property
+    def phase(self):
+        """Get/set the phase of the data. Returns an :class:`~hyperspy.signals.Signal2D`."""
+        sig = self._deepcopy_with_new_data(np.angle(self.data))
+        sig.set_signal_type('')
+        sig.metadata.General.title = 'Complex phase of {}'.format(sig.metadata.General.title)
+        return sig
+
+    @phase.setter
+    def phase(self, phase):
+        if isinstance(phase, BaseSignal):
+            phase = phase.data
+        self.data = self.amplitude.data * np.exp(1j * phase)
+
+    @property
+    def amplitude(self):
+        """Get/set the amplitude of the data. Returns an :class:`~hyperspy.signals.Signal2D`."""
+        sig = self._deepcopy_with_new_data(np.abs(self.data))
+        sig.set_signal_type('')
+        sig.metadata.General.title = 'Complex amplitude of {}'.format(sig.metadata.General.title)
+        return sig
+
+    @amplitude.setter
+    def amplitude(self, amplitude):
+        if isinstance(amplitude, BaseSignal):
+            amplitude = amplitude.data
+        self.data = amplitude * np.exp(1j * self.phase.data)
+
 
     def _load_dictionary(self, file_data_dict):
         """Load data from dictionary.

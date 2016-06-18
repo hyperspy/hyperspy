@@ -28,32 +28,6 @@ class WaveImage(Signal2D):
 
     _signal_type = 'wave'
 
-    @property
-    def phase(self):
-        """Get/set the phase of the data. Returns an :class:`~hyperspy.signals.Signal2D`."""
-        phase = self._deepcopy_with_new_data(np.angle(self.data))
-        phase.set_signal_type('')
-        return phase
-
-    @phase.setter
-    def phase(self, phase):
-        if isinstance(phase, BaseSignal):
-            phase = phase.data
-        self.data = self.amplitude.data * np.exp(1j * phase)
-
-    @property
-    def amplitude(self):
-        """Get/set the amplitude of the data. Returns an :class:`~hyperspy.signals.Signal2D`."""
-        amplitude = self._deepcopy_with_new_data(np.abs(self.data))
-        amplitude.set_signal_type('')
-        return amplitude
-
-    @amplitude.setter
-    def amplitude(self, amplitude):
-        if isinstance(amplitude, BaseSignal):
-            amplitude = amplitude.data
-        self.data = amplitude * np.exp(1j * self.phase.data)
-
     def get_unwrapped_phase(self, wrap_around=False, seed=None, show_progressbar=None):
         """Return the unwrapped phase as an :class:`~hyperspy.signals.Signal2D`.
 
