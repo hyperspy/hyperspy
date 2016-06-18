@@ -25,7 +25,7 @@
 # by the output of "git describe" if git is available or the git
 # hash if .git is present.
 
-version = "0.8.5"
+version = '1.0+dev'
 description = "Multidimensional data analysis toolbox"
 license = 'GPL v3'
 name = 'hyperspy'
