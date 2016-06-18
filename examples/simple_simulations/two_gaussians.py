@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 
 
 # Create an empty spectrum
-s = hs.signals.Spectrum(np.zeros((32, 32, 1024)))
+s = hs.signals.Signal1D(np.zeros((32, 32, 1024)))
 
 # Generate some simple data: two Gaussians with random centers and area
 

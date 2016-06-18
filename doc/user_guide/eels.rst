@@ -9,7 +9,7 @@ Tools for EELS data analysis
 
 The functions described in this chapter are only available for the
 :py:class:`~._signals.eels.EELSSpectrum` class. To transform a
-:py:class:`~.signal.Signal` (or subclass) into a
+:py:class:`~.signal.BaseSignal` (or subclass) into a
 :py:class:`~._signals.eels.EELSSpectrum`:
 
 .. code-block:: python
@@ -29,7 +29,7 @@ It can be useful to define the elemental composition of the sample for
 archiving purposes or to use some feature (e.g. curve fitting) that requieres
 this information.  The elemental composition of the sample can be declared
 using :py:meth:`~._signals.eels.EELSSpectrum.add_elements`. The information is
-stored in the :py:attr:`~.signal.Signal.metadata` attribute (see
+stored in the :py:attr:`~.signal.BaseSignal.metadata` attribute (see
 :ref:`metadata_structure`). This information is saved to file when saving in
 the hdf5 format.
 
@@ -127,7 +127,7 @@ core-loss file
     >>> s.set_microscope_parameters(beam_energy=100, convergence_angle=0.2, collection_angle=2.55)
 
 .. warning::
-    
+
     `convergence_angle` and `collection_angle` are actually semi-angles and are
     given in mrad. `beam_energy` is in keV.
 

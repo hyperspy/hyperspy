@@ -20,7 +20,7 @@ environment:
       CONDA_NPY: "19"
       WP_URL: 'https://github.com/winpython/winpython/releases/download/1.3.20160209/WinPython-32bit-3.5.1.2.exe'
       WP_CRC: '172d19a743ccfaf55af779d15f29f67fca83a46f08b0af855dfaf809b4184c0d'
-      DEPS: "numpy scipy matplotlib ipython h5py sympy scikit-learn dill mock setuptools natsort"
+      DEPS: "numpy scipy matplotlib ipython h5py sympy scikit-learn dill setuptools natsort scikit-image"
 
     - PYTHON: "C:\\Miniconda35-x64"
       PYTHON_VERSION: "3.5.x"
@@ -30,7 +30,7 @@ environment:
       CONDA_NPY: "19"
       WP_URL: 'https://github.com/winpython/winpython/releases/download/1.3.20160209/WinPython-64bit-3.5.1.2.exe'
       WP_CRC: '07e854b9aa7a31d8bbf7829d04a45b6d6266603690520e365199af2d98751ab1'
-      DEPS: "numpy scipy matplotlib ipython h5py sympy scikit-learn dill mock setuptools natsort"
+      DEPS: "numpy scipy matplotlib ipython h5py sympy scikit-learn dill setuptools natsort scikit-image"
 
 
 
@@ -57,7 +57,7 @@ install:
   - "%CMD_IN_ENV% move %PYTHON%\\sip %PYTHON%\\Lib\\site-packages\\PyQt4\\sip"
   - "%CMD_IN_ENV% conda install pip"
   # TODO: Remove once anaconda taitsui package is at v5:
-  - "IF \"%PYTHON_MAJOR%\" EQU \"3\" pip install --upgrade traitsui"
+  - "IF \"%PYTHON_MAJOR%\" EQU \"3\" pip install --upgrade traitsui tqdm"
   - ps: Add-AppveyorMessage "Installing hyperspy..."
   - "python setup.py install"
 
@@ -101,7 +101,7 @@ before_deploy:
   - "SET PATH=%ORIGPATH%"
   - "%CMD_IN_ENV% %WP_INSTDIR%/scripts/env.bat"
   - "%CMD_IN_ENV% python.exe setup.py install"
-  - "%CMD_IN_ENV% pip install --upgrade configobj traitsui natsort start_jupyter_cm"
+  - "%CMD_IN_ENV% pip install --upgrade configobj traitsui natsort start_jupyter_cm tqdm"
   # Custom installer step
   # TODO: Re-run tests in WinPython environment
   - ps: Add-AppveyorMessage "Creating installer..."

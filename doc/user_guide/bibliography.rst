@@ -8,14 +8,27 @@ Bibliography
    "Three-dimensional chemical analysis of laser-welded NiTi–stainless steel wires
    using a dual-beam FIB", Acta Materialia 61 (2013) 3090–3098.
 
+.. [Chantler2015] http://physics.nist.gov/ffast
+
 .. [Egerton2011] Ray Egerton, "Electron Energy-Loss Spectroscopy in the
    Electron Microscope", Springer-Verlag, 2011.
+
+.. [Hyvarinen2000] A. Hyvarinen, E. Oja, "Independent component analysis: algorithms
+   and applications", Neural Networks 13 (2000) 411–430.
+
+.. [Keenan2004] Michael R. Keenan, Paul G. Kotula, "Accounting for Poisson noise
+   in the multivariate analysis of ToF-SIMS spectrum images", Surf. Interface Anal
+   36(3) (2004) 203–212.
 
 .. [MacArthur2016] Katherine E. MacArthur, Thomas J. A. Slater, Sarah J. Haigh,
    Dogan Ozkaya, Peter D. Nellist, Sergio Lozano-Perez, "Quantitative
    Energy-Dispersive X-Ray Analysis of Catalyst Nanoparticles Using a Partial
    Cross Section Approach." Microsc. Microanal. 22 (2016) 71–81.
    doi:10.1017/S1431927615015494.
+
+.. [Pena2010] F. de la Pena, M.-H. Berger, J.-F. Hochepid, F. Dynys, O. Stephan,
+   M. Walls, "Mapping titanium and tin oxide phases using EELS: An application of
+   independent component analysis", Ultramicroscopy 111 (2010) 169–176.
 
 .. [Rossouw2015] David Rossouw, Pierre Burdet, Francisco de la Pena, Caterina
    Ducati, Benjamin R. Knappett, Andrew E. H. Wheatley, Paul A. Midgley, "Multicomponent
@@ -24,7 +37,7 @@ Bibliography
 
 .. [Watanabe1996] Masashi Watanabe, Zenji Horita, Minoru Nemoto, "Absorption
    correction and thickness determination using the zeta factor in quantitative
-   X-ray microanalysis." Ultramicroscopy. 65 (1996) 187–198.
+   X-ray microanalysis." Ultramicroscopy 65 (1996) 187–198.
 
 .. [Watanabe2006] Masashi Watanabe, David B. Williams, "The quantitative
    analysis of thin specimens: a review of progress from the Cliff-Lorimer to

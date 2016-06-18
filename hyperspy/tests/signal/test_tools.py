@@ -1,10 +1,10 @@
-import mock
+from unittest import mock
 
 import numpy as np
 from numpy.testing import assert_array_equal
 import nose.tools as nt
 
-from hyperspy.signal import Signal
+from hyperspy.signals import BaseSignal
 from hyperspy import signals
 
 
@@ -18,7 +18,7 @@ def _verify_test_sum_x_E(self, s):
 class Test2D:
 
     def setUp(self):
-        self.signal = Signal(np.arange(5 * 10).reshape(5, 10))
+        self.signal = BaseSignal(np.arange(5 * 10).reshape(5, 10))
         self.signal.axes_manager[0].name = "x"
         self.signal.axes_manager[1].name = "E"
         self.signal.axes_manager[0].scale = 0.5
@@ -48,47 +48,47 @@ class Test2D:
         s1.crop(0, 2, 4)
         nt.assert_true(m.data_changed.called)
         s2.crop("x", 2, 4)
-        nt.assert_true((s1.data == s2.data).all())
+        np.testing.assert_array_almost_equal(s1.data, s2.data)
 
     def test_crop_int(self):
         s = self.signal
         d = self.data
         s.crop(0, 2, 4)
-        nt.assert_true((s.data == d[2:4, :]).all())
+        np.testing.assert_array_almost_equal(s.data, d[2:4, :])
 
     def test_crop_float(self):
         s = self.signal
         d = self.data
         s.crop(0, 2, 2.)
-        nt.assert_true((s.data == d[2:4, :]).all())
+        np.testing.assert_array_almost_equal(s.data, d[2:4, :])
 
     def test_split_axis0(self):
         result = self.signal.split(0, 2)
-        nt.assert_true(len(result) == 2)
-        nt.assert_true((result[0].data == self.data[:2, :]).all())
-        nt.assert_true((result[1].data == self.data[2:4, :]).all())
+        nt.assert_equal(len(result), 2)
+        np.testing.assert_array_almost_equal(result[0].data, self.data[:2, :])
+        np.testing.assert_array_almost_equal(result[1].data, self.data[2:4, :])
 
     def test_split_axis1(self):
         result = self.signal.split(1, 2)
-        nt.assert_true(len(result) == 2)
-        nt.assert_true((result[0].data == self.data[:, :5]).all())
-        nt.assert_true((result[1].data == self.data[:, 5:]).all())
+        nt.assert_equal(len(result), 2)
+        np.testing.assert_array_almost_equal(result[0].data, self.data[:, :5])
+        np.testing.assert_array_almost_equal(result[1].data, self.data[:, 5:])
 
     def test_split_axisE(self):
         result = self.signal.split("E", 2)
-        nt.assert_true(len(result) == 2)
-        nt.assert_true((result[0].data == self.data[:, :5]).all())
-        nt.assert_true((result[1].data == self.data[:, 5:]).all())
+        nt.assert_equal(len(result), 2)
+        np.testing.assert_array_almost_equal(result[0].data, self.data[:, :5])
+        np.testing.assert_array_almost_equal(result[1].data, self.data[:, 5:])
 
     def test_split_default(self):
         result = self.signal.split()
-        nt.assert_true(len(result) == 5)
-        nt.assert_true((result[0].data == self.data[0]).all())
+        nt.assert_equal(len(result), 5)
+        np.testing.assert_array_almost_equal(result[0].data, self.data[0])
 
     def test_histogram(self):
         result = self.signal.get_histogram(3)
-        nt.assert_true(isinstance(result, signals.Spectrum))
-        nt.assert_true((result.data == np.array([17, 16, 17])).all())
+        nt.assert_true(isinstance(result, signals.Signal1D))
+        np.testing.assert_equal(result.data, [17, 16, 17])
         nt.assert_true(result.metadata.Signal.binned)
 
     def test_estimate_poissonian_noise_copy_data(self):
@@ -100,7 +100,8 @@ class Test2D:
     def test_estimate_poissonian_noise_noarg(self):
         self.signal.estimate_poissonian_noise_variance()
         variance = self.signal.metadata.Signal.Noise_properties.variance
-        nt.assert_true((variance.data == self.signal.data).all())
+        np.testing.assert_array_equal(variance.data, self.signal.data)
+        np.testing.assert_array_equal(variance.data, self.signal.data)
 
     def test_estimate_poissonian_noise_with_args(self):
         self.signal.estimate_poissonian_noise_variance(
@@ -109,8 +110,8 @@ class Test2D:
             gain_offset=1,
             correlation_factor=0.5)
         variance = self.signal.metadata.Signal.Noise_properties.variance
-        nt.assert_true(
-            (variance.data == (self.signal.data * 2 + 1) * 0.5).all())
+        np.testing.assert_array_equal(variance.data,
+                                      (self.signal.data * 2 + 1) * 0.5)
 
     def test_unfold_image(self):
         s = self.signal
@@ -140,7 +141,7 @@ def _test_default_navigation_signal_operations_over_many_axes(self, op):
 class Test3D:
 
     def setUp(self):
-        self.signal = Signal(np.arange(2 * 4 * 6).reshape(2, 4, 6))
+        self.signal = BaseSignal(np.arange(2 * 4 * 6).reshape(2, 4, 6))
         self.signal.axes_manager[0].name = "x"
         self.signal.axes_manager[1].name = "y"
         self.signal.axes_manager[2].name = "E"
@@ -185,14 +186,13 @@ class Test3D:
         self.signal.estimate_poissonian_noise_variance()
         new_s = self.signal.rebin((2, 1, 6))
         var = new_s.metadata.Signal.Noise_properties.variance
-        nt.assert_true(new_s.data.shape == (1, 2, 6))
-        nt.assert_true(var.data.shape == (1, 2, 6))
+        nt.assert_equal(new_s.data.shape, (1, 2, 6))
+        nt.assert_equal(var.data.shape, (1, 2, 6))
         from hyperspy.misc.array_tools import rebin
-        nt.assert_true(np.all(rebin(self.signal.data, (1, 2, 6)) == var.data))
-        nt.assert_true(
-            np.all(
-                rebin(
-                    self.signal.data, (1, 2, 6)) == new_s.data))
+        np.testing.assert_array_equal(rebin(self.signal.data, (1, 2, 6)),
+                                      var.data)
+        np.testing.assert_array_equal(rebin(self.signal.data, (1, 2, 6)),
+                                      new_s.data)
 
     @nt.raises(AttributeError)
     def test_rebin_no_variance(self):
@@ -200,14 +200,23 @@ class Test3D:
         _ = new_s.metadata.Signal.Noise_properties
 
     def test_rebin_const_variance(self):
-        self.signal.metadata.set_item('Signal.Noise_properties.variance', 0.3)
+        self.signal.metadata.set_item(
+            'Signal.Noise_properties.variance', 0.3)
         new_s = self.signal.rebin((2, 1, 6))
-        nt.assert_true(new_s.metadata.Signal.Noise_properties.variance == 0.3)
+        nt.assert_equal(new_s.metadata.Signal.Noise_properties.variance, 0.3)
 
-    def test_swap_axes(self):
+    def test_swap_axes_simple(self):
         s = self.signal
         nt.assert_equal(s.swap_axes(0, 1).data.shape, (4, 2, 6))
+        nt.assert_equal(s.swap_axes(0, 2).axes_manager.shape, (6, 2, 4))
         nt.assert_true(s.swap_axes(0, 2).data.flags['C_CONTIGUOUS'])
+
+    def test_swap_axes_iteration(self):
+        s = self.signal
+        s = s.swap_axes(0, 2)
+        nt.assert_equal(s.axes_manager._getitem_tuple[:2], (0, 0))
+        s.axes_manager.indices = (2, 1)
+        nt.assert_equal(s.axes_manager._getitem_tuple[:2], (1, 2))
 
     def test_get_navigation_signal_nav_dim0(self):
         s = self.signal
@@ -335,7 +344,7 @@ class Test3D:
 class Test4D:
 
     def setUp(self):
-        s = signals.Spectrum(np.ones((5, 4, 3, 6)))
+        s = signals.Signal1D(np.ones((5, 4, 3, 6)))
         for axis, name in zip(
                 s.axes_manager._get_axes_in_natural_order(),
                 ['x', 'y', 'z', 'E']):
@@ -346,7 +355,7 @@ class Test4D:
         s = self.s
         diff = s.diff(axis=2, order=2)
         diff_data = np.diff(s.data, n=2, axis=0)
-        nt.assert_true((diff.data == diff_data).all())
+        np.testing.assert_array_equal(diff.data, diff_data)
 
     def test_diff_axis(self):
         s = self.s
@@ -372,12 +381,12 @@ class Test4D:
         nt.assert_false(self.s.unfold_signal_space())
 
     def test_unfold_image(self):
-        im = self.s.to_image()
+        im = self.s.to_signal2D()
         im.unfold()
         nt.assert_equal(im.data.shape, (30, 12))
 
     def test_image_signal_unfolded_deepcopy(self):
-        im = self.s.to_image()
+        im = self.s.to_signal2D()
         im.unfold()
         # The following could fail if the constructor was not taking the fact
         # that the signal is unfolded into account when setting the signal
@@ -385,23 +394,23 @@ class Test4D:
         im.deepcopy()
 
     def test_image_signal_unfolded_false(self):
-        im = self.s.to_image()
+        im = self.s.to_signal2D()
         nt.assert_false(im.metadata._HyperSpy.Folding.signal_unfolded)
 
     def test_image_signal_unfolded_true(self):
-        im = self.s.to_image()
+        im = self.s.to_signal2D()
         im.unfold()
         nt.assert_true(im.metadata._HyperSpy.Folding.signal_unfolded)
 
     def test_image_signal_unfolded_back_to_false(self):
-        im = self.s.to_image()
+        im = self.s.to_signal2D()
         im.unfold()
         im.fold()
         nt.assert_false(im.metadata._HyperSpy.Folding.signal_unfolded)
 
 
 def test_signal_iterator():
-    s = Signal(np.arange(3).reshape((3, 1)))
+    s = BaseSignal(np.arange(3).reshape((3, 1)))
     nt.assert_equal(next(s).data[0], 0)
     # If the following fails it can be because the iteration index was not
     # restarted
@@ -415,7 +424,7 @@ class TestDerivative:
         offset = 3
         scale = 0.1
         x = np.arange(-offset, offset, scale)
-        s = signals.Spectrum(np.sin(x))
+        s = signals.Signal1D(np.sin(x))
         s.axes_manager[0].offset = x[0]
         s.axes_manager[0].scale = scale
         self.s = s
@@ -432,7 +441,7 @@ class TestOutArg:
     def setup(self):
         # Some test require consistent random data for reference to be correct
         np.random.seed(0)
-        s = signals.Spectrum(np.random.rand(5, 4, 3, 6))
+        s = signals.Signal1D(np.random.rand(5, 4, 3, 6))
         for axis, name in zip(
                 s.axes_manager._get_axes_in_natural_order(),
                 ['x', 'y', 'z', 'E']):
@@ -504,11 +513,11 @@ class TestOutArg:
 
     def test_as_spectrum(self):
         s = self.s
-        self._run_single(s.as_spectrum, s, dict(spectral_axis=1))
+        self._run_single(s.as_signal1D, s, dict(spectral_axis=1))
 
     def test_as_image(self):
         s = self.s
-        self._run_single(s.as_image, s, dict(image_axes=(
+        self._run_single(s.as_signal2D, s, dict(image_axes=(
             s.axes_manager.navigation_axes[0:2])))
 
     def test_inav(self):
