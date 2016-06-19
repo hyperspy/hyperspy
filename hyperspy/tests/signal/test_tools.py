@@ -128,6 +128,15 @@ class Test2D:
         # Just test if it doesn't raise an exception
         self.signal._print_summary()
 
+    def test_numpy_unfunc(self):
+        result = np.exp(self.signal)
+        nt.assert_true(isinstance(result, BaseSignal))
+        np.testing.assert_array_equal(result.data, np.exp(self.signal.data))
+
+    def test_numpy_func(self):
+        result = np.angle(self.signal)
+        nt.assert_true(isinstance(result, np.ndarray))
+        np.testing.assert_array_equal(result, np.angle(self.signal.data))
 
 def _test_default_navigation_signal_operations_over_many_axes(self, op):
     s = getattr(self.signal, op)()
