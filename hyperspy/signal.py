@@ -25,6 +25,7 @@ import inspect
 from contextlib import contextmanager
 from datetime import datetime
 import logging
+import pint
 
 import numpy as np
 import scipy as sp
@@ -56,7 +57,7 @@ from hyperspy.interactive import interactive
 from hyperspy.misc.signal_tools import are_signals_aligned
 
 _logger = logging.getLogger(__name__)
-
+UREG = pint.UnitRegistry()
 
 class ModelManager(object):
 
@@ -1775,19 +1776,26 @@ class BaseSignal(FancySlicing,
                 not self.metadata.has_item("Signal.signal_type")):
             self.metadata.Signal.signal_type = self._signal_type
 
-    def __array__(self, *args):
-        if args:
-            return self.data.astype(args[0])
+    def __array__(self, dtype=None):
+        if dtype:
+            return self.data.astype(dtype)
         else:
             return self.data
 
     def __array_wrap__(self, array, context=None):
+
+        signal = self._deepcopy_with_new_data(array)
         if context is not None:
-            ufunc_name = context[0].__name__
+            # ufunc, argument of the ufunc, domain of the ufunc
+            # In ufuncs with multiple outputs, domain indicates which output
+            # is currently being prepared (eg. see modf).
+            # In ufuncs with a single output, domain is 0
+            uf, objs, huh = context
             if self.metadata.General.title:
-                g = self.metadata.General
-                g.title = "%s(%s)" % (ufunc_name, g.title)
-        return self._deepcopy_with_new_data(array)
+                signal.metadata.General.title = "%s(%s)" % (
+                    uf.__name__, self.metadata.General.title)
+
+        return signal
 
     def squeeze(self):
         """Remove single-dimensional entries from the shape of an array
