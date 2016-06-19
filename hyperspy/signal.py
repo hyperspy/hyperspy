@@ -1797,7 +1797,7 @@ class BaseSignal(FancySlicing,
                 if g.title:
                     return g.title
                 else:
-                    return "Untitled Signal-%s" % (i + 1)
+                    return "Untitled Signal %s" % (i + 1)
 
             title_strs = []
             i = 0
