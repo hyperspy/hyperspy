@@ -1782,6 +1782,11 @@ class BaseSignal(FancySlicing,
             return self.data
 
     def __array_wrap__(self, array, context=None):
+        if context is not None:
+            ufunc_name = context[0].__name__
+            if self.metadata.General.title:
+                g = self.metadata.General
+                g.title = "%s(%s)" % (ufunc_name, g.title)
         return self._deepcopy_with_new_data(array)
 
     def squeeze(self):

@@ -129,9 +129,11 @@ class Test2D:
         self.signal._print_summary()
 
     def test_numpy_unfunc(self):
+        self.signal.metadata.General.title = "yes"
         result = np.exp(self.signal)
         nt.assert_true(isinstance(result, BaseSignal))
         np.testing.assert_array_equal(result.data, np.exp(self.signal.data))
+        nt.assert_equal(result.metadata.General.title, "exp(yes)")
 
     def test_numpy_func(self):
         result = np.angle(self.signal)
