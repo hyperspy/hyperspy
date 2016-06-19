@@ -294,10 +294,15 @@ instances, for example:
 .. code-block:: python
 
     >>> s = hs.signals.Signal1D([0, 1])
+    >>> s.metadata.General.title = "A"
+    >>> s
+    <Signal1D, title: A, dimensions: (|2)>
     >>> np.exp(s)
-    <Signal1D, title: , dimensions: (|2)>
+    <Signal1D, title: exp(A), dimensions: (|2)>
     >>> np.exp(s).data
     array([ 1.        ,  2.71828183])
+
+Notice the the title is automatically updated.
 
 Functions (other than unfucs) that operate on numpy arrays can also operate
 on :py:class:`~.signal.BaseSignal` instances, however they return a numpy
