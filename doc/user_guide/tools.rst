@@ -301,8 +301,22 @@ instances, for example:
     <Signal1D, title: exp(A), dimensions: (|2)>
     >>> np.exp(s).data
     array([ 1.        ,  2.71828183])
+    >>> np.power(s, 2)
+    <Signal1D, title: power(A, 2), dimensions: (|2)>
+    >>> np.add(s, s)
+    <Signal1D, title: add(A, A), dimensions: (|2)>
+    >>> np.add(hs.signals.Signal1D([0, 1]), hs.signals.Signal1D([0, 1]))
+    <Signal1D, title: add(Untitled Signal 1, Untitled Signal 2), dimensions: (|2)>
 
-Notice the the title is automatically updated.
+
+Notice the the title is automatically updated. When the signal has no title
+a new title is automatically generated:
+
+.. code-block:: python
+
+    >>> np.add(hs.signals.Signal1D([0, 1]), hs.signals.Signal1D([0, 1]))
+    <Signal1D, title: add(Untitled Signal 1, Untitled Signal 2), dimensions: (|2)>
+
 
 Functions (other than unfucs) that operate on numpy arrays can also operate
 on :py:class:`~.signal.BaseSignal` instances, however they return a numpy
