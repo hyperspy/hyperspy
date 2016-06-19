@@ -25,7 +25,6 @@ import inspect
 from contextlib import contextmanager
 from datetime import datetime
 import logging
-import pint
 
 import numpy as np
 import scipy as sp
@@ -57,7 +56,6 @@ from hyperspy.interactive import interactive
 from hyperspy.misc.signal_tools import are_signals_aligned
 
 _logger = logging.getLogger(__name__)
-UREG = pint.UnitRegistry()
 
 class ModelManager(object):
 
