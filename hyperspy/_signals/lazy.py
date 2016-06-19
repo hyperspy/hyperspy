@@ -481,7 +481,10 @@ class LazySignal(BaseSignal):
         _logger.debug("Entering delayed-creating loop")
         for data in zip(*iterators):
             for (key, value), datum in zip(iterating_kwargs, data[1:]):
-                kwargs[key] = datum[0]
+                if isinstance(value, BaseSignal) and len(datum) == 1:
+                    kwargs[key] = datum[0]
+                else:
+                    kwargs[key] = datum
             all_delayed.append(dd(function)(data[0], **kwargs))
         _logger.debug("Entering dask.array-creating loop")
         pixels = [da.from_delayed(res, shape=pixel_shape) for res in

@@ -41,8 +41,10 @@ except:
     statsmodels_installed = False
 
 from hyperspy.decorators import auto_replot
+from hyperspy.misc.utils import stack
 from hyperspy.defaults_parser import preferences
 from hyperspy.external.progressbar import progressbar
+from hyperspy._signals.lazy import lazyerror
 from hyperspy.gui.tools import (
     Signal1DCalibration,
     SmoothingSavitzkyGolay,
@@ -659,6 +661,7 @@ class Signal1DTools(object):
                 self.crop(axis.index_in_axes_manager,
                           ilow, ihigh)
             signals_to_shift = also_align
+            self.events.data_changed.trigger(obj=self)
         else:
 
             if self.metadata.Signal.lazy:
@@ -787,14 +790,9 @@ class Signal1DTools(object):
         if (polynomial_order is not None and
                 window_length is not None):
             axis = self.axes_manager.signal_axes[0]
-            self.data = savgol_filter(
-                x=self.data,
-                window_length=window_length,
-                polyorder=polynomial_order,
-                deriv=differential_order,
-                delta=axis.scale,
-                axis=axis.index_in_array)
-            self.events.data_changed.trigger(obj=self)
+            self.map(savgol_filter, window_length=window_length,
+                     polyorder=polynomial_order, deriv=differential_order,
+                     delta=axis.scale,)
         else:
             # Interactive mode
             smoother = SmoothingSavitzkyGolay(self)
@@ -1021,10 +1019,7 @@ class Signal1DTools(object):
                 "FWHM must be greater than zero")
         axis = self.axes_manager.signal_axes[0]
         FWHM *= 1 / axis.scale
-        self.data = gaussian_filter1d(
-            self.data,
-            axis=axis.index_in_array,
-            sigma=FWHM / 2.35482)
+        self.map(gaussian_filter1d, sigma=FWHM / 2.35482)
 
     @auto_replot
     def hanning_taper(self, side='both', channels=None, offset=0):
@@ -1048,6 +1043,8 @@ class Signal1DTools(object):
 
         """
         # TODO: generalize it
+        if self.metadata.Signal.lazy:
+            raise lazyerror
         self._check_signal_dimension_equals_one()
         if channels is None:
             channels = int(round(len(self()) * 0.02))
@@ -1134,6 +1131,8 @@ class Signal1DTools(object):
 
         """
         # TODO: add scipy.signal.find_peaks_cwt
+        # TODO: make work with lazy signals. Currently does not due to funny
+        # output dtype
         self._check_signal_dimension_equals_one()
         axis = self.axes_manager.signal_axes[0].axis
         arr_shape = (self.axes_manager._navigation_shape_in_array
@@ -1197,34 +1196,50 @@ class Signal1DTools(object):
         if not 0 < factor < 1:
             raise ValueError("factor must be between 0 and 1.")
 
-        left, right = (self._get_navigation_signal(),
-                       self._get_navigation_signal())
-        # The signals must be of dtype float to contain np.nan
-        left.change_dtype('float')
-        right.change_dtype('float')
+        left, right = (self._get_navigation_signal(dtype='float'),
+                       self._get_navigation_signal(dtype='float'))
         axis = self.axes_manager.signal_axes[0]
-        x = axis.axis
+        # x = axis.axis
         maxval = self.axes_manager.navigation_size
         show_progressbar = show_progressbar and maxval > 0
-        for i, spectrum in progressbar(enumerate(self),
-                                       total=maxval,
-                                       disable=not show_progressbar,
-                                       leave=True):
+        for _s in (left, right):
+            _s.axes_manager.set_signal_dimension(0)
+        both = stack((left, right))
+        both.axes_manager[-1].navigate = False
+
+        def estimating_function(both,
+                                spectrum=None,
+                                window=None,
+                                factor=0.5,
+                                axis=None):
+            x = axis.axis
             if window is not None:
-                vmax = axis.index2value(spectrum.data.argmax())
-                spectrum = spectrum.isig[vmax - window / 2.:vmax + window / 2.]
-                x = spectrum.axes_manager[0].axis
+                vmax = axis.index2value(spectrum.argmax())
+                slices = axis._get_array_slices(
+                    slice(vmax - window * 0.5, vmax + window * 0.5))
+                spectrum = spectrum[slices]
+                x = x[slices]
             spline = scipy.interpolate.UnivariateSpline(
                 x,
-                spectrum.data - factor * spectrum.data.max(),
+                spectrum - factor * spectrum.max(),
                 s=0)
             roots = spline.roots()
             if len(roots) == 2:
-                left.isig[self.axes_manager.indices] = roots[0]
-                right.isig[self.axes_manager.indices] = roots[1]
+                return np.array(roots)
             else:
-                left.isig[self.axes_manager.indices] = np.nan
-                right.isig[self.axes_manager.indices] = np.nan
+                return np.full((2,), np.nan)
+
+        both._map_iterate(estimating_function,
+                          iterating_kwargs=(
+                              ('spectrum', self),),
+                          window=window,
+                          factor=factor,
+                          axis=axis,
+                          show_progressbar=show_progressbar)
+        left, right = both.split()
+        for _s in (left, right):
+            _s.axes_manager.set_signal_dimension(
+                self.axes_manager.navigation_dimension)
         width = right - left
         if factor == 0.5:
             width.metadata.General.title = (
@@ -1303,6 +1318,8 @@ class Signal1D(BaseSignal,
 
         """
         self._check_signal_dimension_equals_one()
+        if self.metadata.Signal.lazy:
+            raise lazyerror
         dc = self.data
         if signal_mask is not None:
             dc = dc[..., ~signal_mask]

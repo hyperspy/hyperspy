@@ -275,6 +275,7 @@ def histogram(a, bins=10, range=None, **kwargs):
     numpy.histogram
     astroML.plotting.hist
     """
+    import dask.array as da
     if isinstance(a, da.Array):
         return dasky_histogram(a, bins=bins, **kwargs)
 
