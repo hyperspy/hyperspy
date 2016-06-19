@@ -467,19 +467,20 @@ class LazySignal(BaseSignal):
         calc_result = dd(function)(self.data, **kwargs)
         self.data = da.from_delayed(calc_result, shape=self.data.shape)
 
-    def _map_iterate(self, function, signal_kwargs, show_progressbar=None,
-                     **kwargs):
+    def _map_iterate(self, function, iterating_kwargs=(),
+                     show_progressbar=None, **kwargs):
         _logger.debug("Entering '_map_iterate'")
         self._make_sure_data_is_contiguous()
         orig_shape = self.data.shape
-        iterators = tuple(signal[1]._iterate_signal() for signal in
-                          signal_kwargs)
+        iterators = tuple(signal[1]._iterate_signal()
+                          if isinstance(signal[1], BaseSignal) else signal[1]
+                          for signal in iterating_kwargs)
         iterators = (self._iterate_signal(),) + iterators
         all_delayed = []
         pixel_shape = self.axes_manager.signal_shape[::-1]
         _logger.debug("Entering delayed-creating loop")
         for data in zip(*iterators):
-            for (key, value), datum in zip(signal_kwargs, data[1:]):
+            for (key, value), datum in zip(iterating_kwargs, data[1:]):
                 kwargs[key] = datum[0]
             all_delayed.append(dd(function)(data[0], **kwargs))
         _logger.debug("Entering dask.array-creating loop")

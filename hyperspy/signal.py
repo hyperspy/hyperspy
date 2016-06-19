@@ -2599,7 +2599,8 @@ class BaseSignal(FancySlicing,
             getitem = [0] * len(data.shape)
             for axis in axes:
                 getitem[axis] = slice(None)
-            getitem[unfolded_axis] = i
+            # so that we get a reference even with no signal dimensions
+            getitem[unfolded_axis] = i if len(axes) else slice(i, i + 1)
             yield(data[tuple(getitem)])
 
     def _remove_axis(self, axes):
@@ -3300,18 +3301,22 @@ class BaseSignal(FancySlicing,
         """Function that can be replaced for lazy signals"""
         self.data = function(self.data, **kwargs)
 
-    def _map_iterate(self, function, signal_kwargs, show_progressbar=None,
-                     **kwargs):
+    def _map_iterate(self, function, iterating_kwargs=(),
+                     show_progressbar=None, **kwargs):
         """Function that can be replaced for lazy signals"""
-        iterators = tuple(signal[1]._iterate_signal() for signal in
-                          signal_kwargs)
+        iterators = tuple(signal[1]._iterate_signal()
+                          if isinstance(signal[1], BaseSignal) else signal[1]
+                          for signal in iterating_kwargs)
         iterators = (self._iterate_signal(),) + iterators
         for data in progressbar(zip(*iterators),
                                 disable=not show_progressbar,
                                 total=self.axes_manager.navigation_size,
                                 leave=True):
-            for (key, value), datum in zip(signal_kwargs, data[1:]):
-                kwargs[key] = datum[0]
+            for (key, value), datum in zip(iterating_kwargs, data[1:]):
+                if isinstance(value, BaseSignal) and len(datum) == 1:
+                    kwargs[key] = datum[0]
+                else:
+                    kwargs[key] = datum
             data[0][:] = function(data[0], **kwargs)
 
     def copy(self):
