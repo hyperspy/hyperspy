@@ -1791,9 +1791,25 @@ class BaseSignal(FancySlicing,
             # is currently being prepared (eg. see modf).
             # In ufuncs with a single output, domain is 0
             uf, objs, huh = context
-            if self.metadata.General.title:
-                signal.metadata.General.title = "%s(%s)" % (
-                    uf.__name__, self.metadata.General.title)
+
+            def get_title(signal, i=0):
+                g = signal.metadata.General
+                if g.title:
+                    return g.title
+                else:
+                    return "Untitled Signal-%s" % (i + 1)
+
+            title_strs = []
+            i = 0
+            for obj in objs:
+                if isinstance(obj, BaseSignal):
+                    title_strs.append(get_title(obj, i))
+                    i += 1
+                else:
+                    title_strs.append(str(obj))
+
+            signal.metadata.General.title = "%s(%s)" % (
+                uf.__name__, ", ".join(title_strs))
 
         return signal
 
