@@ -46,7 +46,6 @@ from hyperspy._components.offset import Offset
 from hyperspy._components.power_law import PowerLaw
 from hyperspy._components.pes_see import SEE
 from hyperspy._components.rc import RC
-from hyperspy._components.spline import Spline
 from hyperspy._components.eels_vignetting import Vignetting
 from hyperspy._components.voigt import Voigt
 from hyperspy._components.scalable_fixed_pattern import ScalableFixedPattern
