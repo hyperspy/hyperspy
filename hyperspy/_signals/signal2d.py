@@ -16,12 +16,14 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
+import copy
 import numpy as np
 import numpy.ma as ma
 import scipy as sp
 from scipy.fftpack import fftn, ifftn
 from skimage.feature import peak_local_max
 import matplotlib.pyplot as plt
+import scipy.ndimage as ndi
 import warnings
 
 from hyperspy.defaults_parser import preferences
@@ -505,9 +507,11 @@ def find_peaks_masiel(z, subpixel=False, peak_width=10, medfilt_radius=5,
     # peaks = np.hstack((peaks, heights))
     return peaks
 
-def find_peaks_blob(z, threshold=5., **kwargs):
+
+def find_peaks_blob(z, threshold=0.1, **kwargs):
     """
     Finds peaks via the difference of Gaussian Matrices method in scikit-image.
+
     Parameters
     ----------
     z : ndarray
@@ -516,19 +520,33 @@ def find_peaks_blob(z, threshold=5., **kwargs):
         lower than minimum peak intensity.
     kwargs : Additional parameters to be passed to the algorithm. See 'blob_dog'
         documentation for details.
+
     Returns
     -------
     ndarray
         (n_peaks, 2)
         Array of peak coordinates.
+
     Notes
     -----
     While highly effective at finding even very faint peaks, this method is
         sensitive to fluctuations in intensity near the edges of the image.
+
     """
+    z = z/np.max(z)
     from skimage.feature import blob_dog
     blobs = blob_dog(z, threshold=threshold, **kwargs)
-    return blobs[:, :2]
+    try:
+        centers = blobs[:, :2]
+    except IndexError:
+        return np.array([])
+    clean_centers = []
+    for center in centers:
+        if len(np.intersect1d(center, (0,) + z.shape + tuple(
+                        c - 1 for c in z.shape))) > 0:
+            continue
+        clean_centers.append(center)
+    return np.array(clean_centers)
 
 
 def subpix_locate(z, peaks, peak_width, scale=None):
