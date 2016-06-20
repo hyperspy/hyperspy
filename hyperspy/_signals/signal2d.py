@@ -23,6 +23,7 @@ import scipy as sp
 from scipy.fftpack import fftn, ifftn
 from skimage.feature import peak_local_max
 import matplotlib.pyplot as plt
+import scipy.ndimage as ndi
 import warnings
 
 from hyperspy.defaults_parser import preferences
@@ -505,6 +506,7 @@ def find_peaks_masiel(z, subpixel=False, peak_width=10, medfilt_radius=5,
     # heights = np.array([z[peaks[i, 1], peaks[i, 0]] for i in xrange(peaks.shape[0])]).reshape((-1, 1))
     # peaks = np.hstack((peaks, heights))
     return peaks
+
 
 def find_peaks_blob(z, threshold=5., **kwargs):
     """
