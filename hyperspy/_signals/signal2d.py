@@ -508,7 +508,7 @@ def find_peaks_masiel(z, subpixel=False, peak_width=10, medfilt_radius=5,
     return peaks
 
 
-def find_peaks_blob(z, **kwargs):
+def find_peaks_blob(z, threshold=0.1, **kwargs):
     """
     Finds peaks via the difference of Gaussian Matrices method in scikit-image.
 
@@ -533,9 +533,13 @@ def find_peaks_blob(z, **kwargs):
         sensitive to fluctuations in intensity near the edges of the image.
 
     """
+    z = z/np.max(z)
     from skimage.feature import blob_dog
-    blobs = blob_dog(z, **kwargs)
-    centers = blobs[:, :2]
+    blobs = blob_dog(z, threshold=threshold, **kwargs)
+    try:
+        centers = blobs[:, :2]
+    except IndexError:
+        return np.array([])
     clean_centers = []
     for center in centers:
         if len(np.intersect1d(center, (0,) + z.shape + tuple(
