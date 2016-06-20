@@ -20,15 +20,15 @@ import numpy as np
 from scipy import constants
 from scipy.integrate import simps, cumtrapz
 
-from hyperspy._signals.spectrum import Spectrum
+from hyperspy.signals import Signal1D
 from hyperspy.misc.eels.tools import eels_constant
 
 
-class DielectricFunction(Spectrum):
+class DielectricFunction(Signal1D):
     _signal_type = "DielectricFunction"
 
     def __init__(self, *args, **kwards):
-        Spectrum.__init__(self, *args, **kwards)
+        Signal1D.__init__(self, *args, **kwards)
         self.metadata.Signal.binned = False
 
     def get_number_of_effective_electrons(self, nat, cumulative=False):
@@ -56,8 +56,8 @@ class DielectricFunction(Spectrum):
 
         Returns
         -------
-        neff1, neff2: Signal
-            Signal instances containing neff1 and neff2. The signal and
+        neff1, neff2: Signal1D
+            Signal1D instances containing neff1 and neff2. The signal and
             navigation dimensions are the same as the current signal if
             `cumulative` is True, otherwise the signal dimension is 0
             and the navigation dimension is the same as the current

@@ -22,16 +22,81 @@ import textwrap
 from traits import trait_base
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import warnings
-
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 import hyperspy as hs
 
-from hyperspy.misc.image_tools import (contrast_stretching,
-                                       MPL_DIVERGING_COLORMAPS,
-                                       centre_colormap_values)
 from hyperspy.defaults_parser import preferences
+
+
+def contrast_stretching(data, saturated_pixels):
+    """Calculate bounds that leaves out a given percentage of the data.
+
+    Parameters
+    ----------
+    data: numpy array
+    saturated_pixels: scalar
+        The percentage of pixels that are left out of the bounds.  For example,
+        the low and high bounds of a value of 1 are the 0.5% and 99.5%
+        percentiles. It must be in the [0, 100] range.
+
+    Returns
+    -------
+    vmin, vmax: scalar
+        The low and high bounds
+
+    Raises
+    ------
+    ValueError if the value of `saturated_pixels` is out of the valid range.
+
+    """
+    # Sanity check
+    if not 0 <= saturated_pixels <= 100:
+        raise ValueError(
+            "saturated_pixels must be a scalar in the range[0, 100]")
+    nans = np.isnan(data)
+    if nans.any():
+        data = data[~nans]
+    vmin = np.percentile(data, saturated_pixels / 2.)
+    vmax = np.percentile(data, 100 - saturated_pixels / 2.)
+    return vmin, vmax
+
+
+MPL_DIVERGING_COLORMAPS = [
+    "BrBG",
+    "bwr",
+    "coolwarm",
+    "PiYG",
+    "PRGn",
+    "PuOr",
+    "RdBu",
+    "RdGy",
+    "RdYIBu",
+    "RdYIGn",
+    "seismic",
+    "Spectral", ]
+# Add reversed colormaps
+MPL_DIVERGING_COLORMAPS += [cmap + "_r" for cmap in MPL_DIVERGING_COLORMAPS]
+
+
+def centre_colormap_values(vmin, vmax):
+    """Calculate vmin and vmax to set the colormap midpoint to zero.
+
+    Parameters
+    ----------
+    vmin, vmax : scalar
+        The range of data to display.
+
+    Returns
+    -------
+    cvmin, cvmax : scalar
+        The values to obtain a centre colormap.
+
+    """
+
+    absmax = max(abs(vmin), abs(vmax))
+    return -absmax, absmax
 
 
 def create_figure(window_title=None,
@@ -120,7 +185,7 @@ def plot_RGB_map(im_list, normalization='single', dont_plot=False):
 
     Parameters
     ----------
-    im_list : list of Image instances
+    im_list : list of Signal2D instances
     normalization : {'single', 'global'}
     dont_plot : bool
 
@@ -194,14 +259,14 @@ def plot_signals(signal_list, sync=True, navigator="auto",
 
     Parameters
     ----------
-    signal_list : list of Signal instances
+    signal_list : list of BaseSignal instances
         If sync is set to True, the signals must have the
         same navigation shape, but not necessarily the same signal shape.
     sync : True or False, default "True"
         If True: the signals will share navigation, all the signals
         must have the same navigation shape for this to work, but not
         necessarily the same signal shape.
-    navigator : {"auto", None, "spectrum", "slider", Signal}, default "auto"
+    navigator : {"auto", None, "spectrum", "slider", BaseSignal}, default "auto"
         See signal.plot docstring for full description
     navigator_list : {List of navigator arguments, None}, default None
         Set different navigator options for the signals. Must use valid
@@ -255,7 +320,7 @@ def plot_signals(signal_list, sync=True, navigator="auto",
         elif navigator is "slider":
             navigator_list.append("slider")
             navigator_list.extend([None] * (len(signal_list) - 1))
-        elif isinstance(navigator, hyperspy.signal.Signal):
+        elif isinstance(navigator, hyperspy.signal.BaseSignal):
             navigator_list.append(navigator)
             navigator_list.extend([None] * (len(signal_list) - 1))
         elif navigator is "spectrum":
@@ -299,8 +364,8 @@ def plot_signals(signal_list, sync=True, navigator="auto",
 
 
 def _make_heatmap_subplot(spectra):
-    from hyperspy._signals.image import Image
-    im = Image(spectra.data, axes=spectra.axes_manager._get_axes_dicts())
+    from hyperspy._signals.signal2d import Signal2D
+    im = Signal2D(spectra.data, axes=spectra.axes_manager._get_axes_dicts())
     im.metadata.General.title = spectra.metadata.General.title
     im.plot()
     return im._plot.signal_plot.ax
@@ -315,7 +380,7 @@ def _make_overlap_plot(spectra, ax, color="blue", line_style='-'):
             zip(spectra, color, line_style)):
         x_axis = spectrum.axes_manager.signal_axes[0]
         ax.plot(x_axis.axis, spectrum.data, color=color, ls=line_style)
-    _set_spectrum_xlabel(spectra if isinstance(spectra, hs.signals.Signal)
+    _set_spectrum_xlabel(spectra if isinstance(spectra, hs.signals.BaseSignal)
                          else spectra[-1], ax)
     ax.set_ylabel('Intensity')
     ax.autoscale(tight=True)
@@ -339,7 +404,7 @@ def _make_cascade_subplot(
         data_to_plot = ((spectrum.data - spectrum.data.min()) /
                         float(max_value) + spectrum_index * padding)
         ax.plot(x_axis.axis, data_to_plot, color=color, ls=line_style)
-    _set_spectrum_xlabel(spectra if isinstance(spectra, hs.signals.Signal)
+    _set_spectrum_xlabel(spectra if isinstance(spectra, hs.signals.BaseSignal)
                          else spectra[-1], ax)
     ax.set_yticks([])
     ax.autoscale(tight=True)
@@ -396,7 +461,7 @@ def plot_images(images,
             Control the title labeling of the plotted images.
             If None, no titles will be shown.
             If 'auto' (default), function will try to determine suitable titles
-            using Image titles, falling back to the 'titles' option if no good
+            using Signal2D titles, falling back to the 'titles' option if no good
             short titles are detected.
             Works best if all images to be plotted have the same beginning
             to their titles.
@@ -500,13 +565,13 @@ def plot_images(images,
     """
     from hyperspy.drawing.widgets import ScaleBar
     from hyperspy.misc import rgb_tools
-    from hyperspy.signal import Signal
+    from hyperspy.signal import BaseSignal
 
-    if isinstance(images, Signal) and len(images) is 1:
+    if isinstance(images, BaseSignal) and len(images) is 1:
         images.plot()
         ax = plt.gca()
         return ax
-    elif not isinstance(images, (list, tuple, Signal)):
+    elif not isinstance(images, (list, tuple, BaseSignal)):
         raise ValueError("images must be a list of image signals or "
                          "multi-dimensional signal."
                          " " + repr(type(images)) + " was given.")
@@ -524,8 +589,8 @@ def plot_images(images,
 
     # If input is >= 1D signal (e.g. for multi-dimensional plotting),
     # copy it and put it in a list so labeling works out as (x,y) when plotting
-    if isinstance(
-            images, Signal) and images.axes_manager.navigation_dimension > 0:
+    if isinstance(images,
+                  BaseSignal) and images.axes_manager.navigation_dimension > 0:
         images = [images._deepcopy_with_new_data(images.data)]
 
     n = 0
@@ -725,7 +790,9 @@ def plot_images(images,
 
             if not isinstance(aspect, (int, float)) and aspect not in [
                     'auto', 'square', 'equal']:
-                raise ValueError('Did not understand aspect ratio input.')
+                print('Did not understand aspect ratio input. ' \
+                      'Using \'auto\' as default.')
+                aspect = 'auto'
 
             if aspect is 'auto':
                 if float(yaxis.size) / xaxis.size < min_asp:
@@ -788,7 +855,7 @@ def plot_images(images,
                 else:
                     if len(ims) == n:
                         # This is true if we are plotting just 1
-                        # multi-dimensional Image
+                        # multi-dimensional Signal2D
                         title = label_list[idx - 1]
                     elif user_labels:
                         title = label_list[idx - 1]
@@ -822,7 +889,7 @@ def plot_images(images,
 
             # Add scalebars as necessary
             if (scalelist and idx - 1 in scalebar) or scalebar is 'all':
-                ax.scalebar = Scale_Bar(
+                ax.scalebar = ScaleBar(
                     ax=ax,
                     units=axes[0].units,
                     color=scalebar_color,
@@ -1028,14 +1095,14 @@ def plot_spectra(
             ax.set_ylabel('Intensity')
             if legend is not None:
                 ax.set_title(legend)
-            if not isinstance(spectra, hyperspy.signal.Signal):
+            if not isinstance(spectra, hyperspy.signal.BaseSignal):
                 _set_spectrum_xlabel(spectrum, ax)
-        if isinstance(spectra, hyperspy.signal.Signal):
+        if isinstance(spectra, hyperspy.signal.BaseSignal):
             _set_spectrum_xlabel(spectrum, ax)
         fig.tight_layout()
 
     elif style == 'heatmap':
-        if not isinstance(spectra, hyperspy.signal.Signal):
+        if not isinstance(spectra, hyperspy.signal.BaseSignal):
             import hyperspy.utils
             spectra = hyperspy.utils.stack(spectra)
         with spectra.unfolded():
@@ -1146,8 +1213,8 @@ def plot_histograms(signal_list,
     Example
     -------
     Histograms of two random chi-square distributions
-    >>> img = hs.signals.Image(np.random.chisquare(1,[10,10,100]))
-    >>> img2 = hs.signals.Image(np.random.chisquare(2,[10,10,100]))
+    >>> img = hs.signals.Signal2D(np.random.chisquare(1,[10,10,100]))
+    >>> img2 = hs.signals.Signal2D(np.random.chisquare(2,[10,10,100]))
     >>> hs.plot.plot_histograms([img,img2],legend=['hist1','hist2'])
 
     Returns

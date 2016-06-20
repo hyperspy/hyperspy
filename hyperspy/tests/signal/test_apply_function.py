@@ -1,4 +1,4 @@
-import mock
+from unittest import mock
 
 import numpy as np
 from scipy.ndimage import rotate, gaussian_filter, gaussian_filter1d
@@ -10,7 +10,7 @@ import hyperspy.api as hs
 class TestImage:
 
     def setup(self):
-        self.im = hs.signals.Image(np.arange(0., 18).reshape((2, 3, 3)))
+        self.im = hs.signals.Signal2D(np.arange(0., 18).reshape((2, 3, 3)))
 
     def test_constant_sigma(self):
         im = self.im
@@ -36,7 +36,7 @@ class TestImage:
         im = self.im
 # Here sigmas have to be floats because the fix for https://github.com/numpy/numpy/issues/2951 has not
 # propagated yet to the conda environments
-        sigmas = hs.signals.Signal(np.array([0., 1.]))
+        sigmas = hs.signals.BaseSignal(np.array([0., 1.]))
 
         sigmas.axes_manager.set_signal_dimension(0)
         im.map(gaussian_filter,
@@ -63,10 +63,10 @@ class TestImage:
               [0., 14.76776695, 0.]]])))
 
 
-class TestSpectrum:
+class TestSignal1D:
 
     def setup(self):
-        self.s = hs.signals.Spectrum(np.arange(0., 6).reshape((2, 3)))
+        self.s = hs.signals.Signal1D(np.arange(0., 6).reshape((2, 3)))
 
     def test_constant_sigma(self):
         s = self.s
