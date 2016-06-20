@@ -31,6 +31,8 @@ from hyperspy.external.progressbar import progressbar
 from hyperspy.misc.math_tools import symmetrize, antisymmetrize
 from hyperspy.signal import BaseSignal
 
+from hyperspy._signals.signal1d import find_peaks_ohaver
+
 
 def shift_image(im, shift, interpolation_order=1, fill_value=np.nan):
     fractional, integral = np.modf(shift)
@@ -252,7 +254,7 @@ def find_peaks_max(z, alpha=3, size=10):
     peaks = k_arr[:peak_ct]
     return peaks
 
-def find_peaks_zaefferer(z, grad_threshold=400, window_size=40,
+def find_peaks_zaefferer(z, grad_threshold=0.1, window_size=40,
                          distance_cutoff=50):
     """
     Method to locate positive peaks in an image based on gradient thresholding
@@ -288,12 +290,12 @@ def find_peaks_zaefferer(z, grad_threshold=400, window_size=40,
         y_min = max(0, y - a)
         y_max = min(y_max, y + a)
         return np.array(
-            np.meshgrid(range(x_min, x_max), range(y_min, y_max))).T.reshape(-1,
-                                                                             2)
+            np.meshgrid(range(x_min, x_max), range(y_min, y_max))).reshape(2,
+                                                                           -1).T
 
     def get_max(image, box):
         """Finds the coordinates of the maximum of 'image' in 'box'."""
-        vals = image[box[:, 1], box[:, 0]]
+        vals = image[box[:, 0], box[:, 1]]
         max_position = box[np.argmax(vals)]
         return max_position
 
@@ -311,7 +313,8 @@ def find_peaks_zaefferer(z, grad_threshold=400, window_size=40,
     # Generate an ordered list of matrix coordinates.
     if len(z.shape) != 2:
         raise ValueError("'z' should be a 2-d image matrix.")
-    coordinates = np.indices(z.data.shape).T.reshape(-1, 2)
+    z = z/np.max(z)
+    coordinates = np.indices(z.data.shape).reshape(2, -1).T
     # Calculate the gradient at every point.
     image_gradient = gradient(z)
     # Boolean matrix of high-gradient points.
@@ -406,7 +409,7 @@ def find_peaks_stat(z):
     def separate_peaks(binarised_image):
         """Identify adjacent 'on' coordinates via DBSCAN."""
         bi = binarised_image.astype('bool')
-        coordinates = np.indices(bi.data.shape).T.reshape(-1, 2)[bi.flatten()]
+        coordinates = np.indices(bi.data.shape).reshape(2, -1).T[bi.flatten()]
         db = DBSCAN(2, 3)
         peaks = []
         labeled_points = db.fit_predict(coordinates)
@@ -473,23 +476,19 @@ def find_peaks_masiel(z, subpixel=False, peak_width=10, medfilt_radius=5,
     mapY = np.zeros_like(z)
     peak_array = np.zeros((maxpeakn, 3))
 
-    if medfilt_radius > 0:
-        z = ndi.filters.median_filter(z, medfilt_radius)
-    xc = [find_peaks_ohaver(z[i], medfilt_radius=None,
+    xc = [find_peaks_ohaver(z[i], medfilt_radius=medfilt_radius,
                             peakgroup=peak_width,
-                            subchannel=False,
-                            peak_array=peak_array).copy()[:, 0] for i in
-          xrange(z.shape[0])]
-    for row in xrange(len(xc)):
-        for col in xrange(xc[row].shape[0]):
+                            subchannel=False).copy()['position'] for i in
+          range(z.shape[0])]
+    for row in range(len(xc)):
+        for col in range(xc[row].shape[0]):
             mapX[row, int(xc[row][col])] = 1
-    yc = [find_peaks_ohaver(z[:, i], medfilt_radius=None,
+    yc = [find_peaks_ohaver(z[:, i], medfilt_radius=medfilt_radius,
                             peakgroup=peak_width,
-                            subchannel=False,
-                            peak_array=peak_array).copy()[:, 0] for i in
-          xrange(z.shape[1])]
-    for col in xrange(len(yc)):
-        for row in xrange(yc[col].shape[0]):
+                            subchannel=False).copy()['position'] for i in
+          range(z.shape[1])]
+    for col in range(len(yc)):
+        for row in range(yc[col].shape[0]):
             mapY[int(yc[col][row]), col] = 1
 
     Fmap = mapX * mapY
@@ -503,7 +502,7 @@ def find_peaks_masiel(z, subpixel=False, peak_width=10, medfilt_radius=5,
     peaks = np.ma.masked_less(peaks, 0)
     peaks = np.ma.compress_rows(peaks)
     # add the heights
-    # heights = np.array([z[peaks[i, 1], peaks[i, 0]] for i in xrange(peaks.shape[0])]).reshape((-1, 1))
+    # heights = np.array([z[peaks[i, 1], peaks[i, 0]] for i in range(peaks.shape[0])]).reshape((-1, 1))
     # peaks = np.hstack((peaks, heights))
     return peaks
 
@@ -552,7 +551,7 @@ def find_peaks_blob(z, threshold=0.1, **kwargs):
 def subpix_locate(z, peaks, peak_width, scale=None):
     top = left = peak_width / 2 + 1
     centers = np.array(peaks, dtype=np.float32)
-    for i in xrange(peaks.shape[0]):
+    for i in range(peaks.shape[0]):
         pk = peaks[i]
         center = np.array(
             ndi.measurements.center_of_mass(z[(pk[0] - left):(pk[0] + left),
