@@ -557,8 +557,8 @@ class ImageObject(object):
         if len(self.scales) == 1:
             return "spectrum"
         elif (('ImageTags.Meta_Data.Format' in self.imdict and
-               self.imdict.ImageTags.Meta_Data.Format in ("Signal1D image",
-                                                          "Signal1D")) or (
+               self.imdict.ImageTags.Meta_Data.Format in ("Spectrum image",
+                                                          "Spectrum")) or (
                 "ImageTags.spim" in self.imdict)) and len(self.scales) == 2:
             return "spectrum"
         else:
@@ -567,7 +567,7 @@ class ImageObject(object):
     @property
     def to_spectrum(self):
         if (('ImageTags.Meta_Data.Format' in self.imdict and
-                self.imdict.ImageTags.Meta_Data.Format == "Signal1D image") or
+                self.imdict.ImageTags.Meta_Data.Format == "Spectrum image") or
                 ("ImageTags.spim" in self.imdict)) and len(self.scales) > 2:
             return True
         else:
@@ -847,7 +847,7 @@ def file_reader(filename, record_by=None, order=None):
             mp['General']['original_filename'] = os.path.split(filename)[1]
             post_process = []
             if image.to_spectrum is True:
-                post_process.append(lambda s: s.to_spectrum())
+                post_process.append(lambda s: s.to_signal1D())
             post_process.append(lambda s: s.squeeze())
             imd.append(
                 {'data': image.get_data(),
