@@ -116,7 +116,7 @@ The different subclasses are characterized by three
     +---------------------------------------------------------------+-----------+-------------+---------------+
     |              :py:class:`~._signals.signal2d.Signal2D`         |   image   |      -      |       -       |
     +---------------------------------------------------------------+-----------+-------------+---------------+
-    |      :py:class:`~._signals.hologram_image.HologramImage`      |   image   |   HOLOGRAM  |       -       |
+    |      :py:class:`~._signals.hologram_image.HologramImage`      |   image   |   hologram  |       -       |
     +---------------------------------------------------------------+-----------+-------------+---------------+
     |          :py:class:`~._signals.wave_image.WaveImage`          |   image   |     WAVE    |       -       |
     +---------------------------------------------------------------+-----------+-------------+---------------+
