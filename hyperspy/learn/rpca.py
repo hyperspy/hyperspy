@@ -72,8 +72,8 @@ def _updatecol(X, A, B, I):
     return L
 
 def orpca(X, rank, fast=False, lambda1=None,
-          lambda2=None, method=None, init=None,
-          mask=None):
+          lambda2=None, method=None,
+          mask=None, seed=None):
     """
     This function performs Online Robust PCA with
     with missing or corrupted data.
@@ -91,16 +91,17 @@ def orpca(X, rank, fast=False, lambda1=None,
     method : 'CF' | 'BCD'
         CF  - Closed-form (default)
         BCD - Block-coordinate descent
-    init : 'rand' | 'BRP'
-        rand - Random initialization (default)
-        BRP  - Bilateral random projection
     mask : numpy array
         is an initial estimate of the sparse error matrix
+    seed : int
+        Random seed for initialization
 
     Returns
     -------
-    Y : numpy array
-        is the [m x n] low-rank component.
+    L : numpy array
+        is the [m x r] basis array
+    R : numpy array
+        is the [r x n] coefficient array
     E : numpy array
         is the sparse error
     U, S, V : numpy arrays
@@ -114,11 +115,6 @@ def orpca(X, rank, fast=False, lambda1=None,
         def svd(X):
             return scipy.linalg.svd(X, full_matrices=False)
 
-    # Initialize by rescaling to [0,1]
-    Xmin = X.min()
-    Xmax = X.max()
-    X = (X - Xmin) / (Xmax - Xmin)
-
     # Get shape
     m, n = X.shape
 
@@ -127,10 +123,6 @@ def orpca(X, rank, fast=False, lambda1=None,
         _logger.warning("No method specified. Defaulting to "
                         "closed-form solver")
         method = 'CF'
-    if init is None:
-        _logger.warning("No initializer specified. Defaulting to "
-                        "random.")
-        init = 'rand'
     if lambda1 is None:
         _logger.warning("Nuclear norm regularization parameter "
                         "is set to default.")
@@ -143,23 +135,14 @@ def orpca(X, rank, fast=False, lambda1=None,
     # Check options are valid
     if method not in ('CF', 'BCD'):
         raise ValueError("'method' not recognised")
-    if init not in ('rand', 'BRP'):
-        raise ValueError("'init' not recognised")
 
-    if init == 'rand':
-        # Use random initialization
-        Y2 = np.random.randn(m, rank)
-        L, tmp = scipy.linalg.qr(Y2, mode='economic')
-    else:
-        # Use bilateral random projections
-        power = 1
-        Z = X[:, 0:rank]
-        Y2 = np.random.randn(rank, rank)
-        for i in range(power):
-            Y1 = np.dot(Z, Y2)
-            Y2 = np.dot(Z.T, Y1)
-        Q, tmp = scipy.linalg.qr(Y2, mode='economic')
-        L = np.dot(np.dot(Z, Q), Q.T)
+    # Set random seed
+    if seed is not None:
+        np.random.seed(seed)
+
+    # Use random initialization
+    Y2 = np.random.randn(m, rank)
+    L, tmp = scipy.linalg.qr(Y2, mode='economic')
 
     R = np.zeros((rank, n))
     I = lambda1 * np.eye(rank)
@@ -169,7 +152,6 @@ def orpca(X, rank, fast=False, lambda1=None,
         E = np.zeros((m, n))
     else:
         E = mask.reshape((m, n))
-        E = (E - Xmin) / (Xmax - Xmin)
 
     A = np.zeros((rank, rank))
     B = np.zeros((m, rank))
@@ -195,13 +177,8 @@ def orpca(X, rank, fast=False, lambda1=None,
             B = B + np.outer((z - e), r.T)
             L = _updatecol(L, A, B, I)
 
-    # Scale back
-    Y = np.dot(L, R)
-    Y = Y * (Xmax - Xmin) + Xmin
-    E = E * (Xmax - Xmin) + Xmin
-
     # Do final SVD
-    U, S, Vh = svd(Y)
+    U, S, Vh = svd(np.dot(L, R))
     V = Vh.T
 
     # Chop small singular values which
@@ -209,4 +186,4 @@ def orpca(X, rank, fast=False, lambda1=None,
     # in the SVD.
     S[S<=1e-9] = 0.0
 
-    return Y, E, U, S, V
+    return L, R, E, U, S, V
