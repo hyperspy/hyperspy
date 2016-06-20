@@ -1716,58 +1716,49 @@ class BaseSignal(FancySlicing,
     def real(self):
         """Get/set the real part of the data. Returns an :class:`~hyperspy.signals.Signal2D`."""
         sig = self._deepcopy_with_new_data(np.real(self.data))
-        sig.set_signal_type('')
-        sig.metadata.General.title = 'Real part of {}'.format(sig.metadata.General.title)
+        if sig.metadata.General.title:
+            title = sig.metadata.General.title
+        else:
+            title = 'Untitled Signal'
+        sig.metadata.General.title = 'real({})'.format(title)
         return sig
-
-    @real.setter
-    def real(self, real):
-        if isinstance(real, BaseSignal):
-            real = real.data
-        self.data = real + 1j * self.imag.data
 
     @property
     def imag(self):
         """Get/set imaginary part of the data. Returns an :class:`~hyperspy.signals.Signal2D`."""
         sig = self._deepcopy_with_new_data(np.imag(self.data))
-        sig.set_signal_type('')
-        sig.metadata.General.title = 'Imaginary part of {}'.format(sig.metadata.General.title)
+        if sig.metadata.General.title:
+            title = sig.metadata.General.title
+        else:
+            title = 'Untitled Signal'
+        sig.metadata.General.title = 'imag({})'.format(title)
         return sig
 
-    @imag.setter
-    def imag(self, imag):
-        if isinstance(imag, BaseSignal):
-            imag = imag.data
-        self.data = self.real.data + 1j * imag
+    def get_angle(self, deg=False):
+        """Return the angle of the (complex) data of the signal. Is zero if data is real.Calculate
+        the complex anglet the phase of the data.
 
-    @property
-    def phase(self):
-        """Get/set the phase of the data. Returns an :class:`~hyperspy.signals.Signal2D`."""
-        sig = self._deepcopy_with_new_data(np.angle(self.data))
+
+        Parameters
+        ----------
+        deg : bool, optional
+            Return angle in degrees if True, radians if False (default).
+
+        Returns
+        -------
+        angle : :class:`~hyperspy.signals.Signal2D`
+            The counterclockwise angle from the positive real axis on the complex plane,
+            with dtype as numpy.float64.
+
+        """
+        sig = self._deepcopy_with_new_data(np.angle(self.data, deg))
         sig.set_signal_type('')
-        sig.metadata.General.title = 'Complex phase of {}'.format(sig.metadata.General.title)
+        if sig.metadata.General.title:
+            title = sig.metadata.General.title
+        else:
+            title = 'Untitled Signal'
+        sig.metadata.General.title = 'angle({})'.format(title)
         return sig
-
-    @phase.setter
-    def phase(self, phase):
-        if isinstance(phase, BaseSignal):
-            phase = phase.data
-        self.data = self.amplitude.data * np.exp(1j * phase)
-
-    @property
-    def amplitude(self):
-        """Get/set the amplitude of the data. Returns an :class:`~hyperspy.signals.Signal2D`."""
-        sig = self._deepcopy_with_new_data(np.abs(self.data))
-        sig.set_signal_type('')
-        sig.metadata.General.title = 'Complex amplitude of {}'.format(sig.metadata.General.title)
-        return sig
-
-    @amplitude.setter
-    def amplitude(self, amplitude):
-        if isinstance(amplitude, BaseSignal):
-            amplitude = amplitude.data
-        self.data = amplitude * np.exp(1j * self.phase.data)
-
 
     def _load_dictionary(self, file_data_dict):
         """Load data from dictionary.
@@ -1831,6 +1822,43 @@ class BaseSignal(FancySlicing,
         if (self._signal_type or
                 not self.metadata.has_item("Signal.signal_type")):
             self.metadata.Signal.signal_type = self._signal_type
+
+    def __array__(self, dtype=None):
+        if dtype:
+            return self.data.astype(dtype)
+        else:
+            return self.data
+
+    def __array_wrap__(self, array, context=None):
+
+        signal = self._deepcopy_with_new_data(array)
+        if context is not None:
+            # ufunc, argument of the ufunc, domain of the ufunc
+            # In ufuncs with multiple outputs, domain indicates which output
+            # is currently being prepared (eg. see modf).
+            # In ufuncs with a single output, domain is 0
+            uf, objs, huh = context
+
+            def get_title(signal, i=0):
+                g = signal.metadata.General
+                if g.title:
+                    return g.title
+                else:
+                    return "Untitled Signal %s" % (i + 1)
+
+            title_strs = []
+            i = 0
+            for obj in objs:
+                if isinstance(obj, BaseSignal):
+                    title_strs.append(get_title(obj, i))
+                    i += 1
+                else:
+                    title_strs.append(str(obj))
+
+            signal.metadata.General.title = "%s(%s)" % (
+                uf.__name__, ", ".join(title_strs))
+
+        return signal
 
     def squeeze(self):
         """Remove single-dimensional entries from the shape of an array
