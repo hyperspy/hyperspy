@@ -121,6 +121,7 @@ class LazySignal(BaseSignal):
         else:
             self.data = da.from_array(self.data,
                                       chunks=new_chunks)
+        self.metadata.Signal.lazy = True
 
     def _lazy_data(self, axis=None):
         self.make_lazy(axis=axis)

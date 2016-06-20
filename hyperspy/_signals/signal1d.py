@@ -1272,6 +1272,7 @@ class Signal1D(BaseSignal,
     """
     """
     _record_by = 'spectrum'
+    _lazy = False
 
     def __init__(self, *args, **kwargs):
         super(Signal1D, self).__init__(*args, **kwargs)

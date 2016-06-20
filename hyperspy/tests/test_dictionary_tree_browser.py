@@ -92,6 +92,7 @@ class TestDictionaryBrowser:
                             'title': ''},
                         'Signal': {
                             'binned': False,
+                            'lazy': False,
                             'record_by': '',
                             'signal_origin': '',
                             'signal_type': ''},

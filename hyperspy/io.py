@@ -331,12 +331,17 @@ def assign_signal_subclass(record_by="",
     if signal_origin and signal_origin not in ["experiment", "simulation"]:
         raise ValueError("signal_origin must be one of: None, empty string, "
                          "\"experiment\" or \"simulation\"")
+
+    lazy_signals = hyperspy.misc.utils.find_subclasses(hyperspy.signals,
+                                                       hyperspy.signals.LazySignal)
+    base_signals = hyperspy.misc.utils.find_subclasses(
+        hyperspy.signals, BaseSignal)
+
     if lazy:
-        signals = hyperspy.misc.utils.find_subclasses(hyperspy.signals,
-                                                      hyperspy.signals.LazySignal)
+        signals = lazy_signals
     else:
-        signals = hyperspy.misc.utils.find_subclasses(
-            hyperspy.signals, BaseSignal)
+        signals = {k: v for k, v in base_signals.items() if k not in
+                   lazy_signals}
 
     if signal_origin == "experiment":
         signal_origin = ""

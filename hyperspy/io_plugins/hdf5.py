@@ -475,7 +475,7 @@ def overwrite_dataset(group, data, key, metadata=None, **kwds):
     else:
         chunks = get_signal_chunks(data.shape, data.dtype, metadata)
 
-    maxshape = tuple(None for _ in signal.data.shape)
+    maxshape = tuple(None for _ in data.shape)
 
     got_data = False
     while not got_data:
