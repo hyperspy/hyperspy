@@ -20,6 +20,7 @@ import numbers
 import logging
 
 import numpy as np
+import dask.array as da
 import traits.api as t
 from scipy import constants
 
@@ -171,7 +172,10 @@ class EELSSpectrum(Signal1D):
         elif self.axes_manager.navigation_dimension > 1:
             zlpc = zlpc.as_signal2D((0, 1))
         if mask is not None:
-            zlpc.data[mask.data] = np.nan
+            if zlpc._lazy:
+                zlpc.data = da.where(mask.data, np.nan, zlpc.data)
+            else:
+                zlpc.data[mask.data] = np.nan
         return zlpc
 
     def align_zero_loss_peak(
@@ -335,16 +339,35 @@ class EELSSpectrum(Signal1D):
         else:
             I0 = self._get_navigation_signal()
             I0.axes_manager.set_signal_dimension(0)
-            for i, s in progressbar(enumerate(self),
-                                    total=self.axes_manager.navigation_size,
-                                    disable=not show_progressbar,
-                                    leave=True):
-                threshold_ = threshold.isig[I0.axes_manager.indices].data[0]
-                if np.isnan(threshold_):
-                    s.data[:] = np.nan
+            threshold.set_signal_dimension(0)
+
+            def estimating_function(current_value, threshold=None,
+                                    indices=None,
+                                    signal=None):
+                if np.isnan(threshold):
+                    return np.nan
                 else:
-                    s.data[:] = (self.inav[I0.axes_manager.indices].isig[
-                                 :threshold_].integrate1D(-1).data)
+                    px = signal.inav[indices].isig[:threshold]
+                    return px.integrate1D(-1).data
+
+            I0._map_iterate(estimating_function,
+                            iterating_kwargs=(('threshold', threshold),
+                                              ('indices', self.axes_manager)),
+                            signal=self,
+                            show_progressbar=show_progressbar)
+            # TODO: delete the following when tested that works. Seems broken
+            # anyway (old implementation)
+
+            # for i, s in progressbar(enumerate(self),
+            #                         total=self.axes_manager.navigation_size,
+            #                         disable=not show_progressbar,
+            #                         leave=True):
+            #     threshold_ = threshold.isig[I0.axes_manager.indices].data[0]
+            #     if np.isnan(threshold_):
+            #         s.data[:] = np.nan
+            #     else:
+            #         s.data[:] = (self.inav[I0.axes_manager.indices].isig[
+            #                      :threshold_].integrate1D(-1).data)
         I0.axes_manager.set_signal_dimension(
             self.axes_manager.navigation_dimension)
         I0.metadata.General.title = (
@@ -385,7 +408,7 @@ class EELSSpectrum(Signal1D):
             in the axis units. If no inflexion point is found in this
             spectral range the window value is returned instead.
         tol : {None, float}
-            The threshold tolerance for the derivative. If "auto" it is
+            The threshold tolerance for the derivative. If None it is
             automatically calculated as the minimum value that guarantees
             finding an inflexion point in all the spectra in given energy
             range.
@@ -519,8 +542,10 @@ class EELSSpectrum(Signal1D):
         else:
             I0 = self.estimate_elastic_scattering_intensity(
                 threshold=threshold,).data
-
-        t_over_lambda = np.log(total_intensity / I0)
+        if self.metadata.Signal.lazy:
+            t_over_lambda = da.log(total_intensity / I0)
+        else:
+            t_over_lambda = np.log(total_intensity / I0)
         s = self._get_navigation_signal(data=t_over_lambda)
         s.metadata.General.title = (self.metadata.General.title +
                                     ' $\\frac{t}{\\lambda}$')
@@ -573,18 +598,36 @@ class EELSSpectrum(Signal1D):
         size = closest_power_of_two(size)
 
         axis = self.axes_manager.signal_axes[0]
-        z = np.fft.rfft(zlp.data, n=size, axis=axis.index_in_array)
-        j = np.fft.rfft(s.data, n=size, axis=axis.index_in_array)
-        j1 = z * np.nan_to_num(np.log(j / z))
-        sdata = np.fft.irfft(j1, axis=axis.index_in_array)
+        if self.metadata.Signal.lazy or zlp.metadata.Signal.lazy:
+
+            z = da.fft.rfft(zlp.data, n=size, axis=axis.index_in_array)
+            j = da.fft.rfft(s.data, n=size, axis=axis.index_in_array)
+            _tmp = da.log(j / z)
+            j1 = z * da.from_delayed(dd(np.nan_to_num, pure=True)(_tmp),
+                                     shape=_tmp.shape)
+            sdata = da.fft.irfft(j1, axis=axis.index_in_array)
+        else:
+            z = np.fft.rfft(zlp.data, n=size, axis=axis.index_in_array)
+            j = np.fft.rfft(s.data, n=size, axis=axis.index_in_array)
+            j1 = z * np.nan_to_num(np.log(j / z))
+            sdata = np.fft.irfft(j1, axis=axis.index_in_array)
 
         s.data = sdata[s.axes_manager._get_data_slice(
             [(axis.index_in_array, slice(None, self_size)), ])]
         if add_zlp is True:
             if self_size >= zlp_size:
-                s.data[s.axes_manager._get_data_slice(
-                    [(axis.index_in_array, slice(None, zlp_size)), ])
-                ] += zlp.data
+                if self.metadata.Signal.lazy:
+                    _slices_before = s.axes_manager._get_data_slice(
+                        [(axis.index_in_array, slice(None, zlp_size)), ])
+                    _slices_after = s.axes_manager._get_data_slice(
+                        [(axis.index_in_array, slice(zlp_size, None)), ])
+                    s.data = da.stack((s.data[_slices_before] + zlp.data,
+                                       s.data[_slices_after]),
+                                      axis=axis.index_in_array)
+                else:
+                    s.data[s.axes_manager._get_data_slice(
+                        [(axis.index_in_array, slice(None, zlp_size)), ])
+                    ] += zlp.data
             else:
                 s.data += zlp.data[s.axes_manager._get_data_slice(
                     [(axis.index_in_array, slice(None, self_size)), ])]
@@ -657,6 +700,12 @@ class EELSSpectrum(Signal1D):
 
         ll.hanning_taper()
         cl.hanning_taper()
+        if self.metadata.Signal.lazy or zlp.metadata.Signal.lazy:
+            rfft = da.fft.rfft
+            irfft = da.fft.irfft
+        else:
+            rfft = np.fft.rfft
+            irfft = np.fft.irfft
 
         ll_size = ll.axes_manager.signal_axes[0].size
         cl_size = self.axes_manager.signal_axes[0].size
@@ -688,12 +737,12 @@ class EELSSpectrum(Signal1D):
                         axis.offset + axis.scale * (size - 1),
                         size))
         z = np.fft.rfft(zl)
-        jk = np.fft.rfft(cl.data, n=size, axis=axis.index_in_array)
-        jl = np.fft.rfft(ll.data, n=size, axis=axis.index_in_array)
+        jk = rfft(cl.data, n=size, axis=axis.index_in_array)
+        jl = rfft(ll.data, n=size, axis=axis.index_in_array)
         zshape = [1, ] * len(cl.data.shape)
         zshape[axis.index_in_array] = jk.shape[axis.index_in_array]
-        cl.data = np.fft.irfft(z.reshape(zshape) * jk / jl,
-                               axis=axis.index_in_array)
+        cl.data = irfft(z.reshape(zshape) * jk / jl,
+                        axis=axis.index_in_array)
         cl.data *= I0
         cl.crop(-1, None, int(orig_cl_size))
         cl.metadata.General.title = (self.metadata.General.title +
@@ -747,6 +796,8 @@ class EELSSpectrum(Signal1D):
         j = 0
         maxval = self.axes_manager.navigation_size
         show_progressbar = show_progressbar and (maxval > 0)
+        # TODO: improve generally, and make work with lazy signals
+        # (_map_iterate)
         for D in progressbar(self, total=maxval,
                              disable=not show_progressbar,
                              leave=True):
