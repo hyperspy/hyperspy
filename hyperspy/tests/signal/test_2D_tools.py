@@ -122,3 +122,29 @@ class TestAlignTools:
         # Check alignment is correct
         d_al = s.data[:, ds[0]:-ds[0], ds[1]:-ds[1]]
         nt.assert_true(np.all(d_al == self.aligned))
+
+
+class TestFindPeaks2D:
+
+    @staticmethod
+    def gaussian2d(x, y, a=15, x0=0, y0=0, sx=1, sy=1):
+        return a * np.exp(
+            -(((x - x0) ** 2) / sx ** 2 + ((y - y0) ** 2) / sy ** 2))
+
+    def setUp(self):
+        size = 200
+        self.n_peaks = 10
+        clearance = int(size / (2*self.n_peaks))
+        peaks_x = np.linspace(clearance, size - clearance, num=self.n_peaks,
+                              dtype=int)
+        peaks_y = [np.random.randint(clearance, size - clearance) for n in
+                   peaks_x]
+        self.peaks = np.array([peaks_x, peaks_y]).T
+        gaussian2d = np.vectorize(self.gaussian2d, otypes=[np.float])
+        xs = np.ogrid[:size]
+        xs, ys = np.meshgrid(xs, xs)
+        zs = np.zeros_like(xs)
+        for peak_position in self.peaks:
+            self.peaks += gaussian2d(xs, ys, x0=peak_position[0],
+                                     y0=peak_position[1], sx=clearance/2,
+                                     sy=clearance/2)
