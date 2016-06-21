@@ -507,6 +507,44 @@ def find_peaks_masiel(z, subpixel=False, peak_width=10, medfilt_radius=5,
     return peaks
 
 
+def laplacian_of_gaussians(z, threshold=0.1, normalize=True, **kwargs):
+    """
+    Finds peaks via the Laplacian of Gaussian Matrices method from
+    `scikit-image`.
+
+    Parameters
+    ----------
+    z : ndarray
+        Array of image intensities.
+    threshold : float
+        Minimum cut-off value for peak detection.
+    normalize : bool
+        If `True`, linearly scales intensities to between 0 and 1,
+        which makes it easier to determine parameters.
+    kwargs : Additional parameters to be passed to the algorithm. See
+        `blob_log` documentation for details:
+        http://scikit-image.org/docs/dev/api/skimage.feature.html#blob-log
+
+    Returns
+    -------
+    ndarray
+        (n_peaks, 2)
+        Array of peak coordinates.
+
+    """
+    from skimage.feature import blob_log
+    if normalize:
+        z = z/np.max(z)
+    blobs = blob_log(z, threshold=threshold, **kwargs)
+    # Attempt to return only peak positions. If no peaks exist, return an
+    # empty array.
+    try:
+        centers = blobs[:, :2]
+    except IndexError:
+        return np.array([])
+    return centers
+
+
 def difference_of_gaussians(z, threshold=0.1, normalize=True, **kwargs):
     """
     Finds peaks via the difference of Gaussian Matrices method from
@@ -521,7 +559,7 @@ def difference_of_gaussians(z, threshold=0.1, normalize=True, **kwargs):
     normalize: bool
         If `True`, linearly scales intensities to between 0 and 1,
         which makes it easier to determine parameters.
-    kwargs : Additional parameters to be passed to the algorithm. See 'blob_dog'
+    kwargs : Additional parameters to be passed to the algorithm. See `blob_dog`
         documentation for details:
         http://scikit-image.org/docs/dev/api/skimage.feature.html#blob-dog
 
@@ -917,8 +955,14 @@ class Signal2DTools(object):
                      'stat' - statistical approach requiring no free params.
                      'massiel' - finds peaks in each direction and compares the
                                  positions where these coincide.
-                     'blob' - a blob finder implemented in scikit-image which
-                              uses the difference of Gaussian matrices approach
+                     'laplacian_of_gaussians' - a blob finder implemented in
+                                                `scikit-image` which uses the
+                                                laplacian of Gaussian matrices
+                                                approach.
+                     'difference_of_gaussians' - a blob finder implemented in
+                                                 `scikit-image` which uses
+                                                 the difference of Gaussian
+                                                 matrices approach.
         keywords : associated with above methods.
         Returns
         -------
@@ -934,18 +978,24 @@ class Signal2DTools(object):
                               self.axes_manager._array_indices_generator()):
             if method == 'skimage':
                 peaks[indices] = peak_local_max(z, *args, **kwargs)
-            if method == 'max':
+            elif method == 'max':
                 peaks[indices] = find_peaks_max(z, *args, **kwargs)
-            if method == 'minmax':
+            elif method == 'minmax':
                 peaks[indices] = find_peaks_minmax(z, *args, **kwargs)
-            if method == 'zaefferer':
+            elif method == 'zaefferer':
                 peaks[indices] = find_peaks_zaefferer(z, *args, **kwargs)
-            if method == 'stat':
+            elif method == 'stat':
                 peaks[indices] = find_peaks_stat(z, *args, **kwargs)
-            if method == 'massiel':
+            elif method == 'massiel':
                 peaks[indices] = find_peaks_masiel(z, *args, **kwargs)
-            if method == 'difference_of_gaussians':
+            elif method == 'laplacian_of_gaussians':
+                peaks[indices] = laplacian_of_gaussians(z, *args, **kwargs)
+            elif method == 'difference_of_gaussians':
                 peaks[indices] = difference_of_gaussians(z, *args, **kwargs)
+            else:
+                raise NotImplementedError("The method `{}` is not implemented. "
+                                          "See documentation for available "
+                                          "implementations.".format(method))
 
         return peaks
 
