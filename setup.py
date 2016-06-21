@@ -89,7 +89,7 @@ class update_version_when_dev:
                 gd = stdout[1:].strip().decode()
                 # Remove the tag
                 gd = gd[gd.index("-") + 1:]
-                self.version = self.release_version.replace("+dev", "+git-")
+                self.version = self.release_version.replace("+dev", "-git-")
                 self.version += gd
                 update_version(self.version)
                 self.restore_version = True
