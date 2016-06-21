@@ -57,6 +57,7 @@ def are_we_building4windows():
 
 scripts = ['bin/hyperspy', ]
 
+
 def update_version(version):
     release_path = "hyperspy/Release.py"
     lines = []
@@ -67,6 +68,7 @@ def update_version(version):
             lines.append(line)
     with open(release_path, "w") as f:
         f.writelines(lines)
+
 
 class update_version_when_dev:
 
