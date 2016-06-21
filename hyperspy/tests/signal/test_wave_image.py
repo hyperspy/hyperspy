@@ -66,7 +66,7 @@ class TestPhaseFunctions:
     def test_get_unwrapped_phase(self):
         phase_ref = np.arange(9).reshape((3, 3)) - 4
         self.s.phase = phase_ref
-        phase = self.s.get_unwrapped_phase(seed=42, show_progressbar=False)
+        phase = self.s.unwrapped_phase(seed=42, show_progressbar=False)
         assert isinstance(phase, hs.signals.Signal2D)
         nt.assert_almost_equal(phase.data, phase_ref)
 

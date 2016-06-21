@@ -60,16 +60,16 @@ class TestComplexProperties:
 
     def test_set_amplitude(self):
         amplitude = np.random.random((3, 3))
-        self.s.isig[:] = amplitude * np.exp(1j * self.s.get_angle().data)
+        self.s.isig[:] = amplitude * np.exp(1j * self.s.angle().data)
         nt.assert_almost_equal(np.abs(self.s), amplitude)
 
     def test_get_angle(self):
-        nt.assert_almost_equal(self.s.get_angle(), angle_ref)
+        nt.assert_almost_equal(self.s.angle(), angle_ref)
 
     def test_set_angle(self):
         angle = np.random.random((3, 3))
         self.s.isig[:] = np.abs(self.s) * np.exp(1j * angle)
-        nt.assert_almost_equal(self.s.get_angle(), angle)
+        nt.assert_almost_equal(self.s.angle(), angle)
 
 
 if __name__ == '__main__':

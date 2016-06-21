@@ -1734,7 +1734,7 @@ class BaseSignal(FancySlicing,
         sig.metadata.General.title = 'imag({})'.format(title)
         return sig
 
-    def get_angle(self, deg=False):
+    def angle(self, deg=False):
         """Return the angle of the (complex) data of the signal. Is zero if data is real.Calculate
         the complex anglet the phase of the data.
 
