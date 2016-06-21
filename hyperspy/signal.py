@@ -1714,7 +1714,7 @@ class BaseSignal(FancySlicing,
 
     @property
     def real(self):
-        """Get/set the real part of the data. Returns an :class:`~hyperspy.signals.Signal2D`."""
+        """Get the real part of the data. Returns an :class:`~hyperspy.signals.Signal2D`."""
         sig = self._deepcopy_with_new_data(np.real(self.data))
         if sig.metadata.General.title:
             title = sig.metadata.General.title
@@ -1725,7 +1725,7 @@ class BaseSignal(FancySlicing,
 
     @property
     def imag(self):
-        """Get/set imaginary part of the data. Returns an :class:`~hyperspy.signals.Signal2D`."""
+        """Get imaginary part of the data. Returns an :class:`~hyperspy.signals.Signal2D`."""
         sig = self._deepcopy_with_new_data(np.imag(self.data))
         if sig.metadata.General.title:
             title = sig.metadata.General.title
