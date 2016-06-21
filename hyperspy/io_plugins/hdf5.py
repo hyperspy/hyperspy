@@ -19,6 +19,7 @@
 from distutils.version import StrictVersion
 import warnings
 import datetime
+from dateutil import tz
 import logging
 
 import h5py
