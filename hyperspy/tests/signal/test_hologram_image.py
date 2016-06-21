@@ -42,12 +42,13 @@ class TestCaseHologramImage(object):
         self.ref_image = hs.signals.HologramImage(self.ref)
 
     def test_reconstruct_phase(self):
-        wave_image, rec_param = self.holo_image.reconstruct_phase(self.ref, return_param=True)
-        rec_param_cc = [self.img_size-rec_param[2], self.img_size-rec_param[3],
-                        self.img_size-rec_param[0], self.img_size-rec_param[1], rec_param[4]]
+        wave_image = self.holo_image.reconstruct_phase(self.ref)
+        rec_param_cc = [self.img_size-wave_image.rec_param[2], self.img_size-wave_image.rec_param[3],
+                        self.img_size-wave_image.rec_param[0], self.img_size-wave_image.rec_param[1],
+                        wave_image.rec_param[4]]
         wave_image_cc = self.holo_image.reconstruct_phase(self.ref_image, rec_param=rec_param_cc)
-        x_start = int(rec_param[4]*2/10)
-        x_stop = int(rec_param[4]*2*9/10)
+        x_start = int(wave_image.rec_param[4]*2/10)
+        x_stop = int(wave_image.rec_param[4]*2*9/10)
         wave_crop = wave_image.data[x_start:x_stop, x_start:x_stop]
         wave_cc_crop = wave_image_cc.data[x_start:x_stop, x_start:x_stop]
 
@@ -55,9 +56,10 @@ class TestCaseHologramImage(object):
         # sidebands are complex conjugate; this also tests possibility of reconstruction with given rec_param
 
         # interpolate reconstructed phase to compare with the input (reference phase):
-        interp_x = np.arange(rec_param[4]*2)
+        interp_x = np.arange(wave_image.rec_param[4]*2)
         phase_interp = interp2d(interp_x, interp_x, wave_image.get_unwrapped_phase().data, kind='cubic')
-        phase_new = phase_interp(np.linspace(0, rec_param[4]*2, self.img_size), np.linspace(0, rec_param[4]*2, self.img_size))
+        phase_new = phase_interp(np.linspace(0, wave_image.rec_param[4]*2, self.img_size),
+                                 np.linspace(0, wave_image.rec_param[4]*2, self.img_size))
         x_start = int(self.img_size/10)
         x_stop = self.img_size-1-int(self.img_size/10)
         phase_new_crop = phase_new[x_start:x_stop, x_start:x_stop]

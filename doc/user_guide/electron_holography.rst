@@ -46,12 +46,11 @@ To reconstruct the hologram with a reference wave it should be provided to the m
 
     >>> wave_image = im.reconstruct_phase(ref_image)
 
-If return_param flag is true, the method will return reconstruction parameters (position of side band and the size of
-side band filter):
+The reconstruction parameters can be extracted from metadata of wave_image as follows:
 
 .. code-block:: python
 
-    >>> wave_image, reconstruction_param = im.reconstruct_phase(return_param=True)
+    >>> reconstruction_param = wave_image.rec_param
 
 This option can be used for batch processing as the reconstruction_param can be provided to the reconstruction method as follows:
 

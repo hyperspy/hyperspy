@@ -54,6 +54,18 @@ class WaveImage(Signal2D):
             amplitude = amplitude.data
         self.data = amplitude * np.exp(1j * self.phase.data)
 
+    @property
+    def rec_param(self):
+        assert self.metadata.Signal.has_item('holo_rec_param'), "No reconstruction parameters assigned to the wave"
+
+        rec_param = (self.metadata.Signal.holo_rec_param.as_dictionary()['sb_pos_x0'],
+                     self.metadata.Signal.holo_rec_param.as_dictionary()['sb_pos_y0'],
+                     self.metadata.Signal.holo_rec_param.as_dictionary()['sb_pos_x1'],
+                     self.metadata.Signal.holo_rec_param.as_dictionary()['sb_pos_y1'],
+                     self.metadata.Signal.holo_rec_param.as_dictionary()['sb_size'])
+
+        return rec_param
+
     def get_unwrapped_phase(self, wrap_around=False, seed=None, show_progressbar=None):
         """Return the unwrapped phase as an :class:`~hyperspy.signals.Signal2D`.
 
