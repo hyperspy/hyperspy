@@ -507,18 +507,23 @@ def find_peaks_masiel(z, subpixel=False, peak_width=10, medfilt_radius=5,
     return peaks
 
 
-def find_peaks_blob(z, threshold=0.1, **kwargs):
+def difference_of_gaussians(z, threshold=0.1, normalize=True, **kwargs):
     """
-    Finds peaks via the difference of Gaussian Matrices method in scikit-image.
+    Finds peaks via the difference of Gaussian Matrices method from
+    `scikit-image`.
 
     Parameters
     ----------
     z : ndarray
         Array of image intensities.
-    threshold : Minimum cut-off value for peak detection. May be considerably
-        lower than minimum peak intensity.
+    threshold : float
+        Minimum cut-off value for peak detection.
+    normalize: bool
+        If `True`, linearly scales intensities to between 0 and 1,
+        which makes it easier to determine parameters.
     kwargs : Additional parameters to be passed to the algorithm. See 'blob_dog'
-        documentation for details.
+        documentation for details:
+        http://scikit-image.org/docs/dev/api/skimage.feature.html#blob-dog
 
     Returns
     -------
@@ -532,8 +537,9 @@ def find_peaks_blob(z, threshold=0.1, **kwargs):
         sensitive to fluctuations in intensity near the edges of the image.
 
     """
-    z = z/np.max(z)
     from skimage.feature import blob_dog
+    if normalize:
+        z = z/np.max(z)
     blobs = blob_dog(z, threshold=threshold, **kwargs)
     try:
         centers = blobs[:, :2]
@@ -938,8 +944,8 @@ class Signal2DTools(object):
                 peaks[indices] = find_peaks_stat(z, *args, **kwargs)
             if method == 'massiel':
                 peaks[indices] = find_peaks_masiel(z, *args, **kwargs)
-            if method == 'blob':
-                peaks[indices] = find_peaks_blob(z, *args, **kwargs)
+            if method == 'difference_of_gaussians':
+                peaks[indices] = difference_of_gaussians(z, *args, **kwargs)
 
         return peaks
 
