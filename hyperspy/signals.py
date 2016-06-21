@@ -41,9 +41,9 @@ The Signal class and its specilized subclasses:
 # -*- coding: utf-8 -*-
 from hyperspy._signals.signal1d import (Signal1D, LazySignal1D)
 from hyperspy._signals.signal2d import (Signal2D, LazySignal2D)
-from hyperspy._signals.eels import EELSSpectrum
-from hyperspy._signals.eds_sem import EDSSEMSpectrum
-from hyperspy._signals.eds_tem import EDSTEMSpectrum
+from hyperspy._signals.eels import (EELSSpectrum, LazyEELSSpectrum)
+from hyperspy._signals.eds_sem import (EDSSEMSpectrum, LazyEDSSEMSpectrum)
+from hyperspy._signals.eds_tem import (EDSTEMSpectrum, LazyEDSTEMSpectrum)
 from hyperspy._signals.dielectric_function import DielectricFunction
 from hyperspy._signals.simulation import Simulation
 from hyperspy._signals.image_simulation import ImageSimulation

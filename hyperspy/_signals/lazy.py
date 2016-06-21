@@ -113,7 +113,7 @@ class LazySignal(BaseSignal):
                 chunks.append((dc.shape[i],))
         return tuple(chunks)
 
-    def make_lazy(self, axis=None):
+    def _make_lazy(self, axis=None):
         new_chunks = self._get_dask_chunks(axis=axis)
         if isinstance(self.data, da.Array):
             if self.data.chunks != new_chunks:
@@ -124,13 +124,13 @@ class LazySignal(BaseSignal):
         self.metadata.Signal.lazy = True
 
     def _lazy_data(self, axis=None):
-        self.make_lazy(axis=axis)
+        self._make_lazy(axis=axis)
         return self.data
 
     def _apply_function_on_data_and_remove_axis(self, function, axes,
                                                 out=None):
         # Translate from the default numpy to dask functions. Works for most
-        self.make_lazy()
+        self._make_lazy()
         function = getattr(da, function.__name__)
         axes = self.axes_manager[axes]
         if not np.iterable(axes):
@@ -167,7 +167,7 @@ class LazySignal(BaseSignal):
                    np.array(new_shape_in_array))
         axis = {ax.index_in_array: ax for ax in
                 self.axes_manager._axes}[factors.argmax()]
-        self.make_lazy(axis=axis)
+        self._make_lazy(axis=axis)
         return super(LazySignal, self).rebin(new_shape, out=out)
     rebin.__doc__ = BaseSignal.rebin.__doc__
 
@@ -175,9 +175,7 @@ class LazySignal(BaseSignal):
         raise lazyerror
 
     def _make_sure_data_is_contiguous(self):
-        self.make_lazy()
-# we only change navigate attributes, so
-        # self.data = self._data_aligned_with_axes
+        self._make_lazy()
 
     def diff(self, axis, order=1, out=None):
         arr_axis = self.axes_manager[axis].index_in_array

@@ -24,6 +24,7 @@ from matplotlib import pyplot as plt
 
 from hyperspy import utils
 from hyperspy.signals import Signal1D
+from hyperspy.signals import LazySignal1D
 from hyperspy.misc.elements import elements as elements_db
 from hyperspy.misc.eds import utils as utils_eds
 from hyperspy.misc.utils import isiterable
@@ -32,11 +33,12 @@ from hyperspy.utils import markers
 _logger = logging.getLogger(__name__)
 
 
-class EDSSpectrum(Signal1D):
+class EDS_mixin:
+
     _signal_type = "EDS"
 
     def __init__(self, *args, **kwards):
-        Signal1D.__init__(self, *args, **kwards)
+        super().__init__(*args, **kwards)
         if self.metadata.Signal.signal_type == 'EDS':
             warnings.warn('The microscope type is not set. Use '
                           'set_signal_type(\'EDS_TEM\')  '
@@ -156,33 +158,10 @@ class EDSSpectrum(Signal1D):
         return xray_lines_in_range, xray_lines_not_in_range
 
     def sum(self, axis=None, out=None):
-        """Sum the data over the given axis.
-
-        Parameters
-        ----------
-        axis : {int, string}
-           The axis can be specified using the index of the axis in
-           `axes_manager` or the axis name.
-
-        Returns
-        -------
-        s : Signal1D
-
-        See also
-        --------
-        sum_in_mask, mean
-
-        Examples
-        --------
-        >>> s = hs.datasets.example_signals.EDS_SEM_Spectrum()
-        >>> s.sum(0).data
-        array(1000279)
-
-        """
         if axis is None:
             axis = self.axes_manager.navigation_axes
         # modify time spend per spectrum
-        s = super(EDSSpectrum, self).sum(axis=axis, out=out)
+        s = super().sum(axis=axis, out=out)
         s = out or s
         if "Acquisition_instrument.SEM" in s.metadata:
             mp = s.metadata.Acquisition_instrument.SEM
@@ -195,41 +174,27 @@ class EDSSpectrum(Signal1D):
                 self.data.size / s.data.size
         if out is None:
             return s
+    sum.__doc__ = Signal1D.sum.__doc__
 
-    def rebin(self, new_shape):
-        """Rebins the data to the new shape
-
-        Parameters
-        ----------
-        new_shape: tuple of ints
-            The new shape must be a divisor of the original shape
-
-        Examples
-        --------
-        >>> s = hs.datasets.example_signals.EDS_SEM_Spectrum()
-        >>> print(s)
-        >>> print(s.rebin([512]))
-        <EDSSEMSpectrum, title: EDS SEM Signal1D, dimensions: (|1024)>
-        <EDSSEMSpectrum, title: EDS SEM Signal1D, dimensions: (|512)>
-
-        """
+    def rebin(self, new_shape, out=None):
         new_shape_in_array = []
         for axis in self.axes_manager._axes:
             new_shape_in_array.append(
                 new_shape[axis.index_in_axes_manager])
         factors = (np.array(self.data.shape) /
                    np.array(new_shape_in_array))
-        s = super(EDSSpectrum, self).rebin(new_shape)
+        s = super().rebin(new_shape, out=out)
+        s = out or s
         # modify time per spectrum
-        if "Acquisition_instrument.SEM.Detector.EDS.live_time" in s.metadata:
-            for factor in factors:
-                s.metadata.Acquisition_instrument.SEM.Detector.EDS.live_time\
-                    *= factor
-        if "Acquisition_instrument.TEM.Detector.EDS.live_time" in s.metadata:
-            for factor in factors:
-                s.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time\
-                    *= factor
+        this_md = self.metadata
+        that_md = s.metadata
+        keys = ("Acquisition_instrument.SEM.Detector.EDS.live_time",
+                "Acquisition_instrument.TEM.Detector.EDS.live_time")
+        for key in keys:
+            if key in this_md:
+                that_md.set_item(key, this_md.get_item(key) * np.prod(factors))
         return s
+    sum.__doc__ = Signal1D.sum.__doc__
 
     def set_elements(self, elements):
         """Erase all elements and set them.
@@ -298,11 +263,7 @@ class EDSSpectrum(Signal1D):
             else:
                 raise ValueError(
                     "%s is not a valid chemical element symbol." % element)
-
-        if not hasattr(self.metadata, 'Sample'):
-            self.metadata.add_node('Sample')
-
-        self.metadata.Sample.elements = sorted(list(elements_))
+        self.metadata.set_item('Sample.elements', sorted(list(elements_)))
 
     def _get_xray_lines(self, xray_lines=None, only_one=None,
                         only_lines=('a',)):
@@ -921,7 +882,7 @@ class EDSSpectrum(Signal1D):
         set_elements, add_elements, estimate_integration_windows,
         get_lines_intensity, estimate_background_windows
         """
-        super(EDSSpectrum, self).plot(**kwargs)
+        super().plot(**kwargs)
         self._plot_xray_lines(xray_lines, only_lines, only_one,
                               background_windows, integration_windows)
 
@@ -1077,3 +1038,11 @@ class EDSSpectrum(Signal1D):
                 x1=(bw[0] + bw[1]) / 2., x2=(bw[2] + bw[3]) / 2.,
                 y1=y1, y2=y2, color='black')
             self.add_marker(line)
+
+
+class EDSSpectrum(EDS_mixin, Signal1D):
+    pass
+
+
+class LazyEDSSpectrum(EDS_mixin, LazySignal1D):
+    pass

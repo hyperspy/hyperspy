@@ -3761,7 +3761,14 @@ class BaseSignal(FancySlicing,
             lazy=mp.Signal.lazy if "Signal.lazy" in mp else self._lazy)
         self.__init__(**self._to_dictionary())
         if self._lazy:
-            self.make_lazy()
+            self._make_lazy()
+
+    def make_lazy(self):
+        """Makes the signal lazy, meaning all computations are delayed until
+        required or the signal is explicitly saved to a file.
+        """
+        self.metadata.Signal.lazy = True
+        self._assign_subclass()
 
     def set_signal_type(self, signal_type):
         """Set the signal type and change the current class

@@ -25,6 +25,7 @@ import traits.api as t
 from scipy import constants
 
 from hyperspy.signals import Signal1D
+from hyperspy.signals import LazySignal1D
 from hyperspy.misc.elements import elements as elements_db
 import hyperspy.axes
 from hyperspy.decorators import only_interactive
@@ -793,28 +794,46 @@ class EELSSpectrum(Signal1D):
         psf_size = psf.axes_manager.signal_axes[0].size
         kernel = psf()
         imax = kernel.argmax()
-        j = 0
         maxval = self.axes_manager.navigation_size
         show_progressbar = show_progressbar and (maxval > 0)
-        # TODO: improve generally, and make work with lazy signals
-        # (_map_iterate)
-        for D in progressbar(self, total=maxval,
-                             disable=not show_progressbar,
-                             leave=True):
-            D = D.data.copy()
-            if psf.axes_manager.navigation_dimension != 0:
-                kernel = psf(axes_manager=self.axes_manager)
-                imax = kernel.argmax()
 
-            s = ds(axes_manager=self.axes_manager)
+        def deconv_function(current_result, signal=None, kernel=None,
+                            iterations=15, psf_size=None):
+            imax = kernel.argmax()
+            result = np.array(signal).copy()
             mimax = psf_size - 1 - imax
-            O = D.copy()
-            for i in range(iterations):
-                first = np.convolve(kernel, O)[imax: imax + psf_size]
-                O = O * (np.convolve(kernel[::-1],
-                                     D / first)[mimax: mimax + psf_size])
-            s[:] = O
-            j += 1
+            for _ in range(iterations):
+                first = np.convolve(kernel, result)[imax: imax + psf_size]
+                result *= np.convolve(kernel[::-1], signal /
+                                      first)[mimax:mimax + psf_size]
+            return result
+        iterating_kw = (('signal', self),)
+        if psf.axes_manager.navigation_dimension != 0:
+            iterating_kw += (('kernel', psf),)
+        ds._map_iterate(deconv_function,
+                        iterating_kwargs=iterating_kw,
+                        kernel=psf,
+                        iterations=interations,
+                        psf_size=psf_size,
+                        show_progressbar=show_progressbar)
+        # Old code.
+        # for D in progressbar(self, total=maxval,
+        #                      disable=not show_progressbar,
+        #                      leave=True):
+        #     D = D.data.copy()
+        #     if psf.axes_manager.navigation_dimension != 0:
+        #         kernel = psf(axes_manager=self.axes_manager)
+        #         imax = kernel.argmax()
+
+        #     s = ds(axes_manager=self.axes_manager)
+        #     mimax = psf_size - 1 - imax
+        #     O = D.copy()
+        #     for i in range(iterations):
+        #         first = np.convolve(kernel, O)[imax: imax + psf_size]
+        #         O = O * (np.convolve(kernel[::-1],
+        #                              D / first)[mimax: mimax + psf_size])
+        #     s[:] = O
+        #     j += 1
 
         return ds
 
@@ -946,11 +965,25 @@ class EELSSpectrum(Signal1D):
                 '_%i_channels_extrapolated' % extrapolation_size)
         new_shape = list(self.data.shape)
         new_shape[axis.index_in_array] += extrapolation_size
-        s.data = np.zeros(new_shape)
+        if self.metadata.Signal.lazy:
+            left_data = s.data
+            right_shape = list(self.data.shape)
+            right_shape[axis.index_in_array] = extrapolation_size
+            right_chunks = list(self.data.chunks)
+            right_chunks[axis.index_in_array] = (extrapolation_size,)
+            right_data = da.zeros(shape=tuple(right_shape),
+                                  chunks=tuple(right_chunks),
+                                  dtype=self.data.dtype)
+            s.data = da.concatenate([left_data, right_data],
+                                    axis=axis.index_in_array)
+        else:
+            # just old code
+            s.data = np.zeros(new_shape)
+            s.data[..., :axis.size] = self.data
         s.get_dimensions_from_data()
-        s.data[..., :axis.size] = self.data
         pl = PowerLaw()
         pl._axes_manager = self.axes_manager
+        # TODO: make work lazily
         pl.estimate_parameters(
             s, axis.index2value(axis.size - window_size),
             axis.index2value(axis.size - 1))
@@ -966,10 +999,23 @@ class EELSSpectrum(Signal1D):
             factor = s.axes_manager[-1].scale
         else:
             factor = 1
-        s.data[..., axis.size:] = (
-            factor * pl.A.map['values'][..., np.newaxis] *
-            s.axes_manager.signal_axes[0].axis[np.newaxis, axis.size:] ** (
-                -pl.r.map['values'][..., np.newaxis]))
+        if self.metadata.Signal.lazy:
+            right_chunks[axis.index_in_array] = 1
+            A = da.from_array(pl.A.map['values'][..., None],
+                              chunks=right_chunks)
+            x = da.from_array(s.axes_manager.signal_axes[0].axis[np.newaxis,
+                                                                 axis.size:],
+                              chunks=(extrapolation_size,))
+            r = da.from_array(pl.r.map['values'][..., None],
+                              chunks=right_chunks)
+            right_data = factor * A * x**(-r)
+            s.data = da.concatenate([left_data, right_data],
+                                    axis=axis.index_in_array)
+        else:
+            s.data[..., axis.size:] = (
+                factor * pl.A.map['values'][..., np.newaxis] *
+                s.axes_manager.signal_axes[0].axis[np.newaxis, axis.size:] ** (
+                    -pl.r.map['values'][..., np.newaxis]))
         return s
 
     def kramers_kronig_analysis(self,
@@ -1300,3 +1346,12 @@ class EELSSpectrum(Signal1D):
                           GOS=GOS,
                           dictionary=dictionary)
         return model
+
+
+class LazyEELSSpectrum(LazySignal1D, EELSSpectrum):
+
+    _lazy = True
+
+    def __init__(self, *args, **kwargs):
+        super(LazyEELSSpectrum, self).__init__(*args, **kwargs)
+        EELSSpectrum.__init__(self, *args, **kwards)
