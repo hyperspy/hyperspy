@@ -645,7 +645,7 @@ class BaseModel(list):
         ----------
         fitter : None | "leastsq" | "least_squares" | "mpfit" | "odr" |
                  "Nelder-Mead" | "Powell" | "CG" | "BFGS" | "Newton-CG" |
-                 "L-BFGS-B" | "TNC" | "COBYLA"
+                 "L-BFGS-B" | "TNC"
             The optimization algorithm used to perform the fitting.
             If None the fitter defined in `preferences.Model.default_fitter` is used.
             "leastsq" performs least-squares optimization using the
@@ -703,12 +703,10 @@ class BaseModel(list):
             cm = dummy_context_manager
 
         if bounded is True:
-            if fitter not in ("least_squares", "mpfit", "TNC"",
-                              "L-BFGS-B", "COBYLA"):
+            if fitter not in ("least_squares", "mpfit", "TNC", "L-BFGS-B"):
                 raise NotImplementedError("Bounded optimization is only"
                                           "supported by 'least_squares',"
-                                          "'mpfit', 'TNC', "
-                                          "'L-BFGS-B' or 'COBYLA'")
+                                          "'mpfit', 'TNC' or 'L-BFGS-B'")
             else:
                 # this has to be done before setting the p0,
                 # so moved things around
@@ -819,7 +817,7 @@ class BaseModel(list):
                         (len(args[0]) - len(self.p0)))
                 self.fit_output = m
             else:
-                # General optimizers (including constrained ones(tnc,l_bfgs_b)
+                # General optimizers
                 # Least squares or maximum likelihood
                 if method == 'ml':
                     tominimize = self._poisson_likelihood_function
@@ -837,44 +835,30 @@ class BaseModel(list):
                 # Methods using the gradient
                 elif fitter in ('CG', 'BFGS', 'Newton-CG'):
                     self.p0 = minimize(tominimize, self.p0, fprime=fprime,
-                                       method=fitter, args=args, **kwargs)
+                                       args=args, method=fitter, **kwargs)
 
                 # Constrained optimizers
-
-                # Use gradient
-                elif fitter == "tnc":
+                # using the gradient
+                elif fitter in ('TNC', 'L-BFGS-B'):
                     if bounded is True:
                         self.set_boundaries()
                     elif bounded is False:
                         self.free_parameters_boundaries = None
-                    self.p0 = fmin_tnc(
-                        tominimize,
-                        self.p0,
-                        fprime=fprime,
-                        args=args,
+                    self.p0 = minimize(tominimize, self.p0, fprime=fprime,
+                        args=args, method=fitter,
                         bounds=self.free_parameters_boundaries,
-                        approx_grad=approx_grad,
-                        **kwargs)[0]
-                elif fitter == "l_bfgs_b":
-                    if bounded is True:
-                        self.set_boundaries()
-                    elif bounded is False:
-                        self.free_parameters_boundaries = None
-                    self.p0 = fmin_l_bfgs_b(
-                        tominimize, self.p0, fprime=fprime, args=args,
-                        bounds=self.free_parameters_boundaries,
-                        approx_grad=approx_grad, **kwargs)[0]
+                        approx_grad=approx_grad, **kwargs)
                 else:
                     raise ValueError("""
                     The %s optimizer is not available.
                     Available optimizers:
                     Unconstrained:
                     --------------
-                    Only least Squares: leastsq and odr
-                    General: fmin, powell, cg, ncg, bfgs
+                    Least-squares: leastsq and odr
+                    General: Nelder-Mead, Powell, CG, BFGS, Newton-CG
                     Constrained:
                     ------------
-                    tnc and l_bfgs_b
+                    least_squares, mpfit, TNC and L-BFGS-B
                     """ % fitter)
             if np.iterable(self.p0) == 0:
                 self.p0 = (self.p0,)
