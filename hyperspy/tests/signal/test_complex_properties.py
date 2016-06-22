@@ -71,6 +71,13 @@ class TestComplexProperties:
         self.s.isig[:] = np.abs(self.s) * np.exp(1j * angle)
         nt.assert_almost_equal(self.s.angle(), angle)
 
+    def test_get_unwrapped_phase(self):
+        phase_ref = np.arange(9).reshape((3, 3)) / 2
+        self.s.data = np.abs(self.s) * np.exp(1j * phase_ref)
+        phase = self.s.unwrapped_phase(seed=42, show_progressbar=False)
+        assert isinstance(phase, hs.signals.BaseSignal)
+        nt.assert_almost_equal(phase.data, phase_ref)
+
 
 if __name__ == '__main__':
     nose.run(argv=[sys.argv[0], sys.modules[__name__].__file__, '-v'])

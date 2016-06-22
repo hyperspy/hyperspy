@@ -24,21 +24,3 @@ To transform a :py:class:`~._signals.signal2d.Signal2D` (or subclass) into a
 .. code-block:: python
 
     >>> im.set_signal_type('wave')
-
-
-Unwrap the phase
-----------------
-
-With the :py:func:`~._signals.wave_image.WaveImage.unwrapped_phase` method the phase can be
-unwrapped and returned as an :class:`~hyperspy._signals.signal2d.Signal2D`. The underlying method is
-:py:func:`~skimage.restoration.unwrap`.
-
-
-Add a linear ramp
------------------
-
-A linear ramp can be added to the wave via the :py:func:`~._signals.wave_image.WaveImage.add_phase_ramp`
-method. The parameters `ramp_x` and `ramp_y` dictate the slope of the ramp in `x`- and `y` direction,
-while the offset is determined by the `offset` parameter. The fulcrum of the linear ramp is at the origin
-and the slopes are given in units of the axis with the according scale taken into account.
-Both are available via the :py:class:`~.axes.AxesManager` of the signal.

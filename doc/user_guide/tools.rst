@@ -940,3 +940,11 @@ for example:
       ├── record_by = spectrum
       ├── signal_origin = simulation
       └── signal_type =
+
+
+Phase unwrapping
+----------------
+
+With the :py:func:`~hyperspy.signals.BaseSignal.unwrapped_phase` method the complex phase
+of a signal can be unwrapped and returned as a new Signal. The underlying method is 
+:py:func:`~skimage.restoration.unwrap`.

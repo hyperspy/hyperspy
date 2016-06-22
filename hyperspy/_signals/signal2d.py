@@ -667,3 +667,28 @@ class Signal2D(BaseSignal,
         """
         from hyperspy.models.model2d import Model2D
         return Model2D(self, dictionary=dictionary)
+
+    def add_phase_ramp(self, ramp_x, ramp_y, offset=0):
+        """Add a linear ramp to the wave.
+
+        Parameters
+        ----------
+        ramp_x: float
+            Slope of the ramp in x-direction.
+        ramp_y: float
+            Slope of the ramp in y-direction.
+        offset: float, optional
+            Offset of the ramp at the fulcrum.
+        Notes
+        -----
+            The fulcrum of the linear ramp is at the origin and the slopes are given in units of
+            the axis with the according scale taken into account. Both are available via the
+            `axes_manager` of the signal.
+
+        """
+        yy, xx = np.indices(self.axes_manager._signal_shape_in_array)
+        phase = self.angle().data
+        phase += offset * np.ones(self.data.shape)
+        phase += ramp_x * xx
+        phase += ramp_y * yy
+        self.data = np.abs(self) * np.exp(phase * 1j)

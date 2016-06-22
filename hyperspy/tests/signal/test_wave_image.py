@@ -57,24 +57,5 @@ class TestComplexProperties:
         nt.assert_almost_equal(self.s.amplitude.data, test)
 
 
-class TestPhaseFunctions:
-
-    def setUp(self):
-        test = np.arange(9).reshape((3, 3)) + 1j * (9 + np.arange(9).reshape((3, 3)))
-        self.s = hs.signals.WaveImage(test)
-
-    def test_get_unwrapped_phase(self):
-        phase_ref = np.arange(9).reshape((3, 3)) - 4
-        self.s.phase = phase_ref
-        phase = self.s.unwrapped_phase(seed=42, show_progressbar=False)
-        assert isinstance(phase, hs.signals.Signal2D)
-        nt.assert_almost_equal(phase.data, phase_ref)
-
-    def test_add_phase_ramp(self):
-        self.s.phase = np.indices((3,3)).sum(axis=0) + 4
-        self.s.add_phase_ramp(-1, -1, -4)
-        nt.assert_almost_equal(self.s.phase.data, 0)
-
-
 if __name__ == '__main__':
     nose.run(argv=[sys.argv[0], sys.modules[__name__].__file__, '-v'])
