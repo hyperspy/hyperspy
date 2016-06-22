@@ -67,8 +67,9 @@ Matrix based peak finding
     >>> s.find_peaks2D(method='laplacian_of_gaussians')
     >>> s.find_peaks2D(method='difference_of_gaussians')
 
-These methods are essentially wrappers around the `scikit-image
-<http://scikit-image.org/docs/dev/auto_examples/plot_blob.html>`'s Laplacian
+These methods are essentially wrappers around the
+`scikit-image <http://scikit-image
+.org/docs/dev/auto_examples/plot_blob.html>`_ Laplacian
 of Gaussian and Difference of Gaussian methods, based on stacking the
 Laplacian/difference of images convolved with Gaussian kernels of various
 standard deviations. Both are relatively rapid and very robust, given
