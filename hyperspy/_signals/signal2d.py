@@ -538,7 +538,7 @@ class Signal2DTools(object):
                   left,
                   right)
 
-    def find_peaks2d(self, method='skimage', *args, **kwargs):
+    def find_peaks2D(self, method='skimage', *args, **kwargs):
         """Find peaks in a 2D signal/image.
         Function to locate the positive peaks in an image using various, user
         specified, methods. Returns a structured array containing the peak
@@ -566,7 +566,8 @@ class Signal2DTools(object):
                                                  `scikit-image` which uses
                                                  the difference of Gaussian
                                                  matrices approach.
-        keywords : associated with above methods.
+        *args : associated with above methods
+        **kwargs : associated with above methods.
         Returns
         -------
         peaks: structured array of shape _navigation_shape_in_array in which
@@ -600,7 +601,7 @@ class Signal2DTools(object):
 
         return peaks
 
-    def find_peaks2d_interactive(self):
+    def find_peaks2D_interactive(self):
         peakfinder = PeakFinder2D()
         peakfinder.interactive(self)
 
@@ -973,7 +974,7 @@ class Zaefferer(PeakFinder2D):
         ----------
         z : ndarray
             Matrix of image intensities.
-        **kwargs
+        **kwargs :
             grad_threshold : float
                 The minimum gradient required to begin a peak search.
             window_size : int
