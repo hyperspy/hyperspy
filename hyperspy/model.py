@@ -24,14 +24,7 @@ import logging
 
 import numpy as np
 import scipy.odr as odr
-from scipy.optimize import (leastsq,
-                            fmin,
-                            fmin_cg,
-                            fmin_ncg,
-                            fmin_bfgs,
-                            fmin_l_bfgs_b,
-                            fmin_tnc,
-                            fmin_powell)
+from scipy.optimize import (leastsq, least_squares, minimize)
 
 from hyperspy.external.progressbar import progressbar
 from hyperspy.defaults_parser import preferences
@@ -643,39 +636,41 @@ class BaseModel(list):
         """Fits the model to the experimental data.
         The chi-squared, reduced chi-squared and the degrees of freedom are
         computed automatically when fitting. They are stored as signals, in the
-        `chisq`, `red_chisq`  and `dof`. Note that,
-        unless ``metadata.Signal.Noise_properties.variance`` contains an
+        `chisq`, `red_chisq`  and `dof`. Note that unless
+        ``metadata.Signal.Noise_properties.variance`` contains an
         accurate estimation of the variance of the data, the chi-squared and
-        reduced chi-squared cannot be computed correctly. This is also true for
-        homocedastic noise.
+        reduced chi-squared metrics cannot be computed correctly.
+
         Parameters
         ----------
-        fitter : {None, "leastsq", "odr", "mpfit", "fmin"}
-            The optimizer to perform the fitting. If None the fitter
-            defined in `preferences.Model.default_fitter` is used.
-            "leastsq" performs least squares using the Levenberg–Marquardt
-            algorithm.
-            "mpfit"  performs least squares using the Levenberg–Marquardt
-            algorithm and, unlike "leastsq", support bounded optimization.
-            "fmin" performs curve fitting using a downhill simplex algorithm.
-            It is less robust than the Levenberg-Marquardt based optimizers,
-            but, at present, it is the only one that support maximum likelihood
-            optimization for poissonian noise.
+        fitter : None | "leastsq" | "least_squares" | "mpfit" | "odr" |
+                 "Nelder-Mead" | "Powell" | "CG" | "BFGS" | "Newton-CG" |
+                 "L-BFGS-B" | "TNC" | "COBYLA"
+            The optimization algorithm used to perform the fitting.
+            If None the fitter defined in `preferences.Model.default_fitter` is used.
+            "leastsq" performs least-squares optimization using the
+            Levenberg–Marquardt algorithm.
+            "least_squares" performs least-squares using the Levenberg–Marquardt
+            algorithm and supports bounds on parameters.
+            "mpfit" performs least-squares using the Levenberg–Marquardt
+            algorithm and supports bounds on parameters.
             "odr" performs the optimization using the orthogonal distance
             regression algorithm. It does not support bounds.
+            The remaining options are wrappers for scipy.optimize.minimize()
+
             "leastsq", "odr" and "mpfit" can estimate the standard deviation of
             the estimated value of the parameters if the
             "metada.Signal.Noise_properties.variance" attribute is defined.
-            Note that if it is not defined the standard deviation is estimated
-            using variance equal 1, what, if the noise is heterocedatic, will
-            result in a biased estimation of the parameter values and errors.
+            Note that if not defined, the standard deviation is estimated
+            using a variance equal to 1. If the noise is heteroscedastic, this
+            can  result in a biased estimation of the parameter values and errors.
             If `variance` is a `Signal` instance of the same
             `navigation_dimension` as the signal, and `method` is "ls"
             weighted least squares is performed.
         method : {'ls', 'ml'}
-            Choose 'ls' (default) for least squares and 'ml' for poissonian
-            maximum-likelihood estimation.  The latter is only available when
-            `fitter` is "fmin".
+            Choose 'ls' (default) for least-squares and 'ml' for Poisson
+            maximum likelihood estimation. The latter is not available when
+            'fitter' is "leastsq", "odr", "mpfit" or "least_squares".
         grad : bool
             If True, the analytical gradient is used if defined to
             speed up the optimization.
@@ -693,6 +688,7 @@ class BaseModel(list):
             Any extra key word argument will be passed to the chosen
             fitter. For more information read the docstring of the optimizer
             of your choice in `scipy.optimize`.
+
         See Also
         --------
         multifit
@@ -707,13 +703,15 @@ class BaseModel(list):
             cm = dummy_context_manager
 
         if bounded is True:
-            if fitter not in ("mpfit", "tnc", "l_bfgs_b"):
+            if fitter not in ("least_squares", "mpfit", "TNC"",
+                              "L-BFGS-B", "COBYLA"):
                 raise NotImplementedError("Bounded optimization is only"
-                                          "available for the mpfit "
-                                          "optimizer.")
+                                          "supported by 'least_squares',"
+                                          "'mpfit', 'TNC', "
+                                          "'L-BFGS-B' or 'COBYLA'")
             else:
-                # this has to be done before setting the p0, so moved things
-                # around
+                # this has to be done before setting the p0,
+                # so moved things around
                 self.ensure_parameters_in_bounds()
 
         with cm(update_on_resume=True):
@@ -736,10 +734,10 @@ class BaseModel(list):
 
             if method == 'ml':
                 weights = None
-                if fitter != "fmin":
+                if fitter in ("leastsq", "least_squares", "odr"):
                     raise NotImplementedError(
-                        "Maximum likelihood estimation  is only implemented "
-                        'for the "fmin" optimizer')
+                        "Maximum likelihood estimation is not supported "
+                        'for the "leastsq", "least_squares" or "odr" optimizers')
             elif method == "ls":
                 metadata = self.signal.metadata
                 if "Signal.Noise_properties.variance" not in metadata:
@@ -821,38 +819,27 @@ class BaseModel(list):
                         (len(args[0]) - len(self.p0)))
                 self.fit_output = m
             else:
-                # General optimizers (incluiding constrained ones(tnc,l_bfgs_b)
+                # General optimizers (including constrained ones(tnc,l_bfgs_b)
                 # Least squares or maximum likelihood
                 if method == 'ml':
                     tominimize = self._poisson_likelihood_function
                     fprime = grad_ml
-                elif method in ['ls', "wls"]:
+                elif method == 'ls':
                     tominimize = self._errfunc2
                     fprime = grad_ls
 
                 # OPTIMIZERS
+                # Derivative-free methods
+                if fitter in ('Nelder-Mead', 'Powell'):
+                    self.p0 = minimize(tominimize, self.p0, args=args,
+                                       method=fitter, **kwargs)
 
-                # Simple (don't use gradient)
-                if fitter == "fmin":
-                    self.p0 = fmin(
-                        tominimize, self.p0, args=args, **kwargs)
-                elif fitter == "powell":
-                    self.p0 = fmin_powell(tominimize, self.p0, args=args,
-                                          **kwargs)
+                # Methods using the gradient
+                elif fitter in ('CG', 'BFGS', 'Newton-CG'):
+                    self.p0 = minimize(tominimize, self.p0, fprime=fprime,
+                                       method=fitter, args=args, **kwargs)
 
-                # Make use of the gradient
-                elif fitter == "cg":
-                    self.p0 = fmin_cg(tominimize, self.p0, fprime=fprime,
-                                      args=args, **kwargs)
-                elif fitter == "ncg":
-                    self.p0 = fmin_ncg(tominimize, self.p0, fprime=fprime,
-                                       args=args, **kwargs)
-                elif fitter == "bfgs":
-                    self.p0 = fmin_bfgs(
-                        tominimize, self.p0, fprime=fprime,
-                        args=args, **kwargs)
-
-                # Constrainded optimizers
+                # Constrained optimizers
 
                 # Use gradient
                 elif fitter == "tnc":
@@ -885,7 +872,7 @@ class BaseModel(list):
                     --------------
                     Only least Squares: leastsq and odr
                     General: fmin, powell, cg, ncg, bfgs
-                    Cosntrained:
+                    Constrained:
                     ------------
                     tnc and l_bfgs_b
                     """ % fitter)
