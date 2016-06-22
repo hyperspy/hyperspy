@@ -999,6 +999,144 @@ class Signal2DTools(object):
 
         return peaks
 
+    def find_peaks2D_interactive(self, method='difference_of_gaussians'):
+        if method == 'difference_of_gaussians':
+            peakfinder = DifferenceOfGaussians(self)
+            peakfinder.interactive()
+            return {param: getattr(peakfinder, param) for param in
+                    peakfinder.params}
+
+
+class PeakFinder2D(object):
+
+    params = []
+    values = []
+    sliders = []
+    pts = None
+
+    def __init__(self, signal):
+        self.signal = signal
+        for param, default in zip(self.params, self.values):
+            setattr(self, param, default)
+
+    def interactive(self):
+        from IPython.display import display
+        self.signal.plot()
+        for param in self.params:
+            container = self.create_widget(param, getattr(self, param))
+            display(container)
+
+    def create_widget(self, param, value):
+        from ipywidgets import FloatSlider, FloatText, Layout, HBox
+        b = FloatText(value=0, description="min", layout=Layout(flex='0 1 auto', width='auto'))
+        a = FloatText(value=2*value, description="max", layout=Layout(flex='0 1 auto', width='auto'))
+        f = FloatSlider(value=value, min=b.value, max=a.value,
+                        step=np.abs(a.value - b.value) * 0.01,
+                        description=param,
+                        layout=Layout(flex='1 1 auto', width='auto'))
+        f.observe(self.on_value_change, names='value')
+
+        def on_min_change(change):
+            if f.max > change['new']:
+                f.min = change['new']
+                f.step = np.abs(f.max - f.min)*0.01
+
+        def on_max_change(change):
+            if f.min < change['new']:
+                f.max = change['new']
+                f.step = np.abs(f.max - f.min)*0.01
+
+        b.observe(on_min_change, names='value')
+        a.observe(on_max_change, names='value')
+
+        container = HBox((b, f, a))
+        return container
+
+    def on_value_change(self, change):
+        setattr(self, change['owner'].description, change['new'])
+        self.plot_peaks()
+
+    def plot_peaks(self):
+        from hyperspy.utils.markers import point
+        for collection in self.signal._plot.signal_plot.ax.collections:
+            collection.remove()
+        self.signal._plot.signal_plot.ax_markers = []
+        xscale = self.signal.axes_manager.signal_axes[0].scale
+        yscale = self.signal.axes_manager.signal_axes[1].scale
+
+        peaks = self.find_peaks(self.signal.get_current_signal().data)
+        markers = [point(x=p[1]*xscale, y=p[0]*yscale, color='red') for p in
+                   peaks]
+        for marker in markers:
+            self.signal.add_marker(marker)
+
+
+class DifferenceOfGaussians(PeakFinder2D):
+
+    params = [
+        "min_sigma",
+        "max_sigma",
+        "sigma_ratio",
+        "threshold",
+        "overlap",
+    ]
+
+    values = [
+        1.,
+        50.,
+        1.6,
+        0.2,
+        0.5,
+    ]
+
+    def find_peaks(self, z, **kwargs):
+        """
+        Finds peaks via the difference of Gaussian Matrices method from
+        `scikit-image`.
+
+        Parameters
+        ----------
+        normalize: bool
+            If `True`, linearly scales intensities to between 0 and 1,
+            which makes it easier to determine parameters.
+        kwargs : Additional parameters to be passed to the algorithm. See `blob_dog`
+            documentation for details:
+            http://scikit-image.org/docs/dev/api/skimage.feature.html#blob-dog
+
+        Returns
+        -------
+        ndarray
+            (n_peaks, 2)
+            Array of peak coordinates.
+
+        Notes
+        -----
+        While highly effective at finding even very faint peaks, this method is
+            sensitive to fluctuations in intensity near the edges of the image.
+
+        """
+        for param in self.params:
+            if param not in kwargs:
+                kwargs[param] = getattr(self, param)
+        from skimage.feature import blob_dog
+        if True:
+            z = z/np.max(z)
+        else:
+            z = self.z
+        blobs = blob_dog(z, **kwargs)
+        try:
+            centers = blobs[:, :2]
+        except IndexError:
+            return np.empty((1, 2))
+        clean_centers = []
+        for center in centers:
+            if len(np.intersect1d(center, (0,) + z.shape + tuple(
+                            c - 1 for c in z.shape))) > 0:
+                continue
+            clean_centers.append(center)
+        return np.array(clean_centers)
+
+
 class Signal2D(BaseSignal,
                Signal2DTools,):
 
