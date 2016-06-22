@@ -39,29 +39,45 @@ Zaeferrer peak finder
 
     >>> s.find_peaks2D(method='zaefferer')
 
-This algorithm was developed by Zaefferer [Zaefferer2000]_ and the
+This algorithm was developed by Zaefferer [1]_ and the
 implementation here is after the description of the algorithm in the Ph.D.
 thesis of Thomas A. White. It is based on a gradient threshold followed by a
 local maximum search within a square window, which is moved until it is
 centered on the brightest point, which is taken as a peak if it is within a
 certain distance of the starting point.
 
-
 Ball statistical peak finder
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+.. code-block:: python
+
+    >>> s.find_peaks2D(method='stat')
+
+Developed by Gordon Ball, and described in the Ph.D. thesis of Thomas A.
+White, this method is based on finding points which have a statistically
+higher value than the surrounding areas, then iterating between smoothing and
+binarising until the number of peaks has converged. This method is slow, but
+very robust to a variety of image types.
 
 Matrix based peak finding
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
+.. code-block:: python
 
-Masiel peak finder
-^^^^^^^^^^^^^^^^^^
+    >>> s.find_peaks2D(method='laplacian_of_gaussians')
+    >>> s.find_peaks2D(method='difference_of_gaussians')
+
+These methods are essentially wrappers around the `scikit-image
+<http://scikit-image.org/docs/dev/auto_examples/plot_blob.html>`'s Laplacian
+of Gaussian and Difference of Gaussian methods, based on stacking the
+Laplacian/difference of images convolved with Gaussian kernels of various
+standard deviations. Both are relatively rapid and very robust, given
+appropriate parameters.
 
 
 References
 ----------
 
-.. [Zaefferer2000] S. Zaefferer, “New developments of computer-aided
+.. [1] S. Zaefferer, “New developments of computer-aided
    crystallographic analysis in transmission electron microscopy research
    papers,” J. Appl. Crystallogr., vol. 33, no. v, pp. 10–25, 2000.
