@@ -602,6 +602,14 @@ class Signal2DTools(object):
         return peaks
 
     def find_peaks2D_interactive(self):
+        """
+        Find peaks using an interactive tool.
+
+        Notes
+        -----
+        Requires `ipywidgets` and `traitlets` to be installed.
+
+        """
         peakfinder = PeakFinder2D()
         peakfinder.interactive(self)
 
