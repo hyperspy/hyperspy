@@ -35,6 +35,17 @@ The methods available are as follows:
 Zaeferrer peak finder
 ^^^^^^^^^^^^^^^^^^^^^
 
+.. code-block:: python
+
+    >>> s.find_peaks2D(method='zaefferer')
+
+This algorithm was developed by Zaefferer [Zaefferer2000]_ and the
+implementation here is after the description of the algorithm in the Ph.D.
+thesis of Thomas A. White. It is based on a gradient threshold followed by a
+local maximum search within a square window, which is moved until it is
+centered on the brightest point, which is taken as a peak if it is within a
+certain distance of the starting point.
+
 
 Ball statistical peak finder
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -46,3 +57,11 @@ Matrix based peak finding
 
 Masiel peak finder
 ^^^^^^^^^^^^^^^^^^
+
+
+References
+----------
+
+.. [Zaefferer2000] S. Zaefferer, “New developments of computer-aided
+   crystallographic analysis in transmission electron microscopy research
+   papers,” J. Appl. Crystallogr., vol. 33, no. v, pp. 10–25, 2000.
