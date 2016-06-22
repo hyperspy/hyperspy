@@ -19,7 +19,6 @@
 import os
 import nose.tools as nt
 import numpy as np
-from numpy.testing import assert_array_equal
 
 from hyperspy.io import load
 from hyperspy.io_plugins.fei import load_ser_file
@@ -53,7 +52,7 @@ class TestFEIReader():
         fname0 = os.path.join(self.dirpathold, '64x64_TEM_images_acquire.emi')
         s0 = load(fname0)
         data = np.load(fname0.replace('emi', 'npy'))
-        assert_array_equal(s0.data, data)
+        np.testing.assert_array_equal(s0.data, data)
 
     def test_load_ser_reader_old_new_format(self):
         # test TIA old format

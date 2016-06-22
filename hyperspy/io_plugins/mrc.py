@@ -109,9 +109,9 @@ def get_fei_dtype_list(endianess='<'):
         ('y_stage', end + 'f4'),
         # Stage z position (Unit=m. But if value>1, unit=???m)
         ('z_stage', end + 'f4'),
-        # Image shift x (Unit=m. But if value>1, unit=???m)
+        # Signal2D shift x (Unit=m. But if value>1, unit=???m)
         ('x_shift', end + 'f4'),
-        # Image shift y (Unit=m. But if value>1, unit=???m)
+        # Signal2D shift y (Unit=m. But if value>1, unit=???m)
         ('y_shift', end + 'f4'),
         ('defocus', end + 'f4'),  # Defocus Unit=m. But if value>1, unit=???m)
         ('exp_time', end + 'f4'),  # Exposure time (s)
@@ -128,9 +128,9 @@ def get_fei_dtype_list(endianess='<'):
 def get_data_type(index, endianess='<'):
     end = endianess
     data_type = [
-        end + 'u2',         # 0 = Image     unsigned bytes
-        end + 'i2',         # 1 = Image     signed short integer (16 bits)
-        end + 'f4',         # 2 = Image     float
+        end + 'u2',         # 0 = Signal2D     unsigned bytes
+        end + 'i2',         # 1 = Signal2D     signed short integer (16 bits)
+        end + 'f4',         # 2 = Signal2D     float
         (end + 'i2', 2),    # 3 = Complex   short*2
         end + 'c8',         # 4 = Complex   float*2
     ]

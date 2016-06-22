@@ -58,10 +58,14 @@ class TEMParametersUI(t.HasTraits):
 
     beam_energy = t.Float(t.Undefined,
                           label='Beam energy (keV)')
-    live_time = t.Float(t.Undefined,
-                        label='Live time (s)')
+    real_time = t.Float(t.Undefined,
+                        label='Real time (s)')
     tilt_stage = t.Float(t.Undefined,
                          label='Stage tilt (degree)')
+    live_time = t.Float(t.Undefined,
+                        label='Live time (s)')
+    beam_area = t.Float(t.Undefined,
+                        label='Beam/probe area (nm^2)')
     azimuth_angle = t.Float(t.Undefined,
                             label='Azimuth angle (degree)')
     elevation_angle = t.Float(t.Undefined,
@@ -72,8 +76,10 @@ class TEMParametersUI(t.HasTraits):
     traits_view = tu.View(
         tu.Group('beam_energy',
                  'tilt_stage',
+                 'beam_area',
+                 'beam_current',
                  label='TEM', show_border=True),
-        tu.Group('live_time', 'azimuth_angle',
+        tu.Group('real_time', 'live_time', 'azimuth_angle',
                  'elevation_angle', 'energy_resolution_MnKa',
                  label='EDS', show_border=True),
         kind='modal', buttons=[OKButton, CancelButton],

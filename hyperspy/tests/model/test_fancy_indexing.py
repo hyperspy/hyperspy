@@ -50,13 +50,13 @@ class TestModelIndexing:
         self.model = m
 
     def test_model_signal_indexer_slice(self):
-        s = self.model.spectrum.isig[:300]
+        s = self.model.signal.isig[:300]
         m = self.model.isig[:300]
         m1 = self.model.isig[300:]
         m2 = self.model.isig[:0.]
         nt.assert_is(m1[0].A.ext_bounded, m[0].A.ext_bounded)
-        np.testing.assert_array_almost_equal(s.data, m.spectrum.data)
-        np.testing.assert_array_almost_equal(s.data, m2.spectrum.data)
+        np.testing.assert_array_almost_equal(s.data, m.signal.data)
+        np.testing.assert_array_almost_equal(s.data, m2.signal.data)
         np.testing.assert_array_equal(m.dof.data, self.model.dof.data)
         for ic, c in enumerate(m):
             for p_new, p_old in zip(c.parameters, self.model[ic].parameters):
@@ -73,14 +73,7 @@ class TestModelIndexing:
         self.model.axes_manager.indices = (0, 0)
         self.model[0].active = False
 
-        # Make sure the array we copy has been appropriatelly updated before
-        # slicing
-        _test = self.model[0]._active_array[0, 0]
-        while _test:
-            time.sleep(0.1)
-            _test = self.model[0]._active_array[0, 0]
-
-        m = self.model.inav[0::2]
+        m = self.model.inav[0::2, :]
         np.testing.assert_array_equal(
             m.chisq.data, self.model.chisq.data[:, 0::2])
         np.testing.assert_array_equal(m.dof.data, self.model.dof.data[:, 0::2])
@@ -94,6 +87,17 @@ class TestModelIndexing:
                 self.model[ic]._active_array[:, 0::2])
             for p_new, p_old in zip(c.parameters, self.model[ic].parameters):
                 nt.assert_true((p_old.map[:, 0::2] == p_new.map).all())
+
+    # test that explicitly does the wrong thing by mixing up the order
+    def test_component_copying_order(self):
+        self.model.axes_manager.indices = (0, 0)
+        self.model[0].active = False
+        g = self.model[0]
+        g._slicing_order = ('_active_array', 'active_is_multidimensional',
+                            'active')
+        nt.assert_false(g._active_array[0, 0])
+        m = self.model.inav[0:2, 0:2]
+        nt.assert_true(m[0]._active_array[0, 0])
 
 
 class TestModelIndexingClass:
@@ -140,9 +144,9 @@ class TestEELSModelSlicing:
     def test_slicing_low_loss_inav(self):
         m = self.model
         m1 = m.inav[::2]
-        nt.assert_equal(m1.spectrum.data.shape, m1.low_loss.data.shape)
+        nt.assert_equal(m1.signal.data.shape, m1.low_loss.data.shape)
 
     def test_slicing_low_loss_isig(self):
         m = self.model
         m1 = m.isig[::2]
-        nt.assert_equal(m.spectrum.data.shape, m1.low_loss.data.shape)
+        nt.assert_equal(m.signal.data.shape, m1.low_loss.data.shape)

@@ -67,8 +67,8 @@ def load(filenames=None,
         data.
         If None, the value is read or guessed from the file. Any other value
         overrides the value stored in the file if any.
-        If "spectrum" load the data in a Spectrum (sub)class.
-        If "image" load the data in an Image (sub)class.
+        If "spectrum" load the data in a Signal1D (sub)class.
+        If "image" load the data in an Signal2D (sub)class.
         If "" (empty string) load the data in a Signal class.
 
     signal_type : {None, "EELS", "EDS_TEM", "EDS_SEM", "", str}
@@ -149,7 +149,7 @@ def load(filenames=None,
 
     Loading a single file and overriding its default record_by:
 
-    >>> d = hs.load('file.dm3', record_by='Image')
+    >>> d = hs.load('file.dm3', record_by='image')
 
     Loading multiple files:
 
@@ -238,8 +238,8 @@ def load_single_file(filename,
         File name (including the extension)
     record_by : {None, 'spectrum', 'image'}
         If None (default) it will try to guess the data type from the file,
-        if 'spectrum' the file will be loaded as an Spectrum object
-        If 'image' the file will be loaded as an Image object
+        if 'spectrum' the file will be loaded as an Signal1D object
+        If 'image' the file will be loaded as an Signal2D object
 
     """
     extension = os.path.splitext(filename)[1][1:]
@@ -322,7 +322,7 @@ def assign_signal_subclass(record_by="",
 
     """
     import hyperspy.signals
-    from hyperspy.signal import Signal
+    from hyperspy.signal import BaseSignal
     if record_by and record_by not in ["image", "spectrum"]:
         raise ValueError("record_by must be one of: None, empty string, "
                          "\"image\" or \"spectrum\"")
@@ -330,8 +330,7 @@ def assign_signal_subclass(record_by="",
         raise ValueError("signal_origin must be one of: None, empty string, "
                          "\"experiment\" or \"simulation\"")
 
-    signals = hyperspy.misc.utils.find_subclasses(hyperspy.signals, Signal)
-    signals['Signal'] = Signal
+    signals = hyperspy.misc.utils.find_subclasses(hyperspy.signals, BaseSignal)
 
     if signal_origin == "experiment":
         signal_origin = ""

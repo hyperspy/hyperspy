@@ -32,7 +32,7 @@ def set_log_level(level):
         INFO:hyperspy.io_plugins.digital_micrograph:size 4796607 B
         INFO:hyperspy.io_plugins.digital_micrograph:Is file Little endian? True
         INFO:hyperspy.io_plugins.digital_micrograph:Total tags in root group: 15
-        <Image, title: My file, dimensions: (|1024, 1024)>
+        <Signal2D, title: My file, dimensions: (|1024, 1024)>
 
     If you need the log output during the initial import of hyperspy, you
     should set the log level like this:

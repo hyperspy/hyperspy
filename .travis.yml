@@ -26,17 +26,16 @@ before_install:
 - conda update --yes conda
 
 install:
-- DEPS="nose numpy scipy matplotlib ipython h5py sympy scikit-learn dill natsort mock
-  setuptools cython"
-- conda create -n testenv --yes $DEPS
-- source activate testenv
-- conda install pip
-- pip install coverage coveralls traits traitsui request
-- python setup.py install
+  - DEPS="nose numpy scipy matplotlib ipython h5py sympy scikit-learn dill natsort setuptools scikit-image cython"
+  - conda create -n testenv --yes python=$TRAVIS_PYTHON_VERSION $DEPS
+  - source activate testenv
+  - conda install pip
+  - pip install coverage coveralls traits traitsui request tqdm
+  - python setup.py install
 
 script:
-- python setup.py build_ext --inplace
-- python continuous_integration/nosetest.py --with-coverage hyperspy
+  - python setup.py build_ext --inplace
+  - python continuous_integration/nosetest.py --with-coverage hyperspy
 
 after_success:
 - coveralls

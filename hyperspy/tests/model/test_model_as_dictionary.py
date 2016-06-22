@@ -19,7 +19,7 @@
 import numpy as np
 
 import nose.tools as nt
-from hyperspy._signals.spectrum import Spectrum
+from hyperspy._signals.signal1d import Signal1D
 from hyperspy.component import Parameter, Component
 from hyperspy.components import Gaussian, Lorentzian, ScalableFixedPattern
 
@@ -204,7 +204,7 @@ class TestComponentDictionary:
 class TestModelDictionary:
 
     def setUp(self):
-        s = Spectrum(np.array([1.0, 2, 4, 7, 12, 7, 4, 2, 1]))
+        s = Signal1D(np.array([1.0, 2, 4, 7, 12, 7, 4, 2, 1]))
         m = s.create_model()
         m.low_loss = (s + 3.0).deepcopy()
         self.model = m
@@ -234,8 +234,8 @@ class TestModelDictionary:
             remove_empty_numpy_strings(tmp)
             nt.assert_equal(d['components'][num]['name'], tmp['name'])
             nt.assert_equal(d['components'][num]['_id_name'], tmp['_id_name'])
-        np.testing.assert_equal(d['components'][-1]['spectrum'],
-                                (m.spectrum * 0.3)._to_dictionary())
+        np.testing.assert_equal(d['components'][-1]['signal1D'],
+                                (m.signal * 0.3)._to_dictionary())
 
     def test_load_dictionary(self):
         d = self.model.as_dictionary()
@@ -244,7 +244,7 @@ class TestModelDictionary:
         mn._load_dictionary(d)
         mo = self.model
 
-        # nt.assert_true(np.allclose(mo.spectrum.data, mn.spectrum.data))
+        # nt.assert_true(np.allclose(mo.signal1D.data, mn.signal1D.data))
         np.testing.assert_allclose(mo.chisq.data, mn.chisq.data)
         np.testing.assert_allclose(mo.dof.data, mn.dof.data)
 
