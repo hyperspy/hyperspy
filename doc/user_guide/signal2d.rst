@@ -75,6 +75,34 @@ Laplacian/difference of images convolved with Gaussian kernels of various
 standard deviations. Both are relatively rapid and very robust, given
 appropriate parameters.
 
+Interactive Parametrization
+---------------------------
+
+.. code-block:: python
+
+    >>> s.find_peaks2D_interactive()
+
+Many of the peak finding algorithms implemented here have a number of
+tuneable parameters that significantly affect their accuracy. Finding the
+correct parameters can be difficult. An interactive tool for the Jupyter
+(originally IPython) notebook has been developed to help.
+
+Several widgets are available:
+
+.. figure::  images/widgets.png
+   :align: center
+   :width: 600
+
+* The method selector is used to compare different methods. The last-set
+  parameters are maintained.
+* The signal navigator is used where a signal has navigation axes. The
+  randomizer will select random indices.
+* The parameter adjusters will update the parameters of the method and re-plot
+  the new peaks.
+
+.. note:: Some methods take significantly longer than others, particularly
+    where there are a large number of peaks to be found. The plotting window
+    may be inactive during this time.
 
 References
 ----------
