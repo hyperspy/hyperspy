@@ -17,7 +17,7 @@
 
 
 import sys
-import mock
+from unittest import mock
 import nose
 import nose.tools as nt
 import numpy.testing as npt
