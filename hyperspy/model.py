@@ -646,27 +646,32 @@ class BaseModel(list):
         fitter : None | "leastsq" | "least_squares" | "mpfit" | "odr" |
                  "Nelder-Mead" | "Powell" | "CG" | "BFGS" | "Newton-CG" |
                  "L-BFGS-B" | "TNC"
-            The optimization algorithm used to perform the fitting.
-            If None the fitter defined in `preferences.Model.default_fitter` is used.
-            "leastsq" performs least-squares optimization using the
-            Levenberg–Marquardt algorithm.
-            "least_squares" performs least-squares using the Levenberg–Marquardt
-            algorithm and supports bounds on parameters.
-            "mpfit" performs least-squares using the Levenberg–Marquardt
-            algorithm and supports bounds on parameters.
-            "odr" performs the optimization using the orthogonal distance
-            regression algorithm. It does not support bounds.
-            The remaining options are wrappers for scipy.optimize.minimize()
+            The optimization algorithm used to perform the fitting. If None the
+            fitter defined in `preferences.Model.default_fitter` is used.
+
+                "leastsq" performs least-squares optimization using the
+                Levenberg–Marquardt algorithm.
+
+                "least_squares" performs least-squares using the Levenberg–Marquardt
+                algorithm and supports bounds on parameters.
+
+                "mpfit" performs least-squares using the Levenberg–Marquardt
+                algorithm and supports bounds on parameters.
+
+                "odr" performs the optimization using the orthogonal distance
+                regression algorithm. It does not support bounds.
+
+                The remaining options are wrappers for scipy.optimize.minimize()
 
             "leastsq", "odr" and "mpfit" can estimate the standard deviation of
             the estimated value of the parameters if the
             "metada.Signal.Noise_properties.variance" attribute is defined.
-            Note that if not defined, the standard deviation is estimated
-            using a variance equal to 1. If the noise is heteroscedastic, this
-            can  result in a biased estimation of the parameter values and errors.
-            If `variance` is a `Signal` instance of the same
-            `navigation_dimension` as the signal, and `method` is "ls"
-            weighted least squares is performed.
+            Note that if it is not defined, the standard deviation is estimated
+            using a variance of 1. If the noise is heteroscedastic, this can
+            result in a biased estimation of the parameter values and errors.
+            If `variance` is a `Signal` instance of the same `navigation_dimension`
+            as the signal, and `method` is "ls", then weighted least squares
+            is performed.
         method : {'ls', 'ml'}
             Choose 'ls' (default) for least-squares and 'ml' for Poisson
             maximum likelihood estimation. The latter is not available when
@@ -828,7 +833,7 @@ class BaseModel(list):
 
                 # OPTIMIZERS
                 # Derivative-free methods
-                if fitter in ('Nelder-Mead', 'Powell'):
+                if fitter in ('fmin', 'Nelder-Mead', 'Powell'):
                     self.p0 = minimize(tominimize, self.p0, args=args,
                                        method=fitter, **kwargs)
 
