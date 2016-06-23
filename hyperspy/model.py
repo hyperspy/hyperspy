@@ -834,8 +834,12 @@ class BaseModel(list):
                 # OPTIMIZERS
                 # Derivative-free methods
                 if fitter in ('fmin', 'Nelder-Mead', 'Powell'):
-                    self.p0 = minimize(tominimize, self.p0, args=args,
-                                       method=fitter, **kwargs)
+                    if fitter == 'fmin':
+                        self.p0 = minimize(tominimize, self.p0, args=args,
+                                           method='Nelder-Mead', **kwargs)
+                    else:
+                        self.p0 = minimize(tominimize, self.p0, args=args,
+                                           method=fitter, **kwargs)
 
                 # Methods using the gradient
                 elif fitter in ('CG', 'BFGS', 'Newton-CG'):
