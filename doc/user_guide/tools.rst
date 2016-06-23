@@ -309,7 +309,7 @@ instances, for example:
     <Signal1D, title: add(Untitled Signal 1, Untitled Signal 2), dimensions: (|2)>
 
 
-Notice the the title is automatically updated. When the signal has no title
+Notice that the title is automatically updated. When the signal has no title
 a new title is automatically generated:
 
 .. code-block:: python
