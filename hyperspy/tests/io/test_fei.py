@@ -89,8 +89,8 @@ class TestFEIReader():
             s0[0].metadata.Acquisition_instrument.TEM.acquisition_mode, 'STEM')
         nt.assert_almost_equal(s0[0].axes_manager[0].scale, 3.68864, places=5)
         nt.assert_equal(s0[0].axes_manager[0].units, 'nm')
-        nt.assert_almost_equal(s0[0].axes_manager[1].scale, 5.0, places=5)
-        nt.assert_equal(s0[0].axes_manager[1].units, 'eV')
+        nt.assert_almost_equal(s0[0].axes_manager[1].scale, 0.005, places=5)
+        nt.assert_equal(s0[0].axes_manager[1].units, 'keV')
         # s0[1] contains diffraction patterns
         nt.assert_equal(s0[1].data.shape, (5, 128, 128))
         nt.assert_equal(s0[1].axes_manager.signal_dimension, 2)
@@ -116,8 +116,8 @@ class TestFEIReader():
         nt.assert_equal(s0[0].axes_manager[0].units, 'nm')
         nt.assert_almost_equal(s0[0].axes_manager[1].scale, -1.87390, places=5)
         nt.assert_equal(s0[0].axes_manager[1].units, 'nm')
-        nt.assert_almost_equal(s0[0].axes_manager[2].scale, 5.0, places=5)
-        nt.assert_equal(s0[0].axes_manager[2].units, 'eV')
+        nt.assert_almost_equal(s0[0].axes_manager[2].scale, 0.005, places=5)
+        nt.assert_equal(s0[0].axes_manager[2].units, 'keV')
         # s0[1] contains diffraction patterns
         nt.assert_equal(s0[1].data.shape, (5, 5, 256, 256))
         nt.assert_equal(s0[1].axes_manager.signal_dimension, 2)
@@ -137,9 +137,11 @@ class TestFEIReader():
         nt.assert_equal(
             s0.metadata.Acquisition_instrument.TEM.acquisition_mode, 'STEM')
         # single spectrum should be imported as 1D data, not 2D
+        # the scale of the navigation axis doesn't really make sense. It's set
+        # to 1 m!
         nt.assert_almost_equal(
-            s0.axes_manager[0].scale, 1000000000.0, places=5)
-        nt.assert_equal(s0.axes_manager[0].units, 'nm')
+            s0.axes_manager[0].scale, 1000.0, places=5)
+        nt.assert_equal(s0.axes_manager[0].units, 'mm')
         nt.assert_almost_equal(s0.axes_manager[1].scale, 0.2, places=5)
         nt.assert_equal(s0.axes_manager[1].units, 'eV')
 
@@ -151,8 +153,8 @@ class TestFEIReader():
         nt.assert_equal(
             s1.metadata.Acquisition_instrument.TEM.acquisition_mode, 'STEM')
         nt.assert_almost_equal(
-            s0.axes_manager[0].scale, 1000000000.0, places=5)
-        nt.assert_equal(s0.axes_manager[0].units, 'nm')
+            s0.axes_manager[0].scale, 1000.0, places=5)
+        nt.assert_equal(s0.axes_manager[0].units, 'mm')
         nt.assert_almost_equal(s0.axes_manager[1].scale, 0.2, places=5)
         nt.assert_equal(s0.axes_manager[1].units, 'eV')
 
@@ -208,8 +210,8 @@ class TestFEIReader():
         nt.assert_equal(s0.axes_manager[0].units, 'nm')
         nt.assert_almost_equal(s0.axes_manager[1].scale, -4.25819, places=5)
         nt.assert_equal(s0.axes_manager[1].units, 'nm')
-        nt.assert_almost_equal(s0.axes_manager[2].scale, 5.0, places=5)
-        nt.assert_equal(s0.axes_manager[2].units, 'eV')
+        nt.assert_almost_equal(s0.axes_manager[2].scale, 0.005, places=5)
+        nt.assert_equal(s0.axes_manager[2].units, 'keV')
 
     def test_load_search(self):
         fname0 = os.path.join(self.dirpathnew, '128x128-TEM_search.emi')

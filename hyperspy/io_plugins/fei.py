@@ -569,13 +569,13 @@ def ser_reader(filename, objects=None, *args, **kwds):
         array_shape.append(data['ArraySizeX'][0])
     # FEI seems to use the international system of units (SI) for the
     # spatial scale. However, we prefer to work in nm
-    for axis in axes:
-        if axis['units'] == 'meters':
-            axis['units'] = 'nm'
-            axis['scale'] *= 10 ** 9
-        elif axis['units'] == '1/meters':
-            axis['units'] = '1/nm'
-            axis['scale'] /= 10 ** 9
+#    for axis in axes:
+#        if axis['units'] == 'meters':
+#            axis['units'] = 'nm'
+#            axis['scale'] *= 10 ** 9
+#        elif axis['units'] == '1/meters':
+#            axis['units'] = '1/nm'
+#            axis['scale'] /= 10 ** 9
     # If the acquisition stops before finishing the job, the stored file will
     # report the requested size even though no values are recorded. Therefore
     # if the shapes of the retrieved array does not match that of the data

@@ -29,8 +29,10 @@ from hyperspy.misc.utils import isiterable, ordinal
 from hyperspy.misc.math_tools import isfloat
 
 import warnings
+import logging
 from hyperspy.exceptions import VisibleDeprecationWarning
 
+_logger = logging.getLogger(__name__)
 
 class ndindex_nat(np.ndindex):
 
@@ -82,7 +84,9 @@ def _get_convenient_scale_unit(scale, unit, size):
             scale = scale.to(ureg('km'))
     # for diffraction
     elif scale.dimensionality == {'[length]':-1.0}:
-        print('%e'%value)
+        _logger.info('Scale*Size: {:e}, scale: {:e}, size: {:e}'.format(value,
+                                                                        scale,
+                                                                        size))
         scale = scale.to(ureg('1/m'))
         if value > 5E9:
             scale = scale.to(ureg('1/nm'))
@@ -523,9 +527,11 @@ class DataAxis(t.HasTraits):
         return any_changes
 
     def convert_to_convenient_scale_units(self):
-        self.scale, self.units = _get_convenient_scale_unit(self.scale,
-                                                            self.units,
-                                                            self.size)
+        _logger.info('Units: {}'.format(self.units))
+        if self.units not in [t.Undefined, '', ' ', 'Unknown']:
+            self.scale, self.units = _get_convenient_scale_unit(self.scale,
+                                                                self.units,
+                                                                self.size)
         
 
 class AxesManager(t.HasTraits):
@@ -888,6 +894,7 @@ class AxesManager(t.HasTraits):
             Convert to the convenient scale and units on the specified axis.
             If None, convert for all axes.
         """
+        _logger.info('Axes manager: {}'.format(self))
         if axes is None:
             axes = self.navigation_axes + self.signal_axes
         for axis in axes:
