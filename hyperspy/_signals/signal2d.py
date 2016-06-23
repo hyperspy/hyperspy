@@ -615,8 +615,10 @@ class Signal2DTools(object):
 
 
 class PeakFinder2D(object):
+
     params = []
     values = []
+    nopeaks = np.array([[np.nan, np.nan]])
 
     def __init__(self):
         self.signal = None
@@ -837,7 +839,13 @@ class PeakFinder2D(object):
 
     def get_peaks(self):
         peaks = self.current_method.find_peaks(self.get_data())
-        return peaks
+        return self.clean_peaks(peaks)
+
+    def clean_peaks(self, peaks):
+        if len(peaks) == 0:
+            return self.nopeaks
+        else:
+            return peaks
 
     def plot(self):
         self.plot_image()
@@ -910,7 +918,7 @@ class MinMax(PeakFinder2D):
         peaks = np.array(
             ndi.center_of_mass(z, labeled, range(1, num_objects + 1)))
 
-        return peaks
+        return self.clean_peaks(peaks)
 
 
 class Max(PeakFinder2D):
@@ -958,7 +966,7 @@ class Max(PeakFinder2D):
                 break
         # trim array to have shape (number of peaks, 2)
         peaks = k_arr[:peak_ct]
-        return peaks
+        return self.clean_peaks(peaks)
 
 
 class Zaefferer(PeakFinder2D):
@@ -1073,7 +1081,7 @@ class Zaefferer(PeakFinder2D):
             if distance(coordinate, p_new) <= distance_cutoff:
                 peaks.append(tuple(p_new))
         peaks = np.array([np.array(p) for p in set(peaks)])
-        return peaks
+        return self.clean_peaks(peaks)
 
 
 class Stat(PeakFinder2D):
@@ -1188,7 +1196,7 @@ class Stat(PeakFinder2D):
                 [np.mean(peak, axis=0) for peak in peaks])  # 7
             return peak_centers
 
-        return stat_peak_finder(z)
+        return self.clean_peaks(stat_peak_finder(z))
 
 
 class DifferenceOfGaussians(PeakFinder2D):
@@ -1244,7 +1252,7 @@ class DifferenceOfGaussians(PeakFinder2D):
         try:
             centers = blobs[:, :2]
         except IndexError:
-            return np.empty((1, 2))
+            return self.nopeaks
         clean_centers = []
         for center in centers:
             if len(np.intersect1d(center, (0,) + z.shape + tuple(
@@ -1303,7 +1311,7 @@ class LaplacianOfGaussians(PeakFinder2D):
         try:
             centers = blobs[:, :2]
         except IndexError:
-            return np.array([])
+            return self.nopeaks
         return centers
 
 
