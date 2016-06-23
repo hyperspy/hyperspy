@@ -84,18 +84,18 @@ def orpca(X, rank, fast=False, lambda1=None,
         is the [nfeatures x nsamples] matrix of observations.
     rank : int
         The model dimensionality.
-    lambda1 : float | None
+    lambda1 : None | float
         Nuclear norm regularization parameter. If None, set to 1/sqrt(nfeatures)
-    lambda2 : float | None
+    lambda2 : None | float
         Sparse error regularization parameter. If None, set to 1/sqrt(nfeatures)
-    method : 'CF' | 'BCD' | None
-        If none, set to 'CF'
+    method : None | 'CF' | 'BCD'
+        If None, set to 'CF'
         'CF'  - Closed-form
         'BCD' - Block-coordinate descent
     mask : numpy array
         is an initial estimate of the sparse error matrix
-    seed : int
-        Random seed for initialization
+    seed : None | int
+        Random seed for initialization.
 
     Returns
     -------
