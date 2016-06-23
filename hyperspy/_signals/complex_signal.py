@@ -225,5 +225,5 @@ class ComplexSignal(BaseSignal):
             self.amplitude.plot(navigator=navigator, axes_manager=self.axes_manager, **kwargs)
             self.phase.plot(navigator=navigator, axes_manager=self.axes_manager, **kwargs)
         else:
-            raise KeyError('{} is not a valid input for representation (use "cartesion" or '
+            raise KeyError('{} is not a valid input for representation (use "cartesian" or '
                            '"angular")!'.format(representation))
