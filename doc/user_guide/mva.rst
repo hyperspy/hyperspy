@@ -182,7 +182,7 @@ low-rank component for subsequent processing.
 
 HyperSpy implements an *online* algorithm for RPCA developed by Feng et al. [Feng2013]_.
 This minimizes memory usage to make it suitable for large datasets. The method will
-return both **L** and **S**, as well as the factors and loadings of **L**.
+returns the factors and loadings of **L**.
 
 .. code-block:: python
 

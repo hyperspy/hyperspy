@@ -5,7 +5,6 @@ import nose.tools as nt
 from nose.plugins.skip import SkipTest
 
 from hyperspy.learn.rpca import orpca
-from hyperspy.misc.machine_learning.import_sklearn import sklearn_installed
 
 def _ev(U, L, atol=1e-3):
     # Check the similarity between the original

@@ -185,6 +185,7 @@ def orpca(X, rank, fast=False, lambda1=None,
     # Chop small singular values which
     # likely arise from numerical noise
     # in the SVD.
-    S[S<=1e-9] = 0.0
+    #S[S<=1e-9] = 0.0
+    S[rank:] = 0.
 
     return L, R, E, U, S, V
