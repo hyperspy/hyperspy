@@ -3,11 +3,10 @@
 # Author: Jan Caron
 #
 
-import sys
+
 import os.path
 from os import remove
 
-import nose
 import nose.tools as nt
 import numpy as np
 
@@ -147,4 +146,5 @@ class TestCaseSaveAndReadByte():
 
 
 if __name__ == '__main__':
-    nose.run(argv=[sys.argv[0], sys.modules[__name__].__file__, '-v'])
+    import nose
+    nose.run(defaultTest=__name__)

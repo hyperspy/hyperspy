@@ -16,12 +16,12 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
+import matplotlib.pyplot as plt
 import numpy as np
 import numpy.ma as ma
 import scipy as sp
-from scipy.fftpack import fftn, ifftn
-import matplotlib.pyplot as plt
 import warnings
+from scipy.fftpack import fftn, ifftn
 
 from hyperspy.defaults_parser import preferences
 from hyperspy.external.progressbar import progressbar
@@ -668,8 +668,8 @@ class Signal2D(BaseSignal,
         from hyperspy.models.model2d import Model2D
         return Model2D(self, dictionary=dictionary)
 
-    def add_phase_ramp(self, ramp_x, ramp_y, offset=0):
-        """Add a linear ramp to the wave.
+    def add_ramp(self, ramp_x, ramp_y, offset=0):
+        """Add a linear ramp to the signal.
 
         Parameters
         ----------
@@ -678,7 +678,7 @@ class Signal2D(BaseSignal,
         ramp_y: float
             Slope of the ramp in y-direction.
         offset: float, optional
-            Offset of the ramp at the fulcrum.
+            Offset of the ramp at the signal fulcrum.
         Notes
         -----
             The fulcrum of the linear ramp is at the origin and the slopes are given in units of
@@ -687,8 +687,7 @@ class Signal2D(BaseSignal,
 
         """
         yy, xx = np.indices(self.axes_manager._signal_shape_in_array)
-        phase = self.angle().data
-        phase += offset * np.ones(self.data.shape)
-        phase += ramp_x * xx
-        phase += ramp_y * yy
-        self.data = np.abs(self) * np.exp(phase * 1j)
+        ramp = offset * np.ones(self.data.shape, dtype=self.data.dtype)
+        ramp += ramp_x * xx
+        ramp += ramp_y * yy
+        self.data += ramp

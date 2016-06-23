@@ -19,33 +19,31 @@
 
 import numpy as np
 
+from hyperspy._signals.complex_signal import ComplexSignal
 from hyperspy._signals.signal2d import Signal2D
-from hyperspy.signal import BaseSignal
 
 
-class WaveImage(Signal2D):
+class ElectronWaveImage(Signal2D, ComplexSignal):
     """Signal2D subclass for complex electron wave data (e.g. reconstructed from holograms)."""
 
-    _signal_type = 'wave'
+    def add_phase_ramp(self, ramp_x, ramp_y, offset=0):
+        """Add a linear phase ramp to the wave.
 
-    @property
-    def phase(self):
-        """Get/set the phase of the data. Returns an :class:`~hyperspy.signals.Signal2D`."""
-        phase = self.angle(deg=False)  # Phase is always in rad!
-        phase.set_signal_type('')  # Go from WaveImage to Signal2D!
-        return phase
+        Parameters
+        ----------
+        ramp_x: float
+            Slope of the ramp in x-direction.
+        ramp_y: float
+            Slope of the ramp in y-direction.
+        offset: float, optional
+            Offset of the ramp at the fulcrum.
+        Notes
+        -----
+            The fulcrum of the linear ramp is at the origin and the slopes are given in units of
+            the axis with the according scale taken into account. Both are available via the
+            `axes_manager` of the signal.
 
-    @phase.setter
-    def phase(self, phase):
-        self.isig[...] = np.abs(self) * np.exp(phase * 1j)
-
-    @property
-    def amplitude(self):
-        """Get/set the amplitude of the data. Returns an :class:`~hyperspy.signals.Signal2D`."""
-        amplitude = np.abs(self)
-        amplitude.set_signal_type('')  # Go from WaveImage to Signal2D!
-        return amplitude
-
-    @amplitude.setter
-    def amplitude(self, amplitude):
-        self.isig[:] = amplitude * np.exp(self.angle() * 1j)
+        """
+        phase = self.phase
+        phase.add_ramp(ramp_x, ramp_y, offset)
+        self.phase = phase

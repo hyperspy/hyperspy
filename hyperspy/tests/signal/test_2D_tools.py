@@ -129,10 +129,11 @@ class TestAlignTools:
 class TestPhaseFunctions:
 
     def test_add_phase_ramp(self):
-        self.s = hs.signals.Signal2D(np.exp(1j * (np.indices((3, 3)).sum(axis=0) + 4)))
-        self.s.add_phase_ramp(-1, -1, -4)
-        npt.assert_almost_equal(self.s.angle().data, 0)
+        self.s = hs.signals.Signal2D(np.indices((3, 3)).sum(axis=0) + 4)
+        self.s.add_ramp(-1, -1, -4)
+        npt.assert_almost_equal(self.s.data, 0)
 
 
 if __name__ == '__main__':
-    nose.run(argv=[sys.argv[0], sys.modules[__name__].__file__, '-v'])
+    import nose
+    nose.run(defaultTest=__name__)

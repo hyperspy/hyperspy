@@ -27,12 +27,13 @@ spectroscopy data analysis.
 
 Currently the following signal subclasses are available:
 
+* :py:class:`~._signals.complex_signal.ComplexSignal`
 * :py:class:`~._signals.signal1d.Signal1D`
 * :py:class:`~._signals.signal2d.Signal2D`
 * :py:class:`~._signals.eels.EELSSpectrum`
 * :py:class:`~._signals.eds_tem.EDSTEMSpectrum`
 * :py:class:`~._signals.eds_sem.EDSSEMSpectrum`
-* :py:class:`~._signals.wave_image.WaveImage`
+* :py:class:`~._signals.electron_wave_image.ElectronWaveImage`
 * :py:class:`~._signals.spectrum_simulation.SpectrumSimulation`
 * :py:class:`~._signals.image_simulation.ImageSimulation`
 
@@ -103,6 +104,8 @@ The different subclasses are characterized by three
     +===============================================================+===========+=============+===============+
     |                 :py:class:`~.signal.BaseSignal`               |     -     |      -      |       -       |
     +---------------------------------------------------------------+-----------+-------------+---------------+
+    |      :py:class:`~._signals.complex_signal.ComplexSignal`      |     -     |   complex   |       -       |
+    +---------------------------------------------------------------+-----------+-------------+---------------+
     |           :py:class:`~._signals.signal1d.Signal1D`            | spectrum  |      -      |       -       |
     +---------------------------------------------------------------+-----------+-------------+---------------+
     | :py:class:`~._signals.spectrum_simulation.SpectrumSimulation` | spectrum  |      -      |  simulation   |
@@ -115,7 +118,7 @@ The different subclasses are characterized by three
     +---------------------------------------------------------------+-----------+-------------+---------------+
     |              :py:class:`~._signals.signal2d.Signal2D`         |   image   |      -      |       -       |
     +---------------------------------------------------------------+-----------+-------------+---------------+
-    |            :py:class:`~._signals.wave_image.WaveImage`        |   image   |     wave    |       -       |
+    | :py:class:`~._signals.electron_wave_image.ElectronWaveImage`  |   image   |   complex   |       -       |
     +---------------------------------------------------------------+-----------+-------------+---------------+
     |    :py:class:`~._signals.image_simulation.ImageSimulation`    |   image   |      -      |  simulation   |
     +---------------------------------------------------------------+-----------+-------------+---------------+
@@ -201,6 +204,8 @@ following table:
     +===============================================================+========+
     |                 :py:class:`~.signal.BaseSignal`               | False  |
     +---------------------------------------------------------------+--------+
+    |      :py:class:`~._signals.complex_signal.ComplexSignal`      | False  |
+    +---------------------------------------------------------------+--------+
     |           :py:class:`~._signals.signal1d.Signal1D`            | False  |
     +---------------------------------------------------------------+--------+
     | :py:class:`~._signals.spectrum_simulation.SpectrumSimulation` | False  |
@@ -213,7 +218,7 @@ following table:
     +---------------------------------------------------------------+--------+
     |              :py:class:`~._signals.signal2d.Signal2D`         | False  |
     +---------------------------------------------------------------+--------+
-    |          :py:class:`~._signals.wave_image.WaveImage`          | False  |
+    | :py:class:`~._signals.electron_wave_image.ElectronWaveImage`  | False  |
     +---------------------------------------------------------------+--------+
     |    :py:class:`~._signals.image_simulation.ImageSimulation`    | False  |
     +---------------------------------------------------------------+--------+
@@ -942,9 +947,41 @@ for example:
       └── signal_type =
 
 
+
+Handling complex data
+^^^^^^^^^^^^^^^^^^^^^
+
+The HyperSpy :py:class:`~.hyperspy.signals.ComplexSignal` signal class allows the user to access
+complex properties like the `real` and `imag` parts of the data or the `amplitude` (also known
+as the modulus) and `phase` (also known as angle or argument).
+directly. Getting and setting those properties can be done as follows:
+
+..code-block:: python
+
+  >>> real = s.real      # real is a new HyperSpy signal accessing the same data
+  >>> s.real = new_real  # new_real can be an array or signal
+  >>> imag = s.imag      # imag  is a new HyperSpy signal accessing the same data
+  >>> s.imag = new_imag  # new_imag can be an array or signal
+
+
+Calculate the angle / phase / argument
+--------------------------------------
+
+The :py:func:`~hyperspy.signals.ComplexSignal.angle` function can be used to calculate the
+angle, which is equivalent to using the `phase` property if no argument is used. If the data is
+real, the angle will be 0 for positive values and 2$\pi$ for negative values. If the `deg`
+parameter is set to `True`, the result will be given in degrees, otherwise in rad (default).
+The underlying function is the :py:func:`~numpy.angle` function.
+:py:func:`~hyperspy.signals.ComplexSignal.angle` will return an appropriate HyperSpy signal.
+
+
 Phase unwrapping
 ----------------
 
-With the :py:func:`~hyperspy.signals.BaseSignal.unwrapped_phase` method the complex phase
-of a signal can be unwrapped and returned as a new Signal. The underlying method is 
-:py:func:`~skimage.restoration.unwrap`.
+With the :py:func:`~hyperspy.signals.ComplexSignal.unwrapped_phase` method the complex phase
+of a signal can be unwrapped and returned as a new signal. The underlying method is
+:py:func:`~skimage.restoration.unwrap`, which uses the algorithm described in:
+Miguel Arevallilo Herraez, David R. Burton, Michael J. Lalor, and Munther A. Gdeisat,
+“Fast two-dimensional phase-unwrapping algorithm based on sorting by reliability following
+a noncontinuous path”, Journal Applied Optics, Vol. 41, No. 35, pp. 7437, 2002.
+(doi: 10.1364/AO.41.007437).

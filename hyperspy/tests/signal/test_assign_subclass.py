@@ -55,12 +55,20 @@ def test_weird_spectrum():
     assert_true(cls is hs.signals.Signal1D)
 
 
-def test_wave_image():
+def test_complex():
+    assert_true(assign_signal_subclass(
+        record_by="",
+        signal_type="complex",
+        signal_origin="") is
+                hs.signals.ComplexSignal)
+
+
+def test_electron_wave_image():
     assert_true(assign_signal_subclass(
         record_by="image",
-        signal_type="wave",
+        signal_type="complex",
         signal_origin="") is
-        hs.signals.WaveImage)
+                hs.signals.ElectronWaveImage)
 
 
 class TestSignalAssignSubclass:

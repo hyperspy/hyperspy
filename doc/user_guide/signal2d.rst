@@ -24,10 +24,10 @@ left, right syntax.
 * :py:meth:`~._signals.signal2d.Signal2DTools.crop_image`
 
 
-Add a linear phase ramp
------------------------
+Add a linear ramp
+-----------------
 
-A linear phase ramp can be added to the signal via the :py:func:`~._signals.signal2d.Signal2D.add_phase_ramp`
+A linear ramp can be added to the signal via the :py:func:`~._signals.signal2d.Signal2D.add_ramp`
 method. The parameters `ramp_x` and `ramp_y` dictate the slope of the ramp in `x`- and `y` direction,
 while the offset is determined by the `offset` parameter. The fulcrum of the linear ramp is at the origin
 and the slopes are given in units of the axis with the according scale taken into account.
