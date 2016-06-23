@@ -33,6 +33,7 @@ import logging
 from hyperspy.exceptions import VisibleDeprecationWarning
 
 _logger = logging.getLogger(__name__)
+_ureg = UnitRegistry()
 
 class ndindex_nat(np.ndindex):
 
@@ -62,62 +63,72 @@ def generate_axis(offset, scale, size, offset_index=0):
                        offset + scale * (size - 1 - offset_index),
                        size)
 
-def _get_convenient_scale_unit(scale, unit, size):
-    """ Convert (when necessary) the scale and the unit to "sensible" number to
-        avoid displaying scalebar with >3 digits or too small number.
+def _formatting_units(units):
+    units = units.replace(' ', '')
+    return units.replace('um', 'µm')
+    
+def _get_convenient_scale_units(scale, units, size):
+    """ Convert (when necessary) the scale and the units to "sensible" number
+        to avoid displaying scalebar with >3 digits or too small number.
     """
-    ureg = UnitRegistry()
-    scale = scale*ureg(unit)
-    value =  scale.magnitude*size
-    # for image
-    if scale.dimensionality == {'[length]':1.0}:
-        scale = scale.to(ureg('m'))
-        if value < 5E-6:
-            scale = scale.to(ureg('nm'))
-        elif value < 5E-3:
-            scale = scale.to(ureg('µm'))
-        elif value < 5:
-            scale = scale.to(ureg('mm'))
-        elif value < 5E3:
-            pass # already in m
-        else:
-            scale = scale.to(ureg('km'))
-    # for diffraction
-    elif scale.dimensionality == {'[length]':-1.0}:
+    scale = scale*_ureg(units)
+    def get_value(scale, size):
+        value =  scale.magnitude*size
         _logger.info('Scale*Size: {:e}, scale: {:e}, size: {:e}'.format(value,
                                                                         scale,
                                                                         size))
-        scale = scale.to(ureg('1/m'))
+        return value
+        
+    # for image
+    if scale.dimensionality == {'[length]':1.0}:
+        scale = scale.to(_ureg('m'))
+        value = get_value(scale, size)
+        if value < 5E-6:
+            scale = scale.to(_ureg('nm'))
+        elif value < 5E-3:
+            scale = scale.to(_ureg('µm'))
+        elif value < 5:
+            scale = scale.to(_ureg('mm'))
+        elif value < 5E3:
+            pass # already in m
+        else:
+            scale = scale.to(_ureg('km'))
+    # for diffraction
+    elif scale.dimensionality == {'[length]':-1.0}:
+        scale = scale.to(_ureg('1/m'))
+        value = get_value(scale, size)
         if value > 5E9:
-            scale = scale.to(ureg('1/nm'))
+            scale = scale.to(_ureg('1/nm'))
         elif value > 5E6:
-            scale = scale.to(ureg('1/µm'))
+            scale = scale.to(_ureg('1/µm'))
         elif value > 5E3:
-            scale = scale.to(ureg('1/mm'))
+            scale = scale.to(_ureg('1/mm'))
         elif value > 5:
             pass # already in 1/m
         else:
-            scale = scale.to(ureg('1/km'))
+            scale = scale.to(_ureg('1/km'))
     # for energy
     elif scale.units == 'electron_volt' or scale.units == 'kiloelectron_volt'\
         or scale.units == 'millielectron_volt':
-        scale = scale.to(ureg('eV'))
+        scale = scale.to(_ureg('eV'))
+        value = get_value(scale, size)
         if value < 2.5:
-            scale = scale.to(ureg('meV'))
+            scale = scale.to(_ureg('meV'))
         elif value < 2.5E3:
             pass # already in eV
         else:
-            scale = scale.to(ureg('keV'))
+            scale = scale.to(_ureg('keV'))
             
-    units = '{:~}'.format(scale.units).replace(' ', '')
-    if units == 'um':
-        units = 'µm'
-
-    if units == '1/um':
-        units = '1/µm'
+    units = _formatting_units('{:~}'.format(scale.units))
             
     return scale.magnitude, units
 
+def _get_convert_units(scale, units, converted_units):
+    scale = scale*_ureg(units)
+    scale = scale.to(_ureg(converted_units))
+    units = _formatting_units('{:~}'.format(scale.units))
+
+    return scale.magnitude, units
         
 class DataAxis(t.HasTraits):
     name = t.Str()
@@ -529,10 +540,13 @@ class DataAxis(t.HasTraits):
     def convert_to_convenient_scale_units(self):
         _logger.info('Units: {}'.format(self.units))
         if self.units not in [t.Undefined, '', ' ', 'Unknown']:
-            self.scale, self.units = _get_convenient_scale_unit(self.scale,
-                                                                self.units,
-                                                                self.size)
-        
+            self.scale, self.units = _get_convenient_scale_units(self.scale,
+                                                                 self.units,
+                                                                 self.size)
+
+    def convert_to_units(self, units):
+        self.scale, self.units = _get_convert_units(self.scale, self.units,
+                                                    units)
 
 class AxesManager(t.HasTraits):
 
@@ -883,23 +897,62 @@ class AxesManager(t.HasTraits):
 
     def _on_offset_changed(self):
         self.events.any_axis_changed.trigger(obj=self)
+#
+#    def convert_to_convenient_scale_units(self, axes=None):
+#        """ Convert the scale and the units to the convenient scale and units 
+#            to avoid displaying scalebar with >3 digits or too small number.
+#        
+#        Parameters
+#        ----------
+#        axes: iterable of `DataAxis` instances. Default = None
+#            Convert to the convenient scale and units on the specified axis.
+#            If None, convert for all axes.
+#        """
+#        _logger.info('Axes manager: {}'.format(self))
+#        if axes is None:
+#            axes = self.navigation_axes + self.signal_axes
+#        for axis in axes:
+#            axis.convert_to_convenient_scale_units()        
 
-    def convert_to_convenient_scale_units(self, axes=None):
-        """ Convert the scale and the units to the convenient scale and units 
-            to avoid displaying scalebar with >3 digits or too small number.
+
+    def convert_units(self, axes=None, units=None):
+        """ Convert the scale and the units of the selected axes.
         
         Parameters
         ----------
-        axes: iterable of `DataAxis` instances. Default = None
+        axes : iterable of `DataAxis` instances, str or None.
+            Default = None
             Convert to the convenient scale and units on the specified axis.
-            If None, convert for all axes.
+            If string, argument can be `navigation` or `signal` to select the
+            navigation or signal axes.
+            If `None`, convert all axes.
+        units : list of string of the same length than axes, str or None.
+            Default = None
+            If list, the selected axes will be converted to the provided units.
+            If str, the navigation or signal axes will converted to the 
+            provided units.
+            If `None`, the scale and the units to the convenient scale and units 
+            to avoid displaying scalebar with >3 digits or too small number.
         """
         _logger.info('Axes manager: {}'.format(self))
         if axes is None:
             axes = self.navigation_axes + self.signal_axes
-        for axis in axes:
-            axis.convert_to_convenient_scale_units()        
-        
+        elif axes == 'navigation':
+            axes = self.navigation_axes
+        elif axes == 'signal':
+            axes = self.signal_axes
+        if type(units) is str:
+            units = [units]*len(axes)
+        if units is None:
+            for axis in axes:
+                axis.convert_to_convenient_scale_units()
+        else:
+            for axis, units in zip(axes, units):
+                _logger.info('axis: {}, units: {}'.format(axis.name, units))
+                axis.convert_to_units(units)
+            
+        ### add functionality to convert to provided units
+            
     def update_axes_attributes_from(self, axes,
                                     attributes=["scale", "offset", "units"]):
         """Update the axes attributes to match those given.
