@@ -1,0 +1,145 @@
+# -*- coding: utf-8 -*-
+# Copyright 2007-2016 The HyperSpy developers
+#
+# This file is part of  HyperSpy.
+#
+#  HyperSpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+#  HyperSpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+
+import nose.tools as nt
+
+from hyperspy.axes import DataAxis, AxesManager, _get_convenient_scale_unit
+
+
+def test_get_convenient_scale_unit():
+    ##### Imaging #####
+    # typical setting for high resolution image
+    scale, unit = _get_convenient_scale_unit(12E-12, 'm', 2048)
+    nt.assert_almost_equal(scale, 0.012, places=5)
+    nt.assert_equal(unit, 'nm')
+
+    # typical setting for nm resolution image
+    scale, unit = _get_convenient_scale_unit(0.5E-9, 'm', 1024)
+    nt.assert_almost_equal(scale, 0.5, places=5)
+    nt.assert_equal(unit, 'nm')  
+
+    # typical setting for nm resolution image
+    scale, unit = _get_convenient_scale_unit(0.5E-9, 'm', 2048)
+    nt.assert_almost_equal(scale, 0.5, places=5)
+    nt.assert_equal(unit, 'nm')  
+    
+    # typical setting for nm resolution image
+    scale, unit = _get_convenient_scale_unit(1E-9, 'm', 1024)
+    nt.assert_almost_equal(scale, 1.0, places=5)
+    nt.assert_equal(unit, 'nm')    
+
+    # typical setting for µm resolution image
+    scale, unit = _get_convenient_scale_unit(1E-6, 'm', 1024)
+    nt.assert_almost_equal(scale, 1.0, places=5)
+    nt.assert_equal(unit, 'µm') 
+
+    # typical setting for a few tens of µm resolution image
+    scale, unit = _get_convenient_scale_unit(10E-6, 'm', 1024)
+    nt.assert_almost_equal(scale, 0.01, places=5)
+    nt.assert_equal(unit, 'mm')
+
+    ##### Diffraction #####    
+    # typical TEM diffraction
+    scale, unit = _get_convenient_scale_unit(0.1E9, '1/m', 1024)
+    nt.assert_almost_equal(scale, 0.1, places=5)
+    nt.assert_equal(unit, '1/nm')
+
+    # typical TEM diffraction
+    scale, unit = _get_convenient_scale_unit(0.1E9, '1/m', 256)
+    nt.assert_almost_equal(scale, 0.1, places=5)
+    nt.assert_equal(unit, '1/nm')
+    
+    # high camera length diffraction
+    scale, unit = _get_convenient_scale_unit(1E6, '1/m', 4096)
+    nt.assert_almost_equal(scale, 1.0, places=5)
+    nt.assert_equal(unit, '1/µm')
+    
+    # typical EDS resolution
+    scale, unit = _get_convenient_scale_unit(5E3, 'eV', 4096)
+    nt.assert_almost_equal(scale, 5, places=5)
+    nt.assert_equal(unit, 'keV')
+
+    ##### Spectroscopy #####    
+    # typical EELS resolution
+    scale, unit = _get_convenient_scale_unit(0.2, 'eV', 2048)
+    nt.assert_almost_equal(scale, 0.2, places=5)
+    nt.assert_equal(unit, 'eV')
+
+    # typical EELS resolution
+    scale, unit = _get_convenient_scale_unit(1.0, 'eV', 2048)
+    nt.assert_almost_equal(scale, 1.0, places=5)
+    nt.assert_equal(unit, 'eV')
+    
+    # typical high resolution EELS resolution
+    scale, unit = _get_convenient_scale_unit(0.05, 'eV', 100)
+    nt.assert_almost_equal(scale, 0.05, places=5)
+    nt.assert_equal(unit, 'eV')
+
+    # typical high resolution EELS resolution
+    scale, unit = _get_convenient_scale_unit(0.001, 'eV', 100)
+    nt.assert_almost_equal(scale, 1.0, places=5)
+    nt.assert_equal(unit, 'meV')
+    
+    # typical high resolution EELS resolution
+    scale, unit = _get_convenient_scale_unit(0.001, 'eV', 2048)
+    nt.assert_almost_equal(scale, 1.0, places=5)
+    nt.assert_equal(unit, 'meV')
+    
+class TestDataAxisConvenientScaleUnit:
+
+    def setUp(self):
+        self.axis = DataAxis(size=2048, scale=12E-12, units='m')
+        
+    def test_convert_to_convenient_scale_units(self):
+        self.axis.convert_to_convenient_scale_units()
+        nt.assert_almost_equal(self.axis.scale, 0.012, places=5)
+        nt.assert_equal(self.axis.units, 'nm')
+        
+class TestAxesManagerConvenientScaleUnit:
+
+    def setup(self):
+        axes_list = [
+            {'name': 'x',
+             'navigate': True,
+             'offset': 0.0,
+             'scale': 1E-6,
+             'size': 1024,
+             'units': 'm'},
+            {'name': 'y',
+             'navigate': True,
+             'offset': 0.0,
+             'scale': 0.5E-9,
+             'size': 1024,
+             'units': 'm'},
+            {'name': 'energy',
+             'navigate': False,
+             'offset': 0.0,
+             'scale': 5.0,
+             'size': 4096,
+             'units': 'eV'}]
+
+        self.am = AxesManager(axes_list)
+
+    def test_convenient_scale_unit(self):
+        self.am.convert_to_convenient_scale_units()
+        nt.assert_almost_equal(self.am['x'].scale, 1.0, places=5)
+        nt.assert_equal(self.am['x'].units, 'µm')
+        nt.assert_almost_equal(self.am['y'].scale, 0.5, places=5)
+        nt.assert_equal(self.am['y'].units, 'nm')
+        nt.assert_almost_equal(self.am['energy'].scale, 0.005, places=5)
+        nt.assert_equal(self.am['energy'].units, 'keV')
