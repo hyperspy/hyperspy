@@ -234,13 +234,29 @@ The methods of this section are available to all the signals. In other chapters
 methods that are only available in specialized
 subclasses.
 
-Simple mathematical operations
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Mathematical operations
+^^^^^^^^^^^^^^^^^^^^^^^
 
-.. versionchanged:: 1.0.0
+.. versionchanged:: 1.0
 
-A number of simple operations are supported by :py:class:`~.signal.BaseSignal`.
-Most of them are just wrapped numpy functions, as an example:
+A number of mathematical operations are available
+in :py:class:`~.signal.BaseSignal`. Most of them are just wrapped numpy
+functions.
+
+The methods that perform mathematical opearation over one or more axis at a
+time are:
+
+* :py:meth:`~.signal.BaseSignal.sum`
+* :py:meth:`~.signal.BaseSignal.max`
+* :py:meth:`~.signal.BaseSignal.min`
+* :py:meth:`~.signal.BaseSignal.mean`
+* :py:meth:`~.signal.BaseSignal.std`
+* :py:meth:`~.signal.BaseSignal.var`
+
+Note that by default all this methods perform the operation over *all*
+navigation axes.
+
+Example:
 
 .. code-block:: python
 
@@ -261,13 +277,55 @@ Most of them are just wrapped numpy functions, as an example:
     >>> ans.axes_manager[0]
     <Scalar axis, size: 1>
 
-Other functions that support similar behavior: :py:func:`~.signal.sum`,
-:py:func:`~.signal.max`, :py:func:`~.signal.min`, :py:func:`~.signal.mean`,
-:py:func:`~.signal.std`, :py:func:`~.signal.var`. Similar functions that can
-only be performed on one axis at a time: :py:func:`~.signal.diff`,
-:py:func:`~.signal.derivative`, :py:func:`~.signal.integrate_simpson`,
-:py:func:`~.signal.integrate1D`, :py:func:`~.signal.valuemax`,
-:py:func:`~.signal.indexmax`.
+The following methods operate only on one axis at a time:
+
+* :py:meth:`~.signal.BaseSignal.diff`
+* :py:meth:`~.signal.BaseSignal.derivative`
+* :py:meth:`~.signal.BaseSignal.integrate_simpson`
+* :py:meth:`~.signal.BaseSignal.integrate1D`
+* :py:meth:`~.signal.BaseSignal.valuemax`
+* :py:meth:`~.signal.BaseSignal.indexmax`
+
+.. versionadded:: 1.0
+
+All numpy ufunc can operate on :py:class:`~.signal.BaseSignal`
+instances, for example:
+
+.. code-block:: python
+
+    >>> s = hs.signals.Signal1D([0, 1])
+    >>> s.metadata.General.title = "A"
+    >>> s
+    <Signal1D, title: A, dimensions: (|2)>
+    >>> np.exp(s)
+    <Signal1D, title: exp(A), dimensions: (|2)>
+    >>> np.exp(s).data
+    array([ 1.        ,  2.71828183])
+    >>> np.power(s, 2)
+    <Signal1D, title: power(A, 2), dimensions: (|2)>
+    >>> np.add(s, s)
+    <Signal1D, title: add(A, A), dimensions: (|2)>
+    >>> np.add(hs.signals.Signal1D([0, 1]), hs.signals.Signal1D([0, 1]))
+    <Signal1D, title: add(Untitled Signal 1, Untitled Signal 2), dimensions: (|2)>
+
+
+Notice that the title is automatically updated. When the signal has no title
+a new title is automatically generated:
+
+.. code-block:: python
+
+    >>> np.add(hs.signals.Signal1D([0, 1]), hs.signals.Signal1D([0, 1]))
+    <Signal1D, title: add(Untitled Signal 1, Untitled Signal 2), dimensions: (|2)>
+
+
+Functions (other than unfucs) that operate on numpy arrays can also operate
+on :py:class:`~.signal.BaseSignal` instances, however they return a numpy
+array instead of a :py:class:`~.signal.BaseSignal` instance e.g.:
+
+.. code-block:: python
+
+    >>> np.angle(s)
+    array([ 0.,  0.])
 
 .. _signal.indexing:
 
