@@ -73,7 +73,7 @@ def _updatecol(X, A, B, I):
 
 def orpca(X, rank, fast=False, lambda1=None,
           lambda2=None, method=None,
-          mask=None, seed=None):
+          mask=None):
     """
     This function performs Online Robust PCA with
     with missing or corrupted data.
@@ -94,8 +94,6 @@ def orpca(X, rank, fast=False, lambda1=None,
         'BCD' - Block-coordinate descent
     mask : numpy array
         is an initial estimate of the sparse error matrix
-    seed : None | int
-        Random seed for initialization.
 
     Returns
     -------
@@ -136,10 +134,6 @@ def orpca(X, rank, fast=False, lambda1=None,
     # Check options are valid
     if method not in ('CF', 'BCD'):
         raise ValueError("'method' not recognised")
-
-    # Set random seed
-    if seed is not None:
-        np.random.seed(seed)
 
     # Use random initialization
     Y2 = np.random.randn(m, rank)
