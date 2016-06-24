@@ -325,10 +325,11 @@ def assign_signal_subclass(dtype,
     """
     import hyperspy.signals
     from hyperspy.signal import BaseSignal
+    # Check if parameter values are allowed:
     if 'complex' in dtype.name:
         dtype = 'complex'
     elif ('float' in dtype.name or 'int' in dtype.name or
-          'void' in dtype.name or 'bool' in dtype.name):
+                  'void' in dtype.name or 'bool' in dtype.name):
         dtype = 'real'
     else:
         raise ValueError('Data type "{}" not understood!'.format(dtype.name))
@@ -341,17 +342,20 @@ def assign_signal_subclass(dtype,
     signals = hyperspy.misc.utils.find_subclasses(hyperspy.signals, BaseSignal)
     if signal_origin == "experiment":
         signal_origin = ""
-    preselection = [s for s in
-                    [s for s in
-                     [s for s in signals.values()
-                      if record_by == s._record_by]
-                     if dtype == s._dtype]
-                    if signal_origin == s._signal_origin]
-    perfect_match = [s for s in preselection
-                     if signal_type == s._signal_type]
-    selection = perfect_match[0] if perfect_match else \
-        [s for s in preselection if s._signal_type == ""][0]
-    return selection
+
+    def filter_list(input_list, search_property, target_value, default_value):
+        selection = [s for s in input_list if getattr(s, search_property) == target_value]
+        if not selection:  # If list is empty try with defaults:
+            selection = [s for s in input_list if getattr(s, search_property) == default_value]
+        return selection
+
+    # Filter all possible signal classes:
+    selection = signals.values()
+    selection = filter_list(selection, '_record_by', record_by, '')
+    selection = filter_list(selection, '_signal_origin', signal_origin, '')
+    selection = filter_list(selection, '_signal_type', signal_type, '')
+    selection = filter_list(selection, '_dtype', dtype, 'real')
+    return selection[0]
 
 
 def dict2signal(signal_dict):

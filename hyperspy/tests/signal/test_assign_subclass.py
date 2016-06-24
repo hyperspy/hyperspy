@@ -81,24 +81,6 @@ def test_complex():
                 hs.signals.ComplexSignal)
 
 
-def test_complex_1d():
-    assert_true(assign_signal_subclass(
-        dtype=np.dtype('complex'),
-        record_by="spectrum",
-        signal_type="",
-        signal_origin="") is
-                hs.signals.ComplexSignal1D)
-
-
-def test_complex_2d():
-    assert_true(assign_signal_subclass(
-        dtype=np.dtype('complex'),
-        record_by="image",
-        signal_type="",
-        signal_origin="") is
-                hs.signals.ComplexSignal2D)
-
-
 def test_electron_wave_image():
     assert_true(assign_signal_subclass(
         dtype=np.dtype('complex'),
@@ -106,6 +88,23 @@ def test_electron_wave_image():
         signal_type="electron_wave",
         signal_origin="") is
                 hs.signals.ElectronWaveImage)
+
+
+def test_complex_spectrum():
+    assert_true(assign_signal_subclass(
+        dtype=np.dtype('complex'),
+        record_by="spectrum",
+        signal_type="",
+        signal_origin="") is
+                hs.signals.Signal1D)
+
+def test_complex_image():
+    assert_true(assign_signal_subclass(
+        dtype=np.dtype('complex'),
+        record_by="image",
+        signal_type="",
+        signal_origin="") is
+                hs.signals.Signal2D)
 
 
 class TestSignalAssignSubclass:

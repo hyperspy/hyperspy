@@ -3418,10 +3418,10 @@ class BaseSignal(FancySlicing,
             self.get_dimensions_from_data()
             self.metadata.Signal.record_by = "spectrum"
             self.axes_manager[-1 + 2j].name = "RGB index"
-            self._assign_subclass()
             return
         else:
             self.data = self.data.astype(dtype)
+        self._assign_subclass()
 
     def estimate_poissonian_noise_variance(self,
                                            expected_value=None,

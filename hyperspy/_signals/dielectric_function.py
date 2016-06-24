@@ -20,16 +20,17 @@ import numpy as np
 from scipy import constants
 from scipy.integrate import simps, cumtrapz
 
-from hyperspy._signals.complex_signal import ComplexSignal1D
+from hyperspy._signals.signal1d import Signal1D
+from hyperspy._signals.complex_signal import ComplexSignal
 from hyperspy.misc.eels.tools import eels_constant
 
 
-class DielectricFunction(ComplexSignal1D):
+class DielectricFunction(Signal1D, ComplexSignal):
 
     _signal_type = "dielectric_function"
 
     def __init__(self, *args, **kwards):
-        ComplexSignal1D.__init__(self, *args, **kwards)
+        Signal1D.__init__(self, *args, **kwards)
         self.metadata.Signal.binned = False
 
     def get_number_of_effective_electrons(self, nat, cumulative=False):

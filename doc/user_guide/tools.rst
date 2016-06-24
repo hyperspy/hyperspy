@@ -112,8 +112,6 @@ The different subclasses are characterized by four
     +---------------------------------------------------------------+-----------+---------------+---------------+---------+
     |           :py:class:`~._signals.signal1d.Signal1D`            | spectrum  |       -       |       -       |  real   |
     +---------------------------------------------------------------+-----------+---------------+---------------+---------+
-    |     :py:class:`~._signals.complex_signal.ComplexSignal1D`     | spectrum  |       -       |       -       | complex |
-    +---------------------------------------------------------------+-----------+---------------+---------------+---------+
     | :py:class:`~._signals.spectrum_simulation.SpectrumSimulation` | spectrum  |       -       |  simulation   |  real   |
     +---------------------------------------------------------------+-----------+---------------+---------------+---------+
     |           :py:class:`~._signals.eels.EELSSpectrum`            | spectrum  |     EELS      |       -       |  real   |
@@ -123,8 +121,6 @@ The different subclasses are characterized by four
     |           :py:class:`~._signals.eds_tem.EDSTEMSpectrum`       | spectrum  |    EDS_TEM    |       -       |  real   |
     +---------------------------------------------------------------+-----------+---------------+---------------+---------+
     |              :py:class:`~._signals.signal2d.Signal2D`         |   image   |       -       |       -       |  real   |
-    +---------------------------------------------------------------+-----------+---------------+---------------+---------+
-    |     :py:class:`~._signals.complex_signal.ComplexSignal2D`     |   image   |       -       |       -       | complex |
     +---------------------------------------------------------------+-----------+---------------+---------------+---------+
     | :py:class:`~._signals.electron_wave_image.ElectronWaveImage`  |   image   | electron_wave |       -       | complex |
     +---------------------------------------------------------------+-----------+---------------+---------------+---------+
@@ -216,8 +212,6 @@ following table:
     +---------------------------------------------------------------+--------+
     |           :py:class:`~._signals.signal1d.Signal1D`            | False  |
     +---------------------------------------------------------------+--------+
-    |     :py:class:`~._signals.complex_signal.ComplexSignal1D`     | False  |
-    +---------------------------------------------------------------+--------+
     | :py:class:`~._signals.spectrum_simulation.SpectrumSimulation` | False  |
     +---------------------------------------------------------------+--------+
     |           :py:class:`~._signals.eels.EELSSpectrum`            | True   |
@@ -227,8 +221,6 @@ following table:
     |           :py:class:`~._signals.eds_tem.EDSTEMSpectrum`       | True   |
     +---------------------------------------------------------------+--------+
     |              :py:class:`~._signals.signal2d.Signal2D`         | False  |
-    +---------------------------------------------------------------+--------+
-    |     :py:class:`~._signals.complex_signal.ComplexSignal2D`     | False  |
     +---------------------------------------------------------------+--------+
     | :py:class:`~._signals.electron_wave_image.ElectronWaveImage`  | False  |
     +---------------------------------------------------------------+--------+

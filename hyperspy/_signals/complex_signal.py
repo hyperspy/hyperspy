@@ -229,11 +229,3 @@ class ComplexSignal(BaseSignal):
         else:
             raise KeyError('{} is not a valid input for representation (use "cartesian" or '
                            '"angular")!'.format(representation))
-
-
-class ComplexSignal1D(ComplexSignal, Signal1D):
-    pass
-
-
-class ComplexSignal2D(ComplexSignal, Signal2D):
-    pass
