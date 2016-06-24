@@ -28,10 +28,10 @@ hyperspy.tests.utils.test_material module
     :undoc-members:
     :show-inheritance:
 
-hyperspy.tests.utils.test_progressbar module
---------------------------------------------
+hyperspy.tests.utils.test_roi module
+------------------------------------
 
-.. automodule:: hyperspy.tests.utils.test_progressbar
+.. automodule:: hyperspy.tests.utils.test_roi
     :members:
     :undoc-members:
     :show-inheritance:

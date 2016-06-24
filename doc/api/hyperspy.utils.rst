@@ -44,6 +44,14 @@ hyperspy.utils.plot module
     :undoc-members:
     :show-inheritance:
 
+hyperspy.utils.roi module
+-------------------------
+
+.. automodule:: hyperspy.utils.roi
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 
 Module contents
 ---------------

@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-# This file contains plotting code generic to the Signal class.
+# This file contains plotting code generic to the BaseSignal class.
 
 import numpy as np
 import matplotlib.pyplot as plt

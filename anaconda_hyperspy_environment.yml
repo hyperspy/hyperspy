@@ -7,7 +7,6 @@ dependencies:
 - ipyparallel
 - jupyter
 - matplotlib
-- mock
 - nose
 - numpy
 - qt
@@ -27,3 +26,4 @@ dependencies:
   - traits
   - traitsui
   - tqdm
+  - ipywidgets

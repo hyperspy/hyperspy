@@ -53,7 +53,7 @@ class Interactive:
             Arguments and keyword arguments to be passed to `f`.
 
         """
-        from hyperspy.signal import Signal
+        from hyperspy.signal import BaseSignal
         self.f = f
         self.args = args
         self.kwargs = kwargs
@@ -69,7 +69,7 @@ class Interactive:
             # inspect.
             fargs = []
         has_out = "out" in fargs
-        if hasattr(f, "__self__") and isinstance(f.__self__, Signal):
+        if hasattr(f, "__self__") and isinstance(f.__self__, BaseSignal):
             if event is None:
                 event = self.f.__self__.events.data_changed
             if recompute_out_event is None and has_out:

@@ -60,7 +60,7 @@ keywords = {
     'XPERCHAN': {'dtype': float, 'mapped_to': None},
     'OFFSET': {'dtype': float, 'mapped_to': None},
     # Optional parameters
-    # Spectrum characteristics
+    # Signal1D characteristics
     'SIGNALTYPE': {'dtype': str, 'mapped_to':
                    'Signal.signal_type'},
     'XLABEL': {'dtype': str, 'mapped_to': None},
@@ -144,7 +144,7 @@ def parse_msa_string(string, filename=None):
     --------
     file_data_list: list
         The list containts a dictionary that contains the parsed
-        information. It can be used to create a `:class:Signal`
+        information. It can be used to create a `:class:BaseSignal`
         using `:func:hyperspy.io.dict2signal`.
 
     """
@@ -329,7 +329,7 @@ def file_writer(filename, signal, format=None, separator=', ',
         'SIGNALTYPE': signal.metadata.Signal.signal_type,
         'XPERCHAN': signal.axes_manager._axes[0].scale,
         'OFFSET': signal.axes_manager._axes[0].offset,
-        # Spectrum characteristics
+        # Signal1D characteristics
 
         'XLABEL': signal.axes_manager._axes[0].name,
         #        'YLABEL' : '',

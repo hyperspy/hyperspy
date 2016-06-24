@@ -72,7 +72,7 @@ def file_writer(filename, signal, **kwds):
         Parameters
         ----------
         filename: str
-        signal: a Signal instance
+        signal: a BaseSignal instance
 
     """
     data = signal.data

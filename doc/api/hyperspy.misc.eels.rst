@@ -12,6 +12,14 @@ hyperspy.misc.eels.base_gos module
     :undoc-members:
     :show-inheritance:
 
+hyperspy.misc.eels.eelsdb module
+--------------------------------
+
+.. automodule:: hyperspy.misc.eels.eelsdb
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 hyperspy.misc.eels.effective_angle module
 -----------------------------------------
 
