@@ -25,7 +25,7 @@ class TestORPCA:
         s = 0.1
 
         # Low-rank and sparse error matrices
-        rng = numpy.random.RandomState(123)
+        rng = np.random.RandomState(123)
         U = scipy.linalg.orth(rng.randn(m, r))
         V = rng.randn(n, r)
         A = np.dot(U, V.T)
