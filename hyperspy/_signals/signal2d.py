@@ -31,6 +31,7 @@ from hyperspy.misc.math_tools import symmetrize, antisymmetrize
 from hyperspy.signal import BaseSignal
 
 
+
 def shift_image(im, shift, interpolation_order=1, fill_value=np.nan):
     fractional, integral = np.modf(shift)
     if fractional.any():
@@ -612,6 +613,7 @@ class Signal2DTools(object):
         """
         peakfinder = PeakFinder2D()
         peakfinder.interactive(self)
+        return peakfinder.current_method
 
 
 class PeakFinder2D(object):
@@ -621,6 +623,7 @@ class PeakFinder2D(object):
     nopeaks = np.array([[np.nan, np.nan]])
 
     def __init__(self):
+
         self.signal = None
         self.indices = None
         self.ax = None
@@ -651,64 +654,73 @@ class PeakFinder2D(object):
 
     def create_navigator(self):
         from IPython.display import display
-        from ipywidgets import BoundedIntText, Button, Layout, HBox
-        container = HBox()
+        import ipywidgets as ipyw
+        container = ipyw.HBox()
         if self.signal.axes_manager.navigation_dimension == 2:
-            x_min, y_min = 0, 0
-            x_max, y_max = self.signal.axes_manager.navigation_shape
-            x_max -= 1
-            y_max -= 1
-            x_text = BoundedIntText(value=self.indices[0], description="x",
-                                    min=x_min, max=x_max,
-                                    layout=Layout(flex='0 1 auto',
-                                                  width='auto'))
-            y_text = BoundedIntText(value=self.indices[1], description="y",
-                                    min=y_min, max=y_max,
-                                    layout=Layout(flex='0 1 auto',
-                                                  width='auto'))
-            randomize = Button(description="Randomize",
-                                layout=Layout(flex='0 1 auto', width='auto'))
-
-            container = HBox((x_text, y_text, randomize))
-
-            def on_index_change(change):
-                self.indices = (x_text.value, y_text.value)
-                self.replot_image()
-
-            def on_randomize(change):
-                from random import randint
-                x = randint(x_min, x_max)
-                y = randint(y_min, y_max)
-                x_text.value = x
-                y_text.value = y
-
-            x_text.observe(on_index_change, names='value')
-            y_text.observe(on_index_change, names='value')
-            randomize.on_click(on_randomize)
+            container = self.create_navigator_2d()
         elif self.signal.axes_manager.navigation_dimension == 1:
-            x_min, x_max = 0, self.signal.axes_manager.navigation_size - 1
-            x_text = BoundedIntText(value=self.indices[0],
-                                    description="Coordinate", min=x_min,
-                                    max=x_max, layout=Layout(flex='0 1 auto',
-                                                             width='auto'))
-            randomize = Button(description="Randomize",
-                                layout=Layout(flex='0 1 auto', width='auto'))
-            container = HBox((x_text, randomize))
-
-            def on_index_change(change):
-                self.indices = (x_text.value,)
-                self.replot_image()
-
-            def on_randomize(change):
-                from random import randint
-                x = randint(x_min, x_max)
-                x_text.value = x
-
-            x_text.observe(on_index_change, names='value')
-            randomize.on_click(on_randomize)
+            container = self.create_navigator_1d()
         elif self.signal.axes_manager.navigation_dimension == 0:
             container = HBox()
         display(container)
+
+    def create_navigator_1d(self):
+        import ipywidgets as ipyw
+        x_min, x_max = 0, self.signal.axes_manager.navigation_size - 1
+        x_text = ipyw.BoundedIntText(value=self.indices[0],
+                                description="Coordinate", min=x_min,
+                                max=x_max, layout=ipyw.Layout(flex='0 1 auto',
+                                                         width='auto'))
+        randomize = ipyw.Button(description="Randomize",
+                           layout=ipyw.Layout(flex='0 1 auto', width='auto'))
+        container = ipyw.HBox((x_text, randomize))
+
+        def on_index_change(change):
+            self.indices = (x_text.value,)
+            self.replot_image()
+
+        def on_randomize(change):
+            from random import randint
+            x = randint(x_min, x_max)
+            x_text.value = x
+
+        x_text.observe(on_index_change, names='value')
+        randomize.on_click(on_randomize)
+        return container
+
+    def create_navigator_2d(self):
+        import ipywidgets as ipyw
+        x_min, y_min = 0, 0
+        x_max, y_max = self.signal.axes_manager.navigation_shape
+        x_max -= 1
+        y_max -= 1
+        x_text = ipyw.BoundedIntText(value=self.indices[0], description="x",
+                                     min=x_min, max=x_max,
+                                     layout=ipyw.Layout(flex='0 1 auto',
+                                                   width='auto'))
+        y_text = ipyw.BoundedIntText(value=self.indices[1], description="y",
+                                     min=y_min, max=y_max,
+                                     layout=ipyw.Layout(flex='0 1 auto',
+                                                   width='auto'))
+        randomize = ipyw.Button(description="Randomize",
+                                layout=ipyw.Layout(flex='0 1 auto', width='auto'))
+        container = ipyw.HBox((x_text, y_text, randomize))
+
+        def on_index_change(change):
+            self.indices = (x_text.value, y_text.value)
+            self.replot_image()
+
+        def on_randomize(change):
+            from random import randint
+            x = randint(x_min, x_max)
+            y = randint(y_min, y_max)
+            x_text.value = x
+            y_text.value = y
+
+        x_text.observe(on_index_change, names='value')
+        y_text.observe(on_index_change, names='value')
+        randomize.on_click(on_randomize)
+        return container
 
     def create_choices_widget(self):
         from IPython.display import display
