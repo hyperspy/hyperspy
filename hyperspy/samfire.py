@@ -25,7 +25,7 @@ from tqdm import tqdm
 
 from hyperspy.misc.utils import DictionaryTreeBrowser
 from hyperspy.misc.utils import slugify
-from hyperspy.signal import Signal
+from hyperspy.signal import BaseSignal
 from hyperspy.samfire_utils.strategy import (DiffusionStrategy,
                                              SegmenterStrategy)
 from hyperspy.samfire_utils.strategies.diffusion.red_chisq import \
@@ -460,7 +460,7 @@ class Samfire:
                 value_dict['signal.data'] = \
                     self.model.signal.data[ind + (...,)]
                 var = self.model.signal.metadata.Signal.Noise_properties.variance
-                if isinstance(var, Signal):
+                if isinstance(var, BaseSignal):
                     value_dict['variance.data'] = var.data[ind + (...,)]
                 if self.model.low_loss is not None:
                     value_dict['low_loss.data'] = \

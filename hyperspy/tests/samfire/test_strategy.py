@@ -19,7 +19,7 @@ import nose.tools as nt
 import numpy as np
 from hyperspy.samfire_utils.strategy import DiffusionStrategy, SegmenterStrategy
 from hyperspy.misc.utils import DictionaryTreeBrowser
-from hyperspy.signals import Spectrum
+from hyperspy.signals import Signal1D
 from hyperspy.components import Gaussian
 
 
@@ -344,7 +344,7 @@ class TestDiffusionWithModel:
         self.s = DiffusionStrategy('test diffusion strategy')
         self.samf = create_artificial_samfire(self.shape)
 
-        m = Spectrum(np.empty(self.shape + (100,))).create_model()
+        m = Signal1D(np.empty(self.shape + (100,))).create_model()
         m.extend([Gaussian() for _ in range(3)])
         m.chisq.data.fill(5.)
 
@@ -408,7 +408,7 @@ class TestSegmenterStrategy:
         self.s = SegmenterStrategy('test segmenter strategy')
         self.samf = create_artificial_samfire(self.shape)
 
-        m = Spectrum(np.empty(self.shape + (100,))).create_model()
+        m = Signal1D(np.empty(self.shape + (100,))).create_model()
         m.extend([Gaussian() for _ in range(3)])
         m.chisq.data.fill(5.)
 

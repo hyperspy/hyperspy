@@ -373,7 +373,7 @@ class TestSamfireWorker:
         s = hs.signals.SpectrumSimulation(np.array([d, d]))
         s.add_poissonian_noise()
         s.metadata.Signal.set_item("Noise_properties.variance",
-                                   hs.signals.Signal(s.data + 1.))
+                                   hs.signals.BaseSignal(s.data + 1.))
         m = s.create_model()
         m.append(hs.model.components.Gaussian())
         m[-1].name = 'g1'

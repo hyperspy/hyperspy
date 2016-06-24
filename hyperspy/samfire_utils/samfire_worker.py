@@ -23,7 +23,7 @@ from itertools import combinations, product
 from queue import Empty
 import dill
 import numpy as np
-from hyperspy.signal import Signal
+from hyperspy.signal import BaseSignal
 from hyperspy.utils.model_selection import AICc
 
 _logger = logging.getLogger(__name__)
@@ -47,7 +47,7 @@ class Worker:
 
     def create_model(self, signal_dict, model_letter):
         _logger.debug('Creating model in worker {}'.format(self.identity))
-        sig = Signal(**signal_dict)
+        sig = BaseSignal(**signal_dict)
         sig._assign_subclass()
         self.model = sig.models[model_letter].restore()
         self.model.signal.data = self.model.signal.data.copy()
@@ -58,7 +58,7 @@ class Worker:
                 par.map = par.map.copy()
 
         var = self.model.signal.metadata.Signal.Noise_properties.variance
-        if isinstance(var, Signal):
+        if isinstance(var, BaseSignal):
             var.data = var.data.copy()
         if self.model.low_loss is not None:
             self.model.low_loss.data = self.model.low_loss.data.copy()
@@ -145,7 +145,7 @@ class Worker:
         self.model.signal.data[:] = self.value_dict.pop('signal.data')
 
         var = self.model.signal.metadata.Signal.Noise_properties.variance
-        if isinstance(var, Signal):
+        if isinstance(var, BaseSignal):
             var.data[:] = self.value_dict.pop('variance.data')
 
         if 'low_loss.data' in self.value_dict:

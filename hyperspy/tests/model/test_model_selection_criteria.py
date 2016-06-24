@@ -19,14 +19,14 @@
 import numpy as np
 import nose.tools as nt
 from hyperspy.utils.model_selection import AIC, AICc, BIC
-from hyperspy.signals import Spectrum
+from hyperspy.signals import Signal1D
 from hyperspy.components import Gaussian, Lorentzian
 
 
 class TestModelSelection:
 
     def setUp(self):
-        s = Spectrum(range(10))
+        s = Signal1D(range(10))
         m1 = s.create_model()
         m2 = s.create_model()
         m1.append(Gaussian())
