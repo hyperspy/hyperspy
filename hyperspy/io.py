@@ -305,13 +305,15 @@ def load_with_reader(filename,
     return objects
 
 
-def assign_signal_subclass(record_by="",
+def assign_signal_subclass(dtype,
+                           record_by="",
                            signal_type="",
-                           signal_origin="",):
+                           signal_origin=""):
     """Given record_by and signal_type return the matching Signal subclass.
 
     Parameters
     ----------
+    dtype : :class:`~.numpy.dtype`
     record_by: {"spectrum", "image", ""}
     signal_type : {"EELS", "EDS", "EDS_TEM", "", str}
     signal_origin : {"experiment", "simulation", ""}
@@ -323,21 +325,27 @@ def assign_signal_subclass(record_by="",
     """
     import hyperspy.signals
     from hyperspy.signal import BaseSignal
+    if 'complex' in dtype.name:
+        dtype = 'complex'
+    elif ('float' in dtype.name or 'int' in dtype.name or
+          'void' in dtype.name or 'bool' in dtype.name):
+        dtype = 'real'
+    else:
+        raise ValueError('Data type "{}" not understood!'.format(dtype.name))
     if record_by and record_by not in ["image", "spectrum"]:
         raise ValueError("record_by must be one of: None, empty string, "
                          "\"image\" or \"spectrum\"")
     if signal_origin and signal_origin not in ["experiment", "simulation"]:
         raise ValueError("signal_origin must be one of: None, empty string, "
                          "\"experiment\" or \"simulation\"")
-
     signals = hyperspy.misc.utils.find_subclasses(hyperspy.signals, BaseSignal)
-
     if signal_origin == "experiment":
         signal_origin = ""
-
     preselection = [s for s in
-                    [s for s in signals.values()
-                     if record_by == s._record_by]
+                    [s for s in
+                     [s for s in signals.values()
+                      if record_by == s._record_by]
+                     if dtype == s._dtype]
                     if signal_origin == s._signal_origin]
     perfect_match = [s for s in preselection
                      if signal_type == s._signal_type]
@@ -373,7 +381,8 @@ def dict2signal(signal_dict):
             len(signal_dict['data'].shape) < 2):
         record_by = "spectrum"
 
-    signal = assign_signal_subclass(record_by=record_by,
+    signal = assign_signal_subclass(dtype=signal_dict['data'].dtype,
+                                    record_by=record_by,
                                     signal_type=signal_type,
                                     signal_origin=signal_origin)(**signal_dict)
     if "post_process" in signal_dict:

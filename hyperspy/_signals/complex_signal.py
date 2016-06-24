@@ -20,12 +20,14 @@
 import numpy as np
 
 from hyperspy.signal import BaseSignal
+from hyperspy._signals.signal1d import Signal1D
+from hyperspy._signals.signal2d import Signal2D
 
 
 class ComplexSignal(BaseSignal):
     """BaseSignal subclass for complex data."""
 
-    _signal_type = "complex"
+    _dtype = "complex"
 
     @property
     def real(self):
@@ -227,3 +229,11 @@ class ComplexSignal(BaseSignal):
         else:
             raise KeyError('{} is not a valid input for representation (use "cartesian" or '
                            '"angular")!'.format(representation))
+
+
+class ComplexSignal1D(ComplexSignal, Signal1D):
+    pass
+
+
+class ComplexSignal2D(ComplexSignal, Signal2D):
+    pass

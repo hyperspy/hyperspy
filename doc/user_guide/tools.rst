@@ -64,7 +64,7 @@ information (including calibration) can be accessed (and modified) in the
 Transforming between signal subclasses
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The different subclasses are characterized by three
+The different subclasses are characterized by four
 :py:attr:`~.signal.BaseSignal.metadata` attributes (see the table below):
 
 `record_by`
@@ -97,31 +97,39 @@ The different subclasses are characterized by three
     :py:meth:`~.signal.BaseSignal.set_signal_origin` changes the signal_origin in place,
     which may result in a :py:class:`~.signal.BaseSignal` subclass transformation.
 
+`dtype`
+    Describes the underlying data type of the signal data and is determined automatically.
+    Can be "real" or "complex".
+
 .. table:: BaseSignal subclass :py:attr:`~.signal.BaseSignal.metadata` attributes.
 
-    +---------------------------------------------------------------+-----------+-------------+---------------+
-    |                      BaseSignal subclass                      | record_by | signal_type | signal_origin |
-    +===============================================================+===========+=============+===============+
-    |                 :py:class:`~.signal.BaseSignal`               |     -     |      -      |       -       |
-    +---------------------------------------------------------------+-----------+-------------+---------------+
-    |      :py:class:`~._signals.complex_signal.ComplexSignal`      |     -     |   complex   |       -       |
-    +---------------------------------------------------------------+-----------+-------------+---------------+
-    |           :py:class:`~._signals.signal1d.Signal1D`            | spectrum  |      -      |       -       |
-    +---------------------------------------------------------------+-----------+-------------+---------------+
-    | :py:class:`~._signals.spectrum_simulation.SpectrumSimulation` | spectrum  |      -      |  simulation   |
-    +---------------------------------------------------------------+-----------+-------------+---------------+
-    |           :py:class:`~._signals.eels.EELSSpectrum`            | spectrum  |    EELS     |       -       |
-    +---------------------------------------------------------------+-----------+-------------+---------------+
-    |           :py:class:`~._signals.eds_sem.EDSSEMSpectrum`       | spectrum  |   EDS_SEM   |       -       |
-    +---------------------------------------------------------------+-----------+-------------+---------------+
-    |           :py:class:`~._signals.eds_tem.EDSTEMSpectrum`       | spectrum  |   EDS_TEM   |       -       |
-    +---------------------------------------------------------------+-----------+-------------+---------------+
-    |              :py:class:`~._signals.signal2d.Signal2D`         |   image   |      -      |       -       |
-    +---------------------------------------------------------------+-----------+-------------+---------------+
-    | :py:class:`~._signals.electron_wave_image.ElectronWaveImage`  |   image   |   complex   |       -       |
-    +---------------------------------------------------------------+-----------+-------------+---------------+
-    |    :py:class:`~._signals.image_simulation.ImageSimulation`    |   image   |      -      |  simulation   |
-    +---------------------------------------------------------------+-----------+-------------+---------------+
+    +---------------------------------------------------------------+-----------+---------------+---------------+---------+
+    |                      BaseSignal subclass                      | record_by |  signal_type  | signal_origin |  dtype  |
+    +===============================================================+===========+===============+===============+=========+
+    |                 :py:class:`~.signal.BaseSignal`               |     -     |       -       |       -       |  real   |
+    +---------------------------------------------------------------+-----------+---------------+---------------+---------+
+    |      :py:class:`~._signals.complex_signal.ComplexSignal`      |     -     |       -       |       -       | complex |
+    +---------------------------------------------------------------+-----------+---------------+---------------+---------+
+    |           :py:class:`~._signals.signal1d.Signal1D`            | spectrum  |       -       |       -       |  real   |
+    +---------------------------------------------------------------+-----------+---------------+---------------+---------+
+    |     :py:class:`~._signals.complex_signal.ComplexSignal1D`     | spectrum  |       -       |       -       | complex |
+    +---------------------------------------------------------------+-----------+---------------+---------------+---------+
+    | :py:class:`~._signals.spectrum_simulation.SpectrumSimulation` | spectrum  |       -       |  simulation   |  real   |
+    +---------------------------------------------------------------+-----------+---------------+---------------+---------+
+    |           :py:class:`~._signals.eels.EELSSpectrum`            | spectrum  |     EELS      |       -       |  real   |
+    +---------------------------------------------------------------+-----------+---------------+---------------+---------+
+    |           :py:class:`~._signals.eds_sem.EDSSEMSpectrum`       | spectrum  |    EDS_SEM    |       -       |  real   |
+    +---------------------------------------------------------------+-----------+---------------+---------------+---------+
+    |           :py:class:`~._signals.eds_tem.EDSTEMSpectrum`       | spectrum  |    EDS_TEM    |       -       |  real   |
+    +---------------------------------------------------------------+-----------+---------------+---------------+---------+
+    |              :py:class:`~._signals.signal2d.Signal2D`         |   image   |       -       |       -       |  real   |
+    +---------------------------------------------------------------+-----------+---------------+---------------+---------+
+    |     :py:class:`~._signals.complex_signal.ComplexSignal2D`     |   image   |       -       |       -       | complex |
+    +---------------------------------------------------------------+-----------+---------------+---------------+---------+
+    | :py:class:`~._signals.electron_wave_image.ElectronWaveImage`  |   image   | electron_wave |       -       | complex |
+    +---------------------------------------------------------------+-----------+---------------+---------------+---------+
+    |    :py:class:`~._signals.image_simulation.ImageSimulation`    |   image   |       -       |  simulation   |  real   |
+    +---------------------------------------------------------------+-----------+---------------+---------------+---------+
 
 
 The following example shows how to transform between different subclasses.
@@ -208,6 +216,8 @@ following table:
     +---------------------------------------------------------------+--------+
     |           :py:class:`~._signals.signal1d.Signal1D`            | False  |
     +---------------------------------------------------------------+--------+
+    |     :py:class:`~._signals.complex_signal.ComplexSignal1D`     | False  |
+    +---------------------------------------------------------------+--------+
     | :py:class:`~._signals.spectrum_simulation.SpectrumSimulation` | False  |
     +---------------------------------------------------------------+--------+
     |           :py:class:`~._signals.eels.EELSSpectrum`            | True   |
@@ -217,6 +227,8 @@ following table:
     |           :py:class:`~._signals.eds_tem.EDSTEMSpectrum`       | True   |
     +---------------------------------------------------------------+--------+
     |              :py:class:`~._signals.signal2d.Signal2D`         | False  |
+    +---------------------------------------------------------------+--------+
+    |     :py:class:`~._signals.complex_signal.ComplexSignal2D`     | False  |
     +---------------------------------------------------------------+--------+
     | :py:class:`~._signals.electron_wave_image.ElectronWaveImage`  | False  |
     +---------------------------------------------------------------+--------+

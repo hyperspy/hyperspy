@@ -44,6 +44,7 @@ The Signal class and its specilized subclasses:
 # -*- coding: utf-8 -*-
 from hyperspy._signals.signal1d import Signal1D
 from hyperspy._signals.signal2d import Signal2D
+from hyperspy._signals.complex_signal import ComplexSignal, ComplexSignal1D, ComplexSignal2D
 from hyperspy._signals.eels import EELSSpectrum
 from hyperspy._signals.eds_sem import EDSSEMSpectrum
 from hyperspy._signals.eds_tem import EDSTEMSpectrum
@@ -53,6 +54,5 @@ from hyperspy._signals.image_simulation import ImageSimulation
 from hyperspy._signals.spectrum_simulation import SpectrumSimulation
 from hyperspy._signals.eels_spectrum_simulation import (
     EELSSpectrumSimulation)
-from hyperspy._signals.complex_signal import ComplexSignal
 from hyperspy._signals.electron_wave_image import ElectronWaveImage
 from hyperspy.signal import BaseSignal

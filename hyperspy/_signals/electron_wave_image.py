@@ -19,12 +19,14 @@
 
 import numpy as np
 
-from hyperspy._signals.complex_signal import ComplexSignal
+from hyperspy._signals.complex_signal import ComplexSignal2D
 from hyperspy._signals.signal2d import Signal2D
 
 
-class ElectronWaveImage(Signal2D, ComplexSignal):
+class ElectronWaveImage(ComplexSignal2D):
     """Signal2D subclass for complex electron wave data (e.g. reconstructed from holograms)."""
+
+    _signal_type = "electron_wave"
 
     def add_phase_ramp(self, ramp_x, ramp_y, offset=0):
         """Add a linear phase ramp to the wave.

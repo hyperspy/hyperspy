@@ -1453,6 +1453,7 @@ class BaseSignal(FancySlicing,
                  MVA,
                  MVATools,):
 
+    _dtype = "real"
     _record_by = ""
     _signal_type = ""
     _signal_origin = ""
@@ -3749,6 +3750,7 @@ class BaseSignal(FancySlicing,
     def _assign_subclass(self):
         mp = self.metadata
         self.__class__ = hyperspy.io.assign_signal_subclass(
+            self.data.dtype,
             record_by=mp.Signal.record_by
             if "Signal.record_by" in mp
             else self._record_by,
