@@ -27,10 +27,12 @@ from hyperspy.misc.eels.tools import eels_constant
 
 class DielectricFunction(Signal1D, ComplexSignal):
 
+    _record_by = "spectrum"
     _signal_type = "dielectric_function"
 
-    def __init__(self, *args, **kwards):
-        Signal1D.__init__(self, *args, **kwards)
+    def __init__(self, *args, **kwargs):
+        super().__init__(self, *args, **kwargs)
+        self.axes_manager.set_signal_dimension(2)
         self.metadata.Signal.binned = False
 
     def get_number_of_effective_electrons(self, nat, cumulative=False):

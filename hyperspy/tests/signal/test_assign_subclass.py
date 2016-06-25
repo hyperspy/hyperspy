@@ -96,7 +96,7 @@ def test_complex_spectrum():
         record_by="spectrum",
         signal_type="",
         signal_origin="") is
-                hs.signals.Signal1D)
+                hs.signals.ComplexSignal)
 
 def test_complex_image():
     assert_true(assign_signal_subclass(
@@ -104,7 +104,7 @@ def test_complex_image():
         record_by="image",
         signal_type="",
         signal_origin="") is
-                hs.signals.Signal2D)
+                hs.signals.ComplexSignal)
 
 
 class TestSignalAssignSubclass:
