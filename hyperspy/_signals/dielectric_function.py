@@ -25,13 +25,13 @@ from hyperspy._signals.complex_signal import ComplexSignal
 from hyperspy.misc.eels.tools import eels_constant
 
 
-class DielectricFunction(Signal1D, ComplexSignal):
+class DielectricFunction(ComplexSignal):
 
     _record_by = "spectrum"
     _signal_type = "dielectric_function"
 
     def __init__(self, *args, **kwargs):
-        super().__init__(self, *args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.axes_manager.set_signal_dimension(2)
         self.metadata.Signal.binned = False
 

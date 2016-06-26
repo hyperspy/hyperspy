@@ -29,7 +29,7 @@ class ElectronWaveImage(ComplexSignal):
     _signal_type = "electron_wave"
 
     def __init__(self, *args, **kwargs):
-        super().__init__(self, *args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.axes_manager.set_signal_dimension(2)
         self.metadata.Signal.binned = False
 
