@@ -32,7 +32,7 @@ class DielectricFunction(ComplexSignal):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.axes_manager.set_signal_dimension(2)
+        self.axes_manager.set_signal_dimension(1)
         self.metadata.Signal.binned = False
 
     def get_number_of_effective_electrons(self, nat, cumulative=False):

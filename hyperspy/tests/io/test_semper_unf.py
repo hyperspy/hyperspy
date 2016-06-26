@@ -11,7 +11,7 @@ import nose.tools as nt
 import numpy as np
 
 from hyperspy.io import load
-from hyperspy.signals import BaseSignal, Signal2D, Signal1D
+from hyperspy.signals import BaseSignal, Signal2D, Signal1D, ComplexSignal
 
 
 my_path = os.path.dirname(__file__)
@@ -91,7 +91,7 @@ def test_image_complex_loading():
             'example_image_complex.unf'))
     np.testing.assert_equal(signal.data, data_image_complex)
     np.testing.assert_equal(signal.original_metadata.IFORM, 3)  # complex
-    nt.assert_is_instance(signal, Signal2D)
+    nt.assert_is_instance(signal, ComplexSignal)
 
 
 def test_with_title_loading():
