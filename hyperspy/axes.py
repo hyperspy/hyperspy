@@ -66,11 +66,18 @@ def generate_axis(offset, scale, size, offset_index=0):
 def _formatting_units(units):
     units = units.replace(' ', '')
     return units.replace('um', 'µm')
+
+def _ignore_conversion(units):
+    if units == '' or units == t.Undefined:
+        return True
     
 def _get_convenient_scale_units(scale, units, size):
     """ Convert (when necessary) the scale and the units to "sensible" number
         to avoid displaying scalebar with >3 digits or too small number.
     """
+    if _ignore_conversion(units):
+        return scale, units
+    
     scale = scale*_ureg(units)
     def get_value(scale, size):
         value =  scale.magnitude*size
@@ -121,14 +128,16 @@ def _get_convenient_scale_units(scale, units, size):
             
     units = _formatting_units('{:~}'.format(scale.units))
             
-    return scale.magnitude, units
+    return float(scale.magnitude), units
 
 def _get_convert_units(scale, units, converted_units):
+    if _ignore_conversion(units):
+        return scale, units
     scale = scale*_ureg(units)
     scale = scale.to(_ureg(converted_units))
     units = _formatting_units('{:~}'.format(scale.units))
 
-    return scale.magnitude, units
+    return float(scale.magnitude), units
         
 class DataAxis(t.HasTraits):
     name = t.Str()

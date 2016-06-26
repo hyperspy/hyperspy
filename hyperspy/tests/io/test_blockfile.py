@@ -24,23 +24,15 @@ import numpy as np
 import gc
 from hyperspy.io_plugins.blockfile import get_default_header
 from hyperspy.misc.array_tools import sarray2dict
+from hyperspy.tests.utils_testing import remove_file, assert_deep_almost_equal
 import warnings
 
 
 try:
     WindowsError
 except NameError:
-    WindowsError = None
-
-
-def _remove_file(filename):
-    try:
-        if os.path.exists(filename):
-            os.remove(filename)
-    except WindowsError:
-        pass    # If we don't do this, we might mask real exceptions
-
-
+    WindowsError = None        
+        
 dirpath = os.path.dirname(__file__)
 
 file1 = os.path.join(dirpath, 'blockfile_data', 'test1.blo')
@@ -94,12 +86,26 @@ axes1 = {
         'scale': 12.8, 'size': 2, 'units': 'nm'},
     'axis-2': {
         'name': 'dy', 'navigate': False, 'offset': 0.0,
-        'scale': 0.016061676839061997, 'size': 144, 'units': 'cm'},
+        'scale': 0.16061676839061997, 'size': 144, 'units': 'mm'},
     'axis-3': {
         'name': 'dx', 'navigate': False, 'offset': 0.0,
-        'scale': 0.016061676839061997, 'size': 144, 'units': 'cm'}}
+        'scale': 0.16061676839061997, 'size': 144, 'units': 'mm'}}
 
 axes2 = {
+    'axis-0': {
+        'name': 'y', 'navigate': True, 'offset': 0.0,
+        'scale': 64.0, 'size': 2, 'units': 'nm'},
+    'axis-1': {
+        'name': 'x', 'navigate': True, 'offset': 0.0,
+        'scale': 64.0, 'size': 3, 'units': 'nm'},
+    'axis-2': {
+        'name': 'dy', 'navigate': False, 'offset': 0.0,
+        'scale': 160.61676839061997, 'size': 5, 'units': 'µm'},
+    'axis-3': {
+        'name': 'dx', 'navigate': False, 'offset': 0.0,
+        'scale': 160.61676839061997, 'size': 5, 'units': 'µm'}}
+
+axes3 = {
     'axis-0': {
         'name': 'y', 'navigate': True, 'offset': 0.0,
         'scale': 64.0, 'size': 2, 'units': 'nm'},
@@ -113,17 +119,16 @@ axes2 = {
         'name': 'dx', 'navigate': False, 'offset': 0.0,
         'scale': 0.016061676839061997, 'size': 5, 'units': 'cm'}}
 
-
 def test_load1():
     s = hs.load(file1)
     nt.assert_equal(s.data.shape, (3, 2, 144, 144))
-    nt.assert_equal(s.axes_manager.as_dictionary(), axes1)
+    assert_deep_almost_equal(s.axes_manager.as_dictionary(), axes1, places=8)
 
 
 def test_load2():
     s = hs.load(file2)
     nt.assert_equal(s.data.shape, (2, 3, 5, 5))
-    np.testing.assert_equal(s.axes_manager.as_dictionary(), axes2)
+    assert_deep_almost_equal(s.axes_manager.as_dictionary(), axes2, places=8)
     np.testing.assert_allclose(s.data, ref_data2)
 
 
@@ -134,16 +139,17 @@ def test_save_load_cycle():
         signal.save(save_path, overwrite=True)
         sig_reload = hs.load(save_path)
         np.testing.assert_equal(signal.data, sig_reload.data)
-        nt.assert_equal(signal.axes_manager.as_dictionary(),
-                        sig_reload.axes_manager.as_dictionary())
-        nt.assert_equal(signal.original_metadata.as_dictionary(),
-                        sig_reload.original_metadata.as_dictionary())
+        assert_deep_almost_equal(signal.axes_manager.as_dictionary(), axes3,
+                                 places=8)
+        assert_deep_almost_equal(signal.original_metadata.as_dictionary(),
+                                 sig_reload.original_metadata.as_dictionary(),
+                                 places=8)
         nt.assert_is_instance(signal, hs.signals.Signal2D)
     finally:
         # Delete reference to close memmap file!
         del sig_reload
         gc.collect()
-        _remove_file(save_path)
+        remove_file(save_path)
 
 
 def test_default_header():
@@ -159,7 +165,7 @@ def test_non_square():
         with nt.assert_raises(ValueError):
             signal.save(save_path, overwrite=True)
     finally:
-        _remove_file(save_path)
+        remove_file(save_path)
 
 
 def test_load_memmap():
@@ -198,7 +204,7 @@ def test_load_inplace():
         # Delete reference to close memmap file!
         del sig_reload
         gc.collect()
-        _remove_file(save_path)
+        remove_file(save_path)
 
 
 def test_write_fresh():
@@ -222,7 +228,7 @@ def test_write_fresh():
             sig_reload.original_metadata.blockfile_header.as_dictionary(),
             header)
     finally:
-        _remove_file(save_path)
+        remove_file(save_path)
 
 
 def test_write_data_line():
@@ -233,7 +239,7 @@ def test_write_data_line():
         sig_reload = hs.load(save_path)
         np.testing.assert_equal(signal.data, sig_reload.data)
     finally:
-        _remove_file(save_path)
+        remove_file(save_path)
 
 
 def test_write_data_single():
@@ -244,7 +250,7 @@ def test_write_data_single():
         sig_reload = hs.load(save_path)
         np.testing.assert_equal(signal.data, sig_reload.data)
     finally:
-        _remove_file(save_path)
+        remove_file(save_path)
 
 
 def test_write_data_am_mismatch():
@@ -255,7 +261,7 @@ def test_write_data_am_mismatch():
         with nt.assert_raises(ValueError):
             signal.save(save_path, overwrite=True)
     finally:
-        _remove_file(save_path)
+        remove_file(save_path)
 
 
 def test_write_cutoff():
@@ -276,7 +282,7 @@ def test_write_cutoff():
         cut_data = cut_data.reshape((10, 20, 5, 5))
         np.testing.assert_equal(cut_data, sig_reload.data)
     finally:
-        _remove_file(save_path)
+        remove_file(save_path)
 
 
 def test_crop_notes():
@@ -292,4 +298,4 @@ def test_crop_notes():
         nt.assert_equal(sig_reload.original_metadata.blockfile_header.Note,
                         note[:note_len])
     finally:
-        _remove_file(save_path)
+        remove_file(save_path)

@@ -126,7 +126,7 @@ def get_header_from_signal(signal, endianess='<'):
     if signal.axes_manager.navigation_dimension == 2:
         NX, NY = signal.axes_manager.navigation_shape
         SX = signal.axes_manager.navigation_axes[0].scale
-        SY = signal.axes_manager.navigation_axes[0].scale
+        SY = signal.axes_manager.navigation_axes[1].scale
     elif signal.axes_manager.navigation_dimension == 1:
         NX = signal.axes_manager.navigation_shape[0]
         NY = 1
@@ -249,7 +249,11 @@ def file_reader(filename, endianess='<', load_to_memory=True, mmap_mode='c',
 
 def file_writer(filename, signal, **kwds):
     endianess = kwds.pop('endianess', '<')
+    # need to convert the signal axes to 'cm' to write the file
+    signal.axes_manager.convert_units('signal', 'cm')
+    _logger.debug("Writing blockfile: %s" % filename)
     header, note = get_header_from_signal(signal, endianess=endianess)
+    _logger.debug("header: {}".format(header))
     with open(filename, 'wb') as f:
         # Write header
         header.tofile(f)

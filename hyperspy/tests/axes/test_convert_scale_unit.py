@@ -17,11 +17,17 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import nose.tools as nt
+import traits.api as t
 
 from hyperspy.axes import DataAxis, AxesManager, _get_convenient_scale_units,\
                              _get_convert_units
 
+
 def test_convert_to_units():
+    scale, units = _get_convert_units(1.0, t.Undefined, 'nm')
+    nt.assert_almost_equal(scale, 1.0, places=5)
+    nt.assert_equal(units, t.Undefined)   
+
     scale, units = _get_convert_units(0.5, 'µm', 'nm')
     nt.assert_almost_equal(scale, 500, places=5)
     nt.assert_equal(units, 'nm')   
