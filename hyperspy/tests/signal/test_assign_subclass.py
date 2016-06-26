@@ -67,7 +67,7 @@ def test_dielectric_function():
     cls = assign_signal_subclass(
         dtype=np.dtype('complex'),
         record_by="spectrum",
-        signal_type="dielectric_function",
+        signal_type="DielectricFunction",
         signal_origin="")
     assert_true(cls is hs.signals.DielectricFunction)
 
@@ -85,7 +85,7 @@ def test_electron_wave_image():
     assert_true(assign_signal_subclass(
         dtype=np.dtype('complex'),
         record_by="image",
-        signal_type="electron_wave",
+        signal_type="electron wave",
         signal_origin="") is
                 hs.signals.ElectronWaveImage)
 

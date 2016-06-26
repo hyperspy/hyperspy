@@ -1,12 +1,12 @@
 Electron Holography
 *******************
 
-HyperSpy provides the user with two classes which can be used to process electron holography data:
+HyperSpy provides the user with a class which can be used to process electron holography data and
+electron wave data in general:
 
-* :py:class:`~._signals.hologram_image.HologramImage`
 * :py:class:`~._signals.electron_wave_image.ElectronWaveImage`
 
-The usage of both classes is explained in the following sections.
+The usage of the class is explained in the following sections.
 
 
 
@@ -14,17 +14,21 @@ The ElectronWaveImage class
 ===========================
 
 The :py:class:`~._signals.electron_wave_image.ElectronWaveImage` class can hold information about
-the complex electron wave. It inherits from :py:class:`~._signals.signal2d.Signal2D` and
-:py:class:`~._signals.complex_signal.ComplexSignal` and as such relevant properties like the
-`amplitude`, `phase` and the `real` and `imag` part of the complex data can be directly accessed
-and return appropriate :py:class:`~._signals.signal2d.Signal2D` signals.
+the complex electron wave. It inherits from :py:class:`~._signals.complex_signal.ComplexSignal`
+and as such relevant properties like the `amplitude`, `phase` and the `real` and `imag` part of
+the complex data can be directly accessed and return appropriate
+:py:class:`~._signals.signal2d.Signal2D` signals.
 
-To transform a :py:class:`~._signals.signal2d.Signa2D` (or subclass) into a
-:py:class:`~._signals.electron_wave_image.ElectronWaveImage` use:
+To transform a complex signal into a :py:class:`~._signals.electron_wave_image.ElectronWaveImage`
+use:
 
 .. code-block:: python
 
-    >>> im.set_signal_type('complex')
+    >>> im.set_signal_type('electron wave')
+
+Note that a :py:class:`~._signals.electron_wave_image.ElectronWaveImage` does not inherit from
+:py:class:`~._signals.signal2d.Signal2D`, because most functionality can not operate on complex
+data.
 
 
 Add a linear phase ramp

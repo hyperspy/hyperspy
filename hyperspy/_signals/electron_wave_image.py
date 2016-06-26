@@ -26,7 +26,7 @@ class ElectronWaveImage(ComplexSignal):
     """Signal2D subclass for complex electron wave data (e.g. reconstructed from holograms)."""
 
     _record_by = "image"
-    _signal_type = "electron_wave"
+    _signal_type = "electron wave"
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

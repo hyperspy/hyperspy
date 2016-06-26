@@ -28,7 +28,7 @@ from hyperspy.misc.eels.tools import eels_constant
 class DielectricFunction(ComplexSignal):
 
     _record_by = "spectrum"
-    _signal_type = "dielectric_function"
+    _signal_type = "DielectricFunction"
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

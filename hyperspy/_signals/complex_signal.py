@@ -100,6 +100,14 @@ class ComplexSignal(BaseSignal):
         else:
             self.data[:] = np.abs(self.data) * np.exp(1j * phase)
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if 'complex' not in self.data.dtype.name:
+            if self.data.dtype.name.endswith('32'):
+                self.data = self.data.astype(np.complex64)
+            else:
+                self.data = self.data.astype(np.complex128)
+
     def angle(self, deg=False):
         """Return the angle (also known as phase or argument). If the data is real, the angle is 0
         for positive values and 2$\pi$ for negative values.

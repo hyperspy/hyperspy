@@ -1185,7 +1185,7 @@ class EELSSpectrum(Signal1D):
 
         eps = s._deepcopy_with_new_data(e1 + e2 * 1j)
         del s
-        eps.set_signal_type("dielectric_function")
+        eps.set_signal_type("DielectricFunction")
         eps.metadata.General.title = (self.metadata.General.title +
                                       'dielectric function '
                                       '(from Kramers-Kronig analysis)')
