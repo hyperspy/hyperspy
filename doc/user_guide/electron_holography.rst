@@ -24,7 +24,8 @@ use:
 
 .. code-block:: python
 
-    >>> im.set_signal_type('electron wave')
+    >>> s.metadata.Signal.record_by = 'image'
+    >>> s.set_signal_type('electron wave')
 
 Note that a :py:class:`~._signals.electron_wave_image.ElectronWaveImage` does not inherit from
 :py:class:`~._signals.signal2d.Signal2D`, because most functionality can not operate on complex

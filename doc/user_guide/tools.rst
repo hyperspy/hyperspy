@@ -99,7 +99,10 @@ The different subclasses are characterized by four
 
 `dtype`
     Describes the underlying data type of the signal data and is determined automatically.
-    Can be "real" or "complex".
+    Can be "real" or "complex". It is important to note that `data` passed to the constructor of a
+    :py:class:`~._signals.complex_signal.ComplexSignal`, which is not already complex, will be
+    converted to the numpy standard of `np.complex`/`np.complex128`. `data` which is already
+    complex will be passed as is.
 
 .. table:: BaseSignal subclass :py:attr:`~.signal.BaseSignal.metadata` attributes.
 
@@ -117,8 +120,6 @@ The different subclasses are characterized by four
     |           :py:class:`~._signals.eels.EELSSpectrum`            | spectrum  |     EELS      |       -       |  real   |
     +---------------------------------------------------------------+-----------+---------------+---------------+---------+
     |           :py:class:`~._signals.eds_sem.EDSSEMSpectrum`       | spectrum  |    EDS_SEM    |       -       |  real   |
-    +---------------------------------------------------------------+-----------+---------------+---------------+---------+
-    |           :py:class:`~._signals.eds_tem.EDSTEMSpectrum`       | spectrum  |    EDS_TEM    |       -       |  real   |
     +---------------------------------------------------------------+-----------+---------------+---------------+---------+
     |              :py:class:`~._signals.signal2d.Signal2D`         |   image   |       -       |       -       |  real   |
     +---------------------------------------------------------------+-----------+---------------+---------------+---------+

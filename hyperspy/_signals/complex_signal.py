@@ -18,6 +18,7 @@
 
 
 import numpy as np
+import h5py
 
 from hyperspy.signal import BaseSignal
 from hyperspy._signals.signal1d import Signal1D
@@ -103,10 +104,22 @@ class ComplexSignal(BaseSignal):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if 'complex' not in self.data.dtype.name:
-            if self.data.dtype.name.endswith('32'):
-                self.data = self.data.astype(np.complex64)
-            else:
-                self.data = self.data.astype(np.complex128)
+            self.data = self.data.astype(complex)
+
+    def change_dtype(self, dtype):
+        """Change the data type.
+
+        Parameters
+        ----------
+        dtype : str or dtype
+            Typecode or data-type to which the array is cast. For complex signals only other
+            complex dtypes are allowed. If real valued properties are required use `real`,
+            `imag`, `amplitude` and `phase` instead.
+        """
+        if 'complex' in dtype.name:
+            self.data = self.data.astype(dtype)
+        else:
+            raise AttributeError('Complex data can only be converted into other complex dtypes!')
 
     def angle(self, deg=False):
         """Return the angle (also known as phase or argument). If the data is real, the angle is 0

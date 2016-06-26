@@ -3,6 +3,23 @@ Dielectric function tools
 
 .. versionadded:: 0.7
 
+The :py:class:`~.signals.dielectric_function.DielectricFunction` class inherits from
+:py:class:`~.signals.complex_signal.ComplexSignal` and can thus access complex properties.
+To convert a :py:class:`~.signals.complex_signal.ComplexSignal` to a
+:py:class:`~.signals.dielectric_function.DielectricFunction`, make sure that the signal dimension
+and signyl type are properly set:
+
+    .. code-block:: python
+
+        >>> self.metadata.Signal.record_by = 'spectrum'
+        >>> s.set_signal_type('DielectricFunction')
+
+Note that a :py:class:`~._signals.dielectric_function.DielectricFunction` does not inherit from
+:py:class:`~._signals.signal1d.Signal1D`, because most functionality can not operate on complex
+data.
+
+
+
 Number of effective electrons
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
