@@ -61,6 +61,59 @@ class Test2D:
         s.crop(0, 2, 2.)
         np.testing.assert_array_almost_equal(s.data, d[2:4, :])
 
+    def test_crop_float_unit_convertion_signal1D(self):
+        # Should convert the unit to eV
+        d = np.arange(5*10*2000).reshape(5, 10, 2000)
+        s = signals.Signal1D(d)
+        s.axes_manager.signal_axes[0].name = "E"
+        s.axes_manager.signal_axes[0].scale = 0.05
+        s.axes_manager.signal_axes[0].units = "keV"
+        s.crop('E', 0.0, 1.0)
+        nt.assert_almost_equal(s.axes_manager.signal_axes[0].scale, 50.0)
+        nt.assert_equal(s.axes_manager.signal_axes[0].units, "eV")
+        np.testing.assert_allclose(s.data, d[:,:, :20])
+
+        # Should keep the unit to keV
+        s = signals.Signal1D(d)
+        s.axes_manager.signal_axes[0].name = "E"
+        s.axes_manager.signal_axes[0].scale = 0.05
+        s.axes_manager.signal_axes[0].units = "keV"
+        s.crop('E', 0.0, 50.0)
+        nt.assert_almost_equal(s.axes_manager.signal_axes[0].scale, 0.05)
+        nt.assert_equal(s.axes_manager.signal_axes[0].units, "keV")
+        np.testing.assert_allclose(s.data, d[:,:, :1000])
+        
+    def test_crop_float_unit_convertion_signal2D(self):
+        # Should convert the unit to nm
+        d = np.arange(512*512).reshape(512, 512)
+        s = signals.Signal2D(d)
+        s.axes_manager[0].name = 'x'
+        s.axes_manager[0].scale = 0.01
+        s.axes_manager[0].units = 'µm'
+        s.axes_manager[1].name = 'y'
+        s.axes_manager[1].scale = 0.01
+        s.axes_manager[1].units = 'µm'
+        s.crop(0, 0.0, 0.5)
+        s.crop(1, 0.0, 0.5)
+        nt.assert_almost_equal(s.axes_manager[0].scale, 10.0)
+        nt.assert_equal(s.axes_manager[0].units, "nm")
+        np.testing.assert_allclose(s.data, d[:50, :50])
+        
+        # Should keep the unit to µm
+        d = np.arange(512*512).reshape(512, 512)
+        s = signals.Signal2D(d)
+        s.axes_manager[0].name = 'x'
+        s.axes_manager[0].scale = 0.01
+        s.axes_manager[0].units = 'µm'
+        s.axes_manager[1].name = 'y'
+        s.axes_manager[1].scale = 0.01
+        s.axes_manager[1].units = 'µm'
+        s.crop(0, 0.0, 5.0)
+        s.crop(1, 0.0, 5.0)
+        nt.assert_almost_equal(s.axes_manager[0].scale, 0.01)
+        nt.assert_equal(s.axes_manager[0].units, "µm")
+        np.testing.assert_allclose(s.data, d[:500, :500])
+        
     def test_split_axis0(self):
         result = self.signal.split(0, 2)
         nt.assert_equal(len(result), 2)

@@ -2094,6 +2094,7 @@ class BaseSignal(FancySlicing,
         self.get_dimensions_from_data()
         self.squeeze()
         self.events.data_changed.trigger(obj=self)
+        self.axes_manager.convert_units()
 
     def swap_axes(self, axis1, axis2):
         """Swaps the axes.
