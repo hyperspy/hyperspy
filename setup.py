@@ -60,12 +60,12 @@ install_req = ['scipy',
                'dill',
                'h5py',
                'python-dateutil',
-               'ipyparallel']
+               'ipyparallel',
+               'pint>=7.0']
 
 #the hack to deal with setuptools + installing the package in ReadTheDoc:
 if 'readthedocs.org' in sys.executable:
     install_req = []
-
 
 def update_version(version):
     release_path = "hyperspy/Release.py"
