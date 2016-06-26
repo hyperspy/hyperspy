@@ -906,23 +906,6 @@ class AxesManager(t.HasTraits):
 
     def _on_offset_changed(self):
         self.events.any_axis_changed.trigger(obj=self)
-#
-#    def convert_to_convenient_scale_units(self, axes=None):
-#        """ Convert the scale and the units to the convenient scale and units 
-#            to avoid displaying scalebar with >3 digits or too small number.
-#        
-#        Parameters
-#        ----------
-#        axes: iterable of `DataAxis` instances. Default = None
-#            Convert to the convenient scale and units on the specified axis.
-#            If None, convert for all axes.
-#        """
-#        _logger.info('Axes manager: {}'.format(self))
-#        if axes is None:
-#            axes = self.navigation_axes + self.signal_axes
-#        for axis in axes:
-#            axis.convert_to_convenient_scale_units()        
-
 
     def convert_units(self, axes=None, units=None):
         """ Convert the scale and the units of the selected axes.
@@ -959,8 +942,6 @@ class AxesManager(t.HasTraits):
             for axis, units in zip(axes, units):
                 _logger.info('axis: {}, units: {}'.format(axis.name, units))
                 axis.convert_to_units(units)
-            
-        ### add functionality to convert to provided units
             
     def update_axes_attributes_from(self, axes,
                                     attributes=["scale", "offset", "units"]):
