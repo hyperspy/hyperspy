@@ -238,6 +238,24 @@ def test_read_FEI_SEM_scale_metadata_16bits():
     nt.assert_almost_equal(s.axes_manager[0].scale, 3.3724e-06, places=12)
     nt.assert_almost_equal(s.axes_manager[1].scale, 3.3724e-06, places=12)
     nt.assert_equal(s.data.dtype, 'uint16')
+
+def test_read_Zeiss_SEM_scale_metadata_1k_image():
+    fname = os.path.join(my_path2, 'test_tiff_Zeiss_SEM_1k.tif')
+    s = hs.load(fname)
+    nt.assert_equal(s.axes_manager[0].units, 'm')
+    nt.assert_equal(s.axes_manager[1].units, 'm')
+    nt.assert_almost_equal(s.axes_manager[0].scale, 2.614514e-06, places=12)
+    nt.assert_almost_equal(s.axes_manager[1].scale, 2.614514e-06, places=12)
+    nt.assert_equal(s.data.dtype, 'uint16')
+
+def test_read_Zeiss_SEM_scale_metadata_512_image():
+    fname = os.path.join(my_path2, 'test_tiff_Zeiss_SEM_512.tif')
+    s = hs.load(fname)
+    nt.assert_equal(s.axes_manager[0].units, 'm')
+    nt.assert_equal(s.axes_manager[1].units, 'm')
+    nt.assert_almost_equal(s.axes_manager[0].scale, 7.4240e-08, places=12)
+    nt.assert_almost_equal(s.axes_manager[1].scale, 7.4240e-08, places=12)
+    nt.assert_equal(s.data.dtype, 'uint16')
     
 def test_read_RGB_Zeiss_optical_scale_metadata():
     fname = os.path.join(my_path2, 'optical_Zeiss_AxioVision_RGB.tif')

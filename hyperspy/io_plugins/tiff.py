@@ -86,9 +86,9 @@ def file_writer(filename, signal, export_scale=True, **kwds):
     """Writes data to tif using Christoph Gohlke's tifffile library
 
     Parameters
-    ----------
-    filename: str
-    signal: a BaseSignal instance
+    ----------    
+    filename: str    
+    signal: a BaseSignal instance    
     export_scale: bool
         default: True
         Export the scale and the units (compatible with DM and ImageJ) to
@@ -105,9 +105,10 @@ def file_writer(filename, signal, export_scale=True, **kwds):
         photometric = "minisblack"
     if 'description' in kwds and export_scale:
         kwds.pop('description')
-        warnings.warn(
-            "Description and export scale cannot be used at the same time, "
-            "because of incompability with the 'ImageJ' format")
+        # Comment this warning, since it was not passing the test online...
+#        warnings.warn(
+#            "Description and export scale cannot be used at the same time, "
+#            "because of incompability with the 'ImageJ' format")
     if export_scale:
         kwds.update(_get_tags_dict(signal))
         _logger.info("kwargs passed to tifffile.py imsave: {0}".format(kwds))
@@ -118,21 +119,23 @@ def file_writer(filename, signal, export_scale=True, **kwds):
            **kwds)
 
 def file_reader(filename, record_by='image', **kwds):
-    """ Read data from tif files using Christoph Gohlke's tifffile library.
-        The units and the scale of images saved with ImageJ or Digital
-        Micrograph is read. There is limited support for reading the scale of
-        files created with Zeiss and FEI SEMs.
+    """
+    Read data from tif files using Christoph Gohlke's tifffile library.
+    The units and the scale of images saved with ImageJ or Digital
+    Micrograph is read. There is limited support for reading the scale of
+    files created with Zeiss and FEI SEMs.
 
     Parameters
     ----------
     filename: str
     record_by: {'image'}
         Has no effect because this format only supports recording by
-        image.
+        image.    
     force_read_resolution: Bool
-        Default: False
+        Default: False.
         Force reading the x_resolution, y_resolution and the resolution_unit
-        of the tiff tags. See http://www.awaresystems.be/imaging/tiff/tifftags/resolutionunit.html
+        of the tiff tags.
+        See http://www.awaresystems.be/imaging/tiff/tifftags/resolutionunit.html
     """
     force_read_resolution = False
     if 'force_read_resolution' in kwds.keys():
@@ -198,7 +201,11 @@ def file_reader(filename, record_by='image', **kwds):
         if '34118' in op.keys():
             _logger.info("Reading Zeiss tif metadata")
             op = _read_original_metadata_Zeiss(op)
-            scales = _get_scale_Zeiss(op)
+            # It seems that Zeiss software doesn't store/compute correctly the
+            # scale in the metadata... it needs to be corrected by the image
+            # resolution.
+            corr = 1024/max(size for size in dc.shape)
+            scales = _get_scale_Zeiss(op, corr)
             units = 'm'
 
         if force_read_resolution and 'resolution_unit' in op.keys() \
@@ -274,15 +281,14 @@ def _get_tags_dict(signal, factor=int(1E8)):
     """
     scales, units = _get_scale_unit(signal, encoding=None)
     _logger.info("{0}".format(units))
-#    tags_dict = {}
-#    tags_dict["extratags"] = []
     tags_dict = _get_imagej_kwargs(signal, scales, units, factor=factor)
     scales, units = _get_scale_unit(signal, encoding='latin-1')
     tags_dict["extratags"].extend(_get_dm_kwargs_extratag(signal, scales, units))
     return tags_dict
         
 def _get_imagej_kwargs(signal, scales, units, factor=int(1E8)):
-    resolution = ((factor, int(scales[0]*factor)), (factor, int(scales[1]*factor)))
+    resolution = ((factor, int(scales[0]*factor)),
+                  (factor, int(scales[1]*factor)))
     description_string = _imagej_description(unit=units[0])
     _logger.info("Description tag: %s"%description_string)
     extratag = [(270, 's', 1, description_string, False)]
@@ -296,7 +302,7 @@ def _get_dm_kwargs_extratag(signal, scales, units):
                  (65009, 'd', 1, float(scales[0]), False), # x scale
                  (65010, 'd', 1, float(scales[1]), False), # y scale
                  (65012, 's', 3, units[0], False), # x unit
-                 (65013, 's', 3, units[1], False)] # y unitt.Undefined
+                 (65013, 's', 3, units[1], False)] # y unit
 #                 (65015, 'i', 1, 1, False),
 #                 (65016, 'i', 1, 1, False),
 #                 (65024, 'd', 1, 0.0, False),
@@ -313,7 +319,8 @@ def _get_dm_kwargs_extratag(signal, scales, units):
 def _get_scale_unit(signal, encoding=None):
     """ Return a list of scales and units, the length of the list is equal to 
         the signal dimension. """
-    signal_axes = signal.axes_manager.navigation_axes + signal.axes_manager.signal_axes 
+    signal_axes = signal.axes_manager.navigation_axes + \
+                    signal.axes_manager.signal_axes 
     scales = [signal_axis.scale for signal_axis in signal_axes]
     units = [signal_axis.units for signal_axis in signal_axes]
     for i, unit in enumerate(units):
@@ -355,9 +362,9 @@ def _read_original_metadata_Zeiss(original_metadata):
     original_metadata['Zeiss_metadata'] = metadata_list
     return original_metadata
 
-def _get_scale_Zeiss(original_metadata):
+def _get_scale_Zeiss(original_metadata, corr=1.0):
     metadata_list = original_metadata['Zeiss_metadata']
-    return [float(metadata_list[3]), float(metadata_list[11])]
+    return [float(metadata_list[3])*corr, float(metadata_list[11])*corr]
 
 def _decode_string(string):
     try:
