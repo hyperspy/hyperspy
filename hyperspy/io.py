@@ -356,36 +356,12 @@ def assign_signal_subclass(dtype,
         # just record_by and dtype matches
         # Return a general class for the given signal dimension.
         # (There should be only one, but maybe worth checking?)
-        return [s for s in d_r_matches if s._signal_type == ""][0]
+        return [s for s in d_r_matches if s._signal_type == "" and s._signal_origin==""][0]
     else:
         # no record_by match either, hence return the general subclass for correct dtype
         # (There should be only one, but maybe worth checking?)
-        return [s for s in d_matches if s._record_by == ""][0]
-
-    # def recursive_filter(input_list, filter_tuples):
-    #     search_property, target_value, default_value = filter_tuples.pop(0)
-    #     indent = '-' * (4 - len(filter_tuples))
-    #     print(indent, search_property, ':', target_value)
-    #     selection = [s for s in input_list if getattr(s, search_property) == target_value]
-    #     print(indent, search_property, 'selection:', selection)
-    #     if not filter_tuples: # No filters left:
-    #         print(indent, 'This was the last filter! Return the selection!')
-    #         result = selection
-    #     else:  # There are filters left, so go deeper:
-    #         print(indent, 'Go deeper!')
-    #         print(indent, '==========================')
-    #         result = recursive_filter(selection, filter_tuples)
-    #         if not result:  # The filter didn't find matches, return default of search_property:
-    #             print(indent, 'No match found! Return default of', search_property)
-    #             result = [s for s in input_list if getattr(s, search_property) == default_value]
-    #     print(indent, result)
-    #     return result
-    #
-    # filter_tuples = [('_dtype', dtype, 'real'),
-    #                  ('_record_by', record_by, ''),
-    #                  ('_signal_type', signal_type, ''),
-    #                  ('_signal_origin', signal_origin, '')]
-    # return recursive_filter(signals.values(), filter_tuples)[0]
+        return [s for s in d_matches if s._record_by == ""
+               and s._signal_type == "" and s._signal_origin==""][0]
 
 
 def dict2signal(signal_dict):

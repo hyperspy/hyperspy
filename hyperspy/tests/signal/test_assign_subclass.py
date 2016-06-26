@@ -106,6 +106,22 @@ def test_complex_image():
         signal_origin="") is
                 hs.signals.ComplexSignal)
 
+def test_weird_real():
+    assert_true(assign_signal_subclass(
+        dtype=np.dtype('float'),
+        record_by="",
+        signal_type="weird",
+        signal_origin="") is
+                hs.signals.BaseSignal)
+
+def test_weird_complex():
+    assert_true(assign_signal_subclass(
+        dtype=np.dtype('complex'),
+        record_by="",
+        signal_type="weird",
+        signal_origin="") is
+                hs.signals.ComplexSignal)
+
 
 class TestSignalAssignSubclass:
 
