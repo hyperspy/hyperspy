@@ -149,8 +149,8 @@ class TestConvertBaseSignal:
     def test_base_to_complex(self):
         self.s.change_dtype(complex)
         assert_true(isinstance(self.s, hs.signals.ComplexSignal))
-        self.s.change_dtype(float)
-        assert_true(isinstance(self.s, hs.signals.BaseSignal))
+        # Going back from ComplexSignal to BaseSignal is not possible!
+        # If real data is required use `real`, `imag`, `amplitude` or `phase`!
 
     def test_base_to_simulation(self):
         self.s.set_signal_origin("simulation")

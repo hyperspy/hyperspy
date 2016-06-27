@@ -106,6 +106,21 @@ class ComplexSignal(BaseSignal):
         if 'complex' not in self.data.dtype.name:
             self.data = self.data.astype(complex)
 
+    def change_dtype(self, dtype):
+        """Change the data type.
+
+        Parameters
+        ----------
+        dtype : str or dtype
+            Typecode or data-type to which the array is cast. For complex signals only other
+            complex dtypes are allowed. If real valued properties are required use `real`,
+            `imag`, `amplitude` and `phase` instead.
+        """
+        if 'complex' in dtype.name:
+            self.data = self.data.astype(dtype)
+        else:
+            raise AttributeError('Complex data can only be converted into other complex dtypes!')
+
     def angle(self, deg=False):
         """Return the angle (also known as phase or argument). If the data is real, the angle is 0
         for positive values and 2$\pi$ for negative values.
