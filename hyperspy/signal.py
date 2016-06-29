@@ -275,8 +275,7 @@ class MVATools(object):
                         vector_scale=1,
                         no_nans=True, per_row=3):
 
-        from hyperspy._signals.image import Image
-        from hyperspy._signals.spectrum import Spectrum
+        from hyperspy.signals import Spectrum, Image
 
         if multiple_files is None:
             multiple_files = preferences.MachineLearning.multiple_files
@@ -423,8 +422,7 @@ class MVATools(object):
                          no_nans=True,
                          per_row=3):
 
-        from hyperspy._signals.image import Image
-        from hyperspy._signals.spectrum import Spectrum
+        from hyperspy.signals import Image, Spectrum
 
         if multiple_files is None:
             multiple_files = preferences.MachineLearning.multiple_files
