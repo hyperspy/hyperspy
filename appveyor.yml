@@ -131,5 +131,6 @@ deploy:
   #artifact: win_wheels
   draft: false
   prerelease: false
+  force_update: true
   on:
     appveyor_repo_tag: true        # deploy on tag push only
