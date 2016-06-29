@@ -324,6 +324,6 @@ with update_version_when_dev() as version:
             "Natural Language :: English",
             "Operating System :: OS Independent",
             "Topic :: Scientific/Engineering",
-            "Topic :: Scientific/Engineering :: Physics"
+            "Topic :: Scientific/Engineering :: Physics",
         ],
     )
