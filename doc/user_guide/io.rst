@@ -18,14 +18,14 @@ image lena.jpg you can type:
 .. code-block:: python
 
     >>> s = hs.load("lena.jpg")
-    
+
 If the loading was successful, the variable :guilabel:`s` contains a generic
-:py:class:`~.signal.Signal`, a :py:class:`~._signals.spectrum.Spectrum` or an
-:py:class:`~._signals.image.Image`.
+:py:class:`~.signal.BaseSignal`, a :py:class:`~._signals.signal1d.Signal1D` or an
+:py:class:`~._signals.signal2d.Signal2D`.
 
 .. NOTE::
     Note for python programmers: the data is stored in a numpy array
-    in the :py:attr:`~.signal.Signal.data` attribute, but you will not   
+    in the :py:attr:`~.signal.BaseSignal.data` attribute, but you will not
     normally need to access it there.)
 
 
@@ -40,10 +40,10 @@ providing the ``signal`` keyword, which has to be one of: ``spectrum``,
 
 Some file formats store some extra information about the data, which can be
 stored in "attributes". If HyperSpy manages to read some extra information
-about the data it stores it in :py:attr:`~.signal.Signal.original_metadata`
+about the data it stores it in :py:attr:`~.signal.BaseSignal.original_metadata`
 attribute. Also, it is possible that other information will be mapped by
 HyperSpy to a standard location where it can be used by some standard routines,
-the :py:attr:`~.signal.Signal.metadata` attribute.
+the :py:attr:`~.signal.BaseSignal.metadata` attribute.
 
 To print the content of the parameters simply:
 
@@ -52,12 +52,12 @@ To print the content of the parameters simply:
     >>> s.metadata
 
 
-The :py:attr:`~.signal.Signal.original_metadata` and
-:py:attr:`~.signal.Signal.metadata` can be exported to  text files
+The :py:attr:`~.signal.BaseSignal.original_metadata` and
+:py:attr:`~.signal.BaseSignal.metadata` can be exported to  text files
 using the :py:meth:`~.misc.utils.DictionaryTreeBrowser.export` method, e.g.:
 
 .. code-block:: python
-    
+
     >>> s.original_metadata.export('parameters')
 
 Loading multiple files
@@ -70,7 +70,7 @@ functions, e.g.:
 .. code-block:: python
 
     >>> s = hs.load(["file1.hdf5", "file2.hdf5"])
-    
+
 or by using `shell-style wildcards <http://docs.python.org/library/glob.html>`_
 
 
@@ -89,10 +89,10 @@ which case the function will return a list of objects, e.g.:
     CL1.rpl  CL2.raw   CL3.raw  CL4.raw  hdf5/    LL3.rpl
     >>> s = hs.load('*.rpl')
     >>> s
-    [<EELSSpectrum, title: CL1, dimensions: (64, 64, 1024)>,     
-    <EELSSpectrum, title: CL2, dimensions: (64, 64, 1024)>, 
-    <EELSSpectrum, title: CL3, dimensions: (64, 64, 1024)>, 
-    <EELSSpectrum, title: CL4, dimensions: (64, 64, 1024)>, 
+    [<EELSSpectrum, title: CL1, dimensions: (64, 64, 1024)>,
+    <EELSSpectrum, title: CL2, dimensions: (64, 64, 1024)>,
+    <EELSSpectrum, title: CL3, dimensions: (64, 64, 1024)>,
+    <EELSSpectrum, title: CL4, dimensions: (64, 64, 1024)>,
     <EELSSpectrum, title: LL3, dimensions: (64, 64, 1024)>]
     >>> s = hs.load('*.rpl', stack=True)
     >>> s
@@ -104,18 +104,18 @@ which case the function will return a list of objects, e.g.:
 Saving data to files
 ====================
 
-To save data to a file use the :py:meth:`~.signal.Signal.save` method. The
+To save data to a file use the :py:meth:`~.signal.BaseSignal.save` method. The
 first argument is the filename and the format is defined by the filename
 extension. If the filename does not contain the extension the default format
 (:ref:`hdf5-format`) is used. For example, if the :py:const:`s` variable
-contains the :py:class:`~.signal.Signal` that you want to write to a file, the
+contains the :py:class:`~.signal.BaseSignal` that you want to write to a file, the
 following will write the data to a file called :file:`spectrum.hdf5` in the
 default :ref:`hdf5-format` format:
 
 .. code-block:: python
 
     >>> s.save('spectrum')
-    
+
 If instead you want to save in the :ref:`ripple-format` write instead:
 
 .. code-block:: python
@@ -148,7 +148,7 @@ HyperSpy.
     +--------------------+-----------+----------+
     | HDF5               |    Yes    |    Yes   |
     +--------------------+-----------+----------+
-    | Image: jpg..       |    Yes    |    Yes   |
+    | Signal2D: jpg..       |    Yes    |    Yes   |
     +--------------------+-----------+----------+
     | TIFF               |    Yes    |    Yes   |
     +--------------------+-----------+----------+
@@ -184,8 +184,8 @@ applications
 Note that only HDF5 files written by HyperSpy are supported
 
 .. versionadded:: 0.8
-    
-It is also possible to save more complex structures (i.e. lists, tuples and signals) in 
+
+It is also possible to save more complex structures (i.e. lists, tuples and signals) in
 :py:attr:`~.metadata` of the signal. Please note that in order to increase
 saving efficiency and speed, if possible, the inner-most structures are
 converted to numpy arrays when saved. This procedure homogenizes any types of
@@ -215,12 +215,12 @@ intensity<get_lines_intensity>`):
 
     >>> s_new = hs.load('EDS_spectrum.hdf5')
     >>> s_new.metadata.Sample.intensities
-    [<Signal, title: X-ray line intensity of EDS SEM Spectrum: Al_Ka at 1.49 keV, dimensions: (|)>,
-     <Signal, title: X-ray line intensity of EDS SEM Spectrum: C_Ka at 0.28 keV, dimensions: (|)>,
-     <Signal, title: X-ray line intensity of EDS SEM Spectrum: Cu_La at 0.93 keV, dimensions: (|)>,
-     <Signal, title: X-ray line intensity of EDS SEM Spectrum: Mn_La at 0.63 keV, dimensions: (|)>,
-     <Signal, title: X-ray line intensity of EDS SEM Spectrum: Zr_La at 2.04 keV, dimensions: (|)>]
-        
+    [<BaseSignal, title: X-ray line intensity of EDS SEM Signal1D: Al_Ka at 1.49 keV, dimensions: (|)>,
+     <BaseSignal, title: X-ray line intensity of EDS SEM Signal1D: C_Ka at 0.28 keV, dimensions: (|)>,
+     <BaseSignal, title: X-ray line intensity of EDS SEM Signal1D: Cu_La at 0.93 keV, dimensions: (|)>,
+     <BaseSignal, title: X-ray line intensity of EDS SEM Signal1D: Mn_La at 0.63 keV, dimensions: (|)>,
+     <BaseSignal, title: X-ray line intensity of EDS SEM Signal1D: Zr_La at 2.04 keV, dimensions: (|)>]
+
 
 
 Extra saving arguments
@@ -275,14 +275,14 @@ For the MSA format the msa_format argument is used to specify whether the
 energy axis should also be saved with the data.  The default, 'Y' omits the
 energy axis in the file.  The alternative, 'XY', saves a second column with the
 calibrated energy data. It  is possible to personalise the separator with the
-`separator` keyword. 
+`separator` keyword.
 
 .. Warning::
 
     However, if a different separator is chosen the resulting file will not
     comply with the MSA/EMSA standard and HyperSpy and other software may not
     be able to read it.
-    
+
 The default encoding is `latin-1`. It is possible to set a different encoding
 using the `encoding` argument, e.g.:
 
@@ -317,7 +317,7 @@ Images
 ------
 
 HyperSpy is able to read and write data too all the image formats supported by
-`the Python Image Library <http://www.pythonware.com/products/pil/>`_ (PIL).
+`the Python Signal2D Library <http://www.pythonware.com/products/pil/>`_ (PIL).
 This includes png, pdf, gif etc.
 
 It is important to note that these image formats only support 8-bit files, and
@@ -327,7 +327,7 @@ exception of :ref:`tiff-format` which uses another library) to store data for
 analysis purposes.
 
 .. _tiff-format:
-    
+
 TIFF
 ----
 
@@ -341,7 +341,7 @@ bio-scientific imaging. See `the library webpage
 
 Currently HyperSpy cannot read the TIFF tags.
 
- 
+
 .. _dm3-format:
 
 Gatan Digital Micrograph
@@ -352,7 +352,7 @@ complete (and probably they will be unless Gatan releases the specifications of
 the format). That said, we understand that this is an important feature and if
 loading a particular Digital Micrograph file fails for you, please report it as
 an issue in the `issues tracker <github.com/hyperspy/hyperspy/issues>`_ to make
-us aware of the problem. 
+us aware of the problem.
 
 .. _fei-format:
 
@@ -383,7 +383,7 @@ suitable for applications in electron microscopy developed by Owen Saxton (see
 DOI: 10.1016/S0304-3991(79)80044-3 for more information).The unf format is a
 binary format with an extensive header for up to 3 dimensional data.
 HyperSpy can read and write unf-files and will try to convert the data into a
-fitting Signal subclass, based on the information stored in the label.
+fitting BaseSignal subclass, based on the information stored in the label.
 Currently version 7 of the format should be fully supported.
 
 .. _blockfile-format:
@@ -396,14 +396,14 @@ It is used to store a series of diffraction patterns from scanning precession
 electron difraction (SPED) measurements, with a limited set of metadata. The
 header of the blockfile contains information about centering and distortions
 of the diffraction patterns, but is not applied to the signal during reading.
-Blockfiles only support data values of type 
+Blockfiles only support data values of type
 `np.uint8 <http://docs.scipy.org/doc/numpy/user/basics.types.html>`_ (integers
 in range 0-255).
 
 .. warning::
 
    While Blockfiles are supported, it is a proprietary format, and future
-   versions of the format might therefore not be readable. Complete 
+   versions of the format might therefore not be readable. Complete
    interoperability with the official software can neither be guaranteed.
 
 Blockfiles are by default loaded into memory, but can instead be loaded in a
@@ -419,16 +419,16 @@ Examples of ways of loading:
     >>> hs.load('file.blo')     # Default loading, equivalent to the next line
     >>> hs.load('file.blo', load_to_memory=True)    # Load directly to memory
     >>> # Default memmap loading:
-    >>> hs.load('file.blo', load_to_memory=False, mmap_mode='c') 
+    >>> hs.load('file.blo', load_to_memory=False, mmap_mode='c')
 
     >>> # Loads data read only:
     >>> hs.load('file.blo', load_to_memory=False, mmap_mode='r')
     >>> # Loads data read/write:
     >>> hs.load('file.blo', load_to_memory=False, mmap_mode='r+')
 
-By loading the data read/write, any changes to the original data array will be 
+By loading the data read/write, any changes to the original data array will be
 written to disk. The data is written when the original data array is deleted,
-or when :py:meth:`Signal.data.flush() <http://docs.scipy.org/doc/numpy/reference/generated/numpy.memmap.flush.html>`_
+or when :py:meth:`BaseSignal.data.flush() <http://docs.scipy.org/doc/numpy/reference/generated/numpy.memmap.flush.html>`_
 is called.
 
 
@@ -452,7 +452,7 @@ EMD Electron Microscopy Datasets (HDF5)
 EMD stands for “Electron Microscopy Dataset.” It is a subset of the open source
 HDF5 wrapper format. N-dimensional data arrays of any standard type can be stored
 in an HDF5 file, as well as tags and other metadata.
-The EMD format was developed at Lawrence Berkeley National Lab 
+The EMD format was developed at Lawrence Berkeley National Lab
 (see http://emdatasets.lbl.gov/ for more information).
 NOT to be confused with the FEI EMD format which was developed later and has a
 different structure.

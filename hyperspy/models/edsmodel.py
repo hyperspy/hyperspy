@@ -25,7 +25,7 @@ import logging
 
 from hyperspy.misc.utils import stash_active_state
 
-from hyperspy.models.model1D import Model1D
+from hyperspy.models.model1d import Model1D
 from hyperspy._signals.eds import EDSSpectrum
 from hyperspy.misc.elements import elements as elements_db
 from hyperspy.misc.eds import utils as utils_eds
@@ -98,7 +98,7 @@ def _get_scale(E1, E_ref1, fact):
 
 class EDSModel(Model1D):
 
-    """Build and fit a model of an EDS Spectrum.
+    """Build and fit a model of an EDS Signal1D.
 
     Parameters
     ----------
@@ -849,7 +849,7 @@ class EDSModel(Model1D):
                  self.signal.axes_manager.signal_axes[0].units,
                  self.signal.metadata.General.title))
             if img.axes_manager.navigation_dimension >= 2:
-                img = img.as_image([0, 1])
+                img = img.as_signal2D([0, 1])
             elif img.axes_manager.navigation_dimension == 1:
                 img.axes_manager.set_signal_dimension(1)
             if plot_result and img.axes_manager.signal_dimension == 0:
