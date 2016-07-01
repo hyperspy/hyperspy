@@ -626,7 +626,7 @@ class Signal1DTools(object):
         SignalDimensionError if the signal dimension is not 1.
         """
         self._check_signal_dimension_equals_one()
-        calibration = SpectrumCalibration(self)
+        calibration = Signal1DCalibration(self)
         calibration.edit_traits()
 
     def smooth_savitzky_golay(self,
