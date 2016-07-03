@@ -767,14 +767,14 @@ class Signal1DTools(object):
             self, signal_range, background_estimator, fast=True,
             show_progressbar=None):
         from hyperspy.models.model1d import Model1D
-        model = self.create_model() 
+        model = self.create_model()
         model.append(background_estimator)
         background_estimator.estimate_parameters(
             self,
             signal_range[0],
             signal_range[1],
             only_current=False)
-        if not fast: 
+        if not fast:
             model.set_signal_range(signal_range[0], signal_range[1])
             model.multifit(show_progressbar=show_progressbar)
         return self - model.as_signal(show_progressbar=show_progressbar)
