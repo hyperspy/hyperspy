@@ -57,6 +57,7 @@ from hyperspy.misc.signal_tools import are_signals_aligned
 
 _logger = logging.getLogger(__name__)
 
+
 class ModelManager(object):
 
     """Container for models
