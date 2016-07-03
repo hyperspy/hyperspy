@@ -27,7 +27,7 @@ class MPL_HyperImage_Explorer(MPL_HyperExplorer):
                     scalebar=True,
                     scalebar_color="white",
                     axes_ticks=None,
-                    saturated_pixels=0.2,
+                    saturated_pixels=0,
                     vmin=None,
                     vmax=None,
                     no_nans=False,
