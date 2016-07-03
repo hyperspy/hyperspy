@@ -135,4 +135,3 @@ class Signal(BaseSignal,
 del DataDimensionError
 del Signal1DTools
 del Signal2DTools
-del warnings
