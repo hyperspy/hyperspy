@@ -135,7 +135,7 @@ contrast controls are HyperSpy-specific, however `matplotlib.imshow
 
     >>> import scipy
     >>> img = hs.signals.Signal2D(scipy.misc.lena())
-    >>> img.plot(colorbar=True, scalebar=False, auto_contrast=True,
+    >>> img.plot(colorbar=True, scalebar=False,
     >>> 	 axes_ticks=True, cmap='RdYlBu_r', saturated_pixels=0)
 
 
