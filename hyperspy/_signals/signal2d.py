@@ -663,5 +663,3 @@ class Signal2D(BaseSignal):
         self.crop(self.axes_manager.signal_axes[0].index_in_axes_manager,
                   left,
                   right)
-
-

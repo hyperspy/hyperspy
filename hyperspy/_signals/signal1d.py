@@ -220,7 +220,6 @@ def interpolate1D(number_of_interpolation_points, data):
     return interpolator(new_ax)
 
 
-
 class Signal1D(BaseSignal):
 
     """
@@ -1244,5 +1243,3 @@ class Signal1D(BaseSignal):
             return [width, left, right]
         else:
             return width
-
-
