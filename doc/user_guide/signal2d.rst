@@ -2,7 +2,7 @@
 Signal2D Tools
 **************
 
-The methods described in this section are only available for one-dimensional signals in the Signal1D class.
+The methods described in this section are only available for two-dimensional signals in the Signal2D class.
 
 Two dimensional signal registration (alignment)
 -----------------------------------------------
@@ -72,7 +72,7 @@ These methods are essentially wrappers around the
 .org/docs/dev/auto_examples/plot_blob.html>`_ Laplacian
 of Gaussian and Difference of Gaussian methods, based on stacking the
 Laplacian/difference of images convolved with Gaussian kernels of various
-standard deviations. Both are relatively rapid and very robust, given
+standard deviations. Both are very rapid and relatively robust, given
 appropriate parameters.
 
 Interactive Parametrization
