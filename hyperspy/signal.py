@@ -57,7 +57,6 @@ from hyperspy.misc.signal_tools import are_signals_aligned
 
 _logger = logging.getLogger(__name__)
 
-
 class ModelManager(object):
 
     """Container for models
@@ -1774,6 +1773,43 @@ class BaseSignal(FancySlicing,
         if (self._signal_type or
                 not self.metadata.has_item("Signal.signal_type")):
             self.metadata.Signal.signal_type = self._signal_type
+
+    def __array__(self, dtype=None):
+        if dtype:
+            return self.data.astype(dtype)
+        else:
+            return self.data
+
+    def __array_wrap__(self, array, context=None):
+
+        signal = self._deepcopy_with_new_data(array)
+        if context is not None:
+            # ufunc, argument of the ufunc, domain of the ufunc
+            # In ufuncs with multiple outputs, domain indicates which output
+            # is currently being prepared (eg. see modf).
+            # In ufuncs with a single output, domain is 0
+            uf, objs, huh = context
+
+            def get_title(signal, i=0):
+                g = signal.metadata.General
+                if g.title:
+                    return g.title
+                else:
+                    return "Untitled Signal %s" % (i + 1)
+
+            title_strs = []
+            i = 0
+            for obj in objs:
+                if isinstance(obj, BaseSignal):
+                    title_strs.append(get_title(obj, i))
+                    i += 1
+                else:
+                    title_strs.append(str(obj))
+
+            signal.metadata.General.title = "%s(%s)" % (
+                uf.__name__, ", ".join(title_strs))
+
+        return signal
 
     def squeeze(self):
         """Remove single-dimensional entries from the shape of an array
