@@ -1026,20 +1026,22 @@ class AxesManager(t.HasTraits):
     def __repr__(self):
         text = ('<Axes manager, axes: %s>\n' %
                 self._get_dimension_str())
-        ax_signature = "% 16s | %6g | %6s | %6g | %6g | %6s "
-        signature = "% 16s | %6s | %6s | %6s | %6s | %6s "
+        ax_signature = "% 16s | %6g | %6s | %7.2g | %7.2g | %6s "
+        signature = "% 16s | %6s | %6s | %7s | %7s | %6s "
         text += signature % ('Name', 'size', 'index', 'offset', 'scale',
                              'units')
         text += '\n'
-        text += signature % ('='*16, '='*6, '='*6, '='*6, '='*6, '='*6)
+        text += signature % ('=' * 16, '=' * 6, '=' * 6,
+                             '=' * 7, '=' * 7, '=' * 6)
         for ax in self.navigation_axes:
-            text +='\n'
+            text += '\n'
             text += ax_signature % (str(ax.name)[:16], ax.size, str(ax.index),
                                     ax.offset, ax.scale, ax.units)
         text += '\n'
-        text += signature % ('-'*16, '-'*6, '-'*6, '-'*6, '-'*6, '-'*6)
+        text += signature % ('-' * 16, '-' * 6, '-' * 6,
+                             '-' * 7, '-' * 7, '-' * 6)
         for ax in self.signal_axes:
-            text +='\n'
+            text += '\n'
             text += ax_signature % (str(ax.name)[:16], ax.size, ' ', ax.offset,
                                     ax.scale, ax.units)
 
