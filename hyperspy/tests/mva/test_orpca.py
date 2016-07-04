@@ -21,18 +21,15 @@ class TestORPCA:
         # Define shape etc.
         m = 128  # Dimensionality
         n = 1024 # Number of samples
-        r = 5
-        s = 0.1
-
-        # Random seed
-        self.seed = 123
+        r = 3
+        s = 0.01
 
         # Low-rank and sparse error matrices
-        np.random.seed(self.seed)
-        U = scipy.linalg.orth(np.random.randn(m, r))
-        V = np.random.randn(n, r)
+        rng = np.random.RandomState(101)
+        U = scipy.linalg.orth(rng.randn(m, r))
+        V = rng.randn(n, r)
         A = np.dot(U, V.T)
-        E = 1000 * np.random.binomial(1, s, (m, n))
+        E = 100 * rng.binomial(1, s, (m, n))
         X = A + E
 
         self.m = m
@@ -45,68 +42,68 @@ class TestORPCA:
         self.E = E
         self.X = X
 
+        # Test tolerance
+        self.tol = 1e-3
+
     def test_default(self):
-        L, R, E, U, S, V = orpca(self.X, rank=self.rank, seed=self.seed)
+        L, R, E, U, S, V = orpca(self.X, rank=self.rank)
 
         # Check the low-rank component
         normA = np.linalg.norm(np.dot(L, R) - self.A) / (self.m * self.n)
-        nt.assert_true(normA < 1e-4)
+        nt.assert_true(normA < self.tol)
 
         # Check the error component
         normE = np.linalg.norm(E - self.E) / (self.m * self.n)
-        nt.assert_true(normE < 1e-4)
+        nt.assert_true(normE < self.tol)
 
 
         # Check the expressed variance of the
         # recovered subspace
-        nt.assert_true(_ev(self.U, L, 1e-4))
+        nt.assert_true(_ev(self.U, L, self.tol))
 
     def test_mask(self):
         L, R, E, U, S, V = orpca(self.X, rank=self.rank,
-                                 mask=self.E,
-                                 seed=self.seed)
+                                 mask=self.E)
 
         # Check the low-rank component
         normA = np.linalg.norm(np.dot(L, R) - self.A) / (self.m * self.n)
-        nt.assert_true(normA < 1e-4)
+        nt.assert_true(normA < self.tol)
 
         # Check the error component
         normE = np.linalg.norm(E - self.E) / (self.m * self.n)
-        nt.assert_true(normE < 1e-4)
+        nt.assert_true(normE < self.tol)
 
         # Check the expressed variance of the
         # recovered subspace
-        nt.assert_true(_ev(self.U, L, 1e-4))
+        nt.assert_true(_ev(self.U, L, self.tol))
 
     def test_regularization(self):
         L, R, E, U, S, V = orpca(self.X, rank=self.rank,
-                                 lambda1=self.lambda1, lambda2=self.lambda2,
-                                 seed=self.seed)
+                                 lambda1=self.lambda1, lambda2=self.lambda2)
 
         # Check the low-rank component
         normA = np.linalg.norm(np.dot(L, R) - self.A) / (self.m * self.n)
-        nt.assert_true(normA < 1e-4)
+        nt.assert_true(normA < self.tol)
 
         # Check the error component
         normE = np.linalg.norm(E - self.E) / (self.m * self.n)
-        nt.assert_true(normE < 1e-4)
+        nt.assert_true(normE < self.tol)
 
         # Check the expressed variance of the
         # recovered subspace
-        nt.assert_true(_ev(self.U, L, 1e-4))
+        nt.assert_true(_ev(self.U, L, self.tol))
 
     def test_method(self):
-        L, R, E, U, S, V = orpca(self.X, rank=self.rank, method='BCD',
-                                 seed=self.seed)
+        L, R, E, U, S, V = orpca(self.X, rank=self.rank, method='BCD')
 
         #  Check the low-rank component
         normA = np.linalg.norm(np.dot(L, R) - self.A) / (self.m * self.n)
-        nt.assert_true(normA < 1e-4)
+        nt.assert_true(normA < self.tol)
 
         # Check the error component
         normE = np.linalg.norm(E - self.E) / (self.m * self.n)
-        nt.assert_true(normE < 1e-4)
+        nt.assert_true(normE < self.tol)
 
         # Check the expressed variance of the
         # recovered subspace
-        nt.assert_true(_ev(self.U, L, 1e-4))
+        nt.assert_true(_ev(self.U, L, self.tol))
