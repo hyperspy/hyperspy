@@ -282,7 +282,6 @@ class ImagePlot(BlittedFigure):
             marker.axes_manager = self.axes_manager
         self.ax_markers.append(marker)
 
-
     def update(self, **kwargs):
         ims = self.ax.images
         # update extent:

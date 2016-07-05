@@ -804,7 +804,7 @@ def plot_images(images,
 
             if not isinstance(aspect, (int, float)) and aspect not in [
                     'auto', 'square', 'equal']:
-                print('Did not understand aspect ratio input. ' \
+                print('Did not understand aspect ratio input. '
                       'Using \'auto\' as default.')
                 aspect = 'auto'
 

@@ -522,7 +522,6 @@ class BaseModel(list):
                             values[maxmask] = bmax
                         param.value = tuple(values)
 
-
     def store_current_values(self):
         """ Store the parameters of the current coordinates into the
         parameters array.
