@@ -886,18 +886,17 @@ class Signal1D(BaseSignal):
             smoother.edit_traits()
 
     def _remove_background_cli(
-            self, signal_range, background_estimator, estimate_background=True,
+            self, signal_range, background_estimator, fast=True,
             show_progressbar=None):
         from hyperspy.models.model1d import Model1D
-        model = Model1D(self)
+        model = self.create_model()
         model.append(background_estimator)
-        if estimate_background:
-            background_estimator.estimate_parameters(
-                self,
-                signal_range[0],
-                signal_range[1],
-                only_current=False)
-        else:
+        background_estimator.estimate_parameters(
+            self,
+            signal_range[0],
+            signal_range[1],
+            only_current=False)
+        if not fast:
             model.set_signal_range(signal_range[0], signal_range[1])
             model.multifit(show_progressbar=show_progressbar)
         return self - model.as_signal(show_progressbar=show_progressbar)
@@ -907,7 +906,7 @@ class Signal1D(BaseSignal):
             signal_range='interactive',
             background_type='PowerLaw',
             polynomial_order=2,
-            estimate_background=True,
+            fast=True,
             show_progressbar=None):
         """Remove the background, either in place using a gui or returned as a new
         spectrum using the command line.
@@ -923,9 +922,10 @@ class Signal1D(BaseSignal):
             If Polynomial is used, the polynomial order can be specified
         polynomial_order : int, default 2
             Specify the polynomial order if a Polynomial background is used.
-        estimate_background : bool
-            If True, estimate the background. If False, the signal is fitted
-            using a full model. This is slower compared to the estimation but
+        fast : bool
+            If True, perform an approximative estimation of the parameters.
+            If False, the signal is fitted using non-linear least squares
+            afterwards.This is slower compared to the estimation but
             possibly more accurate.
         show_progressbar : None or bool
             If True, display a progress bar. If None the default is set in
@@ -937,7 +937,7 @@ class Signal1D(BaseSignal):
         Using command line, returns a spectrum
         >>>> s = s.remove_background(signal_range=(400,450), background_type='PowerLaw')
         Using a full model to fit the background
-        >>>> s = s.remove_background(signal_range=(400,450), estimate_background=False)
+        >>>> s = s.remove_background(signal_range=(400,450), fast=False)
         Raises
         ------
         SignalDimensionError if the signal dimension is not 1.
@@ -962,7 +962,9 @@ class Signal1D(BaseSignal):
                     " not recognized")
 
             spectra = self._remove_background_cli(
-                signal_range, background_estimator, estimate_background,
+                signal_range=signal_range,
+                background_estimator=background_estimator,
+                fast=fast,
                 show_progressbar=show_progressbar)
             return spectra
 
