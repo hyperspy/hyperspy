@@ -223,7 +223,6 @@ class Signal2D(BaseSignal):
              scalebar=True,
              scalebar_color="white",
              axes_ticks=None,
-             auto_contrast=True,
              saturated_pixels=0,
              vmin=None,
              vmax=None,
@@ -288,9 +287,6 @@ class Signal2D(BaseSignal):
             If True, plot the axes ticks. If None axes_ticks are only
             plotted when the scale bar is not plotted. If False the axes ticks
             are never plotted.
-        auto_contrast : bool, optional
-            If True, the contrast is stretched for each image using the
-            `saturated_pixels` value. Default True.
         saturated_pixels: scalar
             The percentage of pixels that are left out of the bounds.
             For example, the low and high bounds of a value of 1 are the 0.5%
@@ -314,7 +310,6 @@ class Signal2D(BaseSignal):
             scalebar=scalebar,
             scalebar_color=scalebar_color,
             axes_ticks=axes_ticks,
-            auto_contrast=auto_contrast,
             saturated_pixels=saturated_pixels,
             vmin=vmin,
             vmax=vmax,
@@ -663,3 +658,4 @@ class Signal2D(BaseSignal):
         self.crop(self.axes_manager.signal_axes[0].index_in_axes_manager,
                   left,
                   right)
+

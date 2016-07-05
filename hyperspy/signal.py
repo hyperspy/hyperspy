@@ -3415,9 +3415,13 @@ class BaseSignal(FancySlicing,
                     "It is only possibile to change to %s." %
                     ddtype)
             self.data = rgb_tools.rgbx2regular_array(self.data)
-            self.get_dimensions_from_data()
+            self.axes_manager._append_axis(
+                size=self.data.shape[-1],
+                scale=1,
+                offset=0,
+                name="RGB index",
+                navigate=False,)
             self.metadata.Signal.record_by = "spectrum"
-            self.axes_manager[-1 + 2j].name = "RGB index"
             self._assign_subclass()
             return
         else:

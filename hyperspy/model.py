@@ -514,11 +514,14 @@ class BaseModel(list):
                                 param.value = bmax
                     else:
                         values = np.array(param.value)
-                        minmask = values < bmin
-                        maxmask = values > bmax
-                        values[maxmask] = bmax
-                        values[minmask] = bmin
+                        if param.bmin is not None:
+                            minmask = values < bmin
+                            values[minmask] = bmin
+                        if param.bmax is not None:
+                            maxmask = values > bmax
+                            values[maxmask] = bmax
                         param.value = tuple(values)
+
 
     def store_current_values(self):
         """ Store the parameters of the current coordinates into the
