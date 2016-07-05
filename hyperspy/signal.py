@@ -57,6 +57,7 @@ from hyperspy.misc.signal_tools import are_signals_aligned
 
 _logger = logging.getLogger(__name__)
 
+
 class ModelManager(object):
 
     """Container for models
@@ -2144,9 +2145,9 @@ class BaseSignal(FancySlicing,
 
         if i1 is not None:
             axis.offset = new_offset
-        self.events.data_changed.trigger(obj=self)
         self.get_dimensions_from_data()
         self.squeeze()
+        self.events.data_changed.trigger(obj=self)
 
     def swap_axes(self, axis1, axis2):
         """Swaps the axes.
