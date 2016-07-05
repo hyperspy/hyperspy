@@ -22,6 +22,7 @@ import scipy as sp
 from scipy.fftpack import fftn, ifftn
 import matplotlib.pyplot as plt
 import warnings
+from hyperspy.misc.hspy_warnings import VisibleDeprecationWarning
 
 from hyperspy.defaults_parser import preferences
 from hyperspy.external.progressbar import progressbar
@@ -531,7 +532,6 @@ class Signal2D(BaseSignal,
              scalebar=True,
              scalebar_color="white",
              axes_ticks=None,
-             auto_contrast=True,
              saturated_pixels=0,
              vmin=None,
              vmax=None,
@@ -596,17 +596,12 @@ class Signal2D(BaseSignal,
             If True, plot the axes ticks. If None axes_ticks are only
             plotted when the scale bar is not plotted. If False the axes ticks
             are never plotted.
-        auto_contrast : bool, optional
-            If True, the contrast is stretched for each image using the
-            `saturated_pixels` value. Default True.
         saturated_pixels: scalar
             The percentage of pixels that are left out of the bounds.
             For example, the low and high bounds of a value of 1 are the 0.5%
             and 99.5% percentiles. It must be in the [0, 100] range.
         vmin, vmax : scalar, optional
-            `vmin` and `vmax` are used to normalize luminance data. If at
-            least one of them is given `auto_contrast` is set to False and any
-            missing values are calculated automatically.
+            `vmin` and `vmax` are used to normalize luminance data.
         no_nans : bool, optional
             If True, set nans to zero for plotting.
         centre_colormap : {"auto", True, False}
@@ -617,12 +612,16 @@ class Signal2D(BaseSignal,
             Additional key word arguments passed to matplotlib.imshow()
 
         """
+        if "auto_contrast" in kwargs:
+            del kwargs["auto_contrast"]
+            warnings.warn("the `auto_contrast` keyword argument is deprecated"
+                          "and will be removed in HyperSpy 1.0",
+                          VisibleDeprecationWarning)
         super(Signal2D, self).plot(
             colorbar=colorbar,
             scalebar=scalebar,
             scalebar_color=scalebar_color,
             axes_ticks=axes_ticks,
-            auto_contrast=auto_contrast,
             saturated_pixels=saturated_pixels,
             vmin=vmin,
             vmax=vmax,
