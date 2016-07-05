@@ -131,3 +131,7 @@ class Signal(BaseSignal,
                       " and replaced with BaseSignal",
                       VisibleDeprecationWarning)
         BaseSignal.__init__(self, *args, **kwargs)
+
+del DataDimensionError
+del Signal1DTools
+del Signal2DTools
