@@ -36,51 +36,47 @@ class TestORPCA:
         self.tol = 1e-3
 
     def test_default(self):
-        L, R, E, U, S, V = orpca(self.X, rank=self.rank)
-        A = np.dot(L, R)
+        X, E, U, S, V = orpca(self.X, rank=self.rank)
 
         # Check the low-rank component MSE
-        normA = np.linalg.norm(A - self.A) / (self.m * self.n)
-        nt.assert_true(normA < self.tol)
+        normX = np.linalg.norm(X - self.A) / (self.m * self.n)
+        nt.assert_true(normX < self.tol)
 
         # Check the low-rank component rank
-        rankA = np.linalg.matrix_rank(A, self.tol)
-        np.testing.assert_almost_equal(rankA, self.rank)
+        rankX = np.linalg.matrix_rank(X, self.tol)
+        np.testing.assert_almost_equal(rankX, self.rank)
 
     def test_mask(self):
-        L, R, E, U, S, V = orpca(self.X, rank=self.rank,
+        X, E, U, S, V = orpca(self.X, rank=self.rank,
                                  mask=self.E)
-        A = np.dot(L, R)
 
         # Check the low-rank component MSE
-        normA = np.linalg.norm(A - self.A) / (self.m * self.n)
-        nt.assert_true(normA < self.tol)
+        normX = np.linalg.norm(X - self.A) / (self.m * self.n)
+        nt.assert_true(normX < self.tol)
 
         # Check the low-rank component rank
-        rankA = np.linalg.matrix_rank(A, self.tol)
-        np.testing.assert_almost_equal(rankA, self.rank)
+        rankX = np.linalg.matrix_rank(X, self.tol)
+        np.testing.assert_almost_equal(rankX, self.rank)
 
     def test_method(self):
-        L, R, E, U, S, V = orpca(self.X, rank=self.rank, method='BCD')
-        A = np.dot(L, R)
+        X, E, U, S, V = orpca(self.X, rank=self.rank, method='BCD')
 
         # Check the low-rank component MSE
-        normA = np.linalg.norm(A - self.A) / (self.m * self.n)
-        nt.assert_true(normA < self.tol)
+        normX = np.linalg.norm(X - self.A) / (self.m * self.n)
+        nt.assert_true(normX < self.tol)
 
         # Check the low-rank component rank
-        rankA = np.linalg.matrix_rank(A, self.tol)
-        np.testing.assert_almost_equal(rankA, self.rank)
+        rankX = np.linalg.matrix_rank(X, self.tol)
+        np.testing.assert_almost_equal(rankX, self.rank)
 
     def test_regularization(self):
-        L, R, E, U, S, V = orpca(self.X, rank=self.rank,
+        X, E, U, S, V = orpca(self.X, rank=self.rank,
                                  lambda1=self.lambda1, lambda2=self.lambda2)
-        A = np.dot(L, R)
 
         # Check the low-rank component MSE
-        normA = np.linalg.norm(A - self.A) / (self.m * self.n)
-        nt.assert_true(normA < self.tol)
+        normX = np.linalg.norm(X - self.A) / (self.m * self.n)
+        nt.assert_true(normX < self.tol)
 
         # Check the low-rank component rank
-        rankA = np.linalg.matrix_rank(A, self.tol)
-        np.testing.assert_almost_equal(rankA, self.rank)
+        rankX = np.linalg.matrix_rank(X, self.tol)
+        np.testing.assert_almost_equal(rankX, self.rank)
