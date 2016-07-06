@@ -31,6 +31,9 @@ class TestORPCA:
         A = np.dot(U, V.T)
         E = 100 * rng.binomial(1, s, (m, n))
         X = A + E
+        print('Amax is %f, Amin is %f' % (np.max(A),np.min(A)))
+        print('Emax is %f, Emin is %f'% (np.max(E),np.min(E)))
+        print('Xmax is %f, Xmin is %f'% (np.max(X),np.min(X)))
 
         self.m = m
         self.n = n
@@ -52,11 +55,6 @@ class TestORPCA:
         normA = np.linalg.norm(np.dot(L, R) - self.A) / (self.m * self.n)
         nt.assert_true(normA < self.tol)
 
-        # Check the error component
-        normE = np.linalg.norm(E - self.E) / (self.m * self.n)
-        nt.assert_true(normE < self.tol)
-
-
         # Check the expressed variance of the
         # recovered subspace
         nt.assert_true(_ev(self.U, L, self.tol))
@@ -68,10 +66,6 @@ class TestORPCA:
         # Check the low-rank component
         normA = np.linalg.norm(np.dot(L, R) - self.A) / (self.m * self.n)
         nt.assert_true(normA < self.tol)
-
-        # Check the error component
-        normE = np.linalg.norm(E - self.E) / (self.m * self.n)
-        nt.assert_true(normE < self.tol)
 
         # Check the expressed variance of the
         # recovered subspace
@@ -85,10 +79,6 @@ class TestORPCA:
         normA = np.linalg.norm(np.dot(L, R) - self.A) / (self.m * self.n)
         nt.assert_true(normA < self.tol)
 
-        # Check the error component
-        normE = np.linalg.norm(E - self.E) / (self.m * self.n)
-        nt.assert_true(normE < self.tol)
-
         # Check the expressed variance of the
         # recovered subspace
         nt.assert_true(_ev(self.U, L, self.tol))
@@ -100,10 +90,15 @@ class TestORPCA:
         normA = np.linalg.norm(np.dot(L, R) - self.A) / (self.m * self.n)
         nt.assert_true(normA < self.tol)
 
-        # Check the error component
-        normE = np.linalg.norm(E - self.E) / (self.m * self.n)
-        nt.assert_true(normE < self.tol)
-
         # Check the expressed variance of the
         # recovered subspace
         nt.assert_true(_ev(self.U, L, self.tol))
+
+
+if __name__ == "__main__":
+    test = TestORPCA()
+    test.setUp()
+    test.test_default()
+    test.test_mask()
+    test.test_method()
+    test.test_regularization()

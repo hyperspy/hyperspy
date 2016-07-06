@@ -135,6 +135,11 @@ def orpca(X, rank, fast=False, lambda1=None,
     if method not in ('CF', 'BCD'):
         raise ValueError("'method' not recognised")
 
+    # Get min & max of data matrix for scaling
+    X_max = np.max(X)
+    X_min = np.min(X)
+    X = (X - X_min) / X_max
+
     # Use random initialization
     Y2 = np.random.randn(m, rank)
     L, tmp = scipy.linalg.qr(Y2, mode='economic')
@@ -172,8 +177,18 @@ def orpca(X, rank, fast=False, lambda1=None,
             B = B + np.outer((z - e), r.T)
             L = _updatecol(L, A, B, I)
 
+    # Rescale
+    #L = (L * X_max) + X_min
+    Xhat = np.dot(L, R)
+    Xhat = (Xhat * X_max) + X_min
+    E = (E * X_max) + X_min
+
+    print('Xmax is %f, Xmin is %f' % (X_max, X_min))
+    print('Emax is %f, Emin is %f' % (np.max(E), np.min(E)))
+    print('Xhatmax is %f, Xhatmin is %f' % (np.max(Xhat), np.min(Xhat)))
+
     # Do final SVD
-    U, S, Vh = svd(np.dot(L, R))
+    U, S, Vh = svd(Xhat)
     V = Vh.T
 
     # Chop small singular values which
