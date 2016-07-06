@@ -503,6 +503,8 @@ class TestModel1D:
         m.append(g3)
         g4 = hs.model.components.Gaussian()
         m.append(g4)
+        p = hs.model.components.Polynomial(3)
+        m.append(p)
 
         g1.A.value = 3.
         g1.centre.bmin = 300.
@@ -539,6 +541,10 @@ class TestModel1D:
         g4.centre.bmax = -1
         g4.sigma.value = 1
         g4.sigma.bmin = 10
+
+        p.coefficients.value = (1, 2, 3, 4)
+        p.coefficients.bmin = 2
+        p.coefficients.bmax = 3
         m.ensure_parameters_in_bounds()
         np.testing.assert_almost_equal(g1.A.value, 3.)
         np.testing.assert_almost_equal(g2.A.value, 1.)
@@ -554,6 +560,8 @@ class TestModel1D:
         np.testing.assert_almost_equal(g2.sigma.value, 3.)
         np.testing.assert_almost_equal(g3.sigma.value, 0.)
         np.testing.assert_almost_equal(g4.sigma.value, 1)
+
+        np.testing.assert_almost_equal(p.coefficients.value, (2, 2, 3, 3))
 
 
 class TestModel2D:
