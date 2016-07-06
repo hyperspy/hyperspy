@@ -345,7 +345,7 @@ class MVA():
             elif algorithm == 'orpca':
                 _logger.info("Performing Online Robust PCA")
 
-                L, R, E, U, S, V = orpca(
+                X, E, U, S, V = orpca(
                     dc[:, signal_mask][navigation_mask, :],
                     rank=output_dimension, fast=True, **kwargs)
 

@@ -178,9 +178,8 @@ def orpca(X, rank, fast=False, lambda1=None,
             L = _updatecol(L, A, B, I)
 
     # Rescale
-    Xhat = np.dot(L, R)
-    Xhat = (Xhat * X_max) + X_min
-    E = (E * X_max) + X_min
+    Xhat = (np.dot(L, R) * X_max) + X_min
+    Ehat = (E * X_max) + X_min
 
     # Do final SVD
     U, S, Vh = svd(Xhat)
@@ -192,4 +191,4 @@ def orpca(X, rank, fast=False, lambda1=None,
     #S[S<=1e-9] = 0.0
     S[rank:] = 0.
 
-    return L, R, E, U, S, V
+    return Xhat, Ehat, U, S, V
