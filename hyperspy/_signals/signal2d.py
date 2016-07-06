@@ -24,6 +24,7 @@ from scipy.fftpack import fftn, ifftn
 from skimage.feature import peak_local_max
 import matplotlib.pyplot as plt
 import scipy.ndimage as ndi
+from IPython.display import display
 import warnings
 from hyperspy.defaults_parser import preferences
 from hyperspy.external.progressbar import progressbar
@@ -653,15 +654,12 @@ class PeakFinder2D(object):
         return kwargs
 
     def create_navigator(self):
-        from IPython.display import display
         import ipywidgets as ipyw
         container = ipyw.HBox()
         if self.signal.axes_manager.navigation_dimension == 2:
             container = self.create_navigator_2d()
         elif self.signal.axes_manager.navigation_dimension == 1:
             container = self.create_navigator_1d()
-        elif self.signal.axes_manager.navigation_dimension == 0:
-            container = HBox()
         display(container)
 
     def create_navigator_1d(self):
@@ -723,7 +721,6 @@ class PeakFinder2D(object):
         return container
 
     def create_choices_widget(self):
-        from IPython.display import display
         from ipywidgets import Dropdown
         dropdown = Dropdown(
             options=list(self.methods.keys()),
@@ -740,7 +737,6 @@ class PeakFinder2D(object):
         display(dropdown)
 
     def create_param_widgets(self):
-        from IPython.display import display
         from ipywidgets import VBox
         containers = []
         if self.param_container:
