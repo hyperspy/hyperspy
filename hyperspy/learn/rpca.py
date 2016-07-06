@@ -124,11 +124,11 @@ def orpca(X, rank, fast=False, lambda1=None,
         method = 'CF'
     if lambda1 is None:
         _logger.warning("Nuclear norm regularization parameter "
-                        "is set to default: 1/sqrt(nfeatures)")
+                        "is set to default: 1/sqrt(nsamples)")
         lambda1 = 1.0 / np.sqrt(n)
     if lambda2 is None:
         _logger.warning("Sparse regularization parameter "
-                        "is set to default: 1/sqrt(nfeatures)")
+                        "is set to default: 1/sqrt(nsamples)")
         lambda2 = 1.0 / np.sqrt(n)
 
     # Check options are valid
@@ -178,14 +178,9 @@ def orpca(X, rank, fast=False, lambda1=None,
             L = _updatecol(L, A, B, I)
 
     # Rescale
-    #L = (L * X_max) + X_min
     Xhat = np.dot(L, R)
     Xhat = (Xhat * X_max) + X_min
     E = (E * X_max) + X_min
-
-    print('Xmax is %f, Xmin is %f' % (X_max, X_min))
-    print('Emax is %f, Emin is %f' % (np.max(E), np.min(E)))
-    print('Xhatmax is %f, Xhatmin is %f' % (np.max(Xhat), np.min(Xhat)))
 
     # Do final SVD
     U, S, Vh = svd(Xhat)
