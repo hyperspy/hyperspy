@@ -11,7 +11,7 @@ class TestORPCA:
         # Define shape etc.
         m = 128  # Dimensionality
         n = 1024 # Number of samples
-        r = 5
+        r = 4
         s = 0.01
 
         # Low-rank and sparse error matrices
@@ -42,21 +42,12 @@ class TestORPCA:
         normX = np.linalg.norm(X - self.A) / (self.m * self.n)
         nt.assert_true(normX < self.tol)
 
-        # Check the low-rank component rank
-        rankX = np.linalg.matrix_rank(X, self.tol)
-        np.testing.assert_almost_equal(rankX, self.rank)
-
     def test_mask(self):
-        X, E, U, S, V = orpca(self.X, rank=self.rank,
-                                 mask=self.E)
+        X, E, U, S, V = orpca(self.X, rank=self.rank, mask=self.E)
 
         # Check the low-rank component MSE
         normX = np.linalg.norm(X - self.A) / (self.m * self.n)
         nt.assert_true(normX < self.tol)
-
-        # Check the low-rank component rank
-        rankX = np.linalg.matrix_rank(X, self.tol)
-        np.testing.assert_almost_equal(rankX, self.rank)
 
     def test_method(self):
         X, E, U, S, V = orpca(self.X, rank=self.rank, method='BCD')
@@ -65,18 +56,11 @@ class TestORPCA:
         normX = np.linalg.norm(X - self.A) / (self.m * self.n)
         nt.assert_true(normX < self.tol)
 
-        # Check the low-rank component rank
-        rankX = np.linalg.matrix_rank(X, self.tol)
-        np.testing.assert_almost_equal(rankX, self.rank)
-
     def test_regularization(self):
         X, E, U, S, V = orpca(self.X, rank=self.rank,
-                                 lambda1=self.lambda1, lambda2=self.lambda2)
+                              lambda1=self.lambda1,
+                              lambda2=self.lambda2)
 
         # Check the low-rank component MSE
         normX = np.linalg.norm(X - self.A) / (self.m * self.n)
         nt.assert_true(normX < self.tol)
-
-        # Check the low-rank component rank
-        rankX = np.linalg.matrix_rank(X, self.tol)
-        np.testing.assert_almost_equal(rankX, self.rank)
