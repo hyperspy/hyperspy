@@ -331,7 +331,7 @@ analysis purposes.
 TIFF
 ----
 
-Since version 4.1 HyperSpy can read and write 2D and 3D TIFF files using using
+HyperSpy can read and write 2D and 3D TIFF files using using
 Christoph Gohlke's tifffile library. In particular it supports reading and
 writing of TIFF, BigTIFF, OME-TIFF, STK, LSM, NIH, and FluoView files. Most of
 these are uncompressed or losslessly compressed 2**(0 to 6) bit integer,16, 32
@@ -339,9 +339,34 @@ and 64-bit float, grayscale and RGB(A) images, which are commonly used in
 bio-scientific imaging. See `the library webpage
 <http://www.lfd.uci.edu/~gohlke/code/tifffile.py.html>`_ for more details.
 
-Currently HyperSpy cannot read the TIFF tags.
+Currently HyperSpy has limited support for reading and saving the TIFF tags.
+However, the way that HyperSpy reads and saves the scale and the units of tiff
+files is compatible with ImageJ/Fiji and Gatan Digital Micrograph softwares.
+HyperSpy can also import the scale and the units from tiff files saved using
+FEI and Zeiss SEM softwares.
 
+.. code-block:: python
 
+    >>> # Force read image resolution using the x_resolution, y_resolution and
+    >>> # the resolution_unit of the tiff tags. Be aware, that most of the
+    >>> # software doesn't (properly) use these tags when saving tiff files.
+    >>> s = hs.load('file.tif', force_read_resolution=True)
+
+HyperSpy can also read and save custom tags through Christoph Gohlke's tifffile 
+library. See `the library webpage
+<http://www.lfd.uci.edu/~gohlke/code/tifffile.py.html>`_ for more details.
+
+.. code-block:: python
+
+    >>> # Saving the string 'Random metadata' in a custom tag (ID 65000)
+    >>> extratag = [(65000, 's', 1, "Random metadata", False)]
+    >>> s.save('file.tif', extratags=extratag)
+    
+    >>> # Saving the string 'Random metadata' from a custom tag (ID 65000)
+    >>> s2 = hs.load('file.tif')
+    >>> s2.original_metadata['Number_65000']
+    b'Random metadata'
+    
 .. _dm3-format:
 
 Gatan Digital Micrograph
