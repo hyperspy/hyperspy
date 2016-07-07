@@ -148,7 +148,7 @@ HyperSpy.
     +--------------------+-----------+----------+
     | HDF5               |    Yes    |    Yes   |
     +--------------------+-----------+----------+
-    | Signal2D: jpg..       |    Yes    |    Yes   |
+    | Image: jpg..       |    Yes    |    Yes   |
     +--------------------+-----------+----------+
     | TIFF               |    Yes    |    Yes   |
     +--------------------+-----------+----------+
@@ -317,7 +317,7 @@ Images
 ------
 
 HyperSpy is able to read and write data too all the image formats supported by
-`the Python Signal2D Library <http://www.pythonware.com/products/pil/>`_ (PIL).
+`the Python Image Library <http://www.pythonware.com/products/pil/>`_ (PIL).
 This includes png, pdf, gif etc.
 
 It is important to note that these image formats only support 8-bit files, and
@@ -439,6 +439,7 @@ Blockfiles are by default loaded into memory, but can instead be loaded in a
 `numpy.memmap <http://docs.scipy.org/doc/numpy/reference/generated/numpy.memmap.html>`_.
 
 Examples of ways of loading:
+
 .. code-block:: python
 
     >>> hs.load('file.blo')     # Default loading, equivalent to the next line
@@ -453,7 +454,7 @@ Examples of ways of loading:
 
 By loading the data read/write, any changes to the original data array will be
 written to disk. The data is written when the original data array is deleted,
-or when :py:meth:`BaseSignal.data.flush() <http://docs.scipy.org/doc/numpy/reference/generated/numpy.memmap.flush.html>`_
+or when :py:meth:`BaseSignal.data.flush` (`numpy.memmap.flush <http://docs.scipy.org/doc/numpy/reference/generated/numpy.memmap.flush.html>`_)
 is called.
 
 
