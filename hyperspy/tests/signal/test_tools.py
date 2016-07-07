@@ -128,6 +128,38 @@ class Test2D:
         # Just test if it doesn't raise an exception
         self.signal._print_summary()
 
+    def test_numpy_unfunc_one_arg_titled(self):
+        self.signal.metadata.General.title = "yes"
+        result = np.exp(self.signal)
+        nt.assert_true(isinstance(result, BaseSignal))
+        np.testing.assert_array_equal(result.data, np.exp(self.signal.data))
+        nt.assert_equal(result.metadata.General.title, "exp(yes)")
+
+    def test_numpy_unfunc_one_arg_untitled(self):
+        result = np.exp(self.signal)
+        nt.assert_equal(result.metadata.General.title,
+                        "exp(Untitled Signal 1)")
+
+    def test_numpy_unfunc_two_arg_titled(self):
+        s1, s2 = self.signal.deepcopy(), self.signal.deepcopy()
+        s1.metadata.General.title = "A"
+        s2.metadata.General.title = "B"
+        result = np.add(s1, s2)
+        nt.assert_true(isinstance(result, BaseSignal))
+        np.testing.assert_array_equal(result.data, np.add(s1.data, s2.data))
+        nt.assert_equal(result.metadata.General.title, "add(A, B)")
+
+    def test_numpy_unfunc_two_arg_untitled(self):
+        s1, s2 = self.signal.deepcopy(), self.signal.deepcopy()
+        result = np.add(s1, s2)
+        nt.assert_equal(result.metadata.General.title,
+                        "add(Untitled Signal 1, Untitled Signal 2)")
+
+    def test_numpy_func(self):
+        result = np.angle(self.signal)
+        nt.assert_true(isinstance(result, np.ndarray))
+        np.testing.assert_array_equal(result, np.angle(self.signal.data))
+
 
 def _test_default_navigation_signal_operations_over_many_axes(self, op):
     s = getattr(self.signal, op)()

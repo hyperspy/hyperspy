@@ -223,7 +223,7 @@ def eelsdb(spectrum_type=None, title=None, author=None, element=None, formula=No
                 "Please report this error to http://eelsdb.eu/about \n" %
                 (json_spectrum["title"], json_spectrum["id"]))
     if not spectra:
-        _logger.information(
+        _logger.info(
             "The EELS database does not contain any spectra matching your query"
             ". If you have some, why not submitting them "
             "https://eelsdb.eu/submit-data/ ?\n")

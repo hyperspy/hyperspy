@@ -17,7 +17,6 @@
 # along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 import math
-import warnings
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -48,8 +47,6 @@ class ImagePlot(BlittedFigure):
         The title is printed at the top of the image.
     vmin, vmax : float
         Limit the range of the color map scale to the given values.
-    auto_contrast : bool
-        If True, vmin and vmax are calculated automatically.
     min_aspect : float
         Set the minimum aspect ratio of the image and the figure. To
         keep the image in the aspect limit the pixels are made
@@ -75,9 +72,10 @@ class ImagePlot(BlittedFigure):
         self.figure = None
         self.ax = None
         self.title = ''
-        self.vmin = None
-        self.vmax = None
-        self.auto_contrast = True
+        self._vmin_user = None
+        self._vmax_user = None
+        self._vmin_auto = None
+        self._vmax_auto = None
         self._ylabel = ''
         self._xlabel = ''
         self.plot_indices = True
@@ -98,6 +96,28 @@ class ImagePlot(BlittedFigure):
         self._auto_axes_ticks = True
         self.no_nans = False
         self.centre_colormap = "auto"
+
+    @property
+    def vmax(self):
+        if self._vmax_user is not None:
+            return self._vmax_user
+        else:
+            return self._vmax_auto
+
+    @vmax.setter
+    def vmax(self, vmax):
+        self._vmax_user = vmax
+
+    @property
+    def vmin(self):
+        if self._vmin_user is not None:
+            return self._vmin_user
+        else:
+            return self._vmin_auto
+
+    @vmin.setter
+    def vmin(self, vmin):
+        self._vmin_user = vmin
 
     @property
     def axes_ticks(self):
@@ -171,17 +191,12 @@ class ImagePlot(BlittedFigure):
         self._aspect = np.abs(factor * xaxis.scale / yaxis.scale)
 
     def optimize_contrast(self, data):
-        if (self.vmin is not None and
-                self.vmax is not None and
-                not self.auto_contrast):
+        if (self._vmin_user is not None and self._vmax_user is not None):
             return
         if 'complex' in data.dtype.name:
             data = np.log(np.abs(data))
-        vmin, vmax = utils.contrast_stretching(data, self.saturated_pixels)
-        if self.vmin is None or self.auto_contrast:
-            self.vmin = vmin
-        if self.vmax is None or self.auto_contrast:
-            self.vmax = vmax
+        self._vmin_auto, self._vmax_auto = utils.contrast_stretching(
+            data, self.saturated_pixels)
 
     def create_figure(self, max_size=8, min_size=2):
         if self.scalebar is True:
@@ -220,11 +235,6 @@ class ImagePlot(BlittedFigure):
         if rgb_tools.is_rgbx(data):
             self.colorbar = False
             data = rgb_tools.rgbx2regular_array(data, plot_friendly=True)
-        if self.vmin is not None or self.vmax is not None:
-            warnings.warn(
-                'vmin or vmax value given, hence '
-                'auto_contrast is set to False')
-            self.auto_contrast = False
         self.optimize_contrast(data)
         if (not self.axes_manager or
                 self.axes_manager.navigation_size == 0):
@@ -272,7 +282,7 @@ class ImagePlot(BlittedFigure):
             marker.axes_manager = self.axes_manager
         self.ax_markers.append(marker)
 
-    def update(self, auto_contrast=None, **kwargs):
+    def update(self, **kwargs):
         ims = self.ax.images
         # update extent:
         self._extent = (self.xaxis.axis[0] - self.xaxis.scale / 2.,
@@ -315,11 +325,12 @@ class ImagePlot(BlittedFigure):
                 else:
                     return 'x=%1.4g, y=%1.4g' % (x, y)
             self.ax.format_coord = format_coord
-        if (auto_contrast is True or
-                auto_contrast is None and self.auto_contrast is True):
-            vmax, vmin = self.vmax, self.vmin
+            old_vmax, old_vmin = self.vmax, self.vmin
             self.optimize_contrast(data)
-            if vmax == vmin and self.vmax != self.vmin and ims:
+            # If there is an image, any of the contrast bounds have changed and
+            # the new contrast bounds are not the same redraw the colorbar.
+            if (ims and (old_vmax != self.vmax or old_vmin != self.vmin) and
+                    self.vmax != self.vmin):
                 redraw_colorbar = True
                 ims[0].autoscale()
 
@@ -342,7 +353,7 @@ class ImagePlot(BlittedFigure):
             self.ax.set_aspect(self._aspect)
             ims[0].norm.vmax, ims[0].norm.vmin = vmax, vmin
             if redraw_colorbar is True:
-                ims[0].autoscale()
+                # ims[0].autoscale()
                 self._colorbar.draw_all()
                 self._colorbar.solids.set_animated(True)
             else:
@@ -364,6 +375,11 @@ class ImagePlot(BlittedFigure):
             self.ax.imshow(data,
                            **new_args)
             self.figure.canvas.draw()
+
+    def _update(self):
+        # This "wrapper" because on_trait_change fiddles with the
+        # method arguments and auto contrast does not work then
+        self.update()
 
     def adjust_contrast(self):
         ceditor = ImageContrastEditor(self)

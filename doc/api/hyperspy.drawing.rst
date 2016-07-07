@@ -7,6 +7,7 @@ Subpackages
 .. toctree::
 
     hyperspy.drawing._markers
+    hyperspy.drawing._widgets
 
 Submodules
 ----------
@@ -67,10 +68,10 @@ hyperspy.drawing.signal module
     :undoc-members:
     :show-inheritance:
 
-hyperspy.drawing.signal1D module
+hyperspy.drawing.signal1d module
 --------------------------------
 
-.. automodule:: hyperspy.drawing.signal1D
+.. automodule:: hyperspy.drawing.signal1d
     :members:
     :undoc-members:
     :show-inheritance:
@@ -79,6 +80,14 @@ hyperspy.drawing.utils module
 -----------------------------
 
 .. automodule:: hyperspy.drawing.utils
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+hyperspy.drawing.widget module
+------------------------------
+
+.. automodule:: hyperspy.drawing.widget
     :members:
     :undoc-members:
     :show-inheritance:
