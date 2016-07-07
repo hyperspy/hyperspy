@@ -29,10 +29,7 @@ if v[0] != 3:
     sys.exit(1)
 
 from distutils.core import setup
-from distutils.extension import Extension
-
 import distutils.dir_util
-
 import os
 import subprocess
 import fileinput
@@ -46,14 +43,29 @@ if os.path.exists('build'):
 install_req = ['scipy',
                'ipython>=2.0',
                'matplotlib>=1.2',
-               'numpy',
+               'numpy>=1.10',
                'traits>=4.5.0',
                'traitsui>=5.0',
                'natsort',
                'requests',
                'setuptools',
+               'tqdm',
                'sympy',
+               'dill',
+               'h5py',
                'lxml']
+
+
+def update_version(version):
+    release_path = "hyperspy/Release.py"
+    lines = []
+    with open(release_path, "r") as f:
+        for line in f:
+            if line.startswith("version = "):
+                line = "version = \"%s\"\n" % version
+            lines.append(line)
+    with open(release_path, "w") as f:
+        f.writelines(lines)
 
 
 class update_version_when_dev:
@@ -66,46 +78,28 @@ class update_version_when_dev:
         git_master_path = ".git/refs/heads/master"
         if "+dev" in self.release_version and \
                 os.path.isfile(git_master_path):
-            try:
-                p = subprocess.Popen(["git", "describe",
-                                      "--tags", "--dirty", "--always"],
-                                     stdout=subprocess.PIPE)
-                stdout = p.communicate()[0]
-                if p.returncode != 0:
-                    raise EnvironmentError
-                else:
-                    version = stdout[1:].strip().decode()
-                    if str(self.release_version[:-4] + '-') in version:
-                        version = version.replace(
-                            self.release_version[:-4] + '-',
-                            self.release_version[:-4] + '+git')
-                    self.version = version
-            except EnvironmentError:
-                # Git is not available, but the .git directory exists
-                # Therefore we can get just the master hash
-                with open(git_master_path) as f:
-                    masterhash = f.readline()
-                self.version = self.release_version.replace(
-                    "+dev", "+git-%s" % masterhash[:7])
-            for line in fileinput.FileInput("hyperspy/Release.py",
-                                            inplace=1):
-                if line.startswith('version = '):
-                    print("version = \"%s\"" % self.version)
-                else:
-                    print(line, end=' ')
-            self.restore_version = True
+            p = subprocess.Popen(["git", "describe",
+                                  "--tags", "--dirty", "--always"],
+                                 stdout=subprocess.PIPE)
+            stdout = p.communicate()[0]
+            if p.returncode != 0:
+                # Git is not available, we keep the version as is
+                self.restore_version = False
+            else:
+                gd = stdout[1:].strip().decode()
+                # Remove the tag
+                gd = gd[gd.index("-") + 1:]
+                self.version = self.release_version.replace("+dev", "-git-")
+                self.version += gd
+                update_version(self.version)
+                self.restore_version = True
         else:
             self.version = self.release_version
         return self.version
 
     def __exit__(self, type, value, traceback):
         if self.restore_version is True:
-            for line in fileinput.FileInput("hyperspy/Release.py",
-                                            inplace=1):
-                if line.startswith('version = '):
-                    print("version = \"%s\"" % self.release_version)
-                else:
-                    print(line, end=' ')
+            update_version(self.release_version)
 
 
 with update_version_when_dev() as version:
@@ -113,8 +107,6 @@ with update_version_when_dev() as version:
         name="hyperspy",
         package_dir={'hyperspy': 'hyperspy'},
         version=version,
-        ext_modules=[Extension("hyperspy.io_plugins.unbcf_fast",
-                               ['hyperspy/io_plugins/unbcf_fast.c'])],
         packages=['hyperspy',
                   'hyperspy.datasets',
                   'hyperspy._components',
