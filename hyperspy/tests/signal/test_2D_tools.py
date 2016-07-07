@@ -16,7 +16,7 @@
 # along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 
-import mock
+from unittest import mock
 
 import numpy as np
 import nose.tools as nt

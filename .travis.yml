@@ -24,7 +24,7 @@ before_install:
   - conda update --yes conda
 
 install:
-  - DEPS="nose numpy scipy matplotlib ipython h5py sympy scikit-learn dill natsort mock setuptools"
+  - DEPS="nose numpy scipy matplotlib ipython h5py sympy scikit-learn dill natsort setuptools scikit-image"
   - conda create -n testenv --yes python=$TRAVIS_PYTHON_VERSION $DEPS
   - source activate testenv
   - conda install pip

@@ -1775,6 +1775,43 @@ class BaseSignal(FancySlicing,
                 not self.metadata.has_item("Signal.signal_type")):
             self.metadata.Signal.signal_type = self._signal_type
 
+    def __array__(self, dtype=None):
+        if dtype:
+            return self.data.astype(dtype)
+        else:
+            return self.data
+
+    def __array_wrap__(self, array, context=None):
+
+        signal = self._deepcopy_with_new_data(array)
+        if context is not None:
+            # ufunc, argument of the ufunc, domain of the ufunc
+            # In ufuncs with multiple outputs, domain indicates which output
+            # is currently being prepared (eg. see modf).
+            # In ufuncs with a single output, domain is 0
+            uf, objs, huh = context
+
+            def get_title(signal, i=0):
+                g = signal.metadata.General
+                if g.title:
+                    return g.title
+                else:
+                    return "Untitled Signal %s" % (i + 1)
+
+            title_strs = []
+            i = 0
+            for obj in objs:
+                if isinstance(obj, BaseSignal):
+                    title_strs.append(get_title(obj, i))
+                    i += 1
+                else:
+                    title_strs.append(str(obj))
+
+            signal.metadata.General.title = "%s(%s)" % (
+                uf.__name__, ", ".join(title_strs))
+
+        return signal
+
     def squeeze(self):
         """Remove single-dimensional entries from the shape of an array
         and the axes.
@@ -2108,9 +2145,9 @@ class BaseSignal(FancySlicing,
 
         if i1 is not None:
             axis.offset = new_offset
-        self.events.data_changed.trigger(obj=self)
         self.get_dimensions_from_data()
         self.squeeze()
+        self.events.data_changed.trigger(obj=self)
 
     def swap_axes(self, axis1, axis2):
         """Swaps the axes.
@@ -3378,9 +3415,13 @@ class BaseSignal(FancySlicing,
                     "It is only possibile to change to %s." %
                     ddtype)
             self.data = rgb_tools.rgbx2regular_array(self.data)
-            self.get_dimensions_from_data()
+            self.axes_manager._append_axis(
+                size=self.data.shape[-1],
+                scale=1,
+                offset=0,
+                name="RGB index",
+                navigate=False,)
             self.metadata.Signal.record_by = "spectrum"
-            self.axes_manager[-1 + 2j].name = "RGB index"
             self._assign_subclass()
             return
         else:

@@ -23,3 +23,4 @@ dependencies:
   - traits
   - traitsui
   - ipywidgets
+  - tqdm
