@@ -1047,6 +1047,36 @@ class AxesManager(t.HasTraits):
 
         return text
 
+    def _repr_html_(self):
+        text = ("<style>\n"
+                "table, th, td {\n\t"
+                "border: 1px solid black;\n\t"
+                "border-collapse: collapse;\n}"
+                "th, td {\n\t"
+                "padding: 5px;\n}"
+                "\n</style>")
+        text += ('\n<p><b>< Axes manager, axes: %s ></b></p>\n' %
+                 self._get_dimension_str())
+
+        def format_row(*args, tag='td'):
+            signature = "\n<tr> {} {} {} {} {} {} </tr>"
+            return signature.format(*map(lambda x:
+                                         '\n<' + tag +
+                                         '>{}</'.format(x) + tag + '>',
+                                         args))
+        text += "<table style='width:100%'>\n"
+        text += format_row('Name', 'size', 'index', 'offset', 'scale', 'units',
+                           tag='th')
+        for ax in self.navigation_axes:
+            text += format_row(ax.name, ax.size, ax.index, ax.offset, ax.scale,
+                               ax.units)
+        text += "\n<tr><td colspan='6'><hr/></td></tr>"
+        for ax in self.signal_axes:
+            text += format_row(ax.name, ax.size, ax.index, ax.offset, ax.scale,
+                               ax.units)
+        text += "</table>\n"
+        return text
+
     @property
     def coordinates(self):
         """Get the coordinates of the navigation axes.
