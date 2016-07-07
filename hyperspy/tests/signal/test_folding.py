@@ -1,13 +1,13 @@
 import nose.tools as nt
 import numpy as np
 
-from hyperspy.signal import Signal
+from hyperspy.signal import BaseSignal
 
 
 class TestSignalFolding:
 
     def setUp(self):
-        self.s = Signal(np.zeros((2, 3, 4, 5)))
+        self.s = BaseSignal(np.zeros((2, 3, 4, 5)))
         self.s.axes_manager.set_signal_dimension(2)
 
     def test_unfold_navigation(self):
@@ -129,7 +129,7 @@ class TestSignalFolding:
 class TestSignalVarianceFolding:
 
     def setUp(self):
-        self.s = Signal(np.zeros((2, 3, 4, 5)))
+        self.s = BaseSignal(np.zeros((2, 3, 4, 5)))
         self.s.axes_manager.set_signal_dimension(2)
         self.s.estimate_poissonian_noise_variance()
 

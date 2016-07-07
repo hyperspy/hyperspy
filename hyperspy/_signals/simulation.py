@@ -19,10 +19,10 @@
 import numpy as np
 
 from hyperspy.decorators import auto_replot
-from hyperspy.signal import Signal
+from hyperspy.signal import BaseSignal
 
 
-class Simulation(Signal):
+class Simulation(BaseSignal):
     _signal_origin = "simulation"
 
     def __init__(self, *args, **kwargs):

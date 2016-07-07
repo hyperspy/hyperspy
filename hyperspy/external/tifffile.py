@@ -35,7 +35,7 @@
 
 """Read and write image data from and to TIFF files.
 
-Image and metadata can be read from TIFF, BigTIFF, OME-TIFF, STK, LSM, NIH,
+Signal2D and metadata can be read from TIFF, BigTIFF, OME-TIFF, STK, LSM, NIH,
 SGI, ImageJ, MicroManager, FluoView, SEQ and GEL files.
 Only a subset of the TIFF specification is supported, mainly uncompressed
 and losslessly compressed 2**(0 to 6) bit integer, 16, 32 and 64-bit float,
@@ -45,7 +45,7 @@ and XMP metadata is not implemented.
 Only primary info records are read for STK, FluoView, MicroManager, and
 NIH image formats.
 
-TIFF, the Tagged Image File Format, is under the control of Adobe Systems.
+TIFF, the Tagged Signal2D File Format, is under the control of Adobe Systems.
 BigTIFF allows for files greater than 4 GB. STK, LSM, FluoView, SGI, SEQ, GEL,
 and OME-TIFF, are custom extensions defined by Molecular Devices (Universal
 Imaging Corporation), Carl Zeiss MicroImaging, Olympus, Silicon Graphics
@@ -99,9 +99,9 @@ References
 (1)  TIFF 6.0 Specification and Supplements. Adobe Systems Incorporated.
      http://partners.adobe.com/public/developer/tiff/
 (2)  TIFF File Format FAQ. http://www.awaresystems.be/imaging/tiff/faq.html
-(3)  MetaMorph Stack (STK) Image File Format.
+(3)  MetaMorph Stack (STK) Signal2D File Format.
      http://support.meta.moleculardevices.com/docs/t10243.pdf
-(4)  Image File Format Description LSM 5/7 Release 6.0 (ZEN 2010).
+(4)  Signal2D File Format Description LSM 5/7 Release 6.0 (ZEN 2010).
      Carl Zeiss MicroImaging GmbH. BioSciences. May 10, 2011
 (5)  File Format Description - LSM 5xx Release 2.0.
      http://ibb.gsf.de/homepage/karsten.rodenacker/IDL/Lsmfile.doc
@@ -131,7 +131,6 @@ Examples
 
 """
 
-from __future__ import division, print_function
 
 import sys
 import os
@@ -187,7 +186,7 @@ def imsave(filename, data, **kwargs):
     Examples
     --------
     >>> data = numpy.random.rand(2, 5, 3, 301, 219)
-    >>> description = u'{"shape": %s}' % str(list(data.shape))
+    >>> description = '{"shape": %s}' % str(list(data.shape))
     >>> imsave('temp.tif', data, compress=6,
     ...        extratags=[(270, 's', 0, description, True)])
 
@@ -295,7 +294,7 @@ class TiffWriter(object):
              extratags=()):
         """Write image data to TIFF file.
 
-        Image data are written in one stripe per plane.
+        Signal2D data are written in one stripe per plane.
         Dimensions larger than 2 to 4 (depending on photometric mode, planar
         configuration, and SGI mode) are flattened and saved as separate pages.
         The 'sample_format' and 'bits_per_sample' TIFF tags are derived from
@@ -324,7 +323,7 @@ class TiffWriter(object):
         volume : bool
             If True, volume data are stored in one tile (if applicable) using
             the SGI image_depth and tile_depth tags.
-            Image width and depth must be multiple of 16.
+            Signal2D width and depth must be multiple of 16.
             Few software can read this format, e.g. MeVisLab.
         writeshape : bool
             If True, write the data shape to the image_description tag
@@ -694,14 +693,14 @@ def imread(files, **kwargs):
         kwargs_seq['pattern'] = kwargs['pattern']
         del kwargs['pattern']
 
-    if isinstance(files, basestring) and any(i in files for i in '?*'):
+    if isinstance(files, str) and any(i in files for i in '?*'):
         files = glob.glob(files)
     if not files:
         raise ValueError('no files found')
     if len(files) == 1:
         files = files[0]
 
-    if isinstance(files, basestring):
+    if isinstance(files, str):
         with TiffFile(files, **kwargs_file) as tif:
             return tif.asarray(**kwargs)
     else:
@@ -1139,7 +1138,7 @@ class TiffFile(object):
                                     labels = [label.text for label in along
                                               if label.tag.endswith('Label')]
                                 modulo[axis] = (newaxis, labels)
-            if not element.tag.endswith('Image'):
+            if not element.tag.endswith('Signal2D'):
                 continue
             for pixels in element:
                 if not pixels.tag.endswith('Pixels'):
@@ -2261,7 +2260,7 @@ class TiffSequence(object):
         files : str, or sequence of str
             Glob pattern or sequence of file names.
         imread : function or class
-            Image read function or class with asarray function returning numpy
+            Signal2D read function or class with asarray function returning numpy
             array from single file.
         pattern : str
             Regular expression pattern that matches axes names and sequence
@@ -2269,7 +2268,7 @@ class TiffSequence(object):
             By default this matches Olympus OIF and Leica TIFF series.
 
         """
-        if isinstance(files, basestring):
+        if isinstance(files, str):
             files = natural_sorted(glob.glob(files))
         files = list(files)
         if not files:
@@ -2512,7 +2511,7 @@ class FileHandle(object):
         if self._fh:
             return  # file is open
 
-        if isinstance(self._arg, basestring):
+        if isinstance(self._arg, str):
             # file name
             self._arg = os.path.abspath(self._arg)
             self._dir, self._name = os.path.split(self._arg)
@@ -2679,7 +2678,7 @@ def read_json(fh, byteorder, dtype, count):
     """Read JSON tag data from file and return as object."""
     data = fh.read(count)
     try:
-        return json.loads(unicode(stripnull(data), 'utf-8'))
+        return json.loads(str(stripnull(data), 'utf-8'))
     except ValueError:
         warnings.warn("invalid JSON `%s`" % data)
 
@@ -3842,7 +3841,7 @@ OME_PIXEL_TYPES = {
     'double-complex': 'c16',
 }
 
-# NIH Image PicHeader v1.63
+# NIH Signal2D PicHeader v1.63
 NIH_IMAGE_HEADER = [
     ('fileid', 'a8'),
     ('nlines', 'i2'),
@@ -3894,7 +3893,7 @@ NIH_IMAGE_HEADER = [
 
 NIH_COLORTABLE_TYPE = (
     'CustomTable', 'AppleDefault', 'Pseudo20', 'Pseudo32', 'Rainbow',
-    'Fire1', 'Fire2', 'Ice', 'Grays', 'Spectrum')
+    'Fire1', 'Fire2', 'Ice', 'Grays', 'Signal1D')
 
 NIH_LUTMODE_TYPE = (
     'PseudoColor', 'OldAppleDefault', 'OldSpectrum', 'GrayScale',
@@ -4583,7 +4582,7 @@ def imshow(data, title=None, vmin=0, vmax=None, cmap=None,
 
     if title:
         try:
-            title = unicode(title, 'Windows-1252')
+            title = str(title, 'Windows-1252')
         except TypeError:
             pass
         pyplot.title(title, size=11)
@@ -4795,7 +4794,7 @@ def main(argv=None):
     print("\nTIFF file:", tif)
     print()
     for i, s in enumerate(tif.series):
-        print ("Series %i" % i)
+        print("Series %i" % i)
         print(s)
         print()
     for i, page in images:

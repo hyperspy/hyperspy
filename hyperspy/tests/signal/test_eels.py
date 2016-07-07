@@ -52,7 +52,7 @@ class Test_Estimate_Elastic_Scattering_Threshold:
             window_length=5,
             tol=0.00001,
         )
-        nt.assert_true(np.allclose(thr.data, 2.5))
+        np.testing.assert_allclose(thr.data, 2.5, atol=10e-3)
 
     def test_min_in_window_without_smoothing_single_spectrum(self):
         s = self.signal.inav[0, 0]
@@ -61,7 +61,7 @@ class Test_Estimate_Elastic_Scattering_Threshold:
             window_length=0,
             tol=0.001,
         )
-        nt.assert_true(np.allclose(thr.data, 2.49))
+        np.testing.assert_allclose(thr.data, 2.49, atol=10e-3)
 
     def test_min_in_window_without_smoothing(self):
         s = self.signal
@@ -70,16 +70,15 @@ class Test_Estimate_Elastic_Scattering_Threshold:
             window_length=0,
             tol=0.001,
         )
-        nt.assert_true(np.allclose(thr.data, 2.49))
+        np.testing.assert_allclose(thr.data, 2.49, atol=10e-3)
 
     def test_min_not_in_window(self):
         # If I use a much lower window, this is the value that has to be
         # returned as threshold.
         s = self.signal
-        with assert_warns("No inflexion point could be found in some "
-                          "positions that have been marked with nans."):
-            data = s.estimate_elastic_scattering_threshold(
-                window=1.5, tol=0.001).data
+        data = s.estimate_elastic_scattering_threshold(window=1.5,
+                                                       tol=0.001,
+                                                       ).data
         nt.assert_true(np.all(np.isnan(data)))
 
 
@@ -89,17 +88,15 @@ class TestEstimateZLPCentre:
         s = hs.signals.EELSSpectrumSimulation(np.diag(np.arange(1, 11)))
         s.axes_manager[-1].scale = 0.1
         s.axes_manager[-1].offset = 100
-        self.spectrum = s
+        self.signal = s
 
     def test_estimate_zero_loss_peak_centre(self):
-        s = self.spectrum
-        nt.assert_true(
-            np.allclose(
-                s.estimate_zero_loss_peak_centre().data,
-                np.arange(
-                    100,
-                    101,
-                    0.1)))
+        s = self.signal
+        np.testing.assert_allclose(
+            s.estimate_zero_loss_peak_centre().data,
+            np.arange(100,
+                      101,
+                      0.1))
 
 
 class TestAlignZLP:
@@ -118,29 +115,29 @@ class TestAlignZLP:
         s.data[np.arange(10), self.ishifts + self.izlp] = 10
         s.data += self.bg
         s.axes_manager[-1].offset += 100
-        self.spectrum = s
+        self.signal = s
 
     def test_align_zero_loss_peak_calibrate_true(self):
-        s = self.spectrum
+        s = self.signal
         s.align_zero_loss_peak(
             calibrate=True,
             print_stats=False,
             show_progressbar=None)
         zlpc = s.estimate_zero_loss_peak_centre()
-        nt.assert_true(np.allclose(zlpc.data.mean(), 0))
-        nt.assert_true(np.allclose(zlpc.data.std(), 0))
+        np.testing.assert_allclose(zlpc.data.mean(), 0)
+        np.testing.assert_allclose(zlpc.data.std(), 0)
 
     def test_align_zero_loss_peak_calibrate_false(self):
-        s = self.spectrum
+        s = self.signal
         s.align_zero_loss_peak(
             calibrate=False,
             print_stats=False,
             show_progressbar=None)
         zlpc = s.estimate_zero_loss_peak_centre()
-        nt.assert_true(np.allclose(zlpc.data.std(), 0))
+        np.testing.assert_allclose(zlpc.data.std(), 0, atol=10e-3)
 
     def test_also_aligns(self):
-        s = self.spectrum
+        s = self.signal
         s2 = s.deepcopy()
         s.align_zero_loss_peak(calibrate=True,
                                print_stats=False,
@@ -151,7 +148,7 @@ class TestAlignZLP:
         nt.assert_equal(zlpc.data.std(), 0)
 
     def test_align_zero_loss_peak_with_spike_signal_range(self):
-        s = self.spectrum
+        s = self.signal
         spike = np.zeros((10, 100))
         spike_amplitude = 20
         spike[:, 75] = spike_amplitude
@@ -177,11 +174,11 @@ class TestPowerLawExtrapolation:
     def test_unbinned(self):
         sc = self.s.isig[:300]
         s = sc.power_law_extrapolation(extrapolation_size=100)
-        nt.assert_true(np.allclose(s.data, self.s.data))
+        np.testing.assert_allclose(s.data, self.s.data, atol=10e-3)
 
     def test_binned(self):
         self.s.data *= self.s.axes_manager[-1].scale
         self.s.metadata.Signal.binned = True
         sc = self.s.isig[:300]
         s = sc.power_law_extrapolation(extrapolation_size=100)
-        nt.assert_true(np.allclose(s.data, self.s.data))
+        np.testing.assert_allclose(s.data, self.s.data, atol=10e-3)

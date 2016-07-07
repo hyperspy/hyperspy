@@ -85,7 +85,7 @@ class PowerLaw(Component):
 
         Parameters
         ----------
-        signal : Signal instance
+        signal : Signal1D instance
         x1 : float
             Defines the left limit of the spectral range to use for the
             estimation.
@@ -108,7 +108,7 @@ class PowerLaw(Component):
             i2 -= 1
         if i2 == i1:
             i2 += 2
-        i3 = (i2 + i1) / 2
+        i3 = (i2 + i1) // 2
         x1 = axis.index2value(i1)
         x2 = axis.index2value(i2)
         x3 = axis.index2value(i3)

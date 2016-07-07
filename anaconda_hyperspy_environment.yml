@@ -1,12 +1,11 @@
 name: hyperspy
 dependencies:
-- python=2.7
+- python=3.5
 - dill
 - h5py
 - ipython
 - jupyter
 - matplotlib
-- mock
 - nose
 - numpy
 - qt
@@ -16,8 +15,12 @@ dependencies:
 - setuptools
 - statsmodels
 - sympy
-- traits
-- traitsui
+- natsort
+- ncurses
 - pip:
   - dask
   - hyperspy
+  - traits
+  - traitsui
+  - ipywidgets
+  - tqdm

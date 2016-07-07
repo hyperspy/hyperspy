@@ -19,6 +19,7 @@
 import os
 
 import numpy as np
+import functools
 import warnings
 
 import traits.api as t
@@ -32,7 +33,7 @@ from hyperspy.exceptions import NavigationDimensionError
 from hyperspy.misc.export_dictionary import export_to_dictionary, \
     load_from_dictionary
 from hyperspy.events import Events, Event
-from hyperspy.misc.hspy_warnings import VisibleDeprecationWarning
+from hyperspy.exceptions import VisibleDeprecationWarning
 
 import logging
 
@@ -43,7 +44,7 @@ class NoneFloat(t.CFloat):   # Lazy solution, but usable
     default_value = None
 
     def validate(self, object, name, value):
-        if value == "None" or value == u"None":
+        if value == "None" or value == b"None":
             value = None
         if value is None:
             super(NoneFloat, self).validate(object, name, 0)
@@ -194,7 +195,7 @@ class Parameter(t.HasTraits):
         if self.component is not None:
             text += ' of %s' % self.component._get_short_description()
         text = '<' + text + '>'
-        return text.encode('utf8')
+        return text
 
     def __len__(self):
         return self._number_of_elements
@@ -491,12 +492,12 @@ class Parameter(t.HasTraits):
         NavigationDimensionError : if the navigation dimension is 0
 
         """
-        from hyperspy.signal import Signal
+        from hyperspy.signal import BaseSignal
         if self._axes_manager.navigation_dimension == 0:
             raise NavigationDimensionError(0, '>0')
 
-        s = Signal(data=self.map[field],
-                   axes=self._axes_manager._get_navigation_axes_dicts())
+        s = BaseSignal(data=self.map[field],
+                       axes=self._axes_manager._get_navigation_axes_dicts())
         if self.component is not None and \
                 self.component.active_is_multidimensional:
             s.data[np.logical_not(self.component._active_array)] = np.nan
@@ -514,8 +515,23 @@ class Parameter(t.HasTraits):
                 navigate=True)
         return s
 
-    def plot(self):
-        self.as_signal().plot()
+    def plot(self, **kwargs):
+        """Plot parameter signal.
+
+        Parameters
+        ----------
+        **kwargs
+            Any extra keyword arguments are passed to the signal plot.
+
+        Example
+        -------
+        >>> parameter.plot()
+
+        Set the minimum and maximum displayed values
+
+        >>> parameter.plot(vmin=0, vmax=1)
+        """
+        self.as_signal().plot(**kwargs)
 
     def export(self, folder=None, name=None, format=None,
                save_std=False):
@@ -596,6 +612,118 @@ class Parameter(t.HasTraits):
         view = View(editable_traits, buttons=['OK', 'Cancel'])
         return view
 
+    def _interactive_slider_bounds(self, index=None):
+        """Guesstimates the bounds for the slider. They will probably have to
+        be changed later by the user.
+        """
+        fraction = 10.
+        _min, _max, step = None, None, None
+        value = self.value if index is None else self.value[index]
+        if self.bmin is not None:
+            _min = self.bmin
+        if self.bmax is not None:
+            _max = self.bmax
+        if _max is None and _min is not None:
+            _max = value + fraction * (value - _min)
+        if _min is None and _max is not None:
+            _min = value - fraction * (_max - value)
+        if _min is None and _max is None:
+            if self is self.component._position:
+                axis = self._axes_manager.signal_axes[-1]
+                _min = axis.axis.min()
+                _max = axis.axis.max()
+                step = np.abs(axis.scale)
+            else:
+                _max = value + np.abs(value * fraction)
+                _min = value - np.abs(value * fraction)
+        if step is None:
+            step = (_max - _min) * 0.001
+        return {'min': _min, 'max': _max, 'step': step}
+
+    def _interactive_update(self, value=None, index=None):
+        """Callback function for the widgets, to update the value
+        """
+        if value is not None:
+            if index is None:
+                self.value = value['new']
+            else:
+                self.value = self.value[:index] + (value['new'],) +\
+                    self.value[index + 1:]
+
+    def notebook_interaction(self, display=True):
+        """Creates interactive notebook widgets for the parameter, if
+        available.
+        Requires `ipywidgets` to be installed.
+        Parameters
+        ----------
+        display : bool
+            if True (default), attempts to display the parameter widget.
+            Otherwise returns the formatted widget object.
+        """
+        from ipywidgets import VBox
+        from traitlets import TraitError as TraitletError
+        from IPython.display import display as ip_display
+        try:
+            if self._number_of_elements == 1:
+                container = self._create_notebook_widget()
+            else:
+                children = [self._create_notebook_widget(index=i) for i in
+                            range(self._number_of_elements)]
+                container = VBox(children)
+            if not display:
+                return container
+            ip_display(container)
+        except TraitletError:
+            if display:
+                _logger.info('This function is only avialable when running in'
+                             ' a notebook')
+            else:
+                raise
+
+    def _create_notebook_widget(self, index=None):
+
+        from ipywidgets import (FloatSlider, FloatText, Layout, HBox)
+
+        widget_bounds = self._interactive_slider_bounds(index=index)
+        thismin = FloatText(value=widget_bounds['min'],
+                            description='min',
+                            layout=Layout(flex='0 1 auto',
+                                          width='auto'),)
+        thismax = FloatText(value=widget_bounds['max'],
+                            description='max',
+                            layout=Layout(flex='0 1 auto',
+                                          width='auto'),)
+        current_value = self.value if index is None else self.value[index]
+        current_name = self.name
+        if index is not None:
+            current_name += '_{}'.format(index)
+        widget = FloatSlider(value=current_value,
+                             min=thismin.value,
+                             max=thismax.value,
+                             step=widget_bounds['step'],
+                             description=current_name,
+                             layout=Layout(flex='1 1 auto', width='auto'))
+
+        def on_min_change(change):
+            if widget.max > change['new']:
+                widget.min = change['new']
+                widget.step = np.abs(widget.max - widget.min) * 0.001
+
+        def on_max_change(change):
+            if widget.min < change['new']:
+                widget.max = change['new']
+                widget.step = np.abs(widget.max - widget.min) * 0.001
+
+        thismin.observe(on_min_change, names='value')
+        thismax.observe(on_max_change, names='value')
+
+        this_observed = functools.partial(self._interactive_update,
+                                          index=index)
+
+        widget.observe(this_observed, names='value')
+        container = HBox((thismin, widget, thismax))
+        return container
+
 
 class Component(t.HasTraits):
     __axes_manager = None
@@ -638,6 +766,8 @@ class Component(t.HasTraits):
                            'active': None
                            }
         self._slicing_whitelist = {'_active_array': 'inav'}
+        self._slicing_order = ('active', 'active_is_multidimensional',
+                               '_active_array',)
 
     _name = ''
     _active_is_multidimensional = False
@@ -653,15 +783,13 @@ class Component(t.HasTraits):
             raise ValueError('Only boolean values are permitted')
 
         if value == self.active_is_multidimensional:
-            _logger.warn('`active_is_multidimensional` already %s for %s' %
-                         (str(value), self.name))
+            _logger.warning('`active_is_multidimensional` already %s for %s' %
+                            (str(value), self.name))
             return
 
         if value:  # Turn on
             if self._axes_manager.navigation_size < 2:
-                warnings.warn(
-                    '`navigation_size` < 2, skipping',
-                    RuntimeWarning)
+                _logger.warning('`navigation_size` < 2, skipping')
                 return
             # Store value at current position
             self._create_active_array()
@@ -736,7 +864,6 @@ class Component(t.HasTraits):
         self._active = arg
         if self.active_is_multidimensional is True:
             self._store_active_value_in_array(arg)
-
         self.events.active_changed.trigger(active=self._active, obj=self)
         self.trait_property_changed('active', old_value, self._active)
 
@@ -806,6 +933,8 @@ class Component(t.HasTraits):
             shape = [1, ]
         if (not isinstance(self._active_array, np.ndarray)
                 or self._active_array.shape != shape):
+            _logger.debug('Creating _active_array for {}.\n\tCurrent array '
+                          'is:\n{}'.format(self, self._active_array))
             self._active_array = np.ones(shape, dtype=bool)
 
     def _create_arrays(self):
@@ -902,10 +1031,10 @@ class Component(t.HasTraits):
                 is not None else 0
             if parameter.twin is None:
                 if dim <= 1:
-                    print '%s = %s ± %s %s' % (parameter.name,
-                                               parameter.value,
-                                               parameter.std,
-                                               parameter.units)
+                    return ('%s = %s ± %s %s' % (parameter.name,
+                                                 parameter.value,
+                                                 parameter.std,
+                                                 parameter.units))
 
     def __call__(self):
         """Returns the corresponding model for the current coordinates
@@ -928,8 +1057,11 @@ class Component(t.HasTraits):
         s = self.__call__()
         if not self.active:
             s.fill(np.nan)
-        if self.model.spectrum.metadata.Signal.binned is True:
-            s *= self.model.spectrum.axes_manager.signal_axes[0].scale
+        if self.model.signal.metadata.Signal.binned is True:
+            s *= self.model.signal.axes_manager.signal_axes[0].scale
+        if old_axes_manager is not None:
+            self.model.axes_manager = old_axes_manager
+            self.charge()
         if out_of_range2nans is True:
             ns = np.empty(self.model.axis.axis.shape)
             ns.fill(np.nan)
@@ -1010,18 +1142,20 @@ class Component(t.HasTraits):
         for _parameter in parameter_list:
             _parameter.free = False
 
+    def _estimate_parameters(self, signal):
+        if self._axes_manager != signal.axes_manager:
+            self._axes_manager = signal.axes_manager
+            self._create_arrays()
+
     def as_dictionary(self, fullcopy=True):
         """Returns component as a dictionary
-
         For more information on method and conventions, see
         :meth:`hyperspy.misc.export_dictionary.export_to_dictionary`
-
         Parameters
         ----------
         fullcopy : Bool (optional, False)
             Copies of objects are stored, not references. If any found,
             functions will be pickled and signals converted to dictionaries
-
         Returns
         -------
         dic : dictionary
@@ -1042,7 +1176,6 @@ class Component(t.HasTraits):
 
     def _load_dictionary(self, dic):
         """Load data from dictionary.
-
         Parameters
         ----------
         dict : dictionary
@@ -1058,14 +1191,12 @@ class Component(t.HasTraits):
                 component attributes.  For more information see
                 :meth:`hyperspy.misc.export_dictionary.load_from_dictionary`
             * any field from _whitelist.keys() *
-
         Returns
         -------
         twin_dict : dictionary
             Dictionary of 'id' values from input dictionary as keys with all of
             the parameters of the component, to be later used for setting up
             correct twins.
-
         """
         if dic['_id_name'] == self._id_name:
             id_dict = {}
@@ -1084,7 +1215,36 @@ class Component(t.HasTraits):
             raise ValueError( "_id_name of component and dictionary do not match, \ncomponent._id_name = %s\
                     \ndictionary['_id_name'] = %s" % (self._id_name, dic['_id_name']))
 
-    def _estimate_parameters(self, signal):
-        if self._axes_manager != signal.axes_manager:
-            self._axes_manager = signal.axes_manager
-            self._create_arrays()
+    def notebook_interaction(self, display=True):
+        """Creates interactive notebook widgets for all component parameters,
+        if available.
+        Requires `ipywidgets` to be installed.
+        Parameters
+        ----------
+        display : bool
+            if True (default), attempts to display the widgets.
+            Otherwise returns the formatted widget object.
+        """
+        from ipywidgets import (Checkbox, VBox)
+        from traitlets import TraitError as TraitletError
+        from IPython.display import display as ip_display
+        try:
+            active = Checkbox(description='active', value=self.active)
+
+            def on_active_change(change):
+                self.active = change['new']
+            active.observe(on_active_change, names='value')
+
+            container = VBox([active])
+            for parameter in self.parameters:
+                container.children += parameter.notebook_interaction(False),
+
+            if not display:
+                return container
+            ip_display(container)
+        except TraitletError:
+            if display:
+                _logger.info('This function is only avialable when running in'
+                             ' a notebook')
+            else:
+                raise
