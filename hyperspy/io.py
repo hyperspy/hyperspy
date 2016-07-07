@@ -45,11 +45,9 @@ def load(filenames=None,
     """
     Load potentially multiple supported file into an hyperspy structure
     Supported formats: HDF5, msa, Gatan dm3, Ripple (rpl+raw), Bruker bcf,
-    FEI ser and emi, hdf5, SEMPER unf, tif and a number of image formats.
-
+    FEI ser and emi, hdf5, SEMPER unf, EMD, tif and a number of image formats.
     Any extra keyword is passed to the corresponsing reader. For
     available options see their individual documentation.
-
     Parameters
     ----------
     filenames :  None, str or list of strings
@@ -67,10 +65,9 @@ def load(filenames=None,
         data.
         If None, the value is read or guessed from the file. Any other value
         overrides the value stored in the file if any.
-        If "spectrum" load the data in a Spectrum (sub)class.
-        If "image" load the data in an Image (sub)class.
+        If "spectrum" load the data in a Signal1D (sub)class.
+        If "image" load the data in an Signal2D (sub)class.
         If "" (empty string) load the data in a Signal class.
-
     signal_type : {None, "EELS", "EDS_TEM", "EDS_SEM", "", str}
         The acronym that identifies the signal type.
         The value provided may determine the Signal subclass assigned to the
@@ -112,7 +109,6 @@ def load(filenames=None,
         If an axis with this name already
         exists it automatically append '-i', where `i` are integers,
         until it finds a name that is not yet in use.
-
     mmap: bool
         If True and stack is True, then the data is stored
         in a memory-mapped temporary file.The memory-mapped data is
@@ -124,36 +120,28 @@ def load(filenames=None,
         If mmap_dir is not None, and stack and mmap are True, the memory
         mapped file will be created in the given directory,
         otherwise the default directory is used.
-
     load_to_memory: bool
-        for HDF5 files and blockfiles, if True (default) loads all data to
-        memory. If False, enables only loading the data upon request
+        for HDF5 files, blockfiles and EMD files, if True (default) loads all
+        data to memory. If False, enables only loading the data upon request
     mmap_mode: {'r', 'r+', 'c'}
         Used when loading blockfiles to determine which mode to use for when
         loading as memmap (i.e. when load_to_memory=False)
-
+    print_info: bool
+        For SEMPER unf- and EMD (Berkley)-files, if True (default is False)
+        additional information read during loading is printed for a quick overview.
     Returns
     -------
     Signal instance or list of signal instances
-
     Examples
     --------
     Loading a single file providing the signal type:
-
     >>> d = hs.load('file.dm3', signal_type='EDS_TEM')
-
     Loading a single file and overriding its default record_by:
-
-    >>> d = hs.load('file.dm3', record_by='Image')
-
+    >>> d = hs.load('file.dm3', record_by='image')
     Loading multiple files:
-
     >>> d = hs.load('file1.dm3','file2.dm3')
-
     Loading multiple files matching the pattern:
-
     >>> d = hs.load('file*.dm3')
-
     """
     kwds['record_by'] = record_by
     kwds['signal_type'] = signal_type
@@ -225,17 +213,14 @@ def load_single_file(filename,
     Load any supported file into an HyperSpy structure
     Supported formats: netCDF, msa, Gatan dm3, Ripple (rpl+raw),
     Bruker bcf, FEI ser and emi, hdf5 and SEMPER unf.
-
     Parameters
     ----------
-
     filename : string
         File name (including the extension)
     record_by : {None, 'spectrum', 'image'}
         If None (default) it will try to guess the data type from the file,
-        if 'spectrum' the file will be loaded as an Spectrum object
-        If 'image' the file will be loaded as an Image object
-
+        if 'spectrum' the file will be loaded as an Signal1D object
+        If 'image' the file will be loaded as an Signal2D object
     """
     extension = os.path.splitext(filename)[1][1:]
 
@@ -304,20 +289,17 @@ def assign_signal_subclass(record_by="",
                            signal_type="",
                            signal_origin="",):
     """Given record_by and signal_type return the matching Signal subclass.
-
     Parameters
     ----------
     record_by: {"spectrum", "image", ""}
     signal_type : {"EELS", "EDS", "EDS_TEM", "", str}
     signal_origin : {"experiment", "simulation", ""}
-
     Returns
     -------
     Signal or subclass
-
     """
     import hyperspy.signals
-    from hyperspy.signal import Signal
+    from hyperspy.signal import BaseSignal
     if record_by and record_by not in ["image", "spectrum"]:
         raise ValueError("record_by must be one of: None, empty string, "
                          "\"image\" or \"spectrum\"")
@@ -325,8 +307,7 @@ def assign_signal_subclass(record_by="",
         raise ValueError("signal_origin must be one of: None, empty string, "
                          "\"experiment\" or \"simulation\"")
 
-    signals = hyperspy.misc.utils.find_subclasses(hyperspy.signals, Signal)
-    signals['Signal'] = Signal
+    signals = hyperspy.misc.utils.find_subclasses(hyperspy.signals, BaseSignal)
 
     if signal_origin == "experiment":
         signal_origin = ""
@@ -344,15 +325,12 @@ def assign_signal_subclass(record_by="",
 
 def dict2signal(signal_dict):
     """Create a signal (or subclass) instance defined by a dictionary
-
     Parameters
     ----------
     signal_dict : dictionary
-
     Returns
     -------
     s : Signal or subclass
-
     """
     record_by = ""
     signal_type = ""
