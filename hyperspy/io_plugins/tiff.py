@@ -62,15 +62,13 @@ axes_label_codes = {
 def _import_tifffile_library(import_local_tifffile_if_necessary=False,
                              loading=False):
     def import_local_tifffile(loading=False):
-        if loading:
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore")
-                from hyperspy.external.tifffile import imsave, TiffFile
-            warnings.warn(
-                "Failed to import the optional scikit image package. "
-                "Loading of some compressed images will be slow.\n")
-        else:
-            from hyperspy.external.tifffile import imsave, TiffFile
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            from hyperspy.external.tifffile import imsave, TiffFile        
+            if loading:
+                # when we don't use skimage tifffile
+                warnings.warn(
+                    "Loading of some compressed images will be slow.\n")
         return imsave, TiffFile
 
     try: # in case skimage is not available, import local tifffile.py
