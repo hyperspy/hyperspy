@@ -110,6 +110,17 @@ def test_write_read_unit_imagej_with_description(import_local_tifffile=True):
     if remove_files:
         os.remove(fname2)
         os.remove(fname3)
+
+def test_saving_with_custom_tag():
+    s = hs.signals.Signal2D(np.arange(10*15, dtype=np.uint8).reshape((10, 15)))
+    fname = os.path.join(my_path, 'tiff_files',
+                         'test_saving_with_custom_tag.tif')
+    extratag = [(65000, 's', 1, "Random metadata", False)]
+    s.save(fname, extratags=extratag, overwrite=True)
+    s2 = hs.load(fname)
+    nt.assert_equal(s2.original_metadata['Number_65000'], b"Random metadata")
+    if remove_files:
+        os.remove(fname)
         
 def test_read_unit_from_dm():
     """ Use skimage tifffile.py library """

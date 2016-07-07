@@ -59,30 +59,34 @@ axes_label_codes = {
     '_': t.Undefined}
 
 
-def _import_tifffile_library(import_local_tifffile_if_necessary=False):
-    def import_local_tifffile():
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
+def _import_tifffile_library(import_local_tifffile_if_necessary=False,
+                             loading=False):
+    def import_local_tifffile(loading=False):
+        if loading:
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                from hyperspy.external.tifffile import imsave, TiffFile
+            warnings.warn(
+                "Failed to import the optional scikit image package. "
+                "Loading of some compressed images will be slow.\n")
+        else:
             from hyperspy.external.tifffile import imsave, TiffFile
-        warnings.warn(
-            "Failed to import the optional scikit image package. "
-            "Loading of some compressed images will be slow.\n")
         return imsave, TiffFile
 
     try: # in case skimage is not available, import local tifffile.py
         import skimage
     except ImportError:
-        return import_local_tifffile()
+        return import_local_tifffile(loading=loading)
         
     # import local tifffile.py only if the skimage version too old
     skimage_version = LooseVersion(skimage.__version__)
     if import_local_tifffile_if_necessary and skimage_version <= LooseVersion('0.12.3'):
-        return import_local_tifffile()
+        return import_local_tifffile(loading=loading)
     else:
         from skimage.external.tifffile import imsave, TiffFile
         return imsave, TiffFile
         
-def file_writer(filename, signal, export_scale=True, **kwds):
+def file_writer(filename, signal, export_scale=True, extratags=[], **kwds):
     """Writes data to tif using Christoph Gohlke's tifffile library
 
     Parameters
@@ -110,7 +114,7 @@ def file_writer(filename, signal, export_scale=True, **kwds):
 #            "Description and export scale cannot be used at the same time, "
 #            "because of incompability with the 'ImageJ' format")
     if export_scale:
-        kwds.update(_get_tags_dict(signal))
+        kwds.update(_get_tags_dict(signal, extratags=extratags))
         _logger.info("kwargs passed to tifffile.py imsave: {0}".format(kwds))
 
     imsave(filename, data,
@@ -275,7 +279,7 @@ def _get_scales_from_x_y_resolution(op):
     scales.append(op["y_resolution"][1]/op["y_resolution"][0])
     return scales
             
-def _get_tags_dict(signal, factor=int(1E8)):
+def _get_tags_dict(signal, extratags=[], factor=int(1E8)):
     """ Get the tags to export the scale and the unit to be used in
         Digital Micrograph and ImageJ.
     """
@@ -284,6 +288,7 @@ def _get_tags_dict(signal, factor=int(1E8)):
     tags_dict = _get_imagej_kwargs(signal, scales, units, factor=factor)
     scales, units = _get_scale_unit(signal, encoding='latin-1')
     tags_dict["extratags"].extend(_get_dm_kwargs_extratag(signal, scales, units))
+    tags_dict["extratags"].extend(extratags)
     return tags_dict
         
 def _get_imagej_kwargs(signal, scales, units, factor=int(1E8)):
