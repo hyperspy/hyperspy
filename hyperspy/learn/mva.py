@@ -33,7 +33,7 @@ from hyperspy.misc.machine_learning import import_sklearn
 import hyperspy.misc.io.tools as io_tools
 from hyperspy.learn.svd_pca import svd_pca
 from hyperspy.learn.mlpca import mlpca
-from hyperspy.learn.rpca import orpca
+from hyperspy.learn.rpca import rpca, orpca
 from hyperspy.decorators import do_not_replot
 from scipy import linalg
 from hyperspy.misc.machine_learning.orthomax import orthomax
@@ -120,7 +120,7 @@ class MVA():
             If True, scale the SI to normalize Poissonian noise
 
         algorithm : 'svd' | 'fast_svd' | 'mlpca' | 'fast_mlpca' | 'nmf' |
-            'sparse_pca' | 'mini_batch_sparse_pca' | 'orpca'
+            'sparse_pca' | 'mini_batch_sparse_pca' | 'rpca' | 'orpca'
 
         output_dimension : None or int
             number of components to keep/calculate
@@ -186,17 +186,6 @@ class MVA():
                 normalize_poissonian_noise = False
             if output_dimension is None:
                 raise ValueError("With the MLPCA algorithm the "
-                                 "output_dimension must be specified")
-
-        if algorithm == 'orpca':
-            if normalize_poissonian_noise is True:
-                _logger.warning(
-                    "It makes no sense to do normalize_poissonian_noise with "
-                    "the ORPCA algorithm. Therefore, "
-                    "normalize_poissonian_noise is set to False")
-                normalize_poissonian_noise = False
-            if output_dimension is None:
-                raise ValueError("With the ORPCA algorithm the "
                                  "output_dimension must be specified")
 
         # Apply pre-treatments
@@ -341,6 +330,16 @@ class MVA():
                 loadings = U * S
                 factors = V
                 explained_variance_ratio = S ** 2 / Sobj
+                explained_variance = S ** 2 / len(factors)
+            elif algorithm == 'rpca':
+                _logger.info("Performing Robust PCA with GoDec")
+
+                X, E, G, U, S, V = rpca(
+                    dc[:, signal_mask][navigation_mask, :],
+                    rank=output_dimension, fast=True, **kwargs)
+
+                loadings = U * S
+                factors = V
                 explained_variance = S ** 2 / len(factors)
             elif algorithm == 'orpca':
                 _logger.info("Performing Online Robust PCA")
