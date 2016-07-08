@@ -355,7 +355,8 @@ class Signal1DLine(object):
         try:
             self.ax.hspy_fig._draw_animated()
         except:
-            raise
+            # There may be errors if the figure does no longer exist.
+            pass
 
     def close(self):
         if self.line in self.ax.lines:
