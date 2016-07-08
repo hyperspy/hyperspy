@@ -126,12 +126,10 @@ class TestAlignTools:
         nt.assert_true(np.all(d_al == self.aligned))
 
 
-class TestPhaseFunctions:
-
-    def test_add_phase_ramp(self):
-        self.s = hs.signals.Signal2D(np.indices((3, 3)).sum(axis=0) + 4)
-        self.s.add_ramp(-1, -1, -4)
-        npt.assert_almost_equal(self.s.data, 0)
+def test_add_ramp():
+    s = hs.signals.Signal2D(np.indices((3, 3)).sum(axis=0) + 4)
+    s.add_ramp(-1, -1, -4)
+    npt.assert_almost_equal(s.data, 0)
 
 
 if __name__ == '__main__':

@@ -11,10 +11,14 @@ The Signal class and its specilized subclasses:
     Signal2D
         For generic data with signal_dimension equal 2, i.e. image data of
         n-dimensions. The signal is unbinned by default.
-    Signal1D
-        Deprecated in favour of Signal1D from version 1.0.0
-    Signal2D
-        Deprecated in favour of Signal2D from version 1.0.0
+    ComplexSignal
+        For generic complex data with arbitrary signal_dimension.
+    ComplexSignal1D
+        For generic complex data with signal_dimension equal 1, i.e. spectral
+        data of n-dimensions. The signal is unbinned by default.
+    ComplexSignal2D
+        For generic complex data with signal_dimension equal 2, i.e. image
+        data of n-dimensions. The signal is unbinned by default.
     Simulation
         For generic simulated data with arbitrary signal_dimension. All other
         simulation signal classes inherit from this one. It should only be used
@@ -35,9 +39,6 @@ The Signal class and its specilized subclasses:
     DielectricFunction
         For dielectric function data with signal_dimension equal 1. The signal
         is unbinned by default.
-    WaveImage
-        For complex 2D-images. Phase, amplitude, real and imaginary parts are
-        easily accessible and can be manipulated.
 
 """
 
@@ -45,6 +46,8 @@ The Signal class and its specilized subclasses:
 from hyperspy._signals.signal1d import Signal1D
 from hyperspy._signals.signal2d import Signal2D
 from hyperspy._signals.complex_signal import ComplexSignal
+from hyperspy._signals.complex_signal1d import ComplexSignal1D
+from hyperspy._signals.complex_signal2d import ComplexSignal2D
 from hyperspy._signals.eels import EELSSpectrum
 from hyperspy._signals.eds_sem import EDSSEMSpectrum
 from hyperspy._signals.eds_tem import EDSTEMSpectrum
@@ -54,5 +57,4 @@ from hyperspy._signals.image_simulation import ImageSimulation
 from hyperspy._signals.spectrum_simulation import SpectrumSimulation
 from hyperspy._signals.eels_spectrum_simulation import (
     EELSSpectrumSimulation)
-from hyperspy._signals.electron_wave_image import ElectronWaveImage
 from hyperspy.signal import BaseSignal

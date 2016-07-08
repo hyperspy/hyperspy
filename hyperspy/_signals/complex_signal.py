@@ -21,8 +21,8 @@ import numpy as np
 import h5py
 
 from hyperspy.signal import BaseSignal
-from hyperspy._signals.signal1d import Signal1D
-from hyperspy._signals.signal2d import Signal2D
+from hyperspy.docstrings.plot import (
+    BASE_PLOT_DOCSTRING, COMPLEX_DOCSTRING, KWARGS_DOCSTRING)
 
 
 class ComplexSignal(BaseSignal):
@@ -39,7 +39,7 @@ class ComplexSignal(BaseSignal):
         else:
             title = 'Untitled Signal'
         real.metadata.General.title = 'real({})'.format(title)
-        real.set_signal_type('')  # Result is no longer complex!
+        real._assign_subclass()
         return real
 
     @real.setter
@@ -58,7 +58,7 @@ class ComplexSignal(BaseSignal):
         else:
             title = 'Untitled Signal'
         imag.metadata.General.title = 'imag({})'.format(title)
-        imag.set_signal_type('')  # Result is no longer complex!
+        imag._assign_subclass()
         return imag
 
     @imag.setter
@@ -72,7 +72,7 @@ class ComplexSignal(BaseSignal):
     def amplitude(self):
         """Get/set the amplitude of the data. Returns an appropriate HyperSpy signal."""
         amplitude = np.abs(self)
-        amplitude.set_signal_type('')  # Result is no longer complex!
+        amplitude._assign_subclass()
         return amplitude
 
     @amplitude.setter
@@ -91,7 +91,7 @@ class ComplexSignal(BaseSignal):
         else:
             title = 'Untitled Signal'
         phase.metadata.General.title = 'phase({})'.format(title)
-        phase.set_signal_type('')  # Result is no longer complex!
+        phase._assign_subclass()
         return phase
 
     @phase.setter
@@ -116,7 +116,7 @@ class ComplexSignal(BaseSignal):
             complex dtypes are allowed. If real valued properties are required use `real`,
             `imag`, `amplitude` and `phase` instead.
         """
-        if 'complex' in dtype.name:
+        if 'complex' in str(dtype):
             self.data = self.data.astype(dtype)
         else:
             raise AttributeError('Complex data can only be converted into other complex dtypes!')
@@ -166,7 +166,7 @@ class ComplexSignal(BaseSignal):
 
         Returns
         -------
-        phase_image: :class:`~hyperspy._signals.Signal2D`
+        phase_image: :class:`~hyperspy._signals.BaseSignal` subclass
             Unwrapped phase.
 
         Notes
@@ -182,71 +182,22 @@ class ComplexSignal(BaseSignal):
         phase = self.phase
         phase.map(unwrap_phase, wrap_around=wrap_around, seed=seed,
                   show_progressbar=show_progressbar)
+        phase.metadata.General.title = 'unwrapped {}'.format(phase.metadata.General.title)
         return phase  # Now unwrapped!
 
     def plot(self, navigator="auto", axes_manager=None, representation='cartesian', **kwargs):
-        """Plot the signal at the current coordinates.
-
-        For multidimensional datasets an optional figure,
-        the "navigator", with a cursor to navigate that data is
-        raised. In any case it is possible to navigate the data using
-        the sliders. Currently only signals with signal_dimension equal to
-        0, 1 and 2 can be plotted.
-
-        Parameters
-        ----------
-        navigator : {"auto", None, "slider", "spectrum", Signal}
-            If "auto", if navigation_dimension > 0, a navigator is
-            provided to explore the data.
-            If navigation_dimension is 1 and the signal is an image
-            the navigator is a spectrum obtained by integrating
-            over the signal axes (the image).
-            If navigation_dimension is 1 and the signal is a spectrum
-            the navigator is an image obtained by stacking horizontally
-            all the spectra in the dataset.
-            If navigation_dimension is > 1, the navigator is an image
-            obtained by integrating the data over the signal axes.
-            Additionaly, if navigation_dimension > 2 a window
-            with one slider per axis is raised to navigate the data.
-            For example,
-            if the dataset consists of 3 navigation axes X, Y, Z and one
-            signal axis, E, the default navigator will be an image
-            obtained by integrating the data over E at the current Z
-            index and a window with sliders for the X, Y and Z axes
-            will be raised. Notice that changing the Z-axis index
-            changes the navigator in this case.
-            If "slider" and the navigation dimension > 0 a window
-            with one slider per axis is raised to navigate the data.
-            If "spectrum" and navigation_dimension > 0 the navigator
-            is always a spectrum obtained by integrating the data
-            over all other axes.
-            If None, no navigator will be provided.
-            Alternatively a Signal instance can be provided. The signal
-            dimension must be 1 (for a spectrum navigator) or 2 (for a
-            image navigator) and navigation_shape must be 0 (for a static
-            navigator) or navigation_shape + signal_shape must be equal
-            to the navigator_shape of the current object (for a dynamic
-            navigator).
-            If the signal dtype is RGB or RGBA this parameters has no
-            effect and is always "slider".
-
-        axes_manager : {None, axes_manager}
-            If None `axes_manager` is used.
-
-        representation : {'cartesian' or 'angular'}
-            Determines if the real and imaginary part of the complex data is plotted ('cartesian',
-            default), or if the amplitude and phase should be used ('angular').
-
-        **kwargs : optional
-            Any extra keyword arguments are passed to the signal plot.
+        """%s
+        %s
+        %s
 
         """
         if representation == 'cartesian':
             self.real.plot(navigator=navigator, axes_manager=self.axes_manager, **kwargs)
             self.imag.plot(navigator=navigator, axes_manager=self.axes_manager, **kwargs)
-        elif representation == 'angular':
+        elif representation == 'polar':
             self.amplitude.plot(navigator=navigator, axes_manager=self.axes_manager, **kwargs)
             self.phase.plot(navigator=navigator, axes_manager=self.axes_manager, **kwargs)
         else:
-            raise KeyError('{} is not a valid input for representation (use "cartesian" or '
-                           '"angular")!'.format(representation))
+            raise KeyError('{}'.format(representation) +
+                           'is not a valid input for representation (use "cartesian" or "polar")!')
+    plot.__doc__ %= BASE_PLOT_DOCSTRING, COMPLEX_DOCSTRING, KWARGS_DOCSTRING

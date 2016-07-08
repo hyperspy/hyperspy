@@ -51,6 +51,8 @@ from hyperspy.misc.slicing import SpecialSlicers, FancySlicing
 from hyperspy.misc.utils import slugify
 from hyperspy.docstrings.signal import (
     ONE_AXIS_PARAMETER, MANY_AXIS_PARAMETER, OUT_ARG)
+from hyperspy.docstrings.plot import (
+    BASE_PLOT_DOCSTRING, PLOT2D_DOCSTRING, KWARGS_DOCSTRING)
 from hyperspy.events import Events, Event
 from hyperspy.interactive import interactive
 from hyperspy.misc.signal_tools import are_signals_aligned
@@ -1865,56 +1867,8 @@ class BaseSignal(FancySlicing,
             self.data.__getitem__(axes_manager._getitem_tuple))
 
     def plot(self, navigator="auto", axes_manager=None, **kwargs):
-        """Plot the signal at the current coordinates.
-
-        For multidimensional datasets an optional figure,
-        the "navigator", with a cursor to navigate that data is
-        raised. In any case it is possible to navigate the data using
-        the sliders. Currently only signals with signal_dimension equal to
-        0, 1 and 2 can be plotted.
-
-        Parameters
-        ----------
-        navigator : {"auto", None, "slider", "spectrum", Signal}
-            If "auto", if navigation_dimension > 0, a navigator is
-            provided to explore the data.
-            If navigation_dimension is 1 and the signal is an image
-            the navigator is a spectrum obtained by integrating
-            over the signal axes (the image).
-            If navigation_dimension is 1 and the signal is a spectrum
-            the navigator is an image obtained by stacking horizontally
-            all the spectra in the dataset.
-            If navigation_dimension is > 1, the navigator is an image
-            obtained by integrating the data over the signal axes.
-            Additionaly, if navigation_dimension > 2 a window
-            with one slider per axis is raised to navigate the data.
-            For example,
-            if the dataset consists of 3 navigation axes X, Y, Z and one
-            signal axis, E, the default navigator will be an image
-            obtained by integrating the data over E at the current Z
-            index and a window with sliders for the X, Y and Z axes
-            will be raised. Notice that changing the Z-axis index
-            changes the navigator in this case.
-            If "slider" and the navigation dimension > 0 a window
-            with one slider per axis is raised to navigate the data.
-            If "spectrum" and navigation_dimension > 0 the navigator
-            is always a spectrum obtained by integrating the data
-            over all other axes.
-            If None, no navigator will be provided.
-            Alternatively a Signal instance can be provided. The signal
-            dimension must be 1 (for a spectrum navigator) or 2 (for a
-            image navigator) and navigation_shape must be 0 (for a static
-            navigator) or navigation_shape + signal_shape must be equal
-            to the navigator_shape of the current object (for a dynamic
-            navigator).
-            If the signal dtype is RGB or RGBA this parameters has no
-            effect and is always "slider".
-
-        axes_manager : {None, axes_manager}
-            If None `axes_manager` is used.
-
-        **kwargs : optional
-            Any extra keyword arguments are passed to the signal plot.
+        """%s
+        %s
 
         """
 
@@ -2035,6 +1989,7 @@ class BaseSignal(FancySlicing,
             self._plot.signal_plot.events.closed.connect(
                 lambda: self.events.data_changed.disconnect(self.update_plot),
                 [])
+    plot.__doc__ %= BASE_PLOT_DOCSTRING, KWARGS_DOCSTRING
 
     def save(self, filename=None, overwrite=None, extension=None,
              **kwds):
@@ -3668,6 +3623,7 @@ class BaseSignal(FancySlicing,
         nitem = int(self.axes_manager.navigation_size)
         nitem = nitem if nitem > 0 else 1
         return nitem
+
     def as_signal1D(self, spectral_axis, out=None):
         """Return the Signal as a spectrum.
 

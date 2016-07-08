@@ -20,20 +20,13 @@ import numpy as np
 from scipy import constants
 from scipy.integrate import simps, cumtrapz
 
-from hyperspy._signals.signal1d import Signal1D
-from hyperspy._signals.complex_signal import ComplexSignal
+from hyperspy._signals.complex_signal1d import ComplexSignal1D
 from hyperspy.misc.eels.tools import eels_constant
 
 
-class DielectricFunction(ComplexSignal):
+class DielectricFunction(ComplexSignal1D):
 
-    _record_by = "spectrum"
     _signal_type = "DielectricFunction"
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.axes_manager.set_signal_dimension(1)
-        self.metadata.Signal.binned = False
 
     def get_number_of_effective_electrons(self, nat, cumulative=False):
         """Compute the number of effective electrons using the Bethe f-sum

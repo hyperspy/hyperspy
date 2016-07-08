@@ -39,10 +39,11 @@ _logger = logging.getLogger(__name__)
 
 
 class EELSSpectrum(Signal1D):
+
     _signal_type = "EELS"
 
-    def __init__(self, *args, **kwards):
-        Signal1D.__init__(self, *args, **kwards)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         # Attributes defaults
         self.subshells = set()
         self.elements = set()

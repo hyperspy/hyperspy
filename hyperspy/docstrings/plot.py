@@ -1,74 +1,10 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2016 The HyperSpy developers
-#
-# This file is part of  HyperSpy.
-#
-#  HyperSpy is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-#  HyperSpy is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+"""Common docstring snippets for plot.
 
+"""
 
-import numpy as np
-
-from hyperspy._signals.complex_signal import ComplexSignal
-
-
-class ElectronWaveImage(ComplexSignal):
-    """Signal2D subclass for complex electron wave data (e.g. reconstructed from holograms)."""
-
-    _record_by = "image"
-    _signal_type = "electron wave"
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.axes_manager.set_signal_dimension(2)
-        self.metadata.Signal.binned = False
-
-    def add_phase_ramp(self, ramp_x, ramp_y, offset=0):
-        """Add a linear phase ramp to the wave.
-
-        Parameters
-        ----------
-        ramp_x: float
-            Slope of the ramp in x-direction.
-        ramp_y: float
-            Slope of the ramp in y-direction.
-        offset: float, optional
-            Offset of the ramp at the fulcrum.
-        Notes
-        -----
-            The fulcrum of the linear ramp is at the origin and the slopes are given in units of
-            the axis with the according scale taken into account. Both are available via the
-            `axes_manager` of the signal.
-
-        """
-        phase = self.phase
-        phase.add_ramp(ramp_x, ramp_y, offset)
-        self.phase = phase
-
-    def plot(self,
-             colorbar=True,
-             scalebar=True,
-             scalebar_color="white",
-             axes_ticks=None,
-             auto_contrast=True,
-             saturated_pixels=0,
-             vmin=None,
-             vmax=None,
-             no_nans=False,
-             centre_colormap="auto",
-             **kwargs
-             ):
-        """Plot image.
+BASE_PLOT_DOCSTRING = \
+    """Plot the signal at the current coordinates.
 
         For multidimensional datasets an optional figure,
         the "navigator", with a cursor to navigate that data is
@@ -113,9 +49,11 @@ class ElectronWaveImage(ComplexSignal):
             If the signal dtype is RGB or RGBA this parameters has no
             effect and is always "slider".
         axes_manager : {None, axes_manager}
-            If None `axes_manager` is used.
-        colorbar : bool, optional
-             If true, a colorbar is plotted for non-RGB images.
+            If None `axes_manager` is used."""
+
+PLOT2D_DOCSTRING = \
+    """colorbar : bool, optional
+            If true, a colorbar is plotted for non-RGB images.
         scalebar : bool, optional
             If True and the units and scale of the x and y axes are the same a
             scale bar is plotted.
@@ -125,9 +63,6 @@ class ElectronWaveImage(ComplexSignal):
             If True, plot the axes ticks. If None axes_ticks are only
             plotted when the scale bar is not plotted. If False the axes ticks
             are never plotted.
-        auto_contrast : bool, optional
-            If True, the contrast is stretched for each image using the
-            `saturated_pixels` value. Default True.
         saturated_pixels: scalar
             The percentage of pixels that are left out of the bounds.
             For example, the low and high bounds of a value of 1 are the 0.5%
@@ -141,21 +76,13 @@ class ElectronWaveImage(ComplexSignal):
         centre_colormap : {"auto", True, False}
             If True the centre of the color scheme is set to zero. This is
             specially useful when using diverging color schemes. If "auto"
-            (default), diverging color schemes are automatically centred.
-        **kwargs, optional
-            Additional key word arguments passed to matplotlib.imshow()
+            (default), diverging color schemes are automatically centred."""
 
-        """
-        super().plot(
-            colorbar=colorbar,
-            scalebar=scalebar,
-            scalebar_color=scalebar_color,
-            axes_ticks=axes_ticks,
-            auto_contrast=auto_contrast,
-            saturated_pixels=saturated_pixels,
-            vmin=vmin,
-            vmax=vmax,
-            no_nans=no_nans,
-            centre_colormap=centre_colormap,
-            **kwargs
-        )
+COMPLEX_DOCSTRING = \
+    """representation : {'cartesian' or 'polar'}
+            Determines if the real and imaginary part of the complex data is plotted ('cartesian',
+            default), or if the amplitude and phase should be used ('polar')."""
+
+KWARGS_DOCSTRING = \
+    """**kwargs, optional
+            Additional key word arguments passed to matplotlib.imshow()"""

@@ -224,10 +224,11 @@ class Signal1D(BaseSignal):
 
     """
     """
+
     _record_by = 'spectrum'
 
     def __init__(self, *args, **kwargs):
-        BaseSignal.__init__(self, *args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.axes_manager.set_signal_dimension(1)
 
     def to_signal2D(self):
