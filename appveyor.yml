@@ -6,7 +6,7 @@ environment:
   global:
     TEST_DEPS: "nose wheel pip"
     NSIS_DIR: "%PROGRAMFILES(x86)%/NSIS"
-
+    OS: Visual Studio 2015
 
   matrix:
 
