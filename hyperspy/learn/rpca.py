@@ -1,11 +1,4 @@
 # -*- coding: utf-8 -*-
-# This file is a transcription of a MATLAB code obtained from the
-# following research paper:
-#   Jiashi Feng, Huan Xu and Shuicheng Yuan, "Online Robust PCA via
-#   Stochastic Optimization", Advances in Neural Information Processing
-#   Systems 26, (2013), pp. 404-412.
-#
-# Copyright 2013 Jiashi Feng
 # Copyright 2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
@@ -33,17 +26,165 @@ from hyperspy.misc.machine_learning.import_sklearn import (
 
 _logger = logging.getLogger(__name__)
 
+def _thresh(X, lambda1):
+    res = np.abs(X) - lambda1
+    return np.sign(X) * ((res > 0) * res)
+
+def rpca(X, rank, fast=False, lambda1=None,
+         power=None, tol=None, maxiter=None):
+    """
+    This function performs Robust PCA with missing or corrupted data,
+    using the GoDec algorithm
+
+    Parameters
+    ----------
+    X : numpy array
+        is the [nfeatures x nsamples] matrix of observations.
+    rank : int
+        The model dimensionality.
+    lambda1 : None | float
+        Regularization parameter.
+        If None, set to 1 / sqrt(nsamples)
+    power : None | integer
+        The number of power iterations used in the initialization
+        If None, set to 0 for speed
+    tol : None | float
+        Convergence tolerance
+        If None, set to 1e-3
+    maxiter : None | integer
+        Maximum number of iterations
+        If None, set to 1e3
+
+    Returns
+    -------
+    Xhat : numpy array
+        is the [nfeatures x nsamples] low-rank matrix
+    Ehat : numpy array
+        is the [nfeatures x nsamples] sparse error matrix
+    Ghat : numpy array
+        is the [nfeatures x nsamples] Gaussian noise matrix
+    U, S, V : numpy arrays
+        are the results of an SVD on Xhat
+
+    Notes
+    -----
+    Algorithm based on the following research paper:
+       Tianyi Zhou and Dacheng Tao, "GoDec: Randomized Low-rank & Sparse Matrix
+       Decomposition in Noisy Case", ICML-11, (2011), pp. 33-40.
+
+    """
+    if fast is True and sklearn_installed is True:
+        def svd(X):
+            return fast_svd(X, rank)
+    else:
+        def svd(X):
+            return scipy.linalg.svd(X, full_matrices=False)
+
+    # Get shape
+    m, n = X.shape
+
+    # Operate on transposed matrix for speed
+    transpose = False
+    if m < n:
+        transpose = True
+        X = X.T
+
+    # Get shape
+    m, n = X.shape
+
+    # Check options if None
+    if lambda1 is None:
+        _logger.warning("Threshold 'lambda1' is set to "
+                        "default: 1 / sqrt(nsamples)")
+        lambda1 = 1.0 / np.sqrt(n)
+    if power is None:
+        _logger.warning("Number of power iterations not specified. "
+                        "Defaulting to 0")
+        power = 0
+    if tol is None:
+        _logger.warning("Convergence tolerance not specifed. "
+                        "Defaulting to 1e-3")
+        tol = 1e-3
+    if maxiter is None:
+        _logger.warning("Max iterations not specified. "
+                        "Defaulting to 1e3")
+        maxiter = 1e3
+
+    # Get min & max of data matrix for scaling
+    X_max = np.max(X)
+    X_min = np.min(X)
+    X = (X - X_min) / X_max
+
+    # Initialize L and E
+    L = X
+    E = np.zeros(L.shape)
+
+    itr = 0
+    while True:
+        itr += 1
+
+        # Initialization with bilateral random projections
+        Y2 = np.random.randn(n, rank)
+        for i in range(power + 1):
+            Y1 = np.dot(L, Y2)
+            Y2 = np.dot(L.T, Y1);
+        Q, tmp = scipy.linalg.qr(Y2, mode='economic')
+
+        # Estimate the new low-rank and sparse matrices
+        Lnew = np.dot(np.dot(L, Q), Q.T)
+        A = L - Lnew + E
+        L = Lnew
+        E = _thresh(A, lambda1)
+        A -= E
+
+        # Update L
+        L += A
+
+        # Check convergence
+        eps = np.linalg.norm(A)
+        if (eps < tol):
+            _logger.info("Converged to %f in %d iterations" % (eps, itr))
+            break
+        elif (itr >= maxiter):
+            _logger.warning("Maximum iterations reached")
+            break
+
+    # Get the remaining Gaussian noise matrix
+    G = X - L - E
+
+    # Transpose back
+    if transpose:
+        L = L.T
+        E = E.T
+        G = G.T
+
+    # Rescale
+    Xhat = (L * X_max) + X_min
+    Ehat = (E * X_max) + X_min
+    Ghat = (G * X_max) + X_min
+
+    # Do final SVD
+    U, S, Vh = svd(Xhat)
+    V = Vh.T
+
+    # Chop small singular values which
+    # likely arise from numerical noise
+    # in the SVD.
+    S[rank:] = 0.
+
+    return Xhat, Ehat, Ghat, U, S, V
+
+
 def _solveproj(z, X, I, lambda2):
     m, n = X.shape
     s = np.zeros(m)
     x = np.zeros(n)
-    converged = False
     maxiter = 1e9
     iter = 0
 
     ddt = np.dot(scipy.linalg.inv(np.dot(X.T, X) + I), X.T)
 
-    while converged is False:
+    while True:
         iter += 1
         xtmp = x
         x = np.dot(ddt, (z - s))
@@ -53,7 +194,7 @@ def _solveproj(z, X, I, lambda2):
         stops = np.sqrt(np.dot(s - stmp, (s - stmp).conj()))
         stop = max(stopx, stops) / m
         if stop < 1e-5 or iter > maxiter:
-            converged = True
+            break
 
     return x, s
 
@@ -75,7 +216,7 @@ def orpca(X, rank, fast=False, lambda1=None,
           lambda2=None, method=None,
           init=None, training=None):
     """
-    This function performs Online Robust PCA with
+    This function performs Online Robust PCA
     with missing or corrupted data.
 
     Parameters
@@ -110,7 +251,20 @@ def orpca(X, rank, fast=False, lambda1=None,
     Ehat : numpy array
         is the [nfeatures x nsamples] sparse error matrix
     U, S, V : numpy arrays
-        are the results of an SVD on Y
+        are the results of an SVD on Xhat
+
+    Notes
+    -----
+    The ORPCA code is based on a transcription of MATLAB code obtained from
+    the following research paper:
+       Jiashi Feng, Huan Xu and Shuicheng Yuan, "Online Robust PCA via
+       Stochastic Optimization", Advances in Neural Information Processing
+       Systems 26, (2013), pp. 404-412.
+
+    Copyright 2013 Jiashi Feng
+
+    It has been updated to include a new initialization method based
+    on a QR decomposition of the first n "training" samples of the data
 
     """
     if fast is True and sklearn_installed is True:
@@ -214,7 +368,6 @@ def orpca(X, rank, fast=False, lambda1=None,
     # Chop small singular values which
     # likely arise from numerical noise
     # in the SVD.
-    #S[S<=1e-9] = 0.0
     S[rank:] = 0.
 
     return Xhat, Ehat, U, S, V

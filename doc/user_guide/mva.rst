@@ -190,7 +190,13 @@ If one assumes a dataset to consist of a low-rank component **L** corrupted by
 a sparse error component **S**, then Robust PCA (RPCA) can be used to recover the
 low-rank component for subsequent processing.
 
-HyperSpy implements an *online* algorithm for RPCA developed by Feng et al. [Feng2013]_.
+The default RPCA algorithm can be accessed with:
+
+.. code-block:: python
+
+   >>> s.decomposition(algorithm='rpca')
+
+HyperSpy also implements an *online* algorithm for RPCA developed by Feng et al. [Feng2013]_.
 This minimizes memory usage to make it suitable for large datasets. The method will
 returns the factors and loadings of **L**.
 
@@ -210,7 +216,7 @@ following, which trains ORPCA using the first 32 samples of the data.
                        output_dimension='3'
                        init='qr',
                        training=32)
-             
+
 
 Blind Source Separation
 =======================
