@@ -110,7 +110,7 @@ class TestORPCA:
         nt.assert_true(normX < self.tol)
 
     def test_init(self):
-        X, E, U, S, V = orpca(self.X, rank=self.rank, init='qr')
+        X, E, U, S, V = orpca(self.X, rank=self.rank, init='rand')
 
         # Check the low-rank component MSE
         normX = np.linalg.norm(X - self.A) / (self.m * self.n)
