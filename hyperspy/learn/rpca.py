@@ -235,10 +235,10 @@ def orpca(X, rank, fast=False, lambda1=None,
         'CF'  - Closed-form
         'BCD' - Block-coordinate descent
         If None, set to 'CF'
-    init : None | 'rand' | 'qr'
-        'rand' - Random initialization
+    init : None | 'qr' | 'rand'
         'qr'   - QR-based initialization
-        If None, set to 'rand'
+        'rand' - Random initialization
+        If None, set to 'qr'
     training : integer
         Specifies the number of training samples to use in
         the 'qr' initialization (ignored for 'rand')
@@ -292,8 +292,8 @@ def orpca(X, rank, fast=False, lambda1=None,
         lambda2 = 1.0 / np.sqrt(n)
     if init is None:
         _logger.warning("No initialization specified. Defaulting to "
-                        "random initialization")
-        init = 'rand'
+                        "QR-based initialization")
+        init = 'qr'
     if training is None:
         if init is 'rand':
             _logger.warning("Training samples only used for 'qr' method. "
@@ -311,7 +311,7 @@ def orpca(X, rank, fast=False, lambda1=None,
     # Check options are valid
     if method not in ('CF', 'BCD'):
         raise ValueError("'method' not recognised")
-    if init not in ('rand', 'qr'):
+    if init not in ('qr', 'rand'):
         raise ValueError("'method' not recognised")
     if init == 'qr' and training < rank:
         raise ValueError("'training' must be >= 'output_dimension'")
@@ -322,13 +322,13 @@ def orpca(X, rank, fast=False, lambda1=None,
     X = (X - X_min) / X_max
 
     # Initialize the subspace estimate
-    if init == 'rand':
-        Y2 = np.random.randn(m, rank)
-        L, tmp = scipy.linalg.qr(Y2, mode='economic')
-    elif init == 'qr':
+    if init == 'qr':
         Y2 = X[:, :training]
         L, tmp = scipy.linalg.qr(Y2, mode='economic')
         L = L[:, :rank]
+    elif init == 'rand':
+        Y2 = np.random.randn(m, rank)
+        L, tmp = scipy.linalg.qr(Y2, mode='economic')
 
     R = np.zeros((rank, n))
     I = lambda1 * np.eye(rank)
@@ -351,7 +351,7 @@ def orpca(X, rank, fast=False, lambda1=None,
             A = A + np.outer(r, r.T)
             B = B + np.outer((z - e), r.T)
             L = np.dot(B, scipy.linalg.inv(A + I))
-        else:
+        elif method == 'BCD':
             # Block-coordinate descent
             A = A + np.outer(r, r.T)
             B = B + np.outer((z - e), r.T)
