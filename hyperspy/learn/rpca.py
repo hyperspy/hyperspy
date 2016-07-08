@@ -159,7 +159,7 @@ def orpca(X, rank, fast=False, lambda1=None,
         raise ValueError("'method' not recognised")
     if init not in ('rand', 'qr'):
         raise ValueError("'method' not recognised")
-    if training < rank:
+    if init == 'qr' and training < rank:
         raise ValueError("'training' must be >= 'output_dimension'")
 
     # Get min & max of data matrix for scaling
