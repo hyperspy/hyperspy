@@ -9,13 +9,13 @@ from hyperspy.learn.rpca import orpca
 class TestORPCA:
     def setUp(self):
         # Define shape etc.
-        m = 128  # Dimensionality
+        m = 256  # Dimensionality
         n = 1024 # Number of samples
-        r = 4
+        r = 3
         s = 0.01
 
         # Low-rank and sparse error matrices
-        rng = np.random.RandomState(123)
+        rng = np.random.RandomState(101)
         U = scipy.linalg.orth(rng.randn(m, r))
         V = rng.randn(n, r)
         A = np.dot(U, V.T)
@@ -42,18 +42,28 @@ class TestORPCA:
         normX = np.linalg.norm(X - self.A) / (self.m * self.n)
         nt.assert_true(normX < self.tol)
 
-    def test_mask(self):
-        X, E, U, S, V = orpca(self.X, rank=self.rank, mask=self.E)
-
-        # Check the low-rank component MSE
-        normX = np.linalg.norm(X - self.A) / (self.m * self.n)
-        nt.assert_true(normX < self.tol)
-
     def test_method(self):
         X, E, U, S, V = orpca(self.X, rank=self.rank, method='BCD')
 
         # Check the low-rank component MSE
         normX = np.linalg.norm(X - self.A) / (self.m * self.n)
+        nt.assert_true(normX < self.tol)
+
+    def test_init(self):
+        X, E, U, S, V = orpca(self.X, rank=self.rank, init='qr')
+
+        # Check the low-rank component MSE
+        normX = np.linalg.norm(X - self.A) / (self.m * self.n)
+        print(normX)
+        nt.assert_true(normX < self.tol)
+
+    def test_training(self):
+        X, E, U, S, V = orpca(self.X, rank=self.rank, init='qr',
+                              training=32)
+
+        # Check the low-rank component MSE
+        normX = np.linalg.norm(X - self.A) / (self.m * self.n)
+        print(normX)
         nt.assert_true(normX < self.tol)
 
     def test_regularization(self):

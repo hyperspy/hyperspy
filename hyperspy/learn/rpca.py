@@ -73,7 +73,7 @@ def _updatecol(X, A, B, I):
 
 def orpca(X, rank, fast=False, lambda1=None,
           lambda2=None, method=None,
-          mask=None):
+          init=None, training=None):
     """
     This function performs Online Robust PCA with
     with missing or corrupted data.
@@ -85,24 +85,30 @@ def orpca(X, rank, fast=False, lambda1=None,
     rank : int
         The model dimensionality.
     lambda1 : None | float
-        Nuclear norm regularization parameter. If None, set to 1/sqrt(nfeatures)
+        Nuclear norm regularization parameter.
+        If None, set to 1 / sqrt(nsamples)
     lambda2 : None | float
-        Sparse error regularization parameter. If None, set to 1/sqrt(nfeatures)
+        Sparse error regularization parameter.
+        If None, set to 1 / sqrt(nsamples)
     method : None | 'CF' | 'BCD'
-        If None, set to 'CF'
         'CF'  - Closed-form
         'BCD' - Block-coordinate descent
-    mask : numpy array
-        is an initial estimate of the sparse error matrix
+        If None, set to 'CF'
+    init : None | 'rand' | 'qr'
+        'rand' - Random initialization
+        'qr'   - QR-based initialization
+        If None, set to 'rand'
+    training : integer
+        Specifies the number of training samples to use in
+        the 'qr' initialization (ignored for 'rand')
+        If None, set to 10
 
     Returns
     -------
-    L : numpy array
-        is the [nfeatures x rank] basis array
-    R : numpy array
-        is the [rank x nsamples] coefficient array
-    E : numpy array
-        is the sparse error
+    Xhat : numpy array
+        is the [nfeatures x nsamples] low-rank matrix
+    Ehat : numpy array
+        is the [nfeatures x nsamples] sparse error matrix
     U, S, V : numpy arrays
         are the results of an SVD on Y
 
@@ -124,35 +130,55 @@ def orpca(X, rank, fast=False, lambda1=None,
         method = 'CF'
     if lambda1 is None:
         _logger.warning("Nuclear norm regularization parameter "
-                        "is set to default: 1/sqrt(nsamples)")
+                        "is set to default: 1 / sqrt(nsamples)")
         lambda1 = 1.0 / np.sqrt(n)
     if lambda2 is None:
         _logger.warning("Sparse regularization parameter "
-                        "is set to default: 1/sqrt(nsamples)")
+                        "is set to default: 1 / sqrt(nsamples)")
         lambda2 = 1.0 / np.sqrt(n)
+    if init is None:
+        _logger.warning("No initialization specified. Defaulting to "
+                        "random initialization")
+        init = 'rand'
+    if training is None:
+        if init is 'rand':
+            _logger.warning("Training samples only used for 'qr' method. "
+                            "Parameter ignored")
+        elif init is 'qr':
+            if rank >= 10:
+                _logger.warning("Number of training samples for 'qr' method "
+                                "not specified. Defaulting to %d samples" % rank)
+                training = rank
+            else:
+                _logger.warning("Number of training samples for 'qr' method "
+                                "not specified. Defaulting to 10 samples")
+                training = 10
 
     # Check options are valid
     if method not in ('CF', 'BCD'):
         raise ValueError("'method' not recognised")
+    if init not in ('rand', 'qr'):
+        raise ValueError("'method' not recognised")
+    if training < rank:
+        raise ValueError("'training' must be >= 'output_dimension'")
 
     # Get min & max of data matrix for scaling
     X_max = np.max(X)
     X_min = np.min(X)
     X = (X - X_min) / X_max
 
-    # Use random initialization
-    Y2 = np.random.randn(m, rank)
-    L, tmp = scipy.linalg.qr(Y2, mode='economic')
+    # Initialize the subspace estimate
+    if init == 'rand':
+        Y2 = np.random.randn(m, rank)
+        L, tmp = scipy.linalg.qr(Y2, mode='economic')
+    elif init == 'qr':
+        Y2 = X[:, :training]
+        L, tmp = scipy.linalg.qr(Y2, mode='economic')
+        L = L[:, :rank]
 
     R = np.zeros((rank, n))
     I = lambda1 * np.eye(rank)
-
-    # Allow the error matrix to be initialized
-    if mask is None:
-        E = np.zeros((m, n))
-    else:
-        E = mask.reshape((m, n))
-
+    E = np.zeros((m, n))
     A = np.zeros((rank, rank))
     B = np.zeros((m, rank))
 

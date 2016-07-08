@@ -189,6 +189,19 @@ returns the factors and loadings of **L**.
    >>> s.decomposition(algorithm='orpca',
                        output_dimension='3')
 
+The online RPCA implementation in HyperSpy sets several default parameters that are
+usually suitable for most datasets. However, to improve the convergence you can
+"train" the algorithm using the first few samples of your dataset, by writing the
+following, which trains ORPCA using the first 32 samples of the data.
+
+.. code-block:: python
+
+   >>> s.decomposition(algorithm='orpca',
+                       output_dimension='3'
+                       init='qr',
+                       training=32)
+             
+
 Blind Source Separation
 =======================
 
