@@ -1001,16 +1001,19 @@ Speeding up operations
 
 Reusing a Signal for output
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 Many signal methods create and return a new signal. For fast operations, the
 new signal creation time is non-negligible. Also, when the operation is
 repeated many times, for example in a loop, the cumulaive creation time can
-become significant. Therefore, many operations on `Signal` accept an optional
-argument `out`. If an existing signal is passed to `out`, the function output
-will be placed into that signal, instead of being returned in a new signal.
-The following example shows how to use this feature to slice a `Signal`. It is
-important to know that the `Signal` instance passed in the `out` argument must
-be well-suited for the purpose. Often this means that it must have the same
-axes and data shape as the `Signal` that would normally be returned by the
+become significant. Therefore, many operations on
+:py:class:`~.signal.BaseSignal` accept an optional argument `out`. If an
+existing signal is passed to `out`, the function output will be placed into
+that signal, instead of being returned in a new signal.  The following example
+shows how to use this feature to slice a :py:class:`~.signal.BaseSignal`. It is
+important to know that the :py:class:`~.signal.BaseSignal` instance passed in
+the `out` argument must be well-suited for the purpose. Often this means that
+it must have the same axes and data shape as the
+:py:class:`~.signal.BaseSignal` that would normally be returned by the
 operation.
 
 .. code-block:: python
@@ -1083,12 +1086,12 @@ Region Of Interest (ROI)
 
 A number of different ROIs are available:
 
-* :py:class:`~.utils.roi.Point1DROI`
-* :py:class:`~.utils.roi.Point2DROI`
-* :py:class:`~.utils.roi.SpanROI`
-* :py:class:`~.utils.roi.RectangularROI`
-* :py:class:`~.utils.roi.CircleROI`
-* :py:class:`~.utils.roi.Line2DROI`
+* :py:class:`~.roi.Point1DROI`
+* :py:class:`~.roi.Point2DROI`
+* :py:class:`~.roi.SpanROI`
+* :py:class:`~.roi.RectangularROI`
+* :py:class:`~.roi.CircleROI`
+* :py:class:`~.roi.Line2DROI`
 
 Once created, a ROI can be used to return a part of any compatible signal:
 
@@ -1105,7 +1108,9 @@ Once created, a ROI can be used to return a part of any compatible signal:
     <Signal2D, title: , dimensions: (|4, 3)>
 
 ROIs can also be used :ref:`interactively <Interactive>` with widgets. The
-following examples shows how to interactively apply ROIs to an image
+following examples shows how to interactively apply ROIs to an image. Note
+that *it is necessary* to plot the signal onto which the widgets will be
+added before calling :py:meth:`~.roi.BaseInteractiveROI.interactive`.
 
 .. code-block:: python
 

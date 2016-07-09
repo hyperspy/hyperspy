@@ -419,6 +419,12 @@ class BaseInteractiveROI(BaseROI):
         with widget.events.changed.suppress_callback(self._on_widget_change):
             self._apply_roi2widget(widget)
         if widget.ax is None:
+            if signal._plot is None:
+                raise Exception(
+                    "%s does not have an active plot. Plot the signal before "
+                    "calling this method using its `plot` method." %
+                    repr(signal))
+
             ax = _get_mpl_ax(signal._plot, axes)
             widget.set_mpl_ax(ax)
 
