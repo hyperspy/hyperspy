@@ -85,6 +85,8 @@ before_deploy:
   - ps: (& $Env:WP_EXE /S /D=$Env:WP_INSTDIR | Out-Null )
   - "ls %APPDATA%/wpdir"
   - "ls %WP_INSTDIR%"
+  # remove default mingw32/64 compiler setting in winpython enabling use msvc:
+  - ps: del %APPDATA%/wpdir/settings/pydistultils.cfg
 
   # Patch NSIS to allow longer strings
   - ps: Add-AppveyorMessage "Setting up WinPython environment..."
