@@ -161,8 +161,6 @@ class BaseROI(t.HasTraits):
             slices = slices[nav_dim:]
 
         roi = slicer(slices, out=out)
-        if out is not None:
-            out.events.data_changed.trigger(out)
         return roi
 
     def _parse_axes(self, axes, axes_manager):
