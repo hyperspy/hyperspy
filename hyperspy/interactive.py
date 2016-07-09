@@ -19,6 +19,15 @@
 import inspect
 
 
+def _connect_events(event, to_connect):
+    try:
+        for ev in event:
+            # Iterable of events, connect all of them
+            ev.connect(to_connect, [])
+    except TypeError:
+        # It was not an iterable, connect the single event
+        event.connect(to_connect, [])
+
 class Interactive:
     """Chainable operations on Signals that update on events.
 
@@ -34,13 +43,14 @@ class Interactive:
         f: function or method
             A function that returns an object and that optionally can place the
             result in an object given through the `out` keyword.
-        event: {Event, "auto", None}
+        event: {Event, "auto", None, iterable of events}
             Update the result of the operation when the event is triggered.
             If "auto" and `f` is a method of a Signal class instance its
             `data_changed` event is selected is the function takes an `out`
             argument. If None, `update` is not connected to any event. The
-            default is "auto".
-        recompute_out_event: {Event, "auto", None}
+            default is "auto". It is also possible to pass an iterable of
+            events, in which case all the events are connected.
+        recompute_out_event: {Event, "auto", None, iterable of events}
             Optional argument. If supplied, this event causes a full
             recomputation of a new object. Both the data and axes of the new
             object are then copied over to the existing `out` object. Only
@@ -49,7 +59,10 @@ class Interactive:
             instance its `AxesManager` `any_axis_chaged` event is selected if
             the function takes an `out` argument. Otherwise the `Signal`
             `data_changed` event is selected. If None, `recompute_out` is not
-            connected to any event. The default is "auto"
+            connected to any event. The default is "auto". It is also possible
+            to pass an iterable of events, in which case all the events are
+            connected.
+
 
         *args, **kwargs
             Arguments and keyword arguments to be passed to `f`.
@@ -84,13 +97,13 @@ class Interactive:
             recompute_out_event = (None if recompute_out_event == "auto"
                                    else recompute_out_event)
         if recompute_out_event:
-            recompute_out_event.connect(self.recompute_out, [])
+            _connect_events(recompute_out_event, self.recompute_out)
         if event:
             if has_out:
-                event.connect(self.update, [])
+                _connect_events(event, self.update)
             else:
                 #  We "simulate" out by triggering `recompute_out` instead.
-                event.connect(self.recompute_out, [])
+                _connect_events(event, self.recompute_out)
 
     def recompute_out(self):
         out = self.f(*self.args, **self.kwargs)
