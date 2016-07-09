@@ -1015,7 +1015,7 @@ operation.
 
 .. code-block:: python
 
-    >>> s = signals.Spectrum(np.arange(10))
+    >>> s = signals.Signal1D(np.arange(10))
     >>> s_sum = s.sum(0)
     >>> s_sum.data
     array(45)
@@ -1024,10 +1024,10 @@ operation.
     10
     >>> s_roi = s.inav[:3]
     >>> s_roi
-    <Spectrum, title: , dimensions: (|3)>
+    <Signal1D, title: , dimensions: (|3)>
     >>> s.inav.__getitem__(slice(None, 5), out=s_roi)
     >>> s_roi
-    <Spectrum, title: , dimensions: (|5)>
+    <Signal1D, title: , dimensions: (|5)>
 
 
 .. _interactive:
@@ -1045,7 +1045,7 @@ signal changes.
 
 .. code-block:: python
 
-    >>> s = hs.signals.Spectrum(np.arange(10.))
+    >>> s = hs.signals.Signal1D(np.arange(10.))
     >>> ssum = hs.interactive(s.sum, axis=0)
     >>> ssum.data
     array(45.0)
@@ -1058,7 +1058,7 @@ The interactive opearations can be chained.
 
 .. code-block:: python
 
-    >>> s = hs.signals.Spectrum(np.arange(2 * 3 * 4).reshape((2, 3, 4)))
+    >>> s = hs.signals.Signal1D(np.arange(2 * 3 * 4).reshape((2, 3, 4)))
     >>> ssum = hs.interactive(s.sum, axis=0)
     >>> ssum_mean = hs.interactive(ssum.mean, axis=0)
     >>> ssum_mean.data
@@ -1094,15 +1094,15 @@ Once created, a ROI can be used to return a part of any compatible signal:
 
 .. code-block:: python
 
-    >>> s = hs.signals.Spectrum(np.arange(2000).reshape((20,10,10)))
-    >>> im = hs.signals.Image(np.arange(100).reshape((10,10)))
+    >>> s = hs.signals.Signal1D(np.arange(2000).reshape((20,10,10)))
+    >>> im = hs.signals.Signal2D(np.arange(100).reshape((10,10)))
     >>> roi = hs.roi.RectangularROI(left=3, right=7, top=2, bottom=5)
     >>> sr = roi(s)
     >>> sr
-    <Spectrum, title: , dimensions: (4, 3|10)>
+    <Signal1D, title: , dimensions: (4, 3|10)>
     >>> imr = roi(im)
     >>> imr
-    <Image, title: , dimensions: (|4, 3)>
+    <Signal2D, title: , dimensions: (|4, 3)>
 
 ROIs can also be used :ref:`interactively <Interactive>` with widgets. Notably,
 since ROIs are independent from the signals they sub-select, the widget can be
@@ -1111,8 +1111,8 @@ plotted on a different signal altogether.
 .. code-block:: python
 
     >>> import scipy.misc
-    >>> im = hs.signals.Image(scipy.misc.ascent())
-    >>> s = hs.signals.Spectrum(np.random.rand(512, 512, 512))
+    >>> im = hs.signals.Signal2D(scipy.misc.ascent())
+    >>> s = hs.signals.Signal1D(np.random.rand(512, 512, 512))
     >>> roi = hs.roi.RectangularROI(left=30, right=77, top=20, bottom=50)
     >>> s.plot() # plot signal to have where to display the widget
     >>> imr = roi.interactive(im, navigation_signal=s)
