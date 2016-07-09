@@ -57,8 +57,8 @@ class Interactive:
             object are then copied over to the existing `out` object. Only
             useful for `Signal` or other objects that have an attribute
             `axes_manager`. If "auto" and `f` is a method of a Signal class
-            instance its `AxesManager` `any_axis_chaged` event is selected if
-            the function takes an `out` argument. Otherwise the `Signal`
+            instance its `AxesManager` `any_axis_chaged` event is selected.
+            Otherwise the `Signal`
             `data_changed` event is selected. If None, `recompute_out` is not
             connected to any event. The default is "auto". It is also possible
             to pass an iterable of events, in which case all the events are
@@ -90,11 +90,8 @@ class Interactive:
             if event == "auto":
                 event = self.f.__self__.events.data_changed
             if recompute_out_event == "auto":
-                if has_out:
-                    recompute_out_event = \
-                        self.f.__self__.axes_manager.events.any_axis_changed
-                else:
-                    recompute_out_event = None
+                recompute_out_event = \
+                    self.f.__self__.axes_manager.events.any_axis_changed
         else:
             event = None if event == "auto" else event
             recompute_out_event = (None if recompute_out_event == "auto"
