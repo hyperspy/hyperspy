@@ -312,7 +312,7 @@ class BaseInteractiveROI(BaseROI):
         raise NotImplementedError()
 
     def interactive(self, signal, navigation_signal="same", out=None,
-                    **kwargs):
+                    color="green",**kwargs):
         """Creates an interactively sliced Signal (sliced by this ROI) via
         hyperspy.interactive.
 
@@ -328,12 +328,20 @@ class BaseInteractiveROI(BaseROI):
         out : Signal
             If not None, it will use 'out' as the output instead of returning
             a new Signal.
+        color : Matplotlib color specifier (default: 'green')
+            The color for the widget. Any format that matplotlib uses should be
+            ok. This will not change the color fo any widget passed with the
+            'widget' argument.
+        **kwargs
+            All kwargs are passed to the roi __call__ method which is called
+            interactivel on any roi attribute change.
+
         """
         if isinstance(navigation_signal, str) and navigation_signal == "same":
             navigation_signal = signal
         if navigation_signal is not None:
             if navigation_signal not in self.signal_map:
-                self.add_widget(navigation_signal)
+                self.add_widget(navigation_signal, color=color)
         if (self.update not in
                 signal.axes_manager.events.any_axis_changed.connected):
             signal.axes_manager.events.any_axis_changed.connect(

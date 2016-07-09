@@ -1104,7 +1104,35 @@ Once created, a ROI can be used to return a part of any compatible signal:
     >>> imr
     <Signal2D, title: , dimensions: (|4, 3)>
 
-ROIs can also be used :ref:`interactively <Interactive>` with widgets. Notably,
+ROIs can also be used :ref:`interactively <Interactive>` with widgets. The
+following examples shows how to interactively apply ROIs to an image
+
+.. code-block:: python
+
+    >>> import scipy.misc
+    >>> im = hs.signals.Signal2D(scipy.misc.ascent())
+    >>> rectangular_roi = hs.roi.RectangularROI(left=30, right=500, top=200, bottom=400)
+    >>> line_roi = hs.roi.Line2DROI(0, 0, 512, 512, 1)
+    >>> point_roi = hs.roi.Point2DROI(256, 256)
+    >>> im.plot()
+    >>> roi2D = rectangular_roi.interactive(im, color="blue")
+    >>> roi1D = line_roi.interactive(im, color="yellow")
+    >>> roi0D = point_roi.interactive(im, color="red")
+
+
+.. figure::  images/image_with_rois.png
+  :align:   center
+  :width:   500
+
+.. figure::  images/roi1d.png
+  :align:   center
+  :width:   500
+
+.. figure::  images/roi2d.png
+  :align:   center
+  :width:   500
+
+Notably,
 since ROIs are independent from the signals they sub-select, the widget can be
 plotted on a different signal altogether.
 
@@ -1115,7 +1143,20 @@ plotted on a different signal altogether.
     >>> s = hs.signals.Signal1D(np.random.rand(512, 512, 512))
     >>> roi = hs.roi.RectangularROI(left=30, right=77, top=20, bottom=50)
     >>> s.plot() # plot signal to have where to display the widget
-    >>> imr = roi.interactive(im, navigation_signal=s)
+    >>> imr = roi.interactive(im, navigation_signal=s, color="red")
+    >>> roi(im).plot()
 
 ROIs are implemented in terms of physical coordinates and not pixels, so with
 proper calibration will always point to the same region.
+
+.. figure::  images/random_image_with_rect_roi.png
+  :align:   center
+  :width:   500
+
+.. figure::  images/random_image_with_rect_roi_spectrum.png
+  :align:   center
+  :width:   500
+
+.. figure::  images/roi2d.png
+  :align:   center
+  :width:   500
