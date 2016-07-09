@@ -20,7 +20,7 @@ import traits.api as t
 import numpy as np
 
 from hyperspy.events import Events, Event
-import hyperspy.interactive as hsi
+from hyperspy.interactive import interactive
 from hyperspy.axes import DataAxis
 from hyperspy.drawing import widgets
 
@@ -340,12 +340,12 @@ class BaseInteractiveROI(BaseROI):
                 self.update,
                 [])
         if out is None:
-            return hsi.interactive(self.__call__,
+            return interactive(self.__call__,
                                    event=self.events.changed,
                                    signal=signal,
                                    **kwargs)
         else:
-            return hsi.interactive(self.__call__,
+            return interactive(self.__call__,
                                    event=self.events.changed,
                                    signal=signal, out=out, **kwargs)
 
