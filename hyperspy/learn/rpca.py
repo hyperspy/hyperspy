@@ -106,7 +106,7 @@ def rpca(X, rank, fast=False, lambda1=None,
                         "Defaulting to 1e-3")
         tol = 1e-3
     if maxiter is None:
-        _logger.warning("Max iterations not specified. "
+        _logger.warning("Maximum iterations not specified. "
                         "Defaulting to 1e3")
         maxiter = 1e3
 
@@ -180,12 +180,12 @@ def _solveproj(z, X, I, lambda2):
     s = np.zeros(m)
     x = np.zeros(n)
     maxiter = 1e9
-    iter = 0
+    itr = 0
 
     ddt = np.dot(scipy.linalg.inv(np.dot(X.T, X) + I), X.T)
 
     while True:
-        iter += 1
+        itr += 1
         xtmp = x
         x = np.dot(ddt, (z - s))
         stmp = s
@@ -193,7 +193,7 @@ def _solveproj(z, X, I, lambda2):
         stopx = np.sqrt(np.dot(x - xtmp, (x - xtmp).conj()))
         stops = np.sqrt(np.dot(s - stmp, (s - stmp).conj()))
         stop = max(stopx, stops) / m
-        if stop < 1e-5 or iter > maxiter:
+        if stop < 1e-6 or itr > maxiter:
             break
 
     return x, s
@@ -212,9 +212,13 @@ def _updatecol(X, A, B, I):
 
     return L
 
-def orpca(X, rank, fast=False, lambda1=None,
-          lambda2=None, method=None,
-          init=None, training=None):
+def orpca(X, rank, fast=False,
+          lambda1=None,
+          lambda2=None,
+          method=None,
+          learning_rate=None,
+          init=None,
+          training_samples=None):
     """
     This function performs Online Robust PCA
     with missing or corrupted data.
@@ -231,17 +235,22 @@ def orpca(X, rank, fast=False, lambda1=None,
     lambda2 : None | float
         Sparse error regularization parameter.
         If None, set to 1 / sqrt(nsamples)
-    method : None | 'CF' | 'BCD'
-        'CF'  - Closed-form
+    method : None | 'CF' | 'BCD' | 'SGD'
+        'CF'  - Closed-form solver
         'BCD' - Block-coordinate descent
+        'SGD' - Stochastic gradient descent
         If None, set to 'CF'
+    learning_rate : None | float
+        Learning rate for the stochastic gradient
+        descent algorithm
+        If None, set to 1
     init : None | 'qr' | 'rand'
         'qr'   - QR-based initialization
         'rand' - Random initialization
         If None, set to 'qr'
-    training : integer
+    training_samples : integer
         Specifies the number of training samples to use in
-        the 'qr' initialization (ignored for 'rand')
+        the 'qr' initialization
         If None, set to 10
 
     Returns
@@ -261,10 +270,9 @@ def orpca(X, rank, fast=False, lambda1=None,
        Stochastic Optimization", Advances in Neural Information Processing
        Systems 26, (2013), pp. 404-412.
 
-    Copyright 2013 Jiashi Feng
-
     It has been updated to include a new initialization method based
-    on a QR decomposition of the first n "training" samples of the data
+    on a QR decomposition of the first n "training" samples of the data.
+    A stochastic gradient descent solver is also implemented.
 
     """
     if fast is True and sklearn_installed is True:
@@ -292,29 +300,31 @@ def orpca(X, rank, fast=False, lambda1=None,
         lambda2 = 1.0 / np.sqrt(n)
     if init is None:
         _logger.warning("No initialization specified. Defaulting to "
-                        "QR-based initialization")
+                        "'qr' initialization")
         init = 'qr'
-    if training is None:
-        if init is 'rand':
-            _logger.warning("Training samples only used for 'qr' method. "
-                            "Parameter ignored")
-        elif init is 'qr':
+    if training_samples is None:
+        if init == 'qr':
             if rank >= 10:
                 _logger.warning("Number of training samples for 'qr' method "
                                 "not specified. Defaulting to %d samples" % rank)
-                training = rank
+                training_samples = rank
             else:
                 _logger.warning("Number of training samples for 'qr' method "
                                 "not specified. Defaulting to 10 samples")
-                training = 10
+                training_samples = 10
+    if learning_rate is None:
+        if method == 'SGD':
+            _logger.warning("Learning rate for SGD algorithm is "
+                            "set to 1.0")
+            learning_rate = 1.0
 
     # Check options are valid
-    if method not in ('CF', 'BCD'):
+    if method not in ('CF', 'BCD', 'SGD'):
         raise ValueError("'method' not recognised")
     if init not in ('qr', 'rand'):
         raise ValueError("'method' not recognised")
-    if init == 'qr' and training < rank:
-        raise ValueError("'training' must be >= 'output_dimension'")
+    if init == 'qr' and training_samples < rank:
+        raise ValueError("'training_samples' must be >= 'output_dimension'")
 
     # Get min & max of data matrix for scaling
     X_max = np.max(X)
@@ -323,7 +333,7 @@ def orpca(X, rank, fast=False, lambda1=None,
 
     # Initialize the subspace estimate
     if init == 'qr':
-        Y2 = X[:, :training]
+        Y2 = X[:, :training_samples]
         L, tmp = scipy.linalg.qr(Y2, mode='economic')
         L = L[:, :rank]
     elif init == 'rand':
@@ -333,8 +343,11 @@ def orpca(X, rank, fast=False, lambda1=None,
     R = np.zeros((rank, n))
     I = lambda1 * np.eye(rank)
     E = np.zeros((m, n))
-    A = np.zeros((rank, rank))
-    B = np.zeros((m, rank))
+
+    # Extra variables for CF and BCD methods
+    if method in ('CF', 'BCD'):
+        A = np.zeros((rank, rank))
+        B = np.zeros((m, rank))
 
     for t in range(n):
         if t == 0 or np.mod(t + 1, np.round(n / 10)) == 0:
@@ -356,6 +369,12 @@ def orpca(X, rank, fast=False, lambda1=None,
             A = A + np.outer(r, r.T)
             B = B + np.outer((z - e), r.T)
             L = _updatecol(L, A, B, I)
+        elif method == 'SGD':
+            # Stochastic gradient descent
+            learn = learning_rate * (1 + learning_rate * lambda1 * t)
+            L = L - (np.dot(L, np.outer(r, r.T))
+                     - np.outer((z - e), r.T)
+                     + lambda1 * L) / learn
 
     # Rescale
     Xhat = (np.dot(L, R) * X_max) + X_min

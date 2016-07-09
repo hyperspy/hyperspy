@@ -161,6 +161,62 @@ To perform Poissonian noise normalization:
 
 More details about the scaling procedure can be found in [Keenan2004]_.
 
+Robust principal component analysis
+-----------------------------------
+
+PCA is known to be very sensitive to the presence of outliers in data. These outliers
+can be the result of missing or dead pixels, X-ray spikes, or very low count data.
+If one assumes a dataset to consist of a low-rank component **L** corrupted by
+a sparse error component **S**, then Robust PCA (RPCA) can be used to recover the
+low-rank component for subsequent processing.
+
+The default RPCA algorithm returns the factors and loadings of **L**, and can be
+accessed with the following code. You must set the "output_dimension" when using
+RPCA.
+
+.. code-block:: python
+
+   >>> s.decomposition(algorithm='rpca',
+                       output_dimension=3)
+
+HyperSpy also implements an *online* algorithm for RPCA developed by Feng et al. [Feng2013]_.
+This minimizes memory usage, making it suitable for large datasets, and can often
+be faster than the default algorithm.
+
+.. code-block:: python
+
+   >>> s.decomposition(algorithm='orpca',
+                       output_dimension=3)
+
+The online RPCA implementation sets several default parameters that are
+usually suitable for most datasets. However, to improve the convergence you can
+"train" the algorithm with the first few samples of your dataset. For example,
+the following code will train ORPCA using the first 32 samples of the data.
+
+.. code-block:: python
+
+   >>> s.decomposition(algorithm='orpca',
+                       output_dimension=3
+                       training_samples=32)
+
+Finally, online RPCA includes two alternative methods to the default solver,
+which can again improve the convergence and speed of the algorithm. The first
+is block-coordinate descent (BCD), and the second is based on stochastic gradient
+descent (SGD), which takes an additional parameter to set the learning rate.
+
+.. code-block:: python
+
+   >>> s.decomposition(algorithm='orpca',
+                       output_dimension=3
+                       method='BCD',
+                       training_samples=32)
+
+    >>> s.decomposition(algorithm='orpca',
+                        output_dimension=3
+                        method='SGD',
+                        learning_rate=1.1,
+                        training_samples=32)
+
 Non-negative matrix factorization
 ----------------------------
 
@@ -171,42 +227,8 @@ can be accessed in HyperSpy with:
 
    >>> s.decomposition(algorithm='nmf')
 
-Robust principal component analysis
------------------------------------
-
-PCA is known to be very sensitive to the presence of outliers in data. These outliers
-can be the result of missing or dead pixels, X-ray spikes, or very low count data.
-If one assumes a dataset to consist of a low-rank component **L** corrupted by
-a sparse error component **S**, then Robust PCA (RPCA) can be used to recover the
-low-rank component for subsequent processing.
-
-The default RPCA algorithm can be accessed with:
-
-.. code-block:: python
-
-   >>> s.decomposition(algorithm='rpca')
-
-HyperSpy also implements an *online* algorithm for RPCA developed by Feng et al. [Feng2013]_.
-This minimizes memory usage to make it suitable for large datasets. The method will
-returns the factors and loadings of **L**.
-
-.. code-block:: python
-
-   >>> s.decomposition(algorithm='orpca',
-                       output_dimension='3')
-
-The online RPCA implementation in HyperSpy sets several default parameters that are
-usually suitable for most datasets. However, to improve the convergence you can
-"train" the algorithm using the first few samples of your dataset, by writing the
-following, which trains ORPCA using the first 32 samples of the data.
-
-.. code-block:: python
-
-   >>> s.decomposition(algorithm='orpca',
-                       output_dimension='3'
-                       init='qr',
-                       training=32)
-
+Unlike PCA, NMF forces the components to be strictly non-negative, which can aid
+the physical interpretation of components for count data such as images, EELS or EDS
 
 Blind Source Separation
 =======================

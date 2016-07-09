@@ -91,6 +91,8 @@ class TestORPCA:
         self.lambda2 = 1.0 / np.sqrt(n)
         self.A = A
         self.X = X
+        self.learning_rate=1.1
+        self.training_samples=32
 
         # Test tolerance
         self.tol = 1e-3
@@ -102,8 +104,16 @@ class TestORPCA:
         normX = np.linalg.norm(X - self.A) / (self.m * self.n)
         nt.assert_true(normX < self.tol)
 
-    def test_method(self):
+    def test_method_BCD(self):
         X, E, U, S, V = orpca(self.X, rank=self.rank, method='BCD')
+
+        # Check the low-rank component MSE
+        normX = np.linalg.norm(X - self.A) / (self.m * self.n)
+        nt.assert_true(normX < self.tol)
+
+    def test_method_SGD(self):
+        X, E, U, S, V = orpca(self.X, rank=self.rank,
+                              method='SGD', learning_rate=self.learning_rate)
 
         # Check the low-rank component MSE
         normX = np.linalg.norm(X - self.A) / (self.m * self.n)
@@ -118,7 +128,7 @@ class TestORPCA:
 
     def test_training(self):
         X, E, U, S, V = orpca(self.X, rank=self.rank, init='qr',
-                              training=32)
+                              training_samples=self.training_samples)
 
         # Check the low-rank component MSE
         normX = np.linalg.norm(X - self.A) / (self.m * self.n)
