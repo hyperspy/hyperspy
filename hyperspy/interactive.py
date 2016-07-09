@@ -24,8 +24,8 @@ class Interactive:
 
     """
 
-    def __init__(self, f, event=None,
-                 recompute_out_event=None,
+    def __init__(self, f, event="auto",
+                 recompute_out_event="auto",
                  *args, **kwargs):
         """Update operation result when a given event is triggered.
 
@@ -34,7 +34,7 @@ class Interactive:
         f: function or method
             A function that returns an object and that optionally can place the
             result in an object given through the `out` keyword.
-        event: {Event | None}
+        event: {Event | "auto" | None}
             Update the result of the operation when the event is triggered.
             If None and `f` is a method of a Signal class instance its
             `data_changed` event is selected is the function takes an `out`
@@ -44,6 +44,7 @@ class Interactive:
             recomputation of a new object. Both the data and axes of the new
             object are then copied over to the existing `out` object. Only
             useful for `Signal` or other objects that have an attribute
+            irint("here")
             `axes_manager`. If None and `f` is a method of a Signal class
             instance its `AxesManager` `any_axis_chaged` event is selected if
             the function takes an `out` argument. Otherwise the `Signal`
@@ -70,11 +71,17 @@ class Interactive:
             fargs = []
         has_out = "out" in fargs
         if hasattr(f, "__self__") and isinstance(f.__self__, BaseSignal):
-            if event is None:
+            if event == "auto":
                 event = self.f.__self__.events.data_changed
-            if recompute_out_event is None and has_out:
+            if recompute_out_event == "auto" and has_out:
                 recompute_out_event = \
                     self.f.__self__.axes_manager.events.any_axis_changed
+            else:
+                recompute_out_event = None
+        else:
+            event = None if event == "auto" else event
+            recompute_out_event = (None if recompute_out_event == "auto"
+                                   else recompute_out_event)
         if recompute_out_event:
             recompute_out_event.connect(self.recompute_out, [])
         if event:
@@ -101,7 +108,7 @@ class Interactive:
         self.f(*self.args, out=self.out, **self.kwargs)
 
 
-def interactive(f, event=None, recompute_out_event=None, *args, **kwargs):
+def interactive(f, event="auto", recompute_out_event="auto", *args, **kwargs):
     cls = Interactive(f, event, recompute_out_event, *args, **kwargs)
     return cls.out
 
