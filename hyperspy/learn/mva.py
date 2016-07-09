@@ -187,6 +187,11 @@ class MVA():
             if output_dimension is None:
                 raise ValueError("With the MLPCA algorithm the "
                                  "output_dimension must be specified")
+        if algorithm == 'rpca' or algorithm == 'orpca':
+            if output_dimension is None:
+                raise ValueError("With the robust PCA algorithms ('rpca' and "
+                                 "'orpca'), the output_dimension "
+                                 "must be specified")
 
         # Apply pre-treatments
         # Transform the data in a line spectrum
