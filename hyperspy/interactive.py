@@ -34,21 +34,22 @@ class Interactive:
         f: function or method
             A function that returns an object and that optionally can place the
             result in an object given through the `out` keyword.
-        event: {Event | "auto" | None}
+        event: {Event, "auto", None}
             Update the result of the operation when the event is triggered.
-            If None and `f` is a method of a Signal class instance its
+            If "auto" and `f` is a method of a Signal class instance its
             `data_changed` event is selected is the function takes an `out`
-            argument.
-        recompute_out_event: {Event | None}
+            argument. If None, `update` is not connected to any event. The
+            default is "auto".
+        recompute_out_event: {Event, "auto", None}
             Optional argument. If supplied, this event causes a full
             recomputation of a new object. Both the data and axes of the new
             object are then copied over to the existing `out` object. Only
             useful for `Signal` or other objects that have an attribute
-            irint("here")
-            `axes_manager`. If None and `f` is a method of a Signal class
+            `axes_manager`. If "auto" and `f` is a method of a Signal class
             instance its `AxesManager` `any_axis_chaged` event is selected if
             the function takes an `out` argument. Otherwise the `Signal`
-            `data_changed` event is selected.
+            `data_changed` event is selected. If None, `recompute_out` is not
+            connected to any event. The default is "auto"
 
         *args, **kwargs
             Arguments and keyword arguments to be passed to `f`.
