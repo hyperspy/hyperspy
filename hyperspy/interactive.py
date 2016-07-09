@@ -85,14 +85,16 @@ class Interactive:
             # inspect.
             fargs = []
         has_out = "out" in fargs
+        # If it is a BaseSignal method
         if hasattr(f, "__self__") and isinstance(f.__self__, BaseSignal):
             if event == "auto":
                 event = self.f.__self__.events.data_changed
-            if recompute_out_event == "auto" and has_out:
-                recompute_out_event = \
-                    self.f.__self__.axes_manager.events.any_axis_changed
-            else:
-                recompute_out_event = None
+            if recompute_out_event == "auto":
+                if has_out:
+                    recompute_out_event = \
+                        self.f.__self__.axes_manager.events.any_axis_changed
+                else:
+                    recompute_out_event = None
         else:
             event = None if event == "auto" else event
             recompute_out_event = (None if recompute_out_event == "auto"
