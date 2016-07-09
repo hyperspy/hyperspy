@@ -1165,3 +1165,29 @@ proper calibration will always point to the same region.
 .. figure::  images/roi2d.png
   :align:   center
   :width:   500
+
+
+And of course, as all interactive operations, interactive ROIs are chainable.
+The following example shows how to display interactively the histogram of a
+rectangular ROI. Notice how we customise the default event connections in
+order to increase responsiveness.
+
+
+.. code-block:: python
+   
+   >>> import scipy.misc
+   >>> im = hs.signals.Signal2D(scipy.misc.ascent())
+   >>> im.plot()
+   >>> roi = hs.roi.RectangularROI(left=30, right=500, top=200, bottom=400)
+   >>> im_roi = roi.interactive(im, color="red")
+   >>> roi_hist =hs.interactive(im_roi.get_histogram, event=im_roi.axes_manager.events.any_axis_changed, recompute_out_event=None)
+   >>> roi_hist.plot()
+
+
+.. figure::  images/image_with_rect_roi.png
+  :align:   center
+  :width:   500
+
+.. figure::  images/roi_hist.png
+  :align:   center
+  :width:   500
