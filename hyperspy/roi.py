@@ -341,13 +341,13 @@ class BaseInteractiveROI(BaseROI):
                 [])
         if out is None:
             return interactive(self.__call__,
-                                   event=self.events.changed,
-                                   signal=signal,
-                                   **kwargs)
+                               event=self.events.changed,
+                               signal=signal,
+                               **kwargs)
         else:
             return interactive(self.__call__,
-                                   event=self.events.changed,
-                                   signal=signal, out=out, **kwargs)
+                               event=self.events.changed,
+                               signal=signal, out=out, **kwargs)
 
     def _on_widget_change(self, widget):
         """Callback for widgets' 'changed' event. Updates the internal state
