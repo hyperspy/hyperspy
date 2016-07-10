@@ -32,8 +32,6 @@ Currently the following signal subclasses are available:
 * :py:class:`~._signals.eels.EELSSpectrum`
 * :py:class:`~._signals.eds_tem.EDSTEMSpectrum`
 * :py:class:`~._signals.eds_sem.EDSSEMSpectrum`
-* :py:class:`~._signals.spectrum_simulation.SpectrumSimulation`
-* :py:class:`~._signals.image_simulation.ImageSimulation`
 
 Note that in HyperSpy 1.0.0 the :py:class:`~._signals.signal1D.Signal1D` and
 :py:class:`~._signals.image.Signal2D` classes were deprecated.
@@ -967,7 +965,7 @@ for example:
 
 .. code-block:: python
 
-  >>> s = hs.signals.SpectrumSimulation(np.ones(100))
+  >>> s = hs.signals.Spectrum(np.ones(100))
   >>> s.add_poissonian_noise()
   >>> s.metadata
   ├── General
@@ -975,7 +973,7 @@ for example:
   └── Signal
       ├── binned = False
       ├── record_by = spectrum
-      ├── signal_origin = simulation
+      ├── signal_origin = 
       └── signal_type =
 
   >>> s.estimate_poissonian_noise_variance()

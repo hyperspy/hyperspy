@@ -57,6 +57,7 @@ from hyperspy.misc.signal_tools import are_signals_aligned
 
 _logger = logging.getLogger(__name__)
 
+
 class ModelManager(object):
 
     """Container for models
@@ -1278,7 +1279,6 @@ class MVATools(object):
             axes=(
                 [{"size": data.shape[0], "navigate": True}] +
                 self.axes_manager._get_navigation_axes_dicts()))
-        signal.set_signal_origin(self.metadata.Signal.signal_origin)
         for axis in signal.axes_manager._axes[1:]:
             axis.navigate = False
         return signal
@@ -1288,7 +1288,6 @@ class MVATools(object):
             factors.T.reshape((-1,) + self.axes_manager.signal_shape[::-1]),
             axes=[{"size": factors.shape[-1], "navigate": True}] +
             self.axes_manager._get_signal_axes_dicts())
-        signal.set_signal_origin(self.metadata.Signal.signal_origin)
         signal.set_signal_type(self.metadata.Signal.signal_type)
         for axis in signal.axes_manager._axes[1:]:
             axis.navigate = False
@@ -1454,7 +1453,6 @@ class BaseSignal(FancySlicing,
 
     _record_by = ""
     _signal_type = ""
-    _signal_origin = ""
     _additional_slicing_targets = [
         "metadata.Signal.Noise_properties.variance",
     ]
@@ -1767,9 +1765,6 @@ class BaseSignal(FancySlicing,
         if (self._record_by or
                 "Signal.record_by" not in self.metadata):
             self.metadata.Signal.record_by = self._record_by
-        if (self._signal_origin or
-                "Signal.signal_origin" not in self.metadata):
-            self.metadata.Signal.signal_origin = self._signal_origin
         if (self._signal_type or
                 not self.metadata.has_item("Signal.signal_type")):
             self.metadata.Signal.signal_type = self._signal_type
@@ -3753,10 +3748,7 @@ class BaseSignal(FancySlicing,
             else self._record_by,
             signal_type=mp.Signal.signal_type
             if "Signal.signal_type" in mp
-            else self._signal_type,
-            signal_origin=mp.Signal.signal_origin
-            if "Signal.signal_origin" in mp
-            else self._signal_origin)
+            else self._signal_type,)
         self.__init__(**self._to_dictionary())
 
     def set_signal_type(self, signal_type):
@@ -3789,19 +3781,16 @@ class BaseSignal(FancySlicing,
         self._assign_subclass()
 
     def set_signal_origin(self, origin):
-        """Set the origin of the signal and change the current class
-        accordingly if pertinent.
+        """Set the `signal_origin` metadata value.
 
         The signal_origin attribute specifies if the data was obtained
-        through experiment or simulation. There are some methods that are
-        only available for experimental or simulated data, so setting this
-        parameter can enable/disable features.
+        through experiment or simulation.
 
 
         Parameters
         ----------
         origin : {'experiment', 'simulation', None, ""}
-            None an the empty string mean that the signal origin is uknown.
+            None and the empty string mean that the signal origin is uknown.
 
         Raises
         ------
@@ -3811,9 +3800,8 @@ class BaseSignal(FancySlicing,
         if origin not in ['experiment', 'simulation', "", None]:
             raise ValueError("`origin` must be one of: experiment, simulation")
         if origin is None:
-            origin = ""
-        self.metadata.Signal.signal_origin = origin
-        self._assign_subclass()
+            origin=""
+        self.metadata.Signal.signal_origin=origin
 
     def print_summary_statistics(self, formatter="%.3f"):
         """Prints the five-number summary statistics of the data, the mean and
@@ -3833,9 +3821,9 @@ class BaseSignal(FancySlicing,
         get_histogram
 
         """
-        data = self.data
+        data=self.data
         # To make it work with nans
-        data = data[~np.isnan(data)]
+        data=data[~np.isnan(data)]
         print(underline("Summary statistics"))
         print("mean:\t" + formatter % data.mean())
         print("std:\t" + formatter % data.std())
@@ -3894,8 +3882,32 @@ class BaseSignal(FancySlicing,
         if plot_marker:
             marker.plot()
 
+    def add_poissonian_noise(self, **kwargs):
+        """Add Poissonian noise to the data"""
+        original_type=self.data.dtype
+        self.data=np.random.poisson(self.data, **kwargs).astype(
+            original_type)
+        self.events.data_changed.trigger(obj=self)
 
-ARITHMETIC_OPERATORS = (
+    def add_gaussian_noise(self, std):
+        """Add Gaussian noise to the data
+        Parameters
+        ----------
+        std : float
+
+        """
+        noise=np.random.normal(0,
+                                 std,
+                                 self.data.shape)
+        original_dtype=self.data.dtype
+        self.data=(
+            self.data.astype(
+                noise.dtype) +
+            noise).astype(original_dtype)
+        self.events.data_changed.trigger(obj=self)
+
+
+ARITHMETIC_OPERATORS=(
     "__add__",
     "__sub__",
     "__mul__",
@@ -3911,7 +3923,7 @@ ARITHMETIC_OPERATORS = (
     "__mod__",
     "__truediv__",
 )
-INPLACE_OPERATORS = (
+INPLACE_OPERATORS=(
     "__iadd__",
     "__isub__",
     "__imul__",
@@ -3925,7 +3937,7 @@ INPLACE_OPERATORS = (
     "__ixor__",
     "__ior__",
 )
-COMPARISON_OPERATORS = (
+COMPARISON_OPERATORS=(
     "__lt__",
     "__le__",
     "__eq__",
@@ -3933,7 +3945,7 @@ COMPARISON_OPERATORS = (
     "__ge__",
     "__gt__",
 )
-UNARY_OPERATORS = (
+UNARY_OPERATORS=(
     "__neg__",
     "__pos__",
     "__abs__",

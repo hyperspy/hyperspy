@@ -87,8 +87,6 @@ def load(filenames=None,
         considered undefined.
     signal_origin : {None, "experiment", "simulation", ""}
         Defines the origin of the signal.
-        The value provided may determine the Signal subclass assigned to the
-        data.
         If None the value is read/guessed from the file. Any other value
         overrides the value stored in the file if any.
         Use "experiment" if loading experimental data.
@@ -306,15 +304,13 @@ def load_with_reader(filename,
 
 
 def assign_signal_subclass(record_by="",
-                           signal_type="",
-                           signal_origin="",):
+                           signal_type="", signal_origin=""):
     """Given record_by and signal_type return the matching Signal subclass.
 
     Parameters
     ----------
     record_by: {"spectrum", "image", ""}
     signal_type : {"EELS", "EDS", "EDS_TEM", "", str}
-    signal_origin : {"experiment", "simulation", ""}
 
     Returns
     -------
@@ -326,19 +322,13 @@ def assign_signal_subclass(record_by="",
     if record_by and record_by not in ["image", "spectrum"]:
         raise ValueError("record_by must be one of: None, empty string, "
                          "\"image\" or \"spectrum\"")
-    if signal_origin and signal_origin not in ["experiment", "simulation"]:
-        raise ValueError("signal_origin must be one of: None, empty string, "
-                         "\"experiment\" or \"simulation\"")
 
     signals = hyperspy.misc.utils.find_subclasses(hyperspy.signals, BaseSignal)
-
-    if signal_origin == "experiment":
-        signal_origin = ""
 
     preselection = [s for s in
                     [s for s in signals.values()
                      if record_by == s._record_by]
-                    if signal_origin == s._signal_origin]
+                    ]
     perfect_match = [s for s in preselection
                      if signal_type == s._signal_type]
     selection = perfect_match[0] if perfect_match else \
