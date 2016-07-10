@@ -52,8 +52,7 @@ install_req = ['scipy',
                'tqdm',
                'sympy',
                'dill',
-               'h5py',
-               'lxml']
+               'h5py']
 
 
 def update_version(version):
