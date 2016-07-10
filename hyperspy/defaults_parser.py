@@ -75,6 +75,7 @@ else:
 # Due to https://github.com/enthought/traitsui/issues/23 the desc text as
 # displayed in the tooltip get "Specifies" prepended.
 
+
 class GeneralConfig(t.HasTraits):
     default_file_format = t.Enum(
         'hdf5',
@@ -112,8 +113,8 @@ class GeneralConfig(t.HasTraits):
              'metadata), long lists and tuples will be expanded and any '
              'dictionaries in them will be printed similar to '
              'DictionaryTreeBrowser, but with double lines')
-    logging_level = t.Enum(['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG',],
-        desc='the log level of all hyperspy modules.')
+    logging_level = t.Enum(['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', ],
+                           desc='the log level of all hyperspy modules.')
 
     def _logger_on_changed(self, old, new):
         if new is True:
