@@ -28,7 +28,7 @@ Starting HyperSpy in the notebook (or terminal)
 -----------------------------------------------
 Typically you will need to `set up IPython for interactive plotting with
 matplotlib
-<http://ipython.readthedocs.org/en/stable/interactive/plotting.html>`_ using 
+<http://ipython.readthedocs.org/en/stable/interactive/plotting.html>`_ using
 ``%matplotlib`` (which is known as a 'Jupyter magic') *before executing any plotting command*. So, typically,
 after starting IPython, you can import HyperSpy and set up interactive matplotlib plotting by executing the following
 two lines in the IPython terminal (In these docs we normally use the general Python prompt symbol ``>>>`` but you will probably see ``In [1]:`` etc.):
@@ -39,14 +39,14 @@ two lines in the IPython terminal (In these docs we normally use the general Pyt
    >>> import hyperspy.api as hs
 
 Note that to execute lines of code in the notebook you must press ``Shift+Return``. (For details about notebooks and their functionality try the help menu in the notebook).
-Next, import two useful modules: numpy and matplotlib.pyplot, as follows: 
+Next, import two useful modules: numpy and matplotlib.pyplot, as follows:
 
 .. code-block:: python
 
    >>> import numpy as np
    >>> import matplotlib.pyplot as plt
-   
-The rest of the documentation will assume you have done this. Now you are ready to load your data (see below).    
+
+The rest of the documentation will assume you have done this. Now you are ready to load your data (see below).
 
 **Notes for experienced users:** We also fully support the wx backend. Other backends are supported for plotting
 but some features such as navigation sliders may be missing.
@@ -381,3 +381,29 @@ This command should raise the Preferences user interface:
    :align:   center
 
    Preferences user interface.
+
+
+.. _logger-label:
+
+Messages log
+------------
+
+.. versionadded:: 1.0
+
+HyperSpy writes messages to the `Python logger
+<https://docs.python.org/3/howto/logging.html#logging-basic-tutorial>`_. The
+deafault log level is "WARNING", meaning that only warnings and more severe
+event messages will be displayed. The default can be set in the
+:ref:`preferences <configuring-hyperspy-label>`. Alternatively, it can be set
+using :py:func:`~.logger.set_log_level` e.g.:
+
+.. code-block:: python
+
+    >>> import hyperspy.api as hs
+    >>> hs.set_log_level('INFO')
+    >>> hs.load(r'my_file.dm3')
+    INFO:hyperspy.io_plugins.digital_micrograph:DM version: 3
+    INFO:hyperspy.io_plugins.digital_micrograph:size 4796607 B
+    INFO:hyperspy.io_plugins.digital_micrograph:Is file Little endian? True
+    INFO:hyperspy.io_plugins.digital_micrograph:Total tags in root group: 15
+    <Signal2D, title: My file, dimensions: (|1024, 1024)
