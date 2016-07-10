@@ -38,6 +38,11 @@ import fileinput
 
 import re
 
+#stuff to check presence of compiler:
+import distutils.sysconfig
+import distutils.ccompiler
+from distutils.errors import CompileError
+
 setup_path = os.path.dirname(__file__)
 
 import hyperspy.Release as Release
@@ -132,6 +137,26 @@ if len(raw_extensions) > count_c_extensions(raw_extensions):
     extensions = cythonize_extensions(raw_extensions)
 else:
     extensions = no_cythonize(raw_extensions)
+    
+    
+# to compile or not to compile... depends if compiler is present:
+compiler = distutils.ccompiler.new_compiler()
+assert isinstance(compiler, distutils.ccompiler.CCompiler)
+distutils.sysconfig.customize_compiler(compiler)
+try:
+    compiler.compile([os.path.join(setup_path,
+                                   'hyperspy/tests/misc/test_compilers.c')])
+except CompileError:
+    warnings.warn("""WARNING: C compiler can't be found.
+Only slow pure python alternative functions will be available.
+To use fast implementation of some functions writen in cython/c either:
+a) check that you have compiler (EXACTLY SAME as your python
+distribution was compiled with) installed,
+b) use binary distribution of hyperspy (i.e. wheels, egg, (only osx and win)).
+Installation will continue in 10 sec...""")
+    extensions = []
+    from time import sleep
+    sleep(10) #wait 10 secs for user to notice the message
 
 
 # HOOKS ######
