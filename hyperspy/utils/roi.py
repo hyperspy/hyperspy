@@ -15,7 +15,8 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
-
+import hyperspy.roi
+__doc__ = hyperspy.roi.__doc__
 from hyperspy.roi import (Point1DROI,
                           Point2DROI,
                           SpanROI,

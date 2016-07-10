@@ -16,6 +16,35 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
+"""Region of interests (ROIs).
+
+ROIs operate on `BaseSignal` instances and include widgets for interactive
+operation.
+
+The following 1D ROIs are available:
+
+    Point1DROI
+        Single element ROI of a 1D signal.
+
+    SpanROI
+        Interval ROI of a 1D signal.
+
+The following 2D ROIs are available:
+
+    Point2DROI
+        Single element ROI of a 2D signal.
+
+    RectangularROI
+        Rectagular ROI of a 2D signal.
+
+    CircleROI
+        (Hollow) circular ROI of a 2D signal
+
+    Line2DROI
+        Line profile of a 2D signal with customisable width.
+
+"""
+
 import traits.api as t
 import numpy as np
 
