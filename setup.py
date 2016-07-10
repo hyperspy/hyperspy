@@ -144,8 +144,8 @@ compiler = distutils.ccompiler.new_compiler()
 assert isinstance(compiler, distutils.ccompiler.CCompiler)
 distutils.sysconfig.customize_compiler(compiler)
 try:
-    compiler.compile([os.path.join(setup_path, 'test_compiler.c')])
-    os.remove(os.path.join(setup_path, 'test_compiler.o'))
+    compiler.compile([os.path.join(setup_path, 'test_compilers.c')])
+    os.remove(os.path.join(setup_path, 'test_compilers.o'))
 except CompileError:
     warnings.warn("""WARNING: C compiler can't be found.
 Only slow pure python alternative functions will be available.
