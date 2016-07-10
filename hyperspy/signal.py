@@ -3800,8 +3800,8 @@ class BaseSignal(FancySlicing,
         if origin not in ['experiment', 'simulation', "", None]:
             raise ValueError("`origin` must be one of: experiment, simulation")
         if origin is None:
-            origin=""
-        self.metadata.Signal.signal_origin=origin
+            origin = ""
+        self.metadata.Signal.signal_origin = origin
 
     def print_summary_statistics(self, formatter="%.3f"):
         """Prints the five-number summary statistics of the data, the mean and
@@ -3821,9 +3821,9 @@ class BaseSignal(FancySlicing,
         get_histogram
 
         """
-        data=self.data
+        data = self.data
         # To make it work with nans
-        data=data[~np.isnan(data)]
+        data = data[~np.isnan(data)]
         print(underline("Summary statistics"))
         print("mean:\t" + formatter % data.mean())
         print("std:\t" + formatter % data.std())
@@ -3884,8 +3884,8 @@ class BaseSignal(FancySlicing,
 
     def add_poissonian_noise(self, **kwargs):
         """Add Poissonian noise to the data"""
-        original_type=self.data.dtype
-        self.data=np.random.poisson(self.data, **kwargs).astype(
+        original_type = self.data.dtype
+        self.data = np.random.poisson(self.data, **kwargs).astype(
             original_type)
         self.events.data_changed.trigger(obj=self)
 
@@ -3896,18 +3896,18 @@ class BaseSignal(FancySlicing,
         std : float
 
         """
-        noise=np.random.normal(0,
+        noise = np.random.normal(0,
                                  std,
                                  self.data.shape)
-        original_dtype=self.data.dtype
-        self.data=(
+        original_dtype = self.data.dtype
+        self.data = (
             self.data.astype(
                 noise.dtype) +
             noise).astype(original_dtype)
         self.events.data_changed.trigger(obj=self)
 
 
-ARITHMETIC_OPERATORS=(
+ARITHMETIC_OPERATORS = (
     "__add__",
     "__sub__",
     "__mul__",
@@ -3923,7 +3923,7 @@ ARITHMETIC_OPERATORS=(
     "__mod__",
     "__truediv__",
 )
-INPLACE_OPERATORS=(
+INPLACE_OPERATORS = (
     "__iadd__",
     "__isub__",
     "__imul__",
@@ -3937,7 +3937,7 @@ INPLACE_OPERATORS=(
     "__ixor__",
     "__ior__",
 )
-COMPARISON_OPERATORS=(
+COMPARISON_OPERATORS = (
     "__lt__",
     "__le__",
     "__eq__",
@@ -3945,7 +3945,7 @@ COMPARISON_OPERATORS=(
     "__ge__",
     "__gt__",
 )
-UNARY_OPERATORS=(
+UNARY_OPERATORS = (
     "__neg__",
     "__pos__",
     "__abs__",

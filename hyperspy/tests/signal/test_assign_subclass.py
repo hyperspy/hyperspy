@@ -21,10 +21,12 @@ def test_image():
         record_by="image",
         signal_type="",) is hs.signals.Signal2D)
 
+
 def test_eels_spectrum():
     assert_true(assign_signal_subclass(
         record_by="spectrum",
         signal_type="EELS",) is hs.signals.EELSSpectrum)
+
 
 def test_weird_spectrum():
     cls = assign_signal_subclass(

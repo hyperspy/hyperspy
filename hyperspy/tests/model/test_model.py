@@ -823,7 +823,7 @@ class TestModelSignalVariance:
 
     def setUp(self):
         variance = hs.signals.Signal1D(np.arange(100, 300).reshape(
-                (2, 100)))
+            (2, 100)))
         s = variance.deepcopy()
         np.random.seed(1)
         std = 10
