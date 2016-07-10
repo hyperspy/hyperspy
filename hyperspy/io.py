@@ -35,7 +35,6 @@ _logger = logging.getLogger(__name__)
 def load(filenames=None,
          record_by=None,
          signal_type=None,
-         signal_origin=None,
          stack=False,
          stack_axis=None,
          new_axis_name="stack_element",
@@ -83,14 +82,6 @@ def load(filenames=None,
         the case in a transmission electron  microscope (TEM) —,
         "EDS_SEM" if acquired from a non electron-transparent sample
         — as it is usually the case in a scanning electron  microscope (SEM) —.
-        If "" (empty string) the value is not read from the file and is
-        considered undefined.
-    signal_origin : {None, "experiment", "simulation", ""}
-        Defines the origin of the signal.
-        If None the value is read/guessed from the file. Any other value
-        overrides the value stored in the file if any.
-        Use "experiment" if loading experimental data.
-        Use "simulation" if loading simulated data.
         If "" (empty string) the value is not read from the file and is
         considered undefined.
     stack : bool
@@ -160,7 +151,6 @@ def load(filenames=None,
     """
     kwds['record_by'] = record_by
     kwds['signal_type'] = signal_type
-    kwds['signal_origin'] = signal_origin
     if filenames is None:
         if hyperspy.defaults_parser.preferences.General.interactive is True:
             from hyperspy.gui.tools import Load
@@ -222,7 +212,6 @@ def load(filenames=None,
 def load_single_file(filename,
                      record_by=None,
                      signal_type=None,
-                     signal_origin=None,
                      **kwds):
     """
     Load any supported file into an HyperSpy structure
@@ -262,7 +251,6 @@ def load_single_file(filename,
                                 reader=reader,
                                 record_by=record_by,
                                 signal_type=signal_type,
-                                signal_origin=signal_origin,
                                 **kwds)
 
 
@@ -270,7 +258,6 @@ def load_with_reader(filename,
                      reader,
                      record_by=None,
                      signal_type=None,
-                     signal_origin=None,
                      **kwds):
     file_data_list = reader.file_reader(filename,
                                         record_by=record_by,
@@ -285,9 +272,6 @@ def load_with_reader(filename,
                 signal_dict['metadata']["Signal"]['record_by'] = record_by
             if signal_type is not None:
                 signal_dict['metadata']["Signal"]['signal_type'] = signal_type
-            if signal_origin is not None:
-                signal_dict['metadata']["Signal"][
-                    'signal_origin'] = signal_origin
             objects.append(dict2signal(signal_dict))
             folder, filename = os.path.split(os.path.abspath(filename))
             filename, extension = os.path.splitext(filename)
@@ -304,7 +288,7 @@ def load_with_reader(filename,
 
 
 def assign_signal_subclass(record_by="",
-                           signal_type="", signal_origin=""):
+                           signal_type=""):
     """Given record_by and signal_type return the matching Signal subclass.
 
     Parameters
@@ -350,22 +334,18 @@ def dict2signal(signal_dict):
     """
     record_by = ""
     signal_type = ""
-    signal_origin = ""
     if "metadata" in signal_dict:
         mp = signal_dict["metadata"]
         if "Signal" in mp and "record_by" in mp["Signal"]:
             record_by = mp["Signal"]['record_by']
         if "Signal" in mp and "signal_type" in mp["Signal"]:
             signal_type = mp["Signal"]['signal_type']
-        if "Signal" in mp and "signal_origin" in mp["Signal"]:
-            signal_origin = mp["Signal"]['signal_origin']
     if (not record_by and 'data' in signal_dict and
             len(signal_dict['data'].shape) < 2):
         record_by = "spectrum"
 
     signal = assign_signal_subclass(record_by=record_by,
-                                    signal_type=signal_type,
-                                    signal_origin=signal_origin)(**signal_dict)
+                                    signal_type=signal_type,)(**signal_dict)
     if "post_process" in signal_dict:
         for f in signal_dict['post_process']:
             signal = f(signal)

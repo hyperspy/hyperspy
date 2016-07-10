@@ -3789,18 +3789,11 @@ class BaseSignal(FancySlicing,
 
         Parameters
         ----------
-        origin : {'experiment', 'simulation', None, ""}
-            None and the empty string mean that the signal origin is uknown.
+        origin : string
+            Typically 'experiment' or 'simulation'.
 
-        Raises
-        ------
-        ValueError if origin is not 'experiment' or 'simulation'
 
         """
-        if origin not in ['experiment', 'simulation', "", None]:
-            raise ValueError("`origin` must be one of: experiment, simulation")
-        if origin is None:
-            origin = ""
         self.metadata.Signal.signal_origin = origin
 
     def print_summary_statistics(self, formatter="%.3f"):
