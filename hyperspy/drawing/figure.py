@@ -34,6 +34,7 @@ class BlittedFigure(object):
                 artists.extend(ax.texts)
                 artists.extend(ax.artists)
                 artists.append(ax.get_yaxis())
+                artists.append(ax.get_xaxis())
                 [ax.draw_artist(a) for a in artists if
                  a.get_animated() is True]
             if self.figure:

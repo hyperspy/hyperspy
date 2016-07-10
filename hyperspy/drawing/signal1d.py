@@ -65,6 +65,7 @@ class Signal1DFigure(BlittedFigure):
     def create_axis(self):
         self.ax = self.figure.add_subplot(111)
         self.ax.yaxis.set_animated(True)
+        self.ax.xaxis.set_animated(True)
         self.ax.hspy_fig = self
 
     def create_right_axis(self):
@@ -354,9 +355,8 @@ class Signal1DLine(object):
         try:
             self.ax.hspy_fig._draw_animated()
         except:
+            # There may be errors if the figure does no longer exist.
             pass
-        # self.ax.hspy_fig._draw_animated()
-        # self.ax.figure.canvas.draw_idle()
 
     def close(self):
         if self.line in self.ax.lines:
