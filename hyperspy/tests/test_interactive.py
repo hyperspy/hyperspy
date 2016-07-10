@@ -100,7 +100,13 @@ class TestInteractive():
         s = self.s
         e1 = Event()
         e2 = Event()
-        ss = hs.interactive(s.sum, event=(e1, e2), recompute_out_event=None, axis=0)
+        ss = hs.interactive(
+            s.sum,
+            event=(
+                e1,
+                e2),
+            recompute_out_event=None,
+            axis=0)
         s.data[:] = 0
         e1.trigger()
         np.testing.assert_equal(ss.data, np.sum(s.data, axis=1))
@@ -112,11 +118,16 @@ class TestInteractive():
         s = self.s
         e1 = Event()
         e2 = Event()
-        ss = hs.interactive(s.sum, event=None, recompute_out_event=(e1, e2), axis=0)
+        ss = hs.interactive(
+            s.sum,
+            event=None,
+            recompute_out_event=(
+                e1,
+                e2),
+            axis=0)
         s.data[:] = 0
         e1.trigger()
         np.testing.assert_equal(ss.data, np.sum(s.data, axis=1))
         s.data[:] = 1
         e2.trigger()
         np.testing.assert_equal(ss.data, np.sum(s.data, axis=1))
-
