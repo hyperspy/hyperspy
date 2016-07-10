@@ -4,6 +4,14 @@ hyperspy.misc.eds package
 Submodules
 ----------
 
+hyperspy.misc.eds.ffast_mac module
+----------------------------------
+
+.. automodule:: hyperspy.misc.eds.ffast_mac
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 hyperspy.misc.eds.utils module
 ------------------------------
 

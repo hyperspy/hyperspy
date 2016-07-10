@@ -690,7 +690,7 @@ class TestModelWeighted:
 
     def setUp(self):
         np.random.seed(1)
-        s = hs.signals.SpectrumSimulation(np.arange(10, 100, 0.1))
+        s = hs.signals.Signal1D(np.arange(10, 100, 0.1))
         s.metadata.set_item("Signal.Noise_properties.variance",
                             hs.signals.Signal1D(np.arange(10, 100, 0.01)))
         s.axes_manager[0].scale = 0.1
@@ -779,7 +779,7 @@ class TestModelWeighted:
 class TestModelScalarVariance:
 
     def setUp(self):
-        s = hs.signals.SpectrumSimulation(np.ones(100))
+        s = hs.signals.Signal1D(np.ones(100))
         m = s.create_model()
         m.append(hs.model.components.Offset())
         self.s = s
@@ -830,10 +830,8 @@ class TestModelScalarVariance:
 class TestModelSignalVariance:
 
     def setUp(self):
-        variance = hs.signals.SpectrumSimulation(
-            np.arange(
-                100, 300).reshape(
-                (2, 100)))
+        variance = hs.signals.Signal1D(np.arange(100, 300).reshape(
+            (2, 100)))
         s = variance.deepcopy()
         np.random.seed(1)
         std = 10
