@@ -4,6 +4,10 @@ import logging
 
 _logger = logging.getLogger(__name__)
 
+from hyperspy.defaults_parser import preferences
+from hyperspy.logger import set_log_level
+set_log_level(preferences.General.logging_level)
+
 try:
     import sip
     _logger.debug('Setting Qt API to v2')
@@ -14,7 +18,7 @@ try:
     sip.setapi('QTime', 2)
     sip.setapi('QUrl', 2)
     del sip
-except ImportError:
+except (ImportError, ValueError):
     _logger.debug('sip not present, Qt API not set')
     pass
 

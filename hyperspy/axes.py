@@ -515,7 +515,7 @@ class AxesManager(t.HasTraits):
 
     >>> # Create a spectrum with random data
 
-    >>> s = hs.signals.Spectrum(np.random.random((2,3,4,5)))
+    >>> s = hs.signals.Signal1D(np.random.random((2,3,4,5)))
     >>> s.axes_manager
     <Axes manager, axes: (<axis2 axis, size: 4, index: 0>, <axis1 axis, size: 3, index: 0>, <axis0 axis, size: 2, index: 0>, <axis3 axis, size: 5>)>
     >>> s.axes_manager[0]
@@ -592,16 +592,22 @@ class AxesManager(t.HasTraits):
         # view. It defaults to spectrum
         navigates = [i.navigate for i in self._axes]
         if t.Undefined in navigates:
-            # Default to Spectrum view if the view is not fully defined
+            # Default to Signal1D view if the view is not fully defined
             self.set_signal_dimension(1)
 
         self._update_attributes()
-        self.on_trait_change(self._on_index_changed, '_axes.index')
-        self.on_trait_change(self._on_slice_changed, '_axes.slice')
-        self.on_trait_change(self._on_size_changed, '_axes.size')
-        self.on_trait_change(self._on_scale_changed, '_axes.scale')
-        self.on_trait_change(self._on_offset_changed, '_axes.offset')
+        self._update_trait_handlers()
         self._index = None  # index for the iterator
+
+    def _update_trait_handlers(self, remove=False):
+        things = {self._on_index_changed: '_axes.index',
+                  self._on_slice_changed: '_axes.slice',
+                  self._on_size_changed: '_axes.size',
+                  self._on_scale_changed: '_axes.scale',
+                  self._on_offset_changed: '_axes.offset'}
+
+        for k, v in things.items():
+            self.on_trait_change(k, name=v, remove=remove)
 
     def _get_positive_index(self, axis):
         if axis < 0:

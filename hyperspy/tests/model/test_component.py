@@ -2,7 +2,7 @@ import numpy as np
 import nose.tools as nt
 from hyperspy.component import Component
 from hyperspy.axes import AxesManager
-import mock
+from unittest import mock
 
 
 class TestMultidimensionalActive:
@@ -204,8 +204,8 @@ class TestCallMethods:
         c.model.axis.axis = np.array([0.1, 0.2, 0.3])
         c.function = mock.MagicMock()
         c.function.return_value = np.array([1.3, ])
-        c.model.spectrum.axes_manager.signal_axes = [mock.MagicMock(), ]
-        c.model.spectrum.axes_manager.signal_axes[0].scale = 2.
+        c.model.signal.axes_manager.signal_axes = [mock.MagicMock(), ]
+        c.model.signal.axes_manager.signal_axes[0].scale = 2.
 
     def test_call(self):
         c = self.c
@@ -216,28 +216,28 @@ class TestCallMethods:
     def test_plotting_not_active_component(self):
         c = self.c
         c.active = False
-        c.model.spectrum.metadata.Signal.binned = False
+        c.model.signal.metadata.Signal.binned = False
         res = c._component2plot(c.model.axes_manager, out_of_range2nans=False)
         nt.assert_true(np.isnan(res).all())
 
     def test_plotting_active_component_notbinned(self):
         c = self.c
         c.active = True
-        c.model.spectrum.metadata.Signal.binned = False
+        c.model.signal.metadata.Signal.binned = False
         res = c._component2plot(c.model.axes_manager, out_of_range2nans=False)
         np.testing.assert_array_equal(res, np.array([1.3, ]))
 
     def test_plotting_active_component_binned(self):
         c = self.c
         c.active = True
-        c.model.spectrum.metadata.Signal.binned = True
+        c.model.signal.metadata.Signal.binned = True
         res = c._component2plot(c.model.axes_manager, out_of_range2nans=False)
         np.testing.assert_array_equal(res, 2. * np.array([1.3, ]))
 
     def test_plotting_active_component_out_of_range(self):
         c = self.c
         c.active = True
-        c.model.spectrum.metadata.Signal.binned = False
+        c.model.signal.metadata.Signal.binned = False
         c.function.return_value = np.array([1.1, 1.3])
         res = c._component2plot(c.model.axes_manager, out_of_range2nans=True)
         np.testing.assert_array_equal(res, np.array([1.1, np.nan, 1.3]))
