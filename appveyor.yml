@@ -95,7 +95,7 @@ before_deploy:
   - ps: (& $Env:WP_EXE /S /D=$Env:WP_INSTDIR | Out-Null )
   - "ls %APPDATA%/wpdir"
   - "ls %WP_INSTDIR%"
-  - "del %WP_INSTDIR%\\settings\\pydistutils.cfg"
+  #- "del %WP_INSTDIR%\\settings\\pydistutils.cfg"
   # we removed default mingw32/64 compiler setting in winpython enabling use of msvc
 
   # Patch NSIS to allow longer strings
