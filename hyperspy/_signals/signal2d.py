@@ -27,6 +27,7 @@ from hyperspy.defaults_parser import preferences
 from hyperspy.external.progressbar import progressbar
 from hyperspy.misc.math_tools import symmetrize, antisymmetrize
 from hyperspy.signal import BaseSignal
+from hyperspy._signals.common_signal2d import CommonSignal2D
 from hyperspy.docstrings.plot import BASE_PLOT_DOCSTRING, PLOT2D_DOCSTRING, KWARGS_DOCSTRING
 
 
@@ -194,7 +195,7 @@ def estimate_image_shift(ref, image, roi=None, sobel=True,
     return -np.array((shift0, shift1)), max_val
 
 
-class Signal2D(BaseSignal):
+class Signal2D(BaseSignal, CommonSignal2D):
 
     """
     """
@@ -207,18 +208,6 @@ class Signal2D(BaseSignal):
             self.axes_manager.set_signal_dimension(1)
         else:
             self.axes_manager.set_signal_dimension(2)
-
-    def to_signal1D(self):
-        """Returns the image as a spectrum.
-
-        See Also
-        --------
-        as_signal1D : a method for the same purpose with more options.
-        signals.Signal1D.to_signal1D : performs the inverse operation on one
-        dimensional signals.
-
-        """
-        return self.as_signal1D(0 + 3j)
 
     def plot(self,
              colorbar=True,

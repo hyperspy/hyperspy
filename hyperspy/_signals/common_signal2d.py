@@ -17,16 +17,20 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from hyperspy._signals.common_signal1d import CommonSignal1D
-from hyperspy._signals.complex_signal import ComplexSignal
+from hyperspy.signal import BaseSignal
 
 
-class ComplexSignal1D(ComplexSignal, CommonSignal1D):
-    """BaseSignal subclass for complex 1-dimensional data."""
+class CommonSignal2D(object):
+    """Common functions for 2-dimensional signals."""
 
-    _record_by = 'spectrum'
+    def to_signal1D(self):
+        """Returns the image as a spectrum.
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.axes_manager.set_signal_dimension(1)
-        self.metadata.Signal.binned = False
+        See Also
+        --------
+        as_signal1D : a method for the same purpose with more options.
+        signals.Signal1D.to_signal1D : performs the inverse operation on one
+        dimensional signals.
+
+        """
+        return self.as_signal1D(0 + 3j)

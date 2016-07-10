@@ -17,12 +17,13 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 
+from hyperspy._signals.common_signal2d import CommonSignal2D
 from hyperspy._signals.complex_signal import ComplexSignal
 from hyperspy.docstrings.plot import (
     BASE_PLOT_DOCSTRING, PLOT2D_DOCSTRING, COMPLEX_DOCSTRING, KWARGS_DOCSTRING)
 
 
-class ComplexSignal2D(ComplexSignal):
+class ComplexSignal2D(ComplexSignal, CommonSignal2D):
     """BaseSignal subclass for complex 2-dimensional data."""
 
     _record_by = "image"
@@ -33,18 +34,6 @@ class ComplexSignal2D(ComplexSignal):
             self.axes_manager.set_signal_dimension(1)
         else:
             self.axes_manager.set_signal_dimension(2)
-
-    def to_signal1D(self):
-        """Returns the image as a spectrum.
-
-        See Also
-        --------
-        as_signal1D : a method for the same purpose with more options.
-        signals.Signal1D.to_signal1D : performs the inverse operation on one
-        dimensional signals.
-
-        """
-        return self.as_signal1D(0 + 3j)
 
     def add_phase_ramp(self, ramp_x, ramp_y, offset=0):
         """Add a linear phase ramp to the wave.

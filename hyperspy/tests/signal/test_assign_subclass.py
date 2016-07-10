@@ -12,62 +12,55 @@ class TestSignalAssignSubclass:
         assert_is(assign_signal_subclass(
             dtype=np.dtype('float'),
             record_by="",
-            signal_type="") is hs.signals.BaseSignal)
-
+            signal_type=""), hs.signals.BaseSignal)
 
     def test_signal1d(self):
         assert_is(assign_signal_subclass(
             dtype=np.dtype('float'),
             record_by="spectrum",
-            signal_type="") is hs.signals.Signal1D)
-
+            signal_type=""), hs.signals.Signal1D)
 
     def test_signal2d(self):
         assert_is(assign_signal_subclass(
             dtype=np.dtype('float'),
             record_by="image",
-            signal_type="") is hs.signals.Signal2D)
-
+            signal_type=""), hs.signals.Signal2D)
 
     def test_eels_spectrum(self):
         assert_is(assign_signal_subclass(
             dtype=np.dtype('float'),
             record_by="spectrum",
-            signal_type="EELS") is hs.signals.EELSSpectrum)
+            signal_type="EELS"), hs.signals.EELSSpectrum)
+
     def test_dielectric_function(self):
         assert_is(assign_signal_subclass(
             dtype=np.dtype('complex'),
             record_by="spectrum",
-            signal_type="DielectricFunction",
-            signal_origin=""), hs.signals.DielectricFunction)
+            signal_type="DielectricFunction"), hs.signals.DielectricFunction)
 
     def test_complex(self):
         assert_is(assign_signal_subclass(
             dtype=np.dtype('complex'),
             record_by="",
-            signal_type="",
-            signal_origin=""), hs.signals.ComplexSignal)
+            signal_type=""), hs.signals.ComplexSignal)
 
     def test_complex_spectrum(self):
         assert_is(assign_signal_subclass(
             dtype=np.dtype('complex'),
             record_by="spectrum",
-            signal_type="",
-            signal_origin=""), hs.signals.ComplexSignal1D)
+            signal_type=""), hs.signals.ComplexSignal1D)
 
     def test_complex_image(self):
         assert_is(assign_signal_subclass(
             dtype=np.dtype('complex'),
             record_by="image",
-            signal_type="",
-            signal_origin=""), hs.signals.ComplexSignal2D)
+            signal_type=""), hs.signals.ComplexSignal2D)
 
     def test_weird_real(self):
         assert_is(assign_signal_subclass(
             dtype=np.dtype('float'),
             record_by="",
-            signal_type="weird",
-            signal_origin=""), hs.signals.BaseSignal)
+            signal_type="weird"), hs.signals.BaseSignal)
 
     def test_weird_spectrum(self):
         assert_is(assign_signal_subclass(
@@ -75,13 +68,11 @@ class TestSignalAssignSubclass:
             record_by="spectrum",
             signal_type="weird"), hs.signals.Signal1D)
 
-
     def test_weird_complex(self):
         assert_is(assign_signal_subclass(
             dtype=np.dtype('complex'),
             record_by="",
-            signal_type="weird",
-            signal_origin=""), hs.signals.ComplexSignal)
+            signal_type="weird"), hs.signals.ComplexSignal)
 
 
 class TestConvertBaseSignal:
@@ -111,23 +102,11 @@ class TestConvertBaseSignal:
         # Going back from ComplexSignal to BaseSignal is not possible!
         # If real data is required use `real`, `imag`, `amplitude` or `phase`!
 
-    def test_base_to_simulation(self):
-        self.s.set_signal_origin("simulation")
-        assert_true(isinstance(self.s, hs.signals.Simulation))
-        self.s.set_signal_origin("")
-        assert_true(isinstance(self.s, hs.signals.BaseSignal))
-
 
 class TestConvertSignal1D:
 
     def setUp(self):
         self.s = hs.signals.Signal1D([0])
-
-    def test_signal1d_to_spectrum_simulation(self):
-        self.s.set_signal_origin("simulation")
-        assert_true(isinstance(self.s, hs.signals.SpectrumSimulation))
-        self.s.set_signal_origin("")
-        assert_true(isinstance(self.s, hs.signals.Signal1D))
 
     def test_signal1d_to_eels(self):
         self.s.set_signal_type("EELS")
@@ -146,18 +125,6 @@ class TestConvertSignal1D:
         assert_true(isinstance(self.s, hs.signals.EDSSEMSpectrum))
         self.s.set_signal_type("")
         assert_true(isinstance(self.s, hs.signals.Signal1D))
-
-
-class TestConvertSignal2D:
-
-    def setUp(self):
-        self.s = hs.signals.Signal2D(np.zeros((3, 3)))
-
-    def test_signal2d_to_image_simulation(self):
-        self.s.set_signal_origin("simulation")
-        assert_true(isinstance(self.s, hs.signals.ImageSimulation))
-        self.s.set_signal_origin("")
-        assert_true(isinstance(self.s, hs.signals.Signal2D))
 
 
 class TestConvertComplexSignal:
