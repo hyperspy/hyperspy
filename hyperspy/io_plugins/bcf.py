@@ -44,7 +44,13 @@ writes = False
 
 import io
 
-from lxml import objectify
+try:
+    from lxml import objectify
+except ImportError:
+    raise ImportError("""The lxml or/and python-lxml bindings are missing
+required to read Bruker bcf files.
+Try to install python-lxml package with pip or other python packaging system""")
+
 import codecs
 from datetime import datetime, timedelta
 import numpy as np
@@ -523,18 +529,18 @@ class HyperHeader(object):
         self.sem.wd = float(semData.WD)  # in mm
         self.sem.mag = float(semData.Mag)  # in times
         # image/hypermap resolution in um/pixel:
-        self.image.x_res = float(semData.DX) / 1.0e6  # in meters
-        self.image.y_res = float(semData.DY) / 1.0e6  # in meters
+        self.image.x_res = float(semData.DX)  # in micrometers
+        self.image.y_res = float(semData.DY)  # in micrometers
         semStageData = root.xpath("ClassInstance[@Type='TRTSEMStageData']")[0]
         # stage position data in um cast to m (that data anyway is not used
         # by hyperspy):
         try:
-            self.stage.x = float(semStageData.X) / 1.0e6  # in meters
-            self.stage.y = float(semStageData.Y) / 1.0e6  # in meters
+            self.stage.x = float(semStageData.X)  # in micrometers
+            self.stage.y = float(semStageData.Y)  # in micrometers
         except AttributeError:
             self.stage.x = self.stage.y = None
         try:
-            self.stage.z = float(semStageData.Z) / 1.0e6  # in meters
+            self.stage.z = float(semStageData.Z)  # in micrometers
         except AttributeError:
             self.stage.z = None
         try:
@@ -952,14 +958,14 @@ class HyperMap(object):
 
 
 #wrapper functions for hyperspy:
-def file_reader(filename, record_by=None, index=0, downsample=1,
+def file_reader(filename, select_type=None, index=0, downsample=1,
                 cutoff_at_kV=None):
     """Reads a bruker bcf file and loads the data into the appropriate class,
     then wraps it into appropriate hyperspy required list of dictionaries
     used by hyperspy.api.load() method.
 
     Keyword arguments:
-    record_by -- One of: spectrum, image. If none specified, then function
+    select_type -- One of: spectrum, image. If none specified, then function
       loads everything, else if specified, loads either just sem imagery,
       or just hyper spectral mapping data. (default None)
     index -- index of dataset in bcf v2 (delaut 0)
@@ -971,9 +977,9 @@ def file_reader(filename, record_by=None, index=0, downsample=1,
     """
     #objectified bcf file:
     obj_bcf = BCF_reader(filename)
-    if record_by == 'image':
+    if select_type == 'image':
         return bcf_imagery(obj_bcf)
-    elif record_by == 'spectrum':
+    elif select_type == 'spectrum':
         return bcf_hyperspectra(obj_bcf, index=index,
                                  downsample=downsample,
                                  cutoff_at_kV=cutoff_at_kV)
@@ -1038,12 +1044,12 @@ def bcf_hyperspectra(obj_bcf, index=0, downsample=None, cutoff_at_kV=None):
                      'size': obj_bcf.hypermap[index].hypermap.shape[0],
                      'offset': 0,
                      'scale': obj_bcf.hypermap[index].ycalib,
-                     'units': 'm'},
+                     'units': 'µm'},
                     {'name': 'width',
                      'size': obj_bcf.hypermap[index].hypermap.shape[1],
                      'offset': 0,
                      'scale': obj_bcf.hypermap[index].xcalib,
-                     'units': 'm'},
+                     'units': 'µm'},
                      {'name': 'Energy',
                      'size': obj_bcf.hypermap[index].hypermap.shape[2],
                      'offset': obj_bcf.hypermap[index].calib_abs,
