@@ -459,7 +459,7 @@ supported by HyperSpy.
 
 Extra loading arguments
 ^^^^^^^^^^^^^^^^^^^^^^^
-record_by: One of ('spectrum', 'image'). If specified just selected type of data
+select_type: One of ('spectrum', 'image'). If specified just selected type of data
 is returned. (default None)
 
 index: index of dataset in bcf v2 files, which can hold few datasets (delaut 0)
@@ -477,7 +477,7 @@ data from bcf (original shape: 80keV EDS range (4096 channels), 100x75 pixels):
 
 .. code-block:: python
 
-    >>> hs.load("sample80kv.bcf", record_by='spectrum', downsample=2, cutoff_at_kV=10)
+    >>> hs.load("sample80kv.bcf", select_type='spectrum', downsample=2, cutoff_at_kV=10)
     <EDSSEMSpectrum, title: EDX, dimensions: (50, 38|595)>
 
 load the same file without extra arguments:
