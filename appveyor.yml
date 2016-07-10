@@ -6,6 +6,8 @@ environment:
   global:
     TEST_DEPS: "nose wheel pip"
     NSIS_DIR: "%PROGRAMFILES(x86)%/NSIS"
+
+
   matrix:
 
     # Pre-installed Python versions, which Appveyor may upgrade to
