@@ -35,8 +35,6 @@ Currently the following signal subclasses are available:
 * :py:class:`~._signals.eels.EELSSpectrum`
 * :py:class:`~._signals.eds_tem.EDSTEMSpectrum`
 * :py:class:`~._signals.eds_sem.EDSSEMSpectrum`
-* :py:class:`~._signals.spectrum_simulation.SpectrumSimulation`
-* :py:class:`~._signals.image_simulation.ImageSimulation`
 
 Note that in HyperSpy 1.0.0 the :py:class:`~._signals.signal1D.Signal1D` and
 :py:class:`~._signals.image.Signal2D` classes deprecated the old `Spectrum`
@@ -92,12 +90,6 @@ The different subclasses are characterized by three
     :py:meth:`~.signal.BaseSignal.set_signal_type` changes the signal_type in place, which
     may result in a :py:class:`~.signal.BaseSignal` subclass transformation.
 
-`signal_origin`
-    Describes the origin of the signal and can be "simulation" or "experiment" or "", the
-    latter meaning undefined. In certain cases HyperSpy provides features that are only
-    available for a particular signal origin. The :py:class:`~.signal.BaseSignal` method
-    :py:meth:`~.signal.BaseSignal.set_signal_origin` changes the signal_origin in place,
-    which may result in a :py:class:`~.signal.BaseSignal` subclass transformation.
 
 Furthermore, the `dtype` of the signal data also affects the subclass assignment. There are
 e.g. specialised signal subclasses to handle complex data (see the following diagram).
@@ -146,7 +138,6 @@ The following example shows how to transform between different subclasses.
        <Signal1D, title: , dimensions: (20, 10|100)>
        >>> s.metadata
        ├── record_by = spectrum
-       ├── signal_origin =
        ├── signal_type =
        └── title =
        >>> im = s.to_signal2D()
@@ -154,15 +145,11 @@ The following example shows how to transform between different subclasses.
        <Signal2D, title: , dimensions: (100|20, 10)>
        >>> im.metadata
        ├── record_by = image
-       ├── signal_origin =
        ├── signal_type =
        └── title =
        >>> s.set_signal_type("EELS")
        >>> s
        <EELSSpectrum, title: , dimensions: (20, 10|100)>
-       >>> s.set_signal_origin("simulation")
-       >>> s
-       <EELSSpectrumSimulation, title: , dimensions: (20, 10|100)>
 
 
 The navigation and signal dimensions
@@ -992,7 +979,7 @@ for example:
 
 .. code-block:: python
 
-  >>> s = hs.signals.SpectrumSimulation(np.ones(100))
+  >>> s = hs.signals.Spectrum(np.ones(100))
   >>> s.add_poissonian_noise()
   >>> s.metadata
   ├── General
@@ -1000,7 +987,6 @@ for example:
   └── Signal
       ├── binned = False
       ├── record_by = spectrum
-      ├── signal_origin = simulation
       └── signal_type =
 
   >>> s.estimate_poissonian_noise_variance()
@@ -1016,7 +1002,6 @@ for example:
       │   └── variance = <SpectrumSimulation, title: Variance of , dimensions: (|100)>
       ├── binned = False
       ├── record_by = spectrum
-      ├── signal_origin = simulation
       └── signal_type =
 
 

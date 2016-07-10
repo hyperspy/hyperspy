@@ -292,7 +292,7 @@ signal_type
 signal_origin
     type: Str
 
-    Either 'simulation' or 'experiment'.
+    Describes the origin of the signal e.g. 'simulation' or 'experiment'.
 
 record_by
     type: Str

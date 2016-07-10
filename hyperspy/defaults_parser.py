@@ -72,6 +72,9 @@ else:
 # This "section" is all that has to be modified to add or remove sections and
 # options from the defaults
 
+# Due to https://github.com/enthought/traitsui/issues/23 the desc text as
+# displayed in the tooltip get "Specifies" prepended.
+
 
 class GeneralConfig(t.HasTraits):
     default_file_format = t.Enum(
@@ -110,6 +113,8 @@ class GeneralConfig(t.HasTraits):
              'metadata), long lists and tuples will be expanded and any '
              'dictionaries in them will be printed similar to '
              'DictionaryTreeBrowser, but with double lines')
+    logging_level = t.Enum(['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', ],
+                           desc='the log level of all hyperspy modules.')
 
     def _logger_on_changed(self, old, new):
         if new is True:
@@ -230,6 +235,7 @@ template = {
 template['MachineLearning'].export_factors_default_file_format = 'rpl'
 template['MachineLearning'].export_loadings_default_file_format = 'rpl'
 template['General'].default_export_format = 'rpl'
+template['General'].logging_level = 'WARNING'
 
 # Defaults template definition ends ######################################
 

@@ -12,49 +12,28 @@ class TestSignalAssignSubclass:
         assert_is(assign_signal_subclass(
             dtype=np.dtype('float'),
             record_by="",
-            signal_type="",
-            signal_origin=""), hs.signals.BaseSignal)
+            signal_type="") is hs.signals.BaseSignal)
 
 
     def test_signal1d(self):
         assert_is(assign_signal_subclass(
             dtype=np.dtype('float'),
             record_by="spectrum",
-            signal_type="",
-            signal_origin=""), hs.signals.Signal1D)
+            signal_type="") is hs.signals.Signal1D)
 
 
     def test_signal2d(self):
         assert_is(assign_signal_subclass(
             dtype=np.dtype('float'),
             record_by="image",
-            signal_type="",
-            signal_origin=""), hs.signals.Signal2D)
-
-
-    def test_image_simulation(self):
-        assert_is(assign_signal_subclass(
-            dtype=np.dtype('float'),
-            record_by="image",
-            signal_type="",
-            signal_origin="simulation"), hs.signals.ImageSimulation)
+            signal_type="") is hs.signals.Signal2D)
 
 
     def test_eels_spectrum(self):
         assert_is(assign_signal_subclass(
             dtype=np.dtype('float'),
             record_by="spectrum",
-            signal_type="EELS",
-            signal_origin=""), hs.signals.EELSSpectrum)
-
-
-    def test_eels_spectrum_simulation(self):
-        assert_is(assign_signal_subclass(
-            dtype=np.dtype('float'),
-            record_by="spectrum",
-            signal_type="EELS",
-            signal_origin="simulation"), hs.signals.EELSSpectrumSimulation)
-
+            signal_type="EELS") is hs.signals.EELSSpectrum)
     def test_dielectric_function(self):
         assert_is(assign_signal_subclass(
             dtype=np.dtype('complex'),
@@ -94,8 +73,8 @@ class TestSignalAssignSubclass:
         assert_is(assign_signal_subclass(
             dtype=np.dtype('float'),
             record_by="spectrum",
-            signal_type="weird",
-            signal_origin=""), hs.signals.Signal1D)
+            signal_type="weird"), hs.signals.Signal1D)
+
 
     def test_weird_complex(self):
         assert_is(assign_signal_subclass(
@@ -153,14 +132,6 @@ class TestConvertSignal1D:
     def test_signal1d_to_eels(self):
         self.s.set_signal_type("EELS")
         assert_true(isinstance(self.s, hs.signals.EELSSpectrum))
-        self.s.set_signal_type("")
-        assert_true(isinstance(self.s, hs.signals.Signal1D))
-
-    def test_signal1d_to_eels_simulation(self):
-        self.s.set_signal_origin("simulation")
-        self.s.set_signal_type("EELS")
-        assert_true(isinstance(self.s, hs.signals.EELSSpectrumSimulation))
-        self.s.set_signal_origin("")
         self.s.set_signal_type("")
         assert_true(isinstance(self.s, hs.signals.Signal1D))
 

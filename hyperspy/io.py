@@ -35,7 +35,6 @@ _logger = logging.getLogger(__name__)
 def load(filenames=None,
          record_by=None,
          signal_type=None,
-         signal_origin=None,
          stack=False,
          stack_axis=None,
          new_axis_name="stack_element",
@@ -83,16 +82,6 @@ def load(filenames=None,
         the case in a transmission electron  microscope (TEM) —,
         "EDS_SEM" if acquired from a non electron-transparent sample
         — as it is usually the case in a scanning electron  microscope (SEM) —.
-        If "" (empty string) the value is not read from the file and is
-        considered undefined.
-    signal_origin : {None, "experiment", "simulation", ""}
-        Defines the origin of the signal.
-        The value provided may determine the Signal subclass assigned to the
-        data.
-        If None the value is read/guessed from the file. Any other value
-        overrides the value stored in the file if any.
-        Use "experiment" if loading experimental data.
-        Use "simulation" if loading simulated data.
         If "" (empty string) the value is not read from the file and is
         considered undefined.
     stack : bool
@@ -162,7 +151,6 @@ def load(filenames=None,
     """
     kwds['record_by'] = record_by
     kwds['signal_type'] = signal_type
-    kwds['signal_origin'] = signal_origin
     if filenames is None:
         if hyperspy.defaults_parser.preferences.General.interactive is True:
             from hyperspy.gui.tools import Load
@@ -224,7 +212,6 @@ def load(filenames=None,
 def load_single_file(filename,
                      record_by=None,
                      signal_type=None,
-                     signal_origin=None,
                      **kwds):
     """
     Load any supported file into an HyperSpy structure
@@ -264,7 +251,6 @@ def load_single_file(filename,
                                 reader=reader,
                                 record_by=record_by,
                                 signal_type=signal_type,
-                                signal_origin=signal_origin,
                                 **kwds)
 
 
@@ -272,7 +258,6 @@ def load_with_reader(filename,
                      reader,
                      record_by=None,
                      signal_type=None,
-                     signal_origin=None,
                      **kwds):
     file_data_list = reader.file_reader(filename,
                                         record_by=record_by,
@@ -287,9 +272,6 @@ def load_with_reader(filename,
                 signal_dict['metadata']["Signal"]['record_by'] = record_by
             if signal_type is not None:
                 signal_dict['metadata']["Signal"]['signal_type'] = signal_type
-            if signal_origin is not None:
-                signal_dict['metadata']["Signal"][
-                    'signal_origin'] = signal_origin
             objects.append(dict2signal(signal_dict))
             folder, filename = os.path.split(os.path.abspath(filename))
             filename, extension = os.path.splitext(filename)
@@ -307,8 +289,7 @@ def load_with_reader(filename,
 
 def assign_signal_subclass(dtype,
                            record_by="",
-                           signal_type="",
-                           signal_origin=""):
+                           signal_type=""):
     """Given record_by and signal_type return the matching Signal subclass.
 
     Parameters
@@ -316,7 +297,6 @@ def assign_signal_subclass(dtype,
     dtype : :class:`~.numpy.dtype`
     record_by: {"spectrum", "image", ""}
     signal_type : {"EELS", "EDS", "EDS_TEM", "", str}
-    signal_origin : {"experiment", "simulation", ""}
 
     Returns
     -------
@@ -336,32 +316,21 @@ def assign_signal_subclass(dtype,
     if record_by and record_by not in ["image", "spectrum"]:
         raise ValueError("record_by must be one of: None, empty string, "
                          "\"image\" or \"spectrum\"")
-    if signal_origin and signal_origin not in ["experiment", "simulation"]:
-        raise ValueError("signal_origin must be one of: None, empty string, "
-                         "\"experiment\" or \"simulation\"")
     signals = hyperspy.misc.utils.find_subclasses(hyperspy.signals, BaseSignal)
-    if signal_origin == "experiment":
-        signal_origin = ""
-
     d_matches = [s for s in signals.values() if dtype == s._dtype]
     d_r_matches = [s for s in d_matches if record_by == s._record_by]
-    d_r_o_matches = [s for s in d_r_matches if signal_origin == s._signal_origin]
-    d_r_o_t_matches = [s for s in d_r_o_matches if signal_type == s._signal_type]
+    d_r_t_matches = [s for s in d_r_matches if signal_type == s._signal_type]
 
-    if d_r_o_t_matches:
+    if d_r_t_matches:
         # Perfect match found, return it.
-        # (There should be only one, but maybe worth checking?)
-        return d_r_o_t_matches[0]
+        return d_r_t_matches[0]
     elif [s for s in d_r_matches if s._signal_type == ""]:
         # just record_by and dtype matches
         # Return a general class for the given signal dimension.
-        # (There should be only one, but maybe worth checking?)
-        return [s for s in d_r_matches if s._signal_type == "" and s._signal_origin==""][0]
+        return [s for s in d_r_matches if s._signal_type == ""][0]
     else:
         # no record_by match either, hence return the general subclass for correct dtype
-        # (There should be only one, but maybe worth checking?)
-        return [s for s in d_matches if s._record_by == ""
-               and s._signal_type == "" and s._signal_origin==""][0]
+        return [s for s in d_matches if s._record_by == "" and s._signal_type == ""][0]
 
 
 def dict2signal(signal_dict):
@@ -378,23 +347,19 @@ def dict2signal(signal_dict):
     """
     record_by = ""
     signal_type = ""
-    signal_origin = ""
     if "metadata" in signal_dict:
         mp = signal_dict["metadata"]
         if "Signal" in mp and "record_by" in mp["Signal"]:
             record_by = mp["Signal"]['record_by']
         if "Signal" in mp and "signal_type" in mp["Signal"]:
             signal_type = mp["Signal"]['signal_type']
-        if "Signal" in mp and "signal_origin" in mp["Signal"]:
-            signal_origin = mp["Signal"]['signal_origin']
     if (not record_by and 'data' in signal_dict and
             len(signal_dict['data'].shape) < 2):
         record_by = "spectrum"
 
     signal = assign_signal_subclass(dtype=signal_dict['data'].dtype,
                                     record_by=record_by,
-                                    signal_type=signal_type,
-                                    signal_origin=signal_origin)(**signal_dict)
+                                    signal_type=signal_type)(**signal_dict)
     if "post_process" in signal_dict:
         for f in signal_dict['post_process']:
             signal = f(signal)
