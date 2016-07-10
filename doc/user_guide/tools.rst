@@ -973,7 +973,6 @@ for example:
   └── Signal
       ├── binned = False
       ├── record_by = spectrum
-      ├── signal_origin = 
       └── signal_type =
 
   >>> s.estimate_poissonian_noise_variance()
