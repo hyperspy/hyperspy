@@ -145,7 +145,7 @@ assert isinstance(compiler, distutils.ccompiler.CCompiler)
 distutils.sysconfig.customize_compiler(compiler)
 try:
     compiler.compile([os.path.join(setup_path,
-                                   'hyperspy/tests/misc/test_compilers.c')])
+                                   'hyperspy/misc/etc/test_compilers.c')])
 except CompileError:
     warnings.warn("""WARNING: C compiler can't be found.
 Only slow pure python alternative functions will be available.
@@ -153,10 +153,10 @@ To use fast implementation of some functions writen in cython/c either:
 a) check that you have compiler (EXACTLY SAME as your python
 distribution was compiled with) installed,
 b) use binary distribution of hyperspy (i.e. wheels, egg, (only osx and win)).
-Installation will continue in 10 sec...""")
+Installation will continue in 5 sec...""")
     extensions = []
     from time import sleep
-    sleep(10) #wait 10 secs for user to notice the message
+    sleep(5) #wait 5 secs for user to notice the message
 
 
 # HOOKS ######
