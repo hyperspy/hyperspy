@@ -503,6 +503,8 @@ class TestModel1D:
         m.append(g3)
         g4 = hs.model.components.Gaussian()
         m.append(g4)
+        p = hs.model.components.Polynomial(3)
+        m.append(p)
 
         g1.A.value = 3.
         g1.centre.bmin = 300.
@@ -539,6 +541,10 @@ class TestModel1D:
         g4.centre.bmax = -1
         g4.sigma.value = 1
         g4.sigma.bmin = 10
+
+        p.coefficients.value = (1, 2, 3, 4)
+        p.coefficients.bmin = 2
+        p.coefficients.bmax = 3
         m.ensure_parameters_in_bounds()
         np.testing.assert_almost_equal(g1.A.value, 3.)
         np.testing.assert_almost_equal(g2.A.value, 1.)
@@ -554,6 +560,8 @@ class TestModel1D:
         np.testing.assert_almost_equal(g2.sigma.value, 3.)
         np.testing.assert_almost_equal(g3.sigma.value, 0.)
         np.testing.assert_almost_equal(g4.sigma.value, 1)
+
+        np.testing.assert_almost_equal(p.coefficients.value, (2, 2, 3, 3))
 
 
 class TestModel2D:
@@ -682,7 +690,7 @@ class TestModelWeighted:
 
     def setUp(self):
         np.random.seed(1)
-        s = hs.signals.SpectrumSimulation(np.arange(10, 100, 0.1))
+        s = hs.signals.Signal1D(np.arange(10, 100, 0.1))
         s.metadata.set_item("Signal.Noise_properties.variance",
                             hs.signals.Signal1D(np.arange(10, 100, 0.01)))
         s.axes_manager[0].scale = 0.1
@@ -771,7 +779,7 @@ class TestModelWeighted:
 class TestModelScalarVariance:
 
     def setUp(self):
-        s = hs.signals.SpectrumSimulation(np.ones(100))
+        s = hs.signals.Signal1D(np.ones(100))
         m = s.create_model()
         m.append(hs.model.components.Offset())
         self.s = s
@@ -822,10 +830,8 @@ class TestModelScalarVariance:
 class TestModelSignalVariance:
 
     def setUp(self):
-        variance = hs.signals.SpectrumSimulation(
-            np.arange(
-                100, 300).reshape(
-                (2, 100)))
+        variance = hs.signals.Signal1D(np.arange(100, 300).reshape(
+            (2, 100)))
         s = variance.deepcopy()
         np.random.seed(1)
         std = 10

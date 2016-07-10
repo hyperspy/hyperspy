@@ -32,8 +32,6 @@ Currently the following signal subclasses are available:
 * :py:class:`~._signals.eels.EELSSpectrum`
 * :py:class:`~._signals.eds_tem.EDSTEMSpectrum`
 * :py:class:`~._signals.eds_sem.EDSSEMSpectrum`
-* :py:class:`~._signals.spectrum_simulation.SpectrumSimulation`
-* :py:class:`~._signals.image_simulation.ImageSimulation`
 
 Note that in HyperSpy 1.0.0 the :py:class:`~._signals.signal1D.Signal1D` and
 :py:class:`~._signals.image.Signal2D` classes were deprecated.
@@ -88,34 +86,28 @@ The different subclasses are characterized by three
     :py:meth:`~.signal.BaseSignal.set_signal_type` changes the signal_type in place, which
     may result in a :py:class:`~.signal.BaseSignal` subclass transformation.
 
-`signal_origin`
-    Describes the origin of the signal and can be "simulation" or "experiment" or "", the
-    latter meaning undefined. In certain cases HyperSpy provides features that are only
-    available for a particular signal origin. The :py:class:`~.signal.BaseSignal` method
-    :py:meth:`~.signal.BaseSignal.set_signal_origin` changes the signal_origin in place,
-    which may result in a :py:class:`~.signal.BaseSignal` subclass transformation.
 
 .. table:: BaseSignal subclass :py:attr:`~.signal.BaseSignal.metadata` attributes.
 
-    +---------------------------------------------------------------+-----------+-------------+---------------+
-    |                      BaseSignal subclass                      | record_by | signal_type | signal_origin |
-    +===============================================================+===========+=============+===============+
-    |                 :py:class:`~.signal.BaseSignal`               |     -     |      -      |       -       |
-    +---------------------------------------------------------------+-----------+-------------+---------------+
-    |           :py:class:`~._signals.signal1d.Signal1D`            | spectrum  |      -      |       -       |
-    +---------------------------------------------------------------+-----------+-------------+---------------+
-    | :py:class:`~._signals.spectrum_simulation.SpectrumSimulation` | spectrum  |      -      |  simulation   |
-    +---------------------------------------------------------------+-----------+-------------+---------------+
-    |           :py:class:`~._signals.eels.EELSSpectrum`            | spectrum  |    EELS     |       -       |
-    +---------------------------------------------------------------+-----------+-------------+---------------+
-    |           :py:class:`~._signals.eds_sem.EDSSEMSpectrum`       | spectrum  |   EDS_SEM   |       -       |
-    +---------------------------------------------------------------+-----------+-------------+---------------+
-    |           :py:class:`~._signals.eds_tem.EDSTEMSpectrum`       | spectrum  |   EDS_TEM   |       -       |
-    +---------------------------------------------------------------+-----------+-------------+---------------+
-    |              :py:class:`~._signals.signal2d.Signal2D`         |   image   |      -      |       -       |
-    +---------------------------------------------------------------+-----------+-------------+---------------+
-    |    :py:class:`~._signals.image_simulation.ImageSimulation`    |   image   |      -      |  simulation   |
-    +---------------------------------------------------------------+-----------+-------------+---------------+
+    +---------------------------------------------------------------+-----------+-------------+
+    |                      BaseSignal subclass                      | record_by | signal_type |
+    +===============================================================+===========+=============+
+    |                 :py:class:`~.signal.BaseSignal`               |     -     |      -      |
+    +---------------------------------------------------------------+-----------+-------------+
+    |           :py:class:`~._signals.signal1d.Signal1D`            | spectrum  |      -      |
+    +---------------------------------------------------------------+-----------+-------------+
+    | :py:class:`~._signals.spectrum_simulation.SpectrumSimulation` | spectrum  |      -      |
+    +---------------------------------------------------------------+-----------+-------------+
+    |           :py:class:`~._signals.eels.EELSSpectrum`            | spectrum  |    EELS     |
+    +---------------------------------------------------------------+-----------+-------------+
+    |           :py:class:`~._signals.eds_sem.EDSSEMSpectrum`       | spectrum  |   EDS_SEM   |
+    +---------------------------------------------------------------+-----------+-------------+
+    |           :py:class:`~._signals.eds_tem.EDSTEMSpectrum`       | spectrum  |   EDS_TEM   |
+    +---------------------------------------------------------------+-----------+-------------+
+    |              :py:class:`~._signals.signal2d.Signal2D`         |   image   |      -      |
+    +---------------------------------------------------------------+-----------+-------------+
+    |    :py:class:`~._signals.image_simulation.ImageSimulation`    |   image   |      -      |
+    +---------------------------------------------------------------+-----------+-------------+
 
 
 The following example shows how to transform between different subclasses.
@@ -127,7 +119,6 @@ The following example shows how to transform between different subclasses.
        <Signal1D, title: , dimensions: (20, 10|100)>
        >>> s.metadata
        ├── record_by = spectrum
-       ├── signal_origin =
        ├── signal_type =
        └── title =
        >>> im = s.to_signal2D()
@@ -135,15 +126,11 @@ The following example shows how to transform between different subclasses.
        <Signal2D, title: , dimensions: (100|20, 10)>
        >>> im.metadata
        ├── record_by = image
-       ├── signal_origin =
        ├── signal_type =
        └── title =
        >>> s.set_signal_type("EELS")
        >>> s
        <EELSSpectrum, title: , dimensions: (20, 10|100)>
-       >>> s.set_signal_origin("simulation")
-       >>> s
-       <EELSSpectrumSimulation, title: , dimensions: (20, 10|100)>
 
 
 The navigation and signal dimensions
@@ -234,13 +221,29 @@ The methods of this section are available to all the signals. In other chapters
 methods that are only available in specialized
 subclasses.
 
-Simple mathematical operations
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Mathematical operations
+^^^^^^^^^^^^^^^^^^^^^^^
 
-.. versionchanged:: 1.0.0
+.. versionchanged:: 1.0
 
-A number of simple operations are supported by :py:class:`~.signal.BaseSignal`.
-Most of them are just wrapped numpy functions, as an example:
+A number of mathematical operations are available
+in :py:class:`~.signal.BaseSignal`. Most of them are just wrapped numpy
+functions.
+
+The methods that perform mathematical opearation over one or more axis at a
+time are:
+
+* :py:meth:`~.signal.BaseSignal.sum`
+* :py:meth:`~.signal.BaseSignal.max`
+* :py:meth:`~.signal.BaseSignal.min`
+* :py:meth:`~.signal.BaseSignal.mean`
+* :py:meth:`~.signal.BaseSignal.std`
+* :py:meth:`~.signal.BaseSignal.var`
+
+Note that by default all this methods perform the operation over *all*
+navigation axes.
+
+Example:
 
 .. code-block:: python
 
@@ -261,13 +264,55 @@ Most of them are just wrapped numpy functions, as an example:
     >>> ans.axes_manager[0]
     <Scalar axis, size: 1>
 
-Other functions that support similar behavior: :py:func:`~.signal.sum`,
-:py:func:`~.signal.max`, :py:func:`~.signal.min`, :py:func:`~.signal.mean`,
-:py:func:`~.signal.std`, :py:func:`~.signal.var`. Similar functions that can
-only be performed on one axis at a time: :py:func:`~.signal.diff`,
-:py:func:`~.signal.derivative`, :py:func:`~.signal.integrate_simpson`,
-:py:func:`~.signal.integrate1D`, :py:func:`~.signal.valuemax`,
-:py:func:`~.signal.indexmax`.
+The following methods operate only on one axis at a time:
+
+* :py:meth:`~.signal.BaseSignal.diff`
+* :py:meth:`~.signal.BaseSignal.derivative`
+* :py:meth:`~.signal.BaseSignal.integrate_simpson`
+* :py:meth:`~.signal.BaseSignal.integrate1D`
+* :py:meth:`~.signal.BaseSignal.valuemax`
+* :py:meth:`~.signal.BaseSignal.indexmax`
+
+.. versionadded:: 1.0
+
+All numpy ufunc can operate on :py:class:`~.signal.BaseSignal`
+instances, for example:
+
+.. code-block:: python
+
+    >>> s = hs.signals.Signal1D([0, 1])
+    >>> s.metadata.General.title = "A"
+    >>> s
+    <Signal1D, title: A, dimensions: (|2)>
+    >>> np.exp(s)
+    <Signal1D, title: exp(A), dimensions: (|2)>
+    >>> np.exp(s).data
+    array([ 1.        ,  2.71828183])
+    >>> np.power(s, 2)
+    <Signal1D, title: power(A, 2), dimensions: (|2)>
+    >>> np.add(s, s)
+    <Signal1D, title: add(A, A), dimensions: (|2)>
+    >>> np.add(hs.signals.Signal1D([0, 1]), hs.signals.Signal1D([0, 1]))
+    <Signal1D, title: add(Untitled Signal 1, Untitled Signal 2), dimensions: (|2)>
+
+
+Notice that the title is automatically updated. When the signal has no title
+a new title is automatically generated:
+
+.. code-block:: python
+
+    >>> np.add(hs.signals.Signal1D([0, 1]), hs.signals.Signal1D([0, 1]))
+    <Signal1D, title: add(Untitled Signal 1, Untitled Signal 2), dimensions: (|2)>
+
+
+Functions (other than unfucs) that operate on numpy arrays can also operate
+on :py:class:`~.signal.BaseSignal` instances, however they return a numpy
+array instead of a :py:class:`~.signal.BaseSignal` instance e.g.:
+
+.. code-block:: python
+
+    >>> np.angle(s)
+    array([ 0.,  0.])
 
 .. _signal.indexing:
 
@@ -909,7 +954,7 @@ for example:
 
 .. code-block:: python
 
-  >>> s = hs.signals.SpectrumSimulation(np.ones(100))
+  >>> s = hs.signals.Spectrum(np.ones(100))
   >>> s.add_poissonian_noise()
   >>> s.metadata
   ├── General
@@ -917,7 +962,6 @@ for example:
   └── Signal
       ├── binned = False
       ├── record_by = spectrum
-      ├── signal_origin = simulation
       └── signal_type =
 
   >>> s.estimate_poissonian_noise_variance()
@@ -933,5 +977,4 @@ for example:
       │   └── variance = <SpectrumSimulation, title: Variance of , dimensions: (|100)>
       ├── binned = False
       ├── record_by = spectrum
-      ├── signal_origin = simulation
       └── signal_type =
