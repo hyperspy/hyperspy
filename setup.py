@@ -41,7 +41,7 @@ import re
 #stuff to check presence of compiler:
 import distutils.sysconfig
 import distutils.ccompiler
-from distutils.errors import CompileError
+from distutils.errors import CompileError, DistutilsPlatformError
 
 setup_path = os.path.dirname(__file__)
 
@@ -146,7 +146,7 @@ distutils.sysconfig.customize_compiler(compiler)
 try:
     compiler.compile([os.path.join(setup_path,
                                    'hyperspy/misc/etc/test_compilers.c')])
-except CompileError:
+except (CompileError, DistutilsPlatformError):
     warnings.warn("""WARNING: C compiler can't be found.
 Only slow pure python alternative functions will be available.
 To use fast implementation of some functions writen in cython/c either:
