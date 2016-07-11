@@ -3654,6 +3654,7 @@ class BaseSignal(FancySlicing,
             out.events.data_changed.trigger(obj=out)
 
     as_signal1D.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
+
     def as_signal2D(self, image_axes, out=None):
         """Convert signal to image.
 
