@@ -95,8 +95,8 @@ before_deploy:
   - ps: (& $Env:WP_EXE /S /D=$Env:WP_INSTDIR | Out-Null )
   - "ls %APPDATA%/wpdir"
   - "ls %WP_INSTDIR%"
-  #- "del %WP_INSTDIR%\\settings\\pydistutils.cfg"
-  # we removed default mingw32/64 compiler setting in winpython enabling use of msvc
+  - "ren %WP_INSTDIR%\\settings\\pydistutils.cfg pydistutils_bak.cfg"
+  # we rename pydistutils temporaly to enable use of msvc
 
   # Patch NSIS to allow longer strings
   - ps: Add-AppveyorMessage "Setting up WinPython environment..."
@@ -117,6 +117,8 @@ before_deploy:
   - "%CMD_IN_ENV% python.exe -c \"import sys; print(sys.version)\""
   - "%CMD_IN_ENV% python.exe setup.py recythonize"
   - "%CMD_IN_ENV% python.exe setup.py install"
+  # setting back the config:
+  - "ren %WP_INSTDIR%\\settings\\pydistutils_bak.cfg pydistutils.cfg"
   # Custom installer step
   # TODO: Re-run tests in WinPython environment
   - ps: Add-AppveyorMessage "Creating installer..."
