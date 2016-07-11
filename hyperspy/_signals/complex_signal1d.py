@@ -17,9 +17,16 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from hyperspy._signals.signal2d import Signal2D
-from hyperspy._signals.simulation import Simulation
+from hyperspy._signals.common_signal1d import CommonSignal1D
+from hyperspy._signals.complex_signal import ComplexSignal
 
 
-class ImageSimulation(Simulation, Signal2D):
-    pass
+class ComplexSignal1D(ComplexSignal, CommonSignal1D):
+    """BaseSignal subclass for complex 1-dimensional data."""
+
+    _record_by = 'spectrum'
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.axes_manager.set_signal_dimension(1)
+        self.metadata.Signal.binned = False

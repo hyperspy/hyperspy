@@ -20,8 +20,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import warnings
 
-from hyperspy.exceptions import DataDimensionError
 from hyperspy.signal import BaseSignal
+from hyperspy._signals.common_signal1d import CommonSignal1D
 from hyperspy.gui.egerton_quantification import SpikesRemoval
 import math
 
@@ -220,36 +220,15 @@ def interpolate1D(number_of_interpolation_points, data):
     return interpolator(new_ax)
 
 
-class Signal1D(BaseSignal):
+class Signal1D(BaseSignal, CommonSignal1D):
 
     """
     """
     _signal_dimension = 1
 
     def __init__(self, *args, **kwargs):
-        BaseSignal.__init__(self, *args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.axes_manager.set_signal_dimension(1)
-
-    def to_signal2D(self):
-        """Returns the one dimensional signal as a two dimensional signal.
-
-        See Also
-        --------
-        as_signal2D : a method for the same purpose with more options.
-        signals.Signal1D.to_signal2D : performs the inverse operation on images.
-
-        Raises
-        ------
-        DataDimensionError: when data.ndim < 2
-
-        """
-        if self.data.ndim < 2:
-            raise DataDimensionError(
-                "A Signal dimension must be >= 2 to be converted to Signal2D")
-        im = self.rollaxis(-1 + 3j, 0 + 3j)
-        im.axes_manager.set_signal_dimension(2)
-        im._assign_subclass()
-        return im
 
     def _spikes_diagnosis(self, signal_mask=None,
                           navigation_mask=None):

@@ -29,14 +29,16 @@ Currently the following signal subclasses are available:
 
 * :py:class:`~._signals.signal1d.Signal1D`
 * :py:class:`~._signals.signal2d.Signal2D`
+* :py:class:`~._signals.complex_signal.ComplexSignal`
+* :py:class:`~._signals.complex_signal1d.ComplexSignal1D`
+* :py:class:`~._signals.complex_signal2d.ComplexSignal2D`
 * :py:class:`~._signals.eels.EELSSpectrum`
 * :py:class:`~._signals.eds_tem.EDSTEMSpectrum`
 * :py:class:`~._signals.eds_sem.EDSSEMSpectrum`
-* :py:class:`~._signals.spectrum_simulation.SpectrumSimulation`
-* :py:class:`~._signals.image_simulation.ImageSimulation`
 
 Note that in HyperSpy 1.0.0 the :py:class:`~._signals.signal1D.Signal1D` and
-:py:class:`~._signals.image.Signal2D` classes were deprecated.
+:py:class:`~._signals.image.Signal2D` classes deprecated the old `Spectrum`
+and `Image` classes.
 
 
 The :py:mod:`~.signals` module, which contains all available signal subclasses,
@@ -63,7 +65,7 @@ Transforming between signal subclasses
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The different subclasses are characterized by three
-:py:attr:`~.signal.BaseSignal.metadata` attributes (see the table below):
+:py:attr:`~.signal.BaseSignal.metadata` attributes (see the table and diagram below):
 
 `record_by`
     Can be "spectrum", "image" or "", the latter meaning undefined and describes
@@ -88,34 +90,39 @@ The different subclasses are characterized by three
     :py:meth:`~.signal.BaseSignal.set_signal_type` changes the signal_type in place, which
     may result in a :py:class:`~.signal.BaseSignal` subclass transformation.
 
-`signal_origin`
-    Describes the origin of the signal and can be "simulation" or "experiment" or "", the
-    latter meaning undefined. In certain cases HyperSpy provides features that are only
-    available for a particular signal origin. The :py:class:`~.signal.BaseSignal` method
-    :py:meth:`~.signal.BaseSignal.set_signal_origin` changes the signal_origin in place,
-    which may result in a :py:class:`~.signal.BaseSignal` subclass transformation.
+
+Furthermore, the `dtype` of the signal data also affects the subclass assignment. There are
+e.g. specialised signal subclasses to handle complex data (see the following diagram).
+
+
+.. figure::  images/HyperSpySignalOverview.png
+  :align:   center
+  :width:   500
+
+  Diagram showing the inheritance structure of the different subclasses
+
 
 .. table:: BaseSignal subclass :py:attr:`~.signal.BaseSignal.metadata` attributes.
 
-    +---------------------------------------------------------------+-----------+-------------+---------------+
-    |                      BaseSignal subclass                      | record_by | signal_type | signal_origin |
-    +===============================================================+===========+=============+===============+
-    |                 :py:class:`~.signal.BaseSignal`               |     -     |      -      |       -       |
-    +---------------------------------------------------------------+-----------+-------------+---------------+
-    |           :py:class:`~._signals.signal1d.Signal1D`            | spectrum  |      -      |       -       |
-    +---------------------------------------------------------------+-----------+-------------+---------------+
-    | :py:class:`~._signals.spectrum_simulation.SpectrumSimulation` | spectrum  |      -      |  simulation   |
-    +---------------------------------------------------------------+-----------+-------------+---------------+
-    |           :py:class:`~._signals.eels.EELSSpectrum`            | spectrum  |    EELS     |       -       |
-    +---------------------------------------------------------------+-----------+-------------+---------------+
-    |           :py:class:`~._signals.eds_sem.EDSSEMSpectrum`       | spectrum  |   EDS_SEM   |       -       |
-    +---------------------------------------------------------------+-----------+-------------+---------------+
-    |           :py:class:`~._signals.eds_tem.EDSTEMSpectrum`       | spectrum  |   EDS_TEM   |       -       |
-    +---------------------------------------------------------------+-----------+-------------+---------------+
-    |              :py:class:`~._signals.signal2d.Signal2D`         |   image   |      -      |       -       |
-    +---------------------------------------------------------------+-----------+-------------+---------------+
-    |    :py:class:`~._signals.image_simulation.ImageSimulation`    |   image   |      -      |  simulation   |
-    +---------------------------------------------------------------+-----------+-------------+---------------+
+    +---------------------------------------------------------------+-----------+---------------+---------+
+    |                      BaseSignal subclass                      | record_by |  signal_type  |  dtype  |
+    +===============================================================+===========+===============+=========+
+    |                 :py:class:`~.signal.BaseSignal`               |     -     |       -       |  real   |
+    +---------------------------------------------------------------+-----------+---------------+---------+
+    |           :py:class:`~._signals.signal1d.Signal1D`            | spectrum  |       -       |  real   |
+    +---------------------------------------------------------------+-----------+---------------+---------+
+    |           :py:class:`~._signals.eels.EELSSpectrum`            | spectrum  |     EELS      |  real   |
+    +---------------------------------------------------------------+-----------+---------------+---------+
+    |           :py:class:`~._signals.eds_sem.EDSSEMSpectrum`       | spectrum  |    EDS_SEM    |  real   |
+    +---------------------------------------------------------------+-----------+---------------+---------+
+    |              :py:class:`~._signals.signal2d.Signal2D`         |   image   |       -       |  real   |
+    +---------------------------------------------------------------+-----------+---------------+---------+
+    |      :py:class:`~._signals.complex_signal.ComplexSignal`      |     -     |       -       | complex |
+    +---------------------------------------------------------------+-----------+---------------+---------+
+    |    :py:class:`~._signals.complex_signal1d.ComplexSignal1D`    | spectrum  |       -       | complex |
+    +---------------------------------------------------------------+-----------+---------------+---------+
+    |    :py:class:`~._signals.complex_signal2d.ComplexSignal2D`    |   image   |       -       | complex |
+    +---------------------------------------------------------------+-----------+---------------+---------+
 
 
 The following example shows how to transform between different subclasses.
@@ -127,7 +134,6 @@ The following example shows how to transform between different subclasses.
        <Signal1D, title: , dimensions: (20, 10|100)>
        >>> s.metadata
        ├── record_by = spectrum
-       ├── signal_origin =
        ├── signal_type =
        └── title =
        >>> im = s.to_signal2D()
@@ -135,15 +141,11 @@ The following example shows how to transform between different subclasses.
        <Signal2D, title: , dimensions: (100|20, 10)>
        >>> im.metadata
        ├── record_by = image
-       ├── signal_origin =
        ├── signal_type =
        └── title =
        >>> s.set_signal_type("EELS")
        >>> s
        <EELSSpectrum, title: , dimensions: (20, 10|100)>
-       >>> s.set_signal_origin("simulation")
-       >>> s
-       <EELSSpectrumSimulation, title: , dimensions: (20, 10|100)>
 
 
 The navigation and signal dimensions
@@ -200,8 +202,6 @@ following table:
     +---------------------------------------------------------------+--------+
     |           :py:class:`~._signals.signal1d.Signal1D`            | False  |
     +---------------------------------------------------------------+--------+
-    | :py:class:`~._signals.spectrum_simulation.SpectrumSimulation` | False  |
-    +---------------------------------------------------------------+--------+
     |           :py:class:`~._signals.eels.EELSSpectrum`            | True   |
     +---------------------------------------------------------------+--------+
     |           :py:class:`~._signals.eds_sem.EDSSEMSpectrum`       | True   |
@@ -210,7 +210,11 @@ following table:
     +---------------------------------------------------------------+--------+
     |              :py:class:`~._signals.signal2d.Signal2D`         | False  |
     +---------------------------------------------------------------+--------+
-    |    :py:class:`~._signals.image_simulation.ImageSimulation`    | False  |
+    |      :py:class:`~._signals.complex_signal.ComplexSignal`      | False  |
+    +---------------------------------------------------------------+--------+
+    |    :py:class:`~._signals.complex_signal1d.ComplexSignal1D`    | False  |
+    +---------------------------------------------------------------+--------+
+    |    :py:class:`~._signals.complex_signal2d.ComplexSignal2D`    | False  |
     +---------------------------------------------------------------+--------+
 
 
@@ -967,7 +971,7 @@ for example:
 
 .. code-block:: python
 
-  >>> s = hs.signals.SpectrumSimulation(np.ones(100))
+  >>> s = hs.signals.Spectrum(np.ones(100))
   >>> s.add_poissonian_noise()
   >>> s.metadata
   ├── General
@@ -975,7 +979,6 @@ for example:
   └── Signal
       ├── binned = False
       ├── record_by = spectrum
-      ├── signal_origin = simulation
       └── signal_type =
 
   >>> s.estimate_poissonian_noise_variance()
@@ -991,5 +994,71 @@ for example:
       │   └── variance = <SpectrumSimulation, title: Variance of , dimensions: (|100)>
       ├── binned = False
       ├── record_by = spectrum
-      ├── signal_origin = simulation
       └── signal_type =
+
+
+
+Handling complex data
+^^^^^^^^^^^^^^^^^^^^^
+
+The HyperSpy :py:class:`~.hyperspy.signals.ComplexSignal` signal class and its subclasses
+for 1-dimensional and 2-dimensional data allow the user to access complex properties like the
+`real` and `imag` parts of the data or the `amplitude` (also known as the modulus) and `phase`
+(also known as angle or argument) directly. Getting and setting those properties can be done
+as follows:
+
+..code-block:: python
+
+  >>> real = s.real      # real is a new HyperSpy signal accessing the same data
+  >>> s.real = new_real  # new_real can be an array or signal
+  >>> imag = s.imag      # imag  is a new HyperSpy signal accessing the same data
+  >>> s.imag = new_imag  # new_imag can be an array or signal
+
+It is important to note that `data` passed to the constructor of a
+:py:class:`~._signals.complex_signal.ComplexSignal` (or to a subclass), which is not already
+complex, will be converted to the numpy standard of `np.complex`/`np.complex128`. `data` which
+is already complex will be passed as is.
+
+To transform a real signal into a complex one use:
+
+.. code-block:: python
+
+    >>> s.change_dtype(complex)
+
+Changing the `dtype` of a complex signal to something real is not clearly defined and thus not
+directly possible. Use the `real`, `imag`, `amplitude` or `phase` properties instead to extract
+the real data that is desired.
+
+
+Calculate the angle / phase / argument
+--------------------------------------
+
+The :py:func:`~hyperspy.signals.ComplexSignal.angle` function can be used to calculate the
+angle, which is equivalent to using the `phase` property if no argument is used. If the data is
+real, the angle will be 0 for positive values and 2$\pi$ for negative values. If the `deg`
+parameter is set to `True`, the result will be given in degrees, otherwise in rad (default).
+The underlying function is the :py:func:`~numpy.angle` function.
+:py:func:`~hyperspy.signals.ComplexSignal.angle` will return an appropriate HyperSpy signal.
+
+
+Phase unwrapping
+----------------
+
+With the :py:func:`~hyperspy.signals.ComplexSignal.unwrapped_phase` method the complex phase
+of a signal can be unwrapped and returned as a new signal. The underlying method is
+:py:func:`~skimage.restoration.unwrap`, which uses the algorithm described in:
+Miguel Arevallilo Herraez, David R. Burton, Michael J. Lalor, and Munther A. Gdeisat,
+“Fast two-dimensional phase-unwrapping algorithm based on sorting by reliability following
+a noncontinuous path”, Journal Applied Optics, Vol. 41, No. 35, pp. 7437, 2002.
+(doi: 10.1364/AO.41.007437).
+
+
+Add a linear phase ramp
+-----------------------
+
+For 2-dimensional complex images, a linear phase ramp can be added to the signal via the
+:py:func:`~._signals.complex_signal2d.ComplexSignal2D.add_phase_ramp` method. The parameters
+`ramp_x` and `ramp_y` dictate the slope of the ramp in `x`- and `y` direction, while the offset
+is determined by the `offset` parameter. The fulcrum of the linear ramp is at the origin
+and the slopes are given in units of the axis with the according scale taken into account.
+Both are available via the :py:class:`~.axes.AxesManager` of the signal.
