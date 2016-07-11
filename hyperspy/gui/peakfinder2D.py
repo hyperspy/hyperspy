@@ -1,4 +1,5 @@
 import inspect
+from collections import OrderedDict
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -18,7 +19,7 @@ class PeakFinderUIBase:
         self.param_container = None
         self.methods = METHODS
         self.method_names = [method.__name__ for method in METHODS]
-        self.params = {method.__name__: {p.name: p.default for p in inspect.signature(method).parameters.values() if p.default is not inspect._empty} for method in METHODS}
+        self.params = {method.__name__: OrderedDict([(p.name, p.default) for p in inspect.signature(method).parameters.values() if p.default is not inspect._empty]) for method in METHODS}
         self._method = self.method_names[0]
 
     def interactive(self, signal):
@@ -37,7 +38,7 @@ class PeakFinderUIBase:
         return self.signal.inav[self.indices].data
 
     def get_peaks(self):
-        peaks = self.current_method(self.get_data())
+        peaks = self.current_method(self.get_data(), **self.params[self._method])
         return peaks
 
 
@@ -239,6 +240,7 @@ class PeakFinderUIIPYW(PeakFinderUIBase):
         return container
 
     def plot(self):
+        self.ax = None
         self.plot_image()
         self.plot_peaks()
 
@@ -252,6 +254,8 @@ class PeakFinderUIIPYW(PeakFinderUIBase):
         plt.show()
 
     def replot_image(self):
+        if not plt.get_fignums():
+            self.plot()
         z = self.get_data()
         self.image.set_data(np.rot90(np.fliplr(z)))
         self.replot_peaks()
@@ -263,6 +267,8 @@ class PeakFinderUIIPYW(PeakFinderUIBase):
         plt.show()
 
     def replot_peaks(self):
+        if not plt.get_fignums():
+            self.plot()
         peaks = self.get_peaks()
         self.pts.set_xdata(peaks[:, 0])
         self.pts.set_ydata(peaks[:, 1])
