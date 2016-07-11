@@ -19,7 +19,7 @@
 import nose.tools as nt
 import numpy as np
 from hyperspy.components import Gaussian
-from hyperspy.signal import BaseSignal
+from hyperspy.signals import Signal1D
 from hyperspy.misc.utils import stash_active_state
 
 
@@ -27,7 +27,7 @@ class TestParametersAsSignals:
 
     def setUp(self):
         self.gaussian = Gaussian()
-        self.gaussian._axes_manager = BaseSignal(
+        self.gaussian._axes_manager = Signal1D(
             np.zeros((3, 3, 1))).axes_manager
 
     def test_always_active(self):

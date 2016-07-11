@@ -593,7 +593,7 @@ class AxesManager(t.HasTraits):
         navigates = [i.navigate for i in self._axes]
         if t.Undefined in navigates:
             # Default to Signal1D view if the view is not fully defined
-            self.set_signal_dimension(1)
+            self.set_signal_dimension(len(axes_list))
 
         self._update_attributes()
         self._update_trait_handlers()

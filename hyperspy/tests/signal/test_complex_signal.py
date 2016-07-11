@@ -34,6 +34,7 @@ class TestComplexProperties:
     def setUp(self):
         test = self.real_ref + 1j * self.imag_ref
         self.s = hs.signals.ComplexSignal(test)
+        self.s.axes_manager.set_signal_dimension(1)
 
     def test_get_real(self):
         nt.assert_almost_equal(self.s.real.data, self.real_ref)
