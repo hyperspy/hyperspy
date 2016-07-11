@@ -1453,7 +1453,7 @@ class BaseSignal(FancySlicing,
                  MVA,
                  MVATools,):
 
-    _record_by = ""
+    _signal_dimension = -1
     _signal_type = ""
     _signal_origin = ""
     _additional_slicing_targets = [
@@ -1628,8 +1628,8 @@ class BaseSignal(FancySlicing,
                         ns.axes_manager._axes = [axis.copy()
                                                  for axis in new_axes]
                         if bigger_am is oam:
-                            ns.metadata.Signal.record_by = \
-                                other.metadata.Signal.record_by
+                            ns.axes_manager.set_signal_dimension(
+                                other.axes_manager.signal_dimension)
                             ns._assign_subclass()
                         return ns
 
@@ -1691,11 +1691,8 @@ class BaseSignal(FancySlicing,
             string += self.metadata.Signal.signal_type
         string += "\n\tData dimensions: "
         string += str(self.axes_manager.shape)
-        if self.metadata.has_item('Signal.record_by'):
-            string += "\n\tData representation: "
-            string += self.metadata.Signal.record_by
-            string += "\n\tData type: "
-            string += str(self.data.dtype)
+        string += "\n\tData type: "
+        string += str(self.data.dtype)
         return string
 
     def _print_summary(self):
@@ -1765,9 +1762,6 @@ class BaseSignal(FancySlicing,
             file_data_dict['metadata'])
         if "title" not in self.metadata.General:
             self.metadata.General.title = ''
-        if (self._record_by or
-                "Signal.record_by" not in self.metadata):
-            self.metadata.Signal.record_by = self._record_by
         if (self._signal_origin or
                 "Signal.signal_origin" not in self.metadata):
             self.metadata.Signal.signal_origin = self._signal_origin
@@ -2484,6 +2478,7 @@ class BaseSignal(FancySlicing,
         for axis in to_remove:
             self.axes_manager.remove(axis.index_in_axes_manager)
         self.data = self.data.squeeze()
+        self._assign_subclass()
         if self.metadata.has_item('Signal.Noise_properties.variance'):
             variance = self.metadata.Signal.Noise_properties.variance
             if isinstance(variance, BaseSignal):
@@ -2589,6 +2584,7 @@ class BaseSignal(FancySlicing,
             folding.original_axes_manager = None
             folding.unfolded = False
             folding.signal_unfolded = False
+            self._assign_subclass()
             if self.metadata.has_item('Signal.Noise_properties.variance'):
                 variance = self.metadata.Signal.Noise_properties.variance
                 if isinstance(variance, BaseSignal):
@@ -2634,15 +2630,6 @@ class BaseSignal(FancySlicing,
             old_signal_dimension = am.signal_dimension
             am.remove(axes)
             if old_signal_dimension != am.signal_dimension:
-                if am.signal_dimension == 2:
-                    self._record_by = "image"
-                elif am.signal_dimension == 1:
-                    self._record_by = "spectrum"
-                elif am.signal_dimension == 0:
-                    self._record_by = ""
-                else:
-                    return
-                self.metadata.Signal.record_by = self._record_by
                 self._assign_subclass()
         else:
             # Create a "Scalar" axis because the axis is the last one left and
@@ -3360,19 +3347,16 @@ class BaseSignal(FancySlicing,
         Parameters
         ----------
         dtype : str or dtype
-            Typecode or data-type to which the array is cast. In
-            addition to all standard numpy dtypes HyperSpy
-            supports four extra dtypes for RGB images:
-            "rgb8", "rgba8", "rgb16" and "rgba16". Changing from
-            and to any rgbx dtype is more constrained than most
-            other dtype conversions. To change to a rgbx dtype
-            the signal `record_by` must be "spectrum",
-            `signal_dimension` must be 3(4) for rgb(rgba) dtypes
-            and the dtype must be uint8(uint16) for rgbx8(rgbx16).
-            After conversion `record_by` becomes `image` and the
-            spectra dimension is removed. The dtype of images of
-            dtype rgbx8(rgbx16) can only be changed to uint8(uint16)
-            and the `record_by` becomes "spectrum".
+            Typecode or data-type to which the array is cast. In addition to all
+            standard numpy dtypes HyperSpy supports four extra dtypes for RGB
+            images: "rgb8", "rgba8", "rgb16" and "rgba16". Changing from and to
+            any rgbx dtype is more constrained than most other dtype
+            conversions. To change to a rgbx dtype the signal dimension must be
+            1, its size 3(4) for rgb(rgba) dtypes, the dtype uint8(uint16) for
+            rgbx8(rgbx16) and the navigation dimension at least 2. After
+            conversion the signal dimension becomes 2. The dtype of images of
+            dtype rgbx8(rgbx16) can only be changed to uint8(uint16) and the
+            signal dimension becomes 1.
 
 
         Examples
@@ -3387,9 +3371,9 @@ class BaseSignal(FancySlicing,
         """
         if not isinstance(dtype, np.dtype):
             if dtype in rgb_tools.rgb_dtypes:
-                if self.metadata.Signal.record_by != "spectrum":
+                if self.axes_manager.signal_dimension != 1:
                     raise AttributeError(
-                        "Only spectrum signals can be converted "
+                        "Only 1D signals can be converted "
                         "to RGB images.")
                 if "8" in dtype and self.data.dtype.name != "uint8":
                     raise AttributeError(
@@ -3402,7 +3386,7 @@ class BaseSignal(FancySlicing,
                 dtype = rgb_tools.rgb_dtypes[dtype]
                 self.data = rgb_tools.regular_array2rgbx(self.data)
                 self.axes_manager.remove(-1)
-                self.metadata.Signal.record_by = "image"
+                self.axes_manager.set_signal_dimension(2)
                 self._assign_subclass()
                 return
             else:
@@ -3421,7 +3405,7 @@ class BaseSignal(FancySlicing,
                 offset=0,
                 name="RGB index",
                 navigate=False,)
-            self.metadata.Signal.record_by = "spectrum"
+            self.axes_manager.set_signal_dimension(1)
             self._assign_subclass()
             return
         else:
@@ -3694,7 +3678,7 @@ class BaseSignal(FancySlicing,
         """
         # Roll the spectral axis to-be to the latex index in the array
         sp = self.rollaxis(spectral_axis, -1 + 3j)
-        sp.metadata.Signal.record_by = "spectrum"
+        sp.axes_manager.set_signal_dimension(1)
         sp._assign_subclass()
         if out is None:
             return sp
@@ -3741,7 +3725,7 @@ class BaseSignal(FancySlicing,
         iaxes = [axis.index_in_array for axis in axes]
         im = self.rollaxis(iaxes[0] + 3j, -1 + 3j).rollaxis(
             iaxes[1] - np.argmax(iaxes) + 3j, -2 + 3j)
-        im.metadata.Signal.record_by = "image"
+        im.axes_manager.set_signal_dimension = 2
         im._assign_subclass()
         if out is None:
             return im
@@ -3753,9 +3737,7 @@ class BaseSignal(FancySlicing,
     def _assign_subclass(self):
         mp = self.metadata
         self.__class__ = hyperspy.io.assign_signal_subclass(
-            record_by=mp.Signal.record_by
-            if "Signal.record_by" in mp
-            else self._record_by,
+            signal_dimension=self.axes_manager.signal_dimension,
             signal_type=mp.Signal.signal_type
             if "Signal.signal_type" in mp
             else self._signal_type,

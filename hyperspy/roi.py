@@ -208,19 +208,6 @@ class BaseROI(t.HasTraits):
 
         return axes_out
 
-    @staticmethod
-    def _update_metadata_after_signal_axes_removal(signal):
-        am = signal.axes_manager
-        if am.signal_dimension == 2:
-            signal._record_by = "image"
-        elif am.signal_dimension == 1:
-            signal._record_by = "spectrum"
-        elif am.signal_dimension == 0:
-            signal._record_by = ""
-        else:
-            return
-        signal.metadata.Signal.record_by = signal._record_by
-
 
 def _get_mpl_ax(plot, axes):
     """

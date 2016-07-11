@@ -224,7 +224,7 @@ class Signal1D(BaseSignal):
 
     """
     """
-    _record_by = 'spectrum'
+    _signal_dimension = 1
 
     def __init__(self, *args, **kwargs):
         BaseSignal.__init__(self, *args, **kwargs)
@@ -247,7 +247,7 @@ class Signal1D(BaseSignal):
             raise DataDimensionError(
                 "A Signal dimension must be >= 2 to be converted to Signal2D")
         im = self.rollaxis(-1 + 3j, 0 + 3j)
-        im.metadata.Signal.record_by = "image"
+        im.axes_manager.set_signal_dimension(2)
         im._assign_subclass()
         return im
 

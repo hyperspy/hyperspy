@@ -33,7 +33,6 @@ _logger = logging.getLogger(__name__)
 
 
 def load(filenames=None,
-         record_by=None,
          signal_type=None,
          signal_origin=None,
          stack=False,
@@ -62,14 +61,6 @@ def load(filenames=None,
         files can be loaded by using simple shell-style wildcards,
         e.g. 'my_file*.msa' loads all the files that starts
         by 'my_file' and has the '.msa' extension.
-    record_by : {None, 'spectrum', 'image', ""}
-        The value provided may determine the Signal subclass assigned to the
-        data.
-        If None, the value is read or guessed from the file. Any other value
-        overrides the value stored in the file if any.
-        If "spectrum" load the data in a Signal1D (sub)class.
-        If "image" load the data in an Signal2D (sub)class.
-        If "" (empty string) load the data in a Signal class.
 
     signal_type : {None, "EELS", "EDS_TEM", "EDS_SEM", "", str}
         The acronym that identifies the signal type.
@@ -147,10 +138,6 @@ def load(filenames=None,
 
     >>> d = hs.load('file.dm3', signal_type='EDS_TEM')
 
-    Loading a single file and overriding its default record_by:
-
-    >>> d = hs.load('file.dm3', record_by='image')
-
     Loading multiple files:
 
     >>> d = hs.load('file1.dm3','file2.dm3')
@@ -160,7 +147,6 @@ def load(filenames=None,
     >>> d = hs.load('file*.dm3')
 
     """
-    kwds['record_by'] = record_by
     kwds['signal_type'] = signal_type
     kwds['signal_origin'] = signal_origin
     if filenames is None:
@@ -222,7 +208,6 @@ def load(filenames=None,
 
 
 def load_single_file(filename,
-                     record_by=None,
                      signal_type=None,
                      signal_origin=None,
                      **kwds):
@@ -236,10 +221,6 @@ def load_single_file(filename,
 
     filename : string
         File name (including the extension)
-    record_by : {None, 'spectrum', 'image'}
-        If None (default) it will try to guess the data type from the file,
-        if 'spectrum' the file will be loaded as an Signal1D object
-        If 'image' the file will be loaded as an Signal2D object
 
     """
     extension = os.path.splitext(filename)[1][1:]
@@ -253,7 +234,7 @@ def load_single_file(filename,
         try:
             from hyperspy.io_plugins import image
             reader = image
-            return load_with_reader(filename, reader, record_by,
+            return load_with_reader(filename, reader,
                                     signal_type=signal_type, **kwds)
         except:
             raise IOError('If the file format is supported'
@@ -262,7 +243,6 @@ def load_single_file(filename,
         reader = io_plugins[i]
         return load_with_reader(filename=filename,
                                 reader=reader,
-                                record_by=record_by,
                                 signal_type=signal_type,
                                 signal_origin=signal_origin,
                                 **kwds)
@@ -270,12 +250,10 @@ def load_single_file(filename,
 
 def load_with_reader(filename,
                      reader,
-                     record_by=None,
                      signal_type=None,
                      signal_origin=None,
                      **kwds):
     file_data_list = reader.file_reader(filename,
-                                        record_by=record_by,
                                         **kwds)
     objects = []
 
@@ -283,8 +261,6 @@ def load_with_reader(filename,
         if 'metadata' in signal_dict:
             if "Signal" not in signal_dict["metadata"]:
                 signal_dict["metadata"]["Signal"] = {}
-            if record_by is not None:
-                signal_dict['metadata']["Signal"]['record_by'] = record_by
             if signal_type is not None:
                 signal_dict['metadata']["Signal"]['signal_type'] = signal_type
             if signal_origin is not None:
@@ -305,14 +281,15 @@ def load_with_reader(filename,
     return objects
 
 
-def assign_signal_subclass(record_by="",
+def assign_signal_subclass(signal_dimension=-1,
                            signal_type="",
                            signal_origin="",):
-    """Given record_by and signal_type return the matching Signal subclass.
+    """Given signal_dimension and signal_type return the matching Signal subclass.
 
     Parameters
     ----------
-    record_by: {"spectrum", "image", ""}
+    signal_dimension: int
+        Negative means any.
     signal_type : {"EELS", "EDS", "EDS_TEM", "", str}
     signal_origin : {"experiment", "simulation", ""}
 
@@ -323,9 +300,9 @@ def assign_signal_subclass(record_by="",
     """
     import hyperspy.signals
     from hyperspy.signal import BaseSignal
-    if record_by and record_by not in ["image", "spectrum"]:
-        raise ValueError("record_by must be one of: None, empty string, "
-                         "\"image\" or \"spectrum\"")
+    if signal_dimension < -1 or not isinstance(signal_dimension, int):
+        raise ValueError(
+            "signal_dimension must be an integer greater or equal to -1")
     if signal_origin and signal_origin not in ["experiment", "simulation"]:
         raise ValueError("signal_origin must be one of: None, empty string, "
                          "\"experiment\" or \"simulation\"")
@@ -337,7 +314,7 @@ def assign_signal_subclass(record_by="",
 
     preselection = [s for s in
                     [s for s in signals.values()
-                     if record_by == s._record_by]
+                     if signal_dimension == s._signal_dimension]
                     if signal_origin == s._signal_origin]
     perfect_match = [s for s in preselection
                      if signal_type == s._signal_type]
@@ -358,22 +335,30 @@ def dict2signal(signal_dict):
     s : Signal or subclass
 
     """
-    record_by = ""
+    signal_dimension = -1 # undefined
     signal_type = ""
     signal_origin = ""
     if "metadata" in signal_dict:
         mp = signal_dict["metadata"]
         if "Signal" in mp and "record_by" in mp["Signal"]:
             record_by = mp["Signal"]['record_by']
+            if record_by == "spectrum":
+                signal_dimension = 1
+            elif record_by == "image":
+                signal_dimension = 2
+            del mp["Signal"]['record_by']
         if "Signal" in mp and "signal_type" in mp["Signal"]:
             signal_type = mp["Signal"]['signal_type']
         if "Signal" in mp and "signal_origin" in mp["Signal"]:
             signal_origin = mp["Signal"]['signal_origin']
-    if (not record_by and 'data' in signal_dict and
-            len(signal_dict['data'].shape) < 2):
-        record_by = "spectrum"
+    # "Estimate" signal_dimension from axes. It takes precedence over record_by
+    if len(signal_dict["axes"]) == len(
+                [axis for axis in signal_dict["axes"] if "navigate" in axis]):
+        # If navigate is defined for all axes
+        signal_dimension = len(
+            [axis for axis in signal_dict["axes"] if not axis["navigate"]])
 
-    signal = assign_signal_subclass(record_by=record_by,
+    signal = assign_signal_subclass(signal_dimension=signal_dimension,
                                     signal_type=signal_type,
                                     signal_origin=signal_origin)(**signal_dict)
     if "post_process" in signal_dict:

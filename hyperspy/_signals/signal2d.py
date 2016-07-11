@@ -197,7 +197,7 @@ class Signal2D(BaseSignal):
 
     """
     """
-    _record_by = "image"
+    _signal_dimension = 2
 
     def __init__(self, *args, **kw):
         super(Signal2D, self).__init__(*args, **kw)

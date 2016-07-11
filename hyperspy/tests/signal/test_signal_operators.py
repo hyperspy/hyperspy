@@ -80,7 +80,7 @@ class TestBinaryOperators:
         s1.axes_manager.set_signal_dimension(0)  # (3, 2|)
         s = s1 + s2
         assert_array_equal(s.data, 3 * np.ones((2, 3, 2, 3)))
-        nt.assert_equal(s.metadata.Signal.record_by, "image")
+        nt.assert_equal(s.axes_manager.signal_dimension, 2)
 
     def test_broadcast_missing_sig(self):
         s1 = self.s1
