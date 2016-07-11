@@ -3371,12 +3371,8 @@ class BaseSignal(FancySlicing,
                 offset=0,
                 name="RGB index",
                 navigate=False,)
-<< << << < HEAD
             self.axes_manager.set_signal_dimension(1)
             self._assign_subclass()
-== == == =
-            self.metadata.Signal.record_by = "spectrum"
->>>>>> > upstream / master
             return
         else:
             self.data = self.data.astype(dtype)
