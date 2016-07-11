@@ -341,10 +341,10 @@ def dict2signal(signal_dict):
     # "Estimate" signal_dimension from axes. It takes precedence over record_by
     if ("axes" in signal_dict and
         len(signal_dict["axes"]) == len(
-                [axis for axis in signal_dict["axes"] if "navigate" in axis])):
+            [axis for axis in signal_dict["axes"] if "navigate" in axis])):
             # If navigate is defined for all axes
-            signal_dimension = len(
-                [axis for axis in signal_dict["axes"] if not axis["navigate"]])
+        signal_dimension = len(
+            [axis for axis in signal_dict["axes"] if not axis["navigate"]])
     elif signal_dimension == -1:
         # If not defined, all dimension are categorised as signal
         signal_dimension = signal_dict["data"].ndim
