@@ -210,42 +210,6 @@ class TestFindPeaks2D:
         nt.assert_true(np.all(peaks[0] == answer[0]))
 
 
-class TestFindPeaks2DInteractive:
-
-    def setUp(self):
-        from hyperspy._signals.signal2d import PeakFinder2D, Max, MinMax, Zaefferer, Stat, DifferenceOfGaussians, LaplacianOfGaussians
-        coefficients = np.array(
-            [10, 5, 86, 221, 6, 95, 70, 12, 255, 5, 255, 3, 23,
-             24, 77, 255, 11, 255, 8, 35, 195, 165, 27, 255, 8, 14,
-             255, 21, 53, 107, 255, 18, 255, 4, 26, 255, 39, 27, 255,
-             6, 255, 7, 13, 37, 35, 9, 83]
-        )
-        coordinates = np.array(
-            [[3, 40],    [3, 138],  [9, 67],   [14, 95],   [20, 23],
-             [20, 122],  [26, 51],  [26, 100], [31, 78],   [31, 128],
-             [37, 107],  [38, 7],   [43, 34],  [43, 84],   [43, 134],
-             [49, 62],   [49, 112], [54, 90],  [60, 17],   [60, 67],
-             [60, 118],  [66, 45],  [66, 96],  [72, 73],   [72, 124],
-             [77, 51],   [77, 101], [83, 28],  [83, 79],   [83, 130],
-             [89, 57],   [89, 107], [95, 85],  [101, 12],  [101, 62],
-             [101, 113], [106, 40], [107, 91], [112, 68],  [113, 119],
-             [119, 97],  [124, 23], [124, 74], [124, 125], [130, 51],
-             [130, 103], [136, 80]])
-        sparse = np.zeros((144, 144))
-        xs, ys = np.ogrid[:144, :144]
-        for (x0, y0), a in zip(coordinates, coefficients):
-            sparse += a * sp.stats.norm.pdf(xs, x0)*sp.stats.norm.pdf(ys, y0)
-        sparse = sparse[50:100, 50:100]
-        sparse0d = hs.signals.Signal2D(sparse)
-        sparse1d = hs.signals.Signal2D(np.array([sparse for i in range(2)]))
-        sparse2d = hs.signals.Signal2D(np.array([[sparse for i in range(2)] for j in range(2)]))
-        self.datasets = [sparse0d, sparse1d, sparse2d]
-        self.methods = [Max, MinMax, Zaefferer, Stat, DifferenceOfGaussians, LaplacianOfGaussians]
-        self.peakfinder = PeakFinder2D()
-
-    def test_current_method_property(self):
-        nt.assert_in(self.peakfinder.current_method.__class__, self.methods)
-
 
 
 
