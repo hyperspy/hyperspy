@@ -126,8 +126,7 @@ def rpca(X, rank, fast=False, lambda1=None,
         # Initialization with bilateral random projections
         Y2 = np.random.randn(n, rank)
         for i in range(power + 1):
-            Y1 = np.dot(L, Y2)
-            Y2 = np.dot(L.T, Y1);
+            Y2 = np.dot(L.T, np.dot(L, Y2));
         Q, tmp = scipy.linalg.qr(Y2, mode='economic')
 
         # Estimate the new low-rank and sparse matrices
@@ -136,8 +135,6 @@ def rpca(X, rank, fast=False, lambda1=None,
         L = Lnew
         E = _thresh(A, lambda1)
         A -= E
-
-        # Update L
         L += A
 
         # Check convergence
@@ -315,7 +312,7 @@ def orpca(X, rank, fast=False,
     if learning_rate is None:
         if method == 'SGD':
             _logger.warning("Learning rate for SGD algorithm is "
-                            "set to 1.0")
+                            "set to default: 1.0")
             learning_rate = 1.0
 
     # Check options are valid
