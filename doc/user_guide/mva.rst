@@ -221,11 +221,11 @@ descent (SGD), which takes an additional parameter to set the learning rate.
                        method='BCD',
                        training_samples=32)
 
-    >>> s.decomposition(algorithm='orpca',
-                        output_dimension=3
-                        method='SGD',
-                        learning_rate=1.1,
-                        training_samples=32)
+   >>> s.decomposition(algorithm='orpca',
+                       output_dimension=3
+                       method='SGD',
+                       learning_rate=1.1,
+                       training_samples=32)
 
 Non-negative matrix factorization
 ----------------------------
