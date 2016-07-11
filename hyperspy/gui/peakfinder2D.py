@@ -1,6 +1,5 @@
 import inspect
 from collections import OrderedDict
-
 import numpy as np
 import matplotlib.pyplot as plt
 from IPython.display import display
@@ -12,14 +11,16 @@ METHODS = [find_peaks_max, find_peaks_minmax, find_peaks_zaefferer,
 
 
 class PeakFinderUIBase:
+
     def __init__(self):
         self.signal = None
         self.indices = None
-        self.ax = None
-        self.param_container = None
         self.methods = METHODS
         self.method_names = [method.__name__ for method in METHODS]
-        self.params = {method.__name__: OrderedDict([(p.name, p.default) for p in inspect.signature(method).parameters.values() if p.default is not inspect._empty]) for method in METHODS}
+        self.params = {method.__name__: OrderedDict(
+            [(p.name, p.default) for p in
+             inspect.signature(method).parameters.values() if
+             p.default is not inspect._empty]) for method in METHODS}
         self._method = self.method_names[0]
 
     def interactive(self, signal):
@@ -38,11 +39,23 @@ class PeakFinderUIBase:
         return self.signal.inav[self.indices].data
 
     def get_peaks(self):
-        peaks = self.current_method(self.get_data(), **self.params[self._method])
+        peaks = self.current_method(self.get_data(),
+                                    **self.params[self._method])
         return peaks
 
 
 class PeakFinderUIIPYW(PeakFinderUIBase):
+    """
+    Find peaks using a Jupyter notebook-based user interface
+    """
+
+    def __init__(self):
+        super(PeakFinderUIIPYW, self).__init__()
+        self.ax = None
+        self.image = None
+        self.pts = None
+        self.param_container = None
+
     def init_ui(self):
         self.create_choices_widget()
         self.create_navigator()
