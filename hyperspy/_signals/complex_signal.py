@@ -103,7 +103,7 @@ class ComplexSignal(BaseSignal):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        if 'complex' not in self.data.dtype.name:
+        if not np.issubdtype(self.data.dtype, complex):
             self.data = self.data.astype(complex)
 
     def change_dtype(self, dtype):
@@ -116,7 +116,7 @@ class ComplexSignal(BaseSignal):
             complex dtypes are allowed. If real valued properties are required use `real`,
             `imag`, `amplitude` and `phase` instead.
         """
-        if 'complex' in str(dtype):
+        if np.issubdtype(dtype, complex):
             self.data = self.data.astype(dtype)
         else:
             raise AttributeError('Complex data can only be converted into other complex dtypes!')

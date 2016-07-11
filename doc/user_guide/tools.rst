@@ -69,7 +69,7 @@ The different subclasses are characterized by three
 
 `record_by`
     Can be "spectrum", "image" or "", the latter meaning undefined and describes
-    the way the data is arranged in memory. It is possible to transform any non-complex
+    the way the data is arranged in memory. It is possible to transform any
     :py:class:`~.signal.BaseSignal` subclass to a :py:class:`~._signals.signal1d.Signal1D`
     or :py:class:`~._signals.signal2d.Signal2D` subclass using the following
     :py:class:`~.signal.BaseSignal` methods: :py:meth:`~.signal.BaseSignal.as_signal2D`

@@ -20,6 +20,8 @@ import os
 import glob
 import logging
 
+import numpy as np
+
 import hyperspy.defaults_parser
 
 import hyperspy.misc.utils
@@ -306,10 +308,10 @@ def assign_signal_subclass(dtype,
     import hyperspy.signals
     from hyperspy.signal import BaseSignal
     # Check if parameter values are allowed:
-    if 'complex' in dtype.name:
+    if np.issubdtype(dtype, complex):
         dtype = 'complex'
     elif ('float' in dtype.name or 'int' in dtype.name or
-                  'void' in dtype.name or 'bool' in dtype.name):
+          'void' in dtype.name or 'bool' in dtype.name):
         dtype = 'real'
     else:
         raise ValueError('Data type "{}" not understood!'.format(dtype.name))

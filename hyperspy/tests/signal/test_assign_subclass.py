@@ -34,25 +34,25 @@ class TestSignalAssignSubclass:
 
     def test_dielectric_function(self):
         assert_is(assign_signal_subclass(
-            dtype=np.dtype('complex'),
+            dtype=complex,
             record_by="spectrum",
             signal_type="DielectricFunction"), hs.signals.DielectricFunction)
 
     def test_complex(self):
         assert_is(assign_signal_subclass(
-            dtype=np.dtype('complex'),
+            dtype=complex,
             record_by="",
             signal_type=""), hs.signals.ComplexSignal)
 
     def test_complex_spectrum(self):
         assert_is(assign_signal_subclass(
-            dtype=np.dtype('complex'),
+            dtype=complex,
             record_by="spectrum",
             signal_type=""), hs.signals.ComplexSignal1D)
 
     def test_complex_image(self):
         assert_is(assign_signal_subclass(
-            dtype=np.dtype('complex'),
+            dtype=complex,
             record_by="image",
             signal_type=""), hs.signals.ComplexSignal2D)
 
@@ -70,7 +70,7 @@ class TestSignalAssignSubclass:
 
     def test_weird_complex(self):
         assert_is(assign_signal_subclass(
-            dtype=np.dtype('complex'),
+            dtype=complex,
             record_by="",
             signal_type="weird"), hs.signals.ComplexSignal)
 
