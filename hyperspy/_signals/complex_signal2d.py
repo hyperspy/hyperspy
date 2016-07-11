@@ -26,7 +26,7 @@ from hyperspy.docstrings.plot import (
 class ComplexSignal2D(ComplexSignal, CommonSignal2D):
     """BaseSignal subclass for complex 2-dimensional data."""
 
-    _record_by = "image"
+    _signal_dimension = 2
 
     def __init__(self, *args, **kw):
         super().__init__(*args, **kw)
