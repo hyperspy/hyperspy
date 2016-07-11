@@ -81,6 +81,7 @@ class TestComplexProperties:
 def test_get_unwrapped_phase_1D():
     phase = 6 * (1 - np.abs(np.indices((9,)) - 4) / 4)
     s = hs.signals.ComplexSignal(np.ones_like(phase) * np.exp(1j * phase))
+    s.axes_manager.set_signal_dimension(1)
     phase_unwrapped = s.unwrapped_phase(seed=42, show_progressbar=False)
     nt.assert_equal(
         phase_unwrapped.metadata.General.title,
