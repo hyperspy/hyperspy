@@ -3693,7 +3693,7 @@ class BaseSignal(FancySlicing,
         iaxes = [axis.index_in_array for axis in axes]
         im = self.rollaxis(iaxes[0] + 3j, -1 + 3j).rollaxis(
             iaxes[1] - np.argmax(iaxes) + 3j, -2 + 3j)
-        im.axes_manager.set_signal_dimension = 2
+        im.axes_manager.set_signal_dimension(2)
         im._assign_subclass()
         if out is None:
             return im
