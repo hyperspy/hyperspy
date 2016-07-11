@@ -28,7 +28,7 @@ class Test1d:
 class Test2d:
 
     def setUp(self):
-        self.s = BaseSignal(np.random.random((2, 3))) # (|3, 2)
+        self.s = BaseSignal(np.random.random((2, 3)))  # (|3, 2)
 
     def test_as_signal2D_T(self):
         nt.assert_equal(
@@ -59,37 +59,37 @@ class Test2d:
 class Test3d:
 
     def setUp(self):
-        self.s = BaseSignal(np.random.random((2, 3, 4))) # (|4, 3, 2)
+        self.s = BaseSignal(np.random.random((2, 3, 4)))  # (|4, 3, 2)
 
     def test_as_signal2D_contigous(self):
         nt.assert_true(self.s.as_signal2D((0, 1)).data.flags['C_CONTIGUOUS'])
 
     def test_as_signal2D_1(self):
         nt.assert_equal(
-            self.s.as_signal2D((0, 1)).data.shape, (2, 3, 4)) # (2| 4, 3)
+            self.s.as_signal2D((0, 1)).data.shape, (2, 3, 4))  # (2| 4, 3)
 
     def test_as_signal2D_2(self):
         nt.assert_equal(
-            self.s.as_signal2D((1, 0)).data.shape, (2, 4, 3)) # (2| 3, 4)
+            self.s.as_signal2D((1, 0)).data.shape, (2, 4, 3))  # (2| 3, 4)
 
     def test_as_signal2D_3(self):
         nt.assert_equal(
-            self.s.as_signal2D((1, 2)).data.shape, (4, 2, 3)) # (4| 3, 2)
+            self.s.as_signal2D((1, 2)).data.shape, (4, 2, 3))  # (4| 3, 2)
 
     def test_as_signal1D_contigous(self):
         nt.assert_true(self.s.as_signal1D(0).data.flags['C_CONTIGUOUS'])
 
     def test_as_signal1D_0(self):
         nt.assert_equal(
-            self.s.as_signal1D(0).data.shape, (2, 3, 4)) # (3, 2| 4)
+            self.s.as_signal1D(0).data.shape, (2, 3, 4))  # (3, 2| 4)
 
     def test_as_signal1D_1(self):
         nt.assert_equal(
-            self.s.as_signal1D(1).data.shape, (2, 4, 3)) # (4, 2| 3)
+            self.s.as_signal1D(1).data.shape, (2, 4, 3))  # (4, 2| 3)
 
     def test_as_signal1D_2(self):
         nt.assert_equal(
-            self.s.as_signal1D(2).data.shape, (3, 4, 2)) # (4, 3| 2)
+            self.s.as_signal1D(2).data.shape, (3, 4, 2))  # (4, 3| 2)
 
     def test_remove_axis(self):
         im = self.s.as_signal2D((-2, -1))
