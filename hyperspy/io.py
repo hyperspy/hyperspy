@@ -338,14 +338,16 @@ def dict2signal(signal_dict):
             del mp["Signal"]['record_by']
         if "Signal" in mp and "signal_type" in mp["Signal"]:
             signal_type = mp["Signal"]['signal_type']
-        if "Signal" in mp and "signal_origin" in mp["Signal"]:
-            signal_origin = mp["Signal"]['signal_origin']
     # "Estimate" signal_dimension from axes. It takes precedence over record_by
-    if len(signal_dict["axes"]) == len(
-            [axis for axis in signal_dict["axes"] if "navigate" in axis]):
-        # If navigate is defined for all axes
-        signal_dimension = len(
-            [axis for axis in signal_dict["axes"] if not axis["navigate"]])
+    if ("axes" in signal_dict and
+        len(signal_dict["axes"]) == len(
+                [axis for axis in signal_dict["axes"] if "navigate" in axis])):
+            # If navigate is defined for all axes
+            signal_dimension = len(
+                [axis for axis in signal_dict["axes"] if not axis["navigate"]])
+    elif signal_dimension == -1:
+        # If not defined, all dimension are categorised as signal
+        signal_dimension = signal_dict["data"].ndim
 
     signal = assign_signal_subclass(signal_dimension=signal_dimension,
                                     signal_type=signal_type,
