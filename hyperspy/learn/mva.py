@@ -176,6 +176,8 @@ class MVA():
                                  "with navigation_size < 2")
         # backup the original data
         self._data_before_treatments = self.data.copy()
+        # set the output target (peak results or not?)
+        target = LearningResults() 
 
         if algorithm == 'mlpca':
             if normalize_poissonian_noise is True:
@@ -211,8 +213,6 @@ class MVA():
             # case.
             dc = (self.data if self.axes_manager[0].index_in_array == 0
                   else self.data.T)
-            # set the output target (peak results or not?)
-            target = self.learning_results
 
             # Transform the None masks in slices to get the right behaviour
             if navigation_mask is None:
@@ -344,6 +344,7 @@ class MVA():
                     explained_variance / explained_variance.sum()
 
             # Store the results in learning_results
+
             target.factors = factors
             target.loadings = loadings
             target.explained_variance = explained_variance
@@ -355,6 +356,7 @@ class MVA():
             target.unfolded = self._unfolded4decomposition
             target.centre = centre
             target.mean = mean
+
 
             if output_dimension and factors.shape[1] != output_dimension:
                 target.crop_decomposition_dimension(output_dimension)
@@ -422,6 +424,7 @@ class MVA():
             if self._unfolded4decomposition is True:
                 self.fold()
                 self._unfolded4decomposition is False
+            self.learning_results.__dict__.update(target.__dict__)
             # undo any pre-treatments
             self.undo_treatments()
 
