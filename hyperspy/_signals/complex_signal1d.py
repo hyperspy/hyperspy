@@ -28,5 +28,6 @@ class ComplexSignal1D(ComplexSignal, CommonSignal1D):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.axes_manager.set_signal_dimension(1)
+        if self.axes_manager.signal_dimension != 1:
+            self.axes_manager.set_signal_dimension(1)
         self.metadata.Signal.binned = False

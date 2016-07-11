@@ -440,9 +440,6 @@ class BasePointROI(BaseInteractiveROI):
             axes = self._parse_axes(axes, signal.axes_manager)
         s = super(BasePointROI, self).__call__(signal=signal, out=out,
                                                axes=axes)
-        if out is None:
-            if any([not a.navigate for a in axes]):
-                self._update_metadata_after_signal_axes_removal(s)
         return s
 
 
@@ -1116,8 +1113,6 @@ class Line2DROI(BaseInteractiveROI):
                          metadata=signal.metadata.deepcopy().as_dictionary(),
                          original_metadata=signal.original_metadata.
                          deepcopy().as_dictionary())
-            if any([not a.navigate for a in axes]):
-                self._update_metadata_after_signal_axes_removal(roi)
             return roi
         else:
             out.data = profile

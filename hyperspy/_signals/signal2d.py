@@ -203,9 +203,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
 
     def __init__(self, *args, **kw):
         super().__init__(*args, **kw)
-        if self.metadata._HyperSpy.Folding.signal_unfolded:
-            self.axes_manager.set_signal_dimension(1)
-        else:
+        if self.axes_manager.signal_dimension != 2:
             self.axes_manager.set_signal_dimension(2)
 
     def plot(self,

@@ -2394,9 +2394,15 @@ class BaseSignal(FancySlicing,
         See also
         --------
         fold
-        """
 
-        # It doesn't make sense unfolding when dim < 2
+        Notes
+        -----
+        WARNING: this private function does not modify the signal subclass
+        and it is intended for internal use only. To unfold use the public
+        `unfold`, `unfold_navigation_space` or `unfold_signal_space` instead.
+        It doesn't make sense unfolding when dim < 2
+
+        """
         if self.data.squeeze().ndim < 2:
             return
 
@@ -2432,10 +2438,6 @@ class BaseSignal(FancySlicing,
             self.axes_manager.remove(axis.index_in_axes_manager)
         self.data = self.data.squeeze()
         self._assign_subclass()
-        if self.metadata.has_item('Signal.Noise_properties.variance'):
-            variance = self.metadata.Signal.Noise_properties.variance
-            if isinstance(variance, BaseSignal):
-                variance._unfold(steady_axes, unfolded_axis)
 
     def unfold(self, unfold_navigation=True, unfold_signal=True):
         """Modifies the shape of the data by unfolding the signal and
@@ -2501,6 +2503,10 @@ class BaseSignal(FancySlicing,
             unfolded_axis = (
                 self.axes_manager.navigation_axes[0].index_in_array)
             self._unfold(steady_axes, unfolded_axis)
+            if self.metadata.has_item('Signal.Noise_properties.variance'):
+                variance = self.metadata.Signal.Noise_properties.variance
+                if isinstance(variance, BaseSignal):
+                    variance.unfold_navigation_space()
         return needed_unfolding
 
     def unfold_signal_space(self):
@@ -2522,6 +2528,10 @@ class BaseSignal(FancySlicing,
             unfolded_axis = self.axes_manager.signal_axes[0].index_in_array
             self._unfold(steady_axes, unfolded_axis)
             self.metadata._HyperSpy.Folding.signal_unfolded = True
+            if self.metadata.has_item('Signal.Noise_properties.variance'):
+                variance = self.metadata.Signal.Noise_properties.variance
+                if isinstance(variance, BaseSignal):
+                    variance.unfold_signal_space()
         return needed_unfolding
 
     @auto_replot
