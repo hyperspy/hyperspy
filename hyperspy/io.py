@@ -20,6 +20,8 @@ import os
 import glob
 import logging
 
+import numpy as np
+
 import hyperspy.defaults_parser
 
 import hyperspy.misc.utils
@@ -287,12 +289,14 @@ def load_with_reader(filename,
     return objects
 
 
-def assign_signal_subclass(record_by="",
+def assign_signal_subclass(dtype,
+                           record_by="",
                            signal_type=""):
     """Given record_by and signal_type return the matching Signal subclass.
 
     Parameters
     ----------
+    dtype : :class:`~.numpy.dtype`
     record_by: {"spectrum", "image", ""}
     signal_type : {"EELS", "EDS", "EDS_TEM", "", str}
 
@@ -303,21 +307,32 @@ def assign_signal_subclass(record_by="",
     """
     import hyperspy.signals
     from hyperspy.signal import BaseSignal
+    # Check if parameter values are allowed:
+    if np.issubdtype(dtype, complex):
+        dtype = 'complex'
+    elif ('float' in dtype.name or 'int' in dtype.name or
+          'void' in dtype.name or 'bool' in dtype.name):
+        dtype = 'real'
+    else:
+        raise ValueError('Data type "{}" not understood!'.format(dtype.name))
     if record_by and record_by not in ["image", "spectrum"]:
         raise ValueError("record_by must be one of: None, empty string, "
                          "\"image\" or \"spectrum\"")
-
     signals = hyperspy.misc.utils.find_subclasses(hyperspy.signals, BaseSignal)
+    d_matches = [s for s in signals.values() if dtype == s._dtype]
+    d_r_matches = [s for s in d_matches if record_by == s._record_by]
+    d_r_t_matches = [s for s in d_r_matches if signal_type == s._signal_type]
 
-    preselection = [s for s in
-                    [s for s in signals.values()
-                     if record_by == s._record_by]
-                    ]
-    perfect_match = [s for s in preselection
-                     if signal_type == s._signal_type]
-    selection = perfect_match[0] if perfect_match else \
-        [s for s in preselection if s._signal_type == ""][0]
-    return selection
+    if d_r_t_matches:
+        # Perfect match found, return it.
+        return d_r_t_matches[0]
+    elif [s for s in d_r_matches if s._signal_type == ""]:
+        # just record_by and dtype matches
+        # Return a general class for the given signal dimension.
+        return [s for s in d_r_matches if s._signal_type == ""][0]
+    else:
+        # no record_by match either, hence return the general subclass for correct dtype
+        return [s for s in d_matches if s._record_by == "" and s._signal_type == ""][0]
 
 
 def dict2signal(signal_dict):
@@ -344,8 +359,9 @@ def dict2signal(signal_dict):
             len(signal_dict['data'].shape) < 2):
         record_by = "spectrum"
 
-    signal = assign_signal_subclass(record_by=record_by,
-                                    signal_type=signal_type,)(**signal_dict)
+    signal = assign_signal_subclass(dtype=signal_dict['data'].dtype,
+                                    record_by=record_by,
+                                    signal_type=signal_type)(**signal_dict)
     if "post_process" in signal_dict:
         for f in signal_dict['post_process']:
             signal = f(signal)
