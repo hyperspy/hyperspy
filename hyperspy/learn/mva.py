@@ -177,7 +177,7 @@ class MVA():
         # backup the original data
         self._data_before_treatments = self.data.copy()
         # set the output target (peak results or not?)
-        target = LearningResults() 
+        target = LearningResults()
 
         if algorithm == 'mlpca':
             if normalize_poissonian_noise is True:
@@ -356,7 +356,6 @@ class MVA():
             target.unfolded = self._unfolded4decomposition
             target.centre = centre
             target.mean = mean
-
 
             if output_dimension and factors.shape[1] != output_dimension:
                 target.crop_decomposition_dimension(output_dimension)
