@@ -307,8 +307,10 @@ def assign_signal_subclass(dtype,
         # Return a general class for the given signal dimension.
         return [s for s in d_r_matches if s._signal_type == ""][0]
     else:
-        # no record_by match either, hence return the general subclass for correct dtype
-        return [s for s in d_matches if s._record_by == "" and s._signal_type == ""][0]
+        # no record_by match either, hence return the general subclass for
+        # correct dtype
+        return [s for s in d_matches if s._record_by ==
+                "" and s._signal_type == ""][0]
 
 
 def dict2signal(signal_dict):
@@ -323,7 +325,7 @@ def dict2signal(signal_dict):
     s : Signal or subclass
 
     """
-    signal_dimension = -1 # undefined
+    signal_dimension = -1  # undefined
     signal_type = ""
     if "metadata" in signal_dict:
         mp = signal_dict["metadata"]
@@ -340,7 +342,7 @@ def dict2signal(signal_dict):
             signal_origin = mp["Signal"]['signal_origin']
     # "Estimate" signal_dimension from axes. It takes precedence over record_by
     if len(signal_dict["axes"]) == len(
-                [axis for axis in signal_dict["axes"] if "navigate" in axis]):
+            [axis for axis in signal_dict["axes"] if "navigate" in axis]):
         # If navigate is defined for all axes
         signal_dimension = len(
             [axis for axis in signal_dict["axes"] if not axis["navigate"]])
