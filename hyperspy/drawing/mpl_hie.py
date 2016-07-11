@@ -81,13 +81,10 @@ class MPL_HyperImage_Explorer(MPL_HyperExplorer):
         self.signal_plot = imf
 
         if self.navigator_plot is not None and imf.figure is not None:
-            utils.on_figure_window_close(self.navigator_plot.figure,
-                                         self._on_navigator_plot_closing)
-            utils.on_figure_window_close(
-                imf.figure, self.close_navigator_plot)
-            self._key_nav_cid = \
-                self.signal_plot.figure.canvas.mpl_connect(
-                    'key_press_event', self.axes_manager.key_navigator)
-            self._key_nav_cid = \
-                self.navigator_plot.figure.canvas.mpl_connect(
-                    'key_press_event', self.axes_manager.key_navigator)
+            self.navigator_plot.events.closed.connect(
+                self._on_navigator_plot_closing, [])
+            imf.events.closed.connect(self.close_navigator_plot, [])
+            self.signal_plot.figure.canvas.mpl_connect(
+                'key_press_event', self.axes_manager.key_navigator)
+            self.navigator_plot.figure.canvas.mpl_connect(
+                'key_press_event', self.axes_manager.key_navigator)

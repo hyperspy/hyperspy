@@ -65,6 +65,7 @@ class Signal1DFigure(BlittedFigure):
     def create_axis(self):
         self.ax = self.figure.add_subplot(111)
         self.ax.yaxis.set_animated(True)
+        self.ax.xaxis.set_animated(True)
         self.ax.hspy_fig = self
 
     def create_right_axis(self):
@@ -100,12 +101,6 @@ class Signal1DFigure(BlittedFigure):
                 self._color_cycles[line.type].color_cycle.remove(
                     rgba_color)
 
-    def add_marker(self, marker):
-        marker.ax = self.ax
-        if marker.axes_manager is None:
-            marker.axes_manager = self.axes_manager
-        self.ax_markers.append(marker)
-
     def plot(self):
         self.ax.set_xlabel(self.xlabel)
         self.ax.set_ylabel(self.ylabel)
@@ -133,17 +128,11 @@ class Signal1DFigure(BlittedFigure):
                 pass
 
     def _on_close(self):
-        for marker in self.ax_markers:
-            marker.close()
+        if self.figure is None:
+            return  # Already closed
         for line in self.ax_lines + self.right_ax_lines:
             line.close()
-        self.events.closed.trigger(obj=self)
-        for f in self.events.closed.connected:
-            self.events.closed.disconnect(f)
-        self.figure = None
-
-    def close(self):
-        plt.close(self.figure)
+        super(Signal1DFigure, self)._on_close()
 
     def update(self):
         for marker in self.ax_markers:
@@ -354,9 +343,8 @@ class Signal1DLine(object):
         try:
             self.ax.hspy_fig._draw_animated()
         except:
+            # There may be errors if the figure does no longer exist.
             pass
-        # self.ax.hspy_fig._draw_animated()
-        # self.ax.figure.canvas.draw_idle()
 
     def close(self):
         if self.line in self.ax.lines:

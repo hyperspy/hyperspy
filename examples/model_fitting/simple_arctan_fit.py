@@ -4,12 +4,13 @@ import numpy as np
 import hyperspy.api as hs
 
 # Generate the data and make the spectrum
-s = hs.signals.SpectrumSimulation(
+s = hs.signals.Spectrum(
     np.arctan(np.arange(-500, 500)))
 s.axes_manager[0].offset = -500
 s.axes_manager[0].units = ""
 s.axes_manager[0].name = "x"
 s.metadata.General.title = "Simple arctan fit"
+s.set_signal_origin("simulation")
 
 s.add_gaussian_noise(0.1)
 
