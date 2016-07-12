@@ -64,31 +64,14 @@ information (including calibration) can be accessed (and modified) in the
 Transforming between signal subclasses
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The different subclasses are characterized by three
-:py:attr:`~.signal.BaseSignal.metadata` attributes (see the table and diagram below):
-
-`record_by`
-    Can be "spectrum", "image" or "", the latter meaning undefined and describes
-    the way the data is arranged in memory. It is possible to transform any
-    :py:class:`~.signal.BaseSignal` subclass to a :py:class:`~._signals.signal1d.Signal1D`
-    or :py:class:`~._signals.signal2d.Signal2D` subclass using the following
-    :py:class:`~.signal.BaseSignal` methods: :py:meth:`~.signal.BaseSignal.as_signal2D`
-    and :py:meth:`~.signal.BaseSignal.as_signal1D`. In addition
-    :py:class:`~._signals.signal1d.Signal1D` instances can be transformed into
-    two-dimensional signals using :py:meth:`~._signals.signal1d.Signal1D.to_signal2D`
-    and two-dimensional instances transformed into one dimensional instances using
-    :py:meth:`~._signals.signal2d.Signal2D.to_signal1D`. When transforming between
-    one and two dimensinoal signal classes the order in which the data array is stored
-    in memory is modified to improve performance. Also, some functions, e.g. plotting
-    or decomposing, will behave differently.
-
-`signal_type`
-    Describes the nature of the signal. It can be any string, normally the
-    acronym associated with a particular signal. In certain cases HyperSpy provides
-    features that are only available for a particular signal type through
-    :py:class:`~.signal.BaseSignal` subclasses. The :py:class:`~.signal.BaseSignal` method
-    :py:meth:`~.signal.BaseSignal.set_signal_type` changes the signal_type in place, which
-    may result in a :py:class:`~.signal.BaseSignal` subclass transformation.
+The different subclasses are characterized by the `signal_type` metadata attribute,
+the data `dtype` and the signal dimension. See the table and diagram below.
+`signal_type` describes the nature of the signal. It can be any string, normally the
+acronym associated with a particular signal. In certain cases HyperSpy provides
+features that are only available for a particular signal type through
+:py:class:`~.signal.BaseSignal` subclasses. The :py:class:`~.signal.BaseSignal` method
+:py:meth:`~.signal.BaseSignal.set_signal_type` changes the signal_type in place, which
+may result in a :py:class:`~.signal.BaseSignal` subclass transformation.
 
 
 Furthermore, the `dtype` of the signal data also affects the subclass assignment. There are
@@ -104,25 +87,29 @@ e.g. specialised signal subclasses to handle complex data (see the following dia
 
 .. table:: BaseSignal subclass :py:attr:`~.signal.BaseSignal.metadata` attributes.
 
-    +---------------------------------------------------------------+-----------+---------------+---------+
-    |                      BaseSignal subclass                      | record_by |  signal_type  |  dtype  |
-    +===============================================================+===========+===============+=========+
-    |                 :py:class:`~.signal.BaseSignal`               |     -     |       -       |  real   |
-    +---------------------------------------------------------------+-----------+---------------+---------+
-    |           :py:class:`~._signals.signal1d.Signal1D`            | spectrum  |       -       |  real   |
-    +---------------------------------------------------------------+-----------+---------------+---------+
-    |           :py:class:`~._signals.eels.EELSSpectrum`            | spectrum  |     EELS      |  real   |
-    +---------------------------------------------------------------+-----------+---------------+---------+
-    |           :py:class:`~._signals.eds_sem.EDSSEMSpectrum`       | spectrum  |    EDS_SEM    |  real   |
-    +---------------------------------------------------------------+-----------+---------------+---------+
-    |              :py:class:`~._signals.signal2d.Signal2D`         |   image   |       -       |  real   |
-    +---------------------------------------------------------------+-----------+---------------+---------+
-    |      :py:class:`~._signals.complex_signal.ComplexSignal`      |     -     |       -       | complex |
-    +---------------------------------------------------------------+-----------+---------------+---------+
-    |    :py:class:`~._signals.complex_signal1d.ComplexSignal1D`    | spectrum  |       -       | complex |
-    +---------------------------------------------------------------+-----------+---------------+---------+
-    |    :py:class:`~._signals.complex_signal2d.ComplexSignal2D`    |   image   |       -       | complex |
-    +---------------------------------------------------------------+-----------+---------------+---------+
+    +-------------------------------------------------------------------------+------------------+-----------------------+----------+
+    |                      BaseSignal subclass                                | signal_dimension |  signal_type          |  dtype   |
+    +=========================================================================+==================+=======================+==========+
+    |                 :py:class:`~.signal.BaseSignal`                         |        -         |       -               |  real    |
+    +-------------------------------------------------------------------------+------------------+-----------------------+----------+
+    |           :py:class:`~._signals.signal1d.Signal1D`                      |        1         |       -               |  real    |
+    +-------------------------------------------------------------------------+------------------+-----------------------+----------+
+    |           :py:class:`~._signals.eels.EELSSpectrum`                      |        1         |     EELS              |  real    |
+    +-------------------------------------------------------------------------+------------------+-----------------------+----------+
+    |           :py:class:`~._signals.eds_sem.EDSSEMSpectrum`                 |        1         |    EDS_SEM            |  real    |
+    +-------------------------------------------------------------------------+------------------+-----------------------+----------+
+    |           :py:class:`~._signals.eds_sem.EDSTEMSpectrum`                 |        1         |    EDS_TEM            |  real    |
+    +-------------------------------------------------------------------------+------------------+-----------------------+----------+
+    |              :py:class:`~._signals.signal2d.Signal2D`                   |        2         |       -               |  real    |
+    +-------------------------------------------------------------------------+------------------+-----------------------+----------+
+    |           :py:class:`~._signals.dielectric_function.DielectricFunction` |        1         |    DielectricFunction |  complex |
+    +-------------------------------------------------------------------------+------------------+-----------------------+----------+
+    |      :py:class:`~._signals.complex_signal.ComplexSignal`                |        -         |       -               | complex  |
+    +-------------------------------------------------------------------------+------------------+-----------------------+----------+
+    |    :py:class:`~._signals.complex_signal1d.ComplexSignal1D`              |        1         |       -               | complex  |
+    +-------------------------------------------------------------------------+------------------+-----------------------+----------+
+    |    :py:class:`~._signals.complex_signal2d.ComplexSignal2D`              |        2         |       -               | complex  |
+    +-------------------------------------------------------------------------+------------------+-----------------------+----------+
 
 
 The following example shows how to transform between different subclasses.
@@ -133,19 +120,21 @@ The following example shows how to transform between different subclasses.
        >>> s
        <Signal1D, title: , dimensions: (20, 10|100)>
        >>> s.metadata
-       ├── record_by = spectrum
        ├── signal_type =
        └── title =
        >>> im = s.to_signal2D()
        >>> im
        <Signal2D, title: , dimensions: (100|20, 10)>
        >>> im.metadata
-       ├── record_by = image
        ├── signal_type =
        └── title =
        >>> s.set_signal_type("EELS")
        >>> s
        <EELSSpectrum, title: , dimensions: (20, 10|100)>
+       >>> s.change_dtype("complex")
+       >>> s
+       <ComplexSignal1D, title: , dimensions: (20, 10|100)>
+
 
 
 The navigation and signal dimensions
@@ -834,45 +823,46 @@ type in place, e.g.:
 
 
 .. versionadded:: 0.7
+   Support for RGB signals.
 
-    In addition to all standard numpy dtypes HyperSpy supports four extra
-    dtypes for RGB images: rgb8, rgba8, rgb16 and rgba16. Changing
-    from and to any rgbx dtype is more constrained than most other dtype
-    conversions. To change to a rgbx dtype the signal `record_by` must be
-    "spectrum", `signal_dimension` must be 3(4) for rgb(rgba) dtypes and the
-    dtype must be uint8(uint16) for rgbx8(rgbx16).  After conversion
-    `record_by` becomes `image` and the spectra dimension is removed. The dtype
-    of images of dtype rgbx8(rgbx16) can only be changed to uint8(uint16) and
-    the `record_by` becomes "spectrum".
+In addition to all standard numpy dtypes, HyperSpy supports four extra
+dtypes for RGB images: rgb8, rgba8, rgb16 and rgba16. The requirements for changing
+from and to any rgbx dtype are more strict than for most other dtype
+conversions. To change to a rgbx dtype the `signal_dimension` must be 1 and its size 3(4) 3(4) for rgb(rgba) dtypes and the
+dtype must be uint8(uint16) for rgbx8(rgbx16).  After conversion
+the `signal_dimension` becomes 2. The dtype
+of images of dtype rgbx8(rgbx16) can only be changed to uint8(uint16) and
+the `signal_dimension` becomes 1.
 
-    In the following example we create
+In the following example we create a 1D signal with signal size 3 and with
+`dtype` `"uint16"` and change its dtype to `"rgb16"` for plotting.
 
-   .. code-block:: python
+.. code-block:: python
 
-        >>> rgb_test = np.zeros((1024, 1024, 3))
-        >>> ly, lx = rgb_test.shape[:2]
-        >>> offset_factor = 0.16
-        >>> size_factor = 3
-        >>> Y, X = np.ogrid[0:lx, 0:ly]
-        >>> rgb_test[:,:,0] = (X - lx / 2 - lx*offset_factor) ** 2 + (Y - ly / 2 - ly*offset_factor) ** 2 < lx * ly / size_factor **2
-        >>> rgb_test[:,:,1] = (X - lx / 2 + lx*offset_factor) ** 2 + (Y - ly / 2 - ly*offset_factor) ** 2 < lx * ly / size_factor **2
-        >>> rgb_test[:,:,2] = (X - lx / 2) ** 2 + (Y - ly / 2 + ly*offset_factor) ** 2 < lx * ly / size_factor **2
-        >>> rgb_test *= 2**16 - 1
-        >>> s = hs.signals.Signal1D(rgb_test)
-        >>> s.change_dtype("uint16")
-        >>> s
-        <Signal1D, title: , dimensions: (1024, 1024|3)>
-        >>> s.change_dtype("rgb16")
-        >>> s
-        <Signal2D, title: , dimensions: (|1024, 1024)>
-        >>> s.plot()
+    >>> rgb_test = np.zeros((1024, 1024, 3))
+    >>> ly, lx = rgb_test.shape[:2]
+    >>> offset_factor = 0.16
+    >>> size_factor = 3
+    >>> Y, X = np.ogrid[0:lx, 0:ly]
+    >>> rgb_test[:,:,0] = (X - lx / 2 - lx*offset_factor) ** 2 + (Y - ly / 2 - ly*offset_factor) ** 2 < lx * ly / size_factor **2
+    >>> rgb_test[:,:,1] = (X - lx / 2 + lx*offset_factor) ** 2 + (Y - ly / 2 - ly*offset_factor) ** 2 < lx * ly / size_factor **2
+    >>> rgb_test[:,:,2] = (X - lx / 2) ** 2 + (Y - ly / 2 + ly*offset_factor) ** 2 < lx * ly / size_factor **2
+    >>> rgb_test *= 2**16 - 1
+    >>> s = hs.signals.Signal1D(rgb_test)
+    >>> s.change_dtype("uint16")
+    >>> s
+    <Signal1D, title: , dimensions: (1024, 1024|3)>
+    >>> s.change_dtype("rgb16")
+    >>> s
+    <Signal2D, title: , dimensions: (|1024, 1024)>
+    >>> s.plot()
 
 
-   .. figure::  images/rgb_example.png
-      :align:   center
-      :width:   500
+.. figure::  images/rgb_example.png
+  :align:   center
+  :width:   500
 
-      RGB data type example.
+  RGB data type example.
 
 
 Basic statistical analysis
@@ -978,7 +968,6 @@ for example:
   │   └── title =
   └── Signal
       ├── binned = False
-      ├── record_by = spectrum
       └── signal_type =
 
   >>> s.estimate_poissonian_noise_variance()
@@ -993,7 +982,6 @@ for example:
       │   │   └── gain_offset = 0
       │   └── variance = <SpectrumSimulation, title: Variance of , dimensions: (|100)>
       ├── binned = False
-      ├── record_by = spectrum
       └── signal_type =
 
 
