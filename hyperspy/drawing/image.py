@@ -193,7 +193,7 @@ class ImagePlot(BlittedFigure):
     def optimize_contrast(self, data):
         if (self._vmin_user is not None and self._vmax_user is not None):
             return
-        if 'complex' in data.dtype.name:
+        if np.issubdtype(data.dtype, complex):
             data = np.log(np.abs(data))
         self._vmin_auto, self._vmax_auto = utils.contrast_stretching(
             data, self.saturated_pixels)
@@ -328,7 +328,7 @@ class ImagePlot(BlittedFigure):
                 redraw_colorbar = True
                 ims[0].autoscale()
 
-        if 'complex' in data.dtype.name:
+        if np.issubdtype(data.dtype, complex):
             data = np.log(np.abs(data))
         if self.plot_indices is True:
             self._text.set_text(self.axes_manager.indices)

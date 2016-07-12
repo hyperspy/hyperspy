@@ -6,6 +6,7 @@ environment:
   global:
     TEST_DEPS: "nose wheel pip"
     NSIS_DIR: "%PROGRAMFILES(x86)%/NSIS"
+    os: Visual Studio 2015
 
 
   matrix:
@@ -46,7 +47,8 @@ install:
   - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
 
   # Check that we have the expected version and architecture for Python
-  - "python --version"
+  #- "python --version"
+  - "python -c \"import sys; print(sys.version)\""  # this gives more info
   - "python -c \"import struct; print(struct.calcsize('P') * 8)\""
 
   # Install the dependencies of the project.
@@ -66,10 +68,19 @@ build: false  # Not a C# project, build stuff at the test step instead.
 test_script:
   # Run the project tests
   - ps: Add-AppveyorMessage "Running tests..."
+  - "python setup.py build_ext --inplace"
   - "python continuous_integration/nosetest.py hyperspy"
+  - "python setup.py clean"
   - ps: Add-AppveyorMessage "Testing completed."
 
-# Auto-deployment of bundle installer for tags:
+after_test:
+  - python setup.py bdist_wheel
+
+artifacts:
+  - path: dist\*.whl
+    name: win_wheels
+
+  #Auto-deployment of bundle installer for tags:
 before_deploy:
   - ps: Add-AppveyorMessage "Running deployment step..."
   - "pip install winpython"
@@ -85,6 +96,8 @@ before_deploy:
   - ps: (& $Env:WP_EXE /S /D=$Env:WP_INSTDIR | Out-Null )
   - "ls %APPDATA%/wpdir"
   - "ls %WP_INSTDIR%"
+  - "ren %WP_INSTDIR%\\settings\\pydistutils.cfg pydistutils_bak.cfg"
+  # we rename pydistutils temporaly to enable use of msvc
 
   # Patch NSIS to allow longer strings
   - ps: Add-AppveyorMessage "Setting up WinPython environment..."
@@ -100,8 +113,13 @@ before_deploy:
   # Install current hyperspy in WinPython
   - "SET PATH=%ORIGPATH%"
   - "%CMD_IN_ENV% %WP_INSTDIR%/scripts/env.bat"
+  - "%CMD_IN_ENV% pip install --upgrade configobj traitsui natsort start_jupyter_cm tqdm cython setuptools"
+  # Give info about python vesion and compiler used to compile the python
+  - "%CMD_IN_ENV% python.exe -c \"import sys; print(sys.version)\""
+  - "%CMD_IN_ENV% python.exe setup.py recythonize"
   - "%CMD_IN_ENV% python.exe setup.py install"
-  - "%CMD_IN_ENV% pip install --upgrade configobj traitsui natsort start_jupyter_cm tqdm"
+  # setting back the config:
+  - "ren %WP_INSTDIR%\\settings\\pydistutils_bak.cfg pydistutils.cfg"
   # Custom installer step
   # TODO: Re-run tests in WinPython environment
   - ps: Add-AppveyorMessage "Creating installer..."
@@ -111,16 +129,18 @@ before_deploy:
   - "appveyor PushArtifact HyperSpy-%APPVEYOR_REPO_TAG_NAME%-Bundle-Windows-%PYTHON_ARCH%bit.exe"
 
 deploy:
-  release: $(APPVEYOR_REPO_TAG_NAME)
-  description: 'Release: $(APPVEYOR_REPO_COMMIT_MESSAGE)'
   provider: GitHub
   auth_token:
     #   to266:
-    secure: ptV5Dkz3pSVdjD0qRDpxJgjVlddFtleZ+B+c2X1Fg67P8OX3bHWVktRmlj6hfLhM
+    #secure: ptV5Dkz3pSVdjD0qRDpxJgjVlddFtleZ+B+c2X1Fg67P8OX3bHWVktRmlj6hfLhM
     #   vidartf:
     #secure: KwAfARhGEqOnZHltPB6kKu8xmnoiGSk7NMYJBIEbWvFCuVnepoPV7ZcIjUN3pUpK
-  artifact: /.*\.exe/              # upload all exe installers to release assets
-  draft: true
+    #   sem-geologist:
+    secure: RRqUkx9H5VuFNITmm+YzgB0qnqgVGPH1yrPVxb4oCD+FAjcTch2WZAiPEKn4L6w6
+  artifact: /.*\.exe/, win_wheels  # upload all exe installers and wheels to release assets
+  #artifact: win_wheels
+  draft: false
   prerelease: false
+  force_update: true
   on:
     appveyor_repo_tag: true        # deploy on tag push only
