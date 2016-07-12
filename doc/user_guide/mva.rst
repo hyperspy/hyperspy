@@ -228,7 +228,7 @@ can be accessed in HyperSpy with:
    >>> s.decomposition(algorithm='nmf')
 
 Unlike PCA, NMF forces the components to be strictly non-negative, which can aid
-the physical interpretation of components for count data such as images, EELS or EDS
+the physical interpretation of components for count data such as images, EELS or EDS.
 
 Blind Source Separation
 =======================
