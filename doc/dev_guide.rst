@@ -127,7 +127,7 @@ thing has it's own branch! You can merge some together for your personal use.
 
 Diagramatically you should be aiming for something like this:
 
-.. figure:: /user_guide/images/branching_schematic.eps1
+.. figure:: /user_guide/images/branching_schematic.eps
 
 
 Get the style right
@@ -147,7 +147,9 @@ Tests -- these are short functions found in hyperspy/tests that call your functi
 under some known conditions and check the outputs against known values. They should
 depend on as few other features as possible so that when they break we know exactly
 what caused it. Writing tests can seem laborious but you'll probaby soon find that
-they're very important as they force you to sanity check all you do.
+they're very important as they force you to sanity check all you do. When comparing
+integers, it's fine to use ``==``. When comparing floats, be sure to use
+``assert_almost_equal()``.
 
 Documentation comes in two parts docstrings and user-guide documentation.
 

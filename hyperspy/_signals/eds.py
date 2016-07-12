@@ -23,7 +23,7 @@ import warnings
 from matplotlib import pyplot as plt
 
 from hyperspy import utils
-from hyperspy._signals.spectrum import Spectrum
+from hyperspy.signals import Signal1D
 from hyperspy.misc.elements import elements as elements_db
 from hyperspy.misc.eds import utils as utils_eds
 from hyperspy.misc.utils import isiterable
@@ -32,11 +32,11 @@ from hyperspy.utils import markers
 _logger = logging.getLogger(__name__)
 
 
-class EDSSpectrum(Spectrum):
+class EDSSpectrum(Signal1D):
     _signal_type = "EDS"
 
     def __init__(self, *args, **kwards):
-        Spectrum.__init__(self, *args, **kwards)
+        Signal1D.__init__(self, *args, **kwards)
         if self.metadata.Signal.signal_type == 'EDS':
             warnings.warn('The microscope type is not set. Use '
                           'set_signal_type(\'EDS_TEM\')  '
@@ -166,7 +166,7 @@ class EDSSpectrum(Spectrum):
 
         Returns
         -------
-        s : Signal
+        s : Signal1D
 
         See also
         --------
@@ -209,8 +209,8 @@ class EDSSpectrum(Spectrum):
         >>> s = hs.datasets.example_signals.EDS_SEM_Spectrum()
         >>> print(s)
         >>> print(s.rebin([512]))
-        <EDSSEMSpectrum, title: EDS SEM Spectrum, dimensions: (|1024)>
-        <EDSSEMSpectrum, title: EDS SEM Spectrum, dimensions: (|512)>
+        <EDSSEMSpectrum, title: EDS SEM Signal1D, dimensions: (|1024)>
+        <EDSSEMSpectrum, title: EDS SEM Signal1D, dimensions: (|512)>
 
         """
         new_shape_in_array = []
@@ -592,7 +592,7 @@ class EDSSpectrum(Spectrum):
         Returns
         -------
         intensities : list
-            A list containing the intensities as Signal subclasses.
+            A list containing the intensities as BaseSignal subclasses.
 
         Examples
         --------
@@ -636,7 +636,7 @@ class EDSSpectrum(Spectrum):
                 windows_width=integration_windows, xray_lines=xray_lines)
         intensities = []
         ax = self.axes_manager.signal_axes[0]
-        # test 1D Spectrum (0D problem)
+        # test Signal1D (0D problem)
         # signal_to_index = self.axes_manager.navigation_dimension - 2
         for i, (Xray_line, window) in enumerate(
                 zip(xray_lines, integration_windows)):
@@ -668,10 +668,10 @@ class EDSSpectrum(Spectrum):
                  self.axes_manager.signal_axes[0].units,
                  ))
             if img.axes_manager.navigation_dimension >= 2:
-                img = img.as_image([0, 1])
+                img = img.as_signal2D([0, 1])
             elif img.axes_manager.navigation_dimension == 1:
                 img.axes_manager.set_signal_dimension(1)
-            if plot_result and img.axes_manager.signal_dimension == 0:
+            if plot_result and img.axes_manager.signal_size == 1:
                 print("%s at %s %s : Intensity = %.2f"
                       % (Xray_line,
                          line_energy,
@@ -680,7 +680,7 @@ class EDSSpectrum(Spectrum):
             img.metadata.set_item("Sample.elements", ([element]))
             img.metadata.set_item("Sample.xray_lines", ([Xray_line]))
             intensities.append(img)
-        if plot_result and img.axes_manager.signal_dimension != 0:
+        if plot_result and img.axes_manager.signal_size != 1:
             utils.plot.plot_signals(intensities, **kwargs)
         return intensities
 

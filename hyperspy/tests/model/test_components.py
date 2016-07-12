@@ -2,14 +2,14 @@ import numpy as np
 import nose.tools as nt
 
 import hyperspy.api as hs
-from hyperspy.models.model1D import Model1D
+from hyperspy.models.model1d import Model1D
 from hyperspy.misc.test_utils import ignore_warning
 
 
 class TestPowerLaw:
 
     def setUp(self):
-        s = hs.signals.Spectrum(np.zeros(1024))
+        s = hs.signals.Signal1D(np.zeros(1024))
         s.axes_manager[0].offset = 100
         s.axes_manager[0].scale = 0.01
         m = s.create_model()
@@ -19,7 +19,7 @@ class TestPowerLaw:
         self.m = m
 
     def test_estimate_parameters_binned_only_current(self):
-        self.m.spectrum.metadata.Signal.binned = True
+        self.m.signal.metadata.Signal.binned = True
         s = self.m.as_signal(show_progressbar=None)
         s.metadata.Signal.binned = True
         g = hs.model.components.PowerLaw()
@@ -31,7 +31,7 @@ class TestPowerLaw:
         nt.assert_almost_equal(g.r.value, 4.0017676988807409)
 
     def test_estimate_parameters_unbinned_only_current(self):
-        self.m.spectrum.metadata.Signal.binned = False
+        self.m.signal.metadata.Signal.binned = False
         s = self.m.as_signal(show_progressbar=None)
         s.metadata.Signal.binned = False
         g = hs.model.components.PowerLaw()
@@ -43,7 +43,7 @@ class TestPowerLaw:
         nt.assert_almost_equal(g.r.value, 4.0017522876514304)
 
     def test_estimate_parameters_binned(self):
-        self.m.spectrum.metadata.Signal.binned = True
+        self.m.signal.metadata.Signal.binned = True
         s = self.m.as_signal(show_progressbar=None)
         s.metadata.Signal.binned = True
         g = hs.model.components.PowerLaw()
@@ -55,7 +55,7 @@ class TestPowerLaw:
         nt.assert_almost_equal(g.r.value, 4.0017676988807409)
 
     def test_estimate_parameters_unbinned(self):
-        self.m.spectrum.metadata.Signal.binned = False
+        self.m.signal.metadata.Signal.binned = False
         s = self.m.as_signal(show_progressbar=None)
         s.metadata.Signal.binned = False
         g = hs.model.components.PowerLaw()
@@ -78,7 +78,7 @@ class TestPowerLaw:
 class TestOffset:
 
     def setUp(self):
-        s = hs.signals.Spectrum(np.zeros(10))
+        s = hs.signals.Signal1D(np.zeros(10))
         s.axes_manager[0].scale = 0.01
         m = s.create_model()
         m.append(hs.model.components.Offset())
@@ -86,7 +86,7 @@ class TestOffset:
         self.m = m
 
     def test_estimate_parameters_binned(self):
-        self.m.spectrum.metadata.Signal.binned = True
+        self.m.signal.metadata.Signal.binned = True
         s = self.m.as_signal(show_progressbar=None)
         s.metadata.Signal.binned = True
         g = hs.model.components.Offset()
@@ -97,7 +97,7 @@ class TestOffset:
         nt.assert_almost_equal(g.offset.value, 10)
 
     def test_estimate_parameters_unbinned(self):
-        self.m.spectrum.metadata.Signal.binned = False
+        self.m.signal.metadata.Signal.binned = False
         s = self.m.as_signal(show_progressbar=None)
         s.metadata.Signal.binned = False
         g = hs.model.components.Offset()
@@ -111,22 +111,28 @@ class TestOffset:
 class TestPolynomial:
 
     def setUp(self):
-        s = hs.signals.Spectrum(np.zeros(1024))
+        s = hs.signals.Signal1D(np.zeros(1024))
         s.axes_manager[0].offset = -5
         s.axes_manager[0].scale = 0.01
         m = s.create_model()
         m.append(hs.model.components.Polynomial(order=2))
         m[0].coefficients.value = (0.5, 2, 3)
         self.m = m
-        s_2d = hs.signals.Spectrum(np.arange(1000).reshape(10, 100))
+        s_2d = hs.signals.Signal1D(np.arange(1000).reshape(10, 100))
         self.m_2d = s_2d.create_model()
         self.m_2d.append(m[0])
-        s_3d = hs.signals.Spectrum(np.arange(1000).reshape(2, 5, 100))
+        s_3d = hs.signals.Signal1D(np.arange(1000).reshape(2, 5, 100))
         self.m_3d = s_3d.create_model()
         self.m_3d.append(m[0])
 
+    def test_gradient(self):
+        c = self.m[0]
+        np.testing.assert_array_almost_equal(c.grad_coefficients(1),
+                                             np.array([[6, ], [4.5], [3.5]]))
+        nt.assert_equal(c.grad_coefficients(np.arange(10)).shape, (3, 10))
+
     def test_estimate_parameters_binned(self):
-        self.m.spectrum.metadata.Signal.binned = True
+        self.m.signal.metadata.Signal.binned = True
         s = self.m.as_signal(show_progressbar=None)
         s.metadata.Signal.binned = True
         g = hs.model.components.Polynomial(order=2)
@@ -139,7 +145,7 @@ class TestPolynomial:
         nt.assert_almost_equal(g.coefficients.value[2], 3)
 
     def test_estimate_parameters_unbinned(self):
-        self.m.spectrum.metadata.Signal.binned = False
+        self.m.signal.metadata.Signal.binned = False
         s = self.m.as_signal(show_progressbar=None)
         s.metadata.Signal.binned = False
         g = hs.model.components.Polynomial(order=2)
@@ -175,7 +181,7 @@ class TestPolynomial:
 class TestGaussian:
 
     def setUp(self):
-        s = hs.signals.Spectrum(np.zeros(1024))
+        s = hs.signals.Signal1D(np.zeros(1024))
         s.axes_manager[0].offset = -5
         s.axes_manager[0].scale = 0.01
         m = s.create_model()
@@ -186,7 +192,7 @@ class TestGaussian:
         self.m = m
 
     def test_estimate_parameters_binned(self):
-        self.m.spectrum.metadata.Signal.binned = True
+        self.m.signal.metadata.Signal.binned = True
         s = self.m.as_signal(show_progressbar=None)
         s.metadata.Signal.binned = True
         g = hs.model.components.Gaussian()
@@ -199,7 +205,7 @@ class TestGaussian:
         nt.assert_almost_equal(g.centre.value, 1)
 
     def test_estimate_parameters_unbinned(self):
-        self.m.spectrum.metadata.Signal.binned = False
+        self.m.signal.metadata.Signal.binned = False
         s = self.m.as_signal(show_progressbar=None)
         s.metadata.Signal.binned = False
         g = hs.model.components.Gaussian()
@@ -252,8 +258,8 @@ class TestExpression:
 class TestScalableFixedPattern:
 
     def setUp(self):
-        s = hs.signals.Spectrum(np.linspace(0., 100., 10))
-        s1 = hs.signals.Spectrum(np.linspace(0., 1., 10))
+        s = hs.signals.Signal1D(np.linspace(0., 100., 10))
+        s1 = hs.signals.Signal1D(np.linspace(0., 1., 10))
         s.axes_manager[0].scale = 0.1
         s1.axes_manager[0].scale = 0.1
         self.s = s
@@ -310,3 +316,31 @@ class TestScalableFixedPattern:
                             category=RuntimeWarning):
             m.fit()
         nt.assert_almost_equal(fp.yscale.value, 10, delta=.1)
+
+
+class TestHeavisideStep:
+
+    def setUp(self):
+        self.c = hs.model.components.HeavisideStep()
+
+    def test_integer_values(self):
+        c = self.c
+        np.testing.assert_array_almost_equal(c.function([-1, 0, 2]),
+                                             [0, 0.5, 1])
+
+    def test_float_values(self):
+        c = self.c
+        np.testing.assert_array_almost_equal(c.function([-0.5, 0.5, 2]),
+                                             [0, 1, 1])
+
+    def test_not_sorted(self):
+        c = self.c
+        np.testing.assert_array_almost_equal(c.function([3, -0.1, 0]),
+                                             [1, 0, 0.5])
+
+    def test_gradients(self):
+        c = self.c
+        np.testing.assert_array_almost_equal(c.A.grad([3, -0.1, 0]),
+                                             [1, 1, 1])
+        np.testing.assert_array_almost_equal(c.n.grad([3, -0.1, 0]),
+                                             [1, 0, 0.5])
