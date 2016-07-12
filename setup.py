@@ -179,7 +179,8 @@ def find_post_checkout_cleanup_line():
     with open(post_checout_hook_file, 'r') as pchook:
         hook_lines = pchook.readlines()
         for i in range(1, len(hook_lines), 1):
-            if re.search('#cleanup_cythonized_and_compiled:', hook_lines[i]) is not None:
+            if re.search('#cleanup_cythonized_and_compiled:',
+                         hook_lines[i]) is not None:
                 return i + 1
 
 # generate some git hook to clean up and re-build_ext --inplace
