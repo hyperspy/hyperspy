@@ -451,7 +451,7 @@ class EDSTEMSpectrum(EDSSpectrum):
         --------
         >>> # Simulate a spectrum image with vacuum region
         >>> s = hs.datasets.example_signals.EDS_TEM_Spectrum()
-        >>> s_vac = hs.signals.Simulation(
+        >>> s_vac = hs.signals.BaseSignal(
                 np.ones_like(s.data, dtype=float))*0.005
         >>> s_vac.add_poissonian_noise()
         >>> si = hs.stack([s]*3 + [s_vac])

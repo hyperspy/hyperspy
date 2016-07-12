@@ -1449,7 +1449,7 @@ Outputs:
         # Determine which parameters to print
         nprint = len(x)
         print("Iter ", ('%6i' % iter), "   CHI-SQUARE = ", ('%.10g' % fnorm),
-            " DOF = ", ('%i' % dof))
+              " DOF = ", ('%i' % dof))
         for i in range(nprint):
             if (parinfo is not None) and ('parname' in parinfo[i]):
                 p = '   ' + parinfo[i]['parname'] + ' = '

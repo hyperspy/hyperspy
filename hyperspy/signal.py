@@ -37,7 +37,6 @@ from hyperspy.learn.mva import MVA, LearningResults
 import hyperspy.misc.utils
 from hyperspy.misc.utils import DictionaryTreeBrowser
 from hyperspy.drawing import signal as sigdraw
-from hyperspy.decorators import auto_replot
 from hyperspy.defaults_parser import preferences
 from hyperspy.misc.io.tools import ensure_directory
 from hyperspy.external.progressbar import progressbar
@@ -51,6 +50,8 @@ from hyperspy.misc.slicing import SpecialSlicers, FancySlicing
 from hyperspy.misc.utils import slugify
 from hyperspy.docstrings.signal import (
     ONE_AXIS_PARAMETER, MANY_AXIS_PARAMETER, OUT_ARG)
+from hyperspy.docstrings.plot import (
+    BASE_PLOT_DOCSTRING, PLOT2D_DOCSTRING, KWARGS_DOCSTRING)
 from hyperspy.events import Events, Event
 from hyperspy.interactive import interactive
 from hyperspy.misc.signal_tools import are_signals_aligned
@@ -1279,7 +1280,6 @@ class MVATools(object):
             axes=(
                 [{"size": data.shape[0], "navigate": True}] +
                 self.axes_manager._get_navigation_axes_dicts()))
-        signal.set_signal_origin(self.metadata.Signal.signal_origin)
         for axis in signal.axes_manager._axes[1:]:
             axis.navigate = False
         return signal
@@ -1289,7 +1289,6 @@ class MVATools(object):
             factors.T.reshape((-1,) + self.axes_manager.signal_shape[::-1]),
             axes=[{"size": factors.shape[-1], "navigate": True}] +
             self.axes_manager._get_signal_axes_dicts())
-        signal.set_signal_origin(self.metadata.Signal.signal_origin)
         signal.set_signal_type(self.metadata.Signal.signal_type)
         for axis in signal.axes_manager._axes[1:]:
             axis.navigate = False
@@ -1453,9 +1452,9 @@ class BaseSignal(FancySlicing,
                  MVA,
                  MVATools,):
 
+    _dtype = "real"
     _record_by = ""
     _signal_type = ""
-    _signal_origin = ""
     _additional_slicing_targets = [
         "metadata.Signal.Noise_properties.variance",
     ]
@@ -1489,7 +1488,6 @@ class BaseSignal(FancySlicing,
         kwds['data'] = data
         self._load_dictionary(kwds)
         self._plot = None
-        self.auto_replot = True
         self.inav = SpecialSlicersSignal(self, True)
         self.isig = SpecialSlicersSignal(self, False)
         self.events = Events()
@@ -1768,9 +1766,6 @@ class BaseSignal(FancySlicing,
         if (self._record_by or
                 "Signal.record_by" not in self.metadata):
             self.metadata.Signal.record_by = self._record_by
-        if (self._signal_origin or
-                "Signal.signal_origin" not in self.metadata):
-            self.metadata.Signal.signal_origin = self._signal_origin
         if (self._signal_type or
                 not self.metadata.has_item("Signal.signal_type")):
             self.metadata.Signal.signal_type = self._signal_type
@@ -1864,56 +1859,8 @@ class BaseSignal(FancySlicing,
             self.data.__getitem__(axes_manager._getitem_tuple))
 
     def plot(self, navigator="auto", axes_manager=None, **kwargs):
-        """Plot the signal at the current coordinates.
-
-        For multidimensional datasets an optional figure,
-        the "navigator", with a cursor to navigate that data is
-        raised. In any case it is possible to navigate the data using
-        the sliders. Currently only signals with signal_dimension equal to
-        0, 1 and 2 can be plotted.
-
-        Parameters
-        ----------
-        navigator : {"auto", None, "slider", "spectrum", Signal}
-            If "auto", if navigation_dimension > 0, a navigator is
-            provided to explore the data.
-            If navigation_dimension is 1 and the signal is an image
-            the navigator is a spectrum obtained by integrating
-            over the signal axes (the image).
-            If navigation_dimension is 1 and the signal is a spectrum
-            the navigator is an image obtained by stacking horizontally
-            all the spectra in the dataset.
-            If navigation_dimension is > 1, the navigator is an image
-            obtained by integrating the data over the signal axes.
-            Additionaly, if navigation_dimension > 2 a window
-            with one slider per axis is raised to navigate the data.
-            For example,
-            if the dataset consists of 3 navigation axes X, Y, Z and one
-            signal axis, E, the default navigator will be an image
-            obtained by integrating the data over E at the current Z
-            index and a window with sliders for the X, Y and Z axes
-            will be raised. Notice that changing the Z-axis index
-            changes the navigator in this case.
-            If "slider" and the navigation dimension > 0 a window
-            with one slider per axis is raised to navigate the data.
-            If "spectrum" and navigation_dimension > 0 the navigator
-            is always a spectrum obtained by integrating the data
-            over all other axes.
-            If None, no navigator will be provided.
-            Alternatively a Signal instance can be provided. The signal
-            dimension must be 1 (for a spectrum navigator) or 2 (for a
-            image navigator) and navigation_shape must be 0 (for a static
-            navigator) or navigation_shape + signal_shape must be equal
-            to the navigator_shape of the current object (for a dynamic
-            navigator).
-            If the signal dtype is RGB or RGBA this parameters has no
-            effect and is always "slider".
-
-        axes_manager : {None, axes_manager}
-            If None `axes_manager` is used.
-
-        **kwargs : optional
-            Any extra keyword arguments are passed to the signal plot.
+        """%s
+        %s
 
         """
 
@@ -2034,6 +1981,7 @@ class BaseSignal(FancySlicing,
             self._plot.signal_plot.events.closed.connect(
                 lambda: self.events.data_changed.disconnect(self.update_plot),
                 [])
+    plot.__doc__ %= BASE_PLOT_DOCSTRING, KWARGS_DOCSTRING
 
     def save(self, filename=None, overwrite=None, extension=None,
              **kwds):
@@ -2107,7 +2055,6 @@ class BaseSignal(FancySlicing,
                 if self._plot.navigator_plot is not None:
                     self._plot.navigator_plot.update()
 
-    @auto_replot
     def get_dimensions_from_data(self):
         """Get the dimension parameters from the data_cube. Useful when
         the data_cube was externally modified, or when the SI was not
@@ -2176,6 +2123,7 @@ class BaseSignal(FancySlicing,
         am._update_trait_handlers(remove=False)
         s._make_sure_data_is_contiguous()
         return s
+
     swap_axes.__doc__ %= ONE_AXIS_PARAMETER
 
     def rollaxis(self, axis, to_axis):
@@ -2225,6 +2173,7 @@ class BaseSignal(FancySlicing,
         s.axes_manager._update_attributes()
         s._make_sure_data_is_contiguous()
         return s
+
     rollaxis.__doc__ %= (ONE_AXIS_PARAMETER, ONE_AXIS_PARAMETER)
 
     @property
@@ -2303,6 +2252,7 @@ class BaseSignal(FancySlicing,
             return s
         else:
             out.events.data_changed.trigger(obj=out)
+
     rebin.__doc__ %= OUT_ARG
 
     def split(self,
@@ -2430,7 +2380,6 @@ class BaseSignal(FancySlicing,
 
         return splitted
 
-    @auto_replot
     def _unfold(self, steady_axes, unfolded_axis):
         """Modify the shape of the data by specifying the axes whose
         dimension do not change and the axis over which the remaining axes will
@@ -2576,7 +2525,6 @@ class BaseSignal(FancySlicing,
             self.metadata._HyperSpy.Folding.signal_unfolded = True
         return needed_unfolding
 
-    @auto_replot
     def fold(self):
         """If the signal was previously unfolded, folds it back"""
         folding = self.metadata._HyperSpy.Folding
@@ -2748,6 +2696,7 @@ class BaseSignal(FancySlicing,
             axis = self.axes_manager.navigation_axes
         return self._apply_function_on_data_and_remove_axis(np.sum, axis,
                                                             out=out)
+
     sum.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG)
 
     def max(self, axis=None, out=None):
@@ -2781,6 +2730,7 @@ class BaseSignal(FancySlicing,
             axis = self.axes_manager.navigation_axes
         return self._apply_function_on_data_and_remove_axis(np.max, axis,
                                                             out=out)
+
     max.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG)
 
     def min(self, axis=None, out=None):
@@ -2814,6 +2764,7 @@ class BaseSignal(FancySlicing,
             axis = self.axes_manager.navigation_axes
         return self._apply_function_on_data_and_remove_axis(np.min, axis,
                                                             out=out)
+
     min.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG)
 
     def mean(self, axis=None, out=None):
@@ -2847,6 +2798,7 @@ class BaseSignal(FancySlicing,
             axis = self.axes_manager.navigation_axes
         return self._apply_function_on_data_and_remove_axis(np.mean, axis,
                                                             out=out)
+
     mean.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG)
 
     def std(self, axis=None, out=None):
@@ -2880,6 +2832,7 @@ class BaseSignal(FancySlicing,
             axis = self.axes_manager.navigation_axes
         return self._apply_function_on_data_and_remove_axis(np.std, axis,
                                                             out=out)
+
     std.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG)
 
     def var(self, axis=None, out=None):
@@ -2913,6 +2866,7 @@ class BaseSignal(FancySlicing,
             axis = self.axes_manager.navigation_axes
         return self._apply_function_on_data_and_remove_axis(np.var, axis,
                                                             out=out)
+
     var.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG)
 
     def diff(self, axis, order=1, out=None):
@@ -2954,6 +2908,7 @@ class BaseSignal(FancySlicing,
             return s
         else:
             out.events.data_changed.trigger(obj=out)
+
     diff.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
 
     def derivative(self, axis, order=1, out=None):
@@ -2991,6 +2946,7 @@ class BaseSignal(FancySlicing,
             return der
         else:
             out.events.data_changed.trigger(obj=out)
+
     derivative.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
 
     def integrate_simpson(self, axis, out=None):
@@ -3031,6 +2987,7 @@ class BaseSignal(FancySlicing,
             s.data = data
             s._remove_axis(axis.index_in_axes_manager)
             return s
+
     integrate_simpson.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
 
     def integrate1D(self, axis, out=None):
@@ -3067,6 +3024,7 @@ class BaseSignal(FancySlicing,
             return self.integrate_simpson(axis=axis, out=out)
         else:
             return self.sum(axis=axis, out=out)
+
     integrate1D.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
 
     def indexmax(self, axis, out=None):
@@ -3098,6 +3056,7 @@ class BaseSignal(FancySlicing,
         """
         return self._apply_function_on_data_and_remove_axis(np.argmax, axis,
                                                             out=out)
+
     indexmax.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
 
     def valuemax(self, axis, out=None):
@@ -3134,6 +3093,7 @@ class BaseSignal(FancySlicing,
         else:
             out.data[:] = data
             out.events.data_changed.trigger(obj=out)
+
     valuemax.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
 
     def get_histogram(self, bins='freedman', range_bins=None, out=None,
@@ -3216,6 +3176,7 @@ class BaseSignal(FancySlicing,
             return hist_spec
         else:
             out.events.data_changed.trigger(obj=out)
+
     get_histogram.__doc__ %= OUT_ARG
 
     def map(self, function,
@@ -3422,10 +3383,10 @@ class BaseSignal(FancySlicing,
                 name="RGB index",
                 navigate=False,)
             self.metadata.Signal.record_by = "spectrum"
-            self._assign_subclass()
             return
         else:
             self.data = self.data.astype(dtype)
+        self._assign_subclass()
 
     def estimate_poissonian_noise_variance(self,
                                            expected_value=None,
@@ -3701,6 +3662,7 @@ class BaseSignal(FancySlicing,
         else:
             out.data[:] = sp.data
             out.events.data_changed.trigger(obj=out)
+
     as_signal1D.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
 
     def as_signal2D(self, image_axes, out=None):
@@ -3748,20 +3710,19 @@ class BaseSignal(FancySlicing,
         else:
             out.data[:] = im.data
             out.events.data_changed.trigger(obj=out)
+
     as_signal2D.__doc__ %= OUT_ARG
 
     def _assign_subclass(self):
         mp = self.metadata
         self.__class__ = hyperspy.io.assign_signal_subclass(
+            self.data.dtype,
             record_by=mp.Signal.record_by
             if "Signal.record_by" in mp
             else self._record_by,
             signal_type=mp.Signal.signal_type
             if "Signal.signal_type" in mp
-            else self._signal_type,
-            signal_origin=mp.Signal.signal_origin
-            if "Signal.signal_origin" in mp
-            else self._signal_origin)
+            else self._signal_type,)
         self.__init__(**self._to_dictionary())
 
     def set_signal_type(self, signal_type):
@@ -3794,31 +3755,20 @@ class BaseSignal(FancySlicing,
         self._assign_subclass()
 
     def set_signal_origin(self, origin):
-        """Set the origin of the signal and change the current class
-        accordingly if pertinent.
+        """Set the `signal_origin` metadata value.
 
         The signal_origin attribute specifies if the data was obtained
-        through experiment or simulation. There are some methods that are
-        only available for experimental or simulated data, so setting this
-        parameter can enable/disable features.
+        through experiment or simulation.
 
 
         Parameters
         ----------
-        origin : {'experiment', 'simulation', None, ""}
-            None an the empty string mean that the signal origin is uknown.
+        origin : string
+            Typically 'experiment' or 'simulation'.
 
-        Raises
-        ------
-        ValueError if origin is not 'experiment' or 'simulation'
 
         """
-        if origin not in ['experiment', 'simulation', "", None]:
-            raise ValueError("`origin` must be one of: experiment, simulation")
-        if origin is None:
-            origin = ""
         self.metadata.Signal.signal_origin = origin
-        self._assign_subclass()
 
     def print_summary_statistics(self, formatter="%.3f"):
         """Prints the five-number summary statistics of the data, the mean and
@@ -3898,6 +3848,30 @@ class BaseSignal(FancySlicing,
             self._plot.navigator_plot.add_marker(marker)
         if plot_marker:
             marker.plot()
+
+    def add_poissonian_noise(self, **kwargs):
+        """Add Poissonian noise to the data"""
+        original_type = self.data.dtype
+        self.data = np.random.poisson(self.data, **kwargs).astype(
+            original_type)
+        self.events.data_changed.trigger(obj=self)
+
+    def add_gaussian_noise(self, std):
+        """Add Gaussian noise to the data
+        Parameters
+        ----------
+        std : float
+
+        """
+        noise = np.random.normal(0,
+                                 std,
+                                 self.data.shape)
+        original_dtype = self.data.dtype
+        self.data = (
+            self.data.astype(
+                noise.dtype) +
+            noise).astype(original_dtype)
+        self.events.data_changed.trigger(obj=self)
 
 
 ARITHMETIC_OPERATORS = (
