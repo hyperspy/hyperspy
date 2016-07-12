@@ -171,7 +171,7 @@ class Voigt(Component):
         Examples
         --------
 
-        >>> g = hs.model.components.Gaussian()
+        >>> g = hs.model.components1D.Gaussian()
         >>> x = np.arange(-10,10, 0.01)
         >>> data = np.zeros((32,32,2000))
         >>> data[:] = g.function(x).reshape((1,1,2000))

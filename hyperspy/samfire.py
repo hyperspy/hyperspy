@@ -164,7 +164,7 @@ class Samfire:
     def __init__(self, model, workers=None, setup=True, **kwargs):
         # constants:
         if workers is None:
-            workers = cpu_count() - 1
+            workers = max(1, cpu_count() - 1)
         self.model = model
         self.metadata = DictionaryTreeBrowser()
 

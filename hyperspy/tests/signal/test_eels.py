@@ -27,16 +27,16 @@ class Test_Estimate_Elastic_Scattering_Threshold:
 
     def setUp(self):
         # Create an empty spectrum
-        s = hs.signals.EELSSpectrumSimulation(np.zeros((3, 2, 1024)))
+        s = hs.signals.EELSSpectrum(np.zeros((3, 2, 1024)))
         energy_axis = s.axes_manager.signal_axes[0]
         energy_axis.scale = 0.02
         energy_axis.offset = -5
 
-        gauss = hs.model.components.Gaussian()
+        gauss = hs.model.components1D.Gaussian()
         gauss.centre.value = 0
         gauss.A.value = 5000
         gauss.sigma.value = 0.5
-        gauss2 = hs.model.components.Gaussian()
+        gauss2 = hs.model.components1D.Gaussian()
         gauss2.sigma.value = 0.5
         # Inflexion point 1.5
         gauss2.A.value = 5000
@@ -85,7 +85,7 @@ class Test_Estimate_Elastic_Scattering_Threshold:
 class TestEstimateZLPCentre:
 
     def setUp(self):
-        s = hs.signals.EELSSpectrumSimulation(np.diag(np.arange(1, 11)))
+        s = hs.signals.EELSSpectrum(np.diag(np.arange(1, 11)))
         s.axes_manager[-1].scale = 0.1
         s.axes_manager[-1].offset = 100
         self.signal = s
@@ -102,7 +102,7 @@ class TestEstimateZLPCentre:
 class TestAlignZLP:
 
     def setUp(self):
-        s = hs.signals.EELSSpectrumSimulation(np.zeros((10, 100)))
+        s = hs.signals.EELSSpectrum(np.zeros((10, 100)))
         self.scale = 0.1
         self.offset = -2
         eaxis = s.axes_manager.signal_axes[0]

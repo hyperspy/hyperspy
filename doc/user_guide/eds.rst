@@ -29,7 +29,7 @@ downloaded using:
     >>> urlretrieve(url + 'Ni_superalloy_010.raw', 'Ni_superalloy_010.raw')
 
 Loading data
-^^^^^^^^
+^^^^^^^^^^^^
 
 All data are loaded with the :py:func:`~.io.load` function, as described in detail in
 :ref:`Loading files<loading_files>`. HyperSpy is able to import different formats,

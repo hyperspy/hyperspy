@@ -18,7 +18,7 @@
 
 import nose.tools as nt
 import numpy as np
-from hyperspy.components import Gaussian
+from hyperspy.components1d import Gaussian
 from hyperspy.signal import BaseSignal
 from hyperspy.misc.utils import stash_active_state
 

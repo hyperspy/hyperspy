@@ -341,17 +341,17 @@ class SemperFormat(object):
 
     @classmethod
     def _check_format(cls, data):
-        if data.dtype.name == 'int8':
+        if np.issubdtype(data.dtype, np.int8):
             iform = 0  # byte
-        elif data.dtype.name == 'int16':
+        elif np.issubdtype(data.dtype, np.int16):
             iform = 1  # int16
-        elif 'float' in data.dtype.name and data.dtype.itemsize <= 4:
+        elif np.issubdtype(data.dtype, float) and data.dtype.itemsize <= 4:
             data = data.astype(np.float32)
             iform = 2  # float (4 byte or less)
-        elif 'complex' in data.dtype.name and data.dtype.itemsize <= 8:
+        elif np.issubdtype(data.dtype, complex) and data.dtype.itemsize <= 8:
             data = data.astype(np.complex64)
             iform = 3  # complex (8 byte or less)
-        elif data.dtype.name == 'int32':
+        elif np.issubdtype(data.dtype, np.int32):
             iform = 4  # int32
         else:
             supported_formats = [
