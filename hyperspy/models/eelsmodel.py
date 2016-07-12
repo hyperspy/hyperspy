@@ -21,10 +21,10 @@ import warnings
 import logging
 
 from hyperspy.models.model1d import Model1D
-from hyperspy.components import EELSCLEdge
-from hyperspy.components import PowerLaw
+from hyperspy.components1d import EELSCLEdge
+from hyperspy.components1d import PowerLaw
 from hyperspy.defaults_parser import preferences
-from hyperspy import components
+from hyperspy import components1d
 from hyperspy._signals.eels import EELSSpectrum
 
 _logger = logging.getLogger(__name__)
@@ -455,7 +455,7 @@ class EELSModel(Model1D):
         """
         if powerlaw is None:
             for component in self._active_background_components:
-                if isinstance(component, components.PowerLaw):
+                if isinstance(component, components1d.PowerLaw):
                     if powerlaw is None:
                         powerlaw = component
                     else:

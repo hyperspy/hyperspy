@@ -21,7 +21,7 @@ import time
 
 from hyperspy._signals.signal1d import Signal1D
 from hyperspy._signals.eels import EELSSpectrum
-from hyperspy.components import Gaussian
+from hyperspy.components1d import Gaussian
 
 
 class TestModelIndexing:

@@ -17,7 +17,7 @@
 
 
 import nose.tools
-from hyperspy.components import Gaussian
+from hyperspy.components1d import Gaussian
 
 
 class TestSetParameters:

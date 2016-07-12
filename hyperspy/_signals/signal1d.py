@@ -52,7 +52,7 @@ from hyperspy.decorators import only_interactive
 from hyperspy.decorators import interactive_range_selector
 from scipy.ndimage.filters import gaussian_filter1d
 from hyperspy.gui.tools import IntegrateArea
-from hyperspy import components
+from hyperspy import components1d
 
 
 def find_peaks_ohaver(y, x=None, slope_thresh=0., amp_thresh=None,
@@ -927,13 +927,14 @@ class Signal1D(BaseSignal, CommonSignal1D):
             br.edit_traits()
         else:
             if background_type == 'PowerLaw':
-                background_estimator = components.PowerLaw()
+                background_estimator = components1d.PowerLaw()
             elif background_type == 'Gaussian':
-                background_estimator = components.Gaussian()
+                background_estimator = components1d.Gaussian()
             elif background_type == 'Offset':
-                background_estimator = components.Offset()
+                background_estimator = components1d.Offset()
             elif background_type == 'Polynomial':
-                background_estimator = components.Polynomial(polynomial_order)
+                background_estimator = components1d.Polynomial(
+                    polynomial_order)
             else:
                 raise ValueError(
                     "Background type: " +

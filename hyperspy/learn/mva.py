@@ -106,6 +106,7 @@ class MVA():
                       var_func=None,
                       polyfit=None,
                       reproject=None,
+                      return_info=False,
                       **kwargs):
         """Decomposition with a choice of algorithms
 
@@ -115,51 +116,43 @@ class MVA():
         ----------
         normalize_poissonian_noise : bool
             If True, scale the SI to normalize Poissonian noise
-
         algorithm : 'svd' | 'fast_svd' | 'mlpca' | 'fast_mlpca' | 'nmf' |
             'sparse_pca' | 'mini_batch_sparse_pca'
-
         output_dimension : None or int
             number of components to keep/calculate
-
         centre : None | 'variables' | 'trials'
             If None no centring is applied. If 'variable' the centring will be
             performed in the variable axis. If 'trials', the centring will be
             performed in the 'trials' axis. It only has effect when using the
             svd or fast_svd algorithms
-
         auto_transpose : bool
             If True, automatically transposes the data to boost performance.
             Only has effect when using the svd of fast_svd algorithms.
-
         navigation_mask : boolean numpy array
             The navigation locations marked as True are not used in the
             decompostion.
-
         signal_mask : boolean numpy array
             The signal locations marked as True are not used in the
             decomposition.
-
         var_array : numpy array
             Array of variance for the maximum likelihood PCA algorithm
-
         var_func : function or numpy array
             If function, it will apply it to the dataset to obtain the
             var_array. Alternatively, it can a an array with the coefficients
             of a polynomial.
-
-        polyfit :
-
         reproject : None | signal | navigation | both
             If not None, the results of the decomposition will be projected in
             the selected masked area.
-
+        return_info: bool, default False
+            The result of the decomposition is stored internally. However, some algorithms generate some extra
+            information that is not stored. If True (the default is False) return any extra information if available
 
         See also
         --------
         plot_decomposition_factors, plot_decomposition_loadings, plot_lev
 
         """
+        to_return = None
         # Check if it is the wrong data type
         if self.data.dtype.char not in ['e', 'f', 'd']:  # If not float
             _logger.warning(
@@ -258,6 +251,8 @@ class MVA():
                 explained_variance = sk.explained_variance_
                 mean = sk.mean_
                 centre = 'trials'
+                if return_info:
+                    to_return = sk
 
             elif algorithm == 'nmf':
                 if import_sklearn.sklearn_installed is False:
@@ -268,6 +263,8 @@ class MVA():
                 loadings = sk.fit_transform((
                     dc[:, signal_mask][navigation_mask, :]))
                 factors = sk.components_.T
+                if return_info:
+                    to_return = sk
 
             elif algorithm == 'sparse_pca':
                 if import_sklearn.sklearn_installed is False:
@@ -278,6 +275,8 @@ class MVA():
                 loadings = sk.fit_transform(
                     dc[:, signal_mask][navigation_mask, :])
                 factors = sk.components_.T
+                if return_info:
+                    to_return = sk
 
             elif algorithm == 'mini_batch_sparse_pca':
                 if import_sklearn.sklearn_installed is False:
@@ -288,6 +287,8 @@ class MVA():
                 loadings = sk.fit_transform(
                     dc[:, signal_mask][navigation_mask, :])
                 factors = sk.components_.T
+                if return_info:
+                    to_return = sk
 
             elif algorithm == 'mlpca' or algorithm == 'fast_mlpca':
                 _logger.info("Performing the MLPCA training")
@@ -422,6 +423,8 @@ class MVA():
                 self._unfolded4decomposition is False
             # undo any pre-treatments
             self.undo_treatments()
+
+        return to_return
 
     def blind_source_separation(self,
                                 number_of_components=None,
