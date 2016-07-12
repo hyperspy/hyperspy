@@ -10,20 +10,23 @@ is essentially the same as in this documentation any method referred to in
 the :py:class`~.model.BaseModel` class is available for both kinds.
 
 .. versionadded:: 1.0
+   2D models. Note that this first implementation lacks many of the
+   features of 1D models e.g. plotting. Those will be added in future releases.
 
-    Models can be created and and fit to experimental data in both one and two
-    dimensions i.e. spectra and images respectively. Most of the syntax is
-    identical in either case. A one-dimensional model is created when a model
-    is created for a :py:class:`~._signals.signal1D.Signal1D` whereas a two-
-    dimensional model is created for a :py:class:`._signals.signal2D.Signal2D`.
-    At present plotting and gradient fitting methods tools for are not yet
-    provided for the :py:class:`~.models.model2D.Model2D` class.
+Models can be created and and fit to experimental data in both one and two
+dimensions i.e. spectra and images respectively. Most of the syntax is
+identical in either case. A one-dimensional model is created when a model
+is created for a :py:class:`~._signals.signal1D.Signal1D` whereas a two-
+dimensional model is created for a :py:class:`._signals.signal2D.Signal2D`.
+At present plotting and gradient fitting methods tools for are not yet
+provided for the :py:class:`~.models.model2D.Model2D` class.
 
 .. versionadded:: 0.7
+   Binned/unbinned signals
 
-    Before creating a model verify that the ``Signal.binned`` metadata
-    attribute of the signal is set to the correct value because the resulting
-    model depends on this parameter. See :ref:`signal.binned` for more details.
+Before creating a model verify that the ``Signal.binned`` metadata
+attribute of the signal is set to the correct value because the resulting
+model depends on this parameter. See :ref:`signal.binned` for more details.
 
 Creating a model
 ----------------
@@ -55,8 +58,9 @@ collection semi-angles etc.
 Adding components to the model
 ------------------------------
 
-In HyperSpy a model consists of a linear combination of :py:mod:`~.components`
-and various components are available in one and two-dimensions to construct a
+In HyperSpy a model consists of a linear combination of components
+and various components are available in one (:py:mod:`~.components1d`)and
+two-dimensions (:py:mod:`~.components2d`) to construct a
 model.
 
 The following components are currently available for one-dimensional models:
