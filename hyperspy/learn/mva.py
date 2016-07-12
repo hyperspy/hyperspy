@@ -33,7 +33,6 @@ from hyperspy.misc.machine_learning import import_sklearn
 import hyperspy.misc.io.tools as io_tools
 from hyperspy.learn.svd_pca import svd_pca
 from hyperspy.learn.mlpca import mlpca
-from hyperspy.decorators import do_not_replot
 from scipy import linalg
 from hyperspy.misc.machine_learning.orthomax import orthomax
 from hyperspy.misc.utils import stack
@@ -95,7 +94,6 @@ class MVA():
         if not hasattr(self, 'learning_results'):
             self.learning_results = LearningResults()
 
-    @do_not_replot
     def decomposition(self,
                       normalize_poissonian_noise=False,
                       algorithm='svd',
@@ -752,7 +750,6 @@ class MVA():
                 self.reverse_bss_component(i)
                 _logger.info("IC %i reversed" % i)
 
-    @do_not_replot
     def _calculate_recmatrix(self, components=None, mva_type=None,):
         """
         Rebuilds SIs from selected components
