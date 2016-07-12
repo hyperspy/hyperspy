@@ -586,10 +586,10 @@ class MVATools(object):
                     im = Signal2D(factor_data[..., index],
                                   axes=axes_dicts,
                                   metadata={
-                        "General": {'title': '%s from %s' % (
-                            factor_prefix,
-                            self.metadata.General.title),
-                        }})
+                                      "General": {'title': '%s from %s' % (
+                                          factor_prefix,
+                                          self.metadata.General.title),
+                                      }})
                     filename = '%s-%i.%s' % (factor_prefix,
                                              dim,
                                              factor_format)
@@ -722,10 +722,10 @@ class MVATools(object):
                     s = Signal2D(loading_data[index, ...],
                                  axes=axes_dicts,
                                  metadata={
-                        "General": {'title': '%s from %s' % (
-                            loading_prefix,
-                            self.metadata.General.title),
-                        }})
+                                     "General": {'title': '%s from %s' % (
+                                         loading_prefix,
+                                         self.metadata.General.title),
+                                     }})
                     filename = '%s-%i.%s' % (loading_prefix,
                                              dim,
                                              loading_format)
