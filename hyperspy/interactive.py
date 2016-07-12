@@ -47,7 +47,7 @@ class Interactive:
         event: {Event, "auto", None, iterable of events}
             Update the result of the operation when the event is triggered.
             If "auto" and `f` is a method of a Signal class instance its
-            `data_changed` event is selected is the function takes an `out`
+            `data_changed` event is selected if the function takes an `out`
             argument. If None, `update` is not connected to any event. The
             default is "auto". It is also possible to pass an iterable of
             events, in which case all the events are connected.

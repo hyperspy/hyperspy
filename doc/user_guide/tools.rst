@@ -1022,13 +1022,13 @@ operation.
     >>> s_sum = s.sum(0)
     >>> s_sum.data
     array(45)
-    >>> s.inav[:5].sum(0, out=s_sum)
+    >>> s.isig[:5].sum(0, out=s_sum)
     >>> s_sum.data
-    10
-    >>> s_roi = s.inav[:3]
+    array(10)
+    >>> s_roi = s.isig[:3]
     >>> s_roi
     <Signal1D, title: , dimensions: (|3)>
-    >>> s.inav.__getitem__(slice(None, 5), out=s_roi)
+    >>> s.isig.__getitem__(slice(None, 5), out=s_roi)
     >>> s_roi
     <Signal1D, title: , dimensions: (|5)>
 
