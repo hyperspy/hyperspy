@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -19,16 +19,40 @@
 import os
 
 import numpy as np
+import functools
 import warnings
+
+import traits.api as t
+from traits.trait_numeric import Array
 
 from hyperspy.defaults_parser import preferences
 from hyperspy.misc.utils import slugify
 from hyperspy.misc.io.tools import (incremental_filename,
                                     append2pathname,)
 from hyperspy.exceptions import NavigationDimensionError
+from hyperspy.misc.export_dictionary import export_to_dictionary, \
+    load_from_dictionary
+from hyperspy.events import Events, Event
+from hyperspy.exceptions import VisibleDeprecationWarning
+
+import logging
+
+_logger = logging.getLogger(__name__)
 
 
-class Parameter(object):
+class NoneFloat(t.CFloat):   # Lazy solution, but usable
+    default_value = None
+
+    def validate(self, object, name, value):
+        if value == "None" or value == b"None":
+            value = None
+        if value is None:
+            super(NoneFloat, self).validate(object, name, 0)
+            return None
+        return super(NoneFloat, self).validate(object, name, value)
+
+
+class Parameter(t.HasTraits):
 
     """Model parameter
 
@@ -76,26 +100,94 @@ class Parameter(object):
     """
     __number_of_elements = 1
     __value = 0
+    __free = True
     _bounds = (None, None)
     __twin = None
     _axes_manager = None
     __ext_bounded = False
     __ext_force_positive = False
 
+    # traitsui bugs out trying to make an editor for this, so always specify!
+    # (it bugs out, because both editor shares the object, and Array editors
+    # don't like non-sequence objects). TextEditor() works well, so does
+    # RangeEditor() as it works with bmin/bmax.
+    value = t.Property(t.Either([t.CFloat(0), Array()]))
+
+    units = t.Str('')
+    free = t.Property(t.CBool(True))
+
+    bmin = t.Property(NoneFloat(), label="Lower bounds")
+    bmax = t.Property(NoneFloat(), label="Upper bounds")
+
     def __init__(self):
         self._twins = set()
-        self.connected_functions = list()
+        self.events = Events()
+        self.events.value_changed = Event("""
+            Event that triggers when the `Parameter.value` changes.
+
+            The event triggers after the internal state of the `Parameter` has
+            been updated.
+
+            Arguments
+            ---------
+            obj : Parameter
+                The `Parameter` that the event belongs to
+            value : {float | array}
+                The new value of the parameter
+            """, arguments=["obj", 'value'])
         self.twin_function = lambda x: x
         self.twin_inverse_function = lambda x: x
-        self.value = 0
         self.std = None
         self.component = None
-        self.free = True
         self.grad = None
         self.name = ''
         self.units = ''
         self.map = None
         self.model = None
+        self._whitelist = {'_id_name': None,
+                           'value': None,
+                           'std': None,
+                           'free': None,
+                           'units': None,
+                           'map': None,
+                           '_bounds': None,
+                           'ext_bounded': None,
+                           'name': None,
+                           'ext_force_positive': None,
+                           'self': ('id', None),
+                           'twin_function': ('fn', None),
+                           'twin_inverse_function': ('fn', None),
+                           }
+        self._slicing_whitelist = {'map': 'inav'}
+
+    def _load_dictionary(self, dictionary):
+        """Load data from dictionary
+
+        Parameters
+        ----------
+        dict : dictionary
+            A dictionary containing at least the following items:
+            _id_name : string
+                _id_name of the original parameter, used to create the
+                dictionary. Has to match with the self._id_name
+            _whitelist : dictionary
+                a dictionary, which keys are used as keywords to match with the
+                parameter attributes.  For more information see
+                :meth:`hyperspy.misc.export_dictionary.load_from_dictionary`
+            * any field from _whitelist.keys() *
+        Returns
+        -------
+        id_value : int
+            the ID value of the original parameter, to be later used for setting
+            up the correct twins
+
+        """
+        if dictionary['_id_name'] == self._id_name:
+            load_from_dictionary(self, dictionary)
+            return dictionary['self']
+        else:
+            raise ValueError( "_id_name of parameter and dictionary do not match, \nparameter._id_name = %s\
+                    \ndictionary['_id_name'] = %s" % (self._id_name, dictionary['_id_name']))
 
     def __repr__(self):
         text = ''
@@ -103,95 +195,107 @@ class Parameter(object):
         if self.component is not None:
             text += ' of %s' % self.component._get_short_description()
         text = '<' + text + '>'
-        return text.encode('utf8')
+        return text
 
     def __len__(self):
         return self._number_of_elements
 
     def connect(self, f):
-        if f not in self.connected_functions:
-            self.connected_functions.append(f)
-            if self.twin:
-                self.twin.connect(f)
+        warnings.warn(
+            "The method `Parameter.connect()` has been deprecated and will be "
+            "removed in HyperSpy 0.10. Please use "
+            "`Parameter.events.value_changed.connect()` instead.",
+            VisibleDeprecationWarning)
+        self.events.value_changed.connect(f, [])
 
     def disconnect(self, f):
-        if f in self.connected_functions:
-            self.connected_functions.remove(f)
-            if self.twin:
-                self.twin.disconnect(f)
+        warnings.warn(
+            "The method `Parameter.disconnect()` has been deprecated and will "
+            "be removed in HyperSpy 0.10. Please use "
+            "`Parameter.events.value_changed.disconnect()` instead.",
+            VisibleDeprecationWarning)
+        self.events.value_changed.disconnect(f)
 
-    def _getvalue(self):
+    def _get_value(self):
         if self.twin is None:
             return self.__value
         else:
             return self.twin_function(self.twin.value)
 
-    def _setvalue(self, arg):
+    def _set_value(self, value):
         try:
             # Use try/except instead of hasattr("__len__") because a numpy
             # memmap has a __len__ wrapper even for numbers that raises a
             # TypeError when calling. See issue #349.
-            if len(arg) != self._number_of_elements:
+            if len(value) != self._number_of_elements:
                 raise ValueError(
-                    "The lenght of the parameter must be ",
+                    "The length of the parameter must be ",
                     self._number_of_elements)
             else:
-                if not isinstance(arg, tuple):
-                    arg = tuple(arg)
+                if not isinstance(value, tuple):
+                    value = tuple(value)
         except TypeError:
             if self._number_of_elements != 1:
                 raise ValueError(
-                    "The lenght of the parameter must be ",
+                    "The length of the parameter must be ",
                     self._number_of_elements)
         old_value = self.__value
 
         if self.twin is not None:
             if self.twin_inverse_function is not None:
-                self.twin.value = self.twin_inverse_function(arg)
+                self.twin.value = self.twin_inverse_function(value)
             return
 
         if self.ext_bounded is False:
-            self.__value = arg
+            self.__value = value
         else:
             if self.ext_force_positive is True:
-                arg = np.abs(arg)
+                value = np.abs(value)
             if self._number_of_elements == 1:
-                if self.bmin is not None and arg <= self.bmin:
+                if self.bmin is not None and value <= self.bmin:
                     self.__value = self.bmin
-                elif self.bmax is not None and arg >= self.bmax:
+                elif self.bmax is not None and value >= self.bmax:
                     self.__value = self.bmax
                 else:
-                    self.__value = arg
+                    self.__value = value
             else:
                 bmin = (self.bmin if self.bmin is not None
                         else -np.inf)
                 bmax = (self.bmax if self.bmin is not None
                         else np.inf)
-                self.__value = np.clip(arg, bmin, bmax)
+                self.__value = np.clip(value, bmin, bmax)
 
         if (self._number_of_elements != 1 and
                 not isinstance(self.__value, tuple)):
             self.__value = tuple(self.__value)
         if old_value != self.__value:
-            for f in self.connected_functions:
-                try:
-                    f()
-                except:
-                    self.disconnect(f)
-    value = property(_getvalue, _setvalue)
+            self.events.value_changed.trigger(value=self.__value,
+                                              obj=self)
+        self.trait_property_changed('value', old_value, self.__value)
 
     # Fix the parameter when coupled
-    def _getfree(self):
+    def _get_free(self):
         if self.twin is None:
             return self.__free
         else:
             return False
 
-    def _setfree(self, arg):
+    def _set_free(self, arg):
+        old_value = self.__free
         self.__free = arg
         if self.component is not None:
             self.component._update_free_parameters()
-    free = property(_getfree, _setfree)
+        self.trait_property_changed('free', old_value, self.__free)
+
+    def _on_twin_update(self, value, twin=None):
+        if (twin is not None
+                and hasattr(twin, 'events')
+                and hasattr(twin.events, 'value_changed')):
+            with twin.events.value_changed.suppress_callback(
+                    self._on_twin_update):
+                self.events.value_changed.trigger(value=value, obj=self)
+        else:
+            self.events.value_changed.trigger(value=value, obj=self)
 
     def _set_twin(self, arg):
         if arg is None:
@@ -201,16 +305,16 @@ class Parameter(object):
                 twin_value = self.value
                 if self in self.twin._twins:
                     self.twin._twins.remove(self)
-                    for f in self.connected_functions:
-                        self.twin.disconnect(f)
+                    self.twin.events.value_changed.disconnect(
+                        self._on_twin_update)
 
                 self.__twin = arg
                 self.value = twin_value
         else:
             if self not in arg._twins:
                 arg._twins.add(self)
-                for f in self.connected_functions:
-                    arg.connect(f)
+                arg.events.value_changed.connect(self._on_twin_update,
+                                                 ["value"])
             self.__twin = arg
 
         if self.component is not None:
@@ -227,13 +331,14 @@ class Parameter(object):
             return self._bounds[0][0]
 
     def _set_bmin(self, arg):
+        old_value = self.bmin
         if self._number_of_elements == 1:
             self._bounds = (arg, self.bmax)
         else:
             self._bounds = ((arg, self.bmax),) * self._number_of_elements
         # Update the value to take into account the new bounds
         self.value = self.value
-    bmin = property(_get_bmin, _set_bmin)
+        self.trait_property_changed('bmin', old_value, arg)
 
     def _get_bmax(self):
         if self._number_of_elements == 1:
@@ -242,13 +347,14 @@ class Parameter(object):
             return self._bounds[0][1]
 
     def _set_bmax(self, arg):
+        old_value = self.bmax
         if self._number_of_elements == 1:
             self._bounds = (self.bmin, arg)
         else:
             self._bounds = ((self.bmin, arg),) * self._number_of_elements
         # Update the value to take into account the new bounds
         self.value = self.value
-    bmax = property(_get_bmax, _set_bmax)
+        self.trait_property_changed('bmax', old_value, arg)
 
     @property
     def _number_of_elements(self):
@@ -329,7 +435,7 @@ class Parameter(object):
             self.std = self.map['std'][indices]
 
     def assign_current_value_to_all(self, mask=None):
-        '''Assign the current value attribute to all the  indices
+        """Assign the current value attribute to all the  indices
 
         Parameters
         ----------
@@ -341,7 +447,7 @@ class Parameter(object):
         --------
         store_current_value_in_array, fetch
 
-        '''
+        """
         if mask is None:
             mask = np.zeros(self.map.shape, dtype='bool')
         self.map['values'][mask == False] = self.value
@@ -353,7 +459,7 @@ class Parameter(object):
 
         """
         shape = self._axes_manager._navigation_shape_in_array
-        if len(shape) == 1 and shape[0] == 0:
+        if not shape:
             shape = [1, ]
         dtype_ = np.dtype([
             ('values', 'float', self._number_of_elements),
@@ -386,14 +492,16 @@ class Parameter(object):
         NavigationDimensionError : if the navigation dimension is 0
 
         """
-        from hyperspy.signal import Signal
+        from hyperspy.signal import BaseSignal
         if self._axes_manager.navigation_dimension == 0:
             raise NavigationDimensionError(0, '>0')
 
-        s = Signal(data=self.map[field],
-                   axes=self._axes_manager._get_navigation_axes_dicts())
-        if self.component.active_is_multidimensional:
+        s = BaseSignal(data=self.map[field],
+                       axes=self._axes_manager._get_navigation_axes_dicts())
+        if self.component is not None and \
+                self.component.active_is_multidimensional:
             s.data[np.logical_not(self.component._active_array)] = np.nan
+
         s.metadata.General.title = ("%s parameter" % self.name
                                     if self.component is None
                                     else "%s parameter of %s component" %
@@ -401,18 +509,33 @@ class Parameter(object):
         for axis in s.axes_manager._axes:
             axis.navigate = False
         if self._number_of_elements > 1:
-            s.axes_manager.append_axis(
+            s.axes_manager._append_axis(
                 size=self._number_of_elements,
                 name=self.name,
                 navigate=True)
         return s
 
-    def plot(self):
-        self.as_signal().plot()
+    def plot(self, **kwargs):
+        """Plot parameter signal.
+
+        Parameters
+        ----------
+        **kwargs
+            Any extra keyword arguments are passed to the signal plot.
+
+        Example
+        -------
+        >>> parameter.plot()
+
+        Set the minimum and maximum displayed values
+
+        >>> parameter.plot(vmin=0, vmax=1)
+        """
+        self.as_signal().plot(**kwargs)
 
     def export(self, folder=None, name=None, format=None,
                save_std=False):
-        '''Save the data to a file.
+        """Save the data to a file.
 
         All the arguments are optional.
 
@@ -429,7 +552,7 @@ class Parameter(object):
         save_std : bool
             If True, also the standard deviation will be saved
 
-        '''
+        """
         if format is None:
             format = preferences.General.default_export_format
         if name is None:
@@ -442,12 +565,187 @@ class Parameter(object):
             self.as_signal(field='std').save(append2pathname(
                 filename, '_std'))
 
+    def as_dictionary(self, fullcopy=True):
+        """Returns parameter as a dictionary, saving all attributes from
+        self._whitelist.keys() For more information see
+        :meth:`hyperspy.misc.export_dictionary.export_to_dictionary`
 
-class Component(object):
+        Parameters
+        ----------
+        fullcopy : Bool (optional, False)
+            Copies of objects are stored, not references. If any found,
+            functions will be pickled and signals converted to dictionaries
+        Returns
+        -------
+        dic : dictionary with the following keys:
+            _id_name : string
+                _id_name of the original parameter, used to create the
+                dictionary. Has to match with the self._id_name
+            _twins : list
+                a list of ids of the twins of the parameter
+            _whitelist : dictionary
+                a dictionary, which keys are used as keywords to match with the
+                parameter attributes.  For more information see
+                :meth:`hyperspy.misc.export_dictionary.export_to_dictionary`
+            * any field from _whitelist.keys() *
+
+        """
+        dic = {'_twins': [id(t) for t in self._twins]}
+        export_to_dictionary(self, self._whitelist, dic, fullcopy)
+        return dic
+
+    def default_traits_view(self):
+        # As mentioned above, the default editor for
+        # value = t.Property(t.Either([t.CFloat(0), Array()]))
+        # gives a ValueError. We therefore implement default_traits_view so
+        # that configure/edit_traits will still work straight out of the box.
+        # A whitelist controls which traits to include in this view.
+        from traitsui.api import RangeEditor, View, Item
+        whitelist = ['bmax', 'bmin', 'free', 'name', 'std', 'units', 'value']
+        editable_traits = [trait for trait in self.editable_traits()
+                           if trait in whitelist]
+        if 'value' in editable_traits:
+            i = editable_traits.index('value')
+            v = editable_traits.pop(i)
+            editable_traits.insert(i, Item(
+                v, editor=RangeEditor(low_name='bmin', high_name='bmax')))
+        view = View(editable_traits, buttons=['OK', 'Cancel'])
+        return view
+
+    def _interactive_slider_bounds(self, index=None):
+        """Guesstimates the bounds for the slider. They will probably have to
+        be changed later by the user.
+        """
+        fraction = 10.
+        _min, _max, step = None, None, None
+        value = self.value if index is None else self.value[index]
+        if self.bmin is not None:
+            _min = self.bmin
+        if self.bmax is not None:
+            _max = self.bmax
+        if _max is None and _min is not None:
+            _max = value + fraction * (value - _min)
+        if _min is None and _max is not None:
+            _min = value - fraction * (_max - value)
+        if _min is None and _max is None:
+            if self is self.component._position:
+                axis = self._axes_manager.signal_axes[-1]
+                _min = axis.axis.min()
+                _max = axis.axis.max()
+                step = np.abs(axis.scale)
+            else:
+                _max = value + np.abs(value * fraction)
+                _min = value - np.abs(value * fraction)
+        if step is None:
+            step = (_max - _min) * 0.001
+        return {'min': _min, 'max': _max, 'step': step}
+
+    def _interactive_update(self, value=None, index=None):
+        """Callback function for the widgets, to update the value
+        """
+        if value is not None:
+            if index is None:
+                self.value = value['new']
+            else:
+                self.value = self.value[:index] + (value['new'],) +\
+                    self.value[index + 1:]
+
+    def notebook_interaction(self, display=True):
+        """Creates interactive notebook widgets for the parameter, if
+        available.
+        Requires `ipywidgets` to be installed.
+        Parameters
+        ----------
+        display : bool
+            if True (default), attempts to display the parameter widget.
+            Otherwise returns the formatted widget object.
+        """
+        from ipywidgets import VBox
+        from traitlets import TraitError as TraitletError
+        from IPython.display import display as ip_display
+        try:
+            if self._number_of_elements == 1:
+                container = self._create_notebook_widget()
+            else:
+                children = [self._create_notebook_widget(index=i) for i in
+                            range(self._number_of_elements)]
+                container = VBox(children)
+            if not display:
+                return container
+            ip_display(container)
+        except TraitletError:
+            if display:
+                _logger.info('This function is only avialable when running in'
+                             ' a notebook')
+            else:
+                raise
+
+    def _create_notebook_widget(self, index=None):
+
+        from ipywidgets import (FloatSlider, FloatText, Layout, HBox)
+
+        widget_bounds = self._interactive_slider_bounds(index=index)
+        thismin = FloatText(value=widget_bounds['min'],
+                            description='min',
+                            layout=Layout(flex='0 1 auto',
+                                          width='auto'),)
+        thismax = FloatText(value=widget_bounds['max'],
+                            description='max',
+                            layout=Layout(flex='0 1 auto',
+                                          width='auto'),)
+        current_value = self.value if index is None else self.value[index]
+        current_name = self.name
+        if index is not None:
+            current_name += '_{}'.format(index)
+        widget = FloatSlider(value=current_value,
+                             min=thismin.value,
+                             max=thismax.value,
+                             step=widget_bounds['step'],
+                             description=current_name,
+                             layout=Layout(flex='1 1 auto', width='auto'))
+
+        def on_min_change(change):
+            if widget.max > change['new']:
+                widget.min = change['new']
+                widget.step = np.abs(widget.max - widget.min) * 0.001
+
+        def on_max_change(change):
+            if widget.min < change['new']:
+                widget.max = change['new']
+                widget.step = np.abs(widget.max - widget.min) * 0.001
+
+        thismin.observe(on_min_change, names='value')
+        thismax.observe(on_max_change, names='value')
+
+        this_observed = functools.partial(self._interactive_update,
+                                          index=index)
+
+        widget.observe(this_observed, names='value')
+        container = HBox((thismin, widget, thismax))
+        return container
+
+
+class Component(t.HasTraits):
     __axes_manager = None
 
+    active = t.Property(t.CBool(True))
+    name = t.Property(t.Str(''))
+
     def __init__(self, parameter_name_list):
-        self.connected_functions = list()
+        self.events = Events()
+        self.events.active_changed = Event("""
+            Event that triggers when the `Component.active` changes.
+
+            The event triggers after the internal state of the `Component` has
+            been updated.
+
+            Arguments
+            ---------
+            obj : Component
+                The `Component` that the event belongs to
+            active : bool
+                The new active state
+            """, arguments=["obj", 'active'])
         self.parameters = []
         self.init_parameters(parameter_name_list)
         self._update_free_parameters()
@@ -456,12 +754,22 @@ class Component(object):
         self.isbackground = False
         self.convolved = True
         self.parameters = tuple(self.parameters)
-        self._name = ''
         self._id_name = self.__class__.__name__
         self._id_version = '1.0'
         self._position = None
         self.model = None
+        self.name = ''
+        self._whitelist = {'_id_name': None,
+                           'name': None,
+                           'active_is_multidimensional': None,
+                           '_active_array': None,
+                           'active': None
+                           }
+        self._slicing_whitelist = {'_active_array': 'inav'}
+        self._slicing_order = ('active', 'active_is_multidimensional',
+                               '_active_array',)
 
+    _name = ''
     _active_is_multidimensional = False
     _active = True
 
@@ -475,16 +783,13 @@ class Component(object):
             raise ValueError('Only boolean values are permitted')
 
         if value == self.active_is_multidimensional:
-            warnings.warn(
-                '`active_is_multidimensional` already %s for %s' %
-                (str(value), self.name), RuntimeWarning)
+            _logger.warning('`active_is_multidimensional` already %s for %s' %
+                            (str(value), self.name))
             return
 
         if value:  # Turn on
             if self._axes_manager.navigation_size < 2:
-                warnings.warn(
-                    '`navigation_size` < 2, skipping',
-                    RuntimeWarning)
+                _logger.warning('`navigation_size` < 2, skipping')
                 return
             # Store value at current position
             self._create_active_array()
@@ -496,12 +801,11 @@ class Component(object):
             self._active_array = None
             self._active_is_multidimensional = False
 
-    @property
-    def name(self):
-        return(self._name)
+    def _get_name(self):
+        return self._name
 
-    @name.setter
-    def name(self, value):
+    def _set_name(self, value):
+        old_value = self._name
         if self.model:
             for component in self.model:
                 if value == component.name:
@@ -509,10 +813,14 @@ class Component(object):
                         raise ValueError(
                             "Another component already has "
                             "the name " + str(value))
-                else:
-                    self._name = value
+            self._name = value
+            setattr(self.model.components, slugify(
+                value, valid_variable_name=True), self)
+            self.model.components.__delattr__(
+                slugify(old_value, valid_variable_name=True))
         else:
             self._name = value
+        self.trait_property_changed('name', old_value, self._name)
 
     @property
     def _axes_manager(self):
@@ -525,15 +833,22 @@ class Component(object):
         self.__axes_manager = value
 
     def connect(self, f):
-        if f not in self.connected_functions:
-            self.connected_functions.append(f)
+        warnings.warn(
+            "The method `Component.connect()` has been deprecated and will be "
+            "removed in HyperSpy 0.10. Please use "
+            "`Component.events.active_changed.connect()` instead.",
+            VisibleDeprecationWarning)
+        self.events.active_changed.connect(f, [])
 
     def disconnect(self, f):
-        if f in self.connected_functions:
-            self.connected_functions.remove(f)
+        warnings.warn(
+            "The method `Component.disconnect()` has been deprecated and will "
+            "be removed in HyperSpy 0.10. Please use "
+            "`Component.events.active_changed.disconnect()` instead.",
+            VisibleDeprecationWarning)
+        self.events.active_changed.disconnect(f)
 
-    @property
-    def active(self):
+    def _get_active(self):
         if self.active_is_multidimensional is True:
             # The following should set
             self.active = self._active_array[self._axes_manager.indices[::-1]]
@@ -542,29 +857,27 @@ class Component(object):
     def _store_active_value_in_array(self, value):
         self._active_array[self._axes_manager.indices[::-1]] = value
 
-    @active.setter
-    def active(self, arg):
+    def _set_active(self, arg):
         if self._active == arg:
             return
+        old_value = self._active
         self._active = arg
         if self.active_is_multidimensional is True:
             self._store_active_value_in_array(arg)
-
-        for f in self.connected_functions:
-            try:
-                f()
-            except:
-                self.disconnect(f)
+        self.events.active_changed.trigger(active=self._active, obj=self)
+        self.trait_property_changed('active', old_value, self._active)
 
     def init_parameters(self, parameter_name_list):
         for name in parameter_name_list:
             parameter = Parameter()
             self.parameters.append(parameter)
             parameter.name = name
+            parameter._id_name = name
             setattr(self, name, parameter)
             if hasattr(self, 'grad_' + name):
                 parameter.grad = getattr(self, 'grad_' + name)
             parameter.component = self
+            self.add_trait(name, t.Instance(Parameter))
 
     def _get_long_description(self):
         if self.name:
@@ -587,15 +900,10 @@ class Component(object):
         return text
 
     def _update_free_parameters(self):
-        self.free_parameters = set()
-        for parameter in self.parameters:
-            if parameter.free:
-                self.free_parameters.add(parameter)
-        # update_number_free_parameters(self):
-        i = 0
-        for parameter in self.free_parameters:
-            i += parameter._number_of_elements
-        self._nfree_param = i
+        self.free_parameters = sorted([par for par in self.parameters if
+                                       par.free], key=lambda x: x.name)
+        self._nfree_param = sum([par._number_of_elements for par in
+                                 self.free_parameters])
 
     def update_number_parameters(self):
         i = 0
@@ -610,14 +918,14 @@ class Component(object):
         else:
             parameters = self.parameters
         i = 0
-        for parameter in parameters:
-            lenght = parameter._number_of_elements
-            parameter.value = (p[i] if lenght == 1 else p[i:i + lenght])
+        for parameter in sorted(parameters, key=lambda x: x.name):
+            length = parameter._number_of_elements
+            parameter.value = (p[i] if length == 1 else p[i:i + length])
             if p_std is not None:
-                parameter.std = (p_std[i] if lenght == 1 else
-                                 tuple(p_std[i:i + lenght]))
+                parameter.std = (p_std[i] if length == 1 else
+                                 tuple(p_std[i:i + length]))
 
-            i += lenght
+            i += length
 
     def _create_active_array(self):
         shape = self._axes_manager._navigation_shape_in_array
@@ -625,6 +933,8 @@ class Component(object):
             shape = [1, ]
         if (not isinstance(self._active_array, np.ndarray)
                 or self._active_array.shape != shape):
+            _logger.debug('Creating _active_array for {}.\n\tCurrent array '
+                          'is:\n{}'.format(self, self._active_array))
             self._active_array = np.ones(shape, dtype=bool)
 
     def _create_arrays(self):
@@ -721,14 +1031,10 @@ class Component(object):
                 is not None else 0
             if parameter.twin is None:
                 if dim <= 1:
-                    print '%s = %s ± %s %s' % (parameter.name,
-                                               parameter.value,
-                                               parameter.std,
-                                               parameter.units)
-
-    def __tempcall__(self, p, x, onlyfree=True):
-        self.fetch_values_from_array(p, onlyfree=onlyfree)
-        return self.function(x)
+                    return ('%s = %s ± %s %s' % (parameter.name,
+                                                 parameter.value,
+                                                 parameter.std,
+                                                 parameter.units))
 
     def __call__(self):
         """Returns the corresponding model for the current coordinates
@@ -747,20 +1053,23 @@ class Component(object):
         if axes_manager is not self.model.axes_manager:
             old_axes_manager = self.model.axes_manager
             self.model.axes_manager = axes_manager
-            self.charge()
+            self.fetch_stored_values()
         s = self.__call__()
         if not self.active:
             s.fill(np.nan)
-        if self.model.spectrum.metadata.Signal.binned is True:
-            s *= self.model.spectrum.axes_manager.signal_axes[0].scale
+        if self.model.signal.metadata.Signal.binned is True:
+            s *= self.model.signal.axes_manager.signal_axes[0].scale
         if old_axes_manager is not None:
             self.model.axes_manager = old_axes_manager
             self.charge()
         if out_of_range2nans is True:
-            ns = np.empty((self.model.axis.axis.shape))
+            ns = np.empty(self.model.axis.axis.shape)
             ns.fill(np.nan)
             ns[self.model.channel_switches] = s
             s = ns
+        if old_axes_manager is not None:
+            self.model.axes_manager = old_axes_manager
+            self.fetch_stored_values()
         return s
 
     def set_parameters_free(self, parameter_name_list=None):
@@ -776,15 +1085,15 @@ class Component(object):
 
         Examples
         --------
-        >>> v1 = components.Voigt()
+        >>> v1 = hs.model.components.Voigt()
         >>> v1.set_parameters_free()
         >>> v1.set_parameters_free(parameter_name_list=['area','centre'])
 
         See also
         --------
         set_parameters_not_free
-        hyperspy.model.Model.set_parameters_free
-        hyperspy.model.Model.set_parameters_not_free
+        hyperspy.model.BaseModel.set_parameters_free
+        hyperspy.model.BaseModel.set_parameters_not_free
         """
 
         parameter_list = []
@@ -811,15 +1120,15 @@ class Component(object):
 
         Examples
         --------
-        >>> v1 = components.Voigt()
+        >>> v1 = hs.model.components.Voigt()
         >>> v1.set_parameters_not_free()
         >>> v1.set_parameters_not_free(parameter_name_list=['area','centre'])
 
         See also
         --------
         set_parameters_free
-        hyperspy.model.Model.set_parameters_free
-        hyperspy.model.Model.set_parameters_not_free
+        hyperspy.model.BaseModel.set_parameters_free
+        hyperspy.model.BaseModel.set_parameters_not_free
         """
 
         parameter_list = []
@@ -832,3 +1141,110 @@ class Component(object):
 
         for _parameter in parameter_list:
             _parameter.free = False
+
+    def _estimate_parameters(self, signal):
+        if self._axes_manager != signal.axes_manager:
+            self._axes_manager = signal.axes_manager
+            self._create_arrays()
+
+    def as_dictionary(self, fullcopy=True):
+        """Returns component as a dictionary
+        For more information on method and conventions, see
+        :meth:`hyperspy.misc.export_dictionary.export_to_dictionary`
+        Parameters
+        ----------
+        fullcopy : Bool (optional, False)
+            Copies of objects are stored, not references. If any found,
+            functions will be pickled and signals converted to dictionaries
+        Returns
+        -------
+        dic : dictionary
+            A dictionary, containing at least the following fields:
+            parameters : list
+                a list of dictionaries of the parameters, one per
+            _whitelist : dictionary
+                a dictionary with keys used as references saved attributes, for
+                more information, see
+                :meth:`hyperspy.misc.export_dictionary.export_to_dictionary`
+            * any field from _whitelist.keys() *
+        """
+        dic = {
+            'parameters': [
+                p.as_dictionary(fullcopy) for p in self.parameters]}
+        export_to_dictionary(self, self._whitelist, dic, fullcopy)
+        return dic
+
+    def _load_dictionary(self, dic):
+        """Load data from dictionary.
+        Parameters
+        ----------
+        dict : dictionary
+            A dictionary containing following items:
+            _id_name : string
+                _id_name of the original component, used to create the
+                dictionary. Has to match with the self._id_name
+            parameters : list
+                A list of dictionaries, one per parameter of the component (see
+                parameter.as_dictionary() documentation for more)
+            _whitelist : dictionary
+                a dictionary, which keys are used as keywords to match with the
+                component attributes.  For more information see
+                :meth:`hyperspy.misc.export_dictionary.load_from_dictionary`
+            * any field from _whitelist.keys() *
+        Returns
+        -------
+        twin_dict : dictionary
+            Dictionary of 'id' values from input dictionary as keys with all of
+            the parameters of the component, to be later used for setting up
+            correct twins.
+        """
+        if dic['_id_name'] == self._id_name:
+            id_dict = {}
+            for p in dic['parameters']:
+                idname = p['_id_name']
+                if hasattr(self, idname):
+                    par = getattr(self, idname)
+                    t_id = par._load_dictionary(p)
+                    id_dict[t_id] = par
+                else:
+                    raise ValueError(
+                        "_id_name of parameters in component and dictionary do not match")
+            load_from_dictionary(self, dic)
+            return id_dict
+        else:
+            raise ValueError( "_id_name of component and dictionary do not match, \ncomponent._id_name = %s\
+                    \ndictionary['_id_name'] = %s" % (self._id_name, dic['_id_name']))
+
+    def notebook_interaction(self, display=True):
+        """Creates interactive notebook widgets for all component parameters,
+        if available.
+        Requires `ipywidgets` to be installed.
+        Parameters
+        ----------
+        display : bool
+            if True (default), attempts to display the widgets.
+            Otherwise returns the formatted widget object.
+        """
+        from ipywidgets import (Checkbox, VBox)
+        from traitlets import TraitError as TraitletError
+        from IPython.display import display as ip_display
+        try:
+            active = Checkbox(description='active', value=self.active)
+
+            def on_active_change(change):
+                self.active = change['new']
+            active.observe(on_active_change, names='value')
+
+            container = VBox([active])
+            for parameter in self.parameters:
+                container.children += parameter.notebook_interaction(False),
+
+            if not display:
+                return container
+            ip_display(container)
+        except TraitletError:
+            if display:
+                _logger.info('This function is only avialable when running in'
+                             ' a notebook')
+            else:
+                raise

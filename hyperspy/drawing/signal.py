@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -16,14 +16,12 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-# This file contains plotting code generic to the Signal class.
+# This file contains plotting code generic to the BaseSignal class.
 
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from traits.api import Undefined
-
-import hyperspy.messages as messages
 
 
 def _plot_quiver_scatter_overlay(image, axes_manager,
@@ -187,4 +185,4 @@ def _plot_loading(loadings, idx, axes_manager, ax=None,
         else:
             plt.xlabel('depth')
     else:
-        messages.warning_exit('View not supported')
+        raise ValueError('View not supported')

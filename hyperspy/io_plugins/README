@@ -9,7 +9,7 @@ All the read/write plugins must provide a python file containing:
         # ----------------------
 	format_name = <String>
         description = <String>
-        full_suport = <Bool>	# Whether all the Hyperspy features are supported
+        full_support = <Bool>	# Whether all the Hyperspy features are supported
         # Recognised file extension
         file_extensions = <Tuple of string>
         default_extension = <Int>	# Index of the extension that will be used by default

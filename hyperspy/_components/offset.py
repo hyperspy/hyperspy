@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -51,7 +51,8 @@ class Offset(Component):
     def function(self, x):
         return np.ones((len(x))) * self.offset.value
 
-    def grad_offset(self, x):
+    @staticmethod
+    def grad_offset(x):
         return np.ones((len(x)))
 
     def estimate_parameters(self, signal, x1, x2, only_current=False):
@@ -59,7 +60,7 @@ class Offset(Component):
 
         Parameters
         ----------
-        signal : Signal instance
+        signal : BaseSignal instance
         x1 : float
             Defines the left limit of the spectral range to use for the
             estimation.
@@ -75,6 +76,7 @@ class Offset(Component):
         bool
 
         """
+        super(Offset, self)._estimate_parameters(signal)
         axis = signal.axes_manager.signal_axes[0]
         binned = signal.metadata.Signal.binned
         i1, i2 = axis.value_range_to_indices(x1, x2)

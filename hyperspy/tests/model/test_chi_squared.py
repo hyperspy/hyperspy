@@ -1,4 +1,4 @@
-# Copyright 2007-2012 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -19,16 +19,15 @@
 import numpy as np
 
 from nose.tools import assert_true
-from hyperspy._signals.spectrum import Spectrum
-from hyperspy.hspy import create_model
+from hyperspy._signals.signal1d import Signal1D
 from hyperspy.components import Gaussian
 
 
 class TestChiSquared:
 
     def setUp(self):
-        s = Spectrum(np.array([1.0, 2, 4, 7, 12, 7, 4, 2, 1]))
-        m = create_model(s)
+        s = Signal1D(np.array([1.0, 2, 4, 7, 12, 7, 4, 2, 1]))
+        m = s.create_model()
         self.model = m
         self.A = 38.022476979172588
         self.sigma = 1.4764966133859543

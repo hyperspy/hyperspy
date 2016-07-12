@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -25,7 +25,7 @@ from hyperspy.component import Component
 
 class Arctan(Component):
 
-    """Arctan function components
+    """Arctan function component
 
     f(x) = A*arctan{k*(x-x0)}
 
@@ -56,6 +56,7 @@ class Arctan(Component):
         self.x0.grad = self.grad_x0
 
         self.minimum_at_zero = minimum_at_zero
+        self._whitelist['minimum_at_zero'] = ('init', minimum_at_zero)
 
         self.isbackground = False
         self.isconvolved = False
@@ -71,7 +72,6 @@ class Arctan(Component):
             return A * np.arctan(k * (x - x0))
 
     def grad_A(self, x):
-        A = self.A.value
         k = self.k.value
         x0 = self.x0.value
         if self.minimum_at_zero:

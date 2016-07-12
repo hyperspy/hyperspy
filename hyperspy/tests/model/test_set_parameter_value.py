@@ -1,4 +1,4 @@
-# Copyright 2007-2012 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -19,8 +19,7 @@
 import numpy as np
 
 from nose.tools import assert_true
-from hyperspy._signals.spectrum import Spectrum
-from hyperspy.hspy import create_model
+from hyperspy._signals.signal1d import Signal1D
 from hyperspy.components import Gaussian
 
 
@@ -30,8 +29,8 @@ class TestSetParameterInModel:
         g1 = Gaussian()
         g2 = Gaussian()
         g3 = Gaussian()
-        s = Spectrum(np.arange(1000).reshape(10, 10, 10))
-        m = create_model(s)
+        s = Signal1D(np.arange(1000).reshape(10, 10, 10))
+        m = s.create_model()
         m.append(g1)
         m.append(g2)
         m.append(g3)
@@ -66,7 +65,7 @@ class TestSetParameterInModel:
         g2 = self.g2
         g3 = self.g3
         m.set_parameters_value('A', 20, component_list=[g1], only_current=True)
-        g1.A.map['values'][0][0] = g1.A.map['values'][0][0] - 20
+        g1.A.map['values'][0][0] -= 20
         assert_true(np.all(g1.A.map['values'] == 0))
         assert_true(np.all(g2.A.map['values'] == 0))
         assert_true(np.all(g3.A.map['values'] == 0))

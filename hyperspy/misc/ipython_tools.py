@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -70,7 +70,7 @@ def turn_logging_on(verbose=1):
         return
     elif ip.logger.log_active is True:
         if verbose == 1:
-            print "Already logging to " + ip.logger.logfname
+            print("Already logging to " + ip.logger.logfname)
         return
 
     filename = os.path.join(os.getcwd(), 'hyperspy_log.py')

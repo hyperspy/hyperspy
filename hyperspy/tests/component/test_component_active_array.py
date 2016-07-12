@@ -1,4 +1,4 @@
-# Copyright 2007-2012 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -19,23 +19,23 @@
 import nose.tools as nt
 import numpy as np
 from hyperspy.components import Gaussian
-from hyperspy.signal import Signal
+from hyperspy.signal import BaseSignal
+from hyperspy.misc.utils import stash_active_state
 
 
 class TestParametersAsSignals:
 
     def setUp(self):
         self.gaussian = Gaussian()
-        self.gaussian._axes_manager = Signal(np.empty((3, 3, 1))).axes_manager
+        self.gaussian._axes_manager = BaseSignal(
+            np.zeros((3, 3, 1))).axes_manager
 
     def test_always_active(self):
         g = self.gaussian
         g.active_is_multidimensional = False
         g._create_arrays()
-        nt.assert_true(
-            np.all(
-                g.A.as_signal('values').data == np.zeros(
-                    (3, 3))))
+        np.testing.assert_array_equal(g.A.as_signal('values').data,
+                                      np.zeros((3, 3)))
 
     def test_some_inactive(self):
         g = self.gaussian
@@ -43,5 +43,24 @@ class TestParametersAsSignals:
         g._create_arrays()
         g._active_array[2, 0] = False
         g._active_array[0, 0] = False
+        nt.assert_true(
+            np.isnan(g.A.as_signal('values').data[[0, 2], [0]]).all())
+
+    def test_stash_array(self):
+        g = self.gaussian
+        g.active_is_multidimensional = True
+        g._create_arrays()
+        g._active_array[2, 0] = False
+        g._active_array[0, 0] = False
+        with stash_active_state([g]):
+            g.active_is_multidimensional = False
+            nt.assert_false(g._active_is_multidimensional)
+            np.testing.assert_array_equal(g.A.as_signal('values').data,
+                                          np.zeros((3, 3)))
+            nt.assert_is_none(g._active_array)
+        nt.assert_true(g._active_is_multidimensional)
+        np.testing.assert_almost_equal(
+            g._active_array, np.array([[0, 1, 1], [1, 1, 1], [0, 1, 1]],
+                                      dtype=bool))
         nt.assert_true(
             np.isnan(g.A.as_signal('values').data[[0, 2], [0]]).all())

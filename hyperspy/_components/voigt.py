@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -149,7 +149,7 @@ class Voigt(Component):
 
         Parameters
         ----------
-        signal : Signal instance
+        signal : Signal1D instance
         x1 : float
             Defines the left limit of the spectral range to use for the
             estimation.
@@ -171,19 +171,17 @@ class Voigt(Component):
         Examples
         --------
 
-        >>> import numpy as np
-        >>> from hyperspy.hspy import *
-        >>> from hyperspy.signals import Spectrum
-        >>> g = components.Gaussian()
+        >>> g = hs.model.components.Gaussian()
         >>> x = np.arange(-10,10, 0.01)
         >>> data = np.zeros((32,32,2000))
         >>> data[:] = g.function(x).reshape((1,1,2000))
-        >>> s = Spectrum({'data' : data})
+        >>> s = hs.signals.Signal1D({'data' : data})
         >>> s.axes_manager.axes[-1].offset = -10
         >>> s.axes_manager.axes[-1].scale = 0.01
         >>> g.estimate_parameters(s, -10,10, False)
 
         """
+        super(Voigt, self)._estimate_parameters(signal)
         axis = signal.axes_manager.signal_axes[0]
 
         energy2index = axis._get_index

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -16,17 +16,17 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-from __future__ import division
+
 import copy
 
 import numpy as np
 from traits.api import Undefined
 
 from hyperspy.drawing.mpl_he import MPL_HyperExplorer
-from hyperspy.drawing import spectrum, utils
+from hyperspy.drawing import signal1d, utils
 
 
-class MPL_HyperSpectrum_Explorer(MPL_HyperExplorer):
+class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
 
     """Plots the current spectrum to the screen and a map with a cursor
     to explore the SI.
@@ -34,7 +34,7 @@ class MPL_HyperSpectrum_Explorer(MPL_HyperExplorer):
     """
 
     def __init__(self):
-        super(MPL_HyperSpectrum_Explorer, self).__init__()
+        super(MPL_HyperSignal1D_Explorer, self).__init__()
         self.xlabel = ''
         self.ylabel = ''
         self.right_pointer = None
@@ -54,9 +54,9 @@ class MPL_HyperSpectrum_Explorer(MPL_HyperExplorer):
             line.auto_update = value
         if self.pointer is not None:
             if value is True:
-                self.pointer.add_axes(self.navigator_plot.ax)
+                self.pointer.set_mpl_ax(self.navigator_plot.ax)
             else:
-                self.pointer.disconnect(self.navigator_plot.ax)
+                self.pointer.disconnect()
 
     @property
     def right_pointer_on(self):
@@ -82,8 +82,8 @@ class MPL_HyperSpectrum_Explorer(MPL_HyperExplorer):
         if self.axes_manager.signal_axes[0].units is not Undefined:
             self.xlabel += ' (%s)' % self.axes_manager.signal_axes[0].units
         self.ylabel = 'Intensity'
-        self.axis = self.axes_manager.signal_axes[0].axis
-        sf = spectrum.SpectrumFigure(title=self.signal_title +
+        self.axis = self.axes_manager.signal_axes[0]
+        sf = signal1d.Signal1DFigure(title=self.signal_title +
                                      " Signal")
         sf.xlabel = self.xlabel
         sf.ylabel = self.ylabel
@@ -92,7 +92,7 @@ class MPL_HyperSpectrum_Explorer(MPL_HyperExplorer):
         sf.axes_manager = self.axes_manager
         self.signal_plot = sf
         # Create a line to the left axis with the default indices
-        sl = spectrum.SpectrumLine()
+        sl = signal1d.Signal1DLine()
         sl.autoscale = True
         sl.data_function = self.signal_data_function
         sl.plot_indices = True
@@ -106,7 +106,7 @@ class MPL_HyperSpectrum_Explorer(MPL_HyperExplorer):
         sf.add_line(sl)
         # If the data is complex create a line in the left axis with the
         # default coordinates
-        sl = spectrum.SpectrumLine()
+        sl = signal1d.Signal1DLine()
         sl.data_function = self.signal_data_function
         sl.plot_coordinates = True
         sl.get_complex = any(np.iscomplex(sl.data_function()))
@@ -118,18 +118,13 @@ class MPL_HyperSpectrum_Explorer(MPL_HyperExplorer):
         self.signal_plot = sf
         sf.plot()
         if self.navigator_plot is not None and sf.figure is not None:
-            utils.on_figure_window_close(self.navigator_plot.figure,
-                                         self._disconnect)
-            utils.on_figure_window_close(sf.figure,
-                                         self.close_navigator_plot)
-            self._key_nav_cid = \
-                self.signal_plot.figure.canvas.mpl_connect(
-                    'key_press_event',
-                    self.axes_manager.key_navigator)
-            self._key_nav_cid = \
-                self.navigator_plot.figure.canvas.mpl_connect(
-                    'key_press_event',
-                    self.axes_manager.key_navigator)
+            self.navigator_plot.events.closed.connect(
+                self._on_navigator_plot_closing, [])
+            sf.events.closed.connect(self.close_navigator_plot, [])
+            self.signal_plot.figure.canvas.mpl_connect(
+                'key_press_event', self.axes_manager.key_navigator)
+            self.navigator_plot.figure.canvas.mpl_connect(
+                'key_press_event', self.axes_manager.key_navigator)
             self.signal_plot.figure.canvas.mpl_connect(
                 'key_press_event', self.key2switch_right_pointer)
             self.navigator_plot.figure.canvas.mpl_connect(
@@ -149,14 +144,15 @@ class MPL_HyperSpectrum_Explorer(MPL_HyperExplorer):
                 self.signal_plot.right_axes_manager)
             self.right_pointer.size = self.pointer.size
             self.right_pointer.color = 'blue'
-            self.right_pointer.add_axes(self.navigator_plot.ax)
+            self.right_pointer.connect_navigate()
+            self.right_pointer.set_mpl_ax(self.navigator_plot.ax)
 
         if self.right_pointer is not None:
             for axis in self.axes_manager.navigation_axes[
                     self._pointer_nav_dim:]:
                 self.signal_plot.right_axes_manager._axes[
                     axis.index_in_array] = axis
-        rl = spectrum.SpectrumLine()
+        rl = signal1d.Signal1DLine()
         rl.autoscale = True
         rl.data_function = self.signal_data_function
         rl.set_line_properties(color=self.right_pointer.color,

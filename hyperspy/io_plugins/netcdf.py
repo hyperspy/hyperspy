@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2011 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -17,10 +17,11 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import logging
 
 import numpy as np
 
-from hyperspy import messages
+_logger = logging.getLogger(__name__)
 
 no_netcdf = False
 try:
@@ -41,7 +42,7 @@ except:
 # ----------------------
 format_name = 'netCDF'
 description = ''
-full_suport = True
+full_support = True
 file_extensions = ('nc', 'NC')
 default_extension = 0
 
@@ -111,9 +112,9 @@ def file_reader(filename, *args, **kwds):
                 **kwds)
     else:
         ncfile.close()
-        messages.warning_exit('Unsupported netCDF file')
+        raise IOError('Unsupported netCDF file')
 
-    return (dictionary,)
+    return dictionary,
 
 
 def nc_hyperspy_reader_0dot1(ncfile, filename, *args, **kwds):
@@ -130,8 +131,8 @@ def nc_hyperspy_reader_0dot1(ncfile, filename, *args, **kwds):
             else:
                 calibration_dict[attrib[0]] = value
         else:
-            print "Warning: the \'%s\' attribute is not defined in the file\
-            " % attrib[0]
+            _logger.warn("Warning: the attribute '%s' is not defined in the "
+                         "file '%s'", attrib[0], filename)
     for attrib in acquisition2netcdf.items():
         if hasattr(dc, attrib[1]):
             value = eval('dc.' + attrib[1])
@@ -140,16 +141,14 @@ def nc_hyperspy_reader_0dot1(ncfile, filename, *args, **kwds):
             else:
                 acquisition_dict[attrib[0]] = value
         else:
-            print \
-                "Warning: the \'%s\' attribute is not defined in the file\
-            " % attrib[0]
+            _logger.warn("Warning: the attribute '%s' is not defined in the "
+                         "file '%s'", attrib[0], filename)
     for attrib in treatments2netcdf.items():
         if hasattr(dc, attrib[1]):
             treatments_dict[attrib[0]] = eval('dc.' + attrib[1])
         else:
-            print \
-                "Warning: the \'%s\' attribute is not defined in the file\
-            " % attrib[0]
+            _logger.warn("Warning: the attribute '%s' is not defined in the "
+                         "file '%s'", attrib[0], filename)
     original_metadata = {'record_by': ncfile.type,
                          'calibration': calibration_dict,
                          'acquisition': acquisition_dict,
@@ -157,7 +156,7 @@ def nc_hyperspy_reader_0dot1(ncfile, filename, *args, **kwds):
     ncfile.close()
     # Now we'll map some parameters
     record_by = 'image' if original_metadata[
-        'record_by'] == 'Image' else 'spectrum'
+        'record_by'] == 'image' else 'spectrum'
     if record_by == 'image':
         dim = len(data.shape)
         names = ['Z', 'Y', 'X'][3 - dim:]
@@ -194,10 +193,8 @@ def nc_hyperspy_reader_0dot1(ncfile, filename, *args, **kwds):
             'scale': scales[i],
             'offset': origins[i],
             'units': units[i], }
-        for i in xrange(dim)]
-    metadata = {}
-    metadata['General'] = {}
-    metadata['Signal'] = {}
+        for i in range(dim)]
+    metadata = {'General': {}, 'Signal': {}}
     metadata['General']['original_filename'] = os.path.split(filename)[1]
     metadata["Signal"]['record_by'] = record_by
     metadata["General"]['signal_type'] = ""
