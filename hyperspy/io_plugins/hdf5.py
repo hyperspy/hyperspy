@@ -586,4 +586,17 @@ def file_writer(filename,
         expg = exps.create_group(group_name)
         if 'compression' not in kwds:
             kwds['compression'] = 'gzip'
-        write_signal(signal, expg, **kwds)
+        # Add record_by metadata for backward compatibility
+        smd = signal.metadata.Signal
+        if signal.axes_manager.signal_dimension == 1:
+            smd.record_by = "spectrum"
+        elif signal.axes_manager.signal_dimension == 2:
+            smd.record_by = "image"
+        else:
+            smd.record_by = ""
+        try:
+            write_signal(signal, expg, **kwds)
+        except:
+            raise
+        finally:
+            del smd.record_by 
