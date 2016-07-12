@@ -21,13 +21,6 @@ import traitsui.api as tu
 from traitsui.menu import OKButton, CancelButton
 
 
-class General(t.HasTraits):
-    title = t.Str(t.Undefined)
-    original_filename = t.File(t.Undefined)
-    signal_kind = t.Str(t.Undefined)
-    record_by = t.Enum('spectrum', 'image', default=t.Undefined)
-
-
 class TEMParametersUI(t.HasTraits):
     convergence_angle = t.Float(t.Undefined,
                                 label='Convergence semi-angle (mrad)')
