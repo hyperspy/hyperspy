@@ -492,7 +492,7 @@ def write_signal(signal, group, **kwds):
 
 
 def file_writer(filename,
-                signal  ,
+                signal,
                 *args, **kwds):
     with h5py.File(filename, mode='w') as f:
         f.attrs['file_format'] = "HyperSpy"
