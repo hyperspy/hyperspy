@@ -599,4 +599,4 @@ def file_writer(filename,
         except:
             raise
         finally:
-            del smd.record_by 
+            del smd.record_by
