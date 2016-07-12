@@ -20,7 +20,7 @@ import numpy as np
 from hyperspy.samfire_utils.strategy import DiffusionStrategy, SegmenterStrategy
 from hyperspy.misc.utils import DictionaryTreeBrowser
 from hyperspy.signals import Signal1D
-from hyperspy.components import Gaussian
+from hyperspy.components1d import Gaussian
 
 
 class someweight(object):

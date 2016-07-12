@@ -20,7 +20,7 @@ import numpy as np
 import nose.tools as nt
 from hyperspy.utils.model_selection import AIC, AICc, BIC
 from hyperspy.signals import Signal1D
-from hyperspy.components import Gaussian, Lorentzian
+from hyperspy.components1d import Gaussian, Lorentzian
 
 
 class TestModelSelection:

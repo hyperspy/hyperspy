@@ -18,8 +18,8 @@
 import numpy as np
 import nose.tools as nt
 from hyperspy.misc.utils import DictionaryTreeBrowser
-from hyperspy.signals import SpectrumSimulation
-from hyperspy.components import Lorentzian
+from hyperspy.signals import Signal1D
+from hyperspy.components1d import Lorentzian
 
 
 class TestRedChisq:
@@ -68,7 +68,7 @@ class TestRedChisq:
 class TestInformationCriteria:
 
     def setUp(self):
-        m = SpectrumSimulation(np.arange(30).reshape((3, 10))).create_model()
+        m = Signal1D(np.arange(30).reshape((3, 10))).create_model()
         m.append(Lorentzian())
         m.multifit(show_progressbar=False)
         self.m = m
