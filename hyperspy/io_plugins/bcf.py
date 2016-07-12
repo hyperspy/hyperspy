@@ -1002,18 +1002,18 @@ def bcf_imagery(obj_bcf):
                      'size': obj_bcf.header.image.height,
                      'offset': 0,
                      'scale': obj_bcf.header.image.y_res,
-                     'units': 'm'},
+                     'units': 'µm'},
                     {'name': 'width',
                      'size': obj_bcf.header.image.width,
                      'offset': 0,
                      'scale': obj_bcf.header.image.x_res,
-                     'units': 'm'}],
+                     'units': 'µm'}],
            'metadata':
              # where is no way to determine what kind of instrument was used:
              # TEM or SEM
              {'Acquisition_instrument': {
                           'SEM': {
-                             'beam_current': 0.0,  # There is no technical
+                             #'beam_current': 0.0,  # There is no technical
                              # possibilities to get such parameter from bruker
                              # or some SEM's'
                              'beam_energy': obj_bcf.header.sem.hv,
@@ -1025,7 +1025,8 @@ def bcf_imagery(obj_bcf):
               'General': {'original_filename': obj_bcf.filename.split('/')[-1],
                           'title': img.detector_name},
               'Sample': {'name': obj_bcf.header.name},
-              'Signal': {'signal_type': img.detector_name},
+              'Signal': {'signal_type': img.detector_name,
+                         'record_by': 'image'},
              }
            })
     return imagery_list
@@ -1059,7 +1060,7 @@ def bcf_hyperspectra(obj_bcf, index=0, downsample=None, cutoff_at_kV=None):
              # TEM or SEM
              {'Acquisition_instrument': {
                   'SEM': {
-                     'beam_current': 0.0,  # There is no technical
+                     #'beam_current': 0.0,  # There is no technical
                      # possibilities to get such parameter from bruker
                      # or some SEM's'
                      'beam_energy': obj_bcf.header.sem.hv,
@@ -1081,7 +1082,8 @@ def bcf_hyperspectra(obj_bcf, index=0, downsample=None, cutoff_at_kV=None):
               'Sample': {'name': obj_bcf.header.name,
                          'elements': list(obj_bcf.header.elements),
                          'xray_lines': gen_elem_list(obj_bcf.header.elements)},
-              'Signal': {'signal_type': 'EDS_SEM'},
+              'Signal': {'signal_type': 'EDS_SEM',
+                         'record_by': 'spectrum'},
              }
            }]
     return hyperspectra
