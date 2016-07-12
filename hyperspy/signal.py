@@ -37,7 +37,6 @@ from hyperspy.learn.mva import MVA, LearningResults
 import hyperspy.misc.utils
 from hyperspy.misc.utils import DictionaryTreeBrowser
 from hyperspy.drawing import signal as sigdraw
-from hyperspy.decorators import auto_replot
 from hyperspy.defaults_parser import preferences
 from hyperspy.misc.io.tools import ensure_directory
 from hyperspy.external.progressbar import progressbar
@@ -1489,7 +1488,6 @@ class BaseSignal(FancySlicing,
         kwds['data'] = data
         self._load_dictionary(kwds)
         self._plot = None
-        self.auto_replot = True
         self.inav = SpecialSlicersSignal(self, True)
         self.isig = SpecialSlicersSignal(self, False)
         self.events = Events()
@@ -2051,7 +2049,6 @@ class BaseSignal(FancySlicing,
                 if self._plot.navigator_plot is not None:
                     self._plot.navigator_plot.update()
 
-    @auto_replot
     def get_dimensions_from_data(self):
         """Get the dimension parameters from the data_cube. Useful when
         the data_cube was externally modified, or when the SI was not
@@ -2377,7 +2374,6 @@ class BaseSignal(FancySlicing,
 
         return splitted
 
-    @auto_replot
     def _unfold(self, steady_axes, unfolded_axis):
         """Modify the shape of the data by specifying the axes whose
         dimension do not change and the axis over which the remaining axes will
@@ -2534,7 +2530,6 @@ class BaseSignal(FancySlicing,
                     variance.unfold_signal_space()
         return needed_unfolding
 
-    @auto_replot
     def fold(self):
         """If the signal was previously unfolded, folds it back"""
         folding = self.metadata._HyperSpy.Folding

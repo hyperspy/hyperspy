@@ -984,7 +984,203 @@ for example:
       ├── binned = False
       └── signal_type =
 
+Speeding up operations
+----------------------
 
+.. versionadded:: 1.0
+
+Reusing a Signal for output
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Many signal methods create and return a new signal. For fast operations, the
+new signal creation time is non-negligible. Also, when the operation is
+repeated many times, for example in a loop, the cumulaive creation time can
+become significant. Therefore, many operations on
+:py:class:`~.signal.BaseSignal` accept an optional argument `out`. If an
+existing signal is passed to `out`, the function output will be placed into
+that signal, instead of being returned in a new signal.  The following example
+shows how to use this feature to slice a :py:class:`~.signal.BaseSignal`. It is
+important to know that the :py:class:`~.signal.BaseSignal` instance passed in
+the `out` argument must be well-suited for the purpose. Often this means that
+it must have the same axes and data shape as the
+:py:class:`~.signal.BaseSignal` that would normally be returned by the
+operation.
+
+.. code-block:: python
+
+    >>> s = signals.Signal1D(np.arange(10))
+    >>> s_sum = s.sum(0)
+    >>> s_sum.data
+    array(45)
+    >>> s.isig[:5].sum(0, out=s_sum)
+    >>> s_sum.data
+    array(10)
+    >>> s_roi = s.isig[:3]
+    >>> s_roi
+    <Signal1D, title: , dimensions: (|3)>
+    >>> s.isig.__getitem__(slice(None, 5), out=s_roi)
+    >>> s_roi
+    <Signal1D, title: , dimensions: (|5)>
+
+
+.. _interactive:
+
+Interactive operations
+----------------------
+
+.. versionadded:: 1.0
+
+
+The function :py:func:`~.interactive.interactive` ease the task of defining
+operations that are automatically updated when an event is triggered. By
+default it recomputes the operation when data or the axes of the original
+signal changes.
+
+.. code-block:: python
+
+    >>> s = hs.signals.Signal1D(np.arange(10.))
+    >>> ssum = hs.interactive(s.sum, axis=0)
+    >>> ssum.data
+    array(45.0)
+    >>> s.data /= 10
+    >>> s.events.data_changed.trigger()
+    >>> ssum.data
+    4.5
+
+The interactive opearations can be chained.
+
+.. code-block:: python
+
+    >>> s = hs.signals.Signal1D(np.arange(2 * 3 * 4).reshape((2, 3, 4)))
+    >>> ssum = hs.interactive(s.sum, axis=0)
+    >>> ssum_mean = hs.interactive(ssum.mean, axis=0)
+    >>> ssum_mean.data
+    array([ 30.,  33.,  36.,  39.])
+    >>> s.data
+    array([[[ 0,  1,  2,  3],
+            [ 4,  5,  6,  7],
+            [ 8,  9, 10, 11]],
+
+           [[12, 13, 14, 15],
+            [16, 17, 18, 19],
+            [20, 21, 22, 23]]])
+    >>> s.data *= 10
+    >>> s.events.data_changed.trigger(obj=s)
+    >>> ssum_mean.data
+    array([ 300.,  330.,  360.,  390.])
+
+Region Of Interest (ROI)
+------------------------
+
+.. versionadded:: 1.0
+
+A number of different ROIs are available:
+
+* :py:class:`~.roi.Point1DROI`
+* :py:class:`~.roi.Point2DROI`
+* :py:class:`~.roi.SpanROI`
+* :py:class:`~.roi.RectangularROI`
+* :py:class:`~.roi.CircleROI`
+* :py:class:`~.roi.Line2DROI`
+
+Once created, a ROI can be used to return a part of any compatible signal:
+
+.. code-block:: python
+
+    >>> s = hs.signals.Signal1D(np.arange(2000).reshape((20,10,10)))
+    >>> im = hs.signals.Signal2D(np.arange(100).reshape((10,10)))
+    >>> roi = hs.roi.RectangularROI(left=3, right=7, top=2, bottom=5)
+    >>> sr = roi(s)
+    >>> sr
+    <Signal1D, title: , dimensions: (4, 3|10)>
+    >>> imr = roi(im)
+    >>> imr
+    <Signal2D, title: , dimensions: (|4, 3)>
+
+ROIs can also be used :ref:`interactively <Interactive>` with widgets. The
+following examples shows how to interactively apply ROIs to an image. Note
+that *it is necessary* to plot the signal onto which the widgets will be
+added before calling :py:meth:`~.roi.BaseInteractiveROI.interactive`.
+
+.. code-block:: python
+
+    >>> import scipy.misc
+    >>> im = hs.signals.Signal2D(scipy.misc.ascent())
+    >>> rectangular_roi = hs.roi.RectangularROI(left=30, right=500, top=200, bottom=400)
+    >>> line_roi = hs.roi.Line2DROI(0, 0, 512, 512, 1)
+    >>> point_roi = hs.roi.Point2DROI(256, 256)
+    >>> im.plot()
+    >>> roi2D = rectangular_roi.interactive(im, color="blue")
+    >>> roi1D = line_roi.interactive(im, color="yellow")
+    >>> roi0D = point_roi.interactive(im, color="red")
+
+
+.. figure::  images/image_with_rois.png
+  :align:   center
+  :width:   500
+
+.. figure::  images/roi1d.png
+  :align:   center
+  :width:   500
+
+.. figure::  images/roi2d.png
+  :align:   center
+  :width:   500
+
+Notably,
+since ROIs are independent from the signals they sub-select, the widget can be
+plotted on a different signal altogether.
+
+.. code-block:: python
+
+    >>> import scipy.misc
+    >>> im = hs.signals.Signal2D(scipy.misc.ascent())
+    >>> s = hs.signals.Signal1D(np.random.rand(512, 512, 512))
+    >>> roi = hs.roi.RectangularROI(left=30, right=77, top=20, bottom=50)
+    >>> s.plot() # plot signal to have where to display the widget
+    >>> imr = roi.interactive(im, navigation_signal=s, color="red")
+    >>> roi(im).plot()
+
+ROIs are implemented in terms of physical coordinates and not pixels, so with
+proper calibration will always point to the same region.
+
+.. figure::  images/random_image_with_rect_roi.png
+  :align:   center
+  :width:   500
+
+.. figure::  images/random_image_with_rect_roi_spectrum.png
+  :align:   center
+  :width:   500
+
+.. figure::  images/roi2d.png
+  :align:   center
+  :width:   500
+
+
+And of course, as all interactive operations, interactive ROIs are chainable.
+The following example shows how to display interactively the histogram of a
+rectangular ROI. Notice how we customise the default event connections in
+order to increase responsiveness.
+
+
+.. code-block:: python
+   
+   >>> import scipy.misc
+   >>> im = hs.signals.Signal2D(scipy.misc.ascent())
+   >>> im.plot()
+   >>> roi = hs.roi.RectangularROI(left=30, right=500, top=200, bottom=400)
+   >>> im_roi = roi.interactive(im, color="red")
+   >>> roi_hist =hs.interactive(im_roi.get_histogram, event=im_roi.axes_manager.events.any_axis_changed, recompute_out_event=None)
+   >>> roi_hist.plot()
+
+
+.. figure::  images/image_with_rect_roi.png
+  :align:   center
+  :width:   500
+
+.. figure::  images/roi_hist.png
+  :align:   center
+  :width:   500
 
 Handling complex data
 ^^^^^^^^^^^^^^^^^^^^^

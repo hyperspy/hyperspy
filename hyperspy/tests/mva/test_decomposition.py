@@ -1,7 +1,10 @@
 import numpy as np
-
+import nose.tools
+from nose.plugins.skip import SkipTest
 from nose.tools import raises
+
 from hyperspy import signals
+from hyperspy.misc.machine_learning.import_sklearn import sklearn_installed
 
 
 class TestNdAxes:
@@ -36,7 +39,7 @@ class TestNdAxes:
         self.s2 = s2
         self.s12 = s12
 
-    def test_consistensy(self):
+    def test_consistency(self):
         s1 = self.s1
         s2 = self.s2
         s12 = self.s12
@@ -52,7 +55,7 @@ class TestNdAxes:
         np.testing.assert_array_almost_equal(s1.learning_results.factors,
                                              s2.learning_results.loadings)
 
-    def test_consistensy_poissonian(self):
+    def test_consistency_poissonian(self):
         s1 = self.s1
         s1n000 = self.s1.inav[0, 0, 0]
         s2 = self.s2
@@ -84,7 +87,7 @@ class TestGetExplainedVarinaceRatio:
             self.s.get_explained_variance_ratio().data,
             np.asarray([2, 4]))
 
-    @raises(AttributeError)
+    @nose.tools.raises(AttributeError)
     def test_no_evr(self):
         self.s.get_explained_variance_ratio()
 
@@ -187,3 +190,18 @@ class TestNormalizeComponents():
                                       self.factors * 2.)
         np.testing.assert_array_equal(s.learning_results.loadings,
                                       self.loadings / 2.)
+
+
+class TestReturnInfo:
+
+    def setUp(self):
+        self.s = signals.Signal1D(np.empty((5, 10)))
+
+    def test_decomposition_not_supported(self):
+        nose.tools.assert_is_none(self.s.decomposition(return_info=True))
+
+    def test_decomposition_supported(self):
+        if not sklearn_installed:
+            raise SkipTest
+        nose.tools.assert_is_not_none(
+            self.s.decomposition(algorithm="sklearn_pca", return_info=True))

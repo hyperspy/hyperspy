@@ -30,6 +30,12 @@ Functions:
     stack
         Stack several signals.
 
+    interactive
+        Define operations that are automatically recomputed on event changes.
+
+    set_log_level
+        Convenience function to set HyperSpy's the log level.
+
 
 The :mod:`~hyperspy.api` package contains the following submodules/packages:
 
@@ -50,6 +56,9 @@ The :mod:`~hyperspy.api` package contains the following submodules/packages:
         Plotting functions that operate on multiple signals.
     :mod:`~hyperspy.api.datasets`
         Example datasets.
+    :mod:`~hyperspy.api.roi`
+        Region of interests (ROIs) that operate on `BaseSignal` instances and
+        include widgets for interactive operation.
 
 For more details see their doctrings.
 

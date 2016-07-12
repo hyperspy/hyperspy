@@ -524,7 +524,7 @@ legended line, a spectrum can be toggled on and off.
      >>> s.axes_manager[0].offset = -10
      >>> s.axes_manager[0].scale = 0.1
      >>> m = s.create_model()
-     >>> g = components.Gaussian()
+     >>> g = hs.components1D.Gaussian()
      >>> m.append(g)
      >>> gaussians = []
      >>> labels = []

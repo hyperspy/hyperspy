@@ -13,7 +13,7 @@ class TestPowerLaw:
         s.axes_manager[0].offset = 100
         s.axes_manager[0].scale = 0.01
         m = s.create_model()
-        m.append(hs.model.components.PowerLaw())
+        m.append(hs.model.components1D.PowerLaw())
         m[0].A.value = 10
         m[0].r.value = 4
         self.m = m
@@ -22,7 +22,7 @@ class TestPowerLaw:
         self.m.signal.metadata.Signal.binned = True
         s = self.m.as_signal(show_progressbar=None)
         s.metadata.Signal.binned = True
-        g = hs.model.components.PowerLaw()
+        g = hs.model.components1D.PowerLaw()
         g.estimate_parameters(s,
                               None,
                               None,
@@ -34,7 +34,7 @@ class TestPowerLaw:
         self.m.signal.metadata.Signal.binned = False
         s = self.m.as_signal(show_progressbar=None)
         s.metadata.Signal.binned = False
-        g = hs.model.components.PowerLaw()
+        g = hs.model.components1D.PowerLaw()
         g.estimate_parameters(s,
                               None,
                               None,
@@ -46,7 +46,7 @@ class TestPowerLaw:
         self.m.signal.metadata.Signal.binned = True
         s = self.m.as_signal(show_progressbar=None)
         s.metadata.Signal.binned = True
-        g = hs.model.components.PowerLaw()
+        g = hs.model.components1D.PowerLaw()
         g.estimate_parameters(s,
                               None,
                               None,
@@ -58,7 +58,7 @@ class TestPowerLaw:
         self.m.signal.metadata.Signal.binned = False
         s = self.m.as_signal(show_progressbar=None)
         s.metadata.Signal.binned = False
-        g = hs.model.components.PowerLaw()
+        g = hs.model.components1D.PowerLaw()
         g.estimate_parameters(s,
                               None,
                               None,
@@ -81,7 +81,7 @@ class TestOffset:
         s = hs.signals.Signal1D(np.zeros(10))
         s.axes_manager[0].scale = 0.01
         m = s.create_model()
-        m.append(hs.model.components.Offset())
+        m.append(hs.model.components1D.Offset())
         m[0].offset.value = 10
         self.m = m
 
@@ -89,7 +89,7 @@ class TestOffset:
         self.m.signal.metadata.Signal.binned = True
         s = self.m.as_signal(show_progressbar=None)
         s.metadata.Signal.binned = True
-        g = hs.model.components.Offset()
+        g = hs.model.components1D.Offset()
         g.estimate_parameters(s,
                               None,
                               None,
@@ -100,7 +100,7 @@ class TestOffset:
         self.m.signal.metadata.Signal.binned = False
         s = self.m.as_signal(show_progressbar=None)
         s.metadata.Signal.binned = False
-        g = hs.model.components.Offset()
+        g = hs.model.components1D.Offset()
         g.estimate_parameters(s,
                               None,
                               None,
@@ -115,7 +115,7 @@ class TestPolynomial:
         s.axes_manager[0].offset = -5
         s.axes_manager[0].scale = 0.01
         m = s.create_model()
-        m.append(hs.model.components.Polynomial(order=2))
+        m.append(hs.model.components1D.Polynomial(order=2))
         m[0].coefficients.value = (0.5, 2, 3)
         self.m = m
         s_2d = hs.signals.Signal1D(np.arange(1000).reshape(10, 100))
@@ -135,7 +135,7 @@ class TestPolynomial:
         self.m.signal.metadata.Signal.binned = True
         s = self.m.as_signal(show_progressbar=None)
         s.metadata.Signal.binned = True
-        g = hs.model.components.Polynomial(order=2)
+        g = hs.model.components1D.Polynomial(order=2)
         g.estimate_parameters(s,
                               None,
                               None,
@@ -148,7 +148,7 @@ class TestPolynomial:
         self.m.signal.metadata.Signal.binned = False
         s = self.m.as_signal(show_progressbar=None)
         s.metadata.Signal.binned = False
-        g = hs.model.components.Polynomial(order=2)
+        g = hs.model.components1D.Polynomial(order=2)
         g.estimate_parameters(s,
                               None,
                               None,
@@ -161,7 +161,7 @@ class TestPolynomial:
         # This code should run smoothly, any exceptions should trigger failure
         s = self.m_2d.as_signal(show_progressbar=None)
         model = Model1D(s)
-        p = hs.model.components.Polynomial(order=2)
+        p = hs.model.components1D.Polynomial(order=2)
         model.append(p)
         p.estimate_parameters(s, 0, 100, only_current=False)
         np.testing.assert_allclose(p.coefficients.map['values'],
@@ -171,7 +171,7 @@ class TestPolynomial:
         # This code should run smoothly, any exceptions should trigger failure
         s = self.m_3d.as_signal(show_progressbar=None)
         model = Model1D(s)
-        p = hs.model.components.Polynomial(order=2)
+        p = hs.model.components1D.Polynomial(order=2)
         model.append(p)
         p.estimate_parameters(s, 0, 100, only_current=False)
         np.testing.assert_allclose(p.coefficients.map['values'],
@@ -185,7 +185,7 @@ class TestGaussian:
         s.axes_manager[0].offset = -5
         s.axes_manager[0].scale = 0.01
         m = s.create_model()
-        m.append(hs.model.components.Gaussian())
+        m.append(hs.model.components1D.Gaussian())
         m[0].sigma.value = 0.5
         m[0].centre.value = 1
         m[0].A.value = 2
@@ -195,7 +195,7 @@ class TestGaussian:
         self.m.signal.metadata.Signal.binned = True
         s = self.m.as_signal(show_progressbar=None)
         s.metadata.Signal.binned = True
-        g = hs.model.components.Gaussian()
+        g = hs.model.components1D.Gaussian()
         g.estimate_parameters(s,
                               None,
                               None,
@@ -208,7 +208,7 @@ class TestGaussian:
         self.m.signal.metadata.Signal.binned = False
         s = self.m.as_signal(show_progressbar=None)
         s.metadata.Signal.binned = False
-        g = hs.model.components.Gaussian()
+        g = hs.model.components1D.Gaussian()
         g.estimate_parameters(s,
                               None,
                               None,
@@ -221,7 +221,7 @@ class TestGaussian:
 class TestExpression:
 
     def setUp(self):
-        self.g = hs.model.components.Expression(
+        self.g = hs.model.components1D.Expression(
             expression="height * exp(-(x - x0) ** 2 * 4 * log(2)/ fwhm ** 2)",
             name="Gaussian",
             position="x0",
@@ -271,7 +271,7 @@ class TestScalableFixedPattern:
         s.metadata.Signal.binned = False
         s1.metadata.Signal.binned = False
         m = s.create_model()
-        fp = hs.model.components.ScalableFixedPattern(s1)
+        fp = hs.model.components1D.ScalableFixedPattern(s1)
         m.append(fp)
         with ignore_warning(message="invalid value encountered in sqrt",
                             category=RuntimeWarning):
@@ -284,7 +284,7 @@ class TestScalableFixedPattern:
         s.metadata.Signal.binned = True
         s1.metadata.Signal.binned = True
         m = s.create_model()
-        fp = hs.model.components.ScalableFixedPattern(s1)
+        fp = hs.model.components1D.ScalableFixedPattern(s1)
         m.append(fp)
         with ignore_warning(message="invalid value encountered in sqrt",
                             category=RuntimeWarning):
@@ -297,7 +297,7 @@ class TestScalableFixedPattern:
         s.metadata.Signal.binned = True
         s1.metadata.Signal.binned = False
         m = s.create_model()
-        fp = hs.model.components.ScalableFixedPattern(s1)
+        fp = hs.model.components1D.ScalableFixedPattern(s1)
         m.append(fp)
         with ignore_warning(message="invalid value encountered in sqrt",
                             category=RuntimeWarning):
@@ -310,7 +310,7 @@ class TestScalableFixedPattern:
         s.metadata.Signal.binned = False
         s1.metadata.Signal.binned = True
         m = s.create_model()
-        fp = hs.model.components.ScalableFixedPattern(s1)
+        fp = hs.model.components1D.ScalableFixedPattern(s1)
         m.append(fp)
         with ignore_warning(message="invalid value encountered in sqrt",
                             category=RuntimeWarning):
@@ -321,7 +321,7 @@ class TestScalableFixedPattern:
 class TestHeavisideStep:
 
     def setUp(self):
-        self.c = hs.model.components.HeavisideStep()
+        self.c = hs.model.components1D.HeavisideStep()
 
     def test_integer_values(self):
         c = self.c
