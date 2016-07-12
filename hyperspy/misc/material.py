@@ -303,7 +303,7 @@ def mass_absorption_coefficient(element, energies):
     mac_res = np.exp(np.log(macs[index - 1]) +
                      np.log(macs[index] / macs[index - 1]) *
                      (np.log(energies / energies_db[index - 1]) /
-                     np.log(energies_db[index] / energies_db[index - 1])))
+                      np.log(energies_db[index] / energies_db[index - 1])))
     return np.nan_to_num(mac_res)
 
 
@@ -355,7 +355,7 @@ def _mass_absorption_mixture(weight_percent,
     if hasattr(weight_percent[0], '__iter__'):
         weight_fraction = np.array(weight_percent)
         weight_fraction /= np.sum(weight_fraction, 0)
-        mac_res = np.zeros([len(energies)]+list(weight_fraction.shape[1:]))
+        mac_res = np.zeros([len(energies)] + list(weight_fraction.shape[1:]))
         for element, weight in zip(elements, weight_fraction):
             mac_re = mass_absorption_coefficient(element, energies)
             mac_res += np.array([weight * ma for ma in mac_re])
@@ -418,7 +418,7 @@ def mass_absorption_mixture(weight_percent,
     energies = _lines_auto(weight_percent, energies)
     if isinstance(weight_percent[0], BaseSignal):
         weight_per = np.array([wt.data for wt in weight_percent])
-        mac_res = stack([weight_percent[0].deepcopy()]*len(energies))
+        mac_res = stack([weight_percent[0].deepcopy()] * len(energies))
         mac_res.data = \
             _mass_absorption_mixture(weight_per, elements, energies)
         mac_res = mac_res.split()
