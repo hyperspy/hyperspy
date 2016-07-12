@@ -902,7 +902,7 @@ def find_peaks_zaefferer(z, grad_threshold=0.1, window_size=40,
     return clean_peaks(peaks)
 
 
-def find_peaks_stat(z):
+def find_peaks_stat(z, standard_deviation=1.):
     """
     Method to locate positive peaks in an image based on statistical refinement
     and difference with respect to mean intensity.
@@ -958,7 +958,9 @@ def find_peaks_stat(z):
         image_rolling_std = local_std(image, 10)
         image = single_pixel_desensitize(image)
         binarised_image = np.zeros(image.shape)
-        binarised_image[image > image_rolling_mean + image_rolling_std] = 1
+        stat_mask = image > (
+            image_rolling_mean + standard_deviation * image_rolling_std)
+        binarised_image[stat_mask] = 1
         return binarised_image
 
     def smooth(image):
