@@ -38,7 +38,6 @@ try:
 except:
     statsmodels_installed = False
 
-from hyperspy.decorators import auto_replot
 from hyperspy.defaults_parser import preferences
 from hyperspy.external.progressbar import progressbar
 from hyperspy.gui.tools import (
@@ -974,7 +973,6 @@ class Signal1D(BaseSignal, CommonSignal1D):
         self.crop(axis=self.axes_manager.signal_axes[0].index_in_axes_manager,
                   start=left_value, end=right_value)
 
-    @auto_replot
     def gaussian_filter(self, FWHM):
         """Applies a Gaussian filter in the spectral dimension in place.
 
@@ -1001,8 +999,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
             self.data,
             axis=axis.index_in_array,
             sigma=FWHM / 2.35482)
+        self.events.data_changed.trigger(obj=self)
 
-    @auto_replot
     def hanning_taper(self, side='both', channels=None, offset=0):
         """Apply a hanning taper to the data in place.
 
@@ -1043,6 +1041,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
                 np.hanning(2 * channels)[-channels:])
             if offset != 0:
                 dc[..., -offset:] *= 0.
+        self.events.data_changed.trigger(obj=self)
         return channels
 
     def find_peaks1D_ohaver(self, xdim=None, slope_thresh=0, amp_thresh=None,
