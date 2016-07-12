@@ -1001,7 +1001,6 @@ class Signal1D(BaseSignal, CommonSignal1D):
             sigma=FWHM / 2.35482)
         self.events.data_changed.trigger(obj=self)
 
-
     def hanning_taper(self, side='both', channels=None, offset=0):
         """Apply a hanning taper to the data in place.
 
