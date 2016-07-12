@@ -17,7 +17,7 @@ def test_load_16bit():
     # it cant use cython parsing implementation, as it is not compiled
     my_path = os.path.dirname(__file__)
     filename = os.path.join(my_path, 'bcf_data', test_files[0])
-    print('testing bcf instructivele packed 16bit...')
+    print('testing bcf instructively packed 16bit...')
     s = load(filename)
     bse, sei, hype = s
     #Bruker saves all images in true 16bit:
@@ -66,7 +66,7 @@ def test_hyperspy_wrap():
     my_path = os.path.dirname(__file__)
     filename = os.path.join(my_path, 'bcf_data', test_files[0])
     print('testing bcf wrap to hyperspy signal...')
-    hype = load(filename, record_by='spectrum')
+    hype = load(filename, select_type='spectrum')
     assert_almost_equal(hype.axes_manager[0].scale, 8.736785062e-06, places=12)
     assert_almost_equal(hype.axes_manager[1].scale, 8.736785062e-06, places=12)
     assert_true(hype.axes_manager[1].units == 'm')
@@ -79,7 +79,7 @@ def test_hyperspy_wrap_downsampled():
     my_path = os.path.dirname(__file__)
     filename = os.path.join(my_path, 'bcf_data', test_files[0])
     print('testing bcf wrap to hyperspy signal...')
-    hype = load(filename, record_by='spectrum', downsample=5)
+    hype = load(filename, select_type='spectrum', downsample=5)
     assert_almost_equal(hype.axes_manager[0].scale, 4.368392531e-05, places=12)
     assert_almost_equal(hype.axes_manager[1].scale, 4.368392531e-05, places=12)
     assert_true(hype.axes_manager[1].units == 'm')
