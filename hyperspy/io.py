@@ -331,8 +331,10 @@ def assign_signal_subclass(dtype,
         # Return a general class for the given signal dimension.
         return [s for s in d_r_matches if s._signal_type == ""][0]
     else:
-        # no record_by match either, hence return the general subclass for correct dtype
-        return [s for s in d_matches if s._record_by == "" and s._signal_type == ""][0]
+        # no record_by match either, hence return the general subclass for
+        # correct dtype
+        return [s for s in d_matches if s._record_by ==
+                "" and s._signal_type == ""][0]
 
 
 def dict2signal(signal_dict):

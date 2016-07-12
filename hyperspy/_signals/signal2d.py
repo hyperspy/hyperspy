@@ -581,7 +581,6 @@ class Signal2D(BaseSignal, CommonSignal2D):
                   left,
                   right)
 
-
     def add_ramp(self, ramp_x, ramp_y, offset=0):
         """Add a linear ramp to the signal.
 
