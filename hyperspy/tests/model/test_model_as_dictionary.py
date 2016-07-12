@@ -21,7 +21,7 @@ import numpy as np
 import nose.tools as nt
 from hyperspy._signals.signal1d import Signal1D
 from hyperspy.component import Parameter, Component
-from hyperspy.components import Gaussian, Lorentzian, ScalableFixedPattern
+from hyperspy.components1d import Gaussian, Lorentzian, ScalableFixedPattern
 
 
 def remove_empty_numpy_strings(dic):
