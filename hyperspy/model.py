@@ -51,11 +51,14 @@ _logger = logging.getLogger(__name__)
 
 # components is just a container for all (1D and 2D) components, to be able to
 # search in a single object for matching components when recreating a model.
+
+
 class DummyComponentsContainer:
     pass
 components = DummyComponentsContainer()
 components.__dict__.update(components1d.__dict__)
 components.__dict__.update(components2d.__dict__)
+
 
 class ModelComponents(object):
 

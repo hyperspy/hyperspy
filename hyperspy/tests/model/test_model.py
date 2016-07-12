@@ -586,9 +586,9 @@ class TestModel2D:
         im = self.im
         m = im.create_model()
         gt = hs.model.components2D.Gaussian2D(centre_x=-4.5,
-                                            centre_y=-4.5,
-                                            sigma_x=0.5,
-                                            sigma_y=1.5)
+                                              centre_y=-4.5,
+                                              sigma_x=0.5,
+                                              sigma_y=1.5)
         m.append(gt)
         m.fit()
         np.testing.assert_almost_equal(gt.centre_x.value, -5.)
