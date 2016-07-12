@@ -30,11 +30,11 @@ def _thresh(X, lambda1):
     res = np.abs(X) - lambda1
     return np.sign(X) * ((res > 0) * res)
 
-def rpca(X, rank, fast=False, lambda1=None,
-         power=None, tol=None, maxiter=None):
+def rpca_godec(X, rank, fast=False, lambda1=None,
+               power=None, tol=None, maxiter=None):
     """
     This function performs Robust PCA with missing or corrupted data,
-    using the GoDec algorithm
+    using the GoDec algorithm.
 
     Parameters
     ----------
@@ -71,6 +71,8 @@ def rpca(X, rank, fast=False, lambda1=None,
     Algorithm based on the following research paper:
        Tianyi Zhou and Dacheng Tao, "GoDec: Randomized Low-rank & Sparse Matrix
        Decomposition in Noisy Case", ICML-11, (2011), pp. 33-40.
+
+    Code: https://sites.google.com/site/godecomposition/matrix/artifact-1
 
     """
     if fast is True and sklearn_installed is True:

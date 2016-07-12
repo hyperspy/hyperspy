@@ -4,7 +4,7 @@ import scipy.linalg
 import nose.tools as nt
 from nose.plugins.skip import SkipTest
 
-from hyperspy.learn.rpca import rpca, orpca
+from hyperspy.learn.rpca import rpca_godec, orpca
 
 class TestRPCA:
     def setUp(self):
@@ -34,35 +34,35 @@ class TestRPCA:
         self.tol = 1e-3
 
     def test_default(self):
-        X, E, G, U, S, V = rpca(self.X, rank=self.rank)
+        X, E, G, U, S, V = rpca_godec(self.X, rank=self.rank)
 
         # Check the low-rank component MSE
         normX = np.linalg.norm(X - self.A) / (self.m * self.n)
         nt.assert_true(normX < self.tol)
 
     def test_power(self):
-        X, E, G, U, S, V = rpca(self.X, rank=self.rank, power=1)
+        X, E, G, U, S, V = rpca_godec(self.X, rank=self.rank, power=1)
 
         # Check the low-rank component MSE
         normX = np.linalg.norm(X - self.A) / (self.m * self.n)
         nt.assert_true(normX < self.tol)
 
     def test_iter(self):
-        X, E, G, U, S, V = rpca(self.X, rank=self.rank, maxiter=1e4)
+        X, E, G, U, S, V = rpca_godec(self.X, rank=self.rank, maxiter=1e4)
 
         # Check the low-rank component MSE
         normX = np.linalg.norm(X - self.A) / (self.m * self.n)
         nt.assert_true(normX < self.tol)
 
     def test_tol(self):
-        X, E, G, U, S, V = rpca(self.X, rank=self.rank, tol=1e-4)
+        X, E, G, U, S, V = rpca_godec(self.X, rank=self.rank, tol=1e-4)
 
         # Check the low-rank component MSE
         normX = np.linalg.norm(X - self.A) / (self.m * self.n)
         nt.assert_true(normX < self.tol)
 
     def test_regularization(self):
-        X, E, G, U, S, V = rpca(self.X, rank=self.rank, lambda1=self.lambda1)
+        X, E, G, U, S, V = rpca_godec(self.X, rank=self.rank, lambda1=self.lambda1)
 
         # Check the low-rank component MSE
         normX = np.linalg.norm(X - self.A) / (self.m * self.n)

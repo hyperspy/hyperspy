@@ -8,6 +8,9 @@ Bibliography
    "Three-dimensional chemical analysis of laser-welded NiTi–stainless steel wires
    using a dual-beam FIB", Acta Materialia 61 (2013) 3090–3098.
 
+.. [Candes2011] E. Candes, X. Li, Y. Ma and J. Wright, "Robust principal component analysis?"
+   J. ACM 58(3) (2011) 1–37
+
 .. [Chantler2015] http://physics.nist.gov/ffast
 
 .. [Egerton2011] Ray Egerton, "Electron Energy-Loss Spectroscopy in the
@@ -50,6 +53,9 @@ Bibliography
 .. [Williams2009] David B. Williams, Barry Carter, "Transmission Electron
    Microscopy: A Textbook for Materials Science (Part 4)", Second Edi, Springer,
    New York, 2009.
+
+.. [Zhou2011] T. Zhou and D. Tao, "GoDec: Randomized Low-rank & Sparse Matrix
+   Decomposition in Noisy Case", ICML-11 (2011) 33–40.
 
 .. _articles-about-hyperspy:
 

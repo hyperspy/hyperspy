@@ -168,15 +168,15 @@ PCA is known to be very sensitive to the presence of outliers in data. These out
 can be the result of missing or dead pixels, X-ray spikes, or very low count data.
 If one assumes a dataset to consist of a low-rank component **L** corrupted by
 a sparse error component **S**, then Robust PCA (RPCA) can be used to recover the
-low-rank component for subsequent processing.
+low-rank component for subsequent processing [Candes2011]_.
 
-The default RPCA algorithm returns the factors and loadings of **L**, and can be
-accessed with the following code. You must set the "output_dimension" when using
-RPCA.
+The default RPCA algorithm is GoDec [Zhou2011]_. In HyperSpy it returns the factors
+and loadings of **L**, and can be accessed with the following code. You must set the
+"output_dimension" when using RPCA.
 
 .. code-block:: python
 
-   >>> s.decomposition(algorithm='rpca',
+   >>> s.decomposition(algorithm='RPCA_GoDec',
                        output_dimension=3)
 
 HyperSpy also implements an *online* algorithm for RPCA developed by Feng et al. [Feng2013]_.
@@ -185,7 +185,7 @@ be faster than the default algorithm.
 
 .. code-block:: python
 
-   >>> s.decomposition(algorithm='orpca',
+   >>> s.decomposition(algorithm='ORPCA',
                        output_dimension=3)
 
 The online RPCA implementation sets several default parameters that are
@@ -195,7 +195,7 @@ the following code will train ORPCA using the first 32 samples of the data.
 
 .. code-block:: python
 
-   >>> s.decomposition(algorithm='orpca',
+   >>> s.decomposition(algorithm='ORPCA',
                        output_dimension=3
                        training_samples=32)
 
@@ -206,12 +206,12 @@ descent (SGD), which takes an additional parameter to set the learning rate.
 
 .. code-block:: python
 
-   >>> s.decomposition(algorithm='orpca',
+   >>> s.decomposition(algorithm='ORPCA',
                        output_dimension=3
                        method='BCD',
                        training_samples=32)
 
-   >>> s.decomposition(algorithm='orpca',
+   >>> s.decomposition(algorithm='ORPCA',
                        output_dimension=3
                        method='SGD',
                        learning_rate=1.1,
