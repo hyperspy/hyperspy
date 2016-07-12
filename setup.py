@@ -174,13 +174,13 @@ hook_ignorer = os.path.join(setup_path, '.hook_ignore')
 
 
 def find_post_checkout_cleanup_line():
-    """find the line index in the git post-checkout hooks"""
+    """find the line index in the git post-checkout hooks
+    'rm extension1 extension2 ...'"""
     with open(post_checout_hook_file, 'r') as pchook:
         hook_lines = pchook.readlines()
         for i in range(1, len(hook_lines), 1):
-            if re.search(r'^rm hyperspy/*', hook_lines[i]) is not None and \
-                    (re.search(r'python.*?build_ext --inplace', hook_lines[i + 1]) is not None):
-                return i
+            if re.search('#cleanup_cythonized_and_compiled:', hook_lines[i]) is not None:
+                return i + 1
 
 # generate some git hook to clean up and re-build_ext --inplace
 # after changing branches:
@@ -191,6 +191,7 @@ if os.path.exists(git_dir) and (not os.path.exists(hook_ignorer)):
     if (not os.path.exists(post_checout_hook_file)):
         with open(post_checout_hook_file, 'w') as pchook:
             pchook.write('#!/bin/sh\n')
+            pchook.write('#cleanup_cythonized_and_compiled:\n')
             pchook.write('rm ' + ' '.join([i for i in cleanup_list]) + '\n')
             pchook.write(recythonize_str)
         hook_mode = 0o777  # make it executable
@@ -203,7 +204,9 @@ if os.path.exists(git_dir) and (not os.path.exists(hook_ignorer)):
             if line_n is not None:
                 hook_lines[line_n] = 'rm ' + \
                     ' '.join([i for i in cleanup_list]) + '\n'
+                hook_lines[line_n + 1] = recythonize_str
             else:
+                hook_lines.append('\n#cleanup_cythonized_and_compiled:')
                 hook_lines.append(
                     '\nrm ' + ' '.join([i for i in cleanup_list]) + '\n')
                 hook_lines.append(recythonize_str)
