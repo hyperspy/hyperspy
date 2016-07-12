@@ -149,6 +149,12 @@ class MVA():
             The result of the decomposition is stored internally. However, some algorithms generate some extra
             information that is not stored. If True (the default is False) return any extra information if available
 
+        Returns
+        -------
+        (X, E) : (numpy array, numpy array)
+            If 'algorithm' == 'RPCA_GoDec' or 'ORPCA' and 'return_info' is True,
+            returns the low-rank (X) and sparse (E) matrices from robust PCA.
+
         See also
         --------
         plot_decomposition_factors, plot_decomposition_loadings, plot_lev
