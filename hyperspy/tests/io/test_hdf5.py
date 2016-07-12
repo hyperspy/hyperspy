@@ -288,11 +288,12 @@ class TestPassingArgs:
     def tearDown(self):
         remove(self.filename)
 
+
 class TestAxesConfiguration:
 
     def setUp(self):
         self.filename = 'testfile.hdf5'
-        s = BaseSignal(np.zeros((2,2,2,2,2)))
+        s = BaseSignal(np.zeros((2, 2, 2, 2, 2)))
         s.axes_manager.signal_axes[0].navigate = True
         s.axes_manager.signal_axes[0].navigate = True
         s.save(self.filename)
