@@ -119,7 +119,8 @@ class ComplexSignal(BaseSignal):
         if np.issubdtype(dtype, complex):
             self.data = self.data.astype(dtype)
         else:
-            raise AttributeError('Complex data can only be converted into other complex dtypes!')
+            raise AttributeError(
+                'Complex data can only be converted into other complex dtypes!')
 
     def angle(self, deg=False):
         """Return the angle (also known as phase or argument). If the data is real, the angle is 0
@@ -146,7 +147,8 @@ class ComplexSignal(BaseSignal):
         sig.metadata.General.title = 'angle({})'.format(title)
         return sig
 
-    def unwrapped_phase(self, wrap_around=False, seed=None, show_progressbar=None):
+    def unwrapped_phase(self, wrap_around=False, seed=None,
+                        show_progressbar=None):
         """Return the unwrapped phase as an appropriate HyperSpy signal.
 
         Parameters
@@ -182,21 +184,35 @@ class ComplexSignal(BaseSignal):
         phase = self.phase
         phase.map(unwrap_phase, wrap_around=wrap_around, seed=seed,
                   show_progressbar=show_progressbar)
-        phase.metadata.General.title = 'unwrapped {}'.format(phase.metadata.General.title)
+        phase.metadata.General.title = 'unwrapped {}'.format(
+            phase.metadata.General.title)
         return phase  # Now unwrapped!
 
-    def plot(self, navigator="auto", axes_manager=None, representation='cartesian', **kwargs):
+    def plot(self, navigator="auto", axes_manager=None,
+             representation='cartesian', **kwargs):
         """%s
         %s
         %s
 
         """
         if representation == 'cartesian':
-            self.real.plot(navigator=navigator, axes_manager=self.axes_manager, **kwargs)
-            self.imag.plot(navigator=navigator, axes_manager=self.axes_manager, **kwargs)
+            self.real.plot(
+                navigator=navigator,
+                axes_manager=self.axes_manager,
+                **kwargs)
+            self.imag.plot(
+                navigator=navigator,
+                axes_manager=self.axes_manager,
+                **kwargs)
         elif representation == 'polar':
-            self.amplitude.plot(navigator=navigator, axes_manager=self.axes_manager, **kwargs)
-            self.phase.plot(navigator=navigator, axes_manager=self.axes_manager, **kwargs)
+            self.amplitude.plot(
+                navigator=navigator,
+                axes_manager=self.axes_manager,
+                **kwargs)
+            self.phase.plot(
+                navigator=navigator,
+                axes_manager=self.axes_manager,
+                **kwargs)
         else:
             raise KeyError('{}'.format(representation) +
                            'is not a valid input for representation (use "cartesian" or "polar")!')
