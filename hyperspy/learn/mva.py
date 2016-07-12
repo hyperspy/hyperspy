@@ -347,6 +347,10 @@ class MVA():
                 loadings = U * S
                 factors = V
                 explained_variance = S ** 2 / len(factors)
+
+                if return_info:
+                    to_return = (X, E)
+
             elif algorithm == 'ORPCA':
                 _logger.info("Performing Online Robust PCA")
 
@@ -357,6 +361,9 @@ class MVA():
                 loadings = U * S
                 factors = V
                 explained_variance = S ** 2 / len(factors)
+
+                if return_info:
+                    to_return = (X, E)
             else:
                 raise ValueError('Algorithm not recognised. '
                                  'Nothing done')
