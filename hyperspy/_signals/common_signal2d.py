@@ -17,9 +17,20 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from hyperspy._signals.eels import EELSSpectrum
-from hyperspy._signals.spectrum_simulation import SpectrumSimulation
+from hyperspy.signal import BaseSignal
 
 
-class EELSSpectrumSimulation(SpectrumSimulation, EELSSpectrum):
-    pass
+class CommonSignal2D(object):
+    """Common functions for 2-dimensional signals."""
+
+    def to_signal1D(self):
+        """Returns the image as a spectrum.
+
+        See Also
+        --------
+        as_signal1D : a method for the same purpose with more options.
+        signals.Signal1D.to_signal1D : performs the inverse operation on one
+        dimensional signals.
+
+        """
+        return self.as_signal1D(0 + 3j)

@@ -29,7 +29,7 @@ class TestRemoveBackground1DGaussian:
         s1 = self.signal.remove_background(
             signal_range=(None, None),
             background_type='Gaussian',
-            estimate_background=False)
+            fast=False)
         assert_true(np.allclose(s1.data, np.zeros(len(s1.data))))
 
 
