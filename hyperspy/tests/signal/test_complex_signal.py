@@ -69,28 +69,41 @@ class TestComplexProperties:
 
     def test_angle(self):
         nt.assert_almost_equal(self.s.angle(deg=False), self.phase_ref)
-        nt.assert_almost_equal(self.s.angle(deg=True), self.phase_ref * 180 / np.pi)
+        nt.assert_almost_equal(
+            self.s.angle(
+                deg=True),
+            self.phase_ref *
+            180 /
+            np.pi)
 
 
 def test_get_unwrapped_phase_1D():
     phase = 6 * (1 - np.abs(np.indices((9,)) - 4) / 4)
     s = hs.signals.ComplexSignal(np.ones_like(phase) * np.exp(1j * phase))
     phase_unwrapped = s.unwrapped_phase(seed=42, show_progressbar=False)
-    nt.assert_equal(phase_unwrapped.metadata.General.title, 'unwrapped phase(Untitled Signal)')
+    nt.assert_equal(
+        phase_unwrapped.metadata.General.title,
+        'unwrapped phase(Untitled Signal)')
     nt.assert_almost_equal(phase_unwrapped.data, phase)
+
 
 def test_get_unwrapped_phase_2D():
     phase = 5 * (1 - np.abs(np.indices((9, 9)) - 4).sum(axis=0) / 8)
     s = hs.signals.ComplexSignal(np.ones_like(phase) * np.exp(1j * phase))
     phase_unwrapped = s.unwrapped_phase(seed=42, show_progressbar=False)
-    nt.assert_equal(phase_unwrapped.metadata.General.title, 'unwrapped phase(Untitled Signal)')
+    nt.assert_equal(
+        phase_unwrapped.metadata.General.title,
+        'unwrapped phase(Untitled Signal)')
     nt.assert_almost_equal(phase_unwrapped.data, phase)
+
 
 def test_get_unwrapped_phase_3D():
     phase = 4 * (1 - np.abs(np.indices((9, 9, 9)) - 4).sum(axis=0) / 12)
     s = hs.signals.ComplexSignal(np.ones_like(phase) * np.exp(1j * phase))
     phase_unwrapped = s.unwrapped_phase(seed=42, show_progressbar=False)
-    nt.assert_equal(phase_unwrapped.metadata.General.title, 'unwrapped phase(Untitled Signal)')
+    nt.assert_equal(
+        phase_unwrapped.metadata.General.title,
+        'unwrapped phase(Untitled Signal)')
     nt.assert_almost_equal(phase_unwrapped.data, phase)
 
 
