@@ -465,8 +465,11 @@ def hdfgroup2dict(group, dictionary=None, load_to_memory=True):
             dictionary[key[len('_tuple_empty_'):]] = ()
         elif key.startswith('_bs_'):
             dictionary[key[len('_bs_'):]] = value.tostring()
-        elif key.startswith('_datetime_'):
-            dictionary[key.replace("_datetime_", "")] = eval(value)
+# The following is commented out as it could be used to evaluate
+# arbitrary code i.e. it was a security flaw. We should instead
+# use a standard string for date and time.
+#        elif key.startswith('_datetime_'):
+#            dictionary[key.replace("_datetime_", "")] = eval(value)
         else:
             dictionary[key] = value
     if not isinstance(group, h5py.Dataset):
