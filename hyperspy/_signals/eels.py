@@ -31,7 +31,7 @@ from hyperspy.gui.eels import TEMParametersUI
 from hyperspy.defaults_parser import preferences
 import hyperspy.gui.messages as messagesui
 from hyperspy.external.progressbar import progressbar
-from hyperspy.components import PowerLaw
+from hyperspy.components1d import PowerLaw
 from hyperspy.misc.utils import isiterable, closest_power_of_two, underline
 from hyperspy.misc.utils import without_nans
 
@@ -679,7 +679,7 @@ class EELSSpectrum(Signal1D):
             I0_shape.insert(axis.index_in_array, 1)
             I0 = I0.reshape(I0_shape)
 
-        from hyperspy.components import Gaussian
+        from hyperspy.components1d import Gaussian
         g = Gaussian()
         g.sigma.value = fwhm / 2.3548
         g.A.value = 1
@@ -834,11 +834,11 @@ class EELSSpectrum(Signal1D):
         tem_par = TEMParametersUI()
         mapping = {
             'Acquisition_instrument.TEM.convergence_angle':
-                'tem_par.convergence_angle',
+            'tem_par.convergence_angle',
             'Acquisition_instrument.TEM.beam_energy':
-                'tem_par.beam_energy',
+            'tem_par.beam_energy',
             'Acquisition_instrument.TEM.Detector.EELS.collection_angle':
-                'tem_par.collection_angle',
+            'tem_par.collection_angle',
         }
         for key, value in mapping.items():
             if self.metadata.has_item(key):
@@ -846,11 +846,11 @@ class EELSSpectrum(Signal1D):
         tem_par.edit_traits()
         mapping = {
             'Acquisition_instrument.TEM.convergence_angle':
-                tem_par.convergence_angle,
+            tem_par.convergence_angle,
             'Acquisition_instrument.TEM.beam_energy':
-                tem_par.beam_energy,
+            tem_par.beam_energy,
             'Acquisition_instrument.TEM.Detector.EELS.collection_angle':
-                tem_par.collection_angle,
+            tem_par.collection_angle,
         }
         for key, value in mapping.items():
             if value != t.Undefined:
