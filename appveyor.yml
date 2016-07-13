@@ -131,11 +131,11 @@ deploy:
   provider: GitHub
   auth_token:
     #   to266:
-    #secure: ptV5Dkz3pSVdjD0qRDpxJgjVlddFtleZ+B+c2X1Fg67P8OX3bHWVktRmlj6hfLhM
+    secure: ptV5Dkz3pSVdjD0qRDpxJgjVlddFtleZ+B+c2X1Fg67P8OX3bHWVktRmlj6hfLhM
     #   vidartf:
     #secure: KwAfARhGEqOnZHltPB6kKu8xmnoiGSk7NMYJBIEbWvFCuVnepoPV7ZcIjUN3pUpK
     #   sem-geologist:
-    secure: RRqUkx9H5VuFNITmm+YzgB0qnqgVGPH1yrPVxb4oCD+FAjcTch2WZAiPEKn4L6w6
+    #secure: RRqUkx9H5VuFNITmm+YzgB0qnqgVGPH1yrPVxb4oCD+FAjcTch2WZAiPEKn4L6w6
   artifact: /.*\.exe/, win_wheels  # upload all exe installers and wheels to release assets
   #artifact: win_wheels
   draft: false
