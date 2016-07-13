@@ -1508,6 +1508,20 @@ class BaseModel(list):
                          ' notebook')
 
     def create_samfire(self, workers=None, setup=True, **kwargs):
+        """Creates a SAMFire object.
+
+        Parameters
+        ----------
+        workers : {None, int}
+            the number of workers to initialise. 
+            If zero, all computations will be done serially.
+            If None (default), will attempt to use (number-of-cores - 1),
+            however if just one core is available, will use one worker.
+        setup : bool
+            if the setup should be run upon initialization.
+        **kwargs
+            Any that will be passed to the _setup and in turn SamfirePool.
+        """
         from hyperspy.samfire import Samfire
         return Samfire(self, workers=workers,
                        setup=setup, **kwargs)

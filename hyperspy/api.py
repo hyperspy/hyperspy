@@ -59,6 +59,9 @@ The :mod:`~hyperspy.api` package contains the following submodules/packages:
     :mod:`~hyperspy.api.roi`
         Region of interests (ROIs) that operate on `BaseSignal` instances and
         include widgets for interactive operation.
+    :mod:`~hyperspy.api.samfire`
+        SAMFire utilities (strategies, Pool, fit convergence tests)
+
 
 For more details see their doctrings.
 
