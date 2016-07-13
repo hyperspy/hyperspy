@@ -84,10 +84,10 @@ def test_mixture_mac():
                            2587.4161643905127)
     elements = ("Cu", "Sn")
     lines = [0.5, 'Al_Ka']
-    wt = np.array([[[88.]*2]*3, [[12.]*2]*3])
+    wt = np.array([[[88.] * 2] * 3, [[12.] * 2] * 3])
     np.testing.assert_array_almost_equal(
         hs.material.mass_absorption_mixture(wt, elements, lines)[:, 0, 0],
-        np.array([8003.05391481,  4213.4235561]))
+        np.array([8003.05391481, 4213.4235561]))
     wt = hs.signals.Signal2D(wt).split()
     mac = hs.material.mass_absorption_mixture(wt, elements, lines)
     np.testing.assert_array_almost_equal(mac[0].data[0, 0], 8003.053914)

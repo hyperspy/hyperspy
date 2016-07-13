@@ -135,7 +135,7 @@ contrast controls are HyperSpy-specific, however `matplotlib.imshow
 
     >>> import scipy
     >>> img = hs.signals.Signal2D(scipy.misc.lena())
-    >>> img.plot(colorbar=True, scalebar=False, auto_contrast=True,
+    >>> img.plot(colorbar=True, scalebar=False,
     >>> 	 axes_ticks=True, cmap='RdYlBu_r', saturated_pixels=0)
 
 
@@ -524,7 +524,7 @@ legended line, a spectrum can be toggled on and off.
      >>> s.axes_manager[0].offset = -10
      >>> s.axes_manager[0].scale = 0.1
      >>> m = s.create_model()
-     >>> g = components.Gaussian()
+     >>> g = hs.components1D.Gaussian()
      >>> m.append(g)
      >>> gaussians = []
      >>> labels = []

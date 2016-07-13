@@ -23,7 +23,6 @@ from contextlib import contextmanager
 
 from hyperspy.model import BaseModel, ModelComponents, ModelSpecialSlicers
 import hyperspy.drawing.signal1d
-from hyperspy.drawing.utils import on_figure_window_close
 from hyperspy._signals.eels import Signal1D
 from hyperspy.axes import generate_axis
 from hyperspy.exceptions import WrongObjectError
@@ -131,7 +130,7 @@ class Model1D(BaseModel):
 
     >>> s = hs.signals.Signal1D(
             np.random.normal(scale=2, size=10000)).get_histogram()
-    >>> g = hs.model.components.Gaussian()
+    >>> g = hs.model.components1D.Gaussian()
     >>> m = s.create_model()
     >>> m.append(g)
     >>> m.print_current_values()
@@ -619,8 +618,7 @@ class Model1D(BaseModel):
         # Add the line to the figure
         _plot.signal_plot.add_line(l2)
         l2.plot()
-        on_figure_window_close(_plot.signal_plot.figure,
-                               self._close_plot)
+        _plot.signal_plot.events.closed.connect(self._close_plot, [])
 
         self._model_line = l2
         self._plot = self.signal._plot
@@ -683,6 +681,7 @@ class Model1D(BaseModel):
     def _close_plot(self):
         if self._plot_components is True:
             self.disable_plot_components()
+        self.disable_adjust_position()
         self._disconnect_parameters2update_plot(components=self)
         self._model_line = None
 
@@ -734,8 +733,6 @@ class Model1D(BaseModel):
             self.plot()
         if self._position_widgets:
             self.disable_adjust_position()
-        on_figure_window_close(self._plot.signal_plot.figure,
-                               self.disable_adjust_position)
         if components:
             components = [self._get_component(x) for x in components]
         else:
@@ -851,7 +848,7 @@ class Model1D(BaseModel):
         --------
         Signal range set interactivly
 
-        >>> g1 = hs.model.components.Gaussian()
+        >>> g1 = hs.model.components1D.Gaussian()
         >>> m.append(g1)
         >>> m.fit_component(g1)
 

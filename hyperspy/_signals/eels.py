@@ -31,7 +31,7 @@ from hyperspy.gui.eels import TEMParametersUI
 from hyperspy.defaults_parser import preferences
 import hyperspy.gui.messages as messagesui
 from hyperspy.external.progressbar import progressbar
-from hyperspy.components import PowerLaw
+from hyperspy.components1d import PowerLaw
 from hyperspy.misc.utils import isiterable, closest_power_of_two, underline
 from hyperspy.misc.utils import without_nans
 
@@ -39,10 +39,11 @@ _logger = logging.getLogger(__name__)
 
 
 class EELSSpectrum(Signal1D):
+
     _signal_type = "EELS"
 
-    def __init__(self, *args, **kwards):
-        Signal1D.__init__(self, *args, **kwards)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         # Attributes defaults
         self.subshells = set()
         self.elements = set()
@@ -678,7 +679,7 @@ class EELSSpectrum(Signal1D):
             I0_shape.insert(axis.index_in_array, 1)
             I0 = I0.reshape(I0_shape)
 
-        from hyperspy.components import Gaussian
+        from hyperspy.components1d import Gaussian
         g = Gaussian()
         g.sigma.value = fwhm / 2.3548
         g.A.value = 1
