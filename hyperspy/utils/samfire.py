@@ -19,4 +19,3 @@ SamfirePool
 from hyperspy.samfire_utils import fit_tests
 from hyperspy.samfire_utils import global_strategies
 from hyperspy.samfire_utils import local_strategies
-from hyperspy.samfire_utils.samfire_pool import SamfirePool

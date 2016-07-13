@@ -40,7 +40,9 @@ np.random.seed(123)
 
 def generate_test_model():
 
-    import hyperspy.api as hs
+    # import hyperspy.api as hs
+    from hyperspy.signals import Signal1D
+    from hyperspy.components1d import (Gaussian, Lorentzian)
     import numpy as np
     from scipy.ndimage import gaussian_filter
     total = None
@@ -55,11 +57,11 @@ def generate_test_model():
     lor_map = None
     for blur in blurs:
 
-        s = hs.signals.Signal1D(np.ones((domain, domain, 1024)))
+        s = Signal1D(np.ones((domain, domain, 1024)))
         cent = tuple([int(0.5 * i) for i in s.data.shape[:-1]])
         m0 = s.create_model()
 
-        gs01 = hs.model.components1D.Lorentzian()
+        gs01 = Lorentzian()
         m0.append(gs01)
         gs01.gamma.map['values'][:] = 50
         gs01.gamma.map['is_set'][:] = True
@@ -75,7 +77,7 @@ def generate_test_model():
         gs01.A.map['values'] = gaussian_filter(gs01.A.map['values'], blur)
         gs01.A.map['is_set'][:] = True
 
-        gs02 = hs.model.components1D.Gaussian()
+        gs02 = Gaussian()
         m0.append(gs02)
         gs02.sigma.map['values'][:] = 15
         gs02.sigma.map['is_set'][:] = True
@@ -88,7 +90,7 @@ def generate_test_model():
         gs02.A.map['values'][:] = 50000
         gs02.A.map['is_set'][:] = True
 
-        gs03 = hs.model.components1D.Lorentzian()
+        gs03 = Lorentzian()
         m0.append(gs03)
         gs03.gamma.map['values'][:] = 20
         gs03.gamma.map['is_set'][:] = True
@@ -109,15 +111,15 @@ def generate_test_model():
             lor_map = np.concatenate(
                 (lor_map, gs01.centre.map['values'].copy()), axis=1)
 
-    s = hs.signals.Signal1D(total)
+    s = Signal1D(total)
     s.add_poissonian_noise()
     s.data += 0.1
     s.estimate_poissonian_noise_variance()
 
     m = s.inav[:, :7].create_model()
-    g = hs.model.components1D.Gaussian()
-    l1 = hs.model.components1D.Lorentzian()
-    l2 = hs.model.components1D.Lorentzian()
+    g = Gaussian()
+    l1 = Lorentzian()
+    l2 = Lorentzian()
     g.sigma.value = 50
     g.centre.value = 400
     g.A.value = 50000
@@ -373,7 +375,7 @@ class TestSamfireWorker:
         s = hs.signals.Signal1D(np.array([d, d]))
         s.add_poissonian_noise()
         s.metadata.Signal.set_item("Noise_properties.variance",
-                                   hs.signals.BaseSignal(s.data + 1.))
+                                   s.deepcopy() + 1.)
         m = s.create_model()
         m.append(hs.model.components1D.Gaussian())
         m[-1].name = 'g1'
