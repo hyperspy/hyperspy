@@ -77,6 +77,8 @@ def update_version(version):
 # Extensions. Add your extension here:
 raw_extensions = [Extension("hyperspy.tests.misc.cython.test_cython_integration",
                             ['hyperspy/tests/misc/cython/test_cython_integration.pyx']),
+                  Extension("hyperspy.io_plugins.unbcf_fast",
+                            ['hyperspy/io_plugins/unbcf_fast.pyx']),
                   ]
 
 cleanup_list = []
@@ -341,6 +343,7 @@ with update_version_when_dev() as version:
                 'tests/io/tiff_files/*.dm3',
                 'tests/io/npy_files/*.npy',
                 'tests/io/unf_files/*.unf',
+                'tests/io/bcf_data/*.bcf',
                 'tests/drawing/*.ipynb',
                 'tests/signal/test_find_peaks1D_ohaver/test_find_peaks1D_ohaver.hdf5',
             ],

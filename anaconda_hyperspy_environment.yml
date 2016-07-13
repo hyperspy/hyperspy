@@ -17,6 +17,7 @@ dependencies:
 - sympy
 - natsort
 - ncurses
+- lxml
 - pip:
   - dask
   - hyperspy

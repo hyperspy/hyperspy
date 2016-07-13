@@ -44,12 +44,10 @@ def load(filenames=None,
          **kwds):
     """
     Load potentially multiple supported file into an hyperspy structure
-    Supported formats: HDF5, msa, Gatan dm3, Ripple (rpl+raw)
+    Supported formats: HDF5, msa, Gatan dm3, Ripple (rpl+raw), Bruker bcf,
     FEI ser and emi, hdf5, SEMPER unf, EMD, tif and a number of image formats.
-
     Any extra keyword is passed to the corresponsing reader. For
     available options see their individual documentation.
-
     Parameters
     ----------
     filenames :  None, str or list of strings
@@ -62,7 +60,6 @@ def load(filenames=None,
         files can be loaded by using simple shell-style wildcards,
         e.g. 'my_file*.msa' loads all the files that starts
         by 'my_file' and has the '.msa' extension.
-
     signal_type : {None, "EELS", "EDS_TEM", "EDS_SEM", "", str}
         The acronym that identifies the signal type.
         The value provided may determine the Signal subclass assigned to the
@@ -94,7 +91,6 @@ def load(filenames=None,
         If an axis with this name already
         exists it automatically append '-i', where `i` are integers,
         until it finds a name that is not yet in use.
-
     mmap: bool
         If True and stack is True, then the data is stored
         in a memory-mapped temporary file.The memory-mapped data is
@@ -106,7 +102,6 @@ def load(filenames=None,
         If mmap_dir is not None, and stack and mmap are True, the memory
         mapped file will be created in the given directory,
         otherwise the default directory is used.
-
     load_to_memory: bool
         for HDF5 files, blockfiles and EMD files, if True (default) loads all
         data to memory. If False, enables only loading the data upon request
@@ -122,21 +117,15 @@ def load(filenames=None,
     Returns
     -------
     Signal instance or list of signal instances
-
     Examples
     --------
     Loading a single file providing the signal type:
-
     >>> d = hs.load('file.dm3', signal_type='EDS_TEM')
 
     Loading multiple files:
-
     >>> d = hs.load('file1.dm3','file2.dm3')
-
     Loading multiple files matching the pattern:
-
     >>> d = hs.load('file*.dm3')
-
     """
     kwds['signal_type'] = signal_type
     if filenames is None:
@@ -203,11 +192,9 @@ def load_single_file(filename,
     """
     Load any supported file into an HyperSpy structure
     Supported formats: netCDF, msa, Gatan dm3, Ripple (rpl+raw),
-    FEI ser and emi, hdf5 and SEMPER unf.
-
+    Bruker bcf, FEI ser and emi, hdf5 and SEMPER unf.
     Parameters
     ----------
-
     filename : string
         File name (including the extension)
 
@@ -269,17 +256,16 @@ def assign_signal_subclass(dtype,
                            signal_dimension,
                            signal_type=""):
     """Given record_by and signal_type return the matching Signal subclass.
-
     Parameters
     ----------
     dtype : :class:`~.numpy.dtype`
     record_by: {"spectrum", "image", ""}
     signal_type : {"EELS", "EDS", "EDS_TEM", "", str}
 
+
     Returns
     -------
     Signal or subclass
-
     """
     import hyperspy.signals
     from hyperspy.signal import BaseSignal
@@ -316,15 +302,12 @@ def assign_signal_subclass(dtype,
 
 def dict2signal(signal_dict):
     """Create a signal (or subclass) instance defined by a dictionary
-
     Parameters
     ----------
     signal_dict : dictionary
-
     Returns
     -------
     s : Signal or subclass
-
     """
     signal_dimension = -1  # undefined
     signal_type = ""
