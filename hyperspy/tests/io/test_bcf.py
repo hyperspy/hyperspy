@@ -11,11 +11,15 @@ test_files = ['P45_instructively_packed_16bit_compressed.bcf',
               'P45_the_default_job.bcf']
 np_file = ['P45_16bit.npy', 'P45_16bit_ds.npy']
 
+try:
+    import lxml
+    skip_test = False
+except ImportError:
+    skip_test = True
+
 
 def test_load_16bit():
-    try:
-        import lxml:
-    except ImportError:
+    if skip_test:
         raise SkipTest
     # test bcf from hyperspy load function level
     # some of functions can be not covered
@@ -36,9 +40,7 @@ def test_load_16bit():
 
 
 def test_load_16bit_reduced():
-    try:
-        import lxml:
-    except ImportError:
+    if skip_test:
         raise SkipTest
     my_path = os.path.dirname(__file__)
     filename = os.path.join(my_path, 'bcf_data', test_files[0])
@@ -58,9 +60,7 @@ def test_load_16bit_reduced():
 
 
 def test_load_8bit():
-    try:
-        import lxml:
-    except ImportError:
+    if skip_test:
         raise SkipTest
     for bcffile in test_files[1:]:
         my_path = os.path.dirname(__file__)
@@ -76,9 +76,7 @@ def test_load_8bit():
 
 
 def test_hyperspy_wrap():
-    try:
-        import lxml:
-    except ImportError:
+    if skip_test:
         raise SkipTest
     my_path = os.path.dirname(__file__)
     filename = os.path.join(my_path, 'bcf_data', test_files[0])
@@ -93,9 +91,7 @@ def test_hyperspy_wrap():
 
 
 def test_hyperspy_wrap_downsampled():
-    try:
-        import lxml:
-    except ImportError:
+    if skip_test:
         raise SkipTest
     my_path = os.path.dirname(__file__)
     filename = os.path.join(my_path, 'bcf_data', test_files[0])
@@ -107,9 +103,7 @@ def test_hyperspy_wrap_downsampled():
 
 
 def test_fast_bcf():
-    try:
-        import lxml:
-    except ImportError:
+    if skip_test:
         raise SkipTest
     from hyperspy.io_plugins import bcf
 
