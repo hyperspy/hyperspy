@@ -58,7 +58,7 @@ class TEMParametersUI(t.HasTraits):
     live_time = t.Float(t.Undefined,
                         label='Live time (s)')
     probe_area = t.Float(t.Undefined,
-                        label='Beam/probe area (nm^2)')
+                         label='Beam/probe area (nm^2)')
     azimuth_angle = t.Float(t.Undefined,
                             label='Azimuth angle (degree)')
     elevation_angle = t.Float(t.Undefined,
