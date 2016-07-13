@@ -18,13 +18,12 @@ dependencies:
 - sympy
 - natsort
 - ncurses
-- requests
-- pango
+- lxml
+- ipyparallel
+- dask
+- conda-forge::traits
+- conda-forge::traitsui
+- conda-forge::tqdm
+- conda-forge::ipywidgets
 - pip:
-  - dask
   - hyperspy
-  - traits
-  - traitsui
-  - tqdm
-  - ipywidgets
-  - tqdm
