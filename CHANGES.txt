@@ -41,7 +41,7 @@ EDS
 IO
 ^^
 * Support for reading certain files without :ref:`loading them to memory <load_to_memory-label>`. 
-* :ref:`Bruker's composite file (bcf) <bruker-format>` reading support. 
+* :ref:`Bruker's composite file (bcf) <bcf-format>` reading support. 
 * :ref:`Electron Microscopy Datasets (EMD) <emd-format>` read and write support.
 * :ref:`SEMPER unf <unf-format>` read and write support. 
 * :ref:`DENS heat log <dens-format>` read support.
@@ -54,6 +54,16 @@ Enhancements
 * Add support for :ref:`writing/reading scale and unit to tif files
   <tiff-format>` to be read with ImageJ or DigitalMicrograph.
 
+Documentation
+-------------
+
+* The following sections of the User Guide were revised and largely overwritten: 
+
+  * :ref:`install-label`.
+  * :ref:`ml-label`.
+  * :ref:`eds-label`.
+* New :ref:`dev_guide-label`.
+
 
 API changes
 -----------
@@ -65,16 +75,6 @@ API changes
   :py:class:`~._signals.image.Signal2D` and :py:class:`~.signal.BaseSignal`
   classes deprecated the old `Spectrum` `Image` and `Signal` classes. 
 
-Documentation
--------------
-
-
-* The following sections of the User Guide were revised and largely overwritten: 
-
-  * :ref:`install-label`.
-  * :ref:`ml-label`.
-  * :ref:`eds-label`.
-* New :ref:`dev_guide-label`.
 
 
 v0.8.5
