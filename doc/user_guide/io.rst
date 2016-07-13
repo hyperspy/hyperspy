@@ -40,7 +40,7 @@ providing the ``signal`` keyword, which has to be one of: ``spectrum``,
 
 Some file formats store some extra information about the data, which can be
 stored in "attributes". If HyperSpy manages to read some extra information
-about the data it stores it in :py:attr:read and write supporread and write supporread and write supporread and write supporread and write supporread and write supporread and write supporread and write supportttttttt`~.signal.BaseSignal.original_metadata`
+about the data it stores it in `~.signal.BaseSignal.original_metadata`
 attribute. Also, it is possible that other information will be mapped by
 HyperSpy to a standard location where it can be used by some standard routines,
 the :py:attr:`~.signal.BaseSignal.metadata` attribute.
