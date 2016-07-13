@@ -4,9 +4,6 @@ import logging
 
 _logger = logging.getLogger(__name__)
 
-from hyperspy.defaults_parser import preferences
-from hyperspy.logger import set_log_level
-set_log_level(preferences.General.logging_level)
 
 from hyperspy import docstrings
 
