@@ -44,21 +44,23 @@ writes = False
 
 import io
 
+import logging
+_logger = logging.getLogger(__name__)
+
 try:
     from lxml import objectify
+    library_present = True
 except ImportError:
-    raise ImportError("""The lxml or/and python-lxml bindings are missing
+    _logger.warning("""The lxml or/and python-lxml bindings are missing
 required to read Bruker bcf files.
 Try to install python-lxml package with pip or other python packaging system""")
+    library_present = False
 
 import codecs
 from datetime import datetime, timedelta
 import numpy as np
 from struct import unpack as strct_unp
 from zlib import decompress as unzip_block
-
-import logging
-_logger = logging.getLogger(__name__)
 
 try:
     from hyperspy.io_plugins import unbcf_fast
@@ -976,6 +978,8 @@ def file_reader(filename, select_type=None, index=0, downsample=1,
        crop or enlarge energy range at max values. (default None)
     """
     #objectified bcf file:
+    if not library_present:
+        raise ImportError('lxml library or python bindings are not present')
     obj_bcf = BCF_reader(filename)
     if select_type == 'image':
         return bcf_imagery(obj_bcf)
