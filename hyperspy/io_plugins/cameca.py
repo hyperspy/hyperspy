@@ -22,17 +22,10 @@ from glob import glob
 import os
 import logging
 import xml.etree.ElementTree as ET
-try:
-    from collections import OrderedDict
-    ordict = True
-except ImportError:
-    ordict = False
 
 import numpy as np
-import traits.api as t
 
 from hyperspy.misc.array_tools import sarray2dict
-from hyperspy.misc.utils import DictionaryTreeBrowser
 
 _logger = logging.getLogger(__name__)
 
@@ -51,61 +44,8 @@ default_extension = 0
 writes = False
 # ----------------------
 
-data_types = {
-    '1': '<u1',
-    '2': '<u2',
-    '3': '<u4',
-    '4': '<i1',
-    '5': '<i2',
-    '6': '<i4',
-    '7': '<f4',
-    '8': '<f8',
-    '9': '<c8',
-    '10': '<c16',
-}
-
-#XY_TAG_ID = 16706  # header contains XY calibration
 
 
-def readLELongLong(file):
-    """Read 8 bytes as *little endian* integer in file"""
-    read_bytes = file.read(8)
-    return struct.unpack('<Q', read_bytes)[0]
-
-
-def readLELong(file):
-    """Read 4 bytes as *little endian* integer in file"""
-    read_bytes = file.read(4)
-    return struct.unpack('<L', read_bytes)[0]
-
-
-def readLEShort(file):
-    """Read 2 bytes as *little endian* integer in file"""
-    read_bytes = file.read(2)
-    return struct.unpack('<H', read_bytes)[0]
-
-
-def dimension_array_dtype(n, DescriptionLength, UnitsLength):
-    dt_list = [
-        ("Dim-%s_DimensionSize" % n, ("<u4")),
-        ("Dim-%s_CalibrationOffset" % n, "<f8"),
-        ("Dim-%s_CalibrationDelta" % n, "<f8"),
-        ("Dim-%s_CalibrationElement" % n, "<u4"),
-        ("Dim-%s_DescriptionLength" % n, "<u4"),
-        ("Dim-%s_Description" % n, (bytes, DescriptionLength)),
-        ("Dim-%s_UnitsLength" % n, "<u4"),
-        ("Dim-%s_Units" % n, (bytes, UnitsLength)),
-    ]
-    return dt_list
-
-
-def get_lengths(file):
-    file.seek(24, 1)
-    description_length = readLELong(file)
-    file.seek(description_length, 1)
-    unit_length = readLELong(file)
-    file.seek(unit_length, 1)
-    return description_length, unit_length
 
 def get_endian(file):
     """
@@ -196,120 +136,19 @@ def get_header_dtype_list(file, endian):
                           count=1)
     header_list = header_list1 + header_list2
 
+
+
     file.seek(0)
     return header_list
 
 
-def get_data_dtype_list(file, offset, record_by):
-    if record_by == 'spectrum':
-        file.seek(offset + 20)
-        data_type = readLEShort(file)
-        array_size = readLELong(file)
-        header = [
-            ("CalibrationOffset", ("<f8")),
-            ("CalibrationDelta", "<f8"),
-            ("CalibrationElement", "<u4"),
-            ("DataType", "<u2"),
-            ("ArrayLength", "<u4"),
-            ("Array", (data_types[str(data_type)], array_size)),
-        ]
-    elif record_by == 'image':  # Untested
-        file.seek(offset + 40)
-        data_type = readLEShort(file)
-        array_size_x = readLELong(file)
-        array_size_y = readLELong(file)
-        array_size = array_size_x * array_size_y
-        header = [
-            ("CalibrationOffsetX", ("<f8")),
-            ("CalibrationDeltaX", "<f8"),
-            ("CalibrationElementX", "<u4"),
-            ("CalibrationOffsetY", ("<f8")),
-            ("CalibrationDeltaY", "<f8"),
-            ("CalibrationElementY", "<u4"),
-            ("DataType", "<u2"),
-            ("ArraySizeX", "<u4"),
-            ("ArraySizeY", "<u4"),
-            ("Array",
-             (data_types[str(data_type)], (array_size_x, array_size_y))),
-        ]
-    return header
 
-
-def get_data_tag_dtype_list(data_type_id):
-    if data_type_id == XY_TAG_ID:
-        header = [
-            ("TagTypeID", ("<u2")),
-            ("Unknown", ("<u2")),  # Not in Boothroyd description. = 0
-            ("Time", "<u4"),   # The precision is one second...
-            ("PositionX", "<f8"),
-            ("PositionY", "<f8"),
-        ]
-    else:  # elif data_type_id == ?????, 16722?
-        header = [
-            ("TagTypeID", ("<u2")),
-            # Not in Boothroyd description. = 0. Not tested.
-            ("Unknown", ("<u2")),
-            ("Time", "<u4"),   # The precision is one second...
-        ]
-    return header
-
-
-def log_struct_array_values(struct_array):
-    for key in struct_array.dtype.names:
-        if not isinstance(struct_array[key], np.ndarray) or \
-                np.array(struct_array[key].shape).sum() == 1:
-            _logger.info("%s : %s", key, struct_array[key])
-        else:
-            _logger.info("%s : Array", key)
-
-
-def guess_record_by(record_by_id):
-    if record_by_id == 16672:
-        return 'spectrum'
-    else:
-        return 'image'
-
-
-def parse_ExperimentalDescription(et, dictree):
-    dictree.add_node(et.tag)
-    dictree = dictree[et.tag]
-    for data in et.find("Root").findall("Data"):
-        label = data.find("Label").text
-        value = data.find("Value").text
-        units = data.find("Unit").text
-        item = label if not units else label + "_%s" % units
-        value = float(value) if units else value
-        dictree[item] = value
-
-
-def parse_TrueImageHeaderInfo(et, dictree):
-    dictree.add_node(et.tag)
-    dictree = dictree[et.tag]
-    et = ET.fromstring(et.text)
-    for data in et.findall(b"Data"):
-        dictree[data.find(b"Index").text] = float(data.find(b"Value").text)
-
-
-def emixml2dtb(et, dictree):
-    if et.tag == "ExperimentalDescription":
-        parse_ExperimentalDescription(et, dictree)
-        return
-    elif et.tag == "TrueImageHeaderInfo":
-        parse_TrueImageHeaderInfo(et, dictree)
-        return
-    if et.text:
-        dictree[et.tag] = et.text
-        return
-    else:
-        dictree.add_node(et.tag)
-        for child in et:
-            emixml2dtb(child, dictree[et.tag])
 
 
 def file_reader(filename, *args, **kwds):
     ext = os.path.splitext(filename)[1][1:]
     if ext in im_extensions:
-        return [im_reader(filename, *args, **kwds), ]
+        return im_reader(filename, *args, **kwds)
     #elif ext in emi_extensions:
         #return emi_reader(filename, *args, **kwds)
 
@@ -368,336 +207,113 @@ def get_calibration_from_position(position):
     return axis_attr
 
 
-def get_axes_from_position(header, data):
-    array_shape = []
-    axes = []
-    array_size = int(header["ValidNumberElements"])
-    if data[b"TagTypeID"][0] == XY_TAG_ID:
-        xcal = get_calibration_from_position(data[b"PositionX"])
-        ycal = get_calibration_from_position(data[b"PositionY"])
-        if xcal[b"size"] == 0 and ycal[b"size"] != 0:
-            # Vertical line scan
-            axes.append({
-                'name': "x",
-                'units': "meters",
-                'index_in_array': 0,
-            })
-            axes[-1].update(xcal)
-            array_shape.append(axes[-1]["size"])
-
-        elif xcal[b"size"] != 0 and ycal[b"size"] == 0:
-            # Horizontal line scan
-            axes.append({
-                'name': "y",
-                'units': "meters",
-                'index_in_array': 0,
-            })
-            axes[-1].update(ycal)
-            array_shape.append(axes[-1]["size"])
-
-        elif xcal[b"size"] * ycal[b"size"] == array_size:
-            # Signal2D
-            axes.append({
-                'name': "y",
-                'units': "meters",
-                'index_in_array': 0,
-            })
-            axes[-1].update(ycal)
-            array_shape.append(axes[-1]["size"])
-            axes.append({
-                'name': "x",
-                'units': "meters",
-                'index_in_array': 1,
-            })
-            axes[-1].update(xcal)
-            array_shape.append(axes[-1]["size"])
-        elif xcal[b"size"] == ycal[b"size"] == array_size:
-            # Oblique line scan
-            scale = np.sqrt(xcal["scale"] ** 2 + ycal["scale"] ** 2)
-            axes.append({
-                'name': "x",
-                'units': "meters",
-                'index_in_array': 0,
-                "offset": 0,
-                "scale": scale,
-                "size": xcal["size"]
-            })
-            array_shape.append(axes[-1]["size"])
-        else:
-            raise IOError
-    else:
-        array_shape = [header["ValidNumberElements"]]
-        axes.append({
-            'name': "Unknown dimension",
-            'offset': 0,
-            'scale': 1,
-            'units': "",
-            'size': header["ValidNumberElements"],
-            'index_in_array': 0
-        })
-    return array_shape, axes
 
 
-def convert_xml_to_dict(xml_object):
-    op = DictionaryTreeBrowser()
-    emixml2dtb(ET.fromstring(xml_object), op)
-    return op
-
-
-def im_reader(filename, objects=None, *args, **kwds):
+def im_reader(filename, *args, **kwds):
     """Reads the information from the file and returns it in the HyperSpy
     required format.
 
     """
-    header, data = load_ser_file(filename)
-    record_by = guess_record_by(header['DataTypeID'])
-    ndim = int(header['NumberDimensions'])
-    if record_by == 'spectrum':
-        if ndim == 0 and header["ValidNumberElements"] != 0:
-            # The calibration of the axes are not stored in the header.
-            # We try to guess from the position coordinates.
-            array_shape, axes = get_axes_from_position(header=header,
-                                                       data=data)
-        else:
-            axes = []
-            array_shape = [None, ] * int(ndim)
-            if len(data['PositionY']) > 1 and \
-                    (data['PositionY'][0] == data['PositionY'][1]):
-                # The spatial dimensions are stored in F order i.e. X, Y, ...
-                order = "F"
-            else:
-                # The spatial dimensions are stored in C order i.e. ..., Y, X
-                order = "C"
-            # Extra dimensions
-            for i in range(ndim):
-                if i == ndim - 1:
-                    name = 'x'
-                elif i == ndim - 2:
-                    name = 'y'
-                else:
-                    name = t.Undefined
-                idim = 1 + i if order == "C" else ndim - i
-                axes.append({
-                    'name': name,
-                    'offset': header['Dim-%i_CalibrationOffset' % idim][0],
-                    'scale': header['Dim-%i_CalibrationDelta' % idim][0],
-                    'units': header['Dim-%i_Units' % idim][0].decode('utf-8'),
-                    'size': header['Dim-%i_DimensionSize' % idim][0],
-                    'index_in_array': i
-                })
-                array_shape[i] = \
-                    header['Dim-%i_DimensionSize' % idim][0]
+    header, data = load_im_file(filename)
+    nplanes = int(header['number_of_planes'][0])
+    nmasses = int(header['number_of_masses'][0])
+    width_pixels = int(header['width_pixels'][0])
+    height_pixels = int(header['height_pixels'][0])
 
-        # Spectral dimension
-        axes.append({
-            'offset': data['CalibrationOffset'][0],
-            'scale': data['CalibrationDelta'][0],
-            'size': data['ArrayLength'][0],
-            'index_in_array': header['NumberDimensions'][0]
-        })
+    # Image mode
 
-        # FEI seems to use the international system of units (SI) for the
-        # energy scale (eV).
-        axes[-1]['units'] = 'eV'
-        axes[-1]['name'] = 'Energy'
+    axes = []
+    array_shape = []
+    chk_exists = False
+    if chk_exists == True:
+        #set units based on that info
+        units = "unitsfromchkfile"
+    else:
+        units = "um"
+    # Y axis
+    axes.append({
+        'name': 'y',
+        'offset': 0,
+        'scale': header["raster"][0] / header['height_pixels'][0],
+        'units': units,
+        'size': header["height_pixels"][0],
+    })
+    array_shape.append(header["height_pixels"][0])
 
-        array_shape.append(data['ArrayLength'][0])
+    # X axis
+    axes.append({
+        'name': 'x',
+        'offset': 0,
+        'scale': header["raster"][0] / header['width_pixels'][0],
+        'units': units,
+        'size': header["width_pixels"][0],
+    })
 
-    elif record_by == 'image':
-        # Extra dimensions
-        if ndim == 0 and header["ValidNumberElements"] != 0:
-            # The calibration of the axes are not stored in the header.
-            # We try to guess from the position coordinates.
-            array_shape, axes = get_axes_from_position(header=header,
-                                                       data=data)
-        else:
-            axes = []
-            array_shape = []
-            for i in range(ndim):
-                if header['Dim-%i_DimensionSize' % (i + 1)][0] != 1:
-                    axes.append({
-                        'offset': header[
-                            'Dim-%i_CalibrationOffset' % (i + 1)][0],
-                        'scale': header[
-                            'Dim-%i_CalibrationDelta' % (i + 1)][0],
-                        # for image stack, the UnitsLength is 0 (no units)
-                        'units': header['Dim-%i_Units' % (i + 1)][0].decode(
-                            'utf-8')
-                        if header['Dim-%i_UnitsLength' % (i + 1)] > 0
-                        else 'Unknown',
-                        'size': header['Dim-%i_DimensionSize' % (i + 1)][0],
-                    })
-                array_shape.append(header['Dim-%i_DimensionSize' % (i + 1)][0])
-        if objects is not None:
-            objects_dict = convert_xml_to_dict(objects[0])
-            units = guess_units_from_mode(objects_dict, header)
-        else:
-            units = "meters"
-        # Y axis
-        axes.append({
-            'name': 'y',
-            'offset': data['CalibrationOffsetY'][0] -
-            data['CalibrationElementY'][0] * data['CalibrationDeltaY'][0],
-            'scale': data['CalibrationDeltaY'][0],
-            'units': units,
-            'size': data['ArraySizeY'][0],
-        })
-        array_shape.append(data['ArraySizeY'][0])
+    array_shape.append(header['width_pixels'][0])
 
-        # X axis
-        axes.append({
-            'name': 'x',
-            'offset': data['CalibrationOffsetX'][0] -
-            data['CalibrationElementX'][0] * data['CalibrationDeltaX'][0],
-            'scale': data['CalibrationDeltaX'][0],
-            'size': data['ArraySizeX'][0],
-            'units': units,
-        })
-        array_shape.append(data['ArraySizeX'][0])
-    # FEI seems to use the international system of units (SI) for the
-    # spatial scale. However, we prefer to work in nm
-    for axis in axes:
-        if axis['units'] == 'meters':
-            axis['units'] = 'nm'
-            axis['scale'] *= 10 ** 9
-        elif axis['units'] == '1/meters':
-            axis['units'] = '1/nm'
-            axis['scale'] /= 10 ** 9
     # If the acquisition stops before finishing the job, the stored file will
-    # report the requested size even though no values are recorded. Therefore
-    # if the shapes of the retrieved array does not match that of the data
-    # dimensions we must fill the rest with zeros or (better) nans if the
-    # dtype is float
-    if np.cumprod(array_shape)[-1] != np.cumprod(data['Array'].shape)[-1]:
-        dc = np.zeros(np.cumprod(array_shape)[-1],
-                      dtype=data['Array'].dtype)
-        if dc.dtype is np.dtype('f') or dc.dtype is np.dtype('f8'):
-            dc[:] = np.nan
-        dc[:data['Array'].ravel().shape[0]] = data['Array'].ravel()
-    else:
-        dc = data['Array']
+    # contain only zeroes in all remaining slices. Better remove them.
 
-    dc = dc.reshape(array_shape)
-    if record_by == 'image':
-        dc = dc[..., ::-1, :]
-    if ordict:
-        original_metadata = OrderedDict()
-    else:
-        original_metadata = {}
-    header_parameters = sarray2dict(header)
-    sarray2dict(data, header_parameters)
-    if len(axes) != len(dc.shape):
-        dc = dc.squeeze()
-    if len(axes) != len(dc.shape):
-        raise IOError("Please report this issue to the HyperSpy developers.")
-    # We remove the Array key to save memory avoiding duplication
-    del header_parameters['Array']
-    original_metadata['ser_header_parameters'] = header_parameters
-    dictionary = {
-        'data': dc,
-        'metadata': {
-            'General': {
-                'original_filename': os.path.split(filename)[1]},
-            "Signal": {
-                'signal_type': "",
-                'record_by': record_by,
+
+
+    for i in range(header["number_of_masses"]):
+        dc = data[i]
+
+        # Set? original_metadata = {}
+        header_parameters = sarray2dict(header)
+        sarray2dict(data, header_parameters)
+
+        #original_metadata['ser_header_parameters'] = header_parameters
+        dictionary = {
+            'data': dc,
+            'metadata': {
+                'General': {
+                    #'title' : Need to reference label
+                    'original_filename': os.path.split(filename)[1]},
+                "Signal": {
+                    'signal_type': "",
+                    'record_by': record_by,
+                },
             },
-        },
-        'axes': axes,
-        'original_metadata': original_metadata,
-        'mapping': mapping}
-    return dictionary
+            'axes': axes,
+            'original_metadata': original_metadata,
+            'mapping': mapping}
+    # Return a list of dictionaries
+    return dictionary_list
+
 
 def load_im_file(filename):
     _logger.info("Opening the file: %s", filename)
     with open(filename, 'rb') as f:
+        # Check endian of bytes, as it depends on the OS that saved the file
+        endian = get_endian(f)
         header = np.fromfile(f,
-                             dtype=np.dtype(get_header_dtype_list(f)),
+                             dtype=np.dtype(get_header_dtype_list(f, endian=endian)),
                              count=1)
+        for key in header:
+            if type(header[key]) == np.bytes_:
+                header[key] = header[key].decode()
+
         _logger.info("Header info:")
         log_struct_array_values(header[0])
 
-        if header['ValidNumberElements'] == 0:
-            raise IOError(
-                "The file does not contains valid data. "
-                "If it is a single spectrum, the data is contained in the  "
-                ".emi file but HyperSpy cannot currently extract this "
-                "information.")
-
         # Read the first element of data offsets
-        f.seek(header["OffsetArrayOffset"][0])
-        # OffsetArrayOffset can contain 4 or 8 bytes integer depending if the
-        # data have been acquired using a 32 or 64 bits platform.
-        if header['SeriesVersion'] <= 528:
-            data_offsets = readLELong(f)
-        else:
-            data_offsets = readLELongLong(f)
-        data_dtype_list = get_data_dtype_list(
-            f,
-            data_offsets,
-            guess_record_by(header['DataTypeID']))
-        tag_dtype_list = get_data_tag_dtype_list(header['TagTypeID'])
-        f.seek(data_offsets)
+        f.seek(header["header_size"][0])
+        # Data can either be of data type uint16 or uint32 - maybe even uint64
+
+        datadtype = endian + "u" + str(header["pixel_size"][0])
+
         data = np.fromfile(f,
-                           dtype=np.dtype(data_dtype_list + tag_dtype_list),
-                           count=header["TotalNumberElements"][0])
-        _logger.info("Data info:")
-        log_struct_array_values(data[0])
+                           dtype=datadtype,
+                           count=header["number_of_masses"][0]*header["number_of_planes"][0]*header["width_pixels"][0]*header["height_pixels"][0])
+
+        # Reshape into shape (images*planes, width, height)
+        data = data.reshape(header["number_of_masses"][0]*header["number_of_planes"][0], header["width_pixels"][0], header["height_pixels"][0])
+
+        data = np.array([data[i::header["number_of_masses"]] for i in range(header["number_of_masses"])])
+
     return header, data
 
-
-def guess_units_from_mode(objects_dict, header):
-    # in case the xml file doesn't contain the "Mode" or the header doesn't
-    # contain 'Dim-1_UnitsLength', return "meters" as default, which will be
-    # OK most of the time
-    warn_str = "The navigation axes units could not be determined. " \
-               "Setting them to `nm`, but this may be wrong."
-    try:
-        mode = objects_dict.ObjectInfo.ExperimentalDescription.Mode
-        isCamera = (
-            "CameraNamePath" in objects_dict.ObjectInfo.AcquireInfo.keys())
-    except AttributeError:  # in case the xml chunk doesn't contain the Mode
-        warnings.warn(warn_str)
-        return 'meters'  # Most of the time, the unit will be meters!
-    if 'Dim-1_UnitsLength' in header.dtype.fields:
-        # assuming that for an image stack, the UnitsLength of the "3rd"
-        # dimension is 0
-        isImageStack = (header['Dim-1_UnitsLength'][0] == 0)
-        # Workaround: if this is not an image stack and not a STEM image, then
-        # we assume that it should be a diffraction
-        isDiffractionScan = (header['Dim-1_DimensionSize'][0] > 1 and not
-                             isImageStack)
-    else:
-        warnings.warn(warn_str)
-        return 'meters'  # Most of the time, the unit will be meters!
-
-    _logger.info(objects_dict.ObjectInfo.AcquireInfo)
-    _logger.info("mode: %s", mode)
-    _logger.info("isCamera: %s", isCamera)
-    _logger.info("isImageStack: %s", isImageStack)
-    _logger.info("isImageStack: %s", isDiffractionScan)
-    if 'STEM' in mode:
-        # data recorded in STEM with a camera, so we assume, it's a diffraction
-        # in case we can't make use the detector is a camera, use a workaround
-        if isCamera or isDiffractionScan:
-            return "1/meters"
-        else:
-            return "meters"
-    elif 'Diffraction' in mode:
-        return "1/meters"
-    else:
-        return 'meters'
-
-
-def get_simplified_mode(mode):
-    if "STEM" in mode:
-        return "STEM"
-    else:
-        return "TEM"
-
-
-def get_degree(value):
-    return np.degrees(float(value))
 
 
 mapping = {
