@@ -55,6 +55,10 @@ class TestAxesManager:
 
         self.am = AxesManager(axes_list)
 
+    def test_reprs(self):
+        repr(self.am)
+        self.am._repr_html_
+
     def test_update_from(self):
         am = self.am
         am2 = self.am.deepcopy()

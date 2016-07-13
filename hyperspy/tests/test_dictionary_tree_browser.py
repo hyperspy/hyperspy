@@ -92,7 +92,6 @@ class TestDictionaryBrowser:
                             'title': ''},
                         'Signal': {
                             'binned': False,
-                            'record_by': '',
                             'signal_type': ''},
                         '_HyperSpy': {
                             'Folding': {

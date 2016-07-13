@@ -19,7 +19,7 @@
 
 __doc__ = """
 
-Components that can be used to define a model for e.g. curve fitting.
+Components that can be used to define a 1D model for e.g. curve fitting.
 
 There are some components that are only useful for one particular kind of signal
 and therefore their name are preceded by the signal name: eg. eels_cl_edge.
@@ -53,7 +53,6 @@ from hyperspy._components.polynomial import Polynomial
 from hyperspy._components.pes_core_line_shape import PESCoreLineShape
 from hyperspy._components.volume_plasmon_drude import VolumePlasmonDrude
 from hyperspy._components.expression import Expression
-from hyperspy._components.gaussian2d import Gaussian2D
 
 # Generating the documentation
 

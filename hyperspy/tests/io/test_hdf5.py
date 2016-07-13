@@ -289,6 +289,25 @@ class TestPassingArgs:
         remove(self.filename)
 
 
+class TestAxesConfiguration:
+
+    def setUp(self):
+        self.filename = 'testfile.hdf5'
+        s = BaseSignal(np.zeros((2, 2, 2, 2, 2)))
+        s.axes_manager.signal_axes[0].navigate = True
+        s.axes_manager.signal_axes[0].navigate = True
+        s.save(self.filename)
+
+    def test_axes_configuration(self):
+        s = load(self.filename)
+        nt.assert_equal(s.axes_manager.navigation_axes[0].index_in_array, 4)
+        nt.assert_equal(s.axes_manager.navigation_axes[1].index_in_array, 3)
+        nt.assert_equal(s.axes_manager.signal_dimension, 3)
+
+    def tearDown(self):
+        remove(self.filename)
+
+
 def test_strings_from_py2():
     s = EDS_TEM_Spectrum()
     nt.assert_equal(s.metadata.Sample.elements.dtype.char, "U")

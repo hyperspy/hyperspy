@@ -330,7 +330,7 @@ class TestInteractive:
     def test_interactive_special_case(self):
         s = self.s.inav[0]
         r = CircleROI(3, 5, 2)
-        sr = r.interactive(s, None)
+        sr = r.interactive(s, None, color="blue")
         np.testing.assert_array_equal(np.where(sr.data.mask.flatten())[0],
                                       [0, 3, 12, 15])
         r.r_inner = 1

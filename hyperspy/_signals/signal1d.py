@@ -38,7 +38,6 @@ try:
 except:
     statsmodels_installed = False
 
-from hyperspy.decorators import auto_replot
 from hyperspy.defaults_parser import preferences
 from hyperspy.external.progressbar import progressbar
 from hyperspy.gui.tools import (
@@ -53,7 +52,7 @@ from hyperspy.decorators import only_interactive
 from hyperspy.decorators import interactive_range_selector
 from scipy.ndimage.filters import gaussian_filter1d
 from hyperspy.gui.tools import IntegrateArea
-from hyperspy import components
+from hyperspy import components1d
 
 
 def find_peaks_ohaver(y, x=None, slope_thresh=0., amp_thresh=None,
@@ -224,12 +223,12 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
     """
     """
-
-    _record_by = 'spectrum'
+    _signal_dimension = 1
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.axes_manager.set_signal_dimension(1)
+        if self.axes_manager.signal_dimension != 1:
+            self.axes_manager.set_signal_dimension(1)
 
     def _spikes_diagnosis(self, signal_mask=None,
                           navigation_mask=None):
@@ -928,13 +927,14 @@ class Signal1D(BaseSignal, CommonSignal1D):
             br.edit_traits()
         else:
             if background_type == 'PowerLaw':
-                background_estimator = components.PowerLaw()
+                background_estimator = components1d.PowerLaw()
             elif background_type == 'Gaussian':
-                background_estimator = components.Gaussian()
+                background_estimator = components1d.Gaussian()
             elif background_type == 'Offset':
-                background_estimator = components.Offset()
+                background_estimator = components1d.Offset()
             elif background_type == 'Polynomial':
-                background_estimator = components.Polynomial(polynomial_order)
+                background_estimator = components1d.Polynomial(
+                    polynomial_order)
             else:
                 raise ValueError(
                     "Background type: " +
@@ -974,7 +974,6 @@ class Signal1D(BaseSignal, CommonSignal1D):
         self.crop(axis=self.axes_manager.signal_axes[0].index_in_axes_manager,
                   start=left_value, end=right_value)
 
-    @auto_replot
     def gaussian_filter(self, FWHM):
         """Applies a Gaussian filter in the spectral dimension in place.
 
@@ -1001,8 +1000,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
             self.data,
             axis=axis.index_in_array,
             sigma=FWHM / 2.35482)
+        self.events.data_changed.trigger(obj=self)
 
-    @auto_replot
     def hanning_taper(self, side='both', channels=None, offset=0):
         """Apply a hanning taper to the data in place.
 
@@ -1043,6 +1042,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
                 np.hanning(2 * channels)[-channels:])
             if offset != 0:
                 dc[..., -offset:] *= 0.
+        self.events.data_changed.trigger(obj=self)
         return channels
 
     def find_peaks1D_ohaver(self, xdim=None, slope_thresh=0, amp_thresh=None,

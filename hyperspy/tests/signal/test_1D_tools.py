@@ -224,7 +224,7 @@ class TestEstimatePeakWidth:
         scale = 0.1
         window = 2
         x = np.arange(-window, window, scale)
-        g = hs.model.components.Gaussian()
+        g = hs.model.components1D.Gaussian()
         s = hs.signals.Signal1D(g.function(x))
         s.axes_manager[-1].scale = scale
         self.s = s

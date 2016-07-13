@@ -45,7 +45,7 @@ class TestModelBinned:
         s = hs.signals.Signal1D([1])
         s.axes_manager[0].scale = 0.1
         m = s.create_model()
-        m.append(hs.model.components.Offset())
+        m.append(hs.model.components1D.Offset())
         m[0].offset.value = 1
         self.m = m
 

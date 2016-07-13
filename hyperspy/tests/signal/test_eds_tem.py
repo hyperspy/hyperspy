@@ -21,7 +21,7 @@ import nose.tools as nt
 
 from hyperspy.signals import EDSTEMSpectrum
 from hyperspy.defaults_parser import preferences
-from hyperspy.components import Gaussian
+from hyperspy.components1d import Gaussian
 from hyperspy.misc.eds import utils as utils_eds
 from hyperspy.misc.test_utils import ignore_warning
 
