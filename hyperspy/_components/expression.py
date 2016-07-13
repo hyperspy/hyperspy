@@ -64,7 +64,7 @@ class Expression(Component):
         The following creates a Gaussian component and set the initial value
         of the parameters:
 
-        >>> hs.model.components.Expression(
+        >>> hs.model.components1D.Expression(
         ... expression="height * exp(-(x - x0) ** 2 * 4 * log(2)/ fwhm ** 2)",
         ... name="Gaussian",
         ... height=1,

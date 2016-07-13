@@ -142,16 +142,6 @@ the decomposition model. You can easily calculate and display the residuals:
     original :py:const:`s` object, except that the data has been replaced by
     the model constructed using the chosen components.
 
-Non-negative matrix factorization
-----------------------------
-
-Another popular decomposition method is non-negative matrix factorization (NMF), which
-can be accessed in HyperSpy with:
-
-.. code-block:: python
-
-   >>> s.decomposition(algorithm='nmf')
-
 Poissonian noise
 ----------------
 
@@ -166,10 +156,79 @@ To perform Poissonian noise normalization:
      The long way:
      >>> s.decomposition(normalize_poissonian_noise=True)
 
-     Because it is the first argument we cold have simply written:
+     Because it is the first argument we could have simply written:
      >>> s.decomposition(True)
 
 More details about the scaling procedure can be found in [Keenan2004]_.
+
+Robust principal component analysis
+-----------------------------------
+
+PCA is known to be very sensitive to the presence of outliers in data. These outliers
+can be the result of missing or dead pixels, X-ray spikes, or very low count data.
+If one assumes a dataset to consist of a low-rank component **L** corrupted by
+a sparse error component **S**, then Robust PCA (RPCA) can be used to recover the
+low-rank component for subsequent processing [Candes2011]_.
+
+The default RPCA algorithm is GoDec [Zhou2011]_. In HyperSpy it returns the factors
+and loadings of **L**, and can be accessed with the following code. You must set the
+"output_dimension" when using RPCA.
+
+.. code-block:: python
+
+   >>> s.decomposition(algorithm='RPCA_GoDec',
+                       output_dimension=3)
+
+HyperSpy also implements an *online* algorithm for RPCA developed by Feng et al. [Feng2013]_.
+This minimizes memory usage, making it suitable for large datasets, and can often
+be faster than the default algorithm.
+
+.. code-block:: python
+
+   >>> s.decomposition(algorithm='ORPCA',
+                       output_dimension=3)
+
+The online RPCA implementation sets several default parameters that are
+usually suitable for most datasets. However, to improve the convergence you can
+"train" the algorithm with the first few samples of your dataset. For example,
+the following code will train ORPCA using the first 32 samples of the data.
+
+.. code-block:: python
+
+   >>> s.decomposition(algorithm='ORPCA',
+                       output_dimension=3
+                       training_samples=32)
+
+Finally, online RPCA includes two alternative methods to the default solver,
+which can again improve the convergence and speed of the algorithm. The first
+is block-coordinate descent (BCD), and the second is based on stochastic gradient
+descent (SGD), which takes an additional parameter to set the learning rate.
+
+.. code-block:: python
+
+   >>> s.decomposition(algorithm='ORPCA',
+                       output_dimension=3
+                       method='BCD',
+                       training_samples=32)
+
+   >>> s.decomposition(algorithm='ORPCA',
+                       output_dimension=3
+                       method='SGD',
+                       learning_rate=1.1,
+                       training_samples=32)
+
+Non-negative matrix factorization
+----------------------------
+
+Another popular decomposition method is non-negative matrix factorization (NMF), which
+can be accessed in HyperSpy with:
+
+.. code-block:: python
+
+   >>> s.decomposition(algorithm='nmf')
+
+Unlike PCA, NMF forces the components to be strictly non-negative, which can aid
+the physical interpretation of components for count data such as images, EELS or EDS.
 
 Blind Source Separation
 =======================

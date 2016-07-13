@@ -16,10 +16,12 @@
 # along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 
+import sys
 from unittest import mock
-
-import numpy as np
+import nose
 import nose.tools as nt
+import numpy.testing as npt
+import numpy as np
 from scipy.misc import face, ascent
 from scipy.ndimage import fourier_shift
 
@@ -122,3 +124,14 @@ class TestAlignTools:
         # Check alignment is correct
         d_al = s.data[:, ds[0]:-ds[0], ds[1]:-ds[1]]
         nt.assert_true(np.all(d_al == self.aligned))
+
+
+def test_add_ramp():
+    s = hs.signals.Signal2D(np.indices((3, 3)).sum(axis=0) + 4)
+    s.add_ramp(-1, -1, -4)
+    npt.assert_almost_equal(s.data, 0)
+
+
+if __name__ == '__main__':
+    import nose
+    nose.run(defaultTest=__name__)
