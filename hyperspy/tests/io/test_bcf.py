@@ -81,7 +81,7 @@ def test_hyperspy_wrap_downsampled():
     print('testing bcf wrap to hyperspy signal...')
     hype = load(filename, select_type='spectrum', downsample=5)
     assert_almost_equal(hype.axes_manager[0].scale, 43.683925309889, places=12)
-    assert_almost_equal(hype.axes_manager[1].scale, 4.3683925309889, places=12)
+    assert_almost_equal(hype.axes_manager[1].scale, 43.683925309889, places=12)
     assert_true(hype.axes_manager[1].units == 'µm')
 
 
