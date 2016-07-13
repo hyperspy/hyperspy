@@ -344,6 +344,8 @@ with update_version_when_dev() as version:
                 'tests/io/npy_files/*.npy',
                 'tests/io/unf_files/*.unf',
                 'tests/io/bcf_data/*.bcf',
+                'tests/io/ripple_files/*.rpl',
+                'tests/io/ripple_files/*.raw',
                 'tests/drawing/*.ipynb',
                 'tests/signal/test_find_peaks1D_ohaver/test_find_peaks1D_ohaver.hdf5',
             ],
