@@ -24,6 +24,7 @@ from hyperspy.docstrings.plot import (
 
 
 class ComplexSignal2D(ComplexSignal, CommonSignal2D):
+
     """BaseSignal subclass for complex 2-dimensional data."""
 
     _signal_dimension = 2

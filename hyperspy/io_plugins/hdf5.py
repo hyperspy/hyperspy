@@ -191,7 +191,7 @@ def hdfgroup2signaldict(group, load_to_memory=True):
     exp = {'metadata': hdfgroup2dict(
         group[metadata], load_to_memory=load_to_memory),
         'original_metadata': hdfgroup2dict(
-        group[original_metadata], load_to_memory=load_to_memory)
+            group[original_metadata], load_to_memory=load_to_memory)
     }
 
     data = group['data']

@@ -22,6 +22,7 @@ from hyperspy.exceptions import DataDimensionError
 
 
 class CommonSignal1D(object):
+
     """Common functions for 1-dimensional signals."""
 
     def to_signal2D(self):

@@ -171,7 +171,8 @@ class EMD(object):
             try:
                 axis.scale = dim[1] - dim[0]
                 axis.offset = dim[0]
-            except (IndexError, TypeError) as e:  # Hyperspy then uses defaults (1.0 and 0.0)!
+            # Hyperspy then uses defaults (1.0 and 0.0)!
+            except (IndexError, TypeError) as e:
                 self._log.warning(
                     'Could not calculate scale/offset of axis {}: {}'.format(i, e))
         # Extract metadata:
@@ -216,7 +217,8 @@ class EMD(object):
         if name is not None:  # Overwrite Signal title!
             signal.metadata.General.title = name
         else:
-            if signal.metadata.General.title is not '':  # Take title of Signal!
+            # Take title of Signal!
+            if signal.metadata.General.title is not '':
                 name = signal.metadata.General.title
             else:  # Take default!
                 name = '__unnamed__'
@@ -389,7 +391,8 @@ def file_writer(filename, signal, signal_metadata=None, user=None,
     if microscope is None:  # If not provided, look in metadata:
         microscope = signal.metadata.General.as_dictionary().get('microscope')
     if microscope is None:  # If not found, check original_metadata:
-        microscope = signal.original_metadata.General.as_dictionary().get('microscope')
+        microscope = signal.original_metadata.General.as_dictionary().get(
+            'microscope')
     if sample is None:  # If not provided, look in metadata:
         sample = signal.metadata.General.as_dictionary().get('sample')
     if sample is None:  # If not found, check original_metadata:
@@ -397,7 +400,8 @@ def file_writer(filename, signal, signal_metadata=None, user=None,
     if comments is None:  # If not provided, look in metadata:
         comments = signal.metadata.General.as_dictionary().get('comments')
     if comments is None:  # If not found, check original_metadata:
-        comments = signal.original_metadata.General.as_dictionary().get('comments')
+        comments = signal.original_metadata.General.as_dictionary().get(
+            'comments')
     emd = EMD(
         user=user,
         microscope=microscope,

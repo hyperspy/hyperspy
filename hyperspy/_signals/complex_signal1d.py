@@ -22,6 +22,7 @@ from hyperspy._signals.complex_signal import ComplexSignal
 
 
 class ComplexSignal1D(ComplexSignal, CommonSignal1D):
+
     """BaseSignal subclass for complex 1-dimensional data."""
 
     _signal_dimension = 1
