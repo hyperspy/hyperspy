@@ -296,8 +296,9 @@ def assign_signal_subclass(dtype,
     signals = hyperspy.misc.utils.find_subclasses(hyperspy.signals, BaseSignal)
     dtype_matches = [s for s in signals.values() if dtype == s._dtype]
     dtype_dim_matches = [s for s in dtype_matches
-                   if signal_dimension == s._signal_dimension]
-    dtype_dim_type_matches = [s for s in dtype_dim_matches if signal_type == s._signal_type]
+                         if signal_dimension == s._signal_dimension]
+    dtype_dim_type_matches = [
+        s for s in dtype_dim_matches if signal_type == s._signal_type]
 
     if dtype_dim_type_matches:
         # Perfect match found, return it.
