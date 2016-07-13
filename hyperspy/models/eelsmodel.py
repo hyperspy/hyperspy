@@ -21,10 +21,10 @@ import warnings
 import logging
 
 from hyperspy.models.model1d import Model1D
-from hyperspy.components import EELSCLEdge
-from hyperspy.components import PowerLaw
+from hyperspy.components1d import EELSCLEdge
+from hyperspy.components1d import PowerLaw
 from hyperspy.defaults_parser import preferences
-from hyperspy import components
+from hyperspy import components1d
 from hyperspy._signals.eels import EELSSpectrum
 
 _logger = logging.getLogger(__name__)
@@ -273,10 +273,10 @@ class EELSModel(Model1D):
                             "Automatically changing the fine structure "
                             "width of edge %d from %s eV to %s eV to avoid "
                             "conflicts with edge number %d") % (
-                                i1 + 1,
-                                self._active_edges[i1].fine_structure_width,
-                                new_fine_structure_width,
-                                i2 + 1))
+                            i1 + 1,
+                            self._active_edges[i1].fine_structure_width,
+                            new_fine_structure_width,
+                            i2 + 1))
                         self._active_edges[i1].fine_structure_width = \
                             new_fine_structure_width
                         self.resolve_fine_structure(i1=i2)
@@ -455,7 +455,7 @@ class EELSModel(Model1D):
         """
         if powerlaw is None:
             for component in self._active_background_components:
-                if isinstance(component, components.PowerLaw):
+                if isinstance(component, components1d.PowerLaw):
                     if powerlaw is None:
                         powerlaw = component
                     else:

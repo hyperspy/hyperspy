@@ -14,11 +14,6 @@ def test_image_binned_default():
     nt.assert_false(s.metadata.Signal.binned)
 
 
-def test_image_simulation_binned_default():
-    s = hs.signals.ImageSimulation(np.zeros([2, 2]))
-    nt.assert_false(s.metadata.Signal.binned)
-
-
 def test_dielectric_function_binned_default():
     s = hs.signals.DielectricFunction([0])
     nt.assert_false(s.metadata.Signal.binned)
@@ -26,16 +21,6 @@ def test_dielectric_function_binned_default():
 
 def test_signal_binned_default():
     s = hs.signals.BaseSignal([0])
-    nt.assert_false(s.metadata.Signal.binned)
-
-
-def test_simulation_binned_default():
-    s = hs.signals.Simulation([0])
-    nt.assert_false(s.metadata.Signal.binned)
-
-
-def test_spectrum_simulation_binned_default():
-    s = hs.signals.SpectrumSimulation([0])
     nt.assert_false(s.metadata.Signal.binned)
 
 
@@ -60,7 +45,7 @@ class TestModelBinned:
         s = hs.signals.Signal1D([1])
         s.axes_manager[0].scale = 0.1
         m = s.create_model()
-        m.append(hs.model.components.Offset())
+        m.append(hs.model.components1D.Offset())
         m[0].offset.value = 1
         self.m = m
 

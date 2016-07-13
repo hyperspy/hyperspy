@@ -17,9 +17,17 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from hyperspy._signals.eels import EELSSpectrum
-from hyperspy._signals.spectrum_simulation import SpectrumSimulation
+from hyperspy._signals.common_signal1d import CommonSignal1D
+from hyperspy._signals.complex_signal import ComplexSignal
 
 
-class EELSSpectrumSimulation(SpectrumSimulation, EELSSpectrum):
-    pass
+class ComplexSignal1D(ComplexSignal, CommonSignal1D):
+    """BaseSignal subclass for complex 1-dimensional data."""
+
+    _signal_dimension = 1
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.axes_manager.signal_dimension != 1:
+            self.axes_manager.set_signal_dimension(1)
+        self.metadata.Signal.binned = False

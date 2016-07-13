@@ -172,14 +172,6 @@ hyperspy._components.scalable_fixed_pattern module
     :undoc-members:
     :show-inheritance:
 
-hyperspy._components.spline module
-----------------------------------
-
-.. automodule:: hyperspy._components.spline
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 hyperspy._components.voigt module
 ---------------------------------
 

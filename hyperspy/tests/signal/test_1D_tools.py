@@ -224,7 +224,7 @@ class TestEstimatePeakWidth:
         scale = 0.1
         window = 2
         x = np.arange(-window, window, scale)
-        g = hs.model.components.Gaussian()
+        g = hs.model.components1D.Gaussian()
         s = hs.signals.Signal1D(g.function(x))
         s.axes_manager[-1].scale = scale
         self.s = s
@@ -264,7 +264,7 @@ class TestSmoothing:
 
     def setUp(self):
         n, m = 2, 100
-        self.s = hs.signals.SpectrumSimulation(np.arange(n * m).reshape(n, m))
+        self.s = hs.signals.Signal1D(np.arange(n * m).reshape(n, m))
         np.random.seed(1)
         self.s.add_gaussian_noise(0.1)
 

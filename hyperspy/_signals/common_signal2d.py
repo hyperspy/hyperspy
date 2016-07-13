@@ -17,9 +17,20 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from hyperspy._signals.signal2d import Signal2D
-from hyperspy._signals.simulation import Simulation
+from hyperspy.signal import BaseSignal
 
 
-class ImageSimulation(Simulation, Signal2D):
-    pass
+class CommonSignal2D(object):
+    """Common functions for 2-dimensional signals."""
+
+    def to_signal1D(self):
+        """Returns the image as a spectrum.
+
+        See Also
+        --------
+        as_signal1D : a method for the same purpose with more options.
+        signals.Signal1D.to_signal1D : performs the inverse operation on one
+        dimensional signals.
+
+        """
+        return self.as_signal1D(0 + 3j)
