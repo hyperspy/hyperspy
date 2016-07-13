@@ -98,25 +98,27 @@ class TestExample1_11(Example1):
             "hdf5_files",
             "example1_v1.1.hdf5"))
 
-
-class TestExample1_12(Example1):
-
-    def setUp(self):
-        self.s = load(os.path.join(
-            my_path,
-            "hdf5_files",
-            "example1_v1.2.hdf5"))
-
-    def test_date(self):
-        nt.assert_equal(
-            self.s.metadata.General.date,
-            datetime.date(
-                1991,
-                10,
-                1))
-
-    def test_time(self):
-        nt.assert_equal(self.s.metadata.General.time, datetime.time(12, 0))
+# The following is commented out because
+# the feature was removed in HyperSpy 1.0
+# to fix a security flaw.
+# class TestExample1_12(Example1):
+#
+#     def setUp(self):
+#         self.s = load(os.path.join(
+#             my_path,
+#             "hdf5_files",
+#             "example1_v1.2.hdf5"))
+#
+#     def test_date(self):
+#         nt.assert_equal(
+#             self.s.metadata.General.date,
+#             datetime.date(
+#                 1991,
+#                 10,
+#                 1))
+#
+#     def test_time(self):
+#         nt.assert_equal(self.s.metadata.General.time, datetime.time(12, 0))
 
 
 class TestLoadingNewSavedMetadata:
