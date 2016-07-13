@@ -9,14 +9,13 @@ avoid the starting value (or local / false minima) problem, which often arises
 when fitting multi-dimensional datasets.
 
 The algorithm will be described in full when accompanying paper is published,
-however we make the implementation available before that.
+but we are making the implementation available now.
 
 The idea
 --------
 
-The main idea of SAMFire is to change two things, when compared to the
-traditional way of fitting datasets with many dimensions in the navigation
-space:
+The main idea of SAMFire is to change two things compared to the traditional
+way of fitting datasets with many dimensions in the navigation space:
 
  #. Pick a more sensible pixel fitting order.
  #. Calculate the pixel starting parameters from already fitted parts of the
@@ -28,11 +27,11 @@ different strategy families that SAMFfire uses while operating.
 Strategies
 **********
 
-While operating, SAMFire uses a list of strategies to determine how to select
-next pixel and estimate its starting parameters. Only one strategy is used at a
-time. Next strategy is activated when no new pixels are able to fit using the
-current one. Once either the strategy list is exhausted or the full dataset
-fitted, the algorithm terminates.
+During operation SAMFire uses a list of strategies to determine how to select
+the next pixel and estimate its starting parameters. Only one strategy is used
+at a time. Next strategy is chosen when no new pixels are can be fitted with
+the current strategy. Once either the strategy list is exhausted or the full
+dataset fitted, the algorithm terminates.
 
 There are two families of strategies. In each family there may be many
 strategies, using different statistical or significance measures.
