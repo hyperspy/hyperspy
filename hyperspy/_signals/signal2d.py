@@ -22,6 +22,7 @@ import numpy.ma as ma
 import scipy as sp
 import warnings
 from scipy.fftpack import fftn, ifftn
+import copy
 
 from hyperspy.defaults_parser import preferences
 from hyperspy.external.progressbar import progressbar
