@@ -118,7 +118,7 @@ class SamfireStrategy(object):
         self.samf.strategies.remove(self)
 
 
-class DiffusionStrategy(SamfireStrategy):
+class LocalStrategy(SamfireStrategy):
     """A SAMFire strategy that operates in "pixel space" - i.e calculates the
     starting point estimates based on the local averages of the pixels.
     Requires some weighting method (e.g. reduced chi-squared).
@@ -442,7 +442,7 @@ class DiffusionStrategy(SamfireStrategy):
         return fig
 
 
-class SegmenterStrategy(SamfireStrategy):
+class GlobalStrategy(SamfireStrategy):
     """A SAMFire strategy that operates in "parameter space" - i.e the pixel
     positions are not important, and only parameter value distributions are
     segmented to be used as starting point estimators.

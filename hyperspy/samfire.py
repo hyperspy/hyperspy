@@ -26,12 +26,10 @@ from tqdm import tqdm
 from hyperspy.misc.utils import DictionaryTreeBrowser
 from hyperspy.misc.utils import slugify
 from hyperspy.signal import BaseSignal
-from hyperspy.samfire_utils.strategy import (DiffusionStrategy,
-                                             SegmenterStrategy)
-from hyperspy.samfire_utils.strategies.diffusion.red_chisq import \
-    ReducedChiSquaredStrategy
-from hyperspy.samfire_utils.strategies.segmenter.histogram import \
-    HistogramStrategy
+from hyperspy.samfire_utils.strategy import (LocalStrategy,
+                                             GlobalStrategy)
+from hyperspy.samfire_utils.local_strategies import ReducedChiSquaredStrategy
+from hyperspy.samfire_utils.global_strategies import HistogramStrategy
 from hyperspy.samfire_utils.samfire_pool import SamfirePool
 
 
@@ -100,10 +98,10 @@ class Samfire:
     strategies : strategy list
         A list of strategies that will be used to select pixel fitting order
         and calculate required starting parameters. Strategies come in two
-        "flavours" - diffusion and segmenter. Diffusion spreads the starting
+        "flavours" - local and global. Local strategies spread the starting
         values to the nearest pixels and forces certain pixel fitting order.
-        Segmenter looks for clusters in parameter values, and suggests most
-        frequent values. Segmenter strategy does not depend on pixel fitting
+        Global strategies look for clusters in parameter values, and suggests
+        most frequent values. Global strategy do not depend on pixel fitting
         order, hence it is randomised.
     metadata : dictionary
         A dictionary for important samfire parameters
@@ -423,13 +421,13 @@ class Samfire:
         current = self.active_strategy
         new = self.strategies[new_strat]
 
-        if isinstance(current, DiffusionStrategy) and isinstance(
-                new, DiffusionStrategy):
+        if isinstance(current, LocalStrategy) and isinstance(
+                new, LocalStrategy):
             # forget ignore/done levels, keep just calculated or not
             new.refresh(True)
         else:
-            if isinstance(current, DiffusionStrategy) and isinstance(
-                    new, SegmenterStrategy):
+            if isinstance(current, LocalStrategy) and isinstance(
+                    new, GlobalStrategy):
                 # if diffusion->segmenter, set previous -1 to -2 (ignored for
                 # the next diffusion)
                 self.metadata.marker[
@@ -578,9 +576,9 @@ class Samfire:
                 connect_other_navigation1), [])
 
     def plot(self, on_count=False):
-        """(if possible) plots current strategy plot. Diffusion strategies plot
+        """(if possible) plots current strategy plot. Local strategies plot
         grayscale navigation signal with brightness representing order of the
-        pixel selection. Segmenter strategies plot a collection of histograms,
+        pixel selection. Global strategies plot a collection of histograms,
         one per parameter.
 
         Parameters

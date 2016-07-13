@@ -16,12 +16,12 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-from hyperspy.samfire_utils.strategy import SegmenterStrategy
+from hyperspy.samfire_utils.strategy import GlobalStrategy
 from hyperspy.samfire_utils.segmenters.histogram import HistogramSegmenter
 
 
-class HistogramStrategy(SegmenterStrategy):
+class HistogramStrategy(GlobalStrategy):
 
     def __init__(self, bins='freedman'):
-        SegmenterStrategy.__init__(self, 'Histogram segmenter strategy')
+        super().__init__('Histogram global strategy')
         self.segmenter = HistogramSegmenter(bins)

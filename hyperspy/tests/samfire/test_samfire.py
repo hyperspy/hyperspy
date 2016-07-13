@@ -184,8 +184,8 @@ class TestSamfireEmpty:
     def test_samfire_init_strategies(self):
         m = self.model
         samf = m.create_samfire(workers=1, setup=False)
-        from hyperspy.samfire_utils.strategies.diffusion.red_chisq import ReducedChiSquaredStrategy
-        from hyperspy.samfire_utils.strategies.segmenter.histogram import HistogramStrategy
+        from hyperspy.samfire_utils.local_strategies import ReducedChiSquaredStrategy
+        from hyperspy.samfire_utils.global_strategies import HistogramStrategy
         nt.assert_is_instance(
             samf.strategies[0],
             ReducedChiSquaredStrategy)
@@ -280,8 +280,8 @@ class TestSamfireEmpty:
     def test_change_strategy(self):
         m = self.model
         samf = m.create_samfire(setup=False)
-        from hyperspy.samfire_utils.strategies.diffusion.red_chisq import ReducedChiSquaredStrategy
-        from hyperspy.samfire_utils.strategies.segmenter.histogram import HistogramStrategy
+        from hyperspy.samfire_utils.local_strategies import ReducedChiSquaredStrategy
+        from hyperspy.samfire_utils.global_strategies import HistogramStrategy
 
         ind = (0, 0)
         samf.metadata.marker[ind] = -2

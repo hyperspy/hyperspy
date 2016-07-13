@@ -18,7 +18,7 @@
 
 import numpy as np
 
-from hyperspy.samfire_utils.strategy import DiffusionStrategy
+from hyperspy.samfire_utils.strategy import LocalStrategy
 from hyperspy.samfire_utils.weights.red_chisq import ReducedChiSquaredWeight
 
 
@@ -27,13 +27,13 @@ def exp_decay(distances):
     return np.exp(-distances)
 
 
-class ReducedChiSquaredStrategy(DiffusionStrategy):
-    """Reduced chi-squared Diffusion strategy of the SAMFire. Uses reduced
+class ReducedChiSquaredStrategy(LocalStrategy):
+    """Reduced chi-squared Local strategy of the SAMFire. Uses reduced
     chi-squared as the weight, and exponential decay as the decay function.
     """
 
     def __init__(self):
-        DiffusionStrategy.__init__(self, 'Reduced chi squared strategy')
+        super().__init__('Reduced chi squared strategy')
         self.weight = ReducedChiSquaredWeight()
         self.radii = 3.
         self.decay_function = exp_decay

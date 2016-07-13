@@ -17,7 +17,8 @@
 
 import nose.tools as nt
 import numpy as np
-from hyperspy.samfire_utils.strategy import DiffusionStrategy, SegmenterStrategy
+from hyperspy.samfire_utils.strategy import (LocalStrategy,
+                                             GlobalStrategy)
 from hyperspy.misc.utils import DictionaryTreeBrowser
 from hyperspy.signals import Signal1D
 from hyperspy.components1d import Gaussian
@@ -67,11 +68,11 @@ def compare_two_value_dicts(ans_r, ans):
     return test
 
 
-class TestDiffusionSimple:
+class TestLocalSimple:
 
     def setUp(self):
         self.shape = (5, 7)
-        self.s = DiffusionStrategy('test diffusion strategy')
+        self.s = LocalStrategy('test diffusion strategy')
         self.samf = create_artificial_samfire(self.shape)
 
         m = DictionaryTreeBrowser()
@@ -337,11 +338,11 @@ class TestDiffusionSimple:
         nt.assert_true(np.allclose(tmp_m2, s.samf.metadata.marker[:4, :4]))
 
 
-class TestDiffusionWithModel:
+class TestLocalWithModel:
 
     def setUp(self):
         self.shape = (5, 7)
-        self.s = DiffusionStrategy('test diffusion strategy')
+        self.s = LocalStrategy('test diffusion strategy')
         self.samf = create_artificial_samfire(self.shape)
 
         m = Signal1D(np.empty(self.shape + (100,))).create_model()
@@ -400,12 +401,12 @@ class TestDiffusionWithModel:
         nt.assert_true(test2)
 
 
-class TestSegmenterStrategy:
+class TestGlobalStrategy:
 
     def setUp(self):
         # TODO: actually finish setup+ tests
         self.shape = (5, 7)
-        self.s = SegmenterStrategy('test segmenter strategy')
+        self.s = GlobalStrategy('test segmenter strategy')
         self.samf = create_artificial_samfire(self.shape)
 
         m = Signal1D(np.empty(self.shape + (100,))).create_model()
