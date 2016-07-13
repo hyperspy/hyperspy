@@ -337,6 +337,7 @@ with update_version_when_dev() as version:
                 'tests/io/msa_files/*.msa',
                 'tests/io/hdf5_files/*.hdf5',
                 'tests/io/tiff_files/*.tif',
+                'tests/io/tiff_files/*.dm3',
                 'tests/io/npy_files/*.npy',
                 'tests/io/unf_files/*.unf',
                 'tests/drawing/*.ipynb',
