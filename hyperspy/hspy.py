@@ -7,7 +7,7 @@ please use :mod:`~hyperspy.api` instead.
 # -*- coding: utf-8 -*-
 
 from hyperspy.Release import version as __version__
-from hyperspy import components
+from hyperspy import components1d as components
 from hyperspy import signals
 from hyperspy.io import load
 from hyperspy.defaults_parser import preferences

@@ -2,7 +2,7 @@ import nose.tools as nt
 
 import numpy as np
 
-from hyperspy.signals import Image, Spectrum
+from hyperspy.signals import Signal2D, Signal1D
 from hyperspy.roi import (Point1DROI, Point2DROI, SpanROI, RectangularROI,
                           Line2DROI, CircleROI)
 
@@ -11,14 +11,14 @@ class TestROIs():
 
     def setUp(self):
         np.random.seed(0)  # Same random every time, Line2DROi test requires it
-        self.s_s = Spectrum(np.random.rand(50, 60, 4))
+        self.s_s = Signal1D(np.random.rand(50, 60, 4))
         self.s_s.axes_manager[0].scale = 5
         self.s_s.axes_manager[0].units = 'nm'
         self.s_s.axes_manager[1].scale = 5
         self.s_s.axes_manager[1].units = 'nm'
 
         # 4D dataset
-        self.s_i = Image(np.random.rand(100, 100, 4, 4))
+        self.s_i = Signal2D(np.random.rand(100, 100, 4, 4))
 
     def test_point1d_spectrum(self):
         s = self.s_s
@@ -299,7 +299,7 @@ class TestROIs():
 class TestInteractive:
 
     def setup(self):
-        self.s = Spectrum(np.arange(2000).reshape((20, 10, 10)))
+        self.s = Signal1D(np.arange(2000).reshape((20, 10, 10)))
 
     def test_out(self):
         s = self.s
@@ -330,7 +330,7 @@ class TestInteractive:
     def test_interactive_special_case(self):
         s = self.s.inav[0]
         r = CircleROI(3, 5, 2)
-        sr = r.interactive(s, None)
+        sr = r.interactive(s, None, color="blue")
         np.testing.assert_array_equal(np.where(sr.data.mask.flatten())[0],
                                       [0, 3, 12, 15])
         r.r_inner = 1

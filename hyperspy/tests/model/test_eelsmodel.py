@@ -29,13 +29,13 @@ class TestCreateEELSModel:
 
     def test_auto_add_background_true(self):
         m = self.s.create_model(auto_background=True)
-        from hyperspy.components import PowerLaw
+        from hyperspy.components1d import PowerLaw
         is_pl_instance = [isinstance(c, PowerLaw) for c in m]
         nt.assert_true(True in is_pl_instance)
 
     def test_auto_add_edges_false(self):
         m = self.s.create_model(auto_background=False)
-        from hyperspy.components import PowerLaw
+        from hyperspy.components1d import PowerLaw
         is_pl_instance = [isinstance(c, PowerLaw) for c in m]
         nt.assert_false(True in is_pl_instance)
 
@@ -103,8 +103,8 @@ class TestEELSModel:
         nt.assert_is_none(self.m._get_first_ionization_edge_energy())
 
     def test_two_area_powerlaw_estimation_BC(self):
-        self.m.spectrum.data = 2. * self.m.axis.axis ** (-3)  # A= 2, r=3
-        self.m.spectrum.metadata.Signal.binned = False
+        self.m.signal.data = 2. * self.m.axis.axis ** (-3)  # A= 2, r=3
+        self.m.signal.metadata.Signal.binned = False
         self.m.two_area_background_estimation()
         nt.assert_almost_equal(
             self.m._background_components[0].A.value,
@@ -115,8 +115,8 @@ class TestEELSModel:
 
     def test_two_area_powerlaw_estimation_C(self):
         self.m["B_K"].active = False
-        self.m.spectrum.data = 2. * self.m.axis.axis ** (-3)  # A= 2, r=3
-        self.m.spectrum.metadata.Signal.binned = False
+        self.m.signal.data = 2. * self.m.axis.axis ** (-3)  # A= 2, r=3
+        self.m.signal.metadata.Signal.binned = False
         self.m.two_area_background_estimation()
         nt.assert_almost_equal(
             self.m._background_components[0].A.value,
@@ -128,8 +128,8 @@ class TestEELSModel:
     def test_two_area_powerlaw_estimation_no_edge(self):
         self.m["B_K"].active = False
         self.m["C_K"].active = False
-        self.m.spectrum.data = 2. * self.m.axis.axis ** (-3)  # A= 2, r=3
-        self.m.spectrum.metadata.Signal.binned = False
+        self.m.signal.data = 2. * self.m.axis.axis ** (-3)  # A= 2, r=3
+        self.m.signal.metadata.Signal.binned = False
         self.m.two_area_background_estimation()
         nt.assert_almost_equal(
             self.m._background_components[0].A.value,
@@ -163,7 +163,7 @@ class TestFitBackground:
         s.isig[CE:] += 1
         s.add_elements(("Be", "B", "C"))
         self.m = s.create_model(auto_background=False)
-        self.m.append(hs.model.components.Offset())
+        self.m.append(hs.model.components1D.Offset())
 
     def test_fit_background_B_C(self):
         self.m.fit_background()

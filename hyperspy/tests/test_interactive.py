@@ -1,5 +1,5 @@
 from __future__ import print_function
-import mock
+from unittest import mock
 
 import nose.tools as nt
 import numpy as np
@@ -14,7 +14,7 @@ class TestInteractive():
         d = np.linspace(3, 10.5)
         d = np.tile(d, (3, 3, 1))
         # data shape (3, 3, 50)
-        s = hs.signals.Spectrum(d)
+        s = hs.signals.Signal1D(d)
         self.s = s
 
     def test_interactive_sum(self):
@@ -95,3 +95,39 @@ class TestInteractive():
         np.testing.assert_equal(ss.data, np.sum(s.data, axis=1))
         # Finally, check that axes are updated as they should
         nt.assert_equal(ss.axes_manager.navigation_axes[0].offset, 1)
+
+    def test_two_update_events(self):
+        s = self.s
+        e1 = Event()
+        e2 = Event()
+        ss = hs.interactive(
+            s.sum,
+            event=(
+                e1,
+                e2),
+            recompute_out_event=None,
+            axis=0)
+        s.data[:] = 0
+        e1.trigger()
+        np.testing.assert_equal(ss.data, np.sum(s.data, axis=1))
+        s.data[:] = 1
+        e2.trigger()
+        np.testing.assert_equal(ss.data, np.sum(s.data, axis=1))
+
+    def test_two_recompute_events(self):
+        s = self.s
+        e1 = Event()
+        e2 = Event()
+        ss = hs.interactive(
+            s.sum,
+            event=None,
+            recompute_out_event=(
+                e1,
+                e2),
+            axis=0)
+        s.data[:] = 0
+        e1.trigger()
+        np.testing.assert_equal(ss.data, np.sum(s.data, axis=1))
+        s.data[:] = 1
+        e2.trigger()
+        np.testing.assert_equal(ss.data, np.sum(s.data, axis=1))

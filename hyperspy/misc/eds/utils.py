@@ -1,6 +1,7 @@
 
 import numpy as np
 import math
+from scipy import constants
 
 from hyperspy.misc.elements import elements as elements_db
 from functools import reduce
@@ -11,8 +12,8 @@ sigma2fwhm = 2 * math.sqrt(2 * math.log(2))
 
 def _get_element_and_line(xray_line):
     """
-    Returns the element name and line character for a particular X-ray line as a
-    tuple.
+    Returns the element name and line character for a particular X-ray line as
+    a tuple.
 
     By example, if xray_line = 'Mn_Ka' this function returns ('Mn', 'Ka')
     """
@@ -103,7 +104,8 @@ def get_FWHM_at_Energy(energy_resolution_MnKa, E):
     """Calculates an approximate FWHM, accounting for peak broadening due to the
     detector, for a peak at energy E given a known width at a reference energy.
 
-    The factor 2.5 is a constant derived by Fiori & Newbury as references below.
+    The factor 2.5 is a constant derived by Fiori & Newbury as references
+    below.
 
     Parameters
     ----------
@@ -121,8 +123,8 @@ def get_FWHM_at_Energy(energy_resolution_MnKa, E):
     This method implements the equation derived by Fiori and Newbury as is
     documented in the following:
 
-        Fiorie, C. E., and Newbury, D. E. (1978). In SEM/1978/I, SEM, Inc.,
-        AFM O'Hare, Illinois, p. 401.
+        Fiori, C. E., and Newbury, D. E. (1978). In SEM/1978/I, SEM, Inc.,
+        AMF O'Hare, Illinois, p. 401.
 
         Goldstein et al. (2003). "Scanning Electron Microscopy & X-ray
         Microanalysis", Plenum, third edition, p 315.
@@ -274,8 +276,8 @@ def take_off_angle(tilt_stage,
     b = math.radians(azimuth_angle)
     c = math.radians(elevation_angle)
 
-    return math.degrees(np.arcsin(-math.cos(a) * math.cos(b) * math.cos(c)
-                                  + math.sin(a) * math.sin(c)))
+    return math.degrees(np.arcsin(-math.cos(a) * math.cos(b) * math.cos(c) +
+                                  math.sin(a) * math.sin(c)))
 
 
 def xray_lines_model(elements,
@@ -284,7 +286,8 @@ def xray_lines_model(elements,
                      energy_resolution_MnKa=130,
                      energy_axis=None):
     """
-    Generate a model of X-ray lines using a Gaussian distribution for each peak.
+    Generate a model of X-ray lines using a Gaussian distribution for each
+    peak.
 
     The area under a main peak (alpha) is equal to 1 and weighted by the
     composition.
@@ -309,7 +312,7 @@ def xray_lines_model(elements,
     >>> s.plot()
     """
     from hyperspy._signals.eds_tem import EDSTEMSpectrum
-    from hyperspy.model import components
+    from hyperspy import components1d
     if energy_axis is None:
         energy_axis = {'name': 'E', 'scale': 0.01, 'units': 'keV',
                        'offset': -0.1, 'size': 1024}
@@ -331,7 +334,7 @@ def xray_lines_model(elements,
                 ratio_line = properties['weight']
                 if s._get_xray_lines_in_spectral_range(
                         [element + '_' + line])[1] == []:
-                    g = components.Gaussian()
+                    g = components1d.Gaussian()
                     g.centre.value = line_energy
                     g.sigma.value = get_FWHM_at_Energy(
                         energy_resolution_MnKa, line_energy) / sigma2fwhm
@@ -453,3 +456,137 @@ def _quantification_cliff_lorimer(intensities,
     for i in other_index:
         composition[i] = composition[ref_index] / ab[i]
     return composition
+
+
+def quantification_zeta_factor(intensities,
+                               zfactors,
+                               dose):
+    """
+    Quantification using the zeta-factor method
+
+    Parameters
+    ----------
+    intensities: numpy.array
+        The intensities for each X-ray line. The first axis should be the
+        elements axis.
+    zfactors: list of float
+        The list of zeta-factors in the same order as intensities
+        e.g. zfactors = [628.10, 539.89] for ['As_Ka', 'Ga_Ka'].
+    dose: float
+        The total electron dose given by i*t*N, i the current,
+        t the acquisition time and
+        N the number of electrons per unit electric charge (1/e).
+
+    Returns
+    ------
+    A numpy.array containing the weight fraction with the same
+    shape as intensities and mass thickness in kg/m^2.
+    """
+
+    sumzi = np.zeros_like(intensities[0], dtype='float')
+    composition = np.zeros_like(intensities, dtype='float')
+    for intensity, zfactor in zip(intensities, zfactors):
+        sumzi = sumzi + intensity * zfactor
+    for i, (intensity, zfactor) in enumerate(zip(intensities, zfactors)):
+        composition[i] = intensity * zfactor / sumzi
+    mass_thickness = sumzi / dose
+    return composition, mass_thickness
+
+
+def quantification_cross_section(intensities,
+                                 cross_sections,
+                                 dose):
+    """
+    Quantification using EDX cross sections
+    Calculate the atomic compostion and the number of atoms per pixel
+    from the raw X-ray intensity
+    Parameters
+    ----------
+    intensity : numpy.array
+        The integrated intensity for each X-ray line, where the first axis
+        is the element axis.
+    cross_sections : list of floats
+        List of X-ray scattering cross-sections in the same order as the
+        intensities.
+    dose: float
+        the dose per unit area given by i*t*N/A, i the current,
+        t the acquisition time, and
+        N the number of electron by unit electric charge.
+
+    Returns
+    -------
+    numpy.array containing the atomic fraction of each element, with
+    the same shape as the intensity input.
+    numpy.array of the number of atoms counts for each element, with the same
+    shape as the intensity input.
+    """
+
+    total_atoms = np.zeros_like(intensities[0], dtype='float')
+    composition = np.zeros_like(intensities, dtype='float')
+    number_of_atoms = np.zeros_like(intensities, dtype='float')
+    for intensity, cross_section in zip(intensities, cross_sections):
+        total_atoms = total_atoms + \
+            (intensity / (dose * cross_section * 1e-10))
+    for i, (intensity, cross_section) in enumerate(zip(intensities,
+                                                       cross_sections)):
+        number_of_atoms[i] = (intensity) / (dose * cross_section * 1e-10)
+        composition[i] = number_of_atoms[i] / total_atoms
+    return composition, number_of_atoms
+
+
+def edx_cross_section_to_zeta(cross_sections, elements):
+    """Convert a list of cross_sections in barns (b) to zeta-factors (kg/m^2).
+
+    Parameters
+    ----------
+    cross_section: list of float
+        A list of cross sections in barns.
+    elements: list of str
+        A list of element chemical symbols in the same order as the
+        cross sections e.g. ['Al','Zn']
+
+    Returns
+    -------
+    zeta_factors : list of float
+        zeta_factors with units kg/m^2.
+
+    """
+    if len(elements) != len(cross_sections):
+        raise ValueError(
+            'The number of elements must match the number of cross sections.')
+    zeta_factors = []
+    for i, element in enumerate(elements):
+        atomic_weight = elements_db[element]['General_properties'][
+            'atomic_weight']
+        zeta = atomic_weight / (cross_sections[i] * constants.Avogadro * 1E-25)
+        zeta_factors.append(zeta)
+    return zeta_factors
+
+
+def zeta_to_edx_cross_section(zfactors, elements):
+    """Convert a list of zeta-factors (kg/m^2) to cross_sections in barns (b).
+
+    Parameters
+    ----------
+    zfactors: list of float
+        A list of zeta-factors.
+    elements: list of str
+        A list of element chemical symbols in the same order as the
+        cross sections e.g. ['Al','Zn']
+
+    Returns
+    -------
+    cross_sections : list of float
+        cross_sections with units in barns.
+
+    """
+    if len(elements) != len(zfactors):
+        raise ValueError(
+            'The number of elements must match the number of cross sections.')
+    cross_sections = []
+    for i, element in enumerate(elements):
+        atomic_weight = elements_db[element]['General_properties'][
+            'atomic_weight']
+        xsec = atomic_weight / (zfactors[i] * constants.Avogadro * 1E-25)
+        cross_sections.append(xsec)
+    return cross_sections

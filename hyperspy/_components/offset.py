@@ -60,7 +60,7 @@ class Offset(Component):
 
         Parameters
         ----------
-        signal : Signal instance
+        signal : BaseSignal instance
         x1 : float
             Defines the left limit of the spectral range to use for the
             estimation.
