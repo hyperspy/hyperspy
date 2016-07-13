@@ -1,3 +1,6 @@
+
+.. _ml-label:
+
 Machine learning
 ****************
 
@@ -160,6 +163,8 @@ To perform Poissonian noise normalization:
      >>> s.decomposition(True)
 
 More details about the scaling procedure can be found in [Keenan2004]_.
+
+.. _rpca-label:
 
 Robust principal component analysis
 -----------------------------------

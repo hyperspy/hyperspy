@@ -1,3 +1,6 @@
+
+.. _install-label:
+
 Installing HyperSpy
 ===================
 

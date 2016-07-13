@@ -9,6 +9,8 @@ Bounds and weights are supported. The syntax for creating both kinds of model
 is essentially the same as in this documentation any method referred to in
 the :py:class`~.model.BaseModel` class is available for both kinds.
 
+.. _2D_model-label:
+
 .. versionadded:: 1.0
    2D models. Note that this first implementation lacks many of the
    features of 1D models e.g. plotting. Those will be added in future releases.
@@ -55,8 +57,17 @@ to provide important information not already included in the datafile, e.g.if s
 is EELS data, you may be asked for the accelerating voltage, convergence and
 collection semi-angles etc.
 
+
+
+.. _model_components-label:
+
 Adding components to the model
 ------------------------------
+
+.. versionchanged:: 1.0 `hyperspy.api.model.components` renamed to
+   `hyperspy.api.model.components1D`
+
+.. versionadded:: 1.0 `hyperspy.api.model.components2D`.
 
 In HyperSpy a model consists of a linear combination of components
 and various components are available in one (:py:mod:`~.components1d`)and
@@ -337,11 +348,13 @@ To enable this feature for a given component set the
     >>> g1._active_array is None
     True
 
+.. _model_indexing-label:
 
 Indexing model
 --------------
 
-.. versionadded:: 0.9 model indexing
+.. versionadded:: 1.0 model indexing
+
 
 Often it is useful to consider only part of the model - for example at
 a particular location (i.e. a slice in the navigation space) or energy range
@@ -832,7 +845,7 @@ The :py:class:`~.model.BaseModel` :py:meth:`~.models.BaseModel.plot_results`,
 can be used to visualise the result of the fit **when fitting multidimensional
 datasets**.
 
-.. _storing_models:
+.. _storing_models-label:
 
 Storing models
 --------------

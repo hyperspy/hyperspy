@@ -232,6 +232,9 @@ have the ``signal.metadata.Signal.binned`` attribute set to
 ``True``. This is because some methods operate differently in signals that are
 *binned*.
 
+.. versionchanged:: 1.0 ``Simulation``, ``SpectrumSimulation`` and ``ImageSimulation``
+   classes removed.
+
 The default value of the ``binned`` attribute is shown in the
 following table:
 
@@ -334,6 +337,10 @@ The following methods operate only on one axis at a time:
 * :py:meth:`~.signal.BaseSignal.indexmax`
 
 .. versionadded:: 1.0
+   numpy ufunc operate on HyperSpy signals
+
+
+.. _ufunc-label:
 
 All numpy ufunc can operate on :py:class:`~.signal.BaseSignal`
 instances, for example:
@@ -1077,7 +1084,7 @@ operation.
     <Signal1D, title: , dimensions: (|5)>
 
 
-.. _interactive:
+.. _interactive-label:
 
 Interactive operations
 ----------------------
@@ -1123,6 +1130,8 @@ The interactive opearations can be chained.
     >>> ssum_mean.data
     array([ 300.,  330.,  360.,  390.])
 
+.. _roi-label:
+
 Region Of Interest (ROI)
 ------------------------
 
@@ -1151,7 +1160,7 @@ Once created, a ROI can be used to return a part of any compatible signal:
     >>> imr
     <Signal2D, title: , dimensions: (|4, 3)>
 
-ROIs can also be used :ref:`interactively <Interactive>` with widgets. The
+ROIs can also be used :ref:`interactively <interactive-label>` with widgets. The
 following examples shows how to interactively apply ROIs to an image. Note
 that *it is necessary* to plot the signal onto which the widgets will be
 added before calling :py:meth:`~.roi.BaseInteractiveROI.interactive`.
@@ -1235,6 +1244,10 @@ order to increase responsiveness.
 .. figure::  images/roi_hist.png
   :align:   center
   :width:   500
+
+
+
+.. _complex_data-label:
 
 Handling complex data
 ^^^^^^^^^^^^^^^^^^^^^
