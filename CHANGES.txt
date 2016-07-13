@@ -5,6 +5,70 @@ We only cover here the main highlights, for a detailed list of all the changes
 see `the github commits changelog
 <https://github.com/hyperspy/hyperspy/commits/master>`_.
 
+v1.0
+====
+
+This is a major release. Here we only list the highlist. A detailed list of
+changes i`is available in github
+<https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3A1.0.0>`_.
+X-ray Absorption Coefficient Databas
+
+NEW
+---
+
+* Robust PCA (RPCA)  and online RPCA algorithms.
+* Numpy ufuncs can now operate on HyperSpy's signals. 
+* ComplexSignal and specialised subclasses to operate on complex data.
+* Logging.
+* Load to memory #736
+* EELSdb
+
+Model
+^^^^^
+
+* Store model in hdf5
+* Fancy indexing for model
+* 2D Model
+
+EDS
+^^^
+* Z-factors quantification
+* Cross section quantification
+* Curve fitting quantification
+* X-ray Absorption Coefficient Databas
+
+IO
+^^
+* Brucker
+* Support for the Electron Microscopy Datasets (EMD) format.
+* Semper
+* DENS heat log
+
+Enhancements
+------------
+* more useful axesmanager repr string
+* tqdm
+* tiff metadata support
+
+
+
+API changes
+-----------
+
+* Split `api.model.components` into `components1D` and `components2D`
+* Bye bye record_by
+* Simulation classes
+* Signal1D/Signal2D
+
+Documentation
+-------------
+
+* Installation
+* Machine learning
+* EDS
+* Devel guide
+
+
 v0.8.5
 ======
 
