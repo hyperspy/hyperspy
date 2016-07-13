@@ -10,20 +10,23 @@ is essentially the same as in this documentation any method referred to in
 the :py:class`~.model.BaseModel` class is available for both kinds.
 
 .. versionadded:: 1.0
+   2D models. Note that this first implementation lacks many of the
+   features of 1D models e.g. plotting. Those will be added in future releases.
 
-    Models can be created and and fit to experimental data in both one and two
-    dimensions i.e. spectra and images respectively. Most of the syntax is
-    identical in either case. A one-dimensional model is created when a model
-    is created for a :py:class:`~._signals.signal1D.Signal1D` whereas a two-
-    dimensional model is created for a :py:class:`._signals.signal2D.Signal2D`.
-    At present plotting and gradient fitting methods tools for are not yet
-    provided for the :py:class:`~.models.model2D.Model2D` class.
+Models can be created and and fit to experimental data in both one and two
+dimensions i.e. spectra and images respectively. Most of the syntax is
+identical in either case. A one-dimensional model is created when a model
+is created for a :py:class:`~._signals.signal1D.Signal1D` whereas a two-
+dimensional model is created for a :py:class:`._signals.signal2D.Signal2D`.
+At present plotting and gradient fitting methods tools for are not yet
+provided for the :py:class:`~.models.model2D.Model2D` class.
 
 .. versionadded:: 0.7
+   Binned/unbinned signals
 
-    Before creating a model verify that the ``Signal.binned`` metadata
-    attribute of the signal is set to the correct value because the resulting
-    model depends on this parameter. See :ref:`signal.binned` for more details.
+Before creating a model verify that the ``Signal.binned`` metadata
+attribute of the signal is set to the correct value because the resulting
+model depends on this parameter. See :ref:`signal.binned` for more details.
 
 Creating a model
 ----------------
@@ -55,8 +58,9 @@ collection semi-angles etc.
 Adding components to the model
 ------------------------------
 
-In HyperSpy a model consists of a linear combination of :py:mod:`~.components`
-and various components are available in one and two-dimensions to construct a
+In HyperSpy a model consists of a linear combination of components
+and various components are available in one (:py:mod:`~.components1d`)and
+two-dimensions (:py:mod:`~.components2d`) to construct a
 model.
 
 The following components are currently available for one-dimensional models:
@@ -100,7 +104,7 @@ parameters for spectroscopy than the one that ships with HyperSpy:
 
 .. code-block:: python
 
-    >>> g = hs.model.components.Expression(
+    >>> g = hs.model.components1D.Expression(
     ... expression="height * exp(-(x - x0) ** 2 * 4 * log(2)/ fwhm ** 2)",
     ... name="Gaussian",
     ... position="x0",
@@ -208,7 +212,7 @@ data that can be modelled using gaussians we might proceed as follows:
 
 .. code-block:: python
 
-    >>> gaussian = hs.model.components.Gaussian() # Create a Gaussian function component
+    >>> gaussian = hs.model.components1D.Gaussian() # Create a Gaussian function component
     >>> m.append(gaussian) # Add it to the model
     >>> m.components # Print the model components
        # |            Attribute Name |            Component Name |            Component Type
@@ -315,8 +319,8 @@ To enable this feature for a given component set the
 
     >>> s = hs.signals.Signal1D(np.arange(100).reshape(10,10))
     >>> m = s.create_model()
-    >>> g1 = hs.model.components.Gaussian()
-    >>> g2 = hs.model.components.Gaussian()
+    >>> g1 = hs.model.components1D.Gaussian()
+    >>> g2 = hs.model.components1D.Gaussian()
     >>> m.extend([g1,g2])
     >>> g1.active_is_multidimensional = True
     >>> g1._active_array
@@ -350,7 +354,7 @@ recomputed for the resulting slices.
 
     >>> s = hs.signals.Signal1D(np.arange(100).reshape(10,10))
     >>> m = s.create_model()
-    >>> m.append(hs.model.components.Gaussian())
+    >>> m.append(hs.model.components1D.Gaussian())
     >>> # select first three navigation pixels and last five signal channels
     >>> m1 = m.inav[:3].isig[-5:]
     >>> m1.signal1D
@@ -378,8 +382,8 @@ Example:
 
     >>> s = hs.signals.Signal1D(np.arange(100).reshape(10,10))
     >>> m = s.create_model()
-    >>> g1 = hs.model.components.Gaussian()
-    >>> g2 = hs.model.components.Gaussian()
+    >>> g1 = hs.model.components1D.Gaussian()
+    >>> g2 = hs.model.components1D.Gaussian()
     >>> m.extend([g1,g2])
     >>> m.set_parameters_value('A', 20)
     >>> g1.A.map['values']
@@ -406,7 +410,7 @@ all parameters in a component to `True` use
 
 .. code-block:: python
 
-    >>> g = hs.model.components.Gaussian()
+    >>> g = hs.model.components1D.Gaussian()
     >>> g.free_parameters
     set([<Parameter A of Gaussian component>,
         <Parameter sigma of Gaussian component>,
@@ -427,8 +431,8 @@ example:
 
 .. code-block:: python
 
-    >>> g1 = hs.model.components.Gaussian()
-    >>> g2 = hs.model.components.Gaussian()
+    >>> g1 = hs.model.components1D.Gaussian()
+    >>> g2 = hs.model.components1D.Gaussian()
     >>> m.extend([g1,g2])
     >>> m.set_parameters_not_free()
     >>> g1.free_parameters
@@ -592,7 +596,7 @@ to the data.
 .. code-block:: python
 
     >>> m = s.create_model()
-    >>> line = hs.model.components.Polynomial(order=1)
+    >>> line = hs.model.components1D.Polynomial(order=1)
     >>> m.append(line)
     >>> m.fit()
 
@@ -627,7 +631,7 @@ gaussian noise and proceed to fit as in the previous example.
     ...     np.arange(300))
     >>> s.add_poissonian_noise()
     >>> m = s.create_model()
-    >>> line  = hs.model.components.Polynomial(order=1)
+    >>> line  = hs.model.components1D.Polynomial(order=1)
     >>> m.append(line)
     >>> m.fit()
     >>> line.coefficients.value
@@ -671,7 +675,7 @@ the ``centre`` parameter.
     size=1e5)).get_histogram()
     >>> s.metadata.Signal.binned = True
     >>> m = s.create_model()
-    >>> g1 = hs.model.components.Gaussian()
+    >>> g1 = hs.model.components1D.Gaussian()
     >>> m.append(g1)
     >>> g1.centre.value = 7
     >>> g1.centre.bmin = 7
@@ -862,7 +866,7 @@ Current stored models can be listed by calling :py:attr:`~.signal.models`:
 .. code-block:: python
 
     >>> m = s.create_model()
-    >>> m.append(hs.model.components.Lorentzian())
+    >>> m.append(hs.model.components1D.Lorentzian())
     >>> m.store('myname')
     >>> s.models
     └── myname
@@ -871,7 +875,7 @@ Current stored models can be listed by calling :py:attr:`~.signal.models`:
         ├── date = 2015-09-07 12:01:50
         └── dimensions = (|100)
 
-    >>> m.append(hs.model.components.Exponential())
+    >>> m.append(hs.model.components1D.Exponential())
     >>> m.store() # assign model name automatically
     >>> s.models
     ├── a
