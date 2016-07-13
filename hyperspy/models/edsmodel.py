@@ -29,7 +29,7 @@ from hyperspy.models.model1d import Model1D
 from hyperspy._signals.eds import EDSSpectrum
 from hyperspy.misc.elements import elements as elements_db
 from hyperspy.misc.eds import utils as utils_eds
-import hyperspy.components as create_component
+import hyperspy.components1d as create_component
 
 _logger = logging.getLogger(__name__)
 
