@@ -294,22 +294,22 @@ def assign_signal_subclass(dtype,
     if not isinstance(signal_dimension, int) or signal_dimension < 0:
         raise ValueError("signal_dimension must be a positive interger")
     signals = hyperspy.misc.utils.find_subclasses(hyperspy.signals, BaseSignal)
-    d_matches = [s for s in signals.values() if dtype == s._dtype]
-    d_r_matches = [s for s in d_matches
+    dtype_matches = [s for s in signals.values() if dtype == s._dtype]
+    dtype_dim_matches = [s for s in dtype_matches
                    if signal_dimension == s._signal_dimension]
-    d_r_t_matches = [s for s in d_r_matches if signal_type == s._signal_type]
+    dtype_dim_type_matches = [s for s in dtype_dim_matches if signal_type == s._signal_type]
 
-    if d_r_t_matches:
+    if dtype_dim_type_matches:
         # Perfect match found, return it.
-        return d_r_t_matches[0]
-    elif [s for s in d_r_matches if s._signal_type == ""]:
+        return dtype_dim_type_matches[0]
+    elif [s for s in dtype_dim_matches if s._signal_type == ""]:
         # just signal_dimension and dtype matches
         # Return a general class for the given signal dimension.
-        return [s for s in d_r_matches if s._signal_type == ""][0]
+        return [s for s in dtype_dim_matches if s._signal_type == ""][0]
     else:
         # no signal_dimension match either, hence return the general subclass for
         # correct dtype
-        return [s for s in d_matches if s._signal_dimension ==
+        return [s for s in dtype_matches if s._signal_dimension ==
                 -1 and s._signal_type == ""][0]
 
 
