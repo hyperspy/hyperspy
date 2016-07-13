@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 
 
 # Create an empty spectrum
-s = hs.signals.Spectrum(np.zeros((32, 32, 1024)))
+s = hs.signals.Signal1D(np.zeros((32, 32, 1024)))
 
 # Generate some simple data: two Gaussians with random centers and area
 
@@ -18,7 +18,7 @@ s = hs.signals.Spectrum(np.zeros((32, 32, 1024)))
 m = s.create_model()
 
 # Define the first gaussian
-gs1 = hs.model.components.Gaussian()
+gs1 = hs.model.components1D.Gaussian()
 # Add it to the model
 m.append(gs1)
 
@@ -33,7 +33,7 @@ gs1.A.map['values'][:] = 10000 * np.random.random((32, 32))
 gs1.A.map['is_set'][:] = True
 
 # Second gaussian
-gs2 = hs.model.components.Gaussian()
+gs2 = hs.model.components1D.Gaussian()
 # Add it to the model
 m.append(gs2)
 

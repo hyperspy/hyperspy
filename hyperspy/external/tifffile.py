@@ -35,7 +35,7 @@
 
 """Read and write image data from and to TIFF files.
 
-Image and metadata can be read from TIFF, BigTIFF, OME-TIFF, STK, LSM, NIH,
+Signal2D and metadata can be read from TIFF, BigTIFF, OME-TIFF, STK, LSM, NIH,
 SGI, ImageJ, MicroManager, FluoView, SEQ and GEL files.
 Only a subset of the TIFF specification is supported, mainly uncompressed
 and losslessly compressed 2**(0 to 6) bit integer, 16, 32 and 64-bit float,
@@ -45,7 +45,7 @@ and XMP metadata is not implemented.
 Only primary info records are read for STK, FluoView, MicroManager, and
 NIH image formats.
 
-TIFF, the Tagged Image File Format, is under the control of Adobe Systems.
+TIFF, the Tagged Signal2D File Format, is under the control of Adobe Systems.
 BigTIFF allows for files greater than 4 GB. STK, LSM, FluoView, SGI, SEQ, GEL,
 and OME-TIFF, are custom extensions defined by Molecular Devices (Universal
 Imaging Corporation), Carl Zeiss MicroImaging, Olympus, Silicon Graphics
@@ -99,9 +99,9 @@ References
 (1)  TIFF 6.0 Specification and Supplements. Adobe Systems Incorporated.
      http://partners.adobe.com/public/developer/tiff/
 (2)  TIFF File Format FAQ. http://www.awaresystems.be/imaging/tiff/faq.html
-(3)  MetaMorph Stack (STK) Image File Format.
+(3)  MetaMorph Stack (STK) Signal2D File Format.
      http://support.meta.moleculardevices.com/docs/t10243.pdf
-(4)  Image File Format Description LSM 5/7 Release 6.0 (ZEN 2010).
+(4)  Signal2D File Format Description LSM 5/7 Release 6.0 (ZEN 2010).
      Carl Zeiss MicroImaging GmbH. BioSciences. May 10, 2011
 (5)  File Format Description - LSM 5xx Release 2.0.
      http://ibb.gsf.de/homepage/karsten.rodenacker/IDL/Lsmfile.doc
@@ -294,7 +294,7 @@ class TiffWriter(object):
              extratags=()):
         """Write image data to TIFF file.
 
-        Image data are written in one stripe per plane.
+        Signal2D data are written in one stripe per plane.
         Dimensions larger than 2 to 4 (depending on photometric mode, planar
         configuration, and SGI mode) are flattened and saved as separate pages.
         The 'sample_format' and 'bits_per_sample' TIFF tags are derived from
@@ -323,7 +323,7 @@ class TiffWriter(object):
         volume : bool
             If True, volume data are stored in one tile (if applicable) using
             the SGI image_depth and tile_depth tags.
-            Image width and depth must be multiple of 16.
+            Signal2D width and depth must be multiple of 16.
             Few software can read this format, e.g. MeVisLab.
         writeshape : bool
             If True, write the data shape to the image_description tag
@@ -1138,7 +1138,7 @@ class TiffFile(object):
                                     labels = [label.text for label in along
                                               if label.tag.endswith('Label')]
                                 modulo[axis] = (newaxis, labels)
-            if not element.tag.endswith('Image'):
+            if not element.tag.endswith('Signal2D'):
                 continue
             for pixels in element:
                 if not pixels.tag.endswith('Pixels'):
@@ -2260,7 +2260,7 @@ class TiffSequence(object):
         files : str, or sequence of str
             Glob pattern or sequence of file names.
         imread : function or class
-            Image read function or class with asarray function returning numpy
+            Signal2D read function or class with asarray function returning numpy
             array from single file.
         pattern : str
             Regular expression pattern that matches axes names and sequence
@@ -3841,7 +3841,7 @@ OME_PIXEL_TYPES = {
     'double-complex': 'c16',
 }
 
-# NIH Image PicHeader v1.63
+# NIH Signal2D PicHeader v1.63
 NIH_IMAGE_HEADER = [
     ('fileid', 'a8'),
     ('nlines', 'i2'),
@@ -3893,7 +3893,7 @@ NIH_IMAGE_HEADER = [
 
 NIH_COLORTABLE_TYPE = (
     'CustomTable', 'AppleDefault', 'Pseudo20', 'Pseudo32', 'Rainbow',
-    'Fire1', 'Fire2', 'Ice', 'Grays', 'Spectrum')
+    'Fire1', 'Fire2', 'Ice', 'Grays', 'Signal1D')
 
 NIH_LUTMODE_TYPE = (
     'PseudoColor', 'OldAppleDefault', 'OldSpectrum', 'GrayScale',

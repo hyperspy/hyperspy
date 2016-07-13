@@ -24,7 +24,7 @@ from nose.tools import (assert_true,
 import nose.tools as nt
 from hyperspy.component import Parameter
 from hyperspy.exceptions import NavigationDimensionError
-import mock
+from unittest import mock
 
 
 class Dummy:

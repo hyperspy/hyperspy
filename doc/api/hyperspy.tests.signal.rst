@@ -84,6 +84,14 @@ hyperspy.tests.signal.test_fancy_indexing module
     :undoc-members:
     :show-inheritance:
 
+hyperspy.tests.signal.test_find_peaks1D_ohaver module
+-----------------------------------------------------
+
+.. automodule:: hyperspy.tests.signal.test_find_peaks1D_ohaver
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 hyperspy.tests.signal.test_folding module
 -----------------------------------------
 

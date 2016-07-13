@@ -47,10 +47,10 @@ def _estimate_gain(ns, cs,
 
     fit = np.polyfit(average2fit, variance2fit, pol_order)
     if weighted is True:
-        from hyperspy._signals.spectrum import Spectrum
-        from hyperspy.models.model1D import Model1D
-        from hyperspy.components import Line
-        s = Spectrum(variance2fit)
+        from hyperspy._signals.signal1D import Signal1D
+        from hyperspy.models.model1d import Model1D
+        from hyperspy.components1d import Line
+        s = Signal1D(variance2fit)
         s.axes_manager.signal_axes[0].axis = average2fit
         m = Model1D(s)
         l = Line()
@@ -99,7 +99,7 @@ def estimate_variance_parameters(
 
     Parameters
     ----------
-    noisy_SI, clean_SI : spectrum.Spectrum instances
+    noisy_SI, clean_SI : signal1D.Signal1D instances
     mask : numpy bool array
         To define the channels that will be used in the calculation.
     pol_order : int
@@ -217,7 +217,7 @@ def eels_constant(s, zlp, t):
 
     Parameters
     ----------
-    zlp: {number, Signal}
+    zlp: {number, BaseSignal}
         If the ZLP is the same for all spectra, the intengral of the ZLP
         can be provided as a number. Otherwise, if the ZLP intensity is not
         the same for all spectra, it can be provided as i) a Signal
@@ -225,7 +225,7 @@ def eels_constant(s, zlp, t):
         spectra for each location ii) a Signal of signal dimension 0
         and navigation_dimension equal to the current signal containing the
         integrated ZLP intensity.
-    t: {None, number, Signal}
+    t: {None, number, BaseSignal}
         The sample thickness in nm. If the thickness is the same for all
         spectra it can be given by a number. Otherwise, it can be provided
         as a Signal with signal dimension 0 and navigation_dimension equal
@@ -262,7 +262,7 @@ def eels_constant(s, zlp, t):
         # Avoid singularity at E=0
         eaxis[0] = 1e-10
 
-    if isinstance(zlp, hyperspy.signal.Signal):
+    if isinstance(zlp, hyperspy.signal.BaseSignal):
         if (zlp.axes_manager.navigation_dimension ==
                 s.axes_manager.navigation_dimension):
             if zlp.axes_manager.signal_dimension == 0:
@@ -278,9 +278,10 @@ def eels_constant(s, zlp, t):
     elif isinstance(zlp, numbers.Number):
         i0 = zlp
     else:
-        raise ValueError('The zero-loss peak input is not valid.')
+        raise ValueError('The zero-loss peak input must be a Hyperspy signal\
+                         or a number.')
 
-    if isinstance(t, hyperspy.signal.Signal):
+    if isinstance(t, hyperspy.signal.BaseSignal):
         if (t.axes_manager.navigation_dimension ==
                 s.axes_manager.navigation_dimension) and (
                 t.axes_manager.signal_dimension == 0):

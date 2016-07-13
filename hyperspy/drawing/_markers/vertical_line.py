@@ -36,7 +36,7 @@ class VerticalLine(MarkerBase):
     Example
     -------
     >>> import numpy as np
-    >>> s = hs.signals.Spectrum(np.random.random([10, 100]))
+    >>> s = hs.signals.Signal1D(np.random.random([10, 100]))
     >>> m = hs.plot.markers.vertical_line(x=range(10), color='green')
     >>> s.add_marker(m)
 

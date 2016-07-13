@@ -33,13 +33,12 @@ from scipy.optimize import (leastsq,
                             fmin_tnc,
                             fmin_powell)
 
-
-from hyperspy.external import progressbar
+from hyperspy.external.progressbar import progressbar
 from hyperspy.defaults_parser import preferences
 from hyperspy.external.mpfit.mpfit import mpfit
 from hyperspy.component import Component
-from hyperspy import components
-from hyperspy.signal import Signal
+from hyperspy import components1d, components2d
+from hyperspy.signal import BaseSignal
 from hyperspy.misc.export_dictionary import (export_to_dictionary,
                                              load_from_dictionary,
                                              parse_flag_string,
@@ -49,6 +48,16 @@ from hyperspy.misc.utils import (slugify, shorten_name, stash_active_state,
 from hyperspy.misc.slicing import copy_slice_from_whitelist
 
 _logger = logging.getLogger(__name__)
+
+# components is just a container for all (1D and 2D) components, to be able to
+# search in a single object for matching components when recreating a model.
+
+
+class DummyComponentsContainer:
+    pass
+components = DummyComponentsContainer()
+components.__dict__.update(components1d.__dict__)
+components.__dict__.update(components2d.__dict__)
 
 
 class ModelComponents(object):
@@ -63,13 +72,13 @@ class ModelComponents(object):
         self._model = model
 
     def __repr__(self):
-        signature = "%4s | %25s | %25s | %25s"
+        signature = "%4s | %19s | %19s | %19s"
         ans = signature % ('#',
                            'Attribute Name',
                            'Component Name',
                            'Component Type')
         ans += "\n"
-        ans += signature % ('-' * 4, '-' * 25, '-' * 25, '-' * 25)
+        ans += signature % ('-' * 4, '-' * 19, '-' * 19, '-' * 19)
         if self._model:
             for i, c in enumerate(self._model):
                 ans += "\n"
@@ -77,9 +86,9 @@ class ModelComponents(object):
                 variable_name = slugify(name_string, valid_variable_name=True)
                 component_type = c._id_name
 
-                variable_name = shorten_name(variable_name, 25)
-                name_string = shorten_name(name_string, 25)
-                component_type = shorten_name(component_type, 25)
+                variable_name = shorten_name(variable_name, 19)
+                name_string = shorten_name(name_string, 19)
+                component_type = shorten_name(component_type, 19)
 
                 ans += signature % (i,
                                     variable_name,
@@ -113,13 +122,13 @@ class BaseModel(list):
     Attributes
     ----------
 
-    signal : Signal instance
+    signal : BaseSignal instance
         It contains the data to fit.
-    chisq : A Signal of floats
+    chisq : A BaseSignal of floats
         Chi-squared of the signal (or np.nan if not yet fit)
-    dof : A Signal of integers
+    dof : A BaseSignal of integers
         Degrees of freedom of the signal (0 if not yet fit)
-    red_chisq : Signal instance
+    red_chisq : BaseSignal instance
         Reduced chi-squared.
     components : `ModelComponents` instance
         The components of the model are attributes of this class. This provides
@@ -136,7 +145,7 @@ class BaseModel(list):
     remove
         Remove component from model.
     as_signal
-        Generate a Spectrum instance (possible multidimensional)
+        Generate a BaseSignal instance (possible multidimensional)
         from the model.
     store_current_values
         Store the value of the parameters at the current position.
@@ -216,7 +225,7 @@ class BaseModel(list):
             name : {None, str}
                 Stored model name. Auto-generated if left empty
             **kwargs :
-                Other keyword arguments are passed onto `Signal.save()`
+                Other keyword arguments are passed onto `BaseSignal.save()`
         """
         if self.signal is None:
             raise ValueError("Currently cannot store models with no signal")
@@ -342,9 +351,9 @@ class BaseModel(list):
         Examples
         --------
 
-        >>> s = hs.signals.Spectrum(np.empty(1))
+        >>> s = hs.signals.Signal1D(np.empty(1))
         >>> m = s.create_model()
-        >>> g = hs.model.components.Gaussian()
+        >>> g = hs.model.components1D.Gaussian()
         >>> m.append(g)
 
         You could remove `g` like this
@@ -392,10 +401,10 @@ class BaseModel(list):
 
         Examples
         --------
-        >>> s = hs.signals.Spectrum(np.random.random((10,100)))
+        >>> s = hs.signals.Signal1D(np.random.random((10,100)))
         >>> m = s.create_model()
-        >>> l1 = hs.model.components.Lorentzian()
-        >>> l2 = hs.model.components.Lorentzian()
+        >>> l1 = hs.model.components1D.Lorentzian()
+        >>> l2 = hs.model.components1D.Lorentzian()
         >>> m.append(l1)
         >>> m.append(l2)
         >>> s1 = m.as_signal()
@@ -422,18 +431,14 @@ class BaseModel(list):
                 channel_switches_backup = copy.copy(self.channel_switches)
                 self.channel_switches[:] = True
             maxval = self.axes_manager.navigation_size
-            pbar = progressbar.progressbar(maxval=maxval,
-                                           disabled=not show_progressbar)
-            i = 0
-            for index in self.axes_manager:
+            show_progressbar = show_progressbar and (maxval > 0)
+            for index in progressbar(self.axes_manager, total=maxval,
+                                     disable=not show_progressbar,
+                                     leave=True):
                 self.fetch_stored_values(only_fixed=False)
                 data[self.axes_manager._getitem_tuple][
                     np.where(self.channel_switches)] = self.__call__(
                     non_convolved=not self.convolved, onlyactive=True).ravel()
-                i += 1
-                if maxval > 0:
-                    pbar.update(i)
-            pbar.finish()
             if out_of_range_to_nan is True:
                 self.channel_switches[:] = channel_switches_backup
             signal = self.signal.__class__(
@@ -498,6 +503,34 @@ class BaseModel(list):
                         self.mpfit_parinfo.extend((
                             {'limited': limited,
                              'limits': limits},) * param._number_of_elements)
+
+    def ensure_parameters_in_bounds(self):
+        """For all active components, snaps their free parameter values to
+        be within their boundaries (if bounded). Does not touch the array of
+        values.
+        """
+        for component in self:
+            if component.active:
+                for param in component.free_parameters:
+                    bmin = -np.inf if param.bmin is None else param.bmin
+                    bmax = np.inf if param.bmax is None else param.bmax
+                    if param._number_of_elements == 1:
+                        if not bmin <= param.value <= bmax:
+                            min_d = np.abs(param.value - bmin)
+                            max_d = np.abs(param.value - bmax)
+                            if min_d < max_d:
+                                param.value = bmin
+                            else:
+                                param.value = bmax
+                    else:
+                        values = np.array(param.value)
+                        if param.bmin is not None:
+                            minmask = values < bmin
+                            values[minmask] = bmin
+                        if param.bmax is not None:
+                            maxmask = values > bmax
+                            values[maxmask] = bmax
+                        param.value = tuple(values)
 
     def store_current_values(self):
         """ Store the parameters of the current coordinates into the
@@ -593,7 +626,7 @@ class BaseModel(list):
         if self.signal.metadata.has_item('Signal.Noise_properties.variance'):
 
             variance = self.signal.metadata.Signal.Noise_properties.variance
-            if isinstance(variance, Signal):
+            if isinstance(variance, BaseSignal):
                 variance = variance.data.__getitem__(
                     self.axes_manager._getitem_tuple)[np.where(
                                                       self.channel_switches)]
@@ -620,7 +653,6 @@ class BaseModel(list):
             bounded=False, ext_bounding=False, update_plot=False,
             **kwargs):
         """Fits the model to the experimental data.
-
         The chi-squared, reduced chi-squared and the degrees of freedom are
         computed automatically when fitting. They are stored as signals, in the
         `chisq`, `red_chisq`  and `dof`. Note that,
@@ -628,7 +660,6 @@ class BaseModel(list):
         accurate estimation of the variance of the data, the chi-squared and
         reduced chi-squared cannot be computed correctly. This is also true for
         homocedastic noise.
-
         Parameters
         ----------
         fitter : {None, "leastsq", "odr", "mpfit", "fmin"}
@@ -649,9 +680,9 @@ class BaseModel(list):
             "metada.Signal.Noise_properties.variance" attribute is defined.
             Note that if it is not defined the standard deviation is estimated
             using variance equal 1, what, if the noise is heterocedatic, will
-            result in a biased estimation of the parameter values and errors.i
-            If `variance` is a `Signal` instance of the
-            same `navigation_dimension` as the spectrum, and `method` is "ls"
+            result in a biased estimation of the parameter values and errors.
+            If `variance` is a `Signal` instance of the same
+            `navigation_dimension` as the signal, and `method` is "ls"
             weighted least squares is performed.
         method : {'ls', 'ml'}
             Choose 'ls' (default) for least squares and 'ml' for poissonian
@@ -670,16 +701,13 @@ class BaseModel(list):
         ext_bounding : bool
             If True, enforce bounding by keeping the value of the
             parameters constant out of the defined bounding area.
-
         **kwargs : key word arguments
             Any extra key word argument will be passed to the chosen
             fitter. For more information read the docstring of the optimizer
             of your choice in `scipy.optimize`.
-
         See Also
         --------
         multifit
-
         """
 
         if fitter is None:
@@ -689,6 +717,16 @@ class BaseModel(list):
             cm = self.suspend_update
         else:
             cm = dummy_context_manager
+
+        if bounded is True:
+            if fitter not in ("mpfit", "tnc", "l_bfgs_b"):
+                raise NotImplementedError("Bounded optimization is only"
+                                          "available for the mpfit "
+                                          "optimizer.")
+            else:
+                # this has to be done before setting the p0, so moved things
+                # around
+                self.ensure_parameters_in_bounds()
 
         with cm(update_on_resume=True):
             self.p_std = None
@@ -708,10 +746,6 @@ class BaseModel(list):
                 grad_ml = self._gradient_ml
                 grad_ls = self._gradient_ls
 
-            if bounded is True and fitter not in ("mpfit", "tnc", "l_bfgs_b"):
-                raise NotImplementedError(
-                    "Bounded optimization is only available for the mpfit "
-                    "optimizer.")
             if method == 'ml':
                 weights = None
                 if fitter != "fmin":
@@ -724,7 +758,7 @@ class BaseModel(list):
                     variance = 1
                 else:
                     variance = metadata.Signal.Noise_properties.variance
-                    if isinstance(variance, Signal):
+                    if isinstance(variance, BaseSignal):
                         if (variance.axes_manager.navigation_shape ==
                                 self.signal.axes_manager.navigation_shape):
                             variance = variance.data.__getitem__(
@@ -837,7 +871,7 @@ class BaseModel(list):
                     if bounded is True:
                         self.set_boundaries()
                     elif bounded is False:
-                        self.self.free_parameters_boundaries = None
+                        self.free_parameters_boundaries = None
                     self.p0 = fmin_tnc(
                         tominimize,
                         self.p0,
@@ -850,7 +884,7 @@ class BaseModel(list):
                     if bounded is True:
                         self.set_boundaries()
                     elif bounded is False:
-                        self.self.free_parameters_boundaries = None
+                        self.free_parameters_boundaries = None
                     self.p0 = fmin_l_bfgs_b(
                         tominimize, self.p0, fprime=fprime, args=args,
                         bounds=self.free_parameters_boundaries,
@@ -858,13 +892,11 @@ class BaseModel(list):
                 else:
                     raise ValueError("""
                     The %s optimizer is not available.
-
                     Available optimizers:
                     Unconstrained:
                     --------------
                     Only least Squares: leastsq and odr
                     General: fmin, powell, cg, ncg, bfgs
-
                     Cosntrained:
                     ------------
                     tnc and l_bfgs_b
@@ -941,17 +973,9 @@ class BaseModel(list):
                 str(self.axes_manager._navigation_shape_in_array))
         masked_elements = 0 if mask is None else mask.sum()
         maxval = self.axes_manager.navigation_size - masked_elements
-        if maxval > 0:
-            pbar = progressbar.progressbar(maxval=maxval,
-                                           disabled=not show_progressbar)
+        show_progressbar = show_progressbar and (maxval > 0)
         if 'bounded' in kwargs and kwargs['bounded'] is True:
-            if kwargs['fitter'] == 'mpfit':
-                self.set_mpfit_parameters_info()
-                kwargs['bounded'] = None
-            elif kwargs['fitter'] in ("tnc", "l_bfgs_b"):
-                self.set_boundaries()
-                kwargs['bounded'] = None
-            else:
+            if kwargs['fitter'] not in ("tnc", "l_bfgs_b", "mpfit"):
                 _logger.info(
                     "The chosen fitter does not suppport bounding."
                     "If you require bounding please select one of the "
@@ -967,19 +991,18 @@ class BaseModel(list):
                 outer = self.suspend_update
                 inner = dummy_context_manager
             with outer(update_on_resume=True):
-                for index in self.axes_manager:
-                    with inner(update_on_resume=True):
-                        if mask is None or not mask[index[::-1]]:
-                            self.fetch_stored_values(
-                                only_fixed=fetch_only_fixed)
-                            self.fit(**kwargs)
-                            i += 1
-                            if maxval > 0:
-                                pbar.update(i)
-                        if autosave is True and i % autosave_every == 0:
-                            self.save_parameters2file(autosave_fn)
-                if maxval > 0:
-                    pbar.finish()
+                with progressbar(total=maxval, disable=not show_progressbar,
+                                 leave=True) as pbar:
+                    for index in self.axes_manager:
+                        with inner(update_on_resume=True):
+                            if mask is None or not mask[index[::-1]]:
+                                self.fetch_stored_values(
+                                    only_fixed=fetch_only_fixed)
+                                self.fit(**kwargs)
+                                i += 1
+                                pbar.update(1)
+                            if autosave is True and i % autosave_every == 0:
+                                self.save_parameters2file(autosave_fn)
         if autosave is True:
             _logger.info(
                 'Deleting the temporary file %s pixels' % (
@@ -1193,7 +1216,7 @@ class BaseModel(list):
 
         Examples
         --------
-        >>> v1 = hs.model.components.Voigt()
+        >>> v1 = hs.model.components1D.Voigt()
         >>> m.append(v1)
         >>> m.set_parameters_not_free()
 
@@ -1237,7 +1260,7 @@ class BaseModel(list):
 
         Examples
         --------
-        >>> v1 = hs.model.components.Voigt()
+        >>> v1 = hs.model.components1D.Voigt()
         >>> m.append(v1)
         >>> m.set_parameters_free()
         >>> m.set_parameters_free(component_list=[v1],
@@ -1287,8 +1310,8 @@ class BaseModel(list):
 
         Examples
         --------
-        >>> v1 = hs.model.components.Voigt()
-        >>> v2 = hs.model.components.Voigt()
+        >>> v1 = hs.model.components1D.Voigt()
+        >>> v2 = hs.model.components1D.Voigt()
         >>> m.extend([v1,v2])
         >>> m.set_parameters_value('area', 5)
         >>> m.set_parameters_value('area', 5, component_list=[v1])
@@ -1337,10 +1360,10 @@ class BaseModel(list):
             * any field from _whitelist.keys() *
         Examples
         --------
-        >>> s = signals.Spectrum(np.random.random((10,100)))
+        >>> s = signals.Signal1D(np.random.random((10,100)))
         >>> m = s.create_model()
-        >>> l1 = components.Lorentzian()
-        >>> l2 = components.Lorentzian()
+        >>> l1 = components1d.Lorentzian()
+        >>> l2 = components1d.Lorentzian()
         >>> m.append(l1)
         >>> m.append(l2)
         >>> d = m.as_dictionary()
@@ -1388,8 +1411,8 @@ class BaseModel(list):
 
         Examples
         --------
-        >>> v1 = hs.model.components.Voigt()
-        >>> v2 = hs.model.components.Voigt()
+        >>> v1 = hs.model.components1D.Voigt()
+        >>> v2 = hs.model.components1D.Voigt()
         >>> m.extend([v1,v2])
         >>> m.set_component_active_value(False)
         >>> m.set_component_active_value(True, component_list=[v1])
@@ -1437,6 +1460,26 @@ class BaseModel(list):
                     "\" not found in model")
         else:
             return list.__getitem__(self, value)
+
+    def notebook_interaction(self):
+        """Creates interactive notebook widgets for all components and
+        parameters, if available.
+        Requires `ipywidgets` to be installed.
+        """
+        from ipywidgets import Accordion
+        from traitlets import TraitError as TraitletError
+        from IPython.display import display as ip_display
+
+        try:
+            children = [component.notebook_interaction(False) for component in
+                        self]
+            accord = Accordion(children=children)
+            for i, comp in enumerate(self):
+                accord.set_title(i, comp.name)
+            ip_display(accord)
+        except TraitletError:
+            _logger.info('This function is only avialable when running in a'
+                         ' notebook')
 
 
 class ModelSpecialSlicers(object):

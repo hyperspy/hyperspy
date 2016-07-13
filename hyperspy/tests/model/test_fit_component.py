@@ -20,8 +20,8 @@ import numpy as np
 
 import nose.tools
 from nose.tools import assert_true
-from hyperspy._signals.spectrum import Spectrum
-from hyperspy.components import Gaussian
+from hyperspy._signals.signal1d import Signal1D
+from hyperspy.components1d import Gaussian
 
 
 class TestFitOneComponent:
@@ -32,7 +32,7 @@ class TestFitOneComponent:
         g.centre.value = 5000.0
         g.sigma.value = 500.0
         axis = np.arange(10000)
-        s = Spectrum(g.function(axis))
+        s = Signal1D(g.function(axis))
         m = s.create_model()
         self.model = m
         self.g = g
@@ -46,11 +46,10 @@ class TestFitOneComponent:
         g1 = Gaussian()
         m.append(g1)
         m.fit_component(g1, signal_range=(4000, 6000))
-        assert_true(
-            np.allclose(
-                self.g.function(axis),
-                g1.function(axis),
-                rtol=self.rtol))
+        np.testing.assert_allclose(self.g.function(axis),
+                                   g1.function(axis),
+                                   rtol=self.rtol,
+                                   atol=10e-3)
 
     @nose.tools.raises(ValueError)
     def test_component_not_in_model(self):
@@ -80,7 +79,7 @@ class TestFitSeveralComponent:
                         gs2.function(axis) +
                         gs3.function(axis))
 
-        s = Spectrum(total_signal)
+        s = Signal1D(total_signal)
         m = s.create_model()
 
         g1 = Gaussian()
@@ -109,11 +108,10 @@ class TestFitSeveralComponent:
         g2.active = True
         g3.active = False
         m.fit_component(g1, signal_range=(4500, 5200), fit_independent=True)
-        assert_true(
-            np.allclose(
-                self.gs1.function(axis),
-                g1.function(axis),
-                rtol=self.rtol))
+        np.testing.assert_allclose(self.gs1.function(axis),
+                                   g1.function(axis),
+                                   rtol=self.rtol,
+                                   atol=10e-3)
         assert_true(g1.active)
         assert_true(g2.active)
         assert_true(not g3.active)
@@ -127,11 +125,10 @@ class TestFitSeveralComponent:
         g2.A.free = False
         g2.sigma.free = False
         m.fit_component(g1, signal_range=(4500, 5200))
-        assert_true(
-            np.allclose(
-                self.gs1.function(axis),
-                g1.function(axis),
-                rtol=self.rtol))
+        np.testing.assert_allclose(self.gs1.function(axis),
+                                   g1.function(axis),
+                                   rtol=self.rtol,
+                                   atol=10e-3)
 
         assert_true(g1.A.free)
         assert_true(g1.sigma.free)
@@ -153,8 +150,7 @@ class TestFitSeveralComponent:
         m.fit_component(g1, signal_range=(4500, 5200))
         m.fit_component(g2, signal_range=(1500, 2200))
         m.fit_component(g3, signal_range=(5800, 6150))
-        assert_true(
-            np.allclose(
-                self.model.spectrum.data,
-                m(),
-                rtol=self.rtol))
+        np.testing.assert_allclose(self.model.signal.data,
+                                   m(),
+                                   rtol=self.rtol,
+                                   atol=10e-3)

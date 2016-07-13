@@ -24,6 +24,7 @@ from traits.etsconfig.api import ETSConfig
 
 _logger = logging.getLogger(__name__)
 
+
 def set_ets_toolkit(toolkit):
     try:
         ETSConfig.toolkit = toolkit

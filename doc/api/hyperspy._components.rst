@@ -28,14 +28,6 @@ hyperspy._components.eels_cl_edge module
     :undoc-members:
     :show-inheritance:
 
-hyperspy._components.eels_double_offset module
-----------------------------------------------
-
-.. automodule:: hyperspy._components.eels_double_offset
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 hyperspy._components.eels_double_power_law module
 -------------------------------------------------
 
@@ -96,6 +88,14 @@ hyperspy._components.gaussianhf module
 --------------------------------------
 
 .. automodule:: hyperspy._components.gaussianhf
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+hyperspy._components.heaviside module
+-------------------------------------
+
+.. automodule:: hyperspy._components.heaviside
     :members:
     :undoc-members:
     :show-inheritance:
@@ -168,14 +168,6 @@ hyperspy._components.scalable_fixed_pattern module
 --------------------------------------------------
 
 .. automodule:: hyperspy._components.scalable_fixed_pattern
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-hyperspy._components.spline module
-----------------------------------
-
-.. automodule:: hyperspy._components.spline
     :members:
     :undoc-members:
     :show-inheritance:
