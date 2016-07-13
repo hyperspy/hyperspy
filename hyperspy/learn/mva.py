@@ -33,6 +33,7 @@ from hyperspy.misc.machine_learning import import_sklearn
 import hyperspy.misc.io.tools as io_tools
 from hyperspy.learn.svd_pca import svd_pca
 from hyperspy.learn.mlpca import mlpca
+from hyperspy.learn.rpca import rpca_godec, orpca
 from scipy import linalg
 from hyperspy.misc.machine_learning.orthomax import orthomax
 from hyperspy.misc.utils import stack
@@ -117,7 +118,7 @@ class MVA():
         normalize_poissonian_noise : bool
             If True, scale the SI to normalize Poissonian noise
         algorithm : 'svd' | 'fast_svd' | 'mlpca' | 'fast_mlpca' | 'nmf' |
-            'sparse_pca' | 'mini_batch_sparse_pca'
+            'sparse_pca' | 'mini_batch_sparse_pca' | 'RPCA_GoDec' | 'ORPCA'
         output_dimension : None or int
             number of components to keep/calculate
         centre : None | 'variables' | 'trials'
@@ -146,6 +147,12 @@ class MVA():
         return_info: bool, default False
             The result of the decomposition is stored internally. However, some algorithms generate some extra
             information that is not stored. If True (the default is False) return any extra information if available
+
+        Returns
+        -------
+        (X, E) : (numpy array, numpy array)
+            If 'algorithm' == 'RPCA_GoDec' or 'ORPCA' and 'return_info' is True,
+            returns the low-rank (X) and sparse (E) matrices from robust PCA.
 
         See also
         --------
@@ -176,8 +183,13 @@ class MVA():
                     "normalize_poissonian_noise is set to False")
                 normalize_poissonian_noise = False
             if output_dimension is None:
-                raise ValueError("With the mlpca algorithm the "
-                                 "output_dimension must be expecified")
+                raise ValueError("With the MLPCA algorithm the "
+                                 "output_dimension must be specified")
+        if algorithm == 'RPCA_GoDec' or algorithm == 'ORPCA':
+            if output_dimension is None:
+                raise ValueError("With the robust PCA algorithms ('RPCA_GoDec' "
+                                 "and 'ORPCA'), the output_dimension "
+                                 "must be specified")
 
         # Apply pre-treatments
         # Transform the data in a line spectrum
@@ -330,6 +342,33 @@ class MVA():
                 factors = V
                 explained_variance_ratio = S ** 2 / Sobj
                 explained_variance = S ** 2 / len(factors)
+            elif algorithm == 'RPCA_GoDec':
+                _logger.info("Performing Robust PCA with GoDec")
+
+                X, E, G, U, S, V = rpca_godec(
+                    dc[:, signal_mask][navigation_mask, :],
+                    rank=output_dimension, fast=True, **kwargs)
+
+                loadings = U * S
+                factors = V
+                explained_variance = S ** 2 / len(factors)
+
+                if return_info:
+                    to_return = (X, E)
+
+            elif algorithm == 'ORPCA':
+                _logger.info("Performing Online Robust PCA")
+
+                X, E, U, S, V = orpca(
+                    dc[:, signal_mask][navigation_mask, :],
+                    rank=output_dimension, fast=True, **kwargs)
+
+                loadings = U * S
+                factors = V
+                explained_variance = S ** 2 / len(factors)
+
+                if return_info:
+                    to_return = (X, E)
             else:
                 raise ValueError('Algorithm not recognised. '
                                  'Nothing done')
