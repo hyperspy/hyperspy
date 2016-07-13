@@ -44,7 +44,7 @@ format_name = 'CAMECA IM'
 description = 'Format used for the Cameca NanoSIMS'
 full_support = False
 # Recognised file extension
-file_extensions = cameca_extensions
+file_extensions = im_extensions
 default_extension = 0
 
 # Writing capabilities
@@ -107,43 +107,95 @@ def get_lengths(file):
     file.seek(unit_length, 1)
     return description_length, unit_length
 
+def get_endian(file):
+    """
+    Check endian by seeing how large the value in bytes 8:12 are
 
-def get_header_dtype_list(file):
+    Parameters
+    ----------
+    file: file object
+
+    Returns
+    -------
+    endian: string, either ">" (big-endian) or "<" (small-endian) depending on OS that saved the file
+
+    """
+    file.seek(8)
+    header_size = np.fromfile(file,
+                          dtype=np.dtype(">u4"),
+                          count=1)
+    if header_size < 2e6:
+        endian = ">" # (big-endian)
+    else:
+        endian = "<" # (small-endian)
+
+    return endian
+
+def get_header_dtype_list(file, endian):
+    """Parse header info from file
+
+    Parameters
+    ----------
+    file: file object
+    endian: string, either ">" (big-endian) or "<" (small-endian) depending on OS that saved the file
+    Returns
+    -------
+    header: np.ndarray, dictionary-like object of image properties
+
+    """
     # Read the first part of the header
     header_list1 = [
-        ("ByteOrder", "<u2"),
-        ("SeriesID", "<u2"),
-        ("SeriesVersion", "<u2"),
-        ("DataTypeID", "<u4"),
-        ("TagTypeID", "<u4"),
-        ("TotalNumberElements", "<u4"),
-        ("ValidNumberElements", "<u4")]
+        ("release", endian + "u4"),
+        ("analysis_type", endian + "u4"),
+        ("header_size", endian + "u4"),
+        ("sample_type", endian + "u4"),
+        ("data_present", endian + "u4"),
+        ("stage_position_x", endian + "i4"),
+        ("stage_position_y", endian + "i4"),
+        ("analysis_name", endian + "S32"),
+        ("username", endian + "S16"),
+        ("samplename", endian + "S16"),
+        ("date", endian + "S16"),
+        ("time", endian + "S16"),
+        ("filename", endian + "S16"),
+        ("analysis_duration", endian + "u4"),
+        ("cycle_number", endian + "u4"),
+        ("scantype", endian + "u4"),
+        ("magnification", endian + "u2"),
+        ("sizetype", endian + "u2"),
+        ("size_detector", endian + "u2"),
+        ("no_used", endian + "u2"),
+        ("beam_blanking", endian + "u4"),
+        ("pulverisation", endian + "u4"),
+        ("pulve_duration", endian + "u4"),
+        ("auto_cal_in_anal", endian + "u4"),
+        ("autocal", endian + "S72"),
+        ("sig_reference", endian  + "u4"),
+        ("sigref", endian + "S156"),
+        ("number_of_masses", endian + "u4"),
+    ]
     header1 = np.fromfile(file,
                           dtype=np.dtype(header_list1),
                           count=1)
-    # Depending on the SeriesVersion, the OffsetArrayOffset is 4 or 8 bytes
-    if header1["SeriesVersion"] <= 528:
-        OffsetArrayOffset_dtype = "<u4"
-        beginning_dimension_array_section = 30
-    else:
-        OffsetArrayOffset_dtype = "<u8"
-        beginning_dimension_array_section = 34
 
     # Once we know the type of the OffsetArrayOffset, we can continue reading
     # the 2nd part of the header
-    file.seek(22)
-    header_list2 = [("OffsetArrayOffset", OffsetArrayOffset_dtype),
-                    ("NumberDimensions", "<u4")]
+    file.seek(header1["header_size"] - 78)
+
+    header_list2 = [
+        ("width_pixels", endian + "u2"),
+        ("height_pixels", endian + "u2"),
+        ("pixel_size", endian + "u2"),
+        ("number_of_images", endian + "u2"),
+        ("number_of_planes", endian + "u2"),
+        ("raster", endian + "u4"),
+        ("nickname", endian + "S64"),
+    ]
     header2 = np.fromfile(file,
                           dtype=np.dtype(header_list2),
                           count=1)
     header_list = header_list1 + header_list2
-    # Go to the beginning of the dimension array section
-    file.seek(beginning_dimension_array_section)
-    for n in range(1, header2["NumberDimensions"][0] + 1):
-        description_length, unit_length = get_lengths(file)
-        header_list += dimension_array_dtype(
-            n, description_length, unit_length)
+
     file.seek(0)
     return header_list
 
@@ -256,8 +308,8 @@ def emixml2dtb(et, dictree):
 
 def file_reader(filename, *args, **kwds):
     ext = os.path.splitext(filename)[1][1:]
-    if ext in cam:
-        return [ser_reader(filename, *args, **kwds), ]
+    if ext in im_extensions:
+        return [im_reader(filename, *args, **kwds), ]
     #elif ext in emi_extensions:
         #return emi_reader(filename, *args, **kwds)
 
