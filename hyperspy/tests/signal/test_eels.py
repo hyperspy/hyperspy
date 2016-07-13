@@ -32,11 +32,11 @@ class Test_Estimate_Elastic_Scattering_Threshold:
         energy_axis.scale = 0.02
         energy_axis.offset = -5
 
-        gauss = hs.model.components.Gaussian()
+        gauss = hs.model.components1D.Gaussian()
         gauss.centre.value = 0
         gauss.A.value = 5000
         gauss.sigma.value = 0.5
-        gauss2 = hs.model.components.Gaussian()
+        gauss2 = hs.model.components1D.Gaussian()
         gauss2.sigma.value = 0.5
         # Inflexion point 1.5
         gauss2.A.value = 5000

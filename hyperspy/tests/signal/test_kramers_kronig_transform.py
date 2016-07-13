@@ -19,7 +19,7 @@
 import numpy as np
 import nose.tools
 
-from hyperspy.components import VolumePlasmonDrude, Lorentzian
+from hyperspy.components1d import VolumePlasmonDrude, Lorentzian
 from hyperspy.misc.eels.tools import eels_constant
 import hyperspy.api as hs
 
