@@ -23,22 +23,22 @@ common functionality to deal with one-dimensional (e.g. spectral) data and
 :py:class:`~._signals.signal1d.Signal1D` class for electron energy-loss
 spectroscopy data analysis.
 
-.. versionchanged:: 1.0.0
+The :ref:`table below <signal_subclasses_table-label>` summarises all the
+currently available specialised :py:class:`~.signal.BaseSignal` subclasses.
 
-Currently the following signal subclasses are available:
+.. versionchanged:: 1.0
 
-* :py:class:`~._signals.signal1d.Signal1D`
-* :py:class:`~._signals.signal2d.Signal2D`
-* :py:class:`~._signals.complex_signal.ComplexSignal`
-* :py:class:`~._signals.complex_signal1d.ComplexSignal1D`
-* :py:class:`~._signals.complex_signal2d.ComplexSignal2D`
-* :py:class:`~._signals.eels.EELSSpectrum`
-* :py:class:`~._signals.eds_tem.EDSTEMSpectrum`
-* :py:class:`~._signals.eds_sem.EDSSEMSpectrum`
+    The :py:class:`~._signals.signal1D.Signal1D`,
+    :py:class:`~._signals.image.Signal2D` and :py:class:`~.signal.BaseSignal`
+    classes deprecated the old `Spectrum` `Image` and `Signal` classes. 
 
-Note that in HyperSpy 1.0.0 the :py:class:`~._signals.signal1D.Signal1D` and
-:py:class:`~._signals.image.Signal2D` classes deprecated the old `Spectrum`
-and `Image` classes.
+.. versionadded:: 1.0
+
+    New :py:class:`~._signals.complex_signal.ComplexSignal`,
+    :py:class:`~._signals.complex_signal1d.ComplexSignal1D` and
+    :py:class:`~._signals.complex_signal2d.ComplexSignal2D`
+    :py:class:`~.signal.BaseSignal` subclasses specialised in complex data.
+
 
 
 The :py:mod:`~.signals` module, which contains all available signal subclasses,
@@ -48,6 +48,8 @@ example we create a Signal2D instance from a 2D numpy array:
 .. code-block:: python
 
     >>> im = hs.signals.Signal2D(np.random.random((64,64)))
+    >>> im
+    <Signal2D, title: , dimensions: (|64, 64)>
 
 
 The different signals store other objects in what are called attributes. For
@@ -57,6 +59,83 @@ examples, the data is stored in a numpy array in the
 in the :py:attr:`~.signal.BaseSignal.metadata` attribute and the axes
 information (including calibration) can be accessed (and modified) in the
 :py:attr:`~.signal.BaseSignal.axes_manager` attribute.
+
+
+The navigation and signal dimensions
+------------------------------------
+
+HyperSpy can deal with data of arbitrary dimensions. Each dimension is
+internally classified as either "navigation" or "signal" and the way this
+classification is done determines the behaviour of the signal.
+
+The concept is probably best understood with an example: let's imagine a three
+dimensional dataset e.g. a numpy array with dimensions `(10, 20, 30)`. This
+dataset could be an spectrum image acquired by scanning over a sample in two
+dimensions. As in this case the signal is one-dimensional we use a
+:py:class:`~._signals.signal1D.Signal1D` subclass for this data e.g.:
+
+.. code-block:: python
+
+    >>> s = hs.signals.Signal1D(np.random.random((10, 20, 30)))
+    >>> s
+    <Signal1D, title: , dimensions: (20, 10|30)>
+
+In HyperSpy's terminology, the *signal dimension* of this dataset is 30 and
+the navigation dimensions (20, 10). Notice the separator `|` between the
+navigation and signal dimensions.
+
+
+However, the same dataset could also be interpreted as an image
+stack instead.  Actually it could has been acquired by capturing two
+dimensional images at different wavelengths. Then it would be natural to
+identify the two spatial dimensions as the signal dimensions and the wavelength
+dimension as the navigation dimension. To view the data in this way we could
+have used a :py:class:`~._signals.signal2D.Signal2D` instead e.g.:
+
+.. code-block:: python
+
+    >>> im = hs.signals.Signal2D(np.random.random((10, 20, 30)))
+    >>> im
+    <Signal2D, title: , dimensions: (10|30, 20)>
+
+Indeed, for data analysis purposes,
+one may like to operate with an image stack as if it was a set of spectra or
+viceversa. One can easily switch between these two alternative ways of
+classifiying the dimensions of a three-dimensional dataset by
+:ref:`transforming between BaseSignal subclasses
+<transforming.signal>`.
+
+The same dataset could be seen as a three-dimensional signal:
+
+.. code-block:: python
+
+    >>> td = hs.signals.BaseSignal(np.random.random((10, 20, 30)))
+    >>> td 
+    <BaseSignal, title: , dimensions: (|30, 20, 10)>
+
+Notice that with use :py:class:`~.signal.BaseSignal` because there is
+no specialised subclass for three-dimensional data. Also note that by default
+:py:class:`~.signal.BaseSignal` interprets all dimensions as signal dimensions.
+We could also configure it to operate on the dataset as a three-dimensional
+array of scalars by changing the default *view* of
+:py:class:`~.signal.BaseSignal`:
+
+.. code-block:: python
+
+    >>> scalar = hs.signals.BaseSignal(np.random.random((10, 20, 30)))
+    >>> scalar.axes_manager.set_signal_dimension(0)
+    >>> scalar 
+    <BaseSignal, title: , dimensions: (30, 20, 10|)>
+
+
+
+
+.. NOTE::
+
+    Although each dimension can be arbitrarily classified as "navigation
+    dimension" or "signal dimension", for most common tasks there is no need to
+    modify HyperSpy's default choice.
+
 
 
 .. _transforming.signal:
@@ -84,6 +163,8 @@ e.g. specialised signal subclasses to handle complex data (see the following dia
 
   Diagram showing the inheritance structure of the different subclasses
 
+.. _signal_subclasses_table-label:
+
 
 .. table:: BaseSignal subclass :py:attr:`~.signal.BaseSignal.metadata` attributes.
 
@@ -98,7 +179,7 @@ e.g. specialised signal subclasses to handle complex data (see the following dia
     +-------------------------------------------------------------------------+------------------+-----------------------+----------+
     |           :py:class:`~._signals.eds_sem.EDSSEMSpectrum`                 |        1         |    EDS_SEM            |  real    |
     +-------------------------------------------------------------------------+------------------+-----------------------+----------+
-    |           :py:class:`~._signals.eds_sem.EDSTEMSpectrum`                 |        1         |    EDS_TEM            |  real    |
+    |           :py:class:`~._signals.eds_tem.EDSTEMSpectrum`                 |        1         |    EDS_TEM            |  real    |
     +-------------------------------------------------------------------------+------------------+-----------------------+----------+
     |              :py:class:`~._signals.signal2d.Signal2D`                   |        2         |       -               |  real    |
     +-------------------------------------------------------------------------+------------------+-----------------------+----------+
@@ -137,33 +218,6 @@ The following example shows how to transform between different subclasses.
 
 
 
-The navigation and signal dimensions
-------------------------------------
-
-HyperSpy can deal with data of arbitrary dimensions. Each dimension is
-internally classified as either "navigation" or "signal" and the way this
-classification is done determines the behaviour of the signal.
-
-The concept is probably best understood with an example: let's imagine a three
-dimensional dataset. This dataset could be an spectrum image acquired by
-scanning over a sample in two dimensions. In HyperSpy's terminology the
-spectrum dimension would be the signal dimension and the two other dimensions
-would be the navigation dimensions. We could see the same dataset as an image
-stack instead.  Actually it could has been acquired by capturing two
-dimensional images at different wavelengths. Then it would be natural to
-identify the two spatial dimensions as the signal dimensions and the wavelength
-dimension as the navigation dimension.  However, for data analysis purposes,
-one may like to operate with an image stack as if it was a set of spectra or
-viceversa. One can easily switch between these two alternative ways of
-classifiying the dimensions of a three-dimensional dataset by
-:ref:`transforming between BaseSignal subclasses
-<transforming.signal>`.
-
-.. NOTE::
-
-    Although each dimension can be arbitrarily classified as "navigation
-    dimension" or "signal dimension", for most common tasks there is no need to
-    modify HyperSpy's default choice.
 
 
 .. _signal.binned:
