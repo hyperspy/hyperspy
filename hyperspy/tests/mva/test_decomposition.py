@@ -198,7 +198,8 @@ class TestReturnInfo:
         self.s = signals.Signal1D(np.random.random((20, 100)))
 
     def test_decomposition_not_supported(self):
-        for algorithm in ["svd", "fast_svd"]: # Not testing MLPCA, takes too long
+        # Not testing MLPCA, takes too long
+        for algorithm in ["svd", "fast_svd"]:
             print(algorithm)
             nose.tools.assert_is_none(self.s.decomposition(
                 algorithm=algorithm, return_info=True, output_dimension=1))
@@ -209,7 +210,7 @@ class TestReturnInfo:
                 self.s.decomposition(algorithm=algorithm, return_info=True, output_dimension=1))
         if not sklearn_installed:
             raise SkipTest
-        for algorithm in ["sklearn_pca", "nmf", "sparse_pca","mini_batch_sparse_pca",]:
+        for algorithm in ["sklearn_pca", "nmf", "sparse_pca", "mini_batch_sparse_pca", ]:
             nose.tools.assert_is_not_none(
                 self.s.decomposition(algorithm=algorithm, return_info=True, output_dimension=1))
 
@@ -219,7 +220,6 @@ class TestReturnInfo:
                 self.s.decomposition(algorithm=algorithm, return_info=False, output_dimension=1))
         if not sklearn_installed:
             raise SkipTest
-        for algorithm in ["sklearn_pca", "nmf", "sparse_pca","mini_batch_sparse_pca",]:
+        for algorithm in ["sklearn_pca", "nmf", "sparse_pca", "mini_batch_sparse_pca", ]:
             nose.tools.assert_is_none(
                 self.s.decomposition(algorithm=algorithm, return_info=False, output_dimension=1))
-
