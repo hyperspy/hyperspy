@@ -1,6 +1,7 @@
 import os
 
 import numpy as np
+from nose.plugins.skip import SkipTest
 
 from nose.tools import assert_true, assert_almost_equal
 from hyperspy.io import load
@@ -12,6 +13,10 @@ np_file = ['P45_16bit.npy', 'P45_16bit_ds.npy']
 
 
 def test_load_16bit():
+    try:
+        import lxml:
+    except ImportError:
+        raise SkipTest
     # test bcf from hyperspy load function level
     # some of functions can be not covered
     # it cant use cython parsing implementation, as it is not compiled
@@ -31,6 +36,10 @@ def test_load_16bit():
 
 
 def test_load_16bit_reduced():
+    try:
+        import lxml:
+    except ImportError:
+        raise SkipTest
     my_path = os.path.dirname(__file__)
     filename = os.path.join(my_path, 'bcf_data', test_files[0])
     print('testing downsampled 16bit bcf...')
@@ -49,6 +58,10 @@ def test_load_16bit_reduced():
 
 
 def test_load_8bit():
+    try:
+        import lxml:
+    except ImportError:
+        raise SkipTest
     for bcffile in test_files[1:]:
         my_path = os.path.dirname(__file__)
         filename = os.path.join(my_path, 'bcf_data', bcffile)
@@ -63,6 +76,10 @@ def test_load_8bit():
 
 
 def test_hyperspy_wrap():
+    try:
+        import lxml:
+    except ImportError:
+        raise SkipTest
     my_path = os.path.dirname(__file__)
     filename = os.path.join(my_path, 'bcf_data', test_files[0])
     print('testing bcf wrap to hyperspy signal...')
@@ -76,6 +93,10 @@ def test_hyperspy_wrap():
 
 
 def test_hyperspy_wrap_downsampled():
+    try:
+        import lxml:
+    except ImportError:
+        raise SkipTest
     my_path = os.path.dirname(__file__)
     filename = os.path.join(my_path, 'bcf_data', test_files[0])
     print('testing bcf wrap to hyperspy signal...')
@@ -86,6 +107,10 @@ def test_hyperspy_wrap_downsampled():
 
 
 def test_fast_bcf():
+    try:
+        import lxml:
+    except ImportError:
+        raise SkipTest
     from hyperspy.io_plugins import bcf
 
     for bcffile in test_files:
