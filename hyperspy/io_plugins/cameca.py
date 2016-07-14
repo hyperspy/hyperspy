@@ -274,12 +274,16 @@ def load_im_file(filename):
     with open(filename, 'rb') as f:
         # Check endian of bytes, as it depends on the OS that saved the file
         endian = get_endian(f)
+        print(endian)
         header = get_header_dtype_list(f, endian=endian)
 
         for key in header:
-
+            print(key)
             if type(header[key]) == np.bytes_:
-                header[key] = header[key].decode()
+                try:
+                    header[key] = header[key].decode()
+                except UnicodeDecodeError:
+                    pass
 
         # Read the first element of data offsets
         f.seek(header['header_size'])
