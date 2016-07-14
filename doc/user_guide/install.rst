@@ -185,7 +185,7 @@ With development mode setup.py generates or updates git post-checkout hook, whic
 the cythonized c files, cythonize it again and run ```build_ext --inplace``` after the next checkout.
 
 
-.. 
+..
     If using Arch Linux, the latest checkout of the master development branch can be
     installed through the AUR by installing the `hyperspy-git package
     <https://aur.archlinux.org/packages/hyperspy-git/>`_
@@ -216,12 +216,11 @@ Installing the required libraries
 
 When installing HyperSpy using Python installers or from source the Python
 programming language and the following libraries must be installed in the
-system: numpy, scipy, matplotlib (>= 1.2), ipython, natsort, tqdm, traits and
-traitsui. For full functionality it is recommended to also install h5py,
-scikit-image, scikit-learn and lxml. If HyperSpy is going to be installed from 
-source, cython is
-also required.In addition, since version 0.7.2 the lowess
-filter requires statsmodels. In Windows HyperSpy uses the Ipython's 
+system: numpy, scipy, matplotlib (>= 1.2), ipython, natsort, tqdm, ipyparallel,
+traits and traitsui. For full functionality it is recommended to also install
+h5py, scikit-image, scikit-learn and lxml. If HyperSpy is going to be installed
+from  source, cython is also required.In addition, since version 0.7.2 the
+lowess filter requires statsmodels. In Windows HyperSpy uses the Ipython's
 QtConsole and therefore Qt and PyQt or PySide are also required.
 
 
@@ -237,22 +236,22 @@ In Debian/Ubuntu you can install the libraries as follows:
 ..
     In Arch Linux, the following command should install the required packages to
     get a fully functional installation:
-    
+
     .. code-block:: bash
-    
+
         $ sudo pacman -Sy python2 python2-numpy	python2-matplotlib	python2-pip
         python2-traits python2-traitsui python2-h5py python2-scikit-learn python2-nose
         python2-statsmodels python2-pillow python2-pyqt4 python2-pyqt5 python2-scipy
         python2-pandas python2-setuptools ipython2	python2-jinja python2-pyzmq
         python2-pyqt4 python2-tornado python2-sip python2-pygments python2-scikit-image
-    
+
         # Or, just run this command from the root hyperspy directory to import the
         # list of packages and install automatically:
         $ xargs sudo pacman -Sy --noconfirm < doc/package_lists/arch_linux_package_list.txt
-    
+
         # Once these are installed, go to the HyperSpy directory and run:
         $ sudo pip2 install -e ./
-    
+
         # If desired, the python2-seaborn library can also be installed from AUR for prettier plotting
 
 .. _known-issues:

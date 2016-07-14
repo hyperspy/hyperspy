@@ -982,7 +982,7 @@ Smart Adaptive Multi-dimensional Fitting (SAMFire)
     SAMFire
 
 SAMFire (Smart Adaptive Multi-dimensional Fitting) is an algorithm created to
-avoid the starting value (or local / false minima) problem, which often arises
+reduce the starting value (or local / false minima) problem, which often arises
 when fitting multi-dimensional datasets.
 
 The algorithm will be described in full when accompanying paper is published,
@@ -996,7 +996,7 @@ way of fitting datasets with many dimensions in the navigation space:
 
  #. Pick a more sensible pixel fitting order.
  #. Calculate the pixel starting parameters from already fitted parts of the
-     dataset.
+    dataset.
 
 Both of these aspects are linked one to another and are represented by two
 different strategy families that SAMFfire uses while operating.
@@ -1063,23 +1063,26 @@ fitted. In such cases it is best to allow the algorithm terminate, then provide
 new (better) seed pixels by hand, and restart SAMFire. It will use the
 new seed together with the already computed parts of the data.
 
-Examples
-^^^^^^^^
+Usage
+^^^^^
 
-Once a model and suitable seed pixels are fitted, the SAMFire object is created
+After creating a model and fitting suitable seed pixels, to fit the rest of
+the multi-dimensional dataset using SAMFire we must craete a SAMFire instance
 as follows:
 
 .. code-block:: python
 
     >>> samf = m.create_samfire(workers=None, ipyparallel=False)
 
-By default SAMFire will look for an ipyparallel cluster for the workers, and
-will look for it for around 30 seconds. If none is available, it's recommended
-to tell it explicitly via the ``ipyparallel=False`` argument, to use the
-fall-back option of `multiprocessing`.
+By default SAMFire will look for an `ipyparallel
+<http://ipyparallel.readthedocs.io/en/latest/index.html>`_ cluster for the
+workers for around 30 seconds. If none is available, it will use
+multiprocessing instead.  However, if you are not planning to use ipyparallel,
+it's recommended specify it explicitly via the ``ipyparallel=False`` argument,
+to use the fall-back option of `multiprocessing`.
 
 By default a new SAMFire object already has two (and currently only) strategies
-added to its strategly list:
+added to its strategist list:
 
 .. code-block:: python
 
@@ -1098,23 +1101,18 @@ currently active strategy has to be refreshed using the
 The current strategy "database" can be plotted using the
 :py:meth:`~.samfire.Samfire.plot` method.
 
-.. warning::
-    It is a known bug that starting SAMFire after closing the previously
-    plotted plot window crashes. In such cases please run ``samf._figure=None``
-    before startng the samfire analysis.
-
-Whilst the SAMFire is running, each pixel is checked by a ``goodness_test``,
+Whilst SAMFire is running, each pixel is checked by a ``goodness_test``,
 which is by default :py:class:`~.fit_tests.red_chisq_test`, checking the
 reduced chi-squared to be in the bounds of [0, 2]. 
 
-This tolerance can (and most likely should!) be changed appropriatelly for the
+This tolerance can (and most likely should!) be changed appropriately for the
 data as follows:
 
 .. code-block:: python
 
     >>> samf.metadata.goodness_test.tolerance = 0.3 # use a sensible value
 
-The SAMFire calculations can be started using the
+The SAMFire managed multi-dimensional fit can be started using the
 :py:meth:`~.samfire.Samfire.start` method. All keyword arguments are passed to
 the underlying (i.e. usual) :py:meth:`~.model.BaseModel.fit` call:
 
