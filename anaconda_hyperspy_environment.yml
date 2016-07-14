@@ -17,13 +17,13 @@ dependencies:
 - statsmodels
 - sympy
 - natsort
-- ncurses
 - lxml
 - ipyparallel
 - dask
-- conda-forge::traits
-- conda-forge::traitsui
-- conda-forge::tqdm
-- conda-forge::ipywidgets
+- ipywidgets
+- traits
+- traitsui
 - pip:
+  - python-dateutil
+  - tqdm
   - hyperspy

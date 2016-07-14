@@ -55,11 +55,12 @@ install_req = ['scipy',
                'traitsui>=5.0',
                'natsort',
                'requests',
-               'setuptools',
                'tqdm',
                'sympy',
                'dill',
-               'h5py']
+               'h5py',
+               'python-dateutil',
+               'ipyparallel']
 
 
 def update_version(version):
@@ -319,9 +320,6 @@ with update_version_when_dev() as version:
                   'hyperspy.samfire_utils.goodness_of_fit_tests',
                   ],
         install_requires=install_req,
-        setup_requires=[
-            'setuptools'
-        ],
         package_data={
             'hyperspy':
             [
@@ -348,6 +346,10 @@ with update_version_when_dev() as version:
                 'tests/io/npy_files/*.npy',
                 'tests/io/unf_files/*.unf',
                 'tests/io/bcf_data/*.bcf',
+                'tests/io/bcf_data/*.npy',
+                'tests/io/ripple_files/*.rpl',
+                'tests/io/ripple_files/*.raw',
+                'tests/io/emd_files/*.emd',
                 'tests/drawing/*.ipynb',
                 'tests/signal/test_find_peaks1D_ohaver/test_find_peaks1D_ohaver.hdf5',
             ],

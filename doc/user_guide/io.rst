@@ -40,7 +40,7 @@ providing the ``signal`` keyword, which has to be one of: ``spectrum``,
 
 Some file formats store some extra information about the data, which can be
 stored in "attributes". If HyperSpy manages to read some extra information
-about the data it stores it in :py:attr:`~.signal.BaseSignal.original_metadata`
+about the data it stores it in `~.signal.BaseSignal.original_metadata`
 attribute. Also, it is possible that other information will be mapped by
 HyperSpy to a standard location where it can be used by some standard routines,
 the :py:attr:`~.signal.BaseSignal.metadata` attribute.
@@ -51,14 +51,31 @@ To print the content of the parameters simply:
 
     >>> s.metadata
 
-
-The :py:attr:`~.signal.BaseSignal.original_metadata` and
+::
+Th :py:attr:`~.signal.BaseSignal.original_metadata` and
 :py:attr:`~.signal.BaseSignal.metadata` can be exported to  text files
 using the :py:meth:`~.misc.utils.DictionaryTreeBrowser.export` method, e.g.:
 
 .. code-block:: python
 
     >>> s.original_metadata.export('parameters')
+
+.. _load_to_memory-label:
+
+.. versionadded:: 1.0
+    `load_to_memory` argument.
+
+Some file readers support accessing the data without reading it to memory. This
+feature can be useful when analysing large files. To load a file without loading
+it to memory simply set `load_to_memory` to `False` e.g.
+
+.. code-block:: python
+
+    >>> s = hs.load("filename.hdf5", load_to_memory=False)
+
+However, note that as of v1.0 HyperSpy cannot efficiently use this feature to
+operate on big data files. Only hdf5, blockfile and EMD currently support not
+reading to memory.
 
 Loading multiple files
 ----------------------
@@ -340,6 +357,10 @@ these are uncompressed or losslessly compressed 2**(0 to 6) bit integer,16, 32
 and 64-bit float, grayscale and RGB(A) images, which are commonly used in
 bio-scientific imaging. See `the library webpage
 <http://www.lfd.uci.edu/~gohlke/code/tifffile.py.html>`_ for more details.
+
+.. versionadded: 1.0
+   Add support for writing/reading scale and unit to tif files to be read with
+   ImageJ or DigitalMicrograph 
 
 Currently HyperSpy has limited support for reading and saving the TIFF tags.
 However, the way that HyperSpy reads and saves the scale and the units of tiff
