@@ -59,7 +59,8 @@ install_req = ['scipy',
                'tqdm',
                'sympy',
                'dill',
-               'h5py']
+               'h5py',
+               'ipyparallel']
 
 
 def update_version(version):
