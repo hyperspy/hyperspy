@@ -568,9 +568,14 @@ class SemperFormat(object):
             units[i] = signal.axes_manager[i].units
         # Make sure data is 3D!
         data = data[tuple(None for _ in range(3 - len(data.shape)))]
-        iclass = cls.ICLASS_DICT_INV.get(
-            signal.metadata.Signal.record_by,
-            6)  # 6: undefined
+        signal_dimension = signal.axes_manager.signal_dimension
+        if signal_dimension == 1:
+            record_by = "spectrum"
+        elif signal_dimension == 2:
+            record_by = "image"
+        else:
+            record_by = ""
+        iclass = cls.ICLASS_DICT_INV.get(record_by, 6)  # 6: undefined
         data, iform = cls._check_format(data)
         title = signal.metadata.General.as_dictionary().get('title', Undefined)
         if ordict:

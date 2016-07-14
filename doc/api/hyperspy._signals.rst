@@ -4,6 +4,46 @@ hyperspy._signals package
 Submodules
 ----------
 
+hyperspy._signals.common_signal1d module
+----------------------------------------
+
+.. automodule:: hyperspy._signals.common_signal1d
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+hyperspy._signals.common_signal2d module
+----------------------------------------
+
+.. automodule:: hyperspy._signals.common_signal2d
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+hyperspy._signals.complex_signal module
+---------------------------------------
+
+.. automodule:: hyperspy._signals.complex_signal
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+hyperspy._signals.complex_signal1d module
+-----------------------------------------
+
+.. automodule:: hyperspy._signals.complex_signal1d
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+hyperspy._signals.complex_signal2d module
+-----------------------------------------
+
+.. automodule:: hyperspy._signals.complex_signal2d
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 hyperspy._signals.dielectric_function module
 --------------------------------------------
 

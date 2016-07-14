@@ -24,7 +24,7 @@ import traitsui.api as tu
 from traitsui.menu import OKButton, CancelButton
 from pyface.message_dialog import information
 
-from hyperspy import components
+from hyperspy import components1d
 from hyperspy.component import Component
 from hyperspy import drawing
 from hyperspy.gui.tools import (SpanSelectorInSignal1D,
@@ -81,21 +81,21 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
     def set_background_estimator(self):
 
         if self.background_type == 'Power Law':
-            self.background_estimator = components.PowerLaw()
+            self.background_estimator = components1d.PowerLaw()
             self.bg_line_range = 'from_left_range'
         elif self.background_type == 'Gaussian':
-            self.background_estimator = components.Gaussian()
+            self.background_estimator = components1d.Gaussian()
             self.bg_line_range = 'full'
         elif self.background_type == 'Offset':
-            self.background_estimator = components.Offset()
+            self.background_estimator = components1d.Offset()
             self.bg_line_range = 'full'
         elif self.background_type == 'Polynomial':
-            self.background_estimator = components.Polynomial(
+            self.background_estimator = components1d.Polynomial(
                 self.polynomial_order)
             self.bg_line_range = 'full'
 
     def _polynomial_order_changed(self, old, new):
-        self.background_estimator = components.Polynomial(new)
+        self.background_estimator = components1d.Polynomial(new)
         self.span_selector_changed()
 
     def _background_type_changed(self, old, new):

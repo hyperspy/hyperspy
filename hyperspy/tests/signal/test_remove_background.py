@@ -3,13 +3,13 @@ from nose.tools import (
     assert_true,)
 
 from hyperspy import signals
-from hyperspy import components
+from hyperspy import components1d
 
 
 class TestRemoveBackground1DGaussian:
 
     def setUp(self):
-        gaussian = components.Gaussian()
+        gaussian = components1d.Gaussian()
         gaussian.A.value = 10
         gaussian.centre.value = 10
         gaussian.sigma.value = 1
@@ -36,7 +36,7 @@ class TestRemoveBackground1DGaussian:
 class TestRemoveBackground1DPowerLaw:
 
     def setUp(self):
-        pl = components.PowerLaw()
+        pl = components1d.PowerLaw()
         pl.A.value = 1e10
         pl.r.value = 3
         self.signal = signals.Signal1D(

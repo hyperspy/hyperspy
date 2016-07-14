@@ -4,6 +4,7 @@ dependencies:
 - dill
 - h5py
 - ipython
+- ipyparallel
 - jupyter
 - matplotlib
 - nose
@@ -17,10 +18,12 @@ dependencies:
 - sympy
 - natsort
 - ncurses
+- lxml
+- ipyparallel
+- dask
+- conda-forge::traits
+- conda-forge::traitsui
+- conda-forge::tqdm
+- conda-forge::ipywidgets
 - pip:
-  - dask
   - hyperspy
-  - traits
-  - traitsui
-  - ipywidgets
-  - tqdm

@@ -34,6 +34,7 @@ class TestComplexProperties:
     def setUp(self):
         test = self.real_ref + 1j * self.imag_ref
         self.s = hs.signals.ComplexSignal(test)
+        self.s.axes_manager.set_signal_dimension(1)
 
     def test_get_real(self):
         nt.assert_almost_equal(self.s.real.data, self.real_ref)
@@ -80,6 +81,7 @@ class TestComplexProperties:
 def test_get_unwrapped_phase_1D():
     phase = 6 * (1 - np.abs(np.indices((9,)) - 4) / 4)
     s = hs.signals.ComplexSignal(np.ones_like(phase) * np.exp(1j * phase))
+    s.axes_manager.set_signal_dimension(1)
     phase_unwrapped = s.unwrapped_phase(seed=42, show_progressbar=False)
     nt.assert_equal(
         phase_unwrapped.metadata.General.title,

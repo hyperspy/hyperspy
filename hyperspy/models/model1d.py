@@ -130,7 +130,7 @@ class Model1D(BaseModel):
 
     >>> s = hs.signals.Signal1D(
             np.random.normal(scale=2, size=10000)).get_histogram()
-    >>> g = hs.model.components.Gaussian()
+    >>> g = hs.model.components1D.Gaussian()
     >>> m = s.create_model()
     >>> m.append(g)
     >>> m.print_current_values()
@@ -159,6 +159,7 @@ class Model1D(BaseModel):
     """
 
     def __init__(self, signal1D, dictionary=None):
+        super(Model1D, self).__init__()
         self.signal = signal1D
         self.axes_manager = self.signal.axes_manager
         self._plot = None
@@ -848,7 +849,7 @@ class Model1D(BaseModel):
         --------
         Signal range set interactivly
 
-        >>> g1 = hs.model.components.Gaussian()
+        >>> g1 = hs.model.components1D.Gaussian()
         >>> m.append(g1)
         >>> m.fit_component(g1)
 
