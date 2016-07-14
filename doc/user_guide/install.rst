@@ -51,6 +51,8 @@ Quick instructions to install HyperSpy using Anaconda (Linux, MacOs, Windows)
 
    .. code-block:: bash
 
+       $ conda config --add channels conda-forge
+       $ conda install traitsui
        $ pip install hyperspy
 
 .. warning::
@@ -93,9 +95,13 @@ Install using `pip`:
         $ pip install --upgrade hyperspy==0.8.3-1
 
 
-pip installs automatically the stricly required libraries. However, for full
+pip installs automatically the strictly required libraries. However, for full
 functionality you may need to install some other dependencies,
-see :ref:`install-dependencies`.
+see :ref:`install-dependencies`. Also, be aware that HyperSpy depends on a
+number of libraries that usually need to be compiled and therefore installing
+HyperSpy may require development tools. If the above does not work for you
+remember that the easiest way to install HyperSpy is
+:ref:`using Anaconda <quick-anaconda-install>`.
 
 Creating Conda environment for HyperSpy
 ---------------------------------------
@@ -107,6 +113,7 @@ easily set up using environment files. The two required steps are:
 
 .. code-block:: bash
 
+    $ conda config --add channels conda-forge
     $ conda env create -f anaconda_hyperspy_environment.yml
     $ source activate hyperspy
 
