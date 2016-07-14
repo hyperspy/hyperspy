@@ -885,9 +885,10 @@ class TestMultifit:
                                              [3., 3.])
         np.testing.assert_array_almost_equal(self.m[0].A.map['values'],
                                              [2., 2.])
+
     def test_parameter_as_signal_values(self):
         rs = self.m[0].r.as_signal(field="values")
-        np.testing.assert_almost_equal(rs.data, np.array([   2.,  100.]))
+        np.testing.assert_almost_equal(rs.data, np.array([2., 100.]))
         nt.assert_false("Signal.Noise_properties.variance" in rs.metadata)
         self.m.multifit(fetch_only_fixed=True, show_progressbar=None)
         rs = self.m[0].r.as_signal(field="values")
@@ -906,7 +907,6 @@ class TestMultifit:
                                              [3., 3.])
         np.testing.assert_array_almost_equal(self.m[0].A.map['values'],
                                              [4., 4.])
-
 
 
 class TestStoreCurrentValues:
