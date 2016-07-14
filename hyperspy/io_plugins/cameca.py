@@ -32,7 +32,7 @@ from hyperspy.misc.array_tools import sarray2dict
 _logger = logging.getLogger(__name__)
 
 im_extensions = ('im', 'IM')
-im_info_extensions = ('im_chk', "IM_CHK")
+im_info_extensions = ('im_chk', 'IM_CHK')
 # Plugin characteristics
 # ----------------------
 format_name = 'CAMECA'
@@ -50,7 +50,7 @@ writes = False
 
 
 def get_endian(file):
-    """
+    '''
     Check endian by seeing how large the value in bytes 8:12 are
 
     Parameters
@@ -59,108 +59,109 @@ def get_endian(file):
 
     Returns
     -------
-    endian: string, either ">" (big-endian) or "<" (small-endian) depending on OS that saved the file
+    endian: string, either '>' (big-endian) or '<' (small-endian) depending on OS that saved the file
 
-    """
+    '''
     file.seek(8)
     header_size = np.fromfile(file,
-                              dtype=np.dtype(">u4"),
+                              dtype=np.dtype('>u4'),
                               count=1)
     if header_size < 2e6:
-        endian = ">"  # (big-endian)
+        endian = '>'  # (big-endian)
     else:
-        endian = "<"  # (small-endian)
+        endian = '<'  # (small-endian)
     return endian
 
 
 def get_header_dtype_list(file, endian):
-    """Parse header info from file
+    '''Parse header info from file
 
     Parameters
     ----------
     file: file object
-    endian: string, either ">" (big-endian) or "<" (small-endian) depending on OS that saved the file
+    endian: string, either '>' (big-endian) or '<' (small-endian) depending on OS that saved the file
     Returns
     -------
     header: np.ndarray, dictionary-like object of image properties
 
-    """
+    '''
 
     # Read the first part of the header
     header_list1 = [
-        ("release", endian + "u4"),
-        ("analysis_type", endian + "u4"),
-        ("header_size", endian + "u4"),
-        ("sample_type", endian + "u4"),
-        ("data_present", endian + "u4"),
-        ("stage_position_x", endian + "i4"),
-        ("stage_position_y", endian + "i4"),
-        ("analysis_name", endian + "S32"),
-        ("username", endian + "S16"),
-        ("samplename", endian + "S16"),
-        ("date", endian + "S16"),
-        ("time", endian + "S16"),
-        ("filename", endian + "S16"),
-        ("analysis_duration", endian + "u4"),
-        ("cycle_number", endian + "u4"),
-        ("scantype", endian + "u4"),
-        ("magnification", endian + "u2"),
-        ("sizetype", endian + "u2"),
-        ("size_detector", endian + "u2"),
-        ("no_used", endian + "u2"),
-        ("beam_blanking", endian + "u4"),
-        ("pulverisation", endian + "u4"),
-        ("pulve_duration", endian + "u4"),
-        ("auto_cal_in_anal", endian + "u4"),
-        ("autocal", endian + "S72"),
-        ("sig_reference", endian + "u4"),
-        ("sigref", endian + "S156"),
-        ("number_of_masses", endian + "u4"),
+        ('release', endian + 'u4'),
+        ('analysis_type', endian + 'u4'),
+        ('header_size', endian + 'u4'),
+        ('sample_type', endian + 'u4'),
+        ('data_present', endian + 'u4'),
+        ('stage_position_x', endian + 'i4'),
+        ('stage_position_y', endian + 'i4'),
+        ('analysis_name', endian + 'S32'),
+        ('username', endian + 'S16'),
+        ('samplename', endian + 'S16'),
+        ('date', endian + 'S16'),
+        ('time', endian + 'S16'),
+        ('filename', endian + 'S16'),
+        ('analysis_duration', endian + 'u4'),
+        ('cycle_number', endian + 'u4'),
+        ('scantype', endian + 'u4'),
+        ('magnification', endian + 'u2'),
+        ('sizetype', endian + 'u2'),
+        ('size_detector', endian + 'u2'),
+        ('no_used', endian + 'u2'),
+        ('beam_blanking', endian + 'u4'),
+        ('pulverisation', endian + 'u4'),
+        ('pulve_duration', endian + 'u4'),
+        ('auto_cal_in_anal', endian + 'u4'),
+        ('autocal', endian + 'S72'),
+        ('sig_reference', endian + 'u4'),
+        ('sigref', endian + 'S156'),
+        ('number_of_masses', endian + 'u4'),
     ]
     file.seek(0)
     header1 = np.fromfile(file,
                           dtype=np.dtype(header_list1),
                           count=1)
 
-    # Once we know the type of the OffsetArrayOffset, we can continue reading
-    # the 2nd part of the header
-    file.seek(header1["header_size"] - 78)
+    # Once we know what it tells us the header_size is, we can get the next
+    # set of info
+    file.seek(header1['header_size'][0] - 78)
 
     header_list2 = [
-        ("width_pixels", endian + "u2"),
-        ("height_pixels", endian + "u2"),
-        ("pixel_size", endian + "u2"),
-        ("number_of_images", endian + "u2"),
-        ("number_of_planes", endian + "u2"),
-        ("raster", endian + "u4"),
-        ("nickname", endian + "S64"),
+        ('width_pixels', endian + 'u2'),
+        ('height_pixels', endian + 'u2'),
+        ('pixel_size', endian + 'u2'),
+        ('number_of_images', endian + 'u2'),
+        ('number_of_planes', endian + 'u2'),
+        ('raster', endian + 'u4'),
+        ('nickname', endian + 'S64'),
     ]
 
     header2 = np.fromfile(file,
                           dtype=np.dtype(header_list2),
                           count=1)
-
+    # finally, the element names are at positions offset depending on endianness.
+    # the mass is in the first 64 bytes every 192 bytes. I strip off the whitespace at the end.
     header_list3 = [
-        ("mass_name", endian + "S64"),
-        ("placeholder2", endian + "S128"),
+        ('mass_name', endian + 'S64'),
+        ('placeholder2', endian + 'S128'),
     ]
 
-    if endian == ">":  # big-endian
+    if endian == '>':  # big-endian
         offset = 452 + 8
-    else:  # endian == "<":  # small-endian
+    else:  # endian == '<':  # small-endian
         offset = 412 + 192 + 56
 
     mass_names = []
     file.seek(offset + 56)
-    for i in range(header1["number_of_masses"][0]):
+    for i in range(header1['number_of_masses'][0]):
         header3 = np.fromfile(file,
                               dtype=np.dtype(header_list3),
                               count=1)
-        mass_name = header3["mass_name"][0].decode()
-        mass_name = "".join(mass_name.split("\x00"))
+        mass_name = header3['mass_name'][0].decode()
+        mass_name = ''.join(mass_name.split('\x00'))
 
-        if mass_name == "":
-            mass_name = "SE"
+        if mass_name == '':
+            mass_name = 'SE'
 
         mass_names.append(mass_name)
 
@@ -175,7 +176,7 @@ def get_header_dtype_list(file, endian):
     for key in header2:
         header[key] = header2[key]
 
-    header["mass_names"] = mass_names
+    header['mass_names'] = mass_names
 
     file.seek(0)
     return header
@@ -190,10 +191,10 @@ def file_reader(filename, *args, **kwds):
 
 
 def im_reader(filename, *args, **kwds):
-    """Reads the information from the file and returns it in the HyperSpy
+    '''Reads the information from the file and returns it in the HyperSpy
     required format.
 
-    """
+    '''
     header, data = load_im_file(filename)
 
     # Image mode
@@ -203,37 +204,40 @@ def im_reader(filename, *args, **kwds):
     chk_exists = False
     if chk_exists is True:
         # set units based on that info
-        units = "unitsfromchkfile"
+        units = 'unitsfromchkfile'
     else:
-        units = "um"
+        units = 'um'
 
     # Z axis
     axes.append({
         'name': 'z',
+        'index_in_array' : 0,
         'offset': 0,
         'scale': 1,
-        'units': "",
-        'size': header["number_of_planes"],
+        'units': '',
+        'size': header['number_of_planes'],
     })
-    array_shape.append(header["number_of_planes"])
+    array_shape.append(header['number_of_planes'])
 
     # Y axis
     axes.append({
         'name': 'y',
+        'index_in_array' : 0,
         'offset': 0,
-        'scale': header["raster"] / header['height_pixels'],
+        'scale': header['raster'] / header['height_pixels'],
         'units': units,
-        'size': header["height_pixels"],
+        'size': header['height_pixels'],
     })
-    array_shape.append(header["height_pixels"])
+    array_shape.append(header['height_pixels'])
 
     # X axis
     axes.append({
         'name': 'x',
+        'index_in_array' : 0,
         'offset': 0,
-        'scale': header["raster"] / header['width_pixels'],
+        'scale': header['raster'] / header['width_pixels'],
         'units': units,
-        'size': header["width_pixels"],
+        'size': header['width_pixels'],
     })
 
     array_shape.append(header['width_pixels'])
@@ -242,7 +246,7 @@ def im_reader(filename, *args, **kwds):
     # contain only zeroes in all remaining slices. Better remove them.
 
     dictionary_list = []
-    for i in range(header["number_of_masses"]):
+    for i in range(header['number_of_masses']):
         dc = data[i]
         # Set? original_metadata = {}
 
@@ -250,11 +254,12 @@ def im_reader(filename, *args, **kwds):
             'data': dc,
             'metadata': {
                 'General': {
-                    'title': header["mass_names"][i],
-                    'original_filename': header["filename"],
+                    'title': header['mass_names'][i],
+                    'original_filename': header['filename'],
                 },
-                "Signal": {
-                    'signal_type': "",
+                'Signal': {
+                    'record_by': 'image',
+                    'signal_type': '',
                 },
             },
             'axes': axes,
@@ -265,7 +270,7 @@ def im_reader(filename, *args, **kwds):
 
 
 def load_im_file(filename):
-    _logger.info("Opening the file: %s", filename)
+    _logger.info('Opening the file: %s', filename)
     with open(filename, 'rb') as f:
         # Check endian of bytes, as it depends on the OS that saved the file
         endian = get_endian(f)
@@ -277,22 +282,22 @@ def load_im_file(filename):
                 header[key] = header[key].decode()
 
         # Read the first element of data offsets
-        f.seek(header["header_size"])
+        f.seek(header['header_size'])
         # Data can either be of data type uint16 or uint32 - maybe even uint64
 
-        datadtype = endian + "u" + str(header["pixel_size"])
+        datadtype = endian + 'u' + str(header['pixel_size'])
 
         data = np.fromfile(f,
                            dtype=datadtype,
-                           count=header["number_of_masses"] * header["number_of_planes"] * header["width_pixels"] *
-                                 header["height_pixels"])
+                           count=header['number_of_masses'] * header['number_of_planes'] * header['width_pixels'] *
+                                 header['height_pixels'])
 
         data = data.astype(float)
 
         # Reshape into shape (images*planes, width, height)
-        data = data.reshape(header["number_of_masses"] * header["number_of_planes"], header["width_pixels"],
-                            header["height_pixels"])
+        data = data.reshape(header['number_of_masses'] * header['number_of_planes'], header['width_pixels'],
+                            header['height_pixels'])
 
-        data = np.array([data[i::header["number_of_masses"]] for i in range(header["number_of_masses"])])
+        data = np.array([data[i::header['number_of_masses']] for i in range(header['number_of_masses'])])
 
     return header, data
