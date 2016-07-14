@@ -1051,7 +1051,7 @@ class AxesManager(t.HasTraits):
                 signature = "\n<tr class='bolder_row'> "
             else:
                 signature = "\n<tr> "
-            signature +=" ".join(("{}" for _ in range(len(args))))+" </tr>"
+            signature +=" ".join(("{}" for _ in args))+" </tr>"
             return signature.format(*map(lambda x:
                                          '\n<' + tag +
                                          '>{}</'.format(x) + tag + '>',
