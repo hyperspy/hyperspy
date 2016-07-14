@@ -20,9 +20,9 @@
 import logging
 
 from hyperspy.io_plugins import (msa, digital_micrograph, fei, mrc, ripple,
-                                 tiff, semper_unf, blockfile, dens, emd)
+                                 tiff, semper_unf, blockfile, dens, emd, cameca)
 io_plugins = [msa, digital_micrograph, fei, mrc, ripple, tiff, semper_unf,
-              blockfile, dens, emd]
+              blockfile, dens, emd, cameca]
 
 _logger = logging.getLogger(__name__)
 

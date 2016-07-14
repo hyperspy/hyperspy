@@ -25,6 +25,11 @@ import xml.etree.ElementTree as ET
 
 import numpy as np
 
+try:
+    from collections import OrderedDict
+    ordict = True
+except ImportError:
+    ordict = False
 from hyperspy.misc.array_tools import sarray2dict
 
 _logger = logging.getLogger(__name__)
@@ -33,7 +38,7 @@ im_extensions = ('im', 'IM')
 im_info_extensions = ('im_chk', "IM_CHK")
 # Plugin characteristics
 # ----------------------
-format_name = 'CAMECA IM'
+format_name = 'CAMECA'
 description = 'Format used for the Cameca NanoSIMS'
 full_support = False
 # Recognised file extension
@@ -255,29 +260,25 @@ def im_reader(filename, *args, **kwds):
     # contain only zeroes in all remaining slices. Better remove them.
 
 
-
+    dictionary_list = []
     for i in range(header["number_of_masses"]):
         dc = data[i]
 
         # Set? original_metadata = {}
-        header_parameters = sarray2dict(header)
-        sarray2dict(data, header_parameters)
 
-        #original_metadata['ser_header_parameters'] = header_parameters
         dictionary = {
             'data': dc,
             'metadata': {
                 'General': {
-                    #'title' : Need to reference label
+                    'title' : header["mass_names"][0][i],
                     'original_filename': os.path.split(filename)[1]},
                 "Signal": {
                     'signal_type': "",
-                    'record_by': record_by,
                 },
             },
             'axes': axes,
-            'original_metadata': original_metadata,
-            'mapping': mapping}
+        }
+    dictionary_list.append(dictionary)
     # Return a list of dictionaries
     return dictionary_list
 
@@ -287,15 +288,15 @@ def load_im_file(filename):
     with open(filename, 'rb') as f:
         # Check endian of bytes, as it depends on the OS that saved the file
         endian = get_endian(f)
+        print(endian)
         header = np.fromfile(f,
                              dtype=np.dtype(get_header_dtype_list(f, endian=endian)),
                              count=1)
-        for key in header:
+        for i in header:
+            print(key)
             if type(header[key]) == np.bytes_:
                 header[key] = header[key].decode()
 
-        _logger.info("Header info:")
-        log_struct_array_values(header[0])
 
         # Read the first element of data offsets
         f.seek(header["header_size"][0])
@@ -315,18 +316,3 @@ def load_im_file(filename):
     return header, data
 
 
-
-mapping = {
-    "ObjectInfo.ExperimentalDescription.High_tension_kV": (
-        "Acquisition_instrument.TEM.beam_energy",
-        None),
-    "ObjectInfo.ExperimentalDescription.Microscope": (
-        "Acquisition_instrument.TEM.microscope",
-        None),
-    "ObjectInfo.ExperimentalDescription.Mode": (
-        "Acquisition_instrument.TEM.acquisition_mode",
-        get_simplified_mode),
-    "ObjectInfo.ExperimentalConditions.MicroscopeConditions.Tilt1": (
-        "Acquisition_instrument.TEM.tilt_stage",
-        get_degree),
-}
