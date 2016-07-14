@@ -1138,12 +1138,15 @@ class LearningResults(object):
         if hasattr(self, 'output_dimension') and self.output_dimension \
                 is not None:
             self.output_dimension = int(self.output_dimension)
-        self.summary()
+        _logger.info(self._summary())
 
     def summary(self):
         """Prints a summary of the decomposition and demixing parameters
          to the stdout
         """
+        print(self._summary())
+
+    def _summary(self):
         summary_str = (
             "Decomposition parameters:\n"
             "-------------------------\n\n" +
@@ -1159,7 +1162,7 @@ class LearningResults(object):
                 "------------------------\n" +
                 ("BSS algorithm : %s" % self.bss_algorithm) +
                 ("Number of components : %i" % len(self.unmixing_matrix)))
-        _logger.info(summary_str)
+        return summary_str
 
     def crop_decomposition_dimension(self, n):
         """
