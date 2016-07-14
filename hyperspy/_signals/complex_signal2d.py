@@ -90,3 +90,15 @@ class ComplexSignal2D(ComplexSignal, CommonSignal2D):
         )
     plot.__doc__ %= (BASE_PLOT_DOCSTRING, PLOT2D_DOCSTRING,
                      COMPLEX_DOCSTRING, KWARGS_DOCSTRING)
+
+    @property
+    def rec_param(self):
+        assert self.metadata.Signal.has_item('holo_rec_param'), "No reconstruction parameters assigned to the wave"
+
+        rec_param = (self.metadata.Signal.holo_rec_param.as_dictionary()['sb_pos_x0'],
+                     self.metadata.Signal.holo_rec_param.as_dictionary()['sb_pos_y0'],
+                     self.metadata.Signal.holo_rec_param.as_dictionary()['sb_pos_x1'],
+                     self.metadata.Signal.holo_rec_param.as_dictionary()['sb_pos_y1'],
+                     self.metadata.Signal.holo_rec_param.as_dictionary()['sb_size'])
+
+        return rec_param
