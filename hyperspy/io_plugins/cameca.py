@@ -24,7 +24,6 @@ import numpy as np
 
 try:
     from collections import OrderedDict
-
     ordict = True
 except ImportError:
     ordict = False
@@ -87,7 +86,6 @@ def get_header_dtype_list(file, endian):
 
     """
 
-
     # Read the first part of the header
     header_list1 = [
         ("release", endian + "u4"),
@@ -147,13 +145,11 @@ def get_header_dtype_list(file, endian):
         ("placeholder2", endian + "S128"),
     ]
 
-
-    if endian == ">": # big-endian
-        offset = 452 + 8;
-    elif endian == "<": # small-endian
+    if endian == ">":  # big-endian
+        offset = 452 + 8
+    else:  # endian == "<":  # small-endian
         offset = 412 + 192 + 56
 
-    print(endian)
     mass_names = []
     file.seek(offset + 56)
     for i in range(header1["number_of_masses"][0]):
@@ -167,8 +163,6 @@ def get_header_dtype_list(file, endian):
             mass_name = "SE"
 
         mass_names.append(mass_name)
-
-    print(mass_names)
 
     header1 = sarray2dict(header1)
     header2 = sarray2dict(header2)
@@ -207,7 +201,7 @@ def im_reader(filename, *args, **kwds):
     axes = []
     array_shape = []
     chk_exists = False
-    if chk_exists == True:
+    if chk_exists is True:
         # set units based on that info
         units = "unitsfromchkfile"
     else:
@@ -246,12 +240,10 @@ def im_reader(filename, *args, **kwds):
 
     # If the acquisition stops before finishing the job, the stored file will
     # contain only zeroes in all remaining slices. Better remove them.
-    from pprint import pprint
 
     dictionary_list = []
     for i in range(header["number_of_masses"]):
         dc = data[i]
-        print(dc.shape)
         # Set? original_metadata = {}
 
         dictionary = {
@@ -269,7 +261,6 @@ def im_reader(filename, *args, **kwds):
         }
         dictionary_list.append(dictionary)
     # Return a list of dictionaries
-    pprint(dictionary_list)
     return dictionary_list
 
 
@@ -296,13 +287,11 @@ def load_im_file(filename):
                            count=header["number_of_masses"] * header["number_of_planes"] * header["width_pixels"] *
                                  header["height_pixels"])
 
-        #data = data[0]
         data = data.astype(float)
 
         # Reshape into shape (images*planes, width, height)
         data = data.reshape(header["number_of_masses"] * header["number_of_planes"], header["width_pixels"],
                             header["height_pixels"])
-
 
         data = np.array([data[i::header["number_of_masses"]] for i in range(header["number_of_masses"])])
 
