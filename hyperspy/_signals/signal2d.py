@@ -23,6 +23,8 @@ import scipy as sp
 import warnings
 from scipy.fftpack import fftn, ifftn
 import copy
+from skimage.feature import peak_local_max
+import scipy.ndimage as ndi
 
 from hyperspy.defaults_parser import preferences
 from hyperspy.external.progressbar import progressbar
