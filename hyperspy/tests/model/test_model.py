@@ -885,6 +885,15 @@ class TestMultifit:
                                              [3., 3.])
         np.testing.assert_array_almost_equal(self.m[0].A.map['values'],
                                              [2., 2.])
+    def test_parameter_as_signal_values(self):
+        rs = self.m[0].r.as_signal(field="values")
+        np.testing.assert_almost_equal(rs.data, np.array([   2.,  100.]))
+        nt.assert_false("Signal.Noise_properties.variance" in rs.metadata)
+        self.m.multifit(fetch_only_fixed=True, show_progressbar=None)
+        rs = self.m[0].r.as_signal(field="values")
+        nt.assert_true("Signal.Noise_properties.variance" in rs.metadata)
+        nt.assert_is_instance(rs.metadata.Signal.Noise_properties.variance,
+                              hs.signals.Signal1D)
 
     def test_bounded_snapping(self):
         m = self.m
@@ -897,6 +906,7 @@ class TestMultifit:
                                              [3., 3.])
         np.testing.assert_array_almost_equal(self.m[0].A.map['values'],
                                              [4., 4.])
+
 
 
 class TestStoreCurrentValues:
