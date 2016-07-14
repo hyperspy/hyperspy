@@ -493,8 +493,6 @@ class Parameter(t.HasTraits):
 
         """
         from hyperspy.signal import BaseSignal
-        if self._axes_manager.navigation_dimension == 0:
-            raise NavigationDimensionError(0, '>0')
 
         s = BaseSignal(data=self.map[field],
                        axes=self._axes_manager._get_navigation_axes_dicts())
@@ -513,6 +511,15 @@ class Parameter(t.HasTraits):
                 size=self._number_of_elements,
                 name=self.name,
                 navigate=True)
+        s._assign_subclass()
+        if field == "values":
+            # Add the variance if available
+            std = self.as_signal(field="std")
+            if not np.isnan(std.data).all():
+                std.data = std.data ** 2
+                std.metadata.General.title = "Variance"
+                s.metadata.set_item(
+                    "Signal.Noise_properties.variance", std)
         return s
 
     def plot(self, **kwargs):
