@@ -27,6 +27,7 @@ NEW
 Model
 ^^^^^
 
+* :ref:`SAMFire-label`.
 * Store :ref:`models in hdf5 files <storing_models-label>`.
 * Add :ref:`fancy indexing <model_indexing-label>` to `Model`.
 * :ref:`Two-dimensional model fitting <2D_model-label>`.  
