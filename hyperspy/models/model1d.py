@@ -159,6 +159,7 @@ class Model1D(BaseModel):
     """
 
     def __init__(self, signal1D, dictionary=None):
+        super(Model1D, self).__init__()
         self.signal = signal1D
         self.axes_manager = self.signal.axes_manager
         self._plot = None

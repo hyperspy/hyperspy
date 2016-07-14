@@ -20,6 +20,7 @@ HyperSpy User Guide (DRAFT)
     visualisation.rst
     mva.rst
     model.rst
+    samfire.rst
     eels.rst
     eds.rst
     dielectric_function.rst
