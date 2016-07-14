@@ -1814,7 +1814,7 @@ class BaseSignal(FancySlicing,
         self.data = self.data.squeeze()
         return self
 
-    def _to_dictionary(self, add_learning_results=True):
+    def _to_dictionary(self, add_learning_results=True, add_models=False):
         """Returns a dictionary that can be used to recreate the signal.
 
         All items but `data` are copies.
@@ -1838,6 +1838,8 @@ class BaseSignal(FancySlicing,
         if add_learning_results and hasattr(self, 'learning_results'):
             dic['learning_results'] = copy.deepcopy(
                 self.learning_results.__dict__)
+        if add_models:
+            dic['models'] = self.models._models.as_dictionary()
         return dic
 
     def _get_undefined_axes_list(self):
@@ -2693,7 +2695,6 @@ class BaseSignal(FancySlicing,
             axis = self.axes_manager.navigation_axes
         return self._apply_function_on_data_and_remove_axis(np.sum, axis,
                                                             out=out)
-
     sum.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG)
 
     def max(self, axis=None, out=None):
@@ -2727,7 +2728,6 @@ class BaseSignal(FancySlicing,
             axis = self.axes_manager.navigation_axes
         return self._apply_function_on_data_and_remove_axis(np.max, axis,
                                                             out=out)
-
     max.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG)
 
     def min(self, axis=None, out=None):
@@ -2761,7 +2761,6 @@ class BaseSignal(FancySlicing,
             axis = self.axes_manager.navigation_axes
         return self._apply_function_on_data_and_remove_axis(np.min, axis,
                                                             out=out)
-
     min.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG)
 
     def mean(self, axis=None, out=None):
@@ -2795,7 +2794,6 @@ class BaseSignal(FancySlicing,
             axis = self.axes_manager.navigation_axes
         return self._apply_function_on_data_and_remove_axis(np.mean, axis,
                                                             out=out)
-
     mean.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG)
 
     def std(self, axis=None, out=None):
@@ -2829,7 +2827,6 @@ class BaseSignal(FancySlicing,
             axis = self.axes_manager.navigation_axes
         return self._apply_function_on_data_and_remove_axis(np.std, axis,
                                                             out=out)
-
     std.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG)
 
     def var(self, axis=None, out=None):
@@ -2863,7 +2860,6 @@ class BaseSignal(FancySlicing,
             axis = self.axes_manager.navigation_axes
         return self._apply_function_on_data_and_remove_axis(np.var, axis,
                                                             out=out)
-
     var.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG)
 
     def diff(self, axis, order=1, out=None):
@@ -2905,7 +2901,6 @@ class BaseSignal(FancySlicing,
             return s
         else:
             out.events.data_changed.trigger(obj=out)
-
     diff.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
 
     def derivative(self, axis, order=1, out=None):
@@ -2943,7 +2938,6 @@ class BaseSignal(FancySlicing,
             return der
         else:
             out.events.data_changed.trigger(obj=out)
-
     derivative.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
 
     def integrate_simpson(self, axis, out=None):
@@ -2984,7 +2978,6 @@ class BaseSignal(FancySlicing,
             s.data = data
             s._remove_axis(axis.index_in_axes_manager)
             return s
-
     integrate_simpson.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
 
     def integrate1D(self, axis, out=None):
@@ -3021,7 +3014,6 @@ class BaseSignal(FancySlicing,
             return self.integrate_simpson(axis=axis, out=out)
         else:
             return self.sum(axis=axis, out=out)
-
     integrate1D.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
 
     def indexmax(self, axis, out=None):
@@ -3053,7 +3045,6 @@ class BaseSignal(FancySlicing,
         """
         return self._apply_function_on_data_and_remove_axis(np.argmax, axis,
                                                             out=out)
-
     indexmax.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
 
     def valuemax(self, axis, out=None):
@@ -3090,7 +3081,6 @@ class BaseSignal(FancySlicing,
         else:
             out.data[:] = data
             out.events.data_changed.trigger(obj=out)
-
     valuemax.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
 
     def get_histogram(self, bins='freedman', range_bins=None, out=None,
@@ -3173,7 +3163,6 @@ class BaseSignal(FancySlicing,
             return hist_spec
         else:
             out.events.data_changed.trigger(obj=out)
-
     get_histogram.__doc__ %= OUT_ARG
 
     def map(self, function,
@@ -3657,7 +3646,6 @@ class BaseSignal(FancySlicing,
         else:
             out.data[:] = sp.data
             out.events.data_changed.trigger(obj=out)
-
     as_signal1D.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
 
     def as_signal2D(self, image_axes, out=None):
@@ -3705,7 +3693,6 @@ class BaseSignal(FancySlicing,
         else:
             out.data[:] = im.data
             out.events.data_changed.trigger(obj=out)
-
     as_signal2D.__doc__ %= OUT_ARG
 
     def _assign_subclass(self):
@@ -3716,7 +3703,7 @@ class BaseSignal(FancySlicing,
             signal_type=mp.Signal.signal_type
             if "Signal.signal_type" in mp
             else self._signal_type,)
-        self.__init__(**self._to_dictionary())
+        self.__init__(**self._to_dictionary(add_models=True))
 
     def set_signal_type(self, signal_type):
         """Set the signal type and change the current class

@@ -313,6 +313,10 @@ with update_version_when_dev() as version:
                   'hyperspy.external',
                   'hyperspy.external.mpfit',
                   'hyperspy.external.astroML',
+                  'hyperspy.samfire_utils',
+                  'hyperspy.samfire_utils.segmenters',
+                  'hyperspy.samfire_utils.weights',
+                  'hyperspy.samfire_utils.goodness_of_fit_tests',
                   ],
         install_requires=install_req,
         setup_requires=[

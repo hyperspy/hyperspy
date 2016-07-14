@@ -39,7 +39,7 @@ A :py:class:`~.models.model1D.Model1D` can be created for data in the
 
 .. code-block:: python
 
-    >>> s = hs.signals.Signal1D('SomeDataHere') # Load the data from a file
+    >>> s = hs.signals.Signal1D('SomeDataHere') # or load the data from a file
     >>> m = s.create_model() # Creates the 1D-Model and asign it to the variable m
 
 Similarly A :py:class:`~.models.model2D.Model2D` can be created for data in the

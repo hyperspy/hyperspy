@@ -22,7 +22,7 @@ before_install:
 - conda update --yes conda
 
 install:
-  - DEPS="nose numpy scipy matplotlib ipython h5py sympy scikit-learn dill natsort setuptools scikit-image cython lxml"
+  - DEPS="nose numpy scipy matplotlib ipython h5py sympy scikit-learn dill natsort setuptools scikit-image cython lxml ipyparallel"
   - conda create -n testenv --yes $DEPS
   - source activate testenv
   - conda install pip
@@ -31,7 +31,7 @@ install:
 
 script:
   - python setup.py build_ext --inplace
-  - python continuous_integration/nosetest.py --with-coverage hyperspy
+  - python continuous_integration/nosetest.py --with-coverage hyperspy.tests
 
 after_success:
 - coveralls
