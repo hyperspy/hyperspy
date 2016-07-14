@@ -63,7 +63,7 @@ install_req = ['scipy',
                'ipyparallel']
 
 #the hack to deal with setuptools + installing the package in ReadTheDoc:
-if 'readthedocs.org' in setup_path:
+if 'readthedocs.org' in sys.executable:
     install_req = []
 
 
