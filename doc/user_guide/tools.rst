@@ -191,7 +191,8 @@ e.g. specialised signal subclasses to handle complex data (see the following dia
     +-------------------------------------------------------------------------+------------------+-----------------------+----------+
     |    :py:class:`~._signals.complex_signal2d.ComplexSignal2D`              |        2         |       -               | complex  |
     +-------------------------------------------------------------------------+------------------+-----------------------+----------+
-
+    |      :py:class:`~._signals.hologram_image.HologramImage`                |        2         |      hologram         |  real    |
+    +-------------------------------------------------------------------------+------------------+-----------------------+----------+
 
 The following example shows how to transform between different subclasses.
 
