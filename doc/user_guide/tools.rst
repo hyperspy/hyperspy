@@ -183,6 +183,8 @@ e.g. specialised signal subclasses to handle complex data (see the following dia
     +-------------------------------------------------------------------------+------------------+-----------------------+----------+
     |              :py:class:`~._signals.signal2d.Signal2D`                   |        2         |       -               |  real    |
     +-------------------------------------------------------------------------+------------------+-----------------------+----------+
+    |      :py:class:`~._signals.hologram_image.HologramImage`                |        2         |      hologram         |  real    |
+    +-------------------------------------------------------------------------+------------------+-----------------------+----------+
     |           :py:class:`~._signals.dielectric_function.DielectricFunction` |        1         |    DielectricFunction |  complex |
     +-------------------------------------------------------------------------+------------------+-----------------------+----------+
     |      :py:class:`~._signals.complex_signal.ComplexSignal`                |        -         |       -               | complex  |
@@ -190,8 +192,6 @@ e.g. specialised signal subclasses to handle complex data (see the following dia
     |    :py:class:`~._signals.complex_signal1d.ComplexSignal1D`              |        1         |       -               | complex  |
     +-------------------------------------------------------------------------+------------------+-----------------------+----------+
     |    :py:class:`~._signals.complex_signal2d.ComplexSignal2D`              |        2         |       -               | complex  |
-    +-------------------------------------------------------------------------+------------------+-----------------------+----------+
-    |      :py:class:`~._signals.hologram_image.HologramImage`                |        2         |      hologram         |  real    |
     +-------------------------------------------------------------------------+------------------+-----------------------+----------+
 
 The following example shows how to transform between different subclasses.

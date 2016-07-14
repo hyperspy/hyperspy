@@ -1,13 +1,12 @@
 Electron Holography
 *******************
 
-HyperSpy provides the user with two classes which can be used to process electron holography data:
+HyperSpy provides the user with a class which can be used to process electron holography data:
  
 * :py:class:`~._signals.hologram_image.HologramImage`
-* :py:class:`~._signals.wave_image.ComplexSignal2D`
 
-Both inherit directly from the :py:class:`~._signals.signal2d.Signal2D` class and thus can use all of
-its functionality. The usage of both classes is explained in the following sections.
+It inherits directly from the :py:class:`~._signals.signal2d.Signal2D` class and thus can use all of
+its functionality. The usage is explained in the following sections.
 
 
 The HologramImage class
@@ -16,7 +15,7 @@ The HologramImage class
 The :py:class:`~._signals.hologram_image.HologramImage` class is designed to hold images acquired via
 electron holography.
 
-To transform a :py:class:`~._signals.signal2d.Signa2D` (or subclass) into a
+To transform a :py:class:`~._signals.signal2d.Signal2D` (or subclass) into a
 :py:class:`~._signals.hologram_image.HologramImage` use:
 
 .. code-block:: python
@@ -40,7 +39,7 @@ which returns a :py:class:`~._signals.wave_image.ComplexSignal2D` class, contain
     >>> wave_image = im.reconstruct_phase()
 
 To reconstruct the hologram with a reference wave it should be provided to the method either as Hyperspy's
-:py:class:`~._signals.signal2d.Signa2D` (or subclass) or as a nparray:
+:py:class:`~._signals.signal2d.Signal2D` (or subclass) or as a nparray:
 
 .. code-block:: python
 
@@ -58,38 +57,5 @@ This option can be used for batch processing as the reconstruction_param can be 
 
     >>> wave_image1 = im1.reconstruct_phase(rec_param=reconstruction_param)
 
-Further analyses of the reconstructed wave (phase) can be done using :py:class:`~._signals.wave_image.ComplexSignal2D` class
-functionality (see bellow).
-
-
-The ComplexSignal and ComplexSignal2D classes
-=============================================
-
-The :py:class:`~._signals.wave_image.ComplexSignal2D` class can hold information about the complex electron
-wave. As such, relevant properties like the `amplitude`, `phase` and the `real` and `imag` part can be
-directly accessed and return appropriate :py:class:`~._signals.signal2d.Signal2D` signals.
-
-To transform a :py:class:`~._signals.signal2d.Signa2D` (or subclass) into a 
-:py:class:`~._signals.wave_image.ComplexSignal2D` use:
-
-.. code-block:: python
-
-    >>> im.set_signal_type('ComplexSignal2D')
-
-
-Unwrap the phase
-----------------
-
-With the :py:func:`~._signals.wave_image.ComplexSignal2D.unwrapped_phase` method the phase can be
-unwrapped and returned as an :class:`~hyperspy._signals.signal2d.Signal2D`. The underlying method is
-:py:func:`~skimage.restoration.unwrap`.
-
-
-Add a linear ramp
------------------
-
-A linear ramp can be added to the wave via the :py:func:`~._signals.wave_image.ComplexSignal2D.add_phase_ramp`
-method. The parameters `ramp_x` and `ramp_y` dictate the slope of the ramp in `x`- and `y` direction,
-while the offset is determined by the `offset` parameter. The fulcrum of the linear ramp is at the origin
-and the slopes are given in units of the axis with the according scale taken into account.
-Both are available via the :py:class:`~.axes.AxesManager` of the signal.
+Further analyses of the reconstructed wave (phase) can be done using the :py:class:`~._signals.wave_image.ComplexSignal2D` class
+functionality (see dedicated documentation).

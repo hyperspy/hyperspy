@@ -16,11 +16,8 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-import sys
-
 import numpy as np
 
-import nose
 import numpy.testing as nt
 
 import hyperspy.api as hs
@@ -68,4 +65,5 @@ class TestCaseHologramImage(object):
 
 
 if __name__ == '__main__':
-    nose.run(argv=[sys.argv[0], sys.modules[__name__].__file__, '-v'])
+    import nose
+    nose.run(defaultTest=__name__)
