@@ -1763,6 +1763,9 @@ class BaseSignal(FancySlicing,
         if (self._signal_type or
                 not self.metadata.has_item("Signal.signal_type")):
             self.metadata.Signal.signal_type = self._signal_type
+        if "learning_results" in file_data_dict:
+            self.learning_results.__dict__.update(
+                file_data_dict["learning_results"])
 
     def __array__(self, dtype=None):
         if dtype:
