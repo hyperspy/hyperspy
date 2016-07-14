@@ -296,7 +296,6 @@ class TestGeneralMethods:
             [(a, b, c) for a, b, c in zip([1, 3, 5], [2, 4, 6], [0, 0, 0])],
             dtype=[('values', 'float'), ('std', 'float'), ('is_set', bool)])
 
-
     def test_as_signal(self):
         par = self.par
 
