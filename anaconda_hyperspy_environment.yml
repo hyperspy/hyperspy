@@ -26,4 +26,5 @@ dependencies:
 - conda-forge::tqdm
 - conda-forge::ipywidgets
 - pip:
+  - python-dateutil
   - hyperspy
