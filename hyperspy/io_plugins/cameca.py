@@ -22,11 +22,6 @@ import logging
 
 import numpy as np
 
-try:
-    from collections import OrderedDict
-    ordict = True
-except ImportError:
-    ordict = False
 from hyperspy.misc.array_tools import sarray2dict
 
 _logger = logging.getLogger(__name__)
@@ -47,10 +42,58 @@ writes = False
 
 
 # ----------------------
+# Header im_chk file
+def find_nanosims_masses_startingpoint(text):
+    """Finds the starting point in the im_chk file for the table of labels, masses and calibrations"""
+    mass_start = None
+    lines = text.split("\n")
+    for i in range(len(lines)):
+        if lines[i].startswith("Mass#"):
+            mass_start = i + 1
+    return mass_start, lines
 
 
+def nanosims_compounds(filename, header):
+    """Returns info found in the im_chk file"""
+    try:
+        f = open(filename.replace("im", "chk_im"))
+    except FileNotFoundError:
+        print("File " + str(filename) + " not found.")
+        return ()
+    text = f.read()
+    (mass_start, lines) = find_nanosims_masses_startingpoint(text)
+    species = []
+    mass = []
+    detector = []
+    tc = []
+    bfield = []
+    radius = []
+
+    for i in range(header["number_of_masses"]):
+        species.append(lines[mass_start + i][6:18].strip(" "))
+        if species == "":
+            species = "SE"
+
+        mass.append(lines[mass_start + i][18:].split()[0])
+        detector.append(lines[mass_start + i][18:].split()[1])
+        tc.append(lines[mass_start + i][18:].split()[2])
+        bfield.append(lines[mass_start + i][18:].split()[3])
+        radius.append(lines[mass_start + i][18:].split()[4])
+
+    compounds = {
+        "species": species,
+        "mass": mass,
+        "detector": detector,
+        "tc": tc,
+        "bfield": bfield,
+        "radius": radius,
+    }
+    return compounds
+
+
+# Image im file
 def get_endian(file):
-    '''
+    """
     Check endian by seeing how large the value in bytes 8:12 are
 
     Parameters
@@ -61,7 +104,7 @@ def get_endian(file):
     -------
     endian: string, either '>' (big-endian) or '<' (small-endian) depending on OS that saved the file
 
-    '''
+    """
     file.seek(8)
     header_size = np.fromfile(file,
                               dtype=np.dtype('>u4'),
@@ -74,7 +117,7 @@ def get_endian(file):
 
 
 def get_header_dtype_list(file, endian):
-    '''Parse header info from file
+    """Parse header info from file
 
     Parameters
     ----------
@@ -84,7 +127,7 @@ def get_header_dtype_list(file, endian):
     -------
     header: np.ndarray, dictionary-like object of image properties
 
-    '''
+    """
 
     # Read the first part of the header
     header_list1 = [
@@ -191,11 +234,15 @@ def file_reader(filename, *args, **kwds):
 
 
 def im_reader(filename, *args, **kwds):
-    '''Reads the information from the file and returns it in the HyperSpy
+    """Reads the information from the file and returns it in the HyperSpy
     required format.
 
-    '''
+    """
     header, data = load_im_file(filename)
+
+    chk_labels = nanosims_compounds(filename, header)
+
+    header = {**header, **chk_labels}
 
     # Image mode
 
@@ -211,7 +258,7 @@ def im_reader(filename, *args, **kwds):
     # Z axis
     axes.append({
         'name': 'z',
-        'index_in_array' : 0,
+        'index_in_array': 0,
         'offset': 0,
         'scale': 1,
         'units': '',
@@ -222,7 +269,7 @@ def im_reader(filename, *args, **kwds):
     # Y axis
     axes.append({
         'name': 'y',
-        'index_in_array' : 0,
+        'index_in_array': 0,
         'offset': 0,
         'scale': header['raster'] / header['height_pixels'],
         'units': units,
@@ -233,7 +280,7 @@ def im_reader(filename, *args, **kwds):
     # X axis
     axes.append({
         'name': 'x',
-        'index_in_array' : 0,
+        'index_in_array': 0,
         'offset': 0,
         'scale': header['raster'] / header['width_pixels'],
         'units': units,
@@ -244,6 +291,14 @@ def im_reader(filename, *args, **kwds):
 
     # If the acquisition stops before finishing the job, the stored file will
     # contain only zeroes in all remaining slices. Better remove them.
+    metadata_titles = []
+    for i in range(header['number_of_masses']):
+        try:
+            header["mass"]
+        except KeyError:
+            metadata_titles.append(header["mass_names"][i])
+        else:
+            metadata_titles.append(header["mass_names"][i] + "- " + header["mass"][i])
 
     dictionary_list = []
     for i in range(header['number_of_masses']):
@@ -254,7 +309,7 @@ def im_reader(filename, *args, **kwds):
             'data': dc,
             'metadata': {
                 'General': {
-                    'title': header['mass_names'][i],
+                    'title': metadata_titles[i],
                     'original_filename': header['filename'],
                 },
                 'Signal': {
@@ -293,7 +348,6 @@ def load_im_file(filename):
                            dtype=datadtype,
                            count=header['number_of_masses'] * header['number_of_planes'] * header['width_pixels'] *
                                  header['height_pixels'])
-
         data = data.astype(float)
 
         # Reshape into shape (images*planes, width, height)
