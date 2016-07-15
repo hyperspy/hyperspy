@@ -33,7 +33,7 @@ _logger = logging.getLogger(__name__)
 
 
 class EDSSpectrum(Signal1D):
-    _signal_type = "EDS"
+    _signal_type = ["EDS"]
 
     def __init__(self, *args, **kwards):
         Signal1D.__init__(self, *args, **kwards)
@@ -69,10 +69,10 @@ class EDSSpectrum(Signal1D):
         units_name = self.axes_manager.signal_axes[0].units
 
         if FWHM_MnKa == 'auto':
-            if self.metadata.Signal.signal_type == 'EDS_SEM':
+            if self.metadata.Signal.signal_type in ["EDS SEM", "EDS_SEM"]:
                 FWHM_MnKa = self.metadata.Acquisition_instrument.SEM.\
                     Detector.EDS.energy_resolution_MnKa
-            elif self.metadata.Signal.signal_type == 'EDS_TEM':
+            elif self.metadata.Signal.signal_type in ["EDS TEM", "EDS_TEM"]:
                 FWHM_MnKa = self.metadata.Acquisition_instrument.TEM.\
                     Detector.EDS.energy_resolution_MnKa
             else:

@@ -10,7 +10,7 @@ def test_basesignal_signal_dimension():
 
 
 def test_signal_signal_type():
-    assert_equal(hyperspy.signal.BaseSignal._signal_type, "")
+    assert_in("", hyperspy.signal.BaseSignal._signal_type)
 
 
 def test_spectrum_signal_dimension():
@@ -18,7 +18,7 @@ def test_spectrum_signal_dimension():
 
 
 def test_spectrum_signal_type():
-    assert_equal(hyperspy.signals.Signal1D._signal_type, "")
+    assert_in("", hyperspy.signals.Signal1D._signal_type)
 
 
 def test_image_signal_dimension():
@@ -26,7 +26,7 @@ def test_image_signal_dimension():
 
 
 def test_image_signal_type():
-    assert_equal(hyperspy.signals.Signal2D._signal_type, "")
+    assert_in("", hyperspy.signals.Signal2D._signal_type)
 
 
 def test_eels_signal_dimension():
@@ -34,4 +34,4 @@ def test_eels_signal_dimension():
 
 
 def test_eels_signal_type():
-    assert_equal(hyperspy.signals.EELSSpectrum._signal_type, "EELS")
+    assert_in("EELS", hyperspy.signals.EELSSpectrum._signal_type)

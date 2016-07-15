@@ -25,7 +25,7 @@ from hyperspy.decorators import only_interactive
 
 
 class EDSSEMSpectrum(EDSSpectrum):
-    _signal_type = "EDS_SEM"
+    _signal_type = ["EDS SEM", "EDS_SEM"]
 
     def __init__(self, *args, **kwards):
         EDSSpectrum.__init__(self, *args, **kwards)

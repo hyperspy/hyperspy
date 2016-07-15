@@ -1454,7 +1454,7 @@ class BaseSignal(FancySlicing,
 
     _dtype = "real"
     _signal_dimension = -1
-    _signal_type = ""
+    _signal_type = [""]
     _additional_slicing_targets = [
         "metadata.Signal.Noise_properties.variance",
     ]
@@ -1760,9 +1760,9 @@ class BaseSignal(FancySlicing,
             file_data_dict['metadata'])
         if "title" not in self.metadata.General:
             self.metadata.General.title = ''
-        if (self._signal_type or
+        if (self._signal_type[0] or
                 not self.metadata.has_item("Signal.signal_type")):
-            self.metadata.Signal.signal_type = self._signal_type
+            self.metadata.Signal.signal_type = self._signal_type[0]
         if "learning_results" in file_data_dict:
             self.learning_results.__dict__.update(
                 file_data_dict["learning_results"])
@@ -3705,7 +3705,7 @@ class BaseSignal(FancySlicing,
             signal_dimension=self.axes_manager.signal_dimension,
             signal_type=mp.Signal.signal_type
             if "Signal.signal_type" in mp
-            else self._signal_type,)
+            else self._signal_type[0])
         self.__init__(**self._to_dictionary(add_models=True))
 
     def set_signal_type(self, signal_type):
