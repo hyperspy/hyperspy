@@ -368,7 +368,7 @@ A mass absorption coefficient database [Chantler2005]_ is available:
     >>>     elements=['Al','Zn'], weight_percent=[50,50], energies='Al_Ka')
     2587.4161643905127
 
-.. _eds_plot-label: 
+.. _eds_plot-label:
 
 Plotting
 --------
@@ -536,7 +536,7 @@ The quantification method needs be specified as either 'CL', 'zeta', or 'cross_s
 If no method is specified, the function will raise an exception.
 
 A list of factors or cross sections should be supplied in the same order as the listed intensities
-(please note that HyperSpy intensities in :py:meth:~._signals.eds.EDSSpectrum.get_lines_intensity
+(please note that HyperSpy intensities in :py:meth:'~._signals.eds.EDSSpectrum.get_lines_intensity'
 are in alphabetical order).
 
 A set of k-factors can be usually found in the EDS manufacturer software
@@ -546,7 +546,7 @@ be determined experimentally using standards.
 
 Zeta-factors should be provided in units of kg/m^2. The method is described further in [Watanabe1996]_ and [Watanabe2006]_ .
 Cross sections should be provided in units of barns (b). Further details on the cross section method can be found in [MacArthur2016]_ .
-Conversion between zeta-factors and cross sections is possible using :py:meth:~._misc.eds.util.edx_cross_section_to_zeta or :py:meth:~._misc.eds.util.zeta_to_edx_cross_section .
+Conversion between zeta-factors and cross sections is possible using :py:meth:'~._misc.eds.util.edx_cross_section_to_zeta' or :py:meth:'~._misc.eds.util.zeta_to_edx_cross_section' .
 
 Using the Cliff-Lorimer method as an example, quantification can be carried out as follows:
 
