@@ -24,8 +24,7 @@ class ElectronWaveImage(ComplexSignal2D):
 
     """ComplexSignal2D subclass for electron wave images."""
 
-    _signal_dimension = 2
-    _signal_type = 'ElectronWaveImage'
+    _signal_type = 'electron_wave'
 
     @property
     def rec_param(self):

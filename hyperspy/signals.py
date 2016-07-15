@@ -36,6 +36,9 @@ The Signal class and its specilized subclasses:
     HolographyImage
         For 2D-images taken via electron holography. Electron wave as
         ComplexSignal2D can be reconstructed from them.
+    ElectronWaveImage
+        For 2D-images representing electron wave. It includes holography data
+        processing functionality
 
 """
 

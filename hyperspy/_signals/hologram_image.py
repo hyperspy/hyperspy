@@ -153,7 +153,7 @@ class HologramImage(Signal2D):
 
         wave = w_obj / w_ref
         wave_image = self._deepcopy_with_new_data(wave)
-        wave_image.set_signal_type('ElectronWaveImage')  # New signal is an electron wave image!
+        wave_image.set_signal_type('electron_wave')  # New signal is an electron wave image!
         rec_param_dict = OrderedDict([('sb_pos_x0', rec_param[0]), ('sb_pos_y0', rec_param[1]),
                                       ('sb_pos_x1', rec_param[2]), ('sb_pos_y1', rec_param[3]),
                                       ('sb_size', rec_param[4])])
