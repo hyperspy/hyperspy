@@ -4,7 +4,7 @@ Electron Holography
 HyperSpy provides the user with two classes which can be used to process electron holography data:
  
 * :py:class:`~._signals.hologram_image.HologramImage`
-* :py:class:`~._signals.wave_image.ElectronWaveImage`
+* :py:class:`~._signals.electron_wave_image.ElectronWaveImage`
 
 The classes inherit from :py:class:`~._signals.signal2d.Signal2D` and :py:class:`~._signals.electron_wave_image.ElectronWaveImage`
 classes respectively and thus can use all of its functionality. The usage of both classes is explained in the following sections.
@@ -88,7 +88,7 @@ unwrapped and returned as an :class:`~hyperspy._signals.signal2d.Signal2D`. The 
 Add a linear ramp
 -----------------
 
-A linear ramp can be added to the wave via the :py:func:`~._signals.wave_image.ElectronWaveImage.add_phase_ramp`
+A linear ramp can be added to the wave via the :py:func:`~._signals.electron_wave_image.ElectronWaveImage.add_phase_ramp`
 method. The parameters `ramp_x` and `ramp_y` dictate the slope of the ramp in `x`- and `y` direction,
 while the offset is determined by the `offset` parameter. The fulcrum of the linear ramp is at the origin
 and the slopes are given in units of the axis with the according scale taken into account.
