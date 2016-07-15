@@ -51,4 +51,5 @@ from hyperspy._signals.eds_tem import EDSTEMSpectrum
 from hyperspy._signals.dielectric_function import DielectricFunction
 from hyperspy.signal import BaseSignal
 from hyperspy._signals.hologram_image import HologramImage
+from hyperspy._signals.electron_wave_image import ElectronWaveImage
 
