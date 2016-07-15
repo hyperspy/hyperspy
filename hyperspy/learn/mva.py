@@ -174,6 +174,8 @@ class MVA():
                                  "with navigation_size < 2")
         # backup the original data
         self._data_before_treatments = self.data.copy()
+        # set the output target (peak results or not?)
+        target = LearningResults()
 
         if algorithm == 'mlpca':
             if normalize_poissonian_noise is True:
@@ -214,8 +216,6 @@ class MVA():
             # case.
             dc = (self.data if self.axes_manager[0].index_in_array == 0
                   else self.data.T)
-            # set the output target (peak results or not?)
-            target = self.learning_results
 
             # Transform the None masks in slices to get the right behaviour
             if navigation_mask is None:
@@ -382,6 +382,7 @@ class MVA():
                     explained_variance / explained_variance.sum()
 
             # Store the results in learning_results
+
             target.factors = factors
             target.loadings = loadings
             target.explained_variance = explained_variance
@@ -460,6 +461,7 @@ class MVA():
             if self._unfolded4decomposition is True:
                 self.fold()
                 self._unfolded4decomposition is False
+            self.learning_results.__dict__.update(target.__dict__)
             # undo any pre-treatments
             self.undo_treatments()
 
@@ -1136,12 +1138,15 @@ class LearningResults(object):
         if hasattr(self, 'output_dimension') and self.output_dimension \
                 is not None:
             self.output_dimension = int(self.output_dimension)
-        self.summary()
+        _logger.info(self._summary())
 
     def summary(self):
         """Prints a summary of the decomposition and demixing parameters
          to the stdout
         """
+        print(self._summary())
+
+    def _summary(self):
         summary_str = (
             "Decomposition parameters:\n"
             "-------------------------\n\n" +
@@ -1157,7 +1162,7 @@ class LearningResults(object):
                 "------------------------\n" +
                 ("BSS algorithm : %s" % self.bss_algorithm) +
                 ("Number of components : %i" % len(self.unmixing_matrix)))
-        _logger.info(summary_str)
+        return summary_str
 
     def crop_decomposition_dimension(self, n):
         """

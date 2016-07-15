@@ -86,6 +86,7 @@ class Model2D(BaseModel):
     """
 
     def __init__(self, signal2D, dictionary=None):
+        super(Model2D, self).__init__()
         self.signal = signal2D
         self.axes_manager = self.signal.axes_manager
         self._plot = None

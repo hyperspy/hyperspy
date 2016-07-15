@@ -90,6 +90,8 @@ class EELSSpectrum(Signal1D):
                 "See the docstring for more information.")
 
         for element in elements:
+            if isinstance(element, bytes):
+                element = element.decode()
             if element in elements_db:
                 self.elements.add(element)
             else:
@@ -834,11 +836,11 @@ class EELSSpectrum(Signal1D):
         tem_par = TEMParametersUI()
         mapping = {
             'Acquisition_instrument.TEM.convergence_angle':
-                'tem_par.convergence_angle',
+            'tem_par.convergence_angle',
             'Acquisition_instrument.TEM.beam_energy':
-                'tem_par.beam_energy',
+            'tem_par.beam_energy',
             'Acquisition_instrument.TEM.Detector.EELS.collection_angle':
-                'tem_par.collection_angle',
+            'tem_par.collection_angle',
         }
         for key, value in mapping.items():
             if self.metadata.has_item(key):
@@ -846,11 +848,11 @@ class EELSSpectrum(Signal1D):
         tem_par.edit_traits()
         mapping = {
             'Acquisition_instrument.TEM.convergence_angle':
-                tem_par.convergence_angle,
+            tem_par.convergence_angle,
             'Acquisition_instrument.TEM.beam_energy':
-                tem_par.beam_energy,
+            tem_par.beam_energy,
             'Acquisition_instrument.TEM.Detector.EELS.collection_angle':
-                tem_par.collection_angle,
+            tem_par.collection_angle,
         }
         for key, value in mapping.items():
             if value != t.Undefined:

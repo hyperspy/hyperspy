@@ -5,6 +5,79 @@ We only cover here the main highlights, for a detailed list of all the changes
 see `the github commits changelog
 <https://github.com/hyperspy/hyperspy/commits/master>`_.
 
+v1.0
+====
+
+This is a major release. Here we only list the highlist. A detailed list of
+changes `is available in github
+<https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3A1.0.0>`_.
+
+NEW
+---
+
+* :ref:`roi-label`.
+* :ref:`Robust PCA <rpca-label>` (RPCA) and online RPCA algorithms.
+* Numpy ufuncs can now :ref:`operate on HyperSpy's signals <ufunc-label>`. 
+* ComplexSignal and specialised subclasses to :ref:`operate on complex data <complex_data-label>`.
+* Events :ref:`logging <logger-label>`.
+* Query and :ref:`fetch spectra <eelsdb-label>` from `The EELS Database <https://eelsdb.eu/>`_. 
+* :ref:`interactive-label`.
+* :ref:`events-label`.
+
+Model
+^^^^^
+
+* :ref:`SAMFire-label`.
+* Store :ref:`models in hdf5 files <storing_models-label>`.
+* Add :ref:`fancy indexing <model_indexing-label>` to `Model`.
+* :ref:`Two-dimensional model fitting <2D_model-label>`.  
+
+EDS
+^^^
+* :ref:`Z-factors quantification <eds_quantification-label>`.
+* :ref:`Cross section quantification <eds_quantification-label>`.
+* :ref:`EDS curve fitting <eds_fitting-label>`.
+* X-ray :ref:`absorption coefficient database <eds_absorption_db-label>`.
+
+IO
+^^
+* Support for reading certain files without :ref:`loading them to memory <load_to_memory-label>`. 
+* :ref:`Bruker's composite file (bcf) <bcf-format>` reading support. 
+* :ref:`Electron Microscopy Datasets (EMD) <emd-format>` read and write support.
+* :ref:`SEMPER unf <unf-format>` read and write support. 
+* :ref:`DENS heat log <dens-format>` read support.
+* :ref:`NanoMegas blockfile <blockfile-format>` read and write support.
+
+Enhancements
+------------
+* More useful ``AxesManager`` repr string with html repr for Jupyter Notebook.
+* Better progress bar (`tqdm <https://github.com/noamraph/tqdm>`_).
+* Add support for :ref:`writing/reading scale and unit to tif files
+  <tiff-format>` to be read with ImageJ or DigitalMicrograph.
+
+Documentation
+-------------
+
+* The following sections of the User Guide were revised and largely overwritten: 
+
+  * :ref:`install-label`.
+  * :ref:`ml-label`.
+  * :ref:`eds-label`.
+* New :ref:`dev_guide-label`.
+
+
+API changes
+-----------
+
+* Split :ref:`components <model_components-label>` into `components1D` and `components2D`.
+* Remove `record_by` from metadata.
+* Remove simulation classes.
+* The :py:class:`~._signals.signal1D.Signal1D`,
+  :py:class:`~._signals.image.Signal2D` and :py:class:`~.signal.BaseSignal`
+  classes deprecated the old `Spectrum` `Image` and `Signal` classes. 
+
+
+
 v0.8.5
 ======
 

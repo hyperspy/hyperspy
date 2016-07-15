@@ -21,6 +21,7 @@ from hyperspy.signal import BaseSignal
 
 
 class CommonSignal2D(object):
+
     """Common functions for 2-dimensional signals."""
 
     def to_signal1D(self):

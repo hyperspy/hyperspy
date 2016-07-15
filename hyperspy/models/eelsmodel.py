@@ -273,10 +273,10 @@ class EELSModel(Model1D):
                             "Automatically changing the fine structure "
                             "width of edge %d from %s eV to %s eV to avoid "
                             "conflicts with edge number %d") % (
-                                i1 + 1,
-                                self._active_edges[i1].fine_structure_width,
-                                new_fine_structure_width,
-                                i2 + 1))
+                            i1 + 1,
+                            self._active_edges[i1].fine_structure_width,
+                            new_fine_structure_width,
+                            i2 + 1))
                         self._active_edges[i1].fine_structure_width = \
                             new_fine_structure_width
                         self.resolve_fine_structure(i1=i2)
