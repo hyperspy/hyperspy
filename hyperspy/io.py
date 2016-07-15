@@ -60,17 +60,17 @@ def load(filenames=None,
         files can be loaded by using simple shell-style wildcards,
         e.g. 'my_file*.msa' loads all the files that starts
         by 'my_file' and has the '.msa' extension.
-    signal_type : {None, "EELS", "EDS_TEM", "EDS_SEM", "", str}
+    signal_type : {None, "EELS", "EDS SEM", "EDS TEM", "", str}
         The acronym that identifies the signal type.
         The value provided may determine the Signal subclass assigned to the
         data.
         If None the value is read/guessed from the file. Any other value
         overrides the value stored in the file if any.
         For electron energy-loss spectroscopy use "EELS".
-        For energy dispersive x-rays use "EDS_TEM"
+        For energy dispersive x-rays use "EDS TEM"
         if acquired from an electron-transparent sample — as it is usually
         the case in a transmission electron  microscope (TEM) —,
-        "EDS_SEM" if acquired from a non electron-transparent sample
+        "EDS SEM" if acquired from a non electron-transparent sample
         — as it is usually the case in a scanning electron  microscope (SEM) —.
         If "" (empty string) the value is not read from the file and is
         considered undefined.
@@ -120,7 +120,7 @@ def load(filenames=None,
     Examples
     --------
     Loading a single file providing the signal type:
-    >>> d = hs.load('file.dm3', signal_type='EDS_TEM')
+    >>> d = hs.load('file.dm3', signal_type="EDS TEM")
 
     Loading multiple files:
     >>> d = hs.load('file1.dm3','file2.dm3')
@@ -259,8 +259,8 @@ def assign_signal_subclass(dtype,
     Parameters
     ----------
     dtype : :class:`~.numpy.dtype`
-    record_by: {"spectrum", "image", ""}
-    signal_type : {"EELS", "EDS", "EDS_TEM", "", str}
+    signal_dimension: int
+    signal_type : {"EELS", "EDS", "EDS SEM", "EDS TEM", "dielectric function", "", str}
 
 
     Returns

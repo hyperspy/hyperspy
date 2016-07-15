@@ -33,14 +33,17 @@ _logger = logging.getLogger(__name__)
 
 
 class EDSSpectrum(Signal1D):
+
     _signal_type = ["EDS"]
+    _signal_type_EDS_SEM = ["EDS SEM", "EDS_SEM", "EDSSEM"]
+    _signal_type_EDS_TEM = ["EDS TEM", "EDS_TEM", "EDSTEM"]
 
     def __init__(self, *args, **kwards):
         Signal1D.__init__(self, *args, **kwards)
         if self.metadata.Signal.signal_type == 'EDS':
             warnings.warn('The microscope type is not set. Use '
-                          'set_signal_type(\'EDS_TEM\')  '
-                          'or set_signal_type(\'EDS_SEM\')')
+                          'set_signal_type(\'EDS TEM\')  '
+                          'or set_signal_type(\'EDS SEM\')')
         self.metadata.Signal.binned = True
         self._xray_markers = {}
 
@@ -69,17 +72,17 @@ class EDSSpectrum(Signal1D):
         units_name = self.axes_manager.signal_axes[0].units
 
         if FWHM_MnKa == 'auto':
-            if self.metadata.Signal.signal_type in ["EDS SEM", "EDS_SEM"]:
+            if self.metadata.Signal.signal_type in self._signal_type_EDS_SEM:
                 FWHM_MnKa = self.metadata.Acquisition_instrument.SEM.\
                     Detector.EDS.energy_resolution_MnKa
-            elif self.metadata.Signal.signal_type in ["EDS TEM", "EDS_TEM"]:
+            elif self.metadata.Signal.signal_type in self._signal_type_EDS_TEM:
                 FWHM_MnKa = self.metadata.Acquisition_instrument.TEM.\
                     Detector.EDS.energy_resolution_MnKa
             else:
                 raise NotImplementedError(
                     "This method only works for EDS_TEM or EDS_SEM signals. "
-                    "You can use `set_signal_type(\"EDS_TEM\")` or"
-                    "`set_signal_type(\"EDS_SEM\")` to convert to one of these"
+                    "You can use `set_signal_type(\"EDS TEM\")` or"
+                    "`set_signal_type(\"EDS SEM\")` to convert to one of these"
                     "signal types.")
         line_energy = utils_eds._get_energy_xray_line(Xray_line)
         if units_name == 'eV':
@@ -715,9 +718,9 @@ class EDSSpectrum(Signal1D):
         Defined by M. Schaffer et al., Ultramicroscopy 107(8), pp 587-597
         (2007)
         """
-        if self.metadata.Signal.signal_type == 'EDS_SEM':
+        if self.metadata.Signal.signal_type in self._signal_type_EDS_SEM:
             mp = self.metadata.Acquisition_instrument.SEM
-        elif self.metadata.Signal.signal_type == 'EDS_TEM':
+        elif self.metadata.Signal.signal_type in self._signal_type_EDS_TEM:
             mp = self.metadata.Acquisition_instrument.TEM
 
         tilt_stage = mp.tilt_stage

@@ -32,23 +32,23 @@ class TestSignalAssignSubclass:
             signal_dimension=1,
             signal_type="EELS"), hs.signals.EELSSpectrum)
 
-    def test_eds_spectrum(self):
-        assert_is(assign_signal_subclass(
-            dtype=np.dtype('float'),
-            signal_dimension=1,
-            signal_type="EDS"), hs.signals.EELSSpectrum)
-
     def test_eds_sem_spectrum(self):
         assert_is(assign_signal_subclass(
             dtype=np.dtype('float'),
             signal_dimension=1,
             signal_type="EDS SEM"), hs.signals.EDSSEMSpectrum)
 
-    def test_eds_sem_spectrum_legacy(self):
+    def test_eds_sem_spectrum_alt1(self):
         assert_is(assign_signal_subclass(
             dtype=np.dtype('float'),
             signal_dimension=1,
             signal_type="EDS_SEM"), hs.signals.EDSSEMSpectrum)
+
+    def test_eds_sem_spectrum_alt2(self):
+        assert_is(assign_signal_subclass(
+            dtype=np.dtype('float'),
+            signal_dimension=1,
+            signal_type="EDSSEM"), hs.signals.EDSSEMSpectrum)
 
     def test_eds_tem_spectrum(self):
         assert_is(assign_signal_subclass(
@@ -56,11 +56,17 @@ class TestSignalAssignSubclass:
             signal_dimension=1,
             signal_type="EDS TEM"), hs.signals.EDSTEMSpectrum)
 
-    def test_eds_tem_spectrum_legacy(self):
+    def test_eds_tem_spectrum_alt1(self):
         assert_is(assign_signal_subclass(
             dtype=np.dtype('float'),
             signal_dimension=1,
             signal_type="EDS_TEM"), hs.signals.EDSTEMSpectrum)
+
+    def test_eds_tem_spectrum_alt2(self):
+        assert_is(assign_signal_subclass(
+            dtype=np.dtype('float'),
+            signal_dimension=1,
+            signal_type="EDSTEM"), hs.signals.EDSTEMSpectrum)
 
     def test_dielectric_function(self):
         assert_is(assign_signal_subclass(
@@ -68,13 +74,13 @@ class TestSignalAssignSubclass:
             signal_dimension=1,
             signal_type="dielectric function"), hs.signals.DielectricFunction)
 
-    def test_dielectric_function_legacy1(self):
+    def test_dielectric_function_alt1(self):
         assert_is(assign_signal_subclass(
             dtype=complex,
             signal_dimension=1,
             signal_type="dielectric_function"), hs.signals.DielectricFunction)
 
-    def test_dielectric_function_legacy2(self):
+    def test_dielectric_function_alt2(self):
         assert_is(assign_signal_subclass(
             dtype=complex,
             signal_dimension=1,
@@ -154,13 +160,13 @@ class TestConvertSignal1D:
         assert_true(isinstance(self.s, hs.signals.Signal1D))
 
     def test_signal1d_to_eds_tem(self):
-        self.s.set_signal_type("EDS_TEM")
+        self.s.set_signal_type("EDS TEM")
         assert_true(isinstance(self.s, hs.signals.EDSTEMSpectrum))
         self.s.set_signal_type("")
         assert_true(isinstance(self.s, hs.signals.Signal1D))
 
     def test_signal1d_to_eds_sem(self):
-        self.s.set_signal_type("EDS_SEM")
+        self.s.set_signal_type("EDS SEM")
         assert_true(isinstance(self.s, hs.signals.EDSSEMSpectrum))
         self.s.set_signal_type("")
         assert_true(isinstance(self.s, hs.signals.Signal1D))
@@ -188,7 +194,7 @@ class TestConvertComplexSignal1D:
         self.s = hs.signals.ComplexSignal1D([0])
 
     def test_complex_to_dielectric_function(self):
-        self.s.set_signal_type("DielectricFunction")
+        self.s.set_signal_type("dielectric function")
         assert_true(isinstance(self.s, hs.signals.DielectricFunction))
         self.s.set_signal_type("")
         assert_true(isinstance(self.s, hs.signals.ComplexSignal1D))

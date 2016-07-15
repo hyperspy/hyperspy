@@ -107,7 +107,7 @@ class Test_metadata:
 
     def test_TEM_to_SEM(self):
         s = self.signal.inav[0, 0]
-        signal_type = 'EDS_SEM'
+        signal_type = 'EDS SEM'
         mp = s.metadata.Acquisition_instrument.TEM.Detector.EDS
         mp.energy_resolution_MnKa = 125.3
         sSEM = s.deepcopy()

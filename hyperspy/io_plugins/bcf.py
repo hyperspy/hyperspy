@@ -1082,7 +1082,7 @@ def bcf_hyperspectra(obj_bcf, index=0, downsample=None, cutoff_at_kV=None):
               'Sample': {'name': obj_bcf.header.name,
                          'elements': list(obj_bcf.header.elements),
                          'xray_lines': gen_elem_list(obj_bcf.header.elements)},
-              'Signal': {'signal_type': 'EDS_SEM',
+              'Signal': {'signal_type': 'EDS SEM',
                          'record_by': 'spectrum'},
              }
            }]

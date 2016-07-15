@@ -45,11 +45,11 @@ class TestlineFit:
         self._check_model_creation()
 
     def test_semmodel_creation(self):
-        self.s.set_signal_type("EDS_SEM")
+        self.s.set_signal_type("EDS SEM")
         self._check_model_creation()
 
     def test_temmodel_creation(self):
-        self.s.set_signal_type("EDS_TEM")
+        self.s.set_signal_type("EDS TEM")
         self._check_model_creation()
 
     def _check_model_store(self):
@@ -69,11 +69,11 @@ class TestlineFit:
         self._check_model_store()
 
     def test_semmodel_store(self):
-        self.s.set_signal_type("EDS_SEM")
+        self.s.set_signal_type("EDS SEM")
         self._check_model_store()
 
     def test_temmodel_store(self):
-        self.s.set_signal_type("EDS_TEM")
+        self.s.set_signal_type("EDS TEM")
         self._check_model_store()
 
     def test_calibrate_energy_resolution(self):

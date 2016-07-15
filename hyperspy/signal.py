@@ -3720,11 +3720,11 @@ class BaseSignal(FancySlicing,
 
         Parameters
         ----------
-        signal_type : {"EELS", "EDS_TEM", "EDS_SEM", "DielectricFunction"}
+        signal_type : {"EELS", "EDS TEM", "EDS SEM", "dielectric function"}
             Currently there are special features for "EELS" (electron
-            energy-loss spectroscopy), "EDS_TEM" (energy dispersive X-rays of
+            energy-loss spectroscopy), "EDS TEM" (energy dispersive X-rays of
             thin samples, normally obtained in a transmission electron
-            microscope), "EDS_SEM" (energy dispersive X-rays of thick samples,
+            microscope), "EDS SEM" (energy dispersive X-rays of thick samples,
             normally obtained in a scanning electron microscope) and
             "DielectricFuction". Setting the signal_type to the correct acronym
             is highly advisable when analyzing any signal for which HyperSpy

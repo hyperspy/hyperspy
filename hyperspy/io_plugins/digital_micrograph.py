@@ -620,7 +620,7 @@ class ImageObject(object):
     def signal_type(self):
         if 'ImageTags.Meta_Data.Signal' in self.imdict:
             if self.imdict.ImageTags.Meta_Data.Signal == "X-ray":
-                return "EDS_TEM"
+                return "EDS TEM"
             return self.imdict.ImageTags.Meta_Data.Signal
         elif 'ImageTags.spim.eels' in self.imdict:  # Orsay's tag group
             return "EELS"
@@ -787,7 +787,7 @@ class ImageObject(object):
                 "ImageList.TagGroup0.ImageTags.EELS.Acquisition.Exposure (s)":
                 ("Acquisition_instrument.TEM.dwell_time", None),
             })
-        elif self.signal_type == "EDS_TEM":
+        elif self.signal_type in ["EDS TEM", "EDS_TEM", "EDSTEM"]:
             mapping.update({
                 "ImageList.TagGroup0.ImageTags.EDS.Detector_Info.Azimuthal_angle": (
                     "Acquisition_instrument.TEM.Detector.EDS.azimuth_angle",

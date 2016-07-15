@@ -25,7 +25,8 @@ from hyperspy.decorators import only_interactive
 
 
 class EDSSEMSpectrum(EDSSpectrum):
-    _signal_type = ["EDS SEM", "EDS_SEM"]
+
+    _signal_type = EDSSpectrum._signal_type_EDS_SEM
 
     def __init__(self, *args, **kwards):
         EDSSpectrum.__init__(self, *args, **kwards)
@@ -104,7 +105,7 @@ class EDSSEMSpectrum(EDSSpectrum):
             mp.add_node('Acquisition_instrument.SEM')
         if mp.has_item('Acquisition_instrument.SEM.Detector.EDS') is False:
             mp.Acquisition_instrument.SEM.add_node('EDS')
-        mp.Signal.signal_type = 'EDS_SEM'
+        mp.Signal.signal_type = "EDS SEM"
 
         # Transfer
         if 'Acquisition_instrument.TEM' in mp:

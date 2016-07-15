@@ -34,6 +34,7 @@ from hyperspy.misc.utils import DictionaryTreeBrowser
 
 _logger = logging.getLogger(__name__)
 
+
 # Plugin characteristics
 # ----------------------
 format_name = 'Ripple'
@@ -458,7 +459,6 @@ def file_reader(filename, rpl_info=None, encoding="latin-1",
         "Signal": {'signal_type': rpl_info['signal'],
                    'record_by': record_by, },
     })
-
     if 'convergence-angle' in rpl_info:
         mp.set_item('Acquisition_instrument.TEM.convergence_angle',
                     rpl_info['convergence-angle'])
@@ -609,11 +609,10 @@ def file_writer(filename, signal, encoding='latin-1', *args, **kwds):
             keys_dictionary[
                 'collection-angle'] = mp.Detector.EELS.collection_angle
     if "EDS" in signal.metadata.Signal.signal_type:
-        if signal.metadata.Signal.signal_type == "EDS_SEM":
+        if signal.metadata.Signal.signal_type in ["EDS SEM", "EDS_SEM", "EDSSEM"]:
             mp = signal.metadata.Acquisition_instrument.SEM
-        elif signal.metadata.Signal.signal_type == "EDS_TEM":
+        elif signal.metadata.Signal.signal_type in ["EDS TEM", "EDS_TEM", "EDSTEM"]:
             mp = signal.metadata.Acquisition_instrument.TEM
-
         if mp.has_item('beam_energy'):
             keys_dictionary['beam-energy'] = mp.beam_energy
         if mp.has_item('Detector.EDS.elevation_angle'):
