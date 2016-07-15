@@ -61,7 +61,7 @@ install_req = ['scipy',
                'h5py',
                'python-dateutil',
                'ipyparallel',
-               'pint>=7.0']
+               'pint>=0.7']
 
 #the hack to deal with setuptools + installing the package in ReadTheDoc:
 if 'readthedocs.org' in sys.executable:
