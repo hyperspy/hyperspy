@@ -43,7 +43,7 @@ default_extension = 4
 
 # Writing capabilities
 writes = True
-version = "2.0"
+version = "2.1"
 
 # -----------------------
 # File format description
@@ -72,8 +72,14 @@ version = "2.0"
 # the experiments and that will be accessible as attributes of the
 # Experiments instance
 #
-# New in v1.3
-# -----------
+# CHANGES
+#
+# v2.1
+# - Store the navigate attribute.
+# - record_by is stored only for backward compatibility but the axes navigate
+#   attribute takes precendence over record_by for files with version >= 2.1
+# v1.3
+# ----
 # - Added support for lists, tuples and binary strings
 
 not_valid_format = 'The file is not a valid HyperSpy hdf5 file'
@@ -100,7 +106,7 @@ def get_hspy_format_version(f):
     return StrictVersion(version)
 
 
-def file_reader(filename, record_by, mode='r', driver='core',
+def file_reader(filename, mode='r', driver='core',
                 backing_store=False, load_to_memory=True, **kwds):
     f = h5py.File(filename, mode=mode, driver=driver, **kwds)
     # Getting the format version here also checks if it is a valid HSpy
@@ -185,7 +191,7 @@ def hdfgroup2signaldict(group, load_to_memory=True):
     exp = {'metadata': hdfgroup2dict(
         group[metadata], load_to_memory=load_to_memory),
         'original_metadata': hdfgroup2dict(
-        group[original_metadata], load_to_memory=load_to_memory)
+            group[original_metadata], load_to_memory=load_to_memory)
     }
 
     data = group['data']
@@ -459,8 +465,11 @@ def hdfgroup2dict(group, dictionary=None, load_to_memory=True):
             dictionary[key[len('_tuple_empty_'):]] = ()
         elif key.startswith('_bs_'):
             dictionary[key[len('_bs_'):]] = value.tostring()
-        elif key.startswith('_datetime_'):
-            dictionary[key.replace("_datetime_", "")] = eval(value)
+# The following is commented out as it could be used to evaluate
+# arbitrary code i.e. it was a security flaw. We should instead
+# use a standard string for date and time.
+#        elif key.startswith('_datetime_'):
+#            dictionary[key.replace("_datetime_", "")] = eval(value)
         else:
             dictionary[key] = value
     if not isinstance(group, h5py.Dataset):
@@ -536,8 +545,6 @@ def write_signal(signal, group, **kwds):
                          **kwds)
     for axis in signal.axes_manager._axes:
         axis_dict = axis.get_axis_dictionary()
-        # For the moment we don't store the navigate attribute
-        del(axis_dict['navigate'])
         coord_group = group.create_group(
             'axis-%s' % axis.index_in_array)
         dict2hdfgroup(axis_dict, coord_group, **kwds)
@@ -582,4 +589,17 @@ def file_writer(filename,
         expg = exps.create_group(group_name)
         if 'compression' not in kwds:
             kwds['compression'] = 'gzip'
-        write_signal(signal, expg, **kwds)
+        # Add record_by metadata for backward compatibility
+        smd = signal.metadata.Signal
+        if signal.axes_manager.signal_dimension == 1:
+            smd.record_by = "spectrum"
+        elif signal.axes_manager.signal_dimension == 2:
+            smd.record_by = "image"
+        else:
+            smd.record_by = ""
+        try:
+            write_signal(signal, expg, **kwds)
+        except:
+            raise
+        finally:
+            del smd.record_by

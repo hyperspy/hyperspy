@@ -26,6 +26,7 @@ from hyperspy.docstrings.plot import (
 
 
 class ComplexSignal(BaseSignal):
+
     """BaseSignal subclass for complex data."""
 
     _dtype = "complex"

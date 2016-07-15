@@ -26,9 +26,11 @@ from hyperspy.misc.machine_learning.import_sklearn import (
 
 _logger = logging.getLogger(__name__)
 
+
 def _thresh(X, lambda1):
     res = np.abs(X) - lambda1
     return np.sign(X) * ((res > 0) * res)
+
 
 def rpca_godec(X, rank, fast=False, lambda1=None,
                power=None, tol=None, maxiter=None):
@@ -128,7 +130,7 @@ def rpca_godec(X, rank, fast=False, lambda1=None,
         # Initialization with bilateral random projections
         Y2 = np.random.randn(n, rank)
         for i in range(power + 1):
-            Y2 = np.dot(L.T, np.dot(L, Y2));
+            Y2 = np.dot(L.T, np.dot(L, Y2))
         Q, tmp = scipy.linalg.qr(Y2, mode='economic')
 
         # Estimate the new low-rank and sparse matrices
@@ -197,6 +199,7 @@ def _solveproj(z, X, I, lambda2):
 
     return x, s
 
+
 def _updatecol(X, A, B, I):
     tmp, n = X.shape
     L = X
@@ -210,6 +213,7 @@ def _updatecol(X, A, B, I):
         L[:, i] = temp / max(np.sqrt(np.dot(temp, temp.conj())), 1)
 
     return L
+
 
 def orpca(X, rank, fast=False,
           lambda1=None,

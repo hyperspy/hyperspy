@@ -26,3 +26,4 @@ import hyperspy.utils.model
 from hyperspy.misc.utils import stack
 from hyperspy.interactive import interactive
 import hyperspy.utils.roi
+import hyperspy.utils.samfire

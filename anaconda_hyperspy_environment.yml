@@ -4,6 +4,7 @@ dependencies:
 - dill
 - h5py
 - ipython
+- ipyparallel
 - jupyter
 - matplotlib
 - nose
@@ -16,11 +17,13 @@ dependencies:
 - statsmodels
 - sympy
 - natsort
-- ncurses
+- lxml
+- ipyparallel
+- dask
+- ipywidgets
+- traits
+- traitsui
 - pip:
-  - dask
-  - hyperspy
-  - traits
-  - traitsui
-  - ipywidgets
+  - python-dateutil
   - tqdm
+  - hyperspy

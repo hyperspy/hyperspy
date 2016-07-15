@@ -22,14 +22,13 @@ from nose.tools import (
     assert_equal,
     raises)
 
-from hyperspy.signal import BaseSignal
 from hyperspy import signals
 
 
 class Test1D:
 
     def setUp(self):
-        self.signal = BaseSignal(np.arange(10))
+        self.signal = signals.Signal1D(np.arange(10))
         self.data = self.signal.data.copy()
 
     def test_slice_None(self):
@@ -116,8 +115,7 @@ class Test1D:
 class Test2D:
 
     def setUp(self):
-        self.signal = BaseSignal(np.arange(24).reshape(6, 4))
-        self.signal.axes_manager.set_signal_dimension(2)
+        self.signal = signals.Signal2D(np.arange(24).reshape(6, 4))
         self.data = self.signal.data.copy()
 
     def test_index(self):
@@ -136,9 +134,9 @@ class Test2D:
 class Test3D_SignalDim0:
 
     def setUp(self):
-        self.signal = BaseSignal(np.arange(24).reshape((2, 3, 4)))
+        self.signal = signals.BaseSignal(np.arange(24).reshape((2, 3, 4)))
         self.data = self.signal.data.copy()
-        self.signal.axes_manager._axes[2].navigate = True
+        self.signal.axes_manager.set_signal_dimension(0)
 
     @raises(IndexError)
     def test_signal_indexer_signal_dim0_idx_error1(self):
@@ -163,11 +161,8 @@ class Test3D_SignalDim0:
 class Test3D_Navigate_0_and_1:
 
     def setUp(self):
-        self.signal = BaseSignal(np.arange(24).reshape((2, 3, 4)))
+        self.signal = signals.Signal1D(np.arange(24).reshape((2, 3, 4)))
         self.data = self.signal.data.copy()
-        self.signal.axes_manager._axes[0].navigate = True
-        self.signal.axes_manager._axes[1].navigate = True
-        self.signal.axes_manager._axes[2].navigate = False
 
     def test_1px_navigation_indexer_slice(self):
         s = self.signal.inav[1:2]
@@ -231,7 +226,7 @@ class Test3D_Navigate_0_and_1:
 class Test3D_Navigate_1:
 
     def setUp(self):
-        self.signal = BaseSignal(np.arange(24).reshape((2, 3, 4)))
+        self.signal = signals.BaseSignal(np.arange(24).reshape((2, 3, 4)))
         self.data = self.signal.data.copy()
         self.signal.axes_manager._axes[0].navigate = False
         self.signal.axes_manager._axes[1].navigate = True
@@ -263,7 +258,8 @@ class Test3D_Navigate_1:
 class TestFloatArguments:
 
     def setUp(self):
-        self.signal = BaseSignal(np.arange(10))
+        self.signal = signals.BaseSignal(np.arange(10))
+        self.signal.axes_manager.set_signal_dimension(1)
         self.signal.axes_manager[0].scale = 0.5
         self.signal.axes_manager[0].offset = 0.25
         self.data = self.signal.data.copy()
@@ -312,8 +308,9 @@ class TestFloatArguments:
 class TestEllipsis:
 
     def setUp(self):
-        self.signal = BaseSignal(np.arange(2 ** 5).reshape(
+        self.signal = signals.BaseSignal(np.arange(2 ** 5).reshape(
             (2, 2, 2, 2, 2)))
+        self.signal.axes_manager.set_signal_dimension(1)
         self.data = self.signal.data.copy()
 
     def test_in_between(self):
