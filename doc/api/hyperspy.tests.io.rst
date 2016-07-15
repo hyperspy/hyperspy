@@ -12,6 +12,14 @@ hyperspy.tests.io.generate_dm_testing_files module
     :undoc-members:
     :show-inheritance:
 
+hyperspy.tests.io.test_bcf module
+---------------------------------
+
+.. automodule:: hyperspy.tests.io.test_bcf
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 hyperspy.tests.io.test_blockfile module
 ---------------------------------------
 
@@ -52,6 +60,14 @@ hyperspy.tests.io.test_dm_stackbuilder_plugin module
     :undoc-members:
     :show-inheritance:
 
+hyperspy.tests.io.test_emd module
+---------------------------------
+
+.. automodule:: hyperspy.tests.io.test_emd
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 hyperspy.tests.io.test_fei module
 ---------------------------------
 
@@ -72,6 +88,14 @@ hyperspy.tests.io.test_msa module
 ---------------------------------
 
 .. automodule:: hyperspy.tests.io.test_msa
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+hyperspy.tests.io.test_ripple module
+------------------------------------
+
+.. automodule:: hyperspy.tests.io.test_ripple
     :members:
     :undoc-members:
     :show-inheritance:

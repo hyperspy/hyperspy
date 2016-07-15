@@ -4,6 +4,14 @@ hyperspy.io_plugins package
 Submodules
 ----------
 
+hyperspy.io_plugins.bcf module
+------------------------------
+
+.. automodule:: hyperspy.io_plugins.bcf
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 hyperspy.io_plugins.blockfile module
 ------------------------------------
 
@@ -24,6 +32,14 @@ hyperspy.io_plugins.digital_micrograph module
 ---------------------------------------------
 
 .. automodule:: hyperspy.io_plugins.digital_micrograph
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+hyperspy.io_plugins.emd module
+------------------------------
+
+.. automodule:: hyperspy.io_plugins.emd
     :members:
     :undoc-members:
     :show-inheritance:
@@ -96,6 +112,14 @@ hyperspy.io_plugins.tiff module
 -------------------------------
 
 .. automodule:: hyperspy.io_plugins.tiff
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+hyperspy.io_plugins.unbcf_fast module
+-------------------------------------
+
+.. automodule:: hyperspy.io_plugins.unbcf_fast
     :members:
     :undoc-members:
     :show-inheritance:

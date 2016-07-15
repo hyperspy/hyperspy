@@ -1,15 +1,9 @@
 # -*- coding: utf-8 -*-
-try:
-    import sip
-    sip.setapi('QVariant', 2)
-    sip.setapi('QDate', 2)
-    sip.setapi('QDateTime', 2)
-    sip.setapi('QTextStream', 2)
-    sip.setapi('QTime', 2)
-    sip.setapi('QUrl', 2)
-    del sip
-except ImportError:
-    pass
+
+import logging
+
+_logger = logging.getLogger(__name__)
+
 
 from hyperspy import docstrings
 
@@ -29,10 +23,6 @@ needed for data analysis.
 More details in the :mod:`~hyperspy.api` docstring.
 
 """ % docstrings.START_HSPY
-
-import os
-
-os.environ['QT_API'] = "pyqt"
 
 
 from . import Release

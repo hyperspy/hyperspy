@@ -16,11 +16,40 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
+"""Region of interests (ROIs).
+
+ROIs operate on `BaseSignal` instances and include widgets for interactive
+operation.
+
+The following 1D ROIs are available:
+
+    Point1DROI
+        Single element ROI of a 1D signal.
+
+    SpanROI
+        Interval ROI of a 1D signal.
+
+The following 2D ROIs are available:
+
+    Point2DROI
+        Single element ROI of a 2D signal.
+
+    RectangularROI
+        Rectagular ROI of a 2D signal.
+
+    CircleROI
+        (Hollow) circular ROI of a 2D signal
+
+    Line2DROI
+        Line profile of a 2D signal with customisable width.
+
+"""
+
 import traits.api as t
 import numpy as np
 
 from hyperspy.events import Events, Event
-import hyperspy.interactive as hsi
+from hyperspy.interactive import interactive
 from hyperspy.axes import DataAxis
 from hyperspy.drawing import widgets
 
@@ -81,10 +110,10 @@ class BaseROI(t.HasTraits):
         """
         raise NotImplementedError()
 
-    def _make_slices(self, axes_collecion, axes, ranges=None):
+    def _make_slices(self, axes_collection, axes, ranges=None):
         """
         Utility function to make a slice structure that will slice all the axes
-        in 'axes_collecion'. The axes in the `axes` argument will be sliced by
+        in 'axes_collection'. The axes in the `axes` argument will be sliced by
         the ROI, all other axes with 'slice(None)'. Alternatively, if 'ranges'
         is passed, `axes[i]` will be sliced with 'ranges[i]'.
         """
@@ -92,7 +121,7 @@ class BaseROI(t.HasTraits):
             # Use ROI to slice
             ranges = self._get_ranges()
         slices = []
-        for ax in axes_collecion:
+        for ax in axes_collection:
             if ax in axes:
                 i = axes.index(ax)
                 try:
@@ -106,8 +135,7 @@ class BaseROI(t.HasTraits):
                     slices.append(ilow)
                 else:
                     try:
-                        ihigh = 1 + ax.value2index(
-                            ranges[i][1], rounding=lambda x: round(x - 1))
+                        ihigh = ax.value2index(ranges[i][1])
                     except ValueError:
                         if ranges[i][1] > ax.high_value:
                             ihigh = ax.high_index + 1
@@ -162,8 +190,6 @@ class BaseROI(t.HasTraits):
             slices = slices[nav_dim:]
 
         roi = slicer(slices, out=out)
-        if out is not None:
-            out.events.data_changed.trigger(out)
         return roi
 
     def _parse_axes(self, axes, axes_manager):
@@ -208,19 +234,6 @@ class BaseROI(t.HasTraits):
                 raise ValueError("Could not find valid axes configuration.")
 
         return axes_out
-
-    @staticmethod
-    def _update_metadata_after_signal_axes_removal(signal):
-        am = signal.axes_manager
-        if am.signal_dimension == 2:
-            signal._record_by = "image"
-        elif am.signal_dimension == 1:
-            signal._record_by = "spectrum"
-        elif am.signal_dimension == 0:
-            signal._record_by = ""
-        else:
-            return
-        signal.metadata.Signal.record_by = signal._record_by
 
 
 def _get_mpl_ax(plot, axes):
@@ -315,7 +328,7 @@ class BaseInteractiveROI(BaseROI):
         raise NotImplementedError()
 
     def interactive(self, signal, navigation_signal="same", out=None,
-                    **kwargs):
+                    color="green", **kwargs):
         """Creates an interactively sliced Signal (sliced by this ROI) via
         hyperspy.interactive.
 
@@ -331,26 +344,34 @@ class BaseInteractiveROI(BaseROI):
         out : Signal
             If not None, it will use 'out' as the output instead of returning
             a new Signal.
+        color : Matplotlib color specifier (default: 'green')
+            The color for the widget. Any format that matplotlib uses should be
+            ok. This will not change the color fo any widget passed with the
+            'widget' argument.
+        **kwargs
+            All kwargs are passed to the roi __call__ method which is called
+            interactivel on any roi attribute change.
+
         """
-        if isinstance(navigation_signal,
-                      basestring) and navigation_signal == "same":
+        if isinstance(navigation_signal, str) and navigation_signal == "same":
             navigation_signal = signal
         if navigation_signal is not None:
             if navigation_signal not in self.signal_map:
-                self.add_widget(navigation_signal)
-        if self.update not in signal.axes_manager.events.any_axis_changed.connected:
+                self.add_widget(navigation_signal, color=color)
+        if (self.update not in
+                signal.axes_manager.events.any_axis_changed.connected):
             signal.axes_manager.events.any_axis_changed.connect(
                 self.update,
                 [])
         if out is None:
-            return hsi.interactive(self.__call__,
-                                   event=self.events.changed,
-                                   signal=signal,
-                                   **kwargs)
+            return interactive(self.__call__,
+                               event=self.events.changed,
+                               signal=signal,
+                               **kwargs)
         else:
-            return hsi.interactive(self.__call__,
-                                   event=self.events.changed,
-                                   signal=signal, out=out, **kwargs)
+            return interactive(self.__call__,
+                               event=self.events.changed,
+                               signal=signal, out=out, **kwargs)
 
     def _on_widget_change(self, widget):
         """Callback for widgets' 'changed' event. Updates the internal state
@@ -414,6 +435,12 @@ class BaseInteractiveROI(BaseROI):
         with widget.events.changed.suppress_callback(self._on_widget_change):
             self._apply_roi2widget(widget)
         if widget.ax is None:
+            if signal._plot is None:
+                raise Exception(
+                    "%s does not have an active plot. Plot the signal before "
+                    "calling this method using its `plot` method." %
+                    repr(signal))
+
             ax = _get_mpl_ax(signal._plot, axes)
             widget.set_mpl_ax(ax)
 
@@ -430,7 +457,7 @@ class BaseInteractiveROI(BaseROI):
         widget.events.closed.disconnect(self._remove_widget)
         widget.events.changed.disconnect(self._on_widget_change)
         widget.close()
-        for signal, w in self.signal_map.iteritems():
+        for signal, w in self.signal_map.items():
             if w[0] == widget:
                 self.signal_map.pop(signal)
                 break
@@ -454,9 +481,6 @@ class BasePointROI(BaseInteractiveROI):
             axes = self._parse_axes(axes, signal.axes_manager)
         s = super(BasePointROI, self).__call__(signal=signal, out=out,
                                                axes=axes)
-        if out is None:
-            if any([not a.navigate for a in axes]):
-                self._update_metadata_after_signal_axes_removal(s)
         return s
 
 
@@ -826,8 +850,8 @@ class CircleROI(BaseInteractiveROI):
 
         natax = signal.axes_manager._get_axes_in_natural_order()
         # Slice original data with a circumscribed rectangle
-        cx = self.cx + 0.5 * axes[0].scale
-        cy = self.cy + 0.5 * axes[1].scale
+        cx = self.cx + 0.5001 * axes[0].scale
+        cy = self.cy + 0.5001 * axes[1].scale
         ranges = [[cx - self.r, cx + self.r],
                   [cy - self.r, cy + self.r]]
         slices = self._make_slices(natax, axes, ranges)
@@ -842,7 +866,7 @@ class CircleROI(BaseInteractiveROI):
             mask |= gr < self.r_inner**2
         tiles = []
         shape = []
-        for i in xrange(len(slices)):
+        for i in range(len(slices)):
             if i == natax.index(axes[0]):
                 tiles.append(1)
                 shape.append(mask.shape[0])
@@ -1061,7 +1085,7 @@ class Line2DROI(BaseInteractiveROI):
                              (np.product(orig_shape[2:]),))
             pixels = [nd.map_coordinates(img[..., i], perp_lines,
                                          order=order, mode=mode, cval=cval)
-                      for i in xrange(img.shape[2])]
+                      for i in range(img.shape[2])]
             i0 = min(axes[0].index_in_array, axes[1].index_in_array)
             pixels = np.transpose(np.asarray(pixels), (1, 2, 0))
             intensities = pixels.mean(axis=1)
@@ -1125,13 +1149,12 @@ class Line2DROI(BaseInteractiveROI):
                             navigate=axes[0].navigate)
             axis.axes_manager = axm
             axm._axes.insert(i0, axis)
-            from hyperspy.signals import Signal
-            roi = Signal(profile, axes=axm._get_axes_dicts(),
-                         metadata=signal.metadata.deepcopy().as_dictionary(),
-                         original_metadata=signal.original_metadata.
-                         deepcopy().as_dictionary())
-            if any([not a.navigate for a in axes]):
-                self._update_metadata_after_signal_axes_removal(roi)
+            from hyperspy.signals import BaseSignal
+            roi = BaseSignal(profile, axes=axm._get_axes_dicts(),
+                             metadata=signal.metadata.deepcopy(
+                             ).as_dictionary(),
+                             original_metadata=signal.original_metadata.
+                             deepcopy().as_dictionary())
             return roi
         else:
             out.data = profile

@@ -12,6 +12,16 @@
 # serve to show the default.
 
 import sys
+from unittest.mock import MagicMock
+
+class Mock(MagicMock):
+    @classmethod
+    def __getattr__(cls, name):
+            return Mock()
+
+MOCK_MODULES = ['scipy', 'matplotlib', 'traits', 'traitsui', 'numpy', 'h5py']
+sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
+
 import os
 sys.path.append('../')
 from hyperspy import Release
@@ -55,8 +65,8 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'HyperSpy'
-copyright = u'2011-2016, The HyperSpy development team'
+project = 'HyperSpy'
+copyright = '2011-2016, The HyperSpy development team'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -193,8 +203,8 @@ htmlhelp_basename = 'HyperSpydoc'
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-    ('index', 'HyperSpy.tex', u'HyperSpy Documentation',
-     u'The HyperSpy Developers', 'manual'),
+    ('index', 'HyperSpy.tex', 'HyperSpy Documentation',
+     'The HyperSpy Developers', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -226,8 +236,8 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'hyperspy', u'HyperSpy Documentation',
-     [u'The HyperSpy developers'], 1)
+    ('index', 'hyperspy', 'HyperSpy Documentation',
+     ['The HyperSpy developers'], 1)
 ]
 
 # Add the hyperspy website to the intersphinx domains
