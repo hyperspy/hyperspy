@@ -1,4 +1,7 @@
-﻿Developer Guide
+﻿
+.. _dev_guide-label:
+
+Developer Guide
 ===============
 
 This 6-step guide is intended to give people who want to start contributing their 

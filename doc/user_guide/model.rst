@@ -1,4 +1,4 @@
-Curve fitting
+Model fitting
 *************
 
 HyperSpy can perform curve fitting of one-dimensional signals (spectra) and
@@ -9,21 +9,26 @@ Bounds and weights are supported. The syntax for creating both kinds of model
 is essentially the same as in this documentation any method referred to in
 the :py:class`~.model.BaseModel` class is available for both kinds.
 
-.. versionadded:: 1.0
+.. _2D_model-label:
 
-    Models can be created and and fit to experimental data in both one and two
-    dimensions i.e. spectra and images respectively. Most of the syntax is
-    identical in either case. A one-dimensional model is created when a model
-    is created for a :py:class:`~._signals.signal1D.Signal1D` whereas a two-
-    dimensional model is created for a :py:class:`._signals.signal2D.Signal2D`.
-    At present plotting and gradient fitting methods tools for are not yet
-    provided for the :py:class:`~.models.model2D.Model2D` class.
+.. versionadded:: 1.0
+   2D models. Note that this first implementation lacks many of the
+   features of 1D models e.g. plotting. Those will be added in future releases.
+
+Models can be created and and fit to experimental data in both one and two
+dimensions i.e. spectra and images respectively. Most of the syntax is
+identical in either case. A one-dimensional model is created when a model
+is created for a :py:class:`~._signals.signal1D.Signal1D` whereas a two-
+dimensional model is created for a :py:class:`._signals.signal2D.Signal2D`.
+At present plotting and gradient fitting methods tools for are not yet
+provided for the :py:class:`~.models.model2D.Model2D` class.
 
 .. versionadded:: 0.7
+   Binned/unbinned signals
 
-    Before creating a model verify that the ``Signal.binned`` metadata
-    attribute of the signal is set to the correct value because the resulting
-    model depends on this parameter. See :ref:`signal.binned` for more details.
+Before creating a model verify that the ``Signal.binned`` metadata
+attribute of the signal is set to the correct value because the resulting
+model depends on this parameter. See :ref:`signal.binned` for more details.
 
 Creating a model
 ----------------
@@ -34,7 +39,7 @@ A :py:class:`~.models.model1D.Model1D` can be created for data in the
 
 .. code-block:: python
 
-    >>> s = hs.signals.Signal1D('SomeDataHere') # Load the data from a file
+    >>> s = hs.signals.Signal1D('SomeDataHere') # or load the data from a file
     >>> m = s.create_model() # Creates the 1D-Model and asign it to the variable m
 
 Similarly A :py:class:`~.models.model2D.Model2D` can be created for data in the
@@ -52,11 +57,21 @@ to provide important information not already included in the datafile, e.g.if s
 is EELS data, you may be asked for the accelerating voltage, convergence and
 collection semi-angles etc.
 
+
+
+.. _model_components-label:
+
 Adding components to the model
 ------------------------------
 
-In HyperSpy a model consists of a linear combination of :py:mod:`~.components`
-and various components are available in one and two-dimensions to construct a
+.. versionchanged:: 1.0 `hyperspy.api.model.components` renamed to
+   `hyperspy.api.model.components1D`
+
+.. versionadded:: 1.0 `hyperspy.api.model.components2D`.
+
+In HyperSpy a model consists of a linear combination of components
+and various components are available in one (:py:mod:`~.components1d`)and
+two-dimensions (:py:mod:`~.components2d`) to construct a
 model.
 
 The following components are currently available for one-dimensional models:
@@ -100,7 +115,7 @@ parameters for spectroscopy than the one that ships with HyperSpy:
 
 .. code-block:: python
 
-    >>> g = hs.model.components.Expression(
+    >>> g = hs.model.components1D.Expression(
     ... expression="height * exp(-(x - x0) ** 2 * 4 * log(2)/ fwhm ** 2)",
     ... name="Gaussian",
     ... position="x0",
@@ -208,7 +223,7 @@ data that can be modelled using gaussians we might proceed as follows:
 
 .. code-block:: python
 
-    >>> gaussian = hs.model.components.Gaussian() # Create a Gaussian function component
+    >>> gaussian = hs.model.components1D.Gaussian() # Create a Gaussian function component
     >>> m.append(gaussian) # Add it to the model
     >>> m.components # Print the model components
        # |            Attribute Name |            Component Name |            Component Type
@@ -315,8 +330,8 @@ To enable this feature for a given component set the
 
     >>> s = hs.signals.Signal1D(np.arange(100).reshape(10,10))
     >>> m = s.create_model()
-    >>> g1 = hs.model.components.Gaussian()
-    >>> g2 = hs.model.components.Gaussian()
+    >>> g1 = hs.model.components1D.Gaussian()
+    >>> g2 = hs.model.components1D.Gaussian()
     >>> m.extend([g1,g2])
     >>> g1.active_is_multidimensional = True
     >>> g1._active_array
@@ -333,11 +348,13 @@ To enable this feature for a given component set the
     >>> g1._active_array is None
     True
 
+.. _model_indexing-label:
 
 Indexing model
 --------------
 
-.. versionadded:: 0.9 model indexing
+.. versionadded:: 1.0 model indexing
+
 
 Often it is useful to consider only part of the model - for example at
 a particular location (i.e. a slice in the navigation space) or energy range
@@ -350,7 +367,7 @@ recomputed for the resulting slices.
 
     >>> s = hs.signals.Signal1D(np.arange(100).reshape(10,10))
     >>> m = s.create_model()
-    >>> m.append(hs.model.components.Gaussian())
+    >>> m.append(hs.model.components1D.Gaussian())
     >>> # select first three navigation pixels and last five signal channels
     >>> m1 = m.inav[:3].isig[-5:]
     >>> m1.signal1D
@@ -378,8 +395,8 @@ Example:
 
     >>> s = hs.signals.Signal1D(np.arange(100).reshape(10,10))
     >>> m = s.create_model()
-    >>> g1 = hs.model.components.Gaussian()
-    >>> g2 = hs.model.components.Gaussian()
+    >>> g1 = hs.model.components1D.Gaussian()
+    >>> g2 = hs.model.components1D.Gaussian()
     >>> m.extend([g1,g2])
     >>> m.set_parameters_value('A', 20)
     >>> g1.A.map['values']
@@ -406,7 +423,7 @@ all parameters in a component to `True` use
 
 .. code-block:: python
 
-    >>> g = hs.model.components.Gaussian()
+    >>> g = hs.model.components1D.Gaussian()
     >>> g.free_parameters
     set([<Parameter A of Gaussian component>,
         <Parameter sigma of Gaussian component>,
@@ -427,8 +444,8 @@ example:
 
 .. code-block:: python
 
-    >>> g1 = hs.model.components.Gaussian()
-    >>> g2 = hs.model.components.Gaussian()
+    >>> g1 = hs.model.components1D.Gaussian()
+    >>> g2 = hs.model.components1D.Gaussian()
     >>> m.extend([g1,g2])
     >>> m.set_parameters_not_free()
     >>> g1.free_parameters
@@ -592,7 +609,7 @@ to the data.
 .. code-block:: python
 
     >>> m = s.create_model()
-    >>> line = hs.model.components.Polynomial(order=1)
+    >>> line = hs.model.components1D.Polynomial(order=1)
     >>> m.append(line)
     >>> m.fit()
 
@@ -627,7 +644,7 @@ gaussian noise and proceed to fit as in the previous example.
     ...     np.arange(300))
     >>> s.add_poissonian_noise()
     >>> m = s.create_model()
-    >>> line  = hs.model.components.Polynomial(order=1)
+    >>> line  = hs.model.components1D.Polynomial(order=1)
     >>> m.append(line)
     >>> m.fit()
     >>> line.coefficients.value
@@ -671,7 +688,7 @@ the ``centre`` parameter.
     size=1e5)).get_histogram()
     >>> s.metadata.Signal.binned = True
     >>> m = s.create_model()
-    >>> g1 = hs.model.components.Gaussian()
+    >>> g1 = hs.model.components1D.Gaussian()
     >>> m.append(g1)
     >>> g1.centre.value = 7
     >>> g1.centre.bmin = 7
@@ -828,7 +845,7 @@ The :py:class:`~.model.BaseModel` :py:meth:`~.models.BaseModel.plot_results`,
 can be used to visualise the result of the fit **when fitting multidimensional
 datasets**.
 
-.. _storing_models:
+.. _storing_models-label:
 
 Storing models
 --------------
@@ -862,7 +879,7 @@ Current stored models can be listed by calling :py:attr:`~.signal.models`:
 .. code-block:: python
 
     >>> m = s.create_model()
-    >>> m.append(hs.model.components.Lorentzian())
+    >>> m.append(hs.model.components1D.Lorentzian())
     >>> m.store('myname')
     >>> s.models
     └── myname
@@ -871,7 +888,7 @@ Current stored models can be listed by calling :py:attr:`~.signal.models`:
         ├── date = 2015-09-07 12:01:50
         └── dimensions = (|100)
 
-    >>> m.append(hs.model.components.Exponential())
+    >>> m.append(hs.model.components1D.Exponential())
     >>> m.store() # assign model name automatically
     >>> s.models
     ├── a
@@ -955,3 +972,152 @@ parameter attributes:
 * :py:meth:`~.model.BaseModel.set_parameters_not_free`
 * :py:meth:`~.model.BaseModel.set_parameters_free`
 * :py:meth:`~.model.BaseModel.set_parameters_value`
+
+.. _SAMFire-label:
+
+Smart Adaptive Multi-dimensional Fitting (SAMFire)
+--------------------------------------------------
+
+.. versionadded:: 1.0
+    SAMFire
+
+SAMFire (Smart Adaptive Multi-dimensional Fitting) is an algorithm created to
+reduce the starting value (or local / false minima) problem, which often arises
+when fitting multi-dimensional datasets.
+
+The algorithm will be described in full when accompanying paper is published,
+but we are making the implementation available now.
+
+The idea
+^^^^^^^^
+
+The main idea of SAMFire is to change two things compared to the traditional
+way of fitting datasets with many dimensions in the navigation space:
+
+ #. Pick a more sensible pixel fitting order.
+ #. Calculate the pixel starting parameters from already fitted parts of the
+    dataset.
+
+Both of these aspects are linked one to another and are represented by two
+different strategy families that SAMFfire uses while operating.
+
+Strategies
+^^^^^^^^^^
+
+During operation SAMFire uses a list of strategies to determine how to select
+the next pixel and estimate its starting parameters. Only one strategy is used
+at a time. Next strategy is chosen when no new pixels are can be fitted with
+the current strategy. Once either the strategy list is exhausted or the full
+dataset fitted, the algorithm terminates.
+
+There are two families of strategies. In each family there may be many
+strategies, using different statistical or significance measures.
+
+As a rule of thumb, the first strategy in the list should always be from the
+local family, followed by a strategy from the global family. 
+
+Local strategy family
+^^^^^^^^^^^^^^^^^^^^^
+
+These strategies assume that locally neighbouring pixels are similar. As a
+result, the pixel fitting order seems to follow data-suggested order, and the
+starting values are computed from the surrounding already fitted pixels.
+
+More information about the exact procedure will be available once the
+accompanying paper is published.
+
+
+Global strategy family
+^^^^^^^^^^^^^^^^^^^^^^
+
+Global strategies assume that the navigation coordinates of each pixel bear no
+relation to it's signal (i.e. the location of pixels is meaningless). As a
+result, the pixels are selected at random to ensure uniform sampling of the
+navigation space. 
+
+A number of candidate starting values are computed form global statistical
+measures. These values are all attempted in order until a satisfactory result
+is found (not necessarily testing all available starting guesses). As a result,
+on average each pixel requires significantly more computations when compared to
+a local strategy.
+
+More information about the exact procedure will be available once the
+accompanying paper is published.
+
+Seed points
+^^^^^^^^^^^
+
+Due to the strategies using already fitted pixels to estimate the starting
+values, at least one pixel has to be fitted beforehand by the user.
+
+The seed pixel(s) should be selected to require the most complex model present
+in the dataset, however in-built goodness of fit checks ensure that only
+sufficiently well fitted values are allowed to propagate.
+
+If the dataset consists of regions (in the navigation space) of highly
+dissimilar pixels, often called "domain structures", at least one seed pixel
+should be given for each unique region.
+
+If the starting pixels were not optimal, only part of the dataset will be
+fitted. In such cases it is best to allow the algorithm terminate, then provide
+new (better) seed pixels by hand, and restart SAMFire. It will use the
+new seed together with the already computed parts of the data.
+
+Usage
+^^^^^
+
+After creating a model and fitting suitable seed pixels, to fit the rest of
+the multi-dimensional dataset using SAMFire we must craete a SAMFire instance
+as follows:
+
+.. code-block:: python
+
+    >>> samf = m.create_samfire(workers=None, ipyparallel=False)
+
+By default SAMFire will look for an `ipyparallel
+<http://ipyparallel.readthedocs.io/en/latest/index.html>`_ cluster for the
+workers for around 30 seconds. If none is available, it will use
+multiprocessing instead.  However, if you are not planning to use ipyparallel,
+it's recommended specify it explicitly via the ``ipyparallel=False`` argument,
+to use the fall-back option of `multiprocessing`.
+
+By default a new SAMFire object already has two (and currently only) strategies
+added to its strategist list:
+
+.. code-block:: python
+
+    >>> samf.strategies
+      A |    # | Strategy
+     -- | ---- | -------------------------
+      x |    0 | Reduced chi squared strategy
+        |    1 | Histogram global strategy
+
+The currently active strategy is marked by an 'x' in the first column.
+
+If a new datapoint (i.e. pixel) is added manually, the "database" of the
+currently active strategy has to be refreshed using the
+:py:meth:`~.samfire.Samfire.refresh_database` call.
+
+The current strategy "database" can be plotted using the
+:py:meth:`~.samfire.Samfire.plot` method.
+
+Whilst SAMFire is running, each pixel is checked by a ``goodness_test``,
+which is by default :py:class:`~.fit_tests.red_chisq_test`, checking the
+reduced chi-squared to be in the bounds of [0, 2]. 
+
+This tolerance can (and most likely should!) be changed appropriately for the
+data as follows:
+
+.. code-block:: python
+
+    >>> samf.metadata.goodness_test.tolerance = 0.3 # use a sensible value
+
+The SAMFire managed multi-dimensional fit can be started using the
+:py:meth:`~.samfire.Samfire.start` method. All keyword arguments are passed to
+the underlying (i.e. usual) :py:meth:`~.model.BaseModel.fit` call:
+
+.. code-block:: python
+
+    >>> samf.start(fitter='mpfit', bounded=True)
+
+

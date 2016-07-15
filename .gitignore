@@ -35,5 +35,8 @@ doc/log.txt
 .ropeproject/*
 .idea/*
 *.pyproj
+<<<<<<< HEAD
 
+=======
+>>>>>>> hyperspy/master
 hyperspy/tests/misc/cython/test_cython_integration.c

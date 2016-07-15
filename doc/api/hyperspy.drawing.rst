@@ -76,6 +76,14 @@ hyperspy.drawing.signal1d module
     :undoc-members:
     :show-inheritance:
 
+hyperspy.drawing.tiles module
+-----------------------------
+
+.. automodule:: hyperspy.drawing.tiles
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 hyperspy.drawing.utils module
 -----------------------------
 
