@@ -113,7 +113,7 @@ def test_write_read_unit_imagej_with_description(import_local_tifffile=True):
     with assert_warns(
             message="Description and export scale cannot be used at the same",
             category=UserWarning):
-    s.save(fname3, export_scale=True, overwrite=True, description='test')
+        s.save(fname3, export_scale=True, overwrite=True, description='test')
     s3 = hs.load(fname3, import_local_tifffile=import_local_tifffile)
     nt.assert_equal(s3.axes_manager[0].units, 'µm')
     nt.assert_equal(s3.axes_manager[1].units, 'µm')
