@@ -24,8 +24,8 @@ dependencies:
 - traits
 - traitsui
 - ncurses
-- pint
 - pip:
   - python-dateutil
   - tqdm
   - hyperspy
+  - pint
