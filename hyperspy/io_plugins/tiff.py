@@ -184,6 +184,8 @@ def file_reader(filename, record_by='image', **kwds):
                 # ImageJ write the unit in the image description
                 units = image_description.split('unit=')[1].split('\n')[0]
                 scales = _get_scales_from_x_y_resolution(op)
+            if units == 'micron': # ImageJ use micron instead of µm
+                units = 'µm'
 
         # for files created with DM
         if '65003' in op.keys():

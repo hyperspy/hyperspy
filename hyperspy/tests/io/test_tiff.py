@@ -71,8 +71,8 @@ def _test_read_unit_from_imagej(import_local_tifffile=False):
     fname = os.path.join(my_path, 'tiff_files',
                          'test_loading_image_saved_with_imageJ.tif')
     s = hs.load(fname, import_local_tifffile=import_local_tifffile)
-    nt.assert_equal(s.axes_manager[0].units, 'micron')
-    nt.assert_equal(s.axes_manager[1].units, 'micron')
+    nt.assert_equal(s.axes_manager[0].units, 'µm')
+    nt.assert_equal(s.axes_manager[1].units, 'µm')
     nt.assert_almost_equal(s.axes_manager[0].scale, 0.16867, places=5)
     nt.assert_almost_equal(s.axes_manager[1].scale, 0.16867, places=5)
 
@@ -288,40 +288,40 @@ def test_write_scale_unit_image_stack():
 def test_read_FEI_SEM_scale_metadata_8bits():
     fname = os.path.join(my_path2, 'FEI-Helios-Ebeam-8bits.tif')
     s = hs.load(fname)
-    nt.assert_equal(s.axes_manager[0].units, 'm')
-    nt.assert_equal(s.axes_manager[1].units, 'm')
-    nt.assert_almost_equal(s.axes_manager[0].scale, 3.3724e-06, places=12)
-    nt.assert_almost_equal(s.axes_manager[1].scale, 3.3724e-06, places=12)
+    nt.assert_equal(s.axes_manager[0].units, 'µm')
+    nt.assert_equal(s.axes_manager[1].units, 'µm')
+    nt.assert_almost_equal(s.axes_manager[0].scale, 3.3724, places=12)
+    nt.assert_almost_equal(s.axes_manager[1].scale, 3.3724, places=12)
     nt.assert_equal(s.data.dtype, 'uint8')
 
 
 def test_read_FEI_SEM_scale_metadata_16bits():
     fname = os.path.join(my_path2, 'FEI-Helios-Ebeam-16bits.tif')
     s = hs.load(fname)
-    nt.assert_equal(s.axes_manager[0].units, 'm')
-    nt.assert_equal(s.axes_manager[1].units, 'm')
-    nt.assert_almost_equal(s.axes_manager[0].scale, 3.3724e-06, places=12)
-    nt.assert_almost_equal(s.axes_manager[1].scale, 3.3724e-06, places=12)
+    nt.assert_equal(s.axes_manager[0].units, 'µm')
+    nt.assert_equal(s.axes_manager[1].units, 'µm')
+    nt.assert_almost_equal(s.axes_manager[0].scale, 3.3724, places=12)
+    nt.assert_almost_equal(s.axes_manager[1].scale, 3.3724, places=12)
     nt.assert_equal(s.data.dtype, 'uint16')
 
 
 def test_read_Zeiss_SEM_scale_metadata_1k_image():
     fname = os.path.join(my_path2, 'test_tiff_Zeiss_SEM_1k.tif')
     s = hs.load(fname)
-    nt.assert_equal(s.axes_manager[0].units, 'm')
-    nt.assert_equal(s.axes_manager[1].units, 'm')
-    nt.assert_almost_equal(s.axes_manager[0].scale, 2.614514e-06, places=12)
-    nt.assert_almost_equal(s.axes_manager[1].scale, 2.614514e-06, places=12)
+    nt.assert_equal(s.axes_manager[0].units, 'µm')
+    nt.assert_equal(s.axes_manager[1].units, 'µm')
+    nt.assert_almost_equal(s.axes_manager[0].scale, 2.614514, places=12)
+    nt.assert_almost_equal(s.axes_manager[1].scale, 2.614514, places=12)
     nt.assert_equal(s.data.dtype, 'uint16')
 
 
 def test_read_Zeiss_SEM_scale_metadata_512_image():
     fname = os.path.join(my_path2, 'test_tiff_Zeiss_SEM_512.tif')
     s = hs.load(fname)
-    nt.assert_equal(s.axes_manager[0].units, 'm')
-    nt.assert_equal(s.axes_manager[1].units, 'm')
-    nt.assert_almost_equal(s.axes_manager[0].scale, 7.4240e-08, places=12)
-    nt.assert_almost_equal(s.axes_manager[1].scale, 7.4240e-08, places=12)
+    nt.assert_equal(s.axes_manager[0].units, 'µm')
+    nt.assert_equal(s.axes_manager[1].units, 'µm')
+    nt.assert_almost_equal(s.axes_manager[0].scale, 7.4240e-02, places=5)
+    nt.assert_almost_equal(s.axes_manager[1].scale, 7.4240e-02, places=5)
     nt.assert_equal(s.data.dtype, 'uint16')
 
 
