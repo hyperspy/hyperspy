@@ -5,6 +5,7 @@ import nose.tools as nt
 import traits.api as t
 
 import hyperspy.api as hs
+from hyperspy.misc.test_utils import assert_warns
 
 my_path = os.path.dirname(__file__)
 my_path2 = os.path.join(my_path, "tiff_files")
@@ -109,6 +110,9 @@ def test_write_read_unit_imagej_with_description(import_local_tifffile=True):
     nt.assert_almost_equal(s2.axes_manager[1].scale, 1.0, places=5)
 
     fname3 = fname.replace('.tif', '_description2.tif')
+    with assert_warns(
+            message="Description and export scale cannot be used at the same",
+            category=UserWarning):
     s.save(fname3, export_scale=True, overwrite=True, description='test')
     s3 = hs.load(fname3, import_local_tifffile=import_local_tifffile)
     nt.assert_equal(s3.axes_manager[0].units, 'µm')

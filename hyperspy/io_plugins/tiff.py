@@ -108,10 +108,9 @@ def file_writer(filename, signal, export_scale=True, extratags=[], **kwds):
         photometric = "minisblack"
     if 'description' in kwds and export_scale:
         kwds.pop('description')
-        # Comment this warning, since it was not passing the test online...
-#        warnings.warn(
-#            "Description and export scale cannot be used at the same time, "
-#            "because of incompability with the 'ImageJ' format")
+        warnings.warn(
+            "Description and export scale cannot be used at the same time "
+            "because 'ImageJ' doesn't support it")
     if export_scale:
         kwds.update(_get_tags_dict(signal, extratags=extratags))
         _logger.info("kwargs passed to tifffile.py imsave: {0}".format(kwds))
