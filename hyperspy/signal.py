@@ -2080,7 +2080,7 @@ class BaseSignal(FancySlicing,
             None crop from/to the low/high end of the axis.
         auto_convert_units : bool
             Default is False
-            if True, convert the units using the 'convert_to_units' method of
+            If True, convert the units using the 'convert_to_units' method of
             the 'axes_manager'. If False, does nothing.
 
         """

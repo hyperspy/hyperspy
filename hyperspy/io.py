@@ -188,16 +188,29 @@ def load(filenames=None,
 
 def load_single_file(filename,
                      signal_type=None,
+                     auto_convert_units=True,
                      **kwds):
     """
-    Load any supported file into an HyperSpy structure
-    Supported formats: netCDF, msa, Gatan dm3, Ripple (rpl+raw),
-    Bruker bcf, FEI ser and emi, hdf5 and SEMPER unf.
+    Load any supported file into an HyperSpy structure.
+    Supported formats: netCDF, msa, Gatan dm3/dm4, Ripple (rpl+raw), tiff, mrc, 
+    emsa/msa, Bruker bcf, FEI ser and emi, hdf5, blockfile, emd, dens and
+    SEMPER unf.
+    
     Parameters
     ----------
     filename : string
         File name (including the extension)
 
+    signal_type : 
+        Set the signal type of the data to be read.
+        
+    auto_convert_units : bool
+        Default is True.
+        If True, convert the units using the 'convert_to_units' method of
+        the 'axes_manager'. If False, does nothing.        
+        
+    kwds : dictionary
+        Keyword arguments for the file reader.
     """
     extension = os.path.splitext(filename)[1][1:]
 
@@ -220,12 +233,14 @@ def load_single_file(filename,
         return load_with_reader(filename=filename,
                                 reader=reader,
                                 signal_type=signal_type,
+                                auto_convert_units=auto_convert_units,
                                 **kwds)
 
 
 def load_with_reader(filename,
                      reader,
                      signal_type=None,
+                     auto_convert_units=True,
                      **kwds):
     file_data_list = reader.file_reader(filename,
                                         **kwds)
@@ -243,8 +258,9 @@ def load_with_reader(filename,
             objects[-1].tmp_parameters.folder = folder
             objects[-1].tmp_parameters.filename = filename
             objects[-1].tmp_parameters.extension = extension.replace('.', '')
-            objects[-1].axes_manager.convert_units(
-                filterwarning_action="ignore")
+            if auto_convert_units:
+                objects[-1].axes_manager.convert_units(
+                    filterwarning_action="ignore")
         else:
             # it's a standalone model
             continue

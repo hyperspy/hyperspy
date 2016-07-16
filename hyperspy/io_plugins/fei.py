@@ -618,7 +618,7 @@ def guess_units_from_mode(objects_dict, header):
     # contain 'Dim-1_UnitsLength', return "meters" as default, which will be
     # OK most of the time
     warn_str = "The navigation axes units could not be determined. " \
-               "Setting them to `nm`, but this may be wrong."
+               "Setting them to `m`, but this may be wrong."
     try:
         mode = objects_dict.ObjectInfo.ExperimentalDescription.Mode
         isCamera = (

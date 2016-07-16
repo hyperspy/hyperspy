@@ -18,16 +18,17 @@
 
 import nose.tools as nt
 import traits.api as t
-import warnings
 
 from hyperspy.axes import DataAxis, AxesManager, _get_appropriate_scale_units,\
                              _get_convert_units
+from hyperspy.misc.test_utils import assert_warns
 
+                             
 def test_units_not_supported_by_pint_raising_warning():
-    with warnings.catch_warnings(record=True) as w:
+    with assert_warns(
+                message="not supported for conversion.",
+                category=UserWarning):
         scale, units = _get_convert_units(1.0, 'micron', 'nm')
-        assert len(w) == 1 # catch one warning (there is no warning filtered)
-        assert issubclass(w[-1].category, UserWarning)
     nt.assert_almost_equal(scale, 1.0, places=5)
     nt.assert_equal(units, 'micron')
 
@@ -149,18 +150,17 @@ class TestDataAxis:
     def test_units_not_supported_by_pint_no_warning_raised(self):
         # Suppose to do nothing, not raising a warning, not converting scale
         self.axis.units = 'micron'
-        with warnings.catch_warnings(record=True) as w:
-            self.axis.convert_to_units('m', filterwarning_action="ignore")
-            assert len(w) == 0 # not catch warnings, they are ignored
+        self.axis.convert_to_units('m', filterwarning_action="ignore")
         nt.assert_almost_equal(self.axis.scale, 12E-12, places=15)
         nt.assert_equal(self.axis.units, 'micron')
 
     def test_units_not_supported_by_pint_warning_raised(self):
         # raising a warning, not converting scale
         self.axis.units = 'micron'
-        with warnings.catch_warnings(record=True) as w:
+        with assert_warns(
+                message="not supported for conversion.",
+                category=UserWarning):
             self.axis.convert_to_units('m')
-            assert len(w) == 1 # catch warnings
         nt.assert_almost_equal(self.axis.scale, 12E-12, places=15)
         nt.assert_equal(self.axis.units, 'micron')
                 
