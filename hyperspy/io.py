@@ -243,7 +243,8 @@ def load_with_reader(filename,
             objects[-1].tmp_parameters.folder = folder
             objects[-1].tmp_parameters.filename = filename
             objects[-1].tmp_parameters.extension = extension.replace('.', '')
-            objects[-1].axes_manager.convert_units()
+            objects[-1].axes_manager.convert_units(
+                filterwarning_action="ignore")
         else:
             # it's a standalone model
             continue
