@@ -40,7 +40,7 @@ providing the ``signal`` keyword, which has to be one of: ``spectrum``,
 
 Some file formats store some extra information about the data, which can be
 stored in "attributes". If HyperSpy manages to read some extra information
-about the data it stores it in :py:attr:`~.signal.BaseSignal.original_metadata`
+about the data it stores it in `~.signal.BaseSignal.original_metadata`
 attribute. Also, it is possible that other information will be mapped by
 HyperSpy to a standard location where it can be used by some standard routines,
 the :py:attr:`~.signal.BaseSignal.metadata` attribute.
@@ -51,14 +51,31 @@ To print the content of the parameters simply:
 
     >>> s.metadata
 
-
-The :py:attr:`~.signal.BaseSignal.original_metadata` and
+::
+Th :py:attr:`~.signal.BaseSignal.original_metadata` and
 :py:attr:`~.signal.BaseSignal.metadata` can be exported to  text files
 using the :py:meth:`~.misc.utils.DictionaryTreeBrowser.export` method, e.g.:
 
 .. code-block:: python
 
     >>> s.original_metadata.export('parameters')
+
+.. _load_to_memory-label:
+
+.. versionadded:: 1.0
+    `load_to_memory` argument.
+
+Some file readers support accessing the data without reading it to memory. This
+feature can be useful when analysing large files. To load a file without loading
+it to memory simply set `load_to_memory` to `False` e.g.
+
+.. code-block:: python
+
+    >>> s = hs.load("filename.hdf5", load_to_memory=False)
+
+However, note that as of v1.0 HyperSpy cannot efficiently use this feature to
+operate on big data files. Only hdf5, blockfile and EMD currently support not
+reading to memory.
 
 Loading multiple files
 ----------------------
@@ -148,7 +165,7 @@ HyperSpy.
     +--------------------+-----------+----------+
     | HDF5               |    Yes    |    Yes   |
     +--------------------+-----------+----------+
-    | Signal2D: jpg..       |    Yes    |    Yes   |
+    | Image: jpg..       |    Yes    |    Yes   |
     +--------------------+-----------+----------+
     | TIFF               |    Yes    |    Yes   |
     +--------------------+-----------+----------+
@@ -165,6 +182,8 @@ HyperSpy.
     | Blockfile          |    Yes    |    Yes   |
     +--------------------+-----------+----------+
     | DENS heater log    |    Yes    |    No    |
+    +--------------------+-----------+----------+
+    | Bruker's bcf       |    Yes    |    No    |
     +--------------------+-----------+----------+
     | EMD (Berkley Labs) |    Yes    |    Yes   |
     +--------------------+-----------+----------+
@@ -317,7 +336,7 @@ Images
 ------
 
 HyperSpy is able to read and write data too all the image formats supported by
-`the Python Signal2D Library <http://www.pythonware.com/products/pil/>`_ (PIL).
+`the Python Image Library <http://www.pythonware.com/products/pil/>`_ (PIL).
 This includes png, pdf, gif etc.
 
 It is important to note that these image formats only support 8-bit files, and
@@ -331,7 +350,7 @@ analysis purposes.
 TIFF
 ----
 
-Since version 4.1 HyperSpy can read and write 2D and 3D TIFF files using using
+HyperSpy can read and write 2D and 3D TIFF files using using
 Christoph Gohlke's tifffile library. In particular it supports reading and
 writing of TIFF, BigTIFF, OME-TIFF, STK, LSM, NIH, and FluoView files. Most of
 these are uncompressed or losslessly compressed 2**(0 to 6) bit integer,16, 32
@@ -339,9 +358,38 @@ and 64-bit float, grayscale and RGB(A) images, which are commonly used in
 bio-scientific imaging. See `the library webpage
 <http://www.lfd.uci.edu/~gohlke/code/tifffile.py.html>`_ for more details.
 
-Currently HyperSpy cannot read the TIFF tags.
+.. versionadded: 1.0
+   Add support for writing/reading scale and unit to tif files to be read with
+   ImageJ or DigitalMicrograph 
 
+Currently HyperSpy has limited support for reading and saving the TIFF tags.
+However, the way that HyperSpy reads and saves the scale and the units of tiff
+files is compatible with ImageJ/Fiji and Gatan Digital Micrograph softwares.
+HyperSpy can also import the scale and the units from tiff files saved using
+FEI and Zeiss SEM softwares.
 
+.. code-block:: python
+
+    >>> # Force read image resolution using the x_resolution, y_resolution and
+    >>> # the resolution_unit of the tiff tags. Be aware, that most of the
+    >>> # software doesn't (properly) use these tags when saving tiff files.
+    >>> s = hs.load('file.tif', force_read_resolution=True)
+
+HyperSpy can also read and save custom tags through Christoph Gohlke's tifffile 
+library. See `the library webpage
+<http://www.lfd.uci.edu/~gohlke/code/tifffile.py.html>`_ for more details.
+
+.. code-block:: python
+
+    >>> # Saving the string 'Random metadata' in a custom tag (ID 65000)
+    >>> extratag = [(65000, 's', 1, "Random metadata", False)]
+    >>> s.save('file.tif', extratags=extratag)
+    
+    >>> # Saving the string 'Random metadata' from a custom tag (ID 65000)
+    >>> s2 = hs.load('file.tif')
+    >>> s2.original_metadata['Number_65000']
+    b'Random metadata'
+    
 .. _dm3-format:
 
 Gatan Digital Micrograph
@@ -414,6 +462,7 @@ Blockfiles are by default loaded into memory, but can instead be loaded in a
 `numpy.memmap <http://docs.scipy.org/doc/numpy/reference/generated/numpy.memmap.html>`_.
 
 Examples of ways of loading:
+
 .. code-block:: python
 
     >>> hs.load('file.blo')     # Default loading, equivalent to the next line
@@ -428,7 +477,7 @@ Examples of ways of loading:
 
 By loading the data read/write, any changes to the original data array will be
 written to disk. The data is written when the original data array is deleted,
-or when :py:meth:`BaseSignal.data.flush() <http://docs.scipy.org/doc/numpy/reference/generated/numpy.memmap.flush.html>`_
+or when :py:meth:`BaseSignal.data.flush` (`numpy.memmap.flush <http://docs.scipy.org/doc/numpy/reference/generated/numpy.memmap.flush.html>`_)
 is called.
 
 
@@ -442,6 +491,65 @@ format stores all the captured data for each timestamp, together with a small
 header in a plain-text format. The reader extracts the measured temperature
 along the time axis, as well as the date and calibration constants stored in
 the header.
+
+
+.. _bcf-format:
+
+Bruker composite file
+----------------
+
+HyperSpy can read "hypermaps" saved with Bruker's Esprit v1.x or v2.x in bcf
+hybrid (virtual file system/container with xml and binary data, optionally compressed) format.
+Most bcf import functionality is implemented. Both high-resolution 16-bit SEM images
+and hyperspectral EDX data can be retrieved simultaneously.
+
+Note that Bruker Esprit uses a similar format for EBSD data, but it is not currently
+supported by HyperSpy.
+
+Extra loading arguments
+^^^^^^^^^^^^^^^^^^^^^^^
+select_type: One of ('spectrum', 'image'). If specified just selected type of data
+is returned. (default None)
+
+index: index of dataset in bcf v2 files, which can hold few datasets (delaut 0)
+
+downsample: the downsample ratio of hyperspectral array (hight and width only),
+can be integer >=1, where '1' results in no downsampling (default 1). The underlying
+method of downsampling is unchangable: sum. Differently than block_reduce from skimage.measure
+it is memory efficient (does not creates intermediate arrays, works inplace).
+  
+cutoff_at_kV: if set (can be int of float >= 0) can be used either to
+crop or enlarge energy (or channels) range at max values. (default None)
+
+Example of loading reduced (downsampled, and with energy range cropped) "spectrum only"
+data from bcf (original shape: 80keV EDS range (4096 channels), 100x75 pixels):
+
+.. code-block:: python
+
+    >>> hs.load("sample80kv.bcf", select_type='spectrum', downsample=2, cutoff_at_kV=10)
+    <EDSSEMSpectrum, title: EDX, dimensions: (50, 38|595)>
+
+load the same file without extra arguments:
+
+.. code-block:: python
+
+    >>> hs.load("sample80kv.bcf")
+    [<Image, title: BSE, dimensions: (|100, 75)>,
+    <Image, title: SE, dimensions: (|100, 75)>,
+    <EDSSEMSpectrum, title: EDX, dimensions: (100, 75|1095)>]
+
+The loaded array energy dimention can by forced to be larger than the data recorded
+by setting the 'cutoff_at_kV' kwarg to higher value:
+
+.. code-block:: python
+
+    >>> hs.load("sample80kv.bcf", cutoff_at_kV=80)
+    [<Image, title: BSE, dimensions: (|100, 75)>,
+    <Image, title: SE, dimensions: (|100, 75)>,
+    <EDSSEMSpectrum, title: EDX, dimensions: (100, 75|4096)>]
+
+Note that setting downsample to >1 currently locks out using sem imagery
+as navigator in the plotting.
 
 
 .. _emd-format:

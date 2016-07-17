@@ -39,6 +39,7 @@ from hyperspy.misc.export_dictionary import (export_to_dictionary,
 from hyperspy.misc.utils import (slugify, shorten_name, stash_active_state,
                                  dummy_context_manager)
 from hyperspy.misc.slicing import copy_slice_from_whitelist
+from hyperspy.events import Events, Event
 
 _logger = logging.getLogger(__name__)
 
@@ -189,6 +190,21 @@ class BaseModel(list):
     Model2D
 
     """
+
+    def __init__(self):
+
+        self.events = Events()
+        self.events.fitted = Event("""
+            Event that triggers after fitting changed at least one paramter.
+
+            The event triggers after the fitting step was finished, and only of
+            at least one of the parameters changed.
+
+            Arguments
+            ---------
+            obj : Model
+                The Model that the event belongs to
+            """, arguments=['obj'])
 
     def __hash__(self):
         # This is needed to simulate a hashable object so that PySide does not
@@ -646,12 +662,14 @@ class BaseModel(list):
             bounded=False, ext_bounding=False, update_plot=False,
             **kwargs):
         """Fits the model to the experimental data.
+
         The chi-squared, reduced chi-squared and the degrees of freedom are
         computed automatically when fitting. They are stored as signals, in the
         `chisq`, `red_chisq`  and `dof`. Note that unless
         ``metadata.Signal.Noise_properties.variance`` contains an
         accurate estimation of the variance of the data, the chi-squared and
-        reduced chi-squared metrics cannot be computed correctly.
+        reduced chi-squared cannot be computed correctly. This is also true for
+        homocedastic noise.
 
         Parameters
         ----------
@@ -701,6 +719,7 @@ class BaseModel(list):
         ext_bounding : bool
             If True, enforce bounding by keeping the value of the
             parameters constant out of the defined bounding area.
+
         **kwargs : key word arguments
             Any extra key word argument will be passed to the chosen
             fitter. For more information read the docstring of the optimizer
@@ -709,6 +728,7 @@ class BaseModel(list):
         See Also
         --------
         multifit
+
         """
 
         if fitter is None:
@@ -732,6 +752,7 @@ class BaseModel(list):
         with cm(update_on_resume=True):
             self.p_std = None
             self._set_p0()
+            old_p0 = self.p0
             if ext_bounding:
                 self._enable_ext_bounding()
             if grad is False:
@@ -872,11 +893,13 @@ class BaseModel(list):
                 else:
                     raise ValueError("""
                     The %s optimizer is not available.
+
                     Available optimizers:
                     Unconstrained:
                     --------------
                     Least-squares: leastsq and odr
                     General: Nelder-Mead, Powell, CG, BFGS, Newton-CG
+
                     Constrained:
                     ------------
                     least_squares, mpfit, TNC and L-BFGS-B
@@ -889,6 +912,8 @@ class BaseModel(list):
             self._set_current_degrees_of_freedom()
             if ext_bounding is True:
                 self._disable_ext_bounding()
+        if np.any(old_p0 != self.p0):
+            self.events.fitted.trigger(self)
 
     def multifit(self, mask=None, fetch_only_fixed=False,
                  autosave=False, autosave_every=10, show_progressbar=None,
@@ -1460,6 +1485,25 @@ class BaseModel(list):
         except TraitletError:
             _logger.info('This function is only avialable when running in a'
                          ' notebook')
+
+    def create_samfire(self, workers=None, setup=True, **kwargs):
+        """Creates a SAMFire object.
+
+        Parameters
+        ----------
+        workers : {None, int}
+            the number of workers to initialise.
+            If zero, all computations will be done serially.
+            If None (default), will attempt to use (number-of-cores - 1),
+            however if just one core is available, will use one worker.
+        setup : bool
+            if the setup should be run upon initialization.
+        **kwargs
+            Any that will be passed to the _setup and in turn SamfirePool.
+        """
+        from hyperspy.samfire import Samfire
+        return Samfire(self, workers=workers,
+                       setup=setup, **kwargs)
 
 
 class ModelSpecialSlicers(object):

@@ -55,11 +55,16 @@ install_req = ['scipy',
                'traitsui>=5.0',
                'natsort',
                'requests',
-               'setuptools',
                'tqdm',
                'sympy',
                'dill',
-               'h5py']
+               'h5py',
+               'python-dateutil',
+               'ipyparallel']
+
+#the hack to deal with setuptools + installing the package in ReadTheDoc:
+if 'readthedocs.org' in sys.executable:
+    install_req = []
 
 
 def update_version(version):
@@ -77,6 +82,8 @@ def update_version(version):
 # Extensions. Add your extension here:
 raw_extensions = [Extension("hyperspy.tests.misc.cython.test_cython_integration",
                             ['hyperspy/tests/misc/cython/test_cython_integration.pyx']),
+                  Extension("hyperspy.io_plugins.unbcf_fast",
+                            ['hyperspy/io_plugins/unbcf_fast.pyx']),
                   ]
 
 cleanup_list = []
@@ -216,6 +223,7 @@ if os.path.exists(git_dir) and (not os.path.exists(hook_ignorer)):
 
 
 class Recythonize(Command):
+
     """cythonize all extensions"""
     description = "(re-)cythonize all changed cython extensions"
 
@@ -310,11 +318,12 @@ with update_version_when_dev() as version:
                   'hyperspy.external',
                   'hyperspy.external.mpfit',
                   'hyperspy.external.astroML',
+                  'hyperspy.samfire_utils',
+                  'hyperspy.samfire_utils.segmenters',
+                  'hyperspy.samfire_utils.weights',
+                  'hyperspy.samfire_utils.goodness_of_fit_tests',
                   ],
         install_requires=install_req,
-        setup_requires=[
-            'setuptools'
-        ],
         package_data={
             'hyperspy':
             [
@@ -337,8 +346,14 @@ with update_version_when_dev() as version:
                 'tests/io/msa_files/*.msa',
                 'tests/io/hdf5_files/*.hdf5',
                 'tests/io/tiff_files/*.tif',
+                'tests/io/tiff_files/*.dm3',
                 'tests/io/npy_files/*.npy',
                 'tests/io/unf_files/*.unf',
+                'tests/io/bcf_data/*.bcf',
+                'tests/io/bcf_data/*.npy',
+                'tests/io/ripple_files/*.rpl',
+                'tests/io/ripple_files/*.raw',
+                'tests/io/emd_files/*.emd',
                 'tests/drawing/*.ipynb',
                 'tests/signal/test_find_peaks1D_ohaver/test_find_peaks1D_ohaver.hdf5',
             ],

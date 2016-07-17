@@ -84,6 +84,14 @@ hyperspy.tests.model.test_model_as_dictionary module
     :undoc-members:
     :show-inheritance:
 
+hyperspy.tests.model.test_model_selection_criteria module
+---------------------------------------------------------
+
+.. automodule:: hyperspy.tests.model.test_model_selection_criteria
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 hyperspy.tests.model.test_model_storing module
 ----------------------------------------------
 

@@ -6,7 +6,6 @@ environment:
   global:
     TEST_DEPS: "nose wheel pip"
     NSIS_DIR: "%PROGRAMFILES(x86)%/NSIS"
-    os: Visual Studio 2015
 
 
   matrix:
@@ -21,7 +20,7 @@ environment:
       CONDA_NPY: "19"
       WP_URL: 'https://github.com/winpython/winpython/releases/download/1.3.20160209/WinPython-32bit-3.5.1.2.exe'
       WP_CRC: '172d19a743ccfaf55af779d15f29f67fca83a46f08b0af855dfaf809b4184c0d'
-      DEPS: "numpy scipy matplotlib ipython h5py sympy scikit-learn dill setuptools natsort scikit-image cython"
+      DEPS: "numpy scipy matplotlib ipython h5py sympy scikit-learn dill setuptools natsort scikit-image cython lxml ipyparallel"
 
     - PYTHON: "C:\\Miniconda35-x64"
       PYTHON_VERSION: "3.5.x"
@@ -31,7 +30,8 @@ environment:
       CONDA_NPY: "19"
       WP_URL: 'https://github.com/winpython/winpython/releases/download/1.3.20160209/WinPython-64bit-3.5.1.2.exe'
       WP_CRC: '07e854b9aa7a31d8bbf7829d04a45b6d6266603690520e365199af2d98751ab1'
-      DEPS: "numpy scipy matplotlib ipython h5py sympy scikit-learn dill setuptools natsort scikit-image cython"
+      DEPS: "numpy scipy matplotlib ipython h5py sympy scikit-learn dill setuptools natsort scikit-image cython lxml ipyparallel"
+
 
 
 init:
@@ -68,7 +68,7 @@ test_script:
   # Run the project tests
   - ps: Add-AppveyorMessage "Running tests..."
   - "python setup.py build_ext --inplace"
-  - "python continuous_integration/nosetest.py hyperspy"
+  - "python continuous_integration/nosetest.py hyperspy.tests"
   - "python setup.py clean"
   - ps: Add-AppveyorMessage "Testing completed."
 
@@ -131,11 +131,11 @@ deploy:
   provider: GitHub
   auth_token:
     #   to266:
-    #secure: ptV5Dkz3pSVdjD0qRDpxJgjVlddFtleZ+B+c2X1Fg67P8OX3bHWVktRmlj6hfLhM
+    secure: ptV5Dkz3pSVdjD0qRDpxJgjVlddFtleZ+B+c2X1Fg67P8OX3bHWVktRmlj6hfLhM
     #   vidartf:
     #secure: KwAfARhGEqOnZHltPB6kKu8xmnoiGSk7NMYJBIEbWvFCuVnepoPV7ZcIjUN3pUpK
     #   sem-geologist:
-    secure: RRqUkx9H5VuFNITmm+YzgB0qnqgVGPH1yrPVxb4oCD+FAjcTch2WZAiPEKn4L6w6
+    #secure: RRqUkx9H5VuFNITmm+YzgB0qnqgVGPH1yrPVxb4oCD+FAjcTch2WZAiPEKn4L6w6
   artifact: /.*\.exe/, win_wheels  # upload all exe installers and wheels to release assets
   #artifact: win_wheels
   draft: false

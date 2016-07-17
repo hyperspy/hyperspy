@@ -6,11 +6,13 @@ from nose.plugins.skip import SkipTest
 
 from hyperspy.learn.rpca import rpca_godec, orpca
 
+
 class TestRPCA:
+
     def setUp(self):
         # Define shape etc.
         m = 256  # Dimensionality
-        n = 256 # Number of samples
+        n = 256  # Number of samples
         r = 3
         s = 0.01
 
@@ -62,17 +64,20 @@ class TestRPCA:
         nt.assert_true(normX < self.tol)
 
     def test_regularization(self):
-        X, E, G, U, S, V = rpca_godec(self.X, rank=self.rank, lambda1=self.lambda1)
+        X, E, G, U, S, V = rpca_godec(
+            self.X, rank=self.rank, lambda1=self.lambda1)
 
         # Check the low-rank component MSE
         normX = np.linalg.norm(X - self.A) / (self.m * self.n)
         nt.assert_true(normX < self.tol)
 
+
 class TestORPCA:
+
     def setUp(self):
         # Define shape etc.
         m = 256  # Dimensionality
-        n = 1024 # Number of samples
+        n = 1024  # Number of samples
         r = 3
         s = 0.01
 
@@ -91,8 +96,8 @@ class TestORPCA:
         self.lambda2 = 1.0 / np.sqrt(n)
         self.A = A
         self.X = X
-        self.learning_rate=1.1
-        self.training_samples=32
+        self.learning_rate = 1.1
+        self.training_samples = 32
 
         # Test tolerance
         self.tol = 1e-3

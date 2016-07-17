@@ -1,3 +1,6 @@
+
+.. _events-label:
+
 Events
 ******
 

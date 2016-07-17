@@ -223,12 +223,12 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
     """
     """
-
-    _record_by = 'spectrum'
+    _signal_dimension = 1
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.axes_manager.set_signal_dimension(1)
+        if self.axes_manager.signal_dimension != 1:
+            self.axes_manager.set_signal_dimension(1)
 
     def _spikes_diagnosis(self, signal_mask=None,
                           navigation_mask=None):

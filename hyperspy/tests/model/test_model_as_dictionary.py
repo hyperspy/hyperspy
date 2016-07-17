@@ -147,7 +147,7 @@ class TestComponentDictionary:
         nt.assert_true(d['active'])
         nt.assert_is_none(d['_active_array'])
         for ip, p in enumerate(c.parameters):
-            nt.assert_equal(p.as_dictionary(), d['parameters'][ip])
+            nt.assert_dict_equal(p.as_dictionary(), d['parameters'][ip])
 
         c.active_is_multidimensional = True
         d1 = c.as_dictionary()

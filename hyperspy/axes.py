@@ -593,7 +593,7 @@ class AxesManager(t.HasTraits):
         navigates = [i.navigate for i in self._axes]
         if t.Undefined in navigates:
             # Default to Signal1D view if the view is not fully defined
-            self.set_signal_dimension(1)
+            self.set_signal_dimension(len(axes_list))
 
         self._update_attributes()
         self._update_trait_handlers()
@@ -1048,9 +1048,10 @@ class AxesManager(t.HasTraits):
 
         def format_row(*args, tag='td', bold=False):
             if bold:
-                signature = "\n<tr class='bolder_row'> {} {} {} {} {} {} </tr>"
+                signature = "\n<tr class='bolder_row'> "
             else:
-                signature = "\n<tr> {} {} {} {} {} {} </tr>"
+                signature = "\n<tr> "
+            signature +=" ".join(("{}" for _ in args))+" </tr>"
             return signature.format(*map(lambda x:
                                          '\n<' + tag +
                                          '>{}</'.format(x) + tag + '>',
@@ -1065,10 +1066,10 @@ class AxesManager(t.HasTraits):
             text += "</table>\n"
         if self.signal_axes:
             text += "<table style='width:100%'>\n"
-            text += format_row('Signal axis name', 'size', 'index', 'offset',
-                               'scale', 'units', tag='th')
+            text += format_row('Signal axis name', 'size', 'offset', 'scale',
+                               'units', tag='th')
             for ax in self.signal_axes:
-                text += format_row(ax.name, ax.size, ax.index, ax.offset, ax.scale,
+                text += format_row(ax.name, ax.size, ax.offset, ax.scale,
                                    ax.units)
             text += "</table>\n"
         return text
