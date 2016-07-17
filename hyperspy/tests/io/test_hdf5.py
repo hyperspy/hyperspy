@@ -8,6 +8,7 @@ import nose.tools as nt
 import numpy as np
 
 from hyperspy.io import load
+from hyperspy.io_plugins.hdf5 import get_signal_chunks
 from hyperspy.signal import BaseSignal
 from hyperspy._signals.signal1d import Signal1D
 from hyperspy.roi import Point2DROI
@@ -313,3 +314,23 @@ class TestAxesConfiguration:
 def test_strings_from_py2():
     s = EDS_TEM_Spectrum()
     nt.assert_equal(s.metadata.Sample.elements.dtype.char, "U")
+
+def test_signal_chunking():
+    shape = (100, 200, 300, 400)
+    # cannot guarantee anything about the h5py routine to chunk, but test to
+    # detect when it changes
+    nt.assert_equal(get_signal_chunks(shape, 'double'),
+                    (7, 13, 19, 25))
+    nt.assert_equal(get_signal_chunks(shape, 'float32'),
+                    (7, 13, 19, 50))
+
+    # ours we can test safely
+    nt.assert_equal(get_signal_chunks(shape, 'double', signal_axes=(1,3)),
+                    (1, 200, 1, 400))
+    nt.assert_equal(get_signal_chunks(shape, 'float32', signal_axes=(1,3)),
+                    (1, 200, 3, 400))
+    nt.assert_equal(get_signal_chunks(shape, 'double', signal_axes=(0,)),
+                    (100, 7, 10, 13))
+    nt.assert_equal(get_signal_chunks(shape, 'float32', signal_axes=(0,)),
+                    (100, 7, 10, 25))
+
