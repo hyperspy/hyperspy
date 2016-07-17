@@ -400,7 +400,7 @@ def dict2hdfgroup(dictionary, group, **kwds):
             kn = key if key.startswith('_sig_') else '_sig_' + key
             write_signal(value, group.require_group(kn))
         elif isinstance(value, (np.ndarray, h5py.Dataset, da.Array)):
-            overwrite_dataset(group, value, key, metadata=None, **kwds)
+            overwrite_dataset(group, value, key, **kwds)
         elif value is None:
             group.attrs[key] = '_None_'
         elif isinstance(value, bytes):
@@ -441,48 +441,57 @@ def dict2hdfgroup(dictionary, group, **kwds):
                     "information in the file: %s : %s", key, value)
 
 
-def get_signal_chunks(shape, dtype, metadata=None):
+def get_signal_chunks(shape, dtype, signal_axes=None):
+    """Function that claculates chunks for the signal, preferably at least one
+    chunk per signal space.
+
+    Parameters
+    ----------
+    shape : tuple
+        the shape of the dataset to be sored / chunked
+    dtype : {dtype, string}
+        the numpy dtype of the data
+    signal_axes: {None, iterable of ints}
+        the axes defining "signal space" of the dataset. If None, the default
+        h5py chunking is performed.
+    """
     typesize = np.dtype(dtype).itemsize
-    keepdims = None
-    if metadata is not None:
-        if metadata['Signal']['record_by'] == "spectrum":
-            keepdims = 1
-        if metadata['Signal']['record_by'] == "image":
-            keepdims = 2
-    if keepdims is None:
+    if signal_axes is None:
         return h5py._hl.filters.guess_chunk(shape, None, typesize)
 
     # largely based on the guess_chunk in h5py
     CHUNK_MAX = 1024 * 1024
-    want_to_keep = np.product(shape[-keepdims:]) * typesize
+    want_to_keep = np.product([shape[i] for i in signal_axes]) * typesize
     if want_to_keep >= CHUNK_MAX:
         chunks = [1 for _ in shape]
-        for i in range(keepdims):
-            chunks[-i - 1] = shape[-i - 1]
+        for i in signal_axes:
+            chunks[i] = shape[i]
         return tuple(chunks)
 
     chunks = [i for i in shape]
-    nchange = len(shape) - keepdims
     idx = 0
+    navigation_axes = tuple(i for i in range(len(shape)) if i not in
+                            signal_axes)
+    nchange = len(navigation_axes)
     while True:
         chunk_bytes = np.product(chunks) * typesize
 
         if chunk_bytes < CHUNK_MAX:
             break
 
-        if np.product(chunks[:nchange]) == 1:
+        if np.product([chunks[i] for i in navigation_axes]) == 1:
             break
-
-        chunks[idx % nchange] = np.ceil(chunks[idx % nchange] / 2.0)
+        change = navigation_axes[idx % nchange]
+        chunks[change] = np.ceil(chunks[change] / 2.0)
         idx += 1
     return tuple(int(x) for x in chunks)
 
 
-def overwrite_dataset(group, data, key, metadata=None, **kwds):
-    if metadata is None:
+def overwrite_dataset(group, data, key, signal_axes=None, **kwds):
+    if signal_axes is None:
         chunks = True
     else:
-        chunks = get_signal_chunks(data.shape, data.dtype, metadata)
+        chunks = get_signal_chunks(data.shape, data.dtype, signal_axes)
 
     maxshape = tuple(None for _ in data.shape)
 
@@ -619,7 +628,8 @@ def write_signal(signal, group, **kwds):
     metadata_dict = signal.metadata.as_dictionary()
 
     overwrite_dataset(group, signal.data, 'data',
-                      metadata=metadata_dict, **kwds)
+                      signal_axes=signal.axes_manager.signal_indices_in_array,
+                      **kwds)
 
     if default_version < StrictVersion("1.2"):
         metadata_dict["_internal_parameters"] = \
