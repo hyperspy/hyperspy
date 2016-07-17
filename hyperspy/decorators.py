@@ -69,28 +69,3 @@ def interactive_range_selector(cm):
         else:
             cm(self, *args, **kwargs)
     return wrapper
-
-
-@simple_decorator
-def auto_replot(cm):
-    def wrapper(self, *args, **kwargs):
-        if self.auto_replot is True:
-            to_return = cm(self, *args, **kwargs)
-            self._replot()
-            return to_return
-        else:
-            return cm(self, *args, **kwargs)
-    return wrapper
-
-
-@simple_decorator
-def do_not_replot(cm):
-    def wrapper(self, *args, **kwargs):
-        if self.auto_replot is True:
-            self.auto_replot = False
-            to_return = cm(self, *args, **kwargs)
-            self.auto_replot = True
-            return to_return
-        else:
-            return cm(self, *args, **kwargs)
-    return wrapper

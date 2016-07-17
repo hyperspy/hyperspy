@@ -52,6 +52,22 @@ hyperspy.tests.signal.test_binned module
     :undoc-members:
     :show-inheritance:
 
+hyperspy.tests.signal.test_complex_signal module
+------------------------------------------------
+
+.. automodule:: hyperspy.tests.signal.test_complex_signal
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+hyperspy.tests.signal.test_complex_signal2d module
+--------------------------------------------------
+
+.. automodule:: hyperspy.tests.signal.test_complex_signal2d
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 hyperspy.tests.signal.test_eds_sem module
 -----------------------------------------
 
@@ -80,6 +96,14 @@ hyperspy.tests.signal.test_fancy_indexing module
 ------------------------------------------------
 
 .. automodule:: hyperspy.tests.signal.test_fancy_indexing
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+hyperspy.tests.signal.test_find_peaks1D_ohaver module
+-----------------------------------------------------
+
+.. automodule:: hyperspy.tests.signal.test_find_peaks1D_ohaver
     :members:
     :undoc-members:
     :show-inheritance:

@@ -15,13 +15,14 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
+import sys
 
 import numpy as np
 import nose.tools as nt
 
 from hyperspy.signals import EDSSEMSpectrum
 from hyperspy.defaults_parser import preferences
-from hyperspy.components import Gaussian
+from hyperspy.components1d import Gaussian
 from hyperspy import utils
 from hyperspy.misc.test_utils import assert_warns
 
@@ -186,7 +187,8 @@ class Test_metadata:
 
     def test_take_off_angle(self):
         s = self.signal
-        nt.assert_equal(s.get_take_off_angle(), 12.886929785732487)
+        nt.assert_almost_equal(s.get_take_off_angle(), 12.886929785732487,
+                               places=sys.float_info.dig - 2)
 
 
 class Test_get_lines_intentisity:

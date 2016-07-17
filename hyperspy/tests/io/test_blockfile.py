@@ -56,15 +56,15 @@ ref_data2 = np.array(
 
       [[28, 25, 29, 15, 29],
        [12, 15, 12, 25, 24],
-        [25, 26, 26, 18, 27],
-        [19, 18, 20, 23, 28],
-        [28, 18, 22, 25, 0]],
+       [25, 26, 26, 18, 27],
+       [19, 18, 20, 23, 28],
+       [28, 18, 22, 25, 0]],
 
       [[21, 29, 25, 19, 18],
        [30, 15, 20, 22, 26],
-        [23, 18, 26, 15, 25],
-        [22, 25, 24, 15, 20],
-        [22, 15, 15, 21, 23]]],
+       [23, 18, 26, 15, 25],
+       [22, 25, 24, 15, 20],
+       [22, 15, 15, 21, 23]]],
 
 
      [[[28, 25, 26, 24, 26],
@@ -73,17 +73,17 @@ ref_data2 = np.array(
        [21, 24, 19, 17, 0],
        [17, 14, 25, 15, 26]],
 
-        [[25, 18, 20, 15, 24],
-         [19, 13, 23, 18, 11],
-         [0, 25, 0, 0, 14],
-         [26, 22, 22, 11, 14],
-         [21, 0, 15, 13, 19]],
+      [[25, 18, 20, 15, 24],
+       [19, 13, 23, 18, 11],
+       [0, 25, 0, 0, 14],
+       [26, 22, 22, 11, 14],
+       [21, 0, 15, 13, 19]],
 
-        [[24, 18, 20, 22, 21],
-         [13, 25, 20, 28, 29],
-         [15, 17, 24, 23, 23],
-         [22, 21, 21, 22, 18],
-         [24, 25, 18, 18, 27]]]], dtype=np.uint8)
+      [[24, 18, 20, 22, 21],
+       [13, 25, 20, 28, 29],
+       [15, 17, 24, 23, 23],
+       [22, 21, 21, 22, 18],
+       [24, 25, 18, 18, 27]]]], dtype=np.uint8)
 
 axes1 = {
     'axis-0': {
@@ -154,7 +154,7 @@ def test_default_header():
 
 def test_non_square():
     signal = hs.signals.Signal2D((255 * np.random.rand(10, 3, 5, 6)
-                               ).astype(np.uint8))
+                                  ).astype(np.uint8))
     try:
         with nt.assert_raises(ValueError):
             signal.save(save_path, overwrite=True)
@@ -182,7 +182,7 @@ def test_load_readonly():
 def test_load_inplace():
     sig_reload = None
     signal = hs.signals.Signal2D((255 * np.random.rand(2, 3, 2, 2)
-                               ).astype(np.uint8))
+                                  ).astype(np.uint8))
     try:
         signal.save(save_path, overwrite=True)
         del signal
@@ -203,7 +203,7 @@ def test_load_inplace():
 
 def test_write_fresh():
     signal = hs.signals.Signal2D((255 * np.random.rand(10, 3, 5, 5)
-                               ).astype(np.uint8))
+                                  ).astype(np.uint8))
     try:
         signal.save(save_path, overwrite=True)
         sig_reload = hs.load(save_path)
@@ -227,7 +227,7 @@ def test_write_fresh():
 
 def test_write_data_line():
     signal = hs.signals.Signal2D((255 * np.random.rand(3, 5, 5)
-                               ).astype(np.uint8))
+                                  ).astype(np.uint8))
     try:
         signal.save(save_path, overwrite=True)
         sig_reload = hs.load(save_path)
@@ -238,7 +238,7 @@ def test_write_data_line():
 
 def test_write_data_single():
     signal = hs.signals.Signal2D((255 * np.random.rand(5, 5)
-                               ).astype(np.uint8))
+                                  ).astype(np.uint8))
     try:
         signal.save(save_path, overwrite=True)
         sig_reload = hs.load(save_path)
@@ -249,7 +249,7 @@ def test_write_data_single():
 
 def test_write_data_am_mismatch():
     signal = hs.signals.Signal2D((255 * np.random.rand(10, 3, 5, 5)
-                               ).astype(np.uint8))
+                                  ).astype(np.uint8))
     signal.axes_manager.navigation_axes[1].size = 4
     try:
         with nt.assert_raises(ValueError):
@@ -260,7 +260,7 @@ def test_write_data_am_mismatch():
 
 def test_write_cutoff():
     signal = hs.signals.Signal2D((255 * np.random.rand(10, 3, 5, 5)
-                               ).astype(np.uint8))
+                                  ).astype(np.uint8))
     signal.axes_manager.navigation_axes[0].size = 20
     try:
         signal.save(save_path, overwrite=True)
@@ -283,7 +283,7 @@ def test_crop_notes():
     note_len = 0x1000 - 0xF0
     note = 'test123' * 1000     # > note_len
     signal = hs.signals.Signal2D((255 * np.random.rand(2, 3, 2, 2)
-                               ).astype(np.uint8))
+                                  ).astype(np.uint8))
     signal.original_metadata.add_node('blockfile_header.Note')
     signal.original_metadata.blockfile_header.Note = note
     try:

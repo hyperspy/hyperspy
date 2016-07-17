@@ -44,7 +44,7 @@ default_extension = 4
 
 # Writing capabilities
 writes = True
-version = "2.0"
+version = "2.1"
 
 # -----------------------
 # File format description
@@ -73,8 +73,14 @@ version = "2.0"
 # the experiments and that will be accessible as attributes of the
 # Experiments instance
 #
-# New in v1.3
-# -----------
+# CHANGES
+#
+# v2.1
+# - Store the navigate attribute.
+# - record_by is stored only for backward compatibility but the axes navigate
+#   attribute takes precendence over record_by for files with version >= 2.1
+# v1.3
+# ----
 # - Added support for lists, tuples and binary strings
 
 not_valid_format = 'The file is not a valid HyperSpy hdf5 file'
@@ -101,7 +107,7 @@ def get_hspy_format_version(f):
     return StrictVersion(version)
 
 
-def file_reader(filename, record_by, backing_store=False, load_to_memory=True,
+def file_reader(filename, backing_store=False, load_to_memory=True,
                 **kwds):
     mode = kwds.pop('mode', 'r+')
     f = h5py.File(filename, mode=mode, **kwds)
@@ -187,7 +193,7 @@ def hdfgroup2signaldict(group, load_to_memory=True):
     exp = {'metadata': hdfgroup2dict(
         group[metadata], load_to_memory=load_to_memory),
         'original_metadata': hdfgroup2dict(
-        group[original_metadata], load_to_memory=load_to_memory)
+            group[original_metadata], load_to_memory=load_to_memory)
     }
 
     data = group['data']
@@ -200,7 +206,10 @@ def hdfgroup2signaldict(group, load_to_memory=True):
             axes.append(dict(group['axis-%i' % i].attrs))
             axis = axes[-1]
             for key, item in axis.items():
-                axis[key] = ensure_unicode(item)
+                if isinstance(item, np.bool_):
+                    axis[key] = bool(item)
+                else:
+                    axis[key] = ensure_unicode(item)
         except KeyError:
             break
     if len(axes) != len(exp['data'].shape):  # broke from the previous loop
@@ -603,8 +612,6 @@ def write_signal(signal, group, **kwds):
 
     for axis in signal.axes_manager._axes:
         axis_dict = axis.get_axis_dictionary()
-        # For the moment we don't store the navigate attribute
-        del(axis_dict['navigate'])
         coord_group = group.create_group(
             'axis-%s' % axis.index_in_array)
         dict2hdfgroup(axis_dict, coord_group, **kwds)
@@ -653,4 +660,17 @@ def file_writer(filename,
         expg = exps.create_group(group_name)
         if 'compression' not in kwds:
             kwds['compression'] = 'gzip'
-        write_signal(signal, expg, **kwds)
+        # Add record_by metadata for backward compatibility
+        smd = signal.metadata.Signal
+        if signal.axes_manager.signal_dimension == 1:
+            smd.record_by = "spectrum"
+        elif signal.axes_manager.signal_dimension == 2:
+            smd.record_by = "image"
+        else:
+            smd.record_by = ""
+        try:
+            write_signal(signal, expg, **kwds)
+        except:
+            raise
+        finally:
+            del smd.record_by

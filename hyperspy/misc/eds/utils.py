@@ -123,8 +123,8 @@ def get_FWHM_at_Energy(energy_resolution_MnKa, E):
     This method implements the equation derived by Fiori and Newbury as is
     documented in the following:
 
-        Fiorie, C. E., and Newbury, D. E. (1978). In SEM/1978/I, SEM, Inc.,
-        AFM O'Hare, Illinois, p. 401.
+        Fiori, C. E., and Newbury, D. E. (1978). In SEM/1978/I, SEM, Inc.,
+        AMF O'Hare, Illinois, p. 401.
 
         Goldstein et al. (2003). "Scanning Electron Microscopy & X-ray
         Microanalysis", Plenum, third edition, p 315.
@@ -312,7 +312,7 @@ def xray_lines_model(elements,
     >>> s.plot()
     """
     from hyperspy._signals.eds_tem import EDSTEMSpectrum
-    from hyperspy.model import components
+    from hyperspy import components1d
     if energy_axis is None:
         energy_axis = {'name': 'E', 'scale': 0.01, 'units': 'keV',
                        'offset': -0.1, 'size': 1024}
@@ -334,7 +334,7 @@ def xray_lines_model(elements,
                 ratio_line = properties['weight']
                 if s._get_xray_lines_in_spectral_range(
                         [element + '_' + line])[1] == []:
-                    g = components.Gaussian()
+                    g = components1d.Gaussian()
                     g.centre.value = line_energy
                     g.sigma.value = get_FWHM_at_Energy(
                         energy_resolution_MnKa, line_energy) / sigma2fwhm

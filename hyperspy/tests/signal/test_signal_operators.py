@@ -20,14 +20,14 @@ import numpy as np
 from numpy.testing import assert_array_equal
 import nose.tools as nt
 
-from hyperspy.signal import BaseSignal
+from hyperspy import signals
 
 
 class TestBinaryOperators:
 
     def setUp(self):
-        self.s1 = BaseSignal(np.ones((2, 3)))
-        self.s2 = BaseSignal(np.ones((2, 3)))
+        self.s1 = signals.Signal1D(np.ones((2, 3)))
+        self.s2 = signals.Signal1D(np.ones((2, 3)))
         self.s2.data *= 2
 
     def test_sum_same_shape_signals(self):
@@ -42,7 +42,7 @@ class TestBinaryOperators:
 
     def test_sum_same_shape_signals_not_aligned(self):
         s1 = self.s1
-        s2 = BaseSignal(2 * np.ones((3, 2)))
+        s2 = signals.Signal1D(2 * np.ones((3, 2)))
         s1.axes_manager._axes[0].navigate = False
         s1.axes_manager._axes[1].navigate = True
         s2.axes_manager._axes[1].navigate = False
@@ -54,7 +54,7 @@ class TestBinaryOperators:
 
     def test_sum_in_place_same_shape_signals_not_aligned(self):
         s1 = self.s1
-        s2 = BaseSignal(2 * np.ones((3, 2)))
+        s2 = signals.Signal1D(2 * np.ones((3, 2)))
         s1c = s1
         s2c = s2
         s1.axes_manager._axes[0].navigate = False
@@ -71,7 +71,7 @@ class TestBinaryOperators:
     @nt.raises(ValueError)
     def test_sum_wrong_shape(self):
         s1 = self.s1
-        s2 = BaseSignal(np.ones((3, 3)))
+        s2 = signals.Signal1D(np.ones((3, 3)))
         s1 + s2
 
     def test_broadcast_missing_sig_and_nav(self):
@@ -80,7 +80,7 @@ class TestBinaryOperators:
         s1.axes_manager.set_signal_dimension(0)  # (3, 2|)
         s = s1 + s2
         assert_array_equal(s.data, 3 * np.ones((2, 3, 2, 3)))
-        nt.assert_equal(s.metadata.Signal.record_by, "image")
+        nt.assert_equal(s.axes_manager.signal_dimension, 2)
 
     def test_broadcast_missing_sig(self):
         s1 = self.s1
@@ -105,7 +105,7 @@ class TestBinaryOperators:
     def test_broadcast_in_place(self):
         s1 = self.s1
         s1.axes_manager.set_signal_dimension(1)  # (3|2)
-        s2 = BaseSignal(np.ones((4, 2, 4, 3)))
+        s2 = signals.BaseSignal(np.ones((4, 2, 4, 3)))
         s2c = s2
         s2.axes_manager.set_signal_dimension(2)  # (3, 4| 2, 4)
         print(s2)
@@ -116,8 +116,8 @@ class TestBinaryOperators:
 
     def test_equal_naxes_diff_shape(self):
         s32 = self.s1  # (3| 2)
-        s31 = BaseSignal(np.ones((1, 3)))
-        s12 = BaseSignal(np.ones((2, 1)))
+        s31 = signals.Signal1D(np.ones((1, 3)))
+        s12 = signals.Signal1D(np.ones((2, 1)))
         assert_array_equal((s32 + s31).data, s32.data + 1)
         assert_array_equal((s32 + s12).data, s32.data + 1)
 
@@ -125,7 +125,7 @@ class TestBinaryOperators:
 class TestUnaryOperators:
 
     def setUp(self):
-        self.s1 = BaseSignal(np.array((1, -1, 4, -3)))
+        self.s1 = signals.Signal1D(np.array((1, -1, 4, -3)))
 
     def test_minus(self):
         assert_array_equal((-self.s1).data, -self.s1.data)

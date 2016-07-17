@@ -37,7 +37,7 @@ from hyperspy.external.progressbar import progressbar
 from hyperspy.defaults_parser import preferences
 from hyperspy.external.mpfit.mpfit import mpfit
 from hyperspy.component import Component
-from hyperspy import components
+from hyperspy import components1d, components2d
 from hyperspy.signal import BaseSignal
 from hyperspy.misc.export_dictionary import (export_to_dictionary,
                                              load_from_dictionary,
@@ -46,8 +46,19 @@ from hyperspy.misc.export_dictionary import (export_to_dictionary,
 from hyperspy.misc.utils import (slugify, shorten_name, stash_active_state,
                                  dummy_context_manager)
 from hyperspy.misc.slicing import copy_slice_from_whitelist
+from hyperspy.events import Events, Event
 
 _logger = logging.getLogger(__name__)
+
+# components is just a container for all (1D and 2D) components, to be able to
+# search in a single object for matching components when recreating a model.
+
+
+class DummyComponentsContainer:
+    pass
+components = DummyComponentsContainer()
+components.__dict__.update(components1d.__dict__)
+components.__dict__.update(components2d.__dict__)
 
 
 class ModelComponents(object):
@@ -62,13 +73,13 @@ class ModelComponents(object):
         self._model = model
 
     def __repr__(self):
-        signature = "%4s | %25s | %25s | %25s"
+        signature = "%4s | %19s | %19s | %19s"
         ans = signature % ('#',
                            'Attribute Name',
                            'Component Name',
                            'Component Type')
         ans += "\n"
-        ans += signature % ('-' * 4, '-' * 25, '-' * 25, '-' * 25)
+        ans += signature % ('-' * 4, '-' * 19, '-' * 19, '-' * 19)
         if self._model:
             for i, c in enumerate(self._model):
                 ans += "\n"
@@ -76,9 +87,9 @@ class ModelComponents(object):
                 variable_name = slugify(name_string, valid_variable_name=True)
                 component_type = c._id_name
 
-                variable_name = shorten_name(variable_name, 25)
-                name_string = shorten_name(name_string, 25)
-                component_type = shorten_name(component_type, 25)
+                variable_name = shorten_name(variable_name, 19)
+                name_string = shorten_name(name_string, 19)
+                component_type = shorten_name(component_type, 19)
 
                 ans += signature % (i,
                                     variable_name,
@@ -186,6 +197,21 @@ class BaseModel(list):
     Model2D
 
     """
+
+    def __init__(self):
+
+        self.events = Events()
+        self.events.fitted = Event("""
+            Event that triggers after fitting changed at least one paramter.
+
+            The event triggers after the fitting step was finished, and only of
+            at least one of the parameters changed.
+
+            Arguments
+            ---------
+            obj : Model
+                The Model that the event belongs to
+            """, arguments=['obj'])
 
     def __hash__(self):
         # This is needed to simulate a hashable object so that PySide does not
@@ -343,7 +369,7 @@ class BaseModel(list):
 
         >>> s = hs.signals.Signal1D(np.empty(1))
         >>> m = s.create_model()
-        >>> g = hs.model.components.Gaussian()
+        >>> g = hs.model.components1D.Gaussian()
         >>> m.append(g)
 
         You could remove `g` like this
@@ -393,8 +419,8 @@ class BaseModel(list):
         --------
         >>> s = hs.signals.Signal1D(np.random.random((10,100)))
         >>> m = s.create_model()
-        >>> l1 = hs.model.components.Lorentzian()
-        >>> l2 = hs.model.components.Lorentzian()
+        >>> l1 = hs.model.components1D.Lorentzian()
+        >>> l2 = hs.model.components1D.Lorentzian()
         >>> m.append(l1)
         >>> m.append(l2)
         >>> s1 = m.as_signal()
@@ -514,10 +540,12 @@ class BaseModel(list):
                                 param.value = bmax
                     else:
                         values = np.array(param.value)
-                        minmask = values < bmin
-                        maxmask = values > bmax
-                        values[maxmask] = bmax
-                        values[minmask] = bmin
+                        if param.bmin is not None:
+                            minmask = values < bmin
+                            values[minmask] = bmin
+                        if param.bmax is not None:
+                            maxmask = values > bmax
+                            values[maxmask] = bmax
                         param.value = tuple(values)
 
     def store_current_values(self):
@@ -641,6 +669,7 @@ class BaseModel(list):
             bounded=False, ext_bounding=False, update_plot=False,
             **kwargs):
         """Fits the model to the experimental data.
+
         The chi-squared, reduced chi-squared and the degrees of freedom are
         computed automatically when fitting. They are stored as signals, in the
         `chisq`, `red_chisq`  and `dof`. Note that,
@@ -648,6 +677,7 @@ class BaseModel(list):
         accurate estimation of the variance of the data, the chi-squared and
         reduced chi-squared cannot be computed correctly. This is also true for
         homocedastic noise.
+
         Parameters
         ----------
         fitter : {None, "leastsq", "odr", "mpfit", "fmin"}
@@ -689,13 +719,16 @@ class BaseModel(list):
         ext_bounding : bool
             If True, enforce bounding by keeping the value of the
             parameters constant out of the defined bounding area.
+
         **kwargs : key word arguments
             Any extra key word argument will be passed to the chosen
             fitter. For more information read the docstring of the optimizer
             of your choice in `scipy.optimize`.
+
         See Also
         --------
         multifit
+
         """
 
         if fitter is None:
@@ -719,6 +752,7 @@ class BaseModel(list):
         with cm(update_on_resume=True):
             self.p_std = None
             self._set_p0()
+            old_p0 = self.p0
             if ext_bounding:
                 self._enable_ext_bounding()
             if grad is False:
@@ -880,11 +914,13 @@ class BaseModel(list):
                 else:
                     raise ValueError("""
                     The %s optimizer is not available.
+
                     Available optimizers:
                     Unconstrained:
                     --------------
                     Only least Squares: leastsq and odr
                     General: fmin, powell, cg, ncg, bfgs
+
                     Cosntrained:
                     ------------
                     tnc and l_bfgs_b
@@ -897,6 +933,8 @@ class BaseModel(list):
             self._set_current_degrees_of_freedom()
             if ext_bounding is True:
                 self._disable_ext_bounding()
+        if np.any(old_p0 != self.p0):
+            self.events.fitted.trigger(self)
 
     def multifit(self, mask=None, fetch_only_fixed=False,
                  autosave=False, autosave_every=10, show_progressbar=None,
@@ -1204,7 +1242,7 @@ class BaseModel(list):
 
         Examples
         --------
-        >>> v1 = hs.model.components.Voigt()
+        >>> v1 = hs.model.components1D.Voigt()
         >>> m.append(v1)
         >>> m.set_parameters_not_free()
 
@@ -1248,7 +1286,7 @@ class BaseModel(list):
 
         Examples
         --------
-        >>> v1 = hs.model.components.Voigt()
+        >>> v1 = hs.model.components1D.Voigt()
         >>> m.append(v1)
         >>> m.set_parameters_free()
         >>> m.set_parameters_free(component_list=[v1],
@@ -1298,8 +1336,8 @@ class BaseModel(list):
 
         Examples
         --------
-        >>> v1 = hs.model.components.Voigt()
-        >>> v2 = hs.model.components.Voigt()
+        >>> v1 = hs.model.components1D.Voigt()
+        >>> v2 = hs.model.components1D.Voigt()
         >>> m.extend([v1,v2])
         >>> m.set_parameters_value('area', 5)
         >>> m.set_parameters_value('area', 5, component_list=[v1])
@@ -1350,8 +1388,8 @@ class BaseModel(list):
         --------
         >>> s = signals.Signal1D(np.random.random((10,100)))
         >>> m = s.create_model()
-        >>> l1 = components.Lorentzian()
-        >>> l2 = components.Lorentzian()
+        >>> l1 = components1d.Lorentzian()
+        >>> l2 = components1d.Lorentzian()
         >>> m.append(l1)
         >>> m.append(l2)
         >>> d = m.as_dictionary()
@@ -1399,8 +1437,8 @@ class BaseModel(list):
 
         Examples
         --------
-        >>> v1 = hs.model.components.Voigt()
-        >>> v2 = hs.model.components.Voigt()
+        >>> v1 = hs.model.components1D.Voigt()
+        >>> v2 = hs.model.components1D.Voigt()
         >>> m.extend([v1,v2])
         >>> m.set_component_active_value(False)
         >>> m.set_component_active_value(True, component_list=[v1])
@@ -1468,6 +1506,25 @@ class BaseModel(list):
         except TraitletError:
             _logger.info('This function is only avialable when running in a'
                          ' notebook')
+
+    def create_samfire(self, workers=None, setup=True, **kwargs):
+        """Creates a SAMFire object.
+
+        Parameters
+        ----------
+        workers : {None, int}
+            the number of workers to initialise. 
+            If zero, all computations will be done serially.
+            If None (default), will attempt to use (number-of-cores - 1),
+            however if just one core is available, will use one worker.
+        setup : bool
+            if the setup should be run upon initialization.
+        **kwargs
+            Any that will be passed to the _setup and in turn SamfirePool.
+        """
+        from hyperspy.samfire import Samfire
+        return Samfire(self, workers=workers,
+                       setup=setup, **kwargs)
 
 
 class ModelSpecialSlicers(object):
