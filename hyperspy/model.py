@@ -40,6 +40,8 @@ from hyperspy.misc.utils import (slugify, shorten_name, stash_active_state,
                                  dummy_context_manager)
 from hyperspy.misc.slicing import copy_slice_from_whitelist
 from hyperspy.events import Events, Event
+import warnings
+from hyperspy.exceptions import VisibleDeprecationWarning
 
 _logger = logging.getLogger(__name__)
 
@@ -739,6 +741,23 @@ class BaseModel(list):
         else:
             cm = dummy_context_manager
 
+        # Check for deprecated minimizers
+        optimizer_dict = {"fmin": "Nelder-Mead",
+                          "fmin_cg": "CG",
+                          "fmin_ncg": "Newton-CG",
+                          "fmin_bfgs": "BFGS",
+                          "fmin_l_bfgs_b": "L-BFGS-B",
+                          "fmin_tnc": "TNC",
+                          "fmin_powell": "Powell"}
+        check_optimizer = optimizer_dict.get(fitter, None)
+        if check_optimizer:
+            warnings.warn(
+                "The method `%s` has been deprecated and will "
+                "be removed in HyperSpy 2.0. Please use "
+                "`%s` instead." % (fitter, check_optimizer),
+                VisibleDeprecationWarning)
+            fitter = check_optimizer
+
         if bounded is True:
             if fitter not in ("least_squares", "mpfit", "TNC", "L-BFGS-B"):
                 raise NotImplementedError("Bounded optimization is only"
@@ -834,7 +853,7 @@ class BaseModel(list):
                 self.p0 = result
                 self.fit_output = myoutput
 
-            elif fitter == 'mpfit':
+            elif fitter == "mpfit":
                 autoderivative = 1
                 if grad is True:
                     autoderivative = 0
@@ -857,31 +876,27 @@ class BaseModel(list):
             else:
                 # General optimizers
                 # Least squares or maximum likelihood
-                if method == 'ml':
+                if method == "ml":
                     tominimize = self._poisson_likelihood_function
                     fprime = grad_ml
-                elif method == 'ls':
+                elif method == "ls":
                     tominimize = self._errfunc2
                     fprime = grad_ls
 
                 # OPTIMIZERS
                 # Derivative-free methods
-                if fitter in ('fmin', 'Nelder-Mead', 'Powell'):
-                    if fitter == 'fmin':
-                        self.p0 = minimize(tominimize, self.p0, args=args,
-                                           method='Nelder-Mead', **kwargs)
-                    else:
-                        self.p0 = minimize(tominimize, self.p0, args=args,
-                                           method=fitter, **kwargs)
+                if fitter in ("Nelder-Mead", "Powell"):
+                    self.p0 = minimize(tominimize, self.p0, args=args,
+                                       method=fitter, **kwargs).x
 
                 # Methods using the gradient
-                elif fitter in ('CG', 'BFGS', 'Newton-CG'):
+                elif fitter in ("CG", "BFGS", "Newton-CG"):
                     self.p0 = minimize(tominimize, self.p0, fprime=fprime,
-                                       args=args, method=fitter, **kwargs)
+                                       args=args, method=fitter, **kwargs).x
 
                 # Constrained optimizers
                 # using the gradient
-                elif fitter in ('TNC', 'L-BFGS-B'):
+                elif fitter in ("TNC", "L-BFGS-B"):
                     if bounded is True:
                         self.set_boundaries()
                     elif bounded is False:
@@ -889,7 +904,7 @@ class BaseModel(list):
                     self.p0 = minimize(tominimize, self.p0, fprime=fprime,
                         args=args, method=fitter,
                         bounds=self.free_parameters_boundaries,
-                        approx_grad=approx_grad, **kwargs)
+                        approx_grad=approx_grad, **kwargs).x
                 else:
                     raise ValueError("""
                     The %s optimizer is not available.
