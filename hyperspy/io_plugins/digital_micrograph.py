@@ -787,7 +787,7 @@ class ImageObject(object):
                 "ImageList.TagGroup0.ImageTags.EELS.Acquisition.Exposure (s)":
                 ("Acquisition_instrument.TEM.dwell_time", None),
             })
-        elif self.signal_type in ["EDS TEM", "EDS_TEM", "EDSTEM"]:
+        elif self.signal_type == "EDS TEM":
             mapping.update({
                 "ImageList.TagGroup0.ImageTags.EDS.Detector_Info.Azimuthal_angle": (
                     "Acquisition_instrument.TEM.Detector.EDS.azimuth_angle",

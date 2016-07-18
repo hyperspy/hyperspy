@@ -149,7 +149,8 @@ def parse_ripple(fp):
 
     rpl_info = {}
     for line in fp.readlines():
-        line = line.replace(' ', '')
+        # Next line commented out because of space in new _signal_type:
+        # line = line.replace(' ', '')
         # correct_brucker_format
         line = line.replace('data-Length', 'data-length')
         if line[:2] not in newline and line[0] != comment:
@@ -609,9 +610,9 @@ def file_writer(filename, signal, encoding='latin-1', *args, **kwds):
             keys_dictionary[
                 'collection-angle'] = mp.Detector.EELS.collection_angle
     if "EDS" in signal.metadata.Signal.signal_type:
-        if signal.metadata.Signal.signal_type in ["EDS SEM", "EDS_SEM", "EDSSEM"]:
+        if signal.metadata.Signal.signal_type == "EDS SEM":
             mp = signal.metadata.Acquisition_instrument.SEM
-        elif signal.metadata.Signal.signal_type in ["EDS TEM", "EDS_TEM", "EDSTEM"]:
+        elif signal.metadata.Signal.signal_type == "EDS TEM":
             mp = signal.metadata.Acquisition_instrument.TEM
         if mp.has_item('beam_energy'):
             keys_dictionary['beam-energy'] = mp.beam_energy

@@ -26,7 +26,8 @@ from hyperspy.misc.eels.tools import eels_constant
 
 class DielectricFunction(ComplexSignal1D):
 
-    _signal_type = ["dielectric function", "dielectric_function", "DielectricFunction"]
+    _signal_type = "dielectric function"
+    _legacy_signal_types = ["DielectricFunction"]
 
     def get_number_of_effective_electrons(self, nat, cumulative=False):
         """Compute the number of effective electrons using the Bethe f-sum

@@ -283,21 +283,19 @@ def assign_signal_subclass(dtype,
     dtype_matches = [s for s in signals.values() if dtype == s._dtype]
     dtype_dim_matches = [s for s in dtype_matches
                          if signal_dimension == s._signal_dimension]
-    dtype_dim_type_matches = [
-        s for s in dtype_dim_matches if signal_type in s._signal_type]
-
+    dtype_dim_type_matches = [s for s in dtype_dim_matches if signal_type == s._signal_type
+                              or signal_type in s._legacy_signal_types]
     if dtype_dim_type_matches:
         # Perfect match found, return it.
         return dtype_dim_type_matches[0]
-    elif [s for s in dtype_dim_matches if "" in s._signal_type]:
+    elif [s for s in dtype_dim_matches if s._signal_type == ""]:
         # just signal_dimension and dtype matches
         # Return a general class for the given signal dimension.
-        return [s for s in dtype_dim_matches if "" in s._signal_type][0]
+        return [s for s in dtype_dim_matches if s._signal_type == ""][0]
     else:
         # no signal_dimension match either, hence return the general subclass for
         # correct dtype
-        return [s for s in dtype_matches if s._signal_dimension ==
-                -1 and "" in s._signal_type][0]
+        return [s for s in dtype_matches if s._signal_dimension == -1 and s._signal_type == ""][0]
 
 
 def dict2signal(signal_dict):

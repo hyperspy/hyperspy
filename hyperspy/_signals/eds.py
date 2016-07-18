@@ -34,9 +34,7 @@ _logger = logging.getLogger(__name__)
 
 class EDSSpectrum(Signal1D):
 
-    _signal_type = ["EDS"]
-    _signal_type_EDS_SEM = ["EDS SEM", "EDS_SEM", "EDSSEM"]
-    _signal_type_EDS_TEM = ["EDS TEM", "EDS_TEM", "EDSTEM"]
+    _signal_type = "EDS"
 
     def __init__(self, *args, **kwards):
         Signal1D.__init__(self, *args, **kwards)
@@ -72,10 +70,10 @@ class EDSSpectrum(Signal1D):
         units_name = self.axes_manager.signal_axes[0].units
 
         if FWHM_MnKa == 'auto':
-            if self.metadata.Signal.signal_type in self._signal_type_EDS_SEM:
+            if self.metadata.Signal.signal_type == "EDS SEM":
                 FWHM_MnKa = self.metadata.Acquisition_instrument.SEM.\
                     Detector.EDS.energy_resolution_MnKa
-            elif self.metadata.Signal.signal_type in self._signal_type_EDS_TEM:
+            elif self.metadata.Signal.signal_type == "EDS TEM":
                 FWHM_MnKa = self.metadata.Acquisition_instrument.TEM.\
                     Detector.EDS.energy_resolution_MnKa
             else:
@@ -718,9 +716,9 @@ class EDSSpectrum(Signal1D):
         Defined by M. Schaffer et al., Ultramicroscopy 107(8), pp 587-597
         (2007)
         """
-        if self.metadata.Signal.signal_type in self._signal_type_EDS_SEM:
+        if self.metadata.Signal.signal_type == "EDS SEM":
             mp = self.metadata.Acquisition_instrument.SEM
-        elif self.metadata.Signal.signal_type in self._signal_type_EDS_TEM:
+        elif self.metadata.Signal.signal_type == "EDS TEM":
             mp = self.metadata.Acquisition_instrument.TEM
 
         tilt_stage = mp.tilt_stage
