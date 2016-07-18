@@ -574,22 +574,42 @@ spectrum at a particular point in a spectrum-image) use
 :py:meth:`~.model.BaseModel.fit`.
 
 The following table summarizes the features of the currently available
-optimizers:
+optimizers. For more information on the local and global optimization algorithms, see the
+`Scipy documentation <http://docs.scipy.org/doc/scipy/reference/optimize.html>`_.
 
+.. versionadded:: 1.1 Global optimizer `Differential Evolution` added.
+
+.. versionchanged:: 1.1 `leastsq` supports bound constraints. `fmin_XXX` methods
+                  changed to the `scipy.optimze.minimize()` notation.
 
 .. table:: Features of curve fitting optimizers.
 
-    +-----------+--------+------------------+-----------------------------------+
-    | Optimizer | Bounds | Error estimation | Method                            |
-    +===========+========+==================+===================================+
-    | "leastsq" |  No    | Yes              | least squares                     |
-    +-----------+--------+------------------+-----------------------------------+
-    | "mpfit"   |  Yes   | Yes              | least squares                     |
-    +-----------+--------+------------------+-----------------------------------+
-    | "odr"     |  No    | Yes              | least squares                     |
-    +-----------+--------+------------------+-----------------------------------+
-    |  "fmin"   |  No    | No               | least squares, maximum likelihood |
-    +-----------+--------+------------------+-----------------------------------+
+    +--------------------------+--------+------------------+------------+--------+
+    | Optimizer                | Bounds | Error estimation | Method     | Type   |
+    +==========================+========+==================+============+========+
+    | "leastsq"                |  Yes   | Yes              | 'ls'       | local  |
+    +--------------------------+--------+------------------+------------+--------+
+    | "mpfit"                  |  Yes   | Yes              | 'ls'       | local  |
+    +--------------------------+--------+------------------+------------+--------+
+    | "odr"                    |  No    | Yes              | 'ls'       | local  |
+    +--------------------------+--------+------------------+------------+--------+
+    | "Nelder-Mead"            |  No    | No               | 'ls', 'ml' | local  |
+    +--------------------------+--------+------------------+------------+--------+
+    | "Powell"                 |  No    | No               | 'ls', 'ml' | local  |
+    +--------------------------+--------+------------------+------------+--------+
+    | "CG"                     |  No    | No               | 'ls', 'ml' | local  |
+    +--------------------------+--------+------------------+------------+--------+
+    | "BFGS"                   |  No    | No               | 'ls', 'ml' | local  |
+    +--------------------------+--------+------------------+------------+--------+
+    | "Newton-CG"              |  No    | No               | 'ls', 'ml' | local  |
+    +--------------------------+--------+------------------+------------+--------+
+    | "L-BFGS-B"               |  Yes   | No               | 'ls', 'ml' | local  |
+    +--------------------------+--------+------------------+------------+--------+
+    | "TNC"                    |  Yes   | No               | 'ls', 'ml' | local  |
+    +--------------------------+--------+------------------+------------+--------+
+    | "Differential Evolution" |  Yes   | No               | 'ls', 'ml' | global |
+    +--------------------------+--------+------------------+------------+--------+
+
 
 The following example shows how to perfom least squares with error estimation.
 
@@ -666,13 +686,13 @@ approximation in most cases.
    >>> line.coefficients.std
    (0.0055752036447948173, 0.46950832982673557)
 
-
-We can use poissonian maximum likelihood estimation
-instead that is an unbiased estimator for poissonian noise.
+We can use Poisson maximum likelihood estimation
+instead, which is an unbiased estimator for poissonian noise.
+To do so, we use a general optimizer called "Nelder-Mead".
 
 .. code-block:: python
 
-   >>> m.fit(fitter="fmin", method="ml")
+   >>> m.fit(fitter="Nelder-Mead", method="ml")
    >>> line.coefficients.value
    (1.0030718094185611, -0.63590210946134107)
 
@@ -1014,7 +1034,7 @@ There are two families of strategies. In each family there may be many
 strategies, using different statistical or significance measures.
 
 As a rule of thumb, the first strategy in the list should always be from the
-local family, followed by a strategy from the global family. 
+local family, followed by a strategy from the global family.
 
 Local strategy family
 ^^^^^^^^^^^^^^^^^^^^^
@@ -1033,7 +1053,7 @@ Global strategy family
 Global strategies assume that the navigation coordinates of each pixel bear no
 relation to it's signal (i.e. the location of pixels is meaningless). As a
 result, the pixels are selected at random to ensure uniform sampling of the
-navigation space. 
+navigation space.
 
 A number of candidate starting values are computed form global statistical
 measures. These values are all attempted in order until a satisfactory result
@@ -1103,7 +1123,7 @@ The current strategy "database" can be plotted using the
 
 Whilst SAMFire is running, each pixel is checked by a ``goodness_test``,
 which is by default :py:class:`~.fit_tests.red_chisq_test`, checking the
-reduced chi-squared to be in the bounds of [0, 2]. 
+reduced chi-squared to be in the bounds of [0, 2].
 
 This tolerance can (and most likely should!) be changed appropriately for the
 data as follows:
@@ -1119,5 +1139,3 @@ the underlying (i.e. usual) :py:meth:`~.model.BaseModel.fit` call:
 .. code-block:: python
 
     >>> samf.start(fitter='mpfit', bounded=True)
-
-
