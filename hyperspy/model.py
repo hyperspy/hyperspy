@@ -712,7 +712,7 @@ class BaseModel(list):
         method : {'ls', 'ml'}
             Choose 'ls' (default) for least-squares and 'ml' for Poisson
             maximum likelihood estimation. The latter is not available when
-            'fitter' is "leastsq", "odr", "mpfit" or "least_squares".
+            'fitter' is "leastsq", "odr" or "mpfit".
         grad : bool
             If True, the analytical gradient is used if defined to
             speed up the optimization.
@@ -840,8 +840,8 @@ class BaseModel(list):
                                       **kwargs)
 
                     # Do Moore-Penrose inverse discarding zero singular values
-                    _, s, VT = svd(res.jac, full_matrices=False)
-                    threshold = np.finfo(float).eps * max(res.jac.shape) * s[0]
+                    _, s, VT = svd(output.jac, full_matrices=False)
+                    threshold = np.finfo(float).eps * max(output.jac.shape) * s[0]
                     s = s[s > threshold]
                     VT = VT[:s.size]
                     pcov = np.dot(VT.T / s**2, VT)
@@ -923,8 +923,7 @@ class BaseModel(list):
                     self.p0 = minimize(tominimize, self.p0, jac=fprime,
                                        args=args, method=fitter, **kwargs).x
 
-                # Constrained optimizers
-                # using the gradient
+                # Constrained optimizers using the gradient
                 elif fitter in ("TNC", "L-BFGS-B"):
                     if bounded:
                         self.set_boundaries()
@@ -938,7 +937,7 @@ class BaseModel(list):
                 elif fitter == "Basin-hopping":
                     self.p0 = basinhopping(tominimize, self.p0, **kwargs).x
 
-                elif fitter == "Differential Evolution"
+                elif fitter == "Differential Evolution":
                     if bounded:
                         self.set_boundaries()
                     else:
