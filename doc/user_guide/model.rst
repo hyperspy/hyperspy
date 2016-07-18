@@ -679,6 +679,7 @@ approximation in most cases.
 
 We can use Poisson maximum likelihood estimation
 instead, which is an unbiased estimator for poissonian noise.
+To do so, we use a general optimizer called "Nelder-Mead".
 
 .. code-block:: python
 

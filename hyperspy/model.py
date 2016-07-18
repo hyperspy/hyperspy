@@ -891,7 +891,7 @@ class BaseModel(list):
 
                 # Methods using the gradient
                 elif fitter in ("CG", "BFGS", "Newton-CG"):
-                    self.p0 = minimize(tominimize, self.p0, fprime=fprime,
+                    self.p0 = minimize(tominimize, self.p0, jac=fprime,
                                        args=args, method=fitter, **kwargs).x
 
                 # Constrained optimizers
@@ -901,10 +901,9 @@ class BaseModel(list):
                         self.set_boundaries()
                     elif bounded is False:
                         self.free_parameters_boundaries = None
-                    self.p0 = minimize(tominimize, self.p0, fprime=fprime,
+                    self.p0 = minimize(tominimize, self.p0, jac=fprime,
                         args=args, method=fitter,
-                        bounds=self.free_parameters_boundaries,
-                        approx_grad=approx_grad, **kwargs).x
+                        bounds=self.free_parameters_boundaries, **kwargs).x
                 else:
                     raise ValueError("""
                     The %s optimizer is not available.
