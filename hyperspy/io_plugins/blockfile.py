@@ -126,7 +126,7 @@ def get_header_from_signal(signal, endianess='<'):
     if signal.axes_manager.navigation_dimension == 2:
         NX, NY = signal.axes_manager.navigation_shape
         SX = signal.axes_manager.navigation_axes[0].scale
-        SY = signal.axes_manager.navigation_axes[0].scale
+        SY = signal.axes_manager.navigation_axes[1].scale
     elif signal.axes_manager.navigation_dimension == 1:
         NX = signal.axes_manager.navigation_shape[0]
         NY = 1
