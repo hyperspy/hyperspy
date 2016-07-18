@@ -30,7 +30,7 @@ currently available specialised :py:class:`~.signal.BaseSignal` subclasses.
 
     The :py:class:`~._signals.signal1D.Signal1D`,
     :py:class:`~._signals.image.Signal2D` and :py:class:`~.signal.BaseSignal`
-    classes deprecated the old `Spectrum` `Image` and `Signal` classes. 
+    classes deprecated the old `Spectrum` `Image` and `Signal` classes.
 
 .. versionadded:: 1.0
 
@@ -110,7 +110,7 @@ The same dataset could be seen as a three-dimensional signal:
 .. code-block:: python
 
     >>> td = hs.signals.BaseSignal(np.random.random((10, 20, 30)))
-    >>> td 
+    >>> td
     <BaseSignal, title: , dimensions: (|30, 20, 10)>
 
 Notice that with use :py:class:`~.signal.BaseSignal` because there is
@@ -124,7 +124,7 @@ array of scalars by changing the default *view* of
 
     >>> scalar = hs.signals.BaseSignal(np.random.random((10, 20, 30)))
     >>> scalar.axes_manager.set_signal_dimension(0)
-    >>> scalar 
+    >>> scalar
     <BaseSignal, title: , dimensions: (30, 20, 10|)>
 
 
@@ -1227,7 +1227,7 @@ order to increase responsiveness.
 
 
 .. code-block:: python
-   
+
    >>> import scipy.misc
    >>> im = hs.signals.Signal2D(scipy.misc.ascent())
    >>> im.plot()
@@ -1250,7 +1250,7 @@ order to increase responsiveness.
 .. _complex_data-label:
 
 Handling complex data
-^^^^^^^^^^^^^^^^^^^^^
+---------------------
 
 The HyperSpy :py:class:`~.hyperspy.signals.ComplexSignal` signal class and its subclasses
 for 1-dimensional and 2-dimensional data allow the user to access complex properties like the
@@ -1258,7 +1258,7 @@ for 1-dimensional and 2-dimensional data allow the user to access complex proper
 (also known as angle or argument) directly. Getting and setting those properties can be done
 as follows:
 
-..code-block:: python
+.. code-block:: python
 
   >>> real = s.real      # real is a new HyperSpy signal accessing the same data
   >>> s.real = new_real  # new_real can be an array or signal
@@ -1282,7 +1282,7 @@ the real data that is desired.
 
 
 Calculate the angle / phase / argument
---------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The :py:func:`~hyperspy.signals.ComplexSignal.angle` function can be used to calculate the
 angle, which is equivalent to using the `phase` property if no argument is used. If the data is
@@ -1293,7 +1293,7 @@ The underlying function is the :py:func:`~numpy.angle` function.
 
 
 Phase unwrapping
-----------------
+^^^^^^^^^^^^^^^^
 
 With the :py:func:`~hyperspy.signals.ComplexSignal.unwrapped_phase` method the complex phase
 of a signal can be unwrapped and returned as a new signal. The underlying method is
@@ -1305,7 +1305,7 @@ a noncontinuous path”, Journal Applied Optics, Vol. 41, No. 35, pp. 7437, 2002
 
 
 Add a linear phase ramp
------------------------
+^^^^^^^^^^^^^^^^^^^^^^^
 
 For 2-dimensional complex images, a linear phase ramp can be added to the signal via the
 :py:func:`~._signals.complex_signal2d.ComplexSignal2D.add_phase_ramp` method. The parameters
