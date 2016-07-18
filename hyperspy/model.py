@@ -677,9 +677,9 @@ class BaseModel(list):
 
         Parameters
         ----------
-        fitter : None | "leastsq" | "mpfit" | "odr" | "Nelder-Mead" |
-                 "Powell" | "CG" | "BFGS" | "Newton-CG" | "L-BFGS-B" | "TNC" |
-                 "Differential Evolution"
+        fitter : {None, "leastsq", "mpfit", "odr", "Nelder-Mead",
+                 "Powell", "CG", "BFGS", "Newton-CG", "L-BFGS-B", "TNC",
+                 "Differential Evolution"}
             The optimization algorithm used to perform the fitting. If None the
             fitter defined in `preferences.Model.default_fitter` is used.
 
@@ -696,7 +696,7 @@ class BaseModel(list):
                 and "TNC" are wrappers for scipy.optimize.minimize(). Only
                 "L-BFGS-B" and "TNC" support bounds.
 
-                "Differential Evolution" is a global optimization method
+                "Differential Evolution" is a global optimization method.
 
             "leastsq", "mpfit" and "odr" can estimate the standard deviation of
             the estimated value of the parameters if the
@@ -794,7 +794,7 @@ class BaseModel(list):
 
             if method == 'ml':
                 weights = None
-                if fitter in ("leastsq", "odr"):
+                if fitter in ("leastsq", "odr", "mpfit"):
                     raise NotImplementedError(
                         "Maximum likelihood estimation is not supported "
                         'for the "leastsq", "mpfit" or "odr" optimizers')
