@@ -53,7 +53,7 @@ MKL libraries) and the easiest installation. The academic license is free.
    `User Guide <https://docs.continuum.io/anaconda/index#user-guide>`_ for
    details.
 
-#. Then install HyperSpy executing the following `conda` command in the Anaconda
+#. Then install HyperSpy executing the following `conda` commands in the Anaconda
    Prompt, Linux/Mac Terminal or Microsoft Windows Command Prompt. (This
    depends on your OS and how you have installed Anaconda, see the `Anaconda
    User Guide <https://docs.continuum.io/anaconda/index#user-guide>`_) for
@@ -61,16 +61,9 @@ MKL libraries) and the easiest installation. The academic license is free.
 
    .. code-block:: bash
 
+       $ conda config --add channels conda-forge
        $ conda install hyperspy
 
-.. note::
-   If conda fails to install  HyperSpy using the command above you may need to
-   add the conda-forge channel as follows before installing HyperSpy. ( This is
-   usually not necessary with recent versions of Anaconda):
-
-        .. code-block:: bash
-
-            $ conda config --add channels conda-forge
 
 .. note::
     Since version 0.8.4 HyperSpy only supports Python 3. If you need to
