@@ -26,7 +26,7 @@ import numpy as np
 import scipy.odr as odr
 from scipy.optimize import (leastsq, least_squares,
                             minimize, differential_evolution)
-from scipy.linalg import pinv
+from scipy.linalg import svd
 
 from hyperspy.external.progressbar import progressbar
 from hyperspy.defaults_parser import preferences
@@ -840,7 +840,11 @@ class BaseModel(list):
                                       args=args, bounds=ls_b, **kwargs)
 
                     # Do Moore-Penrose inverse discarding zero singular values
-                    pcov = pinv(output.jac)
+                    _, s, VT = svd(output.jac, full_matrices=False)
+                    threshold = np.finfo(float).eps * max(output.jac.shape) * s[0]
+                    s = s[s > threshold]
+                    VT = VT[:s.size]
+                    pcov = np.dot(VT.T / s**2, VT)
                     self.p0 = output.x
                     self.p_std = np.sqrt(np.diag(pcov))
                     self.fit_output = output
