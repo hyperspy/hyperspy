@@ -686,11 +686,28 @@ class TestModelFitBinned:
         np.testing.assert_almost_equal(self.m[0].centre.value, 0.5)
         np.testing.assert_almost_equal(self.m[0].sigma.value, 2.08398236966)
 
+    def test_fit_bounded_lbfgs(self):
+        self.m[0].centre.bmin = 0.5
+        # self.m[0].bounded = True
+        self.m.fit(fitter="L-BFGS-B", bounded=True)
+        np.testing.assert_almost_equal(self.m[0].A.value, 9991.65422046, 4)
+        np.testing.assert_almost_equal(self.m[0].centre.value, 0.5)
+        np.testing.assert_almost_equal(self.m[0].sigma.value, 2.08398236966)
+
     def test_fit_bounded_bad_starting_values(self):
         self.m[0].centre.bmin = 0.5
         self.m[0].centre.value = -1
         # self.m[0].bounded = True
         self.m.fit(fitter="mpfit", bounded=True)
+        np.testing.assert_almost_equal(self.m[0].A.value, 9991.65422046, 4)
+        np.testing.assert_almost_equal(self.m[0].centre.value, 0.5)
+        np.testing.assert_almost_equal(self.m[0].sigma.value, 2.08398236966)
+
+    def test_fit_bounded_bad_starting_values_lbfgs(self):
+        self.m[0].centre.bmin = 0.5
+        self.m[0].centre.value = -1
+        # self.m[0].bounded = True
+        self.m.fit(fitter="L-BFGS-B", bounded=True)
         np.testing.assert_almost_equal(self.m[0].A.value, 9991.65422046, 4)
         np.testing.assert_almost_equal(self.m[0].centre.value, 0.5)
         np.testing.assert_almost_equal(self.m[0].sigma.value, 2.08398236966)
@@ -939,6 +956,18 @@ class TestMultifit:
         m[0].A.value = 2.
         m[0].A.bmin = 3.
         m.multifit(fitter='mpfit', bounded=True, show_progressbar=None)
+        np.testing.assert_array_almost_equal(self.m[0].r.map['values'],
+                                             [3., 3.])
+        np.testing.assert_array_almost_equal(self.m[0].A.map['values'],
+                                             [4., 4.])
+
+    def test_bounded_snapping_lbfgs(self):
+        m = self.m
+        m[0].A.free = True
+        m.signal.data *= 2.
+        m[0].A.value = 2.
+        m[0].A.bmin = 3.
+        m.multifit(fitter='L-BFGS-B', bounded=True, show_progressbar=None)
         np.testing.assert_array_almost_equal(self.m[0].r.map['values'],
                                              [3., 3.])
         np.testing.assert_array_almost_equal(self.m[0].A.map['values'],
