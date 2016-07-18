@@ -26,4 +26,5 @@ dependencies:
 - pip:
   - python-dateutil
   - tqdm
+  - pint
   - hyperspy
