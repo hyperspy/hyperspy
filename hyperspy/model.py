@@ -24,7 +24,10 @@ import logging
 
 import numpy as np
 import scipy.odr as odr
-from scipy.optimize import (leastsq, least_squares, minimize)
+from scipy.optimize import (leastsq, least_squares,
+                            minimize, basinhopping,
+                            differential_evolution)
+from scipy.linalg import svd
 
 from hyperspy.external.progressbar import progressbar
 from hyperspy.defaults_parser import preferences
@@ -675,17 +678,14 @@ class BaseModel(list):
 
         Parameters
         ----------
-        fitter : None | "leastsq" | "least_squares" | "mpfit" | "odr" |
-                 "Nelder-Mead" | "Powell" | "CG" | "BFGS" | "Newton-CG" |
-                 "L-BFGS-B" | "TNC"
+        fitter : None | "leastsq" | "mpfit" | "odr" | "Nelder-Mead" |
+                 "Powell" | "CG" | "BFGS" | "Newton-CG" | "L-BFGS-B" | "TNC"
+                 "Basin-hopping" | "Differential Evolution"
             The optimization algorithm used to perform the fitting. If None the
             fitter defined in `preferences.Model.default_fitter` is used.
 
-                "leastsq" performs least-squares optimization using the
-                Levenberg–Marquardt algorithm.
-
-                "least_squares" performs least-squares using the Levenberg–Marquardt
-                algorithm and supports bounds on parameters.
+                "leastsq" performs least-squares optimization, and supports
+                bounds on parameters.
 
                 "mpfit" performs least-squares using the Levenberg–Marquardt
                 algorithm and supports bounds on parameters.
@@ -693,9 +693,14 @@ class BaseModel(list):
                 "odr" performs the optimization using the orthogonal distance
                 regression algorithm. It does not support bounds.
 
-                The remaining options are wrappers for scipy.optimize.minimize()
+                "Nelder-Mead", "Powell", "CG", "BFGS", "Newton-CG", "L-BFGS-B"
+                and "TNC" are wrappers for scipy.optimize.minimize(). Only
+                "L-BFGS-B" and "TNC" support bounds.
 
-            "leastsq", "odr" and "mpfit" can estimate the standard deviation of
+                "Basin-hopping and "Differential Evolution" are global
+                optimization methods
+
+            "leastsq", "mpfit" and "odr" can estimate the standard deviation of
             the estimated value of the parameters if the
             "metada.Signal.Noise_properties.variance" attribute is defined.
             Note that if it is not defined, the standard deviation is estimated
@@ -713,7 +718,7 @@ class BaseModel(list):
             speed up the optimization.
         bounded : bool
             If True performs bounded optimization if the fitter
-            supports it. Currently only "mpfit" support it.
+            supports it.
         update_plot : bool
             If True, the plot is updated during the optimization
             process. It slows down the optimization but it permits
@@ -752,17 +757,19 @@ class BaseModel(list):
         check_optimizer = optimizer_dict.get(fitter, None)
         if check_optimizer:
             warnings.warn(
-                "The method `%s` has been deprecated and will "
-                "be removed in HyperSpy 2.0. Please use "
-                "`%s` instead." % (fitter, check_optimizer),
-                VisibleDeprecationWarning)
+                 "The method `%s` has been deprecated and will "
+                 "be removed in HyperSpy 2.0. Please use "
+                 "`%s` instead." % (fitter, check_optimizer),
+                 VisibleDeprecationWarning)
             fitter = check_optimizer
 
         if bounded is True:
-            if fitter not in ("least_squares", "mpfit", "TNC", "L-BFGS-B"):
-                raise NotImplementedError("Bounded optimization is only"
-                                          "supported by 'least_squares',"
-                                          "'mpfit', 'TNC' or 'L-BFGS-B'")
+            if fitter not in ("leastsq", "mpfit", "TNC",
+                              "L-BFGS-B", "Differential Evolution"):
+                raise NotImplementedError("Bounded optimization is only "
+                                          "supported by 'leastsq', "
+                                          "'mpfit', 'TNC', 'L-BFGS-B' or"
+                                          "'Differential Evolution'.")
             else:
                 # this has to be done before setting the p0,
                 # so moved things around
@@ -789,10 +796,10 @@ class BaseModel(list):
 
             if method == 'ml':
                 weights = None
-                if fitter in ("leastsq", "least_squares", "odr"):
+                if fitter in ("leastsq", "odr"):
                     raise NotImplementedError(
                         "Maximum likelihood estimation is not supported "
-                        'for the "leastsq", "least_squares" or "odr" optimizers')
+                        'for the "leastsq", "mpfit" or "odr" optimizers')
             elif method == "ls":
                 metadata = self.signal.metadata
                 if "Signal.Noise_properties.variance" not in metadata:
@@ -825,18 +832,40 @@ class BaseModel(list):
 
             # Least squares "dedicated" fitters
             if fitter == "leastsq":
-                output = \
-                    leastsq(self._errfunc, self.p0[:], Dfun=jacobian,
-                            col_deriv=1, args=args, full_output=True, **kwargs)
+                if bounded:
+                    self.set_boundaries()
+                    output = \
+                        least_squares(self._errfunc, self.p0[:], args=args,
+                                      bounds=self.free_parameters_boundaries,
+                                      **kwargs)
 
-                self.p0, pcov = output[0:2]
-                signal_len = sum([axis.size
-                                  for axis in self.axes_manager.signal_axes])
-                if (signal_len > len(self.p0)) and pcov is not None:
-                    pcov *= ((self._errfunc(self.p0, *args) ** 2).sum() /
-                             (len(args[0]) - len(self.p0)))
+                    # Do Moore-Penrose inverse discarding zero singular values
+                    _, s, VT = svd(res.jac, full_matrices=False)
+                    threshold = np.finfo(float).eps * max(res.jac.shape) * s[0]
+                    s = s[s > threshold]
+                    VT = VT[:s.size]
+                    pcov = np.dot(VT.T / s**2, VT)
+                    self.p0 = output.x
                     self.p_std = np.sqrt(np.diag(pcov))
-                self.fit_output = output
+                    self.fit_output = output
+
+                elif bounded is False:
+                    # This replicates the original "leastsq"
+                    # behaviour in earlier versions of HyperSpy
+                    # using the Levenberg-Marquardt algorithm
+                    output = \
+                        leastsq(self._errfunc, self.p0[:], Dfun=jacobian,
+                                col_deriv=1, args=args, full_output=True,
+                                **kwargs)
+
+                    self.p0, pcov = output[0:2]
+                    signal_len = sum([axis.size
+                                      for axis in self.axes_manager.signal_axes])
+                    if (signal_len > len(self.p0)) and pcov is not None:
+                        pcov *= ((self._errfunc(self.p0, *args) ** 2).sum() /
+                                 (len(args[0]) - len(self.p0)))
+                        self.p_std = np.sqrt(np.diag(pcov))
+                    self.fit_output = output
 
             elif fitter == "odr":
                 modelo = odr.Model(fcn=self._function4odr,
@@ -855,9 +884,9 @@ class BaseModel(list):
 
             elif fitter == "mpfit":
                 autoderivative = 1
-                if grad is True:
+                if grad:
                     autoderivative = 0
-                if bounded is True:
+                if bounded:
                     self.set_mpfit_parameters_info()
                 elif bounded is False:
                     self.mpfit_parinfo = None
@@ -897,13 +926,29 @@ class BaseModel(list):
                 # Constrained optimizers
                 # using the gradient
                 elif fitter in ("TNC", "L-BFGS-B"):
-                    if bounded is True:
+                    if bounded:
                         self.set_boundaries()
                     elif bounded is False:
                         self.free_parameters_boundaries = None
                     self.p0 = minimize(tominimize, self.p0, jac=fprime,
                         args=args, method=fitter,
                         bounds=self.free_parameters_boundaries, **kwargs).x
+
+                # Global optimizers
+                elif fitter == "Basin-hopping":
+                    self.p0 = basinhopping(tominimize, self.p0, **kwargs).x
+
+                elif fitter == "Differential Evolution"
+                    if bounded:
+                        self.set_boundaries()
+                    else:
+                        raise ValueError(
+                            "Bounds must be specified for "
+                            "'Differential Evolution' optimizer")
+
+                    self.p0 = differential_evolution(tominimize,
+                        self.free_parameters_boundaries, args=args, **kwargs).x
+
                 else:
                     raise ValueError("""
                     The %s optimizer is not available.
@@ -917,6 +962,10 @@ class BaseModel(list):
                     Constrained:
                     ------------
                     least_squares, mpfit, TNC and L-BFGS-B
+
+                    Global:
+                    -------
+                    Basin-hopping, Differential Evolution
                     """ % fitter)
             if np.iterable(self.p0) == 0:
                 self.p0 = (self.p0,)

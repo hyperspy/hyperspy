@@ -574,33 +574,39 @@ spectrum at a particular point in a spectrum-image) use
 :py:meth:`~.model.BaseModel.fit`.
 
 The following table summarizes the features of the currently available
-optimizers:
+optimizers. For more information on the local and global optimization algorithms, see the
+`Scipy documentation <http://docs.scipy.org/doc/scipy/reference/optimize.html>`_.
 
 .. table:: Features of curve fitting optimizers.
 
-    +---------------+--------+------------------+-----------------------------------+
-    | Optimizer     | Bounds | Error estimation | Method                            |
-    +===============+========+==================+===================================+
-    | "leastsq"     |  No    | Yes              | least squares                     |
-    +---------------+--------+------------------+-----------------------------------+
-    | "mpfit"       |  Yes   | Yes              | least squares                     |
-    +---------------+--------+------------------+-----------------------------------+
-    | "odr"         |  No    | Yes              | least squares                     |
-    +---------------+--------+------------------+-----------------------------------+
-    | "Nelder-Mead" |  No    | No               | least squares, maximum likelihood |
-    +---------------+--------+------------------+-----------------------------------+
-    | "Powell"      |  No    | No               | least squares, maximum likelihood |
-    +---------------+--------+------------------+-----------------------------------+
-    | "CG"          |  No    | No               | least squares, maximum likelihood |
-    +---------------+--------+------------------+-----------------------------------+
-    | "BFGS"        |  No    | No               | least squares, maximum likelihood |
-    +---------------+--------+------------------+-----------------------------------+
-    | "Newton-CG"   |  No    | No               | least squares, maximum likelihood |
-    +---------------+--------+------------------+-----------------------------------+
-    | "L-BFGS-B"    |  Yes   | No               | least squares, maximum likelihood |
-    +---------------+--------+------------------+-----------------------------------+
-    | "TNC"         |  Yes   | No               | least squares, maximum likelihood |
-    +---------------+--------+------------------+-----------------------------------+
+    +--------------------------+--------+------------------+------------+--------+
+    | Optimizer                | Bounds | Error estimation | Method     | Type   |
+    +==========================+========+==================+============+========+
+    | "leastsq"                |  Yes   | Yes              | 'ls'       | local  |
+    +--------------------------+--------+------------------+------------+--------+
+    | "mpfit"                  |  Yes   | Yes              | 'ls'       | local  |
+    +--------------------------+--------+------------------+------------+--------+
+    | "odr"                    |  No    | Yes              | 'ls'       | local  |
+    +--------------------------+--------+------------------+------------+--------+
+    | "Nelder-Mead"            |  No    | No               | 'ls', 'ml' | local  |
+    +--------------------------+--------+------------------+------------+--------+
+    | "Powell"                 |  No    | No               | 'ls', 'ml' | local  |
+    +--------------------------+--------+------------------+------------+--------+
+    | "CG"                     |  No    | No               | 'ls', 'ml' | local  |
+    +--------------------------+--------+------------------+------------+--------+
+    | "BFGS"                   |  No    | No               | 'ls', 'ml' | local  |
+    +--------------------------+--------+------------------+------------+--------+
+    | "Newton-CG"              |  No    | No               | 'ls', 'ml' | local  |
+    +--------------------------+--------+------------------+------------+--------+
+    | "L-BFGS-B"               |  Yes   | No               | 'ls', 'ml' | local  |
+    +--------------------------+--------+------------------+------------+--------+
+    | "TNC"                    |  Yes   | No               | 'ls', 'ml' | local  |
+    +--------------------------+--------+------------------+------------+--------+
+    | "Basin-hopping"          |  No    | No               | 'ls', 'ml' | global |
+    +--------------------------+--------+------------------+------------+--------+
+    | "Differential Evolution" |  Yes   | No               | 'ls', 'ml' | global |
+    +--------------------------+--------+------------------+------------+--------+
+
 
 The following example shows how to perfom least squares with error estimation.
 
