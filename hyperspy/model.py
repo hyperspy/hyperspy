@@ -25,8 +25,7 @@ import logging
 import numpy as np
 import scipy.odr as odr
 from scipy.optimize import (leastsq, least_squares,
-                            minimize, basinhopping,
-                            differential_evolution)
+                            minimize, differential_evolution)
 from scipy.linalg import svd
 
 from hyperspy.external.progressbar import progressbar
@@ -679,8 +678,8 @@ class BaseModel(list):
         Parameters
         ----------
         fitter : None | "leastsq" | "mpfit" | "odr" | "Nelder-Mead" |
-                 "Powell" | "CG" | "BFGS" | "Newton-CG" | "L-BFGS-B" | "TNC"
-                 "Basin-hopping" | "Differential Evolution"
+                 "Powell" | "CG" | "BFGS" | "Newton-CG" | "L-BFGS-B" | "TNC" |
+                 "Differential Evolution"
             The optimization algorithm used to perform the fitting. If None the
             fitter defined in `preferences.Model.default_fitter` is used.
 
@@ -697,8 +696,7 @@ class BaseModel(list):
                 and "TNC" are wrappers for scipy.optimize.minimize(). Only
                 "L-BFGS-B" and "TNC" support bounds.
 
-                "Basin-hopping and "Differential Evolution" are global
-                optimization methods
+                "Differential Evolution" is a global optimization method
 
             "leastsq", "mpfit" and "odr" can estimate the standard deviation of
             the estimated value of the parameters if the
@@ -834,10 +832,12 @@ class BaseModel(list):
             if fitter == "leastsq":
                 if bounded:
                     self.set_boundaries()
+                    ls_b = self.free_parameters_boundaries
+                    ls_b = ([ a if a is not None else -np.inf for a,b in ls_b ],
+                            [ b if b is not None else np.inf for a,b in ls_b ])
                     output = \
-                        least_squares(self._errfunc, self.p0[:], args=args,
-                                      bounds=self.free_parameters_boundaries,
-                                      **kwargs)
+                        least_squares(self._errfunc, self.p0[:],
+                                      args=args, bounds=ls_b, **kwargs)
 
                     # Do Moore-Penrose inverse discarding zero singular values
                     _, s, VT = svd(output.jac, full_matrices=False)
@@ -929,14 +929,12 @@ class BaseModel(list):
                         self.set_boundaries()
                     elif bounded is False:
                         self.free_parameters_boundaries = None
+
                     self.p0 = minimize(tominimize, self.p0, jac=fprime,
                         args=args, method=fitter,
                         bounds=self.free_parameters_boundaries, **kwargs).x
 
                 # Global optimizers
-                elif fitter == "Basin-hopping":
-                    self.p0 = basinhopping(tominimize, self.p0, **kwargs).x
-
                 elif fitter == "Differential Evolution":
                     if bounded:
                         self.set_boundaries()
@@ -944,9 +942,12 @@ class BaseModel(list):
                         raise ValueError(
                             "Bounds must be specified for "
                             "'Differential Evolution' optimizer")
-
-                    self.p0 = differential_evolution(tominimize,
-                        self.free_parameters_boundaries, args=args, **kwargs).x
+                    de_b = self.free_parameters_boundaries
+                    de_b = tuple(((a if a is not None else -np.inf,
+                                b if b is not None else np.inf) for a,b in de_b))
+                    print(de_b)
+                    self.p0 = differential_evolution(tominimize, de_b,
+                                                     args=args, **kwargs).x
 
                 else:
                     raise ValueError("""
@@ -964,7 +965,7 @@ class BaseModel(list):
 
                     Global:
                     -------
-                    Basin-hopping, Differential Evolution
+                    Differential Evolution
                     """ % fitter)
             if np.iterable(self.p0) == 0:
                 self.p0 = (self.p0,)
@@ -1035,18 +1036,19 @@ class BaseModel(list):
             mask.shape != tuple(
                 self.axes_manager._navigation_shape_in_array)):
             raise ValueError(
-                "The mask must be a numpy array of boolen type with "
+                "The mask must be a numpy array of boolean type with "
                 " shape: %s" +
                 str(self.axes_manager._navigation_shape_in_array))
         masked_elements = 0 if mask is None else mask.sum()
         maxval = self.axes_manager.navigation_size - masked_elements
         show_progressbar = show_progressbar and (maxval > 0)
         if 'bounded' in kwargs and kwargs['bounded'] is True:
-            if kwargs['fitter'] not in ("tnc", "l_bfgs_b", "mpfit"):
+            if kwargs['fitter'] not in ("leastsq", "TNC", "L_BFGS-B", "mpfit"):
                 _logger.info(
                     "The chosen fitter does not suppport bounding."
                     "If you require bounding please select one of the "
-                    "following fitters instead: mpfit, tnc, l_bfgs_b")
+                    "following fitters instead: 'leastsq', 'TNC', "
+                    "'L_BFGS-B', 'mpfit'")
                 kwargs['bounded'] = False
         i = 0
         with self.axes_manager.events.indices_changed.suppress_callback(
