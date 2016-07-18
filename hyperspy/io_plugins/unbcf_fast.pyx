@@ -142,10 +142,12 @@ cdef bin_to_numpy(DataStream data_stream,
                   channel_t[:, :, :] hypermap,
                   int max_chan,
                   int downsample):
-    cdef int dummy1, line_cnt, i, j
+
     cdef uint32_t height, width, pix_in_line, pixel_x, add_pulse_size
+    cdef uint32_t dummy1, line_cnt
     cdef uint16_t chan1, chan2, flag, data_size1, n_of_pulses, data_size2
-    cdef uint16_t add_val
+    cdef uint16_t add_val, j
+
     height = data_stream.read_32()
     width = data_stream.read_32()
     data_stream.seek(<int>0x1A0) #the begining of the array
