@@ -577,6 +577,11 @@ The following table summarizes the features of the currently available
 optimizers. For more information on the local and global optimization algorithms, see the
 `Scipy documentation <http://docs.scipy.org/doc/scipy/reference/optimize.html>`_.
 
+.. versionadded:: 1.1 Global optimizer `Differential Evolution` added.
+
+.. versionchanged:: 1.1 `leastsq` supports bound constraints. `fmin_XXX` methods
+                  changed to the `scipy.optimze.minimize()` notation.
+
 .. table:: Features of curve fitting optimizers.
 
     +--------------------------+--------+------------------+------------+--------+
