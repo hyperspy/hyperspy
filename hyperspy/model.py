@@ -838,16 +838,15 @@ class BaseModel(list):
                     output = \
                         least_squares(self._errfunc, self.p0[:],
                                       args=args, bounds=ls_b, **kwargs)
+                    self.p0 = output.x
 
-                    # Do Moore-Penrose inverse discarding zero singular values
+                    # Do Moore-Penrose inverse, discarding zero singular values
+                    # to get pcov (as per scipy.optimize.curve_fit())
                     _, s, VT = svd(output.jac, full_matrices=False)
                     threshold = np.finfo(float).eps * max(output.jac.shape) * s[0]
                     s = s[s > threshold]
                     VT = VT[:s.size]
-                    pcov = np.dot(VT.T / s**2, VT)
-                    self.p0 = output.x
-                    self.p_std = np.sqrt(np.diag(pcov))
-                    self.fit_output = output
+                    pcov = np.dot(VT.T / s**2, VT)                    
 
                 elif bounded is False:
                     # This replicates the original "leastsq"
@@ -857,15 +856,16 @@ class BaseModel(list):
                         leastsq(self._errfunc, self.p0[:], Dfun=jacobian,
                                 col_deriv=1, args=args, full_output=True,
                                 **kwargs)
-
                     self.p0, pcov = output[0:2]
-                    signal_len = sum([axis.size
-                                      for axis in self.axes_manager.signal_axes])
-                    if (signal_len > len(self.p0)) and pcov is not None:
-                        pcov *= ((self._errfunc(self.p0, *args) ** 2).sum() /
-                                 (len(args[0]) - len(self.p0)))
-                        self.p_std = np.sqrt(np.diag(pcov))
-                    self.fit_output = output
+
+                signal_len = sum([axis.size
+                                  for axis in self.axes_manager.signal_axes])
+                if (signal_len > len(self.p0)) and pcov is not None:
+                    pcov *= ((self._errfunc(self.p0, *args) ** 2).sum() /
+                             (len(args[0]) - len(self.p0)))
+
+                self.p_std = np.sqrt(np.diag(pcov))
+                self.fit_output = output
 
             elif fitter == "odr":
                 modelo = odr.Model(fcn=self._function4odr,
