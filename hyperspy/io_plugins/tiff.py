@@ -181,9 +181,16 @@ def file_reader(filename, record_by='image', **kwds):
                 "Image_description tag: {0}".format(image_description))
             if 'ImageJ' in image_description:
                 _logger.info("Reading ImageJ tif metadata")
-                # ImageJ write the unit in the image description
-                units = image_description.split('unit=')[1].split('\n')[0]
-                scales = _get_scales_from_x_y_resolution(op)
+                try:
+                    # ImageJ write the unit in the image description
+                    if 'unit' in image_description:
+                        units = image_description.split('unit=')[1].split('\n')[0]
+                        if dc.ndim == 3 and not tiff.is_rgb:
+                            if 'spacing' in image_description:
+                                scales.append(float(image_description.split('spacing=')[1].split('\n')[0]))
+                        scales.extend(_get_scales_from_x_y_resolution(op))
+                except:
+                    _logger.info("Scale and units could not be imported")                   
 
         # for files created with DM
         if '65003' in op.keys():

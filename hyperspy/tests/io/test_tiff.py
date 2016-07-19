@@ -77,6 +77,44 @@ def _test_read_unit_from_imagej(import_local_tifffile=False):
     nt.assert_almost_equal(s.axes_manager[1].scale, 0.16867, places=5)
 
 
+def test_read_unit_from_imagej_stack(import_local_tifffile=False):
+    fname = os.path.join(my_path, 'tiff_files',
+                         'test_loading_image_saved_with_imageJ_stack.tif')
+    s = hs.load(fname, import_local_tifffile=import_local_tifffile)
+    nt.assert_equal(s.data.shape, (2, 68, 68))
+    nt.assert_equal(s.axes_manager[0].units, t.Undefined)
+    nt.assert_equal(s.axes_manager[1].units, 'micron')
+    nt.assert_equal(s.axes_manager[2].units, 'micron')
+    print(s.axes_manager)
+    nt.assert_almost_equal(s.axes_manager[0].scale, 2.5, places=5)
+    nt.assert_almost_equal(s.axes_manager[1].scale, 0.16867, places=5)
+    nt.assert_almost_equal(s.axes_manager[2].scale, 0.16867, places=5)
+
+    
+def test_read_unit_from_imagej_stack_no_scale(import_local_tifffile=False):
+    fname = os.path.join(my_path, 'tiff_files',
+        'test_loading_image_saved_with_imageJ_stack_no_scale.tif')
+    s = hs.load(fname, import_local_tifffile=import_local_tifffile)
+    nt.assert_equal(s.data.shape, (2, 68, 68))
+    nt.assert_equal(s.axes_manager[0].units, t.Undefined)
+    nt.assert_equal(s.axes_manager[1].units, t.Undefined)
+    nt.assert_equal(s.axes_manager[2].units, t.Undefined)
+    print(s.axes_manager)
+    nt.assert_almost_equal(s.axes_manager[0].scale, 1.0, places=5)
+    nt.assert_almost_equal(s.axes_manager[1].scale, 1.0, places=5)
+    nt.assert_almost_equal(s.axes_manager[2].scale, 1.0, places=5)
+        
+
+def test_read_unit_from_imagej_no_scale(import_local_tifffile=False):
+    fname = os.path.join(my_path, 'tiff_files',
+                         'test_loading_image_saved_with_imageJ_no_scale.tif')
+    s = hs.load(fname, import_local_tifffile=import_local_tifffile)
+    nt.assert_equal(s.axes_manager[0].units, t.Undefined)
+    nt.assert_equal(s.axes_manager[1].units, t.Undefined)
+    nt.assert_almost_equal(s.axes_manager[0].scale, 1.0, places=5)
+    nt.assert_almost_equal(s.axes_manager[1].scale, 1.0, places=5)
+    
+
 def test_write_read_unit_imagej(import_local_tifffile=True):
     fname = os.path.join(my_path, 'tiff_files',
                          'test_loading_image_saved_with_imageJ.tif')
