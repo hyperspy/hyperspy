@@ -22,6 +22,8 @@ import math
 import numpy as np
 import traits.api as t
 from traits.trait_errors import TraitError
+import pint
+import logging
 
 from hyperspy.events import Events, Event
 from hyperspy.misc.utils import isiterable, ordinal
@@ -30,6 +32,8 @@ from hyperspy.misc.math_tools import isfloat
 import warnings
 from hyperspy.exceptions import VisibleDeprecationWarning
 
+_logger = logging.getLogger(__name__)
+_ureg = pint.UnitRegistry()
 
 class ndindex_nat(np.ndindex):
 
@@ -59,7 +63,44 @@ def generate_axis(offset, scale, size, offset_index=0):
                        offset + scale * (size - 1 - offset_index),
                        size)
 
+def _formatting_units(units):
+    units = units.replace(' ', '')
+    return units.replace('um', 'µm')
 
+def _ignore_conversion(units):
+    if units == t.Undefined:
+        return True
+    try:
+        _ureg(units)
+    except pint.errors.UndefinedUnitError:
+        warnings.warn('Unit "{}" not supported for conversion.'.format(units),
+                      UserWarning)
+        return True
+    return False
+
+def _get_converted_compact_scale_units(scale, units, size):
+    """ Return scale and units converted to compact, human-readable units.
+        See to_compact() method of the pint library for details.
+        Size is the size of the considered axes.
+    """
+    if _ignore_conversion(units):
+        return scale, units
+    scale = scale*_ureg(units)
+    scale_size = 0.5*scale*size
+    converted_scale = scale.to(scale_size.to_compact().units)
+    units = _formatting_units('{:~}'.format(converted_scale.units))
+            
+    return float(converted_scale.magnitude), units
+
+def _get_converted_scale_units(scale, units, converted_units):
+    if _ignore_conversion(units):
+        return scale, units
+    scale = scale*_ureg(units)
+    scale = scale.to(_ureg(converted_units))
+    units = _formatting_units('{:~}'.format(scale.units))
+
+    return float(scale.magnitude), units
+        
 class DataAxis(t.HasTraits):
     name = t.Str()
     units = t.Str()
@@ -467,6 +508,36 @@ class DataAxis(t.HasTraits):
             any_changes = True
         return any_changes
 
+    def convert_to_units(self, units=None, filterwarning_action='always'):
+        """ Convert the scale and the units of the current axis. If the units
+        is not supported by the pint library, the scale and units are not
+        changed.
+        
+        Parameters
+        ----------
+        units : list of string of the same length than axes, str or None.
+            Default = None
+            If list, the selected axes will be converted to the provided units.
+            If str, the navigation or signal axes will converted to the 
+            provided units.
+            If `None`, the scale and the units to the appropriate scale and units 
+            to avoid displaying scalebar with >3 digits or too small number.            
+        filterwarning_action : str
+            Default = 'always'
+            Controls whether warnings are ignored, displayed, or turned into
+            errors. See warnings.filterwarnings documentation for more details.
+        """
+        with warnings.catch_warnings():
+            warnings.filterwarnings(filterwarning_action, category=UserWarning)
+            if units is None:
+                self.scale, self.units = _get_converted_compact_scale_units(
+                    self.scale,
+                    self.units,
+                    self.size)     
+            else:
+                self.scale, self.units = _get_converted_scale_units(self.scale,
+                                                                    self.units,
+                                                                    units)
 
 class AxesManager(t.HasTraits):
 
@@ -818,6 +889,48 @@ class AxesManager(t.HasTraits):
     def _on_offset_changed(self):
         self.events.any_axis_changed.trigger(obj=self)
 
+    def convert_units(self, axes=None, units=None,
+                      filterwarning_action='always'):
+        """ Convert the scale and the units of the selected axes. If the units
+        is not supported by the pint library, the scale and units are not
+        changed.
+        
+        Parameters
+        ----------
+        axes : iterable of `DataAxis` instances, str or None.
+            Default = None
+            Convert to the convenient scale and units on the specified axis.
+            If string, argument can be `navigation` or `signal` to select the
+            navigation or signal axes.
+            If `None`, convert all axes.
+        units : list of string of the same length than axes, str or None.
+            Default = None
+            If list, the selected axes will be converted to the provided units.
+            If str, the navigation or signal axes will converted to the 
+            provided units.
+            If `None`, the scale and the units to the appropriate scale and units 
+            to avoid displaying scalebar with >3 digits or too small number.
+        filterwarning_action : str
+            Default = 'always'
+            Controls whether warnings are ignored, displayed, or turned into
+            errors. See warnings.filterwarnings documentation for more details.
+        """
+        _logger.debug('Axes manager: {}'.format(self))
+        if axes is None:
+            axes = self.navigation_axes + self.signal_axes
+        elif axes == 'navigation':
+            axes = self.navigation_axes
+        elif axes == 'signal':
+            axes = self.signal_axes
+        if type(units) is str or units is None:
+            units = [units]*len(axes)
+        elif len(units) != len(axes):
+            _logger.error('Please provide a correct "units" argument')
+        for axis, units in zip(axes, units):
+            _logger.debug('axis: {}, units: {}'.format(axis.name, units))
+            axis.convert_to_units(units,
+                filterwarning_action=filterwarning_action)
+        
     def update_axes_attributes_from(self, axes,
                                     attributes=["scale", "offset", "units"]):
         """Update the axes attributes to match those given.
