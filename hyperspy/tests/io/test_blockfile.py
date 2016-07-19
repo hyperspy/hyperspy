@@ -145,7 +145,25 @@ def test_save_load_cycle():
         gc.collect()
         _remove_file(save_path)
 
-
+def test_different_x_y_scale_units():
+    # perform load and save cycle with changing the scale on y
+    signal = hs.load(file2)
+    signal.axes_manager[0].scale = 50.0
+    try:
+        signal.save(save_path, overwrite=True)
+        sig_reload = hs.load(save_path)
+        nt.assert_almost_equal(sig_reload.axes_manager[0].scale, 50.0,
+                               places=2)        
+        nt.assert_almost_equal(sig_reload.axes_manager[1].scale, 64.0,
+                               places=2)        
+        nt.assert_almost_equal(sig_reload.axes_manager[2].scale, 0.0160616,
+                               places=5)
+    finally:
+        # Delete reference to close memmap file!
+        del sig_reload
+        gc.collect()
+        _remove_file(save_path)
+        
 def test_default_header():
     # Simply check that no exceptions are raised
     header = get_default_header()
