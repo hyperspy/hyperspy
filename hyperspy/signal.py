@@ -56,6 +56,9 @@ from hyperspy.events import Events, Event
 from hyperspy.interactive import interactive
 from hyperspy.misc.signal_tools import are_signals_aligned
 
+import warnings
+from hyperspy.exceptions import VisibleDeprecationWarning
+
 _logger = logging.getLogger(__name__)
 
 
