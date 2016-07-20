@@ -755,10 +755,10 @@ class BaseModel(list):
         check_optimizer = optimizer_dict.get(fitter, None)
         if check_optimizer:
             warnings.warn(
-                 "The method `%s` has been deprecated and will "
-                 "be removed in HyperSpy 2.0. Please use "
-                 "`%s` instead." % (fitter, check_optimizer),
-                 VisibleDeprecationWarning)
+                "The method `%s` has been deprecated and will "
+                "be removed in HyperSpy 2.0. Please use "
+                "`%s` instead." % (fitter, check_optimizer),
+                VisibleDeprecationWarning)
             fitter = check_optimizer
 
         if bounded is True:
@@ -833,8 +833,8 @@ class BaseModel(list):
                 if bounded:
                     self.set_boundaries()
                     ls_b = self.free_parameters_boundaries
-                    ls_b = ([ a if a is not None else -np.inf for a,b in ls_b ],
-                            [ b if b is not None else np.inf for a,b in ls_b ])
+                    ls_b = ([a if a is not None else -np.inf for a, b in ls_b],
+                            [b if b is not None else np.inf for a, b in ls_b])
                     output = \
                         least_squares(self._errfunc, self.p0[:],
                                       args=args, bounds=ls_b, **kwargs)
@@ -843,7 +843,8 @@ class BaseModel(list):
                     # Do Moore-Penrose inverse, discarding zero singular values
                     # to get pcov (as per scipy.optimize.curve_fit())
                     _, s, VT = svd(output.jac, full_matrices=False)
-                    threshold = np.finfo(float).eps * max(output.jac.shape) * s[0]
+                    threshold = np.finfo(float).eps * \
+                        max(output.jac.shape) * s[0]
                     s = s[s > threshold]
                     VT = VT[:s.size]
                     pcov = np.dot(VT.T / s**2, VT)
@@ -931,8 +932,8 @@ class BaseModel(list):
                         self.free_parameters_boundaries = None
 
                     self.p0 = minimize(tominimize, self.p0, jac=fprime,
-                        args=args, method=fitter,
-                        bounds=self.free_parameters_boundaries, **kwargs).x
+                                       args=args, method=fitter,
+                                       bounds=self.free_parameters_boundaries, **kwargs).x
 
                 # Global optimizers
                 elif fitter == "Differential Evolution":
@@ -944,7 +945,7 @@ class BaseModel(list):
                             "'Differential Evolution' optimizer")
                     de_b = self.free_parameters_boundaries
                     de_b = tuple(((a if a is not None else -np.inf,
-                                b if b is not None else np.inf) for a,b in de_b))
+                                   b if b is not None else np.inf) for a, b in de_b))
                     print(de_b)
                     self.p0 = differential_evolution(tominimize, de_b,
                                                      args=args, **kwargs).x
