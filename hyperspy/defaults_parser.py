@@ -56,15 +56,15 @@ def guess_gos_path():
 
 if os.path.isfile(defaults_file):
     # Remove config file if obsolated
-        with open(defaults_file) as f:
-            if 'Not really' in f.readline():
+    with open(defaults_file) as f:
+        if 'Not really' in f.readline():
                 # It is the old config file
-                f.close()
-                _logger.info('Removing obsoleted config file')
-                os.remove(defaults_file)
-                defaults_file_exists = False
-            else:
-                defaults_file_exists = True
+            f.close()
+            _logger.info('Removing obsoleted config file')
+            os.remove(defaults_file)
+            defaults_file_exists = False
+        else:
+            defaults_file_exists = True
 else:
     defaults_file_exists = False
 
