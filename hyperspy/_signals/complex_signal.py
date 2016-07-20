@@ -224,6 +224,6 @@ class ComplexSignal(BaseSignal):
                     axes_manager=self.axes_manager,
                     **kwargs)
         else:
-            raise KeyError('{}'.format(representation) +
+            raise ValueError('{}'.format(representation) +
                            'is not a valid input for representation (use "cartesian" or "polar")!')
     plot.__doc__ %= BASE_PLOT_DOCSTRING, COMPLEX_DOCSTRING, KWARGS_DOCSTRING
