@@ -846,7 +846,7 @@ class BaseModel(list):
                     threshold = np.finfo(float).eps * max(output.jac.shape) * s[0]
                     s = s[s > threshold]
                     VT = VT[:s.size]
-                    pcov = np.dot(VT.T / s**2, VT)                    
+                    pcov = np.dot(VT.T / s**2, VT)
 
                 elif bounded is False:
                     # This replicates the original "leastsq"
@@ -864,7 +864,7 @@ class BaseModel(list):
                     pcov *= ((self._errfunc(self.p0, *args) ** 2).sum() /
                              (len(args[0]) - len(self.p0)))
 
-                self.p_std = np.sqrt(np.diag(pcov))
+                    self.p_std = np.sqrt(np.diag(pcov))
                 self.fit_output = output
 
             elif fitter == "odr":
