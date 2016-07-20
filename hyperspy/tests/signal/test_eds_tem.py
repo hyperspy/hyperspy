@@ -276,6 +276,7 @@ class Test_simple_model:
             [5E4, 5E4],
             rtol=0.03)
 
+
 class Test_get_lines_intentisity:
 
     def test_with_signals_examples(self):
