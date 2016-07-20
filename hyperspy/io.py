@@ -389,7 +389,16 @@ def save(filename, signal, overwrite=None, **kwds):
         if overwrite is None:
             overwrite = hyperspy.misc.io.tools.overwrite(filename)
         if overwrite is True:
-            writer.file_writer(filename, signal, **kwds)
+            # TODO: Delete if-else-block in 2.0! Destroys backwards compatibility!
+            if signal._legacy_signal_types:  # In case legacy signal_type exists:
+                # Temporarily set signal type to the first legacy entry:
+                signal.metadata.Signal.signal_type = signal._legacy_signal_types[0]
+                try:  # Write file:
+                    writer.file_writer(filename, signal, **kwds)
+                finally:  # Even if writing fails, signal type has to revert:
+                    signal.metadata.Signal.signal_type = signal._signal_type
+            else:  # Otherwise, just write the file directly:
+                writer.file_writer(filename, signal, **kwds)
             _logger.info('The %s file was created' % filename)
             folder, filename = os.path.split(os.path.abspath(filename))
             signal.tmp_parameters.set_item('folder', folder)

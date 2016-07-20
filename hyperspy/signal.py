@@ -3706,8 +3706,8 @@ class BaseSignal(FancySlicing,
             signal_type=mp.Signal.signal_type
             if "Signal.signal_type" in mp
             else self._signal_type)
-        if self.__class__._legacy_signal_types:  # In case legacy types exist:
-            mp.Signal.signal_type = self.__class__._signal_type  # set to default!
+        if self._legacy_signal_types:  # In case legacy types exist:
+            mp.Signal.signal_type = self._signal_type  # set to default!
         self.__init__(**self._to_dictionary(add_models=True))
 
     def set_signal_type(self, signal_type):
@@ -3737,6 +3737,11 @@ class BaseSignal(FancySlicing,
 
         """
         self.metadata.Signal.signal_type = signal_type
+        if signal_type in self._legacy_signal_types:
+            s = 'The signal_type "{}" is deprecated and will be removed in a later release of ' \
+                'HyperSpy. Please use "{}" instead'
+            warnings.warn(s.format(signal_type, self.__class__._signal_type),
+                          VisibleDeprecationWarning)
         self._assign_subclass()
 
     def set_signal_origin(self, origin):
