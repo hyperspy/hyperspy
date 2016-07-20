@@ -190,30 +190,39 @@ class ComplexSignal(BaseSignal):
         return phase  # Now unwrapped!
 
     def plot(self, navigator="auto", axes_manager=None,
-             representation='cartesian', **kwargs):
+             representation='cartesian', same_axes=True, **kwargs):
         """%s
         %s
         %s
 
         """
         if representation == 'cartesian':
-            self.real.plot(
-                navigator=navigator,
-                axes_manager=self.axes_manager,
-                **kwargs)
-            self.imag.plot(
-                navigator=navigator,
-                axes_manager=self.axes_manager,
-                **kwargs)
+            if same_axes and self.axes_manager.signal_dimension == 1:
+                super().plot(**kwargs)
+            else:
+                self.real.plot(
+                    navigator=navigator,
+                    axes_manager=self.axes_manager,
+                    **kwargs)
+                self.imag.plot(
+                    navigator=navigator,
+                    axes_manager=self.axes_manager,
+                    **kwargs)
         elif representation == 'polar':
-            self.amplitude.plot(
-                navigator=navigator,
-                axes_manager=self.axes_manager,
-                **kwargs)
-            self.phase.plot(
-                navigator=navigator,
-                axes_manager=self.axes_manager,
-                **kwargs)
+            if same_axes and self.axes_manager.signal_dimension == 1:
+                amp = self.amplitude
+                amp.change_dtype("complex")
+                amp.imag = self.phase
+                amp.plot(**kwargs)
+            else:
+                self.amplitude.plot(
+                    navigator=navigator,
+                    axes_manager=self.axes_manager,
+                    **kwargs)
+                self.phase.plot(
+                    navigator=navigator,
+                    axes_manager=self.axes_manager,
+                    **kwargs)
         else:
             raise KeyError('{}'.format(representation) +
                            'is not a valid input for representation (use "cartesian" or "polar")!')
