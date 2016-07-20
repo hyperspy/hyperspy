@@ -145,6 +145,7 @@ def test_save_load_cycle():
         gc.collect()
         _remove_file(save_path)
 
+
 def test_different_x_y_scale_units():
     # perform load and save cycle with changing the scale on y
     signal = hs.load(file2)
@@ -163,6 +164,7 @@ def test_different_x_y_scale_units():
         del sig_reload
         gc.collect()
         _remove_file(save_path)
+
 
 def test_default_header():
     # Simply check that no exceptions are raised
