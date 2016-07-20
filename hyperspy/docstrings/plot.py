@@ -89,7 +89,6 @@ COMPLEX_DOCSTRING = \
 
         """
 
-COMPLEX1D_DOCSTRING = \
-    KWARGS_DOCSTRING = \
+KWARGS_DOCSTRING = \
     """**kwargs, optional
             Additional key word arguments passed to matplotlib.imshow()"""
