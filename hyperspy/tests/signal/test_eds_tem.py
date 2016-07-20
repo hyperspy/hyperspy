@@ -265,6 +265,16 @@ class Test_simple_model:
             [0.5, 0.5],
             atol=1e-1)
 
+    def test_intensity_dtype_uint(self):
+        s = self.signal
+        s.data *= 1E5
+        s.change_dtype("uint")
+
+        np.testing.assert_allclose(
+            [i.data[0] for i in s.get_lines_intensity(
+                integration_window_factor=5.0)],
+            [5E4, 5E4],
+            rtol=0.03)
 
 class Test_get_lines_intentisity:
 
