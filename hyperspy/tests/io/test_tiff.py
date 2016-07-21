@@ -33,8 +33,12 @@ def _test_rgba16(import_local_tifffile=False):
     nt.assert_equal(s.axes_manager[2].units, t.Undefined)
     nt.assert_almost_equal(s.axes_manager[0].scale, 1.0, places=5)
     nt.assert_almost_equal(s.axes_manager[1].scale, 1.0, places=5)
-    nt.assert_almost_equal(s.axes_manager[2].scale, 1.0, places=5)
+    nt.assert_almost_equal(s.axes_manager[2].scale, 1.0, places=5)        
 
+
+def _compare_signal_shape_data(s0, s1):
+    nt.assert_equal(s0.data.shape, s1.data.shape)
+    np.testing.assert_equal(s0.data, s1.data)
 
 def test_read_unit_um():
     # Load DM file and save it as tif
@@ -85,7 +89,6 @@ def test_read_unit_from_imagej_stack(import_local_tifffile=False):
     nt.assert_equal(s.axes_manager[0].units, t.Undefined)
     nt.assert_equal(s.axes_manager[1].units, 'micron')
     nt.assert_equal(s.axes_manager[2].units, 'micron')
-    print(s.axes_manager)
     nt.assert_almost_equal(s.axes_manager[0].scale, 2.5, places=5)
     nt.assert_almost_equal(s.axes_manager[1].scale, 0.16867, places=5)
     nt.assert_almost_equal(s.axes_manager[2].scale, 0.16867, places=5)
@@ -124,8 +127,9 @@ def test_write_read_unit_imagej(import_local_tifffile=True):
     fname2 = fname.replace('.tif', '2.tif')
     s.save(fname2, export_scale=True, overwrite=True)
     s2 = hs.load(fname2, import_local_tifffile=import_local_tifffile)
-    nt.assert_equal(s2.axes_manager[0].units, 'µm')
-    nt.assert_equal(s2.axes_manager[1].units, 'µm')
+    nt.assert_equal(s2.axes_manager[0].units, 'micron')
+    nt.assert_equal(s2.axes_manager[1].units, 'micron')
+    nt.assert_equal(s.data.shape, s.data.shape)
     if remove_files:
         os.remove(fname2)
 
@@ -149,8 +153,8 @@ def test_write_read_unit_imagej_with_description(import_local_tifffile=True):
     fname3 = fname.replace('.tif', '_description2.tif')
     s.save(fname3, export_scale=True, overwrite=True, description='test')
     s3 = hs.load(fname3, import_local_tifffile=import_local_tifffile)
-    nt.assert_equal(s3.axes_manager[0].units, 'µm')
-    nt.assert_equal(s3.axes_manager[1].units, 'µm')
+    nt.assert_equal(s3.axes_manager[0].units, 'micron')
+    nt.assert_equal(s3.axes_manager[1].units, 'micron')
     nt.assert_almost_equal(s3.axes_manager[0].scale, 0.16867, places=5)
     nt.assert_almost_equal(s3.axes_manager[1].scale, 0.16867, places=5)
 
@@ -277,11 +281,11 @@ def test_write_scale_with_undefined_scale():
             dtype=np.uint8).reshape(
             (10,
              15)))
-    s.axes_manager[0].name = 'x'
-    s.axes_manager[1].name = 'y'
     fname = os.path.join(my_path, 'tiff_files',
                          'test_export_scale_undefined_scale.tif')
     s.save(fname, overwrite=True, export_scale=True)
+    s1 = hs.load(fname)
+    _compare_signal_shape_data(s, s1)
     if remove_files:
         os.remove(fname)
 
@@ -293,6 +297,8 @@ def test_write_scale_with_um_unit():
                              'test_dm_image_um_unit.dm3'))
     fname = os.path.join(my_path, 'tiff_files', 'test_export_um_unit.tif')
     s.save(fname, overwrite=True, export_scale=True)
+    s1 = hs.load(fname)
+    _compare_signal_shape_data(s, s1)
     if remove_files:
         os.remove(fname)
 
@@ -307,21 +313,33 @@ def test_write_scale_unit_image_stack():
             (5,
              10,
              15)))
-    s.axes_manager[0].name = 'x'
-    s.axes_manager[1].name = 'y'
-    s.axes_manager[2].name = 'z'
-    s.axes_manager['x'].scale = 0.25
-    s.axes_manager['y'].scale = 0.5
-    s.axes_manager['z'].scale = 1.5
-    s.axes_manager['x'].units = 'nm'
-    s.axes_manager['y'].units = 'um'
-    s.axes_manager['z'].units = 'mm'
+    s.axes_manager[0].scale = 0.25
+    s.axes_manager[1].scale = 0.5
+    s.axes_manager[2].scale = 1.5
+    s.axes_manager[0].units = 'nm'
+    s.axes_manager[1].units = 'um'
+    s.axes_manager[2].units = 'mm'
     fname = os.path.join(my_path, 'tiff_files',
                          'test_export_scale_unit_stack.tif')
     s.save(fname, overwrite=True, export_scale=True)
+    s1 = hs.load(fname)
+    _compare_signal_shape_data(s, s1)
+    nt.assert_equal(s1.axes_manager[1].units, 'mm') # only one unit can be read
+    nt.assert_equal(s1.axes_manager[2].units, 'mm')
     if remove_files:
         os.remove(fname)
 
+        
+def test_saving_loading_stack_no_scale():
+    fname = os.path.join(my_path, 'tiff_files',
+                         'test_export_scale_unit_stack2.tif')
+    s0 = hs.signals.Signal2D(np.zeros((10, 20, 30)))
+    s0.save(fname)
+    s1 = hs.load(fname)
+    _compare_signal_shape_data(s0, s1)
+    if remove_files:
+        os.remove(fname)
+        
 
 def test_read_FEI_SEM_scale_metadata_8bits():
     fname = os.path.join(my_path2, 'FEI-Helios-Ebeam-8bits.tif')

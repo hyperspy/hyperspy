@@ -114,7 +114,7 @@ def file_writer(filename, signal, export_scale=True, extratags=[], **kwds):
 #            "because of incompability with the 'ImageJ' format")
     if export_scale:
         kwds.update(_get_tags_dict(signal, extratags=extratags))
-        _logger.info("kwargs passed to tifffile.py imsave: {0}".format(kwds))
+        _logger.debug("kwargs passed to tifffile.py imsave: {0}".format(kwds))
 
     imsave(filename, data,
            software="hyperspy",
@@ -160,7 +160,7 @@ def file_reader(filename, record_by='image', **kwds):
         else:
             # old version
             axes = tiff.series[0]['axes']
-        _logger.info("Is RGB: %s" % tiff.is_rgb)
+        _logger.debug("Is RGB: %s" % tiff.is_rgb)
         if tiff.is_rgb:
             dc = rgb_tools.regular_array2rgbx(dc)
             axes = axes[:-1]
@@ -171,46 +171,53 @@ def file_reader(filename, record_by='image', **kwds):
         units = t.Undefined
         scales = []
 
-        _logger.info('Tiff tags list: %s' % op.keys())
-        _logger.info("Photometric: %s" % op['photometric'])
-
-        # for files created with imageJ
-        if 'image_description' in op.keys():
-            image_description = _decode_string(op["image_description"])
-            _logger.info(
-                "Image_description tag: {0}".format(image_description))
-            if 'ImageJ' in image_description:
-                _logger.info("Reading ImageJ tif metadata")
-                try:
-                    # ImageJ write the unit in the image description
-                    if 'unit' in image_description:
-                        units = image_description.split('unit=')[1].split('\n')[0]
-                        if dc.ndim == 3 and not tiff.is_rgb:
-                            if 'spacing' in image_description:
-                                scales.append(float(image_description.split('spacing=')[1].split('\n')[0]))
-                        scales.extend(_get_scales_from_x_y_resolution(op))
-                except:
-                    _logger.info("Scale and units could not be imported")                   
+        _logger.debug('Tiff tags list: %s' % op.keys())
+        _logger.debug("Photometric: %s" % op['photometric'])
+        _logger.debug('is_imagej: {}'.format(tiff[0].is_imagej))
 
         # for files created with DM
         if '65003' in op.keys():
-            _logger.info("Reading DM tif metadata")
+            _logger.info("Reading Gatan DigitalMicrograph tif metadata")
             units = []
             units.extend([_decode_string(op['65003']),  # x unit
                           _decode_string(op['65004'])])  # y unit
             scales = []
             scales.extend([op['65009'],  # x scale
                            op['65010']])  # y scale
+        
+        # for files created with imageJ
+        if tiff[0].is_imagej:
+            image_description = _decode_string(op["image_description"])
+            if "image_description_1" in op.keys():
+                image_description = _decode_string(op["image_description_1"])
+            _logger.debug(
+                "Image_description tag: {0}".format(image_description))
+            if 'ImageJ' in image_description:
+                _logger.info("Reading ImageJ tif metadata")
+                try:
+                    # ImageJ write the unit in the image description
+                    if 'unit' in image_description:
+                        scales = []
+                        unit = image_description.split('unit=')[1].split('\n')[0]
+                        units = [unit] * 2
+                        if dc.ndim == 3:
+                            units.insert(0, t.Undefined)
+                            if 'spacing' in image_description:
+                                scales.append(float(image_description.split('spacing=')[1].split('\n')[0]))
+                        scales.extend(_get_scales_from_x_y_resolution(op))
+
+                except:
+                    _logger.info("Scale and units could not be imported")
 
         # for FEI SEM tiff files:
-        if '34682' in op.keys():
+        elif '34682' in op.keys():
             _logger.info("Reading FEI tif metadata")
             op = _read_original_metadata_FEI(op)
             scales = _get_scale_FEI(op)
             units = 'm'
 
         # for Zeiss SEM tiff files:
-        if '34118' in op.keys():
+        elif '34118' in op.keys():
             _logger.info("Reading Zeiss tif metadata")
             op = _read_original_metadata_Zeiss(op)
             # It seems that Zeiss software doesn't store/compute correctly the
@@ -224,7 +231,7 @@ def file_reader(filename, record_by='image', **kwds):
                 and 'x_resolution' in op.keys():
             res_unit_tag = op['resolution_unit']
             if res_unit_tag != 1 and len(scales) == 0:
-                _logger.info("Resolution unit: %s" % res_unit_tag)
+                _logger.debug("Resolution unit: %s" % res_unit_tag)
                 scales = _get_scales_from_x_y_resolution(op)
                 if res_unit_tag == 2:  # unit is in inch, conversion to um
                     scales = [scale * 25400 for scale in scales]
@@ -233,7 +240,7 @@ def file_reader(filename, record_by='image', **kwds):
                     scales = [scale * 10000 for scale in scales]
                     units = 'µm'
 
-        _logger.info("data shape: {0}".format(dc.shape))
+        _logger.debug("data shape: {0}".format(dc.shape))
 
         # workaround for 'palette' photometric, keep only 'X' and 'Y' axes
         if op['photometric'] == 3:
@@ -246,23 +253,29 @@ def file_reader(filename, record_by='image', **kwds):
                 else:
                     axes.replace(axis, '')
             dc = dc[sl]
-        _logger.info("names: {0}".format(names))
+        _logger.debug("names: {0}".format(names))
 
-        # add the scale for the missing axes when necessary
-        for i in dc.shape[len(scales):]:
-            if op['photometric'] == 0 or op['photometric'] == 1:
-                scales.append(1.0)
-            elif op['photometric'] == 2:
-                scales.insert(0, 1.0)
+        try:
+            # no scales have been imported
+            if len(scales) == 0:
+                scales = [1.0] * dc.ndim
+                units = [t.Undefined] * dc.ndim
+    
+            # for single image
+            if isinstance(units, str) and dc.ndim <=2 :
+                units = [units] * dc.ndim
 
-        if len(scales) == 0:
+            # ImageJ stack or hyperstack
+            if len(dc.shape) > 2 and len(scales) < len(dc.shape):
+                scale = [1.0]*(dc.ndim-2)
+                scale.extend(scale[-2:])
+                units = [t.Undefined]*(dc.ndim-2)
+                units.extend(units[-2:])
+        # if something raises an error, reset unit and scale to continue
+        except:
+            _logger.info("Scale and units could not be imported")
             scales = [1.0] * dc.ndim
-
-        if isinstance(units, str) or units == t.Undefined:
-            units = [units for i in dc.shape]
-
-        if len(dc.shape) == 3:
-            units[0] = t.Undefined
+            units = [t.Undefined] * dc.ndim
 
         axes = [{'size': size,
                  'name': str(name),
@@ -283,9 +296,8 @@ def file_reader(filename, record_by='image', **kwds):
 
 
 def _get_scales_from_x_y_resolution(op):
-    scales = []
-    scales.append(op["x_resolution"][1] / op["x_resolution"][0])
-    scales.append(op["y_resolution"][1] / op["y_resolution"][0])
+    scales = [op["y_resolution"][1] / op["y_resolution"][0],
+              op["x_resolution"][1] / op["x_resolution"][0]]
     return scales
 
 
@@ -294,7 +306,7 @@ def _get_tags_dict(signal, extratags=[], factor=int(1E8)):
         Digital Micrograph and ImageJ.
     """
     scales, units = _get_scale_unit(signal, encoding=None)
-    _logger.info("{0}".format(units))
+    _logger.debug("{0}".format(units))
     tags_dict = _get_imagej_kwargs(signal, scales, units, factor=factor)
     scales, units = _get_scale_unit(signal, encoding='latin-1')
     tags_dict["extratags"].extend(
@@ -307,10 +319,14 @@ def _get_tags_dict(signal, extratags=[], factor=int(1E8)):
 
 
 def _get_imagej_kwargs(signal, scales, units, factor=int(1E8)):
-    resolution = ((factor, int(scales[0] * factor)),
-                  (factor, int(scales[1] * factor)))
-    description_string = _imagej_description(unit=units[0])
-    _logger.info("Description tag: %s" % description_string)
+    resolution = ((factor, int(scales[-1] * factor)),
+                  (factor, int(scales[-2] * factor)))
+    if len(signal.axes_manager.navigation_axes) == 1: # For stacks
+        spacing = '%s'%scales[0]
+    else:
+        spacing = None
+    description_string = _imagej_description(unit=units[1], spacing=spacing)
+    _logger.debug("Description tag: %s" % description_string)
     extratag = [(270, 's', 1, description_string, False)]
     return {"resolution": resolution, "extratags": extratag}
 
@@ -341,8 +357,7 @@ def _get_dm_kwargs_extratag(signal, scales, units):
 def _get_scale_unit(signal, encoding=None):
     """ Return a list of scales and units, the length of the list is equal to
         the signal dimension. """
-    signal_axes = signal.axes_manager.navigation_axes + \
-        signal.axes_manager.signal_axes
+    signal_axes = signal.axes_manager._axes
     scales = [signal_axis.scale for signal_axis in signal_axes]
     units = [signal_axis.units for signal_axis in signal_axes]
     for i, unit in enumerate(units):
@@ -358,9 +373,11 @@ def _imagej_description(version='1.11a', **kwargs):
         appropriate arguments are provided """
     result = ['ImageJ=%s' % version]
     append = []
+    if kwargs['spacing'] is None:
+        kwargs.pop('spacing')
     for key, value in list(kwargs.items()):
         if value == 'µm':
-            value = 'micron'
+            value = 'micron'            
         append.append('%s=%s' % (key.lower(), value))
 
     return '\n'.join(result + append + [''])
