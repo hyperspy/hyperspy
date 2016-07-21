@@ -59,12 +59,14 @@ if os.path.isfile(defaults_file):
     with open(defaults_file) as f:
         if 'Not really' in f.readline():
                 # It is the old config file
-            f.close()
-            _logger.info('Removing obsoleted config file')
-            os.remove(defaults_file)
             defaults_file_exists = False
         else:
             defaults_file_exists = True
+    if not defaults_file_exists:
+        # It actually exists, but is an obsoleted unsupported version of it
+        # so we delete it.
+        _logger.info('Removing obsoleted config file')
+        os.remove(defaults_file)
 else:
     defaults_file_exists = False
 
