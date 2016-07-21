@@ -68,9 +68,7 @@ PLOT2D_DOCSTRING = \
             For example, the low and high bounds of a value of 1 are the 0.5%
             and 99.5% percentiles. It must be in the [0, 100] range.
         vmin, vmax : scalar, optional
-            `vmin` and `vmax` are used to normalize luminance data. If at
-            least one of them is given `auto_contrast` is set to False and any
-            missing values are calculated automatically.
+            `vmin` and `vmax` are used to normalize luminance data.
         no_nans : bool, optional
             If True, set nans to zero for plotting.
         centre_colormap : {"auto", True, False}
