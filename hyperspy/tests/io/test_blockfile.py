@@ -145,6 +145,7 @@ def test_save_load_cycle():
         gc.collect()
         _remove_file(save_path)
 
+
 def test_different_x_y_scale_units():
     # perform load and save cycle with changing the scale on y
     signal = hs.load(file2)
@@ -153,9 +154,9 @@ def test_different_x_y_scale_units():
         signal.save(save_path, overwrite=True)
         sig_reload = hs.load(save_path)
         nt.assert_almost_equal(sig_reload.axes_manager[0].scale, 50.0,
-                               places=2)        
+                               places=2)
         nt.assert_almost_equal(sig_reload.axes_manager[1].scale, 64.0,
-                               places=2)        
+                               places=2)
         nt.assert_almost_equal(sig_reload.axes_manager[2].scale, 0.0160616,
                                places=5)
     finally:
@@ -163,7 +164,8 @@ def test_different_x_y_scale_units():
         del sig_reload
         gc.collect()
         _remove_file(save_path)
-        
+
+
 def test_default_header():
     # Simply check that no exceptions are raised
     header = get_default_header()
@@ -280,14 +282,19 @@ def test_write_cutoff():
     signal = hs.signals.Signal2D((255 * np.random.rand(10, 3, 5, 5)
                                   ).astype(np.uint8))
     signal.axes_manager.navigation_axes[0].size = 20
+    # Test that it raises a warning
     try:
         signal.save(save_path, overwrite=True)
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
             sig_reload = hs.load(save_path)
-            assert len(w) == 1
-            assert issubclass(w[-1].category, UserWarning)
-            assert "Blockfile header" in str(w[-1].message)
+            # There can be other warnings so >=
+            assert len(w) >= 1
+            warning_blockfile = ["Blockfile header" in str(warning.message)
+                                 for warning in w]
+            assert True in warning_blockfile
+            assert issubclass(w[warning_blockfile.index(True)].category,
+                              UserWarning)
         cut_data = signal.data.flatten()
         pw = [(0, 17 * 10 * 5 * 5)]
         cut_data = np.pad(cut_data, pw, mode='constant')
