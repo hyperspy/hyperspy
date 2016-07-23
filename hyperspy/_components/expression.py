@@ -21,6 +21,9 @@ def _fill_function_args(fn):
 
 class Expression(Component):
 
+    """Create a component from a string expression.
+    """
+
     def __init__(self, expression, name, position=None, module="numpy",
                  autodoc=True, **kwargs):
         """Create a component from a string expression.
@@ -61,7 +64,7 @@ class Expression(Component):
         The following creates a Gaussian component and set the initial value
         of the parameters:
 
-        >>> hs.model.components.Expression(
+        >>> hs.model.components1D.Expression(
         ... expression="height * exp(-(x - x0) ** 2 * 4 * log(2)/ fwhm ** 2)",
         ... name="Gaussian",
         ... height=1,

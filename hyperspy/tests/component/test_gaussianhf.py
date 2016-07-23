@@ -19,8 +19,8 @@
 
 import nose.tools as nt
 import numpy as np
-from hyperspy.components import GaussianHF
-from hyperspy.signals import Spectrum
+from hyperspy.components1d import GaussianHF
+from hyperspy.signals import Signal1D
 
 sqrt2pi = np.sqrt(2 * np.pi)
 sigma2fwhm = 2 * np.sqrt(2 * np.log(2))
@@ -36,7 +36,7 @@ def test_function():
 
 
 def test_integral_as_signal():
-    s = Spectrum(np.zeros((2, 3, 100)))
+    s = Signal1D(np.zeros((2, 3, 100)))
     g1 = GaussianHF(fwhm=3.33, centre=20.)
     h_ref = np.linspace(0.1, 3.0, s.axes_manager.navigation_size)
     for d, h in zip(s._iterate_signal(), h_ref):
@@ -54,7 +54,7 @@ def test_integral_as_signal():
 
 
 def test_estimate_parameters_binned():
-    s = Spectrum(np.empty((100,)))
+    s = Signal1D(np.empty((100,)))
     axis = s.axes_manager.signal_axes[0]
     axis.scale = 2.
     axis.offset = -30

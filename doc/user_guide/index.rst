@@ -15,11 +15,12 @@ HyperSpy User Guide (DRAFT)
     install.rst
     getting_started.rst
     tools.rst
-    spectrum.rst
-    image.rst
+    signal1d.rst
+    signal2d.rst
     visualisation.rst
     mva.rst
     model.rst
+    samfire.rst
     eels.rst
     eds.rst
     dielectric_function.rst

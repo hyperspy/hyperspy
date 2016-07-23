@@ -19,8 +19,8 @@
 import numpy as np
 
 from nose.tools import assert_true
-from hyperspy._signals.spectrum import Spectrum
-from hyperspy.components import Gaussian
+from hyperspy._signals.signal1d import Signal1D
+from hyperspy.components1d import Gaussian
 
 
 class TestSetParameterInModel:
@@ -29,7 +29,7 @@ class TestSetParameterInModel:
         g1 = Gaussian()
         g2 = Gaussian()
         g3 = Gaussian()
-        s = Spectrum(np.arange(1000).reshape(10, 10, 10))
+        s = Signal1D(np.arange(1000).reshape(10, 10, 10))
         m = s.create_model()
         m.append(g1)
         m.append(g2)

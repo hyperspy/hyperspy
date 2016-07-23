@@ -20,7 +20,7 @@ environment:
       CONDA_NPY: "19"
       WP_URL: 'https://github.com/winpython/winpython/releases/download/1.3.20160209/WinPython-32bit-3.5.1.2.exe'
       WP_CRC: '172d19a743ccfaf55af779d15f29f67fca83a46f08b0af855dfaf809b4184c0d'
-      DEPS: "numpy scipy matplotlib ipython h5py sympy scikit-learn dill mock setuptools natsort"
+      DEPS: "numpy scipy matplotlib ipython h5py sympy scikit-learn dill setuptools natsort scikit-image cython lxml ipyparallel"
 
     - PYTHON: "C:\\Miniconda35-x64"
       PYTHON_VERSION: "3.5.x"
@@ -30,7 +30,7 @@ environment:
       CONDA_NPY: "19"
       WP_URL: 'https://github.com/winpython/winpython/releases/download/1.3.20160209/WinPython-64bit-3.5.1.2.exe'
       WP_CRC: '07e854b9aa7a31d8bbf7829d04a45b6d6266603690520e365199af2d98751ab1'
-      DEPS: "numpy scipy matplotlib ipython h5py sympy scikit-learn dill mock setuptools natsort"
+      DEPS: "numpy scipy matplotlib ipython h5py sympy scikit-learn dill setuptools natsort scikit-image cython lxml ipyparallel"
 
 
 
@@ -46,7 +46,8 @@ install:
   - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
 
   # Check that we have the expected version and architecture for Python
-  - "python --version"
+  #- "python --version"
+  - "python -c \"import sys; print(sys.version)\""  # this gives more info
   - "python -c \"import struct; print(struct.calcsize('P') * 8)\""
 
   # Install the dependencies of the project.
@@ -57,7 +58,7 @@ install:
   - "%CMD_IN_ENV% move %PYTHON%\\sip %PYTHON%\\Lib\\site-packages\\PyQt4\\sip"
   - "%CMD_IN_ENV% conda install pip"
   # TODO: Remove once anaconda taitsui package is at v5:
-  - "IF \"%PYTHON_MAJOR%\" EQU \"3\" pip install --upgrade traitsui"
+  - "IF \"%PYTHON_MAJOR%\" EQU \"3\" pip install --upgrade traitsui tqdm"
   - ps: Add-AppveyorMessage "Installing hyperspy..."
   - "python setup.py install"
 
@@ -66,10 +67,19 @@ build: false  # Not a C# project, build stuff at the test step instead.
 test_script:
   # Run the project tests
   - ps: Add-AppveyorMessage "Running tests..."
-  - "python continuous_integration/nosetest.py hyperspy"
+  - "python setup.py build_ext --inplace"
+  - "python continuous_integration/nosetest.py hyperspy.tests"
+  - "python setup.py clean"
   - ps: Add-AppveyorMessage "Testing completed."
 
-# Auto-deployment of bundle installer for tags:
+after_test:
+  - python setup.py bdist_wheel
+
+artifacts:
+  - path: dist\*.whl
+    name: win_wheels
+
+  #Auto-deployment of bundle installer for tags:
 before_deploy:
   - ps: Add-AppveyorMessage "Running deployment step..."
   - "pip install winpython"
@@ -85,6 +95,8 @@ before_deploy:
   - ps: (& $Env:WP_EXE /S /D=$Env:WP_INSTDIR | Out-Null )
   - "ls %APPDATA%/wpdir"
   - "ls %WP_INSTDIR%"
+  - "ren %WP_INSTDIR%\\settings\\pydistutils.cfg pydistutils_bak.cfg"
+  # we rename pydistutils temporaly to enable use of msvc
 
   # Patch NSIS to allow longer strings
   - ps: Add-AppveyorMessage "Setting up WinPython environment..."
@@ -100,8 +112,13 @@ before_deploy:
   # Install current hyperspy in WinPython
   - "SET PATH=%ORIGPATH%"
   - "%CMD_IN_ENV% %WP_INSTDIR%/scripts/env.bat"
+  - "%CMD_IN_ENV% pip install --upgrade configobj traitsui natsort start_jupyter_cm tqdm cython setuptools"
+  # Give info about python vesion and compiler used to compile the python
+  - "%CMD_IN_ENV% python.exe -c \"import sys; print(sys.version)\""
+  - "%CMD_IN_ENV% python.exe setup.py recythonize"
   - "%CMD_IN_ENV% python.exe setup.py install"
-  - "%CMD_IN_ENV% pip install --upgrade configobj traitsui natsort start_jupyter_cm"
+  # setting back the config:
+  - "ren %WP_INSTDIR%\\settings\\pydistutils_bak.cfg pydistutils.cfg"
   # Custom installer step
   # TODO: Re-run tests in WinPython environment
   - ps: Add-AppveyorMessage "Creating installer..."
@@ -111,16 +128,18 @@ before_deploy:
   - "appveyor PushArtifact HyperSpy-%APPVEYOR_REPO_TAG_NAME%-Bundle-Windows-%PYTHON_ARCH%bit.exe"
 
 deploy:
-  release: $(APPVEYOR_REPO_TAG_NAME)
-  description: 'Release: $(APPVEYOR_REPO_COMMIT_MESSAGE)'
   provider: GitHub
   auth_token:
     #   to266:
     secure: ptV5Dkz3pSVdjD0qRDpxJgjVlddFtleZ+B+c2X1Fg67P8OX3bHWVktRmlj6hfLhM
     #   vidartf:
     #secure: KwAfARhGEqOnZHltPB6kKu8xmnoiGSk7NMYJBIEbWvFCuVnepoPV7ZcIjUN3pUpK
-  artifact: /.*\.exe/              # upload all exe installers to release assets
-  draft: true
+    #   sem-geologist:
+    #secure: RRqUkx9H5VuFNITmm+YzgB0qnqgVGPH1yrPVxb4oCD+FAjcTch2WZAiPEKn4L6w6
+  artifact: /.*\.exe/, win_wheels  # upload all exe installers and wheels to release assets
+  #artifact: win_wheels
+  draft: false
   prerelease: false
+  force_update: true
   on:
     appveyor_repo_tag: true        # deploy on tag push only

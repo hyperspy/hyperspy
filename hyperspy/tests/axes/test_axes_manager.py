@@ -17,7 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-import mock
+from unittest import mock
 
 import nose.tools as nt
 
@@ -54,6 +54,10 @@ class TestAxesManager:
              'units': 'dd'}]
 
         self.am = AxesManager(axes_list)
+
+    def test_reprs(self):
+        repr(self.am)
+        self.am._repr_html_
 
     def test_update_from(self):
         am = self.am

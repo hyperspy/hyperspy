@@ -209,7 +209,9 @@ class DigitalMicrographReader(object):
                 if not tag_name:
                     tag_name = 'TagGroup%i' % unnammed_group_tags
                     unnammed_group_tags += 1
-                _logger.debug('Reading Tag group at address: %s', self.f.tell())
+                _logger.debug(
+                    'Reading Tag group at address: %s',
+                    self.f.tell())
                 ntags = self.parse_tag_group(skip4=3)[2]
                 group_dict[tag_name] = {}
                 self.parse_tags(
@@ -584,7 +586,7 @@ class ImageObject(object):
 
     @property
     def dtype(self):
-        # Image data types (Image Object chapter on DM help)#
+        # Signal2D data types (Signal2D Object chapter on DM help)#
         # key = DM data type code
         # value = numpy data type
         if self.imdict.ImageData.DataType == 4:
@@ -762,41 +764,56 @@ class ImageObject(object):
         metadata["Signal"]['signal_type'] = self.signal_type
         return metadata
 
-mapping = {
-    "ImageList.TagGroup0.ImageTags.EELS.Experimental_Conditions." +
-    "Collection_semi_angle_mrad": (
-        "Acquisition_instrument.TEM.Detector.EELS.collection_angle",
-        None),
-    "ImageList.TagGroup0.ImageTags.EELS.Experimental_Conditions." +
-    "Convergence_semi_angle_mrad": (
-        "Acquisition_instrument.TEM.convergence_angle",
-        None),
-    "ImageList.TagGroup0.ImageTags.Acquisition.Parameters.Detector." +
-    "exposure_s": (
-        "Acquisition_instrument.TEM.dwell_time",
-        None),
-    "ImageList.TagGroup0.ImageTags.Microscope_Info.Voltage": (
-        "Acquisition_instrument.TEM.beam_energy",
-        lambda x: x / 1e3),
-    "ImageList.TagGroup0.ImageTags.EDS.Detector_Info.Azimuthal_angle": (
-        "Acquisition_instrument.TEM.Detector.EDS.azimuth_angle",
-        None),
-    "ImageList.TagGroup0.ImageTags.EDS.Detector_Info.Elevation_angle": (
-        "Acquisition_instrument.TEM.Detector.EDS.elevation_angle",
-        None),
-    "ImageList.TagGroup0.ImageTags.EDS.Detector_Info.Stage_tilt": (
-        "Acquisition_instrument.TEM.tilt_stage",
-        None),
-    "ImageList.TagGroup0.ImageTags.EDS.Solid_angle": (
-        "Acquisition_instrument.TEM.Detector.EDS.solid_angle",
-        None),
-    "ImageList.TagGroup0.ImageTags.EDS.Live_time": (
-        "Acquisition_instrument.TEM.Detector.EDS.live_time",
-        None),
-    "ImageList.TagGroup0.ImageTags.EDS.Real_time": (
-        "Acquisition_instrument.TEM.Detector.EDS.real_time",
-        None),
-}
+    def get_mapping(self):
+        mapping = {
+            "ImageList.TagGroup0.ImageTags.Microscope_Info.Voltage": (
+                "Acquisition_instrument.TEM.beam_energy",
+                lambda x: x / 1e3),
+            "ImageList.TagGroup0.ImageTags.EDS.Detector_Info.Stage_tilt": (
+                "Acquisition_instrument.TEM.tilt_stage",
+                None),
+        }
+
+        if self.signal_type == "EELS":
+            mapping.update({
+                "ImageList.TagGroup0.ImageTags.EELS.Experimental Conditions." +
+                "Collection semi-angle (mrad)": (
+                    "Acquisition_instrument.TEM.Detector.EELS.collection_angle",
+                    None),
+                "ImageList.TagGroup0.ImageTags.EELS.Experimental Conditions." +
+                "Convergence semi-angle (mrad)": (
+                    "Acquisition_instrument.TEM.convergence_angle",
+                    None),
+                "ImageList.TagGroup0.ImageTags.EELS.Acquisition.Exposure (s)":
+                ("Acquisition_instrument.TEM.dwell_time", None),
+            })
+        elif self.signal_type == "EDS_TEM":
+            mapping.update({
+                "ImageList.TagGroup0.ImageTags.EDS.Detector_Info.Azimuthal_angle": (
+                    "Acquisition_instrument.TEM.Detector.EDS.azimuth_angle",
+                    None),
+                "ImageList.TagGroup0.ImageTags.EDS.Detector_Info.Elevation_angle": (
+                    "Acquisition_instrument.TEM.Detector.EDS.elevation_angle",
+                    None),
+                "ImageList.TagGroup0.ImageTags.EDS.Solid_angle": (
+                    "Acquisition_instrument.TEM.Detector.EDS.solid_angle",
+                    None),
+                "ImageList.TagGroup0.ImageTags.EDS.Live_time": (
+                    "Acquisition_instrument.TEM.Detector.EDS.live_time",
+                    None),
+                "ImageList.TagGroup0.ImageTags.EDS.Real_time": (
+                    "Acquisition_instrument.TEM.Detector.EDS.real_time",
+                    None),
+            })
+
+        else:
+            mapping.update({
+                "ImageList.TagGroup0.ImageTags.Acquisition.Parameters.Detector." +
+                "exposure_s": (
+                    "Acquisition_instrument.TEM.dwell_time",
+                    None),
+            })
+        return mapping
 
 
 def file_reader(filename, record_by=None, order=None):
@@ -807,7 +824,7 @@ def file_reader(filename, record_by=None, order=None):
     Parameters
     ----------
     record_by: Str
-        One of: SI, Image
+        One of: SI, Signal2D
     order: Str
         One of 'C' or 'F'
 
@@ -830,7 +847,7 @@ def file_reader(filename, record_by=None, order=None):
             mp['General']['original_filename'] = os.path.split(filename)[1]
             post_process = []
             if image.to_spectrum is True:
-                post_process.append(lambda s: s.to_spectrum())
+                post_process.append(lambda s: s.to_signal1D())
             post_process.append(lambda s: s.squeeze())
             imd.append(
                 {'data': image.get_data(),
@@ -838,7 +855,7 @@ def file_reader(filename, record_by=None, order=None):
                  'metadata': mp,
                  'original_metadata': dm.tags_dict,
                  'post_process': post_process,
-                 'mapping': mapping,
+                 'mapping': image.get_mapping(),
                  })
 
     return imd

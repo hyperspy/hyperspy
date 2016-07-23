@@ -47,18 +47,18 @@ def attrsetter(target, attrs, value):
         -------
         First create a signal and model pair:
 
-        >>> s = hs.signals.Spectrum(np.arange(10))
+        >>> s = hs.signals.Signal1D(np.arange(10))
         >>> m = s.create_model()
-        >>> m.spectrum.data
+        >>> m.signal.data
         array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
 
         Now set the data of the model with attrsetter
-        >>> attrsetter(m, 'spectrum.data', np.arange(10)+2)
-        >>> m.spectrum.data
+        >>> attrsetter(m, 'signal1D.data', np.arange(10)+2)
+        >>> self.signal.data
         array([2, 3, 4, 5, 6, 7, 8, 9, 10, 10])
 
         The behaviour is identical to
-        >>> m.spectrum.data = np.arange(10) + 2
+        >>> self.signal.data = np.arange(10) + 2
 
 
     """
@@ -251,7 +251,6 @@ class DictionaryTreeBrowser(object):
 
     def _get_print_items(self, padding='', max_len=78):
         """Prints only the attributes that are not methods
-
         """
         from hyperspy.defaults_parser import preferences
 
@@ -342,8 +341,8 @@ class DictionaryTreeBrowser(object):
     def __setattr__(self, key, value):
         if key.startswith('_sig_'):
             key = key[5:]
-            from hyperspy.signal import Signal
-            value = Signal(**value)
+            from hyperspy.signal import BaseSignal
+            value = BaseSignal(**value)
         slugified_key = str(slugify(key, valid_variable_name=True))
         if isinstance(value, dict):
             if self.has_item(slugified_key):
@@ -374,7 +373,7 @@ class DictionaryTreeBrowser(object):
         """Returns its dictionary representation.
 
         """
-        from hyperspy.signal import Signal
+        from hyperspy.signal import BaseSignal
         par_dict = {}
         for key_, item_ in self.__dict__.items():
             if not isinstance(item_, types.MethodType):
@@ -383,7 +382,7 @@ class DictionaryTreeBrowser(object):
                     continue
                 if isinstance(item_['_dtb_value_'], DictionaryTreeBrowser):
                     item = item_['_dtb_value_'].as_dictionary()
-                elif isinstance(item_['_dtb_value_'], Signal):
+                elif isinstance(item_['_dtb_value_'], BaseSignal):
                     item = item_['_dtb_value_']._to_dictionary()
                     key = '_sig_' + key
                 else:
@@ -758,7 +757,7 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
 
     Parameters
     ----------
-    signal_list : list of Signal instances
+    signal_list : list of BaseSignal instances
     axis : {None, int, str}
         If None, the signals are stacked over a new axis. The data must
         have the same dimensions. Otherwise the
@@ -784,16 +783,16 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
 
     Returns
     -------
-    signal : Signal instance (or subclass, determined by the objects in
+    signal : BaseSignal instance (or subclass, determined by the objects in
         signal list)
 
     Examples
     --------
     >>> data = np.arange(20)
-    >>> s = hs.stack([hs.signals.Spectrum(data[:10]),
-    ...               hs.signals.Spectrum(data[10:])])
+    >>> s = hs.stack([hs.signals.Signal1D(data[:10]),
+    ...               hs.signals.Signal1D(data[10:])])
     >>> s
-    <Spectrum, title: Stack of , dimensions: (2, 10)>
+    <Signal1D, title: Stack of , dimensions: (2, 10)>
     >>> s.data
     array([[ 0,  1,  2,  3,  4,  5,  6,  7,  8,  9],
            [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]])
@@ -878,7 +877,16 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
     signal.metadata._HyperSpy.set_item(
         'Stacking_history.step_sizes',
         step_sizes)
-
+    from hyperspy.signal import BaseSignal
+    if np.all([s.metadata.has_item('Signal.Noise_properties.variance')
+               for s in signal_list]):
+        if np.all([isinstance(s.metadata.Signal.Noise_properties.variance, BaseSignal)
+                   for s in signal_list]):
+            variance = stack(
+                [s.metadata.Signal.Noise_properties.variance for s in signal_list], axis)
+            signal.metadata.set_item(
+                'Signal.Noise_properties.variance',
+                variance)
     return signal
 
 

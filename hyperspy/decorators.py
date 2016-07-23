@@ -19,7 +19,7 @@
 # custom exceptions
 from hyperspy.exceptions import NoInteractiveError
 from hyperspy.defaults_parser import preferences
-from hyperspy.gui.tools import SpectrumRangeSelector
+from hyperspy.gui.tools import Signal1DRangeSelector
 
 
 def simple_decorator(decorator):
@@ -63,34 +63,9 @@ def only_interactive(cm):
 def interactive_range_selector(cm):
     def wrapper(self, *args, **kwargs):
         if preferences.General.interactive is True and not args and not kwargs:
-            range_selector = SpectrumRangeSelector(self)
+            range_selector = Signal1DRangeSelector(self)
             range_selector.on_close.append((cm, self))
             range_selector.edit_traits()
         else:
             cm(self, *args, **kwargs)
-    return wrapper
-
-
-@simple_decorator
-def auto_replot(cm):
-    def wrapper(self, *args, **kwargs):
-        if self.auto_replot is True:
-            to_return = cm(self, *args, **kwargs)
-            self._replot()
-            return to_return
-        else:
-            return cm(self, *args, **kwargs)
-    return wrapper
-
-
-@simple_decorator
-def do_not_replot(cm):
-    def wrapper(self, *args, **kwargs):
-        if self.auto_replot is True:
-            self.auto_replot = False
-            to_return = cm(self, *args, **kwargs)
-            self.auto_replot = True
-            return to_return
-        else:
-            return cm(self, *args, **kwargs)
     return wrapper

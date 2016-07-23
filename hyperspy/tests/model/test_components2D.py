@@ -7,7 +7,7 @@ import hyperspy.api as hs
 class TestGaussian2D:
 
     def setUp(self):
-        g = hs.model.components.Gaussian2D(
+        g = hs.model.components2D.Gaussian2D(
             centre_x=-5.,
             centre_y=-5.,
             sigma_x=1.,

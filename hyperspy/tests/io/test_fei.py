@@ -19,7 +19,6 @@
 import os
 import nose.tools as nt
 import numpy as np
-from numpy.testing import assert_array_equal
 
 from hyperspy.io import load
 from hyperspy.io_plugins.fei import load_ser_file
@@ -53,7 +52,7 @@ class TestFEIReader():
         fname0 = os.path.join(self.dirpathold, '64x64_TEM_images_acquire.emi')
         s0 = load(fname0)
         data = np.load(fname0.replace('emi', 'npy'))
-        assert_array_equal(s0.data, data)
+        np.testing.assert_array_equal(s0.data, data)
 
     def test_load_ser_reader_old_new_format(self):
         # test TIA old format
@@ -71,7 +70,7 @@ class TestFEIReader():
         fname0 = os.path.join(self.dirpathold, '64x64_diffraction_acquire.emi')
         s0 = load(fname0)
         nt.assert_equal(s0.data.shape, (64, 64))
-        nt.assert_equal(s0.metadata.Signal.record_by, 'image')
+        nt.assert_equal(s0.axes_manager.signal_dimension, 2)
         nt.assert_equal(
             s0.metadata.Acquisition_instrument.TEM.acquisition_mode, 'TEM')
         nt.assert_almost_equal(s0.axes_manager[0].scale, 0.10157, places=5)
@@ -85,7 +84,7 @@ class TestFEIReader():
         s0 = load(fname0)
         # s0[0] contains EDS
         nt.assert_equal(s0[0].data.shape, (5, 4000))
-        nt.assert_equal(s0[0].metadata.Signal.record_by, 'spectrum')
+        nt.assert_equal(s0[0].axes_manager.signal_dimension, 1)
         nt.assert_equal(
             s0[0].metadata.Acquisition_instrument.TEM.acquisition_mode, 'STEM')
         nt.assert_almost_equal(s0[0].axes_manager[0].scale, 3.68864, places=5)
@@ -94,7 +93,7 @@ class TestFEIReader():
         nt.assert_equal(s0[0].axes_manager[1].units, 'eV')
         # s0[1] contains diffraction patterns
         nt.assert_equal(s0[1].data.shape, (5, 128, 128))
-        nt.assert_equal(s0[1].metadata.Signal.record_by, 'image')
+        nt.assert_equal(s0[1].axes_manager.signal_dimension, 2)
         nt.assert_equal(
             s0[1].metadata.Acquisition_instrument.TEM.acquisition_mode, 'STEM')
         nt.assert_almost_equal(s0[1].axes_manager[0].scale, 3.68864, places=5)
@@ -110,7 +109,7 @@ class TestFEIReader():
         s0 = load(fname0)
         # s0[0] contains EDS
         nt.assert_equal(s0[0].data.shape, (5, 5, 4000))
-        nt.assert_equal(s0[0].metadata.Signal.record_by, 'spectrum')
+        nt.assert_equal(s0[0].axes_manager.signal_dimension, 1)
         nt.assert_equal(
             s0[0].metadata.Acquisition_instrument.TEM.acquisition_mode, 'STEM')
         nt.assert_almost_equal(s0[0].axes_manager[0].scale, 1.87390, places=5)
@@ -121,7 +120,7 @@ class TestFEIReader():
         nt.assert_equal(s0[0].axes_manager[2].units, 'eV')
         # s0[1] contains diffraction patterns
         nt.assert_equal(s0[1].data.shape, (5, 5, 256, 256))
-        nt.assert_equal(s0[1].metadata.Signal.record_by, 'image')
+        nt.assert_equal(s0[1].axes_manager.signal_dimension, 2)
         nt.assert_equal(
             s0[1].metadata.Acquisition_instrument.TEM.acquisition_mode, 'STEM')
         nt.assert_almost_equal(s0[1].axes_manager[0].scale, -1.87390, places=5)
@@ -134,7 +133,7 @@ class TestFEIReader():
             self.dirpathold, '16x16-point_spectrum-1x1024.emi')
         s0 = load(fname0)
         nt.assert_equal(s0.data.shape, (1, 1024))
-        nt.assert_equal(s0.metadata.Signal.record_by, 'spectrum')
+        nt.assert_equal(s0.axes_manager.signal_dimension, 1)
         nt.assert_equal(
             s0.metadata.Acquisition_instrument.TEM.acquisition_mode, 'STEM')
         # single spectrum should be imported as 1D data, not 2D
@@ -148,7 +147,7 @@ class TestFEIReader():
             self.dirpathold, '16x16-2_point-spectra-2x1024.emi')
         s1 = load(fname1)
         nt.assert_equal(s1.data.shape, (2, 1024))
-        nt.assert_equal(s1.metadata.Signal.record_by, 'spectrum')
+        nt.assert_equal(s1.axes_manager.signal_dimension, 1)
         nt.assert_equal(
             s1.metadata.Acquisition_instrument.TEM.acquisition_mode, 'STEM')
         nt.assert_almost_equal(
@@ -162,7 +161,7 @@ class TestFEIReader():
             self.dirpathold, '16x16-line_profile_horizontal_10x1024.emi')
         s0 = load(fname0)
         nt.assert_equal(s0.data.shape, (10, 1024))
-        nt.assert_equal(s0.metadata.Signal.record_by, 'spectrum')
+        nt.assert_equal(s0.axes_manager.signal_dimension, 1)
         nt.assert_equal(
             s0.metadata.Acquisition_instrument.TEM.acquisition_mode, 'STEM')
         nt.assert_almost_equal(s0.axes_manager[0].scale, 0.12303, places=5)
@@ -174,7 +173,7 @@ class TestFEIReader():
             self.dirpathold, '16x16-line_profile_diagonal_10x1024.emi')
         s1 = load(fname1)
         nt.assert_equal(s1.data.shape, (10, 1024))
-        nt.assert_equal(s1.metadata.Signal.record_by, 'spectrum')
+        nt.assert_equal(s1.axes_manager.signal_dimension, 1)
         nt.assert_equal(
             s1.metadata.Acquisition_instrument.TEM.acquisition_mode, 'STEM')
         nt.assert_almost_equal(s1.axes_manager[0].scale, 0.166318, places=5)
@@ -187,7 +186,7 @@ class TestFEIReader():
             self.dirpathold, '16x16-spectrum_image-5x5x1024.emi')
         s0 = load(fname0)
         nt.assert_equal(s0.data.shape, (5, 5, 1024))
-        nt.assert_equal(s0.metadata.Signal.record_by, 'spectrum')
+        nt.assert_equal(s0.axes_manager.signal_dimension, 1)
         nt.assert_equal(
             s0.metadata.Acquisition_instrument.TEM.acquisition_mode, 'STEM')
         nt.assert_almost_equal(s0.axes_manager[0].scale, 0.120539, places=5)
@@ -202,7 +201,7 @@ class TestFEIReader():
             self.dirpathnew, '16x16-spectrum_image_5x5x4000-not_square.emi')
         s0 = load(fname0)
         nt.assert_equal(s0.data.shape, (5, 5, 4000))
-        nt.assert_equal(s0.metadata.Signal.record_by, 'spectrum')
+        nt.assert_equal(s0.axes_manager.signal_dimension, 1)
         nt.assert_equal(
             s0.metadata.Acquisition_instrument.TEM.acquisition_mode, 'STEM')
         nt.assert_almost_equal(s0.axes_manager[0].scale, 1.98591, places=5)
@@ -239,7 +238,7 @@ class TestFEIReader():
         fname0 = os.path.join(self.dirpathold, '64x64x5_TEM_preview.emi')
         s0 = load(fname0)
         nt.assert_equal(s0.data.shape, (5, 64, 64))
-        nt.assert_equal(s0.metadata.Signal.record_by, 'image')
+        nt.assert_equal(s0.axes_manager.signal_dimension, 2)
         nt.assert_equal(
             s0.metadata.Acquisition_instrument.TEM.acquisition_mode, 'TEM')
         nt.assert_almost_equal(s0.axes_manager[0].scale, 1.0, places=5)
@@ -275,7 +274,7 @@ class TestFEIReader():
     def test_load_acquire(self):
         fname0 = os.path.join(self.dirpathold, '64x64_TEM_images_acquire.emi')
         s0 = load(fname0)
-        nt.assert_equal(s0.metadata.Signal.record_by, 'image')
+        nt.assert_equal(s0.axes_manager.signal_dimension, 2)
         nt.assert_equal(
             s0.metadata.Acquisition_instrument.TEM.acquisition_mode, 'TEM')
         nt.assert_almost_equal(s0.axes_manager[0].scale, 6.281833, places=5)
