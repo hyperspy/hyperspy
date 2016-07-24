@@ -727,6 +727,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
             also_align = []
         self._check_signal_dimension_equals_one()
         if self.metadata.Signal.lazy and not expand:
+            axis = self.axes_manager.signal_axes[0]
             kwds = dict(original_axis=axis.axis,
                         fill_value=fill_value,
                         kind=interpolation_method,
@@ -1376,6 +1377,5 @@ class LazySignal1D(LazySignal, Signal1D):
     _lazy = True
 
     def __init__(self, *args, **kwargs):
-        super(LazySignal1D, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.axes_manager.set_signal_dimension(1)
-

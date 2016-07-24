@@ -127,10 +127,6 @@ def load(filenames=None,
 
     >>> d = hs.load('file.dm3', signal_type='EDS_TEM')
 
-    Loading a single file and overriding its default record_by:
-
-    >>> d = hs.load('file.dm3', record_by='image')
-
     Loading multiple files:
 
     >>> d = hs.load('file1.dm3','file2.dm3')
@@ -269,7 +265,7 @@ def load_with_reader(filename,
 def assign_signal_subclass(dtype,
                            signal_dimension,
                            signal_type="",
-			   lazy=False):
+                           lazy=False):
     """Given record_by and signal_type return the matching Signal subclass.
 
     Parameters
@@ -297,13 +293,15 @@ def assign_signal_subclass(dtype,
     if not isinstance(signal_dimension, int) or signal_dimension < 0:
         raise ValueError("signal_dimension must be a positive interger")
     base_signals = hyperspy.misc.utils.find_subclasses(hyperspy.signals,
-                                                       BaseSignal) 
+                                                       BaseSignal)
     lazy_signals = hyperspy.misc.utils.find_subclasses(hyperspy.signals,
                                                        hyperspy.signals.LazySignal)
     if lazy:
         signals = lazy_signals
     else:
-        signals = {k:v for k,v in base_signals.items() if k not in lazy_signals}
+        signals = {
+            k: v for k,
+            v in base_signals.items() if k not in lazy_signals}
     dtype_matches = [s for s in signals.values() if dtype == s._dtype]
     dtype_dim_matches = [s for s in dtype_matches
                          if signal_dimension == s._signal_dimension]

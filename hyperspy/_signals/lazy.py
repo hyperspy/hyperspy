@@ -43,7 +43,7 @@ class LazySignal(BaseSignal):
     _lazy = True
 
     def __init__(self, data, **kwds):
-        super(LazySignal, self).__init__(data, **kwds)
+        super().__init__(data, **kwds)
         self.metadata.Signal.lazy = True
 
     def _compute(self):
@@ -129,9 +129,17 @@ class LazySignal(BaseSignal):
 
     def _apply_function_on_data_and_remove_axis(self, function, axes,
                                                 out=None):
-        # Translate from the default numpy to dask functions. Works for most
         self._make_lazy()
-        function = getattr(da, function.__name__)
+
+        def get_dask_function(numpy_name):
+            # Translate from the default numpy to dask functions
+            translations = {'amax': 'max',
+                            'amin': 'min'}
+            if numpy_name in translations:
+                numpy_name = translations[numpy_name]
+            return getattr(da, numpy_name)
+
+        function = get_dask_function(function.__name__)
         axes = self.axes_manager[axes]
         if not np.iterable(axes):
             axes = (axes,)
@@ -168,7 +176,7 @@ class LazySignal(BaseSignal):
         axis = {ax.index_in_array: ax for ax in
                 self.axes_manager._axes}[factors.argmax()]
         self._make_lazy(axis=axis)
-        return super(LazySignal, self).rebin(new_shape, out=out)
+        return super().rebin(new_shape, out=out)
     rebin.__doc__ = BaseSignal.rebin.__doc__
 
     def _unfold(self, *args):

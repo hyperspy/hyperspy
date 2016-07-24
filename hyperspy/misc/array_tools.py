@@ -90,19 +90,19 @@ def rebin(a, new_shape):
     Adapted from scipy cookbook
 
     """
-    shape = a.shape
-    lenShape = len(shape)
+    lenShape = len(a.shape)
     # ensure the new shape is integers
     new_shape = tuple(int(ns) for ns in new_shape)
-    factor = np.asarray(shape) // np.asarray(new_shape)
+    factor = np.asarray(a.shape) // np.asarray(new_shape)
     if factor.max() < 2:
         return a.copy()
     if isinstance(a, np.ndarray):
         # most of the operations will fall here and dask is not imported
-        evList = ['a.reshape('] + \
-                 ['new_shape[%d],factor[%d],' % (i, i) for i in range(lenShape)] + \
-                 [')'] + ['.sum(%d)' % (i + 1) for i in range(lenShape)]
-        return eval(''.join(evList))
+        rshape = ()
+        for athing in zip(new_shape, factor):
+            rshape += athing
+        return a.reshape(rshape).sum(axis=tuple(
+            2 * i + 1 for i in range(lenShape)))
     else:
         import dask.array as da
         try:

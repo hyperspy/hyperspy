@@ -201,7 +201,9 @@ class TestInterpolateInBetween:
     def test_delta_int(self):
         s = self.s.inav[0]
         s.change_dtype('float')
-        s.data[12] *= 10
+        tmp = np.zeros_like(s.data)
+        tmp[12] = s.data[12]
+        s.data += tmp * 9.
         s.interpolate_in_between(8, 12, delta=2, kind='cubic')
         print(s.data[8:12])
         np.testing.assert_allclose(
@@ -210,7 +212,9 @@ class TestInterpolateInBetween:
     def test_delta_float(self):
         s = self.s.inav[0]
         s.change_dtype('float')
-        s.data[12] *= 10.
+        tmp = np.zeros_like(s.data)
+        tmp[12] = s.data[12]
+        s.data += tmp * 9.
         s.interpolate_in_between(8, 12, delta=0.31, kind='cubic')
         print(s.data[8:12])
         np.testing.assert_allclose(
@@ -224,56 +228,63 @@ class TestEstimatePeakWidth:
         scale = 0.1
         window = 2
         x = np.arange(-window, window, scale)
-        g = hs.model.components1D.Gaussian()
+        g = hs.model.components1D.Gaussian(sigma=0.3)
         s = hs.signals.Signal1D(g.function(x))
         s.axes_manager[-1].scale = scale
         self.s = s
+        self.rtol = 1e-7
+        self.atol = 0
 
     def test_full_range(self):
         width, left, right = self.s.estimate_peak_width(
             window=None,
             return_interval=True,
             show_progressbar=None)
-        nt.assert_equal(width, 2.35482074)
-        nt.assert_equal(left, 0.82258963)
-        nt.assert_equal(right, 3.17741037)
+        np.testing.assert_allclose(width.data, 0.7065102,
+                                   rtol=self.rtol, atol=self.atol)
+        np.testing.assert_allclose(left.data, 1.6467449,
+                                   rtol=self.rtol, atol=self.atol)
+        np.testing.assert_allclose(right.data, 2.353255,
+                                   rtol=self.rtol, atol=self.atol)
 
     def test_too_narrow_range(self):
         width, left, right = self.s.estimate_peak_width(
-            window=2.2,
+            window=0.5,
             return_interval=True,
             show_progressbar=None)
-        nt.assert_equal(width, np.nan)
-        nt.assert_equal(left, np.nan)
-        nt.assert_equal(right, np.nan)
+        nt.assert_true(np.isnan(width.data).all())
+        nt.assert_true(np.isnan(left.data).all())
+        nt.assert_true(np.isnan(right.data).all())
 
     def test_two_peaks(self):
         s = self.s.deepcopy()
-        s.shift1D(np.array([0.5]), show_progressbar=None)
-        self.s.isig[:-5] += s
+        s.shift1D(np.array([1.0]), show_progressbar=None)
+        self.s = self.s.isig[10:] + s
         width, left, right = self.s.estimate_peak_width(
             window=None,
             return_interval=True,
             show_progressbar=None)
-        nt.assert_equal(width, np.nan)
-        nt.assert_equal(left, np.nan)
-        nt.assert_equal(right, np.nan)
+        nt.assert_true(np.isnan(width.data).all())
+        nt.assert_true(np.isnan(left.data).all())
+        nt.assert_true(np.isnan(right.data).all())
 
 
 class TestSmoothing:
 
     def setUp(self):
-        n, m = 2, 100
+        n, m = 2, 100.
         self.s = hs.signals.Signal1D(np.arange(n * m).reshape(n, m))
         np.random.seed(1)
         self.s.add_gaussian_noise(0.1)
+        self.rtol = 1e-7
+        self.atol = 0
 
     def test_lowess(self):
         if skip_lowess:
             raise SkipTest
         frac = 0.5
         it = 1
-        data = self.s.data.copy()
+        data = np.asanyarray(self.s.data.copy())
         for i in range(data.shape[0]):
             data[i, :] = lowess(
                 endog=data[i, :],
@@ -285,18 +296,20 @@ class TestSmoothing:
         self.s.smooth_lowess(smoothing_parameter=frac,
                              number_of_iterations=it,
                              show_progressbar=None)
-        nt.assert_true(np.allclose(data, self.s.data))
+        np.testing.assert_allclose(self.s.data, data,
+                                   rtol=self.rtol, atol=self.atol)
 
     def test_tv(self):
         weight = 1
-        data = self.s.data.copy()
+        data = np.asanyarray(self.s.data.copy())
         for i in range(data.shape[0]):
             data[i, :] = _tv_denoise_1d(
                 im=data[i, :],
                 weight=weight,)
         self.s.smooth_tv(smoothing_parameter=weight,
                          show_progressbar=None)
-        nt.assert_true(np.allclose(data, self.s.data))
+        np.testing.assert_allclose(data, self.s.data,
+                                   rtol=self.rtol, atol=self.atol)
 
     def test_savgol(self):
         window_length = 13
@@ -313,4 +326,48 @@ class TestSmoothing:
             window_length=window_length,
             polynomial_order=polyorder,
             differential_order=deriv,)
-        nt.assert_true(np.allclose(data, self.s.data))
+        np.testing.assert_allclose(data, self.s.data)
+
+
+class TestLazySmoothing(TestSmoothing):
+
+    def setUp(self):
+        super().setUp()
+        self.s = self.s.as_lazy()
+        self.rtol = 1e-4
+        self.atol = 0.4
+
+
+class TestLazyEstimatePeakWidth(TestEstimatePeakWidth):
+
+    def setUp(self):
+        super().setUp()
+        self.s = self.s.as_lazy()
+
+
+class TestLazyInterpolateInBetween(TestInterpolateInBetween):
+
+    def setUp(self):
+        super().setUp()
+        self.s = self.s.as_lazy()
+
+
+class TestLazyFindPeaks1D(TestFindPeaks1D):
+
+    def setUp(self):
+        super().setUp()
+        self.signal = self.signal.as_lazy()
+
+
+class TestLazyShift1D(TestShift1D):
+
+    def setUp(self):
+        super().setUp()
+        self.s = self.s.as_lazy()
+
+
+class TestLazyAlignTools(TestAlignTools):
+
+    def setUp(self):
+        super().setUp()
+        self.signal = self.signal.as_lazy()

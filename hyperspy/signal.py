@@ -1489,7 +1489,6 @@ class BaseSignal(FancySlicing,
         kwds['data'] = data
         self._load_dictionary(kwds)
         self._plot = None
-        self.auto_replot = True
         self.inav = SpecialSlicersSignal(self, True)
         self.isig = SpecialSlicersSignal(self, False)
         self.events = Events()
@@ -1686,12 +1685,18 @@ class BaseSignal(FancySlicing,
             old_models = self.models._models
             self.models._models = DictionaryTreeBrowser()
             ns = self.deepcopy()
-            ns.data = np.atleast_1d(data)
+            ns.data = data
             return ns
         finally:
             self.data = old_data
             self._plot = old_plot
             self.models._models = old_models
+
+    def as_lazy(self):
+        res = self._deepcopy_with_new_data(self.data)
+        res.metadata.set_item('Signal.lazy', True)
+        res._assign_subclass()
+        return res
 
     def _summary(self):
         string = "\n\tTitle: "
@@ -3449,9 +3454,8 @@ class BaseSignal(FancySlicing,
 
         """
         if expected_value is None:
-            dc = self.data.copy()
-        else:
-            dc = expected_value.data.copy()
+            expected_value = self
+        dc = expected_value.as_lazy().data
         if self.metadata.has_item(
                 "Signal.Noise_properties.Variance_linear_model"):
             vlm = self.metadata.Signal.Noise_properties.Variance_linear_model
@@ -3485,8 +3489,12 @@ class BaseSignal(FancySlicing,
         variance = self._estimate_poissonian_noise_variance(dc, gain_factor,
                                                             gain_offset,
                                                             correlation_factor)
-        variance = type(self)(variance)
+# Why the same type? Does not make sense, as it's just variance - probably
+# should be just a generic signal
+        #variance = type(self)(variance)
+        variance = BaseSignal(variance)
         variance.axes_manager = self.axes_manager
+        variance = variance.as_lazy()
         variance.metadata.General.title = ("Variance of " +
                                            self.metadata.General.title)
         self.metadata.set_item(
@@ -3495,9 +3503,13 @@ class BaseSignal(FancySlicing,
     @staticmethod
     def _estimate_poissonian_noise_variance(dc, gain_factor, gain_offset,
                                             correlation_factor):
+        try:
+            from dask.array import clip
+        except ImportError:
+            clip = np.clip
         variance = (dc * gain_factor + gain_offset) * correlation_factor
         # The lower bound of the variance is the gaussian noise.
-        variance = np.clip(variance, gain_offset * correlation_factor, np.inf)
+        variance = clip(variance, gain_offset * correlation_factor, np.inf)
         return variance
 
     def get_current_signal(self, auto_title=True, auto_filename=True):
@@ -3745,9 +3757,9 @@ class BaseSignal(FancySlicing,
             signal_type=mp.Signal.signal_type
             if "Signal.signal_type" in mp
             else self._signal_type,
-	    lazy=mp.Signal.lazy if "Signal.lazy" in mp else self._lazy)
+            lazy=mp.Signal.lazy if "Signal.lazy" in mp else self._lazy)
         self.__init__(**self._to_dictionary(add_models=True))
-        if self._lazy:
+        if ('Signal.lazy' in mp and mp.Signal.lazy) or self._lazy:
             self._make_lazy()
 
     def set_signal_type(self, signal_type):

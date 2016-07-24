@@ -40,7 +40,7 @@ from hyperspy.misc.utils import without_nans
 _logger = logging.getLogger(__name__)
 
 
-class EELSSpectrum(Signal1D):
+class EELSSpectrum_mixin:
 
     _signal_type = "EELS"
 
@@ -1351,10 +1351,11 @@ class EELSSpectrum(Signal1D):
         return model
 
 
-class LazyEELSSpectrum(LazySignal1D, EELSSpectrum):
+class LazyEELSSpectrum(EELSSpectrum_mixin, LazySignal1D):
 
-    _lazy = True
+    pass
 
-    def __init__(self, *args, **kwargs):
-        super(LazyEELSSpectrum, self).__init__(*args, **kwargs)
-        EELSSpectrum.__init__(self, *args, **kwards)
+
+class EELSSpectrum(EELSSpectrum_mixin, Signal1D):
+
+    pass
