@@ -202,7 +202,7 @@ def file_reader(filename, record_by='image', force_read_resolution=False,
                 elif name == 'width':
                     scales[i], units[i] = scales_d['y'], units_d['y']
                     offsets[i] = offsets_d['y']
-                elif name in ['depth', 'image series']:
+                elif name in ['depth', 'image series', 'time']:
                     scales[i], units[i] = scales_d['z'], units_d['z']            
                     offsets[i] = offsets_d['z']
         except:
