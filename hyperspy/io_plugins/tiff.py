@@ -190,27 +190,34 @@ def file_reader(filename, record_by='image', force_read_resolution=False,
         _logger.debug("names: {0}".format(names))
 
         scales = [1.0] * len(names)
+        offsets = [0.0] * len(names)
         units = [t.Undefined] * len(names)
         try:
-            scales_d, units_d = _parse_scale_unit(tiff, op, dc,
-                                                  force_read_resolution)
+            scales_d, units_d, offsets_d = _parse_scale_unit(tiff, op, dc,
+                    force_read_resolution)
             for i, name in enumerate(names):
                 if name == 'height':
                     scales[i], units[i] = scales_d['x'], units_d['x']
+                    offsets[i] = offsets_d['x']
                 elif name == 'width':
                     scales[i], units[i] = scales_d['y'], units_d['y']
+                    offsets[i] = offsets_d['y']
                 elif name in ['depth', 'image series']:
                     scales[i], units[i] = scales_d['z'], units_d['z']            
+                    offsets[i] = offsets_d['z']
         except:
             _logger.info("Scale and units could not be imported")
 
+        print(names, offsets, units)
         axes = [{'size': size,
                  'name': str(name),
                  'scale': scale,
-                 #'offset' : origins[i],
+                 'offset': offset,
                  'units': unit,
                  }
-                for size, name, scale, unit in zip(dc.shape, names, scales, units)]
+                for size, name, scale, offset, unit in zip(dc.shape, names,
+                                                           scales, offsets,
+                                                           units)]
 
     return [{'data': dc,
              'original_metadata': op,
@@ -224,23 +231,36 @@ def file_reader(filename, record_by='image', force_read_resolution=False,
 def _parse_scale_unit(tiff, op, dc, force_read_resolution):
     axes_l = ['x', 'y', 'z']
     scales  = {axis:1.0 for axis in axes_l}
+    offsets  = {axis:0.0 for axis in axes_l}
     units  = {axis:t.Undefined for axis in axes_l}
     
     # for files created with DM
     if '65003' in op.keys():
         _logger.debug("Reading Gatan DigitalMicrograph tif metadata")
-        units['x'] = _decode_string(op['65003'])  # x units
+        units['y'] = _decode_string(op['65003'])  # x units
     if '65004' in op.keys():
-        units['y'] = _decode_string(op['65004'])  # y units
+        units['x'] = _decode_string(op['65004'])  # y units
     if '65005' in op.keys():
         units['z'] = _decode_string(op['65005'])  # z units
     if '65009' in op.keys():
-        scales['x'] = op['65009']   # x scales
+        scales['y'] = op['65009']   # x scales
     if '65010' in op.keys():
-        scales['y'] = op['65010']   # y scales
+        scales['x'] = op['65010']   # y scales
     if '65011' in op.keys():
         scales['z'] = op['65011']   # z scales
-
+    if '65006' in op.keys():
+        offsets['y'] = op['65006']   # x offset
+    if '65007' in op.keys():
+        offsets['x'] = op['65007']   # y offset
+    if '65008' in op.keys():
+        offsets['z'] = op['65008']   # z offset
+#    if '65022' in op.keys():
+#        intensity_units = op['65022']   # intensity units
+#    if '65024' in op.keys():
+#        intensity_offset = op['65024']   # intensity offset
+#    if '65025' in op.keys():
+#        intensity_scale = op['65025']   # intensity scale
+        
     # for files created with imageJ
     if tiff[0].is_imagej:
         image_description = _decode_string(op["image_description"])
@@ -291,7 +311,7 @@ def _parse_scale_unit(tiff, op, dc, force_read_resolution):
                     units[key] = 'µm'
                     scales[key] = scales[key] * 10000
                 
-    return scales, units
+    return scales, units, offsets
              
 def _get_scales_from_x_y_resolution(op):
     scales = op["y_resolution"][1] / op["y_resolution"][0], \
@@ -303,16 +323,17 @@ def _get_tags_dict(signal, extratags=[], factor=int(1E8)):
     """ Get the tags to export the scale and the unit to be used in
         Digital Micrograph and ImageJ.
     """
-    scales, units = _get_scale_unit(signal, encoding=None)
+    scales, units, offsets = _get_scale_unit(signal, encoding=None)
     _logger.debug("{0}".format(units))
     tags_dict = _get_imagej_kwargs(signal, scales, units, factor=factor)
-    scales, units = _get_scale_unit(signal, encoding='latin-1')
+    scales, units, offsets = _get_scale_unit(signal, encoding='latin-1')
             
     tags_dict["extratags"].extend(
         _get_dm_kwargs_extratag(
             signal,
             scales,
-            units))
+            units,
+            offsets))
     tags_dict["extratags"].extend(extratags)
     return tags_dict
 
@@ -331,25 +352,31 @@ def _get_imagej_kwargs(signal, scales, units, factor=int(1E8)):
     return {"resolution": resolution, "extratags": extratag}
 
 
-def _get_dm_kwargs_extratag(signal, scales, units):
-    extratags = [(65003, 's', 3, units[-2], False),  # x unit
-                 (65004, 's', 3, units[-1], False),  # y unit
-#                 (65006, 'd', 1, 0.0, False), # x origin in pixel
-#                 (65007, 'd', 1, 0.0, False), # y origin in pixel
-                 (65009, 'd', 1, float(scales[-2]), False),  # x scale
-                 (65010, 'd', 1, float(scales[-1]), False),  # y scale
-                 (65012, 's', 3, units[-2], False),  # x unit
-                 (65013, 's', 3, units[-1], False)]  # y unit
-#                 (65015, 'i', 1, 1, False),
-#                 (65016, 'i', 1, 1, False),
-#                 (65024, 'd', 1, 0.0, False),
-#                 (65025, 'd', 1, 0.0, False),
-#                 (65026, 'i', 1, 1, False)]
+def _get_dm_kwargs_extratag(signal, scales, units, offsets):
+#    For future intensity axes
+#    intensity_units = 'electron'
+#    intensity_offset = 2.0
+#    intensity_scale = 0.2
+    extratags = [(65003, 's', 3, units[-1], False),  # x unit
+                 (65004, 's', 3, units[-2], False),  # y unit
+                 (65006, 'd', 1, offsets[-1], False), # x origin
+                 (65007, 'd', 1, offsets[-2], False), # y origin
+                 (65009, 'd', 1, float(scales[-1]), False),  # x scale
+                 (65010, 'd', 1, float(scales[-2]), False)]  # y scale
+#                 (65012, 's', 3, units[-1], False),  # x unit full name
+#                 (65013, 's', 3, units[-2], False)]  # y unit full name
+#                 (65015, 'i', 1, 1, False), # don't know
+#                 (65016, 'i', 1, 1, False), # don't know
+#                 (65022, 's', 3, intensity_units, False),  # intensity units
+#                 (65023, 's', 3, intensity_units, False),  # intensity units
+#                 (65024, 'd', 1, intensity_offset, False),  # intensity offset
+#                 (65025, 'd', 1, intensity_scale, False)]  # intensity scale
+#                 (65026, 'i', 1, 1, False)] # don't know
     if signal.axes_manager.navigation_dimension > 0:
         extratags.extend([(65005, 's', 3, units[0], False),  # z unit
-                          (65008, 'd', 1, 3.0, False),  # z origin in pixel
+                          (65008, 'd', 1, offsets[0], False),  # z origin
                           (65011, 'd', 1, float(scales[0]), False),  # z scale
-#                          (65014, 's', 3, units[0], False),  # z unit
+#                          (65014, 's', 3, units[0], False), # z unit full name
                           (65017, 'i', 1, 1, False)])
     return extratags
 
@@ -361,12 +388,13 @@ def _get_scale_unit(signal, encoding=None):
     signal_axes = signal.axes_manager._axes
     scales = [signal_axis.scale for signal_axis in signal_axes]
     units = [signal_axis.units for signal_axis in signal_axes]
+    offsets = [signal_axis.offset for signal_axis in signal_axes]
     for i, unit in enumerate(units):
         if unit == t.Undefined:
             units[i] = ''
         if encoding is not None:
             units[i] = units[i].encode(encoding)
-    return scales, units
+    return scales, units, offsets
 
 
 def _imagej_description(version='1.11a', **kwargs):
