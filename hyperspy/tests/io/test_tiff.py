@@ -105,6 +105,21 @@ def test_read_unit_from_DM_stack(import_local_tifffile=False):
     nt.assert_almost_equal(s.axes_manager[0].scale, 2.5, places=5)
     nt.assert_almost_equal(s.axes_manager[1].scale, 0.16867, places=5)
     nt.assert_almost_equal(s.axes_manager[2].scale, 0.16867, places=5)
+    fname2 = fname.replace('DM_stack.tif', 'DM_stack2.tif')
+    s.save(fname2, overwrite=True)
+    s2 = hs.load(fname2)
+    _compare_signal_shape_data(s, s2)
+    nt.assert_equal(s2.axes_manager[0].units, s.axes_manager[0].units)
+    nt.assert_equal(s2.axes_manager[1].units, 'micron')
+    nt.assert_equal(s2.axes_manager[2].units, 'micron')
+    nt.assert_almost_equal(s2.axes_manager[0].scale, s.axes_manager[0].scale,
+                           places=5)
+    nt.assert_almost_equal(s2.axes_manager[1].scale, s.axes_manager[1].scale,
+                           places=5)
+    nt.assert_almost_equal(s2.axes_manager[2].scale, s.axes_manager[2].scale,
+                           places=5)
+    if remove_files:
+        os.remove(fname2)    
 
     
 def test_read_unit_from_imagej_stack_no_scale(import_local_tifffile=False):
@@ -115,7 +130,6 @@ def test_read_unit_from_imagej_stack_no_scale(import_local_tifffile=False):
     nt.assert_equal(s.axes_manager[0].units, t.Undefined)
     nt.assert_equal(s.axes_manager[1].units, t.Undefined)
     nt.assert_equal(s.axes_manager[2].units, t.Undefined)
-    print(s.axes_manager)
     nt.assert_almost_equal(s.axes_manager[0].scale, 1.0, places=5)
     nt.assert_almost_equal(s.axes_manager[1].scale, 1.0, places=5)
     nt.assert_almost_equal(s.axes_manager[2].scale, 1.0, places=5)
@@ -333,12 +347,16 @@ def test_write_scale_unit_image_stack():
     s.axes_manager[1].units = 'um'
     s.axes_manager[2].units = 'mm'
     fname = os.path.join(my_path, 'tiff_files',
-                         'test_export_scale_unit_stack.tif')
+                         'test_export_scale_unit_stack2.tif')
     s.save(fname, overwrite=True, export_scale=True)
     s1 = hs.load(fname)
     _compare_signal_shape_data(s, s1)
+    nt.assert_equal(s1.axes_manager[0].units, 'nm')
     nt.assert_equal(s1.axes_manager[1].units, 'mm') # only one unit can be read
     nt.assert_equal(s1.axes_manager[2].units, 'mm')
+    nt.assert_almost_equal(s1.axes_manager[0].scale, s.axes_manager[0].scale)
+    nt.assert_almost_equal(s1.axes_manager[1].scale, s.axes_manager[1].scale)
+    nt.assert_almost_equal(s1.axes_manager[2].scale, s.axes_manager[2].scale)
     if remove_files:
         os.remove(fname)
 

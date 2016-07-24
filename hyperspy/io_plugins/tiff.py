@@ -99,6 +99,7 @@ def file_writer(filename, signal, export_scale=True, extratags=[], **kwds):
         If the scikit-image version is too old, use the hyperspy embedded
         tifffile library to allow exporting the scale and the unit.
     """
+    _logger.debug('************* Saving *************')
     imsave, TiffFile = _import_tifffile_library(export_scale)
     data = signal.data
     if signal.is_rgbx is True:
@@ -144,6 +145,7 @@ def file_reader(filename, record_by='image', force_read_resolution=False,
     **kwds, optional
     """
     
+    _logger.debug('************* Loading *************')
     # For testing the use of local and skimage tifffile library
     import_local_tifffile = False
     if 'import_local_tifffile' in kwds.keys():
@@ -202,7 +204,6 @@ def file_reader(filename, record_by='image', force_read_resolution=False,
         except:
             _logger.info("Scale and units could not be imported")
 
-        print(scales, units)
         axes = [{'size': size,
                  'name': str(name),
                  'scale': scale,
@@ -256,7 +257,7 @@ def _parse_scale_unit(tiff, op, dc, force_read_resolution):
                 scales['x'], scales['y'] = _get_scales_from_x_y_resolution(op)
             if 'spacing' in image_description:
                 scales['z'] = float(image_description.split('spacing=')[1].split('\n')[0])
-
+                            
     # for FEI SEM tiff files:
     elif '34682' in op.keys():
         _logger.debug("Reading FEI tif metadata")
@@ -331,25 +332,24 @@ def _get_imagej_kwargs(signal, scales, units, factor=int(1E8)):
 
 
 def _get_dm_kwargs_extratag(signal, scales, units):
-    extratags = [(65003, 's', 3, units[0], False),  # x unit
-                 (65004, 's', 3, units[1], False),  # y unit
-                 # (65006, 'd', 1, 0.0, False), # x origin in pixel
-                 # (65007, 'd', 1, 0.0, False), # y origin in pixel
-                 (65009, 'd', 1, float(scales[0]), False),  # x scale
-                 (65010, 'd', 1, float(scales[1]), False),  # y scale
-                 (65012, 's', 3, units[0], False),  # x unit
-                 (65013, 's', 3, units[1], False)]  # y unit
+    extratags = [(65003, 's', 3, units[-2], False),  # x unit
+                 (65004, 's', 3, units[-1], False),  # y unit
+#                 (65006, 'd', 1, 0.0, False), # x origin in pixel
+#                 (65007, 'd', 1, 0.0, False), # y origin in pixel
+                 (65009, 'd', 1, float(scales[-2]), False),  # x scale
+                 (65010, 'd', 1, float(scales[-1]), False),  # y scale
+                 (65012, 's', 3, units[-2], False),  # x unit
+                 (65013, 's', 3, units[-1], False)]  # y unit
 #                 (65015, 'i', 1, 1, False),
 #                 (65016, 'i', 1, 1, False),
 #                 (65024, 'd', 1, 0.0, False),
 #                 (65025, 'd', 1, 0.0, False),
 #                 (65026, 'i', 1, 1, False)]
     if signal.axes_manager.navigation_dimension > 0:
-        extratags.extend([(65005, 's', 3, units[2], False),  # z unit
+        extratags.extend([(65005, 's', 3, units[0], False),  # z unit
                           (65008, 'd', 1, 3.0, False),  # z origin in pixel
-            
-                          (65011, 'd', 1, float(scales[2]), False),  # z scale
-                          (65014, 's', 3, units[2], False),  # z unit
+                          (65011, 'd', 1, float(scales[0]), False),  # z scale
+#                          (65014, 's', 3, units[0], False),  # z unit
                           (65017, 'i', 1, 1, False)])
     return extratags
 
