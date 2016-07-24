@@ -208,7 +208,6 @@ def file_reader(filename, record_by='image', force_read_resolution=False,
         except:
             _logger.info("Scale and units could not be imported")
 
-        print(names, offsets, units)
         axes = [{'size': size,
                  'name': str(name),
                  'scale': scale,
