@@ -122,7 +122,8 @@ def file_writer(filename, signal, export_scale=True, extratags=[], **kwds):
            **kwds)
 
 
-def file_reader(filename, record_by='image', **kwds):
+def file_reader(filename, record_by='image', force_read_resolution=False,
+                **kwds):
     """
     Read data from tif files using Christoph Gohlke's tifffile library.
     The units and the scale of images saved with ImageJ or Digital
@@ -140,11 +141,9 @@ def file_reader(filename, record_by='image', **kwds):
         Force reading the x_resolution, y_resolution and the resolution_unit
         of the tiff tags.
         See http://www.awaresystems.be/imaging/tiff/tifftags/resolutionunit.html
+    **kwds, optional
     """
-    force_read_resolution = False
-    if 'force_read_resolution' in kwds.keys():
-        force_read_resolution = kwds.pop('force_read_resolution')
-
+    
     # For testing the use of local and skimage tifffile library
     import_local_tifffile = False
     if 'import_local_tifffile' in kwds.keys():
@@ -168,77 +167,10 @@ def file_reader(filename, record_by='image', **kwds):
         for key, tag in tiff[0].tags.items():
             op[key] = tag.value
         names = [axes_label_codes[axis] for axis in axes]
-        units = t.Undefined
-        scales = []
 
         _logger.debug('Tiff tags list: %s' % op.keys())
         _logger.debug("Photometric: %s" % op['photometric'])
         _logger.debug('is_imagej: {}'.format(tiff[0].is_imagej))
-
-        # for files created with DM
-        if '65003' in op.keys():
-            _logger.info("Reading Gatan DigitalMicrograph tif metadata")
-            units = []
-            units.extend([_decode_string(op['65003']),  # x unit
-                          _decode_string(op['65004'])])  # y unit
-            scales = []
-            scales.extend([op['65009'],  # x scale
-                           op['65010']])  # y scale
-        
-        # for files created with imageJ
-        if tiff[0].is_imagej:
-            image_description = _decode_string(op["image_description"])
-            if "image_description_1" in op.keys():
-                image_description = _decode_string(op["image_description_1"])
-            _logger.debug(
-                "Image_description tag: {0}".format(image_description))
-            if 'ImageJ' in image_description:
-                _logger.info("Reading ImageJ tif metadata")
-                try:
-                    # ImageJ write the unit in the image description
-                    if 'unit' in image_description:
-                        scales = []
-                        unit = image_description.split('unit=')[1].split('\n')[0]
-                        units = [unit] * 2
-                        if dc.ndim == 3:
-                            units.insert(0, t.Undefined)
-                            if 'spacing' in image_description:
-                                scales.append(float(image_description.split('spacing=')[1].split('\n')[0]))
-                        scales.extend(_get_scales_from_x_y_resolution(op))
-
-                except:
-                    _logger.info("Scale and units could not be imported")
-
-        # for FEI SEM tiff files:
-        elif '34682' in op.keys():
-            _logger.info("Reading FEI tif metadata")
-            op = _read_original_metadata_FEI(op)
-            scales = _get_scale_FEI(op)
-            units = 'm'
-
-        # for Zeiss SEM tiff files:
-        elif '34118' in op.keys():
-            _logger.info("Reading Zeiss tif metadata")
-            op = _read_original_metadata_Zeiss(op)
-            # It seems that Zeiss software doesn't store/compute correctly the
-            # scale in the metadata... it needs to be corrected by the image
-            # resolution.
-            corr = 1024 / max(size for size in dc.shape)
-            scales = _get_scale_Zeiss(op, corr)
-            units = 'm'
-
-        if force_read_resolution and 'resolution_unit' in op.keys() \
-                and 'x_resolution' in op.keys():
-            res_unit_tag = op['resolution_unit']
-            if res_unit_tag != 1 and len(scales) == 0:
-                _logger.debug("Resolution unit: %s" % res_unit_tag)
-                scales = _get_scales_from_x_y_resolution(op)
-                if res_unit_tag == 2:  # unit is in inch, conversion to um
-                    scales = [scale * 25400 for scale in scales]
-                    units = 'µm'
-                if res_unit_tag == 3:  # unit is in cm, conversion to um
-                    scales = [scale * 10000 for scale in scales]
-                    units = 'µm'
 
         _logger.debug("data shape: {0}".format(dc.shape))
 
@@ -255,28 +187,22 @@ def file_reader(filename, record_by='image', **kwds):
             dc = dc[sl]
         _logger.debug("names: {0}".format(names))
 
+        scales = [1.0] * len(names)
+        units = [t.Undefined] * len(names)
         try:
-            # no scales have been imported
-            if len(scales) == 0:
-                scales = [1.0] * dc.ndim
-                units = [t.Undefined] * dc.ndim
-    
-            # for single image
-            if isinstance(units, str) and dc.ndim <=2 :
-                units = [units] * dc.ndim
-
-            # ImageJ stack or hyperstack
-            if len(dc.shape) > 2 and len(scales) < len(dc.shape):
-                scale = [1.0]*(dc.ndim-2)
-                scale.extend(scale[-2:])
-                units = [t.Undefined]*(dc.ndim-2)
-                units.extend(units[-2:])
-        # if something raises an error, reset unit and scale to continue
+            scales_d, units_d = _parse_scale_unit(tiff, op, dc,
+                                                  force_read_resolution)
+            for i, name in enumerate(names):
+                if name == 'height':
+                    scales[i], units[i] = scales_d['x'], units_d['x']
+                elif name == 'width':
+                    scales[i], units[i] = scales_d['y'], units_d['y']
+                elif name in ['depth', 'image series']:
+                    scales[i], units[i] = scales_d['z'], units_d['z']            
         except:
             _logger.info("Scale and units could not be imported")
-            scales = [1.0] * dc.ndim
-            units = [t.Undefined] * dc.ndim
 
+        print(scales, units)
         axes = [{'size': size,
                  'name': str(name),
                  'scale': scale,
@@ -294,10 +220,81 @@ def file_reader(filename, record_by='image', **kwds):
                           },
              }]
 
+def _parse_scale_unit(tiff, op, dc, force_read_resolution):
+    axes_l = ['x', 'y', 'z']
+    scales  = {axis:1.0 for axis in axes_l}
+    units  = {axis:t.Undefined for axis in axes_l}
+    
+    # for files created with DM
+    if '65003' in op.keys():
+        _logger.debug("Reading Gatan DigitalMicrograph tif metadata")
+        units['x'] = _decode_string(op['65003'])  # x units
+    if '65004' in op.keys():
+        units['y'] = _decode_string(op['65004'])  # y units
+    if '65005' in op.keys():
+        units['z'] = _decode_string(op['65005'])  # z units
+    if '65009' in op.keys():
+        scales['x'] = op['65009']   # x scales
+    if '65010' in op.keys():
+        scales['y'] = op['65010']   # y scales
+    if '65011' in op.keys():
+        scales['z'] = op['65011']   # z scales
 
+    # for files created with imageJ
+    if tiff[0].is_imagej:
+        image_description = _decode_string(op["image_description"])
+        if "image_description_1" in op.keys():
+            image_description = _decode_string(op["image_description_1"])
+        _logger.debug(
+            "Image_description tag: {0}".format(image_description))
+        if 'ImageJ' in image_description:
+            _logger.debug("Reading ImageJ tif metadata")
+            # ImageJ write the unit in the image description
+            if 'unit' in image_description:
+                unit = image_description.split('unit=')[1].split('\n')[0]
+                for key in ['x', 'y']: units[key] = unit
+                scales['x'], scales['y'] = _get_scales_from_x_y_resolution(op)
+            if 'spacing' in image_description:
+                scales['z'] = float(image_description.split('spacing=')[1].split('\n')[0])
+
+    # for FEI SEM tiff files:
+    elif '34682' in op.keys():
+        _logger.debug("Reading FEI tif metadata")
+        op = _read_original_metadata_FEI(op)
+        scales['x'], scales['y'] = _get_scale_FEI(op)
+        for key in ['x', 'y']: units[key] = 'm'
+
+    # for Zeiss SEM tiff files:
+    elif '34118' in op.keys():
+        _logger.debug("Reading Zeiss tif metadata")
+        op = _read_original_metadata_Zeiss(op)
+        # It seems that Zeiss software doesn't store/compute correctly the
+        # scale in the metadata... it needs to be corrected by the image
+        # resolution.
+        corr = 1024 / max(size for size in dc.shape)
+        scales['x'], scales['y'] = _get_scale_Zeiss(op, corr)
+        for key in ['x', 'y']: units[key] = 'm'
+
+    if force_read_resolution and 'resolution_unit' in op.keys() \
+            and 'x_resolution' in op.keys():
+        res_unit_tag = op['resolution_unit']
+        if res_unit_tag != 1:
+            _logger.debug("Resolution unit: %s" % res_unit_tag)
+            scales['x'], scales['y'] = _get_scales_from_x_y_resolution(op)
+            if res_unit_tag == 2:  # unit is in inch, conversion to um
+                for key in ['x', 'y']:
+                    units[key] = 'µm'
+                    scales[key] = scales[key] * 25400
+            if res_unit_tag == 3:  # unit is in cm, conversion to um
+                for key in ['x', 'y']:
+                    units[key] = 'µm'
+                    scales[key] = scales[key] * 10000
+                
+    return scales, units
+             
 def _get_scales_from_x_y_resolution(op):
-    scales = [op["y_resolution"][1] / op["y_resolution"][0],
-              op["x_resolution"][1] / op["x_resolution"][0]]
+    scales = op["y_resolution"][1] / op["y_resolution"][0], \
+             op["x_resolution"][1] / op["x_resolution"][0]
     return scales
 
 
@@ -309,6 +306,7 @@ def _get_tags_dict(signal, extratags=[], factor=int(1E8)):
     _logger.debug("{0}".format(units))
     tags_dict = _get_imagej_kwargs(signal, scales, units, factor=factor)
     scales, units = _get_scale_unit(signal, encoding='latin-1')
+            
     tags_dict["extratags"].extend(
         _get_dm_kwargs_extratag(
             signal,
@@ -318,6 +316,7 @@ def _get_tags_dict(signal, extratags=[], factor=int(1E8)):
     return tags_dict
 
 
+            
 def _get_imagej_kwargs(signal, scales, units, factor=int(1E8)):
     resolution = ((factor, int(scales[-1] * factor)),
                   (factor, int(scales[-2] * factor)))
@@ -348,12 +347,14 @@ def _get_dm_kwargs_extratag(signal, scales, units):
     if signal.axes_manager.navigation_dimension > 0:
         extratags.extend([(65005, 's', 3, units[2], False),  # z unit
                           (65008, 'd', 1, 3.0, False),  # z origin in pixel
+            
                           (65011, 'd', 1, float(scales[2]), False),  # z scale
                           (65014, 's', 3, units[2], False),  # z unit
                           (65017, 'i', 1, 1, False)])
     return extratags
 
 
+            
 def _get_scale_unit(signal, encoding=None):
     """ Return a list of scales and units, the length of the list is equal to
         the signal dimension. """
@@ -372,6 +373,7 @@ def _imagej_description(version='1.11a', **kwargs):
     """ Return a string that will be used by ImageJ to read the unit when
         appropriate arguments are provided """
     result = ['ImageJ=%s' % version]
+            
     append = []
     if kwargs['spacing'] is None:
         kwargs.pop('spacing')
@@ -396,8 +398,8 @@ def _read_original_metadata_FEI(original_metadata):
 
 
 def _get_scale_FEI(original_metadata):
-    return [float(original_metadata['FEI_metadata']['Scan']['pixelwidth']),
-            float(original_metadata['FEI_metadata']['Scan']['pixelheight'])]
+    return float(original_metadata['FEI_metadata']['Scan']['pixelwidth']),\
+           float(original_metadata['FEI_metadata']['Scan']['pixelheight'])
 
 
 def _read_original_metadata_Zeiss(original_metadata):
@@ -409,7 +411,7 @@ def _read_original_metadata_Zeiss(original_metadata):
 
 def _get_scale_Zeiss(original_metadata, corr=1.0):
     metadata_list = original_metadata['Zeiss_metadata']
-    return [float(metadata_list[3]) * corr, float(metadata_list[11]) * corr]
+    return float(metadata_list[3]) * corr, float(metadata_list[11]) * corr
 
 
 def _decode_string(string):

@@ -93,6 +93,19 @@ def test_read_unit_from_imagej_stack(import_local_tifffile=False):
     nt.assert_almost_equal(s.axes_manager[1].scale, 0.16867, places=5)
     nt.assert_almost_equal(s.axes_manager[2].scale, 0.16867, places=5)
 
+
+def test_read_unit_from_DM_stack(import_local_tifffile=False):
+    fname = os.path.join(my_path, 'tiff_files',
+                         'test_loading_image_saved_with_DM_stack.tif')
+    s = hs.load(fname, import_local_tifffile=import_local_tifffile)
+    nt.assert_equal(s.data.shape, (2, 68, 68))
+    nt.assert_equal(s.axes_manager[0].units, 's')
+    nt.assert_equal(s.axes_manager[1].units, 'µm')
+    nt.assert_equal(s.axes_manager[2].units, 'µm')
+    nt.assert_almost_equal(s.axes_manager[0].scale, 2.5, places=5)
+    nt.assert_almost_equal(s.axes_manager[1].scale, 0.16867, places=5)
+    nt.assert_almost_equal(s.axes_manager[2].scale, 0.16867, places=5)
+
     
 def test_read_unit_from_imagej_stack_no_scale(import_local_tifffile=False):
     fname = os.path.join(my_path, 'tiff_files',
@@ -334,7 +347,7 @@ def test_saving_loading_stack_no_scale():
     fname = os.path.join(my_path, 'tiff_files',
                          'test_export_scale_unit_stack2.tif')
     s0 = hs.signals.Signal2D(np.zeros((10, 20, 30)))
-    s0.save(fname)
+    s0.save(fname, overwrite=True)
     s1 = hs.load(fname)
     _compare_signal_shape_data(s0, s1)
     if remove_files:
@@ -404,7 +417,7 @@ def test_read_BW_Zeiss_optical_scale_metadata():
     nt.assert_almost_equal(s.axes_manager[1].scale, 169.3333, places=3)
 
 
-def test_read_BW_Zeiss_optical_scale_metadata_old():
+def test_read_BW_Zeiss_optical_scale_metadata2():
     fname = os.path.join(my_path2, 'optical_Zeiss_AxioVision_BW.tif')
     s = hs.load(fname, force_read_resolution=True)
     nt.assert_equal(s.data.dtype, np.uint16)
@@ -415,7 +428,7 @@ def test_read_BW_Zeiss_optical_scale_metadata_old():
     nt.assert_almost_equal(s.axes_manager[1].scale, 169.3333, places=3)
 
 
-def test_read_BW_Zeiss_optical_scale_metadata_old2():
+def test_read_BW_Zeiss_optical_scale_metadata3():
     fname = os.path.join(my_path2, 'optical_Zeiss_AxioVision_BW.tif')
     s = hs.load(fname, force_read_resolution=False)
     nt.assert_equal(s.data.dtype, np.uint16)
