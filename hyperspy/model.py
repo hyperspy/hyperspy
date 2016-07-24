@@ -846,7 +846,7 @@ class BaseModel(list):
                     threshold = np.finfo(float).eps * max(output.jac.shape) * s[0]
                     s = s[s > threshold]
                     VT = VT[:s.size]
-                    pcov = np.dot(VT.T / s**2, VT)                    
+                    pcov = np.dot(VT.T / s**2, VT)
 
                 elif bounded is False:
                     # This replicates the original "leastsq"
@@ -945,7 +945,6 @@ class BaseModel(list):
                     de_b = self.free_parameters_boundaries
                     de_b = tuple(((a if a is not None else -np.inf,
                                 b if b is not None else np.inf) for a,b in de_b))
-                    print(de_b)
                     self.p0 = differential_evolution(tominimize, de_b,
                                                      args=args, **kwargs).x
 
