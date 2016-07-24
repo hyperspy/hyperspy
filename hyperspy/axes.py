@@ -63,45 +63,81 @@ def generate_axis(offset, scale, size, offset_index=0):
                        offset + scale * (size - 1 - offset_index),
                        size)
 
-def _formatting_units(units):
-    units = units.replace(' ', '')
-    return units.replace('um', 'µm')
+class UnitConversion(object):
+    
+    def __init__(self, units=t.Undefined):
+        self.units = units
+    
+    def _ignore_conversion(self, units):
+        if units == t.Undefined:
+            return True
+        try:
+            _ureg(units)
+        except pint.errors.UndefinedUnitError:
+            warnings.warn('Unit "{}" not supported for conversion.'.format(units),
+                          UserWarning)
+            return True
+        return False
+    
+    def _convert_compact_scale_units(self):
+        """ Return scale and units converted to compact, human-readable units.
+            See to_compact() method of the pint library for details.
+            Size is the size of the considered axes.
+        """
+        if self._ignore_conversion(self.units):
+            return
+        scale = self.scale*_ureg(self.units)
+        scale_size = 0.5*scale*self.size
+        converted_scale = scale.to(scale_size.to_compact().units)
+        self.units = '{:~}'.format(converted_scale.units)
+        self.scale = float(converted_scale.magnitude)
+    
+    def _convert_scale_units(self, converted_units):
+        if self._ignore_conversion(converted_units) or self._ignore_conversion(self.units):
+            return
+        scale = self.scale*_ureg(self.units)
+        scale = scale.to(_ureg(converted_units))
+        self.units = '{:~}'.format(scale.units)
+        self.scale = float(scale.magnitude)
 
-def _ignore_conversion(units):
-    if units == t.Undefined:
-        return True
-    try:
-        _ureg(units)
-    except pint.errors.UndefinedUnitError:
-        warnings.warn('Unit "{}" not supported for conversion.'.format(units),
-                      UserWarning)
-        return True
-    return False
-
-def _get_converted_compact_scale_units(scale, units, size):
-    """ Return scale and units converted to compact, human-readable units.
-        See to_compact() method of the pint library for details.
-        Size is the size of the considered axes.
-    """
-    if _ignore_conversion(units):
-        return scale, units
-    scale = scale*_ureg(units)
-    scale_size = 0.5*scale*size
-    converted_scale = scale.to(scale_size.to_compact().units)
-    units = _formatting_units('{:~}'.format(converted_scale.units))
-            
-    return float(converted_scale.magnitude), units
-
-def _get_converted_scale_units(scale, units, converted_units):
-    if _ignore_conversion(units):
-        return scale, units
-    scale = scale*_ureg(units)
-    scale = scale.to(_ureg(converted_units))
-    units = _formatting_units('{:~}'.format(scale.units))
-
-    return float(scale.magnitude), units
+    def convert_to_units(self, units=None, filterwarning_action='always'):
+        """ Convert the scale and the units of the current axis. If the units
+        is not supported by the pint library, the scale and units are not
+        changed.
         
-class DataAxis(t.HasTraits):
+        Parameters
+        ----------
+        units : list of string of the same length than axes, str or None.
+            Default = None
+            If list, the selected axes will be converted to the provided units.
+            If str, the navigation or signal axes will converted to the 
+            provided units.
+            If `None`, the scale and the units to the appropriate scale and units 
+            to avoid displaying scalebar with >3 digits or too small number.            
+        filterwarning_action : str
+            Default = 'always'
+            Controls whether warnings are ignored, displayed, or turned into
+            errors. See warnings.filterwarnings documentation for more details.
+        """
+        with warnings.catch_warnings():
+            warnings.filterwarnings(filterwarning_action, category=UserWarning)
+            if units is None:
+                self._convert_compact_scale_units()     
+            else:
+                self._convert_scale_units(units)
+
+    @property
+    def units(self):
+        return self._units
+    
+    @units.setter
+    def units(self, s):
+        if s == t.Undefined:
+            self._units = s
+        else:
+            self._units = s.replace('um', 'µm').replace(' ', '')
+                
+class DataAxis(t.HasTraits, UnitConversion):
     name = t.Str()
     units = t.Str()
     scale = t.Float()
@@ -126,7 +162,7 @@ class DataAxis(t.HasTraits):
                  offset=0.,
                  units=t.Undefined,
                  navigate=t.Undefined):
-        super(DataAxis, self).__init__()
+        super().__init__()
         self.events = Events()
         self.events.index_changed = Event("""
             Event that triggers when the index of the `DataAxis` changes
@@ -508,36 +544,16 @@ class DataAxis(t.HasTraits):
             any_changes = True
         return any_changes
 
-    def convert_to_units(self, units=None, filterwarning_action='always'):
-        """ Convert the scale and the units of the current axis. If the units
-        is not supported by the pint library, the scale and units are not
-        changed.
-        
-        Parameters
-        ----------
-        units : list of string of the same length than axes, str or None.
-            Default = None
-            If list, the selected axes will be converted to the provided units.
-            If str, the navigation or signal axes will converted to the 
-            provided units.
-            If `None`, the scale and the units to the appropriate scale and units 
-            to avoid displaying scalebar with >3 digits or too small number.            
-        filterwarning_action : str
-            Default = 'always'
-            Controls whether warnings are ignored, displayed, or turned into
-            errors. See warnings.filterwarnings documentation for more details.
-        """
-        with warnings.catch_warnings():
-            warnings.filterwarnings(filterwarning_action, category=UserWarning)
-            if units is None:
-                self.scale, self.units = _get_converted_compact_scale_units(
-                    self.scale,
-                    self.units,
-                    self.size)     
-            else:
-                self.scale, self.units = _get_converted_scale_units(self.scale,
-                                                                    self.units,
-                                                                    units)
+    @property
+    def units(self):
+        return self._units
+    
+    @units.setter
+    def units(self, s):
+        if s == t.Undefined:
+            self._units = s
+        else:
+            self._units = s.replace('um', 'µm').replace(' ', '')
 
 class AxesManager(t.HasTraits):
 

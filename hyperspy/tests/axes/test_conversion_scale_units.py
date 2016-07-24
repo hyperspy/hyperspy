@@ -19,103 +19,137 @@
 import nose.tools as nt
 import traits.api as t
 
-from hyperspy.axes import DataAxis, AxesManager,\
-            _get_converted_compact_scale_units, _get_converted_scale_units
+from hyperspy.axes import DataAxis, AxesManager, UnitConversion
 from hyperspy.misc.test_utils import assert_warns
 
-                             
-def test_units_not_supported_by_pint_raising_warning():
-    with assert_warns(
-                message="not supported for conversion.",
-                category=UserWarning):
-        scale, units = _get_converted_scale_units(1.0, 'micron', 'nm')
-    nt.assert_almost_equal(scale, 1.0, places=5)
-    nt.assert_equal(units, 'micron')
-
-def test_convert_to_units():
-    scale, units = _get_converted_scale_units(1.0, t.Undefined, 'nm')
-    nt.assert_almost_equal(scale, 1.0, places=5)
-    nt.assert_equal(units, t.Undefined)
-
-    scale, units = _get_converted_scale_units(0.5, 'µm', 'nm')
-    nt.assert_almost_equal(scale, 500, places=5)
-    nt.assert_equal(units, 'nm')
-
-    scale, units = _get_converted_scale_units(5, 'µm', 'cm')
-    nt.assert_almost_equal(scale, 0.0005, places=5)
-    nt.assert_equal(units, 'cm')
     
-    scale, units = _get_converted_scale_units(5, '1/µm', '1/nm')
-    nt.assert_almost_equal(scale, 0.005, places=5)
-    nt.assert_equal(units, '1/nm')
+class TestUnitConversion:
 
-    scale, units = _get_converted_scale_units(5, 'eV', 'keV')
-    nt.assert_almost_equal(scale, 0.005, places=5)
-    nt.assert_equal(units, 'keV')       
+    def setUp(self):
+        self.uc = UnitConversion()
+        self._set_units_scale_size(units='m', scale=1E-3)
+
+    def _set_units_scale_size(self, units=t.Undefined, scale=1.0, size=100):
+        self.uc.units = units
+        self.uc.scale = scale
+        self.uc.size = size
+        
+    def test_units_setter(self):
+        self.uc.units = ' m'
+        nt.assert_equal(self.uc.units, 'm')
+        self.uc.units = 'um'
+        nt.assert_equal(self.uc.units, 'µm')
+        self.uc.units = ' µm'
+        nt.assert_equal(self.uc.units, 'µm')
+        self.uc.units = ' km'
+        nt.assert_equal(self.uc.units, 'km')
+        
+    def test_ignore_conversion(self):
+        nt.assert_true(self.uc._ignore_conversion(t.Undefined))
+        with assert_warns(
+                    message="not supported for conversion.",
+                    category=UserWarning):
+            nt.assert_true(self.uc._ignore_conversion('unit_not_supported'))       
+        nt.assert_false(self.uc._ignore_conversion('m'))
+
+    def test_converted_compact_scale_units(self):
+        self.uc.units = 'micron'
+        with assert_warns(
+                    message="not supported for conversion.",
+                    category=UserWarning):
+            self.uc._convert_compact_scale_units()
+        nt.assert_equal(self.uc.units, 'micron')
+        nt.assert_almost_equal(self.uc.scale, 1.0E-3)
+        
+    def test_convert_to_units(self):
+        self._set_units_scale_size(t.Undefined, 1.0)
+        self.uc._convert_scale_units('nm')
+        nt.assert_equal(self.uc.units, t.Undefined)        
+        nt.assert_almost_equal(self.uc.scale, 1.0, places=5)
+
+        self._set_units_scale_size('m', 1.0E-3)
+        self.uc._convert_scale_units('µm')
+        nt.assert_equal(self.uc.units, 'µm')        
+        nt.assert_almost_equal(self.uc.scale, 1E3, places=5)
+        
+        self._set_units_scale_size('µm', 0.5)
+        self.uc._convert_scale_units('nm')
+        nt.assert_equal(self.uc.units, 'nm')
+        nt.assert_almost_equal(self.uc.scale, 500, places=5)
+
+        self._set_units_scale_size('µm', 5)
+        self.uc._convert_scale_units('cm')
+        nt.assert_equal(self.uc.units, 'cm')
+        nt.assert_almost_equal(self.uc.scale, 0.0005, places=5)
+
+        self._set_units_scale_size('1/µm', 5)
+        self.uc._convert_scale_units('1/nm')
+        nt.assert_equal(self.uc.units, '1/nm')
+        nt.assert_almost_equal(self.uc.scale, 0.005, places=5)
+
+        self._set_units_scale_size('eV', 5)
+        self.uc._convert_scale_units('keV')
+        nt.assert_equal(self.uc.units, 'keV')
+        nt.assert_almost_equal(self.uc.scale, 0.005, places=5)
+
+    def test_get_appropriate_scale_unit(self):
+        ##### Imaging #####
+        # typical setting for high resolution image
+        self._set_units_scale_size('m', 12E-12, 2048)
+        self.uc._convert_compact_scale_units()
+        nt.assert_equal(self.uc.units, 'nm')
+        nt.assert_almost_equal(self.uc.scale, 0.012, places=5)
     
-def test_get_appropriate_scale_unit():
-    ##### Imaging #####
-    # typical setting for high resolution image
-    scale, unit = _get_converted_compact_scale_units(12E-12, 'm', 2048)
-    nt.assert_equal(unit, 'nm')
-    nt.assert_almost_equal(scale, 0.012, places=5)
+        # typical setting for nm resolution image
+        self._set_units_scale_size('m', 0.5E-9, 1024)
+        self.uc._convert_compact_scale_units()
+        nt.assert_equal(self.uc.units, 'nm')  
+        nt.assert_almost_equal(self.uc.scale, 0.5, places=5)                              
 
-    # typical setting for nm resolution image
-    scale, unit = _get_converted_compact_scale_units(0.5E-9, 'm', 1024)
-    nt.assert_equal(unit, 'nm')  
-    nt.assert_almost_equal(scale, 0.5, places=5)
-
-    # typical setting for nm resolution image
-    scale, unit = _get_converted_compact_scale_units(1E-9, 'm', 1024)
-    nt.assert_equal(unit, 'nm')    
-    nt.assert_almost_equal(scale, 1.0, places=5)
-
-    ##### Diffraction #####    
-    # typical TEM diffraction
-    scale, unit = _get_converted_compact_scale_units(0.1E9, '1/m', 1024)
-    nt.assert_equal(unit, '1/nm')
-    nt.assert_almost_equal(scale, 0.1, places=5)
-
-    # typical TEM diffraction
-    scale, unit = _get_converted_compact_scale_units(0.01E9, '1/m', 256)
-    nt.assert_equal(unit, '1/nm')
-    nt.assert_almost_equal(scale, 0.01, places=5)
+        ##### Diffraction #####    
+        # typical TEM diffraction
+        self._set_units_scale_size('1/m', 0.1E9, 1024)
+        self.uc._convert_compact_scale_units()
+        nt.assert_equal(self.uc.units, '1/nm')
+        nt.assert_almost_equal(self.uc.scale, 0.1, places=5)
     
-    # high camera length diffraction
-    scale, unit = _get_converted_compact_scale_units(0.1E6, '1/m', 4096)
-    nt.assert_equal(unit, '1/µm')
-    nt.assert_almost_equal(scale, 0.1, places=5)
+        # typical TEM diffraction
+        self._set_units_scale_size('1/m', 0.01E9, 256)
+        self.uc._convert_compact_scale_units()
+        nt.assert_equal(self.uc.units, '1/nm')
+        nt.assert_almost_equal(self.uc.scale, 0.01, places=5)
+        
+        # high camera length diffraction
+        self._set_units_scale_size('1/m', 0.1E9, 4096)
+        self.uc._convert_compact_scale_units()
+        nt.assert_equal(self.uc.units, '1/nm')
+        nt.assert_almost_equal(self.uc.scale, 0.1, places=5)
     
-    # typical EDS resolution
-    scale, unit = _get_converted_compact_scale_units(50, 'eV', 4096)
-    nt.assert_equal(unit, 'keV')
-    nt.assert_almost_equal(scale, 0.05, places=5)
-
-    ##### Spectroscopy #####    
-    # typical EELS resolution
-    scale, unit = _get_converted_compact_scale_units(0.2, 'eV', 2048)
-    nt.assert_equal(unit, 'eV')
-    nt.assert_almost_equal(scale, 0.2, places=5)
-
-    # typical EELS resolution
-    scale, unit = _get_converted_compact_scale_units(1.0, 'eV', 2048)
-    nt.assert_equal(unit, 'keV')
-    nt.assert_almost_equal(scale, 0.001, places=5)
+        # typical EDS resolution
+        self._set_units_scale_size('eV', 50, 4096)
+        self.uc._convert_compact_scale_units()
+        nt.assert_equal(self.uc.units, 'keV')
+        nt.assert_almost_equal(self.uc.scale, 0.05, places=5)
     
-    # typical high resolution EELS resolution
-    scale, unit = _get_converted_compact_scale_units(0.05, 'eV', 100)
-    nt.assert_equal(unit, 'eV')
-    nt.assert_almost_equal(scale, 0.05, places=5)
+        ##### Spectroscopy #####    
+        # typical EELS resolution
+        self._set_units_scale_size('eV', 0.2, 2048)
+        self.uc._convert_compact_scale_units()
+        nt.assert_equal(self.uc.units, 'eV')
+        nt.assert_almost_equal(self.uc.scale, 0.2, places=5)
 
-    # typical high resolution EELS resolution
-    scale, unit = _get_converted_compact_scale_units(0.001, 'eV', 100)
-    nt.assert_equal(unit, 'meV')
-    nt.assert_almost_equal(scale, 1.0, places=5)
-    
-    # typical high resolution EELS resolution
-    scale, unit = _get_converted_compact_scale_units(0.001, 'eV', 2048)
-    nt.assert_equal(unit, 'eV')
-    nt.assert_almost_equal(scale, 0.001, places=5)
+        # typical EELS resolution
+        self._set_units_scale_size('eV', 1.0, 2048)
+        self.uc._convert_compact_scale_units()
+        nt.assert_equal(self.uc.units, 'keV')
+        nt.assert_almost_equal(self.uc.scale, 0.001, places=5)
+        
+        # typical high resolution EELS resolution
+        self._set_units_scale_size('eV', 0.05, 100)
+        self.uc._convert_compact_scale_units()
+        nt.assert_equal(self.uc.units, 'eV')
+        nt.assert_almost_equal(self.uc.scale, 0.05, places=5)
+
     
 class TestDataAxis:
 
@@ -184,21 +218,21 @@ class TestAxesManager:
         nt.assert_almost_equal(self.am['energy'].scale, 0.005, places=5)
         
     def test_convert_to_navigation_units(self):
-        self.am.convert_units(axes='navigation', units='µm')
-        nt.assert_almost_equal(self.am['x'].scale, 1.0, places=5)
-        nt.assert_equal(self.am['x'].units, 'µm')
-        nt.assert_almost_equal(self.am['y'].scale, 0.5E-3, places=5)
-        nt.assert_equal(self.am['y'].units, 'µm')
+        self.am.convert_units(axes='navigation', units='mm')
+        nt.assert_almost_equal(self.am['x'].scale, 1E-3, places=5)
+        nt.assert_equal(self.am['x'].units, 'mm')
+        nt.assert_almost_equal(self.am['y'].scale, 0.5E-6, places=5)
+        nt.assert_equal(self.am['y'].units, 'mm')
         nt.assert_almost_equal(self.am['energy'].scale,
                                self.axes_list[-1]['scale'], places=5)
         nt.assert_equal(self.am['energy'].units, self.axes_list[-1]['units'])
 
     def test_convert_to_navigation_units_list(self):
-        self.am.convert_units(axes='navigation', units=['µm', 'nm'])
+        self.am.convert_units(axes='navigation', units=['mm', 'nm'])
         nt.assert_almost_equal(self.am['x'].scale, 1000.0, places=5)
         nt.assert_equal(self.am['x'].units, 'nm')
-        nt.assert_almost_equal(self.am['y'].scale, 0.5E-3, places=5)
-        nt.assert_equal(self.am['y'].units, 'µm')
+        nt.assert_almost_equal(self.am['y'].scale, 0.5E-7, places=5)
+        nt.assert_equal(self.am['y'].units, 'mm')
         nt.assert_almost_equal(self.am['energy'].scale,
                                self.axes_list[-1]['scale'], places=5)
         nt.assert_equal(self.am['energy'].units, self.axes_list[-1]['units'])
