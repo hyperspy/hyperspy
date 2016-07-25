@@ -48,16 +48,17 @@ class ScalableReferencePattern2D(Component):
 
     """
 
-    def __init__(self, image,
+    def __init__(self, signal2D,
                  d11=1., d12=0.,
-                 d21=1., d22=1.,
+                 d21=0., d22=1.,
                  order=3
                  ):
 
         Component.__init__(self, ['d11', 'd12',
                                   'd21', 'd22'])
 
-        self.signal = image
+        self._whitelist['signal2D'] = ('init,sig', signal2D)
+        self.signal = signal2D
         self.order = order
         self.d11.value = d11
         self.d12.value = d12
@@ -66,7 +67,7 @@ class ScalableReferencePattern2D(Component):
 
     def function(self, x, y):
 
-        image = self.signal.data
+        signal2D = self.signal.data
         order = self.order
         d11 = self.d11.value
         d12 = self.d12.value
@@ -77,13 +78,13 @@ class ScalableReferencePattern2D(Component):
                       [d21, d22, 0.],
                       [0., 0., 1.]])
 
-        shifty, shiftx = np.array(image.shape[:2]) / 2
+        shifty, shiftx = np.array(signal2D.shape[:2]) / 2
 
         shift = tf.SimilarityTransform(translation=[-shiftx, -shifty])
         tform = tf.AffineTransform(matrix=D)
         shift_inv = tf.SimilarityTransform(translation=[shiftx, shifty])
 
-        transformed = tf.warp(image, (shift + (tform + shift_inv)).inverse,
+        transformed = tf.warp(signal2D, (shift + (tform + shift_inv)).inverse,
                               order=order)
 
         return transformed
