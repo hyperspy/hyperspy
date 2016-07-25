@@ -29,13 +29,13 @@ class TestCreateEELSModel:
 
     def test_auto_add_background_true(self):
         m = self.s.create_model(auto_background=True)
-        from hyperspy.components import PowerLaw
+        from hyperspy.components1d import PowerLaw
         is_pl_instance = [isinstance(c, PowerLaw) for c in m]
         nt.assert_true(True in is_pl_instance)
 
     def test_auto_add_edges_false(self):
         m = self.s.create_model(auto_background=False)
-        from hyperspy.components import PowerLaw
+        from hyperspy.components1d import PowerLaw
         is_pl_instance = [isinstance(c, PowerLaw) for c in m]
         nt.assert_false(True in is_pl_instance)
 
@@ -163,7 +163,7 @@ class TestFitBackground:
         s.isig[CE:] += 1
         s.add_elements(("Be", "B", "C"))
         self.m = s.create_model(auto_background=False)
-        self.m.append(hs.model.components.Offset())
+        self.m.append(hs.model.components1D.Offset())
 
     def test_fit_background_B_C(self):
         self.m.fit_background()

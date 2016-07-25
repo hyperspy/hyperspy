@@ -29,7 +29,7 @@ downloaded using:
     >>> urlretrieve(url + 'Ni_superalloy_010.raw', 'Ni_superalloy_010.raw')
 
 Loading data
-^^^^^^^^
+^^^^^^^^^^^^
 
 All data are loaded with the :py:func:`~.io.load` function, as described in detail in
 :ref:`Loading files<loading_files>`. HyperSpy is able to import different formats,
@@ -352,6 +352,28 @@ The lines are returned in order of distance from the specified energy, and can
 be limited by additional, optional arguments.
 
 
+
+.. _eds_absorption_db-label
+
+Mass absorption coefficient database
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+A mass absorption coefficient database [Chantler2005]_ is available:
+
+.. code-block:: python
+
+    >>> hs.material.mass_absorption_coefficient(
+    >>>     element='Al', energies=['C_Ka','Al_Ka'])
+    array([ 26330.38933818,    372.02616732])
+
+.. code-block:: python
+
+    >>> hs.material.mass_absorption_mixture(
+    >>>     elements=['Al','Zn'], weight_percent=[50,50], energies='Al_Ka')
+    2587.4161643905127
+
+.. _eds_plot-label: 
+
 Plotting
 --------
 
@@ -501,7 +523,9 @@ can be plotted using :py:meth:`~._signals.eds.EDSSpectrum.plot`:
 EDS Quantification
 ------------------
 
-.. versionadded:: 0.8
+.. versionadded:: 0.8 EDS Quantification
+
+.. versionadded:: 1.0 zeta-factors and ionization cross sections
 
 HyperSpy now includes three methods for EDS quantification:
 
@@ -610,7 +634,10 @@ number of atoms per pixel for each element.
     dimensions must be set. For quantification of line scans, rather than spectrum images,
     the pixel area should be added to the metadata as above.
 
-EDS curve-fitting
+
+.. _eds_fitting-label:
+
+EDS curve fitting
 -----------------
 
 The intensity of X-ray lines can be extracted using curve-fitting in HyperSpy.

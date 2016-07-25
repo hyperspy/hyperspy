@@ -70,7 +70,6 @@ in the following sections of this chapter.
         │   │   └── parameters_estimation_method
         │   └── variance
         ├── binned
-        ├── record_by
         ├── signal_type
         └── signal_origin
 
@@ -292,11 +291,12 @@ signal_type
 signal_origin
     type: Str
 
-    Either 'simulation' or 'experiment'.
+    Describes the origin of the signal e.g. 'simulation' or 'experiment'.
 
 record_by
     type: Str
-
+    .. deprecated:: 2.1 (HyperSpy v1.0)
+    
     One of 'spectrum' or 'image'. It describes how the data is stored in memory.
     If 'spectrum' the spectral data is stored in the faster index.
 

@@ -341,17 +341,17 @@ class SemperFormat(object):
 
     @classmethod
     def _check_format(cls, data):
-        if data.dtype.name == 'int8':
+        if np.issubdtype(data.dtype, np.int8):
             iform = 0  # byte
-        elif data.dtype.name == 'int16':
+        elif np.issubdtype(data.dtype, np.int16):
             iform = 1  # int16
-        elif 'float' in data.dtype.name and data.dtype.itemsize <= 4:
+        elif np.issubdtype(data.dtype, float) and data.dtype.itemsize <= 4:
             data = data.astype(np.float32)
             iform = 2  # float (4 byte or less)
-        elif 'complex' in data.dtype.name and data.dtype.itemsize <= 8:
+        elif np.issubdtype(data.dtype, complex) and data.dtype.itemsize <= 8:
             data = data.astype(np.complex64)
             iform = 3  # complex (8 byte or less)
-        elif data.dtype.name == 'int32':
+        elif np.issubdtype(data.dtype, np.int32):
             iform = 4  # int32
         else:
             supported_formats = [
@@ -568,9 +568,14 @@ class SemperFormat(object):
             units[i] = signal.axes_manager[i].units
         # Make sure data is 3D!
         data = data[tuple(None for _ in range(3 - len(data.shape)))]
-        iclass = cls.ICLASS_DICT_INV.get(
-            signal.metadata.Signal.record_by,
-            6)  # 6: undefined
+        signal_dimension = signal.axes_manager.signal_dimension
+        if signal_dimension == 1:
+            record_by = "spectrum"
+        elif signal_dimension == 2:
+            record_by = "image"
+        else:
+            record_by = ""
+        iclass = cls.ICLASS_DICT_INV.get(record_by, 6)  # 6: undefined
         data, iform = cls._check_format(data)
         title = signal.metadata.General.as_dictionary().get('title', Undefined)
         if ordict:

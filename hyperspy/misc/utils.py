@@ -877,7 +877,16 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
     signal.metadata._HyperSpy.set_item(
         'Stacking_history.step_sizes',
         step_sizes)
-
+    from hyperspy.signal import BaseSignal
+    if np.all([s.metadata.has_item('Signal.Noise_properties.variance')
+               for s in signal_list]):
+        if np.all([isinstance(s.metadata.Signal.Noise_properties.variance, BaseSignal)
+                   for s in signal_list]):
+            variance = stack(
+                [s.metadata.Signal.Noise_properties.variance for s in signal_list], axis)
+            signal.metadata.set_item(
+                'Signal.Noise_properties.variance',
+                variance)
     return signal
 
 

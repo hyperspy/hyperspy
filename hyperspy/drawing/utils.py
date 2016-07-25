@@ -587,6 +587,16 @@ def plot_images(images,
         else:
             centre_colormap = False
 
+    if "vmin" in kwargs:
+        user_vmin = kwargs["vmin"]
+        del kwargs["vmin"]
+    else:
+        user_vmin = None
+    if "vmax" in kwargs:
+        user_vmax = kwargs["vmax"]
+        del kwargs["vmax"]
+    else:
+        user_vmax = None
     # If input is >= 1D signal (e.g. for multi-dimensional plotting),
     # copy it and put it in a list so labeling works out as (x,y) when plotting
     if isinstance(images,
@@ -734,6 +744,8 @@ def plot_images(images,
     if colorbar is 'single':
         g_vmin, g_vmax = contrast_stretching(np.concatenate(
             [i.data.flatten() for i in non_rgb]), saturated_pixels)
+        g_vmin = user_vmin if user_vmin is not None else g_vmin
+        g_vmax = user_vmax if user_vmax is not None else g_vmax
         if centre_colormap:
             g_vmin, g_vmax = centre_colormap_values(g_vmin, g_vmax)
 
@@ -766,6 +778,8 @@ def plot_images(images,
                 data = im.data
                 # Find min and max for contrast
                 l_vmin, l_vmax = contrast_stretching(data, saturated_pixels)
+                l_vmin = user_vmin if user_vmin is not None else l_vmin
+                l_vmax = user_vmax if user_vmax is not None else l_vmax
                 if centre_colormap:
                     l_vmin, l_vmax = centre_colormap_values(l_vmin, l_vmax)
 
@@ -790,7 +804,7 @@ def plot_images(images,
 
             if not isinstance(aspect, (int, float)) and aspect not in [
                     'auto', 'square', 'equal']:
-                print('Did not understand aspect ratio input. ' \
+                print('Did not understand aspect ratio input. '
                       'Using \'auto\' as default.')
                 aspect = 'auto'
 
@@ -823,8 +837,10 @@ def plot_images(images,
                 ax_im_list[i] = axes_im
             else:
                 axes_im = ax.imshow(data,
-                                    cmap=cmap, extent=extent,
-                                    vmin=l_vmin, vmax=l_vmax,
+                                    cmap=cmap,
+                                    extent=extent,
+                                    vmin=l_vmin,
+                                    vmax=l_vmax,
                                     aspect=asp,
                                     *args, **kwargs)
                 ax_im_list[i] = axes_im
