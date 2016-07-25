@@ -369,7 +369,9 @@ class LazySignal(BaseSignal):
                 data = np.array([0, ], dtype=dtype)
             else:
                 try:
-                    data = np.array([0, ], dtype=dtype)
+                    data = np.zeros(
+                        self.axes_manager._navigation_shape_in_array,
+                        dtype=dtype)
                 except MemoryError:
                     data = da.zeros(self.axes_manager._navigation_shape_in_array,
                                     chunks=1000,  # just a random guess
