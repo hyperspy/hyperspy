@@ -41,6 +41,7 @@ def load(filenames=None,
          new_axis_name="stack_element",
          mmap=False,
          mmap_dir=None,
+         auto_convert_units=False,
          **kwds):
     """
     Load potentially multiple supported file into an hyperspy structure
@@ -108,7 +109,9 @@ def load(filenames=None,
     mmap_mode: {'r', 'r+', 'c'}
         Used when loading blockfiles to determine which mode to use for when
         loading as memmap (i.e. when load_to_memory=False)
-
+    auto_convert_units : bool
+        If True, convert the units using the 'convert_to_units' method of
+        the 'axes_manager'. If False, does nothing.   
     print_info: bool
         For SEMPER unf- and EMD (Berkley)-files, if True (default is False)
         additional information read during loading is printed for a quick overview.
@@ -128,6 +131,7 @@ def load(filenames=None,
     >>> d = hs.load('file*.dm3')
     """
     kwds['signal_type'] = signal_type
+    kwds['auto_convert_units'] = auto_convert_units
     if filenames is None:
         if hyperspy.defaults_parser.preferences.General.interactive is True:
             from hyperspy.gui.tools import Load
@@ -205,7 +209,6 @@ def load_single_file(filename,
         Set the signal type of the data to be read.
         
     auto_convert_units : bool
-        Default is False.
         If True, convert the units using the 'convert_to_units' method of
         the 'axes_manager'. If False, does nothing.        
         
@@ -214,6 +217,8 @@ def load_single_file(filename,
         
     """
     extension = os.path.splitext(filename)[1][1:]
+    kwds['signal_type'] = signal_type
+    kwds['auto_convert_units'] = auto_convert_units
 
     i = 0
     while extension.lower() not in io_plugins[i].file_extensions and \
@@ -224,18 +229,13 @@ def load_single_file(filename,
         try:
             from hyperspy.io_plugins import image
             reader = image
-            return load_with_reader(filename, reader,
-                                    signal_type=signal_type, **kwds)
+            return load_with_reader(filename, reader, **kwds)
         except:
             raise IOError('If the file format is supported'
                           ' please report this error')
     else:
         reader = io_plugins[i]
-        return load_with_reader(filename=filename,
-                                reader=reader,
-                                signal_type=signal_type,
-                                auto_convert_units=auto_convert_units,
-                                **kwds)
+        return load_with_reader(filename=filename, reader=reader, **kwds)
 
 
 def load_with_reader(filename,
