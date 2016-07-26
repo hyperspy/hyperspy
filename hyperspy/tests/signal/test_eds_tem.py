@@ -269,10 +269,9 @@ class Test_simple_model:
         s = self.signal
         s.data *= 1E5
         s.change_dtype("uint")
-
+        bw = s.estimate_background_windows()
         np.testing.assert_allclose(
-            [i.data[0] for i in s.get_lines_intensity(
-                integration_window_factor=5.0)],
+            [i.data[0] for i in s.get_lines_intensity(background_windows=bw)],
             [5E4, 5E4],
             rtol=0.03)
 
