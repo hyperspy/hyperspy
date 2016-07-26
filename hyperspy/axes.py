@@ -236,7 +236,7 @@ class DataAxis(t.HasTraits):
                     raise IndexError(
                         "Start value above axis high bound for  axis %s."
                         "value: %f high_bound: %f" % (repr(self), start,
-                                                     self.high_value))
+                                                      self.high_value))
                 else:
                     # The start value is below the axis limit,
                     # we slice from the start.
@@ -250,7 +250,7 @@ class DataAxis(t.HasTraits):
                     raise IndexError(
                         "Start value above axis high bound for  axis %s."
                         "value: %f high_bound: %f" % (repr(self), start,
-                                                     self.low_value))
+                                                      self.low_value))
                 else:
                     # The start value is below the axis limit,
                     # we slice from the start.
