@@ -142,7 +142,10 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
             pointer = self.assign_pointer()
             self.right_pointer = pointer(
                 self.signal_plot.right_axes_manager)
-            self.right_pointer.size = self.pointer.size
+            # The following is necessary because e.g. a line pointer does not
+            # have size
+            if hasattr(self.pointer, "size"):
+                self.right_pointer.size = self.pointer.size
             self.right_pointer.color = 'blue'
             self.right_pointer.connect_navigate()
             self.right_pointer.set_mpl_ax(self.navigator_plot.ax)
