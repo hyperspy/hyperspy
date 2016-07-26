@@ -78,7 +78,8 @@ def _import_tifffile_library(import_local_tifffile_if_necessary=False,
 
     # import local tifffile.py only if the skimage version too old
     skimage_version = LooseVersion(skimage.__version__)
-    if import_local_tifffile_if_necessary and skimage_version <= LooseVersion('0.12.3'):
+    if import_local_tifffile_if_necessary and skimage_version <= LooseVersion(
+            '0.12.3'):
         return import_local_tifffile(loading=loading)
     else:
         from skimage.external.tifffile import imsave, TiffFile
@@ -194,7 +195,7 @@ def file_reader(filename, record_by='image', force_read_resolution=False,
         units = [t.Undefined] * len(names)
         try:
             scales_d, units_d, offsets_d = _parse_scale_unit(tiff, op, dc,
-                    force_read_resolution)
+                                                             force_read_resolution)
             for i, name in enumerate(names):
                 if name == 'height':
                     scales[i], units[i] = scales_d['x'], units_d['x']
@@ -227,11 +228,12 @@ def file_reader(filename, record_by='image', force_read_resolution=False,
                           },
              }]
 
+
 def _parse_scale_unit(tiff, op, dc, force_read_resolution):
     axes_l = ['x', 'y', 'z']
-    scales  = {axis:1.0 for axis in axes_l}
-    offsets  = {axis:0.0 for axis in axes_l}
-    units  = {axis:t.Undefined for axis in axes_l}
+    scales = {axis: 1.0 for axis in axes_l}
+    offsets = {axis: 0.0 for axis in axes_l}
+    units = {axis: t.Undefined for axis in axes_l}
 
     # for files created with DM
     if '65003' in op.keys():
@@ -272,17 +274,20 @@ def _parse_scale_unit(tiff, op, dc, force_read_resolution):
             # ImageJ write the unit in the image description
             if 'unit' in image_description:
                 unit = image_description.split('unit=')[1].splitlines()[0]
-                for key in ['x', 'y']: units[key] = unit
+                for key in ['x', 'y']:
+                    units[key] = unit
                 scales['x'], scales['y'] = _get_scales_from_x_y_resolution(op)
             if 'spacing' in image_description:
-                scales['z'] = float(image_description.split('spacing=')[1].splitlines()[0])
+                scales['z'] = float(
+                    image_description.split('spacing=')[1].splitlines()[0])
 
     # for FEI SEM tiff files:
     elif '34682' in op.keys():
         _logger.debug("Reading FEI tif metadata")
         op = _read_original_metadata_FEI(op)
         scales['x'], scales['y'] = _get_scale_FEI(op)
-        for key in ['x', 'y']: units[key] = 'm'
+        for key in ['x', 'y']:
+            units[key] = 'm'
 
     # for Zeiss SEM tiff files:
     elif '34118' in op.keys():
@@ -293,7 +298,8 @@ def _parse_scale_unit(tiff, op, dc, force_read_resolution):
         # resolution.
         corr = 1024 / max(size for size in dc.shape)
         scales['x'], scales['y'] = _get_scale_Zeiss(op, corr)
-        for key in ['x', 'y']: units[key] = 'm'
+        for key in ['x', 'y']:
+            units[key] = 'm'
 
     if force_read_resolution and 'resolution_unit' in op.keys() \
             and 'x_resolution' in op.keys():
@@ -312,9 +318,10 @@ def _parse_scale_unit(tiff, op, dc, force_read_resolution):
 
     return scales, units, offsets
 
+
 def _get_scales_from_x_y_resolution(op):
     scales = op["y_resolution"][1] / op["y_resolution"][0], \
-             op["x_resolution"][1] / op["x_resolution"][0]
+        op["x_resolution"][1] / op["x_resolution"][0]
     return scales
 
 
@@ -337,12 +344,11 @@ def _get_tags_dict(signal, extratags=[], factor=int(1E8)):
     return tags_dict
 
 
-
 def _get_imagej_kwargs(signal, scales, units, factor=int(1E8)):
     resolution = ((factor, int(scales[-1] * factor)),
                   (factor, int(scales[-2] * factor)))
-    if len(signal.axes_manager.navigation_axes) == 1: # For stacks
-        spacing = '%s'%scales[0]
+    if len(signal.axes_manager.navigation_axes) == 1:  # For stacks
+        spacing = '%s' % scales[0]
     else:
         spacing = None
     description_string = _imagej_description(unit=units[1], spacing=spacing)
@@ -352,14 +358,14 @@ def _get_imagej_kwargs(signal, scales, units, factor=int(1E8)):
 
 
 def _get_dm_kwargs_extratag(signal, scales, units, offsets):
-#    For future intensity axes
-#    intensity_units = 'electron'
-#    intensity_offset = 2.0
-#    intensity_scale = 0.2
+    #    For future intensity axes
+    #    intensity_units = 'electron'
+    #    intensity_offset = 2.0
+    #    intensity_scale = 0.2
     extratags = [(65003, 's', 3, units[-1], False),  # x unit
                  (65004, 's', 3, units[-2], False),  # y unit
-                 (65006, 'd', 1, offsets[-1], False), # x origin
-                 (65007, 'd', 1, offsets[-2], False), # y origin
+                 (65006, 'd', 1, offsets[-1], False),  # x origin
+                 (65007, 'd', 1, offsets[-2], False),  # y origin
                  (65009, 'd', 1, float(scales[-1]), False),  # x scale
                  (65010, 'd', 1, float(scales[-2]), False)]  # y scale
 #                 (65012, 's', 3, units[-1], False),  # x unit full name
@@ -375,10 +381,9 @@ def _get_dm_kwargs_extratag(signal, scales, units, offsets):
         extratags.extend([(65005, 's', 3, units[0], False),  # z unit
                           (65008, 'd', 1, offsets[0], False),  # z origin
                           (65011, 'd', 1, float(scales[0]), False),  # z scale
-#                          (65014, 's', 3, units[0], False), # z unit full name
+                          #                          (65014, 's', 3, units[0], False), # z unit full name
                           (65017, 'i', 1, 1, False)])
     return extratags
-
 
 
 def _get_scale_unit(signal, encoding=None):
@@ -426,7 +431,7 @@ def _read_original_metadata_FEI(original_metadata):
 
 def _get_scale_FEI(original_metadata):
     return float(original_metadata['FEI_metadata']['Scan']['pixelwidth']),\
-           float(original_metadata['FEI_metadata']['Scan']['pixelheight'])
+        float(original_metadata['FEI_metadata']['Scan']['pixelheight'])
 
 
 def _read_original_metadata_Zeiss(original_metadata):
