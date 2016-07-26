@@ -943,7 +943,7 @@ class AxesManager(t.HasTraits):
         elif len(units) != len(axes):
             _logger.error('Please provide a correct "units" argument')
         for axis, units in zip(axes, units):
-            _logger.debug('axis: {}, units: {}'.format(axis.name, units))
+            _logger.debug('Convert axis "{0}" to units: "{1}"'.format(axis.name, units))
             axis.convert_to_units(units,
                 filterwarning_action=filterwarning_action)
         

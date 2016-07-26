@@ -348,6 +348,17 @@ def test_read_BW_Zeiss_optical_scale_metadata():
     nt.assert_almost_equal(s.axes_manager[1].scale, 169.3333, places=3)
 
 
+def test_read_BW_Zeiss_optical_scale_metadata_auto_convert_units():
+    fname = os.path.join(my_path2, 'optical_Zeiss_AxioVision_BW.tif')
+    s = hs.load(fname, force_read_resolution=True, auto_convert_units=True)
+    nt.assert_equal(s.data.dtype, np.uint16)
+    nt.assert_equal(s.data.shape, (10, 13))
+    nt.assert_equal(s.axes_manager[0].units, 'mm')
+    nt.assert_equal(s.axes_manager[1].units, 'µm')
+    nt.assert_almost_equal(s.axes_manager[0].scale, 0.16933, places=5)
+    nt.assert_almost_equal(s.axes_manager[1].scale, 169.3333, places=3)
+    
+
 def test_read_BW_Zeiss_optical_scale_metadata_old():
     fname = os.path.join(my_path2, 'optical_Zeiss_AxioVision_BW.tif')
     s = hs.load(fname, force_read_resolution=True)

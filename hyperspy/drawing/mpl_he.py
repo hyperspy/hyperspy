@@ -33,6 +33,7 @@ class MPL_HyperExplorer(object):
         self.signal_data_function = None
         self.navigator_data_function = None
         self.axes_manager = None
+        self.auto_convert_units = True
         self.signal_title = ''
         self.navigator_title = ''
         self.signal_plot = None

@@ -40,9 +40,7 @@ class ImagePlot(BlittedFigure):
     data_fuction : function or method
         A function that returns a 2D array when called without any
         arguments.
-    pixel_units : {None, string}
-        The pixel units for the scale bar. Normally
-    scalebar, plot_ticks, colorbar, plot_indices : bool
+    scalebar, plot_ticks, colorbar, plot_indices, auto_convert_units : bool
     title : str
         The title is printed at the top of the image.
     vmin, vmax : float
@@ -82,6 +80,7 @@ class ImagePlot(BlittedFigure):
         self._text = None
         self._text_position = (0, 1.05,)
         self.axes_manager = None
+        self.auto_convert_units = None
         self._aspect = 1
         self._extent = None
         self.xaxis = None
@@ -122,7 +121,10 @@ class ImagePlot(BlittedFigure):
     @property
     def axes_ticks(self):
         if self._user_axes_ticks is None:
-            return self._auto_axes_ticks
+            if self.scalebar is False:
+                return True
+            else:
+                return self._auto_axes_ticks
         else:
             return self._user_axes_ticks
 
@@ -143,10 +145,44 @@ class ImagePlot(BlittedFigure):
             self._user_scalebar = value
         else:
             self._user_scalebar = None
+            
+    @property
+    def pixel_units(self):
+        return self._pixel_units
 
+    @pixel_units.setter
+    def pixel_units(self, units):
+        if hasattr(self, 'xaxis') and hasattr(self, 'yaxis'):
+            xunits = self.xaxis.units
+            yunits = self.yaxis.units
+            if units == 'auto':
+                units = None # auto convert the units
+            self.xaxis.convert_to_units(units)
+            self.yaxis.convert_to_units(units)
+            if self.scalebar and self.xaxis.units != self.yaxis.units:
+                # Converting back the units, because there are not
+                # compatible with displaying a scalebar
+                self.xaxis.convert_to_units(xunits)
+                self.yaxis.convert_to_units(yunits)
+            self._pixel_units = self.xaxis.units
+        else:
+            self._pixel_units = None
+            
     def configure(self):
         xaxis = self.xaxis
         yaxis = self.yaxis
+
+        if (xaxis.units == yaxis.units) and (
+                xaxis.scale == yaxis.scale):
+            self._auto_scalebar = True
+            self._auto_axes_ticks = False
+        else:
+            self._auto_scalebar = False
+            self._auto_axes_ticks = True
+
+        if self.auto_convert_units:
+            self.pixel_units = 'auto'
+            
         # Signal2D labels
         self._xlabel = '%s' % str(xaxis)
         if xaxis.units is not Undefined:
@@ -155,16 +191,7 @@ class ImagePlot(BlittedFigure):
         self._ylabel = '%s' % str(yaxis)
         if yaxis.units is not Undefined:
             self._ylabel += ' (%s)' % yaxis.units
-
-        if (xaxis.units == yaxis.units) and (
-                xaxis.scale == yaxis.scale):
-            self._auto_scalebar = True
-            self._auto_axes_ticks = False
-            self.pixel_units = xaxis.units
-        else:
-            self._auto_scalebar = False
-            self._auto_axes_ticks = True
-
+            
         # Calibrate the axes of the navigator image
         self._extent = (xaxis.axis[0] - xaxis.scale / 2.,
                         xaxis.axis[-1] + xaxis.scale / 2.,
@@ -200,7 +227,6 @@ class ImagePlot(BlittedFigure):
 
     def create_figure(self, max_size=8, min_size=2):
         if self.scalebar is True:
-
             wfactor = 1.1
         else:
             wfactor = 1
@@ -253,13 +279,10 @@ class ImagePlot(BlittedFigure):
             marker.plot()
         self.update(**kwargs)
         if self.scalebar is True:
-            if self.pixel_units is not None:
-                self.ax.scalebar = widgets.ScaleBar(
-                    ax=self.ax,
-                    units=self.pixel_units,
-                    animated=True,
-                    color=self.scalebar_color,
-                )
+            self.ax.scalebar = widgets.ScaleBar(ax=self.ax,
+                                                units=self.pixel_units,
+                                                animated=True,
+                                                color=self.scalebar_color)
 
         if self.colorbar is True:
             self._colorbar = plt.colorbar(self.ax.images[0], ax=self.ax)
@@ -389,7 +412,15 @@ class ImagePlot(BlittedFigure):
             self.events.closed.connect(
                 lambda: self.axes_manager.events.indices_changed.disconnect(
                     self.update), [])
+            if self.auto_convert_units:
+                print('Auto convert units active')
+                self.figure.canvas.mpl_connect('key_press_event', self.convert_units)
 
+    def convert_units(self, event):
+        if event.key == 'c':
+            print('Convert_units')
+            pass
+                
     def on_key_press(self, event):
         if event.key == 'h':
             self.adjust_contrast()
