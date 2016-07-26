@@ -236,7 +236,7 @@ class DataAxis(t.HasTraits):
                     raise IndexError(
                         "Start value above axis high bound for  axis %s."
                         "value: %f high_bound: %f" % (repr(self), start,
-                                                      self.high_value))
+                                                     self.high_value))
                 else:
                     # The start value is below the axis limit,
                     # we slice from the start.
@@ -246,15 +246,15 @@ class DataAxis(t.HasTraits):
                 stop = v2i(stop)
             except ValueError:
                 if stop < self.low_value:
-                    # The start value is above the axis limit
+                    # The stop value is below the axis limits
                     raise IndexError(
-                        "Start value above axis high bound for  axis %s."
-                        "value: %f high_bound: %f" % (repr(self), start,
-                                                      self.low_value))
+                        "Stop value below axis low bound for  axis %s."
+                        "value: %f low_bound: %f" % (repr(self), stop,
+                                                     self.low_value))
                 else:
-                    # The start value is below the axis limit,
-                    # we slice from the start.
-                    start = None
+                    # The stop value is below the axis limit,
+                    # we slice until the end.
+                    stop = None
 
         if step == 0:
             raise ValueError("slice step cannot be zero")
