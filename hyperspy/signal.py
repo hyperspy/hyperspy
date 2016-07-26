@@ -1458,7 +1458,7 @@ class BaseSignal(FancySlicing,
     _dtype = "real"
     _signal_dimension = -1
     _signal_type = ""
-    _legacy_signal_types = []
+    _alias_signal_types = []
     _additional_slicing_targets = [
         "metadata.Signal.Noise_properties.variance",
     ]
@@ -3709,7 +3709,7 @@ class BaseSignal(FancySlicing,
             signal_type=mp.Signal.signal_type
             if "Signal.signal_type" in mp
             else self._signal_type)
-        if self._legacy_signal_types:  # In case legacy types exist:
+        if self._alias_signal_types:  # In case legacy types exist:
             mp.Signal.signal_type = self._signal_type  # set to default!
         self.__init__(**self._to_dictionary(add_models=True))
 
@@ -3725,11 +3725,11 @@ class BaseSignal(FancySlicing,
 
         Parameters
         ----------
-        signal_type : {"EELS", "EDS TEM", "EDS SEM", "dielectric function"}
+        signal_type : {"EELS", "EDS_TEM", "EDS_SEM", "DielectricFunction"}
             Currently there are special features for "EELS" (electron
-            energy-loss spectroscopy), "EDS TEM" (energy dispersive X-rays of
+            energy-loss spectroscopy), "EDS_TEM" (energy dispersive X-rays of
             thin samples, normally obtained in a transmission electron
-            microscope), "EDS SEM" (energy dispersive X-rays of thick samples,
+            microscope), "EDS_SEM" (energy dispersive X-rays of thick samples,
             normally obtained in a scanning electron microscope) and
             "DielectricFuction". Setting the signal_type to the correct acronym
             is highly advisable when analyzing any signal for which HyperSpy
@@ -3740,11 +3740,6 @@ class BaseSignal(FancySlicing,
 
         """
         self.metadata.Signal.signal_type = signal_type
-        if signal_type in self._legacy_signal_types:
-            s = 'The signal_type "{}" is deprecated and will be removed in a later release of ' \
-                'HyperSpy. Please use "{}" instead'
-            warnings.warn(s.format(signal_type, self.__class__._signal_type),
-                          VisibleDeprecationWarning)
         self._assign_subclass()
 
     def set_signal_origin(self, origin):

@@ -68,14 +68,14 @@ Finally, for a stack of spectrum images, using "*" as a wildcard character:
 Microscope and detector parameters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-First, the signal type ("EDS TEM" or "EDS SEM") needs to be set with the
+First, the signal type ("EDS_TEM" or "EDS_SEM") needs to be set with the
 :py:meth:`~.signal.BaseSignal.set_signal_type` method. By assigning the class of
 the object, specific EDS methods are made available.
 
 .. code-block:: python
 
     >>> s = hs.load("Ni_superalloy_1pix.msa")
-    >>> s.set_signal_type("EDS SEM")
+    >>> s.set_signal_type("EDS_SEM")
     >>> s
     <EDSSEMSpectrum, title: Signal1D, dimensions: (|1024)>
 
@@ -84,7 +84,7 @@ the :py:func:`~.io.load` function:
 
 .. code-block:: python
 
-   >>> s = hs.load("Ni_superalloy_1pix.msa", signal_type="EDS SEM")
+   >>> s = hs.load("Ni_superalloy_1pix.msa", signal_type="EDS_SEM")
    >>> s
    <EDSSEMSpectrum, title: Signal1D, dimensions: (|1024)>
 
@@ -95,7 +95,7 @@ as follows:
 
 .. code-block:: python
 
-    >>> s = hs.load("Ni_superalloy_1pix.msa", signal_type="EDS SEM")
+    >>> s = hs.load("Ni_superalloy_1pix.msa", signal_type="EDS_SEM")
     >>> s.metadata.Acquisition_instrument.SEM
     ├── Detector
     │   └── EDS
@@ -113,7 +113,7 @@ You can also set these parameters directly:
 
 .. code-block:: python
 
-    >>> s = hs.load("Ni_superalloy_1pix.msa", signal_type="EDS SEM")
+    >>> s = hs.load("Ni_superalloy_1pix.msa", signal_type="EDS_SEM")
     >>> s.metadata.Acquisition_instrument.SEM.beam_energy = 30
 
 or by using the
@@ -121,14 +121,14 @@ or by using the
 
 .. code-block:: python
 
-    >>> s = hs.load("Ni_superalloy_1pix.msa", signal_type="EDS SEM")
+    >>> s = hs.load("Ni_superalloy_1pix.msa", signal_type="EDS_SEM")
     >>> s.set_microscope_parameters(beam_energy = 30)
 
 or through the GUI:
 
 .. code-block:: python
 
-    >>> s = hs.load("Ni_superalloy_1pix.msa", signal_type="EDS SEM")
+    >>> s = hs.load("Ni_superalloy_1pix.msa", signal_type="EDS_SEM")
     >>> s.set_microscope_parameters()
 
 .. figure::  images/EDS_microscope_parameters_gui.png
@@ -168,7 +168,7 @@ or adjusted manually with the :py:class:`~.axes.AxesManager`
 
 .. code-block:: python
 
-    >>> si = hs.load("Ni_superalloy_010.rpl", signal_type="EDS TEM").as_signal1D(0)
+    >>> si = hs.load("Ni_superalloy_010.rpl", signal_type="EDS_TEM").as_signal1D(0)
     >>> si.axes_manager[-1].name = 'E'
     >>> si.axes_manager['E'].units = 'keV'
     >>> si.axes_manager['E'].scale = 0.01
@@ -197,10 +197,10 @@ method.
 .. code-block:: python
 
     >>> # s1pixel contains all the parameters
-    >>> s1pixel = hs.load("Ni_superalloy_1pix.msa", signal_type="EDS TEM")
+    >>> s1pixel = hs.load("Ni_superalloy_1pix.msa", signal_type="EDS_TEM")
     >>>
     >>> # si contains no parameters
-    >>> si = hs.load("Ni_superalloy_010.rpl", signal_type="EDS TEM").as_signal1D(0)
+    >>> si = hs.load("Ni_superalloy_010.rpl", signal_type="EDS_TEM").as_signal1D(0)
     >>>
     >>> # Copy all the properties of s1pixel to si
     >>> si.get_calibration_from(s1pixel)

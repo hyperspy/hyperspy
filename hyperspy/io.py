@@ -60,17 +60,17 @@ def load(filenames=None,
         files can be loaded by using simple shell-style wildcards,
         e.g. 'my_file*.msa' loads all the files that starts
         by 'my_file' and has the '.msa' extension.
-    signal_type : {None, "EELS", "EDS SEM", "EDS TEM", "", str}
+    signal_type : {None, "EELS", "EDS_SEM", "EDS_TEM", "", str}
         The acronym that identifies the signal type.
         The value provided may determine the Signal subclass assigned to the
         data.
         If None the value is read/guessed from the file. Any other value
         overrides the value stored in the file if any.
         For electron energy-loss spectroscopy use "EELS".
-        For energy dispersive x-rays use "EDS TEM"
+        For energy dispersive x-rays use "EDS_TEM"
         if acquired from an electron-transparent sample — as it is usually
         the case in a transmission electron  microscope (TEM) —,
-        "EDS SEM" if acquired from a non electron-transparent sample
+        "EDS_SEM" if acquired from a non electron-transparent sample
         — as it is usually the case in a scanning electron  microscope (SEM) —.
         If "" (empty string) the value is not read from the file and is
         considered undefined.
@@ -120,7 +120,7 @@ def load(filenames=None,
     Examples
     --------
     Loading a single file providing the signal type:
-    >>> d = hs.load('file.dm3', signal_type="EDS TEM")
+    >>> d = hs.load('file.dm3', signal_type="EDS_TEM")
 
     Loading multiple files:
     >>> d = hs.load('file1.dm3','file2.dm3')
@@ -260,7 +260,7 @@ def assign_signal_subclass(dtype,
     ----------
     dtype : :class:`~.numpy.dtype`
     signal_dimension: int
-    signal_type : {"EELS", "EDS", "EDS SEM", "EDS TEM", "dielectric function", "", str}
+    signal_type : {"EELS", "EDS", "EDS_SEM", "EDS_TEM", "DielectricFunction", "", str}
 
 
     Returns
@@ -284,7 +284,7 @@ def assign_signal_subclass(dtype,
     dtype_dim_matches = [s for s in dtype_matches
                          if signal_dimension == s._signal_dimension]
     dtype_dim_type_matches = [s for s in dtype_dim_matches if signal_type == s._signal_type
-                              or signal_type in s._legacy_signal_types]
+                              or signal_type in s._alias_signal_types]
     if dtype_dim_type_matches:
         # Perfect match found, return it.
         return dtype_dim_type_matches[0]
@@ -389,16 +389,7 @@ def save(filename, signal, overwrite=None, **kwds):
         if overwrite is None:
             overwrite = hyperspy.misc.io.tools.overwrite(filename)
         if overwrite is True:
-            # TODO: Delete if-else-block in 2.0! Destroys backwards compatibility!
-            if signal._legacy_signal_types:  # In case legacy signal_type exists:
-                # Temporarily set signal type to the first legacy entry:
-                signal.metadata.Signal.signal_type = signal._legacy_signal_types[0]
-                try:  # Write file:
-                    writer.file_writer(filename, signal, **kwds)
-                finally:  # Even if writing fails, signal type has to revert:
-                    signal.metadata.Signal.signal_type = signal._signal_type
-            else:  # Otherwise, just write the file directly:
-                writer.file_writer(filename, signal, **kwds)
+            writer.file_writer(filename, signal, **kwds)
             _logger.info('The %s file was created' % filename)
             folder, filename = os.path.split(os.path.abspath(filename))
             signal.tmp_parameters.set_item('folder', folder)

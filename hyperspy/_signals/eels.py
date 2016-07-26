@@ -41,6 +41,7 @@ _logger = logging.getLogger(__name__)
 class EELSSpectrum(Signal1D):
 
     _signal_type = "EELS"
+    _alias_signal_types = ["TEM EELS"]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -1188,7 +1189,7 @@ class EELSSpectrum(Signal1D):
 
         eps = s._deepcopy_with_new_data(e1 + e2 * 1j)
         del s
-        eps.set_signal_type("dielectric function")
+        eps.set_signal_type("DielectricFunction")
         eps.metadata.General.title = (self.metadata.General.title +
                                       'dielectric function '
                                       '(from Kramers-Kronig analysis)')

@@ -11,7 +11,7 @@ and signal type are properly set:
 
     .. code-block:: python
 
-        >>> s.set_signal_type('dielectric function')
+        >>> s.set_signal_type('DielectricFunction')
 
 Note that :py:class:`~._signals.dielectric_function.DielectricFunction` is complex and therefore
 is a subclass of :py:class:`~._signals.complex_signal1d.ComplexSignal1D`.
