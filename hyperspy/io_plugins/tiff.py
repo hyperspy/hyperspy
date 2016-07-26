@@ -144,7 +144,7 @@ def file_reader(filename, record_by='image', force_read_resolution=False,
         See http://www.awaresystems.be/imaging/tiff/tifftags/resolutionunit.html
     **kwds, optional
     """
-    
+
     _logger.debug('************* Loading *************')
     # For testing the use of local and skimage tifffile library
     import_local_tifffile = False
@@ -203,7 +203,7 @@ def file_reader(filename, record_by='image', force_read_resolution=False,
                     scales[i], units[i] = scales_d['y'], units_d['y']
                     offsets[i] = offsets_d['y']
                 elif name in ['depth', 'image series', 'time']:
-                    scales[i], units[i] = scales_d['z'], units_d['z']            
+                    scales[i], units[i] = scales_d['z'], units_d['z']
                     offsets[i] = offsets_d['z']
         except:
             _logger.info("Scale and units could not be imported")
@@ -232,7 +232,7 @@ def _parse_scale_unit(tiff, op, dc, force_read_resolution):
     scales  = {axis:1.0 for axis in axes_l}
     offsets  = {axis:0.0 for axis in axes_l}
     units  = {axis:t.Undefined for axis in axes_l}
-    
+
     # for files created with DM
     if '65003' in op.keys():
         _logger.debug("Reading Gatan DigitalMicrograph tif metadata")
@@ -259,7 +259,7 @@ def _parse_scale_unit(tiff, op, dc, force_read_resolution):
 #        intensity_offset = op['65024']   # intensity offset
 #    if '65025' in op.keys():
 #        intensity_scale = op['65025']   # intensity scale
-        
+
     # for files created with imageJ
     if tiff[0].is_imagej:
         image_description = _decode_string(op["image_description"])
@@ -271,12 +271,12 @@ def _parse_scale_unit(tiff, op, dc, force_read_resolution):
             _logger.debug("Reading ImageJ tif metadata")
             # ImageJ write the unit in the image description
             if 'unit' in image_description:
-                unit = image_description.split('unit=')[1].split('\n')[0]
+                unit = image_description.split('unit=')[1].splitlines()[0]
                 for key in ['x', 'y']: units[key] = unit
                 scales['x'], scales['y'] = _get_scales_from_x_y_resolution(op)
             if 'spacing' in image_description:
-                scales['z'] = float(image_description.split('spacing=')[1].split('\n')[0])
-                            
+                scales['z'] = float(image_description.split('spacing=')[1].splitlines()[0])
+
     # for FEI SEM tiff files:
     elif '34682' in op.keys():
         _logger.debug("Reading FEI tif metadata")
@@ -309,9 +309,9 @@ def _parse_scale_unit(tiff, op, dc, force_read_resolution):
                 for key in ['x', 'y']:
                     units[key] = 'µm'
                     scales[key] = scales[key] * 10000
-                
+
     return scales, units, offsets
-             
+
 def _get_scales_from_x_y_resolution(op):
     scales = op["y_resolution"][1] / op["y_resolution"][0], \
              op["x_resolution"][1] / op["x_resolution"][0]
@@ -326,7 +326,7 @@ def _get_tags_dict(signal, extratags=[], factor=int(1E8)):
     _logger.debug("{0}".format(units))
     tags_dict = _get_imagej_kwargs(signal, scales, units, factor=factor)
     scales, units, offsets = _get_scale_unit(signal, encoding='latin-1')
-            
+
     tags_dict["extratags"].extend(
         _get_dm_kwargs_extratag(
             signal,
@@ -337,7 +337,7 @@ def _get_tags_dict(signal, extratags=[], factor=int(1E8)):
     return tags_dict
 
 
-            
+
 def _get_imagej_kwargs(signal, scales, units, factor=int(1E8)):
     resolution = ((factor, int(scales[-1] * factor)),
                   (factor, int(scales[-2] * factor)))
@@ -380,7 +380,7 @@ def _get_dm_kwargs_extratag(signal, scales, units, offsets):
     return extratags
 
 
-            
+
 def _get_scale_unit(signal, encoding=None):
     """ Return a list of scales and units, the length of the list is equal to
         the signal dimension. """
@@ -400,13 +400,13 @@ def _imagej_description(version='1.11a', **kwargs):
     """ Return a string that will be used by ImageJ to read the unit when
         appropriate arguments are provided """
     result = ['ImageJ=%s' % version]
-            
+
     append = []
     if kwargs['spacing'] is None:
         kwargs.pop('spacing')
     for key, value in list(kwargs.items()):
         if value == 'µm':
-            value = 'micron'            
+            value = 'micron'
         append.append('%s=%s' % (key.lower(), value))
 
     return '\n'.join(result + append + [''])
@@ -431,7 +431,7 @@ def _get_scale_FEI(original_metadata):
 
 def _read_original_metadata_Zeiss(original_metadata):
     """ information saved in tag '34118' """
-    metadata_list = _decode_string(original_metadata['34118']).split('\r\n')
+    metadata_list = _decode_string(original_metadata['34118']).splitlines()
     original_metadata['Zeiss_metadata'] = metadata_list
     return original_metadata
 
