@@ -227,30 +227,34 @@ class DataAxis(t.HasTraits):
 
         if isfloat(step):
             step = int(round(step / self.scale))
-        start_out_of_range = False
         if isfloat(start):
             try:
                 start = v2i(start)
             except ValueError:
-                # The value is below the axis limits
-                # we slice from the start.
-                start = None
-                start_out_of_range = True
+                if start > self.high_value:
+                    # The start value is above the axis limit
+                    raise IndexError(
+                        "Start value above axis high bound for  axis %s."
+                        "value: %f high_bound: %f" % (repr(self), start,
+                                                     self.high_value))
+                else:
+                    # The start value is below the axis limit,
+                    # we slice from the start.
+                    start = None
         if isfloat(stop):
             try:
                 stop = v2i(stop)
             except ValueError:
-                # The value is above the axes limits
-                # we slice up to the end.
-                if start_out_of_range:
-                    # Slicing in a interval which is out of the axis range.
-                    # In this case numpy would return an empty array
-                    # but HyperSpy doesn't support empty arrays so we raise
-                    # an error
-                    raise IndexError("Slice not in axis range for axis %s" %
-                                     repr(self))
+                if stop < self.low_value:
+                    # The start value is above the axis limit
+                    raise IndexError(
+                        "Start value above axis high bound for  axis %s."
+                        "value: %f high_bound: %f" % (repr(self), start,
+                                                     self.low_value))
                 else:
-                    stop = None
+                    # The start value is below the axis limit,
+                    # we slice from the start.
+                    start = None
 
         if step == 0:
             raise ValueError("slice step cannot be zero")
