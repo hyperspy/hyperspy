@@ -39,6 +39,9 @@ class Test1D:
                      self.signal.axes_manager._axes[0].offset)
         assert_equal(s.axes_manager._axes[0].scale,
                      self.signal.axes_manager._axes[0].scale)
+    @raises(IndexError)
+    def test_slice_out_of_range(self):
+        self.signal.isig[20.:30.]
 
     def test_reverse_slice(self):
         s = self.signal.isig[-1:1:-1]

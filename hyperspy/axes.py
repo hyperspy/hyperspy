@@ -227,6 +227,7 @@ class DataAxis(t.HasTraits):
 
         if isfloat(step):
             step = int(round(step / self.scale))
+        start_out_of_range = False
         if isfloat(start):
             try:
                 start = v2i(start)
@@ -234,13 +235,22 @@ class DataAxis(t.HasTraits):
                 # The value is below the axis limits
                 # we slice from the start.
                 start = None
+                start_out_of_range = True
         if isfloat(stop):
             try:
                 stop = v2i(stop)
             except ValueError:
                 # The value is above the axes limits
                 # we slice up to the end.
-                stop = None
+                if start_out_of_range:
+                    # Slicing in a interval which is out of the axis range.
+                    # In this case numpy would return an empty array
+                    # but HyperSpy doesn't support empty arrays so we raise
+                    # an error
+                    raise IndexError("Slice not in axis range for axis %s" %
+                                     repr(self))
+                else:
+                    stop = None
 
         if step == 0:
             raise ValueError("slice step cannot be zero")
