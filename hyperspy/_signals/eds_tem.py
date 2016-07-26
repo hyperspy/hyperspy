@@ -33,7 +33,6 @@ import warnings
 class EDSTEMSpectrum(EDSSpectrum):
 
     _signal_type = "EDS_TEM"
-    _alias_signal_types = ["EDS TEM"]
 
     def __init__(self, *args, **kwards):
         EDSSpectrum.__init__(self, *args, **kwards)
