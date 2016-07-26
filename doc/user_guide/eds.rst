@@ -372,7 +372,7 @@ A mass absorption coefficient database [Chantler2005]_ is available:
     >>>     elements=['Al','Zn'], weight_percent=[50,50], energies='Al_Ka')
     2587.4161643905127
 
-.. _eds_plot-label: 
+.. _eds_plot-label:
 
 Plotting
 --------
