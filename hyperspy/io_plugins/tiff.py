@@ -194,8 +194,8 @@ def file_reader(filename, record_by='image', force_read_resolution=False,
         offsets = [0.0] * len(names)
         units = [t.Undefined] * len(names)
         try:
-            scales_d, units_d, offsets_d = _parse_scale_unit(tiff, op, dc,
-                                                             force_read_resolution)
+            scales_d, units_d, offsets_d = \
+                _parse_scale_unit(tiff, op, dc, force_read_resolution)
             for i, name in enumerate(names):
                 if name == 'height':
                     scales[i], units[i] = scales_d['x'], units_d['x']
@@ -222,7 +222,8 @@ def file_reader(filename, record_by='image', force_read_resolution=False,
     return [{'data': dc,
              'original_metadata': op,
              'axes': axes,
-             'metadata': {'General': {'original_filename': os.path.split(filename)[1]},
+             'metadata': {'General': {'original_filename':
+                                      os.path.split(filename)[1]},
                           'Signal': {'signal_type': "",
                                      'record_by': "image", },
                           },
