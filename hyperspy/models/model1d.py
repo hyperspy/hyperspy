@@ -274,86 +274,6 @@ class Model1D(BaseModel):
 
     remove.__doc__ = BaseModel.remove.__doc__
 
-    def _connect_parameters2update_plot(self, components):
-        if self._plot_active is False:
-            return
-        for i, component in enumerate(components):
-            component.events.active_changed.connect(
-                self._model_line.update, [])
-            for parameter in component.parameters:
-                parameter.events.value_changed.connect(
-                    self._model_line.update, [])
-        if self._plot_components is True:
-            self._connect_component_lines()
-
-    def _disconnect_parameters2update_plot(self, components):
-        if self._model_line is None:
-            return
-        for component in components:
-            component.events.active_changed.disconnect(self._model_line.update)
-            for parameter in component.parameters:
-                parameter.events.value_changed.disconnect(
-                    self._model_line.update)
-        if self._plot_components is True:
-            self._disconnect_component_lines()
-
-    def update_plot(self, *args, **kwargs):
-        """Update model plot.
-
-        The updating can be suspended using `suspend_update`.
-
-        See Also
-        --------
-        suspend_update
-
-        """
-        if self._plot_active is True and self._suspend_update is False:
-            try:
-                self._update_model_line()
-                for component in [component for component in self if
-                                  component.active is True]:
-                    self._update_component_line(component)
-            except:
-                self._disconnect_parameters2update_plot(components=self)
-
-    @contextmanager
-    def suspend_update(self, update_on_resume=True):
-        """Prevents plot from updating until 'with' clause completes.
-
-        See Also
-        --------
-        update_plot
-        """
-
-        es = EventSupressor()
-        es.add(self.axes_manager.events.indices_changed)
-        if self._model_line:
-            f = self._model_line.update
-            for c in self:
-                es.add(c.events, f)
-                for p in c.parameters:
-                    es.add(p.events, f)
-        for c in self:
-            if hasattr(c, '_model_plot_line'):
-                f = c._model_plot_line.update
-                es.add(c.events, f)
-                for p in c.parameters:
-                    es.add(p.events, f)
-
-        old = self._suspend_update
-        self._suspend_update = True
-        with es.suppress():
-            yield
-        self._suspend_update = old
-
-        if update_on_resume is True:
-            self.update_plot()
-
-    def _update_model_line(self):
-        if (self._plot_active is True and
-                self._model_line is not None):
-            self._model_line.update()
-
     def __call__(self, non_convolved=False, onlyactive=False):
         """Returns the corresponding model for the current coordinates
 
@@ -594,6 +514,23 @@ class Model1D(BaseModel):
         gls = (2 * self._errfunc(param, y, weights) *
                self._jacobian(param, y)).sum(1)
         return gls
+
+    def _model2plot(self, axes_manager, out_of_range2nans=True):
+        old_axes_manager = None
+        if axes_manager is not self.axes_manager:
+            old_axes_manager = self.axes_manager
+            self.axes_manager = axes_manager
+            self.fetch_stored_values()
+        s = self.__call__(non_convolved=False, onlyactive=True)
+        if old_axes_manager is not None:
+            self.axes_manager = old_axes_manager
+            self.fetch_stored_values()
+        if out_of_range2nans is True:
+            ns = np.empty(self.axis.axis.shape)
+            ns.fill(np.nan)
+            ns[np.where(self.channel_switches)] = s
+            s = ns
+        return s
 
     def plot(self, plot_components=False):
         """Plots the current spectrum to the screen and a map with a
