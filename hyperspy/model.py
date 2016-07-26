@@ -1005,7 +1005,7 @@ class BaseModel(list):
                     pcov *= ((self._errfunc(self.p0, *args) ** 2).sum() /
                              (len(args[0]) - len(self.p0)))
 
-                self.p_std = np.sqrt(np.diag(pcov))
+                    self.p_std = np.sqrt(np.diag(pcov))
                 self.fit_output = output
 
             elif fitter == "odr":
