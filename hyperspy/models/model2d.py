@@ -172,29 +172,6 @@ class Model2D(BaseModel):
         errfunc = self._model_function(param).ravel() - y
         return errfunc * weights
 
-    # TODO: The methods below are implemented only for Model1D and should be
-    # added eventually also for Model2D. Probably there are smarter ways to do
-    # it than redefining every method, but it is structured this way now to
-    # make clear what is and isn't available
-    def _connect_parameters2update_plot(self):
-        raise NotImplementedError
-
-    def _disconnect_parameters2update_plot(self):
-        raise NotImplementedError
-
-    def update_plot(self, *args, **kwargs):
-        if self._plot_active is True:
-            raise NotImplementedError
-
-    def suspend_update(self):
-        raise NotImplementedError
-
-    def resume_update(self, update=True):
-        raise NotImplementedError
-
-    def _update_model_line(self):
-        raise NotImplementedError
-
     def _set_signal_range_in_pixels(self, i1=None, i2=None):
         raise NotImplementedError
 
@@ -225,12 +202,6 @@ class Model2D(BaseModel):
     def _jacobian(self, param, y, weights=None):
         raise NotImplementedError
 
-    def _function4odr(self, param, x):
-        raise NotImplementedError
-
-    def _jacobian4odr(self, param, x):
-        raise NotImplementedError
-
     def _poisson_likelihood_function(self, param, y, weights=None):
         raise NotImplementedError
 
@@ -240,6 +211,23 @@ class Model2D(BaseModel):
     def _gradient_ls(self, param, y, weights=None):
         raise NotImplementedError
 
+    def _model2plot(self, axes_manager, out_of_range2nans=True):
+        old_axes_manager = None
+        if axes_manager is not self.axes_manager:
+            old_axes_manager = self.axes_manager
+            self.axes_manager = axes_manager
+            self.fetch_stored_values()
+        s = self.__call__(non_convolved=False, onlyactive=True)
+        if old_axes_manager is not None:
+            self.axes_manager = old_axes_manager
+            self.fetch_stored_values()
+        if out_of_range2nans is True:
+            ns = np.empty(self.xaxis.shape)
+            ns.fill(np.nan)
+            ns[np.where(self.channel_switches)] = s.ravel()
+            s = ns
+        return s
+
     def plot(self, plot_components=False):
         raise NotImplementedError
 
@@ -247,33 +235,7 @@ class Model2D(BaseModel):
     def _connect_component_line(component):
         raise NotImplementedError
 
-    @staticmethod
-    def _disconnect_component_line(component):
-        raise NotImplementedError
-
-    def _connect_component_lines(self):
-        raise NotImplementedError
-
-    def _disconnect_component_lines(self):
-        raise NotImplementedError
-
     def _plot_component(self, component):
-        raise NotImplementedError
-
-    @staticmethod
-    def _update_component_line(component):
-        raise NotImplementedError
-
-    def _disable_plot_component(self, component):
-        raise NotImplementedError
-
-    def _close_plot(self):
-        raise NotImplementedError
-
-    def enable_plot_components(self):
-        raise NotImplementedError
-
-    def disable_plot_components(self):
         raise NotImplementedError
 
     def enable_adjust_position(

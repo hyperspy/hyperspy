@@ -56,6 +56,8 @@ from hyperspy.events import Events, Event
 from hyperspy.interactive import interactive
 from hyperspy.misc.signal_tools import are_signals_aligned
 
+import warnings
+
 _logger = logging.getLogger(__name__)
 
 
@@ -1456,6 +1458,7 @@ class BaseSignal(FancySlicing,
     _signal_dimension = -1
     _signal_type = ""
     _lazy = False
+    _alias_signal_types = []
     _additional_slicing_targets = [
         "metadata.Signal.Noise_properties.variance",
     ]
@@ -1779,8 +1782,7 @@ class BaseSignal(FancySlicing,
             file_data_dict['metadata'])
         if "title" not in self.metadata.General:
             self.metadata.General.title = ''
-        if (self._signal_type or
-                not self.metadata.has_item("Signal.signal_type")):
+        if (self._signal_type or not self.metadata.has_item("Signal.signal_type")):
             self.metadata.Signal.signal_type = self._signal_type
         if (self._lazy or
                 not self.metadata.has_item("Signal.lazy")):
@@ -1931,7 +1933,10 @@ class BaseSignal(FancySlicing,
             navigator.axes_manager.indices = self.axes_manager.indices[
                 navigator.axes_manager.signal_dimension:]
             navigator.axes_manager._update_attributes()
-            return navigator()
+            if np.issubdtype(navigator().dtype, complex):
+                return np.abs(navigator())
+            else:
+                return navigator()
 
         if not isinstance(navigator, BaseSignal) and navigator == "auto":
             if (self.axes_manager.navigation_dimension == 1 and
@@ -1986,8 +1991,12 @@ class BaseSignal(FancySlicing,
                         "The navigator dimensions are not compatible with "
                         "those of self.")
             elif navigator == "data":
-                self._plot.navigator_data_function = \
-                    lambda axes_manager=None: self.data
+                if np.issubdtype(self.data.dtype, complex):
+                    self._plot.navigator_data_function = \
+                        lambda axes_manager=None: np.abs(self.data)
+                else:
+                    self._plot.navigator_data_function = \
+                        lambda axes_manager=None: self.data
             elif navigator == "spectrum":
                 self._plot.navigator_data_function = \
                     get_1D_sum_explorer_wrapper
@@ -2305,7 +2314,7 @@ class BaseSignal(FancySlicing,
             by the number_of_parts the reminder data is lost without
             warning. If number_of_parts and step_sizes is 'auto',
             number_of_parts equals the length of the axis,
-            step_sizes equals one  and the axis is supress from each
+            step_sizes equals one  and the axis is suppressed from each
             sub_spectra.
         step_sizes : {'auto' | list of ints | int}
             Size of the splitted parts. If 'auto', the step_sizes equals one.
@@ -3769,6 +3778,8 @@ class BaseSignal(FancySlicing,
             if "Signal.signal_type" in mp
             else self._signal_type,
             lazy=mp.Signal.lazy if "Signal.lazy" in mp else self._lazy)
+        if self._alias_signal_types:  # In case legacy types exist:
+            mp.Signal.signal_type = self._signal_type  # set to default!
         self.__init__(**self._to_dictionary(add_models=True))
         if ('Signal.lazy' in mp and mp.Signal.lazy) or self._lazy:
             self._make_lazy()

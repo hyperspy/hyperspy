@@ -17,6 +17,7 @@
 
 
 import numpy as np
+import numpy.testing
 from nose.tools import (
     assert_true,
     assert_equal,
@@ -39,6 +40,18 @@ class Test1D:
                      self.signal.axes_manager._axes[0].offset)
         assert_equal(s.axes_manager._axes[0].scale,
                      self.signal.axes_manager._axes[0].scale)
+
+    @raises(IndexError)
+    def test_slice_out_of_range_interval_not_in_axis(self):
+        self.signal.isig[20.:30.]
+
+    def test_slice_out_of_range_interval_in_axis(self):
+        s = self.signal.isig[-20.:100.]
+        assert_equal(s.axes_manager[0].low_value,
+                     self.signal.axes_manager[0].low_value,)
+        assert_equal(s.axes_manager[0].high_value,
+                     self.signal.axes_manager[0].high_value,)
+        np.testing.assert_array_equal(s.data, self.signal.data)
 
     def test_reverse_slice(self):
         s = self.signal.isig[-1:1:-1]

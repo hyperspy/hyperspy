@@ -61,7 +61,7 @@ def load(filenames=None,
         files can be loaded by using simple shell-style wildcards,
         e.g. 'my_file*.msa' loads all the files that starts
         by 'my_file' and has the '.msa' extension.
-    signal_type : {None, "EELS", "EDS_TEM", "EDS_SEM", "", str}
+    signal_type : {None, "EELS", "EDS_SEM", "EDS_TEM", "", str}
         The acronym that identifies the signal type.
         The value provided may determine the Signal subclass assigned to the
         data.
@@ -124,8 +124,7 @@ def load(filenames=None,
     Examples
     --------
     Loading a single file providing the signal type:
-
-    >>> d = hs.load('file.dm3', signal_type='EDS_TEM')
+    >>> d = hs.load('file.dm3', signal_type="EDS_TEM")
 
     Loading multiple files:
 
@@ -271,8 +270,8 @@ def assign_signal_subclass(dtype,
     Parameters
     ----------
     dtype : :class:`~.numpy.dtype`
-    record_by: {"spectrum", "image", ""}
-    signal_type : {"EELS", "EDS", "EDS_TEM", "", str}
+    signal_dimension: int
+    signal_type : {"EELS", "EDS", "EDS_SEM", "EDS_TEM", "DielectricFunction", "", str}
     lazy: bool
 
     Returns
@@ -305,9 +304,8 @@ def assign_signal_subclass(dtype,
     dtype_matches = [s for s in signals.values() if dtype == s._dtype]
     dtype_dim_matches = [s for s in dtype_matches
                          if signal_dimension == s._signal_dimension]
-    dtype_dim_type_matches = [
-        s for s in dtype_dim_matches if signal_type == s._signal_type]
-
+    dtype_dim_type_matches = [s for s in dtype_dim_matches if signal_type == s._signal_type
+                              or signal_type in s._alias_signal_types]
     if dtype_dim_type_matches:
         # Perfect match found, return it.
         return dtype_dim_type_matches[0]
@@ -318,8 +316,8 @@ def assign_signal_subclass(dtype,
     else:
         # no signal_dimension match either, hence return the general subclass for
         # correct dtype
-        return [s for s in dtype_matches if s._signal_dimension ==
-                -1 and s._signal_type == ""][0]
+        return [s for s in dtype_matches if s._signal_dimension == -
+                1 and s._signal_type == ""][0]
 
 
 def dict2signal(signal_dict):

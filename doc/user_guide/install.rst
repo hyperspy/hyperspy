@@ -31,8 +31,8 @@ Bundle. This is a customised `WinPython <http://winpython.github.io/>`_
 distribution that includes HyperSpy, all its dependencies and many other
 scientific Python packages. HyperSpy Bundle does not interact with any other
 Python installation in your system, so it can be safely installed alongside
-other Python distributions. Moreover it is portable, so it can be installed from
-a USB key. When installing it with administator rights for all users it adds
+other Python distributions. Moreover it is portable, so it can be installed to
+a USB key. When installing it with administrator rights for all users it adds
 context (right-click) menu  entries to start the `Jupyter Notebook <http://jupyter.org>`_ and
 `Juypter QtConsole <http://jupyter.org/qtconsole/stable/>`_ inside the folder being clicked. See
 `start_jupyter_cm <https://github.com/hyperspy/start_jupyter_cm>`_ for details.
@@ -43,28 +43,40 @@ context (right-click) menu  entries to start the `Jupyter Notebook <http://jupyt
 Quick instructions to install HyperSpy using Anaconda (Linux, MacOs, Windows)
 -----------------------------------------------------------------------------
 
+Anaconda is recommended for the best performance (it is compiled using Intel
+MKL libraries) and the easiest installation. The academic license is free.
+
+
 #. Download and install
-   `Anaconda. <https://store.continuum.io/cshop/anaconda/>`_
-   For MacOS, be sure to choose the graphical installer, not the command-line version. Anaconda is recommended for the best performance (it is compiled
-   using Intel MKL libraries) and the easiest intallation (all the required
-   libraries are included). The academic license is free. Then install Hyperspy via the 'pip' command (in the Mac Terminal,  usually to be found in "Applications>Utilities" or in a Unix terminal):
+   `Anaconda <https://store.continuum.io/cshop/anaconda/>`_. If you are not
+   familiar with Anaconda please refer to their
+   `User Guide <https://docs.continuum.io/anaconda/index#user-guide>`_ for
+   details.
+
+#. Then install HyperSpy executing the following `conda` commands in the Anaconda
+   Prompt, Linux/Mac Terminal or Microsoft Windows Command Prompt. (This
+   depends on your OS and how you have installed Anaconda, see the `Anaconda
+   User Guide <https://docs.continuum.io/anaconda/index#user-guide>`_) for
+   details.
 
    .. code-block:: bash
 
        $ conda config --add channels conda-forge
-       $ conda install traitsui
-       $ pip install hyperspy
+       $ conda install hyperspy
 
-.. warning::
+
+.. note::
     Since version 0.8.4 HyperSpy only supports Python 3. If you need to
     install HyperSpy in Python 2.7 install version 0.8.3:
 
     .. code-block:: bash
 
+        $ conda install traitsui
         $ pip install --upgrade hyperspy==0.8.3-1
 
-To enable context-menu (right-click) startup in a chosen folder, install `start_jupyter_cm
-<https://github.com/hyperspy/start_jupyter_cm>`_. (currently only available for Gnome and Windows, not MacOS)
+To enable context-menu (right-click) startup in a chosen folder, install
+`start_jupyter_cm <https://github.com/hyperspy/start_jupyter_cm>`_. (Currently
+only available for Gnome and Windows, not MacOS.)
 
 
 For more options and details read the rest of the documentation.

@@ -105,7 +105,7 @@ class EDSSEM_mixin:
             mp.add_node('Acquisition_instrument.SEM')
         if mp.has_item('Acquisition_instrument.SEM.Detector.EDS') is False:
             mp.Acquisition_instrument.SEM.add_node('EDS')
-        mp.Signal.signal_type = 'EDS_SEM'
+        mp.Signal.signal_type = "EDS_SEM"
 
         # Transfer
         if 'Acquisition_instrument.TEM' in mp:
