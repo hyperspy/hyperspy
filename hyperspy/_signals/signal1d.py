@@ -263,13 +263,6 @@ def _shift1D(data, **kwargs):
     return si(axis)
 
 
-def _estimate_and_shift1D(current_guess, **kwargs):
-    shift = _estimate_shift1D(current_guess, **kwargs)
-    data = kwargs.get('data')
-    data[:] = _shift1D(data, shift=shift, **kwargs)
-    return shift
-
-
 class Signal1D(BaseSignal, CommonSignal1D):
 
     """
@@ -590,26 +583,6 @@ class Signal1D(BaseSignal, CommonSignal1D):
         ------
         SignalDimensionError if the signal dimension is not 1.
         """
-        return self._estimate_shift1D_skeleton(start=start,
-                                               end=end,
-                                               reference_indices=reference_indices,
-                                               max_shift=max_shift,
-                                               interpolate=interpolate,
-                                               number_of_interpolation_points=number_of_interpolation_points,
-                                               mask=mask,
-                                               show_progressbar=show_progressbar)
-
-    def _estimate_shift1D_skeleton(self,
-                                   start=None,
-                                   end=None,
-                                   reference_indices=None,
-                                   max_shift=None,
-                                   interpolate=True,
-                                   number_of_interpolation_points=5,
-                                   mask=None,
-                                   show_progressbar=None,
-                                   function=_estimate_shift1D,
-                                   **kwargs):
         if show_progressbar is None:
             show_progressbar = preferences.General.show_progressbar
         self._check_signal_dimension_equals_one()
@@ -628,7 +601,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
         iterating_kwargs = (('data', self),)
         if mask is not None:
             iterating_kwargs += (('mask', mask),)
-        shift_signal._map_iterate(function,
+        shift_signal._map_iterate(_estimate_shift1D,
                                   iterating_kwargs=iterating_kwargs,
                                   data_slice=slice(i1, i2),
                                   mask=None,
@@ -726,63 +699,23 @@ class Signal1D(BaseSignal, CommonSignal1D):
         if also_align is None:
             also_align = []
         self._check_signal_dimension_equals_one()
-        if self.metadata.Signal.lazy and not expand:
-            axis = self.axes_manager.signal_axes[0]
-            kwds = dict(original_axis=axis.axis,
-                        fill_value=fill_value,
-                        kind=interpolation_method,
-                        offset=axis.offset,
-                        scale=axis.scale,
-                        size=axis.size,
-                        )
-            shift_array = self._estimate_shift1D_skeleton(
-                start=start,
-                end=end,
-                reference_indices=reference_indices,
-                max_shift=max_shift,
-                interpolate=interpolate,
-                number_of_interpolation_points=number_of_interpolation_points,
-                mask=mask,
-                show_progressbar=show_progressbar,
-                function=_estimate_and_shift1D,
-                **kwds)
-
-            minimum, maximum = np.nanmin(shift_array), np.nanmax(shift_array)
-            if minimum < 0:
-                ihigh = 1 + axis.value2index(
-                    axis.high_value + minimum,
-                    rounding=math.floor)
-            else:
-                ihigh = axis.high_index + 1
-            if maximum > 0:
-                ilow = axis.value2index(axis.offset + maximum,
-                                        rounding=math.ceil)
-            else:
-                ilow = axis.low_index
-            if crop:
-                self.crop(axis.index_in_axes_manager,
-                          ilow, ihigh)
-            signals_to_shift = also_align
-            self.events.data_changed.trigger(obj=self)
-        else:
-
-            if self.metadata.Signal.lazy:
-                _logger.warning('In order to properly expand, the lazy '
-                                'reference signal will be read twice (once to '
-                                'estimate shifts, and second time to shift '
-                                'appropriatelly), which might take a long time. '
-                                'Use expand=False to only pass through the data '
-                                'once.')
-            shift_array = self.estimate_shift1D(
-                start=start,
-                end=end,
-                reference_indices=reference_indices,
-                max_shift=max_shift,
-                interpolate=interpolate,
-                number_of_interpolation_points=number_of_interpolation_points,
-                mask=mask,
-                show_progressbar=show_progressbar)
-            signals_to_shift = [self] + also_align
+        if self.metadata.Signal.lazy:
+            _logger.warning('In order to properly expand, the lazy '
+                            'reference signal will be read twice (once to '
+                            'estimate shifts, and second time to shift '
+                            'appropriatelly), which might take a long time. '
+                            'Use expand=False to only pass through the data '
+                            'once.')
+        shift_array = self.estimate_shift1D(
+            start=start,
+            end=end,
+            reference_indices=reference_indices,
+            max_shift=max_shift,
+            interpolate=interpolate,
+            number_of_interpolation_points=number_of_interpolation_points,
+            mask=mask,
+            show_progressbar=show_progressbar)
+        signals_to_shift = [self] + also_align
         for signal in signals_to_shift:
             signal.shift1D(shift_array=shift_array,
                            interpolation_method=interpolation_method,
