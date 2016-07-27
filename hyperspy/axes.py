@@ -231,16 +231,30 @@ class DataAxis(t.HasTraits):
             try:
                 start = v2i(start)
             except ValueError:
-                # The value is below the axis limits
-                # we slice from the start.
-                start = None
+                if start > self.high_value:
+                    # The start value is above the axis limit
+                    raise IndexError(
+                        "Start value above axis high bound for  axis %s."
+                        "value: %f high_bound: %f" % (repr(self), start,
+                                                      self.high_value))
+                else:
+                    # The start value is below the axis limit,
+                    # we slice from the start.
+                    start = None
         if isfloat(stop):
             try:
                 stop = v2i(stop)
             except ValueError:
-                # The value is above the axes limits
-                # we slice up to the end.
-                stop = None
+                if stop < self.low_value:
+                    # The stop value is below the axis limits
+                    raise IndexError(
+                        "Stop value below axis low bound for  axis %s."
+                        "value: %f low_bound: %f" % (repr(self), stop,
+                                                     self.low_value))
+                else:
+                    # The stop value is below the axis limit,
+                    # we slice until the end.
+                    stop = None
 
         if step == 0:
             raise ValueError("slice step cannot be zero")
@@ -1051,7 +1065,7 @@ class AxesManager(t.HasTraits):
                 signature = "\n<tr class='bolder_row'> "
             else:
                 signature = "\n<tr> "
-            signature +=" ".join(("{}" for _ in args))+" </tr>"
+            signature += " ".join(("{}" for _ in args)) + " </tr>"
             return signature.format(*map(lambda x:
                                          '\n<' + tag +
                                          '>{}</'.format(x) + tag + '>',

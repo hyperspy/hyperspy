@@ -23,11 +23,11 @@ import numbers
 import logging
 
 import numpy as np
-from contextlib import contextmanager
 import scipy.odr as odr
 from scipy.optimize import (leastsq, least_squares,
                             minimize, differential_evolution)
 from scipy.linalg import svd
+from contextlib import contextmanager
 
 from hyperspy.external.progressbar import progressbar
 from hyperspy.defaults_parser import preferences
@@ -42,10 +42,9 @@ from hyperspy.misc.export_dictionary import (export_to_dictionary,
 from hyperspy.misc.utils import (slugify, shorten_name, stash_active_state,
                                  dummy_context_manager)
 from hyperspy.misc.slicing import copy_slice_from_whitelist
-from hyperspy.events import Events, Event
+from hyperspy.events import Events, Event, EventSuppressor
 import warnings
 from hyperspy.exceptions import VisibleDeprecationWarning
-from hyperspy.events import EventSupressor
 
 _logger = logging.getLogger(__name__)
 
@@ -506,7 +505,7 @@ class BaseModel(list):
         """
         if self._plot_active is True and self._suspend_update is False:
             try:
-                self._update_model_repr()
+                self._update_model_line()
                 for component in [component for component in self if
                                   component.active is True]:
                     self._update_component_line(component)
@@ -522,7 +521,7 @@ class BaseModel(list):
         update_plot
         """
 
-        es = EventSupressor()
+        es = EventSuppressor()
         es.add(self.axes_manager.events.indices_changed)
         if self._model_line:
             f = self._model_line.update
@@ -531,7 +530,7 @@ class BaseModel(list):
                 for p in c.parameters:
                     es.add(p.events, f)
         for c in self:
-            if hasattr(c, '_model_plot_repr'):
+            if hasattr(c, '_model_plot_line'):
                 f = c._model_plot_line.update
                 es.add(c.events, f)
                 for p in c.parameters:
@@ -550,12 +549,12 @@ class BaseModel(list):
         if self._plot_components is True:
             self.disable_plot_components()
         self._disconnect_parameters2update_plot(components=self)
-        self._model_repr = None
+        self._model_line = None
 
     def _update_model_repr(self):
         if (self._plot_active is True and
                 self._model_line is not None):
-            self._model_repr.update()
+            self._model_line.update()
 
     @staticmethod
     def _connect_component_line(component):
@@ -1087,7 +1086,6 @@ class BaseModel(list):
                     de_b = self.free_parameters_boundaries
                     de_b = tuple(((a if a is not None else -np.inf,
                                    b if b is not None else np.inf) for a, b in de_b))
-                    print(de_b)
                     self.p0 = differential_evolution(tominimize, de_b,
                                                      args=args, **kwargs).x
 

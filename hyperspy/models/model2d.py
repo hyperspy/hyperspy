@@ -202,12 +202,6 @@ class Model2D(BaseModel):
     def _jacobian(self, param, y, weights=None):
         raise NotImplementedError
 
-    def _function4odr(self, param, x):
-        raise NotImplementedError
-
-    def _jacobian4odr(self, param, x):
-        raise NotImplementedError
-
     def _poisson_likelihood_function(self, param, y, weights=None):
         raise NotImplementedError
 
@@ -215,9 +209,6 @@ class Model2D(BaseModel):
         raise NotImplementedError
 
     def _gradient_ls(self, param, y, weights=None):
-        raise NotImplementedError
-
-    def plot(self, plot_components=False):
         raise NotImplementedError
 
     def _model2plot(self, axes_manager, out_of_range2nans=True):
@@ -236,6 +227,16 @@ class Model2D(BaseModel):
             ns[np.where(self.channel_switches)] = s.ravel()
             s = ns
         return s
+
+    def plot(self, plot_components=False):
+        raise NotImplementedError
+
+    @staticmethod
+    def _connect_component_line(component):
+        raise NotImplementedError
+
+    def _plot_component(self, component):
+        raise NotImplementedError
 
     def enable_adjust_position(
             self, components=None, fix_them=True, show_label=True):
