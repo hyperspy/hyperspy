@@ -306,6 +306,7 @@ with update_version_when_dev() as version:
                   'hyperspy.tests.io',
                   'hyperspy.tests.model',
                   'hyperspy.tests.mva',
+                  'hyperspy.tests.samfire',
                   'hyperspy.tests.signal',
                   'hyperspy.tests.utils',
                   'hyperspy.tests.misc',
