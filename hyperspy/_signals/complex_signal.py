@@ -140,7 +140,7 @@ class ComplexSignal(BaseSignal):
 
         """
         sig = self._deepcopy_with_new_data(np.angle(self.data, deg))
-        sig.set_signal_type('')
+        sig.set_signal_type("")
         if sig.metadata.General.title:
             title = sig.metadata.General.title
         else:
