@@ -80,33 +80,43 @@ class TestComplexProperties:
 
 def test_get_unwrapped_phase_1D():
     phase = 6 * (1 - np.abs(np.indices((9,)) - 4) / 4)
-    s = hs.signals.ComplexSignal(np.ones_like(phase) * np.exp(1j * phase))
-    s.axes_manager.set_signal_dimension(1)
-    phase_unwrapped = s.unwrapped_phase(seed=42, show_progressbar=False)
-    nt.assert_equal(
-        phase_unwrapped.metadata.General.title,
-        'unwrapped phase(Untitled Signal)')
-    nt.assert_almost_equal(phase_unwrapped.data, phase)
+    sig = hs.signals.ComplexSignal(np.ones_like(phase) * np.exp(1j * phase))
+    sig.axes_manager.set_signal_dimension(1)
+    for s in (sig, sig.as_lazy()):
+        phase_unwrapped = s.unwrapped_phase(seed=42, show_progressbar=False)
+        nt.assert_equal(
+            phase_unwrapped.metadata.General.title,
+            'unwrapped phase(Untitled Signal)')
+        nt.assert_almost_equal(phase_unwrapped.data, phase)
 
 
 def test_get_unwrapped_phase_2D():
     phase = 5 * (1 - np.abs(np.indices((9, 9)) - 4).sum(axis=0) / 8)
-    s = hs.signals.ComplexSignal(np.ones_like(phase) * np.exp(1j * phase))
-    phase_unwrapped = s.unwrapped_phase(seed=42, show_progressbar=False)
-    nt.assert_equal(
-        phase_unwrapped.metadata.General.title,
-        'unwrapped phase(Untitled Signal)')
-    nt.assert_almost_equal(phase_unwrapped.data, phase)
+    sig = hs.signals.ComplexSignal(np.ones_like(phase) * np.exp(1j * phase))
+    for s in (sig, sig.as_lazy()):
+        phase_unwrapped = s.unwrapped_phase(seed=42, show_progressbar=False)
+        nt.assert_equal(
+            phase_unwrapped.metadata.General.title,
+            'unwrapped phase(Untitled Signal)')
+        nt.assert_almost_equal(phase_unwrapped.data, phase)
 
 
 def test_get_unwrapped_phase_3D():
     phase = 4 * (1 - np.abs(np.indices((9, 9, 9)) - 4).sum(axis=0) / 12)
-    s = hs.signals.ComplexSignal(np.ones_like(phase) * np.exp(1j * phase))
-    phase_unwrapped = s.unwrapped_phase(seed=42, show_progressbar=False)
-    nt.assert_equal(
-        phase_unwrapped.metadata.General.title,
-        'unwrapped phase(Untitled Signal)')
-    nt.assert_almost_equal(phase_unwrapped.data, phase)
+    sig = hs.signals.ComplexSignal(np.ones_like(phase) * np.exp(1j * phase))
+    for s in (sig, sig.as_lazy()):
+        phase_unwrapped = s.unwrapped_phase(seed=42, show_progressbar=False)
+        nt.assert_equal(
+            phase_unwrapped.metadata.General.title,
+            'unwrapped phase(Untitled Signal)')
+        nt.assert_almost_equal(phase_unwrapped.data, phase)
+
+
+class TestLazyComplexProperties:
+
+    def setUp(self):
+        super().setUp()
+        self.s = self.s.as_lazy()
 
 
 if __name__ == '__main__':
