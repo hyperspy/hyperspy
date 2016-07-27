@@ -23,83 +23,68 @@ import numpy as np
 
 
 class ScalableFixedPattern2D(Component):
-    """Fixed 2-dimensional pattern component with interpolation support.
+    """Fixed 2-dimensional pattern component which is scaled by a 2D affine
+    transformation of the form:
 
-        f(x,y) = a*s(b*x-x0) + c
-
-    +------------+-----------+
-    | Parameter  | Attribute |
-    +------------+-----------+
-    +------------+-----------+
-    |     a      |  yscale   |
-    +------------+-----------+
-    |     b      |  xscale   |
-    +------------+-----------+
-    |    x0      |  shift    |
-    +------------+-----------+
-
+        X = d11*x + d12*y
+        Y = d21*x + d21*y
 
     The fixed two-dimensional pattern is defined by a single image which must
-    be passed to the ScalableFixedPattern2D constructor, e.g.:
+    be passed to the ScalableReferencePattern2D constructor, e.g.:
 
     .. code-block:: ipython
 
-        In [1]: s = load('my_spectrum.hdf5')
-        In [2] : my_fixed_pattern = components.ScalableFixedPattern(s))
+        In [1]: im = load('my_image_data.hdf5')
+        In [2] : ref = components.ScalableFixedPattern(im.inav[11,30]))
 
     Attributes
     ----------
 
-    yscale, xscale, shift : Float
-    interpolate : Bool
-        If False no interpolation is performed and only a y-scaled spectrum is
-        returned.
+    D : list
+        List containing matrix components for affine matrix
 
-    Methods
-    -------
-
-    prepare_interpolator : method to fine tune the interpolation
+    order : 1, 3
+        Interpolation order used when applying image transformation
 
     """
 
-    def __init__(self, image,
-                 xscale=1.,
-                 yscale=1.,
-                 shear=0.,
-                 rotation=0.,
-                 scale=1.,
+    def __init__(self, signal2D,
+                 d11=1., d12=0.,
+                 d21=0., d22=1.,
+                 order=3
                  ):
 
-        Component.__init__(self, ['xscale',
-                                  'yscale',
-                                  'shear',
-                                  'rotation',
-                                  'scale',
-                                  ])
+        Component.__init__(self, ['d11', 'd12',
+                                  'd21', 'd22'])
 
-        self.image = image
-        self.xscale.value = xscale
-        self.yscale.value = yscale
-        self.shear.value = shear
-        self.rotation.value = rotation
-        self.scale.value = scale
+        self._whitelist['signal2D'] = ('init,sig', signal2D)
+        self.signal = signal2D
+        self.order = order
+        self.d11.value = d11
+        self.d12.value = d12
+        self.d21.value = d21
+        self.d22.value = d22
 
     def function(self, x, y):
 
-        image = self.image.data
-        sx = self.xscale.value
-        sy = self.yscale.value
-        sxy = self.shear.value
-        rot = self.rotation.value
-        sz = self.scale.value
+        signal2D = self.signal.data
+        order = self.order
+        d11 = self.d11.value
+        d12 = self.d12.value
+        d21 = self.d21.value
+        d22 = self.d22.value
 
-        shifty, shiftx = np.array(image.shape[:2]) / 2
+        D = np.array([[d11, d12, 0.],
+                      [d21, d22, 0.],
+                      [0., 0., 1.]])
+
+        shifty, shiftx = np.array(signal2D.shape[:2]) / 2
 
         shift = tf.SimilarityTransform(translation=[-shiftx, -shifty])
-        tform = tf.AffineTransform(rotation=rot, scale=(sx, sy), shear=sxy)
+        tform = tf.AffineTransform(matrix=D)
         shift_inv = tf.SimilarityTransform(translation=[shiftx, shifty])
 
-        transformed = sz * tf.warp(image, (shift + (tform + shift_inv)).inverse,
-                                   order=3)
+        transformed = tf.warp(signal2D, (shift + (tform + shift_inv)).inverse,
+                              order=order)
 
         return transformed
