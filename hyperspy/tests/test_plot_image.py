@@ -21,29 +21,30 @@ from matplotlib.testing.decorators import image_comparison
 
 import hyperspy.api as hs
 
+
 def _generate_image_stack_signal():
     image = hs.signals.Signal2D(np.random.random((2, 3, 512, 512)))
     for i in range(2):
         for j in range(3):
-            image.data[i,j,:] = scipy.misc.ascent()*(i+0.5+j)
+            image.data[i, j, :] = scipy.misc.ascent() * (i + 0.5 + j)
     axes = image.axes_manager
     axes[2].name = "x"
     axes[3].name = "y"
     axes[2].units = "nm"
     axes[3].units = "nm"
-            
+
     return image
 
 
 @image_comparison(baseline_images=['plot_multiple_images'],
                   extensions=['png'])
 def test_plot_multiple_images():
-    image = _generate_image_stack_signal()           
+    image = _generate_image_stack_signal()
 
     image.metadata.General.title = 'multi-dimensional Lena'
     hs.plot.plot_images(image, tight_layout=True)
-    
-    
+
+
 @image_comparison(baseline_images=['plot_image_scalebar'],
                   extensions=['png'])
 def test_plot_scalebar_image():
@@ -83,19 +84,19 @@ def test_plot_image_scalebar_not_square_pixel():
                   extensions=['png'])
 def test_plot_multiple_images_label():
     image = _generate_image_stack_signal()
-        
+
     image.metadata.General.title = 'multi-dimensional Lena'
-    hs.plot.plot_images(image, suptitle='Custom figure title', 
-                           label=['Signal2D 1', 'Signal2D 2', 'Signal2D 3',
-                           'Signal2D 4', 'Signal2D 5', 'Signal2D 6'],
-                           axes_decor=None, tight_layout=True)
+    hs.plot.plot_images(image, suptitle='Custom figure title',
+                        label=['Signal2D 1', 'Signal2D 2', 'Signal2D 3',
+                               'Signal2D 4', 'Signal2D 5', 'Signal2D 6'],
+                        axes_decor=None, tight_layout=True)
 
 
 @image_comparison(baseline_images=['plot_multiple_images_list'],
-                  extensions=['png'])    
+                  extensions=['png'])
 def test_plot_multiple_images_list():
     # load red channel of raccoon as an image
-    image0 = hs.signals.Signal2D(scipy.misc.face()[:,:,0])
+    image0 = hs.signals.Signal2D(scipy.misc.face()[:, :, 0])
 
     image0.metadata.General.title = 'Rocky Raccoon - R'
     axes0 = image0.axes_manager
@@ -103,7 +104,7 @@ def test_plot_multiple_images_list():
     axes0[1].name = "y"
     axes0[0].units = "mm"
     axes0[1].units = "mm"
-    
+
     # load lena into 2x3 hyperimage
     image1 = _generate_image_stack_signal()
     axes1 = image1.axes_manager
@@ -111,16 +112,16 @@ def test_plot_multiple_images_list():
     axes1[3].name = "y"
     axes1[2].units = "nm"
     axes1[3].units = "nm"
-    
+
     # load green channel of raccoon as an image
-    image2 = hs.signals.Signal2D(scipy.misc.face()[:,:,1])
+    image2 = hs.signals.Signal2D(scipy.misc.face()[:, :, 1])
     image2.metadata.General.title = 'Rocky Raccoon - G'
     axes2 = image2.axes_manager
     axes2[0].name = "x"
     axes2[1].name = "y"
     axes2[0].units = "mm"
     axes2[1].units = "mm"
-    
+
     # load rgb imimagesage
     rgb = hs.signals.Signal1D(scipy.misc.face())
     rgb.change_dtype("rgb8")
@@ -129,8 +130,8 @@ def test_plot_multiple_images_list():
     axesRGB[0].name = "x"
     axesRGB[1].name = "y"
     axesRGB[0].units = "nm"
-    axesRGB[1].units = "nm"    
-    
+    axesRGB[1].units = "nm"
+
     hs.plot.plot_images([image0, image1, image2, rgb], tight_layout=True,
-                           #colorbar='single', 
-                           labelwrap=20)
+                        # colorbar='single',
+                        labelwrap=20)
