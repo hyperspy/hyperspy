@@ -645,6 +645,10 @@ class EDSSpectrum(Signal1D):
                                                            FWHM_MnKa='auto')
             element, line = utils_eds._get_element_and_line(Xray_line)
             img = self.isig[window[0]:window[1]].integrate1D(-1)
+            if np.issubdtype(img.data.dtype, np.integer):
+                # The operations below require a float dtype with the default
+                # numpy casting rule ('same_kind')
+                img.change_dtype("float")
             if background_windows is not None:
                 bw = background_windows[i]
                 # TODO: test to prevent slicing bug. To be reomved when fixed

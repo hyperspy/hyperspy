@@ -29,7 +29,7 @@ from hyperspy.exceptions import WrongObjectError
 from hyperspy.decorators import interactive_range_selector
 from hyperspy.drawing.widgets import VerticalLineWidget, LabelWidget
 from hyperspy.gui.tools import ComponentFit
-from hyperspy.events import EventSupressor
+from hyperspy.events import EventSuppressor
 
 
 class Model1D(BaseModel):
@@ -721,7 +721,7 @@ class Model1D(BaseModel):
 
     def _on_widget_moved(self, widget):
         parameter = self._reverse_lookup_position_widget(widget)
-        es = EventSupressor()
+        es = EventSuppressor()
         for w in self._position_widgets[parameter]:
             es.add((w.events.moved, w._set_position))
         with es.suppress():
