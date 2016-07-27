@@ -2280,7 +2280,7 @@ class BaseSignal(FancySlicing,
             by the number_of_parts the reminder data is lost without
             warning. If number_of_parts and step_sizes is 'auto',
             number_of_parts equals the length of the axis,
-            step_sizes equals one  and the axis is supress from each
+            step_sizes equals one  and the axis is suppressed from each
             sub_spectra.
         step_sizes : {'auto' | list of ints | int}
             Size of the splitted parts. If 'auto', the step_sizes equals one.

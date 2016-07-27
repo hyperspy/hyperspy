@@ -191,7 +191,7 @@ class TestEventsSuppression(EventsBase):
 
     def test_suppressor_init_args(self):
         with self.events.b.suppress():
-            es = he.EventSupressor((self.events.a, self.on_trigger),
+            es = he.EventSuppressor((self.events.a, self.on_trigger),
                                    self.events.c)
             with es.suppress():
                 self.trigger_check(self.events.a.trigger, False)
@@ -214,7 +214,7 @@ class TestEventsSuppression(EventsBase):
 
     def test_suppressor_add_args(self):
         with self.events.b.suppress():
-            es = he.EventSupressor()
+            es = he.EventSuppressor()
             es.add((self.events.a, self.on_trigger), self.events.c)
             with es.suppress():
                 self.trigger_check(self.events.a.trigger, False)
@@ -237,7 +237,7 @@ class TestEventsSuppression(EventsBase):
 
     def test_suppressor_all_callback_in_events(self):
         with self.events.b.suppress():
-            es = he.EventSupressor()
+            es = he.EventSuppressor()
             es.add((self.events, self.on_trigger),)
             with es.suppress():
                 self.trigger_check(self.events.a.trigger, False)
