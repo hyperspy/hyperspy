@@ -47,7 +47,7 @@ from hyperspy.misc.export_dictionary import (export_to_dictionary,
 from hyperspy.misc.utils import (slugify, shorten_name, stash_active_state,
                                  dummy_context_manager)
 from hyperspy.misc.slicing import copy_slice_from_whitelist
-from hyperspy.events import Events, Event, EventSupressor
+from hyperspy.events import Events, Event, EventSuppressor
 
 _logger = logging.getLogger(__name__)
 
@@ -524,7 +524,7 @@ class BaseModel(list):
         update_plot
         """
 
-        es = EventSupressor()
+        es = EventSuppressor()
         es.add(self.axes_manager.events.indices_changed)
         if self._model_line:
             f = self._model_line.update
