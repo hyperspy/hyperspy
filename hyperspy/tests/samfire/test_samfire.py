@@ -321,6 +321,8 @@ class TestSamfireMain:
         samf.start(fitter='mpfit', bounded=True)
         # let at most 3 pixels to fail randomly.
         fitmask = samf.metadata.marker == -np.ones(self.shape)
+        print('number of pixels failed: {}'.format(np.sum(fitmask) -
+                                                   np.prod(self.shape)))
         nt.assert_true(np.sum(fitmask) >= np.prod(self.shape) - 3)
         for o_c, n_c in zip([self.g, self.lor1, self.lor2], self.model):
             for p, p1 in zip(o_c.parameters, n_c.parameters):
