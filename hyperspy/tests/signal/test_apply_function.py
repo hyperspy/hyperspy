@@ -77,3 +77,17 @@ class TestSignal1D:
             ([[0.42207377, 1., 1.57792623],
               [3.42207377, 4., 4.57792623]]))))
         nt.assert_true(m.data_changed.called)
+
+
+class TestLazyImage(TestImage):
+
+    def setup(self):
+        super().setup()
+        self.im = self.im.as_lazy()
+
+
+class TestLazySignal1D(TestSignal1D):
+
+    def setup(self):
+        super().setup()
+        self.s = self.s.as_lazy()

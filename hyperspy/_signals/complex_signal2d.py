@@ -18,12 +18,12 @@
 
 
 from hyperspy._signals.common_signal2d import CommonSignal2D
-from hyperspy._signals.complex_signal import ComplexSignal
+from hyperspy._signals.complex_signal import (ComplexSignal, LazyComplexSignal)
 from hyperspy.docstrings.plot import (
     BASE_PLOT_DOCSTRING, PLOT2D_DOCSTRING, COMPLEX_DOCSTRING, KWARGS_DOCSTRING)
 
 
-class ComplexSignal2D(ComplexSignal, CommonSignal2D):
+class Complex2Dmixin:
 
     """BaseSignal subclass for complex 2-dimensional data."""
 
@@ -90,3 +90,15 @@ class ComplexSignal2D(ComplexSignal, CommonSignal2D):
         )
     plot.__doc__ %= (BASE_PLOT_DOCSTRING, PLOT2D_DOCSTRING,
                      COMPLEX_DOCSTRING, KWARGS_DOCSTRING)
+
+
+class ComplexSignal2D(Complex2Dmixin, ComplexSignal, CommonSignal2D):
+
+    """BaseSignal subclass for complex 2-dimensional data."""
+    pass
+
+
+class LazyComplexSignal2D(Complex2Dmixin, LazyComplexSignal, CommonSignal2D):
+
+    """BaseSignal subclass for lazy complex 2-dimensional data."""
+    pass
