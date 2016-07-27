@@ -339,10 +339,6 @@ class Signal1DLine(object):
                             np.nanmin(clipped_ydata))
             if self.get_complex:
                 yreal = self.data_function(axes_manager=self.axes_manager).real
-                y1, y2 = np.searchsorted(self.axis.axis,
-                                         self.ax.get_xbound())
-                y2 += 2
-                y1, y2 = np.clip((y1, y2), 0, len(yreal - 1))
                 clipped_yreal = yreal[y1:y2]
                 y_min = min(y_min, clipped_yreal.min())
                 y_max = max(y_max, clipped_yreal.max())
