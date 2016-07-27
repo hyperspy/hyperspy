@@ -337,6 +337,10 @@ class Signal1DLine(object):
             clipped_ydata = ydata[y1:y2]
             y_max, y_min = (np.nanmax(clipped_ydata),
                             np.nanmin(clipped_ydata))
+            if self.get_complex:
+                yreal = self.data_function(axes_manager=self.axes_manager).real
+                y_min = min(y_min, yreal.min())
+                y_max = max(y_max, yreal.max())
             self.ax.set_ylim(y_min, y_max)
         if self.plot_indices is True:
             self.text.set_text(self.axes_manager.indices)
