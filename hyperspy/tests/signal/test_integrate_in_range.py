@@ -19,3 +19,10 @@ class Test1D:
         integrated_signal = self.signal.integrate_in_range(signal_range=(None,
                                                                          None))
         nose.tools.assert_true(np.allclose(integrated_signal.data, 20,))
+
+
+class TestLazy1D(Test1D):
+
+    def setUp(self):
+        super().setUp()
+        self.signal = self.signal.as_lazy()

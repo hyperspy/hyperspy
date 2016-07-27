@@ -608,8 +608,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
                                   ref=ref,
                                   ip=ip,
                                   interpolate=interpolate,
-                                  show_progressbar=show_progressbar,
-                                  **kwargs)
+                                  show_progressbar=show_progressbar,)
         shift_array = shift_signal.data
         if max_shift is not None:
             if interpolate is True:

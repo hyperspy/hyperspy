@@ -21,3 +21,10 @@ class TestFindPeaks1DOhaver():
         signal1D = self.signal
         peak_list = signal1D.find_peaks1D_ohaver()[0]
         assert_equal(len(peak_list), 48)
+
+
+class TestLazyFindPeaks1DOhaver(TestFindPeaks1DOhaver):
+
+    def setUp(self):
+        super().setUp()
+        self.signal = self.signal.as_lazy()

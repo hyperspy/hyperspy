@@ -1719,6 +1719,8 @@ class BaseSignal(FancySlicing,
     def _set_data(self, value):
         import dask.array as da
         if isinstance(value, (h5py.Dataset, da.Array)):
+            if isinstance(value, da.Array) and not value.ndim:
+                value = value.reshape((1,))
             self._data = value
         else:
             self._data = np.atleast_1d(np.asanyarray(value))
@@ -2254,7 +2256,10 @@ class BaseSignal(FancySlicing,
         s = out or self._deepcopy_with_new_data(None)
         data = array_tools.rebin(self.data, new_shape_in_array)
         if out:
-            out.data[:] = data
+            if out._lazy:
+                out.data = data
+            else:
+                out.data[:] = data
         else:
             s.data = data
         for axis, axis_src in zip(s.axes_manager._axes,
@@ -3698,7 +3703,10 @@ class BaseSignal(FancySlicing,
         if out is None:
             return sp
         else:
-            out.data[:] = sp.data
+            if out._lazy:
+                out.data = sp.data
+            else:
+                out.data[:] = sp.data
             out.events.data_changed.trigger(obj=out)
     as_signal1D.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
 
@@ -3745,7 +3753,10 @@ class BaseSignal(FancySlicing,
         if out is None:
             return im
         else:
-            out.data[:] = im.data
+            if out._lazy:
+                out.data = im.data
+            else:
+                out.data[:] = im.data
             out.events.data_changed.trigger(obj=out)
     as_signal2D.__doc__ %= OUT_ARG
 

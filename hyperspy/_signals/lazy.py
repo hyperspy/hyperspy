@@ -148,6 +148,8 @@ class LazySignal(BaseSignal):
             ar_axes = ar_axes[0]
         current_data = self._lazy_data(axis=axes)
         new_data = function(current_data, axis=ar_axes)
+        if not new_data.ndim:
+            new_data = new_data.reshape((1,))
         if out:
             if out.data.shape == new_data.shape:
                 out.data = new_data
@@ -178,6 +180,9 @@ class LazySignal(BaseSignal):
         self._make_lazy(axis=axis)
         return super().rebin(new_shape, out=out)
     rebin.__doc__ = BaseSignal.rebin.__doc__
+
+    def __array__(self, dtype=None):
+        return self.data.__array__(dtype=dtype)
 
     def _unfold(self, *args):
         raise lazyerror
@@ -210,6 +215,8 @@ class LazySignal(BaseSignal):
 
         current_data = self._lazy_data(axis=axis)
         new_data = dask_diff(current_data, order, arr_axis)
+        if not new_data.ndim:
+            new_data = new_data.reshape((1,))
 
         s = out or self._deepcopy_with_new_data(new_data)
         if out:
@@ -234,7 +241,7 @@ class LazySignal(BaseSignal):
         from dask.delayed import do as del_do
         from dask.array.core import slices_from_chunks
         from itertools import product
-        import scipy.integrate as integrate
+        from scipy import integrate
         axis = self.axes_manager[axis]
         data = self._lazy_data(axis=axis)
         chunks = data.chunks
@@ -245,8 +252,8 @@ class LazySignal(BaseSignal):
         shapes = product(*chunks)
         result_list = [
             da.from_delayed(
-                integ, shape) for integ, shape in zip(
-                integs, shapes)]
+                integ, shape, dtype=data.dtype) for integ, shape
+            in zip(integs, shapes)]
         new_data = da.concatenate(result_list, axis=axis.index_in_array)
         s = out or self._deepcopy_with_new_data(new_data)
         if out:
@@ -271,7 +278,7 @@ class LazySignal(BaseSignal):
             idx.data = data
             return idx
         else:
-            out.data[:] = data
+            out.data = data
             out.events.data_changed.trigger(obj=out)
     valuemax.__doc__ = BaseSignal.valuemax.__doc__
 

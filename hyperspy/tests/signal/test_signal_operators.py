@@ -19,6 +19,7 @@
 import numpy as np
 from numpy.testing import assert_array_equal
 import nose.tools as nt
+from nose.plugins.skip import SkipTest
 
 from hyperspy import signals
 
@@ -35,6 +36,8 @@ class TestBinaryOperators:
         assert_array_equal(s.data, self.s1.data * 3)
 
     def test_sum_in_place_same_shape_signals(self):
+        if self.s1._lazy:
+            raise SkipTest
         s1 = self.s1
         self.s1 += self.s2
         assert_array_equal(self.s1.data, np.ones((2, 3)) * 3)
@@ -43,6 +46,8 @@ class TestBinaryOperators:
     def test_sum_same_shape_signals_not_aligned(self):
         s1 = self.s1
         s2 = signals.Signal1D(2 * np.ones((3, 2)))
+        if s1._lazy:
+            s2 = s2.as_lazy()
         s1.axes_manager._axes[0].navigate = False
         s1.axes_manager._axes[1].navigate = True
         s2.axes_manager._axes[1].navigate = False
@@ -53,6 +58,8 @@ class TestBinaryOperators:
         assert_array_equal(s21.data, s12.data)
 
     def test_sum_in_place_same_shape_signals_not_aligned(self):
+        if self.s1._lazy:
+            raise SkipTest
         s1 = self.s1
         s2 = signals.Signal1D(2 * np.ones((3, 2)))
         s1c = s1
@@ -95,6 +102,8 @@ class TestBinaryOperators:
 
     @nt.raises(ValueError)
     def test_broadcast_in_place_missing_sig_wrong(self):
+        if self.s1._lazy:
+            raise SkipTest
         s1 = self.s1
         s2 = self.s2
         s1.axes_manager.set_signal_dimension(0)  # (3, 2|)
@@ -103,6 +112,8 @@ class TestBinaryOperators:
         s1 += s2
 
     def test_broadcast_in_place(self):
+        if self.s1._lazy:
+            raise SkipTest
         s1 = self.s1
         s1.axes_manager.set_signal_dimension(1)  # (3|2)
         s2 = signals.BaseSignal(np.ones((4, 2, 4, 3)))
@@ -118,6 +129,9 @@ class TestBinaryOperators:
         s32 = self.s1  # (3| 2)
         s31 = signals.Signal1D(np.ones((1, 3)))
         s12 = signals.Signal1D(np.ones((2, 1)))
+        if s32._lazy:
+            s31 = s31.as_lazy()
+            s12 = s12.as_lazy()
         assert_array_equal((s32 + s31).data, s32.data + 1)
         assert_array_equal((s32 + s12).data, s32.data + 1)
 
@@ -138,3 +152,18 @@ class TestUnaryOperators:
 
     def test_abs(self):
         assert_array_equal(abs(self.s1).data, abs(self.s1.data))
+
+
+class TestLazyBinaryOperators(TestBinaryOperators):
+
+    def setUp(self):
+        super().setUp()
+        self.s1 = self.s1.as_lazy()
+        self.s2 = self.s2.as_lazy()
+
+
+class TestLazyUnaryOperators(TestUnaryOperators):
+
+    def setUp(self):
+        super().setUp()
+        self.s1 = self.s1.as_lazy()

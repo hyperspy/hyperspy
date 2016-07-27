@@ -58,3 +58,17 @@ class TestRemoveBackground1DPowerLaw:
             background_type='PowerLaw',
             show_progressbar=None)
         assert_true(np.allclose(s1.data, np.zeros(len(s1.data)), atol=60))
+
+
+class TestLazyRemBack1DGauss(TestRemoveBackground1DGaussian):
+
+    def setUp(self):
+        super().setUp()
+        self.signal = self.signal.as_lazy()
+
+
+class TestLazyRemBack1DPowerLaw(TestRemoveBackground1DPowerLaw):
+
+    def setUp(self):
+        super().setUp()
+        self.signal = self.signal.as_lazy()

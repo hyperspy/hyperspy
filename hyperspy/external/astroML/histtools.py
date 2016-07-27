@@ -339,7 +339,7 @@ def dasky_histogram(a, bins=10, **kwargs):
         _, bins = dasky_scotts_bin_width(a, True)
     elif bins == 'freedman':
         _, bins = dasky_freedman_bin_width(a, True)
-    elif isinstance(bins, basestring):
+    elif isinstance(bins, str):
         raise ValueError("unrecognized bin code: '%s'" % bins)
     elif not np.iterable(bins):
         kwargs['range'] = da.compute(a.min(), a.max())

@@ -3,6 +3,7 @@ from unittest import mock
 import numpy as np
 from numpy.testing import assert_array_equal
 import nose.tools as nt
+from nose.plugins.skip import SkipTest
 
 from hyperspy import signals
 
@@ -99,7 +100,6 @@ class Test2D:
     def test_estimate_poissonian_noise_noarg(self):
         self.signal.estimate_poissonian_noise_variance()
         variance = self.signal.metadata.Signal.Noise_properties.variance
-        np.testing.assert_array_equal(variance.data, self.signal.data)
         np.testing.assert_array_equal(variance.data, self.signal.data)
 
     def test_estimate_poissonian_noise_with_args(self):
@@ -637,3 +637,95 @@ class TestOutArg:
         s.data = np.ma.array(s.data)
         ss = s.sum()  # Sum over navigation, data shape (6,)
         s.sum(axis=s.axes_manager._axes, out=ss)
+
+
+class TestLazyDerivative(TestDerivative):
+
+    def setup(self):
+        super().setup()
+        self.s = self.s.as_lazy()
+
+
+class TestLazyOutArg(TestOutArg):
+
+    def setup(self):
+        super().setup()
+        self.s = self.s.as_lazy()
+
+    def test_masked_array_mean(self):
+        raise SkipTest
+
+    def test_masked_array_sum(self):
+        raise SkipTest
+
+    def test_masked_arrays_out(self):
+        raise SkipTest
+
+
+class TestLazy2D(Test2D):
+
+    def setup(self):
+        super().setUp()
+        self.signal = self.signal.as_lazy()
+
+    @nt.raises(NotImplementedError)
+    def test_unfold_image(self):
+        s = self.signal
+        s.axes_manager.set_signal_dimension(2)
+        s.unfold()
+
+    def test_unfold_image_returns_true(self):
+        raise SkipTest
+
+
+class TestLazy3D(Test3D):
+
+    def setup(self):
+        super().setUp()
+        self.signal = self.signal.as_lazy()
+
+    def test_swap_axes_simple(self):
+        raise SkipTest
+
+    def test_swap_axes_iteration(self):
+        raise SkipTest
+
+
+class TestLazy4D(Test4D):
+
+    def setup(self):
+        super().setUp()
+        self.s = self.s.as_lazy()
+
+    @nt.raises(NotImplementedError)
+    def test_unfold_spectrum(self):
+        self.s.unfold()
+
+    def test_unfold_spectrum_returns_true(self):
+        raise SkipTest
+
+    def test_unfold_spectrum_signal_returns_false(self):
+        raise SkipTest
+
+    @nt.raises(NotImplementedError)
+    def test_unfold_image(self):
+        im = self.s.to_signal2D()
+        im.unfold()
+
+    def test_image_signal_unfolded_deepcopy(self):
+        raise SkipTest
+
+    def test_image_signal_unfolded_true(self):
+        raise SkipTest
+
+    def test_image_signal_unfolded_back_to_false(self):
+        raise SkipTest
+
+
+def test_lazy_signal_iterator():
+    s = signals.Signal1D(np.arange(3).reshape((3, 1))).as_lazy()
+    nt.assert_equal(next(s).data[0], 0)
+    # If the following fails it can be because the iteration index was not
+    # restarted
+    for i, signal in enumerate(s):
+        nt.assert_equal(i, signal.data[0])

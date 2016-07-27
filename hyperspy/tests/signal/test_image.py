@@ -14,7 +14,8 @@ class Test2D:
         s = self.im.to_signal1D()
         nt.assert_true(isinstance(s, Signal1D))
         nt.assert_equal(s.data.shape, self.im.data.T.shape)
-        nt.assert_true(s.data.flags["C_CONTIGUOUS"])
+        if not s._lazy:
+            nt.assert_true(s.data.flags["C_CONTIGUOUS"])
 
 
 class Test3D:
@@ -26,7 +27,8 @@ class Test3D:
         s = self.im.to_signal1D()
         nt.assert_true(isinstance(s, Signal1D))
         nt.assert_equal(s.data.shape, (3, 4, 2))
-        nt.assert_true(s.data.flags["C_CONTIGUOUS"])
+        if not s._lazy:
+            nt.assert_true(s.data.flags["C_CONTIGUOUS"])
 
 
 class Test4D:
@@ -38,4 +40,26 @@ class Test4D:
         s = self.s.to_signal1D()
         nt.assert_true(isinstance(s, Signal1D))
         nt.assert_equal(s.data.shape, (3, 4, 5, 2))
-        nt.assert_true(s.data.flags["C_CONTIGUOUS"])
+        if not s._lazy:
+            nt.assert_true(s.data.flags["C_CONTIGUOUS"])
+
+
+class TestLazy2D(Test2D):
+
+    def setUp(self):
+        super().setUp()
+        self.im = self.im.as_lazy()
+
+
+class TestLazy3D(Test3D):
+
+    def setUp(self):
+        super().setUp()
+        self.im = self.im.as_lazy()
+
+
+class TestLazy4D(Test4D):
+
+    def setUp(self):
+        super().setUp()
+        self.s = self.s.as_lazy()
