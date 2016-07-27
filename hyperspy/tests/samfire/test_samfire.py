@@ -338,6 +338,37 @@ class TestSamfireMain:
                     p.map['values'][:7, :15][mask],
                     rtol=0.3)
 
+#
+#class TestSamfireMain:
+#
+#    def setUp(self):
+#        np.random.seed(1)
+#        self.model, self.lor1, self.g, self.lor2 = generate_test_model()
+#        self.shape = (7, 15)
+#
+#    def test_multiprocessed(self):
+#        self.model.fit()
+#        samf = self.model.create_samfire(ipyparallel=False)
+#        samf.plot_every = np.nan
+#        samf.strategies[0].radii = 1.
+#        samf.strategies.remove(1)
+#        samf.optional_components = [self.model[2]]
+#        samf.start(fitter='mpfit', bounded=True)
+#        nt.assert_true(np.all(samf.metadata.marker == -np.ones(self.shape)))
+#        for o_c, n_c in zip([self.g, self.lor1, self.lor2], self.model):
+#            for p, p1 in zip(o_c.parameters, n_c.parameters):
+#
+#                print(o_c._id_name, n_c._id_name, p1._id_name, p._id_name)
+#                print(p.map['values'][:4, :4])
+#                print('----------------------------')
+#                print(p1.map['values'][:4, :4])
+#                print('ooooooooooooooooooooooooooooooooooooooooooo')
+#
+#                np.testing.assert_allclose(
+#                    p1.map['values'][n_c._active_array],
+#                    p.map['values'][:7, :15][n_c._active_array],
+#                    rtol=0.3)
+
 
 def test_create_worker_defaults():
     worker = create_worker('worker')
