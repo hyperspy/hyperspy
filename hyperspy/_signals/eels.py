@@ -41,6 +41,7 @@ _logger = logging.getLogger(__name__)
 class EELSSpectrum(Signal1D):
 
     _signal_type = "EELS"
+    _alias_signal_types = ["TEM EELS"]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
