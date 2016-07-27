@@ -62,7 +62,7 @@ install_req = ['scipy',
                'python-dateutil',
                'ipyparallel']
 
-#the hack to deal with setuptools + installing the package in ReadTheDoc:
+# the hack to deal with setuptools + installing the package in ReadTheDoc:
 if 'readthedocs.org' in sys.executable:
     install_req = []
 
