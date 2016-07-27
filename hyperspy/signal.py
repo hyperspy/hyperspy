@@ -1909,7 +1909,10 @@ class BaseSignal(FancySlicing,
             navigator.axes_manager.indices = self.axes_manager.indices[
                 navigator.axes_manager.signal_dimension:]
             navigator.axes_manager._update_attributes()
-            return navigator()
+            if np.issubdtype(navigator().dtype, complex):
+                return np.abs(navigator())
+            else:
+                return navigator()
 
         if not isinstance(navigator, BaseSignal) and navigator == "auto":
             if (self.axes_manager.navigation_dimension == 1 and
@@ -1964,8 +1967,12 @@ class BaseSignal(FancySlicing,
                         "The navigator dimensions are not compatible with "
                         "those of self.")
             elif navigator == "data":
-                self._plot.navigator_data_function = \
-                    lambda axes_manager=None: self.data
+                if np.issubdtype(self.data.dtype, complex):
+                    self._plot.navigator_data_function = \
+                        lambda axes_manager=None: np.abs(self.data)
+                else:
+                    self._plot.navigator_data_function = \
+                        lambda axes_manager=None: self.data
             elif navigator == "spectrum":
                 self._plot.navigator_data_function = \
                     get_1D_sum_explorer_wrapper
@@ -2280,7 +2287,7 @@ class BaseSignal(FancySlicing,
             by the number_of_parts the reminder data is lost without
             warning. If number_of_parts and step_sizes is 'auto',
             number_of_parts equals the length of the axis,
-            step_sizes equals one  and the axis is supress from each
+            step_sizes equals one  and the axis is suppressed from each
             sub_spectra.
         step_sizes : {'auto' | list of ints | int}
             Size of the splitted parts. If 'auto', the step_sizes equals one.
