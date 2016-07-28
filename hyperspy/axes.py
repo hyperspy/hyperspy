@@ -35,6 +35,7 @@ from hyperspy.exceptions import VisibleDeprecationWarning
 _logger = logging.getLogger(__name__)
 _ureg = pint.UnitRegistry()
 
+
 class ndindex_nat(np.ndindex):
 
     def __next__(self):
@@ -59,15 +60,19 @@ def generate_axis(offset, scale, size, offset_index=0):
     Numpy array
 
     """
+
     return np.linspace(offset - offset_index * scale,
                        offset + scale * (size - 1 - offset_index),
                        size)
 
+
 class UnitConversion(object):
-    
-    def __init__(self, units=t.Undefined):
+
+    def __init__(self, units=t.Undefined, scale=1.0, offset=0.0):
         self.units = units
-    
+        self.scale = scale
+        self.offset = units
+
     def _ignore_conversion(self, units):
         if units == t.Undefined:
             return True
@@ -78,7 +83,7 @@ class UnitConversion(object):
                           UserWarning)
             return True
         return False
-    
+
     def _convert_compact_scale_units(self):
         """ Return scale and units converted to compact, human-readable units.
             See to_compact() method of the pint library for details.
@@ -86,25 +91,31 @@ class UnitConversion(object):
         """
         if self._ignore_conversion(self.units):
             return
-        scale = self.scale*_ureg(self.units)
-        scale_size = 0.5*scale*self.size
+        scale = self.scale * _ureg(self.units)
+        offset = self.offset * _ureg(self.units)
+        scale_size = 0.5 * scale * self.size
         converted_scale = scale.to(scale_size.to_compact().units)
+        converted_offset = offset.to(scale_size.to_compact().units)
         self.units = '{:~}'.format(converted_scale.units)
         self.scale = float(converted_scale.magnitude)
-    
+        self.offset = float(converted_offset.magnitude)
+
     def _convert_scale_units(self, converted_units):
         if self._ignore_conversion(converted_units) or self._ignore_conversion(self.units):
             return
-        scale = self.scale*_ureg(self.units)
+        scale = self.scale * _ureg(self.units)
+        offset = self.offset * _ureg(self.units)
         scale = scale.to(_ureg(converted_units))
+        offset = offset.to(_ureg(converted_units))
         self.units = '{:~}'.format(scale.units)
         self.scale = float(scale.magnitude)
+        self.offset = float(offset.magnitude)
 
     def convert_to_units(self, units=None, filterwarning_action='always'):
         """ Convert the scale and the units of the current axis. If the units
         is not supported by the pint library, the scale and units are not
         changed.
-        
+
         Parameters
         ----------
         units : list of string of the same length than axes, str or None.
@@ -122,21 +133,22 @@ class UnitConversion(object):
         with warnings.catch_warnings():
             warnings.filterwarnings(filterwarning_action, category=UserWarning)
             if units is None:
-                self._convert_compact_scale_units()     
+                self._convert_compact_scale_units()
             else:
                 self._convert_scale_units(units)
 
     @property
     def units(self):
         return self._units
-    
+
     @units.setter
     def units(self, s):
         if s == t.Undefined:
             self._units = s
         else:
             self._units = s.replace('um', 'µm').replace(' ', '')
-                
+
+
 class DataAxis(t.HasTraits, UnitConversion):
     name = t.Str()
     units = t.Str()
@@ -561,13 +573,14 @@ class DataAxis(t.HasTraits, UnitConversion):
     @property
     def units(self):
         return self._units
-    
+
     @units.setter
     def units(self, s):
         if s == t.Undefined:
             self._units = s
         else:
             self._units = s.replace('um', 'µm').replace(' ', '')
+
 
 class AxesManager(t.HasTraits):
 
@@ -924,7 +937,7 @@ class AxesManager(t.HasTraits):
         """ Convert the scale and the units of the selected axes. If the units
         is not supported by the pint library, the scale and units are not
         changed.
-        
+
         Parameters
         ----------
         axes : iterable of `DataAxis` instances, str or None.
@@ -953,14 +966,15 @@ class AxesManager(t.HasTraits):
         elif axes == 'signal':
             axes = self.signal_axes
         if type(units) is str or units is None:
-            units = [units]*len(axes)
+            units = [units] * len(axes)
         elif len(units) != len(axes):
             _logger.error('Please provide a correct "units" argument')
         for axis, units in zip(axes, units):
-            _logger.debug('Convert axis "{0}" to units: "{1}"'.format(axis.name, units))
+            _logger.debug(
+                'Convert axis "{0}" to units: "{1}"'.format(axis.name, units))
             axis.convert_to_units(units,
-                filterwarning_action=filterwarning_action)
-        
+                                  filterwarning_action=filterwarning_action)
+
     def update_axes_attributes_from(self, axes,
                                     attributes=["scale", "offset", "units"]):
         """Update the axes attributes to match those given.
