@@ -244,7 +244,7 @@ class Test_get_lines_intentisity:
     def test_background_substraction(self):
         s = self.signal
         intens = s.get_lines_intensity(["Al_Ka"], plot_result=False)[0].data
-        s += 1.
+        s = s + 1.
         np.testing.assert_allclose(s.estimate_background_windows(
             xray_lines=["Al_Ka"])[0, 0], 1.25666201, atol=1e-3)
         np.testing.assert_allclose(
@@ -329,3 +329,31 @@ class Test_energy_units:
                                    (1.4865, 0.07661266213883969))
         np.testing.assert_allclose(s._get_line_energy('Al_Ka', FWHM_MnKa=128),
                                    (1.4865, 0.073167615787314))
+
+
+class TestLazy_metadata(Test_metadata):
+
+    def setUp(self):
+        super().setUp()
+        self.signal = self.signal.as_lazy()
+
+
+class TestLazyGetLinesIntensity(Test_get_lines_intentisity):
+
+    def setUp(self):
+        super().setUp()
+        self.signal = self.signal.as_lazy()
+
+
+class TestLazyToolsBulk(Test_tools_bulk):
+
+    def setUp(self):
+        super().setUp()
+        self.signal = self.signal.as_lazy()
+
+
+class TestLazyEnergyUnits(Test_energy_units):
+
+    def setUp(self):
+        super().setUp()
+        self.signal = self.signal.as_lazy()

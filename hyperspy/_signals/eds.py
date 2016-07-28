@@ -624,7 +624,7 @@ class EDS_mixin:
                     bck2 = self.isig[bw[2]:bw[3]].integrate1D(-1)
                 corr_factor = (indexes[5] - indexes[4]) / (
                     (indexes[1] - indexes[0]) + (indexes[3] - indexes[2]))
-                img -= (bck1 + bck2) * corr_factor
+                img = img - (bck1 + bck2) * corr_factor
             img.metadata.General.title = (
                 'X-ray line intensity of %s: %s at %.2f %s' %
                 (self.metadata.General.title,

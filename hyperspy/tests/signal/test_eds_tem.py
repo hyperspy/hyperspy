@@ -276,12 +276,11 @@ class Test_simple_model:
             rtol=0.03)
 
 
-class Test_get_lines_intentisity:
-
-    def test_with_signals_examples(self):
-        from hyperspy.misc.example_signals_loading import \
-            load_1D_EDS_TEM_spectrum as EDS_TEM_Spectrum
-        s = EDS_TEM_Spectrum()
+def test_with_signals_examples():
+    from hyperspy.misc.example_signals_loading import \
+        load_1D_EDS_TEM_spectrum as EDS_TEM_Spectrum
+    sig = EDS_TEM_Spectrum()
+    for s in (sig, sig.as_lazy()):
         np.testing.assert_allclose(
             np.array([res.data[0] for res in s.get_lines_intensity()]),
             np.array([3710, 15872]))
@@ -319,3 +318,31 @@ class Test_eds_markers:
         nt.assert_sequence_equal(
             sorted(s._xray_markers.keys()),
             ['Zn_Ka', 'Zn_La'])
+
+
+class TestLazy_metadata(Test_metadata):
+
+    def setUp(self):
+        super().setUp()
+        self.signal = self.signal.as_lazy()
+
+
+class TestLazyQuantification(Test_quantification):
+
+    def setUp(self):
+        super().setUp()
+        self.signal = self.signal.as_lazy()
+
+
+class TestLazyVacuumMask(Test_vacum_mask):
+
+    def setUp(self):
+        super().setUp()
+        self.signal = self.signal.as_lazy()
+
+
+class TestLazySimpleModel(Test_simple_model):
+
+    def setUp(self):
+        super().setUp()
+        self.signal = self.signal.as_lazy()

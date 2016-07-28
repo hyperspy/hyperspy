@@ -47,6 +47,7 @@ from hyperspy._signals.complex_signal1d import (ComplexSignal1D,
                                                 LazyComplexSignal1D)
 from hyperspy._signals.complex_signal2d import (ComplexSignal2D,
                                                 LazyComplexSignal2D)
-from hyperspy._signals.dielectric_function import DielectricFunction
+from hyperspy._signals.dielectric_function import (DielectricFunction,
+                                                   LazyDielectricFunction)
 from hyperspy._signals.lazy import LazySignal
 from hyperspy.signal import BaseSignal
