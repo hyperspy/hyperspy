@@ -26,8 +26,10 @@ from scipy.misc import face, ascent
 from scipy.ndimage import fourier_shift
 
 import hyperspy.api as hs
+from hyperspy.decorators import lazifyTestClass
 
 
+@lazifyTestClass
 class TestSubPixelAlign:
 
     def setUp(self):
@@ -59,6 +61,7 @@ class TestSubPixelAlign:
         np.testing.assert_allclose(s.data[4], s.data[0], rtol=1)
 
 
+@lazifyTestClass
 class TestAlignTools:
 
     def setUp(self):
@@ -124,20 +127,6 @@ class TestAlignTools:
         # Check alignment is correct
         d_al = s.data[:, ds[0]:-ds[0], ds[1]:-ds[1]]
         nt.assert_true(np.all(d_al == self.aligned))
-
-
-class TestLazySubPixelAlign(TestSubPixelAlign):
-
-    def setUp(self):
-        super().setUp()
-        self.signal = self.signal.as_lazy()
-
-
-class TestLazyAlignTools(TestAlignTools):
-
-    def setUp(self):
-        super().setUp()
-        self.signal = self.signal.as_lazy()
 
 
 def test_add_ramp():

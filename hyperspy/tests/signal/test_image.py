@@ -3,8 +3,10 @@ import numpy as np
 
 from hyperspy._signals.signal1d import Signal1D
 from hyperspy._signals.signal2d import Signal2D
+from hyperspy.decorators import lazifyTestClass
 
 
+@lazifyTestClass
 class Test2D:
 
     def setUp(self):
@@ -18,6 +20,7 @@ class Test2D:
             nt.assert_true(s.data.flags["C_CONTIGUOUS"])
 
 
+@lazifyTestClass
 class Test3D:
 
     def setUp(self):
@@ -31,6 +34,7 @@ class Test3D:
             nt.assert_true(s.data.flags["C_CONTIGUOUS"])
 
 
+@lazifyTestClass
 class Test4D:
 
     def setUp(self):
@@ -42,24 +46,3 @@ class Test4D:
         nt.assert_equal(s.data.shape, (3, 4, 5, 2))
         if not s._lazy:
             nt.assert_true(s.data.flags["C_CONTIGUOUS"])
-
-
-class TestLazy2D(Test2D):
-
-    def setUp(self):
-        super().setUp()
-        self.im = self.im.as_lazy()
-
-
-class TestLazy3D(Test3D):
-
-    def setUp(self):
-        super().setUp()
-        self.im = self.im.as_lazy()
-
-
-class TestLazy4D(Test4D):
-
-    def setUp(self):
-        super().setUp()
-        self.s = self.s.as_lazy()

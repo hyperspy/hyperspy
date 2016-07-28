@@ -28,9 +28,11 @@ except:
     skip_lowess = True
 
 from hyperspy.misc.tv_denoise import _tv_denoise_1d
+from hyperspy.decorators import lazifyTestClass
 import hyperspy.api as hs
 
 
+@lazifyTestClass
 class TestAlignTools:
 
     def setUp(self):
@@ -105,6 +107,7 @@ class TestAlignTools:
         nt.assert_true(np.allclose(s.data[:, i_zlp], 12))
 
 
+@lazifyTestClass
 class TestShift1D:
 
     def setUp(self):
@@ -130,6 +133,7 @@ class TestShift1D:
                     0., 1.8, 0.2)))
 
 
+@lazifyTestClass
 class TestFindPeaks1D:
 
     def setUp(self):
@@ -172,6 +176,7 @@ class TestFindPeaks1D:
             nt.assert_equal(len(peaks[1]), min((8, n)))
 
 
+@lazifyTestClass
 class TestInterpolateInBetween:
 
     def setUp(self):
@@ -222,6 +227,7 @@ class TestInterpolateInBetween:
                                     155.48258721, 170.33564422]))
 
 
+@lazifyTestClass
 class TestEstimatePeakWidth:
 
     def setUp(self):
@@ -269,6 +275,7 @@ class TestEstimatePeakWidth:
         nt.assert_true(np.isnan(right.data).all())
 
 
+@lazifyTestClass(rtol=1e-4, atol=0.4)
 class TestSmoothing:
 
     def setUp(self):
@@ -332,47 +339,3 @@ class TestSmoothing:
             polynomial_order=polyorder,
             differential_order=deriv,)
         np.testing.assert_allclose(data, self.s.data)
-
-
-class TestLazySmoothing(TestSmoothing):
-
-    def setUp(self):
-        super().setUp()
-        self.s = self.s.as_lazy()
-        self.rtol = 1e-4
-        self.atol = 0.4
-
-
-class TestLazyEstimatePeakWidth(TestEstimatePeakWidth):
-
-    def setUp(self):
-        super().setUp()
-        self.s = self.s.as_lazy()
-
-
-class TestLazyInterpolateInBetween(TestInterpolateInBetween):
-
-    def setUp(self):
-        super().setUp()
-        self.s = self.s.as_lazy()
-
-
-class TestLazyFindPeaks1D(TestFindPeaks1D):
-
-    def setUp(self):
-        super().setUp()
-        self.signal = self.signal.as_lazy()
-
-
-class TestLazyShift1D(TestShift1D):
-
-    def setUp(self):
-        super().setUp()
-        self.s = self.s.as_lazy()
-
-
-class TestLazyAlignTools(TestAlignTools):
-
-    def setUp(self):
-        super().setUp()
-        self.signal = self.signal.as_lazy()

@@ -1,10 +1,12 @@
 import os
 from nose.tools import assert_not_equal, assert_equal
 from hyperspy.api import load
+from hyperspy.decorators import lazifyTestClass
 
 my_path = os.path.dirname(__file__)
 
 
+@lazifyTestClass
 class TestFindPeaks1DOhaver():
 
     def setUp(self):
@@ -21,10 +23,3 @@ class TestFindPeaks1DOhaver():
         signal1D = self.signal
         peak_list = signal1D.find_peaks1D_ohaver()[0]
         assert_equal(len(peak_list), 48)
-
-
-class TestLazyFindPeaks1DOhaver(TestFindPeaks1DOhaver):
-
-    def setUp(self):
-        super().setUp()
-        self.signal = self.signal.as_lazy()

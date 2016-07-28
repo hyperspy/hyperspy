@@ -3,10 +3,12 @@ from unittest import mock
 import numpy as np
 from scipy.ndimage import rotate, gaussian_filter, gaussian_filter1d
 import nose.tools as nt
+from hyperspy.decorators import lazifyTestClass
 
 import hyperspy.api as hs
 
 
+@lazifyTestClass
 class TestImage:
 
     def setup(self):
@@ -63,6 +65,7 @@ class TestImage:
               [0., 14.76776695, 0.]]])))
 
 
+@lazifyTestClass
 class TestSignal1D:
 
     def setup(self):
@@ -77,17 +80,3 @@ class TestSignal1D:
             ([[0.42207377, 1., 1.57792623],
               [3.42207377, 4., 4.57792623]]))))
         nt.assert_true(m.data_changed.called)
-
-
-class TestLazyImage(TestImage):
-
-    def setup(self):
-        super().setup()
-        self.im = self.im.as_lazy()
-
-
-class TestLazySignal1D(TestSignal1D):
-
-    def setup(self):
-        super().setup()
-        self.s = self.s.as_lazy()

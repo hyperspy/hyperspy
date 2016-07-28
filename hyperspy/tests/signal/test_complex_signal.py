@@ -21,8 +21,10 @@ import numpy as np
 import numpy.testing as nt
 
 import hyperspy.api as hs
+from hyperspy.decorators import lazifyTestClass
 
 
+@lazifyTestClass
 class TestComplexProperties:
 
     real_ref = np.arange(9).reshape((3, 3))
@@ -110,13 +112,6 @@ def test_get_unwrapped_phase_3D():
             phase_unwrapped.metadata.General.title,
             'unwrapped phase(Untitled Signal)')
         nt.assert_almost_equal(phase_unwrapped.data, phase)
-
-
-class TestLazyComplexProperties:
-
-    def setUp(self):
-        super().setUp()
-        self.s = self.s.as_lazy()
 
 
 if __name__ == '__main__':

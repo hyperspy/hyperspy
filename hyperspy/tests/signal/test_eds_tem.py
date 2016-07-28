@@ -24,8 +24,10 @@ from hyperspy.defaults_parser import preferences
 from hyperspy.components1d import Gaussian
 from hyperspy.misc.eds import utils as utils_eds
 from hyperspy.misc.test_utils import ignore_warning
+from hyperspy.decorators import lazifyTestClass
 
 
+@lazifyTestClass
 class Test_metadata:
 
     def setUp(self):
@@ -132,6 +134,7 @@ class Test_metadata:
                         energy_axis.scale)
 
 
+@lazifyTestClass
 class Test_quantification:
 
     def setUp(self):
@@ -237,6 +240,7 @@ class Test_quantification:
         np.testing.assert_allclose(res, [3, 6], atol=1e-3)
 
 
+@lazifyTestClass
 class Test_vacum_mask:
 
     def setUp(self):
@@ -250,6 +254,7 @@ class Test_vacum_mask:
         nt.assert_false(s.vacuum_mask().data[-1])
 
 
+@lazifyTestClass
 class Test_simple_model:
 
     def setUp(self):
@@ -318,31 +323,3 @@ class Test_eds_markers:
         nt.assert_sequence_equal(
             sorted(s._xray_markers.keys()),
             ['Zn_Ka', 'Zn_La'])
-
-
-class TestLazy_metadata(Test_metadata):
-
-    def setUp(self):
-        super().setUp()
-        self.signal = self.signal.as_lazy()
-
-
-class TestLazyQuantification(Test_quantification):
-
-    def setUp(self):
-        super().setUp()
-        self.signal = self.signal.as_lazy()
-
-
-class TestLazyVacuumMask(Test_vacum_mask):
-
-    def setUp(self):
-        super().setUp()
-        self.signal = self.signal.as_lazy()
-
-
-class TestLazySimpleModel(Test_simple_model):
-
-    def setUp(self):
-        super().setUp()
-        self.signal = self.signal.as_lazy()

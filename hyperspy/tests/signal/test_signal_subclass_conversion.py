@@ -5,8 +5,10 @@ import numpy as np
 from hyperspy.signals import BaseSignal
 from hyperspy import signals
 from hyperspy.exceptions import DataDimensionError
+from hyperspy.decorators import lazifyTestClass
 
 
+@lazifyTestClass
 class Test1d:
 
     def setUp(self):
@@ -30,6 +32,7 @@ class Test1d:
         nt.assert_is_instance(s, _class)
 
 
+@lazifyTestClass
 class Test2d:
 
     def setUp(self):
@@ -65,6 +68,7 @@ class Test2d:
         nt.assert_is_instance(s, _class)
 
 
+@lazifyTestClass
 class Test3d:
 
     def setUp(self):
@@ -108,24 +112,3 @@ class Test3d:
         im = self.s.as_signal2D((-2, -1))
         im._remove_axis(-1)
         nt.assert_is_instance(im, signals.Signal1D)
-
-
-class TestLazy3d(Test3d):
-
-    def setUp(self):
-        super().setUp()
-        self.s = self.s.as_lazy()
-
-
-class TestLazy2d(Test2d):
-
-    def setUp(self):
-        super().setUp()
-        self.s = self.s.as_lazy()
-
-
-class TestLazy1d(Test1d):
-
-    def setUp(self):
-        super().setUp()
-        self.s = self.s.as_lazy()

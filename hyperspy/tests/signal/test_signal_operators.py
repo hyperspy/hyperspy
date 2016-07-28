@@ -22,8 +22,10 @@ import nose.tools as nt
 from nose.plugins.skip import SkipTest
 
 from hyperspy import signals
+from hyperspy.decorators import lazifyTestClass
 
 
+@lazifyTestClass
 class TestBinaryOperators:
 
     def setUp(self):
@@ -136,6 +138,7 @@ class TestBinaryOperators:
         assert_array_equal((s32 + s12).data, s32.data + 1)
 
 
+@lazifyTestClass
 class TestUnaryOperators:
 
     def setUp(self):
@@ -152,18 +155,3 @@ class TestUnaryOperators:
 
     def test_abs(self):
         assert_array_equal(abs(self.s1).data, abs(self.s1.data))
-
-
-class TestLazyBinaryOperators(TestBinaryOperators):
-
-    def setUp(self):
-        super().setUp()
-        self.s1 = self.s1.as_lazy()
-        self.s2 = self.s2.as_lazy()
-
-
-class TestLazyUnaryOperators(TestUnaryOperators):
-
-    def setUp(self):
-        super().setUp()
-        self.s1 = self.s1.as_lazy()

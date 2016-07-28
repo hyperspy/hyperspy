@@ -25,8 +25,10 @@ from hyperspy.defaults_parser import preferences
 from hyperspy.components1d import Gaussian
 from hyperspy import utils
 from hyperspy.misc.test_utils import assert_warns
+from hyperspy.decorators import lazifyTestClass
 
 
+@lazifyTestClass
 class Test_metadata:
 
     def setUp(self):
@@ -191,6 +193,7 @@ class Test_metadata:
                                places=sys.float_info.dig - 2)
 
 
+@lazifyTestClass
 class Test_get_lines_intentisity:
 
     def setUp(self):
@@ -270,6 +273,7 @@ class Test_get_lines_intentisity:
             np.array([84163, 89063, 96117, 96700, 99075]))
 
 
+@lazifyTestClass
 class Test_tools_bulk:
 
     def setUp(self):
@@ -302,6 +306,7 @@ class Test_tools_bulk:
         np.testing.assert_allclose(xr_range, 0.1900368800933955)
 
 
+@lazifyTestClass
 class Test_energy_units:
 
     def setUp(self):
@@ -329,31 +334,3 @@ class Test_energy_units:
                                    (1.4865, 0.07661266213883969))
         np.testing.assert_allclose(s._get_line_energy('Al_Ka', FWHM_MnKa=128),
                                    (1.4865, 0.073167615787314))
-
-
-class TestLazy_metadata(Test_metadata):
-
-    def setUp(self):
-        super().setUp()
-        self.signal = self.signal.as_lazy()
-
-
-class TestLazyGetLinesIntensity(Test_get_lines_intentisity):
-
-    def setUp(self):
-        super().setUp()
-        self.signal = self.signal.as_lazy()
-
-
-class TestLazyToolsBulk(Test_tools_bulk):
-
-    def setUp(self):
-        super().setUp()
-        self.signal = self.signal.as_lazy()
-
-
-class TestLazyEnergyUnits(Test_energy_units):
-
-    def setUp(self):
-        super().setUp()
-        self.signal = self.signal.as_lazy()

@@ -3,8 +3,10 @@ import numpy as np
 
 from hyperspy._signals.signal1d import Signal1D
 from hyperspy.components1d import Gaussian
+from hyperspy.decorators import lazifyTestClass
 
 
+@lazifyTestClass
 class Test1D:
 
     def setUp(self):
@@ -19,10 +21,3 @@ class Test1D:
         integrated_signal = self.signal.integrate_in_range(signal_range=(None,
                                                                          None))
         nose.tools.assert_true(np.allclose(integrated_signal.data, 20,))
-
-
-class TestLazy1D(Test1D):
-
-    def setUp(self):
-        super().setUp()
-        self.signal = self.signal.as_lazy()
