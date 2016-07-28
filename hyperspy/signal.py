@@ -17,7 +17,6 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import copy
-import h5py
 import os.path
 import warnings
 import math
@@ -1716,18 +1715,20 @@ class BaseSignal(FancySlicing,
     def _print_summary(self):
         print(self._summary())
 
-    def _get_data(self):
+    @property
+    def data(self):
         return self._data
 
-    def _set_data(self, value):
-        import dask.array as da
-        if isinstance(value, (h5py.Dataset, da.Array)):
-            if isinstance(value, da.Array) and not value.ndim:
+    @data.setter
+    def data(self, value):
+        from dask.array import Array
+        from h5py import Dataset
+        if isinstance(value, (Dataset, Array)):
+            if isinstance(value, Array) and not value.ndim:
                 value = value.reshape((1,))
             self._data = value
         else:
             self._data = np.atleast_1d(np.asanyarray(value))
-    data = property(_get_data, _set_data)
 
     def _load_dictionary(self, file_data_dict):
         """Load data from dictionary.

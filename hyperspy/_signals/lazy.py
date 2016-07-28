@@ -17,7 +17,6 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-import h5py
 
 import numpy as np
 import dask.array as da
