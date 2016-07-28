@@ -49,6 +49,8 @@ class LazySignal(BaseSignal):
     def _compute(self):
         """Only for testing, when able to store the result in memory.."""
         self.data = self.data.compute()
+        self.metadata.Signal.lazy = False
+        self._assign_subclass()
 
     def _get_dask_chunks(self, axis=None):
         """Returns dask chunks
