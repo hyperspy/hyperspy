@@ -554,7 +554,7 @@ class BaseModel(list):
         self._disconnect_parameters2update_plot(components=self)
         self._model_line = None
 
-    def _update_model_repr(self):
+    def _update_model_line(self):
         if (self._plot_active is True and
                 self._model_line is not None):
             self._model_line.update()
