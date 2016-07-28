@@ -272,8 +272,13 @@ class TestEstimatePeakWidth:
 class TestSmoothing:
 
     def setUp(self):
-        n, m = 2, 100.
-        self.s = hs.signals.Signal1D(np.arange(n * m).reshape(n, m))
+        n, m = 2, 100
+        self.s = hs.signals.Signal1D(
+            np.arange(
+                n * m,
+                dtype='float').reshape(
+                n,
+                m))
         np.random.seed(1)
         self.s.add_gaussian_noise(0.1)
         self.rtol = 1e-7
