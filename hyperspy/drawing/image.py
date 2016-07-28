@@ -148,11 +148,16 @@ class ImagePlot(BlittedFigure):
             
     @property
     def pixel_units(self):
-        return self._pixel_units
+        if self._pixel_units is None and self.scalebar:
+            return self.xaxis.units
+        else:
+            return self._pixel_units
 
     @pixel_units.setter
     def pixel_units(self, units):
-        if hasattr(self, 'xaxis') and hasattr(self, 'yaxis'):
+        if units is None:
+            self._pixel_units = None
+        elif hasattr(self, 'xaxis') and hasattr(self, 'yaxis'):
             xunits = self.xaxis.units
             yunits = self.yaxis.units
             if units == 'auto':

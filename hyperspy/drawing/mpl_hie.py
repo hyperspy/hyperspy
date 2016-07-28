@@ -27,7 +27,6 @@ class MPL_HyperImage_Explorer(MPL_HyperExplorer):
                     scalebar=True,
                     scalebar_color="white",
                     axes_ticks=None,
-                    auto_convert_units=True,
                     saturated_pixels=0,
                     vmin=None,
                     vmax=None,
@@ -72,10 +71,10 @@ class MPL_HyperImage_Explorer(MPL_HyperExplorer):
         imf.data_function = self.signal_data_function
         imf.title = self.signal_title + " Signal"
         imf.xaxis, imf.yaxis = self.axes_manager.signal_axes
+        imf.auto_convert_units = self.auto_convert_units
         imf.colorbar = colorbar
         imf.scalebar = scalebar
         imf.axes_ticks = axes_ticks
-        imf.auto_convert_units = auto_convert_units
         imf.vmin, imf.vmax = vmin, vmax
         imf.saturated_pixels = saturated_pixels
         imf.no_nans = no_nans
