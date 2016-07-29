@@ -90,7 +90,7 @@ class Test2D:
     def test_histogram(self):
         result = self.signal.get_histogram(3)
         nt.assert_true(isinstance(result, signals.Signal1D))
-        np.testing.assert_equal(result.data, [17, 16, 17])
+        np.testing.assert_equal(result.data, np.array([17, 16, 17]))
         nt.assert_true(result.metadata.Signal.binned)
 
     def test_estimate_poissonian_noise_copy_data(self):
@@ -362,7 +362,10 @@ class Test3D:
         s.axes_manager.set_signal_dimension(2)
         data = np.zeros(s.axes_manager._signal_shape_in_array)
         ns = s._get_signal_signal(data=data)
-        nt.assert_is(ns.data, data)
+        if s._lazy:
+            nt.assert_true(data in ns.data.dask.values())
+        else:
+            nt.assert_is(ns.data, data)
 
     def test_get_navigation_signal_dtype(self):
         s = self.signal

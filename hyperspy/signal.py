@@ -3134,10 +3134,11 @@ class BaseSignal(FancySlicing,
         ----------
         bins : int or list or str, optional
             If bins is a string, then it must be one of:
-            'knuth' : use Knuth's rule to determine bins
-            'scotts' : use Scott's rule to determine bins
-            'freedman' : use the Freedman-diaconis rule to determine bins
+            'knuth' : use Knuth's rule to determine bins;
+            'scotts' : use Scott's rule to determine bins;
+            'freedman' : use the Freedman-diaconis rule to determine bins;
             'blocks' : use bayesian blocks for dynamic bin widths
+
         range_bins : tuple or None, optional
             the minimum and maximum range for the histogram. If not specified,
             it will be (x.min(), x.max())
@@ -3158,6 +3159,8 @@ class BaseSignal(FancySlicing,
 
         Notes
         -----
+        The lazy version of the algorithm does not support 'knuth' and 'blocks'
+        bins arguments.
         The number of bins estimators are taken from AstroML. Read
         their documentation for more info.
 
@@ -3607,8 +3610,15 @@ class BaseSignal(FancySlicing,
             if self.axes_manager.navigation_dimension == 0:
                 data = np.array([0, ], dtype=dtype)
             else:
-                data = np.zeros(self.axes_manager._navigation_shape_in_array,
-                                dtype=dtype)
+                try:
+                    data = np.zeros(
+                        self.axes_manager._navigation_shape_in_array,
+                        dtype=dtype)
+                except MemoryError:
+                    from dask.array import zeros
+                    data = zeros(self.axes_manager._navigation_shape_in_array,
+                                 chunks=1000,  # just a random guess
+                                 dtype=dtype)
         if self.axes_manager.navigation_dimension == 0:
             s = BaseSignal(data)
         elif self.axes_manager.navigation_dimension == 1:
@@ -3657,8 +3667,15 @@ class BaseSignal(FancySlicing,
             if self.axes_manager.signal_dimension == 0:
                 data = np.array([0, ], dtype=dtype)
             else:
-                data = np.zeros(self.axes_manager._signal_shape_in_array,
-                                dtype=dtype)
+                try:
+                    data = np.zeros(
+                        self.axes_manager._signal_shape_in_array,
+                        dtype=dtype)
+                except MemoryError:
+                    from dask.array import zeros
+                    data = zeros(self.axes_manager._signal_shape_in_array,
+                                 chunks=1000,  # just a random guess
+                                 dtype=dtype)
 
         if self.axes_manager.signal_dimension == 0:
             s = BaseSignal(data)
@@ -3848,20 +3865,28 @@ class BaseSignal(FancySlicing,
         get_histogram
 
         """
-        data = self.data
-        # To make it work with nans
-        data = data[~np.isnan(data)]
+        _mean, _std, _min, _q1, _q2, _q3, _max = self._calculate_summary_statistics()
         print(underline("Summary statistics"))
-        print("mean:\t" + formatter % data.mean())
-        print("std:\t" + formatter % data.std())
+        print("mean:\t" + formatter % _mean)
+        print("std:\t" + formatter % _std)
         print()
-        print("min:\t" + formatter % data.min())
-        print("Q1:\t" + formatter % np.percentile(data,
-                                                  25))
-        print("median:\t" + formatter % np.median(data))
-        print("Q3:\t" + formatter % np.percentile(data,
-                                                  75))
-        print("max:\t" + formatter % data.max())
+        print("min:\t" + formatter % _min)
+        print("Q1:\t" + formatter % _q1)
+        print("median:\t" + formatter % _q2)
+        print("Q3:\t" + formatter % _q3)
+        print("max:\t" + formatter % _max)
+
+    def _calculate_summary_statistics(self):
+        data = self.data
+        data = data[~np.isnan(data)]
+        _mean = np.nanmean(data)
+        _std = np.nanstd(data)
+        _min = np.nanmin(data)
+        _q1 = np.percentile(data, 25)
+        _q2 = np.percentile(data, 50)
+        _q3 = np.percentile(data, 75)
+        _max = np.nanmax(data)
+        return _mean, _std, _min, _q1, _q2, _q3, _max
 
     @property
     def is_rgba(self):

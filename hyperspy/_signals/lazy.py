@@ -285,60 +285,22 @@ class LazySignal(BaseSignal):
 
     def get_histogram(self, bins='freedman', out=None,
                       **kwargs):
-        """Return a histogram of the signal data.
-
-        More sophisticated algorithms for determining bins can be used.
-        Aside from the `bins` argument allowing a string specified how bins
-        are computed, the parameters are the same as numpy.histogram().
-
-        Parameters
-        ----------
-        bins : int or list or str, optional
-            If bins is a string, then it must be one of:
-            'scotts' : use Scott's rule to determine bins
-            'freedman' : use the Freedman-diaconis rule to determine bins
-        %s
-        **kwargs
-            other keyword arguments (weight and density) are described in
-            da.histogram().
-
-        Returns
-        -------
-        hist_spec : An 1D spectrum instance containing the histogram.
-
-        See Also
-        --------
-        print_summary_statistics
-        astroML.density_estimation.histogram, numpy.histogram : these are the
-            functions that hyperspy uses to compute the histogram.
-
-        Notes
-        -----
-        The number of bins estimators are taken from AstroML. Read
-        their documentation for more info.
-
-        Examples
-        --------
-        >>> s = hs.signals.Signal1D(np.random.normal(size=(10, 100)))
-        Plot the data histogram
-        >>> s.get_histogram().plot()
-        Plot the histogram of the signal at the current coordinates
-        >>> s.get_current_signal().get_histogram().plot()
-
-        """
         if 'range_bins' in kwargs:
+            _logger.warning("'range_bins' argument not supported for lazy "
+                            "signals")
             del kwargs['range_bins']
         from hyperspy.signals import Signal1D
         data = self._lazy_data().flatten()
         hist, bin_edges = dasky_histogram(data, bins=bins, **kwargs)
         if out is None:
             hist_spec = Signal1D(hist)
+            hist_spec.metadata.Signal.lazy = True
+            hist_spec._assign_subclass()
         else:
             hist_spec = out
-            if hist_spec.data.shape == hist.shape:
-                hist_spec.data[:] = hist
-            else:
-                hist_spec.data = hist
+            # we always overwrite the data because the computation is lazy ->
+            # the result signal is lazy. Assume that the `out` is already lazy
+            hist_spec.data = hist
         hist_spec.axes_manager[0].scale = bin_edges[1] - bin_edges[0]
         hist_spec.axes_manager[0].offset = bin_edges[0]
         hist_spec.axes_manager[0].size = hist.shape[-1]
@@ -350,7 +312,7 @@ class LazySignal(BaseSignal):
             return hist_spec
         else:
             out.events.data_changed.trigger(obj=out)
-    get_histogram.__doc__ %= OUT_ARG
+    get_histogram.__doc__ = BaseSignal.get_histogram.__doc__
 
     @staticmethod
     def _estimate_poissonian_noise_variance(dc, gain_factor, gain_offset,
@@ -361,105 +323,20 @@ class LazySignal(BaseSignal):
         return variance
 
     def _get_navigation_signal(self, data=None, dtype=None):
-        if data is not None:
-            ref_shape = (self.axes_manager._navigation_shape_in_array
-                         if self.axes_manager.navigation_dimension != 0
-                         else (1,))
-            if data.shape != ref_shape:
-                raise ValueError(
-                    ("data.shape %s is not equal to the current navigation "
-                     "shape in array which is %s") %
-                    (str(data.shape), str(ref_shape)))
-        else:
-            if dtype is None:
-                dtype = self.data.dtype
-            if self.axes_manager.navigation_dimension == 0:
-                data = np.array([0, ], dtype=dtype)
-            else:
-                try:
-                    data = np.zeros(
-                        self.axes_manager._navigation_shape_in_array,
-                        dtype=dtype)
-                except MemoryError:
-                    data = da.zeros(self.axes_manager._navigation_shape_in_array,
-                                    chunks=1000,  # just a random guess
-                                    dtype=dtype)
-
-        if isinstance(data, np.ndarray):
-            return super(LazySignal, self)._get_navigation_signal(data=data)
-
-        # TODO: Change to lazy classes!
-        if self.axes_manager.navigation_dimension == 0:
-            s = BaseSignal(data)
-        elif self.axes_manager.navigation_dimension == 1:
-            from hyperspy._signals.signal1d import Signal1D
-            s = Signal1D(data,
-                         axes=self.axes_manager._get_navigation_axes_dicts())
-        elif self.axes_manager.navigation_dimension == 2:
-            from hyperspy._signals.signal2d import Signal2D
-            s = Signal2D(data,
-                         axes=self.axes_manager._get_navigation_axes_dicts())
-        else:
-            s = BaseSignal(np.zeros(self.axes_manager._navigation_shape_in_array,
-                                    dtype=self.data.dtype),
-                           axes=self.axes_manager._get_navigation_axes_dicts())
-            s.axes_manager.set_signal_dimension(
-                self.axes_manager.navigation_dimension)
-        return s
+        res = super()._get_navigation_signal(data=data, dtype=dtype)
+        if isinstance(res.data, da.Array):
+            res = res.as_lazy()
+        return res
     _get_navigation_signal.__doc__ = BaseSignal._get_navigation_signal.__doc__
 
     def _get_signal_signal(self, data=None, dtype=None):
-        if data is not None:
-            ref_shape = (self.axes_manager._signal_shape_in_array
-                         if self.axes_manager.signal_dimension != 0
-                         else (1,))
-            if data.shape != ref_shape:
-                raise ValueError(
-                    "data.shape %s is not equal to the current signal shape in"
-                    " array which is %s" % (str(data.shape), str(ref_shape)))
-        else:
-            if dtype is None:
-                dtype = self.data.dtype
-            if self.axes_manager.signal_dimension == 0:
-                data = np.array([0, ], dtype=dtype)
-            else:
-                try:
-                    data = np.zeros(self.axes_manager._signal_shape_in_array,
-                                    dtype=dtype)
-                except MemoryError:
-                    data = da.zeros(self.axes_manager._signal_shape_in_array,
-                                    chunks=1000,  # just a random guess
-                                    dtype=dtype)
-
-        if isinstance(data, np.ndarray):
-            return super(LazySignal, self)._get_signal_signal(data=data)
-
-        if self.axes_manager.signal_dimension == 0:
-            s = LazySignal(data)
-            s.set_signal_type(self.metadata.Signal.signal_type)
-        else:
-            s = self.__class__(data,
-                               axes=self.axes_manager._get_signal_axes_dicts())
-        return s
+        res = super()._get_signal_signal(data=data, dtype=dtype).as_lazy()
+        if isinstance(res.data, da.Array):
+            res = res.as_lazy()
+        return res
     _get_signal_signal.__doc__ = BaseSignal._get_signal_signal.__doc__
 
-    def print_summary_statistics(self, formatter="%.3f"):
-        """Prints the five-number summary statistics of the data, the mean and
-        the standard deviation.
-
-        Prints the mean, standandard deviation (std), maximum (max), minimum
-        (min), first quartile (Q1), median and third quartile.
-
-        Parameters
-        ----------
-        formatter : bool
-           Number formatter.
-
-        See Also
-        --------
-        get_histogram
-
-        """
+    def _calculate_summary_statistics(self):
         data = self._lazy_data()
         _raveled = data.ravel()
         _mean, _std, _min, _q1, _q2, _q3, _max = da.compute(
@@ -470,15 +347,7 @@ class LazySignal(BaseSignal):
             da.percentile(_raveled, [50, ]),
             da.percentile(_raveled, [75, ]),
             da.nanmax(data),)
-        print(underline("Summary statistics"))
-        print("mean:\t" + formatter % _mean)
-        print("std:\t" + formatter % _std)
-        print()
-        print("min:\t" + formatter % _min)
-        print("Q1:\t" + formatter % _q1)
-        print("median:\t" + formatter % _q2)
-        print("Q3:\t" + formatter % _q3)
-        print("max:\t" + formatter % _max)
+        return _mean, _std, _min, _q1, _q2, _q3, _max
 
     def _map_all(self, function, **kwargs):
         calc_result = dd(function)(self.data, **kwargs)
