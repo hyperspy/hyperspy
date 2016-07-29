@@ -62,7 +62,7 @@ install_req = ['scipy',
                'python-dateutil',
                'ipyparallel']
 
-#the hack to deal with setuptools + installing the package in ReadTheDoc:
+# the hack to deal with setuptools + installing the package in ReadTheDoc:
 if 'readthedocs.org' in sys.executable:
     install_req = []
 
@@ -306,6 +306,7 @@ with update_version_when_dev() as version:
                   'hyperspy.tests.io',
                   'hyperspy.tests.model',
                   'hyperspy.tests.mva',
+                  'hyperspy.tests.samfire',
                   'hyperspy.tests.signal',
                   'hyperspy.tests.utils',
                   'hyperspy.tests.misc',

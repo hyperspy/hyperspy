@@ -98,11 +98,6 @@ def copy_slice_from_whitelist(
 
     for key in keys:
         val = _from._whitelist[key]
-        if key == 'self':
-            target = None
-        else:
-            target = attrgetter(key)(_from)
-
         if val is None:
             # attrsetter(_to, key, attrgetter(key)(_from))
             # continue
@@ -118,6 +113,12 @@ def copy_slice_from_whitelist(
             continue
         if 'id' in flags:
             continue
+
+        if key == 'self':
+            target = None
+        else:
+            target = attrgetter(key)(_from)
+
         if 'inav' in flags or 'isig' in flags:
             slice_nav = make_slice_navigation_decision(flags, isNav)
             result = _slice_target(
