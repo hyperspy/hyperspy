@@ -3906,11 +3906,11 @@ class BaseSignal(FancySlicing,
 
         >>> # 3 explicitly defined axes in signal space
         >>> s.transpose(signal_axes=[0, 2, 6])
-        <BaseSignal, title: , dimensions: (2, 4, 5, 6, 8, 9|1, 3, 7)>
+        <BaseSignal, title: , dimensions: (8, 6, 5, 4, 2, 1|9, 7, 3)>
 
         >>> # A mix of two lists, but specifying all axes explicitly
         >>> s.transpose(navigation_axes=[1, 2, 3, 4, 5, 8], signal_axes=[0, 6, 7])
-        <BaseSignal, title: , dimensions: (2, 3, 4, 5, 6, 9|1, 7, 8)>
+        <BaseSignal, title: , dimensions: (8, 7, 6, 5, 4, 1|9, 3, 2)>
 
         """
         from collections import Iterable
@@ -4006,7 +4006,7 @@ class BaseSignal(FancySlicing,
         >>> s
         <BaseSignal, title: , dimensions: (|3, 10, 10)>
         >>> with s.transposed(signal_axes=2) as im:
-                hs.plot.plot_image(im)
+                hs.plot.plot_images(im)
         """
         yield self.transpose(signal_axes=signal_axes,
                              navigation_axes=navigation_axes, copy=copy)
