@@ -520,7 +520,10 @@ class LazySignal(BaseSignal):
         nav_dim = self.axes_manager.navigation_dimension
         sig_dim = self.axes_manager.signal_dimension
         from itertools import product
-        nav_lengths = self.data.shape[:nav_dim]
+        nav_indices = self.axes_manager.navigation_indices_in_array
+        nav_lengths = np.atleast_1d(np.array(self.data.shape)[nav_indices])
+        getitem = [slice(None)] * (nav_dim + sig_dim)
         for indices in product(*[range(l) for l in nav_lengths]):
-            getitem = indices + (slice(None),) * sig_dim
-            yield self.data[getitem]
+            for res, ind in zip(indices, nav_indices):
+                getitem[ind] = res
+            yield self.data[tuple(getitem)]
