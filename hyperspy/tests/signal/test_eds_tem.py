@@ -18,6 +18,7 @@
 
 import numpy as np
 import nose.tools as nt
+from matplotlib.testing.decorators import cleanup
 
 from hyperspy.signals import EDSTEMSpectrum
 from hyperspy.defaults_parser import preferences
@@ -287,35 +288,38 @@ class Test_get_lines_intentisity:
             np.array([3710, 15872]))
 
 
-#class Test_eds_markers:
-#
-#    def setUp(self):
-#        s = utils_eds.xray_lines_model(elements=['Al', 'Zn'],
-#                                       weight_percents=[50, 50])
-#        self.signal = s
-#
-#    def test_plot_auto_add(self):
-#        s = self.signal
-#        s.plot(xray_lines=True)
-#        # Should contain 6 lines
-#        nt.assert_sequence_equal(
-#            sorted(s._xray_markers.keys()),
-#            ['Al_Ka', 'Al_Kb', 'Zn_Ka', 'Zn_Kb', 'Zn_La', 'Zn_Lb1'])
-#
-#    def test_manual_add_line(self):
-#        s = self.signal
-#        s.add_xray_lines_markers(['Zn_La'])
-#        nt.assert_sequence_equal(
-#            list(s._xray_markers.keys()),
-#            ['Zn_La'])
-#        nt.assert_equal(len(s._xray_markers), 1)
-#        # Check that the line has both a vertical line marker and text marker:
-#        nt.assert_equal(len(s._xray_markers['Zn_La']), 2)
-#
-#    def test_manual_remove_element(self):
-#        s = self.signal
-#        s.add_xray_lines_markers(['Zn_Ka', 'Zn_Kb', 'Zn_La'])
-#        s.remove_xray_lines_markers(['Zn_Kb'])
-#        nt.assert_sequence_equal(
-#            sorted(s._xray_markers.keys()),
-#            ['Zn_Ka', 'Zn_La'])
+class Test_eds_markers:
+
+    def setUp(self):
+        s = utils_eds.xray_lines_model(elements=['Al', 'Zn'],
+                                       weight_percents=[50, 50])
+        self.signal = s
+
+    @cleanup
+    def test_plot_auto_add(self):
+        s = self.signal
+        s.plot(xray_lines=True)
+        # Should contain 6 lines
+        nt.assert_sequence_equal(
+            sorted(s._xray_markers.keys()),
+            ['Al_Ka', 'Al_Kb', 'Zn_Ka', 'Zn_Kb', 'Zn_La', 'Zn_Lb1'])
+
+    @cleanup
+    def test_manual_add_line(self):
+        s = self.signal
+        s.add_xray_lines_markers(['Zn_La'])
+        nt.assert_sequence_equal(
+            list(s._xray_markers.keys()),
+            ['Zn_La'])
+        nt.assert_equal(len(s._xray_markers), 1)
+        # Check that the line has both a vertical line marker and text marker:
+        nt.assert_equal(len(s._xray_markers['Zn_La']), 2)
+
+    @cleanup
+    def test_manual_remove_element(self):
+        s = self.signal
+        s.add_xray_lines_markers(['Zn_Ka', 'Zn_Kb', 'Zn_La'])
+        s.remove_xray_lines_markers(['Zn_Kb'])
+        nt.assert_sequence_equal(
+            sorted(s._xray_markers.keys()),
+            ['Zn_Ka', 'Zn_La'])

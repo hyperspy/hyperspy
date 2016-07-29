@@ -20,6 +20,8 @@ import numpy as np
 import nose.tools as nt
 import dill
 import copy
+from matplotlib.testing.decorators import cleanup
+
 import hyperspy.api as hs
 from hyperspy.samfire_utils.samfire_kernel import multi_kernel
 from hyperspy.misc.utils import DictionaryTreeBrowser
@@ -303,40 +305,41 @@ class TestSamfireEmpty:
         nt.assert_is(samf.active_strategy, new_strat)
         nt.assert_equal(samf.metadata.marker[ind], -2)
 
-#
-#class TestSamfireMain:
-#
-#    def setUp(self):
-#        np.random.seed(1)
-#        self.model, self.lor1, self.g, self.lor2 = generate_test_model()
-#        self.shape = (7, 15)
-#
-#    def test_multiprocessed(self):
-#        self.model.fit()
-#        samf = self.model.create_samfire(ipyparallel=False)
-#        samf.plot_every = np.nan
-#        samf.strategies[0].radii = 1.
-#        samf.strategies.remove(1)
-#        samf.optional_components = [self.model[2]]
-#        samf.start(fitter='mpfit', bounded=True)
-#        # let at most 3 pixels to fail randomly.
-#        fitmask = samf.metadata.marker == -np.ones(self.shape)
-#        nt.assert_true(np.sum(fitmask) >= np.prod(self.shape) - 3)
-#        for o_c, n_c in zip([self.g, self.lor1, self.lor2], self.model):
-#            for p, p1 in zip(o_c.parameters, n_c.parameters):
-#                if n_c._active_array is not None:
-#                    mask = np.logical_and(n_c._active_array, fitmask)
-#                else:
-#                    mask = fitmask
-#                print(o_c._id_name, n_c._id_name, p1._id_name, p._id_name)
-#                print(p.map['values'][:4, :4])
-#                print('----------------------------')
-#                print(p1.map['values'][:4, :4])
-#                print('ooooooooooooooooooooooooooooooooooooooooooo')
-#                np.testing.assert_allclose(
-#                    p1.map['values'][mask],
-#                    p.map['values'][:7, :15][mask],
-#                    rtol=0.3)
+
+class TestSamfireMain:
+
+    def setUp(self):
+        np.random.seed(1)
+        self.model, self.lor1, self.g, self.lor2 = generate_test_model()
+        self.shape = (7, 15)
+
+    @cleanup
+    def test_multiprocessed(self):
+        self.model.fit()
+        samf = self.model.create_samfire(ipyparallel=False)
+        samf.plot_every = np.nan
+        samf.strategies[0].radii = 1.
+        samf.strategies.remove(1)
+        samf.optional_components = [self.model[2]]
+        samf.start(fitter='mpfit', bounded=True)
+        # let at most 3 pixels to fail randomly.
+        fitmask = samf.metadata.marker == -np.ones(self.shape)
+        nt.assert_true(np.sum(fitmask) >= np.prod(self.shape) - 3)
+        for o_c, n_c in zip([self.g, self.lor1, self.lor2], self.model):
+            for p, p1 in zip(o_c.parameters, n_c.parameters):
+                if n_c._active_array is not None:
+                    mask = np.logical_and(n_c._active_array, fitmask)
+                else:
+                    mask = fitmask
+                print(o_c._id_name, n_c._id_name, p1._id_name, p._id_name)
+                print(p.map['values'][:4, :4])
+                print('----------------------------')
+                print(p1.map['values'][:4, :4])
+                print('ooooooooooooooooooooooooooooooooooooooooooo')
+                np.testing.assert_allclose(
+                    p1.map['values'][mask],
+                    p.map['values'][:7, :15][mask],
+                    rtol=0.3)
 
 
 def test_create_worker_defaults():
