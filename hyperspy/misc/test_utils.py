@@ -7,7 +7,8 @@ import warnings
 import re
 import sys
 import inspect
-
+import matplotlib
+from distutils.version import LooseVersion
 
 @contextmanager
 def ignore_warning(message="", category=None):
@@ -159,3 +160,15 @@ def assert_warns(message=None, category=None):
         if len(remaining) > 0:
             msg = 'No warning raised matching:\n%s' % '\n'.join(remaining)
             raise ValueError(msg)
+
+
+def get_matplotlib_version_label():
+    """ Return a string describing the matplotlib version installed. The string
+    is used to label the references images for plot testing. """
+    version = LooseVersion(matplotlib.__version__)
+    if version >= LooseVersion('2.0.0b1'):
+        return 'mpl2'
+    else:
+        return 'mpl1'
+        
+ 
