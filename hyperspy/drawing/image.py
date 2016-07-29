@@ -80,7 +80,7 @@ class ImagePlot(BlittedFigure):
         self._text = None
         self._text_position = (0, 1.05,)
         self.axes_manager = None
-        self.auto_convert_units = None
+        self.auto_convert_units = False
         self._aspect = 1
         self._extent = None
         self.xaxis = None
@@ -413,14 +413,6 @@ class ImagePlot(BlittedFigure):
             self.events.closed.connect(
                 lambda: self.axes_manager.events.indices_changed.disconnect(
                     self.update), [])
-            if self.auto_convert_units:
-                print('Auto convert units active')
-                self.figure.canvas.mpl_connect('key_press_event', self.convert_units)
-
-    def convert_units(self, event):
-        if event.key == 'c':
-            print('Convert_units')
-            pass
                 
     def on_key_press(self, event):
         if event.key == 'h':

@@ -127,6 +127,9 @@ class MPL_HyperExplorer(object):
 
     def plot(self, **kwargs):
         if self.pointer is None:
+            if self.auto_convert_units:
+                for navigation_axis in self.axes_manager.navigation_axes:
+                    navigation_axis.convert_to_units()
             pointer = self.assign_pointer()
             if pointer is not None:
                 self.pointer = pointer(self.axes_manager)

@@ -78,18 +78,21 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
             self.signal_plot.plot()
             return
         # Create the figure
+        self.axis = self.axes_manager.signal_axes[0]
+        sf = signal1d.Signal1DFigure(title=self.signal_title +
+                                     " Signal")
+        sf.axis = self.axis
+        sf.create_axis()
+        sf.axes_manager = self.axes_manager
+        if self.auto_convert_units:
+            self.axes_manager.signal_axes[0].convert_to_units()
         self.xlabel = '%s' % str(self.axes_manager.signal_axes[0])
         if self.axes_manager.signal_axes[0].units is not Undefined:
             self.xlabel += ' (%s)' % self.axes_manager.signal_axes[0].units
         self.ylabel = 'Intensity'
-        self.axis = self.axes_manager.signal_axes[0]
-        sf = signal1d.Signal1DFigure(title=self.signal_title +
-                                     " Signal")
         sf.xlabel = self.xlabel
         sf.ylabel = self.ylabel
-        sf.axis = self.axis
-        sf.create_axis()
-        sf.axes_manager = self.axes_manager
+        
         self.signal_plot = sf
         # Create a line to the left axis with the default indices
         is_complex = any(np.iscomplex(self.signal_data_function()))

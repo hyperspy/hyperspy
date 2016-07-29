@@ -1876,6 +1876,8 @@ class BaseSignal(FancySlicing,
 
         if axes_manager is None:
             axes_manager = self.axes_manager
+        if auto_convert_units:
+            axes_manager = axes_manager.deepcopy()
         if self.is_rgbx is True:
             if axes_manager.navigation_size < 2:
                 navigator = None
@@ -1891,8 +1893,6 @@ class BaseSignal(FancySlicing,
         else:
             raise ValueError('Plotting is not supported for this view')
 
-        if auto_convert_units:
-            axes_manager = axes_manager.deepcopy()
         self._plot.auto_convert_units = auto_convert_units
         self._plot.axes_manager = axes_manager
         self._plot.signal_data_function = self.__call__
