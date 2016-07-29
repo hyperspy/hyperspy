@@ -17,6 +17,7 @@
 
 
 import numpy as np
+import numpy.testing
 import nose.tools as nt
 
 import hyperspy.api as hs
@@ -89,15 +90,15 @@ class Test_Estimate_Elastic_Scattering_Threshold:
         t = s.estimate_elastic_scattering_intensity(threshold=threshold)
         nt.assert_equal(t.metadata.Signal.signal_type, "")
         nt.assert_equal(t.axes_manager.signal_dimension, 0)
-        nt.assert_true(np.allclose(t.data, 373005.28859799))
+        np.testing.assert_array_almost_equal(t.data, 373005.28859799)
         # Threshold is signal, 1 spectrum
         s0 = s.inav[0]
         t0 = s0.estimate_elastic_scattering_threshold()
         t = s0.estimate_elastic_scattering_intensity(threshold=t0)
-        nt.assert_true(np.allclose(t.data, 373005.28859799))
+        np.testing.assert_array_almost_equal(t.data, 373005.28859799)
         # Threshold is value
         t = s.estimate_elastic_scattering_intensity(threshold=5.)
-        nt.assert_true(np.allclose(t.data, 373005.28859799))
+        np.testing.assert_array_almost_equal(t.data, 373005.28859799)
 
 
 class TestEstimateZLPCentre:
