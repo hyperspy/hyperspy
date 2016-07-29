@@ -30,6 +30,9 @@ The Signal class and its specilized subclasses:
         For electron energy-dispersive X-rays data acquired in a scanning
         electron microscopy with signal_dimension equal 1, i.e.
         spectral data of n-dimensions. The signal is binned by default.
+    SEDPattern
+        For electron diffraction patterns acquired in a transmission electron
+        microscope with signal_dimension equal 2.
     DielectricFunction
         For dielectric function data with signal_dimension equal 1. The signal
         is unbinned by default.
@@ -45,5 +48,6 @@ from hyperspy._signals.complex_signal2d import ComplexSignal2D
 from hyperspy._signals.eels import EELSSpectrum
 from hyperspy._signals.eds_sem import EDSSEMSpectrum
 from hyperspy._signals.eds_tem import EDSTEMSpectrum
+from hyperspy._signals.sed import SEDPattern
 from hyperspy._signals.dielectric_function import DielectricFunction
 from hyperspy.signal import BaseSignal
