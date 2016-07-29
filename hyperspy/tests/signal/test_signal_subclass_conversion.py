@@ -1,11 +1,14 @@
 import nose.tools as nt
+from nose.plugins.skip import SkipTest
 import numpy as np
 
 from hyperspy.signals import BaseSignal
 from hyperspy import signals
 from hyperspy.exceptions import DataDimensionError
+from hyperspy.decorators import lazifyTestClass
 
 
+@lazifyTestClass
 class Test1d:
 
     def setUp(self):
@@ -22,9 +25,14 @@ class Test1d:
         s = self.s.as_signal1D(0)
         s.set_signal_type("EELS")
         nt.assert_equal(s.metadata.Signal.signal_type, "EELS")
-        nt.assert_is_instance(s, signals.EELSSpectrum)
+        if s._lazy:
+            _class = signals.LazyEELSSpectrum
+        else:
+            _class = signals.EELSSpectrum
+        nt.assert_is_instance(s, _class)
 
 
+@lazifyTestClass
 class Test2d:
 
     def setUp(self):
@@ -53,15 +61,22 @@ class Test2d:
         nt.assert_equal(im.metadata.Signal.signal_type, "EELS")
         s = im.as_signal1D(0)
         nt.assert_equal(s.metadata.Signal.signal_type, "EELS")
-        nt.assert_is_instance(s, signals.EELSSpectrum)
+        if s._lazy:
+            _class = signals.LazyEELSSpectrum
+        else:
+            _class = signals.EELSSpectrum
+        nt.assert_is_instance(s, _class)
 
 
+@lazifyTestClass
 class Test3d:
 
     def setUp(self):
         self.s = BaseSignal(np.random.random((2, 3, 4)))  # (|4, 3, 2)
 
     def test_as_signal2D_contigous(self):
+        if self.s._lazy:
+            raise SkipTest
         nt.assert_true(self.s.as_signal2D((0, 1)).data.flags['C_CONTIGUOUS'])
 
     def test_as_signal2D_1(self):
@@ -77,6 +92,8 @@ class Test3d:
             self.s.as_signal2D((1, 2)).data.shape, (4, 2, 3))  # (4| 3, 2)
 
     def test_as_signal1D_contigous(self):
+        if self.s._lazy:
+            raise SkipTest
         nt.assert_true(self.s.as_signal1D(0).data.flags['C_CONTIGUOUS'])
 
     def test_as_signal1D_0(self):

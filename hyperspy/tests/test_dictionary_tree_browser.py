@@ -92,6 +92,7 @@ class TestDictionaryBrowser:
                             'title': ''},
                         'Signal': {
                             'binned': False,
+                            'lazy': False,
                             'signal_type': ''},
                         '_HyperSpy': {
                             'Folding': {

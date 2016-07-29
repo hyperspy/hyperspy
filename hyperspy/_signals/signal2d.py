@@ -19,6 +19,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import numpy.ma as ma
+import dask.array as da
 import scipy as sp
 import warnings
 from scipy.fftpack import fftn, ifftn
@@ -27,18 +28,22 @@ from hyperspy.defaults_parser import preferences
 from hyperspy.external.progressbar import progressbar
 from hyperspy.misc.math_tools import symmetrize, antisymmetrize
 from hyperspy.signal import BaseSignal
+from hyperspy._signals.lazy import LazySignal
 from hyperspy._signals.common_signal2d import CommonSignal2D
 from hyperspy.docstrings.plot import BASE_PLOT_DOCSTRING, PLOT2D_DOCSTRING, KWARGS_DOCSTRING
 
 
-def shift_image(im, shift, interpolation_order=1, fill_value=np.nan):
-    fractional, integral = np.modf(shift)
-    if fractional.any():
-        order = interpolation_order
+def shift_image(im, shift=0, interpolation_order=1, fill_value=np.nan):
+    if np.any(shift):
+        fractional, integral = np.modf(shift)
+        if fractional.any():
+            order = interpolation_order
+        else:
+            # Disable interpolation
+            order = 0
+        return sp.ndimage.shift(im, shift, cval=fill_value, order=order)
     else:
-        # Disable interpolation
-        order = 0
-    im[:] = sp.ndimage.shift(im, shift, cval=fill_value, order=order)
+        return im
 
 
 def triu_indices_minus_diag(n):
@@ -99,7 +104,8 @@ def fft_correlation(in1, in2, normalize=False):
 
 def estimate_image_shift(ref, image, roi=None, sobel=True,
                          medfilter=True, hanning=True, plot=False,
-                         dtype='float', normalize_corr=False,):
+                         dtype='float', normalize_corr=False,
+                         return_maxval=True):
     """Estimate the shift in a image using phase correlation
 
     This method can only estimate the shift by comparing
@@ -142,6 +148,10 @@ def estimate_image_shift(ref, image, roi=None, sobel=True,
         The maximum value of the correlation
 
     """
+    if isinstance(ref, da.Array):
+        ref = np.array(ref)
+    if isinstance(image, da.Array):
+        image = np.array(image)
     # Make a copy of the images to avoid modifying them
     ref = ref.copy().astype(dtype)
     image = image.copy().astype(dtype)
@@ -191,8 +201,10 @@ def estimate_image_shift(ref, image, roi=None, sobel=True,
     # memory map
     del ref
     del image
-
-    return -np.array((shift0, shift1)), max_val
+    if return_maxval:
+        return -np.array((shift0, shift1)), max_val
+    else:
+        return -np.array((shift0, shift1))
 
 
 class Signal2D(BaseSignal, CommonSignal2D):
@@ -200,6 +212,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
     """
     """
     _signal_dimension = 2
+    _lazy = False
 
     def __init__(self, *args, **kw):
         super().__init__(*args, **kw)
@@ -439,7 +452,8 @@ class Signal2D(BaseSignal, CommonSignal2D):
                 dtype='float',
                 correlation_threshold=None,
                 chunk_size=30,
-                interpolation_order=1):
+                interpolation_order=1,
+                show_progressbar=None):
         """Align the images in place using user provided shifts or by
         estimating the shifts.
         Please, see `estimate_shift2D` docstring for details
@@ -479,6 +493,8 @@ class Signal2D(BaseSignal, CommonSignal2D):
         Ultramicroscopy 102, no. 1 (December 2004): 27–36.
         """
         self._check_signal_dimension_equals_two()
+        if show_progressbar is None:
+            show_progressbar = preferences.General.show_progressbar
         if shifts is None:
             shifts = self.estimate_shift2D(
                 roi=roi,
@@ -490,7 +506,8 @@ class Signal2D(BaseSignal, CommonSignal2D):
                 dtype=dtype,
                 correlation_threshold=correlation_threshold,
                 normalize_corr=normalize_corr,
-                chunk_size=chunk_size)
+                chunk_size=chunk_size,
+                show_progressbar=show_progressbar)
             return_shifts = True
         else:
             return_shifts = False
@@ -530,14 +547,10 @@ class Signal2D(BaseSignal, CommonSignal2D):
                 yaxis.size += bottom - top
 
         # Translate with sub-pixel precision if necesary
-        for im, shift in zip(self._iterate_signal(),
-                             shifts):
-            if np.any(shift):
-                shift_image(im, -shift,
-                            fill_value=fill_value,
-                            interpolation_order=interpolation_order)
-                del im
-
+        self._map_iterate(shift_image, iterating_kwargs=(('shift', -shifts),),
+                          fill_value=fill_value,
+                          interpolation_order=interpolation_order,
+                          show_progressbar=show_progressbar)
         if crop and not expand:
             # Crop the image to the valid size
             shifts = -shifts
@@ -597,7 +610,20 @@ class Signal2D(BaseSignal, CommonSignal2D):
 
         """
         yy, xx = np.indices(self.axes_manager._signal_shape_in_array)
-        ramp = offset * np.ones(self.data.shape, dtype=self.data.dtype)
+        if self._lazy:
+            import dask.array as da
+            ramp = offset * da.ones(self.data.shape, dtype=self.data.dtype, 
+                                    chunks=self.data.chunks)
+        else:
+            ramp = offset * np.ones(self.data.shape, dtype=self.data.dtype)
         ramp += ramp_x * xx
         ramp += ramp_y * yy
         self.data += ramp
+
+
+class LazySignal2D(LazySignal, Signal2D):
+
+    _lazy = True
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)

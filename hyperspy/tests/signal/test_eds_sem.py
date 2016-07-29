@@ -25,8 +25,10 @@ from hyperspy.defaults_parser import preferences
 from hyperspy.components1d import Gaussian
 from hyperspy import utils
 from hyperspy.misc.test_utils import assert_warns
+from hyperspy.decorators import lazifyTestClass
 
 
+@lazifyTestClass
 class Test_metadata:
 
     def setUp(self):
@@ -191,6 +193,7 @@ class Test_metadata:
                                places=sys.float_info.dig - 2)
 
 
+@lazifyTestClass
 class Test_get_lines_intentisity:
 
     def setUp(self):
@@ -244,7 +247,7 @@ class Test_get_lines_intentisity:
     def test_background_substraction(self):
         s = self.signal
         intens = s.get_lines_intensity(["Al_Ka"], plot_result=False)[0].data
-        s += 1.
+        s = s + 1.
         np.testing.assert_allclose(s.estimate_background_windows(
             xray_lines=["Al_Ka"])[0, 0], 1.25666201, atol=1e-3)
         np.testing.assert_allclose(
@@ -270,6 +273,7 @@ class Test_get_lines_intentisity:
             np.array([84163, 89063, 96117, 96700, 99075]))
 
 
+@lazifyTestClass
 class Test_tools_bulk:
 
     def setUp(self):
@@ -302,6 +306,7 @@ class Test_tools_bulk:
         np.testing.assert_allclose(xr_range, 0.1900368800933955)
 
 
+@lazifyTestClass
 class Test_energy_units:
 
     def setUp(self):

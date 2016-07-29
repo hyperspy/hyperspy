@@ -48,6 +48,7 @@ def load(filenames=None,
     FEI ser and emi, hdf5, SEMPER unf, EMD, tif and a number of image formats.
     Any extra keyword is passed to the corresponsing reader. For
     available options see their individual documentation.
+
     Parameters
     ----------
     filenames :  None, str or list of strings
@@ -91,6 +92,7 @@ def load(filenames=None,
         If an axis with this name already
         exists it automatically append '-i', where `i` are integers,
         until it finds a name that is not yet in use.
+
     mmap: bool
         If True and stack is True, then the data is stored
         in a memory-mapped temporary file.The memory-mapped data is
@@ -102,6 +104,7 @@ def load(filenames=None,
         If mmap_dir is not None, and stack and mmap are True, the memory
         mapped file will be created in the given directory,
         otherwise the default directory is used.
+
     load_to_memory: bool
         for HDF5 files, blockfiles and EMD files, if True (default) loads all
         data to memory. If False, enables only loading the data upon request
@@ -117,15 +120,20 @@ def load(filenames=None,
     Returns
     -------
     Signal instance or list of signal instances
+
     Examples
     --------
     Loading a single file providing the signal type:
     >>> d = hs.load('file.dm3', signal_type="EDS_TEM")
 
     Loading multiple files:
+
     >>> d = hs.load('file1.dm3','file2.dm3')
+
     Loading multiple files matching the pattern:
+
     >>> d = hs.load('file*.dm3')
+
     """
     kwds['signal_type'] = signal_type
     if filenames is None:
@@ -195,6 +203,7 @@ def load_single_file(filename,
     Bruker bcf, FEI ser and emi, hdf5 and SEMPER unf.
     Parameters
     ----------
+
     filename : string
         File name (including the extension)
 
@@ -254,18 +263,21 @@ def load_with_reader(filename,
 
 def assign_signal_subclass(dtype,
                            signal_dimension,
-                           signal_type=""):
+                           signal_type="",
+                           lazy=False):
     """Given record_by and signal_type return the matching Signal subclass.
+
     Parameters
     ----------
     dtype : :class:`~.numpy.dtype`
     signal_dimension: int
     signal_type : {"EELS", "EDS", "EDS_SEM", "EDS_TEM", "DielectricFunction", "", str}
-
+    lazy: bool
 
     Returns
     -------
     Signal or subclass
+
     """
     import hyperspy.signals
     from hyperspy.signal import BaseSignal
@@ -279,7 +291,16 @@ def assign_signal_subclass(dtype,
         raise ValueError('Data type "{}" not understood!'.format(dtype.name))
     if not isinstance(signal_dimension, int) or signal_dimension < 0:
         raise ValueError("signal_dimension must be a positive interger")
-    signals = hyperspy.misc.utils.find_subclasses(hyperspy.signals, BaseSignal)
+    base_signals = hyperspy.misc.utils.find_subclasses(hyperspy.signals,
+                                                       BaseSignal)
+    lazy_signals = hyperspy.misc.utils.find_subclasses(hyperspy.signals,
+                                                       hyperspy.signals.LazySignal)
+    if lazy:
+        signals = lazy_signals
+    else:
+        signals = {
+            k: v for k,
+            v in base_signals.items() if k not in lazy_signals}
     dtype_matches = [s for s in signals.values() if dtype == s._dtype]
     dtype_dim_matches = [s for s in dtype_matches
                          if signal_dimension == s._signal_dimension]
@@ -295,17 +316,21 @@ def assign_signal_subclass(dtype,
     else:
         # no signal_dimension match either, hence return the general subclass for
         # correct dtype
-        return [s for s in dtype_matches if s._signal_dimension == -1 and s._signal_type == ""][0]
+        return [s for s in dtype_matches if s._signal_dimension == -
+                1 and s._signal_type == ""][0]
 
 
 def dict2signal(signal_dict):
     """Create a signal (or subclass) instance defined by a dictionary
+
     Parameters
     ----------
     signal_dict : dictionary
+
     Returns
     -------
     s : Signal or subclass
+
     """
     signal_dimension = -1  # undefined
     signal_type = ""

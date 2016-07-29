@@ -17,7 +17,6 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import copy
-import h5py
 import os.path
 import warnings
 import math
@@ -1457,6 +1456,7 @@ class BaseSignal(FancySlicing,
     _dtype = "real"
     _signal_dimension = -1
     _signal_type = ""
+    _lazy = False
     _alias_signal_types = []
     _additional_slicing_targets = [
         "metadata.Signal.Noise_properties.variance",
@@ -1604,17 +1604,27 @@ class BaseSignal(FancySlicing,
                     sdata = self._data_aligned_with_axes
                     odata = other._data_aligned_with_axes
                     if len(new_nav_axes) and sdim_diff:
+                        # Do the np.expand_dims ourselves, so that it works with
+                        # dask as well
                         if bigger_am is sam:
                             # Pad odata
                             while sdim_diff:
-                                odata = np.expand_dims(
-                                    odata, oam.navigation_dimension)
+                                # odata = np.expand_dims(
+                                #     odata, oam.navigation_dimension)
+                                slices = (slice(None),) * \
+                                    oam.navigation_dimension
+                                slices += (None, Ellipsis)
+                                odata = odata[slices]
                                 sdim_diff -= 1
                         else:
                             # Pad sdata
                             while sdim_diff:
-                                sdata = np.expand_dims(
-                                    sdata, sam.navigation_dimension)
+                                # sdata = np.expand_dims(
+                                #     sdata, sam.navigation_dimension)
+                                slices = (slice(None),) * \
+                                    sam.navigation_dimension
+                                slices += (None, Ellipsis)
+                                sdata = sdata[slices]
                                 sdim_diff -= 1
                     if op_name in INPLACE_OPERATORS:
                         # This should raise a ValueError if the operation
@@ -1677,12 +1687,18 @@ class BaseSignal(FancySlicing,
             old_models = self.models._models
             self.models._models = DictionaryTreeBrowser()
             ns = self.deepcopy()
-            ns.data = np.atleast_1d(data)
+            ns.data = data
             return ns
         finally:
             self.data = old_data
             self._plot = old_plot
             self.models._models = old_models
+
+    def as_lazy(self):
+        res = self._deepcopy_with_new_data(self.data)
+        res.metadata.set_item('Signal.lazy', True)
+        res._assign_subclass()
+        return res
 
     def _summary(self):
         string = "\n\tTitle: "
@@ -1705,7 +1721,11 @@ class BaseSignal(FancySlicing,
 
     @data.setter
     def data(self, value):
-        if isinstance(value, h5py.Dataset):
+        from dask.array import Array
+        from h5py import Dataset
+        if isinstance(value, (Dataset, Array)):
+            if isinstance(value, Array) and not value.ndim:
+                value = value.reshape((1,))
             self._data = value
         else:
             self._data = np.atleast_1d(np.asanyarray(value))
@@ -1765,6 +1785,9 @@ class BaseSignal(FancySlicing,
             self.metadata.General.title = ''
         if (self._signal_type or not self.metadata.has_item("Signal.signal_type")):
             self.metadata.Signal.signal_type = self._signal_type
+        if (self._lazy or
+                not self.metadata.has_item("Signal.lazy")):
+            self.metadata.Signal.lazy = self._lazy
         if "learning_results" in file_data_dict:
             self.learning_results.__dict__.update(
                 file_data_dict["learning_results"])
@@ -2243,7 +2266,10 @@ class BaseSignal(FancySlicing,
         s = out or self._deepcopy_with_new_data(None)
         data = array_tools.rebin(self.data, new_shape_in_array)
         if out:
-            out.data[:] = data
+            if out._lazy:
+                out.data = data
+            else:
+                out.data[:] = data
         else:
             s.data = data
         for axis, axis_src in zip(s.axes_manager._axes,
@@ -2590,8 +2616,9 @@ class BaseSignal(FancySlicing,
             getitem = [0] * len(data.shape)
             for axis in axes:
                 getitem[axis] = slice(None)
-            getitem[unfolded_axis] = i
-            yield(data[getitem])
+            # so that we get a reference even with no signal dimensions
+            getitem[unfolded_axis] = i if len(axes) else slice(i, i + 1)
+            yield(data[tuple(getitem)])
 
     def _remove_axis(self, axes):
         am = self.axes_manager
@@ -3107,10 +3134,11 @@ class BaseSignal(FancySlicing,
         ----------
         bins : int or list or str, optional
             If bins is a string, then it must be one of:
-            'knuth' : use Knuth's rule to determine bins
-            'scotts' : use Scott's rule to determine bins
-            'freedman' : use the Freedman-diaconis rule to determine bins
+            'knuth' : use Knuth's rule to determine bins;
+            'scotts' : use Scott's rule to determine bins;
+            'freedman' : use the Freedman-diaconis rule to determine bins;
             'blocks' : use bayesian blocks for dynamic bin widths
+
         range_bins : tuple or None, optional
             the minimum and maximum range for the histogram. If not specified,
             it will be (x.min(), x.max())
@@ -3131,6 +3159,8 @@ class BaseSignal(FancySlicing,
 
         Notes
         -----
+        The lazy version of the algorithm does not support 'knuth' and 'blocks'
+        bins arguments.
         The number of bins estimators are taken from AstroML. Read
         their documentation for more info.
 
@@ -3263,26 +3293,42 @@ class BaseSignal(FancySlicing,
             kwargs['axis'] = \
                 self.axes_manager.signal_axes[-1].index_in_array
 
-            self.data = function(self.data, **kwargs)
+            self._map_all(function, **kwargs)
         # If the function has an axes argument
         # we suppose that it can operate on the full array and we don't
         # interate over the coordinates.
         elif not ndkwargs and "axes" in fargs:
             kwargs['axes'] = tuple([axis.index_in_array for axis in
                                     self.axes_manager.signal_axes])
-            self.data = function(self.data, **kwargs)
+            self._map_all(function, **kwargs)
         else:
             # Iteration over coordinates.
-            iterators = [signal[1]._iterate_signal() for signal in ndkwargs]
-            iterators = tuple([self._iterate_signal()] + iterators)
-            for data in progressbar(zip(*iterators),
-                                    disable=not show_progressbar,
-                                    total=self.axes_manager.navigation_size,
-                                    leave=True):
-                for (key, value), datum in zip(ndkwargs, data[1:]):
-                    kwargs[key] = datum[0]
-                data[0][:] = function(data[0], **kwargs)
+            self._map_iterate(function, ndkwargs,
+                              show_progressbar=show_progressbar,
+                              **kwargs)
         self.events.data_changed.trigger(obj=self)
+
+    def _map_all(self, function, **kwargs):
+        """Function that can be replaced for lazy signals"""
+        self.data = function(self.data, **kwargs)
+
+    def _map_iterate(self, function, iterating_kwargs=(),
+                     show_progressbar=None, **kwargs):
+        """Function that can be replaced for lazy signals"""
+        iterators = tuple(signal[1]._iterate_signal()
+                          if isinstance(signal[1], BaseSignal) else signal[1]
+                          for signal in iterating_kwargs)
+        iterators = (self._iterate_signal(),) + iterators
+        for data in progressbar(zip(*iterators),
+                                disable=not show_progressbar,
+                                total=self.axes_manager.navigation_size,
+                                leave=True):
+            for (key, value), datum in zip(iterating_kwargs, data[1:]):
+                if isinstance(value, BaseSignal) and len(datum) == 1:
+                    kwargs[key] = datum[0]
+                else:
+                    kwargs[key] = datum
+            data[0][:] = function(data[0], **kwargs)
 
     def copy(self):
         try:
@@ -3355,7 +3401,6 @@ class BaseSignal(FancySlicing,
                     raise AttributeError(
                         "Only signals with dtype uint16 can be converted to "
                         "rgb16 images")
-                dtype = rgb_tools.rgb_dtypes[dtype]
                 self.data = rgb_tools.regular_array2rgbx(self.data)
                 self.axes_manager.remove(-1)
                 self.axes_manager.set_signal_dimension(2)
@@ -3427,9 +3472,8 @@ class BaseSignal(FancySlicing,
 
         """
         if expected_value is None:
-            dc = self.data.copy()
-        else:
-            dc = expected_value.data.copy()
+            expected_value = self
+        dc = expected_value.as_lazy().data
         if self.metadata.has_item(
                 "Signal.Noise_properties.Variance_linear_model"):
             vlm = self.metadata.Signal.Noise_properties.Variance_linear_model
@@ -3460,15 +3504,31 @@ class BaseSignal(FancySlicing,
         if correlation_factor < 0:
             raise ValueError("`correlation_factor` must be positive.")
 
-        variance = (dc * gain_factor + gain_offset) * correlation_factor
-        # The lower bound of the variance is the gaussian noise.
-        variance = np.clip(variance, gain_offset * correlation_factor, np.inf)
-        variance = type(self)(variance)
+        variance = self._estimate_poissonian_noise_variance(dc, gain_factor,
+                                                            gain_offset,
+                                                            correlation_factor)
+# Why the same type? Does not make sense, as it's just variance - probably
+# should be just a generic signal
+        #variance = type(self)(variance)
+        variance = BaseSignal(variance)
         variance.axes_manager = self.axes_manager
+        variance = variance.as_lazy()
         variance.metadata.General.title = ("Variance of " +
                                            self.metadata.General.title)
         self.metadata.set_item(
             "Signal.Noise_properties.variance", variance)
+
+    @staticmethod
+    def _estimate_poissonian_noise_variance(dc, gain_factor, gain_offset,
+                                            correlation_factor):
+        try:
+            from dask.array import clip
+        except ImportError:
+            clip = np.clip
+        variance = (dc * gain_factor + gain_offset) * correlation_factor
+        # The lower bound of the variance is the gaussian noise.
+        variance = clip(variance, gain_offset * correlation_factor, np.inf)
+        return variance
 
     def get_current_signal(self, auto_title=True, auto_filename=True):
         """Returns the data at the current coordinates as a Signal subclass.
@@ -3550,8 +3610,15 @@ class BaseSignal(FancySlicing,
             if self.axes_manager.navigation_dimension == 0:
                 data = np.array([0, ], dtype=dtype)
             else:
-                data = np.zeros(self.axes_manager._navigation_shape_in_array,
-                                dtype=dtype)
+                try:
+                    data = np.zeros(
+                        self.axes_manager._navigation_shape_in_array,
+                        dtype=dtype)
+                except MemoryError:
+                    from dask.array import zeros
+                    data = zeros(self.axes_manager._navigation_shape_in_array,
+                                 chunks=1000,  # just a random guess
+                                 dtype=dtype)
         if self.axes_manager.navigation_dimension == 0:
             s = BaseSignal(data)
         elif self.axes_manager.navigation_dimension == 1:
@@ -3600,8 +3667,15 @@ class BaseSignal(FancySlicing,
             if self.axes_manager.signal_dimension == 0:
                 data = np.array([0, ], dtype=dtype)
             else:
-                data = np.zeros(self.axes_manager._signal_shape_in_array,
-                                dtype=dtype)
+                try:
+                    data = np.zeros(
+                        self.axes_manager._signal_shape_in_array,
+                        dtype=dtype)
+                except MemoryError:
+                    from dask.array import zeros
+                    data = zeros(self.axes_manager._signal_shape_in_array,
+                                 chunks=1000,  # just a random guess
+                                 dtype=dtype)
 
         if self.axes_manager.signal_dimension == 0:
             s = BaseSignal(data)
@@ -3656,7 +3730,10 @@ class BaseSignal(FancySlicing,
         if out is None:
             return sp
         else:
-            out.data[:] = sp.data
+            if out._lazy:
+                out.data = sp.data
+            else:
+                out.data[:] = sp.data
             out.events.data_changed.trigger(obj=out)
     as_signal1D.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
 
@@ -3703,7 +3780,10 @@ class BaseSignal(FancySlicing,
         if out is None:
             return im
         else:
-            out.data[:] = im.data
+            if out._lazy:
+                out.data = im.data
+            else:
+                out.data[:] = im.data
             out.events.data_changed.trigger(obj=out)
     as_signal2D.__doc__ %= OUT_ARG
 
@@ -3714,10 +3794,13 @@ class BaseSignal(FancySlicing,
             signal_dimension=self.axes_manager.signal_dimension,
             signal_type=mp.Signal.signal_type
             if "Signal.signal_type" in mp
-            else self._signal_type)
+            else self._signal_type,
+            lazy=mp.Signal.lazy if "Signal.lazy" in mp else self._lazy)
         if self._alias_signal_types:  # In case legacy types exist:
             mp.Signal.signal_type = self._signal_type  # set to default!
         self.__init__(**self._to_dictionary(add_models=True))
+        if ('Signal.lazy' in mp and mp.Signal.lazy) or self._lazy:
+            self._make_lazy()
 
     def set_signal_type(self, signal_type):
         """Set the signal type and change the current class
@@ -3782,20 +3865,28 @@ class BaseSignal(FancySlicing,
         get_histogram
 
         """
-        data = self.data
-        # To make it work with nans
-        data = data[~np.isnan(data)]
+        _mean, _std, _min, _q1, _q2, _q3, _max = self._calculate_summary_statistics()
         print(underline("Summary statistics"))
-        print("mean:\t" + formatter % data.mean())
-        print("std:\t" + formatter % data.std())
+        print("mean:\t" + formatter % _mean)
+        print("std:\t" + formatter % _std)
         print()
-        print("min:\t" + formatter % data.min())
-        print("Q1:\t" + formatter % np.percentile(data,
-                                                  25))
-        print("median:\t" + formatter % np.median(data))
-        print("Q3:\t" + formatter % np.percentile(data,
-                                                  75))
-        print("max:\t" + formatter % data.max())
+        print("min:\t" + formatter % _min)
+        print("Q1:\t" + formatter % _q1)
+        print("median:\t" + formatter % _q2)
+        print("Q3:\t" + formatter % _q3)
+        print("max:\t" + formatter % _max)
+
+    def _calculate_summary_statistics(self):
+        data = self.data
+        data = data[~np.isnan(data)]
+        _mean = np.nanmean(data)
+        _std = np.nanstd(data)
+        _min = np.nanmin(data)
+        _q1 = np.percentile(data, 25)
+        _q2 = np.percentile(data, 50)
+        _q3 = np.percentile(data, 75)
+        _max = np.nanmax(data)
+        return _mean, _std, _min, _q1, _q2, _q3, _max
 
     @property
     def is_rgba(self):

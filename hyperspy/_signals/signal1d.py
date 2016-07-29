@@ -16,8 +16,10 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
 import matplotlib.pyplot as plt
 import numpy as np
+import dask.array as da
 import warnings
 
 from hyperspy.signal import BaseSignal
@@ -38,8 +40,10 @@ try:
 except:
     statsmodels_installed = False
 
+from hyperspy.misc.utils import stack
 from hyperspy.defaults_parser import preferences
 from hyperspy.external.progressbar import progressbar
+from hyperspy._signals.lazy import lazyerror
 from hyperspy.gui.tools import (
     Signal1DCalibration,
     SmoothingSavitzkyGolay,
@@ -53,6 +57,9 @@ from hyperspy.decorators import interactive_range_selector
 from scipy.ndimage.filters import gaussian_filter1d
 from hyperspy.gui.tools import IntegrateArea
 from hyperspy import components1d
+from hyperspy._signals.lazy import LazySignal
+
+_logger = logging.getLogger(__name__)
 
 
 def find_peaks_ohaver(y, x=None, slope_thresh=0., amp_thresh=None,
@@ -219,6 +226,43 @@ def interpolate1D(number_of_interpolation_points, data):
     return interpolator(new_ax)
 
 
+def _estimate_shift1D(current_guess, **kwargs):
+    mask = kwargs.get('mask', None)
+    data = kwargs.get('data', None)
+    ref = kwargs.get('ref', None)
+    interpolate = kwargs.get('interpolate', True)
+    ip = kwargs.get('ip', 5)
+    data_slice = kwargs.get('data_slice', slice(None))
+    if bool(mask):
+        return np.nan
+    data = data[data_slice]
+    if interpolate is True:
+        data = interpolate1D(ip, data)
+    return np.argmax(np.correlate(ref, data, 'full')) - len(ref) + 1
+
+
+def _shift1D(data, **kwargs):
+    shift = kwargs.get('shift', 0.)
+    original_axis = kwargs.get('original_axis', None)
+    fill_value = kwargs.get('fill_value', np.nan)
+    kind = kwargs.get('kind', 'linear')
+    offset = kwargs.get('offset', 0.)
+    scale = kwargs.get('scale', 1.)
+    size = kwargs.get('size', 2)
+    if np.isnan(shift):
+        return data
+    axis = np.linspace(offset, offset + scale * (size - 1), size)
+
+    si = sp.interpolate.interp1d(original_axis,
+                                 data,
+                                 bounds_error=False,
+                                 fill_value=fill_value,
+                                 kind=kind)
+    offset = float(offset - shift)
+    axis = np.linspace(offset, offset + scale * (size - 1), size)
+    return si(axis)
+
+
 class Signal1D(BaseSignal, CommonSignal1D):
 
     """
@@ -380,37 +424,53 @@ class Signal1D(BaseSignal, CommonSignal1D):
         else:
             ilow = axis.low_index
         if expand:
-            padding = []
-            for i in range(self.data.ndim):
-                if i == axis.index_in_array:
-                    padding.append(
-                        (axis.high_index - ihigh + 1, ilow - axis.low_index))
-                else:
-                    padding.append((0, 0))
-            self.data = np.pad(self.data, padding, mode='constant',
-                               constant_values=(fill_value,))
+            if self.metadata.Signal.lazy:
+                ind = axis.index_in_array
+                pre_shape = list(self.data.shape)
+                post_shape = list(self.data.shape)
+                pre_chunks = list(self.data.chunks)
+                post_chunks = list(self.data.chunks)
+
+                pre_shape[ind] = axis.high_index - ihigh + 1
+                post_shape[ind] = ilow - axis.low_index
+                for chunks, shape in zip((pre_chunks, post_chunks),
+                                         (pre_shape, post_shape)):
+                    maxsize = min(np.max(chunks[ind]), shape[ind])
+                    num = np.ceil(shape[ind] / maxsize)
+                    chunks[ind] = tuple(len(ar) for ar in
+                                        np.array_split(np.arange(shape[ind]),
+                                                       num))
+                pre_array = da.full(tuple(pre_shape),
+                                    fill_value,
+                                    chunks=tuple(pre_chunks))
+
+                post_array = da.full(tuple(post_shape),
+                                     fill_value,
+                                     chunks=tuple(post_chunks))
+
+                self.data = da.concatenate((pre_array, self.data, post_array),
+                                           axis=ind)
+            else:
+                padding = []
+                for i in range(self.data.ndim):
+                    if i == axis.index_in_array:
+                        padding.append((axis.high_index - ihigh + 1,
+                                        ilow - axis.low_index))
+                    else:
+                        padding.append((0, 0))
+                self.data = np.pad(self.data, padding, mode='constant',
+                                   constant_values=(fill_value,))
             axis.offset += minimum
             axis.size += axis.high_index - ihigh + 1 + ilow - axis.low_index
-        offset = axis.offset
-        original_axis = axis.axis.copy()
-        with progressbar(total=self.axes_manager.navigation_size,
-                         disable=not show_progressbar,
-                         leave=True) as pbar:
-            for i, (dat, shift) in enumerate(zip(
-                    self._iterate_signal(),
-                    shift_array.ravel())):
-                if np.isnan(shift):
-                    continue
-                si = sp.interpolate.interp1d(original_axis,
-                                             dat,
-                                             bounds_error=False,
-                                             fill_value=fill_value,
-                                             kind=interpolation_method)
-                axis.offset = float(offset - shift)
-                dat[:] = si(axis.axis)
-                pbar.update(1)
 
-        axis.offset = offset
+        self._map_iterate(_shift1D, (('shift', shift_array.ravel()),),
+                          original_axis=axis.axis,
+                          fill_value=fill_value,
+                          kind=interpolation_method,
+                          offset=axis.offset,
+                          scale=axis.scale,
+                          size=axis.size,
+                          show_progressbar=show_progressbar)
 
         if crop and not expand:
             self.crop(axis.index_in_axes_manager,
@@ -450,16 +510,16 @@ class Signal1D(BaseSignal, CommonSignal1D):
             delta = int(delta / axis.scale)
         i0 = int(np.clip(i1 - delta, 0, np.inf))
         i3 = int(np.clip(i2 + delta, 0, axis.size))
-        with progressbar(total=self.axes_manager.navigation_size,
-                         disable=not show_progressbar,
-                         leave=True) as pbar:
-            for i, dat in enumerate(self._iterate_signal()):
-                dat_int = sp.interpolate.interp1d(
-                    list(range(i0, i1)) + list(range(i2, i3)),
-                    dat[i0:i1].tolist() + dat[i2:i3].tolist(),
-                    **kwargs)
-                dat[i1:i2] = dat_int(list(range(i1, i2)))
-                pbar.update(1)
+
+        def interpolating_function(dat):
+            dat_int = sp.interpolate.interp1d(
+                list(range(i0, i1)) + list(range(i2, i3)),
+                dat[i0:i1].tolist() + dat[i2:i3].tolist(),
+                **kwargs)
+            dat[i1:i2] = dat_int(list(range(i1, i2)))
+            return dat
+        self._map_iterate(interpolating_function,
+                          show_progressbar=show_progressbar)
         self.events.data_changed.trigger(obj=self)
 
     def _check_navigation_mask(self, mask):
@@ -529,31 +589,32 @@ class Signal1D(BaseSignal, CommonSignal1D):
         ip = number_of_interpolation_points + 1
         axis = self.axes_manager.signal_axes[0]
         self._check_navigation_mask(mask)
+        # we compute for now
+        if isinstance(start, da.Array):
+            start = start.compute()
+        if isinstance(end, da.Array):
+            end = end.compute()
+        i1, i2 = axis._get_index(start), axis._get_index(end)
+        shift_signal = self._get_navigation_signal(dtype=float)
+        shift_signal.axes_manager.set_signal_dimension(0)
         if reference_indices is None:
             reference_indices = self.axes_manager.indices
-
-        i1, i2 = axis._get_index(start), axis._get_index(end)
-        shift_array = np.zeros(self.axes_manager._navigation_shape_in_array,
-                               dtype=float)
         ref = self.inav[reference_indices].data[i1:i2]
+
         if interpolate is True:
             ref = interpolate1D(ip, ref)
-        with progressbar(total=self.axes_manager.navigation_size,
-                         disable=not show_progressbar,
-                         leave=True) as pbar:
-            for i, (dat, indices) in enumerate(zip(
-                    self._iterate_signal(),
-                    self.axes_manager._array_indices_generator())):
-                if mask is not None and bool(mask.data[indices]) is True:
-                    shift_array[indices] = np.nan
-                else:
-                    dat = dat[i1:i2]
-                    if interpolate is True:
-                        dat = interpolate1D(ip, dat)
-                    shift_array[indices] = np.argmax(
-                        np.correlate(ref, dat, 'full')) - len(ref) + 1
-                pbar.update(1)
-
+        iterating_kwargs = (('data', self),)
+        if mask is not None:
+            iterating_kwargs += (('mask', mask),)
+        shift_signal._map_iterate(_estimate_shift1D,
+                                  iterating_kwargs=iterating_kwargs,
+                                  data_slice=slice(i1, i2),
+                                  mask=None,
+                                  ref=ref,
+                                  ip=ip,
+                                  interpolate=interpolate,
+                                  show_progressbar=show_progressbar,)
+        shift_array = shift_signal.data
         if max_shift is not None:
             if interpolate is True:
                 max_shift *= ip
@@ -574,7 +635,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
                 crop=True,
                 expand=False,
                 fill_value=np.nan,
-                also_align=[],
+                also_align=None,
                 mask=None,
                 show_progressbar=None):
         """Estimate the shifts in the signal axis using
@@ -617,7 +678,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
         fill_value : float
             If crop is False fill the data outside of the original
             interval with the given value where needed.
-        also_align : list of signals
+        also_align : list of signals, None
             A list of BaseSignal instances that has exactly the same
             dimensions as this one and that will be aligned using the shift map
             estimated using the this signal.
@@ -642,6 +703,13 @@ class Signal1D(BaseSignal, CommonSignal1D):
         if also_align is None:
             also_align = []
         self._check_signal_dimension_equals_one()
+        if self.metadata.Signal.lazy:
+            _logger.warning('In order to properly expand, the lazy '
+                            'reference signal will be read twice (once to '
+                            'estimate shifts, and second time to shift '
+                            'appropriatelly), which might take a long time. '
+                            'Use expand=False to only pass through the data '
+                            'once.')
         shift_array = self.estimate_shift1D(
             start=start,
             end=end,
@@ -651,7 +719,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
             number_of_interpolation_points=number_of_interpolation_points,
             mask=mask,
             show_progressbar=show_progressbar)
-        for signal in also_align + [self]:
+        signals_to_shift = [self] + also_align
+        for signal in signals_to_shift:
             signal.shift1D(shift_array=shift_array,
                            interpolation_method=interpolation_method,
                            crop=crop,
@@ -760,14 +829,9 @@ class Signal1D(BaseSignal, CommonSignal1D):
         if (polynomial_order is not None and
                 window_length is not None):
             axis = self.axes_manager.signal_axes[0]
-            self.data = savgol_filter(
-                x=self.data,
-                window_length=window_length,
-                polyorder=polynomial_order,
-                deriv=differential_order,
-                delta=axis.scale,
-                axis=axis.index_in_array)
-            self.events.data_changed.trigger(obj=self)
+            self.map(savgol_filter, window_length=window_length,
+                     polyorder=polynomial_order, deriv=differential_order,
+                     delta=axis.scale,)
         else:
             # Interactive mode
             smoother = SmoothingSavitzkyGolay(self)
@@ -996,11 +1060,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
                 "FWHM must be greater than zero")
         axis = self.axes_manager.signal_axes[0]
         FWHM *= 1 / axis.scale
-        self.data = gaussian_filter1d(
-            self.data,
-            axis=axis.index_in_array,
-            sigma=FWHM / 2.35482)
-        self.events.data_changed.trigger(obj=self)
+        self.map(gaussian_filter1d, sigma=FWHM / 2.35482)
 
     def hanning_taper(self, side='both', channels=None, offset=0):
         """Apply a hanning taper to the data in place.
@@ -1023,6 +1083,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
         """
         # TODO: generalize it
+        if self.metadata.Signal.lazy:
+            raise lazyerror
         self._check_signal_dimension_equals_one()
         if channels is None:
             channels = int(round(len(self()) * 0.02))
@@ -1110,6 +1172,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
         """
         # TODO: add scipy.signal.find_peaks_cwt
+        # TODO: make work with lazy signals. Currently does not due to funny
+        # output dtype
         self._check_signal_dimension_equals_one()
         axis = self.axes_manager.signal_axes[0].axis
         arr_shape = (self.axes_manager._navigation_shape_in_array
@@ -1173,34 +1237,50 @@ class Signal1D(BaseSignal, CommonSignal1D):
         if not 0 < factor < 1:
             raise ValueError("factor must be between 0 and 1.")
 
-        left, right = (self._get_navigation_signal(),
-                       self._get_navigation_signal())
-        # The signals must be of dtype float to contain np.nan
-        left.change_dtype('float')
-        right.change_dtype('float')
+        left, right = (self._get_navigation_signal(dtype='float'),
+                       self._get_navigation_signal(dtype='float'))
         axis = self.axes_manager.signal_axes[0]
-        x = axis.axis
+        # x = axis.axis
         maxval = self.axes_manager.navigation_size
         show_progressbar = show_progressbar and maxval > 0
-        for i, spectrum in progressbar(enumerate(self),
-                                       total=maxval,
-                                       disable=not show_progressbar,
-                                       leave=True):
+        for _s in (left, right):
+            _s.axes_manager.set_signal_dimension(0)
+        both = stack((left, right))
+        both.axes_manager[-1].navigate = False
+
+        def estimating_function(both,
+                                spectrum=None,
+                                window=None,
+                                factor=0.5,
+                                axis=None):
+            x = axis.axis
             if window is not None:
-                vmax = axis.index2value(spectrum.data.argmax())
-                spectrum = spectrum.isig[vmax - window / 2.:vmax + window / 2.]
-                x = spectrum.axes_manager[0].axis
+                vmax = axis.index2value(spectrum.argmax())
+                slices = axis._get_array_slices(
+                    slice(vmax - window * 0.5, vmax + window * 0.5))
+                spectrum = spectrum[slices]
+                x = x[slices]
             spline = scipy.interpolate.UnivariateSpline(
                 x,
-                spectrum.data - factor * spectrum.data.max(),
+                spectrum - factor * spectrum.max(),
                 s=0)
             roots = spline.roots()
             if len(roots) == 2:
-                left.isig[self.axes_manager.indices] = roots[0]
-                right.isig[self.axes_manager.indices] = roots[1]
+                return np.array(roots)
             else:
-                left.isig[self.axes_manager.indices] = np.nan
-                right.isig[self.axes_manager.indices] = np.nan
+                return np.full((2,), np.nan)
+
+        both._map_iterate(estimating_function,
+                          iterating_kwargs=(
+                              ('spectrum', self),),
+                          window=window,
+                          factor=factor,
+                          axis=axis,
+                          show_progressbar=show_progressbar)
+        left, right = both.split()
+        for _s in (left, right):
+            _s.axes_manager.set_signal_dimension(
+                self.axes_manager.navigation_dimension)
         width = right - left
         if factor == 0.5:
             width.metadata.General.title = (
@@ -1225,3 +1305,14 @@ class Signal1D(BaseSignal, CommonSignal1D):
             return [width, left, right]
         else:
             return width
+
+
+class LazySignal1D(LazySignal, Signal1D):
+
+    """
+    """
+    _lazy = True
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.axes_manager.set_signal_dimension(1)

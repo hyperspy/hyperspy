@@ -21,8 +21,10 @@ import nose.tools as nt
 
 import hyperspy.api as hs
 from hyperspy.misc.test_utils import assert_warns
+from hyperspy.decorators import lazifyTestClass
 
 
+@lazifyTestClass
 class Test_Estimate_Elastic_Scattering_Threshold:
 
     def setUp(self):
@@ -82,6 +84,7 @@ class Test_Estimate_Elastic_Scattering_Threshold:
         nt.assert_true(np.all(np.isnan(data)))
 
 
+@lazifyTestClass
 class TestEstimateZLPCentre:
 
     def setUp(self):
@@ -99,6 +102,7 @@ class TestEstimateZLPCentre:
                       0.1))
 
 
+@lazifyTestClass
 class TestAlignZLP:
 
     def setUp(self):
@@ -162,6 +166,7 @@ class TestAlignZLP:
         nt.assert_true(np.allclose(zlp_max, 8))
 
 
+@lazifyTestClass
 class TestPowerLawExtrapolation:
 
     def setUp(self):

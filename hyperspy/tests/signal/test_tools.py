@@ -3,8 +3,10 @@ from unittest import mock
 import numpy as np
 from numpy.testing import assert_array_equal
 import nose.tools as nt
+from nose.plugins.skip import SkipTest
 
 from hyperspy import signals
+from hyperspy.decorators import lazifyTestClass
 
 
 def _verify_test_sum_x_E(self, s):
@@ -14,6 +16,7 @@ def _verify_test_sum_x_E(self, s):
     nt.assert_equal(s.axes_manager.signal_dimension, 1)
 
 
+@lazifyTestClass
 class Test2D:
 
     def setUp(self):
@@ -87,7 +90,7 @@ class Test2D:
     def test_histogram(self):
         result = self.signal.get_histogram(3)
         nt.assert_true(isinstance(result, signals.Signal1D))
-        np.testing.assert_equal(result.data, [17, 16, 17])
+        np.testing.assert_equal(result.data, np.array([17, 16, 17]))
         nt.assert_true(result.metadata.Signal.binned)
 
     def test_estimate_poissonian_noise_copy_data(self):
@@ -99,7 +102,6 @@ class Test2D:
     def test_estimate_poissonian_noise_noarg(self):
         self.signal.estimate_poissonian_noise_variance()
         variance = self.signal.metadata.Signal.Noise_properties.variance
-        np.testing.assert_array_equal(variance.data, self.signal.data)
         np.testing.assert_array_equal(variance.data, self.signal.data)
 
     def test_estimate_poissonian_noise_with_args(self):
@@ -114,12 +116,16 @@ class Test2D:
 
     def test_unfold_image(self):
         s = self.signal
+        if s._lazy:
+            raise SkipTest
         s.axes_manager.set_signal_dimension(2)
         s.unfold()
         nt.assert_equal(s.data.shape, (50,))
 
     def test_unfold_image_returns_true(self):
         s = self.signal
+        if s._lazy:
+            raise SkipTest
         s.axes_manager.set_signal_dimension(2)
         nt.assert_true(s.unfold())
 
@@ -169,6 +175,7 @@ def _test_default_navigation_signal_operations_over_many_axes(self, op):
     nt.assert_equal(s.axes_manager.navigation_dimension, 0)
 
 
+@lazifyTestClass
 class Test3D:
 
     def setUp(self):
@@ -238,12 +245,16 @@ class Test3D:
 
     def test_swap_axes_simple(self):
         s = self.signal
+        if s._lazy:
+            raise SkipTest
         nt.assert_equal(s.swap_axes(0, 1).data.shape, (4, 2, 6))
         nt.assert_equal(s.swap_axes(0, 2).axes_manager.shape, (6, 2, 4))
         nt.assert_true(s.swap_axes(0, 2).data.flags['C_CONTIGUOUS'])
 
     def test_swap_axes_iteration(self):
         s = self.signal
+        if s._lazy:
+            raise SkipTest
         s = s.swap_axes(0, 2)
         nt.assert_equal(s.axes_manager._getitem_tuple[:2], (0, 0))
         s.axes_manager.indices = (2, 1)
@@ -351,7 +362,10 @@ class Test3D:
         s.axes_manager.set_signal_dimension(2)
         data = np.zeros(s.axes_manager._signal_shape_in_array)
         ns = s._get_signal_signal(data=data)
-        nt.assert_is(ns.data, data)
+        if s._lazy:
+            nt.assert_in(data, [v for v in ns.data.dask.values()])
+        else:
+            nt.assert_is(ns.data, data)
 
     def test_get_navigation_signal_dtype(self):
         s = self.signal
@@ -374,6 +388,7 @@ class Test3D:
             s._get_signal_signal(dtype="bool").data.dtype.name, "bool")
 
 
+@lazifyTestClass
 class Test4D:
 
     def setUp(self):
@@ -404,21 +419,31 @@ class Test4D:
         nt.assert_equal(self.s.rollaxis("z", "x").data.shape, (4, 3, 5, 6))
 
     def test_unfold_spectrum(self):
+        if self.s._lazy:
+            raise SkipTest
         self.s.unfold()
         nt.assert_equal(self.s.data.shape, (60, 6))
 
     def test_unfold_spectrum_returns_true(self):
+        if self.s._lazy:
+            raise SkipTest
         nt.assert_true(self.s.unfold())
 
     def test_unfold_spectrum_signal_returns_false(self):
+        if self.s._lazy:
+            raise SkipTest
         nt.assert_false(self.s.unfold_signal_space())
 
     def test_unfold_image(self):
+        if self.s._lazy:
+            raise SkipTest
         im = self.s.to_signal2D()
         im.unfold()
         nt.assert_equal(im.data.shape, (30, 12))
 
     def test_image_signal_unfolded_deepcopy(self):
+        if self.s._lazy:
+            raise SkipTest
         im = self.s.to_signal2D()
         im.unfold()
         # The following could fail if the constructor was not taking the fact
@@ -427,15 +452,21 @@ class Test4D:
         im.deepcopy()
 
     def test_image_signal_unfolded_false(self):
+        if self.s._lazy:
+            raise SkipTest
         im = self.s.to_signal2D()
         nt.assert_false(im.metadata._HyperSpy.Folding.signal_unfolded)
 
     def test_image_signal_unfolded_true(self):
+        if self.s._lazy:
+            raise SkipTest
         im = self.s.to_signal2D()
         im.unfold()
         nt.assert_true(im.metadata._HyperSpy.Folding.signal_unfolded)
 
     def test_image_signal_unfolded_back_to_false(self):
+        if self.s._lazy:
+            raise SkipTest
         im = self.s.to_signal2D()
         im.unfold()
         im.fold()
@@ -443,14 +474,16 @@ class Test4D:
 
 
 def test_signal_iterator():
-    s = signals.Signal1D(np.arange(3).reshape((3, 1)))
-    nt.assert_equal(next(s).data[0], 0)
-    # If the following fails it can be because the iteration index was not
-    # restarted
-    for i, signal in enumerate(s):
-        nt.assert_equal(i, signal.data[0])
+    sig = signals.Signal1D(np.arange(3).reshape((3, 1)))
+    for s in (sig, sig.as_lazy()):
+        nt.assert_equal(next(s).data[0], 0)
+        # If the following fails it can be because the iteration index was not
+        # restarted
+        for i, signal in enumerate(s):
+            nt.assert_equal(i, signal.data[0])
 
 
+@lazifyTestClass
 class TestDerivative:
 
     def setup(self):
@@ -469,6 +502,7 @@ class TestDerivative:
                                    atol=1e-2),)
 
 
+@lazifyTestClass
 class TestOutArg:
 
     def setup(self):
@@ -595,6 +629,8 @@ class TestOutArg:
 
     def test_masked_array_mean(self):
         s = self.s
+        if s._lazy:
+            raise SkipTest
         mask = (s.data > 0.5)
         s.data = np.arange(s.data.size).reshape(s.data.shape)
         s.data = np.ma.masked_array(s.data, mask=mask)
@@ -613,6 +649,8 @@ class TestOutArg:
 
     def test_masked_array_sum(self):
         s = self.s
+        if s._lazy:
+            raise SkipTest
         mask = (s.data > 0.5)
         s.data = np.ma.masked_array(np.ones_like(s.data), mask=mask)
         sr = s.sum(axis=('x', 'z',))
@@ -620,6 +658,8 @@ class TestOutArg:
 
     def test_masked_arrays_out(self):
         s = self.s
+        if s._lazy:
+            raise SkipTest
         mask = (s.data > 0.5)
         s.data = np.ones_like(s.data)
         s.data = np.ma.masked_array(s.data, mask=mask)
