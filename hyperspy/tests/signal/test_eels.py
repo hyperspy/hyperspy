@@ -87,6 +87,7 @@ class Test_Estimate_Elastic_Scattering_Threshold:
         s = self.signal
         threshold = s.estimate_elastic_scattering_threshold()
         # Threshold is nd signal
+        print(threshold.data)
         t = s.estimate_elastic_scattering_intensity(threshold=threshold)
         nt.assert_equal(t.metadata.Signal.signal_type, "")
         nt.assert_equal(t.axes_manager.signal_dimension, 0)
