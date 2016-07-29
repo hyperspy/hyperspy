@@ -81,13 +81,17 @@ class SEDPattern(Signal2D):
                                   precession_frequency=None,
                                   exposure_time=None):
         """Set the microscope parameters.
-        If no arguments are given, raises an interactive mode to fill
-        the values.
+
+        If no arguments are given, raises an interactive mode to enter values.
 
         Parameters
         ----------
         beam_energy: float
             The energy of the electron beam in keV
+        camera_length: float
+            Camera length in m
+        scan_rotation: float
+            Scan rotation in degrees
         convergence_angle : float
             Convergence angle in mrad
         precession_angle : float
@@ -101,8 +105,8 @@ class SEDPattern(Signal2D):
         --------
         >>> dp = hs.datasets.example_signals.SED_Pattern()
         >>> print(dp.metadata.Acquisition_instrument.TEM.precession_angle)
-        >>> s.set_microscope_parameters(precession_angle=36.)
-        >>> print(s.metadata.Acquisition_instrument.TEM.precession_angle)
+        >>> dp.set_microscope_parameters(precession_angle=36.)
+        >>> print(dp.metadata.Acquisition_instrument.TEM.precession_angle)
         18.0
         36.0
         """
@@ -182,9 +186,8 @@ class SEDPattern(Signal2D):
         self._are_microscope_parameters_missing()
 
     def _are_microscope_parameters_missing(self):
-        """Check if the SED parameters necessary for further analysis
-        are defined in metadata. Raise in interactive mode
-         an UI item to fill or cahnge the values"""
+        """Check that the SED parameters necessary for pattern calibration are
+        defined in metadata and raise a UI if not to add them."""
         must_exist = ('Acquisition_instrument.TEM.beam_energy',
                       'Acquisition_instrument.TEM.camera_length',
                       'Acquisition_instrument.TEM.scan_rotation')
@@ -212,9 +215,9 @@ class SEDPattern(Signal2D):
 
     def _get_direct_beam_position(self, z, center=None, radius=None,
                                   subpixel=None):
-        """
-        Refine the position of the direct beam and hence an estimate for the
+        """Refine the position of the direct beam and hence an estimate for the
         position of the pattern center in each SED pattern.
+
         Parameters
         ----------
         radius : int
@@ -223,10 +226,12 @@ class SEDPattern(Signal2D):
         subpixel : bool
             If True the direct beam position is refined to sub-pixel precision
             via calculation of the intensity center of mass.
+
         Return
         ------
         center: array
             Refined position (x, y) of the direct beam.
+
         Notes
         -----
         This method is based on work presented by Thomas White in his PhD (2009)
@@ -257,9 +262,9 @@ class SEDPattern(Signal2D):
         return center
 
     def direct_beam_shifts(self, radius=10, subpixel=False):
-        """
-        Determine rigid shifts in the SED patterns based on the position of the
-        direct beam and return the shifts required to center all patterns.
+        """Determine rigid shifts in the SED patterns based on the position of
+        the direct beam and return the shifts required to center all patterns.
+
         Parameters
         ----------
         radius : int
@@ -268,11 +273,13 @@ class SEDPattern(Signal2D):
         subpixel : bool
             If True the direct beam position is refined to sub-pixel precision
             via calculation of the intensity center_of_mass.
+
         Returns
         -------
         shifts : array
             Array containing the shift to be applied to each SED pattern to
             center it.
+
         See also
         --------
         _get_direct_beam_position
@@ -301,8 +308,8 @@ class SEDPattern(Signal2D):
         return shifts
 
     def direct_beam_mask(self, radius):
-        """
-        Generate a signal mask for the direct beam.
+        """Generate a signal mask for the direct beam.
+
         Parameters
         ----------
         radius : int
@@ -310,6 +317,7 @@ class SEDPattern(Signal2D):
         center : tuple
             User specified (x, y) position of the diffraction pattern center.
             i.e. the direct beam position.
+
         Return
         ------
         mask : array
@@ -324,8 +332,8 @@ class SEDPattern(Signal2D):
         return mask
 
     def vacuum_mask(self, radius, threshold, closing=True, opening=False):
-        """
-        Generate a navigation mask to exlude SED patterns acquired in vacuum.
+        """Generate a navigation mask to exlude SED patterns acquired in vacuum.
+
         Parameters
         ----------
         radius: int
@@ -335,6 +343,7 @@ class SEDPattern(Signal2D):
         threshold : float
             Minimum intensity  required to consider a diffracted beam to be
             present.
+
         Returns
         -------
         mask : signal
@@ -363,9 +372,10 @@ class SEDPattern(Signal2D):
                       closing=True,
                       *args,
                       **kwargs):
-        """
-        Decomposition with a choice of algorithms
+        """Decomposition with a choice of algorithms.
+
         The results are stored in self.learning_results
+
         Parameters
         ----------
         normalize_poissonian_noise : bool
@@ -402,21 +412,24 @@ class SEDPattern(Signal2D):
         reproject : None | signal | navigation | both
             If not None, the results of the decomposition will be projected in
             the selected masked area.
+
         Examples
         --------
-        >>> im = hs.datasets.example_signals.SED_Pattern()
-        >>> ims = hs.stack([s]*3)
-        >>> ims.change_dtype(float)
-        >>> ims.decomposition()
+        >>> dp = hs.datasets.example_signals.SED_Pattern()
+        >>> dps = hs.stack([s]*3)
+        >>> dps.change_dtype(float)
+        >>> dps.decomposition()
+
         See also
         --------
         direct_beam_mask
+        vacuum_mask
         """
         if isinstance(signal_mask, float):
             signal_mask = self.direct_beam_mask(signal_mask)
         if isinstance(navigation_mask, float):
             navigation_mask = self.vacuum_mask(navigation_mask, threshold).data
-        super(Image, self).decomposition(
+        super(Signal2D, self).decomposition(
             normalize_poissonian_noise=normalize_poissonian_noise,
             signal_mask=signal_mask, navigation_mask=navigation_mask,
             *args, **kwargs)
