@@ -338,16 +338,31 @@ class EELSSpectrum(Signal1D):
         else:
             I0 = self._get_navigation_signal()
             I0.axes_manager.set_signal_dimension(0)
-            for i, s in progressbar(enumerate(self),
-                                    total=self.axes_manager.navigation_size,
-                                    disable=not show_progressbar,
-                                    leave=True):
-                threshold_ = threshold.isig[I0.axes_manager.indices].data[0]
-                if np.isnan(threshold_):
-                    s.data[:] = np.nan
-                else:
-                    s.data[:] = (self.inav[I0.axes_manager.indices].isig[
-                                 :threshold_].integrate1D(-1).data)
+            old_navigate = [axis.navigate
+                            for axis in threshold.axes_manager._axes]
+            try:
+                threshold.axes_manager.set_signal_dimension(0)
+                with progressbar(total=self.axes_manager.navigation_size,
+                                 disable=not show_progressbar,
+                                 leave=True) as pbar:
+                    for i, (i0, th, s) in enumerate(zip(I0._iterate_signal(),
+                                                        threshold._iterate_signal(),
+                                                        self)):
+                        print(threshold)
+                        print(th)
+                        if np.isnan(th[0]):
+                            i0[:] = np.nan
+                        else:
+                            i0[:] = s.isig[:th[0]].integrate1D(-1).data
+                        pbar.update(1)
+            except:
+                raise
+            finally:
+                # Restore threshold view
+                for axis, navigate in zip(
+                        threshold.axes_manager._axes,
+                        old_navigate):
+                    axis.navigate = navigate
         I0.axes_manager.set_signal_dimension(
             self.axes_manager.navigation_dimension)
         I0.metadata.General.title = (
