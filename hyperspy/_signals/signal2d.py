@@ -684,3 +684,25 @@ class Signal2D(BaseSignal, CommonSignal2D):
         #TODO:add check that data is in float type before applying
         #     add option for transformation origin to be centre or corner
         self.map(affine_transform, D=D, **kwargs)
+
+    def rotate_signal2D(self, angle, **kwargs):
+        """Rotates the two-dimensional signal in place.
+
+        Parameters
+        ----------
+        Angle : 3 x 3 array
+            Matrix specifying the affinte tranformation.
+
+        Returns
+        -------
+        trans : array
+            Transformed 2-dimensional array
+        """
+        #TODO:add check that data is in float type before applying
+        #     add option for transformation origin to be centre or corner
+        a = angle * np.pi/180.0
+        t = np.array([[math.cos(a), math.sin(a), 0.],
+                      [-math.sin(a), math.cos(a), 0.],
+                      [0., 0., 1.]])
+
+        self.map(affine_transform, D=t, **kwargs)
