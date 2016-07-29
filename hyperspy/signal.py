@@ -2583,7 +2583,7 @@ class BaseSignal(FancySlicing,
             for axis in axes:
                 new_shape[axis] = self.data.shape[axis]
             new_shape[unfolded_axis] = -1
-        else: # signal_dimension == 0
+        else:  # signal_dimension == 0
             new_shape = (-1, 1)
             axes = [1]
             unfolded_axis = 0
