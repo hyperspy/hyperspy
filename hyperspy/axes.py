@@ -28,7 +28,6 @@ from hyperspy.misc.utils import isiterable, ordinal
 from hyperspy.misc.math_tools import isfloat
 
 import warnings
-from hyperspy.exceptions import VisibleDeprecationWarning
 
 
 class ndindex_nat(np.ndindex):
@@ -312,22 +311,6 @@ class DataAxis(t.HasTraits):
     def __str__(self):
         return self._get_name() + " axis"
 
-    def connect(self, f):
-        warnings.warn(
-            "The method `DataAxis.connect()` has been deprecated and will "
-            "be removed in HyperSpy 0.10. Please use "
-            "`DataAxis.events.value_changed.connect()` instead.",
-            VisibleDeprecationWarning)
-        self.events.value_changed.connect(f, [])
-
-    def disconnect(self, f):
-        warnings.warn(
-            "The method `DataAxis.disconnect()` has been deprecated and "
-            "will be removed in HyperSpy 0.10. Please use "
-            "`DataAxis.events.indices_changed.disconnect()` instead.",
-            VisibleDeprecationWarning)
-        self.events.value_changed.disconnect(f)
-
     def update_index_bounds(self):
         self.high_index = self.size - 1
 
@@ -405,14 +388,6 @@ class DataAxis(t.HasTraits):
                 return index
             else:
                 raise ValueError("The value is out of the axis limits")
-
-    def set_index_from_value(self, value):
-        warnings.warn(
-            "The method `DataAxis.set_index_from_value()` has been deprecated "
-            "and will be removed in HyperSpy 0.10. Please set the value using "
-            "the `value` attribute and the index will update automatically.",
-            VisibleDeprecationWarning)
-        self.value = value
 
     def index2value(self, index):
         if isinstance(index, np.ndarray):
@@ -928,22 +903,6 @@ class AxesManager(t.HasTraits):
 
         for axis in self._axes:
             axis.navigate = tl.pop(0)
-
-    def connect(self, f):
-        warnings.warn(
-            "The method `AxesManager.connect()` has been deprecated and will "
-            "be removed in HyperSpy 0.10. Please use "
-            "`AxesManager.events.indices_changed.connect()` instead.",
-            VisibleDeprecationWarning)
-        self.events.indices_changed.connect(f, [])
-
-    def disconnect(self, f):
-        warnings.warn(
-            "The method `AxesManager.disconnect()` has been deprecated and "
-            "will be removed in HyperSpy 0.10. Please use "
-            "`AxesManager.events.indices_changed.disconnect()` instead.",
-            VisibleDeprecationWarning)
-        self.events.indices_changed.disconnect(f)
 
     def key_navigator(self, event):
         if len(self.navigation_axes) not in (1, 2):
