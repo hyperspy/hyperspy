@@ -93,3 +93,11 @@ class TestSignal0D:
         nt.assert_true(
             np.allclose(s.data, (np.arange(0., 6) ** 2).reshape((2, 3))))
         nt.assert_true(m.data_changed.called)
+
+    def test_nav_dim_1(self):
+        s = self.s.inav[1,1]
+        m = mock.Mock()
+        s.events.data_changed.connect(m.data_changed)
+        s.map(lambda x, e: x ** e, e=2, show_progressbar=None)
+        nt.assert_true(np.allclose(s.data, self.s.inav[1, 1].data ** 2))
+        nt.assert_true(m.data_changed.called)
