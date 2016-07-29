@@ -42,3 +42,41 @@ class Test_metadata:
         nt.assert_equal(
             md.Acquisition_instrument.TEM.precession_angle,
             preferences.SED.sed_precession_angle)
+
+class Test_direct_beam_methods:
+
+    def setUp(self):
+        dp = SEDPattern(np.ones((4, 2, 512, 512)))
+
+        self.signal = dp
+
+    def test_get_direct_beam_position(self):
+        dp = self.signal
+
+    def test_get_direct_beam_subpixel(self):
+        dp = self.signal
+
+    def test_direct_beam_shifts(self):
+        dp = self.signal
+
+class Test_masking:
+
+    def setUp(self):
+        dp = SEDPattern(np.ones((4, 2, 512, 512)))
+
+        self.signal = dp
+
+    def test_direct_beam_mask(self):
+
+    def test_vacuum_mask(self):
+
+class Test_decomposition:
+
+    def setUp(self):
+        dp = SEDPattern(np.ones((4, 2, 512, 512)))
+
+        self.signal = dp
+
+    def test_decomposition_direct_beam_masked():
+
+    def test_decomposition_vacuum_masked():

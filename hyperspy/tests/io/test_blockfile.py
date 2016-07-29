@@ -126,6 +126,9 @@ def test_load2():
     np.testing.assert_equal(s.axes_manager.as_dictionary(), axes2)
     np.testing.assert_allclose(s.data, ref_data2)
 
+def test_load_subclass_allocation():
+    s = hs.load(file1)
+    nt.assert_true(isinstance(self.s, hs.signals.SEDPattern))
 
 def test_save_load_cycle():
     sig_reload = None

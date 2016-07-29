@@ -221,7 +221,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
         """%s
         %s
         %s
-        
+
         """
         super(Signal2D, self).plot(
             colorbar=colorbar,
