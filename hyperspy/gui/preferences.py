@@ -16,6 +16,8 @@ preferences_view = tui.View(
               label='EELS'),
     tui.Group(tui.Item('EDS', style='custom', show_label=False, ),
               label='EDS'),
+    tui.Group(tui.Item('SED', style='custom', show_label=False, ),
+              label='SED'),
     tui.Group(tui.Item('MachineLearning', style='custom',
                        show_label=False,),
               label='Machine Learning'),
