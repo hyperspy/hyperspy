@@ -52,6 +52,8 @@ class Test_Estimate_Elastic_Scattering_Threshold:
             tol=0.00001,
         )
         np.testing.assert_allclose(thr.data, 2.5, atol=10e-3)
+        nt.assert_equal(thr.metadata.Signal.signal_type, "")
+        nt.assert_equal(thr.axes_manager.signal_dimension, 0)
 
     def test_min_in_window_without_smoothing_single_spectrum(self):
         s = self.signal.inav[0, 0]
@@ -85,6 +87,8 @@ class Test_Estimate_Elastic_Scattering_Threshold:
         threshold = s.estimate_elastic_scattering_threshold()
         # Threshold is nd signal
         t = s.estimate_elastic_scattering_intensity(threshold=threshold)
+        nt.assert_equal(t.metadata.Signal.signal_type, "")
+        nt.assert_equal(t.axes_manager.signal_dimension, 0)
         nt.assert_true(np.allclose(t.data, 373005.28859799))
         # Threshold is signal, 1 spectrum
         s0 = s.inav[0]
@@ -106,11 +110,13 @@ class TestEstimateZLPCentre:
 
     def test_estimate_zero_loss_peak_centre(self):
         s = self.signal
-        np.testing.assert_allclose(
-            s.estimate_zero_loss_peak_centre().data,
+        zlpc = s.estimate_zero_loss_peak_centre()
+        np.testing.assert_allclose(zlpc.data,
             np.arange(100,
                       101,
                       0.1))
+        nt.assert_equal(zlpc.metadata.Signal.signal_type, "")
+        nt.assert_equal(zlpc.axes_manager.signal_dimension, 0)
 
 
 class TestAlignZLP:

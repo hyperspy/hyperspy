@@ -237,7 +237,9 @@ class TestEstimatePeakWidth:
         nt.assert_equal(width, 2.35482074)
         nt.assert_equal(left, 0.82258963)
         nt.assert_equal(right, 3.17741037)
-
+        for t in (width, left, right):
+            nt.assert_equal(t.metadata.Signal.signal_type, "")
+            nt.assert_equal(t.axes_manager.signal_dimension, 0)
     def test_too_narrow_range(self):
         width, left, right = self.s.estimate_peak_width(
             window=2.2,
