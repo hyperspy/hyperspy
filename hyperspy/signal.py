@@ -3867,6 +3867,157 @@ class BaseSignal(FancySlicing,
             noise).astype(original_dtype)
         self.events.data_changed.trigger(obj=self)
 
+    def transpose(self, signal_axes=None, navigation_axes=None, copy=False):
+        """Transposes the signal to have the required signal and navigation
+        axes.
+
+        Parameters
+        ----------
+        signal_axes, navigation_axes : {None, int, iterable}
+            With the exception of both parameters getting iterables, generally
+            one has to be None (i.e. "floating"). The other one specifies
+            either the required number or explicitly the axes to move to the
+            corresponding space.
+            If both are iterables, full control is given as long as all axes
+            are assigned to one space only.
+        copy : bool [False]
+            If the data should be re-ordered in memory, most likely making a
+            copy. Ensures the fastest available iteration at the expense of
+            memory.
+
+        See also
+        --------
+        transposed, T
+
+        Examples
+        --------
+        >>> s = hs.signals.BaseSignal(np.random.rand(1,2,3,4,5,6,7,8,9))
+        >>> s
+        <BaseSignal, title: , dimensions: (|9, 8, 7, 6, 5, 4, 3, 2, 1)>
+
+        >>> s.transpose() # just swap signal and navigation spaces
+        <BaseSignal, title: , dimensions: (9, 8, 7, 6, 5, 4, 3, 2, 1|)>
+
+        >>> s.transpose(signal_axes=5) # 5 axes in signal space
+        <BaseSignal, title: , dimensions: (1, 2, 3, 4|5, 6, 7, 8, 9)>
+
+        >>> s.transpose(navigation_axes=3) # 3 axes in navigation space
+        <BaseSignal, title: , dimensions: (1, 2, 3|4, 5, 6, 7, 8, 9)>
+
+        >>> # 3 explicitly defined axes in signal space
+        >>> s.transpose(signal_axes=[0, 2, 6])
+        <BaseSignal, title: , dimensions: (2, 4, 5, 6, 8, 9|1, 3, 7)>
+
+        >>> # A mix of two lists, but specifying all axes explicitly
+        >>> s.transpose(navigation_axes=[1, 2, 3, 4, 5, 8], signal_axes=[0, 6, 7])
+        <BaseSignal, title: , dimensions: (2, 3, 4, 5, 6, 9|1, 7, 8)>
+
+        """
+        from collections import Iterable
+
+        def iterable_not_string(thing):
+            return isinstance(thing, Iterable) and \
+                not isinstance(thing, str)
+
+        am = self.axes_manager
+        nat_axes = am._get_axes_in_natural_order()
+        if isinstance(signal_axes, int):
+            if navigation_axes is not None:
+                raise ValueError("one int please")
+                # TODO: better error
+            navigation_axes = nat_axes[:-signal_axes]
+            signal_axes = nat_axes[-signal_axes:]
+        elif iterable_not_string(signal_axes):
+            if navigation_axes is None:
+                signal_axes = tuple(am[ax] for ax in signal_axes)
+                navigation_axes = tuple(ax for ax in nat_axes if ax not in
+                                        signal_axes)
+            elif iterable_not_string(navigation_axes):
+                # want to keep the order
+                signal_axes = tuple(am[ax] for ax in signal_axes)
+                navigation_axes = tuple(am[ax] for ax in navigation_axes)
+                if len(set(signal_axes).intersection(navigation_axes)):
+                    raise ValueError("axis either signal or navigation, not"
+                                     " both")
+                if len(am._axes) != (len(signal_axes) + len(navigation_axes)):
+                    raise ValueError("Not enough axes speficied")
+            else:
+                raise ValueError("iterable + int given. two iterables or one"
+                                 " int allowed")
+        elif signal_axes is None:
+            if isinstance(navigation_axes, int):
+                signal_axes = nat_axes[navigation_axes:]
+                navigation_axes = nat_axes[:navigation_axes]
+            elif iterable_not_string(navigation_axes):
+                navigation_axes = tuple(am[ax] for ax in navigation_axes)
+                signal_axes = tuple(ax for ax in nat_axes if ax not in
+                                    navigation_axes)
+            elif navigation_axes is None:
+                signal_axes = am.navigation_axes
+                navigation_axes = am.signal_axes
+            else:
+                raise ValueError("The passed options are not valid")
+        else:
+            raise ValueError("The passed options are not valid")
+        # get data view
+        array_order = tuple(
+            ax.index_in_array for ax in reversed(navigation_axes))
+        array_order += tuple(ax.index_in_array for ax in reversed(signal_axes))
+        newdata = self.data.transpose(array_order)
+
+        res = self._deepcopy_with_new_data(newdata)
+
+        # reconfigure the axes of the axesmanager:
+        axes_order = tuple(
+            ax.index_in_axes_manager for ax in reversed(navigation_axes))
+        axes_order += tuple(ax.index_in_axes_manager for ax in reversed(signal_axes))
+
+        ram = res.axes_manager
+        ram._update_trait_handlers(remove=True)
+        ram._axes = [ram._axes[i] for i in axes_order]
+        for i, ax in enumerate(ram._axes):
+            if i < len(navigation_axes):
+                ax.slice = None
+                ax.navigate = True
+            else:
+                ax.slice = slice(None)
+                ax.navigate = False
+        ram._update_attributes()
+        ram._update_trait_handlers(remove=False)
+        res.get_dimensions_from_data()
+        # need a copy?
+        if copy:
+            res._make_sure_data_is_contiguous()
+        return res
+
+    @contextmanager
+    def transposed(self, signal_axes=None, navigation_axes=None, copy=False):
+        """Use this function together with a `with` statement to have the
+        signal be transposed for the scope of the `with` block.
+
+        See also
+        --------
+        transpose
+
+        Examples
+        --------
+        >>> import numpy as np
+        >>> s = BaseSignal(np.random.random((3, 10, 10)))
+        >>> s
+        <BaseSignal, title: , dimensions: (|3, 10, 10)>
+        >>> with s.transposed(signal_axes=2) as im:
+                hs.plot.plot_image(im)
+        """
+        yield self.transpose(signal_axes=signal_axes,
+                             navigation_axes=navigation_axes, copy=copy)
+
+    @property
+    def T(self):
+        """The transpose of the signal, with signal and navigation spaces
+        swapped.
+        """
+        return self.transpose()
+
 
 ARITHMETIC_OPERATORS = (
     "__add__",
