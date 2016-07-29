@@ -348,8 +348,6 @@ class EELSSpectrum(Signal1D):
                     for i, (i0, th, s) in enumerate(zip(I0._iterate_signal(),
                                                         threshold._iterate_signal(),
                                                         self)):
-                        print(threshold)
-                        print(th)
                         if np.isnan(th[0]):
                             i0[:] = np.nan
                         else:
