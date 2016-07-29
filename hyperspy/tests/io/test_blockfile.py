@@ -128,7 +128,7 @@ def test_load2():
 
 def test_load_subclass_allocation():
     s = hs.load(file1)
-    nt.assert_true(isinstance(self.s, hs.signals.SEDPattern))
+    nt.assert_true(isinstance(s, hs.signals.SEDPattern))
 
 def test_save_load_cycle():
     sig_reload = None

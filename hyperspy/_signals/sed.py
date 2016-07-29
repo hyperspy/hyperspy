@@ -307,7 +307,7 @@ class SEDPattern(Signal2D):
 
         return shifts
 
-    def direct_beam_mask(self, radius, center=None):
+    def direct_beam_mask(self, radius=None, center=None):
         """Generate a signal mask for the direct beam.
 
         Parameters
@@ -326,7 +326,7 @@ class SEDPattern(Signal2D):
         """
         r = radius
 
-        if center = None:
+        if center == None:
             ny = self.axes_manager.signal_shape[1] / 2
             nx = self.axes_manager.signal_shape[0] / 2
         else:
@@ -336,8 +336,8 @@ class SEDPattern(Signal2D):
         mask = x*x + y*y <= r*r
         return mask
 
-    def vacuum_mask(self, radius, center=None,
-                    threshold, closing=True, opening=False):
+    def vacuum_mask(self, radius=None, center=None,
+                    threshold=None, closing=True, opening=False):
         """Generate a navigation mask to exlude SED patterns acquired in vacuum.
 
         Parameters
