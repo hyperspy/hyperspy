@@ -95,7 +95,7 @@ class TestSignal0D:
         nt.assert_true(m.data_changed.called)
 
     def test_nav_dim_1(self):
-        s = self.s.inav[1,1]
+        s = self.s.inav[1, 1]
         m = mock.Mock()
         s.events.data_changed.connect(m.data_changed)
         s.map(lambda x, e: x ** e, e=2, show_progressbar=None)
