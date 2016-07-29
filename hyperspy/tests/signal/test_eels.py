@@ -81,6 +81,20 @@ class Test_Estimate_Elastic_Scattering_Threshold:
                                                        ).data
         nt.assert_true(np.all(np.isnan(data)))
 
+    def test_estimate_elastic_scattering_intensity(self):
+        s = self.signal
+        threshold = s.estimate_elastic_scattering_threshold()
+        # Threshold is nd signal
+        t = s.estimate_elastic_scattering_intensity(threshold=threshold)
+        nt.assert_true(np.allclose(t.data, 373005.28859799))
+        # Threshold is signal, 1 spectrum
+        s0 = s.inav[0]
+        t0 = s0.estimate_elastic_scattering_threshold()
+        t = s0.estimate_elastic_scattering_intensity(threshold=t0)
+        nt.assert_true(np.allclose(t.data, 373005.28859799))
+        # Threshold is value
+        t = s.estimate_elastic_scattering_intensity(threshold=5.)
+        nt.assert_true(np.allclose(t.data, 373005.28859799))
 
 class TestEstimateZLPCentre:
 
