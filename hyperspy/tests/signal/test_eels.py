@@ -112,9 +112,9 @@ class TestEstimateZLPCentre:
         s = self.signal
         zlpc = s.estimate_zero_loss_peak_centre()
         np.testing.assert_allclose(zlpc.data,
-            np.arange(100,
-                      101,
-                      0.1))
+                                   np.arange(100,
+                                             101,
+                                             0.1))
         nt.assert_equal(zlpc.metadata.Signal.signal_type, "")
         nt.assert_equal(zlpc.axes_manager.signal_dimension, 0)
 
