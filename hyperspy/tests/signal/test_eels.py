@@ -20,7 +20,6 @@ import numpy as np
 import nose.tools as nt
 
 import hyperspy.api as hs
-from hyperspy.misc.test_utils import assert_warns
 
 
 class Test_Estimate_Elastic_Scattering_Threshold:
