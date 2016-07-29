@@ -22,6 +22,7 @@ import numpy.ma as ma
 import scipy as sp
 import warnings
 from scipy.fftpack import fftn, ifftn
+from skimage import transform as tf
 
 from hyperspy.defaults_parser import preferences
 from hyperspy.external.progressbar import progressbar
@@ -32,6 +33,17 @@ from hyperspy.docstrings.plot import BASE_PLOT_DOCSTRING, PLOT2D_DOCSTRING, KWAR
 
 
 def shift_image(im, shift, interpolation_order=1, fill_value=np.nan):
+    """Applies a shift to an image.
+
+    Parameters
+    ----------
+    shift : float or sequence
+        The shift along the axes_ticks
+
+    See also
+    --------
+    scipy.ndimage.shift
+    """
     fractional, integral = np.modf(shift)
     if fractional.any():
         order = interpolation_order
@@ -57,13 +69,14 @@ def triu_indices_minus_diag(n):
 
 
 def hanning2d(M, N):
-    """
-    A 2D hanning window created by outer product.
+    """Creates a 2D hanning window using the outer product.
     """
     return np.outer(np.hanning(M), np.hanning(N))
 
 
 def sobel_filter(im):
+    """Applies a Sobel filter to an image.
+    """
     sx = sp.ndimage.sobel(im, axis=0, mode='constant')
     sy = sp.ndimage.sobel(im, axis=1, mode='constant')
     sob = np.hypot(sx, sy)
@@ -73,13 +86,21 @@ def sobel_filter(im):
 def fft_correlation(in1, in2, normalize=False):
     """Correlation of two N-dimensional arrays using FFT.
 
-    Adapted from scipy's fftconvolve.
-
     Parameters
     ----------
     in1, in2 : array
+        N-dimensional arrays to be correlated.
+
     normalize: bool
         If True performs phase correlation
+
+    Returns
+    -------
+    ret : array
+
+    Notes
+    -----
+    Adapted from scipy fftconvolve.
 
     """
     s1 = np.array(in1.shape)
@@ -194,6 +215,30 @@ def estimate_image_shift(ref, image, roi=None, sobel=True,
 
     return -np.array((shift0, shift1)), max_val
 
+def affine_transform(image, D, **kwargs):
+    """Apply an affine transform to a 2-dimensional array.
+
+    The origin of the tranformation is taken to be the centre of the Signal2D.
+
+    Parameters
+    ----------
+    D : 3 x 3 array
+        Matrix specifying the affine transformation.
+
+    Returns
+    -------
+    trans : array
+        Transformed 2-dimensional array
+    """
+    shift_y, shift_x = np.array(image.shape[:2]) / 2.
+    tf_shift = tf.SimilarityTransform(translation=[-shift_x, -shift_y])
+    tf_shift_inv = tf.SimilarityTransform(translation=[shift_x, shift_y])
+
+    transformation = tf.AffineTransform(matrix=D)
+    trans = tf.warp(image, (tf_shift + (transformation + tf_shift_inv)).inverse,
+                    **kwargs)
+
+    return trans
 
 class Signal2D(BaseSignal, CommonSignal2D):
 
@@ -238,15 +283,20 @@ class Signal2D(BaseSignal, CommonSignal2D):
     plot.__doc__ %= BASE_PLOT_DOCSTRING, PLOT2D_DOCSTRING, KWARGS_DOCSTRING
 
     def create_model(self, dictionary=None):
-        """Create a model for the current signal
+        """Create a model for the current Signal2D.
+
         Parameters
-        __________
+        ----------
+
         dictionary : {None, dict}, optional
             A dictionary to be used to recreate a model. Usually generated using
             :meth:`hyperspy.model.as_dictionary`
+
         Returns
         -------
-        A Model class
+
+        Model2D
+            A Model2D class object continaing a model of the data.
         """
         from hyperspy.models.model2d import Model2D
         return Model2D(self, dictionary=dictionary)
@@ -269,6 +319,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
         between frames. To decrease the memory usage, the time of
         computation and the accuracy of the results it is convenient
         to select a region of interest by setting the roi keyword.
+
         Parameters
         ----------
         reference : {'current', 'cascade' ,'stat'}
@@ -306,14 +357,17 @@ class Signal2D(BaseSignal, CommonSignal2D):
         show_progressbar : None or bool
             If True, display a progress bar. If None the default is set in
             `preferences`.
+
         Returns
         -------
         list of applied shifts
+
         Notes
         -----
         The statistical analysis approach to the translation estimation
         when using `reference`='stat' roughly follows [1]_ . If you use
         it please cite their article.
+
         References
         ----------
         .. [1] Schaffer, Bernhard, Werner Grogger, and Gerald
@@ -442,9 +496,11 @@ class Signal2D(BaseSignal, CommonSignal2D):
                 interpolation_order=1):
         """Align the images in place using user provided shifts or by
         estimating the shifts.
+
         Please, see `estimate_shift2D` docstring for details
         on the rest of the parameters not documented in the following
         section
+
         Parameters
         ----------
         crop : bool
@@ -462,15 +518,18 @@ class Signal2D(BaseSignal, CommonSignal2D):
         interpolation_order: int, default 1.
             The order of the spline interpolation. Default is 1, linear
             interpolation.
+
         Returns
         -------
         shifts : np.array
             The shifts are returned only if `shifts` is None
+
         Notes
         -----
         The statistical analysis approach to the translation estimation
         when using `reference`='stat' roughly follows [1]_ . If you use
         it please cite their article.
+
         References
         ----------
         .. [1] Schaffer, Bernhard, Werner Grogger, and Gerald
@@ -556,14 +615,20 @@ class Signal2D(BaseSignal, CommonSignal2D):
         if return_shifts:
             return shifts
 
-    def crop_image(self, top=None, bottom=None,
-                   left=None, right=None):
-        """Crops an image in place.
+    def crop_signal2D(self, top=None, bottom=None, left=None, right=None):
+        """Crops a two-dimensional signal in place.
 
+        Parameters
+        ----------
         top, bottom, left, right : int or float
 
             If int the values are taken as indices. If float the values are
             converted to indices.
+
+        Returns
+        -------
+        self : Signal2D
+            Cropped Signal2D.
 
         See also:
         ---------
@@ -589,6 +654,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
             Slope of the ramp in y-direction.
         offset: float, optional
             Offset of the ramp at the signal fulcrum.
+
         Notes
         -----
             The fulcrum of the linear ramp is at the origin and the slopes are given in units of
@@ -601,3 +667,20 @@ class Signal2D(BaseSignal, CommonSignal2D):
         ramp += ramp_x * xx
         ramp += ramp_y * yy
         self.data += ramp
+
+    def affine_transformation(self, D, **kwargs):
+        """Applies an affine transformation in place.
+
+        Parameters
+        ----------
+        D : 3 x 3 array
+            Matrix specifying the affinte tranformation.
+
+        Returns
+        -------
+        trans : array
+            Transformed 2-dimensional array
+        """
+        #TODO:add check that data is in float type before applying
+        #     add option for transformation origin to be centre or corner
+        self.map(affine_transform, D=D, **kwargs)
