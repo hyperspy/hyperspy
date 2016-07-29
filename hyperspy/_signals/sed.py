@@ -307,16 +307,17 @@ class SEDPattern(Signal2D):
 
         return shifts
 
-    def direct_beam_mask(self, radius):
+    def direct_beam_mask(self, radius, center=None):
         """Generate a signal mask for the direct beam.
 
         Parameters
         ----------
         radius : int
             User specified radius for the circular mask.
-        center : tuple
+        center : tuple, None
             User specified (x, y) position of the diffraction pattern center.
-            i.e. the direct beam position.
+            i.e. the direct beam position. If None it is assumed that the direct
+            beam is at the center of the diffraction pattern.
 
         Return
         ------
@@ -324,24 +325,30 @@ class SEDPattern(Signal2D):
             The mask of the direct beam
         """
         r = radius
-        ny = self.axes_manager.signal_shape[1] / 2
-        nx = self.axes_manager.signal_shape[0] / 2
+
+        if center = None:
+            ny = self.axes_manager.signal_shape[1] / 2
+            nx = self.axes_manager.signal_shape[0] / 2
+        else:
+            nx, ny = center
 
         y, x = np.ogrid[-ny:ny, -nx:nx]
         mask = x*x + y*y <= r*r
         return mask
 
-    def vacuum_mask(self, radius, threshold, closing=True, opening=False):
+    def vacuum_mask(self, radius, center=None,
+                    threshold, closing=True, opening=False):
         """Generate a navigation mask to exlude SED patterns acquired in vacuum.
 
         Parameters
         ----------
         radius: int
             Radius of circular mask to exclude direct beam.
-        center : tuple
-            User specified position of the diffraction pattern center.
+        center : tuple, None
+            User specified position of the diffraction pattern center. If None
+            it is assumed that the pattern center is the center of the image.
         threshold : float
-            Minimum intensity  required to consider a diffracted beam to be
+            Minimum intensity required to consider a diffracted beam to be
             present.
 
         Returns
@@ -349,7 +356,7 @@ class SEDPattern(Signal2D):
         mask : signal
             The mask of the region of interest.
         """
-        db = np.invert(self.direct_beam_mask(radius=radius))
+        db = np.invert(self.direct_beam_mask(radius=radius, center=center))
         diff_only = self * db
         mask = (diff_only.max((-1, -2)) <= threshold)
         if closing:
@@ -367,8 +374,9 @@ class SEDPattern(Signal2D):
     def decomposition(self,
                       normalize_poissonian_noise=True,
                       signal_mask=None,
-                      navigation_mask=10.0,
-                      threshold=15.0,
+                      center=None,
+                      navigation_mask=None,
+                      threshold=None,
                       closing=True,
                       *args,
                       **kwargs):
@@ -426,9 +434,10 @@ class SEDPattern(Signal2D):
         vacuum_mask
         """
         if isinstance(signal_mask, float):
-            signal_mask = self.direct_beam_mask(signal_mask)
+            signal_mask = self.direct_beam_mask(signal_mask, center)
         if isinstance(navigation_mask, float):
-            navigation_mask = self.vacuum_mask(navigation_mask, threshold).data
+            navigation_mask = self.vacuum_mask(navigation_mask,
+                                               center, threshold).data
         super(Signal2D, self).decomposition(
             normalize_poissonian_noise=normalize_poissonian_noise,
             signal_mask=signal_mask, navigation_mask=navigation_mask,
