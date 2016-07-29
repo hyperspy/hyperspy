@@ -338,8 +338,8 @@ class EELSSpectrum(Signal1D):
             I0 = self._get_navigation_signal()
             I0.axes_manager.set_signal_dimension(0)
             with progressbar(total=self.axes_manager.navigation_size,
-                                disable=not show_progressbar,
-                                leave=True) as pbar:
+                             disable=not show_progressbar,
+                             leave=True) as pbar:
                 for i, (i0, th, s) in enumerate(zip(I0._iterate_signal(),
                                                     threshold._iterate_signal(),
                                                     self)):
