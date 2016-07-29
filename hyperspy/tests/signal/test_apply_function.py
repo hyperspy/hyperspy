@@ -77,3 +77,18 @@ class TestSignal1D:
             ([[0.42207377, 1., 1.57792623],
               [3.42207377, 4., 4.57792623]]))))
         nt.assert_true(m.data_changed.called)
+
+class TestSignal0D:
+
+    def setup(self):
+        self.s = hs.signals.BaseSignal(np.arange(0., 6).reshape((2, 3)))
+        self.s.axes_manager.set_signal_dimension(0)
+
+    def test(self):
+        s = self.s
+        m = mock.Mock()
+        s.events.data_changed.connect(m.data_changed)
+        s.map(lambda x, e: x ** e, e=2, show_progressbar=None)
+        nt.assert_true(
+            np.allclose(s.data, (np.arange(0., 6) ** 2).reshape((2, 3))))
+        nt.assert_true(m.data_changed.called)
