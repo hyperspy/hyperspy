@@ -22,7 +22,6 @@ import numpy.ma as ma
 import scipy as sp
 import warnings
 from scipy.fftpack import fftn, ifftn
-from skimage import transform as tf
 
 from hyperspy.defaults_parser import preferences
 from hyperspy.external.progressbar import progressbar
@@ -215,30 +214,6 @@ def estimate_image_shift(ref, image, roi=None, sobel=True,
 
     return -np.array((shift0, shift1)), max_val
 
-def affine_transform(image, D, **kwargs):
-    """Apply an affine transform to a 2-dimensional array.
-
-    The origin of the tranformation is taken to be the centre of the Signal2D.
-
-    Parameters
-    ----------
-    D : 3 x 3 array
-        Matrix specifying the affine transformation.
-
-    Returns
-    -------
-    trans : array
-        Transformed 2-dimensional array
-    """
-    shift_y, shift_x = np.array(image.shape[:2]) / 2.
-    tf_shift = tf.SimilarityTransform(translation=[-shift_x, -shift_y])
-    tf_shift_inv = tf.SimilarityTransform(translation=[shift_x, shift_y])
-
-    transformation = tf.AffineTransform(matrix=D)
-    trans = tf.warp(image, (tf_shift + (transformation + tf_shift_inv)).inverse,
-                    **kwargs)
-
-    return trans
 
 class Signal2D(BaseSignal, CommonSignal2D):
 
@@ -608,7 +583,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
                            shifts[:, 1].min() < 0 else None,
                            int(np.ceil(shifts[:, 1].max())) if
                            shifts[:, 1].max() > 0 else 0)
-            self.crop_image(top, bottom, left, right)
+            self.crop_signal2D(top, bottom, left, right)
             shifts = -shifts
 
         self.events.data_changed.trigger(obj=self)
@@ -667,42 +642,3 @@ class Signal2D(BaseSignal, CommonSignal2D):
         ramp += ramp_x * xx
         ramp += ramp_y * yy
         self.data += ramp
-
-    def affine_transformation(self, D, **kwargs):
-        """Applies an affine transformation in place.
-
-        Parameters
-        ----------
-        D : 3 x 3 array
-            Matrix specifying the affinte tranformation.
-
-        Returns
-        -------
-        trans : array
-            Transformed 2-dimensional array
-        """
-        #TODO:add check that data is in float type before applying
-        #     add option for transformation origin to be centre or corner
-        self.map(affine_transform, D=D, **kwargs)
-
-    def rotate_signal2D(self, angle, **kwargs):
-        """Rotates the two-dimensional signal in place.
-
-        Parameters
-        ----------
-        Angle : 3 x 3 array
-            Matrix specifying the affinte tranformation.
-
-        Returns
-        -------
-        trans : array
-            Transformed 2-dimensional array
-        """
-        #TODO:add check that data is in float type before applying
-        #     add option for transformation origin to be centre or corner
-        a = angle * np.pi/180.0
-        t = np.array([[math.cos(a), math.sin(a), 0.],
-                      [-math.sin(a), math.cos(a), 0.],
-                      [0., 0., 1.]])
-
-        self.map(affine_transform, D=t, **kwargs)
