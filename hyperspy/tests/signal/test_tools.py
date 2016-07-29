@@ -363,7 +363,7 @@ class Test3D:
         data = np.zeros(s.axes_manager._signal_shape_in_array)
         ns = s._get_signal_signal(data=data)
         if s._lazy:
-            nt.assert_true(data in ns.data.dask.values())
+            nt.assert_in(data, [v for v in ns.data.dask.values()])
         else:
             nt.assert_is(ns.data, data)
 
