@@ -3247,7 +3247,7 @@ class BaseSignal(FancySlicing,
             scale.add(self.axes_manager.signal_axes[i].scale)
             units.add(self.axes_manager.signal_axes[i].units)
         if len(units) != 1 or len(scale) != 1:
-            warnings.warn(
+            _logger.warning(
                 "The function you applied does not take into "
                 "account the difference of units and of scales in-between"
                 " axes.")
