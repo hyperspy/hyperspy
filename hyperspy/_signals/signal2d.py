@@ -44,10 +44,12 @@ def shift_image(im, shift, interpolation_order=1, fill_value=np.nan):
 def triu_indices_minus_diag(n):
     """Returns the indices for the upper-triangle of an (n, n) array
     excluding its diagonal
+
     Parameters
     ----------
     n : int
         The length of the square array
+
     """
     ti = np.triu_indices(n)
     isnotdiag = ti[0] != ti[1]
@@ -70,12 +72,15 @@ def sobel_filter(im):
 
 def fft_correlation(in1, in2, normalize=False):
     """Correlation of two N-dimensional arrays using FFT.
+
     Adapted from scipy's fftconvolve.
+
     Parameters
     ----------
     in1, in2 : array
     normalize: bool
         If True performs phase correlation
+
     """
     s1 = np.array(in1.shape)
     s2 = np.array(in2.shape)
@@ -96,13 +101,16 @@ def estimate_image_shift(ref, image, roi=None, sobel=True,
                          medfilter=True, hanning=True, plot=False,
                          dtype='float', normalize_corr=False,):
     """Estimate the shift in a image using phase correlation
+
     This method can only estimate the shift by comparing
     bidimensional features that should not change the position
     in the given axis. To decrease the memory usage, the time of
     computation and the accuracy of the results it is convenient
     to select a region of interest by setting the roi keyword.
+
     Parameters
     ----------
+
     roi : tuple of ints (top, bottom, left, right)
          Define the region of interest
     sobel : bool
@@ -121,14 +129,18 @@ def estimate_image_shift(ref, image, roi=None, sobel=True,
     dtype : str or dtype
         Typecode or data-type in which the calculations must be
         performed.
+
     normalize_corr : bool
         If True use phase correlation instead of standard correlation
+
     Returns
     -------
+
     shifts: np.array
         containing the estimate shifts
     max_value : float
         The maximum value of the correlation
+
     """
     # Make a copy of the images to avoid modifying them
     ref = ref.copy().astype(dtype)
@@ -209,6 +221,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
         """%s
         %s
         %s
+        
         """
         super(Signal2D, self).plot(
             colorbar=colorbar,
@@ -546,12 +559,16 @@ class Signal2D(BaseSignal, CommonSignal2D):
     def crop_image(self, top=None, bottom=None,
                    left=None, right=None):
         """Crops an image in place.
+
         top, bottom, left, right : int or float
+
             If int the values are taken as indices. If float the values are
             converted to indices.
+
         See also:
         ---------
         crop
+
         """
         self._check_signal_dimension_equals_two()
         self.crop(self.axes_manager.signal_axes[1].index_in_axes_manager,
@@ -563,6 +580,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
 
     def add_ramp(self, ramp_x, ramp_y, offset=0):
         """Add a linear ramp to the signal.
+
         Parameters
         ----------
         ramp_x: float
@@ -576,9 +594,10 @@ class Signal2D(BaseSignal, CommonSignal2D):
             The fulcrum of the linear ramp is at the origin and the slopes are given in units of
             the axis with the according scale taken into account. Both are available via the
             `axes_manager` of the signal.
+
         """
         yy, xx = np.indices(self.axes_manager._signal_shape_in_array)
         ramp = offset * np.ones(self.data.shape, dtype=self.data.dtype)
         ramp += ramp_x * xx
         ramp += ramp_y * yy
-self.data += ramp
+        self.data += ramp
