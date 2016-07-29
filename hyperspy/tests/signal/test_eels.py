@@ -96,6 +96,7 @@ class Test_Estimate_Elastic_Scattering_Threshold:
         t = s.estimate_elastic_scattering_intensity(threshold=5.)
         nt.assert_true(np.allclose(t.data, 373005.28859799))
 
+
 class TestEstimateZLPCentre:
 
     def setUp(self):
