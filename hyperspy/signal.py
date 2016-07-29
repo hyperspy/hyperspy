@@ -2594,7 +2594,7 @@ class BaseSignal(FancySlicing,
             getitem[axis] = slice(None)
         for i in range(data.shape[unfolded_axis]):
             getitem[unfolded_axis] = i
-            yield(data[getitem])
+            yield(data[tuple(getitem)])
 
     def _remove_axis(self, axes):
         am = self.axes_manager
