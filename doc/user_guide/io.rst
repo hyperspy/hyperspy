@@ -187,6 +187,8 @@ HyperSpy.
     +--------------------+-----------+----------+
     | EMD (Berkley Labs) |    Yes    |    Yes   |
     +--------------------+-----------+----------+
+    | Protochips log     |    Yes    |    No    |
+    +--------------------+-----------+----------+
 
 .. _hdf5-format:
 
@@ -564,3 +566,17 @@ The EMD format was developed at Lawrence Berkeley National Lab
 (see http://emdatasets.lbl.gov/ for more information).
 NOT to be confused with the FEI EMD format which was developed later and has a
 different structure.
+
+.. _protochips-format:
+
+Protochips log
+--------------
+
+HyperSpy can read heater, biasing and gas cell log files for Protochips holder.
+The format stores all the captured data together with a small
+header in a plain-text format. The reader extracts the measured quantity 
+(e. g. temperature, pressure, current, voltage) along the time axis, as well as
+the notes saved during the experiment. The reader returns a list of signal with
+each signal corresponding to a quantity. The date, the time and the user name
+ stored in the header are mapped in the metadata attribute. The quantity units 
+and notes are stored in the title and notes attributes, respectively.
