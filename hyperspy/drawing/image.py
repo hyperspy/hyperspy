@@ -81,6 +81,7 @@ class ImagePlot(BlittedFigure):
         self._text_position = (0, 1.05,)
         self.axes_manager = None
         self.auto_convert_units = False
+        self.axes_off = False
         self._aspect = 1
         self._extent = None
         self.xaxis = None
@@ -254,6 +255,8 @@ class ImagePlot(BlittedFigure):
             self.ax.set_xticks([])
             self.ax.set_yticks([])
         self.ax.hspy_fig = self
+        if self.axes_off:
+            self.ax.axis('off')
 
     def plot(self, **kwargs):
         self.configure()

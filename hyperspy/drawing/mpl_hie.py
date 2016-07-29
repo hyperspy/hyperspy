@@ -27,6 +27,7 @@ class MPL_HyperImage_Explorer(MPL_HyperExplorer):
                     scalebar=True,
                     scalebar_color="white",
                     axes_ticks=None,
+                    axes_off=False,
                     saturated_pixels=0,
                     vmin=None,
                     vmax=None,
@@ -49,6 +50,8 @@ class MPL_HyperImage_Explorer(MPL_HyperExplorer):
             If True, plot the axes ticks. If None axes_ticks are only
             plotted when the scale bar is not plotted. If False the axes ticks
             are never plotted.
+        axes_off : bool, optional
+            If True, the axes labels are not plotted.
         auto_convert_units : bool, optional
             if True, automatically convert the units.
         saturated_pixels: scalar
@@ -75,6 +78,7 @@ class MPL_HyperImage_Explorer(MPL_HyperExplorer):
         imf.colorbar = colorbar
         imf.scalebar = scalebar
         imf.axes_ticks = axes_ticks
+        imf.axes_off = axes_off
         imf.vmin, imf.vmax = vmin, vmax
         imf.saturated_pixels = saturated_pixels
         imf.no_nans = no_nans
