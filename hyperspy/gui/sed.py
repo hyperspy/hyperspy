@@ -32,6 +32,10 @@ class SEDParametersUI(t.HasTraits):
 
     beam_energy = t.Float(t.Undefined,
                           label='Beam energy (keV)')
+    camera_length = t.Float(t.Undefined,
+                            label='Camera length (m)')
+    scan_rotation = t.Float(t.Undefined,
+                            label='Scan rotation (degrees)')
     convergence_angle = t.Float(t.Undefined,
                                 label='Convergence angle (mrad)')
     precession_angle = t.Float(t.Undefined,
@@ -41,9 +45,9 @@ class SEDParametersUI(t.HasTraits):
     exposure_time = t.Float(t.Undefined,
                             label='Exposure time (ms)')
     traits_view = tu.View(
-        tu.Group('beam_energy', 'convergence_angle',
-                 'precession_angle', 'precession_frequency',
-                 'exposure_time',
+        tu.Group('beam_energy', 'camera_length', 'scan_rotation',
+                 'convergence_angle', 'precession_angle',
+                 'precession_frequency', 'exposure_time',
                  label='SED', show_border=True),
         kind='modal', buttons=[OKButton, CancelButton],
 title='SED parameters definition wizard')

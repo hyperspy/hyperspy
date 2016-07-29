@@ -20,6 +20,7 @@ from __future__ import division
 import traits.api as t
 import math
 import numpy as np
+import scipy.ndimage as ndi
 
 from hyperspy._signals.signal2d import Signal2D
 from hyperspy.decorators import only_interactive
@@ -49,28 +50,32 @@ class SEDPattern(Signal2D):
         md = self.metadata
         md.Signal.signal_type = 'SED_Pattern'
 
-        if "md.Acquisition_instrument.TEM.beam_energy" not in md:
-            md.set_item(
-                "Acquisition_instrument.TEM.beam_energy",
-                preferences.SED.sed_beam_energy)
+        if "Acquisition_instrument.TEM.beam_energy" not in md:
+            md.set_item("Acquisition_instrument.TEM.beam_energy",
+                        preferences.SED.sed_beam_energy)
+        if "Acquisition_instrument.TEM.camera_length" not in md:
+            md.set_item("Acquisition_instrument.TEM.camera_length",
+                        preferences.SED.sed_camera_length)
+        if "Acquisition_instrument.TEM.scan_rotation" not in md:
+            md.set_item("Acquisition_instrument.TEM.scan_rotation",
+                        preferences.SED.sed_scan_rotation)
         if "Acquisition_instrument.TEM.convergence_angle" not in md:
-            md.set_item(
-                "Acquisition_instrument.TEM.convergence_angle",
-                preferences.SED.sed_convergence_angle)
+            md.set_item("Acquisition_instrument.TEM.convergence_angle",
+                        preferences.SED.sed_convergence_angle)
         if "Acquisition_instrument.TEM.precession_angle" not in md:
             md.set_item("Acquisition_instrument.TEM.precession_angle",
                         preferences.SED.sed_precession_angle)
         if "Acquisition_instrument.TEM.precession_frequency" not in md:
-            md.set_item(
-                "Acquisition_instrument.TEM.precession_frequency",
-                preferences.SED.sed_precession_frequency)
+            md.set_item("Acquisition_instrument.TEM.precession_frequency",
+                        preferences.SED.sed_precession_frequency)
         if "Acquisition_instrument.TEM.Detector.SED.exposure_time" not in md:
-            md.set_item(
-                "Acquisition_instrument.TEM.Detector.SEDexposure_time",
-                preferences.SED.sed_exposure_time)
+            md.set_item("Acquisition_instrument.TEM.Detector.SED.exposure_time",
+                        preferences.SED.sed_exposure_time)
 
     def set_microscope_parameters(self,
                                   beam_energy=None,
+                                  camera_length=None,
+                                  scan_rotation=None,
                                   convergence_angle=None,
                                   precession_angle=None,
                                   precession_frequency=None,
@@ -104,11 +109,17 @@ class SEDPattern(Signal2D):
         md = self.metadata
 
         if beam_energy is not None:
-            md.set_item("Acquisition_instrument.TEM.beam_energy", beam_energy)
+            md.set_item("Acquisition_instrument.TEM.beam_energy",
+                        beam_energy)
+        if camera_length is not None:
+            md.set_item("Acquisition_instrument.TEM.camera_length",
+                        camera_length)
+        if scan_rotation is not None:
+            md.set_item("Acquisition_instrument.TEM.scan_rotation",
+                        scan_rotation)
         if convergence_angle is not None:
-            md.set_item(
-                "Acquisition_instrument.TEM.convergence_angle",
-                convergence_angle)
+            md.set_item("Acquisition_instrument.TEM.convergence_angle",
+                        convergence_angle)
         if precession_angle is not None:
             md.set_item("Acquisition_instrument.TEM.precession_angle",
                         precession_angle)
@@ -116,12 +127,12 @@ class SEDPattern(Signal2D):
             md.set_item("Acquisition_instrument.TEM.precession_frequency",
                         precession_frequency)
         if exposure_time is not None:
-            md.set_item(
-                "Acquisition_instrument.TEM.Detector.SED.exposure_time",
-                exposure_time)
+            md.set_item("Acquisition_instrument.TEM.Detector.SED.exposure_time",
+                        exposure_time)
 
-        if set([accelerating_voltage, convergence_angle, precession_angle,
-                precession_frequency, exposure_time]) == {None}:
+        if set([beam_energy, camera_length, scan_rotation,
+                convergence_angle, precession_angle, precession_frequency,
+                exposure_time]) == {None}:
             self._are_microscope_parameters_missing()
 
     @only_interactive
@@ -129,16 +140,22 @@ class SEDPattern(Signal2D):
         sed_par = SEDParametersUI()
         mapping = {
             'Acquisition_instrument.TEM.beam_energy':
-            'tem_par.beam_energy',
+            'sed_par.beam_energy',
+            'Acquisition_instrument.TEM.camera_length':
+            'sed_par.camera_length',
+            'Acquisition_instrument.TEM.scan_rotation':
+            'sed_par.scan_rotation',
+            'Acquisition_instrument.TEM.beam_energy':
+            'sed_par.beam_energy',
             'Acquisition_instrument.TEM.convergence_angle':
-            'tem_par.convergence_angle',
+            'sed_par.convergence_angle',
             'Acquisition_instrument.TEM.precession_angle':
-            'tem_par.precession_angle',
+            'sed_par.precession_angle',
             'Acquisition_instrument.TEM.precession_frequency':
-            'tem_par.precession_frequency',
+            'sed_par.precession_frequency',
             'Acquisition_instrument.TEM.Detector.SED.exposure_time':
-            'tem_par.exposure_time', }
-        for key, value in mapping.iteritems():
+            'sed_par.exposure_time', }
+        for key, value in mapping.items():
             if self.metadata.has_item(key):
                 exec('%s = self.metadata.%s' % (value, key))
         sed_par.edit_traits()
@@ -146,6 +163,10 @@ class SEDPattern(Signal2D):
         mapping = {
             'Acquisition_instrument.TEM.beam_energy':
             sed_par.beam_energy,
+            'Acquisition_instrument.TEM.camera_length':
+            sed_par.camera_length,
+            'Acquisition_instrument.TEM.scan_rotation':
+            sed_par.scan_rotation,
             'Acquisition_instrument.TEM.convergence_angle':
             sed_par.convergence_angle,
             'Acquisition_instrument.TEM.precession_angle':
@@ -164,8 +185,9 @@ class SEDPattern(Signal2D):
         """Check if the SED parameters necessary for further analysis
         are defined in metadata. Raise in interactive mode
          an UI item to fill or cahnge the values"""
-        must_exist = (
-            'Acquisition_instrument.TEM.accelerating_voltage', )
+        must_exist = ('Acquisition_instrument.TEM.beam_energy',
+                      'Acquisition_instrument.TEM.camera_length',
+                      'Acquisition_instrument.TEM.scan_rotation')
 
         missing_parameters = []
         for item in must_exist:

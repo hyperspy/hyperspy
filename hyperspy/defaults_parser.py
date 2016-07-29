@@ -213,6 +213,12 @@ class SEDConfig(t.HasTraits):
     sed_beam_energy = t.CFloat(300.,
         label='Beam energy (keV)',
         desc='default value for accelerating voltage of microscope')
+    sed_camera_length = t.CFloat(0.21,
+        label='Camera length (m)',
+        desc='default value for camera length in m.')
+    sed_scan_rotation = t.CFloat(275,
+        label='Scan rotation (degrees)',
+        desc='default value for scan rotation in degrees')
     sed_convergence_angle = t.CFloat(5.,
         label='Convergence semi-angle (mrad)',
         desc='default value for convergence semi-angle in mrad.')
