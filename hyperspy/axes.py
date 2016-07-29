@@ -861,7 +861,7 @@ class AxesManager(t.HasTraits):
             self.events.any_axis_changed.trigger(obj=self)
 
     def _update_attributes(self):
-        getitem_tuple = ()
+        getitem_tuple = []
         values = []
         self.signal_axes = ()
         self.navigation_axes = ()
@@ -876,10 +876,12 @@ class AxesManager(t.HasTraits):
             else:
                 getitem_tuple += axis.slice,
                 self.signal_axes += axis,
+        if not self.signal_axes and self.navigation_axes:
+            getitem_tuple[-1] = slice(axis.index, axis.index + 1)
 
         self.signal_axes = self.signal_axes[::-1]
         self.navigation_axes = self.navigation_axes[::-1]
-        self._getitem_tuple = getitem_tuple
+        self._getitem_tuple = tuple(getitem_tuple)
         self.signal_dimension = len(self.signal_axes)
         self.navigation_dimension = len(self.navigation_axes)
         if self.navigation_dimension != 0:
