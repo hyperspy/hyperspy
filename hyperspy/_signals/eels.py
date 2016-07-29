@@ -252,6 +252,8 @@ class EELSSpectrum_mixin:
 
         """
         def substract_from_offset(value, signals):
+            if isinstance(value, da.Array):
+                value = value.compute()
             for signal in signals:
                 signal.axes_manager[-1].offset -= value
 

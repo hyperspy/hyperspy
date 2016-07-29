@@ -589,6 +589,11 @@ class Signal1D(BaseSignal, CommonSignal1D):
         ip = number_of_interpolation_points + 1
         axis = self.axes_manager.signal_axes[0]
         self._check_navigation_mask(mask)
+        # we compute for now
+        if isinstance(start, da.Array):
+            start = start.compute()
+        if isinstance(end, da.Array):
+            end = end.compute()
         i1, i2 = axis._get_index(start), axis._get_index(end)
         shift_signal = self._get_navigation_signal(dtype=float)
         shift_signal.axes_manager.set_signal_dimension(0)
