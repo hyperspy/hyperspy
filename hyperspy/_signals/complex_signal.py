@@ -273,7 +273,7 @@ class LazyComplexSignal(ComplexSignal_mixin, LazySignal):
     def _set_real(self, real):
         if isinstance(real, BaseSignal):
             real = real.data.real
-        self.data = self.data.imag + real
+        self.data = 1j * self.data.imag + real
         self.events.data_changed.trigger(self)
 
     def _set_imag(self, imag):
