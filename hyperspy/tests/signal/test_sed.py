@@ -27,7 +27,7 @@ class Test_metadata:
 
     def setUp(self):
         # Create an empty diffraction pattern
-        dp = SEDPattern(np.ones((4, 2, 512, 512)))
+        dp = SEDPattern(np.ones((2, 2, 2, 2)))
         dp.axes_manager.signal_axes[0].scale = 1e-3
         dp.metadata.Acquisition_instrument.TEM.accelerating_voltage = 200
         dp.metadata.Acquisition_instrument.TEM.convergence_angle = 15.0
@@ -39,15 +39,13 @@ class Test_metadata:
     def test_default_param(self):
         dp = self.signal
         md = dp.metadata
-        nt.assert_equal(
-            md.Acquisition_instrument.TEM.precession_angle,
-            preferences.SED.sed_precession_angle)
+        nt.assert_equal(md.Acquisition_instrument.TEM.precession_angle,
+                        preferences.SED.sed_precession_angle)
 
 class Test_direct_beam_methods:
 
     def setUp(self):
-        dp = SEDPattern(np.ones((4, 2, 512, 512)))
-
+        dp = SEDPattern(np.ones((3, 6, 6)))
         self.signal = dp
 
     def test_get_direct_beam_position(self):
@@ -62,21 +60,11 @@ class Test_direct_beam_methods:
 class Test_masking:
 
     def setUp(self):
-        dp = SEDPattern(np.ones((4, 2, 512, 512)))
-
+        dp = SEDPattern(np.ones((3, 6, 6)))
         self.signal = dp
 
     def test_direct_beam_mask(self):
+        dp = self.signal
 
     def test_vacuum_mask(self):
-
-class Test_decomposition:
-
-    def setUp(self):
-        dp = SEDPattern(np.ones((4, 2, 512, 512)))
-
-        self.signal = dp
-
-    def test_decomposition_direct_beam_masked():
-
-    def test_decomposition_vacuum_masked():
+        dp = self.signal
