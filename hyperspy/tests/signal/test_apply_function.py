@@ -78,6 +78,7 @@ class TestSignal1D:
               [3.42207377, 4., 4.57792623]]))))
         nt.assert_true(m.data_changed.called)
 
+
 class TestSignal0D:
 
     def setup(self):
