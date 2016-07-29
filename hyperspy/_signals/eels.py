@@ -1004,13 +1004,19 @@ class EELSSpectrum_mixin:
         else:
             factor = 1
         if self.metadata.Signal.lazy:
+            # only need new axes if the navigation dimension is not 0
+            if s.axes_manager.navigation_dimension:
+                rightslice = (..., None)
+                axisslice = (None, slice(axis.size, None))
+            else:
+                rightslice = (...,)
+                axisslice = (slice(axis.size, None),)
             right_chunks[axis.index_in_array] = 1
-            A = da.from_array(pl.A.map['values'][..., None],
+            A = da.from_array(pl.A.map['values'][rightslice],
                               chunks=right_chunks)
-            x = da.from_array(s.axes_manager.signal_axes[0].axis[np.newaxis,
-                                                                 axis.size:],
+            x = da.from_array(s.axes_manager.signal_axes[0].axis[axisslice],
                               chunks=(extrapolation_size,))
-            r = da.from_array(pl.r.map['values'][..., None],
+            r = da.from_array(pl.r.map['values'][rightslice],
                               chunks=right_chunks)
             right_data = factor * A * x**(-r)
             s.data = da.concatenate([left_data, right_data],
