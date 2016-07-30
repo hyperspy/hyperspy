@@ -676,6 +676,10 @@ class TestTranspose:
     def test_signal_one_name(self):
         self.s.transpose(signal_axes='a')
 
+    @nt.raises(ValueError)
+    def test_too_many_signal_axes(self):
+        self.s.transpose(signal_axes=10)
+
     def test_navigation_int_transpose(self):
         t = self.s.transpose(navigation_axes=2)
         nt.assert_equal(t.axes_manager.navigation_shape, (6, 5))
@@ -703,6 +707,10 @@ class TestTranspose:
     @nt.raises(ValueError)
     def test_navigation_one_name(self):
         self.s.transpose(navigation_axes='a')
+
+    @nt.raises(ValueError)
+    def test_too_many_navigation_axes(self):
+        self.s.transpose(navigation_axes=10)
 
     def test_transpose_shortcut(self):
         s = self.s.transpose(signal_axes=2)

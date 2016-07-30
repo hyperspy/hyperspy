@@ -3926,6 +3926,8 @@ class BaseSignal(FancySlicing,
                 raise ValueError("The navigation_axes are not None, even "
                                  "though just a number was given for "
                                  "signal_axes")
+            if len(nat_axes) < signal_axes:
+                raise ValueError("Too many signal axes requested")
             navigation_axes = nat_axes[:-signal_axes]
             signal_axes = nat_axes[-signal_axes:]
         elif iterable_not_string(signal_axes):
@@ -3947,6 +3949,8 @@ class BaseSignal(FancySlicing,
                                  " when signal_axes is iterable")
         elif signal_axes is None:
             if isinstance(navigation_axes, int):
+                if len(nat_axes) < navigation_axes:
+                    raise ValueError("Too many navigation axes requested")
                 signal_axes = nat_axes[navigation_axes:]
                 navigation_axes = nat_axes[:navigation_axes]
             elif iterable_not_string(navigation_axes):
