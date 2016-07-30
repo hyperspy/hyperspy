@@ -22,6 +22,7 @@ from matplotlib.testing.decorators import image_comparison
 
 import hyperspy.api as hs
 from hyperspy.misc.test_utils import get_matplotlib_version_label
+from hyperspy.drawing.utils import plot_RGB_map
 
 mplv = get_matplotlib_version_label()
 scalebar_color = 'blue'
@@ -58,9 +59,16 @@ def _set_signal_axes(axes_manager, name=t.Undefined, units=t.Undefined,
         sig_axis.offset = offset
     return axes_manager
 
-    
+
+@image_comparison(baseline_images=['%s_rgb_image' % mplv],
+                  extensions=['png'])    
 def test_rgb_image():
-    pass
+    w = 20
+    ch1 = hs.signals.Signal2D(np.arange(w * w).reshape(w, w))
+    ch1.axes_manager = _set_signal_axes(ch1.axes_manager)
+    ch2 = hs.signals.Signal2D(np.arange(w * w).reshape(w, w).T)
+    ch2.axes_manager = _set_signal_axes(ch2.axes_manager)
+    plot_RGB_map([ch1, ch2])
     
 
 """ Navigation 0, Signal 2 """
