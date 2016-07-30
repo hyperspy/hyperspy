@@ -357,6 +357,7 @@ with update_version_when_dev() as version:
                 'tests/io/emd_files/*.emd',
                 'tests/baseline_images/test_plot_signal1d/*.png',
                 'tests/baseline_images/test_plot_signal2d/*.png',
+                'tests/baseline_images/test_plot_markers/*.png',
                 'tests/drawing/*.ipynb',
                 'tests/signal/test_find_peaks1D_ohaver/test_find_peaks1D_ohaver.hdf5',
             ],
