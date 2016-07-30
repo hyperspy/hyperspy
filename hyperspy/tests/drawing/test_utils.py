@@ -26,22 +26,13 @@ from hyperspy.misc.test_utils import assert_warns
 
 @cleanup
 def test_create_figure():
-    def dummy_function():
-        global test
-        test = 10
-        print('dummy_function have been called after closing windows')
-    window_title = 'test title'
-    fig = utils.create_figure(window_title=window_title,
-                              _on_figure_window_close=dummy_function)
-    nt.assert_true(isinstance(fig, matplotlib.figure.Figure))
+    # if necessary, change the backend to display a figure and to be able to
+    # close it.
+    original_backend = matplotlib.get_backend()
+    if original_backend == 'agg':
+        matplotlib.pyplot.switch_backend('TkAgg')
 
-    matplotlib.pyplot.close(fig)
-    nt.assert_equal(test, 10)
-
-
-@cleanup
-def test_create_figure2():
-    dummy_warning = 'Dummy_function have been called after closing windows'
+    dummy_warning = 'dummy_function have been called after closing windows'
 
     def dummy_function():
         warnings.warn(dummy_warning, UserWarning)
@@ -55,3 +46,6 @@ def test_create_figure2():
                                   _on_figure_window_close=dummy_function)
         nt.assert_true(isinstance(fig, matplotlib.figure.Figure))
         matplotlib.pyplot.close(fig)
+
+    if original_backend == 'agg':  # switch back to the original backend
+        matplotlib.pyplot.switch_backend(original_backend)
