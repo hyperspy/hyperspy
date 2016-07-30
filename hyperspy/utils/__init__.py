@@ -23,7 +23,7 @@ import hyperspy.utils.eds
 import hyperspy.utils.plot
 import hyperspy.datasets.example_signals
 import hyperspy.utils.model
-from hyperspy.misc.utils import (stack, transpose)
+from hyperspy.misc.utils import (stack, transpose, transposed)
 from hyperspy.interactive import interactive
 import hyperspy.utils.roi
 import hyperspy.utils.samfire

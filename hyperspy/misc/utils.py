@@ -922,3 +922,24 @@ def transpose(*args, signal_axes=None, navigation_axes=None, copy=False):
     return [sig.transpose(signal_axes=signal_axes,
                           navigation_axes=navigation_axes,
                           copy=copy) for sig in args]
+@contextmanager
+def transposed(*args, signal_axes=None, navigation_axes=None, copy=False):
+    """Use this function together with a `with` statement to have the
+    signals be transposed for the scope of the `with` block.
+
+    Examples
+    --------
+
+    >>> s2 = hs.signals.BaseSignal(np.random.rand(2, 2))
+    >>> s3 = hs.signals.BaseSignal(np.random.rand(3, 3, 3))
+    >>> s4 = hs.signals.BaseSignal(np.random.rand(4, 4, 4, 4))
+    >>> with hs.transposed(s2, s3, s4, signal_axes=2) as signals:
+            hs.plot.plot_images(signals)
+
+    See also
+    --------
+    transpose
+
+    """
+    yield transpose(*args, signal_axes=signal_axes,
+                    navigation_axes=navigation_axes, copy=copy)
