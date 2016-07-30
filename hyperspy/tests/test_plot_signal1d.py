@@ -44,7 +44,30 @@ def _set_signal_axes(axes_manager, name=t.Undefined, units=t.Undefined,
         sig_axis.offset = offset
     return axes_manager
 
-    
+
+@image_comparison(baseline_images=['%s_plot_spectra_cascade' % mplv,
+                                   '%s_plot_spectra_heatmap' % mplv,
+                                   '%s_plot_spectra_mosaic' % mplv],
+                  extensions=['png'])
+def test_plot_spectra():
+    import scipy.misc
+    s = hs.signals.Signal1D(scipy.misc.ascent()[100:160:10])
+    hs.plot.plot_spectra(s, style='cascade', legend='auto')
+    hs.plot.plot_spectra(s, style='heatmap', legend='auto')
+    hs.plot.plot_spectra(s, style='mosaic', legend='auto')
+
+
+@image_comparison(baseline_images=['%s_plot_spectra_sync_1nav' % mplv,
+                                   '%s_plot_spectra_sync_1sig' % mplv,
+                                   '%s_plot_spectra_sync_2nav' % mplv,
+                                   '%s_plot_spectra_sync_2sig' % mplv],
+                  extensions=['png'])
+def test_plot_spectra_sync():
+    import scipy.misc
+    s1 = hs.signals.Signal1D(scipy.misc.face()).as_signal1D(0).inav[:, :3]
+    s2 = s1.deepcopy() * -1
+    hs.plot.plot_signals([s1, s2])
+
 """ Navigation 0, Signal 1 """
 
 
@@ -70,7 +93,7 @@ def _setup_nav1_sig1():
                                           units='m', scale=1E-6, offset=5E-6)
     return s
 
-    
+
 @image_comparison(baseline_images=['%s_nav1_signal1_1nav' % mplv,
                                    '%s_nav1_signal1_1sig' % mplv],
                   extensions=['png'])
@@ -81,7 +104,7 @@ def test_plot_nav1_sig1():
 
 
 """ Navigation 2, Signal 1 """
-    
+
 
 def _setup_nav2_sig1():
     data = np.arange(5 * 10 * 20).reshape((5, 10, 20))
@@ -92,6 +115,7 @@ def _setup_nav2_sig1():
                                           units='m', scale=1E-6, offset=5E-6)
     return s
 
+
 @image_comparison(baseline_images=['%s_nav2_signal1_1nav' % mplv,
                                    '%s_nav2_signal1_1sig' % mplv],
                   extensions=['png'])
@@ -99,3 +123,16 @@ def test_plot_nav2_sig1():
     s = _setup_nav2_sig1()
     s.metadata.General.title = '1: Nav 2, Sig 1'
     s.plot()
+
+@image_comparison(baseline_images=['%s_nav2_signal1_2nav_two_cursors' % mplv,
+                                   '%s_nav2_signal1_2sig_two_cursors' % mplv],
+                  extensions=['png'])    
+def test_plot_nav2_sig1_two_cursors():
+    s = _setup_nav2_sig1()
+    s.metadata.General.title = '2: Nav 2, Sig 1, two cursor'
+    s.axes_manager[0].index = 5
+    s.axes_manager[1].index = 2
+    s.plot()
+    s._plot.add_right_pointer()
+    s._plot.right_pointer.axes_manager[0].index = 2
+    s._plot.right_pointer.axes_manager[1].index = 2

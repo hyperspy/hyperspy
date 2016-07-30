@@ -58,6 +58,10 @@ def _set_signal_axes(axes_manager, name=t.Undefined, units=t.Undefined,
         sig_axis.offset = offset
     return axes_manager
 
+    
+def test_rgb_image():
+    pass
+    
 
 """ Navigation 0, Signal 2 """
 
