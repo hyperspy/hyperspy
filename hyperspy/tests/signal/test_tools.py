@@ -637,3 +637,90 @@ class TestOutArg:
         s.data = np.ma.array(s.data)
         ss = s.sum()  # Sum over navigation, data shape (6,)
         s.sum(axis=s.axes_manager._axes, out=ss)
+
+
+class TestTranspose:
+
+    def setUp(self):
+        self.s = signals.BaseSignal(np.random.rand(1,2,3,4,5,6))
+        for ax, name in zip(self.s.axes_manager._axes, 'abcdef'):
+            ax.name = name
+        # just to make sure in case default changes
+        self.s.axes_manager.set_signal_dimension(6)
+
+    def test_signal_int_transpose(self):
+        t = self.s.transpose(signal_axes=2)
+        nt.assert_equal(t.axes_manager.signal_shape, (2, 1))
+        nt.assert_equal([ax.name for ax in t.axes_manager.signal_axes],
+                        ['b', 'a'])
+
+    def test_signal_iterable_int_transpose(self):
+        t = self.s.transpose(signal_axes=[0, 5, 4])
+        nt.assert_equal(t.axes_manager.signal_shape, (6, 1, 2))
+        nt.assert_equal([ax.name for ax in t.axes_manager.signal_axes],
+                        ['f', 'a', 'b'])
+
+    def test_signal_iterable_names_transpose(self):
+        t = self.s.transpose(signal_axes=['f', 'a', 'b'])
+        nt.assert_equal(t.axes_manager.signal_shape, (6, 1, 2))
+        nt.assert_equal([ax.name for ax in t.axes_manager.signal_axes],
+                        ['f', 'a', 'b'])
+
+    def test_signal_iterable_axes_transpose(self):
+        t = self.s.transpose(signal_axes=self.s.axes_manager.signal_axes[:2])
+        nt.assert_equal(t.axes_manager.signal_shape, (6, 5))
+        nt.assert_equal([ax.name for ax in t.axes_manager.signal_axes],
+                        ['f', 'e'])
+
+    @nt.raises(ValueError)
+    def test_signal_one_name(self):
+        self.s.transpose(signal_axes='a')
+
+    def test_navigation_int_transpose(self):
+        t = self.s.transpose(navigation_axes=2)
+        nt.assert_equal(t.axes_manager.navigation_shape, (6, 5))
+        nt.assert_equal([ax.name for ax in t.axes_manager.navigation_axes],
+                        ['f', 'e'])
+
+    def test_navigation_iterable_int_transpose(self):
+        t = self.s.transpose(navigation_axes=[0, 5, 4])
+        nt.assert_equal(t.axes_manager.navigation_shape, (6, 1, 2))
+        nt.assert_equal([ax.name for ax in t.axes_manager.navigation_axes],
+                        ['f', 'a', 'b'])
+
+    def test_navigation_iterable_names_transpose(self):
+        t = self.s.transpose(navigation_axes=['f', 'a', 'b'])
+        nt.assert_equal(t.axes_manager.navigation_shape, (6, 1, 2))
+        nt.assert_equal([ax.name for ax in t.axes_manager.navigation_axes],
+                        ['f', 'a', 'b'])
+
+    def test_navigation_iterable_axes_transpose(self):
+        t = self.s.transpose(navigation_axes=self.s.axes_manager.signal_axes[:2])
+        nt.assert_equal(t.axes_manager.navigation_shape, (6, 5))
+        nt.assert_equal([ax.name for ax in t.axes_manager.navigation_axes],
+                        ['f', 'e'])
+
+    @nt.raises(ValueError)
+    def test_navigation_one_name(self):
+        self.s.transpose(navigation_axes='a')
+
+    def test_transpose_shortcut(self):
+        s = self.s.transpose(signal_axes=2)
+        t = s.T
+        nt.assert_equal(t.axes_manager.navigation_shape, (2, 1))
+        nt.assert_equal([ax.name for ax in t.axes_manager.navigation_axes],
+                        ['b', 'a'])
+
+    def test_transposed_cm(self):
+        with self.s.transposed(signal_axes=2) as im:
+            nt.assert_equal(im.axes_manager.signal_shape, (2, 1))
+            nt.assert_equal([ax.name for ax in im.axes_manager.signal_axes],
+                            ['b', 'a'])
+        nt.assert_equal(self.s.axes_manager.navigation_shape, ())
+
+    def test_copy(self):
+        t = self.s.transpose(signal_axes=['f', 'a', 'b'], copy=False)
+        nt.assert_is(t.data.base, self.s.data)
+
+        t = self.s.transpose(signal_axes=['f', 'a', 'b'], copy=True)
+        nt.assert_is_not(t.data.base, self.s.data)
