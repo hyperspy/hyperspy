@@ -3899,10 +3899,10 @@ class BaseSignal(FancySlicing,
         <BaseSignal, title: , dimensions: (9, 8, 7, 6, 5, 4, 3, 2, 1|)>
 
         >>> s.transpose(signal_axes=5) # 5 axes in signal space
-        <BaseSignal, title: , dimensions: (1, 2, 3, 4|5, 6, 7, 8, 9)>
+        <BaseSignal, title: , dimensions: (9, 8, 7, 6|5, 4, 3, 2, 1)>
 
         >>> s.transpose(navigation_axes=3) # 3 axes in navigation space
-        <BaseSignal, title: , dimensions: (1, 2, 3|4, 5, 6, 7, 8, 9)>
+        <BaseSignal, title: , dimensions: (9, 8, 7|6, 5, 4, 3, 2, 1)>
 
         >>> # 3 explicitly defined axes in signal space
         >>> s.transpose(signal_axes=[0, 2, 6])
@@ -3923,8 +3923,9 @@ class BaseSignal(FancySlicing,
         nat_axes = am._get_axes_in_natural_order()
         if isinstance(signal_axes, int):
             if navigation_axes is not None:
-                raise ValueError("one int please")
-                # TODO: better error
+                raise ValueError("The navigation_axes are not None, even "
+                                 "though just a number was given for "
+                                 "signal_axes")
             navigation_axes = nat_axes[:-signal_axes]
             signal_axes = nat_axes[-signal_axes:]
         elif iterable_not_string(signal_axes):
@@ -3937,13 +3938,13 @@ class BaseSignal(FancySlicing,
                 signal_axes = tuple(am[ax] for ax in signal_axes)
                 navigation_axes = tuple(am[ax] for ax in navigation_axes)
                 if len(set(signal_axes).intersection(navigation_axes)):
-                    raise ValueError("axis either signal or navigation, not"
-                                     " both")
+                    raise ValueError("Same axis in both spaces found.")
                 if len(am._axes) != (len(signal_axes) + len(navigation_axes)):
-                    raise ValueError("Not enough axes speficied")
+                    raise ValueError("Not all current axes were assigned to a "
+                                     "space")
             else:
-                raise ValueError("iterable + int given. two iterables or one"
-                                 " int allowed")
+                raise ValueError("navigation_axes has to be None or an iterable"
+                                 " when signal_axes is iterable")
         elif signal_axes is None:
             if isinstance(navigation_axes, int):
                 signal_axes = nat_axes[navigation_axes:]
@@ -3956,25 +3957,21 @@ class BaseSignal(FancySlicing,
                 signal_axes = am.navigation_axes
                 navigation_axes = am.signal_axes
             else:
-                raise ValueError("The passed options are not valid")
+                raise ValueError("The passed navigation_axes argument is not valid")
         else:
-            raise ValueError("The passed options are not valid")
+            raise ValueError("The passed signal_axes argument is not valid")
         # get data view
         array_order = tuple(
             ax.index_in_array for ax in reversed(navigation_axes))
         array_order += tuple(ax.index_in_array for ax in reversed(signal_axes))
         newdata = self.data.transpose(array_order)
-
         res = self._deepcopy_with_new_data(newdata)
 
         # reconfigure the axes of the axesmanager:
-        axes_order = tuple(
-            ax.index_in_axes_manager for ax in reversed(navigation_axes))
-        axes_order += tuple(ax.index_in_axes_manager for ax in reversed(signal_axes))
-
         ram = res.axes_manager
         ram._update_trait_handlers(remove=True)
-        ram._axes = [ram._axes[i] for i in axes_order]
+        # _axes are ordered in array order
+        ram._axes = [ram._axes[i] for i in array_order]
         for i, ax in enumerate(ram._axes):
             if i < len(navigation_axes):
                 ax.slice = None
@@ -3984,7 +3981,6 @@ class BaseSignal(FancySlicing,
                 ax.navigate = False
         ram._update_attributes()
         ram._update_trait_handlers(remove=False)
-        res.get_dimensions_from_data()
         # need a copy?
         if copy:
             res._make_sure_data_is_contiguous()
