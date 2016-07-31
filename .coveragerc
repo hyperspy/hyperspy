@@ -9,3 +9,4 @@ omit =
     */setup.py
     */examples/*
     */bin/*
+    */continuous_integration/*
