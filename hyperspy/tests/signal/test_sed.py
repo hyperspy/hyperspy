@@ -154,3 +154,33 @@ class Test_direct_beam_methods:
         vm = dp.get_vacuum_mask(radius=3, threshold=1,
                                 closing=False, opening=True)
         np.testing.assert_equal(vm, np.array([True, True, False, False]))
+
+
+class Test_radial_profile:
+
+    def setUp(self):
+        dp = SEDPattern(np.zeros((4, 8, 8)))
+        dp.data[0]= np.array([[0., 0., 1., 2., 2., 1., 0., 0.],
+                              [0., 1., 2., 3., 3., 2., 1., 0.],
+                              [1., 2., 3., 4., 4., 3., 2., 1.],
+                              [2., 3., 4., 5., 5., 4., 3., 2.],
+                              [2., 3., 4., 5., 5., 4., 3., 2.],
+                              [1., 2., 3., 4., 4., 3., 2., 1.],
+                              [0., 1., 2., 3., 3., 2., 1., 0.],
+                              [0., 0., 1., 2., 2., 1., 0., 0.]])
+
+        dp.data[1]= np.array([[0., 1., 2., 3., 3., 3., 2., 1.],
+                              [1., 2., 3., 4., 4., 4., 3., 2.],
+                              [2., 3., 4., 5., 5., 5., 4., 3.],
+                              [2., 3., 4., 5., 6., 5., 4., 3.],
+                              [2., 3., 4., 5., 5., 5., 4., 3.],
+                              [1., 2., 3., 4., 4., 4., 3., 2.],
+                              [0., 1., 2., 3., 3., 3., 2., 1.],
+                              [0., 0., 1., 2., 2., 2., 1., 0.]])
+        self.signal = dp
+
+    def test_radial_profile_no_centers(self):
+        pass
+
+    def test_radial_profile_with_centers(self):
+        pass

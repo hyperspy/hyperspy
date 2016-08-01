@@ -28,6 +28,29 @@ from hyperspy.gui.sed import SEDParametersUI
 from hyperspy.defaults_parser import preferences
 import hyperspy.gui.messages as messagesui
 
+def radial_average(z, center):
+    """Calculate the radial average profile about a defined center.
+
+    Parameters
+    ----------
+    center : float
+        The center about which the radial integration is performed.
+
+    Returns
+    -------
+
+    radial_profile :
+
+    """
+    y, x = np.indices((z.shape))
+    r = np.sqrt((x - center[1])**2 + (y - center[0])**2)
+    r = r.astype(np.int)
+
+    tbin = np.bincount(r.ravel(), z.ravel())
+    nr = np.bincount(r.ravel())
+    radial_average = tbin / nr
+
+    return radial_average
 
 class SEDPattern(Signal2D):
     _signal_type = "SED_Pattern"
@@ -342,6 +365,48 @@ class SEDPattern(Signal2D):
                             (self.axes_manager.signal_shape[1] - 1) / 2]
 
         return shifts
+
+def get_radial_profile(dp, centers):
+    """Return the radial profile of the diffraction pattern.
+
+    Parameters
+    ----------
+    centers : array
+        Array of dimensions (navigation_size, 2) containing the
+        origin for the radial integration in each diffraction
+        pattern.
+
+    Returns
+    -------
+    radial_profile : Signal1D
+        The radial average profile of each diffraction pattern
+        in the ElectronDiffraction signal as a Signal1D.
+
+    See also
+    --------
+    radial_average
+    get_direct_beam_position
+    """
+    if centers == None:
+        c = dp.get_direct_beam_position(radius=10)
+    else:
+        c = centers
+    rp = []
+
+    for z, index in zip(dp._iterate_signal(),
+                        np.arange(0,
+                                  dp.axes_manager.navigation_size,
+                                  1)):
+
+        rp.append(radial_average(z, center=c[index]))
+
+    rp = np.array(rp)
+    rp.resize((dp.axes_manager.navigation_shape[0],
+               dp.axes_manager.navigation_shape[1],
+               rp.shape[-1]))
+    radial_profile = hs.signals.Signal1D(rp)
+
+    return radial_profile
 
     def get_vacuum_mask(self, radius=None, center=None,
                     threshold=None, closing=True, opening=False):
