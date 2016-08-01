@@ -9,6 +9,10 @@ import sys
 import inspect
 import matplotlib
 from distutils.version import LooseVersion
+import matplotlib
+
+from hyperspy.decorators import simple_decorator
+
 
 @contextmanager
 def ignore_warning(message="", category=None):
@@ -170,5 +174,33 @@ def get_matplotlib_version_label():
         return 'mpl2'
     else:
         return 'mpl1'
+
+
+@simple_decorator
+def switch_backend_mpl(function):
+    def wrapper(*args, **kwargs):
+        # if necessary, change the backend to display a figure and to be able to
+        # close it.
+        original_backend = matplotlib.get_backend()
+        if original_backend == 'agg':
+            matplotlib.pyplot.switch_backend('TkAgg')
+
+        function(*args, **kwargs)
+
+        if original_backend == 'agg':  # switch back to the original backend
+            matplotlib.pyplot.switch_backend(original_backend)
+    return wrapper
+
+    
+@simple_decorator
+def update_close_figure(function):
+    def wrapper():
+        signal = function()
         
- 
+        p = signal._plot
+        p.signal_plot.update()
+        if hasattr(p, 'navigation_plot'):
+           p.navigation_plot.update() 
+        p.close()
+        
+    return wrapper

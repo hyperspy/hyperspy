@@ -21,31 +21,22 @@ import nose.tools as nt
 import warnings
 
 import hyperspy.drawing.utils as utils
-from hyperspy.misc.test_utils import assert_warns
+from hyperspy.misc.test_utils import assert_warns, switch_backend_mpl
 
 
 @cleanup
+@switch_backend_mpl
 def test_create_figure():
-    # if necessary, change the backend to display a figure and to be able to
-    # close it.
-    original_backend = matplotlib.get_backend()
-    if original_backend == 'agg':
-        matplotlib.pyplot.switch_backend('TkAgg')
-
     dummy_warning = 'dummy_function have been called after closing windows'
 
     def dummy_function():
+        # raise a warning to check if this function have been called
         warnings.warn(dummy_warning, UserWarning)
-        print(dummy_warning)
 
-    with assert_warns(
-            message=dummy_warning,
-            category=UserWarning):
+    with assert_warns(message=dummy_warning, category=UserWarning):
         window_title = 'test title'
         fig = utils.create_figure(window_title=window_title,
                                   _on_figure_window_close=dummy_function)
         nt.assert_true(isinstance(fig, matplotlib.figure.Figure))
         matplotlib.pyplot.close(fig)
 
-    if original_backend == 'agg':  # switch back to the original backend
-        matplotlib.pyplot.switch_backend(original_backend)

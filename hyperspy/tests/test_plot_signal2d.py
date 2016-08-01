@@ -18,14 +18,15 @@
 import numpy as np
 import scipy.ndimage
 import traits.api as t
-from matplotlib.testing.decorators import image_comparison
+from matplotlib.testing.decorators import image_comparison, cleanup
 
 import hyperspy.api as hs
-from hyperspy.misc.test_utils import get_matplotlib_version_label
+from hyperspy.misc.test_utils import get_matplotlib_version_label, update_close_figure
 from hyperspy.drawing.utils import plot_RGB_map
 
 mplv = get_matplotlib_version_label()
 scalebar_color = 'blue'
+
 
 def _generate_image_stack_signal():
     image = hs.signals.Signal2D(np.random.random((2, 3, 512, 512)))
@@ -61,7 +62,7 @@ def _set_signal_axes(axes_manager, name=t.Undefined, units=t.Undefined,
 
 
 @image_comparison(baseline_images=['%s_rgb_image' % mplv],
-                  extensions=['png'])    
+                  extensions=['png'])
 def test_rgb_image():
     w = 20
     ch1 = hs.signals.Signal2D(np.arange(w * w).reshape(w, w))
@@ -69,7 +70,7 @@ def test_rgb_image():
     ch2 = hs.signals.Signal2D(np.arange(w * w).reshape(w, w).T)
     ch2.axes_manager = _set_signal_axes(ch2.axes_manager)
     plot_RGB_map([ch1, ch2])
-    
+
 
 """ Navigation 0, Signal 2 """
 
@@ -86,34 +87,65 @@ def _setup_nav0_sig2():
     s.axes_manager[1].name = 'y'
     return s
 
-@image_comparison(baseline_images=['%s_nav0_signal2_1sig' % mplv],
-                  extensions=['png'])
-def test_plot_nav0_sig2():
+
+def _test_plot_nav0_sig2():
     s = _setup_nav0_sig2()
     s.metadata.General.title = '1: Nav 0, Sig 2, with scalebar and no axis ticks'
     s.plot(scalebar_color=scalebar_color)
+    return s
+
+
+@image_comparison(baseline_images=['%s_nav0_signal2_1sig' % mplv],
+                  extensions=['png'])
+def test_plot_nav0_sig2():
+    _test_plot_nav0_sig2()
+
+
+@cleanup
+@update_close_figure
+def test_plot_nav0_sig2_close():
+    return _test_plot_nav0_sig2() # return for update_close_figure decorator
+
+
+def _test_plot_nav0_sig2_axes_ticks():
+    s = _setup_nav0_sig2()
+    s.metadata.General.title = '2: Nav 0, Sig 2 with axes_ticks=True'
+    s.plot(scalebar_color=scalebar_color, axes_ticks=True)
+    return s
 
 
 @image_comparison(baseline_images=['%s_nav0_signal2_2sig' % mplv],
                   extensions=['png'])
 def test_plot_nav0_sig2_axes_ticks():
+    _test_plot_nav0_sig2_axes_ticks()
+
+
+@cleanup
+@update_close_figure
+def test_plot_nav0_sig2_axes_ticks_close():
+    return _test_plot_nav0_sig2_axes_ticks()
+
+
+def _test_plot_nav0_sig2_no_scalebar():
     s = _setup_nav0_sig2()
-    s.metadata.General.title = '2: Nav 0, Sig 2 with axes_ticks=True'
-    s.plot(scalebar_color=scalebar_color, axes_ticks=True)
+    s.metadata.General.title = '3: Nav 0, Sig 2, without scalebar'
+    s.plot(scalebar=False, scalebar_color=scalebar_color)
+    return s
 
 
 @image_comparison(baseline_images=['%s_nav0_signal2_3sig' % mplv],
                   extensions=['png'])
 def test_plot_nav0_sig2_no_scalebar():
-    s = _setup_nav0_sig2()
-    s.metadata.General.title = '3: Nav 0, Sig 2, without scalebar'
-    s.plot(scalebar=False, scalebar_color=scalebar_color)
+    _test_plot_nav0_sig2_no_scalebar()
 
-        
-@image_comparison(baseline_images=['%s_nav0_signal2_4nav' % mplv,
-                                   '%s_nav0_signal2_4nav' % mplv],
-                  extensions=['png'])
-def test_plot_nav0_sig2_different_signal_axes_scale():
+
+@cleanup
+@update_close_figure
+def test_plot_nav0_sig2_no_scalebar_close():
+    return _test_plot_nav0_sig2_no_scalebar()
+
+
+def _test_plot_nav0_sig2_different_signal_axes_scale():
     s = _setup_nav0_sig2()
     s.metadata.General.title = '4: Nav 0, Sig 2, without scalebar '\
         '(different axes scale)'
@@ -121,13 +153,28 @@ def test_plot_nav0_sig2_different_signal_axes_scale():
     s.axes_manager[0].name = t.Undefined
     s.axes_manager[1].name = t.Undefined
     s.plot(scalebar_color=scalebar_color)
+    return s
 
+
+@image_comparison(baseline_images=['%s_nav0_signal2_4nav' % mplv,
+                                   '%s_nav0_signal2_4nav' % mplv],
+                  extensions=['png'])
+def test_plot_nav0_sig2_different_signal_axes_scale():
+    _test_plot_nav0_sig2_different_signal_axes_scale()
+
+
+@cleanup
+@update_close_figure
+def test_plot_nav0_sig2_different_signal_axes_scale_close():
+    return _test_plot_nav0_sig2_different_signal_axes_scale()
 
 """ Navigation 2, Signal 2 """
 
 
-def _setup_nav2_sig2():
+def _setup_nav2_sig2(complex_data=False):
     data = np.arange(5 * 7 * 10 * 20).reshape((5, 7, 10, 20))
+    if complex_data:
+        data = data + 1j * (data + 200)
     s = hs.signals.Signal2D(data)
     s.axes_manager = _set_signal_axes(s.axes_manager, name='Energy',
                                       units='1/m', scale=500.0, offset=0.0)
@@ -135,24 +182,57 @@ def _setup_nav2_sig2():
                                           units='m', scale=1E-6, offset=5E-6)
     return s
 
-    
+
+def _test_plot_nav2_sig2():
+    s = _setup_nav2_sig2()
+    s.metadata.General.title = '1: Nav 2, Sig 2'
+    s.plot(scalebar_color=scalebar_color)
+    return s
+
+
 @image_comparison(baseline_images=['%s_nav2_signal2_1nav' % mplv,
                                    '%s_nav2_signal2_1sig' % mplv],
                   extensions=['png'])
 def test_plot_nav2_sig2():
-    s = _setup_nav2_sig2()
-    s.metadata.General.title = '1: Nav 2, Sig 2'
-    s.plot(scalebar_color=scalebar_color)
+    _test_plot_nav2_sig2()
 
-    
+
+@cleanup
+@update_close_figure
+def test_plot_nav2_sig2_close():
+    return _test_plot_nav2_sig2()
+
+
 @image_comparison(baseline_images=['%s_nav2_signal2_2nav' % mplv,
                                    '%s_nav2_signal2_2sig' % mplv],
                   extensions=['png'])
 def test_plot_nav2_sig2_no_scalebar():
     s = _setup_nav2_sig2()
-    s.metadata.General.title = '1: Nav 2, Sig 2, without scalebar'
+    s.metadata.General.title = '2: Nav 2, Sig 2, without scalebar'
     s.plot(scalebar=False, scalebar_color=scalebar_color)
-    
+    s._plot.signal_plot.update()
+    s._plot.navigator_plot.update()
+    s._plot.close()
+
+# test for plotting complex signal 2D, still not implemented
+# def _test_plot_nav2_sig2_complex():
+#    s = _setup_nav2_sig2(complex_data=True)
+#    s.metadata.General.title = '3: Nav 2, Sig 2 complex'
+#    s.plot()
+#    return s
+#
+#
+#@image_comparison(baseline_images=['%s_nav2_signal2_3nav_complex' % mplv,
+#                                   '%s_nav2_signal2_3sig_complex' % mplv],
+#                  extensions=['png'])
+# def test_plot_nav2_sig2_complex():
+#    _test_plot_nav2_sig2_complex()
+#
+#@cleanup
+#@update_close_figure
+# def test_plot_nav2_sig2_complex():
+#    return _test_plot_nav2_sig2_complex()
+
 
 @image_comparison(baseline_images=['%s_plot_multiple_images' % mplv],
                   extensions=['png'])

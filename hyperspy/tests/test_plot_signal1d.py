@@ -17,10 +17,10 @@
 
 import numpy as np
 import traits.api as t
-from matplotlib.testing.decorators import image_comparison
+from matplotlib.testing.decorators import image_comparison, cleanup
 
 import hyperspy.api as hs
-from hyperspy.misc.test_utils import get_matplotlib_version_label
+from hyperspy.misc.test_utils import get_matplotlib_version_label, update_close_figure
 
 mplv = get_matplotlib_version_label()
 scalebar_color = 'blue'
@@ -71,21 +71,34 @@ def test_plot_spectra_sync():
 """ Navigation 0, Signal 1 """
 
 
-@image_comparison(baseline_images=['%s_nav0_signal1_sig' % mplv],
-                  extensions=['png'])
-def test_plot_nav0_sig1():
+def _test_plot_nav0_sig1():
     s = hs.signals.Signal1D(np.arange(20))
     s.axes_manager = _set_signal_axes(s.axes_manager, name='Energy',
                                       units='eV', scale=500.0, offset=300.0)
     s.metadata.General.title = '1: Nav 0, Sig 1'
     s.plot()
+    return s
+
+
+@image_comparison(baseline_images=['%s_nav0_signal1_sig' % mplv],
+                  extensions=['png'])
+def test_plot_nav0_sig1():
+    _test_plot_nav0_sig1()
+
+
+@cleanup
+@update_close_figure
+def test_plot_nav0_sig1_close():
+    return _test_plot_nav0_sig1()  # return for @update_close_figure
 
 
 """ Navigation 1, Signal 1 """
 
 
-def _setup_nav1_sig1():
+def _setup_nav1_sig1(complex_data=False):
     data = np.arange(10 * 20).reshape((10, 20))
+    if complex_data:
+        data = data + 1j * (data + 9)
     s = hs.signals.Signal1D(data)
     s.axes_manager = _set_signal_axes(s.axes_manager, name='Energy',
                                       units='eV', scale=500.0, offset=300.0)
@@ -94,14 +107,44 @@ def _setup_nav1_sig1():
     return s
 
 
+def _test_plot_nav1_sig1():
+    s = _setup_nav1_sig1()
+    s.metadata.General.title = '1: Nav 1, Sig 1'
+    s.plot()
+    return s
+
+
 @image_comparison(baseline_images=['%s_nav1_signal1_1nav' % mplv,
                                    '%s_nav1_signal1_1sig' % mplv],
                   extensions=['png'])
 def test_plot_nav1_sig1():
-    s = _setup_nav1_sig1()
-    s.metadata.General.title = '1: Nav 1, Sig 1'
-    s.plot()
+    _test_plot_nav1_sig1()
 
+
+@cleanup
+@update_close_figure
+def test_plot_nav1_sig1_close():
+    return _test_plot_nav1_sig1()
+
+
+def _test_plot_nav1_sig1_complex():
+    s = _setup_nav1_sig1(complex_data=True)
+    s.metadata.General.title = '2: Nav 1, Sig 1 complex'
+    s.plot()
+    return s
+
+
+@image_comparison(baseline_images=['%s_nav1_signal1_2nav_complex' % mplv,
+                                   '%s_nav1_signal1_2sig_complex' % mplv],
+                  extensions=['png'])
+def test_plot_nav1_sig1_complex():
+    _test_plot_nav1_sig1_complex()
+
+
+@cleanup
+@update_close_figure
+def test_plot_nav1_sig1_complex_close():
+    return _test_plot_nav1_sig1_complex()
 
 """ Navigation 2, Signal 1 """
 
@@ -116,18 +159,27 @@ def _setup_nav2_sig1():
     return s
 
 
+def _test_plot_nav2_sig1():
+    s = _setup_nav2_sig1()
+    s.metadata.General.title = '1: Nav 2, Sig 1'
+    s.plot()
+    return s
+
+
 @image_comparison(baseline_images=['%s_nav2_signal1_1nav' % mplv,
                                    '%s_nav2_signal1_1sig' % mplv],
                   extensions=['png'])
 def test_plot_nav2_sig1():
-    s = _setup_nav2_sig1()
-    s.metadata.General.title = '1: Nav 2, Sig 1'
-    s.plot()
+    _test_plot_nav2_sig1()
 
-@image_comparison(baseline_images=['%s_nav2_signal1_2nav_two_cursors' % mplv,
-                                   '%s_nav2_signal1_2sig_two_cursors' % mplv],
-                  extensions=['png'])    
-def test_plot_nav2_sig1_two_cursors():
+
+@cleanup
+@update_close_figure
+def test_plot_nav2_sig1_close():
+    return _test_plot_nav2_sig1()
+
+
+def _test_plot_nav2_sig1_two_cursors():
     s = _setup_nav2_sig1()
     s.metadata.General.title = '2: Nav 2, Sig 1, two cursor'
     s.axes_manager[0].index = 5
@@ -136,3 +188,17 @@ def test_plot_nav2_sig1_two_cursors():
     s._plot.add_right_pointer()
     s._plot.right_pointer.axes_manager[0].index = 2
     s._plot.right_pointer.axes_manager[1].index = 2
+    return s
+
+
+@image_comparison(baseline_images=['%s_nav2_signal1_2nav_two_cursors' % mplv,
+                                   '%s_nav2_signal1_2sig_two_cursors' % mplv],
+                  extensions=['png'])
+def test_plot_nav2_sig1_two_cursors():
+    _test_plot_nav2_sig1_two_cursors()
+
+
+@cleanup
+@update_close_figure
+def test_plot_nav2_sig1_two_cursors_close():
+    return _test_plot_nav2_sig1_two_cursors()
