@@ -3649,10 +3649,11 @@ class BaseSignal(FancySlicing,
         <Signal1D, title: , dimensions: (6, 5, 3, 4)>
 
         """
-        # Roll the spectral axis to-be to the latex index in the array
-        sp = self.rollaxis(spectral_axis, -1 + 3j)
-        sp.axes_manager.set_signal_dimension(1)
-        sp._assign_subclass()
+        ax = self.axes_manager[spectral_axis]
+        all_ax = self.axes_manager._axes.copy()
+        sig = [all_ax.pop(ax.index_in_array)]
+        sp = self.transpose(signal_axes=sig,
+                            navigation_axes=reversed(all_ax), copy=True)
         if out is None:
             return sp
         else:
@@ -3693,13 +3694,7 @@ class BaseSignal(FancySlicing,
         if self.data.ndim < 2:
             raise DataDimensionError(
                 "A Signal dimension must be >= 2 to be converted to a Signal2D")
-        axes = (self.axes_manager[image_axes[0]],
-                self.axes_manager[image_axes[1]])
-        iaxes = [axis.index_in_array for axis in axes]
-        im = self.rollaxis(iaxes[0] + 3j, -1 + 3j).rollaxis(
-            iaxes[1] - np.argmax(iaxes) + 3j, -2 + 3j)
-        im.axes_manager.set_signal_dimension(2)
-        im._assign_subclass()
+        im = self.transpose(signal_axes=image_axes, copy=True)
         if out is None:
             return im
         else:
