@@ -45,26 +45,112 @@ class Test_metadata:
 class Test_direct_beam_methods:
 
     def setUp(self):
-        dp = SEDPattern(np.ones((3, 6, 6)))
+        dp = SEDPattern(np.zeros((4, 8, 8)))
+        dp.data[0]= np.array([[0., 0., 0., 0., 0., 0., 0., 0.],
+                              [0., 0., 0., 0., 0., 0., 0., 0.],
+                              [0., 0., 0., 1., 0., 0., 0., 0.],
+                              [0., 0., 1., 2., 1., 0., 0., 0.],
+                              [0., 0., 0., 1., 0., 0., 0., 0.],
+                              [0., 0., 0., 0., 0., 0., 0., 0.],
+                              [0., 0., 0., 0., 0., 0., 0., 0.],
+                              [0., 0., 0., 0., 0., 0., 0., 0.]])
+
+        dp.data[1]= np.array([[0., 0., 0., 0., 0., 0., 0., 0.],
+                              [0., 0., 0., 0., 0., 0., 0., 0.],
+                              [0., 0., 0., 0., 0., 0., 0., 0.],
+                              [0., 0., 0., 0., 1., 0., 0., 0.],
+                              [0., 0., 0., 1., 2., 1., 0., 0.],
+                              [0., 0., 0., 0., 1., 0., 0., 0.],
+                              [0., 0., 0., 0., 0., 0., 0., 0.],
+                              [0., 0., 0., 0., 0., 0., 0., 0.]])
+
+        dp.data[2]= np.array([[0., 0., 0., 0., 0., 0., 0., 2.],
+                              [0., 0., 0., 0., 0., 0., 0., 0.],
+                              [0., 0., 0., 1., 0., 0., 0., 0.],
+                              [0., 0., 1., 2., 1., 0., 0., 0.],
+                              [0., 0., 0., 1., 0., 0., 0., 0.],
+                              [0., 0., 0., 0., 0., 0., 0., 0.],
+                              [0., 0., 0., 0., 0., 0., 0., 0.],
+                              [0., 0., 0., 0., 0., 0., 0., 0.]])
+
+        dp.data[3]= np.array([[0., 0., 0., 0., 0., 0., 0., 0.],
+                              [0., 0., 0., 0., 0., 0., 0., 0.],
+                              [0., 0., 0., 0., 0., 0., 0., 0.],
+                              [0., 0., 0., 0., 2., 0., 0., 0.],
+                              [0., 0., 0., 2., 2., 2., 0., 0.],
+                              [0., 0., 0., 0., 2., 0., 0., 0.],
+                              [0., 0., 0., 0., 0., 0., 0., 0.],
+                              [0., 0., 0., 0., 0., 0., 0., 0.]])
         self.signal = dp
 
     def test_get_direct_beam_position(self):
         dp = self.signal
+        c = dp.get_direct_beam_position(radius=2)
+        np.testing.assert_equal(c, np.array([[3, 3], [4, 4], [3, 3], [4, 4]]))
 
-    def test_get_direct_beam_subpixel(self):
+    def test_get_direct_beam_shifts_no_centers(self):
         dp = self.signal
+        s = dp.get_direct_beam_shifts(radius=2)
+        np.testing.assert_equal(s, np.array([[-0.5, -0.5],
+                                             [ 0.5,  0.5],
+                                             [-0.5, -0.5],
+                                             [ 0.5,  0.5]]))
 
-    def test_direct_beam_shifts(self):
+    def test_get_direct_beam_shifts_with_centers(self):
         dp = self.signal
+        c = np.array([[3, 3], [4, 4], [3, 3], [4, 4]])
+        s = dp.get_direct_beam_shifts(radius=2)
+        np.testing.assert_equal(s, np.array([[-0.5, -0.5],
+                                             [ 0.5,  0.5],
+                                             [-0.5, -0.5],
+                                             [ 0.5,  0.5]]))
 
-class Test_masking:
-
-    def setUp(self):
-        dp = SEDPattern(np.ones((3, 6, 6)))
-        self.signal = dp
-
-    def test_direct_beam_mask(self):
+    def test_get_direct_beam_shifts_with_wrong_centers(self):
         dp = self.signal
+        c = np.array([[3, 3], [4, 4], [3, 3]])
+        nt.assert_raises(ValueError, dp.get_direct_beam_shifts(centers=c))
 
-    def test_vacuum_mask(self):
+
+    def test_get_direct_beam_mask(self):
         dp = self.signal
+        a = np.array([[False, False, False, False, False, False, False, False],
+                      [False, False, False, False, False, False, False, False],
+                      [False, False, False,  True,  True, False, False, False],
+                      [False, False,  True,  True,  True,  True, False, False],
+                      [False, False,  True,  True,  True,  True, False, False],
+                      [False, False, False,  True,  True, False, False, False],
+                      [False, False, False, False, False, False, False, False],
+                      [False, False, False, False, False, False, False, False]])
+        mask = dp.get_direct_beam_mask(2)
+        np.testing.assert_equal(mask, a)
+
+    def test_get_direct_beam_mask_with_center(self):
+        dp = self.signal
+        a = np.array([[False, False, False, False, False, False, False, False],
+                      [False, False, False, False, False, False, False, False],
+                      [False, False, False, False,  True,  True, False, False],
+                      [False, False, False,  True,  True,  True,  True, False],
+                      [False, False, False,  True,  True,  True,  True, False],
+                      [False, False, False, False,  True,  True, False, False],
+                      [False, False, False, False, False, False, False, False],
+                      [False, False, False, False, False, False, False, False]])
+        mask = dp.get_direct_beam_mask(2, center=(4.5, 3.5))
+        np.testing.assert_equal(mask, a)
+
+    def test_get_vacuum_mask(self):
+        dp = self.signal
+        vm = dp.get_vacuum_mask(radius=3, threshold=1,
+                                closing=False, opening=False)
+        np.testing.assert_equal(vm, np.array([True, True, False, True]))
+
+    def test_vacuum_mask_with_closing(self):
+        dp = self.signal
+        vm = dp.get_vacuum_mask(radius=3, threshold=1,
+                                closing=True, opening=False)
+        np.testing.assert_equal(vm, np.array([True, True, True, True]))
+
+    def test_vacuum_mask_with_opening(self):
+        dp = self.signal
+        vm = dp.get_vacuum_mask(radius=3, threshold=1,
+                                closing=False, opening=True)
+        np.testing.assert_equal(vm, np.array([True, True, False, False]))

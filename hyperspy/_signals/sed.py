@@ -213,8 +213,7 @@ class SEDPattern(Signal2D):
         else:
             return False
 
-    def _get_direct_beam_position(self, z, center=None, radius=None,
-                                  subpixel=None):
+    def get_direct_beam_position(self, radius=None, subpixel=None):
         """Refine the position of the direct beam and hence an estimate for the
         position of the pattern center in each SED pattern.
 
@@ -237,36 +236,62 @@ class SEDPattern(Signal2D):
         This method is based on work presented by Thomas White in his PhD (2009)
         which itself built on Zaefferer (2000).
         """
-        # initialise problem with initial center estimate
-        c_int = z[center[0], center[1]]
-        ny = z.shape[1]
-        nx = z.shape[0]
-        y, x = np.ogrid[-center[0]:ny-center[0], -center[1]:nx-center[1]]
-        mask = x * x + y * y <= radius * radius
-        z_tmp = z * mask
-        # refine center position to pixel level precision via optimisation of
-        # ROI
-        while c_int < z_tmp.max():
-            maxes = np.asarray(np.where(z_tmp == z_tmp.max()))
-            center = np.rint([np.average(maxes[0]), np.average(maxes[1])])
-            center = center.astype(int)
-            c_int = z[center[0], center[1]]
-            y, x = np.ogrid[-center[0]:ny-center[0], -center[1]:nx-center[1]]
-            mask = x * x + y * y <= radius * radius
+        ## TODO: currently broken if navigation_size is 0
+
+
+        # sum images to produce image in which direct beam reinforced and take
+        # the position of maximum intensity as the initial estimate of center.
+        dp_sum = self.sum()
+        max_pos = np.asarray(np.where(dp_sum.data == dp_sum.data.max()))
+        max_ref = [np.average(max_pos[0]), np.average(max_pos[1])]
+        # specify array of dims (nav_size, 2) in which to store centers and find
+        # the center of each pattern by determining the direct beam position.
+        arr_shape = (self.axes_manager.navigation_size, 2)
+        c = np.zeros(arr_shape, dtype=int)
+        r = radius
+        ny = self.axes_manager.signal_shape[1]
+        nx = self.axes_manager.signal_shape[0]
+        for z, index in zip(self._iterate_signal(),
+                            np.arange(0, self.axes_manager.navigation_size, 1)):
+
+            # initialise problem with initial center estimate
+            c_int = z[max_ref[0], max_ref[1]]
+            y, x = np.ogrid[-max_ref[0]:ny-max_ref[0], -max_ref[1]:nx-max_ref[1]]
+            mask = x * x + y * y <= r * r
             z_tmp = z * mask
-        # refine center value to sub-pixel precision by evaluating intensity
-        # centre of mass.
-        if subpixel is True:
-            center = np.asarray(ndi.measurements.center_of_mass(z_tmp))
+            # refine center position to pixel level precision via optimisation of
+            # ROI
+            if c_int == z_tmp.max():
+                c[index] = max_ref
+            else:
+                while c_int < z_tmp.max():
+                    maxes = np.asarray(np.where(z_tmp == z_tmp.max()))
+                    c[index] = np.rint([np.average(maxes[0]),
+                                        np.average(maxes[1])])
+                    c[index] = c[index].astype(int)
+                    c_int = z[c[index][0], c[index][1]]
+                    y, x = np.ogrid[-c[index][0]:ny-c[index][0],
+                                    -c[index][1]:nx-c[index][1]]
+                    mask = x * x + y * y <= radius * radius
+                    z_tmp = z * mask
+            # refine center value to sub-pixel precision by evaluating intensity
+            # centre of mass.
+            if subpixel is True:
+                c[index] = np.asarray(ndi.measurements.center_of_mass(z_tmp))
 
-        return center
+        return c
 
-    def direct_beam_shifts(self, radius=10, subpixel=False):
+    def get_direct_beam_shifts(self, centers=None, radius=None, subpixel=False):
         """Determine rigid shifts in the SED patterns based on the position of
         the direct beam and return the shifts required to center all patterns.
 
         Parameters
         ----------
+        centers : array, None
+            Array of dimension (navigation_size, 2) containing the position of
+            the diffraction pattern
+            If None, an array containing center positions is obtained using the
+            `get_direct_beam_position` method.
         radius : int
             Defines the size of the circular region within which the direct beam
             position is refined.
@@ -282,32 +307,23 @@ class SEDPattern(Signal2D):
 
         See also
         --------
-        _get_direct_beam_position
+        get_direct_beam_position
         """
-        # sum images to produce image in which direct beam reinforced and take
-        # the position of maximum intensity as the initial estimate of center.
-        dp_sum = self.sum()
-        max_ref = np.asarray(np.where(dp_sum.data == dp_sum.data.max()))
-        c_ref = np.rint([np.average(max_ref[0]), np.average(max_ref[1])])
-        c_ref = c_ref.astype(int)
-        # specify array of dims (nav_size, 2) in which to store centers and find
-        # the center of each pattern by determining the direct beam position.
-        arr_shape = (self.axes_manager.navigation_size, 2)
-        centers = np.zeros(arr_shape, dtype=int)
-        for z, index in zip(self._iterate_signal(),
-                            np.arange(0,
-                                      self.axes_manager.navigation_size,
-                                      1)):
-            centers[index] = self._get_direct_beam_position(z, center=c_ref,
-                                                            radius=radius,
-                                                            subpixel=subpixel)
+        if centers == None:
+            centers = self.get_direct_beam_position(radius=radius,
+                                                    subpixel=subpixel)
+        if centers != None:
+            if centers.shape != (self.axes_manager.navigation_size, 2):
+                raise ValueError("The number of center positions provided "
+                                 "must match the navigation_size")
+
         # calculate shifts to align all patterns to the reference position
-        shifts = centers - [self.axes_manager.signal_shape[0] / 2,
-                            self.axes_manager.signal_shape[1] / 2]
+        shifts = centers - [(self.axes_manager.signal_shape[0] - 1) / 2,
+                            (self.axes_manager.signal_shape[1] - 1) / 2]
 
         return shifts
 
-    def direct_beam_mask(self, radius=None, center=None):
+    def get_direct_beam_mask(self, radius=None, center=None):
         """Generate a signal mask for the direct beam.
 
         Parameters
@@ -325,24 +341,31 @@ class SEDPattern(Signal2D):
             The mask of the direct beam
         """
         r = radius
+        ny = self.axes_manager.signal_shape[1]
+        nx = self.axes_manager.signal_shape[0]
 
         if center == None:
-            ny = self.axes_manager.signal_shape[1] / 2
-            nx = self.axes_manager.signal_shape[0] / 2
+            a = (self.axes_manager.signal_shape[1] - 1) / 2
+            b = (self.axes_manager.signal_shape[0] - 1) / 2
         else:
-            nx, ny = center
+            a, b = center
 
-        y, x = np.ogrid[-ny:ny, -nx:nx]
+        y, x = np.ogrid[-b:ny-b, -a:nx-a]
         mask = x*x + y*y <= r*r
         return mask
 
-    def vacuum_mask(self, radius=None, center=None,
+    def get_vacuum_mask(self, radius=None, center=None,
                     threshold=None, closing=True, opening=False):
         """Generate a navigation mask to exlude SED patterns acquired in vacuum.
 
+        Vacuum regions are identified cruedly based on searching for a peak
+        value in each diffraction pattern, having masked the direct beam, above
+        a user defined threshold value. Morpohological opening or closing of the
+        mask obtained is supported.
+
         Parameters
         ----------
-        radius: int
+        radius: float
             Radius of circular mask to exclude direct beam.
         center : tuple, None
             User specified position of the diffraction pattern center. If None
@@ -350,13 +373,20 @@ class SEDPattern(Signal2D):
         threshold : float
             Minimum intensity required to consider a diffracted beam to be
             present.
+        closing : bool
+            Flag to perform morphological closing on
 
         Returns
         -------
         mask : signal
-            The mask of the region of interest.
+            The mask of the region of interest. Vacuum regions to be masked are
+            set True.
+
+        See also
+        --------
+        get_direct_beam_mask
         """
-        db = np.invert(self.direct_beam_mask(radius=radius, center=center))
+        db = np.invert(self.get_direct_beam_mask(radius=radius, center=center))
         diff_only = self * db
         mask = (diff_only.max((-1, -2)) <= threshold)
         if closing:
@@ -424,14 +454,14 @@ class SEDPattern(Signal2D):
         Examples
         --------
         >>> dp = hs.datasets.example_signals.SED_Pattern()
-        >>> dps = hs.stack([s]*3)
+        >>> dps = hs.stack([dp]*3)
         >>> dps.change_dtype(float)
         >>> dps.decomposition()
 
         See also
         --------
-        direct_beam_mask
-        vacuum_mask
+        get_direct_beam_mask
+        get_vacuum_mask
         """
         if isinstance(signal_mask, float):
             signal_mask = self.direct_beam_mask(signal_mask, center)
