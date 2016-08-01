@@ -25,7 +25,7 @@ name = 'hyperspy'
 # When running setup.py the "+dev" string will be replaced (if possible)
 # by the output of "git describe" if git is available or the git
 # hash if .git is present.
-version = "2.0+dev"
+version = "1.1+dev"
 description = "Multidimensional data analysis toolbox"
 license = 'GPL v3'
 
@@ -42,6 +42,7 @@ platforms = ['Linux', 'Mac OSX', 'Windows XP/2000/NT', 'Windows 95/98/ME']
 
 keywords = ['EDX',
             'EELS',
+            'SED'
             'EFTEM',
             'EMSA',
             'FEI',
@@ -55,6 +56,8 @@ keywords = ['EDX',
             'dm3',
             'electron energy loss spectroscopy',
             'electron microscopy',
+            'scanning electron diffraction',
+            'crystal cartography'
             'emi',
             'energy dispersive x-rays',
             'hyperspectral',
@@ -71,6 +74,7 @@ keywords = ['EDX',
             'scipy',
             'ser',
             'spectroscopy',
+            'diffraction',
             'spectrum image']
 
 info = """
