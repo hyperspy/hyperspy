@@ -3653,7 +3653,7 @@ class BaseSignal(FancySlicing,
         all_ax = self.axes_manager._axes.copy()
         sig = [all_ax.pop(ax.index_in_array)]
         sp = self.transpose(signal_axes=sig,
-                            navigation_axes=reversed(all_ax), copy=True)
+                            navigation_axes=all_ax[::-1], copy=True)
         if out is None:
             return sp
         else:
@@ -3894,18 +3894,18 @@ class BaseSignal(FancySlicing,
         <BaseSignal, title: , dimensions: (9, 8, 7, 6, 5, 4, 3, 2, 1|)>
 
         >>> s.transpose(signal_axes=5) # 5 axes in signal space
-        <BaseSignal, title: , dimensions: (9, 8, 7, 6|5, 4, 3, 2, 1)>
+        <BaseSignal, title: , dimensions: (4, 3, 2, 1|9, 8, 7, 6, 5)>
 
         >>> s.transpose(navigation_axes=3) # 3 axes in navigation space
-        <BaseSignal, title: , dimensions: (9, 8, 7|6, 5, 4, 3, 2, 1)>
+        <BaseSignal, title: , dimensions: (3, 2, 1|9, 8, 7, 6, 5, 4)>
 
         >>> # 3 explicitly defined axes in signal space
         >>> s.transpose(signal_axes=[0, 2, 6])
-        <BaseSignal, title: , dimensions: (8, 6, 5, 4, 2, 1|9, 7, 3)>
+        <BaseSignal, title: , dimensions: (8, 6, 5, 4, 2, 1|3, 7, 9)>
 
         >>> # A mix of two lists, but specifying all axes explicitly
         >>> s.transpose(navigation_axes=[1, 2, 3, 4, 5, 8], signal_axes=[0, 6, 7])
-        <BaseSignal, title: , dimensions: (8, 7, 6, 5, 4, 1|9, 3, 2)>
+        <BaseSignal, title: , dimensions: (1, 4, 5, 6, 7, 8|2, 3, 9)>
 
         """
         from collections import Iterable
@@ -3914,30 +3914,31 @@ class BaseSignal(FancySlicing,
             return isinstance(thing, Iterable) and \
                 not isinstance(thing, str)
         am = self.axes_manager
-        nat_axes = am._get_axes_in_natural_order()
+        ax_list = am._axes
         if isinstance(signal_axes, int):
             if navigation_axes is not None:
                 raise ValueError("The navigation_axes are not None, even "
                                  "though just a number was given for "
                                  "signal_axes")
-            if len(nat_axes) < signal_axes:
+            if len(ax_list) < signal_axes:
                 raise ValueError("Too many signal axes requested")
             if signal_axes < 0:
                 raise ValueError("Can't have negative number of signal axes")
             elif signal_axes == 0:
                 signal_axes = ()
-                navigation_axes = nat_axes
+                navigation_axes = ax_list
             else:
-                navigation_axes = nat_axes[:-signal_axes]
-                signal_axes = nat_axes[-signal_axes:]
+                navigation_axes = ax_list[:-signal_axes]
+                signal_axes = ax_list[-signal_axes:]
         elif iterable_not_string(signal_axes):
-            signal_axes = tuple(am[ax] for ax in signal_axes)
+            signal_axes = tuple(am[ax] for ax in reversed(signal_axes))
             if navigation_axes is None:
-                navigation_axes = tuple(ax for ax in nat_axes if ax not in
+                navigation_axes = tuple(ax for ax in ax_list if ax not in
                                         signal_axes)
             elif iterable_not_string(navigation_axes):
                 # want to keep the order
-                navigation_axes = tuple(am[ax] for ax in navigation_axes)
+                navigation_axes = tuple(am[ax] for ax in
+                                        reversed(navigation_axes))
                 intersection = set(signal_axes).intersection(navigation_axes)
                 if len(intersection):
                     raise ValueError("At least one axis found in both spaces:"
@@ -3950,20 +3951,21 @@ class BaseSignal(FancySlicing,
                                  " when signal_axes is iterable")
         elif signal_axes is None:
             if isinstance(navigation_axes, int):
-                if len(nat_axes) < navigation_axes:
+                if len(ax_list) < navigation_axes:
                     raise ValueError("Too many navigation axes requested")
                 if navigation_axes < 0:
                     raise ValueError(
                         "Can't have negative number of navigation axes")
                 elif navigation_axes == 0:
                     navigation_axes = ()
-                    signal_axes = nat_axes
+                    signal_axes = ax_list
                 else:
-                    signal_axes = nat_axes[navigation_axes:]
-                    navigation_axes = nat_axes[:navigation_axes]
+                    signal_axes = ax_list[navigation_axes:]
+                    navigation_axes = ax_list[:navigation_axes]
             elif iterable_not_string(navigation_axes):
-                navigation_axes = tuple(am[ax] for ax in navigation_axes)
-                signal_axes = tuple(ax for ax in nat_axes if ax not in
+                navigation_axes = tuple(am[ax] for ax in
+                                        reversed(navigation_axes))
+                signal_axes = tuple(ax for ax in ax_list if ax not in
                                     navigation_axes)
             elif navigation_axes is None:
                 signal_axes = am.navigation_axes
@@ -3975,8 +3977,8 @@ class BaseSignal(FancySlicing,
             raise ValueError("The passed signal_axes argument is not valid")
         # get data view
         array_order = tuple(
-            ax.index_in_array for ax in reversed(navigation_axes))
-        array_order += tuple(ax.index_in_array for ax in reversed(signal_axes))
+            ax.index_in_array for ax in navigation_axes)
+        array_order += tuple(ax.index_in_array for ax in signal_axes)
         newdata = self.data.transpose(array_order)
         res = self._deepcopy_with_new_data(newdata)
 

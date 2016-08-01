@@ -651,9 +651,9 @@ class TestTranspose:
 
     def test_signal_int_transpose(self):
         t = self.s.transpose(signal_axes=2)
-        nt.assert_equal(t.axes_manager.signal_shape, (2, 1))
+        nt.assert_equal(t.axes_manager.signal_shape, (6, 5))
         nt.assert_equal([ax.name for ax in t.axes_manager.signal_axes],
-                        ['b', 'a'])
+                        ['f', 'e'])
         nt.assert_is_instance(t, signals.Signal2D)
         nt.assert_is_instance(t.metadata.Signal.Noise_properties.variance,
                               signals.Signal2D)
@@ -686,9 +686,9 @@ class TestTranspose:
 
     def test_navigation_int_transpose(self):
         t = self.s.transpose(navigation_axes=2)
-        nt.assert_equal(t.axes_manager.navigation_shape, (6, 5))
+        nt.assert_equal(t.axes_manager.navigation_shape, (2, 1))
         nt.assert_equal([ax.name for ax in t.axes_manager.navigation_axes],
-                        ['f', 'e'])
+                        ['b', 'a'])
 
     def test_navigation_iterable_int_transpose(self):
         t = self.s.transpose(navigation_axes=[0, 5, 4])
@@ -721,9 +721,9 @@ class TestTranspose:
     def test_transpose_shortcut(self):
         s = self.s.transpose(signal_axes=2)
         t = s.T
-        nt.assert_equal(t.axes_manager.navigation_shape, (2, 1))
+        nt.assert_equal(t.axes_manager.navigation_shape, (5, 6))
         nt.assert_equal([ax.name for ax in t.axes_manager.navigation_axes],
-                        ['b', 'a'])
+                        ['e', 'f'])
 
     def test_copy(self):
         t = self.s.transpose(signal_axes=['f', 'a', 'b'], copy=False)
