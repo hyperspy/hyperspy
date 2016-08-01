@@ -127,8 +127,8 @@ array of scalars by changing the default *view* of
     >>> scalar
     <BaseSignal, title: , dimensions: (30, 20, 10|)>
 
-
-
+For more examples of manipulating signal axes in the "signal-navigation" space
+can be found in :ref:`signal.transpose`.
 
 .. NOTE::
 
@@ -679,7 +679,7 @@ not change the left most signal dimensions:
       File "<string>", line 2, in __iadd__
       File "/home/fjd29/Python/hyperspy/hyperspy/signal.py", line 2737, in _binary_operator_ruler
         self.data = getattr(sdata, op_name)(odata)
-    ValueError: non-broadcastable output operand with shape (3,2,1,4) doesn't match the broadcast shape (3,2,5,4)
+    ValueError: non-broadcastable output operand with shape (3,2,1,4) doesn\'t match the broadcast shape (3,2,5,4)
 
 
 .. _signal.iterator:
@@ -922,6 +922,55 @@ In the following example we create a 1D signal with signal size 3 and with
   :width:   500
 
   RGB data type example.
+
+
+.. _signal.transpose:
+
+Transposing (changing signal spaces)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. versionadded:: 1.1
+
+:py:meth:`~.signal.BaseSignal.transpose` method changes how the dataset
+dimensions are interpeted (as signal or navigation axes). The method accepts
+both explicit axes to keep in either space, or just a number of axes required
+in one space (just one number can be specified, as the other is defined as
+"all other axes"). Example usages:
+
+.. code-block:: python
+
+    >>> # just create a signal with many distinct dimensions
+    >>> s = hs.signals.BaseSignal(np.random.rand(1,2,3,4,5,6,7,8,9))
+    >>> s
+    <BaseSignal, title: , dimensions: (|9, 8, 7, 6, 5, 4, 3, 2, 1)>
+
+    >>> s.transpose() # swap signal and navigation spaces
+    <BaseSignal, title: , dimensions: (9, 8, 7, 6, 5, 4, 3, 2, 1|)>
+
+    >>> s.T # a shortcut for no arguments
+    <BaseSignal, title: , dimensions: (9, 8, 7, 6, 5, 4, 3, 2, 1|)>
+
+    >>> s.transpose(signal_axes=5) # roll to leave 5 axes in navigation space
+    <BaseSignal, title: , dimensions: (4, 3, 2, 1|9, 8, 7, 6, 5)>
+
+    >>> s.transpose(navigation_axes=3) # roll leave 3 axes in navigation space
+    <BaseSignal, title: , dimensions: (3, 2, 1|9, 8, 7, 6, 5, 4)>
+
+    >>> # 3 explicitly defined axes in signal space
+    >>> s.transpose(signal_axes=[0, 2, 6])
+    <BaseSignal, title: , dimensions: (8, 6, 5, 4, 2, 1|3, 7, 9)>
+
+    >>> # A mix of two lists, but specifying all axes explicitly
+    >>> # The order of axes is preserved in both lists
+    >>> s.transpose(navigation_axes=[1, 2, 3, 4, 5, 8], signal_axes=[0, 6, 7])
+    <BaseSignal, title: , dimensions: (8, 7, 6, 5, 4, 1|9, 3, 2)>
+
+.. NOTE::
+
+    The :py:meth:`~.signal.BaseSignal.transpose` method accepts keyword
+    argument ``copy``, which is ``False`` by default. If ``True``, it ensures
+    the data in memory is stored in the most efficient manner for iterating.
+    Often this means making a copy of the data.
+
 
 
 Basic statistical analysis

@@ -3904,7 +3904,7 @@ class BaseSignal(FancySlicing,
 
         >>> # A mix of two lists, but specifying all axes explicitly
         >>> s.transpose(navigation_axes=[1, 2, 3, 4, 5, 8], signal_axes=[0, 6, 7])
-        <BaseSignal, title: , dimensions: (1, 4, 5, 6, 7, 8|2, 3, 9)>
+        <BaseSignal, title: , dimensions: (8, 7, 6, 5, 4, 1|9, 3, 2)>
 
         """
         from collections import Iterable
