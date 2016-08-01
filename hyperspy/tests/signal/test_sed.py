@@ -159,7 +159,7 @@ class Test_direct_beam_methods:
 class Test_radial_profile:
 
     def setUp(self):
-        dp = SEDPattern(np.zeros((4, 8, 8)))
+        dp = SEDPattern(np.zeros((2, 8, 8)))
         dp.data[0]= np.array([[0., 0., 1., 2., 2., 1., 0., 0.],
                               [0., 1., 2., 3., 3., 2., 1., 0.],
                               [1., 2., 3., 4., 4., 3., 2., 1.],
@@ -180,7 +180,19 @@ class Test_radial_profile:
         self.signal = dp
 
     def test_radial_profile_no_centers(self):
-        pass
+        dp = self.signal
+        rp = dp.get_radial_profile()
+        np.testing.assert_allclose(rp, np.array([[5., 4.25, 2.875,
+                                                  1.7, 0.92857143, 0.],
+                                                 [5., 4.75, 3.625,
+                                                  2.5, 1.71428571,0.6]]),
+                                                 atol=1e-3)
 
     def test_radial_profile_with_centers(self):
-        pass
+        dp = self.signal
+        rp = dp.get_radial_profile(centers=np.array([[4, 3], [4, 3]]))
+        np.testing.assert_allclose(rp, np.array([[5., 4.25, 2.875,
+                                                  1.7, 0.92857143, 0.],
+                                                 [5., 4.375, 3.5,
+                                                  2.4, 2.07142857, 1.]]),
+                                                 atol=1e-3)

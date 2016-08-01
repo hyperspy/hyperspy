@@ -22,7 +22,7 @@ import math
 import numpy as np
 import scipy.ndimage as ndi
 
-from hyperspy._signals.signal2d import Signal2D
+from hyperspy.signals import Signal2D, Signal1D
 from hyperspy.decorators import only_interactive
 from hyperspy.gui.sed import SEDParametersUI
 from hyperspy.defaults_parser import preferences
@@ -366,47 +366,43 @@ class SEDPattern(Signal2D):
 
         return shifts
 
-def get_radial_profile(dp, centers):
-    """Return the radial profile of the diffraction pattern.
+    def get_radial_profile(self, centers=None):
+        """Return the radial profile of the diffraction pattern.
 
-    Parameters
-    ----------
-    centers : array
-        Array of dimensions (navigation_size, 2) containing the
-        origin for the radial integration in each diffraction
-        pattern.
+        Parameters
+        ----------
+        centers : array
+            Array of dimensions (navigation_size, 2) containing the
+            origin for the radial integration in each diffraction
+            pattern.
 
-    Returns
-    -------
-    radial_profile : Signal1D
-        The radial average profile of each diffraction pattern
-        in the ElectronDiffraction signal as a Signal1D.
+        Returns
+        -------
+        radial_profile : Signal1D
+            The radial average profile of each diffraction pattern
+            in the ElectronDiffraction signal as a Signal1D.
 
-    See also
-    --------
-    radial_average
-    get_direct_beam_position
-    """
-    if centers == None:
-        c = dp.get_direct_beam_position(radius=10)
-    else:
-        c = centers
-    rp = []
+        See also
+        --------
+        radial_average
+        get_direct_beam_position
+        """
+        if centers == None:
+            c = self.get_direct_beam_position(radius=10)
+        else:
+            c = centers
+        rp = []
 
-    for z, index in zip(dp._iterate_signal(),
-                        np.arange(0,
-                                  dp.axes_manager.navigation_size,
-                                  1)):
+        for z, index in zip(self._iterate_signal(),
+                            np.arange(0, self.axes_manager.navigation_size, 1)):
+            rp.append(radial_average(z, center=c[index]))
 
-        rp.append(radial_average(z, center=c[index]))
+        rp = np.array(rp)
+#        rp.resize((self.axes_manager.navigation_shape,
+#                   rp.shape[-1]))
+        radial_profile = Signal1D(rp)
 
-    rp = np.array(rp)
-    rp.resize((dp.axes_manager.navigation_shape[0],
-               dp.axes_manager.navigation_shape[1],
-               rp.shape[-1]))
-    radial_profile = hs.signals.Signal1D(rp)
-
-    return radial_profile
+        return radial_profile
 
     def get_vacuum_mask(self, radius=None, center=None,
                     threshold=None, closing=True, opening=False):
