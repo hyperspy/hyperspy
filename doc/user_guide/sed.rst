@@ -3,14 +3,14 @@
 Scanning Electron Diffraction (SED)
 ***********************************
 
-Methods to analyse scanning electron diffraction (SED) data acquired in a
-scanning transmission electron microscope (STEM) are described step-by-step in
+Methods to analyse electron diffraction data acquired conventional or scanning
+mode of a scanning transmission electron microscope (STEM) are described in
 this chapter. These methods are specific to the signals in the
 :py:class:`~._signals.sed.SEDPattern` class.
 
 .. NOTE::
 
-    See also the `SED tutorials <http://nbviewer.ipython.org/github/hyperspy/hyperspy-	demos/blob/master/electron_microscopy/SED/>`_ .
+    See also the `SED tutorials <http://nbviewer.ipython.org/github/hyperspy/hyperspy-demos/blob/master/electron_microscopy/SED/>`_ .
 
 The data used throughout the following examples can be downloaded as follows:
 
@@ -22,7 +22,6 @@ The data used throughout the following examples can be downloaded as follows:
 
 Loading SED data & setting microscope parameters
 ------------------------------------------------
-
 
 Loading
 ^^^^^^^^
@@ -91,8 +90,8 @@ or raising the gui:
 
    SED microscope parameters preferences window.
 
-If the microscope and detector parameters are not written in the original file, some
-of them are set by default. The default values can be changed in the
+If the microscope and detector parameters are not written in the original file,
+some of them are set by default. The default values can be changed in the
 :py:class:`~.defaults_parser.Preferences` class (see :ref:`preferences
 <configuring-hyperspy-label>`).
 
@@ -221,4 +220,4 @@ Machine learning SED data
 -------------------------
 
 Machine learning decomposition approaches can be applied to SED data
-[Ref, Eggeman et al]. 
+[Ref, Eggeman et al].
