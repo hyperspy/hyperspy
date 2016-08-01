@@ -3922,8 +3922,14 @@ class BaseSignal(FancySlicing,
                                  "signal_axes")
             if len(nat_axes) < signal_axes:
                 raise ValueError("Too many signal axes requested")
-            navigation_axes = nat_axes[:-signal_axes]
-            signal_axes = nat_axes[-signal_axes:]
+            if signal_axes < 0:
+                raise ValueError("Can't have negative number of signal axes")
+            elif signal_axes == 0:
+                signal_axes = ()
+                navigation_axes = nat_axes
+            else:
+                navigation_axes = nat_axes[:-signal_axes]
+                signal_axes = nat_axes[-signal_axes:]
         elif iterable_not_string(signal_axes):
             signal_axes = tuple(am[ax] for ax in signal_axes)
             if navigation_axes is None:
@@ -3946,8 +3952,15 @@ class BaseSignal(FancySlicing,
             if isinstance(navigation_axes, int):
                 if len(nat_axes) < navigation_axes:
                     raise ValueError("Too many navigation axes requested")
-                signal_axes = nat_axes[navigation_axes:]
-                navigation_axes = nat_axes[:navigation_axes]
+                if navigation_axes < 0:
+                    raise ValueError(
+                        "Can't have negative number of navigation axes")
+                elif navigation_axes == 0:
+                    navigation_axes = ()
+                    signal_axes = nat_axes
+                else:
+                    signal_axes = nat_axes[navigation_axes:]
+                    navigation_axes = nat_axes[:navigation_axes]
             elif iterable_not_string(navigation_axes):
                 navigation_axes = tuple(am[ax] for ax in navigation_axes)
                 signal_axes = tuple(ax for ax in nat_axes if ax not in
@@ -3974,10 +3987,8 @@ class BaseSignal(FancySlicing,
         ram._axes = [ram._axes[i] for i in array_order]
         for i, ax in enumerate(ram._axes):
             if i < len(navigation_axes):
-                ax.slice = None
                 ax.navigate = True
             else:
-                ax.slice = slice(None)
                 ax.navigate = False
         ram._update_attributes()
         ram._update_trait_handlers(remove=False)
