@@ -85,21 +85,20 @@ class Test_Estimate_Elastic_Scattering_Threshold:
 
     def test_estimate_elastic_scattering_intensity(self):
         s = self.signal
-        threshold = s.estimate_elastic_scattering_threshold()
+        threshold = s.estimate_elastic_scattering_threshold(window=4.)
         # Threshold is nd signal
-        print(threshold.data)
         t = s.estimate_elastic_scattering_intensity(threshold=threshold)
         nt.assert_equal(t.metadata.Signal.signal_type, "")
         nt.assert_equal(t.axes_manager.signal_dimension, 0)
-        np.testing.assert_array_almost_equal(t.data, 373005.28859799)
+        np.testing.assert_array_almost_equal(t.data, 249999.985133)
         # Threshold is signal, 1 spectrum
         s0 = s.inav[0]
-        t0 = s0.estimate_elastic_scattering_threshold()
+        t0 = s0.estimate_elastic_scattering_threshold(window=4.)
         t = s0.estimate_elastic_scattering_intensity(threshold=t0)
-        np.testing.assert_array_almost_equal(t.data, 373005.28859799)
+        np.testing.assert_array_almost_equal(t.data, 249999.985133)
         # Threshold is value
-        t = s.estimate_elastic_scattering_intensity(threshold=5.)
-        np.testing.assert_array_almost_equal(t.data, 373005.28859799)
+        t = s.estimate_elastic_scattering_intensity(threshold=2.5)
+        np.testing.assert_array_almost_equal(t.data, 249999.985133)
 
 
 class TestEstimateZLPCentre:
