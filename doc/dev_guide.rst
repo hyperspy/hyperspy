@@ -23,27 +23,22 @@ only the specifics that change.
 
 The best way to start understanding how HyperSpy works and to build a broad 
 overview of the code as it stands is to use it -- so what are you waiting for?
-
-`Download HyperSpy <https://hyperspy.org/download.html>`_
+`Download HyperSpy <https://hyperspy.org/download.html>`_.
 
 The user-guide also provides a good overview of all the parts of the code that
 are currently implemented as well as much information about how everything works 
--- so read it well.
-
-`HyerSpy User-Guide <www.hyperspy.org/hyperspy-doc/current/index.html>`_
+-- so read it well:
+`HyperSpy User-Guide <www.hyperspy.org/hyperspy-doc/current/index.html>`_.
 
 For developing the code the home of hyperspy is on github and you'll see that
-a lot of this guide boils down to using that platform well. so visit the link
-below and poke around the code, issues, and pull requests.
+a lot of this guide boils down to using that platform well. so visit the following link and poke around the code, issues, and pull requests:
+`HyperSpy on Github <https://github.com/hyperspy/hyperspy>`_.
 
-`HyperSpy on Github <https://github.com/hyperspy/hyperspy>`_
-
-it's probably also worth visiting the `Github <https://github.com/>`_ home page
+It's probably also worth visiting the `Github <https://github.com/>`_ home page
 and going through the "boot camp" to get a feel for the terminology.
 
 In brief, to give you a hint on the terminology to search for, the contribution
 pattern is:
-
     1. Setup git/github if you don't have it.
     2. Fork HyperSpy on github.
     3. Checkout your fork on your local machine.
@@ -52,9 +47,7 @@ pattern is:
     6. Create a pull request (PR) to the official HyperSpy repository.
 
 Note: You cannot mess up the main HyperSpy project unless you have been promoted
-to write access and the dev-team. So when you're starting out be confident to
-play, get it wrong, and if it all goes wrong you can always get a fresh install
-of HyperSpy!!
+to write access and the dev-team. So when you're starting out be confident to play, get it wrong, and if it all goes wrong you can always get a fresh install of HyperSpy!!
 
 PS: If you choose to develop in Windows/Mac you may find `Github Desktop <https://desktop.github.com>`_ useful.
 
@@ -117,7 +110,7 @@ desktop. By version control we mean that you can separate out your contribution
 to the code into many versions (called branches) and switch between them easily.
 Later you can choose which version you want to have integrated into HyperSpy.
 
-You can learn all about Git `here <www.git-scm.com/about>`_!
+You can learn all about Git `here <http://www.git-scm.com/about>`_!
 
 The most important thing for you to do is to separate your contributions so that 
 each branch is small advancement on the "master" code or on another branch. In
@@ -159,21 +152,21 @@ There are different ways to `run tests <http://nose.readthedocs.io/en/latest/usa
 Useful hints on HyperSpy testing:
 	- When comparing integers, it's fine to use ``==``. When comparing floats, be sure to use ``nose.tools.assert_almost_equal()``.
 	- ``numpy.testing.assert_equal()`` is convenient to compare numpy arrays.
-	- The ``hyperspy.misc.test_utils.py`` contains a few useful function for testing.
-	- Once, you have pushed your PR to the official HyperSpy repository, it can be usefull to check the coverage of your tests using the coveralls.io check of your PR. There should be a link to it at the bottom of your PR on the github website. This service can help you to find how well your code is being tested and exactly which part is not currently tested.
+	- The ``hyperspy.misc.test_utils.py`` contains a few useful functions for testing.
+	- Once, you have pushed your PR to the official HyperSpy repository, it can be useful to check the coverage of your tests using the coveralls.io check of your PR. There should be a link to it at the bottom of your PR on the github PR page. This service can help you to find how well your code is being tested and exactly which part is not currently tested.
 
 Plot testing
 ^^^^^^^^^^^^
 Ploting is tested using the ``image_comparison`` decorator of the matplotlib library.
-This decorator uses reference images located in the ``baseline_images`` folder
+This decorator uses reference images located in the ``baseline_images`` folder.
 If you need to add or change some plots, follow the workflow below:
-    1. Write the test in a module located in the root tests folder.
-    2. During the first tests run, the plot is saved as a image in a sub-folder of the ``result_images`` directory.
+    1. Write the tests in a module located in the root tests folder.
+    2. During the first tests run, the plot is saved as an image in a sub-folder of the ``result_images`` directory.
     3. Copy the image in a sub-folder (named with the corresponding test file name) of the ``baseline_images`` folder.
     4. Run again the tests and this time they should pass.
     5. Use ``git add`` to put the new file of the ``baseline_images`` folder in the git repository.
 
-To make the plotting test compatible with matplotlib 1.x and 2.x, two versions of the references images are necessary, because the matplotlib `style change <http://matplotlib.org/style_changes.html>`_ between the two versions is enough to make the test failed. When adding or updating a plotting test, the references images need to be generated with both version (1.x and 2.x) and having their names starting with mpl1 or mpl2. To achieve this, the ``hyperspy.misc.test_utils.get_matplotlib_version_label()`` function returns a string which just need to be prepend to the name of the reference images.
+To make the plotting tests compatible with matplotlib 1.x and 2.x, two versions of the references images are necessary, because the matplotlib `style change <http://matplotlib.org/style_changes.html>`_ between the two versions is enough to make the test failed, if compared to the wrong library version. When adding or updating a plotting test, the references images need to be generated with both version (1.x and 2.x) and having their names starting with mpl1 or mpl2. To achieve this, the ``hyperspy.misc.test_utils.get_matplotlib_version_label()`` function returns a string which just need to be prepend to the name of the reference images.
 
 It can happen that tests using the ``image_comparison`` decorator failed because plots
 have been generated by other tests. In this case, the tests causing the trouble need
@@ -183,7 +176,7 @@ See `Matplotlib developer guide <http://matplotlib.org/1.5.1/devel/testing.html?
 
 
 Write documentation
-^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^
 
 Documentation comes in two parts docstrings and user-guide documentation.
 
