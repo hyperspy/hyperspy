@@ -642,17 +642,21 @@ class TestOutArg:
 class TestTranspose:
 
     def setUp(self):
-        self.s = signals.BaseSignal(np.random.rand(1,2,3,4,5,6))
+        self.s = signals.BaseSignal(np.random.rand(1, 2, 3, 4, 5, 6))
         for ax, name in zip(self.s.axes_manager._axes, 'abcdef'):
             ax.name = name
         # just to make sure in case default changes
         self.s.axes_manager.set_signal_dimension(6)
+        self.s.estimate_poissonian_noise_variance()
 
     def test_signal_int_transpose(self):
         t = self.s.transpose(signal_axes=2)
         nt.assert_equal(t.axes_manager.signal_shape, (2, 1))
         nt.assert_equal([ax.name for ax in t.axes_manager.signal_axes],
                         ['b', 'a'])
+        nt.assert_is_instance(t, signals.Signal2D)
+        nt.assert_is_instance(t.metadata.Signal.Noise_properties.variance,
+                              signals.Signal2D)
 
     def test_signal_iterable_int_transpose(self):
         t = self.s.transpose(signal_axes=[0, 5, 4])
@@ -699,7 +703,9 @@ class TestTranspose:
                         ['f', 'a', 'b'])
 
     def test_navigation_iterable_axes_transpose(self):
-        t = self.s.transpose(navigation_axes=self.s.axes_manager.signal_axes[:2])
+        t = self.s.transpose(
+            navigation_axes=self.s.axes_manager.signal_axes[
+                :2])
         nt.assert_equal(t.axes_manager.navigation_shape, (6, 5))
         nt.assert_equal([ax.name for ax in t.axes_manager.navigation_axes],
                         ['f', 'e'])
@@ -718,13 +724,6 @@ class TestTranspose:
         nt.assert_equal(t.axes_manager.navigation_shape, (2, 1))
         nt.assert_equal([ax.name for ax in t.axes_manager.navigation_axes],
                         ['b', 'a'])
-
-    def test_transposed_cm(self):
-        with self.s.transposed(signal_axes=2) as im:
-            nt.assert_equal(im.axes_manager.signal_shape, (2, 1))
-            nt.assert_equal([ax.name for ax in im.axes_manager.signal_axes],
-                            ['b', 'a'])
-        nt.assert_equal(self.s.axes_manager.navigation_shape, ())
 
     def test_copy(self):
         t = self.s.transpose(signal_axes=['f', 'a', 'b'], copy=False)

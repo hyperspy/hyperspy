@@ -3887,7 +3887,7 @@ class BaseSignal(FancySlicing,
 
         See also
         --------
-        transposed, T
+        T, hs.transpose, hs.transposed
 
         Examples
         --------
@@ -3918,7 +3918,6 @@ class BaseSignal(FancySlicing,
         def iterable_not_string(thing):
             return isinstance(thing, Iterable) and \
                 not isinstance(thing, str)
-
         am = self.axes_manager
         nat_axes = am._get_axes_in_natural_order()
         if isinstance(signal_axes, int):
@@ -3931,16 +3930,17 @@ class BaseSignal(FancySlicing,
             navigation_axes = nat_axes[:-signal_axes]
             signal_axes = nat_axes[-signal_axes:]
         elif iterable_not_string(signal_axes):
+            signal_axes = tuple(am[ax] for ax in signal_axes)
             if navigation_axes is None:
-                signal_axes = tuple(am[ax] for ax in signal_axes)
                 navigation_axes = tuple(ax for ax in nat_axes if ax not in
                                         signal_axes)
             elif iterable_not_string(navigation_axes):
                 # want to keep the order
-                signal_axes = tuple(am[ax] for ax in signal_axes)
                 navigation_axes = tuple(am[ax] for ax in navigation_axes)
-                if len(set(signal_axes).intersection(navigation_axes)):
-                    raise ValueError("Same axis in both spaces found.")
+                intersection = set(signal_axes).intersection(navigation_axes)
+                if len(intersection):
+                    raise ValueError("At least one axis found in both spaces:"
+                                     " {}".format(intersection))
                 if len(am._axes) != (len(signal_axes) + len(navigation_axes)):
                     raise ValueError("Not all current axes were assigned to a "
                                      "space")
@@ -3961,7 +3961,8 @@ class BaseSignal(FancySlicing,
                 signal_axes = am.navigation_axes
                 navigation_axes = am.signal_axes
             else:
-                raise ValueError("The passed navigation_axes argument is not valid")
+                raise ValueError(
+                    "The passed navigation_axes argument is not valid")
         else:
             raise ValueError("The passed signal_axes argument is not valid")
         # get data view
@@ -3985,31 +3986,20 @@ class BaseSignal(FancySlicing,
                 ax.navigate = False
         ram._update_attributes()
         ram._update_trait_handlers(remove=False)
+        res._assign_subclass()
+        # translate to axes names from actual objects for variance
+        names_sig = [ax.name for ax in signal_axes]
+        names_nav = [ax.name for ax in navigation_axes]
+        if res.metadata.has_item("Signal.Noise_properties.variance"):
+            var = res.metadata.Signal.Noise_properties.variance
+            if isinstance(var, BaseSignal):
+                var = var.transpose(signal_axes=names_sig,
+                                    navigation_axes=names_nav, copy=copy)
+                res.metadata.set_item('Signal.Noise_properties.variance', var)
         # need a copy?
         if copy:
             res._make_sure_data_is_contiguous()
         return res
-
-    @contextmanager
-    def transposed(self, signal_axes=None, navigation_axes=None, copy=False):
-        """Use this function together with a `with` statement to have the
-        signal be transposed for the scope of the `with` block.
-
-        See also
-        --------
-        transpose
-
-        Examples
-        --------
-        >>> import numpy as np
-        >>> s = BaseSignal(np.random.random((3, 10, 10)))
-        >>> s
-        <BaseSignal, title: , dimensions: (|3, 10, 10)>
-        >>> with s.transposed(signal_axes=2) as im:
-                hs.plot.plot_images(im)
-        """
-        yield self.transpose(signal_axes=signal_axes,
-                             navigation_axes=navigation_axes, copy=copy)
 
     @property
     def T(self):
