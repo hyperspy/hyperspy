@@ -49,7 +49,7 @@ invalid_file_error = "The Protochips csv reader can't import the file, please"\
 
 
 def _bad_file():
-    raise AssertionError(invalid_file_error)
+    raise IOError(invalid_file_error)
 
 
 def file_reader(filename, *args, **kwds):
