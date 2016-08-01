@@ -114,13 +114,13 @@ class Test2D:
 
     def test_unfold_image(self):
         s = self.signal
-        s.axes_manager.set_signal_dimension(2)
+        s = s.transpose(signal_axes=2)
         s.unfold()
         nt.assert_equal(s.data.shape, (50,))
 
     def test_unfold_image_returns_true(self):
         s = self.signal
-        s.axes_manager.set_signal_dimension(2)
+        s = s.transpose(signal_axes=2)
         nt.assert_true(s.unfold())
 
     def test_print_summary(self):
@@ -251,7 +251,7 @@ class Test3D:
 
     def test_get_navigation_signal_nav_dim0(self):
         s = self.signal
-        s.axes_manager.set_signal_dimension(3)
+        s = s.transpose(signal_axes=3)
         ns = s._get_navigation_signal()
         nt.assert_equal(ns.axes_manager.signal_dimension, 1)
         nt.assert_equal(ns.axes_manager.signal_size, 1)
@@ -259,7 +259,7 @@ class Test3D:
 
     def test_get_navigation_signal_nav_dim1(self):
         s = self.signal
-        s.axes_manager.set_signal_dimension(2)
+        s = s.transpose(signal_axes=2)
         ns = s._get_navigation_signal()
         nt.assert_equal(ns.axes_manager.signal_shape,
                         s.axes_manager.navigation_shape)
@@ -267,7 +267,7 @@ class Test3D:
 
     def test_get_navigation_signal_nav_dim2(self):
         s = self.signal
-        s.axes_manager.set_signal_dimension(1)
+        s = s.transpose(signal_axes=1)
         ns = s._get_navigation_signal()
         nt.assert_equal(ns.axes_manager.signal_shape,
                         s.axes_manager.navigation_shape)
@@ -275,7 +275,7 @@ class Test3D:
 
     def test_get_navigation_signal_nav_dim3(self):
         s = self.signal
-        s.axes_manager.set_signal_dimension(0)
+        s = s.transpose(signal_axes=0)
         ns = s._get_navigation_signal()
         nt.assert_equal(ns.axes_manager.signal_shape,
                         s.axes_manager.navigation_shape)
@@ -284,25 +284,25 @@ class Test3D:
     @nt.raises(ValueError)
     def test_get_navigation_signal_wrong_data_shape(self):
         s = self.signal
-        s.axes_manager.set_signal_dimension(1)
+        s = s.transpose(signal_axes=1)
         s._get_navigation_signal(data=np.zeros((3, 2)))
 
     @nt.raises(ValueError)
     def test_get_navigation_signal_wrong_data_shape_dim0(self):
         s = self.signal
-        s.axes_manager.set_signal_dimension(3)
+        s = s.transpose(signal_axes=3)
         s._get_navigation_signal(data=np.asarray(0))
 
     def test_get_navigation_signal_given_data(self):
         s = self.signal
-        s.axes_manager.set_signal_dimension(1)
+        s = s.transpose(signal_axes=1)
         data = np.zeros(s.axes_manager._navigation_shape_in_array)
         ns = s._get_navigation_signal(data=data)
         nt.assert_is(ns.data, data)
 
     def test_get_signal_signal_nav_dim0(self):
         s = self.signal
-        s.axes_manager.set_signal_dimension(0)
+        s = s.transpose(signal_axes=0)
         ns = s._get_signal_signal()
         nt.assert_equal(ns.axes_manager.navigation_dimension, 0)
         nt.assert_equal(ns.axes_manager.navigation_size, 0)
@@ -310,7 +310,7 @@ class Test3D:
 
     def test_get_signal_signal_nav_dim1(self):
         s = self.signal
-        s.axes_manager.set_signal_dimension(1)
+        s = s.transpose(signal_axes=1)
         ns = s._get_signal_signal()
         nt.assert_equal(ns.axes_manager.signal_shape,
                         s.axes_manager.signal_shape)
@@ -318,7 +318,7 @@ class Test3D:
 
     def test_get_signal_signal_nav_dim2(self):
         s = self.signal
-        s.axes_manager.set_signal_dimension(2)
+        s = s.transpose(signal_axes=2)
         s._assign_subclass()
         ns = s._get_signal_signal()
         nt.assert_equal(ns.axes_manager.signal_shape,
@@ -327,7 +327,7 @@ class Test3D:
 
     def test_get_signal_signal_nav_dim3(self):
         s = self.signal
-        s.axes_manager.set_signal_dimension(3)
+        s = s.transpose(signal_axes=3)
         s._assign_subclass()
         ns = s._get_signal_signal()
         nt.assert_equal(ns.axes_manager.signal_shape,
@@ -337,18 +337,18 @@ class Test3D:
     @nt.raises(ValueError)
     def test_get_signal_signal_wrong_data_shape(self):
         s = self.signal
-        s.axes_manager.set_signal_dimension(1)
+        s = s.transpose(signal_axes=1)
         s._get_signal_signal(data=np.zeros((3, 2)))
 
     @nt.raises(ValueError)
     def test_get_signal_signal_wrong_data_shape_dim0(self):
         s = self.signal
-        s.axes_manager.set_signal_dimension(0)
+        s = s.transpose(signal_axes=0)
         s._get_signal_signal(data=np.asarray(0))
 
     def test_get_signal_signal_given_data(self):
         s = self.signal
-        s.axes_manager.set_signal_dimension(2)
+        s = s.transpose(signal_axes=2)
         data = np.zeros(s.axes_manager._signal_shape_in_array)
         ns = s._get_signal_signal(data=data)
         nt.assert_is(ns.data, data)

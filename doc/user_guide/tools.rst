@@ -123,7 +123,7 @@ array of scalars by changing the default *view* of
 .. code-block:: python
 
     >>> scalar = hs.signals.BaseSignal(np.random.random((10, 20, 30)))
-    >>> scalar.axes_manager.set_signal_dimension(0)
+    >>> scalar = scalar.transpose(signal_axes=0)
     >>> scalar
     <BaseSignal, title: , dimensions: (30, 20, 10|)>
 
@@ -771,13 +771,11 @@ arguments as in the following example.
     >>> image_stack.axes_manager[1].name = "x"
     >>> image_stack.axes_manager[2].name = "y"
     >>> angles = hs.signals.BaseSignal(np.array([0, 45, 90, 135]))
-    >>> angles.axes_manager.set_signal_dimension(0)
     >>> modes = hs.signals.BaseSignal(np.array(['constant', 'nearest', 'reflect', 'wrap']))
-    >>> modes.axes_manager.set_signal_dimension(0)
     >>> image_stack.map(scipy.ndimage.rotate,
-    ...                            angle=angles,
+    ...                            angle=angles.transpose(signal_axes=0),
     ...                            reshape=False,
-    ...                            mode=modes)
+    ...                            mode=modes.transpose(signal_axes=0))
     calculating 100% |#############################################| ETA:  00:00:00Cropping
 
 .. figure::  images/rotate_lena_apply_ndkwargs.png

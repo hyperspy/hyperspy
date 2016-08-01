@@ -1629,9 +1629,8 @@ class BaseSignal(FancySlicing,
                         ns.axes_manager._axes = [axis.copy()
                                                  for axis in new_axes]
                         if bigger_am is oam:
-                            ns.axes_manager.set_signal_dimension(
-                                other.axes_manager.signal_dimension)
-                            ns._assign_subclass()
+                            ns = ns.transpose(
+                                signal_axes=other.axes_manager.signal_dimension)
                         return ns
 
         else:
@@ -3224,7 +3223,7 @@ class BaseSignal(FancySlicing,
 
         >>> im = hs.signals.Signal2D(np.random.random((10, 64, 64)))
         >>> sigmas = hs.signals.BaseSignal(np.linspace(2,5,10))
-        >>> sigmas.axes_manager.set_signal_dimension(0)
+        >>> sigmas = sigmas.transpose(signal_axes=0)
         >>> im.map(scipy.ndimage.gaussian_filter, sigma=sigmas)
 
         """
