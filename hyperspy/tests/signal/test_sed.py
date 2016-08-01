@@ -108,7 +108,7 @@ class Test_direct_beam_methods:
     def test_get_direct_beam_shifts_with_wrong_centers(self):
         dp = self.signal
         c = np.array([[3, 3], [4, 4], [3, 3]])
-        nt.assert_raises(ValueError, dp.get_direct_beam_shifts(centers=c))
+        nt.assert_raises(ValueError, dp.get_direct_beam_shifts, centers=c)
 
 
     def test_get_direct_beam_mask(self):
