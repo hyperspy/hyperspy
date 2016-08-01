@@ -20,6 +20,8 @@ import numpy as np
 import nose.tools as nt
 import dill
 import copy
+from matplotlib.testing.decorators import cleanup
+
 import hyperspy.api as hs
 from hyperspy.samfire_utils.samfire_kernel import multi_kernel
 from hyperspy.misc.utils import DictionaryTreeBrowser
@@ -311,6 +313,7 @@ class TestSamfireMain:
         self.model, self.lor1, self.g, self.lor2 = generate_test_model()
         self.shape = (7, 15)
 
+    @cleanup
     def test_multiprocessed(self):
         self.model.fit()
         samf = self.model.create_samfire(ipyparallel=False)

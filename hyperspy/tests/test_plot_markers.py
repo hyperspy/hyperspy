@@ -18,9 +18,13 @@
 
 import numpy as np
 import nose.tools
+from matplotlib.testing.decorators import image_comparison, cleanup
 
-from hyperspy.signals import Signal2D
+from hyperspy.signals import Signal2D, Signal1D
 from hyperspy.utils import markers
+from hyperspy.misc.test_utils import get_matplotlib_version_label, update_close_figure
+
+mplv = get_matplotlib_version_label()
 
 
 class Test_markers:
@@ -98,3 +102,120 @@ class Test_markers:
         nose.tools.assert_true(m.auto_update is False)
         m.add_data(y1=[1, 2])
         nose.tools.assert_true(m.auto_update is True)
+
+
+def _test_plot_rectange_markers():
+    # Create test image 100x100 pixels:
+    img = Signal2D(np.zeros((100, 100)))
+
+    # Add four line markers:
+    m1 = markers.line_segment(
+        x1=20, y1=20, x2=70, y2=20, color='red', linewidth=3)
+    m2 = markers.line_segment(
+        x1=20, y1=20, x2=20, y2=70, color='red', linewidth=3)
+    m3 = markers.line_segment(
+        x1=20, y1=70, x2=70, y2=70, color='red', linewidth=3)
+    m4 = markers.line_segment(
+        x1=70, y1=20, x2=70, y2=70, color='red', linewidth=3)
+
+    # Add rectangle marker at same position:
+    m = markers.rectangle(x1=20, x2=70, y1=20, y2=70,
+                          linewidth=4, color='blue', ls='dotted')
+
+    # Plot image and add markers to img:
+    img.plot()
+    img.add_marker(m)
+    img.add_marker(m1)
+    img.add_marker(m2)
+    img.add_marker(m3)
+    img.add_marker(m4)
+    return img
+
+
+@image_comparison(baseline_images=['%s_plot_rectangle_markers' % mplv],
+                  extensions=['png'])
+def test_plot_rectange_markers():
+    _test_plot_rectange_markers()
+
+
+@cleanup
+@update_close_figure
+def test_plot_rectange_markers_close():
+    return _test_plot_rectange_markers()  # return for @update_close_figure
+
+
+def _test_plot_point_markers():
+    width = 100
+    data = np.arange(width * width).reshape((width, width))
+    s = Signal2D(data)
+
+    x, y = 10 * np.arange(4), 15 * np.arange(4)
+    color = ['yellow', 'green', 'red', 'blue']
+    for xi, yi, c in zip(x, y, color):
+        m = markers.point(x=xi, y=yi, color=c)
+        s.add_marker(m)
+    return s
+
+
+@image_comparison(baseline_images=['%s_plot_point_markers' % mplv],
+                  extensions=['png'])
+def test_plot_point_markers():
+    _test_plot_point_markers()
+
+
+@cleanup
+@update_close_figure
+def test_plot_point_markers_close():
+    return _test_plot_point_markers()
+
+
+def _test_plot_text_markers():
+    s = Signal1D(np.arange(100).reshape([10, 10]))
+    s.plot(navigator='spectrum')
+    for i in range(s.axes_manager.shape[0]):
+        m = markers.text(y=s.sum(-1).data[i] + 5, x=i, text='abcdefghij'[i])
+        s.add_marker(m, plot_on_signal=False)
+    x = s.axes_manager.shape[-1] / 2  # middle of signal plot
+    m = markers.text(x=x, y=s.inav[x].data + 2, text=[i for i in 'abcdefghij'])
+    s.add_marker(m)
+    return s
+
+
+@image_comparison(baseline_images=['%s_plot_text_markers_nav' % mplv,
+                                   '%s_plot_text_markers_sig' % mplv],
+                  extensions=['png'])
+def test_plot_text_markers():
+    _test_plot_text_markers()
+
+
+@cleanup
+@update_close_figure
+def test_plot_text_markers_close():
+    return _test_plot_text_markers()
+
+
+def _test_plot_line_markers():
+    im = Signal2D(np.zeros((100, 100)))
+    m0 = markers.vertical_line_segment(x=20, y1=30, y2=70, linewidth=4,
+                                       color='red', linestyle='dotted')
+    im.add_marker(m0)
+    m1 = markers.horizontal_line_segment(x1=30, x2=20, y=80, linewidth=8,
+                                         color='blue', linestyle='-')
+    im.add_marker(m1)
+    m2 = markers.vertical_line(50, linewidth=12, color='green')
+    im.add_marker(m2)
+    m3 = markers.horizontal_line(50, linewidth=10, color='yellow')
+    im.add_marker(m3)
+    return im
+
+
+@image_comparison(baseline_images=['%s_plot_line_markers' % mplv],
+                  extensions=['png'])
+def test_plot_line_markers():
+    _test_plot_line_markers()
+
+
+@cleanup
+@update_close_figure
+def test_plot_line_markers_close():
+    return _test_plot_line_markers()

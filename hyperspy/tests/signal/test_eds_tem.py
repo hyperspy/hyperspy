@@ -18,6 +18,7 @@
 
 import numpy as np
 import nose.tools as nt
+from matplotlib.testing.decorators import cleanup
 
 from hyperspy.signals import EDSTEMSpectrum
 from hyperspy.defaults_parser import preferences
@@ -294,6 +295,7 @@ class Test_eds_markers:
                                        weight_percents=[50, 50])
         self.signal = s
 
+    @cleanup
     def test_plot_auto_add(self):
         s = self.signal
         s.plot(xray_lines=True)
@@ -302,6 +304,7 @@ class Test_eds_markers:
             sorted(s._xray_markers.keys()),
             ['Al_Ka', 'Al_Kb', 'Zn_Ka', 'Zn_Kb', 'Zn_La', 'Zn_Lb1'])
 
+    @cleanup
     def test_manual_add_line(self):
         s = self.signal
         s.add_xray_lines_markers(['Zn_La'])
@@ -312,6 +315,7 @@ class Test_eds_markers:
         # Check that the line has both a vertical line marker and text marker:
         nt.assert_equal(len(s._xray_markers['Zn_La']), 2)
 
+    @cleanup
     def test_manual_remove_element(self):
         s = self.signal
         s.add_xray_lines_markers(['Zn_Ka', 'Zn_Kb', 'Zn_La'])

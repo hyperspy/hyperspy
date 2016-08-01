@@ -29,6 +29,11 @@ install:
   - pip install coverage coveralls traits traitsui request tqdm
   - python setup.py install
 
+before_script: # configure a headless display to test plot generation
+  - "export DISPLAY=:99.0"
+  - if [[ $TRAVIS_OS_NAME == 'linux' ]]; then sh -e /etc/init.d/xvfb start; fi
+  - sleep 3 # give xvfb some time to start
+
 script:
   - python setup.py build_ext --inplace
   - python continuous_integration/nosetest.py --with-coverage hyperspy.tests
