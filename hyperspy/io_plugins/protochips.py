@@ -37,9 +37,11 @@ reads_spectrum_image = False
 # Writing capabilities
 writes = False
 
+
 def file_reader(filename, *args, **kwds):
     csv_file = ProtochipsCSV(filename)
     return protochips_log_reader(csv_file)
+
 
 def protochips_log_reader(csv_file):
     csvs = []
@@ -47,7 +49,9 @@ def protochips_log_reader(csv_file):
         csvs.append(csv_file.get_dictionary(key))
     return csvs
 
+
 class ProtochipsCSV(object):
+
     def __init__(self, filename, header_line_number=10):
         self.filename = filename
         self.raw_header = self._read_header(header_line_number)
@@ -56,7 +60,7 @@ class ProtochipsCSV(object):
         self.logged_quantity_name_list = self.column_name[2:]
 
         self._read_data(header_line_number)
-        
+
         self.calibration_file = None
 
     def get_dictionary(self, quantity):
@@ -64,36 +68,36 @@ class ProtochipsCSV(object):
                 'axes': self._get_axes(),
                 'metadata': self._get_metadata(quantity),
                 'original_metadata': {'Protochips_header':
-                    self._get_original_metadata()},
+                                      self._get_original_metadata()},
                 'mapping': self._get_mapping()}
 
     def _get_original_metadata(self):
-        d = {'Start time':self.start_datetime}
+        d = {'Start time': self.start_datetime}
         d['Time units'] = self.time_units
         for quantity in self.logged_quantity_name_list:
-            d['%s_units'%quantity] = self._get_quantity_units(quantity)
+            d['%s_units' % quantity] = self._get_quantity_units(quantity)
         d['User'] = self.user
-        d['Calibration file'] = self._parse_calibration_file()
+        d['Calibration file name'] = self._parse_calibration_file()
         return d
 
     def _get_mapping(self):
-        return {'Protochips_header.date':("General.time", None),}
+        return {'Protochips_header.date': ("General.time", None), }
 
     def _get_metadata(self, quantity):
         return {'General': {'original_filename': os.path.split(self.filename)[1],
-                            'title': '%s (%s)'%(quantity,
-                                self._get_quantity_units(quantity)),
+                            'title': '%s (%s)' % (quantity,
+                                                  self._get_quantity_units(quantity)),
                             'user': self.user,
                             'start_time': self.start_datetime,
                             'notes': self._parse_notes(),
-                            'calibration_file':self._parse_calibration_file()},
+                            'calibration_file': self._parse_calibration_file()},
                 "Signal": {'signal_type': quantity,
                            'time_axis': self._get_metadata_time_axis()}}
 
     def _get_metadata_time_axis(self):
-        return {'value':self.time_axis,
-                'units':self.time_units}
-                           
+        return {'value': self.time_axis,
+                'units': self.time_units}
+
     def _read_data(self, header_line_number):
         names = [name.replace(' ', '_') for name in self.column_name]
         data = np.genfromtxt(self.filename, delimiter=',', dtype=None,
@@ -118,18 +122,18 @@ class ProtochipsCSV(object):
     def _parse_calibration_file(self):
          # for the gas cell, the calibration is saved in the notes colunm
         if self.calibration_file is None:
-            calibration_file = "The calibration files are saved in "\
+            calibration_file = "The calibration files names are saved in "\
                 "metadata.General.notes"
         else:
-            calibration_file = self.calibration_file            
+            calibration_file = self.calibration_file
         return calibration_file
-        
+
     def _get_axes(self):
         scale = np.diff(self.time_axis).mean()
         units = 's'
         offset = 0
         if self.time_units == 'Milliseconds':
-            scale = scale/1000            
+            scale = scale / 1000
         else:
             warnings.warn("Time units not recognised, assuming second.")
 
@@ -144,7 +148,7 @@ class ProtochipsCSV(object):
 
     def _get_quantity_units(self, quantity):
         quantity = quantity.split(' ')[-1].lower()
-        return self.__dict__['%s_units'%quantity]
+        return self.__dict__['%s_units' % quantity]
 
     def _read_header(self, header_line_number):
         with open(self.filename, 'r') as f:
@@ -154,8 +158,8 @@ class ProtochipsCSV(object):
     def _read_all_metadata_header(self):
         i = 1
         param, value = self._parse_metadata_header(self.raw_header[i])
-        while 'User' not in param: # user should be the last of the header
-            if 'Calibration file' in param:
+        while 'User' not in param:  # user should be the last of the header
+            if 'Calibration file name' in param:
                 self.calibration_file = value
             elif 'Date (yyyy.mm.dd)' in param:
                 date = value
@@ -168,7 +172,7 @@ class ProtochipsCSV(object):
             param, value = self._parse_metadata_header(self.raw_header[i])
 
         self.user = self._parse_metadata_header(self.raw_header[i])[1]
-        self.start_datetime = datetime.strptime(date+time,
+        self.start_datetime = datetime.strptime(date + time,
                                                 "%Y.%m.%d%H:%M:%S.%f")
 
     def _parse_metadata_header(self, line):
@@ -177,10 +181,3 @@ class ProtochipsCSV(object):
     def _read_column_name(self):
         string = self.raw_header[0]
         return string.replace(', ', ',').replace('\n', '').split(',')
-
-if __name__ == '__main__':
-    filename = os.path.join('protochips_gas_cell.csv')
-    p = ProtochipsCSV(filename=filename)
-    import hyperspy.api as hs
-    s = hs.load('protochips_gas_cell.csv')
-    a = s[0]
