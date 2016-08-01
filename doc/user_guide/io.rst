@@ -573,10 +573,4 @@ Protochips log
 --------------
 
 HyperSpy can read heater, biasing and gas cell log files for Protochips holder.
-The format stores all the captured data together with a small
-header in a plain-text format. The reader extracts the measured quantity 
-(e. g. temperature, pressure, current, voltage) along the time axis, as well as
-the notes saved during the experiment. The reader returns a list of signal with
-each signal corresponding to a quantity. The date, the time and the user name
- stored in the header are mapped in the metadata attribute. The quantity units 
-and notes are stored in the title and notes attributes, respectively.
+The format stores all the captured data together with a small header in a csv file. The reader extracts the measured quantity (e. g. temperature, pressure, current, voltage) along the time axis, as well as the notes saved during the experiment. The reader returns a list of signal with each signal corresponding to a quantity. The date, the time and the user name stored in the header are mapped into the metadata. The quantity units and notes are stored in the signals and notes attributes of the metadata, respectively. Since there is a small fluctuation in the step of the time axis, the reader assumes that the step is constant and takes its mean, which is a good approximate. Further realase of HyperSpy will read the time axis more precisely by supporting non-linear axis.

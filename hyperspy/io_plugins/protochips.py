@@ -21,6 +21,7 @@ import numpy as np
 import os
 from datetime import datetime
 import warnings
+import logging
 
 # Plugin characteristics
 # ----------------------
@@ -37,16 +38,32 @@ reads_spectrum_image = False
 # Writing capabilities
 writes = False
 
+_logger = logging.getLogger(__name__)
+
+
+# At some point, if there is another readerw, whith also use csv file, it will
+# be necessary to mention the other reader in this message (and to add an
+# argument in the load function to specify the correct reader)
+invalid_file_error = "The Protochips csv reader can't import the file, please"\
+    " make sure, this is a valid Protochips log file."
+
+
+def _bad_file():
+    raise AssertionError(invalid_file_error)
+
 
 def file_reader(filename, *args, **kwds):
     csv_file = ProtochipsCSV(filename)
-    return protochips_log_reader(csv_file)
+    return _protochips_log_reader(csv_file)
 
 
-def protochips_log_reader(csv_file):
+def _protochips_log_reader(csv_file):
     csvs = []
     for key in csv_file.logged_quantity_name_list:
-        csvs.append(csv_file.get_dictionary(key))
+        try:
+            csvs.append(csv_file.get_dictionary(key))
+        except:
+            _bad_file()
     return csvs
 
 
@@ -54,45 +71,52 @@ class ProtochipsCSV(object):
 
     def __init__(self, filename, header_line_number=10):
         self.filename = filename
+        self._parse_header(header_line_number)
+        self._read_data(header_line_number)
+        self.calibration_file = None
+
+    def _parse_header(self, header_line_number):
         self.raw_header = self._read_header(header_line_number)
         self.column_name = self._read_column_name()
+        self._check_if_protochips_csv_file()
         self._read_all_metadata_header()
         self.logged_quantity_name_list = self.column_name[2:]
 
-        self._read_data(header_line_number)
-
-        self.calibration_file = None
+    def _check_if_protochips_csv_file(self):
+        if 'Time' in self.column_name and 'Notes' in self.column_name and len(
+                self.column_name) >= 3:
+            pass
+        else:
+            _bad_file()
 
     def get_dictionary(self, quantity):
         return {'data': self._data_dictionary[quantity],
                 'axes': self._get_axes(),
                 'metadata': self._get_metadata(quantity),
                 'original_metadata': {'Protochips_header':
-                                      self._get_original_metadata()},
-                'mapping': self._get_mapping()}
+                                      self._get_original_metadata()}}
 
     def _get_original_metadata(self):
         d = {'Start time': self.start_datetime}
         d['Time units'] = self.time_units
         for quantity in self.logged_quantity_name_list:
-            d['%s_units' % quantity] = self._get_quantity_units(quantity)
+            d['%s_units' % quantity] = self._parse_quantity_units(quantity)
         d['User'] = self.user
         d['Calibration file name'] = self._parse_calibration_file()
+        d['Time axis'] = self._get_metadata_time_axis()
         return d
-
-    def _get_mapping(self):
-        return {'Protochips_header.date': ("General.time", None), }
 
     def _get_metadata(self, quantity):
         return {'General': {'original_filename': os.path.split(self.filename)[1],
                             'title': '%s (%s)' % (quantity,
-                                                  self._get_quantity_units(quantity)),
-                            'user': self.user,
-                            'start_time': self.start_datetime,
-                            'notes': self._parse_notes(),
-                            'calibration_file': self._parse_calibration_file()},
-                "Signal": {'signal_type': quantity,
-                           'time_axis': self._get_metadata_time_axis()}}
+                                                  self._parse_quantity_units(quantity)),
+                            'authors': self.user,
+                            'date': self.start_datetime.date(),
+                            'time': self.start_datetime.time(),
+                            'notes': self._parse_notes()},
+                "Signal": {'signal_type': '',
+                           'quantity': self._parse_quantity_name(quantity),
+                           'units': self._parse_quantity_units(quantity)}}
 
     def _get_metadata_time_axis(self):
         return {'value': self.time_axis,
@@ -129,11 +153,18 @@ class ProtochipsCSV(object):
         return calibration_file
 
     def _get_axes(self):
-        scale = np.diff(self.time_axis).mean()
+        scale = np.diff(self.time_axis[1:-2]).mean()
+        max_diff = np.diff(self.time_axis[1:-2]).max()
         units = 's'
         offset = 0
         if self.time_units == 'Milliseconds':
-            scale = scale / 1000
+            scale /= 1000
+            max_diff /= 1000
+            # Once we support non-linear axis, don't forgot to update the
+            # documentation of the protochips reader
+            _logger.warning("The time axis is not linear, the time step is "
+                            "thus extrapolated to {0} {1}. The maximal step in time step is {2} {1}".format(
+                                scale, units, max_diff))
         else:
             warnings.warn("Time units not recognised, assuming second.")
 
@@ -146,7 +177,10 @@ class ProtochipsCSV(object):
                  'navigate': False
                  }]
 
-    def _get_quantity_units(self, quantity):
+    def _parse_quantity_name(self, quantity):
+        return quantity.split(' ')[-1]
+
+    def _parse_quantity_units(self, quantity):
         quantity = quantity.split(' ')[-1].lower()
         return self.__dict__['%s_units' % quantity]
 

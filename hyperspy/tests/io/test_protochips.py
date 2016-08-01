@@ -10,7 +10,7 @@ from datetime import datetime
 import nose.tools as nt
 
 import hyperspy.api as hs
-from hyperspy.io_plugins.protochips import ProtochipsCSV
+from hyperspy.io_plugins.protochips import ProtochipsCSV, invalid_file_error
 
 testdirpath = os.path.dirname(__file__)
 dirpath = os.path.join(testdirpath, 'protochips_data')
@@ -24,9 +24,9 @@ def create_numpy_file(filename, obj):
     data = np.vstack(gen)
     np.save(filename, data.T)
 
-"""
-Protochips gas cell
-"""
+#######################
+# Protochips gas cell #
+#######################
 
 
 def test_read_protochips_gas_cell():
@@ -35,21 +35,47 @@ def test_read_protochips_gas_cell():
     nt.assert_equal(len(s), 5)
     nt.assert_equal(s[0].metadata.General.title,
                     'Holder Temperature (Degrees C)')
-    nt.assert_equal(s[0].metadata.Signal.signal_type, 'Holder Temperature')
+    nt.assert_equal(s[0].metadata.Signal.signal_type, '')
+    nt.assert_equal(s[0].metadata.Signal.quantity, 'Temperature')
+    nt.assert_equal(s[0].metadata.Signal.units, 'Degrees C')
     nt.assert_equal(s[1].metadata.General.title, 'Holder Pressure (Torr)')
-    nt.assert_equal(s[1].metadata.Signal.signal_type, 'Holder Pressure')
+    nt.assert_equal(s[1].metadata.Signal.signal_type, '')
+    nt.assert_equal(s[1].metadata.Signal.quantity, 'Pressure')
+    nt.assert_equal(s[1].metadata.Signal.units, 'Torr')
     nt.assert_equal(s[2].metadata.General.title, 'Tank1 Pressure (Torr)')
-    nt.assert_equal(s[2].metadata.Signal.signal_type, 'Tank1 Pressure')
+    nt.assert_equal(s[2].metadata.Signal.signal_type, '')
+    nt.assert_equal(s[2].metadata.Signal.quantity, 'Pressure')
+    nt.assert_equal(s[2].metadata.Signal.units, 'Torr')
     nt.assert_equal(s[3].metadata.General.title, 'Tank2 Pressure (Torr)')
-    nt.assert_equal(s[3].metadata.Signal.signal_type, 'Tank2 Pressure')
+    nt.assert_equal(s[3].metadata.Signal.signal_type, '')
+    nt.assert_equal(s[3].metadata.Signal.quantity, 'Pressure')
+    nt.assert_equal(s[3].metadata.Signal.units, 'Torr')
     nt.assert_equal(s[4].metadata.General.title, 'Vacuum Tank Pressure (Torr)')
-    nt.assert_equal(s[4].metadata.Signal.signal_type, 'Vacuum Tank Pressure')
+    nt.assert_equal(s[4].metadata.Signal.signal_type, '')
+    nt.assert_equal(s[4].metadata.Signal.quantity, 'Pressure')
+    nt.assert_equal(s[4].metadata.Signal.units, 'Torr')
 
 
 def datetime_gas_cell():
-    date = '2014.12.15'
-    time = '19:07:04.165'
-    return datetime.strptime(date + time, "%Y.%m.%d%H:%M:%S.%f")
+    dt = datetime.strptime('2014.12.15' + '19:07:04.165',
+                           "%Y.%m.%d%H:%M:%S.%f")
+    date = dt.date()
+    time = dt.time()
+    return date, time, dt
+
+
+def test_loading_random_csv_file():
+    filename = os.path.join(dirpath, 'random_csv_file.csv')
+    with nt.assert_raises(AssertionError) as cm:
+        ProtochipsCSV(filename)
+    nt.assert_equal(cm.exception.args[0], invalid_file_error)
+
+
+def test_loading_invalid_protochips_file():
+    filename = os.path.join(dirpath, 'invalid_protochips_file.csv')
+    with nt.assert_raises(AssertionError) as cm:
+        hs.load(filename)
+    nt.assert_equal(cm.exception.args[0], invalid_file_error)
 
 
 class test_ProtochipsGasCellCSV():
@@ -60,9 +86,10 @@ class test_ProtochipsGasCellCSV():
 
     def test_read_metadata(self):
         for s in self.s_list:
-            nt.assert_equal(s.metadata.General.start_time, datetime_gas_cell())
+            nt.assert_equal(s.metadata.General.date, datetime_gas_cell()[0])
+            nt.assert_equal(s.metadata.General.time, datetime_gas_cell()[1])
             nt.assert_equal(s.axes_manager[0].units, 's')
-            nt.assert_almost_equal(s.axes_manager[0].scale, 0.25994, places=5)
+            nt.assert_almost_equal(s.axes_manager[0].scale, 0.25995, places=5)
             nt.assert_equal(s.axes_manager[0].offset, 0)
 
     def test_read_original_metadata(self):
@@ -71,7 +98,7 @@ class test_ProtochipsGasCellCSV():
                         ' are saved in metadata.General.notes')
         nt.assert_equal(om.Holder_Pressure_units, 'Torr')
         nt.assert_equal(om.Holder_Temperature_units, 'Degrees C')
-        nt.assert_equal(om.Start_time, datetime_gas_cell())
+        nt.assert_equal(om.Start_time, datetime_gas_cell()[2])
         nt.assert_equal(om.Holder_Pressure_units, 'Torr')
         nt.assert_equal(om.Tank1_Pressure_units, 'Torr')
         nt.assert_equal(om.Tank2_Pressure_units, 'Torr')
@@ -97,7 +124,7 @@ class test_ProtochipsGasCellCSVReader():
                                                'Vacuum Tank Pressure'])
 
     def test_read_start_datetime(self):
-        nt.assert_equal(self.pgc.start_datetime, datetime_gas_cell())
+        nt.assert_equal(self.pgc.start_datetime, datetime_gas_cell()[2])
 
     def test_read_data(self):
         gen = (self.pgc._data_dictionary[key]
@@ -117,27 +144,39 @@ class test_ProtochipsGasCellCSVReader():
         nt.assert_equal(self.pgc.resistance_units, 'Ohms')
         nt.assert_equal(self.pgc.user, 'eric')
 
-"""
-Protochips electrical
-"""
 
+#########################
+# Protochips electrical #
+#########################
 
 def test_read_protochips_electrical():
     filename = os.path.join(dirpath, 'protochips_electrical.csv')
     s = hs.load(filename)
     nt.assert_equal(len(s), 6)
     nt.assert_equal(s[0].metadata.General.title, 'Channel A Current (Amps)')
-    nt.assert_equal(s[0].metadata.Signal.signal_type, 'Channel A Current')
+    nt.assert_equal(s[0].metadata.Signal.signal_type, '')
+    nt.assert_equal(s[0].metadata.Signal.quantity, 'Current')
+    nt.assert_equal(s[0].metadata.Signal.units, 'Amps')
     nt.assert_equal(s[1].metadata.General.title, 'Channel A Voltage (Volts)')
-    nt.assert_equal(s[1].metadata.Signal.signal_type, 'Channel A Voltage')
+    nt.assert_equal(s[1].metadata.Signal.signal_type, '')
+    nt.assert_equal(s[1].metadata.Signal.quantity, 'Voltage')
+    nt.assert_equal(s[1].metadata.Signal.units, 'Volts')
     nt.assert_equal(s[2].metadata.General.title, 'Channel A Resistance (Ohms)')
-    nt.assert_equal(s[2].metadata.Signal.signal_type, 'Channel A Resistance')
+    nt.assert_equal(s[2].metadata.Signal.signal_type, '')
+    nt.assert_equal(s[2].metadata.Signal.quantity, 'Resistance')
+    nt.assert_equal(s[2].metadata.Signal.units, 'Ohms')
     nt.assert_equal(s[3].metadata.General.title, 'Channel B Current (Amps)')
-    nt.assert_equal(s[3].metadata.Signal.signal_type, 'Channel B Current')
+    nt.assert_equal(s[3].metadata.Signal.signal_type, '')
+    nt.assert_equal(s[3].metadata.Signal.quantity, 'Current')
+    nt.assert_equal(s[3].metadata.Signal.units, 'Amps')
     nt.assert_equal(s[4].metadata.General.title, 'Channel B Voltage (Volts)')
-    nt.assert_equal(s[4].metadata.Signal.signal_type, 'Channel B Voltage')
+    nt.assert_equal(s[4].metadata.Signal.signal_type, '')
+    nt.assert_equal(s[4].metadata.Signal.quantity, 'Voltage')
+    nt.assert_equal(s[4].metadata.Signal.units, 'Volts')
     nt.assert_equal(s[5].metadata.General.title, 'Channel B Resistance (Ohms)')
-    nt.assert_equal(s[5].metadata.Signal.signal_type, 'Channel B Resistance')
+    nt.assert_equal(s[5].metadata.Signal.signal_type, '')
+    nt.assert_equal(s[5].metadata.Signal.quantity, 'Resistance')
+    nt.assert_equal(s[5].metadata.Signal.units, 'Ohms')
 
 
 class test_ProtochipsElectricalCSVReader():
@@ -169,17 +208,19 @@ class test_ProtochipsElectricalCSVReader():
             dirpath, 'protochips_electrical.npy'))
         np.testing.assert_allclose(data.T, expected_data)
 
-"""
-Protochips thermal
-"""
 
+######################
+# Protochips thermal #
+######################
 
 def test_read_protochips_thermal():
     filename = os.path.join(dirpath, 'protochips_thermal.csv')
     s = hs.load(filename)
     nt.assert_equal(s.metadata.General.title,
                     'Channel A Temperature (Degrees C)')
-    nt.assert_equal(s.metadata.Signal.signal_type, 'Channel A Temperature')
+    nt.assert_equal(s.metadata.Signal.signal_type, '')
+    nt.assert_equal(s.metadata.Signal.quantity, 'Temperature')
+    nt.assert_equal(s.metadata.Signal.units, 'Degrees C')
 
 
 class test_ProtochipsThermallCSVReader():
@@ -191,8 +232,8 @@ class test_ProtochipsThermallCSVReader():
             create_numpy_file(self.filename.replace('.csv', '.npy'), self.pt)
 
     def test_read_column_name(self):
-        assert self.pt.column_name == ['Time', 'Notes',
-                                       'Channel A Temperature']
+        assert self.pt.column_name == [
+            'Time', 'Notes', 'Channel A Temperature']
 
     def test_read_start_datetime(self):
         dt = datetime.strptime('2014.12.0317:15:37.192', "%Y.%m.%d%H:%M:%S.%f")
@@ -206,10 +247,10 @@ class test_ProtochipsThermallCSVReader():
             dirpath, 'protochips_thermal.npy'))
         np.testing.assert_allclose(data.T, expected_data)
 
-"""
-Protochips electrothermal
-"""
 
+#############################
+# Protochips electrothermal #
+#############################
 
 def test_read_protochips_electrothermal():
     filename = os.path.join(dirpath, 'protochips_electrothermal.csv')
@@ -217,13 +258,21 @@ def test_read_protochips_electrothermal():
     nt.assert_equal(len(s), 4)
     nt.assert_equal(s[0].metadata.General.title,
                     'Channel A Temperature (Degrees C)')
-    nt.assert_equal(s[0].metadata.Signal.signal_type, 'Channel A Temperature')
+    nt.assert_equal(s[0].metadata.Signal.signal_type, '')
+    nt.assert_equal(s[0].metadata.Signal.quantity, 'Temperature')
+    nt.assert_equal(s[0].metadata.Signal.units, 'Degrees C')
     nt.assert_equal(s[1].metadata.General.title, 'Channel B Current (Amps)')
-    nt.assert_equal(s[1].metadata.Signal.signal_type, 'Channel B Current')
+    nt.assert_equal(s[1].metadata.Signal.signal_type, '')
+    nt.assert_equal(s[1].metadata.Signal.quantity, 'Current')
+    nt.assert_equal(s[1].metadata.Signal.units, 'Amps')
     nt.assert_equal(s[2].metadata.General.title, 'Channel B Voltage (Volts)')
-    nt.assert_equal(s[2].metadata.Signal.signal_type, 'Channel B Voltage')
+    nt.assert_equal(s[2].metadata.Signal.signal_type, '')
+    nt.assert_equal(s[2].metadata.Signal.quantity, 'Voltage')
+    nt.assert_equal(s[2].metadata.Signal.units, 'Volts')
     nt.assert_equal(s[3].metadata.General.title, 'Channel B Resistance (Ohms)')
-    nt.assert_equal(s[3].metadata.Signal.signal_type, 'Channel B Resistance')
+    nt.assert_equal(s[3].metadata.Signal.signal_type, '')
+    nt.assert_equal(s[3].metadata.Signal.quantity, 'Resistance')
+    nt.assert_equal(s[3].metadata.Signal.units, 'Ohms')
 
 
 class test_ProtochipsElectrothermalCSVReader():
