@@ -173,7 +173,7 @@ The following example shows the effect of centering the color map:
    :align:   center
    :width:   500
 
-   Divergent color map with ``Centre colormap `` enabled (default).
+   Divergent color map with ``Centre colormap`` enabled (default).
 
 
 The same example with the feature disabled:
@@ -381,7 +381,7 @@ different slices of a multidimensional image (a *hyperimage*):
     >>> import scipy
     >>> image = hs.signals.Signal2D([scipy.misc.lena()]*6)
     >>> angles = hs.signals.BaseSignal(range(10,70,10))
-    >>> image.map(scipy.ndimage.rotate, angle=angles.transpose(signal_axes=0), reshape=False)
+    >>> image.map(scipy.ndimage.rotate, angle=angles.T, reshape=False)
     >>> hs.plot.plot_images(image, tight_layout=True)
 
 .. figure::  images/plot_images_defaults.png
@@ -403,7 +403,7 @@ In this example, the axes labels and the ticks are also disabled with `axes_deco
     >>> import scipy
     >>> image = hs.signals.Signal2D([scipy.misc.lena()]*6)
     >>> angles = hs.signals.BaseSignal(range(10,70,10))
-    >>> image.map(scipy.ndimage.rotate, angle=angles.transpose(signal_axes=0), reshape=False)
+    >>> image.map(scipy.ndimage.rotate, angle=angles.T, reshape=False)
     >>> hs.plot.plot_images(
     >>>     image, suptitle='Turning Lena', axes_decor='off',
     >>>     label=['Rotation ' + str(angle.data[0]) +
@@ -431,7 +431,7 @@ This example also demonstrates how to wrap labels using `labelwrap` (for prevent
 
     >>> # load lena into 6 hyperimage
     >>> image1 = hs.signals.Signal2D([scipy.misc.lena()]*6)
-    >>> angles = hs.signals.BaseSignal(np.arange(10,70,10)).transpose(signal_axes=0)
+    >>> angles = hs.signals.BaseSignal(np.arange(10,70,10)).T
     >>> image1.map(scipy.ndimage.rotate, angle=angles, reshape=False)
 
     >>> # load green channel of raccoon as an image
@@ -478,8 +478,8 @@ which is used to call subplots_adjust method of matplotlib
 
     >>> si_EDS = hs.load("core_shell.hdf5")
     >>> im = si_EDS.get_lines_intensity()
-    >>> hs.plot.plot_images(
-    >>>     im, tight_layout=True, cmap='RdYlBu_r', axes_decor='off',
+    >>> hs.plot.plot_images(hs.transpose(im, signal_axes=2),
+    >>>     tight_layout=True, cmap='RdYlBu_r', axes_decor='off',
     >>>     colorbar='single', saturated_pixels=2, scalebar='all',
     >>>     scalebar_color='black', suptitle_fontsize=16,
     >>>     padding={'top':0.8, 'bottom':0.10, 'left':0.05,

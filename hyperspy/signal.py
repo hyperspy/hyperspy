@@ -2561,8 +2561,12 @@ class BaseSignal(FancySlicing,
                 if isinstance(variance, BaseSignal):
                     variance.fold()
 
-    def _make_sure_data_is_contiguous(self):
+    def _make_sure_data_is_contiguous(self, log=False):
         if self.data.flags['C_CONTIGUOUS'] is False:
+            if log:
+                _warn_string = "%s data is replaced by its optimized copy".format(
+                    self)
+                _logger.warning(_warn_string)
             self.data = np.ascontiguousarray(self.data)
 
     def _iterate_signal(self):
@@ -3222,8 +3226,7 @@ class BaseSignal(FancySlicing,
         parameter is variable.
 
         >>> im = hs.signals.Signal2D(np.random.random((10, 64, 64)))
-        >>> sigmas = hs.signals.BaseSignal(np.linspace(2,5,10))
-        >>> sigmas = sigmas.transpose(signal_axes=0)
+        >>> sigmas = hs.signals.BaseSignal(np.linspace(2,5,10)).T
         >>> im.map(scipy.ndimage.gaussian_filter, sigma=sigmas)
 
         """
@@ -3648,11 +3651,7 @@ class BaseSignal(FancySlicing,
         <Signal1D, title: , dimensions: (6, 5, 3, 4)>
 
         """
-        ax = self.axes_manager[spectral_axis]
-        all_ax = self.axes_manager._axes.copy()
-        sig = [all_ax.pop(ax.index_in_array)]
-        sp = self.transpose(signal_axes=sig,
-                            navigation_axes=all_ax[::-1], copy=True)
+        sp = self.transpose(signal_axes=[spectral_axis], optimize=True)
         if out is None:
             return sp
         else:
@@ -3693,7 +3692,7 @@ class BaseSignal(FancySlicing,
         if self.data.ndim < 2:
             raise DataDimensionError(
                 "A Signal dimension must be >= 2 to be converted to a Signal2D")
-        im = self.transpose(signal_axes=image_axes, copy=True)
+        im = self.transpose(signal_axes=image_axes, optimize=True)
         if out is None:
             return im
         else:
@@ -3861,7 +3860,8 @@ class BaseSignal(FancySlicing,
             noise).astype(original_dtype)
         self.events.data_changed.trigger(obj=self)
 
-    def transpose(self, signal_axes=None, navigation_axes=None, copy=False):
+    def transpose(self, signal_axes=None,
+                  navigation_axes=None, optimize=False):
         """Transposes the signal to have the required signal and navigation
         axes.
 
@@ -3874,7 +3874,7 @@ class BaseSignal(FancySlicing,
             corresponding space.
             If both are iterables, full control is given as long as all axes
             are assigned to one space only.
-        copy : bool [False]
+        optimize : bool [False]
             If the data should be re-ordered in memory, most likely making a
             copy. Ensures the fastest available iteration at the expense of
             memory.
@@ -4006,11 +4006,11 @@ class BaseSignal(FancySlicing,
             var = res.metadata.Signal.Noise_properties.variance
             if isinstance(var, BaseSignal):
                 var = var.transpose(signal_axes=names_sig,
-                                    navigation_axes=names_nav, copy=copy)
+                                    navigation_axes=names_nav,
+                                    optimize=optimize)
                 res.metadata.set_item('Signal.Noise_properties.variance', var)
-        # need a copy?
-        if copy:
-            res._make_sure_data_is_contiguous()
+        if optimize:
+            res._make_sure_data_is_contiguous(log=True)
         return res
 
     @property

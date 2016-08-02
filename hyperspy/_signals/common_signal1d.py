@@ -28,14 +28,18 @@ class CommonSignal1D(object):
     def to_signal2D(self):
         """Returns the one dimensional signal as a two dimensional signal.
 
+        Always ensures the data is stored optimally, hence often making a copy
+        of the data. See `transpose` for a more general method with more
+        options.
+
         See Also
         --------
-        as_signal2D : a method for the same purpose with more options.
-        signals.Signal1D.to_signal2D : performs the inverse operation on images.
+        transpose, as_signal1D, as_signal2D
 
         Raises
         ------
         DataDimensionError: when data.ndim < 2
+
 
         """
         if self.data.ndim < 2:
@@ -43,5 +47,5 @@ class CommonSignal1D(object):
                 "A Signal dimension must be >= 2 to be converted to Signal2D")
         nat = self.axes_manager._get_axes_in_natural_order()
         im = self.transpose(signal_axes=nat[:2], navigation_axes=nat[2:],
-                            copy=True)
+                            optimize=True)
         return im

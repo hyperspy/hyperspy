@@ -725,9 +725,9 @@ class TestTranspose:
         nt.assert_equal([ax.name for ax in t.axes_manager.navigation_axes],
                         ['e', 'f'])
 
-    def test_copy(self):
-        t = self.s.transpose(signal_axes=['f', 'a', 'b'], copy=False)
+    def test_optimize(self):
+        t = self.s.transpose(signal_axes=['f', 'a', 'b'], optimize=False)
         nt.assert_is(t.data.base, self.s.data)
 
-        t = self.s.transpose(signal_axes=['f', 'a', 'b'], copy=True)
+        t = self.s.transpose(signal_axes=['f', 'a', 'b'], optimize=True)
         nt.assert_is_not(t.data.base, self.s.data)

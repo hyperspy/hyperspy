@@ -897,7 +897,7 @@ def shorten_name(name, req_l):
         return name
 
 
-def transpose(*args, signal_axes=None, navigation_axes=None, copy=False):
+def transpose(*args, signal_axes=None, navigation_axes=None, optimize=False):
     """Transposes all passed signals according to the specified options.
 
     For parameters see ``BaseSignal.transpose``.
@@ -922,4 +922,4 @@ def transpose(*args, signal_axes=None, navigation_axes=None, copy=False):
         raise ValueError("Not all pased objects are signals")
     return [sig.transpose(signal_axes=signal_axes,
                           navigation_axes=navigation_axes,
-                          copy=copy) for sig in args]
+                          optimize=optimize) for sig in args]

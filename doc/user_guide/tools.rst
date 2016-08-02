@@ -118,12 +118,11 @@ no specialised subclass for three-dimensional data. Also note that by default
 :py:class:`~.signal.BaseSignal` interprets all dimensions as signal dimensions.
 We could also configure it to operate on the dataset as a three-dimensional
 array of scalars by changing the default *view* of
-:py:class:`~.signal.BaseSignal`:
+:py:class:`~.signal.BaseSignal` by taking the transpose of it:
 
 .. code-block:: python
 
-    >>> scalar = hs.signals.BaseSignal(np.random.random((10, 20, 30)))
-    >>> scalar = scalar.transpose(signal_axes=0)
+    >>> scalar = td.T
     >>> scalar
     <BaseSignal, title: , dimensions: (30, 20, 10|)>
 
@@ -773,9 +772,9 @@ arguments as in the following example.
     >>> angles = hs.signals.BaseSignal(np.array([0, 45, 90, 135]))
     >>> modes = hs.signals.BaseSignal(np.array(['constant', 'nearest', 'reflect', 'wrap']))
     >>> image_stack.map(scipy.ndimage.rotate,
-    ...                            angle=angles.transpose(signal_axes=0),
+    ...                            angle=angles.T,
     ...                            reshape=False,
-    ...                            mode=modes.transpose(signal_axes=0))
+    ...                            mode=modes.T)
     calculating 100% |#############################################| ETA:  00:00:00Cropping
 
 .. figure::  images/rotate_lena_apply_ndkwargs.png
@@ -934,7 +933,21 @@ Transposing (changing signal spaces)
 dimensions are interpeted (as signal or navigation axes). The method accepts
 both explicit axes to keep in either space, or just a number of axes required
 in one space (just one number can be specified, as the other is defined as
-"all other axes"). Example usages:
+"all other axes"). When axes order is not explicitly defined, they are "rolled"
+from one space to the other as if the ``<navigation axes | signal axes >``
+wrap a circle.
+
+The :py:meth:`~.signal.BaseSignal.transpose` method accepts keyword argument
+``optimize``, which is ``False`` by default, meaning modifying the output
+signal data **modified the original data**. If ``True``, the method ensures the
+data in memory is stored in the most efficient manner for iterating by making a
+copy of the data if required, hence **not always modifying** the original data.
+
+The older convenience methods :py:meth:`~.signal.BaseSignal.as_signal1D` and
+:py:meth:`~.signal.BaseSignal.as_signal2D` internally use
+:py:meth:`~.signal.BaseSignal.transpose`, but always optimize.
+
+Examples:
 
 .. code-block:: python
 
@@ -964,13 +977,19 @@ in one space (just one number can be specified, as the other is defined as
     >>> s.transpose(navigation_axes=[1, 2, 3, 4, 5, 8], signal_axes=[0, 6, 7])
     <BaseSignal, title: , dimensions: (8, 7, 6, 5, 4, 1|9, 3, 2)>
 
-.. NOTE::
+A convenience functions :py:func:`~.utils.transpose` and
+:py:func:`~.utils.transposed` are available to operate on many signals at once,
+for example enabling plotting any-dimension signals trivially:
 
-    The :py:meth:`~.signal.BaseSignal.transpose` method accepts keyword
-    argument ``copy``, which is ``False`` by default. If ``True``, it ensures
-    the data in memory is stored in the most efficient manner for iterating.
-    Often this means making a copy of the data.
+.. code-block:: python
 
+    >>> s2 = hs.signals.BaseSignal(np.random.rand(2, 2)) # 2D signal
+    >>> s3 = hs.signals.BaseSignal(np.random.rand(3, 3, 3)) # 3D signal
+    >>> s4 = hs.signals.BaseSignal(np.random.rand(4, 4, 4, 4)) # 4D signal
+    >>> with hs.transposed(s2, s3, s4, signal_axes=2) as signals:
+    ...    hs.plot.plot_images(signals)
+    >>> # Alternatively, the last command could have been
+    >>> hs.plot.plot_images(hs.transpose(s2, s3, s4, signal_axes=2))
 
 
 Basic statistical analysis
