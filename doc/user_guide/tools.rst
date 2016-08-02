@@ -930,24 +930,32 @@ Transposing (changing signal spaces)
 .. versionadded:: 1.1
 
 :py:meth:`~.signal.BaseSignal.transpose` method changes how the dataset
-dimensions are interpeted (as signal or navigation axes). The method accepts
-both explicit axes to keep in either space, or just a number of axes required
-in one space (just one number can be specified, as the other is defined as
-"all other axes"). When axes order is not explicitly defined, they are "rolled"
-from one space to the other as if the ``<navigation axes | signal axes >``
-wrap a circle.
+dimensions are interpreted (as signal or navigation axes). By default is
+swaps the signal and navigation axes. For example:
 
-The :py:meth:`~.signal.BaseSignal.transpose` method accepts keyword argument
-``optimize``, which is ``False`` by default, meaning modifying the output
-signal data **modified the original data**. If ``True``, the method ensures the
-data in memory is stored in the most efficient manner for iterating by making a
-copy of the data if required, hence **not always modifying** the original data.
 
-The older convenience methods :py:meth:`~.signal.BaseSignal.as_signal1D` and
-:py:meth:`~.signal.BaseSignal.as_signal2D` internally use
-:py:meth:`~.signal.BaseSignal.transpose`, but always optimize.
+.. code-block:: python
 
-Examples:
+   >>> s = hs.signals.Signal1D(np.zeros((4,5,6)))
+   >>> s
+   <Signal1D, title: , dimensions: (5, 4|6)>
+   >>> s.transpose()
+   <Signal2D, title: , dimensions: (6|4, 5)>
+
+For :py:meth:`~.signal.BaseSignal.T` is a shortcut for the default behaviour:
+
+.. code-block:: python
+
+   >>> s = hs.signals.Signal1D(np.zeros((4,5,6))).T
+   <Signal2D, title: , dimensions: (6|4, 5)>
+
+
+The method accepts both explicit axes to keep in either space, or just a number
+of axes required in one space (just one number can be specified, as the other
+is defined as "all other axes"). When axes order is not explicitly defined,
+they are "rolled" from one space to the other as if the ``<navigation axes |
+signal axes >`` wrap a circle. The example below should help clarifying this.
+
 
 .. code-block:: python
 
@@ -955,41 +963,49 @@ Examples:
     >>> s = hs.signals.BaseSignal(np.random.rand(1,2,3,4,5,6,7,8,9))
     >>> s
     <BaseSignal, title: , dimensions: (|9, 8, 7, 6, 5, 4, 3, 2, 1)>
-
-    >>> s.transpose() # swap signal and navigation spaces
-    <BaseSignal, title: , dimensions: (9, 8, 7, 6, 5, 4, 3, 2, 1|)>
-
-    >>> s.T # a shortcut for no arguments
-    <BaseSignal, title: , dimensions: (9, 8, 7, 6, 5, 4, 3, 2, 1|)>
-
-    >>> s.transpose(signal_axes=5) # roll to leave 5 axes in navigation space
+    >>> s.transpose(signal_axes=5) # roll to leave 5 axes in signal space
     <BaseSignal, title: , dimensions: (4, 3, 2, 1|9, 8, 7, 6, 5)>
-
     >>> s.transpose(navigation_axes=3) # roll leave 3 axes in navigation space
     <BaseSignal, title: , dimensions: (3, 2, 1|9, 8, 7, 6, 5, 4)>
-
     >>> # 3 explicitly defined axes in signal space
     >>> s.transpose(signal_axes=[0, 2, 6])
     <BaseSignal, title: , dimensions: (8, 6, 5, 4, 2, 1|9, 7, 3)>
-
     >>> # A mix of two lists, but specifying all axes explicitly
     >>> # The order of axes is preserved in both lists
     >>> s.transpose(navigation_axes=[1, 2, 3, 4, 5, 8], signal_axes=[0, 6, 7])
     <BaseSignal, title: , dimensions: (8, 7, 6, 5, 4, 1|9, 3, 2)>
 
-A convenience functions :py:func:`~.utils.transpose` and
-:py:func:`~.utils.transposed` are available to operate on many signals at once,
-for example enabling plotting any-dimension signals trivially:
+A convenience functions :py:func:`~.utils.transpose` is available to operate on
+many signals at once, for example enabling plotting any-dimension signals
+trivially:
 
 .. code-block:: python
 
     >>> s2 = hs.signals.BaseSignal(np.random.rand(2, 2)) # 2D signal
     >>> s3 = hs.signals.BaseSignal(np.random.rand(3, 3, 3)) # 3D signal
     >>> s4 = hs.signals.BaseSignal(np.random.rand(4, 4, 4, 4)) # 4D signal
-    >>> with hs.transposed(s2, s3, s4, signal_axes=2) as signals:
-    ...    hs.plot.plot_images(signals)
-    >>> # Alternatively, the last command could have been
     >>> hs.plot.plot_images(hs.transpose(s2, s3, s4, signal_axes=2))
+
+The :py:meth:`~.signal.BaseSignal.transpose` method accepts keyword argument
+``optimize``, which is ``False`` by default, meaning modifying the output
+signal data **always modifies the original data** i.e. the data is just a view
+of the original data. If ``True``, the method ensures the data in memory is
+stored in the most efficient manner for iterating by making a copy of the data
+if required, hence modifying the output signal data **not always modifies the
+original data**.
+
+The convenience methods :py:meth:`~.signal.BaseSignal.as_signal1D` and
+:py:meth:`~.signal.BaseSignal.as_signal2D` internally use
+:py:meth:`~.signal.BaseSignal.transpose`, but always optimize the data
+for iteration over the navigation axes if required. Hence, these methods do not
+always return a view of the original data. If a copy of the data is required
+use `:py:meth:`~.signal.BaseSignal.deepcopy` on the output of any of these
+methods e.g.:
+
+.. code-block:: python
+
+   >>> hs.signals.Signal1D(np.zeros((4,5,6))).T.deepcopy()
+   <Signal2D, title: , dimensions: (6|4, 5)>
 
 
 Basic statistical analysis
@@ -1003,7 +1019,7 @@ the five-number summary statistics of the data.
 
 These two methods can be combined with
 :py:meth:`~.signal.BaseSignal.get_current_signal` to compute the histogram or
-print the summary stastics of the signal at the current coordinates, e.g:
+print the summary statistics of the signal at the current coordinates, e.g:
 .. code-block:: python
 
     >>> s = hs.signals.EELSSpectrum(np.random.normal(size=(10,100)))
@@ -1077,10 +1093,10 @@ linear model:
 
         \mathrm{Var}[X] = (a * \mathrm{E}[X] + b) * c
 
-Where `a` is the ``gain_factor``, `b` is the ``gain_offset`` (the gaussian
+Where `a` is the ``gain_factor``, `b` is the ``gain_offset`` (the Gaussian
 noise variance) and `c` the ``correlation_factor``. The correlation
 factor accounts for correlation of adjacent signal elements that can
-be modeled as a convolution with a gaussian point spread function.
+be modelled as a convolution with a Gaussian point spread function.
 :meth:`~.signal.BaseSignal.estimate_poissonian_noise_variance` can be used to set
 the noise properties when the variance can be described by this linear model,
 for example:
@@ -1121,7 +1137,7 @@ Reusing a Signal for output
 
 Many signal methods create and return a new signal. For fast operations, the
 new signal creation time is non-negligible. Also, when the operation is
-repeated many times, for example in a loop, the cumulaive creation time can
+repeated many times, for example in a loop, the cumulative creation time can
 become significant. Therefore, many operations on
 :py:class:`~.signal.BaseSignal` accept an optional argument `out`. If an
 existing signal is passed to `out`, the function output will be placed into
@@ -1174,7 +1190,7 @@ signal changes.
     >>> ssum.data
     4.5
 
-The interactive opearations can be chained.
+The interactive operations can be chained.
 
 .. code-block:: python
 

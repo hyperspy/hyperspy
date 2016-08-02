@@ -2564,8 +2564,9 @@ class BaseSignal(FancySlicing,
     def _make_sure_data_is_contiguous(self, log=False):
         if self.data.flags['C_CONTIGUOUS'] is False:
             if log:
-                _warn_string = "%s data is replaced by its optimized copy".format(
-                    self)
+                _warn_string = \
+                    "{0!r} data is replaced by its optimized copy".format(
+                        self)
                 _logger.warning(_warn_string)
             self.data = np.ascontiguousarray(self.data)
 
@@ -3640,6 +3641,9 @@ class BaseSignal(FancySlicing,
         spectral_axis %s
         %s
 
+        See Also
+        --------
+        as_signal2D, transpose, hs.transpose
         Examples
         --------
         >>> img = hs.signals.Signal2D(np.ones((3,4,5,6)))
@@ -3649,6 +3653,7 @@ class BaseSignal(FancySlicing,
         <Signal1D, title: , dimensions: (6, 5, 4, 3)>
         >>> img.to_spectrum(0)
         <Signal1D, title: , dimensions: (6, 5, 3, 4)>
+
 
         """
         sp = self.transpose(signal_axes=[spectral_axis], optimize=True)
@@ -3673,6 +3678,15 @@ class BaseSignal(FancySlicing,
             and it is given in the "natural" i.e. X, Y, Z... order.
         %s
 
+        Raises
+        ------
+        DataDimensionError : when data.ndim < 2
+
+        See Also
+        --------
+        as_signal1D, transpose, hs.transpose
+
+
         Examples
         --------
         >>> s = hs.signals.Signal1D(np.ones((2,3,4,5)))
@@ -3684,9 +3698,6 @@ class BaseSignal(FancySlicing,
         >>> s.to_signal2D((1,2))
         <Signal2D, title: , dimensions: (4, 5, 3, 2)>
 
-        Raises
-        ------
-        DataDimensionError : when data.ndim < 2
 
         """
         if self.data.ndim < 2:
@@ -3881,7 +3892,7 @@ class BaseSignal(FancySlicing,
 
         See also
         --------
-        T, hs.transpose, hs.transposed
+        T, as_signal2D, as_signal1D, hs.transpose
 
         Examples
         --------

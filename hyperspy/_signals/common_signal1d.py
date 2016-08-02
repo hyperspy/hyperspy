@@ -34,7 +34,7 @@ class CommonSignal1D(object):
 
         See Also
         --------
-        transpose, as_signal1D, as_signal2D
+        transpose, as_signal1D, as_signal2D, hs.transpose
 
         Raises
         ------
