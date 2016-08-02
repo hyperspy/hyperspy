@@ -16,6 +16,10 @@ Bibliography
 .. [Egerton2011] Ray Egerton, "Electron Energy-Loss Spectroscopy in the
    Electron Microscope", Springer-Verlag, 2011.
 
+.. [Eggeman2015] A. S. Eggeman, R. Krakow, P. A. Midgley, "Scanning precession
+   electron tomography for three-dimensional nanoscale orientation imaging and
+   crystallographic analysis", Nature Communications, 6, (2015), 7267
+
 .. [Feng2013] J. Feng, H. Xu and S. Yan, "Online Robust PCA via Stochastic Optimization",
    NIPS 2013, 2013.
 
@@ -53,6 +57,10 @@ Bibliography
 .. [Williams2009] David B. Williams, Barry Carter, "Transmission Electron
    Microscopy: A Textbook for Materials Science (Part 4)", Second Edi, Springer,
    New York, 2009.
+
+.. [Zaefferer2000] S. Zaefferer, "New developments of computer-aided
+   crystallographic analysis in transmission electron microscopy" J. Appl. Cryst.
+   33, 2000, 10-25.
 
 .. [Zhou2011] T. Zhou and D. Tao, "GoDec: Randomized Low-rank & Sparse Matrix
    Decomposition in Noisy Case", ICML-11 (2011) 33–40.

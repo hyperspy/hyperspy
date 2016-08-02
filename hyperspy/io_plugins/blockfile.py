@@ -222,7 +222,7 @@ def file_reader(filename, endianess='<', load_to_memory=True, mmap_mode='c',
     names = ['y', 'x', 'dy', 'dx']
     scales = [header['SY'], header['SX'], SDP, SDP]
     metadata = {'General': {'original_filename': os.path.split(filename)[1]},
-                "Signal": {'signal_type': "SED_Pattern",
+                "Signal": {'signal_type': "electron_diffraction",
                            'record_by': 'image', },
                 }
     # Create the axis objects for each axis

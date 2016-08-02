@@ -52,8 +52,8 @@ def radial_average(z, center):
 
     return radial_average
 
-class SEDPattern(Signal2D):
-    _signal_type = "SED_Pattern"
+class ElectronDiffraction(Signal2D):
+    _signal_type = "electron_diffraction"
 
     def __init__(self, *args, **kwargs):
         Signal2D.__init__(self, *args, **kwargs)
@@ -71,14 +71,11 @@ class SEDPattern(Signal2D):
         """
 
         md = self.metadata
-        md.Signal.signal_type = 'SED_Pattern'
+        md.Signal.signal_type = 'electron_diffraction'
 
         if "Acquisition_instrument.TEM.beam_energy" not in md:
             md.set_item("Acquisition_instrument.TEM.beam_energy",
                         preferences.SED.sed_beam_energy)
-        if "Acquisition_instrument.TEM.camera_length" not in md:
-            md.set_item("Acquisition_instrument.TEM.camera_length",
-                        preferences.SED.sed_camera_length)
         if "Acquisition_instrument.TEM.scan_rotation" not in md:
             md.set_item("Acquisition_instrument.TEM.scan_rotation",
                         preferences.SED.sed_scan_rotation)
@@ -86,13 +83,16 @@ class SEDPattern(Signal2D):
             md.set_item("Acquisition_instrument.TEM.convergence_angle",
                         preferences.SED.sed_convergence_angle)
         if "Acquisition_instrument.TEM.precession_angle" not in md:
-            md.set_item("Acquisition_instrument.TEM.precession_angle",
+            md.set_item("Acquisition_instrument.TEM.rocking_angle",
                         preferences.SED.sed_precession_angle)
         if "Acquisition_instrument.TEM.precession_frequency" not in md:
-            md.set_item("Acquisition_instrument.TEM.precession_frequency",
+            md.set_item("Acquisition_instrument.TEM.rocking_frequency",
                         preferences.SED.sed_precession_frequency)
-        if "Acquisition_instrument.TEM.Detector.SED.exposure_time" not in md:
-            md.set_item("Acquisition_instrument.TEM.Detector.SED.exposure_time",
+        if "Acquisition_instrument.TEM.Detector.Diffraction.camera_length" not in md:
+            md.set_item("Acquisition_instrument.TEM.Detector.Diffraction.camera_length",
+                        preferences.SED.sed_camera_length)
+        if "Acquisition_instrument.TEM.Detector.Diffraction.exposure_time" not in md:
+            md.set_item("Acquisition_instrument.TEM.Detector.Diffraction.exposure_time",
                         preferences.SED.sed_exposure_time)
 
     def set_microscope_parameters(self,
@@ -100,8 +100,8 @@ class SEDPattern(Signal2D):
                                   camera_length=None,
                                   scan_rotation=None,
                                   convergence_angle=None,
-                                  precession_angle=None,
-                                  precession_frequency=None,
+                                  rocking_angle=None,
+                                  rocking_frequency=None,
                                   exposure_time=None):
         """Set the microscope parameters.
 
@@ -126,7 +126,7 @@ class SEDPattern(Signal2D):
 
         Examples
         --------
-        >>> dp = hs.datasets.example_signals.SED_Pattern()
+        >>> dp = hs.datasets.example_signals.electron_diffraction()
         >>> print(dp.metadata.Acquisition_instrument.TEM.precession_angle)
         >>> dp.set_microscope_parameters(precession_angle=36.)
         >>> print(dp.metadata.Acquisition_instrument.TEM.precession_angle)
@@ -138,9 +138,6 @@ class SEDPattern(Signal2D):
         if beam_energy is not None:
             md.set_item("Acquisition_instrument.TEM.beam_energy",
                         beam_energy)
-        if camera_length is not None:
-            md.set_item("Acquisition_instrument.TEM.camera_length",
-                        camera_length)
         if scan_rotation is not None:
             md.set_item("Acquisition_instrument.TEM.scan_rotation",
                         scan_rotation)
@@ -148,17 +145,20 @@ class SEDPattern(Signal2D):
             md.set_item("Acquisition_instrument.TEM.convergence_angle",
                         convergence_angle)
         if precession_angle is not None:
-            md.set_item("Acquisition_instrument.TEM.precession_angle",
+            md.set_item("Acquisition_instrument.TEM.rocking_angle",
                         precession_angle)
         if precession_frequency is not None:
-            md.set_item("Acquisition_instrument.TEM.precession_frequency",
+            md.set_item("Acquisition_instrument.TEM.rocking_frequency",
                         precession_frequency)
+        if camera_length is not None:
+            md.set_item("Acquisition_instrument.TEM.Detector.Diffraction.camera_length",
+                        camera_length)
         if exposure_time is not None:
-            md.set_item("Acquisition_instrument.TEM.Detector.SED.exposure_time",
+            md.set_item("Acquisition_instrument.TEM.Detector.Diffraction.exposure_time",
                         exposure_time)
 
         if set([beam_energy, camera_length, scan_rotation,
-                convergence_angle, precession_angle, precession_frequency,
+                convergence_angle, rocking_angle, rocking_frequency,
                 exposure_time]) == {None}:
             self._are_microscope_parameters_missing()
 
@@ -168,19 +168,19 @@ class SEDPattern(Signal2D):
         mapping = {
             'Acquisition_instrument.TEM.beam_energy':
             'sed_par.beam_energy',
-            'Acquisition_instrument.TEM.camera_length':
-            'sed_par.camera_length',
             'Acquisition_instrument.TEM.scan_rotation':
             'sed_par.scan_rotation',
             'Acquisition_instrument.TEM.beam_energy':
             'sed_par.beam_energy',
             'Acquisition_instrument.TEM.convergence_angle':
             'sed_par.convergence_angle',
-            'Acquisition_instrument.TEM.precession_angle':
+            'Acquisition_instrument.TEM.rocking_angle':
             'sed_par.precession_angle',
-            'Acquisition_instrument.TEM.precession_frequency':
+            'Acquisition_instrument.TEM.rocking_frequency':
             'sed_par.precession_frequency',
-            'Acquisition_instrument.TEM.Detector.SED.exposure_time':
+            'Acquisition_instrument.TEM.Detector.Diffraction.camera_length':
+            'sed_par.camera_length',
+            'Acquisition_instrument.TEM.Detector.Diffraction.exposure_time':
             'sed_par.exposure_time', }
         for key, value in mapping.items():
             if self.metadata.has_item(key):
@@ -190,17 +190,17 @@ class SEDPattern(Signal2D):
         mapping = {
             'Acquisition_instrument.TEM.beam_energy':
             sed_par.beam_energy,
-            'Acquisition_instrument.TEM.camera_length':
-            sed_par.camera_length,
             'Acquisition_instrument.TEM.scan_rotation':
             sed_par.scan_rotation,
             'Acquisition_instrument.TEM.convergence_angle':
             sed_par.convergence_angle,
-            'Acquisition_instrument.TEM.precession_angle':
+            'Acquisition_instrument.TEM.rocking_angle':
             sed_par.precession_angle,
-            'Acquisition_instrument.TEM.precession_frequency':
+            'Acquisition_instrument.TEM.rocking_frequency':
             sed_par.precession_frequency,
-            'Acquisition_instrument.TEM.Detector.SED.exposure_time':
+            'Acquisition_instrument.TEM.Detector.Diffraction.camera_length':
+            sed_par.camera_length,
+            'Acquisition_instrument.TEM.Detector.Diffraction.exposure_time':
             sed_par.exposure_time, }
 
         for key, value in mapping.iteritems():
@@ -212,7 +212,7 @@ class SEDPattern(Signal2D):
         """Check that the SED parameters necessary for pattern calibration are
         defined in metadata and raise a UI if not to add them."""
         must_exist = ('Acquisition_instrument.TEM.beam_energy',
-                      'Acquisition_instrument.TEM.camera_length',
+                      'Acquisition_instrument.TEM.Detector.Diffraction.camera_length',
                       'Acquisition_instrument.TEM.scan_rotation')
 
         missing_parameters = []
@@ -236,7 +236,7 @@ class SEDPattern(Signal2D):
         else:
             return False
 
-    def get_direct_beam_mask(self, radius=None, center=None):
+    def get_direct_beam_mask(self, radius, center=None):
         """Generate a signal mask for the direct beam.
 
         Parameters
@@ -267,7 +267,7 @@ class SEDPattern(Signal2D):
         mask = x*x + y*y <= r*r
         return mask
 
-    def get_direct_beam_position(self, radius=None):
+    def get_direct_beam_position(self, radius):
         """Estimate the position of the direct beam in each SED pattern.
 
         Parameters
@@ -325,7 +325,7 @@ class SEDPattern(Signal2D):
 
         return c
 
-    def get_direct_beam_shifts(self, centers=None, radius=None, subpixel=False):
+    def get_direct_beam_shifts(self, centers=None, radius):
         """Determine rigid shifts in the SED patterns based on the position of
         the direct beam and return the shifts required to center all patterns.
 
@@ -387,6 +387,7 @@ class SEDPattern(Signal2D):
         radial_average
         get_direct_beam_position
         """
+        #TODO: this method needs to preserve the navigation dimensions!
         if centers == None:
             c = self.get_direct_beam_position(radius=10)
         else:
@@ -398,14 +399,14 @@ class SEDPattern(Signal2D):
             rp.append(radial_average(z, center=c[index]))
 
         rp = np.array(rp)
-#        rp.resize((self.axes_manager.navigation_shape,
-#                   rp.shape[-1]))
+        #rp.resize((self.axes_manager.navigation_shape,
+        #rp.shape[-1]))
         radial_profile = Signal1D(rp)
 
         return radial_profile
 
-    def get_vacuum_mask(self, radius=None, center=None,
-                    threshold=None, closing=True, opening=False):
+    def get_vacuum_mask(self, radius=None, center=None, threshold=None,
+                        closing=True, opening=False):
         """Generate a navigation mask to exlude SED patterns acquired in vacuum.
 
         Vacuum regions are identified cruedly based on searching for a peak
@@ -503,7 +504,7 @@ class SEDPattern(Signal2D):
 
         Examples
         --------
-        >>> dp = hs.datasets.example_signals.SED_Pattern()
+        >>> dp = hs.datasets.example_signals.electron_diffraction()
         >>> dps = hs.stack([dp]*3)
         >>> dps.change_dtype(float)
         >>> dps.decomposition()
