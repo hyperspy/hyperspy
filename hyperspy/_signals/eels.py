@@ -169,12 +169,11 @@ class EELSSpectrum(Signal1D):
         self._check_signal_dimension_equals_one()
         self._check_navigation_mask(mask)
         zlpc = self.valuemax(-1)
-        if self.axes_manager.navigation_dimension == 1:
-            zlpc = zlpc.as_signal1D(0)
-        elif self.axes_manager.navigation_dimension > 1:
-            zlpc = zlpc.as_signal2D((0, 1))
         if mask is not None:
             zlpc.data[mask.data] = np.nan
+        zlpc.set_signal_type("")
+        title = self.metadata.General.title
+        zlpc.metadata.General.title = "ZLP(%s)" % title
         return zlpc
 
     def align_zero_loss_peak(
@@ -338,20 +337,20 @@ class EELSSpectrum(Signal1D):
         else:
             I0 = self._get_navigation_signal()
             I0.axes_manager.set_signal_dimension(0)
-            for i, s in progressbar(enumerate(self),
-                                    total=self.axes_manager.navigation_size,
-                                    disable=not show_progressbar,
-                                    leave=True):
-                threshold_ = threshold.isig[I0.axes_manager.indices].data[0]
-                if np.isnan(threshold_):
-                    s.data[:] = np.nan
-                else:
-                    s.data[:] = (self.inav[I0.axes_manager.indices].isig[
-                                 :threshold_].integrate1D(-1).data)
-        I0.axes_manager.set_signal_dimension(
-            self.axes_manager.navigation_dimension)
+            with progressbar(total=self.axes_manager.navigation_size,
+                             disable=not show_progressbar,
+                             leave=True) as pbar:
+                for i, (i0, th, s) in enumerate(zip(I0._iterate_signal(),
+                                                    threshold._iterate_signal(),
+                                                    self)):
+                    if np.isnan(th[0]):
+                        i0[:] = np.nan
+                    else:
+                        i0[:] = s.isig[:th[0]].integrate1D(-1).data
+                    pbar.update(1)
         I0.metadata.General.title = (
             self.metadata.General.title + ' elastic intensity')
+        I0.set_signal_type("")
         if self.tmp_parameters.has_item('filename'):
             I0.tmp_parameters.filename = (
                 self.tmp_parameters.filename +
@@ -463,16 +462,15 @@ class EELSSpectrum(Signal1D):
         # Create spectrum image, stop and return value
         threshold.metadata.General.title = (
             self.metadata.General.title +
-            ' ZLP threshold')
+            ' elastic scattering threshold')
         if self.tmp_parameters.has_item('filename'):
             threshold.tmp_parameters.filename = (
                 self.tmp_parameters.filename +
-                '_ZLP_threshold')
+                '_elastic_scattering_threshold')
             threshold.tmp_parameters.folder = self.tmp_parameters.folder
             threshold.tmp_parameters.extension = \
                 self.tmp_parameters.extension
-        threshold.axes_manager.set_signal_dimension(
-            min(2, self.axes_manager.navigation_dimension))
+        threshold.set_signal_type("")
         return threshold
 
     def estimate_thickness(self,
@@ -534,6 +532,8 @@ class EELSSpectrum(Signal1D):
             s.tmp_parameters.folder = self.tmp_parameters.folder
             s.tmp_parameters.extension = \
                 self.tmp_parameters.extension
+        s.axes_manager.set_signal_dimension(0)
+        s.set_signal_type("")
         return s
 
     def fourier_log_deconvolution(self,
