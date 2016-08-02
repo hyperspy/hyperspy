@@ -896,7 +896,8 @@ def shorten_name(name, req_l):
     else:
         return name
 
-def transpose(*args, signal_axes=None, navigation_axes=None, copy=False):
+
+def transpose(*args, signal_axes=None, navigation_axes=None, optimize=False):
     """Transposes all passed signals according to the specified options.
 
     For parameters see ``BaseSignal.transpose``.
@@ -921,25 +922,4 @@ def transpose(*args, signal_axes=None, navigation_axes=None, copy=False):
         raise ValueError("Not all pased objects are signals")
     return [sig.transpose(signal_axes=signal_axes,
                           navigation_axes=navigation_axes,
-                          copy=copy) for sig in args]
-@contextmanager
-def transposed(*args, signal_axes=None, navigation_axes=None, copy=False):
-    """Use this function together with a `with` statement to have the
-    signals be transposed for the scope of the `with` block.
-
-    Examples
-    --------
-
-    >>> s2 = hs.signals.BaseSignal(np.random.rand(2, 2))
-    >>> s3 = hs.signals.BaseSignal(np.random.rand(3, 3, 3))
-    >>> s4 = hs.signals.BaseSignal(np.random.rand(4, 4, 4, 4))
-    >>> with hs.transposed(s2, s3, s4, signal_axes=2) as signals:
-            hs.plot.plot_images(signals)
-
-    See also
-    --------
-    transpose
-
-    """
-    yield transpose(*args, signal_axes=signal_axes,
-                    navigation_axes=navigation_axes, copy=copy)
+                          optimize=optimize) for sig in args]

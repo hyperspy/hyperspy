@@ -1629,9 +1629,8 @@ class BaseSignal(FancySlicing,
                         ns.axes_manager._axes = [axis.copy()
                                                  for axis in new_axes]
                         if bigger_am is oam:
-                            ns.axes_manager.set_signal_dimension(
-                                other.axes_manager.signal_dimension)
-                            ns._assign_subclass()
+                            ns = ns.transpose(
+                                signal_axes=other.axes_manager.signal_dimension)
                         return ns
 
         else:
@@ -2562,8 +2561,12 @@ class BaseSignal(FancySlicing,
                 if isinstance(variance, BaseSignal):
                     variance.fold()
 
-    def _make_sure_data_is_contiguous(self):
+    def _make_sure_data_is_contiguous(self, log=False):
         if self.data.flags['C_CONTIGUOUS'] is False:
+            if log:
+                _warn_string = "%s data is replaced by its optimized copy".format(
+                    self)
+                _logger.warning(_warn_string)
             self.data = np.ascontiguousarray(self.data)
 
     def _iterate_signal(self):
@@ -3223,8 +3226,7 @@ class BaseSignal(FancySlicing,
         parameter is variable.
 
         >>> im = hs.signals.Signal2D(np.random.random((10, 64, 64)))
-        >>> sigmas = hs.signals.BaseSignal(np.linspace(2,5,10))
-        >>> sigmas.axes_manager.set_signal_dimension(0)
+        >>> sigmas = hs.signals.BaseSignal(np.linspace(2,5,10)).T
         >>> im.map(scipy.ndimage.gaussian_filter, sigma=sigmas)
 
         """
@@ -3649,10 +3651,7 @@ class BaseSignal(FancySlicing,
         <Signal1D, title: , dimensions: (6, 5, 3, 4)>
 
         """
-        # Roll the spectral axis to-be to the latex index in the array
-        sp = self.rollaxis(spectral_axis, -1 + 3j)
-        sp.axes_manager.set_signal_dimension(1)
-        sp._assign_subclass()
+        sp = self.transpose(signal_axes=[spectral_axis], optimize=True)
         if out is None:
             return sp
         else:
@@ -3693,13 +3692,7 @@ class BaseSignal(FancySlicing,
         if self.data.ndim < 2:
             raise DataDimensionError(
                 "A Signal dimension must be >= 2 to be converted to a Signal2D")
-        axes = (self.axes_manager[image_axes[0]],
-                self.axes_manager[image_axes[1]])
-        iaxes = [axis.index_in_array for axis in axes]
-        im = self.rollaxis(iaxes[0] + 3j, -1 + 3j).rollaxis(
-            iaxes[1] - np.argmax(iaxes) + 3j, -2 + 3j)
-        im.axes_manager.set_signal_dimension(2)
-        im._assign_subclass()
+        im = self.transpose(signal_axes=image_axes, optimize=True)
         if out is None:
             return im
         else:
@@ -3867,7 +3860,8 @@ class BaseSignal(FancySlicing,
             noise).astype(original_dtype)
         self.events.data_changed.trigger(obj=self)
 
-    def transpose(self, signal_axes=None, navigation_axes=None, copy=False):
+    def transpose(self, signal_axes=None,
+                  navigation_axes=None, optimize=False):
         """Transposes the signal to have the required signal and navigation
         axes.
 
@@ -3880,35 +3874,40 @@ class BaseSignal(FancySlicing,
             corresponding space.
             If both are iterables, full control is given as long as all axes
             are assigned to one space only.
-        copy : bool [False]
+        optimize : bool [False]
             If the data should be re-ordered in memory, most likely making a
             copy. Ensures the fastest available iteration at the expense of
             memory.
 
         See also
         --------
-        transposed, T
+        T, hs.transpose, hs.transposed
 
         Examples
         --------
+        >>> # just create a signal with many distinct dimensions
         >>> s = hs.signals.BaseSignal(np.random.rand(1,2,3,4,5,6,7,8,9))
         >>> s
         <BaseSignal, title: , dimensions: (|9, 8, 7, 6, 5, 4, 3, 2, 1)>
 
-        >>> s.transpose() # just swap signal and navigation spaces
+        >>> s.transpose() # swap signal and navigation spaces
         <BaseSignal, title: , dimensions: (9, 8, 7, 6, 5, 4, 3, 2, 1|)>
 
-        >>> s.transpose(signal_axes=5) # 5 axes in signal space
-        <BaseSignal, title: , dimensions: (9, 8, 7, 6|5, 4, 3, 2, 1)>
+        >>> s.T # a shortcut for no arguments
+        <BaseSignal, title: , dimensions: (9, 8, 7, 6, 5, 4, 3, 2, 1|)>
 
-        >>> s.transpose(navigation_axes=3) # 3 axes in navigation space
-        <BaseSignal, title: , dimensions: (9, 8, 7|6, 5, 4, 3, 2, 1)>
+        >>> s.transpose(signal_axes=5) # roll to leave 5 axes in navigation space
+        <BaseSignal, title: , dimensions: (4, 3, 2, 1|9, 8, 7, 6, 5)>
+
+        >>> s.transpose(navigation_axes=3) # roll leave 3 axes in navigation space
+        <BaseSignal, title: , dimensions: (3, 2, 1|9, 8, 7, 6, 5, 4)>
 
         >>> # 3 explicitly defined axes in signal space
         >>> s.transpose(signal_axes=[0, 2, 6])
         <BaseSignal, title: , dimensions: (8, 6, 5, 4, 2, 1|9, 7, 3)>
 
         >>> # A mix of two lists, but specifying all axes explicitly
+        >>> # The order of axes is preserved in both lists
         >>> s.transpose(navigation_axes=[1, 2, 3, 4, 5, 8], signal_axes=[0, 6, 7])
         <BaseSignal, title: , dimensions: (8, 7, 6, 5, 4, 1|9, 3, 2)>
 
@@ -3918,29 +3917,36 @@ class BaseSignal(FancySlicing,
         def iterable_not_string(thing):
             return isinstance(thing, Iterable) and \
                 not isinstance(thing, str)
-
         am = self.axes_manager
-        nat_axes = am._get_axes_in_natural_order()
+        ax_list = am._axes
         if isinstance(signal_axes, int):
             if navigation_axes is not None:
                 raise ValueError("The navigation_axes are not None, even "
                                  "though just a number was given for "
                                  "signal_axes")
-            if len(nat_axes) < signal_axes:
+            if len(ax_list) < signal_axes:
                 raise ValueError("Too many signal axes requested")
-            navigation_axes = nat_axes[:-signal_axes]
-            signal_axes = nat_axes[-signal_axes:]
+            if signal_axes < 0:
+                raise ValueError("Can't have negative number of signal axes")
+            elif signal_axes == 0:
+                signal_axes = ()
+                navigation_axes = ax_list
+            else:
+                navigation_axes = ax_list[:-signal_axes]
+                signal_axes = ax_list[-signal_axes:]
         elif iterable_not_string(signal_axes):
+            signal_axes = tuple(am[ax] for ax in reversed(signal_axes))
             if navigation_axes is None:
-                signal_axes = tuple(am[ax] for ax in signal_axes)
-                navigation_axes = tuple(ax for ax in nat_axes if ax not in
+                navigation_axes = tuple(ax for ax in ax_list if ax not in
                                         signal_axes)
             elif iterable_not_string(navigation_axes):
                 # want to keep the order
-                signal_axes = tuple(am[ax] for ax in signal_axes)
-                navigation_axes = tuple(am[ax] for ax in navigation_axes)
-                if len(set(signal_axes).intersection(navigation_axes)):
-                    raise ValueError("Same axis in both spaces found.")
+                navigation_axes = tuple(am[ax] for ax in
+                                        reversed(navigation_axes))
+                intersection = set(signal_axes).intersection(navigation_axes)
+                if len(intersection):
+                    raise ValueError("At least one axis found in both spaces:"
+                                     " {}".format(intersection))
                 if len(am._axes) != (len(signal_axes) + len(navigation_axes)):
                     raise ValueError("Not all current axes were assigned to a "
                                      "space")
@@ -3949,13 +3955,21 @@ class BaseSignal(FancySlicing,
                                  " when signal_axes is iterable")
         elif signal_axes is None:
             if isinstance(navigation_axes, int):
-                if len(nat_axes) < navigation_axes:
+                if len(ax_list) < navigation_axes:
                     raise ValueError("Too many navigation axes requested")
-                signal_axes = nat_axes[navigation_axes:]
-                navigation_axes = nat_axes[:navigation_axes]
+                if navigation_axes < 0:
+                    raise ValueError(
+                        "Can't have negative number of navigation axes")
+                elif navigation_axes == 0:
+                    navigation_axes = ()
+                    signal_axes = ax_list
+                else:
+                    signal_axes = ax_list[navigation_axes:]
+                    navigation_axes = ax_list[:navigation_axes]
             elif iterable_not_string(navigation_axes):
-                navigation_axes = tuple(am[ax] for ax in navigation_axes)
-                signal_axes = tuple(ax for ax in nat_axes if ax not in
+                navigation_axes = tuple(am[ax] for ax in
+                                        reversed(navigation_axes))
+                signal_axes = tuple(ax for ax in ax_list if ax not in
                                     navigation_axes)
             elif navigation_axes is None:
                 signal_axes = am.navigation_axes
@@ -3967,8 +3981,8 @@ class BaseSignal(FancySlicing,
             raise ValueError("The passed signal_axes argument is not valid")
         # get data view
         array_order = tuple(
-            ax.index_in_array for ax in reversed(navigation_axes))
-        array_order += tuple(ax.index_in_array for ax in reversed(signal_axes))
+            ax.index_in_array for ax in navigation_axes)
+        array_order += tuple(ax.index_in_array for ax in signal_axes)
         newdata = self.data.transpose(array_order)
         res = self._deepcopy_with_new_data(newdata)
 
@@ -3979,16 +3993,24 @@ class BaseSignal(FancySlicing,
         ram._axes = [ram._axes[i] for i in array_order]
         for i, ax in enumerate(ram._axes):
             if i < len(navigation_axes):
-                ax.slice = None
                 ax.navigate = True
             else:
-                ax.slice = slice(None)
                 ax.navigate = False
         ram._update_attributes()
         ram._update_trait_handlers(remove=False)
-        # need a copy?
-        if copy:
-            res._make_sure_data_is_contiguous()
+        res._assign_subclass()
+        # translate to axes names from actual objects for variance
+        names_sig = [ax.name for ax in signal_axes]
+        names_nav = [ax.name for ax in navigation_axes]
+        if res.metadata.has_item("Signal.Noise_properties.variance"):
+            var = res.metadata.Signal.Noise_properties.variance
+            if isinstance(var, BaseSignal):
+                var = var.transpose(signal_axes=names_sig,
+                                    navigation_axes=names_nav,
+                                    optimize=optimize)
+                res.metadata.set_item('Signal.Noise_properties.variance', var)
+        if optimize:
+            res._make_sure_data_is_contiguous(log=True)
         return res
 
     @property

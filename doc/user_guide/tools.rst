@@ -118,17 +118,16 @@ no specialised subclass for three-dimensional data. Also note that by default
 :py:class:`~.signal.BaseSignal` interprets all dimensions as signal dimensions.
 We could also configure it to operate on the dataset as a three-dimensional
 array of scalars by changing the default *view* of
-:py:class:`~.signal.BaseSignal`:
+:py:class:`~.signal.BaseSignal` by taking the transpose of it:
 
 .. code-block:: python
 
-    >>> scalar = hs.signals.BaseSignal(np.random.random((10, 20, 30)))
-    >>> scalar.axes_manager.set_signal_dimension(0)
+    >>> scalar = td.T
     >>> scalar
     <BaseSignal, title: , dimensions: (30, 20, 10|)>
 
-
-
+For more examples of manipulating signal axes in the "signal-navigation" space
+can be found in :ref:`signal.transpose`.
 
 .. NOTE::
 
@@ -679,7 +678,7 @@ not change the left most signal dimensions:
       File "<string>", line 2, in __iadd__
       File "/home/fjd29/Python/hyperspy/hyperspy/signal.py", line 2737, in _binary_operator_ruler
         self.data = getattr(sdata, op_name)(odata)
-    ValueError: non-broadcastable output operand with shape (3,2,1,4) doesn't match the broadcast shape (3,2,5,4)
+    ValueError: non-broadcastable output operand with shape (3,2,1,4) doesn\'t match the broadcast shape (3,2,5,4)
 
 
 .. _signal.iterator:
@@ -771,13 +770,11 @@ arguments as in the following example.
     >>> image_stack.axes_manager[1].name = "x"
     >>> image_stack.axes_manager[2].name = "y"
     >>> angles = hs.signals.BaseSignal(np.array([0, 45, 90, 135]))
-    >>> angles.axes_manager.set_signal_dimension(0)
     >>> modes = hs.signals.BaseSignal(np.array(['constant', 'nearest', 'reflect', 'wrap']))
-    >>> modes.axes_manager.set_signal_dimension(0)
     >>> image_stack.map(scipy.ndimage.rotate,
-    ...                            angle=angles,
+    ...                            angle=angles.T,
     ...                            reshape=False,
-    ...                            mode=modes)
+    ...                            mode=modes.T)
     calculating 100% |#############################################| ETA:  00:00:00Cropping
 
 .. figure::  images/rotate_lena_apply_ndkwargs.png
@@ -924,6 +921,75 @@ In the following example we create a 1D signal with signal size 3 and with
   :width:   500
 
   RGB data type example.
+
+
+.. _signal.transpose:
+
+Transposing (changing signal spaces)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. versionadded:: 1.1
+
+:py:meth:`~.signal.BaseSignal.transpose` method changes how the dataset
+dimensions are interpeted (as signal or navigation axes). The method accepts
+both explicit axes to keep in either space, or just a number of axes required
+in one space (just one number can be specified, as the other is defined as
+"all other axes"). When axes order is not explicitly defined, they are "rolled"
+from one space to the other as if the ``<navigation axes | signal axes >``
+wrap a circle.
+
+The :py:meth:`~.signal.BaseSignal.transpose` method accepts keyword argument
+``optimize``, which is ``False`` by default, meaning modifying the output
+signal data **modified the original data**. If ``True``, the method ensures the
+data in memory is stored in the most efficient manner for iterating by making a
+copy of the data if required, hence **not always modifying** the original data.
+
+The older convenience methods :py:meth:`~.signal.BaseSignal.as_signal1D` and
+:py:meth:`~.signal.BaseSignal.as_signal2D` internally use
+:py:meth:`~.signal.BaseSignal.transpose`, but always optimize.
+
+Examples:
+
+.. code-block:: python
+
+    >>> # just create a signal with many distinct dimensions
+    >>> s = hs.signals.BaseSignal(np.random.rand(1,2,3,4,5,6,7,8,9))
+    >>> s
+    <BaseSignal, title: , dimensions: (|9, 8, 7, 6, 5, 4, 3, 2, 1)>
+
+    >>> s.transpose() # swap signal and navigation spaces
+    <BaseSignal, title: , dimensions: (9, 8, 7, 6, 5, 4, 3, 2, 1|)>
+
+    >>> s.T # a shortcut for no arguments
+    <BaseSignal, title: , dimensions: (9, 8, 7, 6, 5, 4, 3, 2, 1|)>
+
+    >>> s.transpose(signal_axes=5) # roll to leave 5 axes in navigation space
+    <BaseSignal, title: , dimensions: (4, 3, 2, 1|9, 8, 7, 6, 5)>
+
+    >>> s.transpose(navigation_axes=3) # roll leave 3 axes in navigation space
+    <BaseSignal, title: , dimensions: (3, 2, 1|9, 8, 7, 6, 5, 4)>
+
+    >>> # 3 explicitly defined axes in signal space
+    >>> s.transpose(signal_axes=[0, 2, 6])
+    <BaseSignal, title: , dimensions: (8, 6, 5, 4, 2, 1|9, 7, 3)>
+
+    >>> # A mix of two lists, but specifying all axes explicitly
+    >>> # The order of axes is preserved in both lists
+    >>> s.transpose(navigation_axes=[1, 2, 3, 4, 5, 8], signal_axes=[0, 6, 7])
+    <BaseSignal, title: , dimensions: (8, 7, 6, 5, 4, 1|9, 3, 2)>
+
+A convenience functions :py:func:`~.utils.transpose` and
+:py:func:`~.utils.transposed` are available to operate on many signals at once,
+for example enabling plotting any-dimension signals trivially:
+
+.. code-block:: python
+
+    >>> s2 = hs.signals.BaseSignal(np.random.rand(2, 2)) # 2D signal
+    >>> s3 = hs.signals.BaseSignal(np.random.rand(3, 3, 3)) # 3D signal
+    >>> s4 = hs.signals.BaseSignal(np.random.rand(4, 4, 4, 4)) # 4D signal
+    >>> with hs.transposed(s2, s3, s4, signal_axes=2) as signals:
+    ...    hs.plot.plot_images(signals)
+    >>> # Alternatively, the last command could have been
+    >>> hs.plot.plot_images(hs.transpose(s2, s3, s4, signal_axes=2))
 
 
 Basic statistical analysis
