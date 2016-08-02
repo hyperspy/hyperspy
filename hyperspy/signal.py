@@ -3990,27 +3990,6 @@ class BaseSignal(FancySlicing,
             res._make_sure_data_is_contiguous()
         return res
 
-    @contextmanager
-    def transposed(self, signal_axes=None, navigation_axes=None, copy=False):
-        """Use this function together with a `with` statement to have the
-        signal be transposed for the scope of the `with` block.
-
-        See also
-        --------
-        transpose
-
-        Examples
-        --------
-        >>> import numpy as np
-        >>> s = BaseSignal(np.random.random((3, 10, 10)))
-        >>> s
-        <BaseSignal, title: , dimensions: (|3, 10, 10)>
-        >>> with s.transposed(signal_axes=2) as im:
-                hs.plot.plot_images(im)
-        """
-        yield self.transpose(signal_axes=signal_axes,
-                             navigation_axes=navigation_axes, copy=copy)
-
     @property
     def T(self):
         """The transpose of the signal, with signal and navigation spaces

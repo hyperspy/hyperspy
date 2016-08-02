@@ -719,13 +719,6 @@ class TestTranspose:
         nt.assert_equal([ax.name for ax in t.axes_manager.navigation_axes],
                         ['b', 'a'])
 
-    def test_transposed_cm(self):
-        with self.s.transposed(signal_axes=2) as im:
-            nt.assert_equal(im.axes_manager.signal_shape, (2, 1))
-            nt.assert_equal([ax.name for ax in im.axes_manager.signal_axes],
-                            ['b', 'a'])
-        nt.assert_equal(self.s.axes_manager.navigation_shape, ())
-
     def test_copy(self):
         t = self.s.transpose(signal_axes=['f', 'a', 'b'], copy=False)
         nt.assert_is(t.data.base, self.s.data)
