@@ -3885,24 +3885,29 @@ class BaseSignal(FancySlicing,
 
         Examples
         --------
+        >>> # just create a signal with many distinct dimensions
         >>> s = hs.signals.BaseSignal(np.random.rand(1,2,3,4,5,6,7,8,9))
         >>> s
         <BaseSignal, title: , dimensions: (|9, 8, 7, 6, 5, 4, 3, 2, 1)>
 
-        >>> s.transpose() # just swap signal and navigation spaces
+        >>> s.transpose() # swap signal and navigation spaces
         <BaseSignal, title: , dimensions: (9, 8, 7, 6, 5, 4, 3, 2, 1|)>
 
-        >>> s.transpose(signal_axes=5) # 5 axes in signal space
+        >>> s.T # a shortcut for no arguments
+        <BaseSignal, title: , dimensions: (9, 8, 7, 6, 5, 4, 3, 2, 1|)>
+
+        >>> s.transpose(signal_axes=5) # roll to leave 5 axes in navigation space
         <BaseSignal, title: , dimensions: (4, 3, 2, 1|9, 8, 7, 6, 5)>
 
-        >>> s.transpose(navigation_axes=3) # 3 axes in navigation space
+        >>> s.transpose(navigation_axes=3) # roll leave 3 axes in navigation space
         <BaseSignal, title: , dimensions: (3, 2, 1|9, 8, 7, 6, 5, 4)>
 
         >>> # 3 explicitly defined axes in signal space
         >>> s.transpose(signal_axes=[0, 2, 6])
-        <BaseSignal, title: , dimensions: (8, 6, 5, 4, 2, 1|3, 7, 9)>
+        <BaseSignal, title: , dimensions: (8, 6, 5, 4, 2, 1|9, 7, 3)>
 
         >>> # A mix of two lists, but specifying all axes explicitly
+        >>> # The order of axes is preserved in both lists
         >>> s.transpose(navigation_axes=[1, 2, 3, 4, 5, 8], signal_axes=[0, 6, 7])
         <BaseSignal, title: , dimensions: (8, 7, 6, 5, 4, 1|9, 3, 2)>
 

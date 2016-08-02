@@ -957,7 +957,7 @@ in one space (just one number can be specified, as the other is defined as
 
     >>> # 3 explicitly defined axes in signal space
     >>> s.transpose(signal_axes=[0, 2, 6])
-    <BaseSignal, title: , dimensions: (8, 6, 5, 4, 2, 1|3, 7, 9)>
+    <BaseSignal, title: , dimensions: (8, 6, 5, 4, 2, 1|9, 7, 3)>
 
     >>> # A mix of two lists, but specifying all axes explicitly
     >>> # The order of axes is preserved in both lists
