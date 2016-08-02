@@ -2566,7 +2566,7 @@ class BaseSignal(FancySlicing,
             if log:
                 _warn_string = \
                     "{0!r} data is replaced by its optimized copy".format(
-                    self)
+                        self)
                 _logger.warning(_warn_string)
             self.data = np.ascontiguousarray(self.data)
 
