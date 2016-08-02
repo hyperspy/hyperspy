@@ -1653,7 +1653,7 @@ class BaseSignal(FancySlicing,
         if self.axes_manager.signal_dimension != 2:
             raise SignalDimensionError(self.axes_manager.signal_dimension, 2)
 
-    def _deepcopy_with_new_data(self, data=None):
+    def _deepcopy_with_new_data(self, data=None, copy_variance=False):
         """Returns a deepcopy of itself replacing the data.
 
         This method has the advantage over deepcopy that it does not
@@ -1668,12 +1668,16 @@ class BaseSignal(FancySlicing,
         ns : Signal
 
         """
+        old_np = None
         try:
             old_data = self.data
             self.data = None
             old_plot = self._plot
             self._plot = None
             old_models = self.models._models
+            if not copy_variance and "Noise_properties" in self.metadata.Signal:
+                old_np = self.metadata.Signal.Noise_properties
+                del self.metadata.Signal.Noise_properties
             self.models._models = DictionaryTreeBrowser()
             ns = self.deepcopy()
             ns.data = np.atleast_1d(data)
@@ -1682,6 +1686,8 @@ class BaseSignal(FancySlicing,
             self.data = old_data
             self._plot = old_plot
             self.models._models = old_models
+            if old_np is not None:
+                self.metadata.Signal.Noise_properties = old_np
 
     def _summary(self):
         string = "\n\tTitle: "
@@ -2239,7 +2245,7 @@ class BaseSignal(FancySlicing,
                 new_shape[axis.index_in_axes_manager])
         factors = (np.array(self.data.shape) /
                    np.array(new_shape_in_array))
-        s = out or self._deepcopy_with_new_data(None)
+        s = out or self._deepcopy_with_new_data(None, copy_variance=True)
         data = array_tools.rebin(self.data, new_shape_in_array)
         if out:
             out.data[:] = data
@@ -2582,20 +2588,25 @@ class BaseSignal(FancySlicing,
         self._make_sure_data_is_contiguous()
         axes = [axis.index_in_array for
                 axis in self.axes_manager.signal_axes]
-        unfolded_axis = (
-            self.axes_manager.navigation_axes[0].index_in_array)
-        new_shape = [1] * len(self.data.shape)
-        for axis in axes:
-            new_shape[axis] = self.data.shape[axis]
-        new_shape[unfolded_axis] = -1
+        if axes:
+            unfolded_axis = (
+                self.axes_manager.navigation_axes[0].index_in_array)
+            new_shape = [1] * len(self.data.shape)
+            for axis in axes:
+                new_shape[axis] = self.data.shape[axis]
+            new_shape[unfolded_axis] = -1
+        else:  # signal_dimension == 0
+            new_shape = (-1, 1)
+            axes = [1]
+            unfolded_axis = 0
         # Warning! if the data is not contigous it will make a copy!!
         data = self.data.reshape(new_shape)
+        getitem = [0] * len(data.shape)
+        for axis in axes:
+            getitem[axis] = slice(None)
         for i in range(data.shape[unfolded_axis]):
-            getitem = [0] * len(data.shape)
-            for axis in axes:
-                getitem[axis] = slice(None)
             getitem[unfolded_axis] = i
-            yield(data[getitem])
+            yield(data[tuple(getitem)])
 
     def _remove_axis(self, axes):
         am = self.axes_manager
@@ -3247,7 +3258,7 @@ class BaseSignal(FancySlicing,
             scale.add(self.axes_manager.signal_axes[i].scale)
             units.add(self.axes_manager.signal_axes[i].units)
         if len(units) != 1 or len(scale) != 1:
-            warnings.warn(
+            _logger.warning(
                 "The function you applied does not take into "
                 "account the difference of units and of scales in-between"
                 " axes.")
@@ -3990,12 +4001,15 @@ class BaseSignal(FancySlicing,
                     "The passed navigation_axes argument is not valid")
         else:
             raise ValueError("The passed signal_axes argument is not valid")
+        # translate to axes idx from actual objects for variance
+        idx_sig = [ax.index_in_axes_manager for ax in signal_axes]
+        idx_nav = [ax.index_in_axes_manager for ax in navigation_axes]
         # get data view
         array_order = tuple(
             ax.index_in_array for ax in navigation_axes)
         array_order += tuple(ax.index_in_array for ax in signal_axes)
         newdata = self.data.transpose(array_order)
-        res = self._deepcopy_with_new_data(newdata)
+        res = self._deepcopy_with_new_data(newdata, copy_variance=True)
 
         # reconfigure the axes of the axesmanager:
         ram = res.axes_manager
@@ -4010,14 +4024,11 @@ class BaseSignal(FancySlicing,
         ram._update_attributes()
         ram._update_trait_handlers(remove=False)
         res._assign_subclass()
-        # translate to axes names from actual objects for variance
-        names_sig = [ax.name for ax in signal_axes]
-        names_nav = [ax.name for ax in navigation_axes]
         if res.metadata.has_item("Signal.Noise_properties.variance"):
             var = res.metadata.Signal.Noise_properties.variance
             if isinstance(var, BaseSignal):
-                var = var.transpose(signal_axes=names_sig,
-                                    navigation_axes=names_nav,
+                var = var.transpose(signal_axes=idx_sig,
+                                    navigation_axes=idx_nav,
                                     optimize=optimize)
                 res.metadata.set_item('Signal.Noise_properties.variance', var)
         if optimize:
