@@ -642,7 +642,7 @@ class TestOutArg:
 class TestTranspose:
 
     def setUp(self):
-        self.s = signals.BaseSignal(np.random.rand(1,2,3,4,5,6))
+        self.s = signals.BaseSignal(np.random.rand(1, 2, 3, 4, 5, 6))
         for ax, name in zip(self.s.axes_manager._axes, 'abcdef'):
             ax.name = name
         # just to make sure in case default changes
@@ -699,7 +699,9 @@ class TestTranspose:
                         ['f', 'a', 'b'])
 
     def test_navigation_iterable_axes_transpose(self):
-        t = self.s.transpose(navigation_axes=self.s.axes_manager.signal_axes[:2])
+        t = self.s.transpose(
+            navigation_axes=self.s.axes_manager.signal_axes[
+                :2])
         nt.assert_equal(t.axes_manager.navigation_shape, (6, 5))
         nt.assert_equal([ax.name for ax in t.axes_manager.navigation_axes],
                         ['f', 'e'])

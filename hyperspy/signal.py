@@ -3961,7 +3961,8 @@ class BaseSignal(FancySlicing,
                 signal_axes = am.navigation_axes
                 navigation_axes = am.signal_axes
             else:
-                raise ValueError("The passed navigation_axes argument is not valid")
+                raise ValueError(
+                    "The passed navigation_axes argument is not valid")
         else:
             raise ValueError("The passed signal_axes argument is not valid")
         # get data view
