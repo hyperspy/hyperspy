@@ -974,7 +974,8 @@ class BaseModel(list):
             if fitter == "leastsq":
                 if bounded:
                     # leastsq with bounds requires scipy >= 0.17
-                    if StrictVersion(scipy.__version__) < StrictVersion("0.17"):
+                    if StrictVersion(
+                            scipy.__version__) < StrictVersion("0.17"):
                         raise ImportError(
                             "leastsq with bounds requires SciPy >= 0.17")
 
