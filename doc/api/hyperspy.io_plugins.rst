@@ -92,6 +92,14 @@ hyperspy.io_plugins.netcdf module
     :undoc-members:
     :show-inheritance:
 
+hyperspy.io_plugins.protochips module
+-------------------------------------
+
+.. automodule:: hyperspy.io_plugins.protochips
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 hyperspy.io_plugins.ripple module
 ---------------------------------
 
@@ -124,13 +132,6 @@ hyperspy.io_plugins.unbcf_fast module
     :undoc-members:
     :show-inheritance:
 
-hyperspy.io_plugins.protochips module
--------------------------------
-
-.. automodule:: hyperspy.io_plugins.protochips
-    :members:
-    :undoc-members:
-    :show-inheritance:
 
 Module contents
 ---------------
