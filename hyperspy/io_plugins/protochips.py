@@ -107,13 +107,13 @@ class ProtochipsCSV(object):
     def _get_metadata(self, quantity):
         return {'General': {'original_filename': os.path.split(self.filename)[1],
                             'title': '%s (%s)' % (quantity,
-                                                  self._parse_quantity_units(quantity)),
-                            'authors': self.user,
-                            'date': self.start_datetime.date(),
-                            'time': self.start_datetime.time(),
-                            'notes': self._parse_notes()},
-                "Signal": {'signal_type': '',
-                           'quantity': self._parse_quantity(quantity)}}
+                                                  self._parse_quantity_units(quantity)),},
+#                            'authors': self.user,
+#                            'date': self.start_datetime.date(),
+#                            'time': self.start_datetime.time(),
+#                            'notes': self._parse_notes()},
+                "Signal": {'signal_type': '',}}
+#                           'quantity': self._parse_quantity(quantity)}}
 
     def _get_metadata_time_axis(self):
         return {'value': self.time_axis,
