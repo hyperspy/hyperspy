@@ -548,6 +548,11 @@ class BaseModel(list):
         if update_on_resume is True:
             self.update_plot()
 
+    def _update_model_line(self):
+        if (self._plot_active is True and
+                self._model_line is not None):
+            self._model_line.update()
+
     def _close_plot(self):
         if self._plot_components is True:
             self.disable_plot_components()
