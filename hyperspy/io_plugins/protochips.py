@@ -48,10 +48,6 @@ invalid_file_error = "The Protochips csv reader can't import the file, please"\
     " make sure, this is a valid Protochips log file."
 
 
-def _bad_file():
-    raise IOError(invalid_file_error)
-
-
 def file_reader(filename, *args, **kwds):
     csv_file = ProtochipsCSV(filename)
     return _protochips_log_reader(csv_file)
@@ -63,7 +59,7 @@ def _protochips_log_reader(csv_file):
         try:
             csvs.append(csv_file.get_dictionary(key))
         except:
-            _bad_file()
+            raise IOError(invalid_file_error)
     return csvs
 
 
@@ -78,16 +74,18 @@ class ProtochipsCSV(object):
     def _parse_header(self, header_line_number):
         self.raw_header = self._read_header(header_line_number)
         self.column_name = self._read_column_name()
-        self._check_if_protochips_csv_file()
+        if not self._is_protochips_csv_file():
+            raise IOError(invalid_file_error)
         self._read_all_metadata_header()
         self.logged_quantity_name_list = self.column_name[2:]
 
-    def _check_if_protochips_csv_file(self):
+    def _is_protochips_csv_file(self):
+        # This check is not great, but it's better than nothing...
         if 'Time' in self.column_name and 'Notes' in self.column_name and len(
                 self.column_name) >= 3:
-            pass
+            return True
         else:
-            _bad_file()
+            return False
 
     def get_dictionary(self, quantity):
         return {'data': self._data_dictionary[quantity],
@@ -115,8 +113,7 @@ class ProtochipsCSV(object):
                             'time': self.start_datetime.time(),
                             'notes': self._parse_notes()},
                 "Signal": {'signal_type': '',
-                           'quantity': self._parse_quantity_name(quantity),
-                           'units': self._parse_quantity_units(quantity)}}
+                           'quantity': self._parse_quantity(quantity)}}
 
     def _get_metadata_time_axis(self):
         return {'value': self.time_axis,
@@ -177,8 +174,10 @@ class ProtochipsCSV(object):
                  'navigate': False
                  }]
 
-    def _parse_quantity_name(self, quantity):
-        return quantity.split(' ')[-1]
+    def _parse_quantity(self, quantity):
+        quantity_name = quantity.split(' ')[-1]
+        return '%s (%s)' % (quantity_name,
+                            self._parse_quantity_units(quantity))
 
     def _parse_quantity_units(self, quantity):
         quantity = quantity.split(' ')[-1].lower()
