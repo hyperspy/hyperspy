@@ -1653,7 +1653,7 @@ class BaseSignal(FancySlicing,
         if self.axes_manager.signal_dimension != 2:
             raise SignalDimensionError(self.axes_manager.signal_dimension, 2)
 
-    def _deepcopy_with_new_data(self, data=None):
+    def _deepcopy_with_new_data(self, data=None, copy_variance=False):
         """Returns a deepcopy of itself replacing the data.
 
         This method has the advantage over deepcopy that it does not
@@ -1675,7 +1675,7 @@ class BaseSignal(FancySlicing,
             old_plot = self._plot
             self._plot = None
             old_models = self.models._models
-            if "Noise_properties" in self.metadata.Signal:
+            if not copy_variance and "Noise_properties" in self.metadata.Signal:
                 old_np = self.metadata.Signal.Noise_properties
                 del self.metadata.Signal.Noise_properties
             self.models._models = DictionaryTreeBrowser()
@@ -2245,7 +2245,7 @@ class BaseSignal(FancySlicing,
                 new_shape[axis.index_in_axes_manager])
         factors = (np.array(self.data.shape) /
                    np.array(new_shape_in_array))
-        s = out or self._deepcopy_with_new_data(None)
+        s = out or self._deepcopy_with_new_data(None, copy_variance=True)
         data = array_tools.rebin(self.data, new_shape_in_array)
         if out:
             out.data[:] = data
@@ -4004,7 +4004,7 @@ class BaseSignal(FancySlicing,
             ax.index_in_array for ax in navigation_axes)
         array_order += tuple(ax.index_in_array for ax in signal_axes)
         newdata = self.data.transpose(array_order)
-        res = self._deepcopy_with_new_data(newdata)
+        res = self._deepcopy_with_new_data(newdata, copy_variance=True)
 
         # reconfigure the axes of the axesmanager:
         ram = res.axes_manager
