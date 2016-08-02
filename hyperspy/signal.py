@@ -1689,7 +1689,6 @@ class BaseSignal(FancySlicing,
             if old_np is not None:
                 self.metadata.Signal.Noise_properties = old_np
 
-
     def _summary(self):
         string = "\n\tTitle: "
         string += self.metadata.General.title
