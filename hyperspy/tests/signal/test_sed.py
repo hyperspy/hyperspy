@@ -39,8 +39,8 @@ class Test_metadata:
     def test_default_param(self):
         dp = self.signal
         md = dp.metadata
-        nt.assert_equal(md.Acquisition_instrument.TEM.precession_angle,
-                        preferences.SED.sed_precession_angle)
+        nt.assert_equal(md.Acquisition_instrument.TEM.rocking_angle,
+                        preferences.ElectronDiffraction.ed_precession_angle)
 
 class Test_direct_beam_methods:
 

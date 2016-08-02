@@ -48,6 +48,6 @@ from hyperspy._signals.complex_signal2d import ComplexSignal2D
 from hyperspy._signals.eels import EELSSpectrum
 from hyperspy._signals.eds_sem import EDSSEMSpectrum
 from hyperspy._signals.eds_tem import EDSTEMSpectrum
-from hyperspy._signals.sed import ElectronDiffraction
+from hyperspy._signals.electron_diffraction import ElectronDiffraction
 from hyperspy._signals.dielectric_function import DielectricFunction
 from hyperspy.signal import BaseSignal

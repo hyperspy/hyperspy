@@ -24,7 +24,7 @@ import scipy.ndimage as ndi
 
 from hyperspy.signals import Signal2D, Signal1D
 from hyperspy.decorators import only_interactive
-from hyperspy.gui.sed import SEDParametersUI
+from hyperspy.gui.electron_diffraction import EDParametersUI
 from hyperspy.defaults_parser import preferences
 import hyperspy.gui.messages as messagesui
 
@@ -75,25 +75,25 @@ class ElectronDiffraction(Signal2D):
 
         if "Acquisition_instrument.TEM.beam_energy" not in md:
             md.set_item("Acquisition_instrument.TEM.beam_energy",
-                        preferences.SED.sed_beam_energy)
+                        preferences.ElectronDiffraction.ed_beam_energy)
         if "Acquisition_instrument.TEM.scan_rotation" not in md:
             md.set_item("Acquisition_instrument.TEM.scan_rotation",
-                        preferences.SED.sed_scan_rotation)
+                        preferences.ElectronDiffraction.ed_scan_rotation)
         if "Acquisition_instrument.TEM.convergence_angle" not in md:
             md.set_item("Acquisition_instrument.TEM.convergence_angle",
-                        preferences.SED.sed_convergence_angle)
+                        preferences.ElectronDiffraction.ed_convergence_angle)
         if "Acquisition_instrument.TEM.precession_angle" not in md:
             md.set_item("Acquisition_instrument.TEM.rocking_angle",
-                        preferences.SED.sed_precession_angle)
+                        preferences.ElectronDiffraction.ed_precession_angle)
         if "Acquisition_instrument.TEM.precession_frequency" not in md:
             md.set_item("Acquisition_instrument.TEM.rocking_frequency",
-                        preferences.SED.sed_precession_frequency)
+                        preferences.ElectronDiffraction.ed_precession_frequency)
         if "Acquisition_instrument.TEM.Detector.Diffraction.camera_length" not in md:
             md.set_item("Acquisition_instrument.TEM.Detector.Diffraction.camera_length",
-                        preferences.SED.sed_camera_length)
+                        preferences.ElectronDiffraction.ed_camera_length)
         if "Acquisition_instrument.TEM.Detector.Diffraction.exposure_time" not in md:
             md.set_item("Acquisition_instrument.TEM.Detector.Diffraction.exposure_time",
-                        preferences.SED.sed_exposure_time)
+                        preferences.ElectronDiffraction.ed_exposure_time)
 
     def set_microscope_parameters(self,
                                   beam_energy=None,
@@ -117,9 +117,9 @@ class ElectronDiffraction(Signal2D):
             Scan rotation in degrees
         convergence_angle : float
             Convergence angle in mrad
-        precession_angle : float
+        rocking_angle : float
             Precession angle in mrad
-        precession_frequency : float
+        rocking_frequency : float
             Precession frequency in Hz
         exposure_time : float
             Exposure time in ms.
@@ -127,9 +127,9 @@ class ElectronDiffraction(Signal2D):
         Examples
         --------
         >>> dp = hs.datasets.example_signals.electron_diffraction()
-        >>> print(dp.metadata.Acquisition_instrument.TEM.precession_angle)
+        >>> print(dp.metadata.Acquisition_instrument.TEM.rocking_angle)
         >>> dp.set_microscope_parameters(precession_angle=36.)
-        >>> print(dp.metadata.Acquisition_instrument.TEM.precession_angle)
+        >>> print(dp.metadata.Acquisition_instrument.TEM.rocking_angle)
         18.0
         36.0
         """
@@ -164,7 +164,7 @@ class ElectronDiffraction(Signal2D):
 
     @only_interactive
     def _set_microscope_parameters(self):
-        sed_par = SEDParametersUI()
+        ed_par = EDParametersUI()
         mapping = {
             'Acquisition_instrument.TEM.beam_energy':
             'sed_par.beam_energy',
@@ -185,23 +185,23 @@ class ElectronDiffraction(Signal2D):
         for key, value in mapping.items():
             if self.metadata.has_item(key):
                 exec('%s = self.metadata.%s' % (value, key))
-        sed_par.edit_traits()
+        ed_par.edit_traits()
 
         mapping = {
             'Acquisition_instrument.TEM.beam_energy':
-            sed_par.beam_energy,
+            ed_par.beam_energy,
             'Acquisition_instrument.TEM.scan_rotation':
-            sed_par.scan_rotation,
+            ed_par.scan_rotation,
             'Acquisition_instrument.TEM.convergence_angle':
-            sed_par.convergence_angle,
+            ed_par.convergence_angle,
             'Acquisition_instrument.TEM.rocking_angle':
-            sed_par.precession_angle,
+            ed_par.precession_angle,
             'Acquisition_instrument.TEM.rocking_frequency':
-            sed_par.precession_frequency,
+            ed_par.precession_frequency,
             'Acquisition_instrument.TEM.Detector.Diffraction.camera_length':
-            sed_par.camera_length,
+            ed_par.camera_length,
             'Acquisition_instrument.TEM.Detector.Diffraction.exposure_time':
-            sed_par.exposure_time, }
+            ed_par.exposure_time, }
 
         for key, value in mapping.iteritems():
             if value != t.Undefined:
@@ -236,7 +236,7 @@ class ElectronDiffraction(Signal2D):
         else:
             return False
 
-    def get_direct_beam_mask(self, radius, center=None):
+    def get_direct_beam_mask(self, radius=None, center=None):
         """Generate a signal mask for the direct beam.
 
         Parameters
@@ -325,7 +325,7 @@ class ElectronDiffraction(Signal2D):
 
         return c
 
-    def get_direct_beam_shifts(self, centers=None, radius):
+    def get_direct_beam_shifts(self, centers=None, radius=None):
         """Determine rigid shifts in the SED patterns based on the position of
         the direct beam and return the shifts required to center all patterns.
 

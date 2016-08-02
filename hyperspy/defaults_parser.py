@@ -209,26 +209,26 @@ class EDSConfig(t.HasTraits):
         desc='default value for the elevation angle in degree.')
 
 
-class SEDConfig(t.HasTraits):
-    sed_beam_energy = t.CFloat(300.,
+class ElectronDiffractionConfig(t.HasTraits):
+    ed_beam_energy = t.CFloat(300.,
         label='Beam energy (keV)',
         desc='default value for accelerating voltage of microscope')
-    sed_camera_length = t.CFloat(0.21,
+    ed_camera_length = t.CFloat(0.21,
         label='Camera length (m)',
         desc='default value for camera length in m.')
-    sed_scan_rotation = t.CFloat(275,
+    ed_scan_rotation = t.CFloat(275,
         label='Scan rotation (degrees)',
         desc='default value for scan rotation in degrees')
-    sed_convergence_angle = t.CFloat(5.,
+    ed_convergence_angle = t.CFloat(5.,
         label='Convergence semi-angle (mrad)',
         desc='default value for convergence semi-angle in mrad.')
-    sed_precession_angle = t.CFloat(18.,
+    ed_precession_angle = t.CFloat(18.,
         label='Precession angle (mrad)',
         desc='default value for precession angle in mrad.')
-    sed_precession_frequency = t.CFloat(100.,
+    ed_precession_frequency = t.CFloat(100.,
         label='Precession frequency (Hertz)',
         desc='default value for precession frequency in Hertz.')
-    sed_exposure_time = t.CFloat(60.,
+    ed_exposure_time = t.CFloat(60.,
         label='Exposure time (ms)',
         desc='default value for camera exposure time in ms.')
 
@@ -254,7 +254,7 @@ template = {
     'Model': ModelConfig(),
     'EELS': EELSConfig(),
     'EDS': EDSConfig(),
-    'SED': SEDConfig(),
+    'ElectronDiffraction': ElectronDiffractionConfig(),
     'MachineLearning': MachineLearningConfig(),
     'Plot': PlotConfig(), }
 
@@ -326,7 +326,7 @@ config2template(template, config)
 class Preferences(t.HasTraits):
     EELS = t.Instance(EELSConfig)
     EDS = t.Instance(EDSConfig)
-    SED = t.Instance(SEDConfig)
+    ElectronDiffraction = t.Instance(ElectronDiffractionConfig)
     Model = t.Instance(ModelConfig)
     General = t.Instance(GeneralConfig)
     MachineLearning = t.Instance(MachineLearningConfig)
@@ -346,7 +346,7 @@ class Preferences(t.HasTraits):
 preferences = Preferences(
     EELS=template['EELS'],
     EDS=template['EDS'],
-    SED=template['SED'],
+    ElectronDiffraction=template['ElectronDiffraction'],
     General=template['General'],
     Model=template['Model'],
     MachineLearning=template['MachineLearning'],

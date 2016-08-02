@@ -6,7 +6,7 @@ Electron Diffraction
 Methods to analyse electron diffraction data acquired conventional or scanning
 mode of a scanning transmission electron microscope (STEM) are described in
 this chapter. These methods are specific to the signals in the
-:py:class:`~._signals.sed.ElectronDiffraction` class.
+:py:class:`~._signals.electron_diffraction.ElectronDiffraction` class.
 
 .. NOTE::
 
@@ -76,7 +76,7 @@ Parameters can be specified directly:
     >>> dp.metadata.Acquisition_instrument.SED.convergence_angle = 5.
 
 or with the
-:py:meth:`~._signals.sed.ElectronDiffraction.set_microscope_parameters` method:
+:py:meth:`~._signals.electron_diffraction.ElectronDiffraction.set_microscope_parameters` method:
 
 .. code-block:: python
 
@@ -154,7 +154,7 @@ The radial average profile of each electron diffraction pattern about a given
 center can be calculated and returned as a
 :py:class:`~._signals.signal1d.Signal1D` class object. If no center is specified
 by the user it is assumed that the center should be the direct beam position,
-which is estimated using the py:meth:`~._signals.sed.get_direct_beam_position()`
+which is estimated using the py:meth:`~._signals.electron_diffraction.get_direct_beam_position()`
 method.
 
 .. code-block:: python
@@ -175,14 +175,14 @@ Direct beam masking
 
 A signal mask that excludes pixels in the SED patterns containing the direct
 beam can be generated automatically using the
-py:meth:`~._signals.sed.get_direct_beam_mask()` method. This can be useful for
+py:meth:`~._signals.electron_diffraction.get_direct_beam_mask()` method. This can be useful for
 visualisation if the direct beam is much more intense than diffracted beams and
 can alleviate issues associated with saturation of the direct beam that may
 affect further analysis.
 
-The py:meth:`~._signals.sed.get_direct_beam_mask()` method estimates the direct
+The py:meth:`~._signals.electron_diffraction.get_direct_beam_mask()` method estimates the direct
 beam position in each SED pattern using the
-py:meth:`~._signals.sed.get_direct_beam_position()` method and masks a
+py:meth:`~._signals.electron_diffraction.get_direct_beam_position()` method and masks a
 circular region around that position with a user specified radius, as follows:
 
 .. code-block:: python
@@ -203,14 +203,14 @@ Vacuum masking
 
 A navigation mask to exclude electron diffraction patterns acquired in vacuum
 from further analysis can be generated using the
-py:meth:`~._signals.sed.get_vacuum_mask()` method. Ignoring
+py:meth:`~._signals.electron_diffraction.get_vacuum_mask()` method. Ignoring
 these patterns, which do not contain useful information, in later analysis is
 efficient in terms of computation time and can improve machine learning results.
 The method crudely determines whether a SED pattern was acquired in vacuum by
 assessing whether or not any diffraction peaks exist in the region excluding the
 direct beam. This is based on a user defined threshold for the maximum value
 after the patterns have been masked using the
-py:meth:`~._signals.sed.get_direct_beam_mask()` method.
+py:meth:`~._signals.electron_diffraction.get_direct_beam_mask()` method.
 
 .. code-block:: python
 
@@ -252,8 +252,8 @@ diffraction data [Eggeman2015]_. When applying these methods it may be useful to
 mask the direct beam or regions of vacuum from the data. A specialised method is
 therefore implemented to provide easy access to these options. If float values
 are passed as the signal_mask and/or navigation_mask then masks are generated
-and applied using the py:meth:`~._signals.sed.get_direct_beam_mask()` and
-py:meth:`~._signals.sed.get_vacuum_mask()` methods respectively.
+and applied using the py:meth:`~._signals.electron_diffraction.get_direct_beam_mask()` and
+py:meth:`~._signals.electron_diffraction.get_vacuum_mask()` methods respectively.
 
 .. code-block:: python
 

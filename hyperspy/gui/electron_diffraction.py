@@ -28,7 +28,7 @@ class General(t.HasTraits):
     record_by = t.Enum('spectrum', 'image', default=t.Undefined)
 
 
-class SEDParametersUI(t.HasTraits):
+class EDParametersUI(t.HasTraits):
 
     beam_energy = t.Float(t.Undefined,
                           label='Beam energy (keV)')
@@ -38,16 +38,16 @@ class SEDParametersUI(t.HasTraits):
                             label='Scan rotation (degrees)')
     convergence_angle = t.Float(t.Undefined,
                                 label='Convergence angle (mrad)')
-    precession_angle = t.Float(t.Undefined,
+    rocking_angle = t.Float(t.Undefined,
                                label='Precession angle (mrad)')
-    precession_frequency = t.Float(t.Undefined,
+    rocking_frequency = t.Float(t.Undefined,
                                    label='Precession frequency (Hz)')
     exposure_time = t.Float(t.Undefined,
                             label='Exposure time (ms)')
     traits_view = tu.View(
         tu.Group('beam_energy', 'camera_length', 'scan_rotation',
-                 'convergence_angle', 'precession_angle',
-                 'precession_frequency', 'exposure_time',
-                 label='SED', show_border=True),
+                 'convergence_angle', 'rocking_angle',
+                 'rocking_frequency', 'exposure_time',
+                 label='Diffraction', show_border=True),
         kind='modal', buttons=[OKButton, CancelButton],
-title='SED parameters definition wizard')
+title='Electron diffraction parameters definition wizard')
