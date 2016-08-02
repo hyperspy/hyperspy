@@ -1668,12 +1668,16 @@ class BaseSignal(FancySlicing,
         ns : Signal
 
         """
+        old_np = None
         try:
             old_data = self.data
             self.data = None
             old_plot = self._plot
             self._plot = None
             old_models = self.models._models
+            if "Noise_properties" in self.metadata.Signal:
+                old_np = self.metadata.Signal.Noise_properties
+                del self.metadata.Signal.Noise_properties
             self.models._models = DictionaryTreeBrowser()
             ns = self.deepcopy()
             ns.data = np.atleast_1d(data)
@@ -1682,6 +1686,8 @@ class BaseSignal(FancySlicing,
             self.data = old_data
             self._plot = old_plot
             self.models._models = old_models
+            if old_np is not None:
+                self.metadata.Signal.Noise_properties = old_np
 
     def _summary(self):
         string = "\n\tTitle: "
@@ -3990,6 +3996,9 @@ class BaseSignal(FancySlicing,
                     "The passed navigation_axes argument is not valid")
         else:
             raise ValueError("The passed signal_axes argument is not valid")
+        # translate to axes idx from actual objects for variance
+        idx_sig = [ax.index_in_axes_manager for ax in signal_axes]
+        idx_nav = [ax.index_in_axes_manager for ax in navigation_axes]
         # get data view
         array_order = tuple(
             ax.index_in_array for ax in navigation_axes)
@@ -4010,14 +4019,11 @@ class BaseSignal(FancySlicing,
         ram._update_attributes()
         ram._update_trait_handlers(remove=False)
         res._assign_subclass()
-        # translate to axes names from actual objects for variance
-        names_sig = [ax.name for ax in signal_axes]
-        names_nav = [ax.name for ax in navigation_axes]
         if res.metadata.has_item("Signal.Noise_properties.variance"):
             var = res.metadata.Signal.Noise_properties.variance
             if isinstance(var, BaseSignal):
-                var = var.transpose(signal_axes=names_sig,
-                                    navigation_axes=names_nav,
+                var = var.transpose(signal_axes=idx_sig,
+                                    navigation_axes=idx_nav,
                                     optimize=optimize)
                 res.metadata.set_item('Signal.Noise_properties.variance', var)
         if optimize:
