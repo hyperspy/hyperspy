@@ -337,8 +337,7 @@ class EELSSpectrum(Signal1D):
         if isinstance(threshold, numbers.Number):
             I0 = self.isig[:threshold].integrate1D(-1)
         else:
-            I0 = self._get_navigation_signal()
-            I0.axes_manager.set_signal_dimension(0)
+            I0 = self._get_navigation_signal().transpose(signal_axes=0)
             for i, s in progressbar(enumerate(self),
                                     total=self.axes_manager.navigation_size,
                                     disable=not show_progressbar,
@@ -349,8 +348,7 @@ class EELSSpectrum(Signal1D):
                 else:
                     s.data[:] = (self.inav[I0.axes_manager.indices].isig[
                                  :threshold_].integrate1D(-1).data)
-        I0.axes_manager.set_signal_dimension(
-            self.axes_manager.navigation_dimension)
+        I0 = I0.transpose(signal_axes=self.axes_manager.navigation_dimension)
         I0.metadata.General.title = (
             self.metadata.General.title + ' elastic intensity')
         if self.tmp_parameters.has_item('filename'):
@@ -430,8 +428,7 @@ class EELSSpectrum(Signal1D):
         """
         self._check_signal_dimension_equals_one()
         # Create threshold with the same shape as the navigation dims.
-        threshold = self._get_navigation_signal()
-        threshold.axes_manager.set_signal_dimension(0)
+        threshold = self._get_navigation_signal().transpose(signal_axes=0)
 
         # Progress Bar
         axis = self.axes_manager.signal_axes[0]
@@ -472,8 +469,8 @@ class EELSSpectrum(Signal1D):
             threshold.tmp_parameters.folder = self.tmp_parameters.folder
             threshold.tmp_parameters.extension = \
                 self.tmp_parameters.extension
-        threshold.axes_manager.set_signal_dimension(
-            min(2, self.axes_manager.navigation_dimension))
+        threshold = threshold.transpose(signal_axes=min(
+            2, self.axes_manager.navigation_dimension))
         return threshold
 
     def estimate_thickness(self,
