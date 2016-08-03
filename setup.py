@@ -355,6 +355,8 @@ with update_version_when_dev() as version:
                 'tests/io/ripple_files/*.rpl',
                 'tests/io/ripple_files/*.raw',
                 'tests/io/emd_files/*.emd',
+                'tests/io/protochips_data/*.npy',
+                'tests/io/protochips_data/*.csv',
                 'tests/drawing/*.ipynb',
                 'tests/signal/test_find_peaks1D_ohaver/test_find_peaks1D_ohaver.hdf5',
             ],
