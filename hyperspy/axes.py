@@ -653,7 +653,7 @@ class AxesManager(t.HasTraits):
             return self.signal_axes[int(y.real)]
         else:
             raise IndexError("axesmanager imaginary part of complex indices "
-                             "must be 0, 1 or 2")
+                             "must be 0, 1, 2 or 3")
 
     def __getslice__(self, i=None, j=None):
         """x.__getslice__(i, j) <==> x[i:j]

@@ -192,7 +192,7 @@ class TestEventsSuppression(EventsBase):
     def test_suppressor_init_args(self):
         with self.events.b.suppress():
             es = he.EventSuppressor((self.events.a, self.on_trigger),
-                                   self.events.c)
+                                    self.events.c)
             with es.suppress():
                 self.trigger_check(self.events.a.trigger, False)
                 self.trigger_check2(self.events.a.trigger, True)

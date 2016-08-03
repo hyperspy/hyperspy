@@ -41,6 +41,7 @@ _logger = logging.getLogger(__name__)
 class EELSSpectrum(Signal1D):
 
     _signal_type = "EELS"
+    _alias_signal_types = ["TEM EELS"]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -428,8 +429,7 @@ class EELSSpectrum(Signal1D):
         """
         self._check_signal_dimension_equals_one()
         # Create threshold with the same shape as the navigation dims.
-        threshold = self._get_navigation_signal()
-        threshold.axes_manager.set_signal_dimension(0)
+        threshold = self._get_navigation_signal().transpose(signal_axes=0)
 
         # Progress Bar
         axis = self.axes_manager.signal_axes[0]
