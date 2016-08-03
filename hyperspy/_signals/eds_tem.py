@@ -31,6 +31,7 @@ import warnings
 
 
 class EDSTEMSpectrum(EDSSpectrum):
+
     _signal_type = "EDS_TEM"
 
     def __init__(self, *args, **kwards):
@@ -49,7 +50,7 @@ class EDSTEMSpectrum(EDSSpectrum):
         """
 
         mp = self.metadata
-        mp.Signal.signal_type = 'EDS_TEM'
+        mp.Signal.signal_type = "EDS_TEM"
 
         mp = self.metadata
         if "Acquisition_instrument.TEM.tilt_stage" not in mp:

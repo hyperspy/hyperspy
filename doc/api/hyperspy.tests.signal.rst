@@ -36,14 +36,6 @@ hyperspy.tests.signal.test_assign_subclass module
     :undoc-members:
     :show-inheritance:
 
-hyperspy.tests.signal.test_attributes module
---------------------------------------------
-
-.. automodule:: hyperspy.tests.signal.test_attributes
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 hyperspy.tests.signal.test_binned module
 ----------------------------------------
 
