@@ -327,7 +327,7 @@ class EDSModel(Model1D):
             component, fix_it, show_label)
         if show_label and component in (self.xray_lines + self.family_lines):
             label = self._position_widgets[component._position][1]
-            label.string = ("$\mathrm{%s}_{\mathrm{%s}}$" %
+            label.string = (r"$\mathrm{%s}_{\mathrm{%s}}$" %
                             _get_element_and_line(component.name))
 
     def fit_background(self,
