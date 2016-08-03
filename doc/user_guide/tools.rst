@@ -23,20 +23,22 @@ common functionality to deal with one-dimensional (e.g. spectral) data and
 :py:class:`~._signals.signal1d.Signal1D` class for electron energy-loss
 spectroscopy data analysis.
 
-.. versionchanged:: 1.0.0
+The :ref:`table below <signal_subclasses_table-label>` summarises all the
+currently available specialised :py:class:`~.signal.BaseSignal` subclasses.
 
-Currently the following signal subclasses are available:
+.. versionchanged:: 1.0
 
-* :py:class:`~._signals.signal1d.Signal1D`
-* :py:class:`~._signals.signal2d.Signal2D`
-* :py:class:`~._signals.eels.EELSSpectrum`
-* :py:class:`~._signals.eds_tem.EDSTEMSpectrum`
-* :py:class:`~._signals.eds_sem.EDSSEMSpectrum`
-* :py:class:`~._signals.spectrum_simulation.SpectrumSimulation`
-* :py:class:`~._signals.image_simulation.ImageSimulation`
+    The :py:class:`~._signals.signal1D.Signal1D`,
+    :py:class:`~._signals.image.Signal2D` and :py:class:`~.signal.BaseSignal`
+    classes deprecated the old `Spectrum` `Image` and `Signal` classes.
 
-Note that in HyperSpy 1.0.0 the :py:class:`~._signals.signal1D.Signal1D` and
-:py:class:`~._signals.image.Signal2D` classes were deprecated.
+.. versionadded:: 1.0
+
+    New :py:class:`~._signals.complex_signal.ComplexSignal`,
+    :py:class:`~._signals.complex_signal1d.ComplexSignal1D` and
+    :py:class:`~._signals.complex_signal2d.ComplexSignal2D`
+    :py:class:`~.signal.BaseSignal` subclasses specialised in complex data.
+
 
 
 The :py:mod:`~.signals` module, which contains all available signal subclasses,
@@ -46,6 +48,8 @@ example we create a Signal2D instance from a 2D numpy array:
 .. code-block:: python
 
     >>> im = hs.signals.Signal2D(np.random.random((64,64)))
+    >>> im
+    <Signal2D, title: , dimensions: (|64, 64)>
 
 
 The different signals store other objects in what are called attributes. For
@@ -57,65 +61,136 @@ information (including calibration) can be accessed (and modified) in the
 :py:attr:`~.signal.BaseSignal.axes_manager` attribute.
 
 
+The navigation and signal dimensions
+------------------------------------
+
+HyperSpy can deal with data of arbitrary dimensions. Each dimension is
+internally classified as either "navigation" or "signal" and the way this
+classification is done determines the behaviour of the signal.
+
+The concept is probably best understood with an example: let's imagine a three
+dimensional dataset e.g. a numpy array with dimensions `(10, 20, 30)`. This
+dataset could be an spectrum image acquired by scanning over a sample in two
+dimensions. As in this case the signal is one-dimensional we use a
+:py:class:`~._signals.signal1D.Signal1D` subclass for this data e.g.:
+
+.. code-block:: python
+
+    >>> s = hs.signals.Signal1D(np.random.random((10, 20, 30)))
+    >>> s
+    <Signal1D, title: , dimensions: (20, 10|30)>
+
+In HyperSpy's terminology, the *signal dimension* of this dataset is 30 and
+the navigation dimensions (20, 10). Notice the separator `|` between the
+navigation and signal dimensions.
+
+
+However, the same dataset could also be interpreted as an image
+stack instead.  Actually it could has been acquired by capturing two
+dimensional images at different wavelengths. Then it would be natural to
+identify the two spatial dimensions as the signal dimensions and the wavelength
+dimension as the navigation dimension. To view the data in this way we could
+have used a :py:class:`~._signals.signal2D.Signal2D` instead e.g.:
+
+.. code-block:: python
+
+    >>> im = hs.signals.Signal2D(np.random.random((10, 20, 30)))
+    >>> im
+    <Signal2D, title: , dimensions: (10|30, 20)>
+
+Indeed, for data analysis purposes,
+one may like to operate with an image stack as if it was a set of spectra or
+viceversa. One can easily switch between these two alternative ways of
+classifiying the dimensions of a three-dimensional dataset by
+:ref:`transforming between BaseSignal subclasses
+<transforming.signal>`.
+
+The same dataset could be seen as a three-dimensional signal:
+
+.. code-block:: python
+
+    >>> td = hs.signals.BaseSignal(np.random.random((10, 20, 30)))
+    >>> td
+    <BaseSignal, title: , dimensions: (|30, 20, 10)>
+
+Notice that with use :py:class:`~.signal.BaseSignal` because there is
+no specialised subclass for three-dimensional data. Also note that by default
+:py:class:`~.signal.BaseSignal` interprets all dimensions as signal dimensions.
+We could also configure it to operate on the dataset as a three-dimensional
+array of scalars by changing the default *view* of
+:py:class:`~.signal.BaseSignal`:
+
+.. code-block:: python
+
+    >>> scalar = hs.signals.BaseSignal(np.random.random((10, 20, 30)))
+    >>> scalar.axes_manager.set_signal_dimension(0)
+    >>> scalar
+    <BaseSignal, title: , dimensions: (30, 20, 10|)>
+
+
+
+
+.. NOTE::
+
+    Although each dimension can be arbitrarily classified as "navigation
+    dimension" or "signal dimension", for most common tasks there is no need to
+    modify HyperSpy's default choice.
+
+
+
 .. _transforming.signal:
 
 Transforming between signal subclasses
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The different subclasses are characterized by three
-:py:attr:`~.signal.BaseSignal.metadata` attributes (see the table below):
+The different subclasses are characterized by the `signal_type` metadata attribute,
+the data `dtype` and the signal dimension. See the table and diagram below.
+`signal_type` describes the nature of the signal. It can be any string, normally the
+acronym associated with a particular signal. In certain cases HyperSpy provides
+features that are only available for a particular signal type through
+:py:class:`~.signal.BaseSignal` subclasses. The :py:class:`~.signal.BaseSignal` method
+:py:meth:`~.signal.BaseSignal.set_signal_type` changes the signal_type in place, which
+may result in a :py:class:`~.signal.BaseSignal` subclass transformation.
 
-`record_by`
-    Can be "spectrum", "image" or "", the latter meaning undefined and describes
-    the way the data is arranged in memory. It is possible to transform any
-    :py:class:`~.signal.BaseSignal` subclass to a :py:class:`~._signals.signal1d.Signal1D`
-    or :py:class:`~._signals.signal2d.Signal2D` subclass using the following
-    :py:class:`~.signal.BaseSignal` methods: :py:meth:`~.signal.BaseSignal.as_signal2D`
-    and :py:meth:`~.signal.BaseSignal.as_signal1D`. In addition
-    :py:class:`~._signals.signal1d.Signal1D` instances can be transformed into
-    two-dimensional signals using :py:meth:`~._signals.signal1d.Signal1D.to_signal2D`
-    and two-dimensional instances transformed into one dimensional instances using
-    :py:meth:`~._signals.signal2d.Signal2D.to_signal1D`. When transforming between
-    one and two dimensinoal signal classes the order in which the data array is stored
-    in memory is modified to improve performance. Also, some functions, e.g. plotting
-    or decomposing, will behave differently.
 
-`signal_type`
-    Describes the nature of the signal. It can be any string, normally the
-    acronym associated with a particular signal. In certain cases HyperSpy provides
-    features that are only available for a particular signal type through
-    :py:class:`~.signal.BaseSignal` subclasses. The :py:class:`~.signal.BaseSignal` method
-    :py:meth:`~.signal.BaseSignal.set_signal_type` changes the signal_type in place, which
-    may result in a :py:class:`~.signal.BaseSignal` subclass transformation.
+Furthermore, the `dtype` of the signal data also affects the subclass assignment. There are
+e.g. specialised signal subclasses to handle complex data (see the following diagram).
 
-`signal_origin`
-    Describes the origin of the signal and can be "simulation" or "experiment" or "", the
-    latter meaning undefined. In certain cases HyperSpy provides features that are only
-    available for a particular signal origin. The :py:class:`~.signal.BaseSignal` method
-    :py:meth:`~.signal.BaseSignal.set_signal_origin` changes the signal_origin in place,
-    which may result in a :py:class:`~.signal.BaseSignal` subclass transformation.
+
+.. figure::  images/HyperSpySignalOverview.png
+  :align:   center
+  :width:   500
+
+  Diagram showing the inheritance structure of the different subclasses
+
+.. _signal_subclasses_table-label:
+
 
 .. table:: BaseSignal subclass :py:attr:`~.signal.BaseSignal.metadata` attributes.
 
-    +---------------------------------------------------------------+-----------+-------------+---------------+
-    |                      BaseSignal subclass                      | record_by | signal_type | signal_origin |
-    +===============================================================+===========+=============+===============+
-    |                 :py:class:`~.signal.BaseSignal`               |     -     |      -      |       -       |
-    +---------------------------------------------------------------+-----------+-------------+---------------+
-    |           :py:class:`~._signals.signal1d.Signal1D`            | spectrum  |      -      |       -       |
-    +---------------------------------------------------------------+-----------+-------------+---------------+
-    | :py:class:`~._signals.spectrum_simulation.SpectrumSimulation` | spectrum  |      -      |  simulation   |
-    +---------------------------------------------------------------+-----------+-------------+---------------+
-    |           :py:class:`~._signals.eels.EELSSpectrum`            | spectrum  |    EELS     |       -       |
-    +---------------------------------------------------------------+-----------+-------------+---------------+
-    |           :py:class:`~._signals.eds_sem.EDSSEMSpectrum`       | spectrum  |   EDS_SEM   |       -       |
-    +---------------------------------------------------------------+-----------+-------------+---------------+
-    |           :py:class:`~._signals.eds_tem.EDSTEMSpectrum`       | spectrum  |   EDS_TEM   |       -       |
-    +---------------------------------------------------------------+-----------+-------------+---------------+
-    |              :py:class:`~._signals.signal2d.Signal2D`         |   image   |      -      |       -       |
-    +---------------------------------------------------------------+-----------+-------------+---------------+
-    |    :py:class:`~._signals.image_simulation.ImageSimulation`    |   image   |      -      |  simulation   |
-    +---------------------------------------------------------------+-----------+-------------+---------------+
+    +-------------------------------------------------------------------------+------------------+-----------------------+----------+
+    |                      BaseSignal subclass                                | signal_dimension |  signal_type          |  dtype   |
+    +=========================================================================+==================+=======================+==========+
+    |                 :py:class:`~.signal.BaseSignal`                         |        -         |       -               |  real    |
+    +-------------------------------------------------------------------------+------------------+-----------------------+----------+
+    |           :py:class:`~._signals.signal1d.Signal1D`                      |        1         |       -               |  real    |
+    +-------------------------------------------------------------------------+------------------+-----------------------+----------+
+    |           :py:class:`~._signals.eels.EELSSpectrum`                      |        1         |     EELS              |  real    |
+    +-------------------------------------------------------------------------+------------------+-----------------------+----------+
+    |           :py:class:`~._signals.eds_sem.EDSSEMSpectrum`                 |        1         |    EDS_SEM            |  real    |
+    +-------------------------------------------------------------------------+------------------+-----------------------+----------+
+    |           :py:class:`~._signals.eds_tem.EDSTEMSpectrum`                 |        1         |    EDS_TEM            |  real    |
+    +-------------------------------------------------------------------------+------------------+-----------------------+----------+
+    |              :py:class:`~._signals.signal2d.Signal2D`                   |        2         |       -               |  real    |
+    +-------------------------------------------------------------------------+------------------+-----------------------+----------+
+    |           :py:class:`~._signals.dielectric_function.DielectricFunction` |        1         |    DielectricFunction |  complex |
+    +-------------------------------------------------------------------------+------------------+-----------------------+----------+
+    |      :py:class:`~._signals.complex_signal.ComplexSignal`                |        -         |       -               | complex  |
+    +-------------------------------------------------------------------------+------------------+-----------------------+----------+
+    |    :py:class:`~._signals.complex_signal1d.ComplexSignal1D`              |        1         |       -               | complex  |
+    +-------------------------------------------------------------------------+------------------+-----------------------+----------+
+    |    :py:class:`~._signals.complex_signal2d.ComplexSignal2D`              |        2         |       -               | complex  |
+    +-------------------------------------------------------------------------+------------------+-----------------------+----------+
 
 
 The following example shows how to transform between different subclasses.
@@ -126,53 +201,23 @@ The following example shows how to transform between different subclasses.
        >>> s
        <Signal1D, title: , dimensions: (20, 10|100)>
        >>> s.metadata
-       ├── record_by = spectrum
-       ├── signal_origin =
        ├── signal_type =
        └── title =
        >>> im = s.to_signal2D()
        >>> im
        <Signal2D, title: , dimensions: (100|20, 10)>
        >>> im.metadata
-       ├── record_by = image
-       ├── signal_origin =
        ├── signal_type =
        └── title =
        >>> s.set_signal_type("EELS")
        >>> s
        <EELSSpectrum, title: , dimensions: (20, 10|100)>
-       >>> s.set_signal_origin("simulation")
+       >>> s.change_dtype("complex")
        >>> s
-       <EELSSpectrumSimulation, title: , dimensions: (20, 10|100)>
+       <ComplexSignal1D, title: , dimensions: (20, 10|100)>
 
 
-The navigation and signal dimensions
-------------------------------------
 
-HyperSpy can deal with data of arbitrary dimensions. Each dimension is
-internally classified as either "navigation" or "signal" and the way this
-classification is done determines the behaviour of the signal.
-
-The concept is probably best understood with an example: let's imagine a three
-dimensional dataset. This dataset could be an spectrum image acquired by
-scanning over a sample in two dimensions. In HyperSpy's terminology the
-spectrum dimension would be the signal dimension and the two other dimensions
-would be the navigation dimensions. We could see the same dataset as an image
-stack instead.  Actually it could has been acquired by capturing two
-dimensional images at different wavelengths. Then it would be natural to
-identify the two spatial dimensions as the signal dimensions and the wavelength
-dimension as the navigation dimension.  However, for data analysis purposes,
-one may like to operate with an image stack as if it was a set of spectra or
-viceversa. One can easily switch between these two alternative ways of
-classifiying the dimensions of a three-dimensional dataset by
-:ref:`transforming between BaseSignal subclasses
-<transforming.signal>`.
-
-.. NOTE::
-
-    Although each dimension can be arbitrarily classified as "navigation
-    dimension" or "signal dimension", for most common tasks there is no need to
-    modify HyperSpy's default choice.
 
 
 .. _signal.binned:
@@ -187,6 +232,9 @@ have the ``signal.metadata.Signal.binned`` attribute set to
 ``True``. This is because some methods operate differently in signals that are
 *binned*.
 
+.. versionchanged:: 1.0 ``Simulation``, ``SpectrumSimulation`` and ``ImageSimulation``
+   classes removed.
+
 The default value of the ``binned`` attribute is shown in the
 following table:
 
@@ -200,8 +248,6 @@ following table:
     +---------------------------------------------------------------+--------+
     |           :py:class:`~._signals.signal1d.Signal1D`            | False  |
     +---------------------------------------------------------------+--------+
-    | :py:class:`~._signals.spectrum_simulation.SpectrumSimulation` | False  |
-    +---------------------------------------------------------------+--------+
     |           :py:class:`~._signals.eels.EELSSpectrum`            | True   |
     +---------------------------------------------------------------+--------+
     |           :py:class:`~._signals.eds_sem.EDSSEMSpectrum`       | True   |
@@ -210,7 +256,11 @@ following table:
     +---------------------------------------------------------------+--------+
     |              :py:class:`~._signals.signal2d.Signal2D`         | False  |
     +---------------------------------------------------------------+--------+
-    |    :py:class:`~._signals.image_simulation.ImageSimulation`    | False  |
+    |      :py:class:`~._signals.complex_signal.ComplexSignal`      | False  |
+    +---------------------------------------------------------------+--------+
+    |    :py:class:`~._signals.complex_signal1d.ComplexSignal1D`    | False  |
+    +---------------------------------------------------------------+--------+
+    |    :py:class:`~._signals.complex_signal2d.ComplexSignal2D`    | False  |
     +---------------------------------------------------------------+--------+
 
 
@@ -234,13 +284,29 @@ The methods of this section are available to all the signals. In other chapters
 methods that are only available in specialized
 subclasses.
 
-Simple mathematical operations
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Mathematical operations
+^^^^^^^^^^^^^^^^^^^^^^^
 
-.. versionchanged:: 1.0.0
+.. versionchanged:: 1.0
 
-A number of simple operations are supported by :py:class:`~.signal.BaseSignal`.
-Most of them are just wrapped numpy functions, as an example:
+A number of mathematical operations are available
+in :py:class:`~.signal.BaseSignal`. Most of them are just wrapped numpy
+functions.
+
+The methods that perform mathematical opearation over one or more axis at a
+time are:
+
+* :py:meth:`~.signal.BaseSignal.sum`
+* :py:meth:`~.signal.BaseSignal.max`
+* :py:meth:`~.signal.BaseSignal.min`
+* :py:meth:`~.signal.BaseSignal.mean`
+* :py:meth:`~.signal.BaseSignal.std`
+* :py:meth:`~.signal.BaseSignal.var`
+
+Note that by default all this methods perform the operation over *all*
+navigation axes.
+
+Example:
 
 .. code-block:: python
 
@@ -261,13 +327,59 @@ Most of them are just wrapped numpy functions, as an example:
     >>> ans.axes_manager[0]
     <Scalar axis, size: 1>
 
-Other functions that support similar behavior: :py:func:`~.signal.sum`,
-:py:func:`~.signal.max`, :py:func:`~.signal.min`, :py:func:`~.signal.mean`,
-:py:func:`~.signal.std`, :py:func:`~.signal.var`. Similar functions that can
-only be performed on one axis at a time: :py:func:`~.signal.diff`,
-:py:func:`~.signal.derivative`, :py:func:`~.signal.integrate_simpson`,
-:py:func:`~.signal.integrate1D`, :py:func:`~.signal.valuemax`,
-:py:func:`~.signal.indexmax`.
+The following methods operate only on one axis at a time:
+
+* :py:meth:`~.signal.BaseSignal.diff`
+* :py:meth:`~.signal.BaseSignal.derivative`
+* :py:meth:`~.signal.BaseSignal.integrate_simpson`
+* :py:meth:`~.signal.BaseSignal.integrate1D`
+* :py:meth:`~.signal.BaseSignal.valuemax`
+* :py:meth:`~.signal.BaseSignal.indexmax`
+
+.. versionadded:: 1.0
+   numpy ufunc operate on HyperSpy signals
+
+
+.. _ufunc-label:
+
+All numpy ufunc can operate on :py:class:`~.signal.BaseSignal`
+instances, for example:
+
+.. code-block:: python
+
+    >>> s = hs.signals.Signal1D([0, 1])
+    >>> s.metadata.General.title = "A"
+    >>> s
+    <Signal1D, title: A, dimensions: (|2)>
+    >>> np.exp(s)
+    <Signal1D, title: exp(A), dimensions: (|2)>
+    >>> np.exp(s).data
+    array([ 1.        ,  2.71828183])
+    >>> np.power(s, 2)
+    <Signal1D, title: power(A, 2), dimensions: (|2)>
+    >>> np.add(s, s)
+    <Signal1D, title: add(A, A), dimensions: (|2)>
+    >>> np.add(hs.signals.Signal1D([0, 1]), hs.signals.Signal1D([0, 1]))
+    <Signal1D, title: add(Untitled Signal 1, Untitled Signal 2), dimensions: (|2)>
+
+
+Notice that the title is automatically updated. When the signal has no title
+a new title is automatically generated:
+
+.. code-block:: python
+
+    >>> np.add(hs.signals.Signal1D([0, 1]), hs.signals.Signal1D([0, 1]))
+    <Signal1D, title: add(Untitled Signal 1, Untitled Signal 2), dimensions: (|2)>
+
+
+Functions (other than unfucs) that operate on numpy arrays can also operate
+on :py:class:`~.signal.BaseSignal` instances, however they return a numpy
+array instead of a :py:class:`~.signal.BaseSignal` instance e.g.:
+
+.. code-block:: python
+
+    >>> np.angle(s)
+    array([ 0.,  0.])
 
 .. _signal.indexing:
 
@@ -772,45 +884,46 @@ type in place, e.g.:
 
 
 .. versionadded:: 0.7
+   Support for RGB signals.
 
-    In addition to all standard numpy dtypes HyperSpy supports four extra
-    dtypes for RGB images: rgb8, rgba8, rgb16 and rgba16. Changing
-    from and to any rgbx dtype is more constrained than most other dtype
-    conversions. To change to a rgbx dtype the signal `record_by` must be
-    "spectrum", `signal_dimension` must be 3(4) for rgb(rgba) dtypes and the
-    dtype must be uint8(uint16) for rgbx8(rgbx16).  After conversion
-    `record_by` becomes `image` and the spectra dimension is removed. The dtype
-    of images of dtype rgbx8(rgbx16) can only be changed to uint8(uint16) and
-    the `record_by` becomes "spectrum".
+In addition to all standard numpy dtypes, HyperSpy supports four extra
+dtypes for RGB images: rgb8, rgba8, rgb16 and rgba16. The requirements for changing
+from and to any rgbx dtype are more strict than for most other dtype
+conversions. To change to a rgbx dtype the `signal_dimension` must be 1 and its size 3(4) 3(4) for rgb(rgba) dtypes and the
+dtype must be uint8(uint16) for rgbx8(rgbx16).  After conversion
+the `signal_dimension` becomes 2. The dtype
+of images of dtype rgbx8(rgbx16) can only be changed to uint8(uint16) and
+the `signal_dimension` becomes 1.
 
-    In the following example we create
+In the following example we create a 1D signal with signal size 3 and with
+`dtype` `"uint16"` and change its dtype to `"rgb16"` for plotting.
 
-   .. code-block:: python
+.. code-block:: python
 
-        >>> rgb_test = np.zeros((1024, 1024, 3))
-        >>> ly, lx = rgb_test.shape[:2]
-        >>> offset_factor = 0.16
-        >>> size_factor = 3
-        >>> Y, X = np.ogrid[0:lx, 0:ly]
-        >>> rgb_test[:,:,0] = (X - lx / 2 - lx*offset_factor) ** 2 + (Y - ly / 2 - ly*offset_factor) ** 2 < lx * ly / size_factor **2
-        >>> rgb_test[:,:,1] = (X - lx / 2 + lx*offset_factor) ** 2 + (Y - ly / 2 - ly*offset_factor) ** 2 < lx * ly / size_factor **2
-        >>> rgb_test[:,:,2] = (X - lx / 2) ** 2 + (Y - ly / 2 + ly*offset_factor) ** 2 < lx * ly / size_factor **2
-        >>> rgb_test *= 2**16 - 1
-        >>> s = hs.signals.Signal1D(rgb_test)
-        >>> s.change_dtype("uint16")
-        >>> s
-        <Signal1D, title: , dimensions: (1024, 1024|3)>
-        >>> s.change_dtype("rgb16")
-        >>> s
-        <Signal2D, title: , dimensions: (|1024, 1024)>
-        >>> s.plot()
+    >>> rgb_test = np.zeros((1024, 1024, 3))
+    >>> ly, lx = rgb_test.shape[:2]
+    >>> offset_factor = 0.16
+    >>> size_factor = 3
+    >>> Y, X = np.ogrid[0:lx, 0:ly]
+    >>> rgb_test[:,:,0] = (X - lx / 2 - lx*offset_factor) ** 2 + (Y - ly / 2 - ly*offset_factor) ** 2 < lx * ly / size_factor **2
+    >>> rgb_test[:,:,1] = (X - lx / 2 + lx*offset_factor) ** 2 + (Y - ly / 2 - ly*offset_factor) ** 2 < lx * ly / size_factor **2
+    >>> rgb_test[:,:,2] = (X - lx / 2) ** 2 + (Y - ly / 2 + ly*offset_factor) ** 2 < lx * ly / size_factor **2
+    >>> rgb_test *= 2**16 - 1
+    >>> s = hs.signals.Signal1D(rgb_test)
+    >>> s.change_dtype("uint16")
+    >>> s
+    <Signal1D, title: , dimensions: (1024, 1024|3)>
+    >>> s.change_dtype("rgb16")
+    >>> s
+    <Signal2D, title: , dimensions: (|1024, 1024)>
+    >>> s.plot()
 
 
-   .. figure::  images/rgb_example.png
-      :align:   center
-      :width:   500
+.. figure::  images/rgb_example.png
+  :align:   center
+  :width:   500
 
-      RGB data type example.
+  RGB data type example.
 
 
 Basic statistical analysis
@@ -909,15 +1022,13 @@ for example:
 
 .. code-block:: python
 
-  >>> s = hs.signals.SpectrumSimulation(np.ones(100))
+  >>> s = hs.signals.Spectrum(np.ones(100))
   >>> s.add_poissonian_noise()
   >>> s.metadata
   ├── General
   │   └── title =
   └── Signal
       ├── binned = False
-      ├── record_by = spectrum
-      ├── signal_origin = simulation
       └── signal_type =
 
   >>> s.estimate_poissonian_noise_variance()
@@ -932,6 +1043,273 @@ for example:
       │   │   └── gain_offset = 0
       │   └── variance = <SpectrumSimulation, title: Variance of , dimensions: (|100)>
       ├── binned = False
-      ├── record_by = spectrum
-      ├── signal_origin = simulation
       └── signal_type =
+
+Speeding up operations
+----------------------
+
+.. versionadded:: 1.0
+
+Reusing a Signal for output
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Many signal methods create and return a new signal. For fast operations, the
+new signal creation time is non-negligible. Also, when the operation is
+repeated many times, for example in a loop, the cumulaive creation time can
+become significant. Therefore, many operations on
+:py:class:`~.signal.BaseSignal` accept an optional argument `out`. If an
+existing signal is passed to `out`, the function output will be placed into
+that signal, instead of being returned in a new signal.  The following example
+shows how to use this feature to slice a :py:class:`~.signal.BaseSignal`. It is
+important to know that the :py:class:`~.signal.BaseSignal` instance passed in
+the `out` argument must be well-suited for the purpose. Often this means that
+it must have the same axes and data shape as the
+:py:class:`~.signal.BaseSignal` that would normally be returned by the
+operation.
+
+.. code-block:: python
+
+    >>> s = signals.Signal1D(np.arange(10))
+    >>> s_sum = s.sum(0)
+    >>> s_sum.data
+    array(45)
+    >>> s.isig[:5].sum(0, out=s_sum)
+    >>> s_sum.data
+    array(10)
+    >>> s_roi = s.isig[:3]
+    >>> s_roi
+    <Signal1D, title: , dimensions: (|3)>
+    >>> s.isig.__getitem__(slice(None, 5), out=s_roi)
+    >>> s_roi
+    <Signal1D, title: , dimensions: (|5)>
+
+
+.. _interactive-label:
+
+Interactive operations
+----------------------
+
+.. versionadded:: 1.0
+
+
+The function :py:func:`~.interactive.interactive` ease the task of defining
+operations that are automatically updated when an event is triggered. By
+default it recomputes the operation when data or the axes of the original
+signal changes.
+
+.. code-block:: python
+
+    >>> s = hs.signals.Signal1D(np.arange(10.))
+    >>> ssum = hs.interactive(s.sum, axis=0)
+    >>> ssum.data
+    array(45.0)
+    >>> s.data /= 10
+    >>> s.events.data_changed.trigger()
+    >>> ssum.data
+    4.5
+
+The interactive opearations can be chained.
+
+.. code-block:: python
+
+    >>> s = hs.signals.Signal1D(np.arange(2 * 3 * 4).reshape((2, 3, 4)))
+    >>> ssum = hs.interactive(s.sum, axis=0)
+    >>> ssum_mean = hs.interactive(ssum.mean, axis=0)
+    >>> ssum_mean.data
+    array([ 30.,  33.,  36.,  39.])
+    >>> s.data
+    array([[[ 0,  1,  2,  3],
+            [ 4,  5,  6,  7],
+            [ 8,  9, 10, 11]],
+
+           [[12, 13, 14, 15],
+            [16, 17, 18, 19],
+            [20, 21, 22, 23]]])
+    >>> s.data *= 10
+    >>> s.events.data_changed.trigger(obj=s)
+    >>> ssum_mean.data
+    array([ 300.,  330.,  360.,  390.])
+
+.. _roi-label:
+
+Region Of Interest (ROI)
+------------------------
+
+.. versionadded:: 1.0
+
+A number of different ROIs are available:
+
+* :py:class:`~.roi.Point1DROI`
+* :py:class:`~.roi.Point2DROI`
+* :py:class:`~.roi.SpanROI`
+* :py:class:`~.roi.RectangularROI`
+* :py:class:`~.roi.CircleROI`
+* :py:class:`~.roi.Line2DROI`
+
+Once created, a ROI can be used to return a part of any compatible signal:
+
+.. code-block:: python
+
+    >>> s = hs.signals.Signal1D(np.arange(2000).reshape((20,10,10)))
+    >>> im = hs.signals.Signal2D(np.arange(100).reshape((10,10)))
+    >>> roi = hs.roi.RectangularROI(left=3, right=7, top=2, bottom=5)
+    >>> sr = roi(s)
+    >>> sr
+    <Signal1D, title: , dimensions: (4, 3|10)>
+    >>> imr = roi(im)
+    >>> imr
+    <Signal2D, title: , dimensions: (|4, 3)>
+
+ROIs can also be used :ref:`interactively <interactive-label>` with widgets. The
+following examples shows how to interactively apply ROIs to an image. Note
+that *it is necessary* to plot the signal onto which the widgets will be
+added before calling :py:meth:`~.roi.BaseInteractiveROI.interactive`.
+
+.. code-block:: python
+
+    >>> import scipy.misc
+    >>> im = hs.signals.Signal2D(scipy.misc.ascent())
+    >>> rectangular_roi = hs.roi.RectangularROI(left=30, right=500, top=200, bottom=400)
+    >>> line_roi = hs.roi.Line2DROI(0, 0, 512, 512, 1)
+    >>> point_roi = hs.roi.Point2DROI(256, 256)
+    >>> im.plot()
+    >>> roi2D = rectangular_roi.interactive(im, color="blue")
+    >>> roi1D = line_roi.interactive(im, color="yellow")
+    >>> roi0D = point_roi.interactive(im, color="red")
+
+
+.. figure::  images/image_with_rois.png
+  :align:   center
+  :width:   500
+
+.. figure::  images/roi1d.png
+  :align:   center
+  :width:   500
+
+.. figure::  images/roi2d.png
+  :align:   center
+  :width:   500
+
+Notably,
+since ROIs are independent from the signals they sub-select, the widget can be
+plotted on a different signal altogether.
+
+.. code-block:: python
+
+    >>> import scipy.misc
+    >>> im = hs.signals.Signal2D(scipy.misc.ascent())
+    >>> s = hs.signals.Signal1D(np.random.rand(512, 512, 512))
+    >>> roi = hs.roi.RectangularROI(left=30, right=77, top=20, bottom=50)
+    >>> s.plot() # plot signal to have where to display the widget
+    >>> imr = roi.interactive(im, navigation_signal=s, color="red")
+    >>> roi(im).plot()
+
+ROIs are implemented in terms of physical coordinates and not pixels, so with
+proper calibration will always point to the same region.
+
+.. figure::  images/random_image_with_rect_roi.png
+  :align:   center
+  :width:   500
+
+.. figure::  images/random_image_with_rect_roi_spectrum.png
+  :align:   center
+  :width:   500
+
+.. figure::  images/roi2d.png
+  :align:   center
+  :width:   500
+
+
+And of course, as all interactive operations, interactive ROIs are chainable.
+The following example shows how to display interactively the histogram of a
+rectangular ROI. Notice how we customise the default event connections in
+order to increase responsiveness.
+
+
+.. code-block:: python
+
+   >>> import scipy.misc
+   >>> im = hs.signals.Signal2D(scipy.misc.ascent())
+   >>> im.plot()
+   >>> roi = hs.roi.RectangularROI(left=30, right=500, top=200, bottom=400)
+   >>> im_roi = roi.interactive(im, color="red")
+   >>> roi_hist =hs.interactive(im_roi.get_histogram, event=im_roi.axes_manager.events.any_axis_changed, recompute_out_event=None)
+   >>> roi_hist.plot()
+
+
+.. figure::  images/image_with_rect_roi.png
+  :align:   center
+  :width:   500
+
+.. figure::  images/roi_hist.png
+  :align:   center
+  :width:   500
+
+
+
+.. _complex_data-label:
+
+Handling complex data
+---------------------
+
+The HyperSpy :py:class:`~.hyperspy.signals.ComplexSignal` signal class and its subclasses
+for 1-dimensional and 2-dimensional data allow the user to access complex properties like the
+`real` and `imag` parts of the data or the `amplitude` (also known as the modulus) and `phase`
+(also known as angle or argument) directly. Getting and setting those properties can be done
+as follows:
+
+.. code-block:: python
+
+  >>> real = s.real      # real is a new HyperSpy signal accessing the same data
+  >>> s.real = new_real  # new_real can be an array or signal
+  >>> imag = s.imag      # imag  is a new HyperSpy signal accessing the same data
+  >>> s.imag = new_imag  # new_imag can be an array or signal
+
+It is important to note that `data` passed to the constructor of a
+:py:class:`~._signals.complex_signal.ComplexSignal` (or to a subclass), which is not already
+complex, will be converted to the numpy standard of `np.complex`/`np.complex128`. `data` which
+is already complex will be passed as is.
+
+To transform a real signal into a complex one use:
+
+.. code-block:: python
+
+    >>> s.change_dtype(complex)
+
+Changing the `dtype` of a complex signal to something real is not clearly defined and thus not
+directly possible. Use the `real`, `imag`, `amplitude` or `phase` properties instead to extract
+the real data that is desired.
+
+
+Calculate the angle / phase / argument
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The :py:func:`~hyperspy.signals.ComplexSignal.angle` function can be used to calculate the
+angle, which is equivalent to using the `phase` property if no argument is used. If the data is
+real, the angle will be 0 for positive values and 2$\pi$ for negative values. If the `deg`
+parameter is set to `True`, the result will be given in degrees, otherwise in rad (default).
+The underlying function is the :py:func:`~numpy.angle` function.
+:py:func:`~hyperspy.signals.ComplexSignal.angle` will return an appropriate HyperSpy signal.
+
+
+Phase unwrapping
+^^^^^^^^^^^^^^^^
+
+With the :py:func:`~hyperspy.signals.ComplexSignal.unwrapped_phase` method the complex phase
+of a signal can be unwrapped and returned as a new signal. The underlying method is
+:py:func:`~skimage.restoration.unwrap`, which uses the algorithm described in:
+Miguel Arevallilo Herraez, David R. Burton, Michael J. Lalor, and Munther A. Gdeisat,
+“Fast two-dimensional phase-unwrapping algorithm based on sorting by reliability following
+a noncontinuous path”, Journal Applied Optics, Vol. 41, No. 35, pp. 7437, 2002.
+(doi: 10.1364/AO.41.007437).
+
+
+Add a linear phase ramp
+^^^^^^^^^^^^^^^^^^^^^^^
+
+For 2-dimensional complex images, a linear phase ramp can be added to the signal via the
+:py:func:`~._signals.complex_signal2d.ComplexSignal2D.add_phase_ramp` method. The parameters
+`ramp_x` and `ramp_y` dictate the slope of the ramp in `x`- and `y` direction, while the offset
+is determined by the `offset` parameter. The fulcrum of the linear ramp is at the origin
+and the slopes are given in units of the axis with the according scale taken into account.
+Both are available via the :py:class:`~.axes.AxesManager` of the signal.

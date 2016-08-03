@@ -3,16 +3,15 @@
 # Author: Jan Caron
 #
 
-import sys
+
 import os.path
 from os import remove
 
-import nose
 import nose.tools as nt
 import numpy as np
 
 from hyperspy.io import load
-from hyperspy.signals import BaseSignal, Signal2D, Signal1D
+from hyperspy.signals import BaseSignal, Signal2D, Signal1D, ComplexSignal
 
 
 my_path = os.path.dirname(__file__)
@@ -23,7 +22,7 @@ data_image = np.arange(16, dtype=np.float32).reshape((4, 4)) / 2.
 data_spectrum = np.arange(10, dtype=np.float32) / 2.
 data_image_byte = np.arange(
     25, dtype=np.byte).reshape(
-        (5, 5))  # Odd dim. tests strange read/write
+    (5, 5))  # Odd dim. tests strange read/write
 data_image_int16 = np.arange(16, dtype=np.int16).reshape((4, 4))
 data_image_int32 = np.arange(16, dtype=np.int32).reshape((4, 4))
 data_image_complex = (data_image_int32 + 1j * data_image).astype(np.complex64)
@@ -92,7 +91,7 @@ def test_image_complex_loading():
             'example_image_complex.unf'))
     np.testing.assert_equal(signal.data, data_image_complex)
     np.testing.assert_equal(signal.original_metadata.IFORM, 3)  # complex
-    nt.assert_is_instance(signal, Signal2D)
+    nt.assert_is_instance(signal, ComplexSignal)
 
 
 def test_with_title_loading():
@@ -147,4 +146,5 @@ class TestCaseSaveAndReadByte():
 
 
 if __name__ == '__main__':
-    nose.run(argv=[sys.argv[0], sys.modules[__name__].__file__, '-v'])
+    import nose
+    nose.run(defaultTest=__name__)

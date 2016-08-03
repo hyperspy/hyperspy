@@ -1,6 +1,6 @@
 import copy
 import math
-import mock
+from unittest import mock
 
 import nose.tools as nt
 import numpy as np

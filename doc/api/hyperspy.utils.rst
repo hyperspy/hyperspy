@@ -36,10 +36,42 @@ hyperspy.utils.model module
     :undoc-members:
     :show-inheritance:
 
+hyperspy.utils.model_selection module
+-------------------------------------
+
+.. automodule:: hyperspy.utils.model_selection
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+hyperspy.utils.parallel_pool module
+-----------------------------------
+
+.. automodule:: hyperspy.utils.parallel_pool
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 hyperspy.utils.plot module
 --------------------------
 
 .. automodule:: hyperspy.utils.plot
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+hyperspy.utils.roi module
+-------------------------
+
+.. automodule:: hyperspy.utils.roi
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+hyperspy.utils.samfire module
+-----------------------------
+
+.. automodule:: hyperspy.utils.samfire
     :members:
     :undoc-members:
     :show-inheritance:

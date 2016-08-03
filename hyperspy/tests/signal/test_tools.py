@@ -1,10 +1,9 @@
-import mock
+from unittest import mock
 
 import numpy as np
 from numpy.testing import assert_array_equal
 import nose.tools as nt
 
-from hyperspy.signals import BaseSignal
 from hyperspy import signals
 
 
@@ -18,7 +17,7 @@ def _verify_test_sum_x_E(self, s):
 class Test2D:
 
     def setUp(self):
-        self.signal = BaseSignal(np.arange(5 * 10).reshape(5, 10))
+        self.signal = signals.Signal1D(np.arange(5 * 10).reshape(5, 10))
         self.signal.axes_manager[0].name = "x"
         self.signal.axes_manager[1].name = "E"
         self.signal.axes_manager[0].scale = 0.5
@@ -128,6 +127,38 @@ class Test2D:
         # Just test if it doesn't raise an exception
         self.signal._print_summary()
 
+    def test_numpy_unfunc_one_arg_titled(self):
+        self.signal.metadata.General.title = "yes"
+        result = np.exp(self.signal)
+        nt.assert_true(isinstance(result, signals.Signal1D))
+        np.testing.assert_array_equal(result.data, np.exp(self.signal.data))
+        nt.assert_equal(result.metadata.General.title, "exp(yes)")
+
+    def test_numpy_unfunc_one_arg_untitled(self):
+        result = np.exp(self.signal)
+        nt.assert_equal(result.metadata.General.title,
+                        "exp(Untitled Signal 1)")
+
+    def test_numpy_unfunc_two_arg_titled(self):
+        s1, s2 = self.signal.deepcopy(), self.signal.deepcopy()
+        s1.metadata.General.title = "A"
+        s2.metadata.General.title = "B"
+        result = np.add(s1, s2)
+        nt.assert_true(isinstance(result, signals.Signal1D))
+        np.testing.assert_array_equal(result.data, np.add(s1.data, s2.data))
+        nt.assert_equal(result.metadata.General.title, "add(A, B)")
+
+    def test_numpy_unfunc_two_arg_untitled(self):
+        s1, s2 = self.signal.deepcopy(), self.signal.deepcopy()
+        result = np.add(s1, s2)
+        nt.assert_equal(result.metadata.General.title,
+                        "add(Untitled Signal 1, Untitled Signal 2)")
+
+    def test_numpy_func(self):
+        result = np.angle(self.signal)
+        nt.assert_true(isinstance(result, np.ndarray))
+        np.testing.assert_array_equal(result, np.angle(self.signal.data))
+
 
 def _test_default_navigation_signal_operations_over_many_axes(self, op):
     s = getattr(self.signal, op)()
@@ -141,7 +172,7 @@ def _test_default_navigation_signal_operations_over_many_axes(self, op):
 class Test3D:
 
     def setUp(self):
-        self.signal = BaseSignal(np.arange(2 * 4 * 6).reshape(2, 4, 6))
+        self.signal = signals.Signal1D(np.arange(2 * 4 * 6).reshape(2, 4, 6))
         self.signal.axes_manager[0].name = "x"
         self.signal.axes_manager[1].name = "y"
         self.signal.axes_manager[2].name = "E"
@@ -288,6 +319,7 @@ class Test3D:
     def test_get_signal_signal_nav_dim2(self):
         s = self.signal
         s.axes_manager.set_signal_dimension(2)
+        s._assign_subclass()
         ns = s._get_signal_signal()
         nt.assert_equal(ns.axes_manager.signal_shape,
                         s.axes_manager.signal_shape)
@@ -296,6 +328,7 @@ class Test3D:
     def test_get_signal_signal_nav_dim3(self):
         s = self.signal
         s.axes_manager.set_signal_dimension(3)
+        s._assign_subclass()
         ns = s._get_signal_signal()
         nt.assert_equal(ns.axes_manager.signal_shape,
                         s.axes_manager.signal_shape)
@@ -410,7 +443,7 @@ class Test4D:
 
 
 def test_signal_iterator():
-    s = BaseSignal(np.arange(3).reshape((3, 1)))
+    s = signals.Signal1D(np.arange(3).reshape((3, 1)))
     nt.assert_equal(next(s).data[0], 0)
     # If the following fails it can be because the iteration index was not
     # restarted

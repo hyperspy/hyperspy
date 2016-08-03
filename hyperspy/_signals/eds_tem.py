@@ -31,6 +31,7 @@ import warnings
 
 
 class EDSTEMSpectrum(EDSSpectrum):
+
     _signal_type = "EDS_TEM"
 
     def __init__(self, *args, **kwards):
@@ -49,7 +50,7 @@ class EDSTEMSpectrum(EDSSpectrum):
         """
 
         mp = self.metadata
-        mp.Signal.signal_type = 'EDS_TEM'
+        mp.Signal.signal_type = "EDS_TEM"
 
         mp = self.metadata
         if "Acquisition_instrument.TEM.tilt_stage" not in mp:
@@ -451,7 +452,7 @@ class EDSTEMSpectrum(EDSSpectrum):
         --------
         >>> # Simulate a spectrum image with vacuum region
         >>> s = hs.datasets.example_signals.EDS_TEM_Spectrum()
-        >>> s_vac = hs.signals.Simulation(
+        >>> s_vac = hs.signals.BaseSignal(
                 np.ones_like(s.data, dtype=float))*0.005
         >>> s_vac.add_poissonian_noise()
         >>> si = hs.stack([s]*3 + [s_vac])

@@ -231,16 +231,30 @@ class DataAxis(t.HasTraits):
             try:
                 start = v2i(start)
             except ValueError:
-                # The value is below the axis limits
-                # we slice from the start.
-                start = None
+                if start > self.high_value:
+                    # The start value is above the axis limit
+                    raise IndexError(
+                        "Start value above axis high bound for  axis %s."
+                        "value: %f high_bound: %f" % (repr(self), start,
+                                                      self.high_value))
+                else:
+                    # The start value is below the axis limit,
+                    # we slice from the start.
+                    start = None
         if isfloat(stop):
             try:
                 stop = v2i(stop)
             except ValueError:
-                # The value is above the axes limits
-                # we slice up to the end.
-                stop = None
+                if stop < self.low_value:
+                    # The stop value is below the axis limits
+                    raise IndexError(
+                        "Stop value below axis low bound for  axis %s."
+                        "value: %f low_bound: %f" % (repr(self), stop,
+                                                     self.low_value))
+                else:
+                    # The stop value is below the axis limit,
+                    # we slice until the end.
+                    stop = None
 
         if step == 0:
             raise ValueError("slice step cannot be zero")
@@ -593,7 +607,7 @@ class AxesManager(t.HasTraits):
         navigates = [i.navigate for i in self._axes]
         if t.Undefined in navigates:
             # Default to Signal1D view if the view is not fully defined
-            self.set_signal_dimension(1)
+            self.set_signal_dimension(len(axes_list))
 
         self._update_attributes()
         self._update_trait_handlers()
@@ -999,18 +1013,6 @@ class AxesManager(t.HasTraits):
         ag = tuple(ag)
         self.edit_traits(view=tui.View(*ag), context=context)
 
-    def _get_axes_str(self):
-        string = "("
-        for axis in self.navigation_axes:
-            string += axis.__repr__() + ", "
-        string = string.rstrip(", ")
-        string += "|"
-        for axis in self.signal_axes:
-            string += axis.__repr__() + ", "
-        string = string.rstrip(", ")
-        string += ")"
-        return string
-
     def _get_dimension_str(self):
         string = "("
         for axis in self.navigation_axes:
@@ -1024,8 +1026,66 @@ class AxesManager(t.HasTraits):
         return string
 
     def __repr__(self):
-        text = ('<Axes manager, axes: %s>' %
-                self._get_axes_str())
+        text = ('<Axes manager, axes: %s>\n' %
+                self._get_dimension_str())
+        ax_signature = "% 16s | %6g | %6s | %7.2g | %7.2g | %6s "
+        signature = "% 16s | %6s | %6s | %7s | %7s | %6s "
+        text += signature % ('Name', 'size', 'index', 'offset', 'scale',
+                             'units')
+        text += '\n'
+        text += signature % ('=' * 16, '=' * 6, '=' * 6,
+                             '=' * 7, '=' * 7, '=' * 6)
+        for ax in self.navigation_axes:
+            text += '\n'
+            text += ax_signature % (str(ax.name)[:16], ax.size, str(ax.index),
+                                    ax.offset, ax.scale, ax.units)
+        text += '\n'
+        text += signature % ('-' * 16, '-' * 6, '-' * 6,
+                             '-' * 7, '-' * 7, '-' * 6)
+        for ax in self.signal_axes:
+            text += '\n'
+            text += ax_signature % (str(ax.name)[:16], ax.size, ' ', ax.offset,
+                                    ax.scale, ax.units)
+
+        return text
+
+    def _repr_html_(self):
+        text = ("<style>\n"
+                "table, th, td {\n\t"
+                "border: 1px solid black;\n\t"
+                "border-collapse: collapse;\n}"
+                "\nth, td {\n\t"
+                "padding: 5px;\n}"
+                "\n</style>")
+        text += ('\n<p><b>< Axes manager, axes: %s ></b></p>\n' %
+                 self._get_dimension_str())
+
+        def format_row(*args, tag='td', bold=False):
+            if bold:
+                signature = "\n<tr class='bolder_row'> "
+            else:
+                signature = "\n<tr> "
+            signature += " ".join(("{}" for _ in args)) + " </tr>"
+            return signature.format(*map(lambda x:
+                                         '\n<' + tag +
+                                         '>{}</'.format(x) + tag + '>',
+                                         args))
+        if self.navigation_axes:
+            text += "<table style='width:100%'>\n"
+            text += format_row('Navigation axis name', 'size', 'index', 'offset',
+                               'scale', 'units', tag='th')
+            for ax in self.navigation_axes:
+                text += format_row(ax.name, ax.size, ax.index, ax.offset, ax.scale,
+                                   ax.units)
+            text += "</table>\n"
+        if self.signal_axes:
+            text += "<table style='width:100%'>\n"
+            text += format_row('Signal axis name', 'size', 'offset', 'scale',
+                               'units', tag='th')
+            for ax in self.signal_axes:
+                text += format_row(ax.name, ax.size, ax.offset, ax.scale,
+                                   ax.units)
+            text += "</table>\n"
         return text
 
     @property

@@ -19,9 +19,9 @@ import numpy as np
 import nose.tools as nt
 import time
 
-from hyperspy._signals.spectrum_simulation import SpectrumSimulation
+from hyperspy._signals.signal1d import Signal1D
 from hyperspy._signals.eels import EELSSpectrum
-from hyperspy.components import Gaussian
+from hyperspy.components1d import Gaussian
 
 
 class TestModelIndexing:
@@ -35,7 +35,7 @@ class TestModelIndexing:
         g.centre.value = 300.
         g.sigma.value = 150.
         data = g.function(axes)
-        s = SpectrumSimulation(data)
+        s = Signal1D(data)
         s.axes_manager[-1].offset = -150.
         s.axes_manager[-1].scale = 0.5
         s.add_gaussian_noise(2.0)
