@@ -8,11 +8,13 @@ Subpackages
 
     hyperspy.tests.axes
     hyperspy.tests.component
+    hyperspy.tests.datasets
     hyperspy.tests.drawing
     hyperspy.tests.io
     hyperspy.tests.misc
     hyperspy.tests.model
     hyperspy.tests.mva
+    hyperspy.tests.samfire
     hyperspy.tests.signal
     hyperspy.tests.utils
 
@@ -31,6 +33,14 @@ hyperspy.tests.test_events module
 ---------------------------------
 
 .. automodule:: hyperspy.tests.test_events
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+hyperspy.tests.test_interactive module
+--------------------------------------
+
+.. automodule:: hyperspy.tests.test_interactive
     :members:
     :undoc-members:
     :show-inheritance:

@@ -36,14 +36,6 @@ hyperspy.gui.egerton_quantification module
     :undoc-members:
     :show-inheritance:
 
-hyperspy.gui.main_window module
--------------------------------
-
-.. automodule:: hyperspy.gui.main_window
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 hyperspy.gui.messages module
 ----------------------------
 

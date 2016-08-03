@@ -4,6 +4,46 @@ hyperspy._signals package
 Submodules
 ----------
 
+hyperspy._signals.common_signal1d module
+----------------------------------------
+
+.. automodule:: hyperspy._signals.common_signal1d
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+hyperspy._signals.common_signal2d module
+----------------------------------------
+
+.. automodule:: hyperspy._signals.common_signal2d
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+hyperspy._signals.complex_signal module
+---------------------------------------
+
+.. automodule:: hyperspy._signals.complex_signal
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+hyperspy._signals.complex_signal1d module
+-----------------------------------------
+
+.. automodule:: hyperspy._signals.complex_signal1d
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+hyperspy._signals.complex_signal2d module
+-----------------------------------------
+
+.. automodule:: hyperspy._signals.complex_signal2d
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 hyperspy._signals.dielectric_function module
 --------------------------------------------
 
@@ -44,58 +84,18 @@ hyperspy._signals.eels module
     :undoc-members:
     :show-inheritance:
 
-hyperspy._signals.eels_spectrum_simulation module
--------------------------------------------------
-
-.. automodule:: hyperspy._signals.eels_spectrum_simulation
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-hyperspy._signals.image module
-------------------------------
-
-.. automodule:: hyperspy._signals.image
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-hyperspy._signals.image_simulation module
------------------------------------------
-
-.. automodule:: hyperspy._signals.image_simulation
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-hyperspy._signals.pes module
-----------------------------
-
-.. automodule:: hyperspy._signals.pes
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-hyperspy._signals.simulation module
------------------------------------
-
-.. automodule:: hyperspy._signals.simulation
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-hyperspy._signals.spectrum module
+hyperspy._signals.signal1d module
 ---------------------------------
 
-.. automodule:: hyperspy._signals.spectrum
+.. automodule:: hyperspy._signals.signal1d
     :members:
     :undoc-members:
     :show-inheritance:
 
-hyperspy._signals.spectrum_simulation module
---------------------------------------------
+hyperspy._signals.signal2d module
+---------------------------------
 
-.. automodule:: hyperspy._signals.spectrum_simulation
+.. automodule:: hyperspy._signals.signal2d
     :members:
     :undoc-members:
     :show-inheritance:

@@ -1,0 +1,29 @@
+name: hyperspy
+dependencies:
+- python=3.5
+- dill
+- h5py
+- ipython
+- ipyparallel
+- jupyter
+- matplotlib
+- nose
+- numpy
+- qt
+- scikit-image
+- scikit-learn
+- scipy
+- setuptools
+- statsmodels
+- sympy
+- natsort
+- lxml
+- ipyparallel
+- dask
+- ipywidgets
+- traits
+- traitsui
+- pip:
+  - python-dateutil
+  - tqdm
+  - hyperspy

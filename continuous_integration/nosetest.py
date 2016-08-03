@@ -13,7 +13,7 @@ if __name__ == '__main__':
 
     # Check if we should fail on external deprecation messages
     fail_on_external = os.environ.pop('FAIL_ON_EXTERNAL_DEPRECATION', False)
-    if isinstance(fail_on_external, basestring):
+    if isinstance(fail_on_external, str):
         fail_on_external = (fail_on_external.lower() in
                             ['true', 't', '1', 'yes', 'y', 'set'])
 

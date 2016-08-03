@@ -25,4 +25,5 @@ import hyperspy.datasets.example_signals
 import hyperspy.utils.model
 from hyperspy.misc.utils import stack
 from hyperspy.interactive import interactive
-from hyperspy import roi
+import hyperspy.utils.roi
+import hyperspy.utils.samfire

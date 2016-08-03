@@ -25,6 +25,6 @@ def amari(C, A):
 def _ntu(C):
     m, n = C.shape
     CN = C.copy() * 0
-    for t in xrange(n):
+    for t in range(n):
         CN[:, t] = C[:, t] / np.max(np.abs(C[:, t]))
     return CN

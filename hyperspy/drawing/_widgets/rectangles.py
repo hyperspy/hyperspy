@@ -289,8 +289,8 @@ class RectangleWidget(SquareWidget, ResizersMixin):
         yaxis = self.axes[1]
 
         # Make sure widget size is not larger than axes
-        self._size[0] = min(self._size[0], xaxis.size*xaxis.scale)
-        self._size[1] = min(self._size[1], yaxis.size*yaxis.scale)
+        self._size[0] = min(self._size[0], xaxis.size * xaxis.scale)
+        self._size[1] = min(self._size[1], yaxis.size * yaxis.scale)
 
         # Make sure x1/y1 is within bounds
         if x1 is None:

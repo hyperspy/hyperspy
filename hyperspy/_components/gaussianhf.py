@@ -31,7 +31,7 @@ class GaussianHF(Expression):
     of the sigma parameter, and a height parameter instead of the A parameter
     (scaling difference of sigma * sqrt(2*Pi)). This makes the parameter vs.
     peak maximum independent of sigma, and thereby makes locking of the
-    parameter more viable. As long as there it no binning, the height parameter
+    parameter more viable. As long as there is no binning, the height parameter
     corresponds directly to the peak maximum, if not, the value is scaled by a
     linear constant (signal_axis.scale).
 
@@ -40,7 +40,8 @@ class GaussianHF(Expression):
         f(x) = h \\sqrt{2\\pi}\\mathrm{exp}{\\left[-\\frac{4 \\log{2}\\left(x-c\\right)^{2}}{W^{2}}\\right]}
 
 
-    Parameters:
+    Parameters
+    -----------
         height: float
             The height of the peak. If there is no binning, this corresponds
             directly to the maximum, otherwise the maximum divided by
@@ -51,7 +52,7 @@ class GaussianHF(Expression):
             The full width half maximum value, i.e. the width of the gaussian
             at half the value of gaussian peak (at centre).
 
-    The helper properties `sigma` and `A` are also defined for compatibilty
+    The helper properties `sigma` and `A` are also defined for compatibility
     with `Gaussian` component.
 
     See also
@@ -86,14 +87,13 @@ class GaussianHF(Expression):
 
         Parameters
         ----------
-        signal : Signal instance
+        signal : Signal1D instance
         x1 : float
             Defines the left limit of the spectral range to use for the
             estimation.
         x2 : float
             Defines the right limit of the spectral range to use for the
             estimation.
-
         only_current : bool
             If False estimates the parameters for the full dataset.
 
@@ -108,11 +108,11 @@ class GaussianHF(Expression):
         Examples
         --------
 
-        >>> g = hs.model.components.GaussianHF()
+        >>> g = hs.model.components1D.GaussianHF()
         >>> x = np.arange(-10, 10, 0.01)
         >>> data = np.zeros((32, 32, 2000))
         >>> data[:] = g.function(x).reshape((1, 1, 2000))
-        >>> s = hs.signals.Spectrum(data)
+        >>> s = hs.signals.Signal1D(data)
         >>> s.axes_manager._axes[-1].offset = -10
         >>> s.axes_manager._axes[-1].scale = 0.01
         >>> g.estimate_parameters(s, -10, 10, False)
@@ -164,7 +164,7 @@ class GaussianHF(Expression):
 
     def integral_as_signal(self):
         """
-        Utility function to get gaussian integral as Signal
+        Utility function to get gaussian integral as Signal1D
         """
         return (self.height.as_signal() * self.fwhm.as_signal() *
                 sqrt2pi / sigma2fwhm)

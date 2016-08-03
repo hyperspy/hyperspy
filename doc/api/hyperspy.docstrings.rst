@@ -4,6 +4,14 @@ hyperspy.docstrings package
 Submodules
 ----------
 
+hyperspy.docstrings.plot module
+-------------------------------
+
+.. automodule:: hyperspy.docstrings.plot
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 hyperspy.docstrings.signal module
 ---------------------------------
 

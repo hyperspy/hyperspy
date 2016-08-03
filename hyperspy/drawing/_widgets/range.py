@@ -368,7 +368,7 @@ class ModifiableSpanSelector(matplotlib.widgets.SpanSelector):
                     x < self.step_ax.low_value - self.step_ax.scale):
                 return
             if self.snap_position:
-                snap_offset = self.step_ax.offset- 0.5 * self.step_ax.scale
+                snap_offset = self.step_ax.offset - 0.5 * self.step_ax.scale
             elif self.snap_size:
                 snap_offset = self._range[1]
             if self.snap_position or self.snap_size:

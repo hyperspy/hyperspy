@@ -1,23 +1,24 @@
 ﻿.. _eds-label:
 
-Energy-Dispersive X-Rays Spectrometry (EDS)
+Energy-Dispersive X-ray Spectrometry (EDS)
 ******************************************
 
-The methods described here are specific to the following signals:
+The methods described in this chapter are specific to the following signals:
 
 * :py:class:`~._signals.eds_tem.EDSTEMSpectrum`
 * :py:class:`~._signals.eds_sem.EDSSEMSpectrum`
 
-This chapter described step by step the analysis of an EDS
+This chapter describes step-by-step the analysis of an EDS
 spectrum (SEM or TEM).
 
 .. NOTE::
     See also the `EDS tutorials <http://nbviewer.ipython.org/github/hyperspy/hyperspy-	demos/blob/master/electron_microscopy/EDS/>`_ .
 
-Spectrum loading and parameters
+Signal1D loading and parameters
 -------------------------------
 
-Data files used in the following examples can be downloaded using
+The sample and  data used in this section are described in [Burdet2013]_, and can be
+downloaded using:
 
 .. code-block:: python
 
@@ -27,79 +28,70 @@ Data files used in the following examples can be downloaded using
     >>> urlretrieve(url + 'Ni_superalloy_010.rpl', 'Ni_superalloy_010.rpl')
     >>> urlretrieve(url + 'Ni_superalloy_010.raw', 'Ni_superalloy_010.raw')
 
-.. NOTE::
+Loading data
+^^^^^^^^^^^^
 
-    The sample and the data used in this chapter are described in
-    P. Burdet, `et al.`, Acta Materialia, 61, p. 3090-3098 (2013) (see
-    `abstract <http://infoscience.epfl.ch/record/185861/>`_).
-
-
-Loading
-^^^^^^^^
-
-All data are loaded with the :py:func:`~.io.load` function, as described in details in
+All data are loaded with the :py:func:`~.io.load` function, as described in detail in
 :ref:`Loading files<loading_files>`. HyperSpy is able to import different formats,
-among them ".msa" and ".rpl" (the raw format of Oxford Instrument and Brucker).
+among them ".msa" and ".rpl" (the raw format of Oxford Instruments and Brucker).
 
-Here is three example for files exported by Oxford Instrument software (INCA).
+Here are three example for files exported by Oxford Instruments software (INCA).
 For a single spectrum:
 
 .. code-block:: python
 
     >>> s = hs.load("Ni_superalloy_1pix.msa")
     >>> s
-    <Spectrum, title: Spectrum, dimensions: (|1024)>
+    <Signal1D, title: Signal1D, dimensions: (|1024)>
 
 For a spectrum image (The .rpl file is recorded as an image in this example,
-The method :py:meth:`~.signal.Signal.as_spectrum` set it back to a spectrum
-with the energy axis in first position):
+The method :py:meth:`~.signal.BaseSignal.as_signal1D` set it back to a one
+dimensional signal with the energy axis in first position):
 
 .. code-block:: python
 
-    >>> si = hs.load("Ni_superalloy_010.rpl").as_spectrum(0)
+    >>> si = hs.load("Ni_superalloy_010.rpl").as_signal1D(0)
     >>> si
-    <Spectrum, title: , dimensions: (256, 224|1024)>
+    <Signal1D, title: , dimensions: (256, 224|1024)>
 
-For a stack of spectrum images (The "*" replace all chains of string, in this
-example 01, 02, 03,...):
+Finally, for a stack of spectrum images, using "*" as a wildcard character:
 
 .. code-block:: python
 
     >>> si4D = hs.load("Ni_superalloy_0*.rpl", stack=True)
-    >>> si4D = si4D.as_spectrum(0)
+    >>> si4D = si4D.as_signal1D(0)
     >>> si4D
-    <Spectrum, title:, dimensions: (256, 224, 2|1024)>
+    <Signal1D, title:, dimensions: (256, 224, 2|1024)>
 
 .. _eds_calibration-label:
 
 Microscope and detector parameters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-First, the type of microscope ("EDS_TEM" or "EDS_SEM") needs to be set with the
-:py:meth:`~.signal.Signal.set_signal_type` method. The class of the
-object is thus assigned, and specific EDS methods become available.
+First, the signal type ("EDS_TEM" or "EDS_SEM") needs to be set with the
+:py:meth:`~.signal.BaseSignal.set_signal_type` method. By assigning the class of
+the object, specific EDS methods are made available.
 
 .. code-block:: python
 
     >>> s = hs.load("Ni_superalloy_1pix.msa")
     >>> s.set_signal_type("EDS_SEM")
     >>> s
-    <EDSSEMSpectrum, title: Spectrum, dimensions: (|1024)>
+    <EDSSEMSpectrum, title: Signal1D, dimensions: (|1024)>
 
-or as an argument of the :py:func:`~.io.load` function:
+You can also specify the signal type as an argument of
+the :py:func:`~.io.load` function:
 
 .. code-block:: python
 
    >>> s = hs.load("Ni_superalloy_1pix.msa", signal_type="EDS_SEM")
    >>> s
-   <EDSSEMSpectrum, title: Spectrum, dimensions: (|1024)>
+   <EDSSEMSpectrum, title: Signal1D, dimensions: (|1024)>
 
-The main values for the microscope parameters are
-automatically imported from the file, if existing. The microscope and
-detector parameters are stored in stored in the
-:py:attr:`~.signal.Signal.metadata`
+HyperSpy will automatically load any existing  microscope parameters from the
+file, and store them in the :py:attr:`~.signal.BaseSignal.metadata`
 attribute (see :ref:`metadata_structure`). These parameters can be displayed
-as follow:
+as follows:
 
 .. code-block:: python
 
@@ -117,14 +109,14 @@ as follow:
     └── tilt_stage = 38.0
 
 
-These parameters can be set directly:
+You can also set these parameters directly:
 
 .. code-block:: python
 
     >>> s = hs.load("Ni_superalloy_1pix.msa", signal_type="EDS_SEM")
     >>> s.metadata.Acquisition_instrument.SEM.beam_energy = 30
 
-or with the
+or by using the
 :py:meth:`~._signals.eds_tem.EDSTEMSpectrum.set_microscope_parameters` method:
 
 .. code-block:: python
@@ -132,7 +124,7 @@ or with the
     >>> s = hs.load("Ni_superalloy_1pix.msa", signal_type="EDS_SEM")
     >>> s.set_microscope_parameters(beam_energy = 30)
 
-or raising the gui:
+or through the GUI:
 
 .. code-block:: python
 
@@ -143,10 +135,10 @@ or raising the gui:
    :align:   center
    :width:   350
 
-   EDS microscope parameters preferences window.
+   EDS microscope parameters preferences window
 
-If the microscope and detector parameters are not written in the original file, some
-of them are set by default. The default values can be changed in the
+Any microscope and detector parameters that are not found in the imported file
+will be set by default. These default values can be changed in the
 :py:class:`~.defaults_parser.Preferences` class (see :ref:`preferences
 <configuring-hyperspy-label>`).
 
@@ -154,7 +146,7 @@ of them are set by default. The default values can be changed in the
 
     >>> hs.preferences.EDS.eds_detector_elevation = 37
 
-or raising the gui:
+or through the GUI:
 
 .. code-block:: python
 
@@ -164,23 +156,25 @@ or raising the gui:
    :align:   center
    :width:   400
 
-   EDS preferences window.
+   EDS preferences window
 
 Energy axis
 ^^^^^^^^^^^
 
-The main values for the energy axis are automatically imported from the file, if existing. The properties of the energy axis can be set manually with the :py:class:`~.axes.AxesManager`.
+The size, scale and units of the energy axis are automatically imported from
+the imported file, where they exist. These properties can also be set
+or adjusted manually with the :py:class:`~.axes.AxesManager`
 (see :ref:`Axis properties<Setting_axis_properties>` for more info):
 
 .. code-block:: python
 
-    >>> si = hs.load("Ni_superalloy_010.rpl", signal_type="EDS_TEM").as_spectrum(0)
+    >>> si = hs.load("Ni_superalloy_010.rpl", signal_type="EDS_TEM").as_signal1D(0)
     >>> si.axes_manager[-1].name = 'E'
     >>> si.axes_manager['E'].units = 'keV'
     >>> si.axes_manager['E'].scale = 0.01
     >>> si.axes_manager['E'].offset = -0.1
 
-or with the :py:meth:`~.axes.AxesManager.gui` method:
+or through the GUI:
 
 .. code-block:: python
 
@@ -190,13 +184,13 @@ or with the :py:meth:`~.axes.AxesManager.gui` method:
    :align:   center
    :width:   280
 
-   Axis properties window.
+   Axis properties window
 
 
-Related method
-^^^^^^^^^^^^^^
+Copying spectrum calibration
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-All the above parameters can be copy from one spectrum (for example exported from one pixel) to another one
+All of the above parameters can be copied from one spectrum to another
 with the :py:meth:`~._signals.eds_tem.EDSTEMSpectrum.get_calibration_from`
 method.
 
@@ -204,14 +198,10 @@ method.
 
     >>> # s1pixel contains all the parameters
     >>> s1pixel = hs.load("Ni_superalloy_1pix.msa", signal_type="EDS_TEM")
-
-.. code-block:: python
-
+    >>>
     >>> # si contains no parameters
-    >>> si = hs.load("Ni_superalloy_010.rpl", signal_type="EDS_TEM").as_spectrum(0)
-
-.. code-block:: python
-
+    >>> si = hs.load("Ni_superalloy_010.rpl", signal_type="EDS_TEM").as_signal1D(0)
+    >>>
     >>> # Copy all the properties of s1pixel to si
     >>> si.get_calibration_from(s1pixel)
 
@@ -220,9 +210,8 @@ method.
 Describing the sample
 ---------------------
 
-The description of the sample is stored in metadata.Sample (in the
-:py:attr:`~.signal.Signal.metadata` attribute). It can be displayed as
-follow:
+The description of the sample is also stored in the
+:py:attr:`~.signal.BaseSignal.metadata` attribute. It can be displayed using:
 
 .. code-block:: python
 
@@ -236,14 +225,15 @@ follow:
     └── xray_lines = ['Fe_Ka', 'Pt_La']
 
 
-The following methods are either called "set" or "add". When "set"
-methods erases all previously defined values, the "add" methods add the
-values to the previously defined values.
+The following methods are either called "set" or "add".
+
+* "set" methods overwrite previously defined values
+* "add" methods add to the previously defined values
 
 Elements
 ^^^^^^^^
 
-The elements present in the sample can be defined with the
+The elements present in the sample can be defined using the
 :py:meth:`~._signals.eds.EDSSpectrum.set_elements`  and
 :py:meth:`~._signals.eds.EDSSpectrum.add_elements` methods.  Only element
 abbreviations are accepted:
@@ -259,10 +249,11 @@ abbreviations are accepted:
 X-ray lines
 ^^^^^^^^^^^
 
-Similarly, the X-ray lines can be defined with the
+Similarly, the X-ray lines can be defined using the
 :py:meth:`~._signals.eds.EDSSpectrum.set_lines` and
 :py:meth:`~._signals.eds.EDSSpectrum.add_lines` methods. The corresponding
-elements will be added automatically. Several lines per elements can be defined.
+elements will be added automatically.
+Several lines per element can be defined at once.
 
 .. code-block:: python
 
@@ -274,9 +265,9 @@ elements will be added automatically. Several lines per elements can be defined.
     ├── elements = ['Fe', 'Pt']
     └── xray_lines = ['Fe_Ka', 'Fe_La', 'Pt_La']
 
-These methods can be used automatically, if the beam energy is set.
+The X-ray lines can also be defined automatically, if the beam energy is set.
 The most excited X-ray line is selected per element (highest energy above an
-overvoltage of 2 (< beam energy / 2)).
+overvoltage of 2 (< beam energy / 2)):
 
 .. code-block:: python
 
@@ -297,7 +288,7 @@ overvoltage of 2 (< beam energy / 2)).
     ├── elements = ['Al', 'Cu', 'Mn']
     └── xray_lines = ['Al_Ka', 'Cu_La', 'Mn_La']
 
-A warning is raised, if setting a X-ray lines higher than the beam energy.
+A warning is raised if you try to set an X-ray line higher than the beam energy:
 
 .. code-block:: python
 
@@ -308,10 +299,10 @@ A warning is raised, if setting a X-ray lines higher than the beam energy.
     Warning: Mn Ka is above the data energy range.
 
 
-Element database
-^^^^^^^^^^^^^^^^
+Elemental database
+^^^^^^^^^^^^^^^^^^
 
-An elemental database is available with the energy of the X-ray lines.
+HyperSpy includes an elemental database, which contains the energy of the X-ray lines.
 
 .. code-block:: python
 
@@ -344,10 +335,10 @@ An elemental database is available with the energy of the X-ray lines.
 .. _eds_plot-label:
 
 Finding elements from energy
-----------------------------
+^^^^^^^^^^^^^^^^
 
-To find the nearest xray lines to a given energy, use the utility function
-:py:meth:`~.utils.eds.get_xray_lines_near_energy` to look up in the elemental
+To find the nearest X-ray line for a given energy, use the utility function
+:py:meth:`~.utils.eds.get_xray_lines_near_energy` to search the elemental
 database:
 
 .. code-block:: python
@@ -357,15 +348,37 @@ database:
     >>> hs.eds.get_xray_lines_near_energy(P['position'], only_lines=['a', 'b'])
     ['C_Ka', 'Ca_La', 'B_Ka']
 
-The lines are returned in order of closeness to the specified energy, and can
+The lines are returned in order of distance from the specified energy, and can
 be limited by additional, optional arguments.
 
+
+
+.. _eds_absorption_db-label
+
+Mass absorption coefficient database
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+A mass absorption coefficient database [Chantler2005]_ is available:
+
+.. code-block:: python
+
+    >>> hs.material.mass_absorption_coefficient(
+    >>>     element='Al', energies=['C_Ka','Al_Ka'])
+    array([ 26330.38933818,    372.02616732])
+
+.. code-block:: python
+
+    >>> hs.material.mass_absorption_mixture(
+    >>>     elements=['Al','Zn'], weight_percent=[50,50], energies='Al_Ka')
+    2587.4161643905127
+
+.. _eds_plot-label:
 
 Plotting
 --------
 
-As decribed in :ref:`visualisation<visualization-label>`, the
-:py:meth:`~.signals.eds.EDSSpectrum.plot` method can be used:
+You can visualize an EDS spectrum using the :py:meth:`~.signals.eds.EDSSpectrum.plot`
+method (see :ref:`visualisation<visualization-label>`). For example:
 
 .. code-block:: python
 
@@ -376,26 +389,23 @@ As decribed in :ref:`visualisation<visualization-label>`, the
    :align:   center
    :width:   500
 
-   EDS spectrum.
+   EDS spectrum
 
-An example of plotting EDS data of higher dimension (3D SEM-EDS) is given in
+An example of multi-dimensional EDS data (e.g. 3D SEM-EDS) is given in
 :ref:`visualisation multi-dimension<visualization_multi_dim>`.
 
 
 .. _eds_plot_markers-label:
 
-Plot X-ray lines
-^^^^^^^^^^^^^^^^
+Plotting X-ray lines
+^^^^^^^^^^^^^^^^^^^^
 
 .. versionadded:: 0.8
 
-X-ray lines can be labbeled on a plot with
-:py:meth:`~._signals.eds.EDSSpectrum.plot`. The lines are
-either given, either retrieved from "metadata.Sample.Xray_lines",
-or selected with the same method as
-:py:meth:`~._signals.eds.EDSSpectrum.add_lines` using the
-elements in "metadata.Sample.elements".
-
+X-ray lines can be added as plot labels with :py:meth:`~.signals.eds.EDSSpectrum.plot`.
+The lines are either retrieved from "metadata.Sample.Xray_lines",
+or selected with the same method as :py:meth:`~._signals.eds.EDSSpectrum.add_lines`
+using the elements in "metadata.Sample.elements".
 
 .. code-block:: python
 
@@ -407,9 +417,9 @@ elements in "metadata.Sample.elements".
    :align:   center
    :width:   500
 
-   EDS spectrum plot with line markers.
+   EDS spectrum plot with line markers
 
-Selecting certain type of lines:
+You can also select a subset of lines to label:
 
 .. code-block:: python
 
@@ -421,16 +431,18 @@ Selecting certain type of lines:
    :align:   center
    :width:   500
 
-   EDS spectrum plot with a selection of line markers.
+   EDS spectrum plot with a selection of line markers
 
 .. _get_lines_intensity:
 
 
-Get lines intensity
+Geting the intensity of an X-ray line
 -------------------
 
+.. versionadded:: 0.8
 
-Data files used in the following examples can be downloaded using
+The sample and data used in this section are described in [Rossouw2015]_, and
+can be downloaded using:
 
 .. code-block:: python
 
@@ -438,15 +450,8 @@ Data files used in the following examples can be downloaded using
     >>> url = 'http://cook.msm.cam.ac.uk//~hyperspy//EDS_tutorial//'
     >>> urlretrieve(url + 'core_shell.hdf5', 'core_shell.hdf5')
 
-.. NOTE::
-
-    The sample and the data used in this section are described in
-    D. Roussow et al., Nano Lett, 10.1021/acs.nanolett.5b00449 (2015).
-
-.. versionadded:: 0.8
-
 The width of integration is defined by extending the energy resolution of
-Mn Ka to the peak energy ("energy_resolution_MnKa" in metadata).
+Mn Ka to the peak energy ("energy_resolution_MnKa" in metadata):
 
 .. code-block:: python
 
@@ -457,20 +462,20 @@ Mn Ka to the peak energy ("energy_resolution_MnKa" in metadata).
    :align:   center
    :width:   500
 
-   Iron map as computed and displayed by ``get_lines_intensity``.
+   Iron map as computed and displayed by ``get_lines_intensity``
 
 The X-ray lines defined in "metadata.Sample.Xray_lines" (see above)
-are used by default.
+are used by default:
 
 .. code-block:: python
 
     >>> s = hs.load('core_shell.hdf5')
     >>> s.set_lines(['Fe_Ka', 'Pt_La'])
     >>> s.get_lines_intensity()
-    [<Image, title: X-ray line intensity of Core shell: Fe_Ka at 6.40 keV, dimensions: (|64, 64)>,
-    <Image, title: X-ray line intensity of Core shell: Pt_La at 9.44 keV, dimensions: (|64, 64)>]
+    [<Signal2D, title: X-ray line intensity of Core shell: Fe_Ka at 6.40 keV, dimensions: (|64, 64)>,
+    <Signal2D, title: X-ray line intensity of Core shell: Pt_La at 9.44 keV, dimensions: (|64, 64)>]
 
-The windows of integration can be visualised using :py:meth:`~._signals.eds.EDSSpectrum.plot` method
+Finally, the windows of integration can be visualised using :py:meth:`~._signals.eds.EDSSpectrum.plot` method:
 
 .. code-block:: python
 
@@ -482,7 +487,7 @@ The windows of integration can be visualised using :py:meth:`~._signals.eds.EDSS
    :align:   center
    :width:   500
 
-   EDS spectrum with integration windows markers.
+   EDS spectrum with integration windows markers
 
 .. _eds_background_subtraction-label:
 
@@ -491,7 +496,13 @@ Background subtraction
 
 .. versionadded:: 0.8
 
-The background can be subtracted from the X-ray intensities with the :py:meth:`~._signals.eds.EDSSpectrum.get_lines_intensity` method. The background value is obtained by averaging the intensity in two windows on each side of the X-ray line. The position of the windows can be estimated with the :py:meth:`~._signals.eds.EDSSpectrum.estimate_background_windows` method and can be plotted with the :py:meth:`~._signals.eds.EDSSpectrum.plot` method as follow. The integration windows are plotted with dashed lines.
+The background can be subtracted from the X-ray intensities with
+:py:meth:`~._signals.eds.EDSSpectrum.get_lines_intensity`.
+The background value is obtained by averaging the intensity in two
+windows on each side of the X-ray line.
+The position of the windows can be estimated using
+:py:meth:`~._signals.eds.EDSSpectrum.estimate_background_windows`, and
+can be plotted using :py:meth:`~._signals.eds.EDSSpectrum.plot`:
 
 .. code-block:: python
 
@@ -509,14 +520,41 @@ The background can be subtracted from the X-ray intensities with the :py:meth:`~
 
 .. _eds_quantification-label:
 
-Quantification
---------------
+EDS Quantification
+------------------
 
-.. versionadded:: 0.8
+.. versionadded:: 0.8 EDS Quantification
 
-One TEM quantification method (Cliff-Lorimer) is implemented so far.
+.. versionadded:: 1.0 zeta-factors and ionization cross sections
 
-Quantification can be applied from the intensities (background subtracted) with the :py:meth:`~._signals.eds_tem.EDSTEMSpectrum.quantification` method. The required k-factors can be usually found in the EDS manufacturer software.
+HyperSpy now includes three methods for EDS quantification:
+
+* Cliff-Lorimer
+* Zeta-factors
+* Ionization cross sections
+
+Quantification must be applied to the background-subtracted intensities, which can
+be found using :py:meth:`~._signals.eds.EDSSpectrum.get_lines_intensity`.
+The quantification of these intensities can then be calculated using
+:py:meth:`~._signals.eds_tem.EDSTEMSpectrum.quantification`.
+
+The quantification method needs be specified as either 'CL', 'zeta', or 'cross_section'.
+If no method is specified, the function will raise an exception.
+
+A list of factors or cross sections should be supplied in the same order as the listed intensities
+(please note that HyperSpy intensities in :py:meth:~._signals.eds.EDSSpectrum.get_lines_intensity
+are in alphabetical order).
+
+A set of k-factors can be usually found in the EDS manufacturer software
+although determination from standard samples for the particular instrument used
+is usually preferable. In the case of zeta-factors and cross sections, these must
+be determined experimentally using standards.
+
+Zeta-factors should be provided in units of kg/m^2. The method is described further in [Watanabe1996]_ and [Watanabe2006]_ .
+Cross sections should be provided in units of barns (b). Further details on the cross section method can be found in [MacArthur2016]_ .
+Conversion between zeta-factors and cross sections is possible using :py:meth:~._misc.eds.util.edx_cross_section_to_zeta or :py:meth:~._misc.eds.util.zeta_to_edx_cross_section .
+
+Using the Cliff-Lorimer method as an example, quantification can be carried out as follows:
 
 .. code-block:: python
 
@@ -525,34 +563,89 @@ Quantification can be applied from the intensities (background subtracted) with 
     >>> kfactors = [1.450226, 5.075602] #For Fe Ka and Pt La
     >>> bw = s.estimate_background_windows(line_width=[5.0, 2.0])
     >>> intensities = s.get_lines_intensity(background_windows=bw)
-    >>> weight_percent = s.quantification(intensities, kfactors, plot_result=True)
-    Fe (Fe_Ka): Composition = 4.96 weight percent
-    Pt (Pt_La): Composition = 95.04 weight percent
+    >>> atomic_percent = s.quantification(intensities, method='CL', kfactors)
+    Fe (Fe_Ka): Composition = 15.41 atomic percent
+    Pt (Pt_La): Composition = 84.59 atomic percent
 
-The obtained composition is in weight percent. It can be changed transformed into atomic percent either with the option :py:meth:`~._signals.eds_tem.EDSTEMSpectrum.quantification`:
+The obtained composition is in atomic percent, by default. However, it can be
+transformed into weight percent either with the option :py:meth:`~._signals.eds_tem.EDSTEMSpectrum.quantification`:
 
 .. code-block:: python
 
     >>> # With s, intensities and kfactors from before
-    >>> s.quantification(intensities, kfactors, plot_result=True,
-    >>>                  composition_units='atomic')
-    Fe (Fe_Ka): Composition = 15.41 atomic percent
-    Pt (Pt_La): Composition = 84.59 atomic percent
+    >>> s.quantification(intensities, method='CL',kfactors,
+    >>>                  composition_units='weight')
+    Fe (Fe_Ka): Composition = 4.96 weight percent
+    Pt (Pt_La): Composition = 95.04 weight percent
 
-either with :py:func:`~.misc.material.weight_to_atomic`. The reverse method is :py:func:`~.misc.material.atomic_to_weight`.
+or using :py:func:`~.misc.material.atomic_to_weight`:
 
 .. code-block:: python
 
-    >>> # With weight_percent from before
-    >>> atomic_percent = hs.material.weight_to_atomic(weight_percent)
+    >>> # With atomic_percent from before
+    >>> weight_percent = hs.material.atomic_to_weight(atomic_percent)
+
+The reverse method is :py:func:`~.misc.material.weight_to_atomic`.
+
+The zeta-factor method needs both the 'beam_current' (in nA) and the acquisition
+or dwell time (referred to as 'real_time' in seconds) in order to obtain an accurate
+quantification. Both of the these parameters can be assigned to the metadata using:
+
+.. code-block:: python
+
+    >>> s.set_microscope_parameters(beam_current=0.5)
+    >>> s.set_microscope_parameters(real_time=1.5)
+
+If these parameters are not set, the code will produce an error.
+The zeta-factor method will produce two sets of results. Index [0] contains the
+composition maps for each element in atomic percent, and index [1] contains the mass-thickness map.
+
+The cross section method needs the 'beam_current', dwell time ('real_time') and probe area
+in order to obtain an accurate quantification. The 'beam_current' and 'real_time' can be set as shown above.
+The 'probe_area' (in nm^2) can be defined in two different ways.
+
+If the probe diameter is narrower than the pixel width, then the probe is being
+under-sampled and an estimation of the probe area needs to be used. This can be added
+to the metadata with:
+
+.. code-block: python
+
+    >>> s.set_microscope_parameters(probe_area=0.00125)
+
+Alternatively, if sub-pixel scanning is used (or the spectrum map was recorded
+at a high spatial sampling and subsequently binned into much larger pixels) then
+the illumination area becomes the pixel area of the spectrum image. This is a much
+more accurate approach for quantitative EDS and should be used where possible.
+The pixel width could either be added to the metadata by putting the pixel area
+in as the 'probe_area' (above) or by calibrating the spectrum image
+(see :ref:`Setting axis properties').
+
+Either approach will provide an illumination area for the cross_section
+quantification. If the pixel width is not set, the code will still run with the
+default value of 1 nm with a warning message to remind the user that this is the case.
+
+The cross section method will produce two sets of results. Index [0] contains the
+composition maps for each element in atomic percent and index [1] is the
+number of atoms per pixel for each element.
+
+.. NOTE::
+
+    Please note that the function does not assume square pixels, so both the x and y pixel
+    dimensions must be set. For quantification of line scans, rather than spectrum images,
+    the pixel area should be added to the metadata as above.
+
+
+.. _eds_fitting-label:
 
 EDS curve fitting
 -----------------
 
-HyperSpy makes it really easy to extract the intensity of X-ray lines by curve fitting as it is shown in the next example for an EDS-SEM spectrum recorded on a test material EDS-TM001 provided by `BAM <http://www.webshop.bam.de>`_. 
+The intensity of X-ray lines can be extracted using curve-fitting in HyperSpy.
+This example uses an EDS-SEM spectrum of a a test material (EDS-TM001) provided
+by `BAM <http://www.webshop.bam.de>`_.
 
-Load the spectrum, define the chemical composition of the sample and set the beam energy.
-
+First, we load the spectrum, define the chemical composition of the sample and
+set the beam energy:
 
 .. code-block:: python
 
@@ -560,7 +653,9 @@ Load the spectrum, define the chemical composition of the sample and set the bea
     >>> s.add_elements(['Al', 'Ar', 'C', 'Cu', 'Mn', 'Zr'])
     >>> s.set_microscope_parameters(beam_energy=10)
 
-The model is created with :py:func:`~._signals.eds_sem.create_model`. One gaussian is automatically created per X-ray line and a polynomial for the backgronud.
+Next, the model is created with :py:func:`~._signals.eds_sem.create_model`. One
+Gaussian is automatically created per X-ray line, along with a polynomial for
+the background.
 
 .. code-block:: python
 
@@ -604,26 +699,30 @@ The model is created with :py:func:`~._signals.eds_sem.create_model`. One gaussi
     Zr_Lb3
     background_order_6
 
-The width and the energy are fixed. The height of the sub-X-ray lines are twinned to the main X-ray lines (alpha lines). The model can be fitted.
+The width and the energies are fixed, while the heights of the sub-X-ray lines are linked
+to the main X-ray lines (alpha lines). The model can now be fitted:
 
 .. code-block:: python
 
     >>> m.fit()
 
-The background fitting can be improved with the :py:meth:`~.models.edsmodel.EDSModel.fit_background` method by enabling only the energy ranges with no X-ray lines.
+The background fitting can be improved with :py:meth:`~.models.edsmodel.EDSModel.fit_background`
+by enabling only energy ranges containing no X-ray lines:
 
 .. code-block:: python
 
     >>> m.fit_background()
 
-The width of the X-ray lines is defined from the energy resolution (FWHM at Mn Ka) provided by `energy_resolution_MnKa` in `metadata`. This parameters can be calibrated by fitting with the :py:meth:`~.models.edsmodel.EDSModel.calibrate_energy_axis` method.
+The width of the X-ray lines is defined from the energy resolution (FWHM at Mn Ka)
+provided by `energy_resolution_MnKa` in `metadata`. This parameters can be calibrated
+by fitting with :py:meth:`~.models.edsmodel.EDSModel.calibrate_energy_axis`:
 
 .. code-block:: python
 
     >>> m.calibrate_energy_axis(calibrate='resolution')
     Energy resolution (FWHM at Mn Ka) changed from 130.000000 to 131.927922 eV
 
-Fine tuning of the parameters of specific X-ray lines can be done with the :py:meth:`~.models.edsmodel.EDSModel.calibrate_xray_lines` method.
+Fine-tuning of specific X-ray lines can be achieved using :py:meth:`~.models.edsmodel.EDSModel.calibrate_xray_lines`:
 
 .. code-block:: python
 
@@ -645,7 +744,7 @@ The result of the fit is obtained with the :py:meth:`~.models.edsmodel.EDSModel.
     Mn_La at 0.63316 keV : Intensity = 73665.70
     Zr_La at 2.0423 keV : Intensity = 68703.75
 
-Visualize the result
+Finally, we visualize the result:
 
 .. code-block:: python
 
@@ -655,7 +754,8 @@ Visualize the result
    :align:   center
    :width:   500
 
-The following methods permit to easily enable/disable several X-ray lines functionalities:
+The following methods can be used to enable/disable different functionalities of
+X-ray lines when fitting:
 
 * :py:meth:`~.models.edsmodel.EDSModel.free_background`
 * :py:meth:`~.models.edsmodel.EDSModel.fix_background`

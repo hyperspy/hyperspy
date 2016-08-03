@@ -19,14 +19,14 @@
 import numpy as np
 
 from nose.tools import assert_true
-from hyperspy._signals.spectrum import Spectrum
-from hyperspy.components import Gaussian
+from hyperspy._signals.signal1d import Signal1D
+from hyperspy.components1d import Gaussian
 
 
 class TestChiSquared:
 
     def setUp(self):
-        s = Spectrum(np.array([1.0, 2, 4, 7, 12, 7, 4, 2, 1]))
+        s = Signal1D(np.array([1.0, 2, 4, 7, 12, 7, 4, 2, 1]))
         m = s.create_model()
         self.model = m
         self.A = 38.022476979172588

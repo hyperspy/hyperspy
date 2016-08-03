@@ -28,12 +28,12 @@ from hyperspy.misc.utils import isiterable, ordinal
 from hyperspy.misc.math_tools import isfloat
 
 import warnings
-from hyperspy.misc.hspy_warnings import VisibleDeprecationWarning
+from hyperspy.exceptions import VisibleDeprecationWarning
 
 
 class ndindex_nat(np.ndindex):
 
-    def next(self):
+    def __next__(self):
         return super(ndindex_nat, self).next()[::-1]
 
 
@@ -231,16 +231,30 @@ class DataAxis(t.HasTraits):
             try:
                 start = v2i(start)
             except ValueError:
-                # The value is below the axis limits
-                # we slice from the start.
-                start = None
+                if start > self.high_value:
+                    # The start value is above the axis limit
+                    raise IndexError(
+                        "Start value above axis high bound for  axis %s."
+                        "value: %f high_bound: %f" % (repr(self), start,
+                                                      self.high_value))
+                else:
+                    # The start value is below the axis limit,
+                    # we slice from the start.
+                    start = None
         if isfloat(stop):
             try:
                 stop = v2i(stop)
             except ValueError:
-                # The value is above the axes limits
-                # we slice up to the end.
-                stop = None
+                if stop < self.low_value:
+                    # The stop value is below the axis limits
+                    raise IndexError(
+                        "Stop value below axis low bound for  axis %s."
+                        "value: %f low_bound: %f" % (repr(self), stop,
+                                                     self.low_value))
+                else:
+                    # The stop value is below the axis limit,
+                    # we slice until the end.
+                    stop = None
 
         if step == 0:
             raise ValueError("slice step cannot be zero")
@@ -267,7 +281,7 @@ class DataAxis(t.HasTraits):
         start, stop, step = my_slice.start, my_slice.stop, my_slice.step
 
         if start is None:
-            if step > 0 or step is None:
+            if step is None or step > 0:
                 start = 0
             else:
                 start = self.size - 1
@@ -293,7 +307,7 @@ class DataAxis(t.HasTraits):
         if self.navigate is True:
             text += ", index: %i" % self.index
         text += ">"
-        return text.encode('utf8')
+        return text
 
     def __str__(self):
         return self._get_name() + " axis"
@@ -428,7 +442,7 @@ class DataAxis(t.HasTraits):
             greater than v1.
 
         """
-        if v1 > v2:
+        if v1 is not None and v2 is not None and v1 > v2:
             raise ValueError("v2 must be greater than v1.")
 
         if v1 is not None and self.low_value < v1 <= self.high_value:
@@ -443,11 +457,12 @@ class DataAxis(t.HasTraits):
 
     def update_from(self, axis, attributes=["scale", "offset", "units"]):
         """Copy values of specified axes fields from the passed AxesManager.
+
         Parameters
         ----------
         axis : DataAxis
             The DataAxis instance to use as a source for values.
-        fields : iterable container of strings.
+        attributes : iterable container of strings.
             The name of the attribute to update. If the attribute does not
             exist in either of the AxesManagers, an AttributeError will be
             raised.
@@ -514,7 +529,7 @@ class AxesManager(t.HasTraits):
 
     >>> # Create a spectrum with random data
 
-    >>> s = hs.signals.Spectrum(np.random.random((2,3,4,5)))
+    >>> s = hs.signals.Signal1D(np.random.random((2,3,4,5)))
     >>> s.axes_manager
     <Axes manager, axes: (<axis2 axis, size: 4, index: 0>, <axis1 axis, size: 3, index: 0>, <axis0 axis, size: 2, index: 0>, <axis3 axis, size: 5>)>
     >>> s.axes_manager[0]
@@ -529,7 +544,7 @@ class AxesManager(t.HasTraits):
     >>> s.axes_manager['y']
     <y axis, size: 3 index: 0>
     >>> for i in s.axes_manager:
-    >>>     print i, s.axes_manager.indices
+    >>>     print(i, s.axes_manager.indices)
     (0, 0, 0) (0, 0, 0)
     (1, 0, 0) (1, 0, 0)
     (2, 0, 0) (2, 0, 0)
@@ -572,7 +587,7 @@ class AxesManager(t.HasTraits):
             updated.
 
             Arguments:
-            ---------
+            ----------
             obj : The AxesManager that the event belongs to.
             """, arguments=['obj'])
         self.events.any_axis_changed = Event("""
@@ -584,23 +599,29 @@ class AxesManager(t.HasTraits):
 
             Arguments:
             ----------
-            axes_manager : The AxesManager that the event belongs to.
-            """, arguments=["obj"])
+            obj : The AxesManager that the event belongs to.
+            """, arguments=['obj'])
         self.create_axes(axes_list)
         # set_signal_dimension is called only if there is no current
         # view. It defaults to spectrum
         navigates = [i.navigate for i in self._axes]
         if t.Undefined in navigates:
-            # Default to Spectrum view if the view is not fully defined
-            self.set_signal_dimension(1)
+            # Default to Signal1D view if the view is not fully defined
+            self.set_signal_dimension(len(axes_list))
 
         self._update_attributes()
-        self.on_trait_change(self._on_index_changed, '_axes.index')
-        self.on_trait_change(self._on_slice_changed, '_axes.slice')
-        self.on_trait_change(self._on_size_changed, '_axes.size')
-        self.on_trait_change(self._on_scale_changed, '_axes.scale')
-        self.on_trait_change(self._on_offset_changed, '_axes.offset')
+        self._update_trait_handlers()
         self._index = None  # index for the iterator
+
+    def _update_trait_handlers(self, remove=False):
+        things = {self._on_index_changed: '_axes.index',
+                  self._on_slice_changed: '_axes.slice',
+                  self._on_size_changed: '_axes.size',
+                  self._on_scale_changed: '_axes.scale',
+                  self._on_offset_changed: '_axes.offset'}
+
+        for k, v in things.items():
+            self.on_trait_change(k, name=v, remove=remove)
 
     def _get_positive_index(self, axis):
         if axis < 0:
@@ -623,17 +644,18 @@ class AxesManager(t.HasTraits):
         """x.__getitem__(y) <==> x[y]
 
         """
-        if isinstance(y, basestring) or not np.iterable(y):
+        if isinstance(y, str) or not np.iterable(y):
             return self[(y,)][0]
         axes = [self._axes_getter(ax) for ax in y]
-        _, indices = np.unique(axes, return_index=True)
+        _, indices = np.unique(
+            [_id for _id in map(id, axes)], return_index=True)
         ans = tuple(axes[i] for i in sorted(indices))
         return ans
 
     def _axes_getter(self, y):
         if y in self._axes:
             return y
-        if isinstance(y, basestring):
+        if isinstance(y, str):
             axes = list(self._get_axes_in_natural_order())
             while axes:
                 axis = axes.pop()
@@ -755,7 +777,7 @@ class AxesManager(t.HasTraits):
         if self._max_index != 0:
             self._max_index -= 1
 
-    def next(self):
+    def __next__(self):
         """
         Standard iterator method, updates the index and returns the
         current coordiantes
@@ -991,18 +1013,6 @@ class AxesManager(t.HasTraits):
         ag = tuple(ag)
         self.edit_traits(view=tui.View(*ag), context=context)
 
-    def _get_axes_str(self):
-        string = "("
-        for axis in self.navigation_axes:
-            string += axis.__repr__() + ", "
-        string = string.rstrip(", ")
-        string += "|"
-        for axis in self.signal_axes:
-            string += axis.__repr__() + ", "
-        string = string.rstrip(", ")
-        string += ")"
-        return string
-
     def _get_dimension_str(self):
         string = "("
         for axis in self.navigation_axes:
@@ -1016,8 +1026,66 @@ class AxesManager(t.HasTraits):
         return string
 
     def __repr__(self):
-        text = ('<Axes manager, axes: %s>' %
-                self._get_axes_str())
+        text = ('<Axes manager, axes: %s>\n' %
+                self._get_dimension_str())
+        ax_signature = "% 16s | %6g | %6s | %7.2g | %7.2g | %6s "
+        signature = "% 16s | %6s | %6s | %7s | %7s | %6s "
+        text += signature % ('Name', 'size', 'index', 'offset', 'scale',
+                             'units')
+        text += '\n'
+        text += signature % ('=' * 16, '=' * 6, '=' * 6,
+                             '=' * 7, '=' * 7, '=' * 6)
+        for ax in self.navigation_axes:
+            text += '\n'
+            text += ax_signature % (str(ax.name)[:16], ax.size, str(ax.index),
+                                    ax.offset, ax.scale, ax.units)
+        text += '\n'
+        text += signature % ('-' * 16, '-' * 6, '-' * 6,
+                             '-' * 7, '-' * 7, '-' * 6)
+        for ax in self.signal_axes:
+            text += '\n'
+            text += ax_signature % (str(ax.name)[:16], ax.size, ' ', ax.offset,
+                                    ax.scale, ax.units)
+
+        return text
+
+    def _repr_html_(self):
+        text = ("<style>\n"
+                "table, th, td {\n\t"
+                "border: 1px solid black;\n\t"
+                "border-collapse: collapse;\n}"
+                "\nth, td {\n\t"
+                "padding: 5px;\n}"
+                "\n</style>")
+        text += ('\n<p><b>< Axes manager, axes: %s ></b></p>\n' %
+                 self._get_dimension_str())
+
+        def format_row(*args, tag='td', bold=False):
+            if bold:
+                signature = "\n<tr class='bolder_row'> "
+            else:
+                signature = "\n<tr> "
+            signature += " ".join(("{}" for _ in args)) + " </tr>"
+            return signature.format(*map(lambda x:
+                                         '\n<' + tag +
+                                         '>{}</'.format(x) + tag + '>',
+                                         args))
+        if self.navigation_axes:
+            text += "<table style='width:100%'>\n"
+            text += format_row('Navigation axis name', 'size', 'index', 'offset',
+                               'scale', 'units', tag='th')
+            for ax in self.navigation_axes:
+                text += format_row(ax.name, ax.size, ax.index, ax.offset, ax.scale,
+                                   ax.units)
+            text += "</table>\n"
+        if self.signal_axes:
+            text += "<table style='width:100%'>\n"
+            text += format_row('Signal axis name', 'size', 'offset', 'scale',
+                               'units', tag='th')
+            for ax in self.signal_axes:
+                text += format_row(ax.name, ax.size, ax.offset, ax.scale,
+                                   ax.units)
+            text += "</table>\n"
         return text
 
     @property
@@ -1106,3 +1174,41 @@ class AxesManager(t.HasTraits):
                              "of items are axes are in this AxesManager")
         for axis, value in zip(self._axes, values):
             setattr(axis, attr, value)
+
+    @property
+    def navigation_indices_in_array(self):
+        return tuple([axis.index_in_array for axis in self.navigation_axes])
+
+    @property
+    def signal_indices_in_array(self):
+        return tuple([axis.index_in_array for axis in self.signal_axes])
+
+    @property
+    def axes_are_aligned_with_data(self):
+        """Verify if the data axes are aligned with the signal axes.
+
+        When the data are aligned with the axes the axes order in `self._axes`
+        is [nav_n, nav_n-1, ..., nav_0, sig_m, sig_m-1 ..., sig_0].
+
+        Returns
+        -------
+        aligned : bool
+
+        """
+        nav_iia_r = self.navigation_indices_in_array[::-1]
+        sig_iia_r = self.signal_indices_in_array[::-1]
+        iia_r = nav_iia_r + sig_iia_r
+        aligned = iia_r == tuple(range(len(iia_r)))
+        return aligned
+
+    def _sort_axes(self):
+        """Sort _axes to align them.
+
+        When the data are aligned with the axes the axes order in `self._axes`
+        is [nav_n, nav_n-1, ..., nav_0, sig_m, sig_m-1 ..., sig_0]. This method
+        sort the axes in this way. Warning: this doesn't sort the `data` axes.
+
+        """
+        am = self
+        new_axes = am.navigation_axes[::-1] + am.signal_axes[::-1]
+        self._axes = list(new_axes)

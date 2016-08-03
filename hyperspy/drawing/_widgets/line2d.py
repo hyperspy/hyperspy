@@ -183,7 +183,7 @@ class Line2DWidget(ResizableDraggableWidgetBase):
         if self.is_on() and self.patch:
             self.patch[0].set_data(np.array(self._pos).T)
             wc = self._get_width_indicator_coords()
-            for i in xrange(2):
+            for i in range(2):
                 self.patch[1 + i].set_data(wc[i].T)
             self.draw_patch()
 
@@ -207,7 +207,7 @@ class Line2DWidget(ResizableDraggableWidgetBase):
             mfc='lime',
             picker=max_r,)[0:1]
         wc = self._get_width_indicator_coords()
-        for i in xrange(2):
+        for i in range(2):
             wi, = self.ax.plot(
                 wc[i][0], wc[i][1],
                 linestyle=':',
@@ -272,7 +272,7 @@ class Line2DWidget(ResizableDraggableWidgetBase):
         # indicator lines
         radius = self.radius_move
         wc = self._get_width_indicator_coords()
-        for i in xrange(2):
+        for i in range(2):
             A = np.array(trans.transform(wc[i][0]))
             B = np.array(trans.transform(wc[i][1]))
             t = np.dot(c - A, B - A)

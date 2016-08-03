@@ -16,6 +16,8 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
+
 import numpy as np
 import scipy as sp
 import matplotlib.pyplot as plt
@@ -28,6 +30,8 @@ from hyperspy.exceptions import SignalDimensionError
 from hyperspy.gui import messages
 from hyperspy.axes import AxesManager
 from hyperspy.drawing.widgets import VerticalLineWidget
+
+_logger = logging.getLogger(__name__)
 
 
 OurOKButton = tu.Action(name="OK",
@@ -60,7 +64,7 @@ class SmoothingHandler(tu.Handler):
         return True
 
 
-class SpanSelectorInSpectrumHandler(tu.Handler):
+class SpanSelectorInSignal1DHandler(tu.Handler):
 
     def close(self, info, is_ok):
         # Removes the span selector from the plot
@@ -92,11 +96,11 @@ class SpanSelectorInSpectrumHandler(tu.Handler):
         obj = info.object
         obj.is_ok = True
         if hasattr(obj, 'next'):
-            obj.next()
+            next(obj)
         return
 
 
-class SpectrumRangeSelectorHandler(tu.Handler):
+class Signal1DRangeSelectorHandler(tu.Handler):
 
     def close(self, info, is_ok):
         # Removes the span selector from the plot
@@ -121,7 +125,7 @@ class SpectrumRangeSelectorHandler(tu.Handler):
         return
 
 
-class CalibrationHandler(SpanSelectorInSpectrumHandler):
+class CalibrationHandler(SpanSelectorInSignal1DHandler):
 
     def apply(self, info, *args, **kwargs):
         """Handles the **Apply** button being clicked.
@@ -139,7 +143,7 @@ class CalibrationHandler(SpanSelectorInSpectrumHandler):
         return
 
 
-class SpanSelectorInSpectrum(t.HasTraits):
+class SpanSelectorInSignal1D(t.HasTraits):
     ss_left_value = t.Float(np.nan)
     ss_right_value = t.Float(np.nan)
     is_ok = t.Bool(False)
@@ -167,7 +171,7 @@ class SpanSelectorInSpectrum(t.HasTraits):
                 drawing.widgets.ModifiableSpanSelector(
                     self.signal._plot.signal_plot.ax,
                     onselect=self.update_span_selector_traits,
-                    onmove_callback=self.update_span_selector_traits)
+                    onmove_callback=self.update_span_selector_traits,)
 
         elif self.span_selector is not None:
             self.on_disabling_span_selector()
@@ -188,7 +192,7 @@ class SpanSelectorInSpectrum(t.HasTraits):
         self.span_selector_switch(True)
 
 
-class LineInSpectrum(t.HasTraits):
+class LineInSignal1D(t.HasTraits):
 
     """Adds a vertical draggable line to a spectrum that reports its
     position to the position attribute of the class.
@@ -196,8 +200,8 @@ class LineInSpectrum(t.HasTraits):
     Attributes:
     -----------
     position : float
-        The position of the vertical line in the spectrum. Moving the
-        line changes the position but the reverse is not true.
+        The position of the vertical line in the one dimensional signal. Moving
+        the line changes the position but the reverse is not true.
     on : bool
         Turns on and off the line
     color : wx.Colour
@@ -262,7 +266,7 @@ class LineInSpectrum(t.HasTraits):
         self.draw()
 
 
-class SpectrumCalibration(SpanSelectorInSpectrum):
+class Signal1DCalibration(SpanSelectorInSignal1D):
     left_value = t.Float(label='New left value')
     right_value = t.Float(label='New right value')
     offset = t.Float()
@@ -289,7 +293,7 @@ class SpectrumCalibration(SpanSelectorInSpectrum):
         title='Calibration parameters')
 
     def __init__(self, signal):
-        super(SpectrumCalibration, self).__init__(signal)
+        super(Signal1DCalibration, self).__init__(signal)
         if signal.axes_manager.signal_dimension != 1:
             raise SignalDimensionError(
                 signal.axes_manager.signal_dimension, 1)
@@ -325,13 +329,13 @@ class SpectrumCalibration(SpanSelectorInSpectrum):
             modify_calibration=False)
 
 
-class SpectrumRangeSelector(SpanSelectorInSpectrum):
+class Signal1DRangeSelector(SpanSelectorInSignal1D):
     on_close = t.List()
 
     view = tu.View(
         tu.Item('ss_left_value', label='Left', style='readonly'),
         tu.Item('ss_right_value', label='Right', style='readonly'),
-        handler=SpectrumRangeSelectorHandler,
+        handler=Signal1DRangeSelectorHandler,
         buttons=[OKButton, OurApplyButton, CancelButton],)
 
 
@@ -369,7 +373,7 @@ class Smoothing(t.HasTraits):
         self.original_color = l1.line.get_color()
         l1.set_line_properties(color=self.original_color,
                                type='scatter')
-        l2 = drawing.spectrum.SpectrumLine()
+        l2 = drawing.signal1d.Signal1DLine()
         l2.data_function = self.model2plot
 
         l2.set_line_properties(
@@ -390,7 +394,7 @@ class Smoothing(t.HasTraits):
     def turn_diff_line_on(self, diff_order):
 
         self.signal._plot.signal_plot.create_right_axis()
-        self.smooth_diff_line = drawing.spectrum.SpectrumLine()
+        self.smooth_diff_line = drawing.signal1d.Signal1DLine()
         self.smooth_diff_line.data_function = self.diff_model2plot
         self.smooth_diff_line.set_line_properties(
             color=np.array(self.line_color_rgb) / 255.,
@@ -492,14 +496,15 @@ class SmoothingSavitzkyGolay(Smoothing):
         if nwl > self.polynomial_order:
             self.window_length = nwl
         else:
-            print(
-                "The window length must be greated than the polynomial order")
+            _logger.warn(
+                "The window length must be greater than the polynomial order")
 
     def _polynomial_order_changed(self, old, new):
         if self.window_length <= new:
             self.window_length = new + 2 if new % 2 else new + 1
-            print("Polynomial order must be < window length. "
-                  "Window length set to %i." % self.window_length)
+            _logger.warn(
+                "Polynomial order must be < window length. "
+                "Window length set to %i.", self.window_length)
         self.update_lines()
 
     def _window_length_changed(self, old, new):
@@ -508,8 +513,9 @@ class SmoothingSavitzkyGolay(Smoothing):
     def _differential_order_changed(self, old, new):
         if new > self.polynomial_order:
             self.polynomial_order += 1
-            print("Differential order must be <= polynomial order. "
-                  "Polynomial order set to %i." % self.polynomial_order)
+            _logger.warn(
+                "Differential order must be <= polynomial order. "
+                "Polynomial order set to %i.", self.polynomial_order)
         super(
             SmoothingSavitzkyGolay,
             self)._differential_order_changed(
@@ -660,7 +666,7 @@ class ImageContrastHandler(tu.Handler):
         #        if is_ok is True:
         #            self.apply(info)
         if is_ok is False:
-            info.object.image.update(auto_contrast=True)
+            info.object.image.update()
         info.object.close()
         return True
 
@@ -757,7 +763,7 @@ class ImageContrastEditor(t.HasTraits):
     def reset(self):
         data = self.image.data_function().ravel()
         self.image.vmin, self.image.vmax = np.nanmin(data), np.nanmax(data)
-        self.image.update(auto_contrast=False)
+        self.image.update()
         self.update_histogram()
 
     def update_histogram(self):
@@ -770,14 +776,14 @@ class ImageContrastEditor(t.HasTraits):
             return
         self.image.vmin = self.ss_left_value
         self.image.vmax = self.ss_right_value
-        self.image.update(auto_contrast=False)
+        self.image.update()
         self.update_histogram()
 
     def close(self):
         plt.close(self.ax.figure)
 
 
-class ComponentFit(SpanSelectorInSpectrum):
+class ComponentFit(SpanSelectorInSignal1D):
     fit = t.Button()
     only_current = t.List(t.Bool(True))
 
@@ -787,17 +793,17 @@ class ComponentFit(SpanSelectorInSpectrum):
                 editor=tu.CheckListEditor(values=[(True, 'Only current')])),
         buttons=[OurCloseButton],
         title='Fit single component',
-        handler=SpanSelectorInSpectrumHandler,
+        handler=SpanSelectorInSignal1DHandler,
     )
 
     def __init__(self, model, component, signal_range=None,
                  estimate_parameters=True, fit_independent=False,
                  only_current=True, **kwargs):
-        if model.spectrum.axes_manager.signal_dimension != 1:
+        if model.signal.axes_manager.signal_dimension != 1:
             raise SignalDimensionError(
-                model.spectrum.axes_manager.signal_dimension, 1)
+                model.signal.axes_manager.signal_dimension, 1)
 
-        self.signal = model.spectrum
+        self.signal = model.signal
         self.axis = self.signal.axes_manager.signal_axes[0]
         self.span_selector = None
         self.only_current = [True] if only_current else []  # CheckListEditor
@@ -886,13 +892,13 @@ class ComponentFit(SpanSelectorInSpectrum):
         self._fit_fired()
 
 
-class IntegrateArea(SpanSelectorInSpectrum):
+class IntegrateArea(SpanSelectorInSignal1D):
     integrate = t.Button()
 
     view = tu.View(
         buttons=[OKButton, CancelButton],
         title='Integrate in range',
-        handler=SpanSelectorInSpectrumHandler,
+        handler=SpanSelectorInSignal1DHandler,
     )
 
     def __init__(self, signal, signal_range=None):
@@ -901,6 +907,7 @@ class IntegrateArea(SpanSelectorInSpectrum):
                 signal.axes.signal_dimension, 1)
 
         self.signal = signal
+        self.axis = self.signal.axes_manager.signal_axes[0]
         self.span_selector = None
         if not hasattr(self.signal, '_plot'):
             self.signal.plot()

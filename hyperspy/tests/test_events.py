@@ -191,8 +191,8 @@ class TestEventsSuppression(EventsBase):
 
     def test_suppressor_init_args(self):
         with self.events.b.suppress():
-            es = he.EventSupressor((self.events.a, self.on_trigger),
-                                   self.events.c)
+            es = he.EventSuppressor((self.events.a, self.on_trigger),
+                                    self.events.c)
             with es.suppress():
                 self.trigger_check(self.events.a.trigger, False)
                 self.trigger_check2(self.events.a.trigger, True)
@@ -214,7 +214,7 @@ class TestEventsSuppression(EventsBase):
 
     def test_suppressor_add_args(self):
         with self.events.b.suppress():
-            es = he.EventSupressor()
+            es = he.EventSuppressor()
             es.add((self.events.a, self.on_trigger), self.events.c)
             with es.suppress():
                 self.trigger_check(self.events.a.trigger, False)
@@ -237,7 +237,7 @@ class TestEventsSuppression(EventsBase):
 
     def test_suppressor_all_callback_in_events(self):
         with self.events.b.suppress():
-            es = he.EventSupressor()
+            es = he.EventSuppressor()
             es.add((self.events, self.on_trigger),)
             with es.suppress():
                 self.trigger_check(self.events.a.trigger, False)
@@ -321,7 +321,7 @@ def test_events_container_magic_attributes():
     nt.assert_in("a", events.__dir__())
     nt.assert_equal(repr(events),
                     "<hyperspy.events.Events: "
-                    "{'event': <hyperspy.events.Event: set([])>}>")
+                    "{'event': <hyperspy.events.Event: set()>}>")
     del events.event
     del events.a
     nt.assert_not_in("event", events.__dir__())
