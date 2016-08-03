@@ -93,8 +93,8 @@ class test_ProtochipsGasCellCSV():
 
     def test_read_metadata(self):
         for s in self.s_list:
-#            nt.assert_equal(s.metadata.General.date, datetime_gas_cell()[0])
-#            nt.assert_equal(s.metadata.General.time, datetime_gas_cell()[1])
+            #            nt.assert_equal(s.metadata.General.date, datetime_gas_cell()[0])
+            #            nt.assert_equal(s.metadata.General.time, datetime_gas_cell()[1])
             nt.assert_equal(s.axes_manager[0].units, 's')
             nt.assert_almost_equal(s.axes_manager[0].scale, 0.25995, places=5)
             nt.assert_equal(s.axes_manager[0].offset, 0)

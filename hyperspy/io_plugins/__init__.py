@@ -49,7 +49,7 @@ try:
     io_plugins.append(image)
 except ImportError:
     _logger.info('The Signal2D (PIL) IO features are not available')
-    
+
 try:
     from hyperspy.io_plugins import bcf
     io_plugins.append(bcf)
