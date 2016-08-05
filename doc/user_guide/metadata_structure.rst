@@ -56,6 +56,7 @@ in the following sections of this chapter.
     │   ├── date
     │   ├── doi
     │   ├── original_filename
+    │   ├── notes
     │   ├── time
     │   └── title
     ├── Sample
@@ -91,28 +92,28 @@ original_filename
     original file.
 
 time
-    type: str
+    type: Str
 
-    The acquistion or creation time.
+    The acquistion or creation time in ISO 8601 time format.
 
 date
-    type: str
+    type: Str
 
-    The acquistion or creation date.
+    The acquistion or creation date in ISO 8601 date format
 
 
 authors
-    type: str
+    type: Str
 
     The authors who generated the files.
 
 doi
-    type: str
+    type: Str
 
     Digital object identifier.
 
 notes
-    type: str
+    type: Str
 
     Notes about the data.
 
