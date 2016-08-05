@@ -94,23 +94,23 @@ original_filename
 time
     type: Str
 
-    The acquistion or creation time in ISO 8601 time format.
+    The acquisition or creation time in ISO 8601 time format.
 
 date
     type: Str
 
-    The acquistion or creation date in ISO 8601 date format
+    The acquisition or creation date in ISO 8601 date format
 
 
 authors
     type: Str
 
-    The authors who generated the files.
+    The authors of the data.
 
 doi
     type: Str
 
-    Digital object identifier.
+    Digital object identifier of the data.
 
 notes
     type: Str
@@ -158,7 +158,7 @@ dwell_time
 exposure
     type: Float
 
-    The exposure time in seconds. This is relevant for TEM acquistion.
+    The exposure time in seconds. This is relevant for TEM acquisition.
 
 tilt_stage
     type: Float
@@ -227,7 +227,7 @@ dwell_time
 exposure
     type: Float
 
-    The exposure time in seconds. This is relevant for TEM acquistion.
+    The exposure time in seconds. This is relevant for TEM acquisition.
 
 
 EDS
@@ -322,7 +322,7 @@ record_by
 quantity
     type: Str
     
-    The name of the quantity of the "intensity axis" with the units in brackets if required.
+    The name of the quantity of the "intensity axis" with the units in round brackets if required.
 
 Noise_properties
 ----------------
