@@ -333,7 +333,7 @@ class TestFEIReader():
         nt.assert_almost_equal(s2[0].axes_manager[0].scale, 21.5100, places=4)
 
     def test_guess_units_from_mode(self):
-        from hyperspy.io_plugins.fei import guess_units_from_mode, \
+        from hyperspy.io_plugins.fei import _guess_units_from_mode, \
             convert_xml_to_dict, get_xml_info_from_emi
         fname0_emi = os.path.join(
             self.dirpathold, '64x64_TEM_images_acquire.emi')
@@ -343,12 +343,20 @@ class TestFEIReader():
         header0, data0 = load_ser_file(fname0_ser)
         objects_dict = convert_xml_to_dict(objects[0])
 
-        unit = guess_units_from_mode(objects_dict, header0)
+        unit = _guess_units_from_mode(objects_dict, header0)
         nt.assert_equal(unit, 'meters')
 
         # objects is empty dictionary
         with assert_warns(
                 message="The navigation axes units could not be determined.",
                 category=UserWarning):
-            unit = guess_units_from_mode({}, header0)
+            unit = _guess_units_from_mode({}, header0)
         nt.assert_equal(unit, 'meters')
+
+    def test_date_time(self):
+        fname0 = os.path.join(self.dirpathold, '64x64_TEM_images_acquire.emi')
+        s = load(fname0)
+        nt.assert_equal(s.metadata.General.date,"2016-02-21")
+        nt.assert_equal(s.metadata.General.time, "17:50:18")
+        nt.assert_equal(s.metadata.General.authors, "ERIC")
+        
