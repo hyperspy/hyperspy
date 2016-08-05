@@ -52,6 +52,94 @@ def radial_average(z, center):
 
     return radial_average
 
+def affine_transformation(z, order=3, **kwargs):
+    """Apply an affine transform to a 2-dimensional array.
+
+    Parameters
+    ----------
+    matrix : 3 x 3
+
+    Returns
+    -------
+    trans : array
+        Transformed 2-dimensional array
+    """
+    shift_y, shift_x = np.array(z.shape[:2]) / 2.
+    tf_shift = tf.SimilarityTransform(translation=[-shift_x, -shift_y])
+    tf_shift_inv = tf.SimilarityTransform(translation=[shift_x, shift_y])
+
+    transformation = tf.AffineTransform(**kwargs)
+    trans = tf.warp(z, (tf_shift + (transformation + tf_shift_inv)).inverse,
+                    order=order)
+
+    return trans
+
+def circular_mask((nx, ny), (a, b)):
+    """
+
+    Parameters
+    ----------
+
+    Returns
+    -------
+
+    """
+    y, x = np.ogrid[-b:ny-b, -a:nx-a]
+    mask = x*x + y*y <= r*r
+
+    return mask
+
+def refine_beam_position(z, center=None, radius=None):
+    """
+    Refine the position of the direct beam and hence an estimate for the
+    position of the pattern center in each SED pattern.
+
+    Parameters
+    ----------
+    radius : int
+        Defines the size of the circular region within which the direct beam
+        position is refined.
+
+    center : bool
+        If True the direct beam position is refined to sub-pixel precision
+        via calculation of the intensity center of mass.
+
+    Return
+    ------
+    center: array
+        Refined position (x, y) of the direct beam.
+
+    Notes
+    -----
+    This method is based on work presented by Thomas White in his PhD (2009)
+    which itself built on Zaefferer (2000).
+    """
+    # initialise problem with initial center estimate
+    c_int = z[mref[0], mref[1]]
+    mask = self.get_direct_beam_mask(radius=radius, center=mref)
+    z_tmp = z * mask
+    # refine center position with shifting ROI
+    if c_int == z_tmp.max():
+        maxes = np.asarray(np.where(z_tmp == z_tmp.max()))
+        c = np.rint([np.average(maxes[0]), np.average(maxes[1])])
+        c = c.astype(int)
+        c_int = z[c[0], c[1]]
+        mask = circular_mask(radius=radius, center=c)
+        ztmp = z * mask
+    while c_int < z_tmp.max():
+        maxes = np.asarray(np.where(z_tmp == z_tmp.max()))
+        c[index] = np.rint([np.average(maxes[0]),
+                            np.average(maxes[1])])
+        c[index] = c.astype(int)
+        c_int = z[c[0], c[1]]
+        mask = circular_mask(radius=radius, center=c)
+        ztmp = z * mask
+
+    c = np.asarray(ndi.measurements.center_of_mass(ztmp))
+
+    return c
+
+
 class ElectronDiffraction(Signal2D):
     _signal_type = "electron_diffraction"
 
@@ -263,12 +351,14 @@ class ElectronDiffraction(Signal2D):
         else:
             a, b = center
 
-        y, x = np.ogrid[-b:ny-b, -a:nx-a]
-        mask = x*x + y*y <= r*r
-        return mask
+        signal_mask = Signal2D(circular_mask((nx, ny), (a, b)))
 
-    def get_direct_beam_position(self, radius):
-        """Estimate the position of the direct beam in each SED pattern.
+        return signal_mask
+
+    def get_direct_beam_position(self, radius=10):
+        """
+        Determine rigid shifts in the SED patterns based on the position of the
+        direct beam and return the shifts required to center all patterns.
 
         Parameters
         ----------
@@ -276,52 +366,34 @@ class ElectronDiffraction(Signal2D):
             Defines the size of the circular region within which the direct beam
             position is refined.
 
-        Return
-        ------
-        center: array
-            Estimated position (x, y) of the direct beam.
+        subpixel : bool
+            If True the direct beam position is refined to sub-pixel precision
+            via calculation of the intensity center_of_mass.
 
-        Notes
-        -----
-        Based on work presented by Thomas White in his PhD, Cambridge, (2009)
-        which itself built on Zaefferer (2000).
+        Returns
+        -------
+        shifts : array
+            Array containing the shift to be applied to each SED pattern to
+            center it.
+
+        See also
+        --------
+        _get_direct_beam_position
+
         """
         # sum images to produce image in which direct beam reinforced and take
         # the position of maximum intensity as the initial estimate of center.
         dp_sum = self.sum()
-        maxes = np.asarray(np.where(dp_sum.data == dp_sum.data.max()))
-        mref = [np.average(maxes[0]), np.average(maxes[1])]
+        max_ref = np.asarray(np.where(dp_sum.data == dp_sum.data.max()))
+        c_ref = np.rint([np.average(max_ref[0]), np.average(max_ref[1])])
+        c_ref = c_ref.astype(int)
         # specify array of dims (nav_size, 2) in which to store centers and find
         # the center of each pattern by determining the direct beam position.
         arr_shape = (self.axes_manager.navigation_size, 2)
         c = np.zeros(arr_shape, dtype=int)
         for z, index in zip(self._iterate_signal(),
                             np.arange(0, self.axes_manager.navigation_size, 1)):
-            # initialise problem with initial center estimate
-            c_int = z[mref[0], mref[1]]
-            mask = self.get_direct_beam_mask(radius=radius, center=mref)
-            z_tmp = z * mask
-            # refine center position with shifting ROI
-            if c_int == z_tmp.max():
-                maxes = np.asarray(np.where(z_tmp == z_tmp.max()))
-                c[index] = np.rint([np.average(maxes[0]),
-                                    np.average(maxes[1])])
-                c[index] = c[index].astype(int)
-                c_int = z[c[index][0], c[index][1]]
-                mask = self.get_direct_beam_mask(radius=radius,
-                                                 center=c[index])
-                ztmp = z * mask
-            while c_int < z_tmp.max():
-                maxes = np.asarray(np.where(z_tmp == z_tmp.max()))
-                c[index] = np.rint([np.average(maxes[0]),
-                                    np.average(maxes[1])])
-                c[index] = c[index].astype(int)
-                c_int = z[c[index][0], c[index][1]]
-                mask = self.get_direct_beam_mask(radius=radius,
-                                                     center=c[index])
-                ztmp = z * mask
-
-            c[index] = np.asarray(ndi.measurements.center_of_mass(ztmp))
+            c[index] = refine_beam_position(z, center=c_ref, radius=radius)
 
         return c
 
@@ -365,6 +437,21 @@ class ElectronDiffraction(Signal2D):
                             (self.axes_manager.signal_shape[1] - 1) / 2]
 
         return shifts
+
+    def correct_geometric_distortion(self, D):
+        """Apply an affine transformation to all of the diffraction patterns to
+        correct for geometric distortion.
+
+        Parameters
+        ----------
+
+
+        Returns
+        -------
+
+
+        """
+        self.map(affine_transformation, matrix=D)
 
     def get_radial_profile(self, centers=None):
         """Return the radial profile of the diffraction pattern.

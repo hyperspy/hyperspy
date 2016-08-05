@@ -56,6 +56,7 @@ following sections of this chapter.
     │       ├── beam_energy (keV)
     │       ├── convergence_angle (mrad)
     │       ├── rocking_angle (mrad)
+    │       ├── rocking_frequency (Hz)
     │       ├── scan_rotation (º)
     │       └── tilt_stage (º)
     ├── General
@@ -142,6 +143,11 @@ rocking_angle
     type: float
 
     The beam rocking semi-angle in mrad.
+
+rocking_frequency
+        type: float
+
+        The beam rocking frequency in Hz.
 
 scan_rotation
     type: float

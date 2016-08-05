@@ -110,6 +110,10 @@ class Test_direct_beam_methods:
         c = np.array([[3, 3], [4, 4], [3, 3]])
         nt.assert_raises(ValueError, dp.get_direct_beam_shifts, centers=c)
 
+    def test_get_direct_beam_mask_signal_type(self):
+        dp = self.signal
+        mask = dp.get_direct_beam_mask(2)
+        nt.assert_true(isinstance(mask, Signal2D))
 
     def test_get_direct_beam_mask(self):
         dp = self.signal
@@ -194,6 +198,53 @@ class Test_radial_profile:
                                                       atol=1e-3)
 
     def test_radial_profile_with_centers(self):
+        dp = self.signal
+        rp = dp.get_radial_profile(centers=np.array([[4, 3], [4, 3]]))
+        np.testing.assert_allclose(rp.data, np.array([[5., 4.25, 2.875,
+                                                       1.7, 0.92857143, 0.],
+                                                      [5., 4.375, 3.5,
+                                                       2.4, 2.07142857, 1.]]),
+                                                      atol=1e-3)
+
+
+class Test_correct_geometric_distortion:
+
+    def setUp(self):
+        dp = ElectronDiffraction(np.zeros((2, 8, 8)))
+        dp.data[0]= np.array([[0., 0., 1., 2., 2., 1., 0., 0.],
+                              [0., 1., 2., 3., 3., 2., 1., 0.],
+                              [1., 2., 3., 4., 4., 3., 2., 1.],
+                              [2., 3., 4., 5., 5., 4., 3., 2.],
+                              [2., 3., 4., 5., 5., 4., 3., 2.],
+                              [1., 2., 3., 4., 4., 3., 2., 1.],
+                              [0., 1., 2., 3., 3., 2., 1., 0.],
+                              [0., 0., 1., 2., 2., 1., 0., 0.]])
+
+        dp.data[1]= np.array([[0., 1., 2., 3., 3., 3., 2., 1.],
+                              [1., 2., 3., 4., 4., 4., 3., 2.],
+                              [2., 3., 4., 5., 5., 5., 4., 3.],
+                              [2., 3., 4., 5., 6., 5., 4., 3.],
+                              [2., 3., 4., 5., 5., 5., 4., 3.],
+                              [1., 2., 3., 4., 4., 4., 3., 2.],
+                              [0., 1., 2., 3., 3., 3., 2., 1.],
+                              [0., 0., 1., 2., 2., 2., 1., 0.]])
+        self.signal = dp
+
+    def test_correct_geometric_distortion_signal_type(self):
+        dp=self.signal
+        dp.correct_geometric_distortion()
+        nt.assert_true(isinstance(dp, ElectronDiffraction))
+
+    def test_geometric_distortion_rotation_origin(self):
+        dp = self.signal
+        dp.correct_geometric_distortion()
+        np.testing.assert_allclose(rp.data, np.array([[5., 4.25, 2.875,
+                                                       1.7, 0.92857143, 0.],
+                                                      [5., 4.75, 3.625,
+                                                       2.5, 1.71428571,0.6]]),
+                                                      atol=1e-3)
+
+    def test_geometric_distortion(self):
         dp = self.signal
         rp = dp.get_radial_profile(centers=np.array([[4, 3], [4, 3]]))
         np.testing.assert_allclose(rp.data, np.array([[5., 4.25, 2.875,
