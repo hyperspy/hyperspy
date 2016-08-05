@@ -98,28 +98,6 @@ class TestExample1_11(Example1):
             "hdf5_files",
             "example1_v1.1.hdf5"))
 
-# The following is commented out because
-# the feature was removed in HyperSpy 1.0
-# to fix a security flaw.
-# class TestExample1_12(Example1):
-#
-#     def setUp(self):
-#         self.s = load(os.path.join(
-#             my_path,
-#             "hdf5_files",
-#             "example1_v1.2.hdf5"))
-#
-#     def test_date(self):
-#         nt.assert_equal(
-#             self.s.metadata.General.date,
-#             datetime.date(
-#                 1991,
-#                 10,
-#                 1))
-#
-#     def test_time(self):
-#         nt.assert_equal(self.s.metadata.General.time, datetime.time(12, 0))
-
 
 class TestLoadingNewSavedMetadata:
 
@@ -217,6 +195,38 @@ class TestSavingMetadataContainers:
         s.save('tmp.hdf5', overwrite=True)
         l = load('tmp.hdf5')
         nt.assert_not_in('test', l.metadata)
+
+    def test_date_time(self):
+        s = self.s
+        date, time = "2016-08-05", "15:00:00.450"
+        s.metadata.General.date = date
+        s.metadata.General.time = time
+        s.save('tmp.hdf5', overwrite=True)
+        l = load('tmp.hdf5')
+        nt.assert_equal(l.metadata.General.date, date)
+        nt.assert_equal(l.metadata.General.time, time)
+
+    def test_general_metadata(self):
+        s = self.s
+        notes = "Dummy notes"
+        authors = "Author 1, Author 2"
+        doi = "doi"
+        s.metadata.General.notes = notes
+        s.metadata.General.authors = authors
+        s.metadata.General.doi = doi
+        s.save('tmp.hdf5', overwrite=True)
+        l = load('tmp.hdf5')
+        nt.assert_equal(l.metadata.General.notes, notes)
+        nt.assert_equal(l.metadata.General.authors, authors)
+        nt.assert_equal(l.metadata.General.doi, doi)
+
+    def test_quantity(self):
+        s = self.s
+        quantity = "Intensity (electron)"
+        s.metadata.Signal.quantity = quantity
+        s.save('tmp.hdf5', overwrite=True)
+        l = load('tmp.hdf5')
+        nt.assert_equal(l.metadata.Signal.quantity, quantity)
 
     def tearDown(self):
         gc.collect()        # Make sure any memmaps are closed first!
