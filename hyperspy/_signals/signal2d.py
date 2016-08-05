@@ -22,13 +22,15 @@ import numpy.ma as ma
 import scipy as sp
 import logging
 from scipy.fftpack import fftn, ifftn
+from skimage.feature.register_translation import _upsampled_dft
 
 from hyperspy.defaults_parser import preferences
 from hyperspy.external.progressbar import progressbar
 from hyperspy.misc.math_tools import symmetrize, antisymmetrize
 from hyperspy.signal import BaseSignal
 from hyperspy._signals.common_signal2d import CommonSignal2D
-from hyperspy.docstrings.plot import BASE_PLOT_DOCSTRING, PLOT2D_DOCSTRING, KWARGS_DOCSTRING
+from hyperspy.docstrings.plot import (
+    BASE_PLOT_DOCSTRING, PLOT2D_DOCSTRING, KWARGS_DOCSTRING)
 
 
 _logger = logging.getLogger(__name__)
@@ -274,8 +276,8 @@ class Signal2D(BaseSignal, CommonSignal2D):
         Parameters
         __________
         dictionary : {None, dict}, optional
-            A dictionary to be used to recreate a model. Usually generated using
-            :meth:`hyperspy.model.as_dictionary`
+            A dictionary to be used to recreate a model. Usually generated
+            using :meth:`hyperspy.model.as_dictionary`
         Returns
         -------
         A Model class
@@ -343,8 +345,8 @@ class Signal2D(BaseSignal, CommonSignal2D):
             If True, display a progress bar. If None the default is set in
             `preferences`.
         sub_pixel_factor : float
-            Estimate shifts with a sub-pixel accuracy of 1/sub_pixel_factor parts
-            of a pixel. Default is 1, i.e. no sub-pixel accuracy.
+            Estimate shifts with a sub-pixel accuracy of 1/sub_pixel_factor
+            parts of a pixel. Default is 1, i.e. no sub-pixel accuracy.
 
         Returns
         -------
