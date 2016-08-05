@@ -19,7 +19,7 @@
 import numpy as np
 import nose.tools as nt
 
-from hyperspy.signals import ElectronDiffraction, Signal1D
+from hyperspy.signals import ElectronDiffraction, Signal1D, Signal2D
 from hyperspy.defaults_parser import preferences
 
 
