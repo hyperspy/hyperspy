@@ -382,9 +382,9 @@ def save(filename, signal, overwrite=None, **kwds):
                           if plugin.writes is True or
                           plugin.writes is not False and
                           (sd, nd) in plugin.writes]
-            raise ValueError('This file format cannot write this data. '
-                             'The following formats can: %s' %
-                             strlist2enumeration(yes_we_can))
+            raise IOError('This file format cannot write this data. '
+                          'The following formats can: %s' %
+                          strlist2enumeration(yes_we_can))
         ensure_directory(filename)
         if overwrite is None:
             overwrite = hyperspy.misc.io.tools.overwrite(filename)
