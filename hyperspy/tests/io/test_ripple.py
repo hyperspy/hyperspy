@@ -7,7 +7,7 @@ import nose.tools as nt
 import numpy.testing as npt
 
 from hyperspy.io import load
-from hyperspy.signals import BaseSignal, EELSSpectrum, EDSTEMSpectrum
+import hyperspy.signals as signals
 from hyperspy.io_plugins import ripple
 
 
@@ -22,6 +22,53 @@ MYPATH = os.path.dirname(__file__)
 nt.assert_equal.__self__.maxDiff = None
 
 
+@nt.raises(IOError)
+def test_write_unsupported_data_shape():
+    data = np.arange(5*10*15*20).reshape((5, 10, 15, 20))
+    s = signals.Signal1D(data)
+    s.save('test_write_unsupported_data_shape.rpl')
+
+
+@nt.raises(IOError)    
+def test_write_unsupported_data_type():
+    data = np.arange(5*10*15).reshape((5, 10, 15)).astype(np.float16)
+    s = signals.Signal1D(data)
+    s.save('test_write_unsupported_data_type.rpl')
+
+
+# Test failing
+#def test_write_scalar():
+#    data = np.array([2])
+#    with tempfile.TemporaryDirectory() as tmpdir:
+#        s = signals.BaseSignal(data)
+#        fname = os.path.join(tmpdir, 'test_write_scalar_data.rpl')
+#        s.save(fname)  
+#        s2 = load(fname)
+#        np.testing.assert_allclose(s.data, s2.data)
+
+
+def test_write_without_metadata():
+    data = np.arange(5*10*15).reshape((5, 10, 15))
+    s = signals.Signal1D(data)
+    with tempfile.TemporaryDirectory() as tmpdir:
+        fname = os.path.join(tmpdir, 'test_write_without_metadata.rpl')
+        s.save(fname)  
+        s2 = load(fname)
+        np.testing.assert_allclose(s.data, s2.data)
+
+        
+def test_write_with_metadata():
+    data = np.arange(5*10).reshape((5, 10))
+    s = signals.Signal1D(data)
+    s.metadata.set_item('General.date',  "2016-08-06")
+    with tempfile.TemporaryDirectory() as tmpdir:
+        fname = os.path.join(tmpdir, 'test_write_with_metadata.rpl')
+        s.save(fname)  
+        s2 = load(fname)
+        np.testing.assert_allclose(s.data, s2.data)
+        nt.assert_equal(s.metadata.General.date, s2.metadata.General.date)
+
+        
 def test_ripple():
     with tempfile.TemporaryDirectory() as tmpdir:
         for dtype in ripple.dtype2keys.keys():
@@ -43,13 +90,13 @@ def _create_signal(shape, dim, dtype,):
         shape).astype(dtype)
     if dim == 1:
         if len(shape) > 2:
-            s = EELSSpectrum(data)
+            s = signals.EELSSpectrum(data)
             s.set_microscope_parameters(
                 beam_energy=100.,
                 convergence_angle=1.,
                 collection_angle=10.)
         else:
-            s = EDSTEMSpectrum(data)
+            s = signals.EDSTEMSpectrum(data)
             s.set_microscope_parameters(
                 beam_energy=100.,
                 live_time=1.,
@@ -58,7 +105,7 @@ def _create_signal(shape, dim, dtype,):
                 elevation_angle=4.,
                 energy_resolution_MnKa=5.)
     else:
-        s = BaseSignal(data)
+        s = signals.BaseSignal(data)
         s.axes_manager.set_signal_dimension(dim)
     s.metadata.General.date = "2016-08-06"
     s.metadata.General.time = "10:55:00"
