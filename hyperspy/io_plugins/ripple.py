@@ -107,6 +107,8 @@ rpl_keys = {
     # to keep compatibility with rpl file written by HyperSpy < 0.8.4
     'energy-resolution': float,
     'tilt-stage': float,
+    'date': str,
+    'time': str,
 }
 
 
@@ -330,7 +332,9 @@ def file_reader(filename, rpl_info=None, encoding="latin-1",
       azimuth-angle     float   # Elevation angle of the EDS detector
       live-time         float   # Live time per spectrum
       energy-resolution float   # Resolution of the EDS (FHWM of MnKa)
-      tilt-stage       float   # The tilt of the stage
+      tilt-stage        float   # The tilt of the stage
+      date              str     # date in ISO 8601
+      time              str     # time in ISO 8601
 
     NOTES
 
@@ -410,6 +414,12 @@ def file_reader(filename, rpl_info=None, encoding="latin-1",
     units = ['', '', '']
     sizes = [rpl_info[names[i]] for i in range(3)]
 
+    if 'date' not in rpl_info:
+        rpl_info['date'] = ""
+
+    if 'time' not in rpl_info:
+        rpl_info['time'] = ""
+
     if 'signal' not in rpl_info:
         rpl_info['signal'] = ""
 
@@ -454,10 +464,11 @@ def file_reader(filename, rpl_info=None, encoding="latin-1",
         names[iheight] = rpl_info['height-name']
 
     mp = DictionaryTreeBrowser({
-
-        'General': {'original_filename': os.path.split(filename)[1]},
+        'General': {'original_filename': os.path.split(filename)[1],
+                    'date': rpl_info['date'],
+                    'time': rpl_info['time']},
         "Signal": {'signal_type': rpl_info['signal'],
-                   'record_by': record_by, },
+                   'record_by': record_by},
     })
     if 'convergence-angle' in rpl_info:
         mp.set_item('Acquisition_instrument.TEM.convergence_angle',
@@ -540,6 +551,14 @@ def file_writer(filename, signal, encoding='latin-1', *args, **kwds):
         signal_type = signal.metadata.Signal.signal_type
     else:
         signal_type = ""
+    if signal.metadata.has_item("General.date"):
+        date = signal.metadata.General.date
+    else:
+        date = ""
+    if signal.metadata.has_item("General.time"):
+        time = signal.metadata.General.time
+    else:
+        time = ""
     if signal.axes_manager.signal_dimension == 1:
         record_by = 'vector'
         depth_axis = signal.axes_manager.signal_axes[0]
@@ -584,7 +603,9 @@ def file_writer(filename, signal, encoding='latin-1', *args, **kwds):
         'data-length': data_length,
         'byte-order': byte_order,
         'record-by': record_by,
-        'signal': signal_type
+        'signal': signal_type,
+        'date': date,
+        'time': time
     }
     if ev_per_chan is not None:
         keys_dictionary['ev-per-chan'] = ev_per_chan

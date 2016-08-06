@@ -60,6 +60,8 @@ def _create_signal(shape, dim, dtype,):
     else:
         s = BaseSignal(data)
         s.axes_manager.set_signal_dimension(dim)
+    s.metadata.General.date = "2016-08-06"
+    s.metadata.General.time = "10:55:00"
     for i, axis in enumerate(s.axes_manager._axes):
         i += 1
         axis.offset = i * 0.5
@@ -86,7 +88,9 @@ def _run_test(dtype, shape, dim, tmpdir):
             nt.assert_equal(s.axes_manager.signal_dimension,
                             stest.axes_manager.signal_dimension)
             mdpaths = (
-                "Signal.signal_type",)
+                "General.date",
+                "General.time",
+                "Signal.signal_type")
             if s.metadata.Signal.signal_type == "EELS":
                 mdpaths += (
                     "Acquisition_instrument.TEM.convergence_angle",
