@@ -16,17 +16,13 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-import locale
-import time
-import datetime
+from datetime import datetime as dt
 import codecs
-import warnings
 import os
 import logging
 
 import numpy as np
 
-from hyperspy.misc.config_dir import os_name
 from hyperspy import Release
 from hyperspy.misc.utils import DictionaryTreeBrowser
 
@@ -216,34 +212,10 @@ def parse_msa_string(string, filename=None):
                     mapped.set_item(keywords[clean_par]['mapped_to'] +
                                     '_units', units)
 
-    # The data parameter needs some extra care
-    # It is necessary to change the locale to US english to read the date
-    # keyword
-    loc = locale.getlocale(locale.LC_TIME)
-    # Setting locale can raise an exception because
-    # their name depends on library versions, platform etc.
-    try:
-        if os_name == 'posix':
-            locale.setlocale(locale.LC_TIME, ('en_US', 'utf8'))
-        elif os_name == 'windows':
-            locale.setlocale(locale.LC_TIME, 'english')
-        try:
-            H, M = time.strptime(parameters['TIME'], "%H:%M")[3:5]
-            mapped.set_item('General.time', datetime.time(H, M))
-        except:
-            if 'TIME' in parameters and parameters['TIME']:
-                _logger.warn('The time information could not be retrieved')
-        try:
-            Y, M, D = time.strptime(parameters['DATE'], "%d-%b-%Y")[0:3]
-            mapped.set_item('General.date', datetime.date(Y, M, D))
-        except:
-            if 'DATE' in parameters and parameters['DATE']:
-                _logger.warn('The date information could not be retrieved')
-    except:
-        warnings.warn("I couldn't write the date information due to"
-                      "an unexpected error. Please report this error to "
-                      "the developers")
-    locale.setlocale(locale.LC_TIME, loc)  # restore saved locale
+    time = dt.strptime(parameters['TIME'], "%H:%M")
+    mapped.set_item('General.time', time.time().isoformat())
+    date = dt.strptime(parameters['DATE'], "%d-%b-%Y")
+    mapped.set_item('General.date', date.date().isoformat())
 
     axes = [{
         'size': len(y),
@@ -263,6 +235,8 @@ def parse_msa_string(string, filename=None):
     else:
         # Defaulting to EELS looks reasonable
         mapped.set_item('Signal.signal_type', 'EELS')
+    quantity = "%s (%s)" % (parameters['YLABEL'], parameters['YUNITS'])
+    mapped.set_item('Signal.quantity', quantity)
 
     dictionary = {
         'data': np.array(y),
@@ -287,6 +261,7 @@ def file_writer(filename, signal, format=None, separator=', ',
                 encoding='latin-1'):
     loc_kwds = {}
     FORMAT = "EMSA/MAS Spectral Data File"
+    md = signal.metadata
     if hasattr(signal.original_metadata, 'FORMAT') and \
             signal.original_metadata.FORMAT == FORMAT:
         loc_kwds = signal.original_metadata.as_dictionary()
@@ -298,23 +273,13 @@ def file_writer(filename, signal, format=None, separator=', ',
     else:
         if format is None:
             format = 'Y'
-        if signal.metadata.has_item("General.date"):
-            # Setting locale can raise an exception because
-            # their name depends on library versions, platform etc.
-            try:
-                loc = locale.getlocale(locale.LC_TIME)
-                if os_name == 'posix':
-                    locale.setlocale(locale.LC_TIME, ('en_US', 'latin-1'))
-                elif os_name == 'windows':
-                    locale.setlocale(locale.LC_TIME, 'english')
-                loc_kwds['DATE'] = signal.metadata.data.strftime(
-                    "%d-%b-%Y")
-                locale.setlocale(locale.LC_TIME, loc)  # restore saved locale
-            except:
-                warnings.warn(
-                    "I couldn't write the date information due to"
-                    "an unexpected error. Please report this error to "
-                    "the developers")
+        if md.has_item("General.date"):
+            date = dt.strptime(md.General.date, "%Y-%m-%d")
+            loc_kwds['DATE'] = date.strftime("%d-%b-%Y")
+        if md.has_item("General.time"):
+            time = dt.strptime(md.General.time, "%H:%M:%S")
+            loc_kwds['TIME'] = time.strftime("%H:%M")
+
     keys_from_signal = {
         # Required parameters
         'FORMAT': FORMAT,
