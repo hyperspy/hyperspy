@@ -532,15 +532,10 @@ def file_writer(filename, signal, encoding='latin-1', *args, **kwds):
     # Check if the dtype is supported
     dc = signal.data
     dtype_name = signal.data.dtype.name
+    dimension = len(signal.data.shape)
     if dtype_name not in dtype2keys.keys():
         err = 'The ripple format does not support writting data of %s type' % (
             dtype_name)
-        raise IOError(err)
-    # Check if the dimensions are supported
-    dimension = len(signal.data.shape)
-    if dimension > 3:
-        err = 'This file format does not support %i dimension data' % (
-            dimension)
         raise IOError(err)
 
     # Gather the information to write the rpl
