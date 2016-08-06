@@ -419,8 +419,6 @@ def dict2hdfgroup(dictionary, group, **kwds):
             dict2hdfgroup(value.as_dictionary(),
                           group.create_group('_hspy_AxesManager_' + key),
                           **kwds)
-#        elif isinstance(value, (datetime.date, datetime.time)):
-#            group.attrs["_datetime_" + key] = repr(value)
         elif isinstance(value, list):
             if len(value):
                 parse_structure(key, group, value, '_list_', **kwds)
