@@ -23,7 +23,7 @@ import numpy as np
 import traits.api as t
 from scipy import constants
 
-from hyperspy.signals import Signal1D
+from hyperspy._signals.signal1d  import Signal1D
 from hyperspy.misc.elements import elements as elements_db
 import hyperspy.axes
 from hyperspy.decorators import only_interactive

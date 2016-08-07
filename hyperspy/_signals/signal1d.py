@@ -18,7 +18,6 @@
 
 import matplotlib.pyplot as plt
 import numpy as np
-import warnings
 
 from hyperspy.signal import BaseSignal
 from hyperspy._signals.common_signal1d import CommonSignal1D
