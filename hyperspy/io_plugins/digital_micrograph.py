@@ -815,10 +815,6 @@ class ImageObject(object):
             "ImageList.TagGroup0.ImageTags.Microscope Info.STEM Camera Length": (
                 "Acquisition_instrument.TEM.camera_length",
                 None),
-            "ImageList.TagGroup0.ImageTags.Microscope Info": (
-                "Acquisition_instrument.TEM.camera_length_units",
-                lambda x: "mm"),
-
         }
         if "Microscope_Info" in self.imdict.ImageTags.keys():
             mapping.update({
