@@ -23,7 +23,7 @@ from contextlib import contextmanager
 
 from hyperspy.model import BaseModel, ModelComponents, ModelSpecialSlicers
 import hyperspy.drawing.signal1d
-from hyperspy._signals.eels import Signal1D
+from hyperspy._signals.signal1d import Signal1D
 from hyperspy.axes import generate_axis
 from hyperspy.exceptions import WrongObjectError
 from hyperspy.decorators import interactive_range_selector
