@@ -58,6 +58,7 @@ def test_read_STEM_metadata():
     nt.assert_equal(md.Acquisition_instrument.TEM.acquisition_mode, "STEM")
     nt.assert_almost_equal(md.Acquisition_instrument.TEM.beam_energy, 200.0)
     nt.assert_almost_equal(md.Acquisition_instrument.TEM.dwell_time, 3.5E-6)
+    nt.assert_almost_equal(md.Acquisition_instrument.TEM.camera_length, 135.0)
     nt.assert_equal(md.Acquisition_instrument.TEM.microscope, "FEI Titan")
     nt.assert_equal(md.General.date, "2016-08-08")
     nt.assert_equal(md.General.original_filename, "test_STEM_image.dm3")
@@ -75,6 +76,7 @@ def test_read_EELS_metadata():
     nt.assert_almost_equal(md.Acquisition_instrument.TEM.beam_energy, 200.0)
     nt.assert_almost_equal(md.Acquisition_instrument.TEM.dwell_time, 7e-05)
     nt.assert_equal(md.Acquisition_instrument.TEM.microscope, "FEI Titan")
+    nt.assert_almost_equal(md.Acquisition_instrument.TEM.camera_length, 135.0)
     nt.assert_almost_equal(md.Acquisition_instrument.TEM.tilt_stage, 24.95,
                            places=2)
     nt.assert_equal(md.General.date, "2016-08-08")
@@ -99,7 +101,6 @@ def test_read_EDS_metadata():
                            places=2)
     nt.assert_almost_equal(md.Acquisition_instrument.TEM.beam_energy, 200.0)
     nt.assert_equal(md.Acquisition_instrument.TEM.microscope, "FEI Titan")
-    nt.assert_equal(md.Acquisition_instrument.TEM.camera_length_units, "mm")
     nt.assert_almost_equal(md.Acquisition_instrument.TEM.camera_length, 135.0)
     nt.assert_equal(md.General.date, "2016-08-08")
     nt.assert_equal(md.General.original_filename, "test-EDS_spectrum.dm3")
