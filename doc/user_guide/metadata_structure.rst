@@ -52,8 +52,11 @@ in the following sections of this chapter.
     │       ├── microscope
     │       └── tilt_stage (º)
     ├── General
+    │   ├── authors
     │   ├── date
+    │   ├── doi
     │   ├── original_filename
+    │   ├── notes
     │   ├── time
     │   └── title
     ├── Sample
@@ -70,6 +73,7 @@ in the following sections of this chapter.
         │   │   └── parameters_estimation_method
         │   └── variance
         ├── binned
+        ├── quantity
         ├── signal_type
         └── signal_origin
 
@@ -88,15 +92,30 @@ original_filename
     original file.
 
 time
-    type: datetime.time
+    type: Str
 
-    The acquistion or creation time.
+    The acquistion or creation time in ISO 8601 time format.
 
 date
-    type: datetime.time
+    type: Str
 
-    The acquistion or creation date.
+    The acquistion or creation date in ISO 8601 date format
 
+
+authors
+    type: Str
+
+    The authors who generated the files.
+
+doi
+    type: Str
+
+    Digital object identifier.
+
+notes
+    type: Str
+
+    Notes about the data.
 
 Acquisition_instrument
 ======================
@@ -299,6 +318,11 @@ record_by
     
     One of 'spectrum' or 'image'. It describes how the data is stored in memory.
     If 'spectrum' the spectral data is stored in the faster index.
+
+quantity
+    type: Str
+    
+    The name of the quantity of the "intensity axis" with the units in brackets if required.
 
 Noise_properties
 ----------------
