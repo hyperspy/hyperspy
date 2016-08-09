@@ -111,6 +111,7 @@ def test_hyperspy_wrap():
                                                                       'elevation_angle': 35.0,
                                                                       'azimuth_angle': 90.0}},
                                                  'stage_x': 62409.2,
+                                                 'magnification': 131.1433,
                                                  'tilt_stage': 0.0}},
               'General': {'title': 'EDX',
                           'time': '17:05:03',
