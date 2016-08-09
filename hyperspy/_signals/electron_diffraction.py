@@ -454,6 +454,28 @@ class ElectronDiffraction(Signal2D):
         """
         self.map(affine_transformation, matrix=D)
 
+    def rotate_patterns(self, angle):
+        a = angle * np.pi/180.0
+        t = np.array([[math.cos(a), math.sin(a), 0.],
+                      [-math.sin(a), math.cos(a), 0.],
+                      [0., 0., 1.]])
+
+        self.map(_affine_transformation, matrix=t)
+
+    def _regional_filter(self, z, h):
+        seed = np.copy(z)
+        seed = z - h
+        mask = z
+        dilated = morphology.reconstruction(seed, mask, method='dilation')
+
+        return z - dilated
+
+    def remove_background(self, h):
+        self.data = self.data / self.data.max()
+        self.map(self._regional_filter, h=h)
+        self.map(filters.rank.mean, selem=square(3))
+        self.data = self.data / self.data.max()
+
     def get_radial_profile(self, centers=None):
         """Return the radial profile of the diffraction pattern.
 
