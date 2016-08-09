@@ -702,7 +702,7 @@ mapping = {
         _get_simplified_mode),
     "ObjectInfo.ExperimentalDescription.Camera length_m": (
         "Acquisition_instrument.TEM.camera_length",
-        lambda x: x*1e3),
+        lambda x: x * 1e3),
     "ObjectInfo.ExperimentalDescription.Magnification_x": (
         "Acquisition_instrument.TEM.magnification",
         None),

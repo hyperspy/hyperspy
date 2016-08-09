@@ -966,7 +966,7 @@ class HyperMap(object):
 
 # wrapper functions for hyperspy:
 def file_reader(filename, select_type=None, index=0, downsample=1,
-                cutoff_at_kV=None):
+                cutoff_at_kV=None, instrument=None):
     """Reads a bruker bcf file and loads the data into the appropriate class,
     then wraps it into appropriate hyperspy required list of dictionaries
     used by hyperspy.api.load() method.
@@ -981,7 +981,8 @@ def file_reader(filename, select_type=None, index=0, downsample=1,
       no downsampling will be applied (default 1).
     cutoff_at_kV -- if set (can be int of float >= 0) can be used either, to
        crop or enlarge energy range at max values. (default None)
-    """
+    instrument -- str, either 'TEM' or 'SEM'. Default is None.
+      """
     # objectified bcf file:
     obj_bcf = BCF_reader(filename)
     if select_type == 'image':
@@ -989,20 +990,23 @@ def file_reader(filename, select_type=None, index=0, downsample=1,
     elif select_type == 'spectrum':
         return bcf_hyperspectra(obj_bcf, index=index,
                                 downsample=downsample,
-                                cutoff_at_kV=cutoff_at_kV)
+                                cutoff_at_kV=cutoff_at_kV,
+                                instrument=instrument)
     else:
-        return bcf_imagery(obj_bcf) + bcf_hyperspectra(obj_bcf,
-                                                       index=index,
-                                                       downsample=downsample,
-                                                       cutoff_at_kV=cutoff_at_kV)
+        return bcf_imagery(obj_bcf, instrument=instrument) + bcf_hyperspectra(
+            obj_bcf,
+            index=index,
+            downsample=downsample,
+            cutoff_at_kV=cutoff_at_kV,
+            instrument=instrument)
 
 
-def bcf_imagery(obj_bcf):
+def bcf_imagery(obj_bcf, instrument=None):
     """ return hyperspy required list of dict with sem
     imagery and metadata.
     """
     imagery_list = []
-    mode = _get_mode(obj_bcf)
+    mode = _get_mode(obj_bcf, instrument=instrument)
     for img in obj_bcf.header.image.images:
         imagery_list.append(
             {'data': img.data,
@@ -1040,14 +1044,15 @@ def bcf_imagery(obj_bcf):
     return imagery_list
 
 
-def bcf_hyperspectra(obj_bcf, index=0, downsample=None, cutoff_at_kV=None):
+def bcf_hyperspectra(obj_bcf, index=0, downsample=None, cutoff_at_kV=None,
+                     instrument=None):
     """ Return hyperspy required list of dict with eds
     hyperspectra and metadata.
     """
     obj_bcf.persistent_parse_hypermap(index=index, downsample=downsample,
                                       cutoff_at_kV=cutoff_at_kV)
     eds_metadata = obj_bcf.header.get_spectra_metadata(index=index)
-    mode = _get_mode(obj_bcf)
+    mode = _get_mode(obj_bcf, instrument=instrument)
     hyperspectra = [{'data': obj_bcf.hypermap[index].hypermap,
                      'axes': [{'name': 'height',
                                'size': obj_bcf.hypermap[index].hypermap.shape[0],
@@ -1117,8 +1122,16 @@ def parse_line(line_string):
     return line_string.capitalize()
 
 
-def _get_mode(obj_bcf):
-    if obj_bcf.header.sem.hv > 30.0:  # workaround to know if TEM or SEM
-        return 'TEM'
+def _get_mode(obj_bcf, instrument=None):
+    if instrument is not None:
+        return instrument
+    hv = obj_bcf.header.sem.hv
+    if hv > 30.0:  # workaround to know if TEM or SEM
+        mode = 'TEM'
     else:
-        return 'SEM'
+        mode = 'SEM'
+    _logger.info("Guessing that the acquisition instrument is %s " % mode +
+                 "because the beam energy is %i keV. If this is wrong, " % hv +
+                 "please provide the right instrument using the 'instrument' " +
+                 "keyword.")
+    return mode

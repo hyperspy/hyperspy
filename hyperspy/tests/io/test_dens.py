@@ -42,7 +42,7 @@ def test_read1():
     nt.assert_equal(s.metadata.General.date, ref_date)
     nt.assert_equal(s.metadata.General.time, ref_time)
     nt.assert_equal(s.metadata.Signal.signal_type, "")
-    nt.assert_equal(s.metadata.Signal.quantity, "Temperature (celsius)")
+    nt.assert_equal(s.metadata.Signal.quantity, "Temperature (Celsius)")
 
 
 @nt.raises(AssertionError)

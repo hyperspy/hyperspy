@@ -103,7 +103,7 @@ def file_reader(filename, *args, **kwds):
                             'date': date,
                             'time': time},
                 "Signal": {'signal_type': "", 
-                           'quantity': "Temperature (celsius)"}, }
+                           'quantity': "Temperature (Celsius)"}, }
 
     axes = [{
         'size': len(temp_interp),

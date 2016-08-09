@@ -108,12 +108,12 @@ date
 authors
     type: Str
 
-    The authors of the data.
+    The authors of the data, e. g. surname1, name1 and surname2, name2, etc.
 
 doi
     type: Str
 
-    Digital object identifier of the data.
+    Digital object identifier of the data, e. g. doi:10.5281/zenodo.58841.
 
 notes
     type: Str

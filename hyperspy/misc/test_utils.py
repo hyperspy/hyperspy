@@ -200,5 +200,5 @@ def assert_deep_almost_equal(actual, expected, *args, **kwargs):
         exc.__dict__.setdefault('traces', []).append(trace)
         if is_root:
             trace = ' -> '.join(reversed(exc.traces))
-            exc = AssertionError("%s\nTRACE: %s" % (exc.message, trace))
+            exc = AssertionError("%s\nTRACE: %s" % (exc, trace))
         raise exc

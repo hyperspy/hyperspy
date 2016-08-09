@@ -17,12 +17,15 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 from datetime import datetime as dt
+import warnings
+import locale
 import codecs
 import os
 import logging
 
 import numpy as np
 
+from hyperspy.misc.config_dir import os_name
 from hyperspy import Release
 from hyperspy.misc.utils import DictionaryTreeBrowser
 
@@ -212,14 +215,34 @@ def parse_msa_string(string, filename=None):
                     mapped.set_item(keywords[clean_par]['mapped_to'] +
                                     '_units', units)
 
-    if 'TIME' in parameters.keys():
-        if len(parameters['TIME']) > 0:
+    # The data parameter needs some extra care
+    # It is necessary to change the locale to US english to read the date
+    # keyword
+    loc = locale.getlocale(locale.LC_TIME)
+    # Setting locale can raise an exception because
+    # their name depends on library versions, platform etc.
+    try:
+        if os_name == 'posix':
+            locale.setlocale(locale.LC_TIME, ('en_US', 'utf8'))
+        elif os_name == 'windows':
+            locale.setlocale(locale.LC_TIME, 'english')
+        try:
             time = dt.strptime(parameters['TIME'], "%H:%M")
             mapped.set_item('General.time', time.time().isoformat())
-    if 'DATE' in parameters.keys():
-        if len(parameters['DATE']) > 0:
+        except:
+            if 'TIME' in parameters and parameters['TIME']:
+                _logger.warn('The time information could not be retrieved')
+        try:
             date = dt.strptime(parameters['DATE'], "%d-%b-%Y")
             mapped.set_item('General.date', date.date().isoformat())
+        except:
+            if 'DATE' in parameters and parameters['DATE']:
+                _logger.warn('The date information could not be retrieved')
+    except:
+        warnings.warn("I couldn't read the date information due to"
+                      "an unexpected error. Please report this error to "
+                      "the developers")
+    locale.setlocale(locale.LC_TIME, loc)  # restore saved locale
 
     axes = [{
         'size': len(y),
@@ -283,11 +306,25 @@ def file_writer(filename, signal, format=None, separator=', ',
         if format is None:
             format = 'Y'
         if md.has_item("General.date"):
-            date = dt.strptime(md.General.date, "%Y-%m-%d")
-            loc_kwds['DATE'] = date.strftime("%d-%b-%Y")
-        if md.has_item("General.time"):
-            time = dt.strptime(md.General.time, "%H:%M:%S")
-            loc_kwds['TIME'] = time.strftime("%H:%M")
+            # Setting locale can raise an exception because
+            # their name depends on library versions, platform etc.
+            loc = locale.getlocale(locale.LC_TIME)
+            if os_name == 'posix':
+                locale.setlocale(locale.LC_TIME, ('en_US', 'latin-1'))
+            elif os_name == 'windows':
+                locale.setlocale(locale.LC_TIME, 'english')
+            try:
+                date = dt.strptime(md.General.date, "%Y-%m-%d")
+                loc_kwds['DATE'] = date.strftime("%d-%b-%Y")
+                if md.has_item("General.time"):
+                    time = dt.strptime(md.General.time, "%H:%M:%S")
+                    loc_kwds['TIME'] = time.strftime("%H:%M")
+            except:
+                warnings.warn(
+                    "I couldn't write the date information due to"
+                    "an unexpected error. Please report this error to "
+                    "the developers")
+            locale.setlocale(locale.LC_TIME, loc)  # restore saved locale
 
     keys_from_signal = {
         # Required parameters
