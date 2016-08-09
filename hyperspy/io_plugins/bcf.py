@@ -1076,6 +1076,7 @@ def bcf_hyperspectra(obj_bcf, index=0, downsample=None, cutoff_at_kV=None):
                              'tilt_stage': obj_bcf.header.stage.tilt_angle,
                              'stage_x': obj_bcf.header.stage.x,
                              'stage_y': obj_bcf.header.stage.y,
+                             'magnification': obj_bcf.header.sem.mag,
                              'Detector': {
                                  'EDS': {
                                      'azimuth_angle': eds_metadata.azimutAngle,

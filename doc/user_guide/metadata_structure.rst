@@ -30,6 +30,7 @@ in the following sections of this chapter.
     │   │   ├── beam_current (nA)
     │   │   ├── beam_energy (keV)
     │   │   ├── convergence_angle (mrad)
+    │       ├── magnification
     │   │   ├── microscope
     │   │   └── tilt_stage (º)
     │   └── TEM
@@ -48,7 +49,9 @@ in the following sections of this chapter.
     │       ├── acquisition_mode
     │       ├── beam_current (nA)
     │       ├── beam_energy (keV)
+    │       ├── camera_length (mm)
     │       ├── convergence_angle (mrad)
+    │       ├── magnification
     │       ├── microscope
     │       └── tilt_stage (º)
     ├── General
@@ -135,6 +138,11 @@ acquisition_mode
 
     Either 'TEM' or 'STEM'
 
+camera_length
+    type: Float
+
+    The camera length in mm.
+
 convergence_angle
     type: Float
 
@@ -159,6 +167,11 @@ exposure
     type: Float
 
     The exposure time in seconds. This is relevant for TEM acquisition.
+
+magnification
+    type: Float
+
+    The magnification.
 
 tilt_stage
     type: Float
@@ -190,6 +203,10 @@ beam_current
 
     The beam current in nA.
 
+magnification
+    type: Float
+
+    The magnification.
 
 tilt_stage
     type: Float

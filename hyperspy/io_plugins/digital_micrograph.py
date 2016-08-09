@@ -815,6 +815,13 @@ class ImageObject(object):
             "ImageList.TagGroup0.ImageTags.Microscope Info.STEM Camera Length": (
                 "Acquisition_instrument.TEM.camera_length",
                 None),
+            "ImageList.TagGroup0.ImageTags.Microscope Info.Indicated Magnification": (
+                "Acquisition_instrument.TEM.magnification",
+                None),
+            "ImageList.TagGroup0.ImageTags.Microscope Info.Probe Current (nA)": (
+                "Acquisition_instrument.TEM.beam_current",
+                None),
+        
         }
         if "Microscope_Info" in self.imdict.ImageTags.keys():
             mapping.update({

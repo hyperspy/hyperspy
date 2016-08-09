@@ -687,16 +687,25 @@ def _get_date_time(value):
     return dt.date().isoformat(), dt.time().isoformat()
 
 
+def _get_microscope_name(value):
+    return value.replace('Microscope ', '')
+
 mapping = {
     "ObjectInfo.ExperimentalDescription.High_tension_kV": (
         "Acquisition_instrument.TEM.beam_energy",
         None),
     "ObjectInfo.ExperimentalDescription.Microscope": (
         "Acquisition_instrument.TEM.microscope",
-        None),
+        _get_microscope_name),
     "ObjectInfo.ExperimentalDescription.Mode": (
         "Acquisition_instrument.TEM.acquisition_mode",
         _get_simplified_mode),
+    "ObjectInfo.ExperimentalDescription.Camera length_m": (
+        "Acquisition_instrument.TEM.camera_length",
+        lambda x: x*1e3),
+    "ObjectInfo.ExperimentalDescription.Magnification_x": (
+        "Acquisition_instrument.TEM.magnification",
+        None),
     "ObjectInfo.ExperimentalConditions.MicroscopeConditions.Tilt1": (
         "Acquisition_instrument.TEM.tilt_stage",
         _get_degree),
