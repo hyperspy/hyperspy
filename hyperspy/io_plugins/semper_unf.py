@@ -73,7 +73,6 @@
 # 101-256  title (ic chars)
 
 from collections import OrderedDict
-from time import strftime
 import struct
 from functools import partial
 import logging
@@ -304,7 +303,7 @@ class SemperFormat(object):
         label['ICLASS'] = self.metadata.get('ICLASS', 6)  # 6: Undefined!
         label['IFORM'] = iform
         label['IWP'] = self.metadata.get('IWP', 0)  # seems standard
-        date = self.metadata.get('DATE', strftime('%Y-%m-%d %H:%M:%S'))
+        date = self.metadata.get('DATE', "%s" % datetime.now())
         year, time = date.split(' ')
         date_ints = (list(map(int, year.split('-'))) +
                      list(map(int, time.split(':'))))
@@ -570,7 +569,14 @@ class SemperFormat(object):
         data, iform = cls._check_format(data)
         title = signal.metadata.General.as_dictionary().get('title', Undefined)
         metadata = OrderedDict()
-        metadata.update({'DATE': strftime('%Y-%m-%d %H:%M:%S'),
+        if 'date' in signal.metadata.General.keys(
+        ) and 'time' in signal.metadata.General.keys():
+            dt = "%s %s" % (signal.metadata.General.date,
+                            signal.metadata.General.time)
+        else:
+            dt = "%s" % datetime.now()
+
+        metadata.update({'DATE': "%s" % dt.split('.')[0],
                          'ICLASS': iclass,
                          'IFORM': iform,
                          'IVERSN': 2,  # Current standard

@@ -60,6 +60,7 @@ def test_writing_loading_metadata():
         s2 = load(fname)
         np.testing.assert_allclose(s.data, s2.data)
         nt.assert_equal(s.metadata.General.date, s2.metadata.General.date)
+        nt.assert_equal(s.metadata.General.time, s2.metadata.General.time)
 
 
 def test_signal_3d_loading():
