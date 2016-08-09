@@ -212,10 +212,14 @@ def parse_msa_string(string, filename=None):
                     mapped.set_item(keywords[clean_par]['mapped_to'] +
                                     '_units', units)
 
-    time = dt.strptime(parameters['TIME'], "%H:%M")
-    mapped.set_item('General.time', time.time().isoformat())
-    date = dt.strptime(parameters['DATE'], "%d-%b-%Y")
-    mapped.set_item('General.date', date.date().isoformat())
+    if 'TIME' in parameters.keys():
+        if len(parameters['TIME']) > 0:
+            time = dt.strptime(parameters['TIME'], "%H:%M")
+            mapped.set_item('General.time', time.time().isoformat())
+    if 'DATE' in parameters.keys():
+        if len(parameters['DATE']) > 0:
+            date = dt.strptime(parameters['DATE'], "%d-%b-%Y")
+            mapped.set_item('General.date', date.date().isoformat())
 
     axes = [{
         'size': len(y),
@@ -235,8 +239,13 @@ def parse_msa_string(string, filename=None):
     else:
         # Defaulting to EELS looks reasonable
         mapped.set_item('Signal.signal_type', 'EELS')
-    quantity = "%s (%s)" % (parameters['YLABEL'], parameters['YUNITS'])
-    mapped.set_item('Signal.quantity', quantity)
+    if 'YUNITS' in parameters.keys():
+        quantity_units = "(%s)" % parameters['YUNITS']
+    else:
+        quantity_units = ""
+    if 'YLABEL' in parameters.keys():
+        quantity = "%s %s" % (parameters['YLABEL'], quantity_units)
+        mapped.set_item('Signal.quantity', quantity)
 
     dictionary = {
         'data': np.array(y),
