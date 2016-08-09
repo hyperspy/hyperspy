@@ -352,3 +352,22 @@ class TestFEIReader():
                 category=UserWarning):
             unit = guess_units_from_mode({}, header0)
         nt.assert_equal(unit, 'meters')
+
+    def test_load_multisignal_stack(self):
+        fname0 = os.path.join(
+            self.dirpathnew, '16x16-line_profile_horizontal_5x128x128_EDS.emi')
+        fname1 = os.path.join(
+            self.dirpathnew,
+            '16x16-line_profile_horizontal_5x128x128_EDS_copy.emi')
+        load([fname0, fname1], stack=True)
+
+    def test_load_multisignal_stack_mismatch(self):
+        fname0 = os.path.join(
+            self.dirpathnew, '16x16-diffraction_imagel_5x5x256x256_EDS.emi')
+        fname1 = os.path.join(
+            self.dirpathnew,
+            '16x16-diffraction_imagel_5x5x256x256_EDS_copy.emi')
+        with nt.assert_raises(ValueError) as cm:
+            load([fname0, fname1], stack=True)
+        nt.assert_true(str(cm.exception).startswith(
+            "The number of sub-signals per file does not match"))
