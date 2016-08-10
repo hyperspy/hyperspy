@@ -20,10 +20,10 @@ import numpy as np
 
 from os import remove
 import nose.tools as nt
-from hyperspy._signals.spectrum import Spectrum
+from hyperspy._signals.signal1d import Signal1D
 from hyperspy.io import load
-from hyperspy.components import Gaussian
-import mock
+from hyperspy.components1d import Gaussian
+from unittest import mock
 import gc
 
 
@@ -39,7 +39,7 @@ def clean_model_dictionary(d):
 class TestModelStoring:
 
     def setUp(self):
-        s = Spectrum(range(100))
+        s = Signal1D(range(100))
         m = s.create_model()
         m.append(Gaussian())
         m.fit()
@@ -47,13 +47,13 @@ class TestModelStoring:
 
     def test_models_getattr(self):
         m = self.m
-        s = m.spectrum
+        s = m.signal
         m.store()
         nt.assert_is(s.models.a, s.models['a'])
 
     def test_models_stub_methods(self):
         m = self.m
-        s = m.spectrum
+        s = m.signal
         m.store()
         s.models.pop = mock.MagicMock()
         s.models.remove = mock.MagicMock()
@@ -72,7 +72,7 @@ class TestModelStoring:
 
     def test_models_pop(self):
         m = self.m
-        s = m.spectrum
+        s = m.signal
         m.store()
         s.models.remove = mock.MagicMock()
         s.models.restore = mock.MagicMock()
@@ -88,18 +88,18 @@ class TestModelStoring:
         d = m.as_dictionary(True)
         np.testing.assert_equal(
             d,
-            m.spectrum.models._models.a._dict.as_dictionary())
+            m.signal.models._models.a._dict.as_dictionary())
 
     def test_actually_stored(self):
         m = self.m
         m.store()
         m[0].A.map['values'][0] += 13.33
-        m1 = m.spectrum.models.a.restore()
+        m1 = m.signal.models.a.restore()
         nt.assert_not_equal(m[0].A.map['values'], m1[0].A.map['values'])
 
     def test_models_restore_remove(self):
         m = self.m
-        s = m.spectrum
+        s = m.signal
         m.store('a')
         m1 = s.models.restore('a')
         m2 = s.models.a.restore()
@@ -114,27 +114,27 @@ class TestModelStoring:
 
     @nt.raises(KeyError)
     def test_store_name_error1(self):
-        s = self.m.spectrum
+        s = self.m.signal
         s.models.restore('a')
 
     @nt.raises(KeyError)
     def test_store_name_error2(self):
-        s = self.m.spectrum
+        s = self.m.signal
         s.models.restore(3)
 
     @nt.raises(KeyError)
     def test_store_name_error3(self):
-        s = self.m.spectrum
+        s = self.m.signal
         s.models.restore('_a')
 
     @nt.raises(KeyError)
     def test_store_name_error4(self):
-        s = self.m.spectrum
+        s = self.m.signal
         s.models.restore('a._dict')
 
     @nt.raises(KeyError)
     def test_store_name_error5(self):
-        s = self.m.spectrum
+        s = self.m.signal
         self.m.store('b')
         s.models.restore('a')
 
@@ -142,7 +142,7 @@ class TestModelStoring:
 class TestModelSaving:
 
     def setUp(self):
-        s = Spectrum(range(100))
+        s = Signal1D(range(100))
         m = s.create_model()
         m.append(Gaussian())
         m.components.Gaussian.A.value = 13

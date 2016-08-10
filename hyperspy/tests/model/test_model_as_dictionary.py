@@ -19,9 +19,9 @@
 import numpy as np
 
 import nose.tools as nt
-from hyperspy._signals.spectrum import Spectrum
+from hyperspy._signals.signal1d import Signal1D
 from hyperspy.component import Parameter, Component
-from hyperspy.components import Gaussian, Lorentzian, ScalableFixedPattern
+from hyperspy.components1d import Gaussian, Lorentzian, ScalableFixedPattern
 
 
 def remove_empty_numpy_strings(dic):
@@ -74,19 +74,19 @@ class TestParameterDictionary:
     def test_to_dictionary(self):
         d = self.par.as_dictionary()
 
-        nt.assert_true(d['name'] == self.par.name)
-        nt.assert_true(d['_id_name'] == self.par._id_name)
-        nt.assert_true(d['map']['values'][0] == 1)
-        nt.assert_true(d['map']['std'][0] == 0.1)
+        nt.assert_equal(d['name'], self.par.name)
+        nt.assert_equal(d['_id_name'], self.par._id_name)
+        np.testing.assert_equal(d['map']['values'][0], 1)
+        np.testing.assert_equal(d['map']['std'][0], 0.1)
         nt.assert_true(d['map']['is_set'][0])
-        nt.assert_true(d['value'] == self.par.value)
-        nt.assert_true(d['std'] == self.par.std)
-        nt.assert_true(d['free'] == self.par.free)
-        nt.assert_true(d['self'] == id(self.par))
-        nt.assert_true(d['_bounds'] == self.par._bounds)
-        nt.assert_true(d['ext_bounded'] == self.par.ext_bounded)
-        nt.assert_true(
-            d['ext_force_positive'] == self.par.ext_force_positive)
+        np.testing.assert_equal(d['value'], self.par.value)
+        np.testing.assert_equal(d['std'], self.par.std)
+        nt.assert_is(d['free'], self.par.free)
+        nt.assert_equal(d['self'], id(self.par))
+        np.testing.assert_equal(d['_bounds'], self.par._bounds)
+        nt.assert_is(d['ext_bounded'], self.par.ext_bounded)
+        nt.assert_is(
+            d['ext_force_positive'], self.par.ext_force_positive)
 
     def test_load_dictionary(self):
         d = self.par.as_dictionary()
@@ -95,19 +95,21 @@ class TestParameterDictionary:
         _id = p._load_dictionary(d)
 
         nt.assert_equal(_id, id(self.par))
-        nt.assert_true(p.name == self.par.name)
-        nt.assert_true(p._id_name == self.par._id_name)
-        nt.assert_true(p.map['values'][0] == 1)
-        nt.assert_true(p.map['std'][0] == 0.1)
+        nt.assert_equal(p.name, self.par.name)
+        nt.assert_equal(p._id_name, self.par._id_name)
+        np.testing.assert_equal(p.map['values'][0], 1)
+        np.testing.assert_equal(p.map['std'][0], 0.1)
         nt.assert_true(p.map['is_set'][0])
-        nt.assert_true(p.value == self.par.value)
-        nt.assert_true(p.std == self.par.std)
-        nt.assert_true(p.free == self.par.free)
-        nt.assert_true(p._bounds == self.par._bounds)
+        np.testing.assert_equal(p.value, self.par.value)
+        np.testing.assert_equal(p.std, self.par.std)
+        np.testing.assert_equal(p.free, self.par.free)
+        np.testing.assert_equal(p._bounds, self.par._bounds)
 
         rn = np.random.random()
-        nt.assert_equal(p.twin_function(rn), self.par.twin_function(rn))
-        nt.assert_equal(
+        np.testing.assert_equal(
+            p.twin_function(rn),
+            self.par.twin_function(rn))
+        np.testing.assert_equal(
             p.twin_inverse_function(rn),
             self.par.twin_inverse_function(rn))
 
@@ -145,12 +147,12 @@ class TestComponentDictionary:
         nt.assert_true(d['active'])
         nt.assert_is_none(d['_active_array'])
         for ip, p in enumerate(c.parameters):
-            nt.assert_equal(p.as_dictionary(), d['parameters'][ip])
+            nt.assert_dict_equal(p.as_dictionary(), d['parameters'][ip])
 
         c.active_is_multidimensional = True
         d1 = c.as_dictionary()
         nt.assert_true(d1['active_is_multidimensional'])
-        nt.assert_true(np.all(d1['_active_array'] == c._active_array))
+        np.testing.assert_array_equal(d1['_active_array'], c._active_array)
 
     def test_load_dictionary(self):
         c = self.comp
@@ -202,7 +204,7 @@ class TestComponentDictionary:
 class TestModelDictionary:
 
     def setUp(self):
-        s = Spectrum(np.array([1.0, 2, 4, 7, 12, 7, 4, 2, 1]))
+        s = Signal1D(np.array([1.0, 2, 4, 7, 12, 7, 4, 2, 1]))
         m = s.create_model()
         m.low_loss = (s + 3.0).deepcopy()
         self.model = m
@@ -218,21 +220,22 @@ class TestModelDictionary:
         m = self.model
         d = m.as_dictionary()
 
-        nt.assert_equal(m.low_loss, d['low_loss'])
-        nt.assert_true(np.all(m.chisq.data == d['chisq.data']))
-        nt.assert_true(np.all(m.dof.data == d['dof.data']))
-        nt.assert_equal(
+        print(d['low_loss'])
+        np.testing.assert_almost_equal(m.low_loss.data, d['low_loss']['data'])
+        np.testing.assert_almost_equal(m.chisq.data, d['chisq.data'])
+        np.testing.assert_almost_equal(m.dof.data, d['dof.data'])
+        np.testing.assert_equal(
             d['free_parameters_boundaries'],
             m.free_parameters_boundaries)
-        nt.assert_equal(d['convolved'], m.convolved)
+        nt.assert_is(d['convolved'], m.convolved)
 
         for num, c in enumerate(m):
             tmp = c.as_dictionary()
             remove_empty_numpy_strings(tmp)
             nt.assert_equal(d['components'][num]['name'], tmp['name'])
             nt.assert_equal(d['components'][num]['_id_name'], tmp['_id_name'])
-        np.testing.assert_equal(d['components'][-1]['spectrum'],
-                                (m.spectrum * 0.3)._to_dictionary())
+        np.testing.assert_equal(d['components'][-1]['signal1D'],
+                                (m.signal * 0.3)._to_dictionary())
 
     def test_load_dictionary(self):
         d = self.model.as_dictionary()
@@ -241,20 +244,20 @@ class TestModelDictionary:
         mn._load_dictionary(d)
         mo = self.model
 
-        # nt.assert_true(np.allclose(mo.spectrum.data, mn.spectrum.data))
-        nt.assert_true(np.allclose(mo.chisq.data, mn.chisq.data))
-        nt.assert_true(np.allclose(mo.dof.data, mn.dof.data))
+        # nt.assert_true(np.allclose(mo.signal1D.data, mn.signal1D.data))
+        np.testing.assert_allclose(mo.chisq.data, mn.chisq.data)
+        np.testing.assert_allclose(mo.dof.data, mn.dof.data)
 
-        nt.assert_true(np.allclose(mn.low_loss.data, mo.low_loss.data))
+        np.testing.assert_allclose(mn.low_loss.data, mo.low_loss.data)
 
-        nt.assert_equal(
+        np.testing.assert_equal(
             mn.free_parameters_boundaries,
             mo.free_parameters_boundaries)
-        nt.assert_equal(mn.convolved, mo.convolved)
+        nt.assert_is(mn.convolved, mo.convolved)
         for i in range(len(mn)):
             nt.assert_equal(mn[i]._id_name, mo[i]._id_name)
             for po, pn in zip(mo[i].parameters, mn[i].parameters):
-                nt.assert_true(np.allclose(po.map['values'], pn.map['values']))
-                nt.assert_true(np.allclose(po.map['is_set'], pn.map['is_set']))
+                np.testing.assert_allclose(po.map['values'], pn.map['values'])
+                np.testing.assert_allclose(po.map['is_set'], pn.map['is_set'])
 
-        nt.assert_true(mn[0].A.twin is mn[1].A)
+        nt.assert_is(mn[0].A.twin, mn[1].A)

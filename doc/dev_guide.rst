@@ -1,7 +1,10 @@
-﻿Developer Guide
+﻿
+.. _dev_guide-label:
+
+Developer Guide
 ===============
 
-This 5-step guide is intended to give people who want to start contributing their 
+This 6-step guide is intended to give people who want to start contributing their 
 own tools to HyperSpy a foothold to kick-start the process. This is also the way
 to start if you ultimately hope to become a member of the developer team.
 
@@ -127,7 +130,7 @@ thing has it's own branch! You can merge some together for your personal use.
 
 Diagramatically you should be aiming for something like this:
 
-.. figure:: /user_guide/images/branching_schematic.eps1
+.. figure:: /user_guide/images/branching_schematic.eps
 
 
 Get the style right
@@ -147,7 +150,9 @@ Tests -- these are short functions found in hyperspy/tests that call your functi
 under some known conditions and check the outputs against known values. They should
 depend on as few other features as possible so that when they break we know exactly
 what caused it. Writing tests can seem laborious but you'll probaby soon find that
-they're very important as they force you to sanity check all you do.
+they're very important as they force you to sanity check all you do. When comparing
+integers, it's fine to use ``==``. When comparing floats, be sure to use
+``assert_almost_equal()``.
 
 Documentation comes in two parts docstrings and user-guide documentation.
 
@@ -164,3 +169,37 @@ to use it with examples and links to the relevant code.
 When you've got a branch that's ready to be incorporated in to the main code of
 HyperSpy -- make a pull request on GitHub and wait for it to be reviewed and
 discussed.
+
+6. Contributing cython code
+---------------------------
+
+Python is not the fastest language, and can be particularly slow in loops.
+Performance can sometimes be significantly improved by implementing optional cython
+code alongside the pure Python versions. While developing cython code, make use of
+the official cython recommendations (http://docs.cython.org/).
+Add your cython extensions to the setup.py, in the existing list of ``raw_extensions``.
+
+Unlike the cython recommendation, the cythonized .c or .cpp files are not welcome
+in the git source repository (except original c or c++ files), since they are typically
+quite large. Cythonization will take place during Travis CI and Appveyor building.
+The cythonized code will be generated and included in source or binary distributions
+for end users. To help troubleshoot potential deprecation with future cython releases,
+add a comment with in the header of your .pyx files with the cython version.
+If cython is present in the build environment and any cythonized c/c++ file is missing,
+then setup.py tries to cythonize all extensions automatically.
+
+To make the development easier the new command ``recythonize`` has been added to setup.py.
+It can be used in conjunction with other default commands.
+For example ``python setup.py recythonize build_ext --inplace``
+will recythonize all changed (and described in setup.py!) cython code and compile.
+
+When developing on git branches, the first time you call setup.py in conjunction with
+or without any other command - it will generate a post-checkout hook, which will include
+a potential cythonization and compilation product list (.c/.cpp/.so/.pyd). With your next
+``git checkout`` the hook will remove them and automatically run ``python setup.py build_ext --inplace``
+to cythonize and compile the code if available. If an older version of HyperSpy (<= 0.8.4.x)
+is checked out this should have no side effects.
+
+If another custom post-checkout hook is detected on PR, then setup.py tries to append
+or update the relevant part. To prevent unwanted hook generation or update you can create
+the empty file ``.hook_ignore`` in source directory (same level as setup.py).

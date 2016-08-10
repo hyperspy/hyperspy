@@ -1,8 +1,8 @@
-import nose.tools
+import nose.tools as nt
 import numpy as np
 
 from hyperspy.misc.utils import DictionaryTreeBrowser
-from hyperspy.signal import Signal
+from hyperspy.signal import BaseSignal
 
 
 class TestDictionaryBrowser:
@@ -28,7 +28,7 @@ class TestDictionaryBrowser:
             "Node3": {
                 "leaf31": 31},
         })
-        nose.tools.assert_equal(
+        nt.assert_equal(
             {"Node1": {"leaf11": 11,
                        "leaf12": 12,
                        "Node11": {"leaf111": 222,
@@ -44,31 +44,27 @@ class TestDictionaryBrowser:
 
     def test_add_signal_in_dictionary(self):
         tree = self.tree
-        s = Signal([1., 2, 3])
+        s = BaseSignal([1., 2, 3])
         s.axes_manager[0].name = 'x'
         s.axes_manager[0].units = 'ly'
         tree.add_dictionary({"_sig_signal name": s._to_dictionary()})
-        nose.tools.assert_is_instance(tree.signal_name, Signal)
-        nose.tools.assert_true(np.all(
-            tree.signal_name.data == s.data
-        ))
-        nose.tools.assert_equal(
-            tree.signal_name.metadata.as_dictionary(),
-            s.metadata.as_dictionary())
-        nose.tools.assert_equal(
-            tree.signal_name.axes_manager._get_axes_dicts(),
-            s.axes_manager._get_axes_dicts())
+        nt.assert_is_instance(tree.signal_name, BaseSignal)
+        np.testing.assert_array_equal(tree.signal_name.data, s.data)
+        nt.assert_dict_equal(tree.signal_name.metadata.as_dictionary(),
+                             s.metadata.as_dictionary())
+        nt.assert_equal(tree.signal_name.axes_manager._get_axes_dicts(),
+                        s.axes_manager._get_axes_dicts())
 
     def test_signal_to_dictionary(self):
         tree = self.tree
-        s = Signal([1., 2, 3])
+        s = BaseSignal([1., 2, 3])
         s.axes_manager[0].name = 'x'
         s.axes_manager[0].units = 'ly'
         tree.set_item('Some name', s)
         d = tree.as_dictionary()
-        nose.tools.assert_true(np.all(d['_sig_Some name']['data'] == s.data))
+        np.testing.assert_array_equal(d['_sig_Some name']['data'], s.data)
         d['_sig_Some name']['data'] = 0
-        nose.tools.assert_equal(
+        nt.assert_dict_equal(
             {
                 "Node1": {
                     "leaf11": 11,
@@ -96,8 +92,6 @@ class TestDictionaryBrowser:
                             'title': ''},
                         'Signal': {
                             'binned': False,
-                            'record_by': '',
-                            'signal_origin': '',
                             'signal_type': ''},
                         '_HyperSpy': {
                             'Folding': {

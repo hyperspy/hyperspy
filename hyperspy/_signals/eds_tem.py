@@ -19,7 +19,7 @@
 
 import traits.api as t
 import numpy as np
-
+from scipy import constants
 from hyperspy import utils
 from hyperspy._signals.eds import EDSSpectrum
 from hyperspy.decorators import only_interactive
@@ -27,9 +27,11 @@ from hyperspy.gui.eds import TEMParametersUI
 from hyperspy.defaults_parser import preferences
 import hyperspy.gui.messages as messagesui
 from hyperspy.misc.eds import utils as utils_eds
+import warnings
 
 
 class EDSTEMSpectrum(EDSSpectrum):
+
     _signal_type = "EDS_TEM"
 
     def __init__(self, *args, **kwards):
@@ -48,10 +50,10 @@ class EDSTEMSpectrum(EDSSpectrum):
         """
 
         mp = self.metadata
-        mp.Signal.signal_type = 'EDS_TEM'
+        mp.Signal.signal_type = "EDS_TEM"
 
         mp = self.metadata
-        if "mp.Acquisition_instrument.TEM.tilt_stage" not in mp:
+        if "Acquisition_instrument.TEM.tilt_stage" not in mp:
             mp.set_item(
                 "Acquisition_instrument.TEM.tilt_stage",
                 preferences.EDS.eds_tilt_stage)
@@ -75,7 +77,10 @@ class EDSTEMSpectrum(EDSSpectrum):
                                   tilt_stage=None,
                                   azimuth_angle=None,
                                   elevation_angle=None,
-                                  energy_resolution_MnKa=None):
+                                  energy_resolution_MnKa=None,
+                                  beam_current=None,
+                                  probe_area=None,
+                                  real_time=None):
         """Set the microscope parameters.
 
         If no arguments are given, raises an interactive mode to fill
@@ -86,7 +91,7 @@ class EDSTEMSpectrum(EDSSpectrum):
         beam_energy: float
             The energy of the electron beam in keV
         live_time : float
-            In second
+            In seconds
         tilt_stage : float
             In degree
         azimuth_angle : float
@@ -95,6 +100,12 @@ class EDSTEMSpectrum(EDSSpectrum):
             In degree
         energy_resolution_MnKa : float
             In eV
+        beam_current: float
+            In nA
+        probe_area: float
+            In nm^2
+        real_time: float
+            In seconds
 
         Examples
         --------
@@ -131,6 +142,18 @@ class EDSTEMSpectrum(EDSSpectrum):
                 "Acquisition_instrument.TEM.Detector.EDS." +
                 "energy_resolution_MnKa",
                 energy_resolution_MnKa)
+        if beam_current is not None:
+            md.set_item(
+                "Acquisition_instrument.TEM.beam_current",
+                beam_current)
+        if probe_area is not None:
+            md.set_item(
+                "Acquisition_instrument.TEM.probe_area",
+                probe_area)
+        if real_time is not None:
+            md.set_item(
+                "Acquisition_instrument.TEM.Detector.EDS.real_time",
+                real_time)
 
         if set([beam_energy, live_time, tilt_stage, azimuth_angle,
                 elevation_angle, energy_resolution_MnKa]) == {None}:
@@ -151,7 +174,13 @@ class EDSTEMSpectrum(EDSSpectrum):
             'Acquisition_instrument.TEM.Detector.EDS.elevation_angle':
             'tem_par.elevation_angle',
             'Acquisition_instrument.TEM.Detector.EDS.energy_resolution_MnKa':
-            'tem_par.energy_resolution_MnKa', }
+            'tem_par.energy_resolution_MnKa',
+            'Acquisition_instrument.TEM.beam_current':
+            'tem_par.beam_current',
+            'Acquisition_instrument.TEM.probe_area':
+            'tem_par.probe_area',
+            'Acquisition_instrument.TEM.Detector.EDS.real_time':
+            'tem_par.real_time', }
         for key, value in mapping.items():
             if self.metadata.has_item(key):
                 exec('%s = self.metadata.%s' % (value, key))
@@ -169,7 +198,13 @@ class EDSTEMSpectrum(EDSSpectrum):
             'Acquisition_instrument.TEM.Detector.EDS.elevation_angle':
             tem_par.elevation_angle,
             'Acquisition_instrument.TEM.Detector.EDS.energy_resolution_MnKa':
-            tem_par.energy_resolution_MnKa, }
+            tem_par.energy_resolution_MnKa,
+            'Acquisition_instrument.TEM.beam_current':
+            tem_par.beam_current,
+            'Acquisition_instrument.TEM.probe_area':
+            tem_par.probe_area,
+            'Acquisition_instrument.TEM.Detector.EDS.real_time':
+            tem_par.real_time, }
 
         for key, value in mapping.items():
             if value != t.Undefined:
@@ -179,7 +214,7 @@ class EDSTEMSpectrum(EDSSpectrum):
     def _are_microscope_parameters_missing(self):
         """Check if the EDS parameters necessary for quantification
         are defined in metadata. Raise in interactive mode
-         an UI item to fill or cahnge the values"""
+         an UI item to fill or change the values"""
         must_exist = (
             'Acquisition_instrument.TEM.beam_energy',
             'Acquisition_instrument.TEM.Detector.EDS.live_time',)
@@ -250,7 +285,7 @@ class EDSTEMSpectrum(EDSSpectrum):
         else:
             raise ValueError("The reference has no metadata." +
                              "Acquisition_instrument.TEM" +
-                             "\n nor metadata.Acquisition_instrument.SEM ")
+                             "\n or metadata.Acquisition_instrument.SEM ")
 
         mp = self.metadata
         mp.Acquisition_instrument.TEM = mp_ref.deepcopy()
@@ -260,29 +295,32 @@ class EDSTEMSpectrum(EDSSpectrum):
 
     def quantification(self,
                        intensities,
-                       kfactors,
-                       composition_units='weight',
+                       method,
+                       factors='auto',
+                       composition_units='atomic',
                        navigation_mask=1.0,
                        closing=True,
                        plot_result=False,
                        **kwargs):
         """
-        Quantification of intensities to return elemental composition
-
-        Method: Cliff-Lorimer
+        Quantification using Cliff-Lorimer, the zeta-factor method, or
+        ionization cross sections.
 
         Parameters
         ----------
         intensities: list of signal
             the intensitiy for each X-ray lines.
-        kfactors: list of float
-            The list of kfactor in same order as intensities. Note that
-            intensities provided by hyperspy are sorted by the aplhabetical
-            order of the X-ray lines. eg. kfactors =[0.982, 1.32, 1.60] for
-            ['Al_Ka','Cr_Ka', 'Ni_Ka'].
+        method: 'CL' or 'zeta' or 'cross_section'
+            Set the quantification method: Cliff-Lorimer, zeta-factor, or
+            ionization cross sections.
+        factors: list of float
+            The list of kfactors, zeta-factors or cross sections in same order
+            as intensities. Note that intensities provided by Hyperspy are
+            sorted by the alphabetical order of the X-ray lines.
+            eg. factors =[0.982, 1.32, 1.60] for ['Al_Ka', 'Cr_Ka', 'Ni_Ka'].
         composition_units: 'weight' or 'atomic'
-            Quantification returns weight percent. By choosing 'atomic', the
-            return composition is in atomic percent.
+            The quantification returns the composition in atomic percent by
+            default, but can also return weight percent if specified.
         navigation_mask : None or float or signal
             The navigation locations marked as True are not used in the
             quantification. If int is given the vacuum_mask method is used to
@@ -297,10 +335,16 @@ class EDSTEMSpectrum(EDSSpectrum):
         kwargs
             The extra keyword arguments are passed to plot.
 
-        Return
+        Returns
         ------
         A list of quantified elemental maps (signal) giving the composition of
         the sample in weight or atomic percent.
+
+        If the method is 'zeta' this function also returns the mass thickness
+        profile for the data.
+
+        If the method is 'cross_section' this function also returns the atom
+        counts for each element.
 
         Examples
         --------
@@ -325,12 +369,37 @@ class EDSTEMSpectrum(EDSSpectrum):
             navigation_mask = navigation_mask.data
         xray_lines = self.metadata.Sample.xray_lines
         composition = utils.stack(intensities)
-        composition.data = utils_eds.quantification_cliff_lorimer(
-            composition.data, kfactors=kfactors,
-            mask=navigation_mask) * 100.
+        if method == 'CL':
+            composition.data = utils_eds.quantification_cliff_lorimer(
+                composition.data, kfactors=factors,
+                mask=navigation_mask) * 100.
+        elif method == 'zeta':
+            results = utils_eds.quantification_zeta_factor(
+                composition.data, zfactors=factors,
+                dose=self._get_dose(method))
+            composition.data = results[0] * 100.
+            mass_thickness = intensities[0].deepcopy()
+            mass_thickness.data = results[1]
+            mass_thickness.metadata.General.title = 'Mass thickness'
+        elif method == 'cross_section':
+            results = utils_eds.quantification_cross_section(
+                composition.data,
+                cross_sections=factors,
+                dose=self._get_dose(method))
+            composition.data = results[0] * 100
+            number_of_atoms = utils.stack(intensities)
+            number_of_atoms.data = results[1]
+            number_of_atoms = number_of_atoms.split()
+        else:
+            raise ValueError('Please specify method for quantification,'
+                             'as \'CL\', \'zeta\' or \'cross_section\'')
         composition = composition.split()
         if composition_units == 'atomic':
-            composition = utils.material.weight_to_atomic(composition)
+            if method != 'cross_section':
+                composition = utils.material.weight_to_atomic(composition)
+        else:
+            if method == 'cross_section':
+                composition = utils.material.atomic_to_weight(composition)
         for i, xray_line in enumerate(xray_lines):
             element, line = utils_eds._get_element_and_line(xray_line)
             composition[i].metadata.General.title = composition_units + \
@@ -343,9 +412,27 @@ class EDSTEMSpectrum(EDSSpectrum):
                 print("%s (%s): Composition = %.2f %s percent"
                       % (element, xray_line, composition[i].data,
                          composition_units))
+        if method == 'cross_section':
+            for i, xray_line in enumerate(xray_lines):
+                element, line = utils_eds._get_element_and_line(xray_line)
+                number_of_atoms[i].metadata.General.title = \
+                    'atom counts of ' + element
+                number_of_atoms[i].metadata.set_item("Sample.elements",
+                                                     ([element]))
+                number_of_atoms[i].metadata.set_item(
+                    "Sample.xray_lines", ([xray_line]))
         if plot_result and composition[i].axes_manager.signal_dimension != 0:
             utils.plot.plot_signals(composition, **kwargs)
-        return composition
+        if method == 'zeta':
+            self.metadata.set_item("Sample.mass_thickness", mass_thickness)
+            return composition, mass_thickness
+        elif method == 'cross_section':
+            return composition, number_of_atoms
+        elif method == 'CL':
+            return composition
+        else:
+            raise ValueError('Please specify method for quantification, as \
+            ''CL\', \'zeta\' or \'cross_section\'')
 
     def vacuum_mask(self, threshold=1.0, closing=True, opening=False):
         """
@@ -365,7 +452,7 @@ class EDSTEMSpectrum(EDSSpectrum):
         --------
         >>> # Simulate a spectrum image with vacuum region
         >>> s = hs.datasets.example_signals.EDS_TEM_Spectrum()
-        >>> s_vac = hs.signals.Simulation(
+        >>> s_vac = hs.signals.BaseSignal(
                 np.ones_like(s.data, dtype=float))*0.005
         >>> s_vac.add_poissonian_noise()
         >>> si = hs.stack([s]*3 + [s_vac])
@@ -404,7 +491,7 @@ class EDSTEMSpectrum(EDSSpectrum):
             If True, scale the SI to normalize Poissonian noise
         navigation_mask : None or float or boolean numpy array
             The navigation locations marked as True are not used in the
-            decompostion. If float is given the vacuum_mask method is used to
+            decomposition. If float is given the vacuum_mask method is used to
             generate a mask with the float value as threshold.
         closing: bool
             If true, applied a morphologic closing to the maks obtained by
@@ -483,3 +570,87 @@ class EDSTEMSpectrum(EDSSpectrum):
                             auto_add_lines=auto_add_lines,
                             *args, **kwargs)
         return model
+
+    def _get_dose(self, method, beam_current='auto', real_time='auto',
+                  probe_area='auto'):
+        """
+        Calculates the total electron dose for the zeta-factor or cross section
+        methods of quantification.
+
+        Input given by i*t*N, i the current, t the
+        acquisition time, and N the number of electron by unit electric charge.
+
+        Parameters
+        ----------
+        method : 'zeta' or 'cross_section'
+            If 'zeta', the dose is given by i*t*N
+            If 'cross section', the dose is given by i*t*N/A
+            where i is the beam current, t is the acquistion time,
+            N is the number of electrons per unit charge (1/e) and
+            A is the illuminated beam area or pixel area.
+        beam_current: float
+            Probe current in nA
+        real_time: float
+            Acquisiton time in s
+        probe_area: float
+            The illumination area of the electron beam in nm^2.
+            If not set the value is extracted from the scale axes_manager.
+            Therefore we assume the probe is oversampling such that
+            the illumination area can be approximated to the pixel area of the
+            spectrum image.
+
+        Returns
+        --------
+        Dose in electrons (zeta factor) or electrons per nm^2 (cross_section)
+
+        See also
+        --------
+        set_microscope_parameters
+        """
+
+        parameters = self.metadata.Acquisition_instrument.TEM
+
+        if beam_current is 'auto':
+            if 'beam_current' not in parameters:
+                raise Exception('Electron dose could not be calculated as\
+                     beam_current is not set.'
+                                'The beam current can be set by calling \
+                                set_microscope_parameters()')
+            else:
+                beam_current = parameters.beam_current
+
+        if real_time == 'auto':
+            real_time = parameters.Detector.EDS.real_time
+            if 'real_time' not in parameters.Detector.EDS:
+                raise Exception('Electron dose could not be calculated as \
+                real_time is not set. '
+                                'The beam_current can be set by calling \
+                                set_microscope_parameters()')
+            elif real_time == 0.5:
+                warnings.warn('Please note that your real time is set to '
+                              'the default value of 0.5 s. If this is not \
+                              correct, you should change it using '
+                              'set_microscope_parameters() and run \
+                              quantification again.')
+
+        if method == 'cross_section':
+            if probe_area == 'auto':
+                if probe_area in parameters:
+                    area = parameters.TEM.probe_area
+                else:
+                    pixel1 = self.axes_manager[0].scale
+                    pixel2 = self.axes_manager[1].scale
+                    if pixel1 == 1 or pixel2 == 1:
+                        warnings.warn('Please note your probe_area is set to'
+                                      'the default value of 1 nm^2. The \
+                                      function will still run. However if'
+                                      '1 nm^2 is not correct, please read the \
+                                      user documentations for how to set this \
+                                      properly.')
+                    area = pixel1 * pixel2
+            return (real_time * beam_current * 1e-9) / (constants.e * area)
+            # 1e-9 is included here because the beam_current is in nA.
+        elif method == 'zeta':
+            return real_time * beam_current * 1e-9 / constants.e
+        else:
+            raise Exception('Method need to be \'zeta\' or \'cross_section\'.')

@@ -4,8 +4,8 @@
 Metadata structure
 ******************
 
-The :class:`~.signal.Signal` class stores metadata in the
-:attr:`~.signal.Signal.metadata` attribute that has a tree structure. By
+The :class:`~.signal.BaseSignal` class stores metadata in the
+:attr:`~.signal.BaseSignal.metadata` attribute that has a tree structure. By
 convention, the nodes labels are capitalized and the leaves are not
 capitalized.
 
@@ -70,7 +70,6 @@ in the following sections of this chapter.
         │   │   └── parameters_estimation_method
         │   └── variance
         ├── binned
-        ├── record_by
         ├── signal_type
         └── signal_origin
 
@@ -183,7 +182,7 @@ Detector
 
 All instruments can contain a "Detector" node with information about the
 detector used to acquire the signal. EDX and EELS detectors should follow the
-following strcture:
+following structure:
 
 EELS
 ^^^^
@@ -292,11 +291,12 @@ signal_type
 signal_origin
     type: Str
 
-    Either 'simulation' or 'experiment'.
+    Describes the origin of the signal e.g. 'simulation' or 'experiment'.
 
 record_by
     type: Str
-
+    .. deprecated:: 2.1 (HyperSpy v1.0)
+    
     One of 'spectrum' or 'image'. It describes how the data is stored in memory.
     If 'spectrum' the spectral data is stored in the faster index.
 
@@ -304,11 +304,11 @@ Noise_properties
 ----------------
 
 variance
-    type: float or Signal instance.
+    type: float or BaseSignal instance.
 
     The variance of the data. It can be a float when the noise is Gaussian or a
-    :class:`~.signal.Signal` instance if the noise is heteroscedastic, in which
-    case it must have the same dimensions as :attr:`~.signal.Signal.data`.
+    :class:`~.signal.BaseSignal` instance if the noise is heteroscedastic, in which
+    case it must have the same dimensions as :attr:`~.signal.BaseSignal.data`.
 
 Variance_linear_model
 ^^^^^^^^^^^^^^^^^^^^^
@@ -332,14 +332,14 @@ _Internal_parameters
 ====================
 
 This node is "private" and therefore is not displayed when printing the
-:attr:`~.signal.Signal.metadata` attribute. For example, an "energy" leaf
+:attr:`~.signal.BaseSignal.metadata` attribute. For example, an "energy" leaf
 should be accompanied by an "energy_units" leaf.
 
 Stacking_history
 ----------------
 
 Generated when using :py:meth:`~.utils.stack`. Used by
-:py:meth:`~.signal.Signal.split`, to retrieve the former list of signal.
+:py:meth:`~.signal.BaseSignal.split`, to retrieve the former list of signal.
 
 step_sizes
     type: list of int

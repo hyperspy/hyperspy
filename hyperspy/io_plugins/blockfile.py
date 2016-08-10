@@ -126,7 +126,7 @@ def get_header_from_signal(signal, endianess='<'):
     if signal.axes_manager.navigation_dimension == 2:
         NX, NY = signal.axes_manager.navigation_shape
         SX = signal.axes_manager.navigation_axes[0].scale
-        SY = signal.axes_manager.navigation_axes[0].scale
+        SY = signal.axes_manager.navigation_axes[1].scale
     elif signal.axes_manager.navigation_dimension == 1:
         NX = signal.axes_manager.navigation_shape[0]
         NY = 1
@@ -178,8 +178,8 @@ def file_reader(filename, endianess='<', load_to_memory=True, mmap_mode='c',
     note = note.strip(b'\x00')
     header['Note'] = note.decode()
     _logger.debug("File header: " + str(header))
-    NX, NY = header['NX'], header['NY']
-    DP_SZ = header['DP_SZ']
+    NX, NY = int(header['NX']), int(header['NY'])
+    DP_SZ = int(header['DP_SZ'])
     if header['SDP']:
         SDP = 100. / header['SDP']
     else:

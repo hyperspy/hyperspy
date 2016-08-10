@@ -17,6 +17,7 @@ Subpackages
     hyperspy.learn
     hyperspy.misc
     hyperspy.models
+    hyperspy.samfire_utils
     hyperspy.tests
     hyperspy.utils
 
@@ -55,10 +56,18 @@ hyperspy.component module
     :undoc-members:
     :show-inheritance:
 
-hyperspy.components module
---------------------------
+hyperspy.components1d module
+----------------------------
 
-.. automodule:: hyperspy.components
+.. automodule:: hyperspy.components1d
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+hyperspy.components2d module
+----------------------------
+
+.. automodule:: hyperspy.components2d
     :members:
     :undoc-members:
     :show-inheritance:
@@ -95,10 +104,10 @@ hyperspy.exceptions module
     :undoc-members:
     :show-inheritance:
 
-hyperspy.hspy module
---------------------
+hyperspy.interactive module
+---------------------------
 
-.. automodule:: hyperspy.hspy
+.. automodule:: hyperspy.interactive
     :members:
     :undoc-members:
     :show-inheritance:
@@ -111,10 +120,10 @@ hyperspy.io module
     :undoc-members:
     :show-inheritance:
 
-hyperspy.messages module
-------------------------
+hyperspy.logger module
+----------------------
 
-.. automodule:: hyperspy.messages
+.. automodule:: hyperspy.logger
     :members:
     :undoc-members:
     :show-inheritance:
@@ -123,6 +132,22 @@ hyperspy.model module
 ---------------------
 
 .. automodule:: hyperspy.model
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+hyperspy.roi module
+-------------------
+
+.. automodule:: hyperspy.roi
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+hyperspy.samfire module
+-----------------------
+
+.. automodule:: hyperspy.samfire
     :members:
     :undoc-members:
     :show-inheritance:

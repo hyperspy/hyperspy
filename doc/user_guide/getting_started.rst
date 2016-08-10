@@ -4,48 +4,51 @@ Getting started
 
 .. _importing_hyperspy-label:
 
-Starting HyperSpy
------------------
+Starting Python in Windows
+----------------------------
+If you used the bundle installation you should be able to use the context menus to get started. Right-click on the folder containing the data you wish to analyse and select "Jupyter notebook here" or "Jupyter qtconsole here". We recommend the former, since notebooks have many advantages over convetional consoles, as will be illustrated in later sections. The examples in some later sections assume Notebook operation. A new tab should appear in your default browser listing the files in the selected folder. To start a python notebook choose "Python 3" in the "New" drop-down menu at the top right of the page. Another new tab will open which is your Notebook.
 
-HyperSpy is a `Python <http://python.org>`_ library for multi-dimensional data
-analysis.  HyperSpy's API can be imported as any other Python library as
-follows:
+Starting Python in Linux and MacOS
+------------------------------------
 
-.. code-block:: python
-
-   >>> import hyperspy.api as hs
-
-The most common way of using HyperSpy is interactively using  interactive
-computing package `IPython <http://ipython.org>`_. In all operating systems (OS)
-you can start IPython by opening a system terminal and executing ``ipython``,
-optionally followed by the frontend. In most cases, **the most agreeable way**
+You can start IPython by opening a system terminal and executing ``ipython``,
+(optionally followed by the "frontend": "qtconsole" for example). However, in most cases, **the most agreeable way**
 to work with HyperSpy interactively is using the `Jupyter Notebook
-<http://jupyter.org>`_ (previously known as the IPython Notebook), which can be
-started as follows:
+<http://jupyter.org>`_ (previously known as the IPython Notebook), which can be started as follows:
 
 .. code-block:: bash
 
     $ jupyter notebook
 
-Some may find it more convenient to start Jupyter/IPython from the `file manager
-context menu <https://github.com/hyperspy/start_jupyter_cm>`_ or by
-`double-clicking a notebook file <https://github.com/takluyver/nbopen>`_.
+Linux users may find it more convenient to start Jupyter/IPython from the `file manager
+context menu <https://github.com/hyperspy/start_jupyter_cm>`_ . In either OS you can also start by
+`double-clicking a notebook file <https://github.com/takluyver/nbopen>`_ if one already exists.
 
+Starting HyperSpy in the notebook (or terminal)
+-----------------------------------------------
 Typically you will need to `set up IPython for interactive plotting with
 matplotlib
-<http://ipython.readthedocs.org/en/stable/interactive/plotting.html>`_ using the
-``%matplotlib`` magic *before executing any plotting command*. So, typically,
-after starting IPython, you can import
-HyperSpy and set up interactive matplotlib plotting by executing the following
-two lines in the IPython terminal:
+<http://ipython.readthedocs.org/en/stable/interactive/plotting.html>`_ using
+``%matplotlib`` (which is known as a 'Jupyter magic') *before executing any plotting command*. So, typically,
+after starting IPython, you can import HyperSpy and set up interactive matplotlib plotting by executing the following
+two lines in the IPython terminal (In these docs we normally use the general Python prompt symbol ``>>>`` but you will probably see ``In [1]:`` etc.):
 
 .. code-block:: python
 
-   In [1]: %matplotlib qt
-   In [2]: import hyperspy.api as hs
+   >>> %matplotlib qt
+   >>> import hyperspy.api as hs
 
+Note that to execute lines of code in the notebook you must press ``Shift+Return``. (For details about notebooks and their functionality try the help menu in the notebook).
+Next, import two useful modules: numpy and matplotlib.pyplot, as follows:
 
-We also fully support the wx backend. Other backends are supported for plotting
+.. code-block:: python
+
+   >>> import numpy as np
+   >>> import matplotlib.pyplot as plt
+
+The rest of the documentation will assume you have done this. Now you are ready to load your data (see below).
+
+**Notes for experienced users:** We also fully support the wx backend. Other backends are supported for plotting
 but some features such as navigation sliders may be missing.
 
 .. warning::
@@ -61,23 +64,13 @@ but some features such as navigation sliders may be missing.
 
     .. code-block:: python
 
-       In [1]: import matplotlib
-       In [2]: matplotlib.rcParams["backend"] = "Agg"
-       In [3]: import hyperspy.api as hs
+       >>> import matplotlib
+       >>> matplotlib.rcParams["backend"] = "Agg"
+       >>> import hyperspy.api as hs
 
 
-.. warning::
-        When using the qt4 backend it is important to import hyperspy
-        before executing the ``%matplotlib`` magic as above to ensure that
-        matplotlib uses version 2 of the PyQt API. This is necessary to avoid
-        conflicts with other libraries.
 
 
-This documentation assumes that numpy and matplotlib are also imported as
-follows:
-
-   >>> import numpy as np
-   >>> import matplotlib.pyplot as plt
 
 
 
@@ -149,7 +142,7 @@ files. For more details read :ref:`loading_files`
 "Loading" data from a numpy array
 ---------------------------------
 
-HyperSpy can operate on any numpy array by assigning it to a Signal class.
+HyperSpy can operate on any numpy array by assigning it to a BaseSignal class.
 This is useful e.g. for loading data stored in a format that is not yet
 supported by HyperSpy—supposing that they can be read with another Python
 library—or to explore numpy arrays generated by other Python
@@ -160,11 +153,11 @@ to the constructor e.g.
 .. code-block:: python
 
     >>> my_np_array = np.random.random((10,20,100))
-    >>> s = hs.signals.Spectrum(my_np_array)
+    >>> s = hs.signals.Signal1D(my_np_array)
     >>> s
-    <Spectrum, title: , dimensions: (20, 10|100)>
+    <Signal1D, title: , dimensions: (20, 10|100)>
 
-The numpy array is stored in the :py:attr:`~.signal.Signal.data` attribute
+The numpy array is stored in the :py:attr:`~.signal.BaseSignal.data` attribute
 of the signal class.
 
 .. _example-data-label:
@@ -180,7 +173,9 @@ signals:
 
     >>> hs.datasets.example_signals.EDS_TEM_Spectrum().plot()
 
-.. versionadded:: 0.9
+.. _eelsdb-label:
+    
+.. versionadded:: 1.0
     :py:func:`~.misc.eels.eelsdb.eelsdb` function.
 
 
@@ -207,26 +202,28 @@ the *navigation* dimensions an the energy-loss is the *signal* dimension. To
 make this distinction more explicit the representation of the object includes
 a separator ``|`` between the navigaton and signal dimensions e.g.
 
-In Hyperpsy a spectrum image has signal dimension 1 and navigation dimension 2.
+In Hyperpsy a spectrum image has signal dimension 1 and navigation dimension 2
+and is stored in the Signal1D subclass.
 
 .. code-block:: python
 
-    >>> s = hs.signals.Spectrum(np.zeros((10, 20, 30)))
+    >>> s = hs.signals.Signal1D(np.zeros((10, 20, 30)))
     >>> s
-    <Spectrum, title: , dimensions: (20, 10|30)>
+    <Signal1D, title: , dimensions: (20, 10|30)>
 
 
-An image stack has signal dimension 2 and navigation dimension 1.
+An image stack has signal dimension 2 and navigation dimension 1 and is stored
+in the Signal2D subclass.
 
 .. code-block:: python
 
-    >>> im = hs.signals.Image(np.zeros((30, 10, 20)))
+    >>> im = hs.signals.Signal2D(np.zeros((30, 10, 20)))
     >>> im
-    <Image, title: , dimensions: (30|20, 10)>
+    <Signal2D, title: , dimensions: (30|20, 10)>
 
 Note the HyperSpy rearranges the axes position to match the following pattern:
 (navigatons axis 0,..., navigation axis n|signal axis 0,..., signal axis n).
-This is the order used for :ref:`indexing the Signal class <signal.indexing>`.
+This is the order used for :ref:`indexing the BaseSignal class <signal.indexing>`.
 
 .. _Setting_axis_properties:
 
@@ -234,15 +231,15 @@ Setting axis properties
 -----------------------
 
 The axes are managed and stored by the :py:class:`~.axes.AxesManager` class
-that is stored in the :py:attr:`~.signal.Signal.axes_manager` attribute of
+that is stored in the :py:attr:`~.signal.BaseSignal.axes_manager` attribute of
 the signal class. The indidual axes can be accessed by indexing the AxesManager
 e.g.
 
 .. code-block:: python
 
-    >>> s = hs.signals.Spectrum(np.random.random((10, 20 , 100)))
+    >>> s = hs.signals.Signal1D(np.random.random((10, 20 , 100)))
     >>> s
-    <Spectrum, title: , dimensions: (20, 10|100)>
+    <Signal1D, title: , dimensions: (20, 10|100)>
     >>> s.axes_manager
     <Axes manager, axes: (<Unnamed 0th axis, size: 20, index: 0>, <Unnamed 1st
     axis, size: 10, index: 0>|<Unnamed 2nd axis, size: 100>)>
@@ -305,10 +302,10 @@ There are optional flags that may be passed to the save function. See
 Accessing and setting the metadata
 ----------------------------------
 
-When loading a file HyperSpy stores all metadata in the Signal
-:py:attr:`~.signal.Signal.original_metadata` attribute. In addition, some of
+When loading a file HyperSpy stores all metadata in the BaseSignal
+:py:attr:`~.signal.BaseSignal.original_metadata` attribute. In addition, some of
 those metadata and any new metadata generated by HyperSpy are stored in
-:py:attr:`~.signal.Signal.metadata` attribute.
+:py:attr:`~.signal.BaseSignal.metadata` attribute.
 
 
 .. code-block:: python
@@ -317,7 +314,6 @@ those metadata and any new metadata generated by HyperSpy are stored in
    >>> s.metadata
    ├── original_filename = NbO2_Nb_M_David_Bach,_Wilfried_Sigle_217.msa
    ├── record_by = spectrum
-   ├── signal_origin =
    ├── signal_type = EELS
    └── title = NbO2_Nb_M_David_Bach,_Wilfried_Sigle_217
 
@@ -346,7 +342,6 @@ those metadata and any new metadata generated by HyperSpy are stored in
    │   └── convergence_angle = 10
    ├── original_filename = NbO2_Nb_M_David_Bach,_Wilfried_Sigle_217.msa
    ├── record_by = spectrum
-   ├── signal_origin =
    ├── signal_type = EELS
    └── title = NbO2_Nb_M_David_Bach,_Wilfried_Sigle_217
 
@@ -360,7 +355,6 @@ those metadata and any new metadata generated by HyperSpy are stored in
    │   └── microscope = STEM VG
    ├── original_filename = NbO2_Nb_M_David_Bach,_Wilfried_Sigle_217.msa
    ├── record_by = spectrum
-   ├── signal_origin =
    ├── signal_type = EELS
    └── title = NbO2_Nb_M_David_Bach,_Wilfried_Sigle_217
 
@@ -386,3 +380,29 @@ This command should raise the Preferences user interface:
    :align:   center
 
    Preferences user interface.
+
+
+.. _logger-label:
+
+Messages log
+------------
+
+.. versionadded:: 1.0
+
+HyperSpy writes messages to the `Python logger
+<https://docs.python.org/3/howto/logging.html#logging-basic-tutorial>`_. The
+deafault log level is "WARNING", meaning that only warnings and more severe
+event messages will be displayed. The default can be set in the
+:ref:`preferences <configuring-hyperspy-label>`. Alternatively, it can be set
+using :py:func:`~.logger.set_log_level` e.g.:
+
+.. code-block:: python
+
+    >>> import hyperspy.api as hs
+    >>> hs.set_log_level('INFO')
+    >>> hs.load(r'my_file.dm3')
+    INFO:hyperspy.io_plugins.digital_micrograph:DM version: 3
+    INFO:hyperspy.io_plugins.digital_micrograph:size 4796607 B
+    INFO:hyperspy.io_plugins.digital_micrograph:Is file Little endian? True
+    INFO:hyperspy.io_plugins.digital_micrograph:Total tags in root group: 15
+    <Signal2D, title: My file, dimensions: (|1024, 1024)
