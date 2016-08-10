@@ -42,21 +42,17 @@ data_image_complex = (data_image_int32 + 1j * data_image).astype(np.complex64)
 test_title = 'This is a test!'
 
 
-@nt.raises(IOError)
 def test_writing_unsupported_data_type():
     data = np.arange(5 * 10).reshape((5, 10))
-    s = BaseSignal(data)
-    s.save('test_writing_unsupported_data_type.unf')
-
-    
-def test_writing_unsupported_data_type2():
-    data = np.arange(5 * 10).reshape((5, 10))
-    s = BaseSignal(data)
-    with nt.assert_raises(IOError) as cm:
-        s.save('test_writing_unsupported_data_type.unf')
+    s = BaseSignal(data.astype('int64'))
+    with tempfile.TemporaryDirectory() as tmpdir:
+        with nt.assert_raises(IOError) as cm:
+            fname = os.path.join(tmpdir,
+                                 'test_writing_unsupported_data_type.unf')
+            s.save(fname)
     nt.assert_in("The SEMPER file format does not support int64 data type",
                  cm.exception.args[0])
-    
+
 
 def test_writing_loading_metadata():
     data = np.arange(5 * 10).reshape((5, 10)).astype(np.int8)

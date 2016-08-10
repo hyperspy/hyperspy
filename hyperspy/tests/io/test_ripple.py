@@ -24,51 +24,57 @@ nt.assert_equal.__self__.maxDiff = None
 
 @nt.raises(IOError)
 def test_write_unsupported_data_shape():
-    data = np.arange(5*10*15*20).reshape((5, 10, 15, 20))
+    data = np.arange(5 * 10 * 15 * 20).reshape((5, 10, 15, 20))
     s = signals.Signal1D(data)
     s.save('test_write_unsupported_data_shape.rpl')
 
 
-@nt.raises(IOError)    
+@nt.raises(IOError)
 def test_write_unsupported_data_type():
-    data = np.arange(5*10*15).reshape((5, 10, 15)).astype(np.float16)
+    data = np.arange(5 * 10 * 15).reshape((5, 10, 15)).astype(np.float16)
     s = signals.Signal1D(data)
     s.save('test_write_unsupported_data_type.rpl')
 
 
 # Test failing
-#def test_write_scalar():
+# def test_write_scalar():
 #    data = np.array([2])
 #    with tempfile.TemporaryDirectory() as tmpdir:
 #        s = signals.BaseSignal(data)
 #        fname = os.path.join(tmpdir, 'test_write_scalar_data.rpl')
-#        s.save(fname)  
+#        s.save(fname)
 #        s2 = load(fname)
 #        np.testing.assert_allclose(s.data, s2.data)
 
 
 def test_write_without_metadata():
-    data = np.arange(5*10*15).reshape((5, 10, 15))
+    data = np.arange(5 * 10 * 15).reshape((5, 10, 15))
     s = signals.Signal1D(data)
     with tempfile.TemporaryDirectory() as tmpdir:
         fname = os.path.join(tmpdir, 'test_write_without_metadata.rpl')
-        s.save(fname)  
+        s.save(fname)
         s2 = load(fname)
         np.testing.assert_allclose(s.data, s2.data)
+        # for windows
+        del s2
+        gc.collect()
 
-        
+
 def test_write_with_metadata():
-    data = np.arange(5*10).reshape((5, 10))
+    data = np.arange(5 * 10).reshape((5, 10))
     s = signals.Signal1D(data)
-    s.metadata.set_item('General.date',  "2016-08-06")
+    s.metadata.set_item('General.date', "2016-08-06")
     with tempfile.TemporaryDirectory() as tmpdir:
         fname = os.path.join(tmpdir, 'test_write_with_metadata.rpl')
-        s.save(fname)  
+        s.save(fname)
         s2 = load(fname)
         np.testing.assert_allclose(s.data, s2.data)
         nt.assert_equal(s.metadata.General.date, s2.metadata.General.date)
+        # for windows
+        del s2
+        gc.collect()
 
-        
+
 def test_ripple():
     with tempfile.TemporaryDirectory() as tmpdir:
         for dtype in ripple.dtype2keys.keys():

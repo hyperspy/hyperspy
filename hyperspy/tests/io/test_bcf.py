@@ -121,6 +121,7 @@ def test_hyperspy_wrap():
                          'quantity': 'X-ray intensity (counts)',
                          'signal_type': 'EDS_SEM'}}
 
+    md_ref['General']['original_filename'] = hype.metadata.General.original_filename
     assert_deep_almost_equal(hype.metadata.as_dictionary(), md_ref)
     nt.assert_equal(hype.metadata.General.date, "2016-04-01")
     nt.assert_equal(hype.metadata.General.time, "17:05:03")
@@ -160,18 +161,18 @@ def test_fast_bcf():
             hmap2 = thingy.parse_hypermap(downsample=j)    # py implementation
             np.testing.assert_array_equal(hmap1, hmap2)
 
-       
+
 def test_get_mode():
     filename = os.path.join(my_path, 'bcf_data', test_files[0])
     s = load(filename, select_type='spectrum', instrument='SEM')
     nt.assert_equal(s.metadata.Signal.signal_type, "EDS_SEM")
     nt.assert_true(isinstance(s, signals.EDSSEMSpectrum))
-    
+
     filename = os.path.join(my_path, 'bcf_data', test_files[0])
     s = load(filename, select_type='spectrum', instrument='TEM')
     nt.assert_equal(s.metadata.Signal.signal_type, "EDS_TEM")
     nt.assert_true(isinstance(s, signals.EDSTEMSpectrum))
-    
+
     filename = os.path.join(my_path, 'bcf_data', test_files[0])
     s = load(filename, select_type='spectrum')
     nt.assert_equal(s.metadata.Signal.signal_type, "EDS_SEM")
@@ -181,4 +182,3 @@ def test_get_mode():
     s = load(filename, select_type='spectrum')
     nt.assert_equal(s.metadata.Signal.signal_type, "EDS_TEM")
     nt.assert_true(isinstance(s, signals.EDSTEMSpectrum))
-            
