@@ -767,12 +767,16 @@ class ImageObject(object):
 
     def _get_quantity(self, units):
         quantity = "Intensity"
+        if len(units) == 0:
+            units = ""
+        elif units == 'e-':
+            units = "Counts"
+            quantity = "Electrons"
         if self.signal_type == 'EDS_TEM':
-            quantity = "X-ray intensity"
-        quantify_units = " (%s)" % units
-        if "[]" in quantify_units:
-            quantify_units = ""
-        return "%s%s" % (quantity, quantify_units)
+            quantity = "X-rays"
+        if len(units) != 0:
+            units = " (%s)" % units
+        return "%s%s" % (quantity, units)
 
     def _get_mode(self, mode):
         if 'STEM' in mode:
@@ -843,6 +847,12 @@ class ImageObject(object):
                 "ImageList.TagGroup0.ImageData.Calibrations.Brightness.Units": (
                     "Signal.quantity",
                     self._get_quantity),
+                "ImageList.TagGroup0.ImageData.Calibrations.Brightness.Scale": (
+                    "Signal.Noise_properties.Variance_linear_model.gain_factor",
+                    None),
+                "ImageList.TagGroup0.ImageData.Calibrations.Brightness.Origin": (
+                    "Signal.Noise_properties.Variance_linear_model.gain_offset",
+                    None),
             })
 
         if self.signal_type == "EELS":

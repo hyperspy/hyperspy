@@ -104,7 +104,7 @@ def test_read_EELS_metadata():
     nt.assert_equal(md.General.original_filename, "test-EELS_spectrum.dm3")
     nt.assert_equal(md.General.title, "EELS Acquire")
     nt.assert_equal(md.General.time, "19:35:17")
-    nt.assert_equal(md.Signal.quantity, "Intensity (e-)")
+    nt.assert_equal(md.Signal.quantity, "Electrons (Counts)")
     nt.assert_equal(md.Signal.signal_type, "EELS")
 
 
@@ -135,7 +135,7 @@ def test_read_EDS_metadata():
     nt.assert_equal(md.General.original_filename, "test-EDS_spectrum.dm3")
     nt.assert_equal(md.General.title, "EDS Spectrum")
     nt.assert_equal(md.General.time, "21:46:19")
-    nt.assert_equal(md.Signal.quantity, "X-ray intensity (Counts)")
+    nt.assert_equal(md.Signal.quantity, "X-rays (Counts)")
     nt.assert_equal(md.Signal.signal_type, "EDS_TEM")
 
 
