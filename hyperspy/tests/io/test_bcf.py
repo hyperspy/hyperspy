@@ -118,14 +118,14 @@ def test_hyperspy_wrap():
                           'original_filename': 'P45_instructively_packed_16bit_compressed.bcf',
                           'date': '2016-04-01'},
               'Signal': {'binned': True,
-                         'quantity': 'X-ray intensity (counts)',
+                         'quantity': 'X-rays (Counts)',
                          'signal_type': 'EDS_SEM'}}
 
     md_ref['General']['original_filename'] = hype.metadata.General.original_filename
     assert_deep_almost_equal(hype.metadata.as_dictionary(), md_ref)
     nt.assert_equal(hype.metadata.General.date, "2016-04-01")
     nt.assert_equal(hype.metadata.General.time, "17:05:03")
-    nt.assert_equal(hype.metadata.Signal.quantity, "X-ray intensity (counts)")
+    nt.assert_equal(hype.metadata.Signal.quantity, "X-rays (Counts)")
 
 
 def test_hyperspy_wrap_downsampled():

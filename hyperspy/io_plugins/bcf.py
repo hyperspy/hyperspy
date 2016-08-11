@@ -1100,7 +1100,7 @@ def bcf_hyperspectra(obj_bcf, index=0, downsample=None, cutoff_at_kV=None,
                          'xray_lines': sorted(gen_elem_list(obj_bcf.header.elements))},
         'Signal': {'signal_type': 'EDS_%s' % mode,
                          'record_by': 'spectrum',
-                         'quantity': 'X-ray intensity (counts)'},
+                         'quantity': 'X-rays (Counts)'},
     }
     }]
     return hyperspectra
