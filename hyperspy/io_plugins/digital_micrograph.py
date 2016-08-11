@@ -795,7 +795,14 @@ class ImageObject(object):
         except AttributeError:
             return ImageTags.Microscope_Info.Name
 
+    def _parse_string(self, tag):
+        if len(tag) == 0:
+            return None
+        else:
+            return tag
+
     def get_mapping(self):
+        is_scanning = "DigiScan" in self.imdict.ImageTags.keys()
         mapping = {
             "ImageList.TagGroup0.ImageTags.DataBar.Acquisition Date": (
                 "General.date",
@@ -821,7 +828,12 @@ class ImageObject(object):
             "ImageList.TagGroup0.ImageTags.Microscope Info.Probe Current (nA)": (
                 "Acquisition_instrument.TEM.beam_current",
                 None),
-        
+            "ImageList.TagGroup0.ImageTags.Session Info.Operator": (
+                "General.authors",
+                self._parse_string),
+            "ImageList.TagGroup0.ImageTags.Session Info.Specimen": (
+                "Sample.description",
+                self._parse_string),
         }
         if "Microscope_Info" in self.imdict.ImageTags.keys():
             mapping.update({
@@ -834,6 +846,10 @@ class ImageObject(object):
             })
 
         if self.signal_type == "EELS":
+            if is_scanning:
+                mapped_attribute = 'dwell_time'
+            else:
+                mapped_attribute = 'exposure'
             mapping.update({
                 "ImageList.TagGroup0.ImageTags.EELS.Acquisition.Date": (
                     "General.date",
@@ -849,8 +865,18 @@ class ImageObject(object):
                 "Convergence semi-angle (mrad)": (
                     "Acquisition_instrument.TEM.convergence_angle",
                     None),
-                "ImageList.TagGroup0.ImageTags.EELS.Acquisition.Exposure (s)":
-                ("Acquisition_instrument.TEM.dwell_time", None),
+                "ImageList.TagGroup0.ImageTags.EELS.Acquisition.Integration time (s)": (
+                    "Acquisition_instrument.TEM.Detector.EELS.%s" % mapped_attribute,
+                    None),
+                "ImageList.TagGroup0.ImageTags.EELS.Acquisition.Number_of_frames": (
+                    "Acquisition_instrument.TEM.Detector.EELS.frame_number",
+                    None),
+                "ImageList.TagGroup0.ImageTags.EELS_Spectrometer.Aperture_label": (
+                    "Acquisition_instrument.TEM.Detector.EELS.aperture_size",
+                    lambda string: float(string.replace(' mm', ''))),
+                "ImageList.TagGroup0.ImageTags.EELS Spectrometer.Instrument name": (
+                    "Acquisition_instrument.TEM.Detector.EELS.spectrometer",
+                    None),
             })
         elif self.signal_type == "EDS_TEM":
             mapping.update({

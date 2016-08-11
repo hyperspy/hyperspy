@@ -60,7 +60,9 @@ def test_read_STEM_metadata():
     nt.assert_almost_equal(md.Acquisition_instrument.TEM.beam_energy, 200.0)
     nt.assert_almost_equal(md.Acquisition_instrument.TEM.dwell_time, 3.5E-6)
     nt.assert_almost_equal(md.Acquisition_instrument.TEM.camera_length, 135.0)
-    nt.assert_almost_equal(md.Acquisition_instrument.TEM.magnification, 225000.0)
+    nt.assert_almost_equal(
+        md.Acquisition_instrument.TEM.magnification,
+        225000.0)
     nt.assert_equal(md.Acquisition_instrument.TEM.microscope, "FEI Titan")
     nt.assert_equal(md.General.date, "2016-08-08")
     nt.assert_equal(md.General.original_filename, "test_STEM_image.dm3")
@@ -76,12 +78,28 @@ def test_read_EELS_metadata():
     md = s.metadata
     nt.assert_equal(md.Acquisition_instrument.TEM.acquisition_mode, "STEM")
     nt.assert_almost_equal(md.Acquisition_instrument.TEM.beam_energy, 200.0)
-    nt.assert_almost_equal(md.Acquisition_instrument.TEM.dwell_time, 7e-05)
     nt.assert_equal(md.Acquisition_instrument.TEM.microscope, "FEI Titan")
     nt.assert_almost_equal(md.Acquisition_instrument.TEM.camera_length, 135.0)
-    nt.assert_almost_equal(md.Acquisition_instrument.TEM.magnification, 640000.0)
+    nt.assert_almost_equal(
+        md.Acquisition_instrument.TEM.magnification,
+        640000.0)
     nt.assert_almost_equal(md.Acquisition_instrument.TEM.tilt_stage, 24.95,
                            places=2)
+    nt.assert_almost_equal(
+        md.Acquisition_instrument.TEM.convergence_angle, 21.0)
+    nt.assert_almost_equal(
+        md.Acquisition_instrument.TEM.Detector.EELS.collection_angle, 0.0)
+    nt.assert_almost_equal(
+        md.Acquisition_instrument.TEM.Detector.EELS.exposure,
+        0.00349999)
+    nt.assert_almost_equal(
+        md.Acquisition_instrument.TEM.Detector.EELS.frame_number, 50)
+    nt.assert_equal(
+        md.Acquisition_instrument.TEM.Detector.EELS.spectrometer,
+        'GIF Quantum ER')
+    nt.assert_equal(
+        md.Acquisition_instrument.TEM.Detector.EELS.aperture_size,
+        5.0)
     nt.assert_equal(md.General.date, "2016-08-08")
     nt.assert_equal(md.General.original_filename, "test-EELS_spectrum.dm3")
     nt.assert_equal(md.General.title, "EELS Acquire")
@@ -95,17 +113,24 @@ def test_read_EDS_metadata():
     s = load(fname)
     md = s.metadata
     nt.assert_equal(md.Acquisition_instrument.TEM.acquisition_mode, "STEM")
-    nt.assert_almost_equal(md.Acquisition_instrument.TEM.Detector.EDS.azimuth_angle, 45.0)
-    nt.assert_almost_equal(md.Acquisition_instrument.TEM.Detector.EDS.elevation_angle, 18.0)
-    nt.assert_almost_equal(md.Acquisition_instrument.TEM.Detector.EDS.energy_resolution_MnKa, 130.0)
-    nt.assert_almost_equal(md.Acquisition_instrument.TEM.Detector.EDS.live_time, 3.806)
-    nt.assert_almost_equal(md.Acquisition_instrument.TEM.Detector.EDS.real_time, 4.233)
+    nt.assert_almost_equal(
+        md.Acquisition_instrument.TEM.Detector.EDS.azimuth_angle, 45.0)
+    nt.assert_almost_equal(
+        md.Acquisition_instrument.TEM.Detector.EDS.elevation_angle, 18.0)
+    nt.assert_almost_equal(
+        md.Acquisition_instrument.TEM.Detector.EDS.energy_resolution_MnKa, 130.0)
+    nt.assert_almost_equal(
+        md.Acquisition_instrument.TEM.Detector.EDS.live_time, 3.806)
+    nt.assert_almost_equal(
+        md.Acquisition_instrument.TEM.Detector.EDS.real_time, 4.233)
     nt.assert_almost_equal(md.Acquisition_instrument.TEM.tilt_stage, 24.95,
                            places=2)
     nt.assert_almost_equal(md.Acquisition_instrument.TEM.beam_energy, 200.0)
     nt.assert_equal(md.Acquisition_instrument.TEM.microscope, "FEI Titan")
     nt.assert_almost_equal(md.Acquisition_instrument.TEM.camera_length, 135.0)
-    nt.assert_almost_equal(md.Acquisition_instrument.TEM.magnification, 320000.0)
+    nt.assert_almost_equal(
+        md.Acquisition_instrument.TEM.magnification,
+        320000.0)
     nt.assert_equal(md.General.date, "2016-08-08")
     nt.assert_equal(md.General.original_filename, "test-EDS_spectrum.dm3")
     nt.assert_equal(md.General.title, "EDS Spectrum")
@@ -113,7 +138,7 @@ def test_read_EDS_metadata():
     nt.assert_equal(md.Signal.quantity, "X-ray intensity (Counts)")
     nt.assert_equal(md.Signal.signal_type, "EDS_TEM")
 
-    
+
 def test_loading():
     dims = range(1, 4)
     for dim in dims:

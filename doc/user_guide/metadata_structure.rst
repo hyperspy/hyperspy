@@ -42,9 +42,11 @@ in the following sections of this chapter.
     │       │   │   ├── live_time (s)
     │       │   │   └── real_time (s)
     │       │   └── EELS
+    │       │       ├── aperture (mm)
     │       │       ├── collection_angle (mrad)
     │       │       ├── dwell_time (s)
     │       │       ├── exposure (s)
+    │       │       ├── frame_number
     │       │       └── spectrometer
     │       ├── acquisition_mode
     │       ├── beam_current (nA)
@@ -226,10 +228,10 @@ EELS
 This node stores parameters relevant to electron energy loss spectroscopy
 signals.
 
-spectrometer
-    type: Str
+aperture_size
+    type: Float
 
-    The spectrometer model, e.g. Gatan 666
+    The entrance aperture size of the spectrometer in mm.
 
 collection_angle
     type: Float
@@ -245,6 +247,16 @@ exposure
     type: Float
 
     The exposure time in seconds. This is relevant for TEM acquisition.
+
+frame_number
+    type: int
+
+    The number of frames/spectra integrated during the acquisition.
+
+spectrometer
+    type: Str
+
+    The spectrometer model, e.g. Gatan 666
 
 
 EDS
