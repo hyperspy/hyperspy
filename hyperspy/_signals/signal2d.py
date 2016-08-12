@@ -195,6 +195,43 @@ def estimate_image_shift(ref, image, roi=None, sobel=True,
     return -np.array((shift0, shift1)), max_val
 
 
+def get_largest_rectangle_from_rotation(width, height, angle):
+    """
+    Given a rectangle of size wxh that has been rotated by 'angle' (in
+    degrees), computes the width and height of the largest possible
+    axis-aligned rectangle (maximal area) within the rotated rectangle.
+    from: http://stackoverflow.com/a/16778797/1018861
+    In hyperspy, it is centered around centre coordinate of the signal.
+    """
+    import math
+    angle = math.radians(angle)
+    if width <= 0 or height <= 0:
+        return 0, 0
+
+    width_is_longer = width >= height
+    side_long, side_short = (width, height) if width_is_longer else (height, width)
+
+    # since the solutions for angle, -angle and 180-angle are all the same,
+    # if suffices to look at the first quadrant and the absolute values of sin,cos:
+    sin_a, cos_a = abs(math.sin(angle)), abs(math.cos(angle))
+    if side_short <= 2. * sin_a * cos_a * side_long:
+        # half constrained case: two crop corners touch the longer side,
+        #   the other two corners are on the mid-line parallel to the longer line
+        x = 0.5 * side_short
+        wr, hr = (x / sin_a, x / cos_a) if width_is_longer else (x / cos_a, x / sin_a)
+    else:
+        # fully constrained case: crop touches all 4 sides
+        cos_2a = cos_a * cos_a - sin_a * sin_a
+        wr, hr = (width * cos_a - height * sin_a) / cos_2a, (height * cos_a - width * sin_a) / cos_2a
+    return wr, hr
+
+
+def get_signal_width_height(s):
+    "Return pixel width and height of a signal"
+    w = s.axes_manager[s.axes_manager.signal_indices_in_array[1]].size
+    h = s.axes_manager[s.axes_manager.signal_indices_in_array[0]].size
+    return (w, h)
+
 class Signal2D(BaseSignal, CommonSignal2D):
 
     """
@@ -601,3 +638,83 @@ class Signal2D(BaseSignal, CommonSignal2D):
         ramp += ramp_x * xx
         ramp += ramp_y * yy
         self.data += ramp
+
+
+
+    def rotate(self, angle, reshape=False, crop=True, out=None,
+                      record=True, *args, **kwargs):
+        """Transposes the signal to have the required signal and navigation
+        axes.
+
+        Parameters
+        ----------
+        signal_axes, navigation_axes : {None, int, iterable}
+            With the exception of both parameters getting iterables, generally
+            one has to be None (i.e. "floating"). The other one specifies
+            either the required number or explicitly the axes to move to the
+            corresponding space.
+            If both are iterables, full control is given as long as all axes
+            are assigned to one space only.
+        optimize : bool [False]
+            If the data should be re-ordered in memory, most likely making a
+            copy. Ensures the fastest available iteration at the expense of
+            memory.
+
+        See also
+        --------
+        T, as_signal2D, as_signal1D, hs.transpose
+
+        Examples
+        --------
+        >>> # just create a signal with many distinct dimensions
+        >>> s = hs.signals.BaseSignal(np.random.rand(1,2,3,4,5,6,7,8,9))
+        >>> s
+        <BaseSignal, title: , dimensions: (|9, 8, 7, 6, 5, 4, 3, 2, 1)>
+
+        >>> s.transpose() # swap signal and navigation spaces
+        <BaseSignal, title: , dimensions: (9, 8, 7, 6, 5, 4, 3, 2, 1|)>
+
+        >>> s.T # a shortcut for no arguments
+        <BaseSignal, title: , dimensions: (9, 8, 7, 6, 5, 4, 3, 2, 1|)>
+
+        >>> s.transpose(signal_axes=5) # roll to leave 5 axes in navigation space
+        <BaseSignal, title: , dimensions: (4, 3, 2, 1|9, 8, 7, 6, 5)>
+
+        >>> s.transpose(navigation_axes=3) # roll leave 3 axes in navigation space
+        <BaseSignal, title: , dimensions: (3, 2, 1|9, 8, 7, 6, 5, 4)>
+
+        >>> # 3 explicitly defined axes in signal space
+        >>> s.transpose(signal_axes=[0, 2, 6])
+        <BaseSignal, title: , dimensions: (8, 6, 5, 4, 2, 1|9, 7, 3)>
+
+        >>> # A mix of two lists, but specifying all axes explicitly
+        >>> # The order of axes is preserved in both lists
+        >>> s.transpose(navigation_axes=[1, 2, 3, 4, 5, 8], signal_axes=[0, 6, 7])
+        <BaseSignal, title: , dimensions: (8, 7, 6, 5, 4, 1|9, 3, 2)>
+
+        """
+        from collections import Iterable
+
+        import scipy.ndimage
+        import math
+
+        s2 = self.deepcopy()
+        s2.map(scipy.ndimage.rotate, angle=angle, reshape=reshape)
+
+        if crop == False:
+            return s2
+        elif crop == True:
+            w, h = get_signal_width_height(s2)
+
+            crop_w, crop_h = get_largest_rectangle_from_rotation(w, h, angle)
+            crop_w, crop_h = math.floor(crop_w), math.floor(crop_h)
+            center = (w / 2, h / 2)
+
+            x1 = math.ceil(center[0] - crop_w / 2)
+            x2 = math.floor(center[0] + crop_w / 2)
+            y1 = math.ceil(center[1] - crop_h / 2)
+            y2 = math.floor(center[1] + crop_h / 2)
+
+            s2 = s2.isig[x1:x2, y1:y2]
+            s2.plot()
+            return s2
