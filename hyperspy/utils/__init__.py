@@ -1,6 +1,6 @@
 """
 
-Functions that operate of Signal instances and other goodies.
+Functions that operate on Signal instances and other goodies.
 
     stack
         Stack Signal instances.
@@ -23,6 +23,7 @@ import hyperspy.utils.eds
 import hyperspy.utils.plot
 import hyperspy.datasets.example_signals
 import hyperspy.utils.model
-from hyperspy.misc.utils import stack
+from hyperspy.misc.utils import (stack, transpose)
 from hyperspy.interactive import interactive
 import hyperspy.utils.roi
+import hyperspy.utils.samfire

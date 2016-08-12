@@ -173,7 +173,9 @@ signals:
 
     >>> hs.datasets.example_signals.EDS_TEM_Spectrum().plot()
 
-.. versionadded:: 0.9
+.. _eelsdb-label:
+    
+.. versionadded:: 1.0
     :py:func:`~.misc.eels.eelsdb.eelsdb` function.
 
 

@@ -35,3 +35,5 @@ doc/log.txt
 .ropeproject/*
 .idea/*
 *.pyproj
+hyperspy/tests/misc/cython/test_cython_integration.c
+hyperspy/io_plugins/unbcf_fast.c

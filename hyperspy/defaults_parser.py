@@ -56,15 +56,17 @@ def guess_gos_path():
 
 if os.path.isfile(defaults_file):
     # Remove config file if obsolated
-    f = open(defaults_file)
-    if 'Not really' in f.readline():
-        # It is the old config file
-        f.close()
+    with open(defaults_file) as f:
+        if 'Not really' in f.readline():
+                # It is the old config file
+            defaults_file_exists = False
+        else:
+            defaults_file_exists = True
+    if not defaults_file_exists:
+        # It actually exists, but is an obsoleted unsupported version of it
+        # so we delete it.
         _logger.info('Removing obsoleted config file')
         os.remove(defaults_file)
-        defaults_file_exists = False
-    else:
-        defaults_file_exists = True
 else:
     defaults_file_exists = False
 
@@ -289,7 +291,8 @@ if defaults_file_exists:
 
 if not defaults_file_exists or rewrite is True:
     _logger.info('Writing the config file')
-    config.write(open(defaults_file, 'w'))
+    with open(defaults_file, "w") as df:
+        config.write(df)
 
 # Use the traited classes to cast the content of the ConfigParser
 config2template(template, config)

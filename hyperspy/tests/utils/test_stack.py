@@ -9,6 +9,7 @@ class TestUtilsStack:
 
     def setUp(self):
         s = BaseSignal(np.random.random((3, 2, 5)))
+        s.axes_manager.set_signal_dimension(1)
         s.axes_manager[0].name = "x"
         s.axes_manager[1].name = "y"
         s.axes_manager[2].name = "E"

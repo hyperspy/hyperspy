@@ -21,6 +21,7 @@ from hyperspy.signal import BaseSignal
 
 
 class CommonSignal2D(object):
+
     """Common functions for 2-dimensional signals."""
 
     def to_signal1D(self):
@@ -31,6 +32,8 @@ class CommonSignal2D(object):
         as_signal1D : a method for the same purpose with more options.
         signals.Signal1D.to_signal1D : performs the inverse operation on one
         dimensional signals.
+
+        as_signal2D, transpose, hs.transpose
 
         """
         return self.as_signal1D(0 + 3j)

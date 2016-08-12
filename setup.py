@@ -55,11 +55,16 @@ install_req = ['scipy',
                'traitsui>=5.0',
                'natsort',
                'requests',
-               'setuptools',
                'tqdm',
                'sympy',
                'dill',
-               'h5py']
+               'h5py',
+               'python-dateutil',
+               'ipyparallel']
+
+# the hack to deal with setuptools + installing the package in ReadTheDoc:
+if 'readthedocs.org' in sys.executable:
+    install_req = []
 
 
 def update_version(version):
@@ -77,6 +82,8 @@ def update_version(version):
 # Extensions. Add your extension here:
 raw_extensions = [Extension("hyperspy.tests.misc.cython.test_cython_integration",
                             ['hyperspy/tests/misc/cython/test_cython_integration.pyx']),
+                  Extension("hyperspy.io_plugins.unbcf_fast",
+                            ['hyperspy/io_plugins/unbcf_fast.pyx']),
                   ]
 
 cleanup_list = []
@@ -174,13 +181,14 @@ hook_ignorer = os.path.join(setup_path, '.hook_ignore')
 
 
 def find_post_checkout_cleanup_line():
-    """find the line index in the git post-checkout hooks"""
+    """find the line index in the git post-checkout hooks
+    'rm extension1 extension2 ...'"""
     with open(post_checout_hook_file, 'r') as pchook:
         hook_lines = pchook.readlines()
         for i in range(1, len(hook_lines), 1):
-            if re.search(r'^rm hyperspy/*', hook_lines[i]) is not None and \
-                    (re.search(r'python.*?build_ext --inplace', hook_lines[i + 1]) is not None):
-                return i
+            if re.search('#cleanup_cythonized_and_compiled:',
+                         hook_lines[i]) is not None:
+                return i + 1
 
 # generate some git hook to clean up and re-build_ext --inplace
 # after changing branches:
@@ -191,6 +199,7 @@ if os.path.exists(git_dir) and (not os.path.exists(hook_ignorer)):
     if (not os.path.exists(post_checout_hook_file)):
         with open(post_checout_hook_file, 'w') as pchook:
             pchook.write('#!/bin/sh\n')
+            pchook.write('#cleanup_cythonized_and_compiled:\n')
             pchook.write('rm ' + ' '.join([i for i in cleanup_list]) + '\n')
             pchook.write(recythonize_str)
         hook_mode = 0o777  # make it executable
@@ -203,7 +212,9 @@ if os.path.exists(git_dir) and (not os.path.exists(hook_ignorer)):
             if line_n is not None:
                 hook_lines[line_n] = 'rm ' + \
                     ' '.join([i for i in cleanup_list]) + '\n'
+                hook_lines[line_n + 1] = recythonize_str
             else:
+                hook_lines.append('\n#cleanup_cythonized_and_compiled:')
                 hook_lines.append(
                     '\nrm ' + ' '.join([i for i in cleanup_list]) + '\n')
                 hook_lines.append(recythonize_str)
@@ -212,6 +223,7 @@ if os.path.exists(git_dir) and (not os.path.exists(hook_ignorer)):
 
 
 class Recythonize(Command):
+
     """cythonize all extensions"""
     description = "(re-)cythonize all changed cython extensions"
 
@@ -294,6 +306,7 @@ with update_version_when_dev() as version:
                   'hyperspy.tests.io',
                   'hyperspy.tests.model',
                   'hyperspy.tests.mva',
+                  'hyperspy.tests.samfire',
                   'hyperspy.tests.signal',
                   'hyperspy.tests.utils',
                   'hyperspy.tests.misc',
@@ -306,11 +319,12 @@ with update_version_when_dev() as version:
                   'hyperspy.external',
                   'hyperspy.external.mpfit',
                   'hyperspy.external.astroML',
+                  'hyperspy.samfire_utils',
+                  'hyperspy.samfire_utils.segmenters',
+                  'hyperspy.samfire_utils.weights',
+                  'hyperspy.samfire_utils.goodness_of_fit_tests',
                   ],
         install_requires=install_req,
-        setup_requires=[
-            'setuptools'
-        ],
         package_data={
             'hyperspy':
             [
@@ -333,8 +347,16 @@ with update_version_when_dev() as version:
                 'tests/io/msa_files/*.msa',
                 'tests/io/hdf5_files/*.hdf5',
                 'tests/io/tiff_files/*.tif',
+                'tests/io/tiff_files/*.dm3',
                 'tests/io/npy_files/*.npy',
                 'tests/io/unf_files/*.unf',
+                'tests/io/bcf_data/*.bcf',
+                'tests/io/bcf_data/*.npy',
+                'tests/io/ripple_files/*.rpl',
+                'tests/io/ripple_files/*.raw',
+                'tests/io/emd_files/*.emd',
+                'tests/io/protochips_data/*.npy',
+                'tests/io/protochips_data/*.csv',
                 'tests/drawing/*.ipynb',
                 'tests/signal/test_find_peaks1D_ohaver/test_find_peaks1D_ohaver.hdf5',
             ],
