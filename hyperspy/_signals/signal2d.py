@@ -641,60 +641,35 @@ class Signal2D(BaseSignal, CommonSignal2D):
 
 
 
-    def rotate(self, angle, reshape=False, crop=True, out=None,
-                      record=True, *args, **kwargs):
-        """Transposes the signal to have the required signal and navigation
-        axes.
+    def rotate(self, angle, reshape=False, crop=False, out=None,
+               record=True, *args, **kwargs):
+        """Rotates and interpolates the signal by an angle in degrees
 
         Parameters
         ----------
-        signal_axes, navigation_axes : {None, int, iterable}
-            With the exception of both parameters getting iterables, generally
-            one has to be None (i.e. "floating"). The other one specifies
-            either the required number or explicitly the axes to move to the
-            corresponding space.
-            If both are iterables, full control is given as long as all axes
-            are assigned to one space only.
-        optimize : bool [False]
-            If the data should be re-ordered in memory, most likely making a
-            copy. Ensures the fastest available iteration at the expense of
-            memory.
+        angle : {int, float}
+            In degrees, the angle by which the image shall be rotated anti-clockwise.
+        reshape : bool [False]
+            Increases the size of the signal (if necessary), to avoid cropping any of the signal.
+        crop : bool [False]
+            Crops the signal around its centre to its largest area without any black corners, based on
+            a geometric calculation: http://stackoverflow.com/a/16778797/1018861
+        out : To be filled by Dev
+        record : To be filled by Dev (UI)
 
         See also
         --------
-        T, as_signal2D, as_signal1D, hs.transpose
+        Dev: Suggestions?
 
         Examples
         --------
-        >>> # just create a signal with many distinct dimensions
-        >>> s = hs.signals.BaseSignal(np.random.rand(1,2,3,4,5,6,7,8,9))
-        >>> s
-        <BaseSignal, title: , dimensions: (|9, 8, 7, 6, 5, 4, 3, 2, 1)>
+        >>> # Rotate and crop an image to its largest area without black corners.
+        >>> s = hs.signals.Signal2D(sc.misc.ascent())
+        >>> s2 = s.rotate(angle=45, reshape=False, crop=True)
+        >>> s2.plot()
 
-        >>> s.transpose() # swap signal and navigation spaces
-        <BaseSignal, title: , dimensions: (9, 8, 7, 6, 5, 4, 3, 2, 1|)>
-
-        >>> s.T # a shortcut for no arguments
-        <BaseSignal, title: , dimensions: (9, 8, 7, 6, 5, 4, 3, 2, 1|)>
-
-        >>> s.transpose(signal_axes=5) # roll to leave 5 axes in navigation space
-        <BaseSignal, title: , dimensions: (4, 3, 2, 1|9, 8, 7, 6, 5)>
-
-        >>> s.transpose(navigation_axes=3) # roll leave 3 axes in navigation space
-        <BaseSignal, title: , dimensions: (3, 2, 1|9, 8, 7, 6, 5, 4)>
-
-        >>> # 3 explicitly defined axes in signal space
-        >>> s.transpose(signal_axes=[0, 2, 6])
-        <BaseSignal, title: , dimensions: (8, 6, 5, 4, 2, 1|9, 7, 3)>
-
-        >>> # A mix of two lists, but specifying all axes explicitly
-        >>> # The order of axes is preserved in both lists
-        >>> s.transpose(navigation_axes=[1, 2, 3, 4, 5, 8], signal_axes=[0, 6, 7])
-        <BaseSignal, title: , dimensions: (8, 7, 6, 5, 4, 1|9, 3, 2)>
 
         """
-        from collections import Iterable
-
         import scipy.ndimage
         import math
 
