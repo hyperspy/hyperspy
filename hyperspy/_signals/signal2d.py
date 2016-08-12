@@ -716,5 +716,4 @@ class Signal2D(BaseSignal, CommonSignal2D):
             y2 = math.floor(center[1] + crop_h / 2)
 
             s2 = s2.isig[x1:x2, y1:y2]
-            s2.plot()
             return s2
