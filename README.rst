@@ -2,7 +2,7 @@
 
 |Travis|_ |AppVeyor|_ |Coveralls|_ |pypi_version|_  |rtd|_ |gitter|_ |saythanks|_
 
-.. |Travis| image:: https://api.travis-ci.org/hyperspy/hyperspy.png?branch=RELEASE_next_minor
+.. |Travis| image:: https://api.travis-ci.org/hyperspy/hyperspy.png?branch=RELEASE_next_major
 .. _Travis: https://travis-ci.org/hyperspy/hyperspy
 
 .. |AppVeyor| image:: https://ci.appveyor.com/api/projects/status/github/hyperspy/hyperspy?svg=true&branch=RELEASE_next_minor
