@@ -17,10 +17,10 @@
 
 
 import numpy as np
+import numpy.testing
 import nose.tools as nt
 
 import hyperspy.api as hs
-from hyperspy.misc.test_utils import assert_warns
 
 
 class Test_Estimate_Elastic_Scattering_Threshold:
@@ -32,11 +32,11 @@ class Test_Estimate_Elastic_Scattering_Threshold:
         energy_axis.scale = 0.02
         energy_axis.offset = -5
 
-        gauss = hs.model.components.Gaussian()
+        gauss = hs.model.components1D.Gaussian()
         gauss.centre.value = 0
         gauss.A.value = 5000
         gauss.sigma.value = 0.5
-        gauss2 = hs.model.components.Gaussian()
+        gauss2 = hs.model.components1D.Gaussian()
         gauss2.sigma.value = 0.5
         # Inflexion point 1.5
         gauss2.A.value = 5000
@@ -53,6 +53,8 @@ class Test_Estimate_Elastic_Scattering_Threshold:
             tol=0.00001,
         )
         np.testing.assert_allclose(thr.data, 2.5, atol=10e-3)
+        nt.assert_equal(thr.metadata.Signal.signal_type, "")
+        nt.assert_equal(thr.axes_manager.signal_dimension, 0)
 
     def test_min_in_window_without_smoothing_single_spectrum(self):
         s = self.signal.inav[0, 0]
@@ -81,6 +83,23 @@ class Test_Estimate_Elastic_Scattering_Threshold:
                                                        ).data
         nt.assert_true(np.all(np.isnan(data)))
 
+    def test_estimate_elastic_scattering_intensity(self):
+        s = self.signal
+        threshold = s.estimate_elastic_scattering_threshold(window=4.)
+        # Threshold is nd signal
+        t = s.estimate_elastic_scattering_intensity(threshold=threshold)
+        nt.assert_equal(t.metadata.Signal.signal_type, "")
+        nt.assert_equal(t.axes_manager.signal_dimension, 0)
+        np.testing.assert_array_almost_equal(t.data, 249999.985133)
+        # Threshold is signal, 1 spectrum
+        s0 = s.inav[0]
+        t0 = s0.estimate_elastic_scattering_threshold(window=4.)
+        t = s0.estimate_elastic_scattering_intensity(threshold=t0)
+        np.testing.assert_array_almost_equal(t.data, 249999.985133)
+        # Threshold is value
+        t = s.estimate_elastic_scattering_intensity(threshold=2.5)
+        np.testing.assert_array_almost_equal(t.data, 249999.985133)
+
 
 class TestEstimateZLPCentre:
 
@@ -92,11 +111,13 @@ class TestEstimateZLPCentre:
 
     def test_estimate_zero_loss_peak_centre(self):
         s = self.signal
-        np.testing.assert_allclose(
-            s.estimate_zero_loss_peak_centre().data,
-            np.arange(100,
-                      101,
-                      0.1))
+        zlpc = s.estimate_zero_loss_peak_centre()
+        np.testing.assert_allclose(zlpc.data,
+                                   np.arange(100,
+                                             101,
+                                             0.1))
+        nt.assert_equal(zlpc.metadata.Signal.signal_type, "")
+        nt.assert_equal(zlpc.axes_manager.signal_dimension, 0)
 
 
 class TestAlignZLP:

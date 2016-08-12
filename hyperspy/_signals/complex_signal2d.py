@@ -24,15 +24,14 @@ from hyperspy.docstrings.plot import (
 
 
 class ComplexSignal2D(ComplexSignal, CommonSignal2D):
+
     """BaseSignal subclass for complex 2-dimensional data."""
 
-    _record_by = "image"
+    _signal_dimension = 2
 
     def __init__(self, *args, **kw):
         super().__init__(*args, **kw)
-        if self.metadata._HyperSpy.Folding.signal_unfolded:
-            self.axes_manager.set_signal_dimension(1)
-        else:
+        if self.axes_manager.signal_dimension != 2:
             self.axes_manager.set_signal_dimension(2)
 
     def add_phase_ramp(self, ramp_x, ramp_y, offset=0):
@@ -62,7 +61,6 @@ class ComplexSignal2D(ComplexSignal, CommonSignal2D):
              scalebar=True,
              scalebar_color="white",
              axes_ticks=None,
-             auto_contrast=True,
              saturated_pixels=0,
              vmin=None,
              vmax=None,
@@ -81,7 +79,6 @@ class ComplexSignal2D(ComplexSignal, CommonSignal2D):
             scalebar=scalebar,
             scalebar_color=scalebar_color,
             axes_ticks=axes_ticks,
-            auto_contrast=auto_contrast,
             saturated_pixels=saturated_pixels,
             vmin=vmin,
             vmax=vmax,

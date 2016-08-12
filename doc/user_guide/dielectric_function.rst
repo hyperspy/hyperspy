@@ -11,7 +11,6 @@ and signal type are properly set:
 
     .. code-block:: python
 
-        >>> self.metadata.Signal.record_by = 'spectrum'
         >>> s.set_signal_type('DielectricFunction')
 
 Note that :py:class:`~._signals.dielectric_function.DielectricFunction` is complex and therefore

@@ -49,7 +49,7 @@ def _estimate_gain(ns, cs,
     if weighted is True:
         from hyperspy._signals.signal1D import Signal1D
         from hyperspy.models.model1d import Model1D
-        from hyperspy.components import Line
+        from hyperspy.components1d import Line
         s = Signal1D(variance2fit)
         s.axes_manager.signal_axes[0].axis = average2fit
         m = Model1D(s)

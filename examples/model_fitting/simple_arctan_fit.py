@@ -15,7 +15,7 @@ s.set_signal_origin("simulation")
 s.add_gaussian_noise(0.1)
 
 # Make the arctan component for use in the model
-arctan_component = hs.model.components.Arctan()
+arctan_component = hs.model.components1D.Arctan()
 
 # Create the model and add the arctan component
 m = s.create_model()

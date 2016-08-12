@@ -877,7 +877,16 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
     signal.metadata._HyperSpy.set_item(
         'Stacking_history.step_sizes',
         step_sizes)
-
+    from hyperspy.signal import BaseSignal
+    if np.all([s.metadata.has_item('Signal.Noise_properties.variance')
+               for s in signal_list]):
+        if np.all([isinstance(s.metadata.Signal.Noise_properties.variance, BaseSignal)
+                   for s in signal_list]):
+            variance = stack(
+                [s.metadata.Signal.Noise_properties.variance for s in signal_list], axis)
+            signal.metadata.set_item(
+                'Signal.Noise_properties.variance',
+                variance)
     return signal
 
 
@@ -886,3 +895,31 @@ def shorten_name(name, req_l):
         return name[:req_l - 2] + '..'
     else:
         return name
+
+
+def transpose(*args, signal_axes=None, navigation_axes=None, optimize=False):
+    """Transposes all passed signals according to the specified options.
+
+    For parameters see ``BaseSignal.transpose``.
+
+    Examples
+    --------
+
+    >>> signal_iterable = [hs.signals.BaseSignal(np.random.random((2,)*(i+1)))
+                           for i in range(3)]
+    >>> signal_iterable
+    [<BaseSignal, title: , dimensions: (|2)>,
+     <BaseSignal, title: , dimensions: (|2, 2)>,
+     <BaseSignal, title: , dimensions: (|2, 2, 2)>]
+    >>> hs.transpose(*signal_iterable, signal_axes=1)
+    [<BaseSignal, title: , dimensions: (|2)>,
+     <BaseSignal, title: , dimensions: (2|2)>,
+     <BaseSignal, title: , dimensions: (2, 2|2)>]
+    >>> hs.transpose(signal1, signal2, signal3, signal_axes=["Energy"])
+    """
+    from hyperspy.signal import BaseSignal
+    if not all(map(isinstance, args, (BaseSignal for _ in args))):
+        raise ValueError("Not all pased objects are signals")
+    return [sig.transpose(signal_axes=signal_axes,
+                          navigation_axes=navigation_axes,
+                          optimize=optimize) for sig in args]

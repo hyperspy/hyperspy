@@ -1,4 +1,4 @@
-#! /usr/bin/python
+#! /usr/bin/python3
 # To produce a binary-only deb file
 # Requires python-stdeb, debhelper, dpkg-dev and python-argparser
 
@@ -19,7 +19,7 @@ release_name = 'hyperspy-' + Release.version.replace('.dev', '~dev')
 # Delete the deb_dist folder to avoid an error if it contains
 # directories from a previous packaging
 os.system("rm -rf deb_dist")
-os.system('python setup.py --command-packages=stdeb.command bdist_deb')
+os.system('python3 setup.py --command-packages=stdeb.command bdist_deb')
 
 if args.install is True:
     os.system('sudo gdebi %s' % glob('deb_dist/*.deb')[0])

@@ -19,7 +19,7 @@
 
 import nose.tools as nt
 import numpy as np
-from hyperspy.components import GaussianHF
+from hyperspy.components1d import GaussianHF
 from hyperspy.signals import Signal1D
 
 sqrt2pi = np.sqrt(2 * np.pi)

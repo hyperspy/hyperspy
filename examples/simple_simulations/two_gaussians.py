@@ -18,7 +18,7 @@ s = hs.signals.Signal1D(np.zeros((32, 32, 1024)))
 m = s.create_model()
 
 # Define the first gaussian
-gs1 = hs.model.components.Gaussian()
+gs1 = hs.model.components1D.Gaussian()
 # Add it to the model
 m.append(gs1)
 
@@ -33,7 +33,7 @@ gs1.A.map['values'][:] = 10000 * np.random.random((32, 32))
 gs1.A.map['is_set'][:] = True
 
 # Second gaussian
-gs2 = hs.model.components.Gaussian()
+gs2 = hs.model.components1D.Gaussian()
 # Add it to the model
 m.append(gs2)
 
