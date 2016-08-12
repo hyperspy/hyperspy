@@ -6,7 +6,7 @@
 .. _Travis: https://travis-ci.org/hyperspy/hyperspy
 
 .. |AppVeyor| image:: https://ci.appveyor.com/api/projects/status/github/hyperspy/hyperspy?svg=true&branch=RELEASE_next_minor
-.. _AppVeyor: https://ci.appveyor.com/project/hyperspy/hyperspy/branch/RELEASE_next_patch
+.. _AppVeyor: https://ci.appveyor.com/project/hyperspy/hyperspy/branch/RELEASE_next_minor
 
 .. |Coveralls| image:: https://coveralls.io/repos/hyperspy/hyperspy/badge.svg
 .. _Coveralls: https://coveralls.io/r/hyperspy/hyperspy
