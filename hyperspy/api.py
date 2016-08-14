@@ -80,6 +80,7 @@ from hyperspy import datasets
 from hyperspy.logger import set_log_level
 
 if preferences.General.logging_level == 'NOTSET':
+    import logging
     logging.basicConfig()  # Does nothing if already configured
 else:
     set_log_level(preferences.General.logging_level)
