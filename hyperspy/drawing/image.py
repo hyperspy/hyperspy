@@ -120,6 +120,10 @@ class ImagePlot(BlittedFigure):
         self._vmin_user = vmin
 
     @property
+    def auto_contrast(self):
+        return (self._vmin_user is None, self._vmax_user is None)
+
+    @property
     def axes_ticks(self):
         if self._user_axes_ticks is None:
             return self._auto_axes_ticks
