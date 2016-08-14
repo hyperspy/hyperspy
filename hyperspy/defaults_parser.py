@@ -115,7 +115,8 @@ class GeneralConfig(t.HasTraits):
              'metadata), long lists and tuples will be expanded and any '
              'dictionaries in them will be printed similar to '
              'DictionaryTreeBrowser, but with double lines')
-    logging_level = t.Enum(['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', ],
+    logging_level = t.Enum(['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG',
+                            'NOTSET'],
                            desc='the log level of all hyperspy modules.')
 
     def _logger_on_changed(self, old, new):
@@ -237,7 +238,7 @@ template = {
 template['MachineLearning'].export_factors_default_file_format = 'rpl'
 template['MachineLearning'].export_loadings_default_file_format = 'rpl'
 template['General'].default_export_format = 'rpl'
-template['General'].logging_level = 'WARNING'
+template['General'].logging_level = 'NOTSET'
 
 # Defaults template definition ends ######################################
 
