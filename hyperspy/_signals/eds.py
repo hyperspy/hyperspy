@@ -23,11 +23,11 @@ import warnings
 from matplotlib import pyplot as plt
 
 from hyperspy import utils
-from hyperspy.signals import Signal1D
+from hyperspy._signals.signal1d import Signal1D
 from hyperspy.misc.elements import elements as elements_db
 from hyperspy.misc.eds import utils as utils_eds
 from hyperspy.misc.utils import isiterable
-from hyperspy.utils import markers
+from hyperspy.utils.plot import markers
 
 _logger = logging.getLogger(__name__)
 
