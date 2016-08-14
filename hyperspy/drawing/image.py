@@ -123,6 +123,28 @@ class ImagePlot(BlittedFigure):
     def auto_contrast(self):
         return (self._vmin_user is None, self._vmax_user is None)
 
+    @auto_contrast.setter
+    def auto_contrast(self, value):
+        if isinstance(value, (list, tuple)):
+            if len(value) != 2:
+                raise ValueError("Value to auto_contrast must be a boolean or "
+                                 "a list/tuple of two booleans")
+            if value[0]:
+                self._vmin_user = None
+            else:
+                self._vmin_user = self.vmin
+            if value[1]:
+                self._vmax_user = None
+            else:
+                self._vmax_user = self.vmax
+        elif value:
+            self._vmin_user = self._vmax_user = None
+        else:
+            self._vmin_user = self.vmin
+            self._vmax_user = self.vmax
+
+
+
     @property
     def axes_ticks(self):
         if self._user_axes_ticks is None:
