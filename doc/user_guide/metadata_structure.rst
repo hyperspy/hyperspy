@@ -110,7 +110,7 @@ date
 authors
     type: Str
 
-    The authors of the data, e. g. surname1, name1 and surname2, name2, etc.
+    The authors of the data, in Latex format: Surname1, Name1 and Surname2, Name2, etc.
 
 doi
     type: Str
@@ -256,7 +256,7 @@ frame_number
 spectrometer
     type: Str
 
-    The spectrometer model, e.g. Gatan 666
+    The spectrometer model, e.g. Gatan Enfinium ER (Model 977).
 
 
 EDS
@@ -351,7 +351,7 @@ record_by
 quantity
     type: Str
     
-    The name of the quantity of the "intensity axis" with the units in round brackets if required.
+    The name of the quantity of the "intensity axis" with the units in round brackets if required, for example Temperature (K).
 
 Noise_properties
 ----------------

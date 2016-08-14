@@ -259,16 +259,26 @@ def parse_msa_string(string, filename=None):
     if mapped.has_item('Signal.signal_type'):
         if mapped.Signal.signal_type == 'ELS':
             mapped.Signal.signal_type = 'EELS'
+        if mapped.Signal.signal_type in ['EDX', 'XEDS']:
+            mapped.Signal.signal_type = 'EDS'
     else:
         # Defaulting to EELS looks reasonable
         mapped.set_item('Signal.signal_type', 'EELS')
     if 'YUNITS' in parameters.keys():
-        quantity_units = "(%s)" % parameters['YUNITS']
+        yunits = "(%s)" % parameters['YUNITS']
     else:
-        quantity_units = ""
+        yunits = ""
     if 'YLABEL' in parameters.keys():
-        quantity = "%s %s" % (parameters['YLABEL'], quantity_units)
-        mapped.set_item('Signal.quantity', quantity)
+        quantity = "%s" % parameters['YLABEL']
+    else:
+        if mapped.Signal.signal_type == 'EELS':
+            quantity = 'Electrons'
+        elif 'EDS' in mapped.Signal.signal_type:
+            quantity = 'X-rays'
+        if yunits == "":
+            yunits = '(Counts)'
+    quantity_units = "%s %s" % (quantity, yunits)
+    mapped.set_item('Signal.quantity', quantity_units.strip())
 
     dictionary = {
         'data': np.array(y),
