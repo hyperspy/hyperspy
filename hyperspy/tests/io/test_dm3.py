@@ -52,6 +52,23 @@ def test_read_TEM_metadata():
     nt.assert_equal(md.Signal.signal_type, "")
 
 
+def test_read_Diffraction_metadata():
+    fname = os.path.join(my_path, "dm3_2D_data", "test_diffraction_pattern.dm3")
+    s = load(fname)
+    md = s.metadata
+    nt.assert_equal(md.Acquisition_instrument.TEM.acquisition_mode, "TEM")
+    nt.assert_almost_equal(md.Acquisition_instrument.TEM.beam_energy, 200.0)
+    nt.assert_almost_equal(md.Acquisition_instrument.TEM.exposure_time, 0.2)
+    nt.assert_almost_equal(md.Acquisition_instrument.TEM.camera_length, 320.0)
+    nt.assert_equal(md.Acquisition_instrument.TEM.microscope, "FEI Tecnai")
+    nt.assert_equal(md.General.date, "2014-07-09")
+    nt.assert_equal(md.General.original_filename, "test_diffraction_pattern.dm3")
+    nt.assert_equal(md.General.title, "test_diffraction_pattern")
+    nt.assert_equal(md.General.time, "18:56:37")
+    nt.assert_equal(md.Signal.quantity, "Intensity")
+    nt.assert_equal(md.Signal.signal_type, "")
+
+
 def test_read_STEM_metadata():
     fname = os.path.join(my_path, "dm3_2D_data", "test_STEM_image.dm3")
     s = load(fname)
