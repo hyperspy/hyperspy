@@ -97,6 +97,7 @@ class Example1:
             example1_original_metadata,
             self.s.original_metadata.as_dictionary())
 
+
 class TestExample1_12(Example1):
 
     def setUp(self):
@@ -111,6 +112,7 @@ class TestExample1_12(Example1):
 
     def test_time(self):
         nt.assert_equal(self.s.metadata.General.time, "12:00:00")
+
 
 class TestExample1_10(Example1):
 
