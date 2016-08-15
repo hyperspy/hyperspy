@@ -6,6 +6,7 @@ import nose.tools as nt
 import traits.api as t
 
 import hyperspy.api as hs
+from hyperspy.misc.test_utils import assert_deep_almost_equal
 
 MY_PATH = os.path.dirname(__file__)
 MY_PATH2 = os.path.join(MY_PATH, "tiff_files")
@@ -46,7 +47,6 @@ def test_read_unit_um():
     nt.assert_equal(s.axes_manager[1].units, 'µm')
     nt.assert_almost_equal(s.axes_manager[0].scale, 0.16867, places=5)
     nt.assert_almost_equal(s.axes_manager[1].scale, 0.16867, places=5)
-
     with tempfile.TemporaryDirectory() as tmpdir:
         fname = os.path.join(tmpdir, 'tiff_files', 'test_export_um_unit.tif')
         s.save(fname, overwrite=True, export_scale=True)
@@ -56,6 +56,20 @@ def test_read_unit_um():
         nt.assert_equal(s.axes_manager[1].units, 'µm')
         nt.assert_almost_equal(s2.axes_manager[0].scale, 0.16867, places=5)
         nt.assert_almost_equal(s2.axes_manager[1].scale, 0.16867, places=5)
+
+
+def test_write_read_intensity_axes_DM():
+    s = hs.load(os.path.join(MY_PATH2, 'test_dm_image_um_unit.dm3'))
+    s.metadata.Signal.set_item('quantity', 'Electrons (Counts)')
+    d = {'gain_factor': 5.0,
+         'gain_offset': 2.0}
+    s.metadata.Signal.set_item('Noise_properties.Variance_linear_model', d)
+    with tempfile.TemporaryDirectory() as tmpdir:
+        fname = os.path.join(tmpdir, 'tiff_files', 'test_export_um_unit2.tif')
+        s.save(fname, overwrite=True, export_scale=True)
+        s2 = hs.load(fname, import_local_tifffile=True)
+        assert_deep_almost_equal(s.metadata.Signal.as_dictionary(),
+                                 s2.metadata.Signal.as_dictionary())
 
 
 def test_read_unit_from_imagej():
@@ -202,8 +216,8 @@ def test_saving_with_custom_tag():
         extratag = [(65000, 's', 1, "Random metadata", False)]
         s.save(fname, extratags=extratag, overwrite=True)
         s2 = hs.load(fname)
-        nt.assert_equal(s2.original_metadata[
-                        'Number_65000'], b"Random metadata")
+        nt.assert_equal(s2.original_metadata['Number_65000'],
+                        b"Random metadata")
 
 
 def test_read_unit_from_dm():
