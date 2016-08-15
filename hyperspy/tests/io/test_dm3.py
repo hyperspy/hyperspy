@@ -53,7 +53,10 @@ def test_read_TEM_metadata():
 
 
 def test_read_Diffraction_metadata():
-    fname = os.path.join(my_path, "dm3_2D_data", "test_diffraction_pattern.dm3")
+    fname = os.path.join(
+        my_path,
+        "dm3_2D_data",
+        "test_diffraction_pattern.dm3")
     s = load(fname)
     md = s.metadata
     nt.assert_equal(md.Acquisition_instrument.TEM.acquisition_mode, "TEM")
@@ -62,7 +65,9 @@ def test_read_Diffraction_metadata():
     nt.assert_almost_equal(md.Acquisition_instrument.TEM.camera_length, 320.0)
     nt.assert_equal(md.Acquisition_instrument.TEM.microscope, "FEI Tecnai")
     nt.assert_equal(md.General.date, "2014-07-09")
-    nt.assert_equal(md.General.original_filename, "test_diffraction_pattern.dm3")
+    nt.assert_equal(
+        md.General.original_filename,
+        "test_diffraction_pattern.dm3")
     nt.assert_equal(md.General.title, "test_diffraction_pattern")
     nt.assert_equal(md.General.time, "18:56:37")
     nt.assert_equal(md.Signal.quantity, "Intensity")
@@ -123,6 +128,12 @@ def test_read_EELS_metadata():
     nt.assert_equal(md.General.time, "19:35:17")
     nt.assert_equal(md.Signal.quantity, "Electrons (Counts)")
     nt.assert_equal(md.Signal.signal_type, "EELS")
+    nt.assert_almost_equal(
+        md.Signal.Noise_properties.Variance_linear_model.gain_factor,
+        0.1285347)
+    nt.assert_almost_equal(
+        md.Signal.Noise_properties.Variance_linear_model.gain_offset,
+        0.0)
 
 
 def test_read_EDS_metadata():
@@ -154,6 +165,12 @@ def test_read_EDS_metadata():
     nt.assert_equal(md.General.time, "21:46:19")
     nt.assert_equal(md.Signal.quantity, "X-rays (Counts)")
     nt.assert_equal(md.Signal.signal_type, "EDS_TEM")
+    nt.assert_almost_equal(
+        md.Signal.Noise_properties.Variance_linear_model.gain_factor,
+        1.0)
+    nt.assert_almost_equal(
+        md.Signal.Noise_properties.Variance_linear_model.gain_offset,
+        0.0)
 
 
 def test_loading():
