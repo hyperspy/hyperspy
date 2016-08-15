@@ -1,6 +1,7 @@
 from distutils.version import StrictVersion
 
 import numpy as np
+import scipy
 import nose.tools as nt
 from unittest import mock
 from nose.plugins.skip import SkipTest
@@ -674,6 +675,8 @@ class TestModelFitBinned:
         np.testing.assert_almost_equal(self.m[0].sigma.value, 2.08398236966)
 
     def test_fit_bounded_leastsq(self):
+        if StrictVersion(scipy.__version__) < StrictVersion("0.17"):
+            raise SkipTest("least bounds only available in scipy >= 0.17")
         self.m[0].centre.bmin = 0.5
         # self.m[0].bounded = True
         self.m.fit(fitter="leastsq", bounded=True)

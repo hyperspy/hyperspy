@@ -21,8 +21,10 @@ import os
 import tempfile
 import numbers
 import logging
+from distutils.version import StrictVersion
 
 import numpy as np
+import scipy
 import scipy.odr as odr
 from scipy.optimize import (leastsq, least_squares,
                             minimize, differential_evolution)
@@ -545,13 +547,18 @@ class BaseModel(list):
         if update_on_resume is True:
             self.update_plot()
 
+    def _update_model_line(self):
+        if (self._plot_active is True and
+                self._model_line is not None):
+            self._model_line.update()
+
     def _close_plot(self):
         if self._plot_components is True:
             self.disable_plot_components()
         self._disconnect_parameters2update_plot(components=self)
         self._model_line = None
 
-    def _update_model_repr(self):
+    def _update_model_line(self):
         if (self._plot_active is True and
                 self._model_line is not None):
             self._model_line.update()
@@ -971,6 +978,12 @@ class BaseModel(list):
             # Least squares "dedicated" fitters
             if fitter == "leastsq":
                 if bounded:
+                    # leastsq with bounds requires scipy >= 0.17
+                    if StrictVersion(
+                            scipy.__version__) < StrictVersion("0.17"):
+                        raise ImportError(
+                            "leastsq with bounds requires SciPy >= 0.17")
+
                     self.set_boundaries()
                     ls_b = self.free_parameters_boundaries
                     ls_b = ([a if a is not None else -np.inf for a, b in ls_b],

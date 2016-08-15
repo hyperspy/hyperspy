@@ -295,7 +295,8 @@ def assign_signal_subclass(dtype,
     else:
         # no signal_dimension match either, hence return the general subclass for
         # correct dtype
-        return [s for s in dtype_matches if s._signal_dimension == -1 and s._signal_type == ""][0]
+        return [s for s in dtype_matches if s._signal_dimension == -
+                1 and s._signal_type == ""][0]
 
 
 def dict2signal(signal_dict):
@@ -347,7 +348,8 @@ def dict2signal(signal_dict):
                 value = signal.original_metadata.get_item(opattr)
                 if function is not None:
                     value = function(value)
-                signal.metadata.set_item(mpattr, value)
+                if value is not None:
+                    signal.metadata.set_item(mpattr, value)
     return signal
 
 
@@ -382,9 +384,9 @@ def save(filename, signal, overwrite=None, **kwds):
                           if plugin.writes is True or
                           plugin.writes is not False and
                           (sd, nd) in plugin.writes]
-            raise ValueError('This file format cannot write this data. '
-                             'The following formats can: %s' %
-                             strlist2enumeration(yes_we_can))
+            raise IOError('This file format cannot write this data. '
+                          'The following formats can: %s' %
+                          strlist2enumeration(yes_we_can))
         ensure_directory(filename)
         if overwrite is None:
             overwrite = hyperspy.misc.io.tools.overwrite(filename)

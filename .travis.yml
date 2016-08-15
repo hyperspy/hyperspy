@@ -26,7 +26,7 @@ install:
   - conda create -n testenv --yes $DEPS
   - source activate testenv
   - conda install pip
-  - pip install coverage coveralls traits traitsui request tqdm
+  - pip install coverage coveralls traits traitsui requests tqdm
   - python setup.py install
 
 before_script: # configure a headless display to test plot generation

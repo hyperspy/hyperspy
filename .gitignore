@@ -38,3 +38,4 @@ doc/log.txt
 hyperspy/tests/misc/cython/test_cython_integration.c
 hyperspy/io_plugins/unbcf_fast.c
 hyperspy/tests/result_images/*
+hyperspy/misc/etc/test_compilers.obj

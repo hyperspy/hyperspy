@@ -618,7 +618,7 @@ the illumination area becomes the pixel area of the spectrum image. This is a mu
 more accurate approach for quantitative EDS and should be used where possible.
 The pixel width could either be added to the metadata by putting the pixel area
 in as the 'probe_area' (above) or by calibrating the spectrum image
-(see :ref:`Setting axis properties').
+(see :ref:`Setting axis properties`).
 
 Either approach will provide an illumination area for the cross_section
 quantification. If the pixel width is not set, the code will still run with the
