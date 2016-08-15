@@ -377,9 +377,10 @@ class TestFEIReader():
             load([fname0, fname1], stack=True)
         nt.assert_true(str(cm.exception).startswith(
             "The number of sub-signals per file does not match"))
+
     def test_date_time(self):
         fname0 = os.path.join(self.dirpathold, '64x64_TEM_images_acquire.emi')
         s = load(fname0)
-        nt.assert_equal(s.metadata.General.date,"2016-02-21")
+        nt.assert_equal(s.metadata.General.date, "2016-02-21")
         nt.assert_equal(s.metadata.General.time, "17:50:18")
         nt.assert_equal(s.metadata.General.authors, "ERIC")
