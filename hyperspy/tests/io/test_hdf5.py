@@ -97,6 +97,20 @@ class Example1:
             example1_original_metadata,
             self.s.original_metadata.as_dictionary())
 
+class TestExample1_12(Example1):
+
+    def setUp(self):
+        self.s = load(os.path.join(
+            my_path,
+            "hdf5_files",
+            "example1_v1.2.hdf5"))
+
+    def test_date(self):
+        nt.assert_equal(
+            self.s.metadata.General.date, "1991-10-01")
+
+    def test_time(self):
+        nt.assert_equal(self.s.metadata.General.time, "12:00:00")
 
 class TestExample1_10(Example1):
 
