@@ -19,6 +19,8 @@
 from distutils.version import StrictVersion
 import warnings
 import logging
+import datetime
+import ast
 
 import h5py
 import numpy as np
@@ -466,6 +468,16 @@ def hdfgroup2dict(group, dictionary=None, load_to_memory=True):
             dictionary[key[len('_tuple_empty_'):]] = ()
         elif key.startswith('_bs_'):
             dictionary[key[len('_bs_'):]] = value.tostring()
+        # The following two elif stataments enable reading date and time from
+        # v < 2 of HyperSpy's metadata specifications
+        elif key.startswith('_datetime_date'):
+            date_iso = datetime.date(
+                *ast.literal_eval(value[value.index("("):])).isoformat()
+            dictionary[key.replace("_datetime_", "")] = date_iso
+        elif key.startswith('_datetime_time'):
+            date_iso = datetime.time(
+                *ast.literal_eval(value[value.index("("):])).isoformat()
+            dictionary[key.replace("_datetime_", "")] = date_iso
         else:
             dictionary[key] = value
     if not isinstance(group, h5py.Dataset):
