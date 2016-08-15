@@ -194,7 +194,7 @@ def file_reader(filename, record_by='image', force_read_resolution=False,
         offsets = [0.0] * len(names)
         units = [t.Undefined] * len(names)
         try:
-            scales_d, units_d, offsets_d = \
+            scales_d, units_d, offsets_d, intensity_axis = \
                 _parse_scale_unit(tiff, op, dc, force_read_resolution)
             for i, name in enumerate(names):
                 if name == 'height':
@@ -219,14 +219,23 @@ def file_reader(filename, record_by='image', force_read_resolution=False,
                                                            scales, offsets,
                                                            units)]
 
+        md = {'General': {'original_filename': os.path.split(filename)[1]},
+              'Signal': {'signal_type': "",
+                         'record_by': "image",
+                         },
+              }
+
+        if 'units' in intensity_axis.keys():
+            md['Signal']['quantity'] = intensity_axis['units']
+        if 'scale' in intensity_axis.keys() and 'offset' in intensity_axis.keys():
+            dic = {'gain_factor': intensity_axis['scale'],
+                   'gain_offset': intensity_axis['offset']}
+            md['Signal']['Noise_properties'] = {'Variance_linear_model': dic}
+
     return [{'data': dc,
              'original_metadata': op,
              'axes': axes,
-             'metadata': {'General': {'original_filename':
-                                      os.path.split(filename)[1]},
-                          'Signal': {'signal_type': "",
-                                     'record_by': "image", },
-                          },
+             'metadata': md,
              }]
 
 
@@ -235,6 +244,7 @@ def _parse_scale_unit(tiff, op, dc, force_read_resolution):
     scales = {axis: 1.0 for axis in axes_l}
     offsets = {axis: 0.0 for axis in axes_l}
     units = {axis: t.Undefined for axis in axes_l}
+    intensity_axis = {}
 
     # for files created with DM
     if '65003' in op.keys():
@@ -256,12 +266,12 @@ def _parse_scale_unit(tiff, op, dc, force_read_resolution):
         offsets['x'] = op['65007']   # y offset
     if '65008' in op.keys():
         offsets['z'] = op['65008']   # z offset
-#    if '65022' in op.keys():
-#        intensity_units = op['65022']   # intensity units
-#    if '65024' in op.keys():
-#        intensity_offset = op['65024']   # intensity offset
-#    if '65025' in op.keys():
-#        intensity_scale = op['65025']   # intensity scale
+    if '65022' in op.keys():
+        intensity_axis['units'] = _decode_string(op['65022'])   # intensity units
+    if '65024' in op.keys():
+        intensity_axis['offset'] = op['65024']   # intensity offset
+    if '65025' in op.keys():
+        intensity_axis['scale'] = op['65025']   # intensity scale
 
     # for files created with imageJ
     if tiff[0].is_imagej:
@@ -317,7 +327,7 @@ def _parse_scale_unit(tiff, op, dc, force_read_resolution):
                     units[key] = 'µm'
                     scales[key] = scales[key] * 10000
 
-    return scales, units, offsets
+    return scales, units, offsets, intensity_axis
 
 
 def _get_scales_from_x_y_resolution(op):
@@ -359,10 +369,6 @@ def _get_imagej_kwargs(signal, scales, units, factor=int(1E8)):
 
 
 def _get_dm_kwargs_extratag(signal, scales, units, offsets):
-    #    For future intensity axes
-    #    intensity_units = 'electron'
-    #    intensity_offset = 2.0
-    #    intensity_scale = 0.2
     extratags = [(65003, 's', 3, units[-1], False),  # x unit
                  (65004, 's', 3, units[-2], False),  # y unit
                  (65006, 'd', 1, offsets[-1], False),  # x origin
@@ -373,11 +379,29 @@ def _get_dm_kwargs_extratag(signal, scales, units, offsets):
 #                 (65013, 's', 3, units[-2], False)]  # y unit full name
 #                 (65015, 'i', 1, 1, False), # don't know
 #                 (65016, 'i', 1, 1, False), # don't know
-#                 (65022, 's', 3, intensity_units, False),  # intensity units
-#                 (65023, 's', 3, intensity_units, False),  # intensity units
-#                 (65024, 'd', 1, intensity_offset, False),  # intensity offset
-#                 (65025, 'd', 1, intensity_scale, False)]  # intensity scale
 #                 (65026, 'i', 1, 1, False)] # don't know
+    md = signal.metadata
+    if md.has_item('Signal.quantity'):
+        try:
+            intensity_units = md.Signal.quantity
+        except:
+            _logger.info("The units of the 'intensity axes' couldn't be"
+                         "retrieved, please report the bug.")
+            intensity_units = ""
+        extratags.extend([(65022, 's', 3, intensity_units, False),
+                          (65023, 's', 3, intensity_units, False)])
+    if md.has_item('Signal.Noise_properties.Variance_linear_model'):
+        try:
+            dic = md.Signal.Noise_properties.Variance_linear_model
+            intensity_offset = dic.gain_offset
+            intensity_scale = dic.gain_factor
+        except:
+            _logger.info("The scale or the offset of the 'intensity axes'"
+                         "couldn't be retrieved, please report the bug.")
+            intensity_offset = 0.0
+            intensity_scale = 1.0
+        extratags.extend([(65024, 'd', 1, intensity_offset, False),
+                          (65025, 'd', 1, intensity_scale, False)])
     if signal.axes_manager.navigation_dimension > 0:
         extratags.extend([(65005, 's', 3, units[0], False),  # z unit
                           (65008, 'd', 1, offsets[0], False),  # z origin
