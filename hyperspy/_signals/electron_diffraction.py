@@ -22,6 +22,8 @@ import math
 import numpy as np
 import scipy.ndimage as ndi
 from skimage import transform as tf
+from skimage import morphology, filters
+from skimage.morphology import square
 
 from hyperspy.signals import Signal2D, Signal1D
 from hyperspy.decorators import only_interactive
