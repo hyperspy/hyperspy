@@ -33,6 +33,8 @@ following sections of this chapter.
     │   │   ├── beam_current (nA)
     │   │   ├── beam_energy (keV)
     │   │   ├── convergence_angle (mrad)
+    │       ├── magnification
+    │   │   ├── microscope
     │   │   └── tilt_stage (º)
     │   └── TEM
     │       ├── Detector
@@ -43,25 +45,29 @@ following sections of this chapter.
     │       │   │   ├── live_time (s)
     │       │   │   └── real_time (s)
     │       │   └── EELS
-    │       │   │   ├── collection_angle (mrad)
-    │       │   │   ├── dwell_time (s)
-    │       │   │   ├── exposure (s)
-    │       │   │   └── spectrometer
-    |       |   └── Diffraction
-    |       |       ├── camera_length (m)
-    |       |       └── exposure_time (ms)
+    │       │       ├── aperture (mm)
+    │       │       ├── collection_angle (mrad)
+    │       │       ├── dwell_time (s)
+    │       │       ├── exposure (s)
+    │       │       ├── frame_number
+    │       │       └── spectrometer
     │       ├── microscope
-    |       ├── acquisition_mode
+    │       ├── acquisition_mode
     │       ├── beam_current (nA)
     │       ├── beam_energy (keV)
+    │       ├── camera_length (mm)
     │       ├── convergence_angle (mrad)
+    │       ├── magnification
     │       ├── rocking_angle (mrad)
     │       ├── rocking_frequency (Hz)
     │       ├── scan_rotation (º)
     │       └── tilt_stage (º)
     ├── General
+    │   ├── authors
     │   ├── date
+    │   ├── doi
     │   ├── original_filename
+    │   ├── notes
     │   ├── time
     │   └── title
     ├── Sample
@@ -78,6 +84,7 @@ following sections of this chapter.
         │   │   └── parameters_estimation_method
         │   └── variance
         ├── binned
+        ├── quantity
         ├── signal_type
         └── signal_origin
 
@@ -96,15 +103,30 @@ original_filename
     original file.
 
 time
-    type: datetime.time
+    type: str
 
-    The acquistion or creation time.
+    The acquisition or creation time in ISO 8601 time format.
 
 date
-    type: datetime.time
+    type: str
 
-    The acquistion or creation date.
+    The acquisition or creation date in ISO 8601 date format
 
+
+authors
+    type: Str
+
+    The authors of the data, in Latex format: Surname1, Name1 and Surname2, Name2, etc.
+
+doi
+    type: Str
+
+    Digital object identifier of the data, e. g. doi:10.5281/zenodo.58841.
+
+notes
+    type: Str
+
+    Notes about the data.
 
 Acquisition_instrument
 ======================
@@ -124,6 +146,11 @@ acquisition_mode
 
     Either 'TEM' or 'STEM'
 
+camera_length
+    type: Float
+
+    The camera length in mm.
+
 beam_current
     type: float
 
@@ -133,7 +160,20 @@ beam_energy
     type: float
 
     The energy of the electron beam in keV
+dwell_time
+    type: Float
 
+    The dwell time in seconds. This is relevant for STEM acquisition
+
+exposure
+    type: Float
+
+    The exposure time in seconds. This is relevant for TEM acquisition.
+
+magnification
+    type: Float
+
+    The magnification.
 convergence_angle
     type: float
 
@@ -185,6 +225,11 @@ beam_current
 
     The beam current in nA.
 
+magnification
+    type: Float
+
+    The magnification.
+
 tilt_stage
     type: float
 
@@ -209,6 +254,10 @@ spectrometer
 
     The spectrometer model, e.g. Gatan 666
 
+aperture_size
+    type: Float
+
+    The entrance aperture size of the spectrometer in mm.
 collection_angle
     type: float
 
@@ -222,7 +271,17 @@ dwell_time
 exposure
     type: float
 
-    The exposure time in seconds. This is relevant for TEM acquistion.
+    The exposure time in seconds. This is relevant for TEM acquisition.
+
+frame_number
+    type: int
+
+    The number of frames/spectra integrated during the acquisition.
+
+spectrometer
+    type: Str
+
+    The spectrometer model, e.g. Gatan Enfinium ER (Model 977).
 
 
 EDS
@@ -331,6 +390,10 @@ record_by
     One of 'spectrum' or 'image'. It describes how the data is stored in memory.
     If 'spectrum' the spectral data is stored in the faster index.
 
+quantity
+    type: Str
+    
+    The name of the quantity of the "intensity axis" with the units in round brackets if required, for example Temperature (K).
 
 Noise_properties
 ----------------
