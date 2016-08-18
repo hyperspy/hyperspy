@@ -226,7 +226,7 @@ def file_reader(filename, endianess='<', load_to_memory=True, mmap_mode='c',
                             'date': date,
                             'time': time,
                             'notes': header['Note']},
-                "Signal": {'signal_type': "diffraction",
+                "Signal": {'signal_type': "electron_diffraction",
                            'record_by': 'image', },
                 }
     # Create the axis objects for each axis
