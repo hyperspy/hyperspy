@@ -262,7 +262,7 @@ class ImagePlot(BlittedFigure):
 
         if self.colorbar is True:
             self._colorbar = plt.colorbar(self.ax.images[0], ax=self.ax)
-            self._colorbar.set_label(self.quantity_label, rotation=-90, labelpad=15.)
+            self._colorbar.set_label(self.quantity_label, rotation=-90, va='bottom')
             self._colorbar.ax.yaxis.set_animated(True)
 
         self.figure.canvas.draw()
