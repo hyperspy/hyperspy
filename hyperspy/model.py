@@ -911,7 +911,7 @@ class BaseModel(list):
         if bounded is True:
             if fitter not in ("leastsq", "mpfit", "TNC",
                               "L-BFGS-B", "Differential Evolution"):
-                raise NotImplementedError("Bounded optimization is only "
+                raise ValueError("Bounded optimization is only "
                                           "supported by 'leastsq', "
                                           "'mpfit', 'TNC', 'L-BFGS-B' or"
                                           "'Differential Evolution'.")
@@ -1195,14 +1195,6 @@ class BaseModel(list):
         masked_elements = 0 if mask is None else mask.sum()
         maxval = self.axes_manager.navigation_size - masked_elements
         show_progressbar = show_progressbar and (maxval > 0)
-        if 'bounded' in kwargs and kwargs['bounded'] is True:
-            if kwargs['fitter'] not in ("leastsq", "TNC", "L_BFGS-B", "mpfit"):
-                _logger.info(
-                    "The chosen fitter does not suppport bounding."
-                    "If you require bounding please select one of the "
-                    "following fitters instead: 'leastsq', 'TNC', "
-                    "'L_BFGS-B', 'mpfit'")
-                kwargs['bounded'] = False
         i = 0
         with self.axes_manager.events.indices_changed.suppress_callback(
                 self.fetch_stored_values):
