@@ -912,9 +912,9 @@ class BaseModel(list):
             if fitter not in ("leastsq", "mpfit", "TNC",
                               "L-BFGS-B", "Differential Evolution"):
                 raise ValueError("Bounded optimization is only "
-                                          "supported by 'leastsq', "
-                                          "'mpfit', 'TNC', 'L-BFGS-B' or"
-                                          "'Differential Evolution'.")
+                                 "supported by 'leastsq', "
+                                 "'mpfit', 'TNC', 'L-BFGS-B' or"
+                                 "'Differential Evolution'.")
             else:
                 # this has to be done before setting the p0,
                 # so moved things around
