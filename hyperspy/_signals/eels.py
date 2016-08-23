@@ -24,8 +24,7 @@ import dask.array as da
 import traits.api as t
 from scipy import constants
 
-from hyperspy.signals import Signal1D
-from hyperspy.signals import LazySignal1D
+from hyperspy._signals.signal1d import (Signal1D, LazySignal1D)
 from hyperspy.misc.elements import elements as elements_db
 import hyperspy.axes
 from hyperspy.decorators import only_interactive
@@ -172,15 +171,14 @@ class EELSSpectrum_mixin:
         self._check_signal_dimension_equals_one()
         self._check_navigation_mask(mask)
         zlpc = self.valuemax(-1)
-        if self.axes_manager.navigation_dimension == 1:
-            zlpc = zlpc.as_signal1D(0)
-        elif self.axes_manager.navigation_dimension > 1:
-            zlpc = zlpc.as_signal2D((0, 1))
         if mask is not None:
             if zlpc._lazy:
                 zlpc.data = da.where(mask.data, np.nan, zlpc.data)
             else:
                 zlpc.data[mask.data] = np.nan
+        zlpc.set_signal_type("")
+        title = self.metadata.General.title
+        zlpc.metadata.General.title = "ZLP(%s)" % title
         return zlpc
 
     def align_zero_loss_peak(
@@ -346,7 +344,7 @@ class EELSSpectrum_mixin:
         else:
             I0 = self._get_navigation_signal()
             I0.axes_manager.set_signal_dimension(0)
-            threshold.set_signal_dimension(0)
+            threshold.axes_manager.set_signal_dimension(0)
 
             def estimating_function(current_value, threshold=None,
                                     indices=None,
@@ -375,10 +373,9 @@ class EELSSpectrum_mixin:
             #     else:
             #         s.data[:] = (self.inav[I0.axes_manager.indices].isig[
             #                      :threshold_].integrate1D(-1).data)
-        I0.axes_manager.set_signal_dimension(
-            self.axes_manager.navigation_dimension)
         I0.metadata.General.title = (
             self.metadata.General.title + ' elastic intensity')
+        I0.set_signal_type("")
         if self.tmp_parameters.has_item('filename'):
             I0.tmp_parameters.filename = (
                 self.tmp_parameters.filename +
@@ -415,7 +412,7 @@ class EELSSpectrum_mixin:
             in the axis units. If no inflexion point is found in this
             spectral range the window value is returned instead.
         tol : {None, float}
-            The threshold tolerance for the derivative. If None it is
+            The threshold tolerance for the derivative. If "auto" it is
             automatically calculated as the minimum value that guarantees
             finding an inflexion point in all the spectra in given energy
             range.
@@ -456,8 +453,7 @@ class EELSSpectrum_mixin:
         """
         self._check_signal_dimension_equals_one()
         # Create threshold with the same shape as the navigation dims.
-        threshold = self._get_navigation_signal()
-        threshold.axes_manager.set_signal_dimension(0)
+        threshold = self._get_navigation_signal().transpose(signal_axes=0)
 
         # Progress Bar
         axis = self.axes_manager.signal_axes[0]
@@ -490,16 +486,15 @@ class EELSSpectrum_mixin:
         # Create spectrum image, stop and return value
         threshold.metadata.General.title = (
             self.metadata.General.title +
-            ' ZLP threshold')
+            ' elastic scattering threshold')
         if self.tmp_parameters.has_item('filename'):
             threshold.tmp_parameters.filename = (
                 self.tmp_parameters.filename +
-                '_ZLP_threshold')
+                '_elastic_scattering_threshold')
             threshold.tmp_parameters.folder = self.tmp_parameters.folder
             threshold.tmp_parameters.extension = \
                 self.tmp_parameters.extension
-        threshold.axes_manager.set_signal_dimension(
-            min(2, self.axes_manager.navigation_dimension))
+        threshold.set_signal_type("")
         return threshold
 
     def estimate_thickness(self,
@@ -563,6 +558,8 @@ class EELSSpectrum_mixin:
             s.tmp_parameters.folder = self.tmp_parameters.folder
             s.tmp_parameters.extension = \
                 self.tmp_parameters.extension
+        s.axes_manager.set_signal_dimension(0)
+        s.set_signal_type("")
         return s
 
     def fourier_log_deconvolution(self,

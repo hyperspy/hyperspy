@@ -188,7 +188,7 @@ class LazySignal(BaseSignal):
     def _unfold(self, *args):
         raise lazyerror
 
-    def _make_sure_data_is_contiguous(self):
+    def _make_sure_data_is_contiguous(self, log=None):
         self._make_lazy()
 
     def diff(self, axis, order=1, out=None):

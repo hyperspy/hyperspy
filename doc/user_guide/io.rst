@@ -93,7 +93,9 @@ or by using `shell-style wildcards <http://docs.python.org/library/glob.html>`_
 
 By default HyperSpy will return a list of all the files loaded. Alternatively,
 HyperSpy can stack the data of the files contain data with exactly the same
-dimensions. If this is not the case an error is raised.
+dimensions. If this is not the case an error is raised. If each file contains
+multiple (N) signals, N stacks will be created. Here, the numbers of signals
+per file must also match, or an error will be raised.
 
 It is also possible to load multiple files with a single command without
 stacking them by passing the `stack=False` argument to the load function, in
@@ -186,6 +188,8 @@ HyperSpy.
     | Bruker's bcf       |    Yes    |    No    |
     +--------------------+-----------+----------+
     | EMD (Berkley Labs) |    Yes    |    Yes   |
+    +--------------------+-----------+----------+
+    | Protochips log     |    Yes    |    No    |
     +--------------------+-----------+----------+
 
 .. _hdf5-format:
@@ -384,7 +388,7 @@ library. See `the library webpage
     >>> # Saving the string 'Random metadata' in a custom tag (ID 65000)
     >>> extratag = [(65000, 's', 1, "Random metadata", False)]
     >>> s.save('file.tif', extratags=extratag)
-    
+ 
     >>> # Saving the string 'Random metadata' from a custom tag (ID 65000)
     >>> s2 = hs.load('file.tif')
     >>> s2.original_metadata['Number_65000']
@@ -564,3 +568,11 @@ The EMD format was developed at Lawrence Berkeley National Lab
 (see http://emdatasets.lbl.gov/ for more information).
 NOT to be confused with the FEI EMD format which was developed later and has a
 different structure.
+
+.. _protochips-format:
+
+Protochips log
+--------------
+
+HyperSpy can read heater, biasing and gas cell log files for Protochips holder.
+The format stores all the captured data together with a small header in a csv file. The reader extracts the measured quantity (e. g. temperature, pressure, current, voltage) along the time axis, as well as the notes saved during the experiment. The reader returns a list of signal with each signal corresponding to a quantity. Since there is a small fluctuation in the step of the time axis, the reader assumes that the step is constant and takes its mean, which is a good approximation. Further realase of HyperSpy will read the time axis more precisely by supporting non-linear axis.

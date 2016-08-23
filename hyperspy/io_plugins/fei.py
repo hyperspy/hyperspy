@@ -20,6 +20,7 @@ import struct
 import warnings
 from glob import glob
 import os
+from datetime import datetime
 import logging
 import xml.etree.ElementTree as ET
 try:
@@ -465,6 +466,7 @@ def ser_reader(filename, objects=None, *args, **kwds):
     header, data = load_ser_file(filename)
     record_by = guess_record_by(header['DataTypeID'])
     ndim = int(header['NumberDimensions'])
+    date, time = "", ""
     if record_by == 'spectrum':
         if ndim == 0 and header["ValidNumberElements"] != 0:
             # The calibration of the axes are not stored in the header.
@@ -543,7 +545,8 @@ def ser_reader(filename, objects=None, *args, **kwds):
                 array_shape.append(header['Dim-%i_DimensionSize' % (i + 1)][0])
         if objects is not None:
             objects_dict = convert_xml_to_dict(objects[0])
-            units = guess_units_from_mode(objects_dict, header)
+            units = _guess_units_from_mode(objects_dict, header)
+            date, time = _get_date_time(objects_dict.ObjectInfo.AcquireDate)
         else:
             units = "meters"
         # Y axis
@@ -610,7 +613,10 @@ def ser_reader(filename, objects=None, *args, **kwds):
         'data': dc,
         'metadata': {
             'General': {
-                'original_filename': os.path.split(filename)[1]},
+                'original_filename': os.path.split(filename)[1],
+                'date': date,
+                'time': time,
+            },
             "Signal": {
                 'signal_type': "",
                 'record_by': record_by,
@@ -622,7 +628,7 @@ def ser_reader(filename, objects=None, *args, **kwds):
     return dictionary
 
 
-def guess_units_from_mode(objects_dict, header):
+def _guess_units_from_mode(objects_dict, header):
     # in case the xml file doesn't contain the "Mode" or the header doesn't
     # contain 'Dim-1_UnitsLength', return "meters" as default, which will be
     # OK most of the time
@@ -665,16 +671,24 @@ def guess_units_from_mode(objects_dict, header):
         return 'meters'
 
 
-def get_simplified_mode(mode):
+def _get_simplified_mode(mode):
     if "STEM" in mode:
         return "STEM"
     else:
         return "TEM"
 
 
-def get_degree(value):
+def _get_degree(value):
     return np.degrees(float(value))
 
+
+def _get_date_time(value):
+    dt = datetime.strptime(value, "%a %b %d %H:%M:%S %Y")
+    return dt.date().isoformat(), dt.time().isoformat()
+
+
+def _get_microscope_name(value):
+    return value.replace('Microscope ', '')
 
 mapping = {
     "ObjectInfo.ExperimentalDescription.High_tension_kV": (
@@ -682,11 +696,18 @@ mapping = {
         None),
     "ObjectInfo.ExperimentalDescription.Microscope": (
         "Acquisition_instrument.TEM.microscope",
-        None),
+        _get_microscope_name),
     "ObjectInfo.ExperimentalDescription.Mode": (
         "Acquisition_instrument.TEM.acquisition_mode",
-        get_simplified_mode),
+        _get_simplified_mode),
+    "ObjectInfo.ExperimentalDescription.Camera length_m": (
+        "Acquisition_instrument.TEM.camera_length",
+        lambda x: x * 1e3),
+    "ObjectInfo.ExperimentalDescription.Magnification_x": (
+        "Acquisition_instrument.TEM.magnification",
+        None),
     "ObjectInfo.ExperimentalConditions.MicroscopeConditions.Tilt1": (
         "Acquisition_instrument.TEM.tilt_stage",
-        get_degree),
+        _get_degree),
+    "ObjectInfo.ExperimentalDescription.User": ("General.authors", None),
 }

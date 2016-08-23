@@ -24,6 +24,7 @@ import math
 import logging
 
 from hyperspy.misc.utils import stash_active_state
+from hyperspy.misc.eds.utils import _get_element_and_line
 
 from hyperspy.models.model1d import Model1D
 from hyperspy._signals.eds import EDSSpectrum
@@ -131,6 +132,7 @@ class EDSModel(Model1D):
                  *args, **kwargs):
         Model1D.__init__(self, spectrum, *args, **kwargs)
         self.xray_lines = list()
+        self.family_lines = list()
         end_energy = self.axes_manager.signal_axes[0].high_value
         self.end_energy = min(end_energy, self.signal._get_beam_energy())
         self.start_energy = self.axes_manager.signal_axes[0].low_value
@@ -266,6 +268,7 @@ class EDSModel(Model1D):
                             element, li)
                         component_sub.A.twin = component.A
                         self.append(component_sub)
+                        self.family_lines.append(component_sub)
             self.fetch_stored_values()
 
     @property
@@ -317,6 +320,15 @@ class EDSModel(Model1D):
         """
         for component in self._active_xray_lines:
             component.active = False
+
+    def _make_position_adjuster(self, component, fix_it, show_label):
+        # Override to ensure formatting of labels of xray lines
+        super(EDSModel, self)._make_position_adjuster(
+            component, fix_it, show_label)
+        if show_label and component in (self.xray_lines + self.family_lines):
+            label = self._position_widgets[component._position][1]
+            label.string = (r"$\mathrm{%s}_{\mathrm{%s}}$" %
+                            _get_element_and_line(component.name))
 
     def fit_background(self,
                        start_energy=None,

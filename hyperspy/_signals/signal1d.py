@@ -20,7 +20,6 @@ import logging
 import matplotlib.pyplot as plt
 import numpy as np
 import dask.array as da
-import warnings
 
 from hyperspy.signal import BaseSignal
 from hyperspy._signals.common_signal1d import CommonSignal1D
@@ -1301,6 +1300,9 @@ class Signal1D(BaseSignal, CommonSignal1D):
             right.metadata.General.title = (
                 self.metadata.General.title +
                 " full-width at %.1f maximum right position" % factor)
+        for signal in (left, width, right):
+            signal.axes_manager.set_signal_dimension(0)
+            signal.set_signal_type("")
         if return_interval is True:
             return [width, left, right]
         else:

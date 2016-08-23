@@ -23,12 +23,12 @@ import warnings
 from matplotlib import pyplot as plt
 
 from hyperspy import utils
-from hyperspy.signals import Signal1D
+from hyperspy._signals.signal1d import Signal1D
 from hyperspy.signals import LazySignal1D
 from hyperspy.misc.elements import elements as elements_db
 from hyperspy.misc.eds import utils as utils_eds
 from hyperspy.misc.utils import isiterable
-from hyperspy.utils import markers
+from hyperspy.utils.plot import markers
 
 _logger = logging.getLogger(__name__)
 
@@ -972,8 +972,10 @@ class EDS_mixin:
             line = markers.vertical_line_segment(
                 x=line_energy[i], y1=None, y2=intensity[i] * 0.8)
             self.add_marker(line)
+            string = (r'$\mathrm{%s}_{\mathrm{%s}}$' %
+                      utils_eds._get_element_and_line(xray_lines[i]))
             text = markers.text(
-                x=line_energy[i], y=intensity[i] * 1.1, text=xray_lines[i],
+                x=line_energy[i], y=intensity[i] * 1.1, text=string,
                 rotation=90)
             self.add_marker(text)
             self._xray_markers[xray_lines[i]] = [line, text]
