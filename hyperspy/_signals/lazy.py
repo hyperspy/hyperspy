@@ -63,8 +63,10 @@ class LazySignal(BaseSignal):
         Tuple of tuples, dask chunks
         """
         dc = self.data
-        for axis in self.axes_manager._axes:
-            axis.size = int(dc.shape[axis.index_in_array])
+        dcshape = dc.shape
+        for _axis in self.axes_manager._axes:
+            if _axis.index_in_array < len(dcshape):
+                _axis.size = int(dcshape[_axis.index_in_array])
 
         if axis is not None:
             need_axes = self.axes_manager[axis]
@@ -110,10 +112,10 @@ class LazySignal(BaseSignal):
                 chunks.append((dc.shape[i],))
         return tuple(chunks)
 
-    def _make_lazy(self, axis=None):
+    def _make_lazy(self, axis=None, rechunk=False):
         new_chunks = self._get_dask_chunks(axis=axis)
         if isinstance(self.data, da.Array):
-            if self.data.chunks != new_chunks:
+            if self.data.chunks != new_chunks and rechunk:
                 self.data = self.data.rechunk(new_chunks)
         else:
             self.data = da.from_array(self.data,
@@ -184,7 +186,7 @@ class LazySignal(BaseSignal):
         raise lazyerror
 
     def _make_sure_data_is_contiguous(self, log=None):
-        self._make_lazy()
+        self._make_lazy(rechunk=True)
 
     def diff(self, axis, order=1, out=None):
         arr_axis = self.axes_manager[axis].index_in_array
@@ -385,7 +387,7 @@ class LazySignal(BaseSignal):
         sig_dim = self.axes_manager.signal_dimension
         from itertools import product
         nav_indices = self.axes_manager.navigation_indices_in_array
-        nav_lengths = np.atleast_1d(np.array(self.data.shape)[nav_indices])
+        nav_lengths = np.atleast_1d(np.array(self.data.shape)[list(nav_indices)])
         getitem = [slice(None)] * (nav_dim + sig_dim)
         for indices in product(*[range(l) for l in nav_lengths]):
             for res, ind in zip(indices, nav_indices):
