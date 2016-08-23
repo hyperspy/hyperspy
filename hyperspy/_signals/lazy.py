@@ -41,14 +41,10 @@ class LazySignal(BaseSignal):
     """
     _lazy = True
 
-    def __init__(self, data, **kwds):
-        super().__init__(data, **kwds)
-        self.metadata.Signal.lazy = True
-
     def _compute(self):
         """Only for testing, when able to store the result in memory.."""
         self.data = self.data.compute()
-        self.metadata.Signal.lazy = False
+        self._lazy = False
         self._assign_subclass()
 
     def _get_dask_chunks(self, axis=None):
@@ -122,7 +118,6 @@ class LazySignal(BaseSignal):
         else:
             self.data = da.from_array(self.data,
                                       chunks=new_chunks)
-        self.metadata.Signal.lazy = True
 
     def _lazy_data(self, axis=None):
         self._make_lazy(axis=axis)
@@ -294,7 +289,7 @@ class LazySignal(BaseSignal):
         hist, bin_edges = dasky_histogram(data, bins=bins, **kwargs)
         if out is None:
             hist_spec = Signal1D(hist)
-            hist_spec.metadata.Signal.lazy = True
+            hist_spec._lazy = True
             hist_spec._assign_subclass()
         else:
             hist_spec = out

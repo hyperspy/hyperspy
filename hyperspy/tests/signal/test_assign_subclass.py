@@ -51,12 +51,10 @@ class TestConvertBaseSignal:
 
     def test_base_to_lazy(self):
         assert_false(self.s._lazy)
-        assert_false(self.s.metadata.Signal.lazy)
-        self.s.metadata.Signal.lazy = True
+        self.s._lazy = True
         self.s._assign_subclass()
         assert_true(isinstance(self.s, hs.signals.LazySignal))
         assert_true(self.s._lazy)
-        assert_true(self.s.metadata.Signal.lazy)
 
     def test_base_to_1d(self):
         self.s.axes_manager.set_signal_dimension(1)

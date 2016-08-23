@@ -423,7 +423,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
         else:
             ilow = axis.low_index
         if expand:
-            if self.metadata.Signal.lazy:
+            if self._lazy:
                 ind = axis.index_in_array
                 pre_shape = list(self.data.shape)
                 post_shape = list(self.data.shape)
@@ -702,7 +702,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
         if also_align is None:
             also_align = []
         self._check_signal_dimension_equals_one()
-        if self.metadata.Signal.lazy:
+        if self._lazy:
             _logger.warning('In order to properly expand, the lazy '
                             'reference signal will be read twice (once to '
                             'estimate shifts, and second time to shift '
@@ -1082,7 +1082,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
         """
         # TODO: generalize it
-        if self.metadata.Signal.lazy:
+        if self._lazy:
             raise lazyerror
         self._check_signal_dimension_equals_one()
         if channels is None:

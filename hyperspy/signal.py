@@ -1702,7 +1702,7 @@ class BaseSignal(FancySlicing,
     def as_lazy(self, copy_variance=True):
         res = self._deepcopy_with_new_data(self.data,
                                            copy_variance=copy_variance)
-        res.metadata.set_item('Signal.lazy', True)
+        res._lazy = True
         res._assign_subclass()
         return res
 
@@ -1764,6 +1764,7 @@ class BaseSignal(FancySlicing,
 
         """
 
+        old_lazy = self._lazy
         self.data = file_data_dict['data']
         if 'models' in file_data_dict:
             self.models._add_dictionary(file_data_dict['models'])
@@ -1780,9 +1781,9 @@ class BaseSignal(FancySlicing,
                 if hasattr(self, key):
                     if isinstance(value, dict):
                         for k, v in value.items():
-                            eval('self.%s.__setattr__(k,v)' % key)
+                            setattr(getattr(self, key), k, v)
                     else:
-                        self.__setattr__(key, value)
+                        setattr(self, key, value)
         self.original_metadata.add_dictionary(
             file_data_dict['original_metadata'])
         self.metadata.add_dictionary(
@@ -1791,12 +1792,11 @@ class BaseSignal(FancySlicing,
             self.metadata.General.title = ''
         if (self._signal_type or not self.metadata.has_item("Signal.signal_type")):
             self.metadata.Signal.signal_type = self._signal_type
-        if (self._lazy or
-                not self.metadata.has_item("Signal.lazy")):
-            self.metadata.Signal.lazy = self._lazy
         if "learning_results" in file_data_dict:
             self.learning_results.__dict__.update(
                 file_data_dict["learning_results"])
+        if old_lazy is not self._lazy:
+            self._assign_subclass()
 
     def __array__(self, dtype=None):
         if dtype:
@@ -1868,7 +1868,9 @@ class BaseSignal(FancySlicing,
                'original_metadata':
                self.original_metadata.deepcopy().as_dictionary(),
                'tmp_parameters':
-               self.tmp_parameters.deepcopy().as_dictionary()}
+               self.tmp_parameters.deepcopy().as_dictionary(),
+               'attributes': {'_lazy': self._lazy},
+               }
         if add_learning_results and hasattr(self, 'learning_results'):
             dic['learning_results'] = copy.deepcopy(
                 self.learning_results.__dict__)
@@ -3486,7 +3488,7 @@ class BaseSignal(FancySlicing,
         """
         if expected_value is None:
             expected_value = self
-        dc = expected_value.as_lazy().data
+        dc = expected_value.data.copy()
         if self.metadata.has_item(
                 "Signal.Noise_properties.Variance_linear_model"):
             vlm = self.metadata.Signal.Noise_properties.Variance_linear_model
@@ -3517,31 +3519,18 @@ class BaseSignal(FancySlicing,
         if correlation_factor < 0:
             raise ValueError("`correlation_factor` must be positive.")
 
-        variance = self._estimate_poissonian_noise_variance(dc, gain_factor,
-                                                            gain_offset,
-                                                            correlation_factor)
+        variance = (dc * gain_factor + gain_offset) * correlation_factor
+        variance = np.clip(variance, gain_offset * correlation_factor, np.inf)
+
 # Why the same type? Does not make sense, as it's just variance - probably
 # should be just a generic signal
         #variance = type(self)(variance)
         variance = BaseSignal(variance)
         variance.axes_manager = self.axes_manager
-        variance = variance.as_lazy()
         variance.metadata.General.title = ("Variance of " +
                                            self.metadata.General.title)
         self.metadata.set_item(
             "Signal.Noise_properties.variance", variance)
-
-    @staticmethod
-    def _estimate_poissonian_noise_variance(dc, gain_factor, gain_offset,
-                                            correlation_factor):
-        try:
-            from dask.array import clip
-        except ImportError:
-            clip = np.clip
-        variance = (dc * gain_factor + gain_offset) * correlation_factor
-        # The lower bound of the variance is the gaussian noise.
-        variance = clip(variance, gain_offset * correlation_factor, np.inf)
-        return variance
 
     def get_current_signal(self, auto_title=True, auto_filename=True):
         """Returns the data at the current coordinates as a Signal subclass.
@@ -3808,11 +3797,11 @@ class BaseSignal(FancySlicing,
             signal_type=mp.Signal.signal_type
             if "Signal.signal_type" in mp
             else self._signal_type,
-            lazy=mp.Signal.lazy if "Signal.lazy" in mp else self._lazy)
+            lazy=self._lazy)
         if self._alias_signal_types:  # In case legacy types exist:
             mp.Signal.signal_type = self._signal_type  # set to default!
         self.__init__(**self._to_dictionary(add_models=True))
-        if ('Signal.lazy' in mp and mp.Signal.lazy) or self._lazy:
+        if self._lazy:
             self._make_lazy()
 
     def set_signal_type(self, signal_type):

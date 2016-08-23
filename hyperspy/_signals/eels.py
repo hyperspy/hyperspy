@@ -544,7 +544,7 @@ class EELSSpectrum_mixin:
         else:
             I0 = self.estimate_elastic_scattering_intensity(
                 threshold=threshold,).data
-        if self.metadata.Signal.lazy:
+        if self._lazy:
             t_over_lambda = da.log(total_intensity / I0)
         else:
             t_over_lambda = np.log(total_intensity / I0)
@@ -602,7 +602,7 @@ class EELSSpectrum_mixin:
         size = closest_power_of_two(size)
 
         axis = self.axes_manager.signal_axes[0]
-        if self.metadata.Signal.lazy or zlp.metadata.Signal.lazy:
+        if self._lazy or zlp._lazy:
 
             z = da.fft.rfft(zlp.data, n=size, axis=axis.index_in_array)
             j = da.fft.rfft(s.data, n=size, axis=axis.index_in_array)
@@ -620,7 +620,7 @@ class EELSSpectrum_mixin:
             [(axis.index_in_array, slice(None, self_size)), ])]
         if add_zlp is True:
             if self_size >= zlp_size:
-                if self.metadata.Signal.lazy:
+                if self._lazy:
                     _slices_before = s.axes_manager._get_data_slice(
                         [(axis.index_in_array, slice(None, zlp_size)), ])
                     _slices_after = s.axes_manager._get_data_slice(
@@ -704,7 +704,7 @@ class EELSSpectrum_mixin:
 
         ll.hanning_taper()
         cl.hanning_taper()
-        if self.metadata.Signal.lazy or zlp.metadata.Signal.lazy:
+        if self._lazy or zlp._lazy:
             rfft = da.fft.rfft
             irfft = da.fft.irfft
         else:
@@ -968,7 +968,7 @@ class EELSSpectrum_mixin:
                 '_%i_channels_extrapolated' % extrapolation_size)
         new_shape = list(self.data.shape)
         new_shape[axis.index_in_array] += extrapolation_size
-        if self.metadata.Signal.lazy:
+        if self._lazy:
             left_data = s.data
             right_shape = list(self.data.shape)
             right_shape[axis.index_in_array] = extrapolation_size
@@ -1002,7 +1002,7 @@ class EELSSpectrum_mixin:
             factor = s.axes_manager[-1].scale
         else:
             factor = 1
-        if self.metadata.Signal.lazy:
+        if self._lazy:
             # only need new axes if the navigation dimension is not 0
             if s.axes_manager.navigation_dimension:
                 rightslice = (..., None)
