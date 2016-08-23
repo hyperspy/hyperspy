@@ -150,7 +150,9 @@ class EDSModel(Model1D):
         if auto_background is True:
             self.add_polynomial_background()
         if auto_add_lines is True:
-            self.add_family_lines()
+            # Will raise an error if no elements are specified, so check:
+            if 'Sample.elements' in self.signal.metadata:
+                self.add_family_lines()
 
     def as_dictionary(self, fullcopy=True):
         dic = super(EDSModel, self).as_dictionary(fullcopy)
