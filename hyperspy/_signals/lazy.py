@@ -393,3 +393,21 @@ class LazySignal(BaseSignal):
             for res, ind in zip(indices, nav_indices):
                 getitem[ind] = res
             yield self.data[tuple(getitem)]
+
+    def decomposition(self, num_components=10):
+        """ Experimental just to see how well we perform.."""
+        # for now just assume everything is simple
+        N = self.axes_manager.navigation_size
+        M = self.axes_manager.signal_size
+        data = self.data.reshape((N, M))
+
+        U, S, V = da.linalg.svd_compressed(data, num_components)
+        factors = V.T
+        loadings = U * S
+        explained_variance = S**2 / N
+        target = self.learning_results
+        target.factors = factors
+        target.loadings = loadings
+        target.explained_variance = explained_variance
+        
+
