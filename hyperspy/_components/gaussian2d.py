@@ -48,6 +48,14 @@ class Gaussian2D(Component):
     rotation_degrees which will give the angle between the x-axis and the
     major axis, ergo between the x-axis and the highest sigma.
 
+    For convenience the `fwhm_x` and `fwhm_y` attributes can be used to
+    get and set the full-with-half-maximums.
+
+    The `ellipticity` attribute returns `sigma_x`/`sigma_y`.
+
+    The `rotation_degrees` attribute returns the angle between
+    the major axis (the largest sigma), and the positive
+    horizontal axis.
     """
 
     def __init__(self,
@@ -126,7 +134,7 @@ class Gaussian2D(Component):
 
     @property
     def rotation_degrees(self):
-        """ Angle between major axis and x-axis."""
+        """Angle between major axis and x-axis."""
         rotation = math.fmod(self.rotation.value, pi2)
         if self.sigma_x.value > self.sigma_y.value:
             return math.degrees(rotation)

@@ -58,8 +58,6 @@ class SymmetricGaussian2D(Component):
         self.centre_x.value = centre_x
         self.centre_y.value = centre_y
 
-# TODO: add boundaries and gradients for enhancement
-
     def function(self, x, y):
         A = self.A.value
         s = self.sigma.value
