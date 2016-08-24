@@ -44,8 +44,8 @@ class Gaussian2D(Component):
     +------------+-----------+
 
     The rotation value is in radians from the x-axis.
-    The rotation in degrees can be accessed using the property 
-    rotation_degrees which will give the angle between the x-axis and the 
+    The rotation in degrees can be accessed using the property
+    rotation_degrees which will give the angle between the x-axis and the
     major axis, ergo between the x-axis and the highest sigma.
 
     """
@@ -74,8 +74,6 @@ class Gaussian2D(Component):
         self.centre_y.value = centre_y
         self.rotation.value = rotation
 
-# TODO: add boundaries and gradients for enhancement
-
     def function(self, x, y):
         A = self.A.value
         sx = self.sigma_x.value
@@ -97,6 +95,14 @@ class Gaussian2D(Component):
         return A * (1 / (sx * sy * pi2)) * np.exp(-(a*(x - x0) ** 2 +
                                                   2*b*(x - x0) * (y - y0) +
                                                   c*(y - y0) ** 2))
+
+    @property
+    def rotation(self):
+        return self.rotation.value
+
+    @rotation.setter
+    def rotation(self, value):
+        self.rotation.value = value % math.pi
 
     @property
     def ellipticity(self):
@@ -121,7 +127,7 @@ class Gaussian2D(Component):
     @property
     def rotation_degrees(self):
         """ Angle between major axis and x-axis."""
-        rotation = math.fmod(self.rotation.value, pi2) 
+        rotation = math.fmod(self.rotation.value, pi2)
         if self.sigma_x.value > self.sigma_y.value:
             return math.degrees(rotation)
         else:
