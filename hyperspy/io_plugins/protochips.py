@@ -19,7 +19,7 @@
 
 import numpy as np
 import os
-from datetime import datetime
+from datetime import datetime as dt
 import warnings
 import logging
 
@@ -102,18 +102,22 @@ class ProtochipsCSV(object):
         d['User'] = self.user
         d['Calibration file name'] = self._parse_calibration_file()
         d['Time axis'] = self._get_metadata_time_axis()
+        # Add the notes here, because there are not well formatted enough to
+        # go in metadata
+        d['Original notes'] = self._parse_notes()
         return d
 
     def _get_metadata(self, quantity):
+        date, time = np.datetime_as_string(self.start_datetime).split('T')
         return {'General': {'original_filename': os.path.split(self.filename)[1],
                             'title': '%s (%s)' % (quantity,
-                                                  self._parse_quantity_units(quantity)), },
-                #                            'authors': self.user,
-                #                            'date': self.start_datetime.date(),
-                #                            'time': self.start_datetime.time(),
-                #                            'notes': self._parse_notes()},
-                "Signal": {'signal_type': '', }}
-#                           'quantity': self._parse_quantity(quantity)}}
+                                                  self._parse_quantity_units(quantity)),
+                            'authors': self.user,
+                            'date': date,
+                            'time': time,
+                            'notes': ''},
+                "Signal": {'signal_type': '',
+                           'quantity': self._parse_quantity(quantity)}}
 
     def _get_metadata_time_axis(self):
         return {'value': self.time_axis,
@@ -205,8 +209,8 @@ class ProtochipsCSV(object):
             param, value = self._parse_metadata_header(self.raw_header[i])
 
         self.user = self._parse_metadata_header(self.raw_header[i])[1]
-        self.start_datetime = datetime.strptime(date + time,
-                                                "%Y.%m.%d%H:%M:%S.%f")
+        self.start_datetime = np.datetime64(dt.strptime(date + time,
+                                                        "%Y.%m.%d%H:%M:%S.%f"))
 
     def _parse_metadata_header(self, line):
         return line.replace(', ', ',').split(',')[1].split(' = ')

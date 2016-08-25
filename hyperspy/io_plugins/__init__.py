@@ -54,9 +54,9 @@ try:
     from hyperspy.io_plugins import bcf
     io_plugins.append(bcf)
 except ImportError:
-    _logger.warning('The Bruker composite file reader cant be loaded',
-                    'due to lxml library missing. Please install lxml',
-                    'and python bindings, to enable the bcf loader.')
+    _logger.warning('The Bruker composite file reader can not be loaded '
+                    'because the lxml library is not installed. To enable it '
+                    'install the Python lxml package.')
 
 default_write_ext = set()
 for plugin in io_plugins:
