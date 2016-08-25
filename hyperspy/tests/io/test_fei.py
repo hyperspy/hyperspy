@@ -384,29 +384,53 @@ class TestFEIReader():
         nt.assert_equal(s.metadata.General.date, "2016-02-21")
         nt.assert_equal(s.metadata.General.time, "17:50:18")
         nt.assert_equal(s.metadata.General.authors, "ERIC")
-        
+
     def test_metadata_TEM(self):
         fname0 = os.path.join(self.dirpathold, '64x64_TEM_images_acquire.emi')
-        s = load(fname0)        
-        nt.assert_equal(s.metadata.Acquisition_instrument.TEM.beam_energy, 200.0)
-        nt.assert_equal(s.metadata.Acquisition_instrument.TEM.magnification, 19500.0)
-        nt.assert_equal(s.metadata.Acquisition_instrument.TEM.microscope, "Tecnai 200 kV D2267 SuperTwin")
-        nt.assert_almost_equal(s.metadata.Acquisition_instrument.TEM.tilt_stage, 0.00, places=2)
-        
+        s = load(fname0)
+        nt.assert_equal(
+            s.metadata.Acquisition_instrument.TEM.beam_energy, 200.0)
+        nt.assert_equal(
+            s.metadata.Acquisition_instrument.TEM.magnification,
+            19500.0)
+        nt.assert_equal(
+            s.metadata.Acquisition_instrument.TEM.microscope,
+            "Tecnai 200 kV D2267 SuperTwin")
+        nt.assert_almost_equal(
+            s.metadata.Acquisition_instrument.TEM.tilt_stage,
+            0.00,
+            places=2)
+
     def test_metadata_STEM(self):
         fname0 = os.path.join(self.dirpathold, '16x16_STEM_BF_DF_acquire.emi')
-        s = load(fname0)[0]      
-        nt.assert_equal(s.metadata.Acquisition_instrument.TEM.beam_energy, 200.0)
-        nt.assert_equal(s.metadata.Acquisition_instrument.TEM.camera_length, 40.0)
-        nt.assert_equal(s.metadata.Acquisition_instrument.TEM.magnification, 10000.0)
-        nt.assert_equal(s.metadata.Acquisition_instrument.TEM.microscope, "Tecnai 200 kV D2267 SuperTwin")
-        nt.assert_almost_equal(s.metadata.Acquisition_instrument.TEM.tilt_stage, 0.00, places=2)
-        
+        s = load(fname0)[0]
+        nt.assert_equal(
+            s.metadata.Acquisition_instrument.TEM.beam_energy, 200.0)
+        nt.assert_equal(
+            s.metadata.Acquisition_instrument.TEM.camera_length, 40.0)
+        nt.assert_equal(
+            s.metadata.Acquisition_instrument.TEM.magnification,
+            10000.0)
+        nt.assert_equal(
+            s.metadata.Acquisition_instrument.TEM.microscope,
+            "Tecnai 200 kV D2267 SuperTwin")
+        nt.assert_almost_equal(
+            s.metadata.Acquisition_instrument.TEM.tilt_stage,
+            0.00,
+            places=2)
+
     def test_metadata_diffraction(self):
         fname0 = os.path.join(self.dirpathold, '64x64_diffraction_acquire.emi')
         s = load(fname0)
-        nt.assert_equal(s.metadata.Acquisition_instrument.TEM.beam_energy, 200.0)
-        nt.assert_equal(s.metadata.Acquisition_instrument.TEM.camera_length, 490.0)
-        nt.assert_equal(s.metadata.Acquisition_instrument.TEM.microscope, "Tecnai 200 kV D2267 SuperTwin")
-        nt.assert_almost_equal(s.metadata.Acquisition_instrument.TEM.tilt_stage, 0.00, places=2)
-        
+        nt.assert_equal(
+            s.metadata.Acquisition_instrument.TEM.beam_energy, 200.0)
+        nt.assert_equal(
+            s.metadata.Acquisition_instrument.TEM.camera_length,
+            490.0)
+        nt.assert_equal(
+            s.metadata.Acquisition_instrument.TEM.microscope,
+            "Tecnai 200 kV D2267 SuperTwin")
+        nt.assert_almost_equal(
+            s.metadata.Acquisition_instrument.TEM.tilt_stage,
+            0.00,
+            places=2)
