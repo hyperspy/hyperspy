@@ -229,11 +229,11 @@ data that can be modelled using gaussians we might proceed as follows:
        # |            Attribute Name |            Component Name |            Component Type
     ---- | ------------------------- | ------------------------- | -------------------------
        0 |                  Gaussian |                  Gaussian |                  Gaussian
-    >>> gaussian2 = hs.components.Gaussian() # Create another gaussian components
-    >>> gaussian3 = hs.components.Gaussian() # Create a third gaussian components
+    >>> gaussian2 = hs.model.components1D.Gaussian() # Create another gaussian component
+    >>> gaussian3 = hs.model.components1D.Gaussian() # Create a third gaussian component
 
 
-We could use the append method two times to add the two gaussians, but when
+We could use the append method twice to add the two gaussians, but when
 adding multiple components it is handier to use the extend method that enables
 adding a list of components at once.
 
