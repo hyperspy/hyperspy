@@ -193,7 +193,10 @@ def find_post_checkout_cleanup_line():
 # generate some git hook to clean up and re-build_ext --inplace
 # after changing branches:
 if os.path.exists(git_dir) and (not os.path.exists(hook_ignorer)):
-    recythonize_str = ' '.join([sys.executable,
+    exec_str = sys.executable
+    if os.name == 'nt':
+        exec_str = exec_str.replace('\\', '/')  # Won't work otherwise
+    recythonize_str = ' '.join([exec_str,
                                 os.path.join(setup_path, 'setup.py'),
                                 'clean --all build_ext --inplace \n'])
     if (not os.path.exists(post_checout_hook_file)):

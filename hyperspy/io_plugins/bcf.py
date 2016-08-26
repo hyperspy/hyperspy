@@ -92,9 +92,9 @@ class SFSTreeItem(object):
     def __init__(self, item_raw_string, parent):
         self.sfs = parent
         self._pointer_to_pointer_table, self.size, create_time, \
-        mod_time, some_time, self.permissions, \
-        self.parent, _, self.is_dir, _, name, _ = strct_unp(
-                       '<iQQQQIi176s?3s256s32s', item_raw_string)
+            mod_time, some_time, self.permissions, \
+            self.parent, _, self.is_dir, _, name, _ = strct_unp(
+                '<iQQQQIi176s?3s256s32s', item_raw_string)
         self.create_time = self._filetime_to_unix(create_time)
         self.mod_time = self._filetime_to_unix(mod_time)
         self.some_time = self._filetime_to_unix(some_time)
@@ -125,9 +125,9 @@ class SFSTreeItem(object):
         continuation of file pointer table, thus it have to be read and filled
         consecutive.
         """
-        #table size in number of chunks:
+        # table size in number of chunks:
         n_of_chunks = -(-self.size_in_chunks //
-                       (self.sfs.usable_chunk // 4))
+                        (self.sfs.usable_chunk // 4))
         with open(self.sfs.filename, 'rb') as fn:
             if n_of_chunks > 1:
                 next_chunk = self._pointer_to_pointer_table
@@ -146,7 +146,7 @@ class SFSTreeItem(object):
                 temp_table = fn.read(self.sfs.usable_chunk)
             self.pointers = np.fromstring(temp_table[:self.size_in_chunks * 4],
                                           dtype='uint32').astype(np.int64) *\
-                                                   self.sfs.chunksize + 0x138
+                self.sfs.chunksize + 0x138
 
     def read_piece(self, offset, length):
         """ Read and returns raw byte string of the file without applying
@@ -160,13 +160,13 @@ class SFSTreeItem(object):
         io.ByteIO object
         """
         data = io.BytesIO()
-        #first block index:
+        # first block index:
         fb_idx = offset // self.sfs.usable_chunk
-        #first block offset:
+        # first block offset:
         fbo = offset % self.sfs.usable_chunk
-        #last block index:
+        # last block index:
         lb_idx = (offset + length) // self.sfs.usable_chunk
-        #last block cut off:
+        # last block cut off:
         lbco = (offset + length) % self.sfs.usable_chunk
         with open(self.sfs.filename, 'rb') as fn:
             if fb_idx != lb_idx:
@@ -219,7 +219,7 @@ class SFSTreeItem(object):
         """
         with open(self.sfs.filename, 'rb') as fn:
             fn.seek(self.pointers[0])
-            #AACS signature, uncompressed size, undef var, number of blocks
+            # AACS signature, uncompressed size, undef var, number of blocks
             aacs, uc_size, _, n_of_blocks = strct_unp('<IIII', fn.read(16))
         if aacs == 0x53434141:  # AACS as string
             self.uncompressed_blk_size = uc_size
@@ -239,7 +239,7 @@ but compression signature is missing in the header. Aborting....""")
         offset = 0x80  # the 1st compression block header
         for dummy1 in range(self.no_of_compr_blk):
             cpr_size, dummy_size, dummy_unkn, dummy_size2 = strct_unp('<IIII',
-                                                  self.read_piece(offset, 16))
+                                                                      self.read_piece(offset, 16))
             # dummy_unkn is probably some kind of checksum but
             # none of known (crc16, crc32, adler32) algorithm could match.
             # dummy_size2 == cpr_size + 0x10 which have no use...
@@ -262,10 +262,10 @@ but compression signature is missing in the header. Aborting....""")
         """
         if self.sfs.compression == 'None':
             return self._iter_read_chunks(), self.sfs.usable_chunk,\
-               self.size_in_chunks
+                self.size_in_chunks
         elif self.sfs.compression in ('zlib', 'bzip2'):
             return self._iter_read_compr_chunks(), self.uncompressed_blk_size,\
-                   self.no_of_compr_blk
+                self.no_of_compr_blk
         else:
             raise RuntimeError('file', str(self.sfs.filename),
                                ' is compressed by not known and not',
@@ -313,10 +313,10 @@ class SFS_reader(object):
             self.sfs_version = '{0:4.2f}'.format(version)
             self.usable_chunk = self.chunksize - 32
             fn.seek(0x140)
-            #the sfs tree and number of the items / files + directories in it,
-            #and the number in chunks of whole sfs:
+            # the sfs tree and number of the items / files + directories in it,
+            # and the number in chunks of whole sfs:
             self.tree_address, self.n_tree_items, self.sfs_n_of_chunks =\
-                                                 strct_unp('<III', fn.read(12))
+                strct_unp('<III', fn.read(12))
         self._setup_vfs()
 
     def _setup_vfs(self):
@@ -327,14 +327,14 @@ class SFS_reader(object):
         SFSTreeItem
         """
         with open(self.filename, 'rb') as fn:
-            #file tree do not exceed one chunk in bcf:
+            # file tree do not exceed one chunk in bcf:
             fn.seek(self.chunksize * self.tree_address + 0x138)
             raw_tree = fn.read(0x200 * self.n_tree_items)
             temp_item_list = [SFSTreeItem(raw_tree[i * 0x200:(i + 1) * 0x200],
-                                       self) for i in range(self.n_tree_items)]
+                                          self) for i in range(self.n_tree_items)]
             # temp list with parents of items
             paths = [[h.parent] for h in temp_item_list]
-        #checking the compression header which can be different per file:
+        # checking the compression header which can be different per file:
         self._check_the_compresion(temp_item_list)
         if self.compression == 'zlib':
             for c in temp_item_list:
@@ -342,7 +342,7 @@ class SFS_reader(object):
                     c.setup_compression_metadata()
         # convert the items to virtual file system tree
         dict_tree = self._flat_items_to_dict(paths, temp_item_list)
-        #and finaly set the Virtual file system:
+        # and finaly set the Virtual file system:
         self.vfs = dict_tree['root']
 
     def _flat_items_to_dict(self, paths, temp_item_list):
@@ -379,7 +379,7 @@ class SFS_reader(object):
     def _check_the_compresion(self, temp_item_list):
         """parse, check and setup the self.compression"""
         with open(self.filename, 'rb') as fn:
-            #Find if there is compression:
+            # Find if there is compression:
             for c in temp_item_list:
                 if not c.is_dir:
                     fn.seek(c.pointers[0])
@@ -419,6 +419,7 @@ class SFS_reader(object):
 
 
 class EDXSpectrum(object):
+
     def __init__(self, spectrum):
         """
         Wrap the objectified bruker EDS spectrum xml part
@@ -430,26 +431,27 @@ class EDXSpectrum(object):
         """
         try:
             self.realTime = int(
-                            spectrum.TRTHeaderedClass.ClassInstance.RealTime)
+                spectrum.TRTHeaderedClass.ClassInstance.RealTime)
             self.lifeTime = int(
-                            spectrum.TRTHeaderedClass.ClassInstance.LifeTime)
+                spectrum.TRTHeaderedClass.ClassInstance.LifeTime)
             self.deadTime = int(
-                            spectrum.TRTHeaderedClass.ClassInstance.DeadTime)
+                spectrum.TRTHeaderedClass.ClassInstance.DeadTime)
         except AttributeError:
             _logger.warning('spectrum have no dead time records...')
         self.zeroPeakPosition = int(
-                      spectrum.TRTHeaderedClass.ClassInstance.ZeroPeakPosition)
+            spectrum.TRTHeaderedClass.ClassInstance.ZeroPeakPosition)
         self.amplification = int(
-                      spectrum.TRTHeaderedClass.ClassInstance.Amplification)
+            spectrum.TRTHeaderedClass.ClassInstance.Amplification)
         self.shapingTime = int(
-                      spectrum.TRTHeaderedClass.ClassInstance.ShapingTime)
-        self.detectorType = str(spectrum.TRTHeaderedClass.ClassInstance[1].Type)
+            spectrum.TRTHeaderedClass.ClassInstance.ShapingTime)
+        self.detectorType = str(
+            spectrum.TRTHeaderedClass.ClassInstance[1].Type)
         self.hv = float(
-                      spectrum.TRTHeaderedClass.ClassInstance[2].PrimaryEnergy)
+            spectrum.TRTHeaderedClass.ClassInstance[2].PrimaryEnergy)
         self.elevationAngle = float(
-                      spectrum.TRTHeaderedClass.ClassInstance[2].ElevationAngle)
+            spectrum.TRTHeaderedClass.ClassInstance[2].ElevationAngle)
         self.azimutAngle = float(
-                      spectrum.TRTHeaderedClass.ClassInstance[2].AzimutAngle)
+            spectrum.TRTHeaderedClass.ClassInstance[2].AzimutAngle)
         self.calibAbs = float(spectrum.ClassInstance[0].CalibAbs)
         self.calibLin = float(spectrum.ClassInstance[0].CalibLin)
         self.chnlCnt = int(spectrum.ClassInstance[0].ChannelCount)
@@ -457,8 +459,8 @@ class EDXSpectrum(object):
         self.time = str(spectrum.ClassInstance[0].Time)
         self.data = np.fromstring(str(spectrum.Channels), dtype='Q', sep=",")
         self.energy = np.arange(self.calibAbs,
-                           self.calibLin * self.chnlCnt + self.calibAbs,
-                           self.calibLin)  # the x axis for ploting spectra
+                                self.calibLin * self.chnlCnt + self.calibAbs,
+                                self.calibLin)  # the x axis for ploting spectra
 
     def energy_to_channel(self, energy, kV=True):
         """ convert energy to channel index,
@@ -488,6 +490,7 @@ class HyperHeader(object):
     imagining detectors (BSE, SEI, ARGUS, etc...): access to imagery
     is throught image index.
     """
+
     def __init__(self, xml_str):
         # Due to Delphi(TM) xml implementation literaly shits into xml,
         # we need lxml parser to be more forgiving (recover=True):
@@ -498,15 +501,17 @@ class HyperHeader(object):
         except KeyError:
             self.name = 'Undefinded'
             _logger.info("hypermap have no name. Giving it 'Undefined' name")
-        self.datetime = datetime.strptime(' '.join([str(root.Header.Date),
-                                                    str(root.Header.Time)]),
-                                          "%d.%m.%Y %H:%M:%S")
+        dt = datetime.strptime(' '.join([str(root.Header.Date),
+                                         str(root.Header.Time)]),
+                               "%d.%m.%Y %H:%M:%S")
+        self.date = dt.date().isoformat()
+        self.time = dt.time().isoformat()
         self.version = int(root.Header.FileVersion)
-        #create containers:
+        # create containers:
         self.sem = Container()
         self.stage = Container()
         self.image = Container()
-        #fill the sem and stage attributes:
+        # fill the sem and stage attributes:
         self._set_sem(root)
         self._set_image(root)
         self.elements = {}
@@ -577,11 +582,12 @@ class HyperHeader(object):
         """
         try:
             elements = root.xpath("".join([
-               "ClassInstance[@Type='TRTContainerClass']/ChildClassInstances",
-               "/ClassInstance[@Type='TRTElementInformationList']",
-               "/ClassInstance[@Type='TRTSpectrumRegionList']",
-               "/ChildClassInstances"]))[0]
-            for j in elements.xpath("ClassInstance[@Type='TRTSpectrumRegion']"):
+                "ClassInstance[@Type='TRTContainerClass']/ChildClassInstances",
+                "/ClassInstance[@Type='TRTElementInformationList']",
+                "/ClassInstance[@Type='TRTSpectrumRegionList']",
+                "/ChildClassInstances"]))[0]
+            for j in elements.xpath(
+                    "ClassInstance[@Type='TRTSpectrumRegion']"):
                 self.elements[j.attrib['Name']] = {'line': j.Line.pyval,
                                                    'energy': j.Energy.pyval,
                                                    'width': j.Width.pyval}
@@ -591,9 +597,9 @@ class HyperHeader(object):
     def _set_sum_edx(self, root):
         for i in range(self.mapping_count):
             self.channel_factors[i] = int(root.xpath("ChannelFactor" +
-                                                                    str(i))[0])
+                                                     str(i))[0])
             self.spectra_data[i] = EDXSpectrum(root.xpath("SpectrumData" +
-                                                       str(i))[0].ClassInstance)
+                                                          str(i))[0].ClassInstance)
 
     def estimate_map_channels(self, index=0):
         """estimate minimal size of energy axis so any spectra from any pixel
@@ -633,11 +639,12 @@ class HyperHeader(object):
         safe side multiplying by 2.
         """
         sum_eds = self.spectra_data[index].data
-        #the most intensive peak is Bruker reference peak at 0kV:
+        # the most intensive peak is Bruker reference peak at 0kV:
         roof = np.max(sum_eds) // self.image.width // self.image.height * 2 *\
-                                          downsample * downsample
-        #this complicated nonsence bellow is due to numpy regression in adding
-        # integer inplace to unsigned integer array. (python integers is signed)
+            downsample * downsample
+        # this complicated nonsence bellow is due to numpy regression in adding
+        # integer inplace to unsigned integer array. (python integers is
+        # signed)
         if roof > 0xFF:
             if roof > 0xFFFF:
                 if for_numpy and (downsample > 1):
@@ -755,7 +762,7 @@ class BCF_reader(SFS_reader):
 
         if fast_unbcf:
             spectrum_file = self.get_file('EDSDatabase/SpectrumData' +
-                                                                    str(index))
+                                          str(index))
             return unbcf_fast.parse_to_numpy(spectrum_file,
                                              downsample=downsample,
                                              cutoff=cutoff_chan)
@@ -763,8 +770,8 @@ class BCF_reader(SFS_reader):
             _logger.warning("""using slow python parser,
 this is going to take a while... please wait""")
             return self.py_parse_hypermap(index=0,
-                                     downsample=downsample,
-                                     cutoff_at_channel=cutoff_chan)
+                                          downsample=downsample,
+                                          cutoff_at_channel=cutoff_chan)
 
     def py_parse_hypermap(self, index=0, downsample=1, cutoff_at_channel=None):
         """Unpack the Delphi/Bruker binary spectral map and return
@@ -799,7 +806,7 @@ this is going to take a while... please wait""")
         st = {1: 'B', 2: 'B', 4: 'H', 8: 'I', 16: 'Q'}
         spectrum_file = self.get_file('EDSDatabase/SpectrumData' + str(index))
         iter_data, size_chnk = spectrum_file.get_iter_and_properties()[:2]
-        if type(cutoff_at_channel) == int:
+        if isinstance(cutoff_at_channel, int):
             max_chan = cutoff_at_channel
         else:
             max_chan = self.header.estimate_map_channels(index=index)
@@ -811,7 +818,7 @@ this is going to take a while... please wait""")
         dwn_factor = downsample
         total_pixels = -(-height // dwn_factor) * -(-width // dwn_factor)
         total_channels = total_pixels * max_chan
-        #hyper map as very flat array:
+        # hyper map as very flat array:
         vfa = np.zeros(total_channels, dtype=depth)
         offset = 0x1A0
         size = size_chnk
@@ -827,7 +834,7 @@ this is going to take a while... please wait""")
                     size = size_chnk + size - offset
                     buffer1 = buffer1[offset:] + next(iter_data)
                     offset = 0
-                #the pixel header contains such information:
+                # the pixel header contains such information:
                 # x index of pixel,
                 # number of channels for whole mapping,
                 # number of channels for pixel,
@@ -839,24 +846,24 @@ this is going to take a while... please wait""")
                 # packed data size - next header is after that size,
                 # dummy -- empty 2bytes
                 x_pix, chan1, chan2, dummy1, flag, dummy_size1, n_of_pulses,\
-                     data_size2, dummy2 = strct_unp('<IHHIHHHHH',
-                                                    buffer1[offset:offset + 22])
+                    data_size2, dummy2 = strct_unp('<IHHIHHHHH',
+                                                   buffer1[offset:offset + 22])
                 pix_idx = (x_pix // dwn_factor) + ((-(-width // dwn_factor)) *
-                                                      (line_cnt // dwn_factor))
+                                                   (line_cnt // dwn_factor))
                 offset += 22
                 if (offset + data_size2) >= size:
                     buffer1 = buffer1[offset:] + next(iter_data)
                     size = size_chnk + size - offset
                     offset = 0
                 if flag == 1:  # and (chan1 != chan2)
-                    #Unpack packed 12-bit data to 16-bit uints:
+                    # Unpack packed 12-bit data to 16-bit uints:
                     data1 = buffer1[offset:offset + data_size2]
                     switched_i2 = np.fromstring(data1,
                                                 dtype='<u2'
                                                 ).byteswap(True)
                     data2 = np.fromstring(switched_i2.tostring(),
                                           dtype=np.uint8
-                                         ).repeat(2)
+                                          ).repeat(2)
                     mask = np.ones_like(data2, dtype=bool)
                     mask[0::6] = mask[5::6] = False
                     # Reinterpret expanded as 16-bit:
@@ -869,28 +876,28 @@ this is going to take a while... please wait""")
                     pixel = np.bincount(exp16, minlength=chan1 - 1)
                     offset += data_size2
                 else:
-                    #Unpack instructively packed data to pixel channels:
+                    # Unpack instructively packed data to pixel channels:
                     pixel = []
                     the_end = offset + data_size2 - 4
                     while offset < the_end:
-                        #this would work on py3
+                        # this would work on py3
                         #size_p, channels = buffer1[offset:offset + 2]
                         # this is needed on py2:
                         size_p, channels = strct_unp('<BB',
-                                                   buffer1[offset:offset + 2])
+                                                     buffer1[offset:offset + 2])
                         offset += 2
                         if size_p == 0:
                             pixel += channels * [0]
                         else:
                             gain = strct_unp('<' + st[size_p * 2],
-                                            buffer1[offset:offset + size_p])[0]
+                                             buffer1[offset:offset + size_p])[0]
                             offset += size_p
                             if size_p == 1:
                                 # special case with nibble switching
                                 length = -(-channels // 2)  # integer roof
                                 # valid py3 code
                                 #a = list(buffer1[offset:offset + length])
-                                #this have to be used on py2:
+                                # this have to be used on py2:
                                 a = strct_unp('<' + 'B' * length,
                                               buffer1[offset:offset + length])
                                 g = []
@@ -900,7 +907,7 @@ this is going to take a while... please wait""")
                             else:
                                 length = int(channels * size_p / 2)
                                 temp = strct_unp('<' + channels * st[size_p],
-                                                buffer1[offset:offset + length])
+                                                 buffer1[offset:offset + length])
                                 pixel += [l + gain for l in temp]
                             offset += length
                     if chan2 < chan1:
@@ -916,7 +923,7 @@ this is going to take a while... please wait""")
                             offset = 0
                         # the additional pulses:
                         add_pulses = strct_unp('<' + 'H' * n_of_pulses,
-                                           buffer1[offset:offset + add_s])
+                                               buffer1[offset:offset + add_s])
                         offset += add_s
                         for i in add_pulses:
                             pixel[i] += 1
@@ -929,14 +936,14 @@ this is going to take a while... please wait""")
                     chan1 = max_chan
                 if (dwn_factor == 1):
                     vfa[max_chan * pix_idx:chan1 + max_chan * pix_idx] =\
-                                                                 pixel[:chan1]
+                        pixel[:chan1]
                 else:
                     vfa[max_chan * pix_idx:chan1 + max_chan * pix_idx] +=\
-                                                                 pixel[:chan1]
+                        pixel[:chan1]
         vfa.resize((-(-height // dwn_factor),
                     -(-width // dwn_factor),
                     max_chan))
-        #check if array is signed, and convert to unsigned
+        # check if array is signed, and convert to unsigned
         if str(vfa.dtype)[0] == 'i':
             new_dtype = ''.join(['u', str(vfa.dtype)])
             vfa.dtype = new_dtype
@@ -950,16 +957,16 @@ class HyperMap(object):
 
     def __init__(self, nparray, parent, index=0, downsample=1):
         sp_meta = parent.header.get_spectra_metadata(index=index)
-        self.calib_abs = sp_meta.calibAbs # in keV
+        self.calib_abs = sp_meta.calibAbs  # in keV
         self.calib_lin = sp_meta.calibLin
         self.xcalib = parent.header.image.x_res * downsample
         self.ycalib = parent.header.image.y_res * downsample
         self.hypermap = nparray
 
 
-#wrapper functions for hyperspy:
+# wrapper functions for hyperspy:
 def file_reader(filename, select_type=None, index=0, downsample=1,
-                cutoff_at_kV=None):
+                cutoff_at_kV=None, instrument=None):
     """Reads a bruker bcf file and loads the data into the appropriate class,
     then wraps it into appropriate hyperspy required list of dictionaries
     used by hyperspy.api.load() method.
@@ -974,118 +981,128 @@ def file_reader(filename, select_type=None, index=0, downsample=1,
       no downsampling will be applied (default 1).
     cutoff_at_kV -- if set (can be int of float >= 0) can be used either, to
        crop or enlarge energy range at max values. (default None)
-    """
-    #objectified bcf file:
+    instrument -- str, either 'TEM' or 'SEM'. Default is None.
+      """
+    # objectified bcf file:
     obj_bcf = BCF_reader(filename)
     if select_type == 'image':
         return bcf_imagery(obj_bcf)
     elif select_type == 'spectrum':
         return bcf_hyperspectra(obj_bcf, index=index,
-                                 downsample=downsample,
-                                 cutoff_at_kV=cutoff_at_kV)
+                                downsample=downsample,
+                                cutoff_at_kV=cutoff_at_kV,
+                                instrument=instrument)
     else:
-        return bcf_imagery(obj_bcf) + bcf_hyperspectra(obj_bcf,
-                                                       index=index,
-                                                       downsample=downsample,
-                                                      cutoff_at_kV=cutoff_at_kV)
+        return bcf_imagery(obj_bcf, instrument=instrument) + bcf_hyperspectra(
+            obj_bcf,
+            index=index,
+            downsample=downsample,
+            cutoff_at_kV=cutoff_at_kV,
+            instrument=instrument)
 
 
-def bcf_imagery(obj_bcf):
+def bcf_imagery(obj_bcf, instrument=None):
     """ return hyperspy required list of dict with sem
     imagery and metadata.
     """
     imagery_list = []
+    mode = _get_mode(obj_bcf, instrument=instrument)
     for img in obj_bcf.header.image.images:
         imagery_list.append(
-          {'data': img.data,
-           'axes': [{'name': 'height',
-                     'size': obj_bcf.header.image.height,
-                     'offset': 0,
-                     'scale': obj_bcf.header.image.y_res,
-                     'units': 'µm'},
-                    {'name': 'width',
-                     'size': obj_bcf.header.image.width,
-                     'offset': 0,
-                     'scale': obj_bcf.header.image.x_res,
-                     'units': 'µm'}],
-           'metadata':
+            {'data': img.data,
+             'axes': [{'name': 'height',
+                       'size': obj_bcf.header.image.height,
+                       'offset': 0,
+                       'scale': obj_bcf.header.image.y_res,
+                       'units': 'µm'},
+                      {'name': 'width',
+                       'size': obj_bcf.header.image.width,
+                       'offset': 0,
+                       'scale': obj_bcf.header.image.x_res,
+                       'units': 'µm'}],
+             'metadata':
              # where is no way to determine what kind of instrument was used:
              # TEM or SEM
              {'Acquisition_instrument': {
-                          'SEM': {
-                             #'beam_current': 0.0,  # There is no technical
-                             # possibilities to get such parameter from bruker
-                             # or some SEM's'
-                             'beam_energy': obj_bcf.header.sem.hv,
-                             'tilt_stage': obj_bcf.header.stage.tilt_angle,
-                             'stage_x': obj_bcf.header.stage.x,
-                             'stage_y': obj_bcf.header.stage.y
-                                 }
-                                        },
-              'General': {'original_filename': obj_bcf.filename.split('/')[-1],
-                          'title': img.detector_name},
-              'Sample': {'name': obj_bcf.header.name},
-              'Signal': {'signal_type': img.detector_name,
-                         'record_by': 'image'},
-             }
-           })
-    return imagery_list
-
-
-def bcf_hyperspectra(obj_bcf, index=0, downsample=None, cutoff_at_kV=None):
-    """ Return hyperspy required list of dict with eds
-    hyperspectra and metadata.
-    """
-    obj_bcf.persistent_parse_hypermap(index=index, downsample=downsample,
-                                      cutoff_at_kV=cutoff_at_kV)
-    eds_metadata = obj_bcf.header.get_spectra_metadata(index=index)
-    hyperspectra = [{'data': obj_bcf.hypermap[index].hypermap,
-           'axes': [{'name': 'height',
-                     'size': obj_bcf.hypermap[index].hypermap.shape[0],
-                     'offset': 0,
-                     'scale': obj_bcf.hypermap[index].ycalib,
-                     'units': 'µm'},
-                    {'name': 'width',
-                     'size': obj_bcf.hypermap[index].hypermap.shape[1],
-                     'offset': 0,
-                     'scale': obj_bcf.hypermap[index].xcalib,
-                     'units': 'µm'},
-                     {'name': 'Energy',
-                     'size': obj_bcf.hypermap[index].hypermap.shape[2],
-                     'offset': obj_bcf.hypermap[index].calib_abs,
-                     'scale': obj_bcf.hypermap[index].calib_lin,
-                     'units': 'keV'}],
-           'metadata':
-             # where is no way to determine what kind of instrument was used:
-             # TEM or SEM
-             {'Acquisition_instrument': {
-                  'SEM': {
+                 mode: {
                      #'beam_current': 0.0,  # There is no technical
                      # possibilities to get such parameter from bruker
                      # or some SEM's'
                      'beam_energy': obj_bcf.header.sem.hv,
                      'tilt_stage': obj_bcf.header.stage.tilt_angle,
                      'stage_x': obj_bcf.header.stage.x,
-                     'stage_y': obj_bcf.header.stage.y,
-                     'Detector': {
-                         'EDS':{
-                             'azimuth_angle': eds_metadata.azimutAngle,
-                             'elevation_angle': eds_metadata.elevationAngle,
-                             'detector_type': eds_metadata.detectorType
-                               }
-                                 }
-                         }
-                                         },
-              'General': {'original_filename': obj_bcf.filename.split('/')[-1],
-                          'title': 'EDX',
-                          'datetime': obj_bcf.header.datetime},
-              'Sample': {'name': obj_bcf.header.name,
-                         'elements': list(obj_bcf.header.elements),
-                         'xray_lines': gen_elem_list(obj_bcf.header.elements)},
-              'Signal': {'signal_type': 'EDS_SEM',
-                         'record_by': 'spectrum'},
+                     'stage_y': obj_bcf.header.stage.y
+                 }
+             },
+                 'General': {'original_filename': obj_bcf.filename.split('/')[-1],
+                             'title': img.detector_name},
+                 'Sample': {'name': obj_bcf.header.name},
+                 'Signal': {'signal_type': img.detector_name,
+                            'record_by': 'image'},
              }
-           }]
+             })
+    return imagery_list
+
+
+def bcf_hyperspectra(obj_bcf, index=0, downsample=None, cutoff_at_kV=None,
+                     instrument=None):
+    """ Return hyperspy required list of dict with eds
+    hyperspectra and metadata.
+    """
+    obj_bcf.persistent_parse_hypermap(index=index, downsample=downsample,
+                                      cutoff_at_kV=cutoff_at_kV)
+    eds_metadata = obj_bcf.header.get_spectra_metadata(index=index)
+    mode = _get_mode(obj_bcf, instrument=instrument)
+    hyperspectra = [{'data': obj_bcf.hypermap[index].hypermap,
+                     'axes': [{'name': 'height',
+                               'size': obj_bcf.hypermap[index].hypermap.shape[0],
+                               'offset': 0,
+                               'scale': obj_bcf.hypermap[index].ycalib,
+                               'units': 'µm'},
+                              {'name': 'width',
+                               'size': obj_bcf.hypermap[index].hypermap.shape[1],
+                               'offset': 0,
+                               'scale': obj_bcf.hypermap[index].xcalib,
+                               'units': 'µm'},
+                              {'name': 'Energy',
+                               'size': obj_bcf.hypermap[index].hypermap.shape[2],
+                               'offset': obj_bcf.hypermap[index].calib_abs,
+                               'scale': obj_bcf.hypermap[index].calib_lin,
+                               'units': 'keV'}],
+                     'metadata':
+                     # where is no way to determine what kind of instrument was used:
+                     # TEM or SEM
+                     {'Acquisition_instrument': {
+                         mode: {
+                             #'beam_current': 0.0,  # There is no technical
+                             # possibilities to get such parameter from bruker
+                             # or some SEM's'
+                             'beam_energy': obj_bcf.header.sem.hv,
+                             'tilt_stage': obj_bcf.header.stage.tilt_angle,
+                             'stage_x': obj_bcf.header.stage.x,
+                             'stage_y': obj_bcf.header.stage.y,
+                             'magnification': obj_bcf.header.sem.mag,
+                             'Detector': {
+                                 'EDS': {
+                                     'azimuth_angle': eds_metadata.azimutAngle,
+                                     'elevation_angle': eds_metadata.elevationAngle,
+                                     'detector_type': eds_metadata.detectorType
+                                 }
+                             }
+                         }
+                     },
+        'General': {'original_filename': obj_bcf.filename.split('/')[-1],
+                         'title': 'EDX',
+                         'date': obj_bcf.header.date,
+                         'time': obj_bcf.header.time},
+        'Sample': {'name': obj_bcf.header.name,
+                         'elements': sorted(list(obj_bcf.header.elements)),
+                         'xray_lines': sorted(gen_elem_list(obj_bcf.header.elements))},
+        'Signal': {'signal_type': 'EDS_%s' % mode,
+                         'record_by': 'spectrum',
+                         'quantity': 'X-rays (Counts)'},
+    }
+    }]
     return hyperspectra
 
 
@@ -1103,3 +1120,18 @@ def parse_line(line_string):
     if len(line_string) == 1:
         line_string = line_string + 'a'
     return line_string.capitalize()
+
+
+def _get_mode(obj_bcf, instrument=None):
+    if instrument is not None:
+        return instrument
+    hv = obj_bcf.header.sem.hv
+    if hv > 30.0:  # workaround to know if TEM or SEM
+        mode = 'TEM'
+    else:
+        mode = 'SEM'
+    _logger.info("Guessing that the acquisition instrument is %s " % mode +
+                 "because the beam energy is %i keV. If this is wrong, " % hv +
+                 "please provide the right instrument using the 'instrument' " +
+                 "keyword.")
+    return mode

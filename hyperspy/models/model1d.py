@@ -632,11 +632,11 @@ class Model1D(BaseModel):
             self._plot_component(component)
 
     def disable_plot_components(self):
+        self._plot_components = False
         if self._plot is None:
             return
         for component in self:
             self._disable_plot_component(component)
-        self._plot_components = False
 
     def enable_adjust_position(
             self, components=None, fix_them=True, show_label=True):

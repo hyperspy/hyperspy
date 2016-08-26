@@ -70,6 +70,7 @@ class MPL_HyperImage_Explorer(MPL_HyperExplorer):
         imf.title = self.signal_title + " Signal"
         imf.xaxis, imf.yaxis = self.axes_manager.signal_axes
         imf.colorbar = colorbar
+        imf.quantity_label = self.quantity_label
         imf.scalebar = scalebar
         imf.axes_ticks = axes_ticks
         imf.vmin, imf.vmax = vmin, vmax
