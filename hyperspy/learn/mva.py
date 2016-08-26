@@ -167,7 +167,7 @@ class MVA():
         """
         to_return = None
         # Check if it is the wrong data type
-        if self.data.dtype.char not in ['e', 'f', 'd']:  # If not float
+        if self.data.dtype.char not in ['e', 'f', 'd', 'F', 'D', 'G']:  # If not float
             raise TypeError(
                 'To perform a decomposition the data must be of the float '
                 'type, but the current type is \'{}\'. '
