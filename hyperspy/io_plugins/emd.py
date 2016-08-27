@@ -347,26 +347,22 @@ class EMD(object):
         # Write user:
         for key, value in self.user.items():
             if not (value == ''):
-                if 'user' not in emd_file:
-                    user_group = emd_file.require_group('user')
+                user_group = emd_file.require_group('user')
                 user_group.attrs[key] = value
         # Write microscope:
         for key, value in self.microscope.items():
             if not (value == ''):
-                if 'microscope' not in emd_file:
-                    microscope_group = emd_file.require_group('microscope')
+                microscope_group = emd_file.require_group('microscope')
                 microscope_group.attrs[key] = value
         # Write sample:
         for key, value in self.sample.items():
             if not (value == ''):
-                if 'sample' not in emd_file:
-                    sample_group = emd_file.require_group('sample')
+                sample_group = emd_file.require_group('sample')
                 sample_group.attrs[key] = value
         # Write comments:
         for key, value in self.comments.items():
             if not (value == ''):
-                if 'comments' not in emd_file:
-                    comments_group = emd_file.require_group('comments')
+                comments_group = emd_file.require_group('comments')
                 comments_group.attrs[key] = value
         # Write signals:
         signal_group = emd_file.require_group('signals')
@@ -413,33 +409,20 @@ def file_reader(filename, load_to_memory=True, log_info=False, **kwds):
 
 def file_writer(filename, signal, signal_metadata=None, user=None,
                 microscope=None, sample=None, comments=None, **kwds):
-    if user is None:  # If not provided, look in metadata:
-        if 'user' in signal.metadata.General.as_dictionary():
-            user = signal.metadata.General.as_dictionary().get('user')
-    if user is None:  # If not found, check original_metadata:
-        if 'user' in signal.original_metadata.General.as_dictionary():
-            user = signal.original_metadata.General.as_dictionary().get('user')
-    if microscope is None:  # If not provided, look in metadata:
-        if 'microscope' in signal.metadata.General.as_dictionary():
-            microscope = signal.metadata.General.as_dictionary().get(
-                    'microscope')
-    if microscope is None:  # If not found, check original_metadata:
-        microscope = signal.original_metadata.General.as_dictionary().get(
-            'microscope')
-    if sample is None:  # If not provided, look in metadata:
-        if 'sample' in signal.metadata.General.as_dictionary():
-            sample = signal.metadata.General.as_dictionary().get('sample')
-    if sample is None:  # If not found, check original_metadata:
-        if 'sample' in signal.original_metadata.General.as_dictionary():
-            sample = signal.original_metadata.General.as_dictionary().get(
-                    'sample')
-    if comments is None:  # If not provided, look in metadata:
-        if 'comments' in signal.metadata.General.as_dictionary():
-            comments = signal.metadata.General.as_dictionary().get('comments')
-    if comments is None:  # If not found, check original_metadata:
-        if 'comments' in signal.original_metadata.General.as_dictionary():
-            comments = signal.original_metadata.General.as_dictionary().get(
-                    'comments')
+    metadata = signal_metadata or signal.metadata.get('General', {})
+    original_metadata = signal.original_metadata.get('General', {})
+    user = user\
+        or metadata.get('user', None)\
+        or original_metadata.get('user', None)
+    microscope = microscope\
+        or metadata.get('microscope', None)\
+        or original_metadata.get('microscope', None)
+    sample = sample\
+        or metadata.get('sample', None)\
+        or original_metadata.get('sample', None)
+    comments = sample\
+        or metadata.get('comments', None)\
+        or original_metadata.get('comments', None)
     emd = EMD(
         user=user,
         microscope=microscope,
