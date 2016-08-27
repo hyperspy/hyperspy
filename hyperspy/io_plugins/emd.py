@@ -70,7 +70,8 @@ class EMD(object):
 
     _log = logging.getLogger(__name__)
 
-    def __init__(self, signals=None, user=None, microscope=None, sample=None, comments=None):
+    def __init__(self, signals=None, user=None,
+                 microscope=None, sample=None, comments=None):
         self._log.debug('Calling __init__')
         # Create dictionaries if not present:
         if signals is None:
@@ -106,7 +107,8 @@ class EMD(object):
             self.add_signal(signal, name)
 
     def __getitem__(self, key):
-        # This is for accessing the raw data easily. For the signals use emd.signals[key]!
+        # This is for accessing the raw data easily. For the signals use
+        # emd.signals[key]!
         return self.signals[key].data
 
     def _write_signal_to_group(self, signal_group, signal):
@@ -114,14 +116,18 @@ class EMD(object):
         # Save data:
         dataset = signal_group.require_group(signal.metadata.General.title)
         maxshape = tuple(None for _ in signal.data.shape)
-        dataset.create_dataset('data', data=signal.data, chunks=True, maxshape=maxshape)
+        dataset.create_dataset(
+            'data',
+            data=signal.data,
+            chunks=True,
+            maxshape=maxshape)
         # Iterate over all dimensions:
         for i in range(len(signal.data.shape)):
-            key = 'dim{}'.format(i+1)
+            key = 'dim{}'.format(i + 1)
             axis = signal.axes_manager._axes[i]
             offset = axis.offset
             scale = axis.scale
-            dim = dataset.create_dataset(key, data=[offset, offset+scale])
+            dim = dataset.create_dataset(key, data=[offset, offset + scale])
             name = axis.name
             from traits.trait_base import _Undefined
             if isinstance(name, _Undefined):
@@ -149,14 +155,9 @@ class EMD(object):
         data = group.get('data')
         if load_to_memory:
             data = np.asanyarray(data)
-        record_by = group.attrs.get('record_by', '')
-        # Create Signal, Image or Spectrum:
-        if record_by == 'spectrum':
-            signal = signals.Spectrum(data)
-        elif record_by == 'image':
-            signal = signals.Image(data)
-        else:
-            signal = signals.Signal(data)
+        # EMD does not have a standard way to describe the signal axis.
+        # Therefore we return a BaseSignal
+        signal = signals.BaseSignal(data)
         # Set signal properties:
         signal.set_signal_origin = group.attrs.get('signal_origin', '')
         signal.set_signal_type = group.attrs.get('signal_type', '')
@@ -178,8 +179,10 @@ class EMD(object):
             try:
                 axis.scale = dim[1] - dim[0]
                 axis.offset = dim[0]
-            except (IndexError, TypeError, ValueError) as e:  # Hyperspy then uses defaults (1.0 and 0.0)!
-                self._log.warning('Could not calculate scale/offset of axis {}: {}'.format(i, e))
+            # Hyperspy then uses defaults (1.0 and 0.0)!
+            except (IndexError, TypeError) as e:
+                self._log.warning(
+                    'Could not calculate scale/offset of axis {}: {}'.format(i, e))
         # Extract metadata:
         metadata = {}
         for key, value in group.attrs.items():
@@ -222,7 +225,8 @@ class EMD(object):
         if name is not None:  # Overwrite Signal title!
             signal.metadata.General.title = name
         else:
-            if signal.metadata.General.title is not '':  # Take title of Signal!
+            # Take title of Signal!
+            if signal.metadata.General.title is not '':
                 name = signal.metadata.General.title
             else:  # Take default!
                 name = '__unnamed__'
@@ -239,7 +243,8 @@ class EMD(object):
         signal.metadata.General.add_node('comments')
         signal.metadata.General.comments.add_dictionary(self.comments)
         # Also save metadata as original_metadata:
-        signal.original_metadata.add_dictionary(signal.metadata.as_dictionary())
+        signal.original_metadata.add_dictionary(
+            signal.metadata.as_dictionary())
         # Add signal:
         self.signals[name] = signal
 
@@ -287,17 +292,20 @@ class EMD(object):
                 emd.comments[key] = value
         # Extract signals:
         node_list = list(emd_file.keys())
-        for key in ['user', 'microscope', 'sample', 'comments']:  # Nodes which are not the data!
+        for key in ['user', 'microscope',
+                    'sample', 'comments']:  # Nodes which are not the data!
             if key in node_list:
                 node_list.pop(node_list.index(key))  # Pop all unwanted nodes!
-        # One node should remain, the data node (named 'data', 'signals', 'experiments', ...)!
+        # One node should remain, the data node (named 'data', 'signals',
+        # 'experiments', ...)!
         assert len(node_list) == 1, 'Dataset location is ambiguous!'
         data_group = emd_file.get(node_list[0])
         if data_group is not None:
             for name, group in data_group.items():
                 if isinstance(group, h5py.Group):
                     if group.attrs.get('emd_group_type') == 1:
-                        emd._read_signal_from_group(name, group, load_to_memory)
+                        emd._read_signal_from_group(
+                            name, group, load_to_memory)
         # Close file and return EMD object:
         if load_to_memory:
             emd_file.close()
@@ -395,30 +403,32 @@ def file_writer(filename, signal, signal_metadata=None, user=None,
     if user is None:  # If not provided, look in metadata:
         if 'user' in signal.metadata.General.as_dictionary():
             user = signal.metadata.General.as_dictionary().get('user')
+    if user is None:  # If not found, check original_metadata:
+        if 'user' in signal.original_metadata.General.as_dictionary():
+            user = signal.original_metadata.General.as_dictionary().get('user')
     if microscope is None:  # If not provided, look in metadata:
         if 'microscope' in signal.metadata.General.as_dictionary():
-            microscope = signal.metadata.General.as_dictionary().get('microscope')
+            microscope = signal.metadata.General.as_dictionary().get(
+                    'microscope')
+    if microscope is None:  # If not found, check original_metadata:
+        microscope = signal.original_metadata.General.as_dictionary().get(
+            'microscope')
     if sample is None:  # If not provided, look in metadata:
         if 'sample' in signal.metadata.General.as_dictionary():
             sample = signal.metadata.General.as_dictionary().get('sample')
+    if sample is None:  # If not found, check original_metadata:
+        if 'sample' in signal.original_metadata.General.as_dictionary():
+            sample = signal.original_metadata.General.as_dictionary().get('sample')
     if comments is None:  # If not provided, look in metadata:
         if 'comments' in signal.metadata.General.as_dictionary():
             comments = signal.metadata.General.as_dictionary().get('comments')
-
-    if 'General' in signal.original_metadata.as_dictionary():
-        if user is None:  # If not found, check original_metadata:
-            if 'user' in signal.original_metadata.General.as_dictionary():
-                user = signal.original_metadata.General.as_dictionary().get('user')
-        if microscope is None:  # If not found, check original_metadata:
-            if 'microscope' in signal.original_metadata.General.as_dictionary():
-                microscope = signal.original_metadata.General.as_dictionary().get('microscope')
-        if sample is None:  # If not found, check original_metadata:
-            if 'sample' in signal.original_metadata.General.as_dictionary():
-                sample = signal.original_metadata.General.as_dictionary().get('sample')
-        if comments is None:  # If not found, check original_metadata:
-            if 'comments' in signal.original_metadata.General.as_dictionary():
-                comments = signal.original_metadata.General.as_dictionary().get('comments')
-
-    emd = EMD(user=user, microscope=microscope, sample=sample, comments=comments)
+    if comments is None:  # If not found, check original_metadata:
+        if 'comments' in signal.original_metadata.General.as_dictionary():
+            comments = signal.original_metadata.General.as_dictionary().get('comments')
+    emd = EMD(
+        user=user,
+        microscope=microscope,
+        sample=sample,
+        comments=comments)
     emd.add_signal(signal, metadata=signal_metadata)
     emd.save_to_emd(filename)

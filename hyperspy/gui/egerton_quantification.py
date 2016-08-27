@@ -24,11 +24,11 @@ import traitsui.api as tu
 from traitsui.menu import OKButton, CancelButton
 from pyface.message_dialog import information
 
-from hyperspy import components
+from hyperspy import components1d
 from hyperspy.component import Component
 from hyperspy import drawing
-from hyperspy.gui.tools import (SpanSelectorInSpectrum,
-                                SpanSelectorInSpectrumHandler,
+from hyperspy.gui.tools import (SpanSelectorInSignal1D,
+                                SpanSelectorInSignal1DHandler,
                                 OurOKButton,
                                 OurFindButton,
                                 OurPreviousButton,
@@ -36,7 +36,7 @@ from hyperspy.gui.tools import (SpanSelectorInSpectrum,
 import hyperspy.gui.messages as messages
 
 
-class BackgroundRemoval(SpanSelectorInSpectrum):
+class BackgroundRemoval(SpanSelectorInSignal1D):
     background_type = t.Enum(
         'Power Law',
         'Gaussian',
@@ -44,10 +44,10 @@ class BackgroundRemoval(SpanSelectorInSpectrum):
         'Polynomial',
         default='Power Law')
     polynomial_order = t.Range(1, 10)
-    estimate_background = t.Enum(
-        'Estimate',
-        'Full fit',
-        default='Estimate')
+    fast = t.Bool(True,
+                  desc=("Perform a fast (analytic, but possibly less accurate)"
+                        " estimation of the background. Otherwise use "
+                        "non-linear least squares."))
     background_estimator = t.Instance(Component)
     bg_line_range = t.Enum('from_left_range',
                            'full',
@@ -57,11 +57,12 @@ class BackgroundRemoval(SpanSelectorInSpectrum):
     view = tu.View(
         tu.Group(
             'background_type',
+            'fast',
             tu.Group(
                 'polynomial_order',
                 visible_when='background_type == \'Polynomial\''), ),
         buttons=[OKButton, CancelButton],
-        handler=SpanSelectorInSpectrumHandler,
+        handler=SpanSelectorInSignal1DHandler,
         title='Background removal tool',
         resizable=True,
         width=300,
@@ -70,7 +71,6 @@ class BackgroundRemoval(SpanSelectorInSpectrum):
     def __init__(self, signal):
         super(BackgroundRemoval, self).__init__(signal)
         self.set_background_estimator()
-        self.estimate_fit = True
         self.bg_line = None
 
     def on_disabling_span_selector(self):
@@ -81,32 +81,26 @@ class BackgroundRemoval(SpanSelectorInSpectrum):
     def set_background_estimator(self):
 
         if self.background_type == 'Power Law':
-            self.background_estimator = components.PowerLaw()
+            self.background_estimator = components1d.PowerLaw()
             self.bg_line_range = 'from_left_range'
         elif self.background_type == 'Gaussian':
-            self.background_estimator = components.Gaussian()
+            self.background_estimator = components1d.Gaussian()
             self.bg_line_range = 'full'
         elif self.background_type == 'Offset':
-            self.background_estimator = components.Offset()
+            self.background_estimator = components1d.Offset()
             self.bg_line_range = 'full'
         elif self.background_type == 'Polynomial':
-            self.background_estimator = \
-                components.Polynomial(self.polynomial_order)
+            self.background_estimator = components1d.Polynomial(
+                self.polynomial_order)
             self.bg_line_range = 'full'
 
     def _polynomial_order_changed(self, old, new):
-        self.background_estimator = components.Polynomial(new)
+        self.background_estimator = components1d.Polynomial(new)
         self.span_selector_changed()
 
     def _background_type_changed(self, old, new):
         self.set_background_estimator()
         self.span_selector_changed()
-
-    def _estimate_background_changed(self, old, new):
-        if self.estimate_background == 'Full fit':
-            self.estimate_fit = False
-        if self.estimate_background == 'Estimate':
-            self.estimate_fit = True
 
     def _ss_left_value_changed(self, old, new):
         if not (np.isnan(self.ss_right_value) or np.isnan(self.ss_left_value)):
@@ -117,7 +111,7 @@ class BackgroundRemoval(SpanSelectorInSpectrum):
             self.span_selector_changed()
 
     def create_background_line(self):
-        self.bg_line = drawing.spectrum.SpectrumLine()
+        self.bg_line = drawing.signal1d.Signal1DLine()
         self.bg_line.data_function = self.bg_to_plot
         self.bg_line.set_line_properties(
             color='blue',
@@ -174,7 +168,7 @@ class BackgroundRemoval(SpanSelectorInSpectrum):
         self.signal._plot.auto_update_plot = False
         new_spectra = self.signal._remove_background_cli(
             (self.ss_left_value, self.ss_right_value),
-            self.background_estimator, estimate_background=self.estimate_fit)
+            self.background_estimator, fast=self.fast)
         self.signal.data = new_spectra.data
         self.signal._replot()
         self.signal._plot.auto_update_plot = True
@@ -219,7 +213,7 @@ class SpikesRemovalHandler(tu.Handler):
         return
 
 
-class SpikesRemoval(SpanSelectorInSpectrum):
+class SpikesRemoval(SpanSelectorInSignal1D):
     interpolator_kind = t.Enum(
         'Linear',
         'Spline',
@@ -227,24 +221,24 @@ class SpikesRemoval(SpanSelectorInSpectrum):
         desc="the type of interpolation to use when\n"
              "replacing the signal where a spike has been replaced")
     threshold = t.Float(desc="the derivative magnitude threshold above\n"
-                             "which to find spikes")
+                        "which to find spikes")
     click_to_show_instructions = t.Button()
     show_derivative_histogram = t.Button()
     spline_order = t.Range(1, 10, 3,
                            desc="the order of the spline used to\n"
-                                "connect the reconstructed data")
+                           "connect the reconstructed data")
     interpolator = None
     default_spike_width = t.Int(5,
                                 desc="the width over which to do the interpolation\n"
-                                     "when removing a spike (this can be "
-                                     "adjusted for each\nspike by clicking "
+                                "when removing a spike (this can be "
+                                "adjusted for each\nspike by clicking "
                                      "and dragging on the display during\n"
                                      "spike replacement)")
     index = t.Int(0)
     add_noise = t.Bool(True,
                        desc="whether to add noise to the interpolated\nportion"
-                            "of the spectrum. The noise properties defined\n"
-                            "in the Signal metadata are used if present,"
+                       "of the spectrum. The noise properties defined\n"
+                       "in the Signal metadata are used if present,"
                             "otherwise\nshot noise is used as a default")
 
     thisOKButton = tu.Action(name="OK",
@@ -254,18 +248,18 @@ class SpikesRemoval(SpanSelectorInSpectrum):
     thisApplyButton = tu.Action(name="Remove spike",
                                 action="apply",
                                 tooltip="Remove the current spike by "
-                                       "interpolating\n"
+                                "interpolating\n"
                                        "with the specified settings (and find\n"
                                        "the next spike automatically)")
     thisFindButton = tu.Action(name="Find next",
                                action="find",
                                tooltip="Find the next (in terms of navigation\n"
-                                      "dimensions) spike in the data.")
+                               "dimensions) spike in the data.")
 
     thisPreviousButton = tu.Action(name="Find previous",
                                    action="back",
                                    tooltip="Find the previous (in terms of "
-                                          "navigation\n"
+                                   "navigation\n"
                                           "dimensions) spike in the data.")
     view = tu.View(tu.Group(
         tu.Group(
@@ -321,15 +315,17 @@ class SpikesRemoval(SpanSelectorInSpectrum):
         self.signal_mask = signal_mask
         self.navigation_mask = navigation_mask
         md = self.signal.metadata
-        from hyperspy.signal import Signal
+        from hyperspy.signal import BaseSignal
 
         if "Signal.Noise_properties" in md:
             if "Signal.Noise_properties.variance" in md:
                 self.noise_variance = md.Signal.Noise_properties.variance
-                if isinstance(md.Signal.Noise_properties.variance, Signal):
+                if isinstance(md.Signal.Noise_properties.variance, BaseSignal):
                     self.noise_type = "heteroscedastic"
                 else:
                     self.noise_type = "white"
+            else:
+                self.noise_type = "shot noise"
         else:
             self.noise_type = "shot noise"
 
@@ -478,9 +474,8 @@ class SpikesRemoval(SpanSelectorInSpectrum):
             self.span_selector_changed()
 
     def create_interpolation_line(self):
-        self.interpolated_line = drawing.spectrum.SpectrumLine()
-        self.interpolated_line.data_function = \
-            self.get_interpolated_spectrum
+        self.interpolated_line = drawing.signal1d.Signal1DLine()
+        self.interpolated_line.data_function = self.get_interpolated_spectrum
         self.interpolated_line.set_line_properties(
             color='blue',
             type='line')

@@ -36,18 +36,18 @@ hyperspy.models.eelsmodel module
     :undoc-members:
     :show-inheritance:
 
-hyperspy.models.model1D module
+hyperspy.models.model1d module
 ------------------------------
 
-.. automodule:: hyperspy.models.model1D
+.. automodule:: hyperspy.models.model1d
     :members:
     :undoc-members:
     :show-inheritance:
 
-hyperspy.models.model2D module
+hyperspy.models.model2d module
 ------------------------------
 
-.. automodule:: hyperspy.models.model2D
+.. automodule:: hyperspy.models.model2d
     :members:
     :undoc-members:
     :show-inheritance:

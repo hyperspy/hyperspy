@@ -87,7 +87,7 @@ class GaussianHF(Expression):
 
         Parameters
         ----------
-        signal : Signal instance
+        signal : Signal1D instance
         x1 : float
             Defines the left limit of the spectral range to use for the
             estimation.
@@ -108,11 +108,11 @@ class GaussianHF(Expression):
         Examples
         --------
 
-        >>> g = hs.model.components.GaussianHF()
+        >>> g = hs.model.components1D.GaussianHF()
         >>> x = np.arange(-10, 10, 0.01)
         >>> data = np.zeros((32, 32, 2000))
         >>> data[:] = g.function(x).reshape((1, 1, 2000))
-        >>> s = hs.signals.Spectrum(data)
+        >>> s = hs.signals.Signal1D(data)
         >>> s.axes_manager._axes[-1].offset = -10
         >>> s.axes_manager._axes[-1].scale = 0.01
         >>> g.estimate_parameters(s, -10, 10, False)
@@ -164,7 +164,7 @@ class GaussianHF(Expression):
 
     def integral_as_signal(self):
         """
-        Utility function to get gaussian integral as Signal
+        Utility function to get gaussian integral as Signal1D
         """
         return (self.height.as_signal() * self.fwhm.as_signal() *
                 sqrt2pi / sigma2fwhm)

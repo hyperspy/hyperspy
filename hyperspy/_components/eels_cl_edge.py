@@ -306,6 +306,15 @@ class EELSCLEdge(Component):
         """Returns the number of counts in barns
 
         """
+        shift = self.onset_energy.value - self.GOS.onset_energy
+        if shift != self.GOS.energy_shift:
+            # Because hspy Events are not executed in any given order,
+            # an external function could be in the same event execution list
+            # as _integrate_GOS and be executed first. That can potentially
+            # cause an error that enforcing _integrate_GOS here prevents. Note
+            # that this is suboptimal because _integrate_GOS is computed twice
+            # unnecessarily.
+            self._integrate_GOS()
         Emax = self.GOS.energy_axis[-1] + self.GOS.energy_shift
         cts = np.zeros((len(E)))
         bsignal = (E >= self.onset_energy.value)
@@ -341,7 +350,7 @@ class EELSCLEdge(Component):
                 "The provided fine structure file "
                 "doesn't match the size of the current fine structure")
 
-    def get_fine_structure_as_spectrum(self):
+    def get_fine_structure_as_signal1D(self):
         """Returns a spectrum containing the fine structure.
 
         Notes
@@ -375,3 +384,48 @@ class EELSCLEdge(Component):
             '_', ' ') + ' fine structure'
 
         return s
+
+    def notebook_interaction(self, display=True):
+
+        from ipywidgets import (Checkbox, FloatSlider, VBox)
+        from traitlets import TraitError as TraitletError
+        from IPython.display import display as ip_display
+
+        try:
+            active = Checkbox(description='active', value=self.active)
+
+            def on_active_change(change):
+                self.active = change['new']
+            active.observe(on_active_change, names='value')
+
+            fine_structure = Checkbox(description='Fine structure',
+                                      value=self.fine_structure_active)
+
+            def on_fine_structure_active_change(change):
+                self.fine_structure_active = change['new']
+            fine_structure.observe(on_fine_structure_active_change,
+                                   names='value')
+
+            fs_smoothing = FloatSlider(description='Fine structure smoothing',
+                                       min=0, max=1, step=0.001,
+                                       value=self.fine_structure_smoothing)
+
+            def on_fs_smoothing_change(change):
+                self.fine_structure_smoothing = change['new']
+            fs_smoothing.observe(on_fs_smoothing_change, names='value')
+
+            container = VBox([active, fine_structure, fs_smoothing])
+            for parameter in [self.intensity, self.effective_angle,
+                              self.onset_energy]:
+                container.children += parameter.notebook_interaction(False),
+
+            if not display:
+                return container
+            ip_display(container)
+        except TraitletError:
+            if display:
+                print('This function is only avialable when running in a'
+                      ' notebook')
+            else:
+                raise
+    notebook_interaction.__doc__ = Component.notebook_interaction.__doc__

@@ -1,22 +1,25 @@
 import numpy as np
-
+import nose.tools
+from nose.plugins.skip import SkipTest
 from nose.tools import raises
+
 from hyperspy import signals
+from hyperspy.misc.machine_learning.import_sklearn import sklearn_installed
 
 
 class TestNdAxes:
 
     def setUp(self):
         # Create three signals with dimensions:
-        # s1 : <Signal, title: , dimensions: (4, 3, 2|2, 3)>
-        # s2 : <Signal, title: , dimensions: (2, 3|4, 3, 2)>
-        # s12 : <Signal, title: , dimensions: (2, 3|4, 3, 2)>
+        # s1 : <BaseSignal, title: , dimensions: (4, 3, 2|2, 3)>
+        # s2 : <BaseSignal, title: , dimensions: (2, 3|4, 3, 2)>
+        # s12 : <BaseSignal, title: , dimensions: (2, 3|4, 3, 2)>
         # Where s12 data is transposed in respect to s2
         dc1 = np.random.random((2, 3, 4, 3, 2))
         dc2 = np.rollaxis(np.rollaxis(dc1, -1), -1)
-        s1 = signals.Signal(dc1.copy())
-        s2 = signals.Signal(dc2)
-        s12 = signals.Signal(dc1.copy())
+        s1 = signals.BaseSignal(dc1.copy())
+        s2 = signals.BaseSignal(dc2)
+        s12 = signals.BaseSignal(dc1.copy())
         for i, axis in enumerate(s1.axes_manager._axes):
             if i < 3:
                 axis.navigate = True
@@ -36,7 +39,7 @@ class TestNdAxes:
         self.s2 = s2
         self.s12 = s12
 
-    def test_consistensy(self):
+    def test_consistency(self):
         s1 = self.s1
         s2 = self.s2
         s12 = self.s12
@@ -52,7 +55,7 @@ class TestNdAxes:
         np.testing.assert_array_almost_equal(s1.learning_results.factors,
                                              s2.learning_results.loadings)
 
-    def test_consistensy_poissonian(self):
+    def test_consistency_poissonian(self):
         s1 = self.s1
         s1n000 = self.s1.inav[0, 0, 0]
         s2 = self.s2
@@ -75,7 +78,7 @@ class TestNdAxes:
 class TestGetExplainedVarinaceRatio:
 
     def setUp(self):
-        s = signals.Signal(np.empty(1))
+        s = signals.BaseSignal(np.empty(1))
         self.s = s
 
     def test_data(self):
@@ -84,7 +87,7 @@ class TestGetExplainedVarinaceRatio:
             self.s.get_explained_variance_ratio().data,
             np.asarray([2, 4]))
 
-    @raises(AttributeError)
+    @nose.tools.raises(AttributeError)
     def test_no_evr(self):
         self.s.get_explained_variance_ratio()
 
@@ -92,7 +95,7 @@ class TestGetExplainedVarinaceRatio:
 class TestReverseDecompositionComponent:
 
     def setUp(self):
-        s = signals.Signal(np.zeros(1))
+        s = signals.BaseSignal(np.zeros(1))
         self.factors = np.ones([2, 3])
         self.loadings = np.ones([2, 3])
         s.learning_results.factors = self.factors.copy()
@@ -143,7 +146,7 @@ class TestReverseDecompositionComponent:
 class TestNormalizeComponents():
 
     def setUp(self):
-        s = signals.Signal(np.zeros(1))
+        s = signals.BaseSignal(np.zeros(1))
         self.factors = np.ones([2, 3])
         self.loadings = np.ones([2, 3])
         s.learning_results.factors = self.factors.copy()
@@ -187,3 +190,36 @@ class TestNormalizeComponents():
                                       self.factors * 2.)
         np.testing.assert_array_equal(s.learning_results.loadings,
                                       self.loadings / 2.)
+
+
+class TestReturnInfo:
+
+    def setUp(self):
+        self.s = signals.Signal1D(np.random.random((20, 100)))
+
+    def test_decomposition_not_supported(self):
+        # Not testing MLPCA, takes too long
+        for algorithm in ["svd", "fast_svd"]:
+            print(algorithm)
+            nose.tools.assert_is_none(self.s.decomposition(
+                algorithm=algorithm, return_info=True, output_dimension=1))
+
+    def test_decomposition_supported_return_true(self):
+        for algorithm in ["RPCA_GoDec", "ORPCA"]:
+            nose.tools.assert_is_not_none(
+                self.s.decomposition(algorithm=algorithm, return_info=True, output_dimension=1))
+        if not sklearn_installed:
+            raise SkipTest
+        for algorithm in ["sklearn_pca", "nmf", "sparse_pca", "mini_batch_sparse_pca", ]:
+            nose.tools.assert_is_not_none(
+                self.s.decomposition(algorithm=algorithm, return_info=True, output_dimension=1))
+
+    def test_decomposition_supported_return_false(self):
+        for algorithm in ["RPCA_GoDec", "ORPCA"]:
+            nose.tools.assert_is_none(
+                self.s.decomposition(algorithm=algorithm, return_info=False, output_dimension=1))
+        if not sklearn_installed:
+            raise SkipTest
+        for algorithm in ["sklearn_pca", "nmf", "sparse_pca", "mini_batch_sparse_pca", ]:
+            nose.tools.assert_is_none(
+                self.s.decomposition(algorithm=algorithm, return_info=False, output_dimension=1))

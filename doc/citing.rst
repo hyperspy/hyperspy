@@ -8,33 +8,38 @@ entry
 
 .. code-block:: bibtex
 
-    @misc{francisco_de_la_pena_2015_27735,
+    @misc{francisco_de_la_pena_2016_59293,
       author       = {Francisco de la Peña and
-                      Pierre Burdet and
-                      Vidar Tonaas Fauske
                       Tomas Ostasevicius and
+                      Vidar Tonaas Fauske and
+                      Pierre Burdet and
+                      Petras Jokubauskas and
                       Mike Sarahan and
+                      Duncan Johnstone and
                       Magnus Nord and
                       Josh Taillon and
-                      Duncan Johnstone and
+                      Jan Caron and
+                      Katherine E. MacArthur and
                       Alberto Eljarrat and
                       Stefano Mazzucco and
-                      Jan Caron and
+                      Tom Furnival and
                       Eric Prestat and
-                      Gaël Donval and
-                      Luiz Fernando Zagonel and
                       Michael Walls and
-                      Ilya Iyengar and
-                      },
-      title        = {hyperspy: HyperSpy 0.8.4},
+                      Gaël Donval and
+                      Ben Martineau and
+                      Luiz Fernando Zagonel and
+                      Andreas Garmannslund and
+                      Thomas Aarholt and
+                      Christoph Gohlke and
+                      iygr},
+      title        = {hyperspy: HyperSpy 1.1},
       month        = aug,
-      year         = 2015,
-      doi          = {10.5281/zenodo.46897},
-      url          = {http://dx.doi.org/10.5281/zenodo.46897}
+      year         = 2016,
+      doi          = {10.5281/zenodo.60697},
+      url          = {http://dx.doi.org/10.5281/zenodo.60697}
     }
-
-
+    
 or click on the DOI badge below for more citation formats.
 
-.. image:: https://zenodo.org/badge/doi/10.5281/zenodo.46897.svg
-   :target: http://dx.doi.org/10.5281/zenodo.46897
+.. image:: https://zenodo.org/badge/doi/10.5281/zenodo.60697.svg
+   :target: http://dx.doi.org/10.5281/zenodo.60697

@@ -56,21 +56,26 @@ def guess_gos_path():
 
 if os.path.isfile(defaults_file):
     # Remove config file if obsolated
-    f = open(defaults_file)
-    if 'Not really' in f.readline():
-        # It is the old config file
-        f.close()
+    with open(defaults_file) as f:
+        if 'Not really' in f.readline():
+                # It is the old config file
+            defaults_file_exists = False
+        else:
+            defaults_file_exists = True
+    if not defaults_file_exists:
+        # It actually exists, but is an obsoleted unsupported version of it
+        # so we delete it.
         _logger.info('Removing obsoleted config file')
         os.remove(defaults_file)
-        defaults_file_exists = False
-    else:
-        defaults_file_exists = True
 else:
     defaults_file_exists = False
 
 # Defaults template definition starts#####################################
 # This "section" is all that has to be modified to add or remove sections and
 # options from the defaults
+
+# Due to https://github.com/enthought/traitsui/issues/23 the desc text as
+# displayed in the tooltip get "Specifies" prepended.
 
 
 class GeneralConfig(t.HasTraits):
@@ -110,6 +115,8 @@ class GeneralConfig(t.HasTraits):
              'metadata), long lists and tuples will be expanded and any '
              'dictionaries in them will be printed similar to '
              'DictionaryTreeBrowser, but with double lines')
+    logging_level = t.Enum(['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', ],
+                           desc='the log level of all hyperspy modules.')
 
     def _logger_on_changed(self, old, new):
         if new is True:
@@ -230,6 +237,7 @@ template = {
 template['MachineLearning'].export_factors_default_file_format = 'rpl'
 template['MachineLearning'].export_loadings_default_file_format = 'rpl'
 template['General'].default_export_format = 'rpl'
+template['General'].logging_level = 'WARNING'
 
 # Defaults template definition ends ######################################
 
@@ -283,7 +291,8 @@ if defaults_file_exists:
 
 if not defaults_file_exists or rewrite is True:
     _logger.info('Writing the config file')
-    config.write(open(defaults_file, 'w'))
+    with open(defaults_file, "w") as df:
+        config.write(df)
 
 # Use the traited classes to cast the content of the ConfigParser
 config2template(template, config)

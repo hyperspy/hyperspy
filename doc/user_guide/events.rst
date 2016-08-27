@@ -1,3 +1,6 @@
+
+.. _events-label:
+
 Events
 ******
 
@@ -20,7 +23,7 @@ The following example shows how to connect to the `index_changed` event of
 
  .. code-block:: python
 
-   >>> s = hs.signals.Spectrum(np.random.random((10,100)))
+   >>> s = hs.signals.Signal1D(np.random.random((10,100)))
    >>> nav_axis = s.axes_manager.navigation_axes[0]
    >>> nav_axis.name = "x"
    >>> def on_index_changed(obj, index):
@@ -122,11 +125,11 @@ Although usually there is no need to trigger events manually, there are
 cases where it is required. When triggering events manually it is important
 to pass the right keywords as specified in the event docstring. In the
 following example we change the :py:attr:`data` attribute of a
-:py:class:`~.signal.Signal` manually and we then trigger the `data_changed`
+:py:class:`~.signal.BaseSignal` manually and we then trigger the `data_changed`
 event.
 
 .. code-block:: python
 
-    >>> s = hs.signals.Spectrum(np.random.random((10,100)))
+    >>> s = hs.signals.Signal1D(np.random.random((10,100)))
     >>> s.data[:] = 0
     >>> s.events.data_changed.trigger(obj=s)

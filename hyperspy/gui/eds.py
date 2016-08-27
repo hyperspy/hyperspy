@@ -21,13 +21,6 @@ import traitsui.api as tu
 from traitsui.menu import OKButton, CancelButton
 
 
-class General(t.HasTraits):
-    title = t.Str(t.Undefined)
-    original_filename = t.File(t.Undefined)
-    signal_kind = t.Str(t.Undefined)
-    record_by = t.Enum('spectrum', 'image', default=t.Undefined)
-
-
 class SEMParametersUI(t.HasTraits):
 
     beam_energy = t.Float(t.Undefined,
@@ -58,22 +51,30 @@ class TEMParametersUI(t.HasTraits):
 
     beam_energy = t.Float(t.Undefined,
                           label='Beam energy (keV)')
-    live_time = t.Float(t.Undefined,
-                        label='Live time (s)')
+    real_time = t.Float(t.Undefined,
+                        label='Real time (s)')
     tilt_stage = t.Float(t.Undefined,
                          label='Stage tilt (degree)')
+    live_time = t.Float(t.Undefined,
+                        label='Live time (s)')
+    probe_area = t.Float(t.Undefined,
+                         label='Beam/probe area (nm^2)')
     azimuth_angle = t.Float(t.Undefined,
                             label='Azimuth angle (degree)')
     elevation_angle = t.Float(t.Undefined,
                               label='Elevation angle (degree)')
     energy_resolution_MnKa = t.Float(t.Undefined,
                                      label='Energy resolution MnKa (eV)')
+    beam_current = t.Float(t.Undefined,
+                           label='Beam current (nA)')
 
     traits_view = tu.View(
         tu.Group('beam_energy',
                  'tilt_stage',
+                 'probe_area',
+                 'beam_current',
                  label='TEM', show_border=True),
-        tu.Group('live_time', 'azimuth_angle',
+        tu.Group('real_time', 'live_time', 'azimuth_angle',
                  'elevation_angle', 'energy_resolution_MnKa',
                  label='EDS', show_border=True),
         kind='modal', buttons=[OKButton, CancelButton],
