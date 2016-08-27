@@ -46,17 +46,21 @@ class EMD(object):
 
     """Class for storing electron microscopy datasets.
 
-    The :class:`~.EMD` class can hold an arbitrary amount of datasets in the `signals` dictionary.
-    These are saved as HyperSpy :class:`~hyperspy.signal.Signal` instances. Global metadata
-    are saved in four dictionaries (`user`, `microscope`, `sample`, `comments`). To print
-    relevant information about the EMD instance use the :func:`~.log_info` function. EMD
-    instances can be loaded from and saved to emd-files, an hdf5 standard developed at Lawrence
+    The :class:`~.EMD` class can hold an arbitrary amount of
+    datasets in the `signals` dictionary. These are saved as
+    HyperSpy :class:`~hyperspy.signal.Signal` instances.
+    Global metadata are saved in four dictionaries
+    (`user`, `microscope`, `sample`, `comments`). To print
+    relevant information about the EMD instance use the
+    :func:`~.log_info` function. EMD instances can be loaded
+    from and saved to emd-files, an hdf5 standard developed at Lawrence
     Berkeley National Lab (http://emdatasets.lbl.gov/).
 
     Attributes
     ----------
     signals: dictionary
-        Dictionary which contains all datasets as :class:`~hyperspy.signal.Signal` instances.
+        Dictionary which contains all datasets as
+        :class:`~hyperspy.signal.Signal` instances.
     user: dictionary
         Dictionary which contains user related metadata.
     microscope: dictionary
@@ -145,8 +149,9 @@ class EMD(object):
             try:  # If something h5py can't handle is saved in the metadata...
                 dataset.attrs[key] = value
             except Exception:  # ...let the user know what could not be added!
-                self._log.exception('The hdf5 writer could not write the following '
-                                    'information in the file: %s : %s', key, value)
+                self._log.exception(
+                        'The hdf5 writer could not write the following '
+                        'information in the file: %s : %s', key, value)
 
     def _read_signal_from_group(self, name, group, load_to_memory=True):
         self._log.debug('Calling _read_signal_from_group')
@@ -182,7 +187,8 @@ class EMD(object):
             # Hyperspy then uses defaults (1.0 and 0.0)!
             except (IndexError, TypeError) as e:
                 self._log.warning(
-                    'Could not calculate scale/offset of axis {}: {}'.format(i, e))
+                    'Could not calculate scale/offset \
+                    of axis {}: {}'.format(i, e))
         # Extract metadata:
         metadata = {}
         for key, value in group.attrs.items():
@@ -191,19 +197,22 @@ class EMD(object):
         self.add_signal(signal, name, metadata)
 
     def add_signal(self, signal, name=None, metadata=None):
-        """Add a hyperspy signal to the EMD instance and make sure all metadata is present.
+        """Add a hyperspy signal to the EMD instance and
+        make sure all metadata is present.
 
         Parameters
         ----------
         signal: :class:`~hyperspy.signal.Signal`
             HyperSpy signal which should be added to the EMD instance.
         name: string, optional
-            Name of the (used as a key for the `signals` dictionary). If not specified,
-            `signal.metadata.General.title` will be used. If this is an empty string, both name
-            and signal title are set to 'dataset' per default. If specified, `name` overwrites the
-            signal title.
+            Name of the (used as a key for the `signals` dictionary).
+            If not specified, `signal.metadata.General.title` will
+            be used. If this is an empty string, both name and signal
+            title are set to 'dataset' per default. If specified, `name`
+            overwrites the signal title.
         metadata: dictionary
-            Dictionary which holds signal specific metadata which will be added to the signal.
+            Dictionary which holds signal specific metadata
+            which will be added to the signal.
 
         Returns
         -------
@@ -211,9 +220,10 @@ class EMD(object):
 
         Notes
         -----
-        This is the preferred way to add signals to the EMD instance. Directly adding to the
-        `signals` dictionary is possible but does not make sure all metadata are correct. This
-        method is also called in the standard constructor on all entries in the `signals`
+        This is the preferred way to add signals to the EMD instance.
+        Directly adding to the `signals` dictionary is possible but
+        does not make sure all metadata are correct. This method is also
+        called in the standard constructor on all entries in the `signals`
         dictionary!
 
         """
@@ -255,9 +265,11 @@ class EMD(object):
         Parameters
         ----------
         filename : string
-            The name of the emd-file from which to load the signals. Standard format is '*.emd'.
+            The name of the emd-file from which to load the signals.
+            Standard format is '*.emd'.
         load_to_memory: bool, optional
-            If True (default) loads data to memory. If False, enables loading only if requested.
+            If True (default) loads data to memory.
+            If False, enables loading only if requested.
 
         Returns
         -------
@@ -334,25 +346,25 @@ class EMD(object):
         emd_file.attrs['version_minor'] = ver_min
         # Write user:
         for key, value in self.user.items():
-            if not (value==''):
+            if not (value == ''):
                 if 'user' not in emd_file:
                     user_group = emd_file.require_group('user')
                 user_group.attrs[key] = value
         # Write microscope:
         for key, value in self.microscope.items():
-            if not (value==''):
+            if not (value == ''):
                 if 'microscope' not in emd_file:
                     microscope_group = emd_file.require_group('microscope')
                 microscope_group.attrs[key] = value
         # Write sample:
         for key, value in self.sample.items():
-            if not (value==''):
+            if not (value == ''):
                 if 'sample' not in emd_file:
                     sample_group = emd_file.require_group('sample')
                 sample_group.attrs[key] = value
         # Write comments:
         for key, value in self.comments.items():
-            if not (value==''):
+            if not (value == ''):
                 if 'comments' not in emd_file:
                     comments_group = emd_file.require_group('comments')
                 comments_group.attrs[key] = value
@@ -365,20 +377,21 @@ class EMD(object):
 
     def log_info(self):
         """Print all relevant information about the EMD instance."""
+        string_pad = '-------------------------\n'
         self._log.debug('Calling log_info')
-        info_str = '\nUser:\n-------------------------\n'
+        info_str = '\nUser:\n' + string_pad
         for key, value in self.user.items():
             info_str += '{:<15}: {}\n'.format(key, value)
-        info_str += '-------------------------\n\nMicroscope:\n-------------------------\n'
+        info_str += '-------------------------\n\nMicroscope:\n' + string_pad
         for key, value in self.microscope.items():
             info_str += '{:<15}: {}\n'.format(key, value)
-        info_str += '-------------------------\n\nSample:\n-------------------------\n'
+        info_str += '-------------------------\n\nSample:\n' + string_pad
         for key, value in self.sample.items():
             info_str += '{:<15}: {}\n'.format(key, value)
-        info_str += '-------------------------\n\nComments:\n-------------------------\n'
+        info_str += '-------------------------\n\nComments:\n' + string_pad
         for key, value in self.comments.items():
             info_str += '{:<15}: {}\n'.format(key, value)
-        info_str += '-------------------------\n\nData:\n-------------------------\n'
+        info_str += '-------------------------\n\nData:\n' + string_pad
         for key, value in self.signals.items():
             info_str += '{:<15}: {}\n'.format(key, value)
             sig_dict = value.metadata.Signal
@@ -418,13 +431,15 @@ def file_writer(filename, signal, signal_metadata=None, user=None,
             sample = signal.metadata.General.as_dictionary().get('sample')
     if sample is None:  # If not found, check original_metadata:
         if 'sample' in signal.original_metadata.General.as_dictionary():
-            sample = signal.original_metadata.General.as_dictionary().get('sample')
+            sample = signal.original_metadata.General.as_dictionary().get(
+                    'sample')
     if comments is None:  # If not provided, look in metadata:
         if 'comments' in signal.metadata.General.as_dictionary():
             comments = signal.metadata.General.as_dictionary().get('comments')
     if comments is None:  # If not found, check original_metadata:
         if 'comments' in signal.original_metadata.General.as_dictionary():
-            comments = signal.original_metadata.General.as_dictionary().get('comments')
+            comments = signal.original_metadata.General.as_dictionary().get(
+                    'comments')
     emd = EMD(
         user=user,
         microscope=microscope,
