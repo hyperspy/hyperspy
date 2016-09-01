@@ -41,7 +41,7 @@ class LazySignal(BaseSignal):
     """
     _lazy = True
 
-    def _compute(self):
+    def compute(self):
         """Only for testing, when able to store the result in memory.."""
         self.data = self.data.compute()
         self._lazy = False

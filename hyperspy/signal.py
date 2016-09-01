@@ -48,7 +48,7 @@ from hyperspy.drawing.utils import animate_legend
 from hyperspy.misc.slicing import SpecialSlicers, FancySlicing
 from hyperspy.misc.utils import slugify
 from hyperspy.docstrings.signal import (
-    ONE_AXIS_PARAMETER, MANY_AXIS_PARAMETER, OUT_ARG)
+    ONE_AXIS_PARAMETER, MANY_AXIS_PARAMETER, OUT_ARG, NAN_FUNC)
 from hyperspy.docstrings.plot import (
     BASE_PLOT_DOCSTRING, PLOT2D_DOCSTRING, KWARGS_DOCSTRING)
 from hyperspy.events import Events, Event
@@ -2917,6 +2917,57 @@ class BaseSignal(FancySlicing,
         return self._apply_function_on_data_and_remove_axis(np.var, axis,
                                                             out=out)
     var.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG)
+
+    def nansum(self, axis=None, out=None):
+        """%s
+        """
+        if axis is None:
+            axis = self.axes_manager.navigation_axes
+        return self._apply_function_on_data_and_remove_axis(np.nansum, axis,
+                                                            out=out)
+    nansum.__doc__ %= (NAN_FUNC.format('sum', sum.__doc__))
+
+    def nanmax(self, axis=None, out=None):
+        """%s
+        """
+        if axis is None:
+            axis = self.axes_manager.navigation_axes
+        return self._apply_function_on_data_and_remove_axis(np.nanmax, axis,
+                                                            out=out)
+    nanmax.__doc__ %= (NAN_FUNC.format('max', max.__doc__))
+
+    def nanmin(self, axis=None, out=None):
+        """%s"""
+        if axis is None:
+            axis = self.axes_manager.navigation_axes
+        return self._apply_function_on_data_and_remove_axis(np.nanmin, axis,
+                                                            out=out)
+    nanmin.__doc__ %= (NAN_FUNC.format('min', min.__doc__))
+
+
+    def nanmean(self, axis=None, out=None):
+        """%s """
+        if axis is None:
+            axis = self.axes_manager.navigation_axes
+        return self._apply_function_on_data_and_remove_axis(np.nanmean, axis,
+                                                            out=out)
+    nanmean.__doc__ %= (NAN_FUNC.format('mean', mean.__doc__))
+
+    def nanstd(self, axis=None, out=None):
+        """%s"""
+        if axis is None:
+            axis = self.axes_manager.navigation_axes
+        return self._apply_function_on_data_and_remove_axis(np.nanstd, axis,
+                                                            out=out)
+    nanstd.__doc__ %= (NAN_FUNC.format('std', std.__doc__))
+
+    def nanvar(self, axis=None, out=None):
+        """%s"""
+        if axis is None:
+            axis = self.axes_manager.navigation_axes
+        return self._apply_function_on_data_and_remove_axis(np.nanvar, axis,
+                                                            out=out)
+    nanvar.__doc__ %= (NAN_FUNC.format('var', var.__doc__))
 
     def diff(self, axis, order=1, out=None):
         """Returns a signal with the n-th order discrete difference along

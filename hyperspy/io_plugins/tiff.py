@@ -154,6 +154,7 @@ def file_reader(filename, record_by='image', force_read_resolution=False,
 
     imsave, TiffFile = _import_tifffile_library(import_local_tifffile)
     with TiffFile(filename, **kwds) as tiff:
+        # TODO add memmap mode kwargs here?
         dc = tiff.asarray()
         # change in the Tifffiles API
         if hasattr(tiff.series[0], 'axes'):
