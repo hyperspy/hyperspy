@@ -3,6 +3,7 @@ Tools for working with distributions
 """
 import numpy as np
 import dask.array as da
+from dask.diagnostics import ProgressBar
 from hyperspy.external.astroML.bayesian_blocks import bayesian_blocks
 from scipy.special import gammaln
 from scipy import optimize
@@ -342,10 +343,12 @@ def dasky_histogram(a, bins=10, **kwargs):
     elif isinstance(bins, str):
         raise ValueError("unrecognized bin code: '%s'" % bins)
     elif not np.iterable(bins):
-        kwargs['range'] = da.compute(a.min(), a.max())
+        with ProgressBar():
+            kwargs['range'] = da.compute(a.min(), a.max())
 
     h, bins = da.histogram(a, bins=bins, **kwargs)
-    return h.compute(), bins
+    with ProgressBar():
+        return h.compute(), bins
 
 
 def dasky_scotts_bin_width(data, return_bins=True):

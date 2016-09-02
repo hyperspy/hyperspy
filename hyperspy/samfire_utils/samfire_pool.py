@@ -133,7 +133,7 @@ class SamfirePool(ParallelPool):
         model = mall.inav[mall.axes_manager.indices]
         var = model.signal.metadata.Signal.Noise_properties.variance
         if var._lazy:
-            var._compute()
+            var.compute()
         model.store('z')
         m_dict = model.signal._to_dictionary(False)
         m_dict['models'] = model.signal.models._models.as_dictionary()

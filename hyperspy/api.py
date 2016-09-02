@@ -81,10 +81,6 @@ from hyperspy.logger import set_log_level
 
 set_log_level(preferences.General.logging_level)
 
-from dask.diagnostics import ProgressBar
-
-ProgressBar().register()
-
 
 
 def get_configuration_directory_path():

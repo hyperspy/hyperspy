@@ -51,8 +51,10 @@ def rgbx2regular_array(data, plot_friendly=False):
     """
     # Make sure that the data is contiguous
     if isinstance(data, Array):
+        from dask.diagnostics import ProgressBar
         # an expensive thing, but nothing to be done for now...
-        data = data.compute()
+        with ProgressBar():
+            data = data.compute()
     if data.flags['C_CONTIGUOUS'] is False:
         if np.ma.is_masked(data):
             data = data.copy(order='C')

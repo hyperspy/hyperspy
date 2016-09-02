@@ -903,8 +903,8 @@ class CircleROI(BaseInteractiveROI):
             import dask.array as da
             mask = da.from_array(mask, chunks=chunks)
             mask = da.broadcast_to(mask, tiles)
-            # TODO: make it work with floats (non-floats don't have nans)
-            roi.data = da.where(mask, roi.data, np.nan)
+            # By default promotes dtype to float if required
+            roi.data = da.where(mask, np.nan, roi.data)
         else:
             mask = np.tile(mask, tiles)
             roi.data = np.ma.masked_array(roi.data, mask, hard_mask=True)

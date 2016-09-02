@@ -21,6 +21,7 @@ import logging
 import numpy as np
 import dask.array as da
 import dask.delayed as dd
+from dask.diagnostics import ProgressBar
 from dask.delayed import Delayed as dDelayed
 
 from hyperspy.signal import BaseSignal
@@ -43,7 +44,8 @@ class LazySignal(BaseSignal):
 
     def compute(self):
         """Only for testing, when able to store the result in memory.."""
-        self.data = self.data.compute()
+        with ProgressBar():
+            self.data = self.data.compute()
         self._lazy = False
         self._assign_subclass()
 
