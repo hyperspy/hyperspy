@@ -336,6 +336,7 @@ with update_version_when_dev() as version:
                 'tests/io/dens_data/*.dens',
                 'tests/io/dm_stackbuilder_plugin/test_stackbuilder_imagestack.dm3',
                 'tests/io/dm3_1D_data/*.dm3',
+                'tests/io/dm3_locale/*.dm3',
                 'tests/io/dm3_2D_data/*.dm3',
                 'tests/io/dm3_3D_data/*.dm3',
                 'tests/io/dm4_1D_data/*.dm4',
