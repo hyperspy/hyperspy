@@ -45,13 +45,11 @@ magics = [0x0102]
 
 def _from_serial_date(serial):
     # Excel date&time format
-    origin = datetime(1899, 12, 30, tzinfo=tz.tzutc())
+    origin = datetime(1899, 12, 30)
     secs = (serial % 1.0) * 86400.0
-    dt = timedelta(int(serial), secs, secs / 1000)
-    utc = origin + dt
-    date = "%s" % utc.astimezone(tz.tzlocal()).date()
-    time = "%s" % utc.astimezone(tz.tzlocal()).time()
-    return date, time
+    delta = timedelta(int(serial), secs, secs / 1000)
+    dt = origin + delta
+    return dt.date().isoformat(), dt.time().isoformat()
 
 
 def _to_serial_date(dt):
