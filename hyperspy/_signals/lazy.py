@@ -453,11 +453,11 @@ class LazySignal(BaseSignal):
             loadings = transform(ipca, data).compute()
 
         elif kind == 'ORPCA':
-            X, E, U, S, V = orpca(data, rank=n_components, fast=True,
+            X, E, U, S, V = orpca(data.T, rank=n_components, fast=True,
                                   **kwargs)
 
-            loadings = U * S
-            factors = V
+            factors = U * S
+            loadings = V
             explained_variance = S ** 2 / len(factors)
 
         if explained_variance is not None and \

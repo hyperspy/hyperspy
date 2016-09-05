@@ -321,7 +321,7 @@ def orpca(X, rank, fast=False,
             _logger.warning("Learning rate for SGD algorithm is "
                             "set to default: 1.0")
             learning_rate = 1.0
-
+    lazy = isinstance(X, da.Array)
     # Check options are valid
     if method not in ('CF', 'BCD', 'SGD'):
         raise ValueError("'method' not recognised")
@@ -331,7 +331,7 @@ def orpca(X, rank, fast=False,
         raise ValueError("'training_samples' must be >= 'output_dimension'")
 
     # Get min & max of data matrix for scaling
-    if isinstance(X, da.Array):
+    if lazy:
         # X_max, X_min = da.compute(X.min(), X.max())
         # TODO: this is expensive, avoid it...?
         X_max = 1
@@ -352,14 +352,19 @@ def orpca(X, rank, fast=False,
 
     R = np.zeros((rank, n))
     I = lambda1 * np.eye(rank)
-    E = np.zeros((m, n))
+    if not lazy:
+        E = np.zeros((m, n))
 
     # Extra variables for CF and BCD methods
     if method in ('CF', 'BCD'):
         A = np.zeros((rank, rank))
         B = np.zeros((m, rank))
-
-    for t in range(n):
+    if lazy:
+        import tqdm
+        thisrange = tqdm.trange(n)
+    else:
+        thisrange = range(n)
+    for t in thisrange:
         if t == 0 or np.mod(t + 1, np.round(n / 10)) == 0:
             _logger.info("Processing sample : %s" % (t + 1))
 
@@ -367,7 +372,8 @@ def orpca(X, rank, fast=False,
         r, e = _solveproj(z, L, I, lambda2)
 
         R[:, t] = r
-        E[:, t] = e
+        if not lazy:
+            E[:, t] = e
 
         if method == 'CF':
             # Closed-form solution
@@ -388,7 +394,8 @@ def orpca(X, rank, fast=False,
 
     # Rescale
     Xhat = (np.dot(L, R) * X_max) + X_min
-    Ehat = (E * X_max) + X_min
+    if not lazy:
+        Ehat = (E * X_max) + X_min
 
     # Do final SVD
     U, S, Vh = svd(Xhat)
@@ -399,4 +406,7 @@ def orpca(X, rank, fast=False,
     # in the SVD.
     S[rank:] = 0.
 
-    return Xhat, Ehat, U, S, V
+    if lazy:
+        return Xhat, 1, U, S, V
+    else:
+        return Xhat, Ehat, U, S, V
