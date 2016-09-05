@@ -19,6 +19,7 @@
 import logging
 
 import numpy as np
+from toolz import partial
 import dask.array as da
 import dask.delayed as dd
 from dask.diagnostics import ProgressBar
@@ -34,6 +35,13 @@ from hyperspy.docstrings.signal import (ONE_AXIS_PARAMETER, OUT_ARG)
 _logger = logging.getLogger(__name__)
 
 lazyerror = NotImplementedError('This method is not available in lazy signals')
+
+def _transform(model, x):
+    return model.transform(x)
+
+def transform(model, x):
+    func = partial(_transform, model)
+    return x.map_blocks(func, chunks=(x.chunks[0], (model.n_components,)), drop_axis=1, new_axis=1)
 
 
 class LazySignal(BaseSignal):
@@ -395,3 +403,22 @@ class LazySignal(BaseSignal):
             for res, ind in zip(indices, nav_indices):
                 getitem[ind] = res
             yield self.data[tuple(getitem)]
+
+    def decomposition(self, n_components):
+        data = self.data.reshape((self.axes_manager.navigation_size,
+                                  self.axes_manager.signal_size))
+        if n_components > np.min(data.chunks[0]):
+            data = data.rechunk((n_components, data.shape[1]))
+        from sklearn.decomposition import IncrementalPCA
+        ipca = IncrementalPCA(n_components=n_components)
+        chunks = data.chunks
+        slices = [slice(-chunks[0][0], 0), slice(None)]
+        for _chunk in progressbar(chunks[0]):
+            slices[0] = slice(slices[0].start+_chunk, slices[0].stop+_chunk)
+            thedata = data[tuple(slices)]
+            ipca = ipca.partial_fit(thedata)
+        self.learning_results.explained_variance = ipca.explained_variance_
+        self.learning_results.explained_variance_ratio = \
+                ipca.explained_variance_ratio_
+        self.learning_results.factors = ipca.components_.T
+        self.learning_results.loadings = transform(ipca, data).compute()
