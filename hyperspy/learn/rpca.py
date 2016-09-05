@@ -19,6 +19,7 @@
 import logging
 
 import numpy as np
+import dask.array as da
 import scipy.linalg
 
 from hyperspy.misc.machine_learning.import_sklearn import (
@@ -330,8 +331,14 @@ def orpca(X, rank, fast=False,
         raise ValueError("'training_samples' must be >= 'output_dimension'")
 
     # Get min & max of data matrix for scaling
-    X_max = np.max(X)
-    X_min = np.min(X)
+    if isinstance(X, da.Array):
+        # X_max, X_min = da.compute(X.min(), X.max())
+        # TODO: this is expensive, avoid it...?
+        X_max = 1
+        X_min = 0
+    else:
+        X_max = np.max(X)
+        X_min = np.min(X)
     X = (X - X_min) / X_max
 
     # Initialize the subspace estimate

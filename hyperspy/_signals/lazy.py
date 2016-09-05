@@ -22,8 +22,8 @@ import numpy as np
 from toolz import partial
 import dask.array as da
 import dask.delayed as dd
+from dask import threaded
 from dask.diagnostics import ProgressBar
-from dask.delayed import Delayed as dDelayed
 
 from hyperspy.signal import BaseSignal
 from hyperspy.misc.utils import underline
@@ -31,6 +31,7 @@ from hyperspy.external.progressbar import progressbar
 from hyperspy.external.astroML.histtools import dasky_histogram
 from hyperspy.defaults_parser import preferences
 from hyperspy.docstrings.signal import (ONE_AXIS_PARAMETER, OUT_ARG)
+from hyperspy.learn.rpca import orpca
 
 _logger = logging.getLogger(__name__)
 
@@ -404,21 +405,68 @@ class LazySignal(BaseSignal):
                 getitem[ind] = res
             yield self.data[tuple(getitem)]
 
-    def decomposition(self, n_components):
+    def decomposition(self, n_components, kind='PCA',
+                      get=threaded.get, blocksize=None, **kwargs):
+        """Perform Incremental (Batch) PCA on the data, keeping n significant
+        components.
+
+        Parameters
+        ----------
+            n_components : int
+                the number of significant components to keep
+            kind : str
+                'PCA' or 'ORPCA'
+            get : dask scheduler
+                the dask scheduler to use for computations
+            blocksize : int
+                the size of blocks to pass to the PCA model. Larger blocks
+                require more memory, but should run faster. Has to be at least
+                equal to the n_components.
+            **kwargs
+                passed to the selected method.
+
+        """
         data = self.data.reshape((self.axes_manager.navigation_size,
                                   self.axes_manager.signal_size))
-        if n_components > np.min(data.chunks[0]):
-            data = data.rechunk((n_components, data.shape[1]))
-        from sklearn.decomposition import IncrementalPCA
-        ipca = IncrementalPCA(n_components=n_components)
-        chunks = data.chunks
-        slices = [slice(-chunks[0][0], 0), slice(None)]
-        for _chunk in progressbar(chunks[0]):
-            slices[0] = slice(slices[0].start+_chunk, slices[0].stop+_chunk)
-            thedata = data[tuple(slices)]
-            ipca = ipca.partial_fit(thedata)
-        self.learning_results.explained_variance = ipca.explained_variance_
-        self.learning_results.explained_variance_ratio = \
-                ipca.explained_variance_ratio_
-        self.learning_results.factors = ipca.components_.T
-        self.learning_results.loadings = transform(ipca, data).compute()
+        explained_variance = None
+        explained_variance_ratio = None
+        if kind == 'PCA':
+            if blocksize is not None and n_components > blocksize:
+                raise ValueError('too small blocksize, has to be more than '
+                                 'n_components')
+            if blocksize is not None:
+                data = data.rechunk((blocksize, data.shape[1]))
+            elif n_components > np.min(data.chunks[0]):
+                data = data.rechunk((n_components, data.shape[1]))
+            from sklearn.decomposition import IncrementalPCA
+            ipca = IncrementalPCA(n_components=n_components)
+            nblocks = len(data.chunks[0])
+
+            import tqdm
+            for i in tqdm.trange(nblocks):
+                thedata = get(data.dask, (data.name, i, 0))
+                ipca = ipca.partial_fit(thedata, **kwargs)
+
+            explained_variance = ipca.explained_variance_
+            explained_variance_ratio = ipca.explained_variance_ratio_
+            factors = ipca.components_.T
+            loadings = transform(ipca, data).compute()
+
+        elif kind == 'ORPCA':
+            X, E, U, S, V = orpca(data, rank=n_components, fast=True,
+                                  **kwargs)
+
+            loadings = U * S
+            factors = V
+            explained_variance = S ** 2 / len(factors)
+
+        if explained_variance is not None and \
+                explained_variance_ratio is None:
+            explained_variance_ratio = \
+                explained_variance / explained_variance.sum()
+
+        target = self.learning_results
+        target.factors = factors
+        target.loadings = loadings
+        target.explained_variance = explained_variance
+        target.explained_variance_ratio = explained_variance_ratio
