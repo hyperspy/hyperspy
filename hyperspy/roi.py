@@ -906,7 +906,7 @@ class CircleROI(BaseInteractiveROI):
             # By default promotes dtype to float if required
             roi.data = da.where(mask, np.nan, roi.data)
         else:
-            mask = np.tile(mask, tiles)
+            mask = np.broadcast_to(mask, tiles)
             roi.data = np.ma.masked_array(roi.data, mask, hard_mask=True)
         if out is None:
             return roi

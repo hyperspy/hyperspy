@@ -404,7 +404,7 @@ class LazySignal(BaseSignal):
                 getitem[ind] = res
             yield self.data[tuple(getitem)]
 
-    def decomposition(self, n_components
+    def decomposition(self, n_components,
                       get=threaded.get, blocksize=None, **kwargs):
         """Perform Incremental (Batch) PCA on the data, keeping n significant
         components.
