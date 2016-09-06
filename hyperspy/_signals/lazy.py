@@ -31,7 +31,6 @@ from hyperspy.external.progressbar import progressbar
 from hyperspy.external.astroML.histtools import dasky_histogram
 from hyperspy.defaults_parser import preferences
 from hyperspy.docstrings.signal import (ONE_AXIS_PARAMETER, OUT_ARG)
-from hyperspy.learn.rpca import orpca
 
 _logger = logging.getLogger(__name__)
 
@@ -405,7 +404,7 @@ class LazySignal(BaseSignal):
                 getitem[ind] = res
             yield self.data[tuple(getitem)]
 
-    def decomposition(self, n_components, kind='PCA',
+    def decomposition(self, n_components
                       get=threaded.get, blocksize=None, **kwargs):
         """Perform Incremental (Batch) PCA on the data, keeping n significant
         components.
@@ -414,8 +413,6 @@ class LazySignal(BaseSignal):
         ----------
             n_components : int
                 the number of significant components to keep
-            kind : str
-                'PCA' or 'ORPCA'
             get : dask scheduler
                 the dask scheduler to use for computations
             blocksize : int
@@ -423,42 +420,33 @@ class LazySignal(BaseSignal):
                 require more memory, but should run faster. Has to be at least
                 equal to the n_components.
             **kwargs
-                passed to the selected method.
+                passed to the partial_fit.
 
         """
         data = self.data.reshape((self.axes_manager.navigation_size,
                                   self.axes_manager.signal_size))
         explained_variance = None
         explained_variance_ratio = None
-        if kind == 'PCA':
-            if blocksize is not None and n_components > blocksize:
-                raise ValueError('too small blocksize, has to be more than '
-                                 'n_components')
-            if blocksize is not None:
-                data = data.rechunk((blocksize, data.shape[1]))
-            elif n_components > np.min(data.chunks[0]):
-                data = data.rechunk((n_components, data.shape[1]))
-            from sklearn.decomposition import IncrementalPCA
-            ipca = IncrementalPCA(n_components=n_components)
-            nblocks = len(data.chunks[0])
+        if blocksize is not None and n_components > blocksize:
+            raise ValueError('too small blocksize, has to be more than '
+                             'n_components')
+        if blocksize is not None:
+            data = data.rechunk((blocksize, data.shape[1]))
+        elif n_components > np.min(data.chunks[0]):
+            data = data.rechunk((n_components, data.shape[1]))
+        from sklearn.decomposition import IncrementalPCA
+        ipca = IncrementalPCA(n_components=n_components)
+        nblocks = len(data.chunks[0])
 
-            import tqdm
-            for i in tqdm.trange(nblocks):
-                thedata = get(data.dask, (data.name, i, 0))
-                ipca = ipca.partial_fit(thedata, **kwargs)
+        import tqdm
+        for i in tqdm.trange(nblocks):
+            thedata = get(data.dask, (data.name, i, 0))
+            ipca = ipca.partial_fit(thedata, **kwargs)
 
-            explained_variance = ipca.explained_variance_
-            explained_variance_ratio = ipca.explained_variance_ratio_
-            factors = ipca.components_.T
-            loadings = transform(ipca, data).compute()
-
-        elif kind == 'ORPCA':
-            X, E, U, S, V = orpca(data.T, rank=n_components, fast=True,
-                                  **kwargs)
-
-            factors = U * S
-            loadings = V
-            explained_variance = S ** 2 / len(factors)
+        explained_variance = ipca.explained_variance_
+        explained_variance_ratio = ipca.explained_variance_ratio_
+        factors = ipca.components_.T
+        loadings = transform(ipca, data).compute()
 
         if explained_variance is not None and \
                 explained_variance_ratio is None:
