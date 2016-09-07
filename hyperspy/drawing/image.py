@@ -328,7 +328,7 @@ class ImagePlot(BlittedFigure):
                     self.vmax != self.vmin):
                 redraw_colorbar = True
                 ims[0].autoscale()
-
+        redraw_colorbar = redraw_colorbar and self.colorbar
         if self.plot_indices is True:
             self._text.set_text(self.axes_manager.indices)
         if self.no_nans:
