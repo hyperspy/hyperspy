@@ -332,6 +332,62 @@ class EDSModel(Model1D):
             label.string = (r"$\mathrm{%s}_{\mathrm{%s}}$" %
                             _get_element_and_line(component.name))
 
+    def fit(self, fitter='mpfit', method='ls', grad=True,
+            bounded=True, ext_bounding=False, update_plot=False,
+            **kwargs):
+        """Fits the EDS model to the experimental data.
+
+        The fitting of an EDS model is, by default, performed by bounded
+        optimisation using mpfit. This constrains the components to be positive
+        as is physical. Alternative fitters may still be specified.
+
+        Parameters
+        ----------
+        fitter : {None, "leastsq", "odr", "mpfit", "fmin"}
+            The optimizer to perform the fitting. By default mpfit is used for
+            EDS models, as this supports bounding to force the components in the
+            model to be positive. This is inline with the physical nature of EDS
+            spectra. All optimizers available for Model1D remain availble and
+            can be specified by the user. fmin is the only one that supports
+            maximum likelihood estimation, but it is less robust than leastsq
+            and mpfit, it could be used for further refinement after an initial
+            fit with mpfit.
+        method : {'ls', 'ml'}
+            Choose 'ls' (default) for least squares and 'ml' for
+            maximum-likelihood estimation. The latter only works with
+            fitter = 'fmin'.
+        grad : bool
+            If True, the analytical gradient is used if defined to
+            speed up the estimation. As gradients are defined for the Gaussian
+            components used to construct a model to EDS data it is set to True
+            by default.
+        ext_bounding : bool
+            If True, enforce bounding by keeping the value of the parameters
+            constant out of the defined bounding area.
+        bounded : bool
+            If True (the default for EDS models) performs bounded optimization
+            if the fitter supports it. Currently only mpfit supports bounding.
+        update_plot : bool
+            If True, the plot is updated during the optimization process. It
+            slows down the optimization but it permits to visualize the
+            optimization evolution.
+        **kwargs : key word arguments
+            Any extra key word argument will be passed to the chosen fitter.
+
+        See Also
+        --------
+        multifit
+
+        """
+        Model1D.fit(self,
+                    fitter=fitter,
+                    method=method,
+                    grad=grad,
+                    bounded=bounded,
+                    ext_bounding=ext_bounding,
+                    update_plot=update_plot,
+                    **kwargs)
+
     def fit_background(self,
                        start_energy=None,
                        end_energy=None,
