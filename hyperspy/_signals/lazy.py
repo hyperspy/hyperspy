@@ -279,7 +279,7 @@ class LazySignal(BaseSignal):
 
     def valuemax(self, axis, out=None):
         idx = self.indexmax(axis)
-        old_data = idx._lazy_data(axis=axis)
+        old_data = idx.data
         data = old_data.map_blocks(
             lambda x: self.axes_manager[axis].index2value(x))
         if out is None:
