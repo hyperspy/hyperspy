@@ -69,6 +69,7 @@ class ImagePlot(BlittedFigure):
         self.plot_ticks = False
         self.colorbar = True
         self._colorbar = None
+        self.quantity_label = ''
         self.figure = None
         self.ax = None
         self.title = ''
@@ -261,6 +262,8 @@ class ImagePlot(BlittedFigure):
 
         if self.colorbar is True:
             self._colorbar = plt.colorbar(self.ax.images[0], ax=self.ax)
+            self._colorbar.set_label(
+                self.quantity_label, rotation=-90, va='bottom')
             self._colorbar.ax.yaxis.set_animated(True)
 
         self.figure.canvas.draw()
@@ -325,7 +328,7 @@ class ImagePlot(BlittedFigure):
                     self.vmax != self.vmin):
                 redraw_colorbar = True
                 ims[0].autoscale()
-
+        redraw_colorbar = redraw_colorbar and self.colorbar
         if self.plot_indices is True:
             self._text.set_text(self.axes_manager.indices)
         if self.no_nans:

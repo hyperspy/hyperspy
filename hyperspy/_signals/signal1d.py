@@ -931,7 +931,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
             self, signal_range, background_estimator, fast=True,
             show_progressbar=None):
         from hyperspy.models.model1d import Model1D
-        model = self.create_model()
+        model = Model1D(self)
         model.append(background_estimator)
         background_estimator.estimate_parameters(
             self,

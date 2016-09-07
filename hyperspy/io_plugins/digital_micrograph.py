@@ -823,12 +823,6 @@ class ImageObject(object):
             "ImageList.TagGroup0.ImageTags.Microscope Info.Illumination Mode": (
                 "Acquisition_instrument.TEM.acquisition_mode",
                 self._get_mode),
-            "ImageList.TagGroup0.ImageTags.Microscope Info.STEM Camera Length": (
-                "Acquisition_instrument.TEM.camera_length",
-                None),
-            "ImageList.TagGroup0.ImageTags.Microscope Info.Indicated Magnification": (
-                "Acquisition_instrument.TEM.magnification",
-                None),
             "ImageList.TagGroup0.ImageTags.Microscope Info.Probe Current (nA)": (
                 "Acquisition_instrument.TEM.beam_current",
                 None),
@@ -839,7 +833,36 @@ class ImageObject(object):
                 "Sample.description",
                 self._parse_string),
         }
+
         if "Microscope_Info" in self.imdict.ImageTags.keys():
+            is_TEM = (
+                'TEM' == self.imdict.ImageTags.Microscope_Info.Illumination_Mode)
+            is_diffraction = (
+                'DIFFRACTION' == self.imdict.ImageTags.Microscope_Info.Imaging_Mode)
+
+            if is_TEM:
+                if is_diffraction:
+                    mapping.update({
+                        "ImageList.TagGroup0.ImageTags.Microscope Info.Indicated Magnification": (
+                            "Acquisition_instrument.TEM.camera_length",
+                            None),
+                    })
+                else:
+                    mapping.update({
+                        "ImageList.TagGroup0.ImageTags.Microscope Info.Indicated Magnification": (
+                            "Acquisition_instrument.TEM.magnification",
+                            None),
+                    })
+            else:
+                mapping.update({
+                    "ImageList.TagGroup0.ImageTags.Microscope Info.STEM Camera Length": (
+                        "Acquisition_instrument.TEM.camera_length",
+                        None),
+                    "ImageList.TagGroup0.ImageTags.Microscope Info.Indicated Magnification": (
+                        "Acquisition_instrument.TEM.magnification",
+                        None),
+                })
+
             mapping.update({
                 "ImageList.TagGroup0.ImageTags": (
                     "Acquisition_instrument.TEM.microscope",

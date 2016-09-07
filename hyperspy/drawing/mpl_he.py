@@ -35,6 +35,7 @@ class MPL_HyperExplorer(object):
         self.axes_manager = None
         self.signal_title = ''
         self.navigator_title = ''
+        self.quantity_label = ''
         self.signal_plot = None
         self.navigator_plot = None
         self.axis = None
@@ -46,7 +47,7 @@ class MPL_HyperExplorer(object):
         # Doing nothing is good enough for signal_dimension==0 though.
         return
 
-    def plot_navigator(self):
+    def plot_navigator(self, **kwargs):
         if self.axes_manager.navigation_dimension == 0:
             return
         if self.navigator_data_function is None:
@@ -95,6 +96,15 @@ class MPL_HyperExplorer(object):
         elif len(self.navigator_data_function().shape) >= 2:
             imf = image.ImagePlot()
             imf.data_function = self.navigator_data_function
+            imf.colorbar = kwargs.get('colorbar', True)
+            imf.scalebar = kwargs.get('scalebar', True)
+            imf.scalebar_color = kwargs.get('scalebar_color', "white")
+            imf.axes_ticks = kwargs.get('axes_ticks', None)
+            imf.saturated_pixels = kwargs.get('saturated_pixels', 0)
+            imf.vmin = kwargs.get('vmin', None)
+            imf.vmax = kwargs.get('vmax', None)
+            imf.no_nans = kwargs.get('no_nans', False)
+            imf.centre_colormap = kwargs.get('centre_colormap', "auto")
             # Navigator labels
             if self.axes_manager.navigation_dimension == 1:
                 imf.yaxis = self.axes_manager.navigation_axes[0]
@@ -131,7 +141,7 @@ class MPL_HyperExplorer(object):
                 self.pointer = pointer(self.axes_manager)
                 self.pointer.color = 'red'
                 self.pointer.connect_navigate()
-            self.plot_navigator()
+            self.plot_navigator(**kwargs)
         self.plot_signal(**kwargs)
 
     def assign_pointer(self):

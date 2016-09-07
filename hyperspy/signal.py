@@ -1927,6 +1927,8 @@ class BaseSignal(FancySlicing,
             self._plot.signal_title = self.metadata.General.title
         elif self.tmp_parameters.has_item('filename'):
             self._plot.signal_title = self.tmp_parameters.filename
+        if self.metadata.has_item("Signal.quantity"):
+            self._plot.quantity_label = self.metadata.Signal.quantity
 
         def get_static_explorer_wrapper(*args, **kwargs):
             return navigator()
