@@ -19,8 +19,7 @@
 
 import nose.tools as nt
 import numpy as np
-from hyperspy.components import Gaussian2D, SymmetricGaussian2D
-from hyperspy.signals import Image
+from hyperspy._components import gaussian2d, symmetric_gaussian2d
 from hyperspy.io import load
 import os
 
@@ -41,7 +40,7 @@ class TestSymmetricGaussian2DFitting:
 
     def test_fitting(self):
         m = self.s.create_model()
-        g = SymmetricGaussian2D()
+        g = symmetric_gaussian2d.SymmetricGaussian2D()
         m.append(g)
         m.fit()
         model_data = m.as_signal().data
@@ -53,7 +52,7 @@ class TestSymmetricGaussian2DFitting:
 class TestSymmetricGaussian2DValues:
 
     def setUp(self):
-        g = SymmetricGaussian2D(
+        g = symmetric_gaussian2d.SymmetricGaussian2D(
             centre_x=-5.,
             centre_y=-5.,
             sigma=1.)
@@ -85,7 +84,7 @@ class TestGaussian2D:
 
     def test_fitting(self):
         m = self.s.create_model()
-        g = Gaussian2D()
+        g = gaussian2d.Gaussian2D()
         # Need to set some sensible initial values
         m.append(g)
         m.fit()
