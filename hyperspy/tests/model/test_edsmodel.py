@@ -152,6 +152,20 @@ class TestlineFit:
         np.testing.assert_allclose(sigma, m['Fe_Ka'].sigma.value,
                                    atol=1e-2)
 
+    def test_enable_adjust_position(self):
+        m = self.s.create_model()
+        m.enable_adjust_position()
+        nt.assert_equal(len(m._position_widgets), 5)
+        # Check that both line and label was added
+        nt.assert_equal(len(list(m._position_widgets.values())[0]), 2)
+        lbls = [p[1].string for p in m._position_widgets.values()]
+        nt.assert_equal(sorted(lbls), [
+            '$\\mathrm{Cr}_{\\mathrm{Ka}}$',
+            '$\\mathrm{Cr}_{\\mathrm{Kb}}$',
+            '$\\mathrm{Fe}_{\\mathrm{Ka}}$',
+            '$\\mathrm{Fe}_{\\mathrm{Kb}}$',
+            '$\\mathrm{Zn}_{\\mathrm{Ka}}$'])
+
 
 class TestMaps:
 

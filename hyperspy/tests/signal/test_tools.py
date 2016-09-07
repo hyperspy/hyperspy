@@ -1,10 +1,9 @@
-import mock
+from unittest import mock
 
 import numpy as np
 from numpy.testing import assert_array_equal
 import nose.tools as nt
 
-from hyperspy.signals import BaseSignal
 from hyperspy import signals
 
 
@@ -18,7 +17,7 @@ def _verify_test_sum_x_E(self, s):
 class Test2D:
 
     def setUp(self):
-        self.signal = BaseSignal(np.arange(5 * 10).reshape(5, 10))
+        self.signal = signals.Signal1D(np.arange(5 * 10).reshape(5, 10))
         self.signal.axes_manager[0].name = "x"
         self.signal.axes_manager[1].name = "E"
         self.signal.axes_manager[0].scale = 0.5
@@ -115,18 +114,50 @@ class Test2D:
 
     def test_unfold_image(self):
         s = self.signal
-        s.axes_manager.set_signal_dimension(2)
+        s = s.transpose(signal_axes=2)
         s.unfold()
         nt.assert_equal(s.data.shape, (50,))
 
     def test_unfold_image_returns_true(self):
         s = self.signal
-        s.axes_manager.set_signal_dimension(2)
+        s = s.transpose(signal_axes=2)
         nt.assert_true(s.unfold())
 
     def test_print_summary(self):
         # Just test if it doesn't raise an exception
         self.signal._print_summary()
+
+    def test_numpy_unfunc_one_arg_titled(self):
+        self.signal.metadata.General.title = "yes"
+        result = np.exp(self.signal)
+        nt.assert_true(isinstance(result, signals.Signal1D))
+        np.testing.assert_array_equal(result.data, np.exp(self.signal.data))
+        nt.assert_equal(result.metadata.General.title, "exp(yes)")
+
+    def test_numpy_unfunc_one_arg_untitled(self):
+        result = np.exp(self.signal)
+        nt.assert_equal(result.metadata.General.title,
+                        "exp(Untitled Signal 1)")
+
+    def test_numpy_unfunc_two_arg_titled(self):
+        s1, s2 = self.signal.deepcopy(), self.signal.deepcopy()
+        s1.metadata.General.title = "A"
+        s2.metadata.General.title = "B"
+        result = np.add(s1, s2)
+        nt.assert_true(isinstance(result, signals.Signal1D))
+        np.testing.assert_array_equal(result.data, np.add(s1.data, s2.data))
+        nt.assert_equal(result.metadata.General.title, "add(A, B)")
+
+    def test_numpy_unfunc_two_arg_untitled(self):
+        s1, s2 = self.signal.deepcopy(), self.signal.deepcopy()
+        result = np.add(s1, s2)
+        nt.assert_equal(result.metadata.General.title,
+                        "add(Untitled Signal 1, Untitled Signal 2)")
+
+    def test_numpy_func(self):
+        result = np.angle(self.signal)
+        nt.assert_true(isinstance(result, np.ndarray))
+        np.testing.assert_array_equal(result, np.angle(self.signal.data))
 
 
 def _test_default_navigation_signal_operations_over_many_axes(self, op):
@@ -141,7 +172,7 @@ def _test_default_navigation_signal_operations_over_many_axes(self, op):
 class Test3D:
 
     def setUp(self):
-        self.signal = BaseSignal(np.arange(2 * 4 * 6).reshape(2, 4, 6))
+        self.signal = signals.Signal1D(np.arange(2 * 4 * 6).reshape(2, 4, 6))
         self.signal.axes_manager[0].name = "x"
         self.signal.axes_manager[1].name = "y"
         self.signal.axes_manager[2].name = "E"
@@ -220,7 +251,7 @@ class Test3D:
 
     def test_get_navigation_signal_nav_dim0(self):
         s = self.signal
-        s.axes_manager.set_signal_dimension(3)
+        s = s.transpose(signal_axes=3)
         ns = s._get_navigation_signal()
         nt.assert_equal(ns.axes_manager.signal_dimension, 1)
         nt.assert_equal(ns.axes_manager.signal_size, 1)
@@ -228,7 +259,7 @@ class Test3D:
 
     def test_get_navigation_signal_nav_dim1(self):
         s = self.signal
-        s.axes_manager.set_signal_dimension(2)
+        s = s.transpose(signal_axes=2)
         ns = s._get_navigation_signal()
         nt.assert_equal(ns.axes_manager.signal_shape,
                         s.axes_manager.navigation_shape)
@@ -236,7 +267,7 @@ class Test3D:
 
     def test_get_navigation_signal_nav_dim2(self):
         s = self.signal
-        s.axes_manager.set_signal_dimension(1)
+        s = s.transpose(signal_axes=1)
         ns = s._get_navigation_signal()
         nt.assert_equal(ns.axes_manager.signal_shape,
                         s.axes_manager.navigation_shape)
@@ -244,7 +275,7 @@ class Test3D:
 
     def test_get_navigation_signal_nav_dim3(self):
         s = self.signal
-        s.axes_manager.set_signal_dimension(0)
+        s = s.transpose(signal_axes=0)
         ns = s._get_navigation_signal()
         nt.assert_equal(ns.axes_manager.signal_shape,
                         s.axes_manager.navigation_shape)
@@ -253,25 +284,25 @@ class Test3D:
     @nt.raises(ValueError)
     def test_get_navigation_signal_wrong_data_shape(self):
         s = self.signal
-        s.axes_manager.set_signal_dimension(1)
+        s = s.transpose(signal_axes=1)
         s._get_navigation_signal(data=np.zeros((3, 2)))
 
     @nt.raises(ValueError)
     def test_get_navigation_signal_wrong_data_shape_dim0(self):
         s = self.signal
-        s.axes_manager.set_signal_dimension(3)
+        s = s.transpose(signal_axes=3)
         s._get_navigation_signal(data=np.asarray(0))
 
     def test_get_navigation_signal_given_data(self):
         s = self.signal
-        s.axes_manager.set_signal_dimension(1)
+        s = s.transpose(signal_axes=1)
         data = np.zeros(s.axes_manager._navigation_shape_in_array)
         ns = s._get_navigation_signal(data=data)
         nt.assert_is(ns.data, data)
 
     def test_get_signal_signal_nav_dim0(self):
         s = self.signal
-        s.axes_manager.set_signal_dimension(0)
+        s = s.transpose(signal_axes=0)
         ns = s._get_signal_signal()
         nt.assert_equal(ns.axes_manager.navigation_dimension, 0)
         nt.assert_equal(ns.axes_manager.navigation_size, 0)
@@ -279,7 +310,7 @@ class Test3D:
 
     def test_get_signal_signal_nav_dim1(self):
         s = self.signal
-        s.axes_manager.set_signal_dimension(1)
+        s = s.transpose(signal_axes=1)
         ns = s._get_signal_signal()
         nt.assert_equal(ns.axes_manager.signal_shape,
                         s.axes_manager.signal_shape)
@@ -287,7 +318,8 @@ class Test3D:
 
     def test_get_signal_signal_nav_dim2(self):
         s = self.signal
-        s.axes_manager.set_signal_dimension(2)
+        s = s.transpose(signal_axes=2)
+        s._assign_subclass()
         ns = s._get_signal_signal()
         nt.assert_equal(ns.axes_manager.signal_shape,
                         s.axes_manager.signal_shape)
@@ -295,7 +327,8 @@ class Test3D:
 
     def test_get_signal_signal_nav_dim3(self):
         s = self.signal
-        s.axes_manager.set_signal_dimension(3)
+        s = s.transpose(signal_axes=3)
+        s._assign_subclass()
         ns = s._get_signal_signal()
         nt.assert_equal(ns.axes_manager.signal_shape,
                         s.axes_manager.signal_shape)
@@ -304,18 +337,18 @@ class Test3D:
     @nt.raises(ValueError)
     def test_get_signal_signal_wrong_data_shape(self):
         s = self.signal
-        s.axes_manager.set_signal_dimension(1)
+        s = s.transpose(signal_axes=1)
         s._get_signal_signal(data=np.zeros((3, 2)))
 
     @nt.raises(ValueError)
     def test_get_signal_signal_wrong_data_shape_dim0(self):
         s = self.signal
-        s.axes_manager.set_signal_dimension(0)
+        s = s.transpose(signal_axes=0)
         s._get_signal_signal(data=np.asarray(0))
 
     def test_get_signal_signal_given_data(self):
         s = self.signal
-        s.axes_manager.set_signal_dimension(2)
+        s = s.transpose(signal_axes=2)
         data = np.zeros(s.axes_manager._signal_shape_in_array)
         ns = s._get_signal_signal(data=data)
         nt.assert_is(ns.data, data)
@@ -410,7 +443,7 @@ class Test4D:
 
 
 def test_signal_iterator():
-    s = BaseSignal(np.arange(3).reshape((3, 1)))
+    s = signals.Signal1D(np.arange(3).reshape((3, 1)))
     nt.assert_equal(next(s).data[0], 0)
     # If the following fails it can be because the iteration index was not
     # restarted
@@ -604,3 +637,97 @@ class TestOutArg:
         s.data = np.ma.array(s.data)
         ss = s.sum()  # Sum over navigation, data shape (6,)
         s.sum(axis=s.axes_manager._axes, out=ss)
+
+
+class TestTranspose:
+
+    def setUp(self):
+        self.s = signals.BaseSignal(np.random.rand(1, 2, 3, 4, 5, 6))
+        for ax, name in zip(self.s.axes_manager._axes, 'abcdef'):
+            ax.name = name
+        # just to make sure in case default changes
+        self.s.axes_manager.set_signal_dimension(6)
+        self.s.estimate_poissonian_noise_variance()
+
+    def test_signal_int_transpose(self):
+        t = self.s.transpose(signal_axes=2)
+        nt.assert_equal(t.axes_manager.signal_shape, (6, 5))
+        nt.assert_equal([ax.name for ax in t.axes_manager.signal_axes],
+                        ['f', 'e'])
+        nt.assert_is_instance(t, signals.Signal2D)
+        nt.assert_is_instance(t.metadata.Signal.Noise_properties.variance,
+                              signals.Signal2D)
+
+    def test_signal_iterable_int_transpose(self):
+        t = self.s.transpose(signal_axes=[0, 5, 4])
+        nt.assert_equal(t.axes_manager.signal_shape, (6, 1, 2))
+        nt.assert_equal([ax.name for ax in t.axes_manager.signal_axes],
+                        ['f', 'a', 'b'])
+
+    def test_signal_iterable_names_transpose(self):
+        t = self.s.transpose(signal_axes=['f', 'a', 'b'])
+        nt.assert_equal(t.axes_manager.signal_shape, (6, 1, 2))
+        nt.assert_equal([ax.name for ax in t.axes_manager.signal_axes],
+                        ['f', 'a', 'b'])
+
+    def test_signal_iterable_axes_transpose(self):
+        t = self.s.transpose(signal_axes=self.s.axes_manager.signal_axes[:2])
+        nt.assert_equal(t.axes_manager.signal_shape, (6, 5))
+        nt.assert_equal([ax.name for ax in t.axes_manager.signal_axes],
+                        ['f', 'e'])
+
+    @nt.raises(ValueError)
+    def test_signal_one_name(self):
+        self.s.transpose(signal_axes='a')
+
+    @nt.raises(ValueError)
+    def test_too_many_signal_axes(self):
+        self.s.transpose(signal_axes=10)
+
+    def test_navigation_int_transpose(self):
+        t = self.s.transpose(navigation_axes=2)
+        nt.assert_equal(t.axes_manager.navigation_shape, (2, 1))
+        nt.assert_equal([ax.name for ax in t.axes_manager.navigation_axes],
+                        ['b', 'a'])
+
+    def test_navigation_iterable_int_transpose(self):
+        t = self.s.transpose(navigation_axes=[0, 5, 4])
+        nt.assert_equal(t.axes_manager.navigation_shape, (6, 1, 2))
+        nt.assert_equal([ax.name for ax in t.axes_manager.navigation_axes],
+                        ['f', 'a', 'b'])
+
+    def test_navigation_iterable_names_transpose(self):
+        t = self.s.transpose(navigation_axes=['f', 'a', 'b'])
+        nt.assert_equal(t.axes_manager.navigation_shape, (6, 1, 2))
+        nt.assert_equal([ax.name for ax in t.axes_manager.navigation_axes],
+                        ['f', 'a', 'b'])
+
+    def test_navigation_iterable_axes_transpose(self):
+        t = self.s.transpose(
+            navigation_axes=self.s.axes_manager.signal_axes[
+                :2])
+        nt.assert_equal(t.axes_manager.navigation_shape, (6, 5))
+        nt.assert_equal([ax.name for ax in t.axes_manager.navigation_axes],
+                        ['f', 'e'])
+
+    @nt.raises(ValueError)
+    def test_navigation_one_name(self):
+        self.s.transpose(navigation_axes='a')
+
+    @nt.raises(ValueError)
+    def test_too_many_navigation_axes(self):
+        self.s.transpose(navigation_axes=10)
+
+    def test_transpose_shortcut(self):
+        s = self.s.transpose(signal_axes=2)
+        t = s.T
+        nt.assert_equal(t.axes_manager.navigation_shape, (5, 6))
+        nt.assert_equal([ax.name for ax in t.axes_manager.navigation_axes],
+                        ['e', 'f'])
+
+    def test_optimize(self):
+        t = self.s.transpose(signal_axes=['f', 'a', 'b'], optimize=False)
+        nt.assert_is(t.data.base, self.s.data)
+
+        t = self.s.transpose(signal_axes=['f', 'a', 'b'], optimize=True)
+        nt.assert_is_not(t.data.base, self.s.data)

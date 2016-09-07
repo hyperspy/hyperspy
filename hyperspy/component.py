@@ -33,7 +33,6 @@ from hyperspy.exceptions import NavigationDimensionError
 from hyperspy.misc.export_dictionary import export_to_dictionary, \
     load_from_dictionary
 from hyperspy.events import Events, Event
-from hyperspy.exceptions import VisibleDeprecationWarning
 
 import logging
 
@@ -199,22 +198,6 @@ class Parameter(t.HasTraits):
 
     def __len__(self):
         return self._number_of_elements
-
-    def connect(self, f):
-        warnings.warn(
-            "The method `Parameter.connect()` has been deprecated and will be "
-            "removed in HyperSpy 0.10. Please use "
-            "`Parameter.events.value_changed.connect()` instead.",
-            VisibleDeprecationWarning)
-        self.events.value_changed.connect(f, [])
-
-    def disconnect(self, f):
-        warnings.warn(
-            "The method `Parameter.disconnect()` has been deprecated and will "
-            "be removed in HyperSpy 0.10. Please use "
-            "`Parameter.events.value_changed.disconnect()` instead.",
-            VisibleDeprecationWarning)
-        self.events.value_changed.disconnect(f)
 
     def _get_value(self):
         if self.twin is None:
@@ -493,8 +476,6 @@ class Parameter(t.HasTraits):
 
         """
         from hyperspy.signal import BaseSignal
-        if self._axes_manager.navigation_dimension == 0:
-            raise NavigationDimensionError(0, '>0')
 
         s = BaseSignal(data=self.map[field],
                        axes=self._axes_manager._get_navigation_axes_dicts())
@@ -513,6 +494,15 @@ class Parameter(t.HasTraits):
                 size=self._number_of_elements,
                 name=self.name,
                 navigate=True)
+        s._assign_subclass()
+        if field == "values":
+            # Add the variance if available
+            std = self.as_signal(field="std")
+            if not np.isnan(std.data).all():
+                std.data = std.data ** 2
+                std.metadata.General.title = "Variance"
+                s.metadata.set_item(
+                    "Signal.Noise_properties.variance", std)
         return s
 
     def plot(self, **kwargs):
@@ -832,22 +822,6 @@ class Component(t.HasTraits):
             parameter._axes_manager = value
         self.__axes_manager = value
 
-    def connect(self, f):
-        warnings.warn(
-            "The method `Component.connect()` has been deprecated and will be "
-            "removed in HyperSpy 0.10. Please use "
-            "`Component.events.active_changed.connect()` instead.",
-            VisibleDeprecationWarning)
-        self.events.active_changed.connect(f, [])
-
-    def disconnect(self, f):
-        warnings.warn(
-            "The method `Component.disconnect()` has been deprecated and will "
-            "be removed in HyperSpy 0.10. Please use "
-            "`Component.events.active_changed.disconnect()` instead.",
-            VisibleDeprecationWarning)
-        self.events.active_changed.disconnect(f)
-
     def _get_active(self):
         if self.active_is_multidimensional is True:
             # The following should set
@@ -1085,7 +1059,7 @@ class Component(t.HasTraits):
 
         Examples
         --------
-        >>> v1 = hs.model.components.Voigt()
+        >>> v1 = hs.model.components1D.Voigt()
         >>> v1.set_parameters_free()
         >>> v1.set_parameters_free(parameter_name_list=['area','centre'])
 
@@ -1120,7 +1094,7 @@ class Component(t.HasTraits):
 
         Examples
         --------
-        >>> v1 = hs.model.components.Voigt()
+        >>> v1 = hs.model.components1D.Voigt()
         >>> v1.set_parameters_not_free()
         >>> v1.set_parameters_not_free(parameter_name_list=['area','centre'])
 

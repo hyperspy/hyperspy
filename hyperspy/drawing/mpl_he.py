@@ -35,11 +35,11 @@ class MPL_HyperExplorer(object):
         self.axes_manager = None
         self.signal_title = ''
         self.navigator_title = ''
+        self.quantity_label = ''
         self.signal_plot = None
         self.navigator_plot = None
         self.axis = None
         self.pointer = None
-        self._key_nav_cid = None
         self._pointer_nav_dim = None
 
     def plot_signal(self):

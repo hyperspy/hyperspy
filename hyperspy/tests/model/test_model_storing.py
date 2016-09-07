@@ -22,8 +22,8 @@ from os import remove
 import nose.tools as nt
 from hyperspy._signals.signal1d import Signal1D
 from hyperspy.io import load
-from hyperspy.components import Gaussian
-import mock
+from hyperspy.components1d import Gaussian
+from unittest import mock
 import gc
 
 

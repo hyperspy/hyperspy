@@ -27,8 +27,7 @@ class MPL_HyperImage_Explorer(MPL_HyperExplorer):
                     scalebar=True,
                     scalebar_color="white",
                     axes_ticks=None,
-                    auto_contrast=True,
-                    saturated_pixels=0.2,
+                    saturated_pixels=0,
                     vmin=None,
                     vmax=None,
                     no_nans=False,
@@ -50,16 +49,12 @@ class MPL_HyperImage_Explorer(MPL_HyperExplorer):
             If True, plot the axes ticks. If None axes_ticks are only
             plotted when the scale bar is not plotted. If False the axes ticks
             are never plotted.
-        auto_contrast : bool, optional
-            If True, the contrast is stretched for each image using the
-            `saturated_pixels` value. Default True
         saturated_pixels: scalar
             The percentage of pixels that are left out of the bounds. For
             example, the low and high bounds of a value of 1 are the
             0.5% and 99.5% percentiles. It must be in the [0, 100] range.
         vmin, vmax : scalar, optional
-            `vmin` and `vmax` are used to normalize luminance data. If
-            `auto_contrast` is True (i.e. default) these values are ignore.
+            `vmin` and `vmax` are used to normalize luminance data.
         no_nans : bool, optional
             If True, set nans to zero for plotting.
         **kwargs, optional
@@ -75,25 +70,22 @@ class MPL_HyperImage_Explorer(MPL_HyperExplorer):
         imf.title = self.signal_title + " Signal"
         imf.xaxis, imf.yaxis = self.axes_manager.signal_axes
         imf.colorbar = colorbar
+        imf.quantity_label = self.quantity_label
         imf.scalebar = scalebar
         imf.axes_ticks = axes_ticks
         imf.vmin, imf.vmax = vmin, vmax
         imf.saturated_pixels = saturated_pixels
         imf.no_nans = no_nans
         imf.scalebar_color = scalebar_color
-        imf.auto_contrast = auto_contrast
         imf.centre_colormap = centre_colormap
         imf.plot(**kwargs)
         self.signal_plot = imf
 
         if self.navigator_plot is not None and imf.figure is not None:
-            utils.on_figure_window_close(self.navigator_plot.figure,
-                                         self._on_navigator_plot_closing)
-            utils.on_figure_window_close(
-                imf.figure, self.close_navigator_plot)
-            self._key_nav_cid = \
-                self.signal_plot.figure.canvas.mpl_connect(
-                    'key_press_event', self.axes_manager.key_navigator)
-            self._key_nav_cid = \
-                self.navigator_plot.figure.canvas.mpl_connect(
-                    'key_press_event', self.axes_manager.key_navigator)
+            self.navigator_plot.events.closed.connect(
+                self._on_navigator_plot_closing, [])
+            imf.events.closed.connect(self.close_navigator_plot, [])
+            self.signal_plot.figure.canvas.mpl_connect(
+                'key_press_event', self.axes_manager.key_navigator)
+            self.navigator_plot.figure.canvas.mpl_connect(
+                'key_press_event', self.axes_manager.key_navigator)

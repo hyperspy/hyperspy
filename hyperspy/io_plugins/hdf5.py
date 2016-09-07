@@ -18,8 +18,9 @@
 
 from distutils.version import StrictVersion
 import warnings
-import datetime
 import logging
+import datetime
+import ast
 
 import h5py
 import numpy as np
@@ -43,7 +44,7 @@ default_extension = 4
 
 # Writing capabilities
 writes = True
-version = "2.0"
+version = "2.2"
 
 # -----------------------
 # File format description
@@ -72,8 +73,18 @@ version = "2.0"
 # the experiments and that will be accessible as attributes of the
 # Experiments instance
 #
-# New in v1.3
-# -----------
+# CHANGES
+#
+# v2.2
+# - store more metadata as string: date, time, notes, authors and doi
+# - store quantity for intensity axis
+#
+# v2.1
+# - Store the navigate attribute.
+# - record_by is stored only for backward compatibility but the axes navigate
+#   attribute takes precendence over record_by for files with version >= 2.1
+# v1.3
+# ----
 # - Added support for lists, tuples and binary strings
 
 not_valid_format = 'The file is not a valid HyperSpy hdf5 file'
@@ -100,7 +111,7 @@ def get_hspy_format_version(f):
     return StrictVersion(version)
 
 
-def file_reader(filename, record_by, mode='r', driver='core',
+def file_reader(filename, mode='r', driver='core',
                 backing_store=False, load_to_memory=True, **kwds):
     f = h5py.File(filename, mode=mode, driver=driver, **kwds)
     # Getting the format version here also checks if it is a valid HSpy
@@ -185,7 +196,7 @@ def hdfgroup2signaldict(group, load_to_memory=True):
     exp = {'metadata': hdfgroup2dict(
         group[metadata], load_to_memory=load_to_memory),
         'original_metadata': hdfgroup2dict(
-        group[original_metadata], load_to_memory=load_to_memory)
+            group[original_metadata], load_to_memory=load_to_memory)
     }
 
     data = group['data']
@@ -198,7 +209,10 @@ def hdfgroup2signaldict(group, load_to_memory=True):
             axes.append(dict(group['axis-%i' % i].attrs))
             axis = axes[-1]
             for key, item in axis.items():
-                axis[key] = ensure_unicode(item)
+                if isinstance(item, np.bool_):
+                    axis[key] = bool(item)
+                else:
+                    axis[key] = ensure_unicode(item)
         except KeyError:
             break
     if len(axes) != len(exp['data'].shape):  # broke from the previous loop
@@ -407,8 +421,6 @@ def dict2hdfgroup(dictionary, group, **kwds):
             dict2hdfgroup(value.as_dictionary(),
                           group.create_group('_hspy_AxesManager_' + key),
                           **kwds)
-        elif isinstance(value, (datetime.date, datetime.time)):
-            group.attrs["_datetime_" + key] = repr(value)
         elif isinstance(value, list):
             if len(value):
                 parse_structure(key, group, value, '_list_', **kwds)
@@ -456,8 +468,16 @@ def hdfgroup2dict(group, dictionary=None, load_to_memory=True):
             dictionary[key[len('_tuple_empty_'):]] = ()
         elif key.startswith('_bs_'):
             dictionary[key[len('_bs_'):]] = value.tostring()
-        elif key.startswith('_datetime_'):
-            dictionary[key.replace("_datetime_", "")] = eval(value)
+        # The following two elif stataments enable reading date and time from
+        # v < 2 of HyperSpy's metadata specifications
+        elif key.startswith('_datetime_date'):
+            date_iso = datetime.date(
+                *ast.literal_eval(value[value.index("("):])).isoformat()
+            dictionary[key.replace("_datetime_", "")] = date_iso
+        elif key.startswith('_datetime_time'):
+            date_iso = datetime.time(
+                *ast.literal_eval(value[value.index("("):])).isoformat()
+            dictionary[key.replace("_datetime_", "")] = date_iso
         else:
             dictionary[key] = value
     if not isinstance(group, h5py.Dataset):
@@ -533,8 +553,6 @@ def write_signal(signal, group, **kwds):
                          **kwds)
     for axis in signal.axes_manager._axes:
         axis_dict = axis.get_axis_dictionary()
-        # For the moment we don't store the navigate attribute
-        del(axis_dict['navigate'])
         coord_group = group.create_group(
             'axis-%s' % axis.index_in_array)
         dict2hdfgroup(axis_dict, coord_group, **kwds)
@@ -579,4 +597,17 @@ def file_writer(filename,
         expg = exps.create_group(group_name)
         if 'compression' not in kwds:
             kwds['compression'] = 'gzip'
-        write_signal(signal, expg, **kwds)
+        # Add record_by metadata for backward compatibility
+        smd = signal.metadata.Signal
+        if signal.axes_manager.signal_dimension == 1:
+            smd.record_by = "spectrum"
+        elif signal.axes_manager.signal_dimension == 2:
+            smd.record_by = "image"
+        else:
+            smd.record_by = ""
+        try:
+            write_signal(signal, expg, **kwds)
+        except:
+            raise
+        finally:
+            del smd.record_by

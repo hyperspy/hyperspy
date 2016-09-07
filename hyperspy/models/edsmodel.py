@@ -24,12 +24,13 @@ import math
 import logging
 
 from hyperspy.misc.utils import stash_active_state
+from hyperspy.misc.eds.utils import _get_element_and_line
 
 from hyperspy.models.model1d import Model1D
 from hyperspy._signals.eds import EDSSpectrum
 from hyperspy.misc.elements import elements as elements_db
 from hyperspy.misc.eds import utils as utils_eds
-import hyperspy.components as create_component
+import hyperspy.components1d as create_component
 
 _logger = logging.getLogger(__name__)
 
@@ -131,6 +132,7 @@ class EDSModel(Model1D):
                  *args, **kwargs):
         Model1D.__init__(self, spectrum, *args, **kwargs)
         self.xray_lines = list()
+        self.family_lines = list()
         end_energy = self.axes_manager.signal_axes[0].high_value
         self.end_energy = min(end_energy, self.signal._get_beam_energy())
         self.start_energy = self.axes_manager.signal_axes[0].low_value
@@ -148,7 +150,9 @@ class EDSModel(Model1D):
         if auto_background is True:
             self.add_polynomial_background()
         if auto_add_lines is True:
-            self.add_family_lines()
+            # Will raise an error if no elements are specified, so check:
+            if 'Sample.elements' in self.signal.metadata:
+                self.add_family_lines()
 
     def as_dictionary(self, fullcopy=True):
         dic = super(EDSModel, self).as_dictionary(fullcopy)
@@ -266,6 +270,7 @@ class EDSModel(Model1D):
                             element, li)
                         component_sub.A.twin = component.A
                         self.append(component_sub)
+                        self.family_lines.append(component_sub)
             self.fetch_stored_values()
 
     @property
@@ -318,61 +323,14 @@ class EDSModel(Model1D):
         for component in self._active_xray_lines:
             component.active = False
 
-    def fit(self, fitter='mpfit', method='ls', grad=True,
-            bounded=True, ext_bounding=False, update_plot=False,
-            **kwargs):
-        """Fits the EDS model to the experimental data.
-
-        The fitting of an EDS model is, by default, performed by bounded
-        optimisation using mpfit. This constrains the components to be positive
-        as is physical. Alternative fitters may still be specified.
-
-        Parameters
-        ----------
-        fitter : {None, "leastsq", "odr", "mpfit", "fmin"}
-            The optimizer to perform the fitting. By default mpfit is used for
-            EDS models, as this supports bounding to force the components in the
-            model to be positive. This is inline with the physical nature of EDS
-            spectra. All optimizers available for Model1D remain availble and
-            can be specified by the user. fmin is the only one that supports
-            maximum likelihood estimation, but it is less robust than leastsq
-            and mpfit, it could be used for further refinement after an initial
-            fit with mpfit.
-        method : {'ls', 'ml'}
-            Choose 'ls' (default) for least squares and 'ml' for
-            maximum-likelihood estimation. The latter only works with
-            fitter = 'fmin'.
-        grad : bool
-            If True, the analytical gradient is used if defined to
-            speed up the estimation. As gradients are defined for the Gaussian
-            components used to construct a model to EDS data it is set to True
-            by default.
-        ext_bounding : bool
-            If True, enforce bounding by keeping the value of the parameters
-            constant out of the defined bounding area.
-        bounded : bool
-            If True (the default for EDS models) performs bounded optimization
-            if the fitter supports it. Currently only mpfit supports bounding.
-        update_plot : bool
-            If True, the plot is updated during the optimization process. It
-            slows down the optimization but it permits to visualize the
-            optimization evolution.
-        **kwargs : key word arguments
-            Any extra key word argument will be passed to the chosen fitter.
-
-        See Also
-        --------
-        multifit
-
-        """
-        Model1D.fit(self,
-                    fitter=fitter,
-                    method=method,
-                    grad=grad,
-                    bounded=bounded,
-                    ext_bounding=ext_bounding,
-                    update_plot=update_plot,
-                    **kwargs)
+    def _make_position_adjuster(self, component, fix_it, show_label):
+        # Override to ensure formatting of labels of xray lines
+        super(EDSModel, self)._make_position_adjuster(
+            component, fix_it, show_label)
+        if show_label and component in (self.xray_lines + self.family_lines):
+            label = self._position_widgets[component._position][1]
+            label.string = (r"$\mathrm{%s}_{\mathrm{%s}}$" %
+                            _get_element_and_line(component.name))
 
     def fit_background(self,
                        start_energy=None,

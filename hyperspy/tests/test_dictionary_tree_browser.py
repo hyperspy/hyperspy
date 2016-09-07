@@ -92,8 +92,6 @@ class TestDictionaryBrowser:
                             'title': ''},
                         'Signal': {
                             'binned': False,
-                            'record_by': '',
-                            'signal_origin': '',
                             'signal_type': ''},
                         '_HyperSpy': {
                             'Folding': {
@@ -104,3 +102,27 @@ class TestDictionaryBrowser:
                     'original_metadata': {},
                     'tmp_parameters': {}}},
             d)
+
+    def _test_date_time(self, dt_str='now'):
+        dt0 = np.datetime64(dt_str)
+        data_str, time_str = np.datetime_as_string(dt0).split('T')
+        self.tree.add_node("General")
+        self.tree.General.date = data_str
+        self.tree.General.time = time_str
+
+        dt1 = np.datetime64('%sT%s' % (self.tree.General.date,
+                                       self.tree.General.time))
+
+        np.testing.assert_equal(dt0, dt1)
+        return dt1
+
+    def test_date_time_now(self):
+        # not really a test, more a demo to show how to set and use date and
+        # time in the DictionaryBrowser
+        self._test_date_time()
+
+    def test_date_time_nanosecond_precision(self):
+        # not really a test, more a demo to show how to set and use date and
+        # time in the DictionaryBrowser
+        dt_str = '2016-08-05T10:13:15.450580'
+        self._test_date_time(dt_str)

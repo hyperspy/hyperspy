@@ -12,6 +12,14 @@ hyperspy.tests.misc.test_arraytools module
     :undoc-members:
     :show-inheritance:
 
+hyperspy.tests.misc.test_cython module
+--------------------------------------
+
+.. automodule:: hyperspy.tests.misc.test_cython
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 hyperspy.tests.misc.test_image_tools module
 -------------------------------------------
 

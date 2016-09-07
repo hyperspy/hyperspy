@@ -23,7 +23,7 @@ import numpy as np
 import traits.api as t
 from scipy import constants
 
-from hyperspy.signals import Signal1D
+from hyperspy._signals.signal1d import Signal1D
 from hyperspy.misc.elements import elements as elements_db
 import hyperspy.axes
 from hyperspy.decorators import only_interactive
@@ -31,7 +31,7 @@ from hyperspy.gui.eels import TEMParametersUI
 from hyperspy.defaults_parser import preferences
 import hyperspy.gui.messages as messagesui
 from hyperspy.external.progressbar import progressbar
-from hyperspy.components import PowerLaw
+from hyperspy.components1d import PowerLaw
 from hyperspy.misc.utils import isiterable, closest_power_of_two, underline
 from hyperspy.misc.utils import without_nans
 
@@ -39,10 +39,12 @@ _logger = logging.getLogger(__name__)
 
 
 class EELSSpectrum(Signal1D):
-    _signal_type = "EELS"
 
-    def __init__(self, *args, **kwards):
-        Signal1D.__init__(self, *args, **kwards)
+    _signal_type = "EELS"
+    _alias_signal_types = ["TEM EELS"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         # Attributes defaults
         self.subshells = set()
         self.elements = set()
@@ -89,6 +91,8 @@ class EELSSpectrum(Signal1D):
                 "See the docstring for more information.")
 
         for element in elements:
+            if isinstance(element, bytes):
+                element = element.decode()
             if element in elements_db:
                 self.elements.add(element)
             else:
@@ -166,12 +170,11 @@ class EELSSpectrum(Signal1D):
         self._check_signal_dimension_equals_one()
         self._check_navigation_mask(mask)
         zlpc = self.valuemax(-1)
-        if self.axes_manager.navigation_dimension == 1:
-            zlpc = zlpc.as_signal1D(0)
-        elif self.axes_manager.navigation_dimension > 1:
-            zlpc = zlpc.as_signal2D((0, 1))
         if mask is not None:
             zlpc.data[mask.data] = np.nan
+        zlpc.set_signal_type("")
+        title = self.metadata.General.title
+        zlpc.metadata.General.title = "ZLP(%s)" % title
         return zlpc
 
     def align_zero_loss_peak(
@@ -335,20 +338,20 @@ class EELSSpectrum(Signal1D):
         else:
             I0 = self._get_navigation_signal()
             I0.axes_manager.set_signal_dimension(0)
-            for i, s in progressbar(enumerate(self),
-                                    total=self.axes_manager.navigation_size,
-                                    disable=not show_progressbar,
-                                    leave=True):
-                threshold_ = threshold.isig[I0.axes_manager.indices].data[0]
-                if np.isnan(threshold_):
-                    s.data[:] = np.nan
-                else:
-                    s.data[:] = (self.inav[I0.axes_manager.indices].isig[
-                                 :threshold_].integrate1D(-1).data)
-        I0.axes_manager.set_signal_dimension(
-            self.axes_manager.navigation_dimension)
+            with progressbar(total=self.axes_manager.navigation_size,
+                             disable=not show_progressbar,
+                             leave=True) as pbar:
+                for i, (i0, th, s) in enumerate(zip(I0._iterate_signal(),
+                                                    threshold._iterate_signal(),
+                                                    self)):
+                    if np.isnan(th[0]):
+                        i0[:] = np.nan
+                    else:
+                        i0[:] = s.isig[:th[0]].integrate1D(-1).data
+                    pbar.update(1)
         I0.metadata.General.title = (
             self.metadata.General.title + ' elastic intensity')
+        I0.set_signal_type("")
         if self.tmp_parameters.has_item('filename'):
             I0.tmp_parameters.filename = (
                 self.tmp_parameters.filename +
@@ -426,8 +429,7 @@ class EELSSpectrum(Signal1D):
         """
         self._check_signal_dimension_equals_one()
         # Create threshold with the same shape as the navigation dims.
-        threshold = self._get_navigation_signal()
-        threshold.axes_manager.set_signal_dimension(0)
+        threshold = self._get_navigation_signal().transpose(signal_axes=0)
 
         # Progress Bar
         axis = self.axes_manager.signal_axes[0]
@@ -460,16 +462,15 @@ class EELSSpectrum(Signal1D):
         # Create spectrum image, stop and return value
         threshold.metadata.General.title = (
             self.metadata.General.title +
-            ' ZLP threshold')
+            ' elastic scattering threshold')
         if self.tmp_parameters.has_item('filename'):
             threshold.tmp_parameters.filename = (
                 self.tmp_parameters.filename +
-                '_ZLP_threshold')
+                '_elastic_scattering_threshold')
             threshold.tmp_parameters.folder = self.tmp_parameters.folder
             threshold.tmp_parameters.extension = \
                 self.tmp_parameters.extension
-        threshold.axes_manager.set_signal_dimension(
-            min(2, self.axes_manager.navigation_dimension))
+        threshold.set_signal_type("")
         return threshold
 
     def estimate_thickness(self,
@@ -531,6 +532,8 @@ class EELSSpectrum(Signal1D):
             s.tmp_parameters.folder = self.tmp_parameters.folder
             s.tmp_parameters.extension = \
                 self.tmp_parameters.extension
+        s.axes_manager.set_signal_dimension(0)
+        s.set_signal_type("")
         return s
 
     def fourier_log_deconvolution(self,
@@ -678,7 +681,7 @@ class EELSSpectrum(Signal1D):
             I0_shape.insert(axis.index_in_array, 1)
             I0 = I0.reshape(I0_shape)
 
-        from hyperspy.components import Gaussian
+        from hyperspy.components1d import Gaussian
         g = Gaussian()
         g.sigma.value = fwhm / 2.3548
         g.A.value = 1
@@ -833,11 +836,11 @@ class EELSSpectrum(Signal1D):
         tem_par = TEMParametersUI()
         mapping = {
             'Acquisition_instrument.TEM.convergence_angle':
-                'tem_par.convergence_angle',
+            'tem_par.convergence_angle',
             'Acquisition_instrument.TEM.beam_energy':
-                'tem_par.beam_energy',
+            'tem_par.beam_energy',
             'Acquisition_instrument.TEM.Detector.EELS.collection_angle':
-                'tem_par.collection_angle',
+            'tem_par.collection_angle',
         }
         for key, value in mapping.items():
             if self.metadata.has_item(key):
@@ -845,11 +848,11 @@ class EELSSpectrum(Signal1D):
         tem_par.edit_traits()
         mapping = {
             'Acquisition_instrument.TEM.convergence_angle':
-                tem_par.convergence_angle,
+            tem_par.convergence_angle,
             'Acquisition_instrument.TEM.beam_energy':
-                tem_par.beam_energy,
+            tem_par.beam_energy,
             'Acquisition_instrument.TEM.Detector.EELS.collection_angle':
-                tem_par.collection_angle,
+            tem_par.collection_angle,
         }
         for key, value in mapping.items():
             if value != t.Undefined:
