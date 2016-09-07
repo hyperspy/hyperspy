@@ -78,9 +78,14 @@ PLOT2D_DOCSTRING = \
 
 COMPLEX_DOCSTRING = \
     """representation : {'cartesian' or 'polar'}
-            Determines if the real and imaginary part of the complex data is
-            plotted ('cartesian', default), or if the amplitude and phase should
-            be used ('polar')."""
+            Determines if the real and imaginary part of the complex data is plotted ('cartesian',
+            default), or if the amplitude and phase should be used ('polar').
+        same_axes : bool, default True
+            If True (default) plot the real and
+            imaginary parts (or amplitude and phase) in the same figure if
+            the signal is one-dimensional.
+
+        """
 
 KWARGS_DOCSTRING = \
     """**kwargs, optional

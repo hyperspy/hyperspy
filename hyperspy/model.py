@@ -21,12 +21,15 @@ import os
 import tempfile
 import numbers
 import logging
+from distutils.version import StrictVersion
 
 import numpy as np
+import scipy
 import scipy.odr as odr
 from scipy.optimize import (leastsq, least_squares,
                             minimize, differential_evolution)
 from scipy.linalg import svd
+from contextlib import contextmanager
 
 from hyperspy.external.progressbar import progressbar
 from hyperspy.defaults_parser import preferences
@@ -41,7 +44,7 @@ from hyperspy.misc.export_dictionary import (export_to_dictionary,
 from hyperspy.misc.utils import (slugify, shorten_name, stash_active_state,
                                  dummy_context_manager)
 from hyperspy.misc.slicing import copy_slice_from_whitelist
-from hyperspy.events import Events, Event
+from hyperspy.events import Events, Event, EventSuppressor
 import warnings
 from hyperspy.exceptions import VisibleDeprecationWarning
 
@@ -469,6 +472,146 @@ class BaseModel(list):
         else:
             return False
 
+    def _connect_parameters2update_plot(self, components):
+        if self._plot_active is False:
+            return
+        for i, component in enumerate(components):
+            component.events.active_changed.connect(
+                self._model_line.update, [])
+            for parameter in component.parameters:
+                parameter.events.value_changed.connect(
+                    self._model_line.update, [])
+
+    def _disconnect_parameters2update_plot(self, components):
+        if self._model_line is None:
+            return
+        for component in components:
+            component.events.active_changed.disconnect(self._model_line.update)
+            for parameter in component.parameters:
+                parameter.events.value_changed.disconnect(
+                    self._model_line.update)
+
+    def update_plot(self, *args, **kwargs):
+        """Update model plot.
+
+        The updating can be suspended using `suspend_update`.
+
+        See Also
+        --------
+        suspend_update
+
+        """
+        if self._plot_active is True and self._suspend_update is False:
+            try:
+                self._update_model_line()
+                for component in [component for component in self if
+                                  component.active is True]:
+                    self._update_component_line(component)
+            except:
+                self._disconnect_parameters2update_plot(components=self)
+
+    @contextmanager
+    def suspend_update(self, update_on_resume=True):
+        """Prevents plot from updating until 'with' clause completes.
+
+        See Also
+        --------
+        update_plot
+        """
+
+        es = EventSuppressor()
+        es.add(self.axes_manager.events.indices_changed)
+        if self._model_line:
+            f = self._model_line.update
+            for c in self:
+                es.add(c.events, f)
+                for p in c.parameters:
+                    es.add(p.events, f)
+        for c in self:
+            if hasattr(c, '_model_plot_line'):
+                f = c._model_plot_line.update
+                es.add(c.events, f)
+                for p in c.parameters:
+                    es.add(p.events, f)
+
+        old = self._suspend_update
+        self._suspend_update = True
+        with es.suppress():
+            yield
+        self._suspend_update = old
+
+        if update_on_resume is True:
+            self.update_plot()
+
+    def _update_model_line(self):
+        if (self._plot_active is True and
+                self._model_line is not None):
+            self._model_line.update()
+
+    def _close_plot(self):
+        if self._plot_components is True:
+            self.disable_plot_components()
+        self._disconnect_parameters2update_plot(components=self)
+        self._model_line = None
+
+    def _update_model_line(self):
+        if (self._plot_active is True and
+                self._model_line is not None):
+            self._model_line.update()
+
+    @staticmethod
+    def _connect_component_line(component):
+        if hasattr(component, "_model_plot_line"):
+            f = component._model_plot_line.update
+            component.events.active_changed.connect(f, [])
+            for parameter in component.parameters:
+                parameter.events.value_changed.connect(f, [])
+
+    @staticmethod
+    def _disconnect_component_line(component):
+        if hasattr(component, "_model_plot_line"):
+            f = component._model_plot_line.update
+            component.events.active_changed.disconnect(f)
+            for parameter in component.parameters:
+                parameter.events.value_changed.disconnect(f)
+
+    def _connect_component_lines(self):
+        for component in self:
+            if component.active:
+                self._connect_component_line(component)
+
+    def _disconnect_component_lines(self):
+        for component in self:
+            if component.active:
+                self._disconnect_component_line(component)
+
+    @staticmethod
+    def _update_component_line(component):
+        if hasattr(component, "_model_plot_line"):
+            component._model_plot_line.update()
+
+    def _disable_plot_component(self, component):
+        self._disconnect_component_line(component)
+        if hasattr(component, "_model_plot_line"):
+            component._model_plot_line.close()
+            del component._model_plot_line
+        self._plot_components = False
+
+    def enable_plot_components(self):
+        if self._plot is None or self._plot_components:
+            return
+        self._plot_components = True
+        for component in [component for component in self if
+                          component.active]:
+            self._plot_component(component)
+
+    def disable_plot_components(self):
+        if self._plot is None:
+            return
+        for component in self:
+            self._disable_plot_component(component)
+        self._plot_components = False
+
     def _set_p0(self):
         self.p0 = ()
         for component in self:
@@ -755,19 +898,19 @@ class BaseModel(list):
         check_optimizer = optimizer_dict.get(fitter, None)
         if check_optimizer:
             warnings.warn(
-                 "The method `%s` has been deprecated and will "
-                 "be removed in HyperSpy 2.0. Please use "
-                 "`%s` instead." % (fitter, check_optimizer),
-                 VisibleDeprecationWarning)
+                "The method `%s` has been deprecated and will "
+                "be removed in HyperSpy 2.0. Please use "
+                "`%s` instead." % (fitter, check_optimizer),
+                VisibleDeprecationWarning)
             fitter = check_optimizer
 
         if bounded is True:
             if fitter not in ("leastsq", "mpfit", "TNC",
                               "L-BFGS-B", "Differential Evolution"):
-                raise NotImplementedError("Bounded optimization is only "
-                                          "supported by 'leastsq', "
-                                          "'mpfit', 'TNC', 'L-BFGS-B' or"
-                                          "'Differential Evolution'.")
+                raise ValueError("Bounded optimization is only "
+                                 "supported by 'leastsq', "
+                                 "'mpfit', 'TNC', 'L-BFGS-B' or"
+                                 "'Differential Evolution'.")
             else:
                 # this has to be done before setting the p0,
                 # so moved things around
@@ -831,10 +974,16 @@ class BaseModel(list):
             # Least squares "dedicated" fitters
             if fitter == "leastsq":
                 if bounded:
+                    # leastsq with bounds requires scipy >= 0.17
+                    if StrictVersion(
+                            scipy.__version__) < StrictVersion("0.17"):
+                        raise ImportError(
+                            "leastsq with bounds requires SciPy >= 0.17")
+
                     self.set_boundaries()
                     ls_b = self.free_parameters_boundaries
-                    ls_b = ([ a if a is not None else -np.inf for a,b in ls_b ],
-                            [ b if b is not None else np.inf for a,b in ls_b ])
+                    ls_b = ([a if a is not None else -np.inf for a, b in ls_b],
+                            [b if b is not None else np.inf for a, b in ls_b])
                     output = \
                         least_squares(self._errfunc, self.p0[:],
                                       args=args, bounds=ls_b, **kwargs)
@@ -843,7 +992,8 @@ class BaseModel(list):
                     # Do Moore-Penrose inverse, discarding zero singular values
                     # to get pcov (as per scipy.optimize.curve_fit())
                     _, s, VT = svd(output.jac, full_matrices=False)
-                    threshold = np.finfo(float).eps * max(output.jac.shape) * s[0]
+                    threshold = np.finfo(float).eps * \
+                        max(output.jac.shape) * s[0]
                     s = s[s > threshold]
                     VT = VT[:s.size]
                     pcov = np.dot(VT.T / s**2, VT)
@@ -864,7 +1014,7 @@ class BaseModel(list):
                     pcov *= ((self._errfunc(self.p0, *args) ** 2).sum() /
                              (len(args[0]) - len(self.p0)))
 
-                self.p_std = np.sqrt(np.diag(pcov))
+                    self.p_std = np.sqrt(np.diag(pcov))
                 self.fit_output = output
 
             elif fitter == "odr":
@@ -931,8 +1081,8 @@ class BaseModel(list):
                         self.free_parameters_boundaries = None
 
                     self.p0 = minimize(tominimize, self.p0, jac=fprime,
-                        args=args, method=fitter,
-                        bounds=self.free_parameters_boundaries, **kwargs).x
+                                       args=args, method=fitter,
+                                       bounds=self.free_parameters_boundaries, **kwargs).x
 
                 # Global optimizers
                 elif fitter == "Differential Evolution":
@@ -944,7 +1094,7 @@ class BaseModel(list):
                             "'Differential Evolution' optimizer")
                     de_b = self.free_parameters_boundaries
                     de_b = tuple(((a if a is not None else -np.inf,
-                                b if b is not None else np.inf) for a,b in de_b))
+                                   b if b is not None else np.inf) for a, b in de_b))
                     self.p0 = differential_evolution(tominimize, de_b,
                                                      args=args, **kwargs).x
 
@@ -1041,14 +1191,6 @@ class BaseModel(list):
         masked_elements = 0 if mask is None else mask.sum()
         maxval = self.axes_manager.navigation_size - masked_elements
         show_progressbar = show_progressbar and (maxval > 0)
-        if 'bounded' in kwargs and kwargs['bounded'] is True:
-            if kwargs['fitter'] not in ("leastsq", "TNC", "L_BFGS-B", "mpfit"):
-                _logger.info(
-                    "The chosen fitter does not suppport bounding."
-                    "If you require bounding please select one of the "
-                    "following fitters instead: 'leastsq', 'TNC', "
-                    "'L_BFGS-B', 'mpfit'")
-                kwargs['bounded'] = False
         i = 0
         with self.axes_manager.events.indices_changed.suppress_callback(
                 self.fetch_stored_values):

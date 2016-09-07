@@ -20,26 +20,10 @@ hyperspy.tests.signal.test_2D_tools module
     :undoc-members:
     :show-inheritance:
 
-hyperspy.tests.signal.test_apply_function module
-------------------------------------------------
-
-.. automodule:: hyperspy.tests.signal.test_apply_function
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 hyperspy.tests.signal.test_assign_subclass module
 -------------------------------------------------
 
 .. automodule:: hyperspy.tests.signal.test_assign_subclass
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-hyperspy.tests.signal.test_attributes module
---------------------------------------------
-
-.. automodule:: hyperspy.tests.signal.test_attributes
     :members:
     :undoc-members:
     :show-inheritance:
@@ -136,6 +120,14 @@ hyperspy.tests.signal.test_kramers_kronig_transform module
 ----------------------------------------------------------
 
 .. automodule:: hyperspy.tests.signal.test_kramers_kronig_transform
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+hyperspy.tests.signal.test_map_method module
+--------------------------------------------
+
+.. automodule:: hyperspy.tests.signal.test_map_method
     :members:
     :undoc-members:
     :show-inheritance:
