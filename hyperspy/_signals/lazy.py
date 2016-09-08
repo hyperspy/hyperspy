@@ -441,10 +441,13 @@ class LazySignal(BaseSignal):
 
             from sklearn.decomposition import IncrementalPCA
             ipca = IncrementalPCA(n_components=output_dimension)
+            try:
+                for i in progressbar(range(nblocks), total=nblocks, leave=True):
+                    thedata = get(data.dask, (data.name, i, 0))
+                    ipca = ipca.partial_fit(thedata, **kwargs)
 
-            for i in progressbar(range(nblocks), total=nblocks, leave=True):
-                thedata = get(data.dask, (data.name, i, 0))
-                ipca = ipca.partial_fit(thedata, **kwargs)
+            except KeyboardInterrupt:
+                pass
 
             explained_variance = ipca.explained_variance_
             explained_variance_ratio = ipca.explained_variance_ratio_
