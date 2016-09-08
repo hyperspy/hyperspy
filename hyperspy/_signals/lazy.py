@@ -404,49 +404,71 @@ class LazySignal(BaseSignal):
                 getitem[ind] = res
             yield self.data[tuple(getitem)]
 
-    def decomposition(self, n_components,
+    def decomposition(self, output_dimension, kind='PCA',
                       get=threaded.get, blocksize=None, **kwargs):
         """Perform Incremental (Batch) PCA on the data, keeping n significant
         components.
 
         Parameters
         ----------
-            n_components : int
+            output_dimension : int
                 the number of significant components to keep
             get : dask scheduler
                 the dask scheduler to use for computations
             blocksize : int
                 the size of blocks to pass to the PCA model. Larger blocks
                 require more memory, but should run faster. Has to be at least
-                equal to the n_components.
+                equal to the output_dimension.
             **kwargs
                 passed to the partial_fit.
 
         """
-        data = self.data.reshape((self.axes_manager.navigation_size,
-                                  self.axes_manager.signal_size))
         explained_variance = None
         explained_variance_ratio = None
-        if blocksize is not None and n_components > blocksize:
+        data = self.data.reshape((self.axes_manager.navigation_size,
+                                  self.axes_manager.signal_size))
+        if blocksize is not None and output_dimension > blocksize:
             raise ValueError('too small blocksize, has to be more than '
-                             'n_components')
+                             'output_dimension')
         if blocksize is not None:
             data = data.rechunk((blocksize, data.shape[1]))
-        elif n_components > np.min(data.chunks[0]):
-            data = data.rechunk((n_components, data.shape[1]))
-        from sklearn.decomposition import IncrementalPCA
-        ipca = IncrementalPCA(n_components=n_components)
+        elif output_dimension > np.min(data.chunks[0]):
+            data = data.rechunk((output_dimension, data.shape[1]))
+
         nblocks = len(data.chunks[0])
 
-        import tqdm
-        for i in tqdm.trange(nblocks):
-            thedata = get(data.dask, (data.name, i, 0))
-            ipca = ipca.partial_fit(thedata, **kwargs)
+        if kind == 'PCA':
 
-        explained_variance = ipca.explained_variance_
-        explained_variance_ratio = ipca.explained_variance_ratio_
-        factors = ipca.components_.T
-        loadings = transform(ipca, data).compute()
+            from sklearn.decomposition import IncrementalPCA
+            ipca = IncrementalPCA(n_components=output_dimension)
+
+            for i in progressbar(range(nblocks), total=nblocks, leave=True):
+                thedata = get(data.dask, (data.name, i, 0))
+                ipca = ipca.partial_fit(thedata, **kwargs)
+
+            explained_variance = ipca.explained_variance_
+            explained_variance_ratio = ipca.explained_variance_ratio_
+            factors = ipca.components_.T
+            loadings = transform(ipca, data).compute()
+
+        elif kind == 'ORPCA':
+            from hyperspy.learn.rpca import ORPCA
+            kwargs['fast'] = True
+            _orpca = ORPCA(output_dimension, **kwargs)
+            try:
+                for i in progressbar(range(nblocks), total=nblocks, leave=True,
+                                     desc='Data chunks'):
+                    thedata = get(data.dask, (data.name, i, 0))
+                    _orpca.fit(thedata)
+            except KeyboardInterrupt:
+                pass
+
+            _, _, U, S, V = _orpca.finish()
+
+            factors = U * S
+            loadings = V
+            explained_variance = S ** 2 / len(factors)
+
 
         if explained_variance is not None and \
                 explained_variance_ratio is None:
