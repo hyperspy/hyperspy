@@ -233,7 +233,7 @@ class Samfire:
         """
         self._setup()
         if self._workers and self.pool is not None:
-            self.pool.update_optional_names()
+            self.pool.update_parameters()
         self._args = kwargs
         num_of_strat = len(self.strategies)
         total_size = self.model.axes_manager.navigation_size - self.pixels_done
