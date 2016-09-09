@@ -462,7 +462,7 @@ class LazySignal(BaseSignal):
                 for i in progressbar(range(nblocks), total=nblocks, leave=True,
                                      desc='Data chunks'):
                     thedata = get(data.dask, (data.name, i, 0))
-                    _orpca.fit(thedata)
+                    _orpca.fit(thedata, iterating=True)
             except KeyboardInterrupt:
                 pass
 

@@ -34,6 +34,22 @@ def _thresh(X, lambda1):
     return np.sign(X) * ((res > 0) * res)
 
 
+def _normalize(arr, ar_min=None, ar_max=None, undo=False):
+    if not undo:
+        if ar_min is None:
+            ar_min = arr.min()
+        if ar_max is None:
+            ar_max = arr.max()
+    else:
+        if ar_min is None or ar_max is None:
+            raise ValueError("min / max values have to be passed when undoing "
+                             "the normalization")
+    if undo:
+        return (arr * (ar_max - ar_min)) + ar_min
+    else:
+        return (arr - ar_min) / (ar_max - ar_min)
+
+
 def rpca_godec(X, rank, fast=False, lambda1=None,
                power=None, tol=None, maxiter=None):
     """
@@ -224,6 +240,7 @@ class ORPCA:
                  training_samples=None):
 
         self.nfeatures = None
+        self.normalize = False
         if fast is True and sklearn_installed is True:
             def svd(X):
                 return fast_svd(X, rank)
@@ -275,12 +292,23 @@ class ORPCA:
             raise ValueError(
                 "'training_samples' must be >= 'output_dimension'")
 
-    def _setup(self, X):
+    def _setup(self, X, normalize=False):
 
         if isinstance(X, np.ndarray):
             n, m = X.shape
             iterating = False
+            if normalize:
+                self.X_min = X.min()
+                self.X_max = X.max()
+                self.normalize = normalize
+                # actually scale the data to be between 0 and 1, not just close
+                # to it..
+                X = _normalize(X, ar_min=self.X_min, ar_max=self.X_max)
+                # X = (X - self.X_min) / (self.X_max - self.X_min)
         else:
+            if normalize:
+                _logger.warning("Normalization with an iterator is not"
+                                " possible, option ignored.")
             x = next(X)
             m = len(x)
             X = chain([x], X)
@@ -298,21 +326,36 @@ class ORPCA:
                             "is set to default: 1 / sqrt(nfeatures)")
             self.lambda2 = 1.0 / np.sqrt(m)
 
+        self.L = self._initialize(X)
+        self.I = self.lambda1 * np.eye(self.rank)
+        self.R = []
+        self.E = []
+
+        # Extra variables for CF and BCD methods
+        if self.method in ('CF', 'BCD'):
+            self.A = np.zeros((self.rank, self.rank))
+            self.B = np.zeros((m, self.rank))
+
+    def _initialize(self, X):
+        m = self.nfeatures
+        iterating = self.iterating
+
         # Initialize the subspace estimate
-        if self.init == 'qr':
-            if iterating:
-                Y2 = np.stack([next(X) for _ in range(self.training_samples)],
-                              axis=-1)
-                X = chain(iter(Y2.T.copy()), X)
-            else:
-                Y2 = X[:self.training_samples, :].T
-            # normalize the init data here..
-            Y2 = (Y2 - Y2.min()) / Y2.max()
-            L, tmp = scipy.linalg.qr(Y2, mode='economic')
-            L = L[:, :self.rank]
-        elif self.init == 'rand':
-            Y2 = np.random.randn(m, self.rank)
-            L, tmp = scipy.linalg.qr(Y2, mode='economic')
+        if self.init in ('qr', 'rand'):
+            if self.init == 'qr':
+                if iterating:
+                    Y2 = np.stack([next(X) for _ in range(self.training_samples)],
+                                  axis=-1)
+                    X = chain(iter(Y2.T.copy()), X)
+                else:
+                    Y2 = X[:self.training_samples, :].T
+                # normalize the init data here..
+                # Y2 = (Y2 - Y2.min()) / (Y2.max() - Y2.min())
+                Y2 = _normalize(Y2)
+            elif self.init == 'rand':
+                Y2 = np.random.randn(m, self.rank)
+            L, _ = scipy.linalg.qr(Y2, mode='economic')
+            return L[:, :self.rank]
         elif isinstance(self.init, np.ndarray):
             if init.ndim != 2:
                 raise ValueError("'init' has to be a two-dimensional matrix")
@@ -320,26 +363,18 @@ class ORPCA:
             if init_m != m or init_r != self.rank:
                 raise ValueError(
                     "'init' has to be of shape [nfeatures x rank]")
-            L = init.copy()
-
-        self.L = L
-        self.I = self.lambda1 * np.eye(self.rank)
-        self.R = []
-        if iterating:
-            self.E = None
+            return init.copy()
         else:
-            self.E = []
+            raise ValueError('Bad initialization options')
 
-        # Extra variables for CF and BCD methods
-        if self.method in ('CF', 'BCD'):
-            self.A = np.zeros((self.rank, self.rank))
-            self.B = np.zeros((m, self.rank))
-
-    def fit(self, X):
+    def fit(self, X, iterating=None):
         if self.nfeatures is None:
             self._setup(X)
 
-        iterating = self.iterating
+        if iterating is None:
+            iterating = self.iterating
+        else:
+            self.iterating = iterating
         num = None
         if isinstance(X, np.ndarray):
             num = X.shape[0]
@@ -383,11 +418,18 @@ class ORPCA:
         R = np.stack(self.R, axis=-1)
 
         Xhat = np.dot(self.L, R)
-        if not self.iterating:
+        if len(self.E):
             Ehat = np.stack(self.E, axis=-1)
-        # # Rescale
-        # Xhat = (np.dot(L, R) * X_max) + X_min
-        # Ehat = (E * X_max) + X_min
+            # both keep an indicator that we had something and remove the
+            # duplicate data
+            self.E = [1]
+            if self.normalize:
+                Ehat = _normalize(Ehat, ar_min=self.X_min, ar_max=self.X_max,
+                                  undo=True)
+
+        if self.normalize:
+            Xhat = _normalize(Xhat, ar_min=self.X_min, ar_max=self.X_max,
+                              undo=True)
 
         # Do final SVD
         U, S, Vh = self.svd(Xhat)
@@ -397,10 +439,10 @@ class ORPCA:
         # likely arise from numerical noise
         # in the SVD.
         S[self.rank:] = 0.
-        if self.iterating:
-            return Xhat, 1, U, S, V
-        else:
+        if len(self.E):
             return Xhat, Ehat, U, S, V
+        else:
+            return Xhat, 1, U, S, V
 
 
 def orpca(X, rank, fast=False,
@@ -472,5 +514,6 @@ def orpca(X, rank, fast=False,
                    lambda2=lambda2, method=method,
                    learning_rate=learning_rate, init=init,
                    training_samples=training_samples)
+    _orpca._setup(X, normalize=True)
     _orpca.fit(X)
     return _orpca.finish()
