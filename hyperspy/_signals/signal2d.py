@@ -95,9 +95,8 @@ def fft_correlation(in1, in2, normalize=False):
     fprod = fftn(in1, fsize)
     fprod *= fftn(in2, fsize).conjugate()
     if normalize is True:
-        ret = ifftn(np.nan_to_num(fprod / np.absolute(fprod))).real.copy()
-    else:
-        ret = ifftn(fprod).real.copy()
+        fprod = np.nan_to_num(fprod / np.absolute(fprod))
+    ret = ifftn(fprod).real.copy()
     return ret, fprod
 
 
@@ -197,19 +196,19 @@ def estimate_image_shift(ref, image, roi=None, sobel=True,
         normalization = (image_product.size * sub_pixel_factor ** 2)
         # Matrix multiply DFT around the current shift estimate
         sample_region_offset = dftshift - shifts*sub_pixel_factor
-        cross_correlation = _upsampled_dft(image_product.conj(),
-                                           upsampled_region_size,
-                                           sub_pixel_factor,
-                                           sample_region_offset).conj()
-        cross_correlation /= normalization
+        correlation = _upsampled_dft(image_product.conj(),
+                                     upsampled_region_size,
+                                     sub_pixel_factor,
+                                     sample_region_offset).conj()
+        correlation /= normalization
         # Locate maximum and map back to original pixel grid
         maxima = np.array(np.unravel_index(
-                              np.argmax(np.abs(cross_correlation)),
-                              cross_correlation.shape),
-                          dtype=np.float64)
+            np.argmax(np.abs(correlation)),
+            correlation.shape),
+            dtype=np.float64)
         maxima -= dftshift
         shifts = shifts + maxima / sub_pixel_factor
-        max_val = cross_correlation.max()
+        max_val = correlation.max()
 
     # Plot on demand
     if plot is True:
@@ -219,7 +218,10 @@ def estimate_image_shift(ref, image, roi=None, sobel=True,
         axarr[2].imshow(phase_correlation)
         axarr[0].set_title('Reference')
         axarr[1].set_title('Signal')
-        axarr[2].set_title('Phase correlation')
+        if normalize_corr:
+            axarr[2].set_title('Phase correlation')
+        else:
+            axarr[2].set_title('Correlation')
         plt.show()
     # Liberate the memory. It is specially necessary if it is a
     # memory map
