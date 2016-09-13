@@ -21,11 +21,11 @@ from multiprocessing import cpu_count
 
 import dill
 import numpy as np
-from tqdm import tqdm
 
 from hyperspy.misc.utils import DictionaryTreeBrowser
 from hyperspy.misc.utils import slugify
 from hyperspy.signal import BaseSignal
+from hyperspy.external.progressbar import progressbar
 from hyperspy.samfire_utils.strategy import (LocalStrategy,
                                              GlobalStrategy)
 from hyperspy.samfire_utils.local_strategies import ReducedChiSquaredStrategy
@@ -237,7 +237,7 @@ class Samfire:
         self._args = kwargs
         num_of_strat = len(self.strategies)
         total_size = self.model.axes_manager.navigation_size - self.pixels_done
-        self._progressbar = tqdm(total=total_size)
+        self._progressbar = progressbar(total=total_size)
 
         while True:
             self._run_active_strategy()
