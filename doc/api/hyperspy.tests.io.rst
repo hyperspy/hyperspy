@@ -92,6 +92,14 @@ hyperspy.tests.io.test_msa module
     :undoc-members:
     :show-inheritance:
 
+hyperspy.tests.io.test_protochips module
+----------------------------------------
+
+.. automodule:: hyperspy.tests.io.test_protochips
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 hyperspy.tests.io.test_ripple module
 ------------------------------------
 

@@ -31,6 +31,7 @@ import warnings
 
 
 class EDSTEMSpectrum(EDSSpectrum):
+
     _signal_type = "EDS_TEM"
 
     def __init__(self, *args, **kwards):
@@ -49,7 +50,7 @@ class EDSTEMSpectrum(EDSSpectrum):
         """
 
         mp = self.metadata
-        mp.Signal.signal_type = 'EDS_TEM'
+        mp.Signal.signal_type = "EDS_TEM"
 
         mp = self.metadata
         if "Acquisition_instrument.TEM.tilt_stage" not in mp:
@@ -407,7 +408,7 @@ class EDSTEMSpectrum(EDSSpectrum):
             composition[i].metadata.set_item(
                 "Sample.xray_lines", ([xray_line]))
             if plot_result and \
-                    composition[i].axes_manager.signal_dimension == 0:
+                    composition[i].axes_manager.navigation_size == 1:
                 print("%s (%s): Composition = %.2f %s percent"
                       % (element, xray_line, composition[i].data,
                          composition_units))
@@ -420,7 +421,7 @@ class EDSTEMSpectrum(EDSSpectrum):
                                                      ([element]))
                 number_of_atoms[i].metadata.set_item(
                     "Sample.xray_lines", ([xray_line]))
-        if plot_result and composition[i].axes_manager.signal_dimension != 0:
+        if plot_result and composition[i].axes_manager.navigation_size != 1:
             utils.plot.plot_signals(composition, **kwargs)
         if method == 'zeta':
             self.metadata.set_item("Sample.mass_thickness", mass_thickness)

@@ -21,7 +21,6 @@ import os
 import nose.tools as nt
 import hyperspy.api as hs
 import numpy as np
-from datetime import datetime
 
 
 dirpath = os.path.dirname(__file__)
@@ -39,8 +38,11 @@ def test_read1():
     np.testing.assert_allclose(s.data, ref_T)
     nt.assert_almost_equal(s.axes_manager[0].scale, 0.33)
     nt.assert_almost_equal(s.axes_manager[0].offset, 50077.68)
-    ref_date = datetime(2015, 4, 16, 13, 53)
-    nt.assert_equal(s.metadata.General.time, ref_date)
+    ref_date, ref_time = "2015-04-16", "13:53:00"
+    nt.assert_equal(s.metadata.General.date, ref_date)
+    nt.assert_equal(s.metadata.General.time, ref_time)
+    nt.assert_equal(s.metadata.Signal.signal_type, "")
+    nt.assert_equal(s.metadata.Signal.quantity, "Temperature (Celsius)")
 
 
 @nt.raises(AssertionError)

@@ -128,14 +128,6 @@ hyperspy.logger module
     :undoc-members:
     :show-inheritance:
 
-hyperspy.messages module
-------------------------
-
-.. automodule:: hyperspy.messages
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 hyperspy.model module
 ---------------------
 
