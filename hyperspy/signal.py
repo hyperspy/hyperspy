@@ -3279,26 +3279,42 @@ class BaseSignal(FancySlicing,
             kwargs['axis'] = \
                 self.axes_manager.signal_axes[-1].index_in_array
 
-            self.data = function(self.data, **kwargs)
+            self._map_all(function, **kwargs)
         # If the function has an axes argument
         # we suppose that it can operate on the full array and we don't
         # interate over the coordinates.
         elif not ndkwargs and "axes" in fargs:
             kwargs['axes'] = tuple([axis.index_in_array for axis in
                                     self.axes_manager.signal_axes])
-            self.data = function(self.data, **kwargs)
+            self._map_all(function, **kwargs)
         else:
             # Iteration over coordinates.
-            iterators = [signal[1]._iterate_signal() for signal in ndkwargs]
-            iterators = tuple([self._iterate_signal()] + iterators)
-            for data in progressbar(zip(*iterators),
-                                    disable=not show_progressbar,
-                                    total=self.axes_manager.navigation_size,
-                                    leave=True):
-                for (key, value), datum in zip(ndkwargs, data[1:]):
-                    kwargs[key] = datum[0]
-                data[0][:] = function(data[0], **kwargs)
+            self._map_iterate(function, ndkwargs,
+                              show_progressbar=show_progressbar,
+                              **kwargs)
         self.events.data_changed.trigger(obj=self)
+
+    def _map_all(self, function, **kwargs):
+        """Function that can be replaced for lazy signals"""
+        self.data = function(self.data, **kwargs)
+
+    def _map_iterate(self, function, iterating_kwargs=(),
+                     show_progressbar=None, **kwargs):
+        """Function that can be replaced for lazy signals"""
+        iterators = tuple(signal[1]._iterate_signal()
+                          if isinstance(signal[1], BaseSignal) else signal[1]
+                          for signal in iterating_kwargs)
+        iterators = (self._iterate_signal(),) + iterators
+        for data in progressbar(zip(*iterators),
+                                disable=not show_progressbar,
+                                total=self.axes_manager.navigation_size,
+                                leave=True):
+            for (key, value), datum in zip(iterating_kwargs, data[1:]):
+                if isinstance(value, BaseSignal) and len(datum) == 1:
+                    kwargs[key] = datum[0]
+                else:
+                    kwargs[key] = datum
+            data[0][:] = function(data[0], **kwargs)
 
     def copy(self):
         try:
