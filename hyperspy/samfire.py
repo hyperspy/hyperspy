@@ -21,10 +21,10 @@ from multiprocessing import cpu_count
 
 import dill
 import numpy as np
-from tqdm import tqdm
 
 from hyperspy.misc.utils import DictionaryTreeBrowser
 from hyperspy.misc.utils import slugify
+from hyperspy.external.progressbar import progressbar
 from hyperspy.signal import BaseSignal
 from hyperspy.samfire_utils.strategy import (LocalStrategy,
                                              GlobalStrategy)
@@ -237,16 +237,19 @@ class Samfire:
         self._args = kwargs
         num_of_strat = len(self.strategies)
         total_size = self.model.axes_manager.navigation_size - self.pixels_done
-        self._progressbar = tqdm(total=total_size)
-
-        while True:
-            self._run_active_strategy()
-            self.plot()
-            if self._active_strategy_ind == num_of_strat - 1:
-                # last one just finished running
-                break
-
-            self.change_strategy(self._active_strategy_ind + 1)
+        self._progressbar = progressbar(total=total_size)
+        try:
+            while True:
+                self._run_active_strategy()
+                self.plot()
+                if self._active_strategy_ind == num_of_strat - 1:
+                    # last one just finished running
+                    break
+                self.change_strategy(self._active_strategy_ind + 1)
+        except KeyboardInterrupt:
+            if self.pool is not None:
+                _logger.warning('Collecting already started pixels, please wait')
+                self.pool.collect_results()
 
     def append(self, strategy):
         """appends the given strategy to the end of the strategies list
@@ -320,8 +323,8 @@ class Samfire:
             if isgood:
                 self._progressbar.update(1)
             self.active_strategy.update(ind, isgood)
-            self._plot()
-            self._save()
+            self.plot(on_count=True)
+            self.backup(on_count=True)
 
     def backup(self, filename=None, on_count=True):
         """Backs-up the samfire results in a file
