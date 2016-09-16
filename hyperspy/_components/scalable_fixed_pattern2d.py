@@ -17,12 +17,12 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from hyperspy.component import Component
+from hyperspy.component import Component2D
 from skimage import transform as tf
 import numpy as np
 
 
-class ScalableFixedPattern2D(Component):
+class ScalableFixedPattern2D(Component2D):
     """Fixed 2-dimensional pattern component which is scaled by a 2D affine
     transformation of the form:
 
@@ -54,7 +54,7 @@ class ScalableFixedPattern2D(Component):
                  order=3
                  ):
 
-        Component.__init__(self, ['d11', 'd12',
+        Component2D.__init__(self, ['d11', 'd12',
                                   'd21', 'd22'])
 
         self._whitelist['signal2D'] = ('init,sig', signal2D)

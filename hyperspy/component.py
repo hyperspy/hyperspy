@@ -1222,3 +1222,10 @@ class Component(t.HasTraits):
                              ' a notebook')
             else:
                 raise
+
+class Component2D(Component):
+
+    def __call__(self):
+        xaxis = self.model.xaxis
+        yaxis = self.model.yaxis
+        return self.function(xaxis, yaxis)

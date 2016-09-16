@@ -28,7 +28,8 @@ from hyperspy.misc.utils import slugify
 from hyperspy.signal import BaseSignal
 from hyperspy.samfire_utils.strategy import (LocalStrategy,
                                              GlobalStrategy)
-from hyperspy.samfire_utils.local_strategies import ReducedChiSquaredStrategy
+from hyperspy.samfire_utils.local_strategies import (ReducedChiSquaredStrategy,
+                                                     PhaseCorrelationStrategy)
 from hyperspy.samfire_utils.global_strategies import HistogramStrategy
 from hyperspy.samfire_utils.samfire_pool import SamfirePool
 
@@ -180,12 +181,18 @@ class Samfire:
 
         self.metadata.marker = marker
         self.strategies = StrategyList(self)
-        self.strategies.append(ReducedChiSquaredStrategy())
+        sig_dim = model.signal.axes_manager.signal_dimension
+        if sig_dim == 1:
+            self.strategies.append(ReducedChiSquaredStrategy())
+            from hyperspy.samfire_utils.fit_tests import red_chisq_test
+            self.metadata.goodness_test = red_chisq_test(tolerance=1.0)
+        elif sig_dim == 2:
+            self.strategies.append(PhaseCorrelationStrategy())
+            from hyperspy.samfire_utils.fit_tests import correlation
+            self.metadata.goodness_test = correlation(tolerance=0.2)
         self.strategies.append(HistogramStrategy())
         self._active_strategy_ind = 0
         self.update_every = max(10, workers * 2)  # some sensible number....
-        from hyperspy.samfire_utils.fit_tests import red_chisq_test
-        self.metadata.goodness_test = red_chisq_test(tolerance=1.0)
         self.metadata._gt_dump = None
         from hyperspy.samfire_utils.samfire_kernel import single_kernel
         self.single_kernel = single_kernel
@@ -457,10 +464,12 @@ class Samfire:
                 value_dict['fitting_kwargs'] = self._args
                 value_dict['signal.data'] = \
                     self.model.signal.data[ind + (...,)]
-                var = self.model.signal.metadata.Signal.Noise_properties.variance
-                if isinstance(var, BaseSignal):
-                    value_dict['variance.data'] = var.data[ind + (...,)]
-                if self.model.low_loss is not None:
+                if self.model.signal.metadata.has_item(
+                    'Signal.Noise_properties.variace'):
+                    var = self.model.signal.metadata.Signal.Noise_properties.variance
+                    if isinstance(var, BaseSignal):
+                        value_dict['variance.data'] = var.data[ind + (...,)]
+                if hasattr(self.model, 'low_loss') and self.model.low_loss is not None:
                     value_dict['low_loss.data'] = \
                         self.model.low_loss.data[ind + (...,)]
 
@@ -485,11 +494,16 @@ class Samfire:
 
     def _swap_dict_and_model(self, m_ind, dic, d_ind=None):
         if d_ind is None:
-            d_ind = tuple([0 for _ in dic['chisq.data'].shape])
-        self.model.chisq.data[m_ind], dic['chisq.data'] = dic[
-            'chisq.data'].copy(), self.model.chisq.data[m_ind].copy()
+            d_ind = tuple([0 for _ in dic['dof.data'].shape])
         self.model.dof.data[m_ind], dic['dof.data'] = dic[
             'dof.data'].copy(), self.model.dof.data[m_ind].copy()
+
+        if 'chisq.data' in dic:
+            self.model.chisq.data[m_ind], dic['chisq.data'] = dic[
+                'chisq.data'].copy(), self.model.chisq.data[m_ind].copy()
+        if 'corr.data' in dic:
+            self.model.corr.data[m_ind], dic['corr.data'] = dic[
+                'corr.data'].copy(), self.model.corr.data[m_ind].copy()
 
         for comp_name, comp in dic['components'].items():
             # only active components are sent

@@ -20,6 +20,7 @@ import numpy as np
 
 from hyperspy.samfire_utils.strategy import LocalStrategy
 from hyperspy.samfire_utils.weights.red_chisq import ReducedChiSquaredWeight
+from hyperspy.samfire_utils.weights.phase_corr import PhaseCorrelationWeight
 
 
 def exp_decay(distances):
@@ -35,5 +36,16 @@ class ReducedChiSquaredStrategy(LocalStrategy):
     def __init__(self):
         super().__init__('Reduced chi squared strategy')
         self.weight = ReducedChiSquaredWeight()
+        self.radii = 3.
+        self.decay_function = exp_decay
+
+
+class PhaseCorrelationStrategy(LocalStrategy):
+    """Phase correlation Local strategy of the SAMFire. 
+    """
+
+    def __init__(self):
+        super().__init__('Phase correlation strategy')
+        self.weight = PhaseCorrelationWeight()
         self.radii = 3.
         self.decay_function = exp_decay
