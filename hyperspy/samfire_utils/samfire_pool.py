@@ -150,7 +150,7 @@ class SamfirePool(ParallelPool):
                               worker.create_model(m_dict, 'z'), self.rworker,
                               m_dict)
             direct_view.apply(lambda worker, ts: worker.setup_test(ts),
-                              self.rworker, samfire.metadata.gt_dump)
+                              self.rworker, samfire.metadata._gt_dump)
             direct_view.apply(lambda worker, on: worker.set_optional_names(on),
                               self.rworker, optional_names)
 
@@ -161,7 +161,7 @@ class SamfirePool(ParallelPool):
             for i in range(self.num_workers):
                 this_queue = manager.Queue()
                 self.workers[i] = this_queue
-                this_queue.put(('setup_test', (samfire.metadata.gt_dump,)))
+                this_queue.put(('setup_test', (samfire.metadata._gt_dump,)))
                 this_queue.put(('create_model', (m_dict, 'z')))
                 this_queue.put(('set_optional_names', (optional_names,)))
                 self.pool.apply_async(create_worker, args=(i, this_queue,

@@ -186,7 +186,7 @@ class Samfire:
         self.update_every = max(10, workers * 2)  # some sensible number....
         from hyperspy.samfire_utils.fit_tests import red_chisq_test
         self.metadata.goodness_test = red_chisq_test(tolerance=1.0)
-        self.metadata.gt_dump = None
+        self.metadata._gt_dump = None
         from hyperspy.samfire_utils.samfire_kernel import single_kernel
         self.single_kernel = single_kernel
         self._workers = workers
@@ -206,7 +206,7 @@ class Samfire:
     def _setup(self, **kwargs):
         """Set up SAMFire - configure models, set up pool if necessary"""
         self._figure = None
-        self.metadata.gt_dump = dill.dumps(self.metadata.goodness_test)
+        self.metadata._gt_dump = dill.dumps(self.metadata.goodness_test)
         self._enable_optional_components()
 
         if hasattr(self.model, '_suspend_auto_fine_structure_width'):
