@@ -176,14 +176,14 @@ class SamfirePool(ParallelPool):
         if self.is_multiprocessing:
             for this_queue in self.workers.values():
                 this_queue.put(('set_optional_names', (optional_names,)))
-                this_queue.put(('setup_test', (samfire.metadata.gt_dump,)))
+                this_queue.put(('setup_test', (samfire.metadata._gt_dump,)))
         elif self.is_ipyparallel:
             direct_view = self.pool.client[:self.num_workers]
             direct_view.block = True
             direct_view.apply(lambda worker, on: worker.set_optional_names(on),
                               self.rworker, optional_names)
             direct_view.apply(lambda worker, ts: worker.setup_test(ts),
-                              self.rworker, samfire.metadata.gt_dump)
+                              self.rworker, samfire.metadata._gt_dump)
 
     def ping_workers(self, timeout=None):
         """Pings the workers and records one-way trip time and (if available)
@@ -300,7 +300,8 @@ class SamfirePool(ParallelPool):
             timeout = self.timeout
         found_something = False
         if self.is_ipyparallel:
-            for res, ind in reversed(self.results):
+            # for res, ind in reversed(self.results):
+            for res, ind in self.results:
                 if res.ready():
                     try:
                         result = res.get(timeout=timeout)
@@ -355,7 +356,7 @@ class SamfirePool(ParallelPool):
             new_result = self.collect_results()
             need_number = self.need_pixels
 
-            if need_number:
+            if need_number > 0:
                 self.add_jobs(need_number)
             if not need_number or not new_result:
                 # did not spend much time, since no new results or added pixels

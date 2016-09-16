@@ -131,10 +131,12 @@ class Model2D(BaseModel):
             'convolved': None,
             'free_parameters_boundaries': None,
             'chisq.data': None,
+            'corr.data': None,
             'dof.data': None}
         self._slicing_whitelist = {
             'channel_switches': 'isig',
             'chisq.data': 'inav',
+            'corr.data': 'inav',
             'dof.data': 'inav'}
 
     @property

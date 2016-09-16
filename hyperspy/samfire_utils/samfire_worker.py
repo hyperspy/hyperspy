@@ -44,7 +44,6 @@ class Worker:
         self.last_time = 1
         self.optional_names = set()
         self.model = None
-        self.measure = 'red_chisq'
 
     def create_model(self, signal_dict, model_letter):
         _logger.debug('Creating model in worker {}'.format(self.identity))
@@ -63,8 +62,8 @@ class Worker:
             var = self.model.signal.metadata.Signal.Noise_properties.variance
             if isinstance(var, BaseSignal):
                 var.data = var.data.copy()
-        else:
-            self.measure = 'correlation'
+        if hasattr(self.model, 'corr'):
+            self.model.corr.data = self.model.corr.data.copy()
         if not hasattr(self.model, 'low_loss'):
             self.model.low_loss = None
         if self.model.low_loss is not None:
@@ -151,7 +150,8 @@ class Worker:
         self.fitting_kwargs = self.value_dict.pop('fitting_kwargs', {})
         self.model.signal.data[:] = self.value_dict.pop('signal.data')
 
-        if self.measure == 'red_chisq':
+        if self.model.signal.metadata.has_item(
+            'Signal.Noise_properties.variance'):
             var = self.model.signal.metadata.Signal.Noise_properties.variance
             if isinstance(var, BaseSignal):
                 var.data[:] = self.value_dict.pop('variance.data')
@@ -188,35 +188,27 @@ class Worker:
             self.best_values = self._collect_values()
             self.best_AICc = new_AICc
             self.best_dof = len(self.model.p0)
-            if self.measure == 'red_chisq':
-                self.best_measure = self.model.chisq.data[0]
-            elif self.measure == 'correlation':
-                self.best_measure = self.model.corr.data[0]
-
-    def _current_measure(self):
-        if self.measure == 'red_chisq':
-            return self.model.chisq.data[0]
-        elif self.measure == 'correlation':
-            return self.model.corr.data[0]
-        else:
-            raise ValueError('bad measure in this worker')
+            # self.best_measure = self._current_measure()
+            self.best_chisq = self.model.chisq.data[0]
+            if hasattr(self.model, 'corr'):
+                self.best_corr = self.model.corr.data[0]
 
     def send_results(self, current=False):
         if current:
-            self.best_measure = self._current_measure()
+            self.best_chisq = self.model.chisq.data[0] 
             self.best_dof = len(self.model.p0)
             self.best_values = self._collect_values()
+            if hasattr(self.model, 'corr'):
+                self.best_corr = self.model.corr.data[0]
         if len(self.best_values):  # i.e. we have a good result
             _logger.debug('we have a good result in worker '
                           '{}'.format(self.identity))
             result = {'dof.data': np.array(self.best_dof),
-                      'components': self.best_values
+                      'components': self.best_values,
+                      'chisq.data': np.array(self.best_chisq)
                       }
-            if self.measure == 'red_chisq':
-                key = 'chisq.data'
-            elif self.measure == 'correlation':
-                key = 'corr.data'
-            result[key] = np.array(self.best_measure)
+            if hasattr(self.model, 'corr'):
+                result['corr.data'] = np.array(self.best_corr)
             found_solution = True
         else:
             _logger.debug("we don't have a good result in worker "
