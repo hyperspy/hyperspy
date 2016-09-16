@@ -21,8 +21,10 @@ import os
 import tempfile
 import numbers
 import logging
+from distutils.version import StrictVersion
 
 import numpy as np
+import scipy
 import scipy.odr as odr
 from scipy.optimize import (leastsq, least_squares,
                             minimize, differential_evolution)
@@ -479,8 +481,6 @@ class BaseModel(list):
             for parameter in component.parameters:
                 parameter.events.value_changed.connect(
                     self._model_line.update, [])
-        if self._plot_components is True:
-            self._connect_component_lines()
 
     def _disconnect_parameters2update_plot(self, components):
         if self._model_line is None:
@@ -490,8 +490,6 @@ class BaseModel(list):
             for parameter in component.parameters:
                 parameter.events.value_changed.disconnect(
                     self._model_line.update)
-        if self._plot_components is True:
-            self._disconnect_component_lines()
 
     def update_plot(self, *args, **kwargs):
         """Update model plot.
@@ -545,13 +543,18 @@ class BaseModel(list):
         if update_on_resume is True:
             self.update_plot()
 
+    def _update_model_line(self):
+        if (self._plot_active is True and
+                self._model_line is not None):
+            self._model_line.update()
+
     def _close_plot(self):
         if self._plot_components is True:
             self.disable_plot_components()
         self._disconnect_parameters2update_plot(components=self)
         self._model_line = None
 
-    def _update_model_repr(self):
+    def _update_model_line(self):
         if (self._plot_active is True and
                 self._model_line is not None):
             self._model_line.update()
@@ -904,10 +907,10 @@ class BaseModel(list):
         if bounded is True:
             if fitter not in ("leastsq", "mpfit", "TNC",
                               "L-BFGS-B", "Differential Evolution"):
-                raise NotImplementedError("Bounded optimization is only "
-                                          "supported by 'leastsq', "
-                                          "'mpfit', 'TNC', 'L-BFGS-B' or"
-                                          "'Differential Evolution'.")
+                raise ValueError("Bounded optimization is only "
+                                 "supported by 'leastsq', "
+                                 "'mpfit', 'TNC', 'L-BFGS-B' or"
+                                 "'Differential Evolution'.")
             else:
                 # this has to be done before setting the p0,
                 # so moved things around
@@ -971,6 +974,12 @@ class BaseModel(list):
             # Least squares "dedicated" fitters
             if fitter == "leastsq":
                 if bounded:
+                    # leastsq with bounds requires scipy >= 0.17
+                    if StrictVersion(
+                            scipy.__version__) < StrictVersion("0.17"):
+                        raise ImportError(
+                            "leastsq with bounds requires SciPy >= 0.17")
+
                     self.set_boundaries()
                     ls_b = self.free_parameters_boundaries
                     ls_b = ([a if a is not None else -np.inf for a, b in ls_b],
@@ -1182,14 +1191,6 @@ class BaseModel(list):
         masked_elements = 0 if mask is None else mask.sum()
         maxval = self.axes_manager.navigation_size - masked_elements
         show_progressbar = show_progressbar and (maxval > 0)
-        if 'bounded' in kwargs and kwargs['bounded'] is True:
-            if kwargs['fitter'] not in ("leastsq", "TNC", "L_BFGS-B", "mpfit"):
-                _logger.info(
-                    "The chosen fitter does not suppport bounding."
-                    "If you require bounding please select one of the "
-                    "following fitters instead: 'leastsq', 'TNC', "
-                    "'L_BFGS-B', 'mpfit'")
-                kwargs['bounded'] = False
         i = 0
         with self.axes_manager.events.indices_changed.suppress_callback(
                 self.fetch_stored_values):

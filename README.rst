@@ -2,11 +2,11 @@
 
 |Travis|_ |AppVeyor|_ |Coveralls|_ |pypi_version|_ |pypi_downloads|_ |rtd|_ |gitter|_
 
-.. |Travis| image:: https://api.travis-ci.org/hyperspy/hyperspy.png?branch=master
+.. |Travis| image:: https://api.travis-ci.org/hyperspy/hyperspy.png?branch=RELEASE_next_minor
 .. _Travis: https://travis-ci.org/hyperspy/hyperspy
 
-.. |AppVeyor| image:: https://ci.appveyor.com/api/projects/status/github/hyperspy/hyperspy?svg=true&branch=master
-.. _AppVeyor: https://ci.appveyor.com/project/hyperspy/hyperspy/branch/master
+.. |AppVeyor| image:: https://ci.appveyor.com/api/projects/status/github/hyperspy/hyperspy?svg=true&branch=RELEASE_next_minor
+.. _AppVeyor: https://ci.appveyor.com/project/hyperspy/hyperspy/branch/RELEASE_next_minor
 
 .. |Coveralls| image:: https://coveralls.io/repos/hyperspy/hyperspy/badge.svg
 .. _Coveralls: https://coveralls.io/r/hyperspy/hyperspy
@@ -49,5 +49,5 @@ Cite
 
 |DOI|_
 
-.. |DOI| image:: https://zenodo.org/badge/doi/10.5281/zenodo.58841.svg
-.. _DOI: http://dx.doi.org/10.5281/zenodo.58841
+.. |DOI| image:: https://zenodo.org/badge/doi/10.5281/zenodo.60697.svg
+.. _DOI: http://dx.doi.org/10.5281/zenodo.60697

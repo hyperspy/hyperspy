@@ -23,7 +23,7 @@ from contextlib import contextmanager
 
 from hyperspy.model import BaseModel, ModelComponents, ModelSpecialSlicers
 import hyperspy.drawing.signal1d
-from hyperspy._signals.eels import Signal1D
+from hyperspy._signals.signal1d import Signal1D
 from hyperspy.axes import generate_axis
 from hyperspy.exceptions import WrongObjectError
 from hyperspy.decorators import interactive_range_selector
@@ -632,11 +632,11 @@ class Model1D(BaseModel):
             self._plot_component(component)
 
     def disable_plot_components(self):
+        self._plot_components = False
         if self._plot is None:
             return
         for component in self:
             self._disable_plot_component(component)
-        self._plot_components = False
 
     def enable_adjust_position(
             self, components=None, fix_them=True, show_label=True):
