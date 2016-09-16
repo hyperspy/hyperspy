@@ -57,9 +57,13 @@ class Worker:
             for par in component.parameters:
                 par.map = par.map.copy()
 
-        var = self.model.signal.metadata.Signal.Noise_properties.variance
-        if isinstance(var, BaseSignal):
-            var.data = var.data.copy()
+        if self.model.signal.metadata.has_item(
+            'Signal.Noise_properties.variance'):
+            var = self.model.signal.metadata.Signal.Noise_properties.variance
+            if isinstance(var, BaseSignal):
+                var.data = var.data.copy()
+        if not hasattr(self.model, 'low_loss'):
+            self.model.low_loss = None
         if self.model.low_loss is not None:
             self.model.low_loss.data = self.model.low_loss.data.copy()
 
@@ -144,9 +148,11 @@ class Worker:
         self.fitting_kwargs = self.value_dict.pop('fitting_kwargs', {})
         self.model.signal.data[:] = self.value_dict.pop('signal.data')
 
-        var = self.model.signal.metadata.Signal.Noise_properties.variance
-        if isinstance(var, BaseSignal):
-            var.data[:] = self.value_dict.pop('variance.data')
+        if self.model.signal.metadata.has_item(
+            'Signal.Noise_properties.variance'):
+            var = self.model.signal.metadata.Signal.Noise_properties.variance
+            if isinstance(var, BaseSignal):
+                var.data[:] = self.value_dict.pop('variance.data')
 
         if 'low_loss.data' in self.value_dict:
             self.model.low_loss.data[:] = self.value_dict.pop('low_loss.data')
