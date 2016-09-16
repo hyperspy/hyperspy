@@ -51,8 +51,8 @@ class SamfirePool(ParallelPool):
         given SAMFire object, populates the workers with the required
         information. In case of multiprocessing, starts worker listening to the
         queues.
-    update_optional_names
-        updates the optional names in all workers
+    update_parameters
+        updates the parameters in the workers
     ping_workers
         pings all workers. Stores the one-way trip time and the process_id
         (pid) of each worker if available
@@ -168,7 +168,7 @@ class SamfirePool(ParallelPool):
                                                            self.shared_queue,
                                                            self.result_queue))
 
-    def update_optional_names(self):
+    def update_parameters(self):
         """Updates the optional names on the workers"""
         samfire = self.samf
         optional_names = {samfire.model[c].name for c in
@@ -176,11 +176,14 @@ class SamfirePool(ParallelPool):
         if self.is_multiprocessing:
             for this_queue in self.workers.values():
                 this_queue.put(('set_optional_names', (optional_names,)))
+                this_queue.put(('setup_test', (samfire.metadata.gt_dump,)))
         elif self.is_ipyparallel:
             direct_view = self.pool.client[:self.num_workers]
             direct_view.block = True
             direct_view.apply(lambda worker, on: worker.set_optional_names(on),
                               self.rworker, optional_names)
+            direct_view.apply(lambda worker, ts: worker.setup_test(ts),
+                              self.rworker, samfire.metadata.gt_dump)
 
     def ping_workers(self, timeout=None):
         """Pings the workers and records one-way trip time and (if available)

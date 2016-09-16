@@ -70,26 +70,27 @@ class HistogramTilePlot(BlittedFigure):
             j = 0
             for p_n, (hist, bin_edges) in v.items():
                 j += 1
-                title = c_n + ' ' + p_n
-                ax = self.create_axis(ncomps, ncols, istart + j, title)
-                self.ax = ax
-                # remove previous
-                while ax.patches:
-                    ax.patches[0].remove()
-                # set new; only draw non-zero height bars
                 mask = hist > 0
-                ax.bar(
-                    bin_edges[
-                        :-1][mask],
-                    hist[mask],
-                    np.diff(bin_edges)[mask],
-                    # animated=True,
-                    **kwargs)
-                width = bin_edges[-1] - bin_edges[0]
-                ax.set_xlim(
-                    bin_edges[0] - width * 0.1, bin_edges[-1] + width * 0.1)
-                ax.set_ylim(0, np.max(hist) * 1.1)
-                ax.set_title(c_n + ' ' + p_n)
+                if np.any(mask):
+                    title = c_n + ' ' + p_n
+                    ax = self.create_axis(ncomps, ncols, istart + j, title)
+                    self.ax = ax
+                    # remove previous
+                    while ax.patches:
+                        ax.patches[0].remove()
+                    # set new; only draw non-zero height bars
+                    ax.bar(
+                        bin_edges[
+                            :-1][mask],
+                        hist[mask],
+                        np.diff(bin_edges)[mask],
+                        # animated=True,
+                        **kwargs)
+                    width = bin_edges[-1] - bin_edges[0]
+                    ax.set_xlim(
+                        bin_edges[0] - width * 0.1, bin_edges[-1] + width * 0.1)
+                    ax.set_ylim(0, np.max(hist) * 1.1)
+                    # ax.set_title(c_n + ' ' + p_n)
         self._draw_animated()
         self.figure.canvas.draw()
 
