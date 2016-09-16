@@ -3195,7 +3195,8 @@ class BaseSignal(FancySlicing,
     get_histogram.__doc__ %= OUT_ARG
 
     def map(self, function,
-            show_progressbar=None, **kwargs):
+            show_progressbar=None,
+            threaded=False, **kwargs):
         """Apply a function to the signal data at all the coordinates.
 
         The function must operate on numpy arrays and the output *must have the
@@ -3217,6 +3218,9 @@ class BaseSignal(FancySlicing,
         show_progressbar : None or bool
             If True, display a progress bar. If None the default is set in
             `preferences`.
+        threaded : bool
+            if True, the mapping will be performed in a threaded (parallel)
+            manner.
         keyword arguments : any valid keyword argument
             All extra keyword arguments are passed to the
 
@@ -3283,38 +3287,88 @@ class BaseSignal(FancySlicing,
         # If the function has an axes argument
         # we suppose that it can operate on the full array and we don't
         # interate over the coordinates.
-        elif not ndkwargs and "axes" in fargs:
+        elif not ndkwargs and "axes" in fargs and not threaded:
             kwargs['axes'] = tuple([axis.index_in_array for axis in
                                     self.axes_manager.signal_axes])
             self._map_all(function, **kwargs)
         else:
             # Iteration over coordinates.
-            self._map_iterate(function, ndkwargs,
+            self._map_iterate(function, iterating_kwargs=ndkwargs,
                               show_progressbar=show_progressbar,
+                              threaded=threaded,
                               **kwargs)
         self.events.data_changed.trigger(obj=self)
 
     def _map_all(self, function, **kwargs):
-        """Function that can be replaced for lazy signals"""
+        """The function has to have either 'axis' or 'axes' keyword argument,
+        and hence support operating on the full dataset efficiently.
+
+        Replaced for lazy signals"""
         self.data = function(self.data, **kwargs)
 
     def _map_iterate(self, function, iterating_kwargs=(),
-                     show_progressbar=None, **kwargs):
-        """Function that can be replaced for lazy signals"""
+                     show_progressbar=None, threaded=False,
+                     **kwargs):
+        """Iterates the signal navigation space applying the function.
+
+        Paratemers
+        ----------
+        function : callable
+            the function to apply
+        iterating_kwargs : tuple of tuples
+            a tuple with structure (('key1', value1), ('key2', value2), ..)
+            where the key-value pairs will be passed as kwargs for the
+            callable, and the values will be iterated together with the signal
+            navigation.
+        threaded : bool
+            if True, the mapping will be performed in a threaded (parallel)
+            manner.
+        show_progressbar : None or bool
+            If True, display a progress bar. If None the default is set in
+            `preferences`.
+
+        Notes
+        -----
+        This method is replaced for lazy signals.
+        """
         iterators = tuple(signal[1]._iterate_signal()
                           if isinstance(signal[1], BaseSignal) else signal[1]
                           for signal in iterating_kwargs)
+        # make all kwargs iterating for simplicity:
+        from itertools import repeat
+        size = max(1, self.axes_manager.navigation_size)
+        iterating = tuple(key for key, value in iterating_kwargs)
+        for k, v in kwargs.items():
+            if k not in iterating:
+                iterating += k,
+                iterators += repeat(v, size),
+
         iterators = (self._iterate_signal(),) + iterators
-        for data in progressbar(zip(*iterators),
-                                disable=not show_progressbar,
-                                total=self.axes_manager.navigation_size,
-                                leave=True):
-            for (key, value), datum in zip(iterating_kwargs, data[1:]):
-                if isinstance(value, BaseSignal) and len(datum) == 1:
-                    kwargs[key] = datum[0]
-                else:
-                    kwargs[key] = datum
-            data[0][:] = function(data[0], **kwargs)
+
+        def figure_out_kwargs(data):
+            _kwargs = {k: v for k, v in zip(iterating, data[1:])}
+            for k, v in iterating_kwargs:
+                if isinstance(v, BaseSignal) and len(_kwargs[k]) == 1:
+                    _kwargs[k] = _kwargs[k][0]
+            return data[0], _kwargs
+
+        def func(*args):
+            dat, these_kwargs = figure_out_kwargs(*args)
+            return function(dat, **these_kwargs)
+
+        if threaded:
+            from concurrent.futures import ThreadPoolExecutor
+            executor = ThreadPoolExecutor()
+            thismap = executor.map
+        else:
+            from builtins import map as thismap
+        for data, res in progressbar(zip(self._iterate_signal(),
+                                         thismap(func, zip(*iterators))),
+                                     disable=not show_progressbar,
+                                     total=size, leave=True):
+            data[:] = res
+        if threaded:
+            executor.shutdown()
 
     def copy(self):
         try:
