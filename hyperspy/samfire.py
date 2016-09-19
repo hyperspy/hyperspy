@@ -242,6 +242,9 @@ class Samfire:
             while True:
                 self._run_active_strategy()
                 self.plot()
+                if self.pixels_done == self.model.axes_manager.navigation_size:
+                    # all pixels are done, no need to go to the next strategy
+                    break
                 if self._active_strategy_ind == num_of_strat - 1:
                     # last one just finished running
                     break
@@ -486,15 +489,26 @@ class Samfire:
                 number -= 1
         return inds
 
-    def _swap_dict_and_model(self, m_ind, dic, d_ind=None):
+    def _swap_dict_and_model(self, m_ind, dict_, d_ind=None):
         if d_ind is None:
-            d_ind = tuple([0 for _ in dic['chisq.data'].shape])
-        self.model.chisq.data[m_ind], dic['chisq.data'] = dic[
-            'chisq.data'].copy(), self.model.chisq.data[m_ind].copy()
-        self.model.dof.data[m_ind], dic['dof.data'] = dic[
-            'dof.data'].copy(), self.model.dof.data[m_ind].copy()
+            d_ind = tuple([0 for _ in dict_['dof.data'].shape])
+        m = self.model
+        for k in dict_.keys():
+            if k.endswith('.data'):
+                item = k[:-5]
+                getattr(m, item).data[m_ind], dict_[k] = \
+                    dict_[k].copy(), getattr(m, item).data[m_ind].copy()
+        # self.model.dof.data[m_ind], dict_['dof.data'] = dict_[
+        #     'dof.data'].copy(), self.model.dof.data[m_ind].copy()
 
-        for comp_name, comp in dic['components'].items():
+        # if 'chisq.data' in dict_:
+        #     self.model.chisq.data[m_ind], dict_['chisq.data'] = dict_[
+        #         'chisq.data'].copy(), self.model.chisq.data[m_ind].copy()
+        # if 'corr.data' in dict_:
+        #     self.model.corr.data[m_ind], dict_['corr.data'] = dict_[
+        #         'corr.data'].copy(), self.model.corr.data[m_ind].copy()
+
+        for comp_name, comp in dict_['components'].items():
             # only active components are sent
             if self.model[comp_name].active_is_multidimensional:
                 self.model[comp_name]._active_array[m_ind] = True
@@ -507,7 +521,7 @@ class Samfire:
 
         for component in self.model:
             # switch off all that did not appear in the dictionary
-            if component.name not in dic['components'].keys():
+            if component.name not in dict_['components'].keys():
                 if component.active_is_multidimensional:
                     component._active_array[m_ind] = False
 
