@@ -44,13 +44,13 @@ class Worker:
         self.last_time = 1
         self.optional_names = set()
         self.model = None
+        self.parameters = {}
 
     def create_model(self, signal_dict, model_letter):
         _logger.debug('Creating model in worker {}'.format(self.identity))
         sig = BaseSignal(**signal_dict)
         sig._assign_subclass()
         self.model = sig.models[model_letter].restore()
-        self.model.signal.data = self.model.signal.data.copy()
         for component in self.model:
             component.active_is_multidimensional = False
             component.active = True
@@ -62,12 +62,24 @@ class Worker:
             var = self.model.signal.metadata.Signal.Noise_properties.variance
             if isinstance(var, BaseSignal):
                 var.data = var.data.copy()
-        if hasattr(self.model, 'corr'):
-            self.model.corr.data = self.model.corr.data.copy()
-        if not hasattr(self.model, 'low_loss'):
-            self.model.low_loss = None
-        if self.model.low_loss is not None:
-            self.model.low_loss.data = self.model.low_loss.data.copy()
+        self._array_views_to_copies()
+        # self.model.signal.data = self.model.signal.data.copy()
+        # if hasattr(self.model, 'corr'):
+        #     self.model.corr.data = self.model.corr.data.copy()
+        # if not hasattr(self.model, 'low_loss'):
+        #     self.model.low_loss = None
+        # if self.model.low_loss is not None:
+        #     self.model.low_loss.data = self.model.low_loss.data.copy()
+
+    def _array_views_to_copies(self):
+        dct = self.model.__dict__
+        self.parameters = {}
+        for k, v in dct.items():
+            if isinstance(v, BaseSignal):
+                v.data = v.data.copy()
+                self.parameters[k] = None
+            if isinstance(v, np.ndarray):
+                dct[k] = v.copy()
 
     def set_optional_names(self, optional_names):
         self.optional_names = optional_names
@@ -188,27 +200,33 @@ class Worker:
             self.best_values = self._collect_values()
             self.best_AICc = new_AICc
             self.best_dof = len(self.model.p0)
-            # self.best_measure = self._current_measure()
-            self.best_chisq = self.model.chisq.data[0]
-            if hasattr(self.model, 'corr'):
-                self.best_corr = self.model.corr.data[0]
+            # self.best_chisq = self.model.chisq.data[0]
+            # if hasattr(self.model, 'corr'):
+            #     self.best_corr = self.model.corr.data[0]
+            for k in self.parameters.keys():
+                self.parameters[k] = getattr(self.model, k).data[0]
 
     def send_results(self, current=False):
         if current:
-            self.best_chisq = self.model.chisq.data[0] 
-            self.best_dof = len(self.model.p0)
             self.best_values = self._collect_values()
-            if hasattr(self.model, 'corr'):
-                self.best_corr = self.model.corr.data[0]
+            for k in self.parameters.keys():
+                self.parameters[k] = getattr(self.model, k).data[0]
+            # self.best_dof = len(self.model.p0)
+            # self.best_chisq = self.model.chisq.data[0] 
+            # if hasattr(self.model, 'corr'):
+            #     self.best_corr = self.model.corr.data[0]
         if len(self.best_values):  # i.e. we have a good result
             _logger.debug('we have a good result in worker '
                           '{}'.format(self.identity))
-            result = {'dof.data': np.array(self.best_dof),
-                      'components': self.best_values,
-                      'chisq.data': np.array(self.best_chisq)
-                      }
-            if hasattr(self.model, 'corr'):
-                result['corr.data'] = np.array(self.best_corr)
+            result = {k+'.data': np.array(v) for k, v in
+                      self.parameters.items()}
+            result['components'] = self.best_values
+            # result = {'dof.data': np.array(self.best_dof),
+            #           'components': self.best_values,
+            #           'chisq.data': np.array(self.best_chisq)
+            #           }
+            # if hasattr(self.model, 'corr'):
+            #     result['corr.data'] = np.array(self.best_corr)
             found_solution = True
         else:
             _logger.debug("we don't have a good result in worker "
