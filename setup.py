@@ -55,11 +55,16 @@ install_req = ['scipy',
                'traitsui>=5.0',
                'natsort',
                'requests',
-               'setuptools',
                'tqdm',
                'sympy',
                'dill',
-               'h5py']
+               'h5py',
+               'python-dateutil',
+               'ipyparallel']
+
+# the hack to deal with setuptools + installing the package in ReadTheDoc:
+if 'readthedocs.org' in sys.executable:
+    install_req = []
 
 
 def update_version(version):
@@ -188,7 +193,10 @@ def find_post_checkout_cleanup_line():
 # generate some git hook to clean up and re-build_ext --inplace
 # after changing branches:
 if os.path.exists(git_dir) and (not os.path.exists(hook_ignorer)):
-    recythonize_str = ' '.join([sys.executable,
+    exec_str = sys.executable
+    if os.name == 'nt':
+        exec_str = exec_str.replace('\\', '/')  # Won't work otherwise
+    recythonize_str = ' '.join([exec_str,
                                 os.path.join(setup_path, 'setup.py'),
                                 'clean --all build_ext --inplace \n'])
     if (not os.path.exists(post_checout_hook_file)):
@@ -301,6 +309,7 @@ with update_version_when_dev() as version:
                   'hyperspy.tests.io',
                   'hyperspy.tests.model',
                   'hyperspy.tests.mva',
+                  'hyperspy.tests.samfire',
                   'hyperspy.tests.signal',
                   'hyperspy.tests.utils',
                   'hyperspy.tests.misc',
@@ -319,9 +328,6 @@ with update_version_when_dev() as version:
                   'hyperspy.samfire_utils.goodness_of_fit_tests',
                   ],
         install_requires=install_req,
-        setup_requires=[
-            'setuptools'
-        ],
         package_data={
             'hyperspy':
             [
@@ -348,6 +354,12 @@ with update_version_when_dev() as version:
                 'tests/io/npy_files/*.npy',
                 'tests/io/unf_files/*.unf',
                 'tests/io/bcf_data/*.bcf',
+                'tests/io/bcf_data/*.npy',
+                'tests/io/ripple_files/*.rpl',
+                'tests/io/ripple_files/*.raw',
+                'tests/io/emd_files/*.emd',
+                'tests/io/protochips_data/*.npy',
+                'tests/io/protochips_data/*.csv',
                 'tests/drawing/*.ipynb',
                 'tests/signal/test_find_peaks1D_ohaver/test_find_peaks1D_ohaver.hdf5',
             ],

@@ -419,7 +419,7 @@ class Event(object):
         return "<hyperspy.events.Event: " + repr(self.connected) + ">"
 
 
-class EventSupressor(object):
+class EventSuppressor(object):
 
     """
     Object to enforce a variety of suppression types simultaneously
@@ -435,14 +435,14 @@ class EventSupressor(object):
 
     Example usage
     -------------
-    >>> es = EventSupressor((event1, callback1), (event1, callback2))
+    >>> es = EventSuppressor((event1, callback1), (event1, callback2))
     >>> es.add(event2, callback2)
     >>> es.add(event3)
     >>> es.add(events_container1)
     >>> es.add(events_container2, callback1)
     >>> es.add(event4, (events_container3, callback2))
     >>>
-    >>> with es.supress():
+    >>> with es.suppress():
     ...     do_something()
     """
 

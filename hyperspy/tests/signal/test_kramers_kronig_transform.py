@@ -39,7 +39,7 @@ class Test2D:
         # Parameters
         i0 = 1.
         t = hs.signals.BaseSignal(np.arange(10, 70, 10).reshape((2, 3)))
-        t.axes_manager.set_signal_dimension(0)
+        t = t.transpose(signal_axes=0)
         scale = 0.02
 
         # Create an 3x2x2048 spectrum with Drude plasmon

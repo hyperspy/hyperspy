@@ -1,4 +1,4 @@
-Curve fitting
+Model fitting
 *************
 
 HyperSpy can perform curve fitting of one-dimensional signals (spectra) and
@@ -8,6 +8,8 @@ optimisation algorithms can be used to fit the model to experimental data.
 Bounds and weights are supported. The syntax for creating both kinds of model
 is essentially the same as in this documentation any method referred to in
 the :py:class`~.model.BaseModel` class is available for both kinds.
+
+.. _2D_model-label:
 
 .. versionadded:: 1.0
    2D models. Note that this first implementation lacks many of the
@@ -55,8 +57,17 @@ to provide important information not already included in the datafile, e.g.if s
 is EELS data, you may be asked for the accelerating voltage, convergence and
 collection semi-angles etc.
 
+
+
+.. _model_components-label:
+
 Adding components to the model
 ------------------------------
+
+.. versionchanged:: 1.0 `hyperspy.api.model.components` renamed to
+   `hyperspy.api.model.components1D`
+
+.. versionadded:: 1.0 `hyperspy.api.model.components2D`.
 
 In HyperSpy a model consists of a linear combination of components
 and various components are available in one (:py:mod:`~.components1d`)and
@@ -337,11 +348,13 @@ To enable this feature for a given component set the
     >>> g1._active_array is None
     True
 
+.. _model_indexing-label:
 
 Indexing model
 --------------
 
-.. versionadded:: 0.9 model indexing
+.. versionadded:: 1.0 model indexing
+
 
 Often it is useful to consider only part of the model - for example at
 a particular location (i.e. a slice in the navigation space) or energy range
@@ -561,22 +574,42 @@ spectrum at a particular point in a spectrum-image) use
 :py:meth:`~.model.BaseModel.fit`.
 
 The following table summarizes the features of the currently available
-optimizers:
+optimizers. For more information on the local and global optimization algorithms, see the
+`Scipy documentation <http://docs.scipy.org/doc/scipy/reference/optimize.html>`_.
 
+.. versionadded:: 1.1 Global optimizer `Differential Evolution` added.
+
+.. versionchanged:: 1.1 `leastsq` supports bound constraints. `fmin_XXX` methods
+                  changed to the `scipy.optimze.minimize()` notation.
 
 .. table:: Features of curve fitting optimizers.
 
-    +-----------+--------+------------------+-----------------------------------+
-    | Optimizer | Bounds | Error estimation | Method                            |
-    +===========+========+==================+===================================+
-    | "leastsq" |  No    | Yes              | least squares                     |
-    +-----------+--------+------------------+-----------------------------------+
-    | "mpfit"   |  Yes   | Yes              | least squares                     |
-    +-----------+--------+------------------+-----------------------------------+
-    | "odr"     |  No    | Yes              | least squares                     |
-    +-----------+--------+------------------+-----------------------------------+
-    |  "fmin"   |  No    | No               | least squares, maximum likelihood |
-    +-----------+--------+------------------+-----------------------------------+
+    +--------------------------+--------+------------------+------------+--------+
+    | Optimizer                | Bounds | Error estimation | Method     | Type   |
+    +==========================+========+==================+============+========+
+    | "leastsq"                |  Yes   | Yes              | 'ls'       | local  |
+    +--------------------------+--------+------------------+------------+--------+
+    | "mpfit"                  |  Yes   | Yes              | 'ls'       | local  |
+    +--------------------------+--------+------------------+------------+--------+
+    | "odr"                    |  No    | Yes              | 'ls'       | local  |
+    +--------------------------+--------+------------------+------------+--------+
+    | "Nelder-Mead"            |  No    | No               | 'ls', 'ml' | local  |
+    +--------------------------+--------+------------------+------------+--------+
+    | "Powell"                 |  No    | No               | 'ls', 'ml' | local  |
+    +--------------------------+--------+------------------+------------+--------+
+    | "CG"                     |  No    | No               | 'ls', 'ml' | local  |
+    +--------------------------+--------+------------------+------------+--------+
+    | "BFGS"                   |  No    | No               | 'ls', 'ml' | local  |
+    +--------------------------+--------+------------------+------------+--------+
+    | "Newton-CG"              |  No    | No               | 'ls', 'ml' | local  |
+    +--------------------------+--------+------------------+------------+--------+
+    | "L-BFGS-B"               |  Yes   | No               | 'ls', 'ml' | local  |
+    +--------------------------+--------+------------------+------------+--------+
+    | "TNC"                    |  Yes   | No               | 'ls', 'ml' | local  |
+    +--------------------------+--------+------------------+------------+--------+
+    | "Differential Evolution" |  Yes   | No               | 'ls', 'ml' | global |
+    +--------------------------+--------+------------------+------------+--------+
+
 
 The following example shows how to perfom least squares with error estimation.
 
@@ -653,13 +686,13 @@ approximation in most cases.
    >>> line.coefficients.std
    (0.0055752036447948173, 0.46950832982673557)
 
-
-We can use poissonian maximum likelihood estimation
-instead that is an unbiased estimator for poissonian noise.
+We can use Poisson maximum likelihood estimation
+instead, which is an unbiased estimator for poissonian noise.
+To do so, we use a general optimizer called "Nelder-Mead".
 
 .. code-block:: python
 
-   >>> m.fit(fitter="fmin", method="ml")
+   >>> m.fit(fitter="Nelder-Mead", method="ml")
    >>> line.coefficients.value
    (1.0030718094185611, -0.63590210946134107)
 
@@ -832,7 +865,7 @@ The :py:class:`~.model.BaseModel` :py:meth:`~.models.BaseModel.plot_results`,
 can be used to visualise the result of the fit **when fitting multidimensional
 datasets**.
 
-.. _storing_models:
+.. _storing_models-label:
 
 Storing models
 --------------
@@ -959,3 +992,150 @@ parameter attributes:
 * :py:meth:`~.model.BaseModel.set_parameters_not_free`
 * :py:meth:`~.model.BaseModel.set_parameters_free`
 * :py:meth:`~.model.BaseModel.set_parameters_value`
+
+.. _SAMFire-label:
+
+Smart Adaptive Multi-dimensional Fitting (SAMFire)
+--------------------------------------------------
+
+.. versionadded:: 1.0
+    SAMFire
+
+SAMFire (Smart Adaptive Multi-dimensional Fitting) is an algorithm created to
+reduce the starting value (or local / false minima) problem, which often arises
+when fitting multi-dimensional datasets.
+
+The algorithm will be described in full when accompanying paper is published,
+but we are making the implementation available now.
+
+The idea
+^^^^^^^^
+
+The main idea of SAMFire is to change two things compared to the traditional
+way of fitting datasets with many dimensions in the navigation space:
+
+ #. Pick a more sensible pixel fitting order.
+ #. Calculate the pixel starting parameters from already fitted parts of the
+    dataset.
+
+Both of these aspects are linked one to another and are represented by two
+different strategy families that SAMFfire uses while operating.
+
+Strategies
+^^^^^^^^^^
+
+During operation SAMFire uses a list of strategies to determine how to select
+the next pixel and estimate its starting parameters. Only one strategy is used
+at a time. Next strategy is chosen when no new pixels are can be fitted with
+the current strategy. Once either the strategy list is exhausted or the full
+dataset fitted, the algorithm terminates.
+
+There are two families of strategies. In each family there may be many
+strategies, using different statistical or significance measures.
+
+As a rule of thumb, the first strategy in the list should always be from the
+local family, followed by a strategy from the global family.
+
+Local strategy family
+^^^^^^^^^^^^^^^^^^^^^
+
+These strategies assume that locally neighbouring pixels are similar. As a
+result, the pixel fitting order seems to follow data-suggested order, and the
+starting values are computed from the surrounding already fitted pixels.
+
+More information about the exact procedure will be available once the
+accompanying paper is published.
+
+
+Global strategy family
+^^^^^^^^^^^^^^^^^^^^^^
+
+Global strategies assume that the navigation coordinates of each pixel bear no
+relation to it's signal (i.e. the location of pixels is meaningless). As a
+result, the pixels are selected at random to ensure uniform sampling of the
+navigation space.
+
+A number of candidate starting values are computed form global statistical
+measures. These values are all attempted in order until a satisfactory result
+is found (not necessarily testing all available starting guesses). As a result,
+on average each pixel requires significantly more computations when compared to
+a local strategy.
+
+More information about the exact procedure will be available once the
+accompanying paper is published.
+
+Seed points
+^^^^^^^^^^^
+
+Due to the strategies using already fitted pixels to estimate the starting
+values, at least one pixel has to be fitted beforehand by the user.
+
+The seed pixel(s) should be selected to require the most complex model present
+in the dataset, however in-built goodness of fit checks ensure that only
+sufficiently well fitted values are allowed to propagate.
+
+If the dataset consists of regions (in the navigation space) of highly
+dissimilar pixels, often called "domain structures", at least one seed pixel
+should be given for each unique region.
+
+If the starting pixels were not optimal, only part of the dataset will be
+fitted. In such cases it is best to allow the algorithm terminate, then provide
+new (better) seed pixels by hand, and restart SAMFire. It will use the
+new seed together with the already computed parts of the data.
+
+Usage
+^^^^^
+
+After creating a model and fitting suitable seed pixels, to fit the rest of
+the multi-dimensional dataset using SAMFire we must craete a SAMFire instance
+as follows:
+
+.. code-block:: python
+
+    >>> samf = m.create_samfire(workers=None, ipyparallel=False)
+
+By default SAMFire will look for an `ipyparallel
+<http://ipyparallel.readthedocs.io/en/latest/index.html>`_ cluster for the
+workers for around 30 seconds. If none is available, it will use
+multiprocessing instead.  However, if you are not planning to use ipyparallel,
+it's recommended specify it explicitly via the ``ipyparallel=False`` argument,
+to use the fall-back option of `multiprocessing`.
+
+By default a new SAMFire object already has two (and currently only) strategies
+added to its strategist list:
+
+.. code-block:: python
+
+    >>> samf.strategies
+      A |    # | Strategy
+     -- | ---- | -------------------------
+      x |    0 | Reduced chi squared strategy
+        |    1 | Histogram global strategy
+
+The currently active strategy is marked by an 'x' in the first column.
+
+If a new datapoint (i.e. pixel) is added manually, the "database" of the
+currently active strategy has to be refreshed using the
+:py:meth:`~.samfire.Samfire.refresh_database` call.
+
+The current strategy "database" can be plotted using the
+:py:meth:`~.samfire.Samfire.plot` method.
+
+Whilst SAMFire is running, each pixel is checked by a ``goodness_test``,
+which is by default :py:class:`~.fit_tests.red_chisq_test`, checking the
+reduced chi-squared to be in the bounds of [0, 2].
+
+This tolerance can (and most likely should!) be changed appropriately for the
+data as follows:
+
+.. code-block:: python
+
+    >>> samf.metadata.goodness_test.tolerance = 0.3 # use a sensible value
+
+The SAMFire managed multi-dimensional fit can be started using the
+:py:meth:`~.samfire.Samfire.start` method. All keyword arguments are passed to
+the underlying (i.e. usual) :py:meth:`~.model.BaseModel.fit` call:
+
+.. code-block:: python
+
+    >>> samf.start(fitter='mpfit', bounded=True)

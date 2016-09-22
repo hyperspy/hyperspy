@@ -98,11 +98,6 @@ def copy_slice_from_whitelist(
 
     for key in keys:
         val = _from._whitelist[key]
-        if key == 'self':
-            target = None
-        else:
-            target = attrgetter(key)(_from)
-
         if val is None:
             # attrsetter(_to, key, attrgetter(key)(_from))
             # continue
@@ -118,6 +113,12 @@ def copy_slice_from_whitelist(
             continue
         if 'id' in flags:
             continue
+
+        if key == 'self':
+            target = None
+        else:
+            target = attrgetter(key)(_from)
+
         if 'inav' in flags or 'isig' in flags:
             slice_nav = make_slice_navigation_decision(flags, isNav)
             result = _slice_target(
@@ -207,7 +208,8 @@ class FancySlicing(object):
     def _slicer(self, slices, isNavigation=None, out=None):
         array_slices = self._get_array_slices(slices, isNavigation)
         if out is None:
-            _obj = self._deepcopy_with_new_data(self.data[array_slices])
+            _obj = self._deepcopy_with_new_data(self.data[array_slices],
+                                                copy_variance=True)
             _to_remove = []
             for slice_, axis in zip(array_slices, _obj.axes_manager._axes):
                 if (isinstance(slice_, slice) or

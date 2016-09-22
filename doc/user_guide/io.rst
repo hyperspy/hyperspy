@@ -40,7 +40,7 @@ providing the ``signal`` keyword, which has to be one of: ``spectrum``,
 
 Some file formats store some extra information about the data, which can be
 stored in "attributes". If HyperSpy manages to read some extra information
-about the data it stores it in :py:attr:`~.signal.BaseSignal.original_metadata`
+about the data it stores it in `~.signal.BaseSignal.original_metadata`
 attribute. Also, it is possible that other information will be mapped by
 HyperSpy to a standard location where it can be used by some standard routines,
 the :py:attr:`~.signal.BaseSignal.metadata` attribute.
@@ -51,14 +51,31 @@ To print the content of the parameters simply:
 
     >>> s.metadata
 
-
-The :py:attr:`~.signal.BaseSignal.original_metadata` and
+::
+Th :py:attr:`~.signal.BaseSignal.original_metadata` and
 :py:attr:`~.signal.BaseSignal.metadata` can be exported to  text files
 using the :py:meth:`~.misc.utils.DictionaryTreeBrowser.export` method, e.g.:
 
 .. code-block:: python
 
     >>> s.original_metadata.export('parameters')
+
+.. _load_to_memory-label:
+
+.. versionadded:: 1.0
+    `load_to_memory` argument.
+
+Some file readers support accessing the data without reading it to memory. This
+feature can be useful when analysing large files. To load a file without loading
+it to memory simply set `load_to_memory` to `False` e.g.
+
+.. code-block:: python
+
+    >>> s = hs.load("filename.hdf5", load_to_memory=False)
+
+However, note that as of v1.0 HyperSpy cannot efficiently use this feature to
+operate on big data files. Only hdf5, blockfile and EMD currently support not
+reading to memory.
 
 Loading multiple files
 ----------------------
@@ -76,7 +93,9 @@ or by using `shell-style wildcards <http://docs.python.org/library/glob.html>`_
 
 By default HyperSpy will return a list of all the files loaded. Alternatively,
 HyperSpy can stack the data of the files contain data with exactly the same
-dimensions. If this is not the case an error is raised.
+dimensions. If this is not the case an error is raised. If each file contains
+multiple (N) signals, N stacks will be created. Here, the numbers of signals
+per file must also match, or an error will be raised.
 
 It is also possible to load multiple files with a single command without
 stacking them by passing the `stack=False` argument to the load function, in
@@ -169,6 +188,8 @@ HyperSpy.
     | Bruker's bcf       |    Yes    |    No    |
     +--------------------+-----------+----------+
     | EMD (Berkley Labs) |    Yes    |    Yes   |
+    +--------------------+-----------+----------+
+    | Protochips log     |    Yes    |    No    |
     +--------------------+-----------+----------+
 
 .. _hdf5-format:
@@ -341,6 +362,10 @@ and 64-bit float, grayscale and RGB(A) images, which are commonly used in
 bio-scientific imaging. See `the library webpage
 <http://www.lfd.uci.edu/~gohlke/code/tifffile.py.html>`_ for more details.
 
+.. versionadded: 1.0
+   Add support for writing/reading scale and unit to tif files to be read with
+   ImageJ or DigitalMicrograph 
+
 Currently HyperSpy has limited support for reading and saving the TIFF tags.
 However, the way that HyperSpy reads and saves the scale and the units of tiff
 files is compatible with ImageJ/Fiji and Gatan Digital Micrograph softwares.
@@ -363,7 +388,7 @@ library. See `the library webpage
     >>> # Saving the string 'Random metadata' in a custom tag (ID 65000)
     >>> extratag = [(65000, 's', 1, "Random metadata", False)]
     >>> s.save('file.tif', extratags=extratag)
-    
+ 
     >>> # Saving the string 'Random metadata' from a custom tag (ID 65000)
     >>> s2 = hs.load('file.tif')
     >>> s2.original_metadata['Number_65000']
@@ -543,3 +568,11 @@ The EMD format was developed at Lawrence Berkeley National Lab
 (see http://emdatasets.lbl.gov/ for more information).
 NOT to be confused with the FEI EMD format which was developed later and has a
 different structure.
+
+.. _protochips-format:
+
+Protochips log
+--------------
+
+HyperSpy can read heater, biasing and gas cell log files for Protochips holder.
+The format stores all the captured data together with a small header in a csv file. The reader extracts the measured quantity (e. g. temperature, pressure, current, voltage) along the time axis, as well as the notes saved during the experiment. The reader returns a list of signal with each signal corresponding to a quantity. Since there is a small fluctuation in the step of the time axis, the reader assumes that the step is constant and takes its mean, which is a good approximation. Further realase of HyperSpy will read the time axis more precisely by supporting non-linear axis.

@@ -112,7 +112,7 @@ before_deploy:
   # Install current hyperspy in WinPython
   - "SET PATH=%ORIGPATH%"
   - "%CMD_IN_ENV% %WP_INSTDIR%/scripts/env.bat"
-  - "%CMD_IN_ENV% pip install --upgrade configobj traitsui natsort start_jupyter_cm tqdm cython setuptools"
+  - "%CMD_IN_ENV% pip install --upgrade configobj traitsui natsort start_jupyter_cm tqdm cython setuptools ipywidgets"
   # Give info about python vesion and compiler used to compile the python
   - "%CMD_IN_ENV% python.exe -c \"import sys; print(sys.version)\""
   - "%CMD_IN_ENV% python.exe setup.py recythonize"
@@ -131,11 +131,11 @@ deploy:
   provider: GitHub
   auth_token:
     #   to266:
-    #secure: ptV5Dkz3pSVdjD0qRDpxJgjVlddFtleZ+B+c2X1Fg67P8OX3bHWVktRmlj6hfLhM
+    secure: ptV5Dkz3pSVdjD0qRDpxJgjVlddFtleZ+B+c2X1Fg67P8OX3bHWVktRmlj6hfLhM
     #   vidartf:
     #secure: KwAfARhGEqOnZHltPB6kKu8xmnoiGSk7NMYJBIEbWvFCuVnepoPV7ZcIjUN3pUpK
     #   sem-geologist:
-    secure: RRqUkx9H5VuFNITmm+YzgB0qnqgVGPH1yrPVxb4oCD+FAjcTch2WZAiPEKn4L6w6
+    #secure: RRqUkx9H5VuFNITmm+YzgB0qnqgVGPH1yrPVxb4oCD+FAjcTch2WZAiPEKn4L6w6
   artifact: /.*\.exe/, win_wheels  # upload all exe installers and wheels to release assets
   #artifact: win_wheels
   draft: false
