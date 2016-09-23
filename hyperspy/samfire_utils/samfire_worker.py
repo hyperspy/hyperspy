@@ -70,7 +70,8 @@ class Worker:
         for k, v in dct.items():
             if isinstance(v, BaseSignal):
                 v.data = v.data.copy()
-                self.parameters[k] = None
+                if k not in ['signal', 'image', 'spectrum']:
+                    self.parameters[k] = None
             if isinstance(v, np.ndarray):
                 dct[k] = v.copy()
 
