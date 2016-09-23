@@ -643,32 +643,30 @@ class Signal2D(BaseSignal, CommonSignal2D):
         -------
         peaks: structured array of shape _navigation_shape_in_array in which
                each cell contains an array with dimensions (npeaks, 2) that
-               contains the x, y coordinates of peaks found in each image.
+               contains the x, y pixel coordinates of peaks found in each image.
         """
         arr_shape = (self.axes_manager._navigation_shape_in_array
                      if self.axes_manager.navigation_size > 0
                      else [1, ])
         peaks = np.zeros(arr_shape, dtype=object)
+        method_dict = {
+            'skimage': peak_local_max,
+            'max': find_peaks_max,
+            'minmax': find_peaks_minmax,
+            'zaefferer': find_peaks_zaefferer,
+            'stat': find_peaks_stat,
+            'laplacian_of_gaussians':  find_peaks_log,
+            'difference_of_gaussians': find_peaks_dog,
+        }
+        if method in method_dict:
+            method = method_dict[method]
+        else:
+            raise NotImplementedError("The method `{}` is not implemented. "
+                                      "See documentation for available "
+                                      "implementations.".format(method))
         for z, indices in zip(self._iterate_signal(),
                               self.axes_manager._array_indices_generator()):
-            if method == 'skimage':
-                peaks[indices] = peak_local_max(z, *args, **kwargs)
-            elif method == 'max':
-                peaks[indices] = find_peaks_max(z, **kwargs)
-            elif method == 'minmax':
-                peaks[indices] = find_peaks_minmax(z, **kwargs)
-            elif method == 'zaefferer':
-                peaks[indices] = find_peaks_zaefferer(z, **kwargs)
-            elif method == 'stat':
-                peaks[indices] = find_peaks_stat(z, **kwargs)
-            elif method == 'laplacian_of_gaussians':
-                peaks[indices] = find_peaks_log(z, **kwargs)
-            elif method == 'difference_of_gaussians':
-                peaks[indices] = find_peaks_dog(z, **kwargs)
-            else:
-                raise NotImplementedError("The method `{}` is not implemented. "
-                                          "See documentation for available "
-                                          "implementations.".format(method))
+            peaks[indices] = method(z, *args, **kwargs)
 
         return peaks
 
@@ -696,15 +694,18 @@ def clean_peaks(peaks):
         return peaks
 
 
-def find_peaks_minmax(z, separation=5., threshold=10., interpolation_order=3):
+def find_peaks_minmax(z, separation=5., threshold=10.):
     """
     Method to locate the positive peaks in an image by comparing maximum
     and minimum filtered images.
     Parameters
     ----------
-    z: ndarray
-    separation: expected distance between peaks
-    threshold: ???
+    z : ndarray
+        Matrix of image intensities.
+    separation : float
+        Expected distance between peaks.
+    threshold : float
+        Minimum difference between maximum and minimum filtered images.
     Returns
     -------
     peaks: array with dimensions (npeaks, 2) that contains the x, y coordinates
@@ -723,12 +724,26 @@ def find_peaks_minmax(z, separation=5., threshold=10., interpolation_order=3):
 
 
 def find_peaks_max(z, alpha=3., size=10):
-    """
-    Method to locate positive peaks in an image by simple local maximum
-    searching.
+    """Method to locate positive peaks in an image by local maximum searching.
+
+    Parameters
+    ----------
+    alpha : float
+        Only maxima above `alpha * sigma` are found, where `sigma` is the
+        standard deviation of the image.
+    size : int
+        When a peak is found, all pixels in a square region of side `size` are
+        set to zero so that no further peaks can be found in that region.
+
+    Returns
+    -------
+    peaks : numpy.ndarray
+        (n_peaks, 2)
+        Peak pixel coordinates.
+
     """
     # preallocate lots of peak storage
-    k_arr = np.zeros((10000, 2))
+    k_arr = []
     # copy image
     image_temp = copy.deepcopy(z)
     peak_ct = 0
@@ -738,7 +753,7 @@ def find_peaks_max(z, alpha=3., size=10):
         k = np.argmax(image_temp)
         j, i = np.unravel_index(k, image_temp.shape)
         if image_temp[j, i] >= alpha * sigma:
-            k_arr[peak_ct] = [j, i]
+            k_arr.append([j, i])
             # masks peaks already identified.
             x = np.arange(i - size, i + size)
             y = np.arange(j - size, j + size)
@@ -749,16 +764,15 @@ def find_peaks_max(z, alpha=3., size=10):
             peak_ct += 1
         else:
             break
-    # trim array to have shape (number of peaks, 2)
-    peaks = k_arr[:peak_ct]
+    peaks = np.array(k_arr)
     return clean_peaks(peaks)
 
 
 def find_peaks_zaefferer(z, grad_threshold=0.1, window_size=40,
                          distance_cutoff=50):
-    """
-    Method to locate positive peaks in an image based on gradient
+    """Method to locate positive peaks in an image based on gradient
     thresholding and subsequent refinement within masked regions.
+
     Parameters
     ----------
     z : ndarray
@@ -771,6 +785,7 @@ def find_peaks_zaefferer(z, grad_threshold=0.1, window_size=40,
     distance_cutoff : float
         The maximum distance a peak may be from the initial
         high-gradient point.
+
     Returns
     -------
     peaks : numpy.ndarray
@@ -792,8 +807,7 @@ def find_peaks_zaefferer(z, grad_threshold=0.1, window_size=40,
         y_max = min(y_max, y + a)
         return np.array(
             np.meshgrid(range(x_min, x_max), range(y_min, y_max))).reshape(
-            2,
-            -1).T
+            2, -1).T
 
     def get_max(image, box):
         """Finds the coordinates of the maximum of 'image' in 'box'."""
@@ -843,13 +857,14 @@ def find_peaks_zaefferer(z, grad_threshold=0.1, window_size=40,
             p_old = p_new
             b = box(p_old[0], p_old[1], window_size, z.shape[0], z.shape[1])
             p_new = get_max(z, b)
-        if distance(coordinate, p_new) <= distance_cutoff:
+            if distance(coordinate, p_new) > distance_cutoff:
+                break
             peaks.append(tuple(p_new))
     peaks = np.array([np.array(p) for p in set(peaks)])
     return clean_peaks(peaks)
 
 
-def find_peaks_stat(z, standard_deviation=1.):
+def find_peaks_stat(z, alpha=1., window_radius=10, convergence_ratio=0.05):
     """
     Method to locate positive peaks in an image based on statistical refinement
     and difference with respect to mean intensity.
@@ -857,6 +872,15 @@ def find_peaks_stat(z, standard_deviation=1.):
     ----------
     z : ndarray
         Array of image intensities.
+    alpha : float
+        Only maxima above `alpha * sigma` are found, where `sigma` is the
+        local, rolling standard deviation of the image.
+    window_radius : int
+        The pixel radius of the circular window for the calculation of the
+        rolling mean and standard deviation.
+    convergence_ratio : float
+        The algorithm will stop finding peaks when the proportion of new peaks
+        being found is less than `convergence_ratio`.
     Returns
     -------
     ndarray
@@ -881,7 +905,7 @@ def find_peaks_stat(z, standard_deviation=1.):
     def _local_stat(image, radius, func):
         """Calculates rolling method 'func' over a circular kernel."""
         x, y = np.ogrid[-radius:radius + 1, -radius:radius + 1]
-        kernel = x ** 2 + y ** 2 <= radius ** 2
+        kernel = np.hypot(x, y) < radius
         stat = generic_filter(image, func, footprint=kernel)
         return stat
 
@@ -901,12 +925,11 @@ def find_peaks_stat(z, standard_deviation=1.):
 
     def stat_binarise(image):
         """Peaks more than one standard deviation from the mean set to one."""
-        image_rolling_mean = local_mean(image, 10)
-        image_rolling_std = local_std(image, 10)
+        image_rolling_mean = local_mean(image, window_radius)
+        image_rolling_std = local_std(image, window_radius)
         image = single_pixel_desensitize(image)
         binarised_image = np.zeros(image.shape)
-        stat_mask = image > (
-            image_rolling_mean + standard_deviation * image_rolling_std)
+        stat_mask = image > (image_rolling_mean + alpha * image_rolling_std)
         binarised_image[stat_mask] = 1
         return binarised_image
 
@@ -918,14 +941,13 @@ def find_peaks_stat(z, standard_deviation=1.):
 
     def half_binarise(image):
         """Image binarised about values of one-half intensity."""
-        binarised_image = np.zeros(image.shape)
-        binarised_image[image > 0.5] = 1
+        binarised_image = np.where(image > 0.5, 1, 0)
         return binarised_image
 
     def separate_peaks(binarised_image):
         """Identify adjacent 'on' coordinates via DBSCAN."""
         bi = binarised_image.astype('bool')
-        coordinates = np.indices(bi.data.shape).reshape(2, -1).T[
+        coordinates = np.indices(bi.shape).reshape(2, -1).T[
             bi.flatten()]
         db = DBSCAN(2, 3)
         peaks = []
@@ -942,13 +964,13 @@ def find_peaks_stat(z, standard_deviation=1.):
         return image, peaks
 
     def stat_peak_finder(image):
-        """Find peaks in diffraction image. Algorithm stages in comments."""
+        """Find peaks in image. Algorithm stages in comments."""
         image = normalize(image)  # 1
         image = stat_binarise(image)  # 2, 3
         n_peaks = np.infty  # Initial number of peaks
         image, peaks = _peak_find_once(image)  # 4-6
         m_peaks = len(peaks)  # Actual number of peaks
-        while (n_peaks - m_peaks) / n_peaks > 0.05:  # 8
+        while (n_peaks - m_peaks) / n_peaks > convergence_ratio:  # 8
             n_peaks = m_peaks
             image, peaks = _peak_find_once(image)
             m_peaks = len(peaks)
@@ -997,7 +1019,7 @@ def find_peaks_dog(z, min_sigma=1., max_sigma=50, sigma_ratio=1.6,
         return NO_PEAKS
     clean_centers = []
     for center in centers:
-        if len(np.intersect1d(center, (0,) + z.shape + tuple(
+        if len(np.intersect1d(center, (0, 1) + z.shape + tuple(
                         c - 1 for c in z.shape))) > 0:
             continue
         clean_centers.append(center)

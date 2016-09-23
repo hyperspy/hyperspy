@@ -36,7 +36,8 @@ class PeakFinderUIBase:
         return dict(zip(self.method_names, self.methods))[self._method]
 
     def get_data(self):
-        return self.signal.inav[self.indices].data
+        _slices = self.signal._get_array_slices(self.indices, isNavigation=True)
+        return self.signal.data[_slices]
 
     def get_peaks(self):
         peaks = self.current_method(self.get_data(),

@@ -36,7 +36,7 @@ Both are available via the :py:class:`~.axes.AxesManager` of the signal.
 Peak finding
 ------------
 
-.. versionadded:: 1.0.0
+.. versionadded:: 1.1.2
 
 The :py:meth:`~.signal.Signal2DTools.find_peaks2D` method provides access to a
 number of algorithms for that achieve peak finding in two dimensional signals.
@@ -93,8 +93,8 @@ Interactive Parametrization
     >>> s.find_peaks2D_interactive()
 
 Many of the peak finding algorithms implemented here have a number of
-tuneable parameters that significantly affect their accuracy. Finding the
-correct parameters can be difficult. An interactive tool for the Jupyter
+tuneable parameters that significantly affect their accuracy and speed. Finding
+the correct parameters can be difficult. An interactive tool for the Jupyter
 (originally IPython) notebook has been developed to help.
 
 Several widgets are available:
