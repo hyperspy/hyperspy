@@ -4,8 +4,10 @@ from nose.tools import (
 
 from hyperspy import signals
 from hyperspy import components1d
+from hyperspy.decorators import lazifyTestClass
 
 
+@lazifyTestClass
 class TestRemoveBackground1DGaussian:
 
     def setUp(self):
@@ -33,6 +35,7 @@ class TestRemoveBackground1DGaussian:
         assert_true(np.allclose(s1.data, np.zeros(len(s1.data))))
 
 
+@lazifyTestClass
 class TestRemoveBackground1DPowerLaw:
 
     def setUp(self):

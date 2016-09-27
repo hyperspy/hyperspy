@@ -24,8 +24,10 @@ from hyperspy.defaults_parser import preferences
 from hyperspy.components1d import Gaussian
 from hyperspy.misc.eds import utils as utils_eds
 from hyperspy.misc.test_utils import ignore_warning
+from hyperspy.decorators import lazifyTestClass
 
 
+@lazifyTestClass
 class Test_metadata:
 
     def setUp(self):
@@ -132,6 +134,7 @@ class Test_metadata:
                         energy_axis.scale)
 
 
+@lazifyTestClass
 class Test_quantification:
 
     def setUp(self):
@@ -237,6 +240,7 @@ class Test_quantification:
         np.testing.assert_allclose(res, [3, 6], atol=1e-3)
 
 
+@lazifyTestClass
 class Test_vacum_mask:
 
     def setUp(self):
@@ -250,6 +254,7 @@ class Test_vacum_mask:
         nt.assert_false(s.vacuum_mask().data[-1])
 
 
+@lazifyTestClass
 class Test_simple_model:
 
     def setUp(self):
@@ -276,12 +281,11 @@ class Test_simple_model:
             rtol=0.03)
 
 
-class Test_get_lines_intentisity:
-
-    def test_with_signals_examples(self):
-        from hyperspy.misc.example_signals_loading import \
-            load_1D_EDS_TEM_spectrum as EDS_TEM_Spectrum
-        s = EDS_TEM_Spectrum()
+def test_with_signals_examples():
+    from hyperspy.misc.example_signals_loading import \
+        load_1D_EDS_TEM_spectrum as EDS_TEM_Spectrum
+    sig = EDS_TEM_Spectrum()
+    for s in (sig, sig.as_lazy()):
         np.testing.assert_allclose(
             np.array([res.data[0] for res in s.get_lines_intensity()]),
             np.array([3710, 15872]))

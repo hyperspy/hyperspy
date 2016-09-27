@@ -21,8 +21,10 @@ import numpy.testing
 import nose.tools as nt
 
 import hyperspy.api as hs
+from hyperspy.decorators import lazifyTestClass
 
 
+@lazifyTestClass
 class Test_Estimate_Elastic_Scattering_Threshold:
 
     def setUp(self):
@@ -100,7 +102,7 @@ class Test_Estimate_Elastic_Scattering_Threshold:
         t = s.estimate_elastic_scattering_intensity(threshold=2.5)
         np.testing.assert_array_almost_equal(t.data, 249999.985133)
 
-
+@lazifyTestClass
 class TestEstimateZLPCentre:
 
     def setUp(self):
@@ -120,6 +122,7 @@ class TestEstimateZLPCentre:
         nt.assert_equal(zlpc.axes_manager.signal_dimension, 0)
 
 
+@lazifyTestClass
 class TestAlignZLP:
 
     def setUp(self):
@@ -183,6 +186,7 @@ class TestAlignZLP:
         nt.assert_true(np.allclose(zlp_max, 8))
 
 
+@lazifyTestClass
 class TestPowerLawExtrapolation:
 
     def setUp(self):
