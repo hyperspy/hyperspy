@@ -58,6 +58,12 @@ class TestSubPixelAlign:
         # Compare by broadcasting
         np.testing.assert_allclose(s.data[4], s.data[0], rtol=1)
 
+    def test_estimate_subpix(self):
+        s = self.signal
+        shifts = s.estimate_shift2D(sub_pixel_factor=200)
+        np.testing.assert_allclose(shifts, self.shifts, rtol=0.02, atol=0.02,
+                                   verbose=True)
+
 
 class TestAlignTools:
 
