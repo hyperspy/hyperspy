@@ -60,6 +60,7 @@ install_req = ['scipy',
                'sympy',
                'dill',
                'h5py',
+               'toolz'
                'python-dateutil',
                'ipyparallel']
 
