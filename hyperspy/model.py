@@ -915,6 +915,16 @@ class BaseModel(list):
                 # this has to be done before setting the p0,
                 # so moved things around
                 self.ensure_parameters_in_bounds()
+        if method == 'custom':
+            min_function = kwargs.pop('min_function', None)
+            if min_function is None:
+                raise ValueError('Custom minimization requires "min_function" '
+                                 'kwarg with a callable')
+            if grad is not False:
+                raise ValueError('Custom minimization does not support '
+                                 'gradient (for now).')
+            from toolz import curry
+            min_function = curry(min_function, self)
 
         with cm(update_on_resume=True):
             self.p_std = None
@@ -935,7 +945,7 @@ class BaseModel(list):
                 grad_ml = self._gradient_ml
                 grad_ls = self._gradient_ls
 
-            if method == 'ml':
+            if method in ['ml', 'custom']:
                 weights = None
                 if fitter in ("leastsq", "odr", "mpfit"):
                     raise NotImplementedError(
@@ -1061,6 +1071,9 @@ class BaseModel(list):
                 elif method == "ls":
                     tominimize = self._errfunc2
                     fprime = grad_ls
+                elif method == 'custom':
+                    tominimize = min_function
+                    fprime = None
 
                 # OPTIMIZERS
                 # Derivative-free methods
