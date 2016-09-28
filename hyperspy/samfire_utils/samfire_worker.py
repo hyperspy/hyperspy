@@ -161,6 +161,9 @@ class Worker:
         self.value_dict = value_dict
 
         self.fitting_kwargs = self.value_dict.pop('fitting_kwargs', {})
+        if 'min_function' in self.fitting_kwargs:
+            self.fitting_kwargs['min_function'] = \
+                    dill.loads(self.fitting_kwargs['min_function'])
         self.model.signal.data[:] = self.value_dict.pop('signal.data')
 
         if self.model.signal.metadata.has_item(
