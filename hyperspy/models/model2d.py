@@ -258,7 +258,7 @@ class Model2D(BaseModel):
     def _calculate_correlation(self):
         if hasattr(self, 'corr'):
             sig = self.signal()
-            norm = fft_correlation(sig, sig, normalize=False).sum()
+            norm = fft_correlation(sig, sig, normalize=False)[0].sum()
             self.corr.data[self.axes_manager.indices[::-1]] = \
-                    (fft_correlation(sig, self(), normalize=False).sum() /
+                    (fft_correlation(sig, self(), normalize=False)[0].sum() /
                      norm)
