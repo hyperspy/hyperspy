@@ -24,6 +24,7 @@
 import os
 import logging
 from datetime import datetime
+import dateutil.parser
 
 import numpy as np
 import traits.api as t
@@ -789,7 +790,7 @@ class ImageObject(object):
         return dt.time().isoformat()
 
     def _get_date(self, date):
-        dt = datetime.strptime(date, "%m/%d/%Y")
+        dt = dateutil.parser.parse(date)
         return dt.date().isoformat()
 
     def _get_microscope_name(self, ImageTags):
